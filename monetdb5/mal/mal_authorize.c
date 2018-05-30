@@ -42,10 +42,18 @@
 static str AUTHdecypherValue(str *ret, const char *value);
 static str AUTHcypherValue(str *ret, const char *value);
 static str AUTHverifyPassword(const char *passwd);
+static BUN lookupRemoteTableKey(const char *key);
 
 static BAT *user = NULL;
 static BAT *pass = NULL;
 static BAT *duser = NULL;
+
+/* Remote table bats */
+static BAT *rt_key = NULL;
+static BAT *rt_uri = NULL;
+static BAT *rt_remoteuser = NULL;
+static BAT *rt_hashedpwd = NULL;
+static BAT *rt_deleted = NULL;
 /* yep, the vault key is just stored in memory */
 static str vaultKey = NULL;
 
@@ -130,7 +138,7 @@ AUTHrequireAdminOrUser(Client cntxt, const char *username) {
 static void
 AUTHcommit(void)
 {
-	bat blist[4];
+	bat blist[9];
 
 	blist[0] = 0;
 
@@ -140,7 +148,17 @@ AUTHcommit(void)
 	blist[2] = pass->batCacheid;
 	assert(duser);
 	blist[3] = duser->batCacheid;
-	TMsubcommit_list(blist, 4);
+	assert(rt_key);
+	blist[4] = rt_key->batCacheid;
+	assert(rt_uri);
+	blist[5] = rt_uri->batCacheid;
+	assert(rt_remoteuser);
+	blist[6] = rt_remoteuser->batCacheid;
+	assert(rt_hashedpwd);
+	blist[7] = rt_hashedpwd->batCacheid;
+	assert(rt_deleted);
+	blist[8] = rt_deleted->batCacheid;
+	TMsubcommit_list(blist, 9);
 }
 
 /*
@@ -224,8 +242,6 @@ AUTHinitTables(const char *passwd) {
 			BATmode(duser, PERSISTENT) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
-		if (!isNew)
-			AUTHcommit();
 	} else {
 		duser = BATdescriptor(bid);
 		if (duser == NULL)
@@ -233,6 +249,133 @@ AUTHinitTables(const char *passwd) {
 		isNew = 0;
 	}
 	assert(duser);
+
+	/* Remote table authorization table.
+	 *
+	 * This table holds the remote tabe authorization credentials
+	 * (uri, username and hashed password).
+	 */
+	/* load/create remote table URI BAT */
+	bid = BBPindex("M5system_auth_rt_key");
+	if (!bid) {
+		rt_key = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_key == NULL)
+			throw(MAL, "initTables.rt_key", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table key bat");
+
+		if (BBPrename(BBPcacheid(rt_key), "M5system_auth_rt_key") != 0 ||
+			BATmode(rt_key, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_key", GDK_EXCEPTION);
+	}
+	else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
+		rt_key = BATdescriptor(bid);
+		GDKdebug = dbg;
+		if (rt_key == NULL) {
+			throw(MAL, "initTables.rt_key", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_key);
+
+	/* load/create remote table URI BAT */
+	bid = BBPindex("M5system_auth_rt_uri");
+	if (!bid) {
+		rt_uri = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_uri == NULL)
+			throw(MAL, "initTables.rt_uri", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table uri bat");
+
+		if (BBPrename(BBPcacheid(rt_uri), "M5system_auth_rt_uri") != 0 ||
+			BATmode(rt_uri, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
+	}
+	else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
+		rt_uri = BATdescriptor(bid);
+		GDKdebug = dbg;
+		if (rt_uri == NULL) {
+			throw(MAL, "initTables.rt_uri", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_uri);
+
+	/* load/create remote table remote user name BAT */
+	bid = BBPindex("M5system_auth_rt_remoteuser");
+	if (!bid) {
+		rt_remoteuser = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_remoteuser == NULL)
+			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+
+		if (BBPrename(BBPcacheid(rt_remoteuser), "M5system_auth_rt_remoteuser") != 0 ||
+			BATmode(rt_remoteuser, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_remoteuser", GDK_EXCEPTION);
+	}
+	else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
+		rt_remoteuser = BATdescriptor(bid);
+		GDKdebug = dbg;
+		if (rt_remoteuser == NULL) {
+			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_remoteuser);
+
+	/* load/create remote table password BAT */
+	bid = BBPindex("M5system_auth_rt_hashedpwd");
+	if (!bid) {
+		rt_hashedpwd = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_hashedpwd == NULL)
+			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+
+		if (BBPrename(BBPcacheid(rt_hashedpwd), "M5system_auth_rt_hashedpwd") != 0 ||
+			BATmode(rt_hashedpwd, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_hashedpwd", GDK_EXCEPTION);
+	}
+	else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
+		rt_hashedpwd = BATdescriptor(bid);
+		GDKdebug = dbg;
+		if (rt_hashedpwd == NULL) {
+			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_hashedpwd);
+
+	/* load/create remote table deleted entries BAT */
+	bid = BBPindex("M5system_auth_rt_deleted");
+	if (!bid) {
+		rt_deleted = COLnew(0, TYPE_oid, 256, PERSISTENT);
+		if (rt_deleted == NULL)
+			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+
+		if (BBPrename(BBPcacheid(rt_deleted), "M5system_auth_rt_deleted") != 0 ||
+			BATmode(rt_deleted, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_deleted", GDK_EXCEPTION);
+		/* If the database is not new, but we just created this BAT,
+		 * write everything to disc. This needs to happen only after
+		 * the last BAT of the vault has been created.
+		 */
+		if (!isNew)
+			AUTHcommit();
+	}
+	else {
+		rt_deleted = BATdescriptor(bid);
+		if (rt_deleted == NULL) {
+			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_deleted);
 
 	if (isNew == 1) {
 		/* insert the monetdb/monetdb administrator account on a
@@ -351,8 +494,8 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
 	/* needs force, as SQL makes a view over user */
-	if (BUNappend(user, username, TRUE) != GDK_SUCCEED ||
-		BUNappend(pass, hash, TRUE) != GDK_SUCCEED) {
+	if (BUNappend(user, username, true) != GDK_SUCCEED ||
+		BUNappend(pass, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(MAL, "addUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -396,7 +539,7 @@ AUTHremoveUser(Client cntxt, const char *username)
 		throw(MAL, "removeUser", "cannot remove yourself");
 
 	/* now, we got the oid, start removing the related tuples */
-	if (BUNappend(duser, &id, TRUE) != GDK_SUCCEED)
+	if (BUNappend(duser, &id, true) != GDK_SUCCEED)
 		throw(MAL, "removeUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
@@ -433,7 +576,7 @@ AUTHchangeUsername(Client cntxt, const char *olduser, const char *newuser)
 		throw(MAL, "changeUsername", "user '%s' already exists", newuser);
 
 	/* ok, just do it! (with force, because sql makes view over it) */
-	if (BUNinplace(user, p, newuser, TRUE) != GDK_SUCCEED)
+	if (BUNinplace(user, p, newuser, true) != GDK_SUCCEED)
 		throw(MAL, "changeUsername", GDK_EXCEPTION);
 	AUTHcommit();
 	return(MAL_SUCCEED);
@@ -485,7 +628,7 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 
 	/* ok, just overwrite the password field for this user */
 	assert(id == p);
-	if (BUNinplace(pass, p, hash, TRUE) != GDK_SUCCEED) {
+	if (BUNinplace(pass, p, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(INVCRED, "changePassword", GDK_EXCEPTION);
 	}
@@ -539,7 +682,7 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	/* ok, just overwrite the password field for this user */
 	assert (p != BUN_NONE);
 	assert(id == p);
-	if (BUNinplace(pass, p, hash, TRUE) != GDK_SUCCEED) {
+	if (BUNinplace(pass, p, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(MAL, "setPassword", GDK_EXCEPTION);
 	}
@@ -611,12 +754,12 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 	if (*ret1 == NULL)
 		throw(MAL, "getUsers", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (BATcount(duser)) {
-		bn = BATdiff(*ret1, duser, NULL, NULL, 0, BUN_NONE);
+		bn = BATdiff(*ret1, duser, NULL, NULL, false, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;
 	} else {
-		*ret2 = COLcopy(user, user->ttype, FALSE, TRANSIENT);
+		*ret2 = COLcopy(user, user->ttype, false, TRANSIENT);
 	}
 	if (*ret1 == NULL || *ret2 == NULL) {
 		if (*ret1)
@@ -821,4 +964,209 @@ AUTHverifyPassword(const char *passwd)
 	throw(MAL, "verifyPassword", "Unknown backend hash algorithm: %s",
 		  MONETDB5_PASSWDHASH);
 #endif
+}
+
+static BUN
+lookupRemoteTableKey(const char *key)
+{
+	BATiter cni = bat_iterator(rt_key);
+	BUN p = BUN_NONE;
+
+	assert(rt_key);
+	assert(rt_deleted);
+
+	if (BAThash(rt_key, 0) == GDK_SUCCEED) {
+		HASHloop_str(cni, cni.b->thash, p, key) {
+			oid pos = p;
+			if (BUNfnd(rt_deleted, &pos) == BUN_NONE)
+				return p;
+		}
+	}
+
+	return BUN_NONE;
+
+}
+
+str
+AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, str *password)
+{
+	BUN p;
+	BATiter i;
+	str tmp;
+	str pwhash;
+
+	if (local_table == NULL || strNil(local_table)) {
+		throw(ILLARG, "getRemoteTableCredentials", "local table should not be nil");
+	}
+
+	p = lookupRemoteTableKey(local_table);
+	if (p == BUN_NONE) {
+		throw(MAL, "getRemoteTableCredentials", "No credentials for remote table %s found", local_table);
+	}
+
+	assert(rt_key);
+	assert(rt_uri);
+	assert(rt_remoteuser);
+	assert(rt_hashedpwd);
+
+	assert(p != BUN_NONE);
+	i = bat_iterator(rt_uri);
+	*uri = BUNtail(i, p);
+
+	i = bat_iterator(rt_remoteuser);
+	*username = BUNtail(i, p);
+
+	i = bat_iterator(rt_hashedpwd);
+	tmp = BUNtail(i, p);
+	rethrow("getRemoteTableCredentials", tmp, AUTHdecypherValue(&pwhash, tmp));
+
+	*password = pwhash;
+
+	return MAL_SUCCEED;
+}
+
+str
+AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, const char *uri, const char *remoteuser, const char *pass, bool pw_encrypted)
+{
+	char *pwhash = NULL;
+	bool free_pw = false;
+	str tmp;
+	BUN p;
+
+	if (uri == NULL || strNil(uri))
+		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
+	if (local_user == NULL || strNil(local_user))
+		throw(ILLARG, "addRemoteTableCredentials", "local user name cannot be nil");
+
+	assert(rt_key);
+	assert(rt_uri);
+	assert(rt_remoteuser);
+	assert(rt_hashedpwd);
+
+	p = lookupRemoteTableKey(local_table);
+
+	if (p != BUN_NONE) {
+	/* An entry with the given key is already in the vault (note: the
+	 * key is the string "schema.table_name", which is unique in the
+	 * SQL catalog, in the sense that no two tables can have the same
+	 * name in the same schema). This can only mean that the entry is
+	 * invalid (i.e. it does not correspond to a valid SQL table). To
+	 * see this consider the following:
+	 *
+	 * 1. The function `AUTHaddRemoteTableCredentials` is only called
+	 * from `rel_create_table` (also from the upgrade code, but this
+	 * is irrelevant for our discussion since, in this case no remote
+	 * table will have any credentials), i.e. when we are creating a
+	 * (remote) table.
+	 *
+	 * 2. If a remote table with name "schema.table_name" has been
+	 * defined previously (i.e there is already a SQL catalog entry
+	 * for it) and we try to define it again,
+	 * `AUTHaddRemoteTableCredentials` will *not* be called because we
+	 * are trying to define an already existing table, and the SQL
+	 * layer will not allow us to continue.
+	 *
+	 * 3. The only way to add an entry in the vault is calling this
+	 * function.
+	 *
+	 * Accepting (1)-(3) above means that just before
+	 * `AUTHaddRemoteTableCredentials` gets called with an argument
+	 * "schema.table_name", that table does not exist in the SQL
+	 * catalog.
+	 *
+	 * This means that if we call `AUTHaddRemoteTableCredentials` with
+	 * argument "schema.table_name" and find an entry with that key
+	 * already in the vault, we can safely overwrite it, because the
+	 * table it refers to does not exist in the SQL catalog. We can
+	 * also conclude that the previous entry was added in the vault as
+	 * part of a CREATE REMOTE TABLE call (conclusion follows from (1)
+	 * and (3)), that did not create a corresponding entry in the SQL
+	 * catalog (conclusion follows from (2)). The only (valid) way for
+	 * this to happen is if the CREATE REMOTE TABLE call was inside a
+	 * transaction that did not succeed.
+	 *
+	 * Implementation note: we first delete the entry and then add a
+	 * new entry with the same key.
+	 */
+		AUTHdeleteRemoteTableCredentials(local_table);
+	}
+
+	if (pass == NULL) {
+		/* NOTE: Is having the client == NULL safe? */
+		AUTHgetPasswordHash(&pwhash, NULL, local_user);
+	}
+	else {
+		free_pw = true;
+		if (pw_encrypted) {
+			pwhash = strdup(pass);
+		}
+		else {
+			/* Note: the remote server might have used a different
+			 * algorithm to hash the pwhash.
+			 */
+			pwhash = mcrypt_BackendSum(pass, strlen(pass));
+		}
+	}
+	rethrow("addRemoteTableCredentials", tmp, AUTHverifyPassword(pwhash));
+
+	str cypher;
+	rethrow("addRemoteTableCredentials", tmp, AUTHcypherValue(&cypher, pwhash));
+
+	/* Add entry */
+	bool table_entry = (BUNappend(rt_key, local_table, true) == GDK_SUCCEED &&
+						BUNappend(rt_uri, uri, true) == GDK_SUCCEED &&
+						BUNappend(rt_remoteuser, remoteuser, true) == GDK_SUCCEED &&
+						BUNappend(rt_hashedpwd, cypher, true) == GDK_SUCCEED);
+
+	if (!table_entry) {
+		if (free_pw) {
+			free(pwhash);
+		}
+		else {
+			GDKfree(pwhash);
+		}
+		GDKfree(cypher);
+		throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
+	AUTHcommit();
+
+	if (free_pw) {
+		free(pwhash);
+	}
+	else {
+		GDKfree(pwhash);
+	}
+	GDKfree(cypher);
+	return MAL_SUCCEED;
+}
+
+str
+AUTHdeleteRemoteTableCredentials(const char *local_table)
+{
+	BUN p;
+	oid id;
+
+	assert(rt_key);
+	assert(rt_uri);
+	assert(rt_remoteuser);
+	assert(rt_hashedpwd);
+
+	/* pre-condition check */
+	if (local_table == NULL || strNil(local_table))
+		throw(ILLARG, "deleteRemoteTableCredentials", "local table cannot be nil");
+
+	/* ensure that the username exists */
+	p = lookupRemoteTableKey(local_table);
+	if (p == BUN_NONE)
+		throw(MAL, "deleteRemoteTableCredentials", "no such table: '%s'", local_table);
+	id = p;
+
+	/* now, we got the oid, start removing the related tuples */
+	if (BUNappend(rt_deleted, &id, true) != GDK_SUCCEED)
+		throw(MAL, "deleteRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* make the stuff persistent */
+	AUTHcommit();
+	return(MAL_SUCCEED);
 }

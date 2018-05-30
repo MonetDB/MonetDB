@@ -409,7 +409,7 @@ GDKextend(const char *fn, size_t size)
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
 gdk_return
-GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
+GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
 {
 	int err = 0;
 
@@ -809,7 +809,7 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
 		if (HEAPload(&b->theap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			HEAPfree(&b->theap, 0);
+			HEAPfree(&b->theap, false);
 			return NULL;
 		}
 		assert(b->theap.size >> b->tshift <= BUN_MAX);
@@ -821,12 +821,12 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			HEAPfree(&b->theap, 0);
-			HEAPfree(b->tvheap, 0);
+			HEAPfree(&b->theap, false);
+			HEAPfree(b->tvheap, false);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
-			strCleanHash(b->tvheap, FALSE);	/* ensure consistency */
+			strCleanHash(b->tvheap, false);	/* ensure consistency */
 		} else {
 			HEAP_recover(b->tvheap, (const var_t *) Tloc(b, 0),
 				     BATcount(b));
@@ -839,9 +839,9 @@ BATload_intern(bat bid, bool lock)
 
 	/* load succeeded; register it in BBP */
 	if (BBPcacheit(b, lock) != GDK_SUCCEED) {
-		HEAPfree(&b->theap, 0);
+		HEAPfree(&b->theap, false);
 		if (b->tvheap)
-			HEAPfree(b->tvheap, 0);
+			HEAPfree(b->tvheap, false);
 		return NULL;
 	}
 	return b;
@@ -882,7 +882,7 @@ BATdelete(BAT *b)
 		    b->batCopiedtodisk)
 			IODEBUG fprintf(stderr, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->theap.base) {
-		HEAPfree(&b->theap, 1);
+		HEAPfree(&b->theap, true);
 	}
 	if (b->tvheap) {
 		assert(b->tvheap->parentid == bid);
@@ -891,7 +891,7 @@ BATdelete(BAT *b)
 			    b->batCopiedtodisk)
 				IODEBUG fprintf(stderr, "#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b->tvheap, 1);
+			HEAPfree(b->tvheap, true);
 		}
 	}
 	b->batCopiedtodisk = FALSE;

@@ -113,7 +113,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 		assert(tr != NULL);
 
 		/* append reversed tail in result BAT */
-		if (BUNappend(bn, tr, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(bn, tr, false) != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batudf.reverse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}

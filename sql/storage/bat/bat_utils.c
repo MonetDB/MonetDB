@@ -67,7 +67,7 @@ temp_copy(log_bid b, int temp)
 	if (!o)
 		return BID_NIL;
 	if (!temp) {
-		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
+		c = COLcopy(o, o->ttype, true, PERSISTENT);
 		if (!c)
 			return BID_NIL;
 		bat_set_access(c, BAT_READ);
@@ -90,7 +90,7 @@ append_inserted(BAT *b, BAT *i )
 	BATiter ii = bat_iterator(i);
 
 	for (r = i->batInserted; r < BUNlast(i); r++) {
-		if (BUNappend(b, BUNtail(ii,r), TRUE) != GDK_SUCCEED)
+		if (BUNappend(b, BUNtail(ii,r), true) != GDK_SUCCEED)
 			return BUN_NONE;
 		nr++;
 	}
@@ -106,7 +106,7 @@ ebat2real(log_bid b, oid ibase)
 	log_bid r = BID_NIL;
 	BAT *o = temp_descriptor(b);
 	if(o) {
-		BAT *c = COLcopy(o, ATOMtype(o->ttype), TRUE, PERSISTENT);
+		BAT *c = COLcopy(o, ATOMtype(o->ttype), true, PERSISTENT);
 		if(c) {
 			BAThseqbase(c, ibase );
 			r = temp_create(c);
@@ -152,7 +152,7 @@ ebat_copy(log_bid b, oid ibase, int temp)
 	}
 
 	if (!temp && BATcount(o)) {
-		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
+		c = COLcopy(o, o->ttype, true, PERSISTENT);
 		if (!c)
 			return BID_NIL;
 		BAThseqbase(c, ibase );

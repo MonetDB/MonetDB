@@ -55,7 +55,7 @@ __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
+__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
@@ -105,9 +105,9 @@ __hidden BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *res
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden Heap *createOIDXheap(BAT *b, int stable)
+__hidden Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bit force)
+__hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextend(const char *fn, size_t size)
@@ -138,7 +138,7 @@ __hidden gdk_return GDKmunmap(void *addr, size_t len)
 __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
+__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
@@ -165,9 +165,9 @@ __hidden gdk_return HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden void HEAPfree(Heap *h, int remove)
+__hidden void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
+__hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden void HEAP_recover(Heap *, const var_t *, BUN)
@@ -198,10 +198,10 @@ __hidden void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
+__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void strCleanHash(Heap *hp, int rebuild)
+__hidden void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
 	__attribute__((__visibility__("hidden")));
@@ -266,7 +266,7 @@ extern struct BBPfarm_t {
 	FILE *lock_file;
 } BBPfarms[MAXFARMS];
 
-extern int BBP_dirty;	/* BBP table dirty? */
+extern bool BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
@@ -276,8 +276,6 @@ extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;
-
-#define BBPdirty(x)	(BBP_dirty=(x))
 
 #define BATcheck(tst, msg, err)						\
 	do {								\

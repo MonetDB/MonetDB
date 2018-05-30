@@ -73,6 +73,13 @@ set schema "sys";
 commit;
 
 Running database upgrade commands:
+set schema "sys";
+drop function sys.chi2prob(double, double);
+delete from systemfunctions where function_id not in (select id from functions);
+set schema "sys";
+commit;
+
+Running database upgrade commands:
 set schema sys;
 create aggregate sys.group_concat(str string) returns string external name "aggr"."str_group_concat";
 grant execute on aggregate sys.group_concat(string) to public;
@@ -81,6 +88,14 @@ grant execute on aggregate sys.group_concat(string, string) to public;
 insert into sys.systemfunctions (select id from sys.functions where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 set schema "sys";
 commit;
+
+Running database upgrade commands:
+set schema sys;
+create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
+insert into sys.systemfunctions (select id from sys.functions where name='remote_table_credentials' and id not in (select function_id from sys.systemfunctions));
+set schema "sys";
+commit;
+
 
 # 16:02:52 >  
 # 16:02:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5391" "--port=32916"

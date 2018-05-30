@@ -2780,14 +2780,14 @@ strPrelude(void *ret)
 		}
 
 		for (i = 0; i < sizeof(UTF8_toUpper) / sizeof(UTF8_toUpper[0]); i++) {
-			if (BUNappend(UTF8_toUpperFrom, &UTF8_toUpper[i].from, FALSE) != GDK_SUCCEED ||
-				BUNappend(UTF8_toUpperTo, &UTF8_toUpper[i].to, FALSE) != GDK_SUCCEED)
+			if (BUNappend(UTF8_toUpperFrom, &UTF8_toUpper[i].from, false) != GDK_SUCCEED ||
+				BUNappend(UTF8_toUpperTo, &UTF8_toUpper[i].to, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 
 		for (i = 0; i < sizeof(UTF8_toLower) / sizeof(UTF8_toLower[0]); i++) {
-			if (BUNappend(UTF8_toLowerFrom, &UTF8_toLower[i].from, FALSE) != GDK_SUCCEED ||
-				BUNappend(UTF8_toLowerTo, &UTF8_toLower[i].to, FALSE) != GDK_SUCCEED)
+			if (BUNappend(UTF8_toLowerFrom, &UTF8_toLower[i].from, false) != GDK_SUCCEED ||
+				BUNappend(UTF8_toLowerTo, &UTF8_toLower[i].to, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 

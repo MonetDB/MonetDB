@@ -893,7 +893,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 								ovector, ovecsize, replacement,
 								len_replacement, backrefs, nbackrefs, global,
 								tmpres, &max_dest_size);
-		if (tmpres == NULL || BUNappend(tmpbat, tmpres, FALSE) != GDK_SUCCEED) {
+		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
 			pcre_free_study(extra);
 			pcre_free(pcre_code);
 			GDKfree(ovector);
@@ -1630,7 +1630,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		res = re_likeselect(&bn, b, s, *pat, *caseignore, *anti, use_strcmp);
 	} else if (ppat == NULL) {
 		/* no pattern and no special characters: can use normal select */
-		bn = BATselect(b, s, *pat, NULL, 1, 1, *anti);
+		bn = BATselect(b, s, *pat, NULL, true, true, *anti);
 		if (bn == NULL)
 			res = createException(MAL, "algebra.likeselect", GDK_EXCEPTION);
 		else

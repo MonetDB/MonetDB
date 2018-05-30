@@ -1144,7 +1144,7 @@ strHash(const char *s)
 }
 
 void
-strCleanHash(Heap *h, int rebuild)
+strCleanHash(Heap *h, bool rebuild)
 {
 	stridx_t newhash[GDK_STRHASHTABLE];
 	size_t pad, pos;
@@ -1314,7 +1314,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			return 0;
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		if (HEAPextend(h, newsize, TRUE) != GDK_SUCCEED) {
+		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
 			return 0;
 		}
 #ifndef NDEBUG

@@ -77,7 +77,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BAThseqbase(bn, b->hseqbase);
 				BATtseqbase(bn, b->tseqbase);
 			}
-			if (BATappend(bn, b, NULL, FALSE) != GDK_SUCCEED) {
+			if (BATappend(bn, b, NULL, false) != GDK_SUCCEED) {
 				BBPunfix(bn->batCacheid);
 				BBPunfix(b->batCacheid);
 				throw(MAL, "mat.pack", GDK_EXCEPTION);
@@ -119,14 +119,14 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * since BATappend does clever things for strings */
 		if ( b->tvheap && bn->tvheap && ATOMstorage(b->ttype) != TYPE_str){
 			newsize =  b->tvheap->size * pieces;
-			if (HEAPextend(bn->tvheap, newsize, TRUE) != GDK_SUCCEED) {
+			if (HEAPextend(bn->tvheap, newsize, true) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 		BATtseqbase(bn, b->tseqbase);
-		if (BATappend(bn, b, NULL, FALSE) != GDK_SUCCEED) {
+		if (BATappend(bn, b, NULL, false) != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
@@ -143,7 +143,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BAThseqbase(b, bb->hseqbase);
 				BATtseqbase(b, bb->tseqbase);
 			}
-			if (BATappend(b, bb, NULL, FALSE) != GDK_SUCCEED) {
+			if (BATappend(b, bb, NULL, false) != GDK_SUCCEED) {
 				BBPunfix(bb->batCacheid);
 				BBPunfix(b->batCacheid);
 				throw(MAL, "mat.pack", GDK_EXCEPTION);
@@ -180,11 +180,11 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	if (ATOMextern(type)) {
 		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, TRUE) != GDK_SUCCEED)
+			if (BUNappend(bn, stk->stk[getArg(p,i)].val.pval, true) != GDK_SUCCEED)
 				goto bailout;
 	} else {
 		for(i = first; i < p->argc; i++)
-			if (BUNappend(bn, getArgReference(stk, p, i), TRUE) != GDK_SUCCEED)
+			if (BUNappend(bn, getArgReference(stk, p, i), true) != GDK_SUCCEED)
 				goto bailout;
 	}
 	ret= getArgReference_bat(stk,p,0);

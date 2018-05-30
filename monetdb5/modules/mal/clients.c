@@ -141,28 +141,28 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	if (BUNappend(b, "user", FALSE) != GDK_SUCCEED ||
-		BUNappend(bn, local_itoa((int)cntxt->user), FALSE) != GDK_SUCCEED ||
+	if (BUNappend(b, "user", false) != GDK_SUCCEED ||
+		BUNappend(bn, local_itoa((int)cntxt->user), false) != GDK_SUCCEED ||
 
-		BUNappend(b, "password", FALSE) != GDK_SUCCEED || /* FIXME: get rid of this */
-		BUNappend(bn, "", FALSE) != GDK_SUCCEED || /* FIXME: get rid of this */
+		BUNappend(b, "password", false) != GDK_SUCCEED || /* FIXME: get rid of this */
+		BUNappend(bn, "", false) != GDK_SUCCEED || /* FIXME: get rid of this */
 
-		BUNappend(b, "scenario", FALSE) != GDK_SUCCEED ||
-		BUNappend(bn, cntxt->scenario, FALSE) != GDK_SUCCEED ||
+		BUNappend(b, "scenario", false) != GDK_SUCCEED ||
+		BUNappend(bn, cntxt->scenario, false) != GDK_SUCCEED ||
 
-		BUNappend(b, "trace", FALSE) != GDK_SUCCEED ||
-		BUNappend(bn, local_itoa(cntxt->itrace), FALSE) != GDK_SUCCEED ||
+		BUNappend(b, "trace", false) != GDK_SUCCEED ||
+		BUNappend(bn, local_itoa(cntxt->itrace), false) != GDK_SUCCEED ||
 
-		BUNappend(b, "listing", FALSE) != GDK_SUCCEED ||
-		BUNappend(bn, local_itoa(cntxt->listing), FALSE) != GDK_SUCCEED ||
+		BUNappend(b, "listing", false) != GDK_SUCCEED ||
+		BUNappend(bn, local_itoa(cntxt->listing), false) != GDK_SUCCEED ||
 
-		BUNappend(b, "debug", FALSE) != GDK_SUCCEED ||
-		BUNappend(bn, local_itoa(cntxt->debug), FALSE) != GDK_SUCCEED)
+		BUNappend(b, "debug", false) != GDK_SUCCEED ||
+		BUNappend(bn, local_itoa(cntxt->debug), false) != GDK_SUCCEED)
 		goto bailout;
 
 	CLTtimeConvert((time_t) cntxt->login,s);
-	if (BUNappend(b, "login", FALSE) != GDK_SUCCEED ||
-		BUNappend(bn, s, FALSE) != GDK_SUCCEED)
+	if (BUNappend(b, "login", false) != GDK_SUCCEED ||
+		BUNappend(bn, s, false) != GDK_SUCCEED)
 		goto bailout;
 	if (pseudo(ret,b,"client","info"))
 		goto bailout;
@@ -190,8 +190,8 @@ CLTLogin(bat *nme, bat *ret)
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
 			CLTtimeConvert((time_t) c->login,s);
-			if (BUNappend(b, s, FALSE) != GDK_SUCCEED ||
-				BUNappend(u, &c->user, FALSE) != GDK_SUCCEED)
+			if (BUNappend(b, s, false) != GDK_SUCCEED ||
+				BUNappend(u, &c->user, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}
@@ -219,7 +219,7 @@ CLTLastCommand(bat *ret)
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
 			CLTtimeConvert((time_t) c->lastcmd,s);
-			if (BUNappend(b, s, FALSE) != GDK_SUCCEED)
+			if (BUNappend(b, s, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}
@@ -243,7 +243,7 @@ CLTActions(bat *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
-			if (BUNappend(b, &c->actions, FALSE) != GDK_SUCCEED)
+			if (BUNappend(b, &c->actions, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}
@@ -269,7 +269,7 @@ CLTusers(bat *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user) &&
-			BUNappend(b, &i, FALSE) != GDK_SUCCEED)
+			BUNappend(b, &i, false) != GDK_SUCCEED)
 			goto bailout;
 	}
 	if (pseudo(ret,b,"client","users"))
@@ -645,7 +645,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
     for (c = mal_clients + (GDKgetenv_isyes("monet_daemon") != 0); c < mal_clients + MAL_MAXCLIENTS; c++) 
 	if (c->mode == RUNCLIENT) {
-		if (BUNappend(user, c->username, FALSE) != GDK_SUCCEED)
+		if (BUNappend(user, c->username, false) != GDK_SUCCEED)
 			goto bailout;
 		msg = MTIMEunix_epoch(&ts);
 		if (msg)
@@ -654,10 +654,10 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
 		if (msg)
 			goto bailout;
-		if (BUNappend(login, &ret, FALSE) != GDK_SUCCEED)
+		if (BUNappend(login, &ret, false) != GDK_SUCCEED)
 			goto bailout;
 		timeout = c->stimeout / 1000000;
-		if (BUNappend(stimeout, &timeout, FALSE) != GDK_SUCCEED)
+		if (BUNappend(stimeout, &timeout, false) != GDK_SUCCEED)
 			goto bailout;
 		msg = MTIMEunix_epoch(&ts);
 		if (msg)
@@ -666,11 +666,11 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
 		if (msg)
 			goto bailout;
-		if (BUNappend(last, &ret, FALSE) != GDK_SUCCEED)
+		if (BUNappend(last, &ret, false) != GDK_SUCCEED)
 			goto bailout;
 		timeout = c->qtimeout / 1000000;
-		if (BUNappend(qtimeout, &timeout, FALSE) != GDK_SUCCEED ||
-			BUNappend(active, &c->active, FALSE) != GDK_SUCCEED)
+		if (BUNappend(qtimeout, &timeout, false) != GDK_SUCCEED ||
+			BUNappend(active, &c->active, false) != GDK_SUCCEED)
 			goto bailout;
     }
     MT_lock_unset(&mal_contextLock);

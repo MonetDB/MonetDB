@@ -206,7 +206,7 @@ BATmaterialize(BAT *b)
 	BATsetcount(b, b->batCount);
 
 	/* cleanup the old heaps */
-	HEAPfree(&tail, 0);
+	HEAPfree(&tail, false);
 	return GDK_SUCCEED;
 }
 
@@ -356,14 +356,14 @@ VIEWreset(BAT *b)
 		b->batCapacity = cnt;
 
 		/* insert all of v in b, and quit */
-		if (BATappend(b, v, NULL, FALSE) != GDK_SUCCEED)
+		if (BATappend(b, v, NULL, false) != GDK_SUCCEED)
 			goto bailout;
 		BBPreclaim(v);
 	}
 	return GDK_SUCCEED;
       bailout:
 	BBPreclaim(v);
-	HEAPfree(&tail, 0);
+	HEAPfree(&tail, false);
 	GDKfree(th);
 	return GDK_FAIL;
 }
@@ -427,7 +427,7 @@ VIEWdestroy(BAT *b)
 	VIEWunlink(b);
 
 	if (b->ttype && !b->theap.parentid) {
-		HEAPfree(&b->theap, 0);
+		HEAPfree(&b->theap, false);
 	} else {
 		b->theap.base = NULL;
 	}

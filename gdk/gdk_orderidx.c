@@ -88,7 +88,7 @@ BATcheckorderidx(BAT *b)
 				    (hdata[2] == 0 || hdata[2] == 1) &&
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) (hp->size = hp->free = (ORDERIDXOFF + hdata[1]) * SIZEOF_OID) &&
-				    HEAPload(hp, nme, "torderidx", 0) == GDK_SUCCEED) {
+				    HEAPload(hp, nme, "torderidx", false) == GDK_SUCCEED) {
 					close(fd);
 					b->torderidx = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckorderidx: reusing persisted orderidx %d\n", b->batCacheid);
@@ -111,7 +111,7 @@ BATcheckorderidx(BAT *b)
 
 /* create the heap for an order index; returns NULL on failure */
 Heap *
-createOIDXheap(BAT *b, int stable)
+createOIDXheap(BAT *b, bool stable)
 {
 	Heap *m;
 	oid *restrict mv;
@@ -130,7 +130,7 @@ createOIDXheap(BAT *b, int stable)
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
 	*mv++ = (oid) BATcount(b);
-	*mv++ = (oid) !!stable;
+	*mv++ = (oid) stable;
 	return m;
 }
 
@@ -153,13 +153,13 @@ persistOIDX(BAT *b)
 }
 
 gdk_return
-BATorderidx(BAT *b, int stable)
+BATorderidx(BAT *b, bool stable)
 {
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
 		BAT *on;
-		if (BATsort(NULL, &on, NULL, b, NULL, NULL, 0, stable) != GDK_SUCCEED)
+		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
 		assert(BATcount(b) == BATcount(on));
 		if (BATtdense(on)) {
@@ -391,7 +391,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		default:
 			/* TODO: support strings, date, timestamps etc. */
 			assert(0);
-			HEAPfree(m, 1);
+			HEAPfree(m, true);
 			GDKfree(m);
 			MT_lock_unset(&GDKhashLock(b->batCacheid));
 			return GDK_FAIL;
@@ -407,7 +407,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		  bailout:
 			GDKfree(p);
 			GDKfree(q);
-			HEAPfree(m, 1);
+			HEAPfree(m, true);
 			GDKfree(m);
 			MT_lock_unset(&GDKhashLock(b->batCacheid));
 			return GDK_FAIL;
@@ -468,7 +468,7 @@ OIDXfree(BAT *b)
 		MT_lock_set(&GDKhashLock(b->batCacheid));
 		if ((hp = b->torderidx) != NULL && hp != (Heap *) 1) {
 			b->torderidx = (Heap *) 1;
-			HEAPfree(hp, 0);
+			HEAPfree(hp, false);
 			GDKfree(hp);
 		}
 		MT_lock_unset(&GDKhashLock(b->batCacheid));

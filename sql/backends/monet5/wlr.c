@@ -660,7 +660,7 @@ WLRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define WLRcolumn(TPE) \
 	for( i = 4; i < pci->argc; i++){                                \
 		TPE val = *getArgReference_##TPE(stk,pci,i);            \
-		if (BUNappend(ins, (void*) &val, FALSE) != GDK_SUCCEED) { \
+		if (BUNappend(ins, (void*) &val, false) != GDK_SUCCEED) { \
 			msg = createException(MAL, "WLRappend", "BUNappend failed"); \
 			goto cleanup;                                   \
 		}                                                       \
@@ -718,7 +718,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_str:
 		for( i = 4; i < pci->argc; i++){
 			str val = *getArgReference_str(stk,pci,i);
-			if (BUNappend(ins, (void*) val, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(ins, (void*) val, false) != GDK_SUCCEED) {
 				msg = createException(MAL, "WLRappend", "BUNappend failed");
 				goto cleanup;
 			}
@@ -775,7 +775,7 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i = 3; i < pci->argc; i++){
 		o = *getArgReference_oid(stk,pci,i);
-		if (BUNappend(ins, (void*) &o, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(ins, (void*) &o, false) != GDK_SUCCEED) {
 			msg = createException(MAL, "WLRdelete", "BUNappend failed");
 			goto cleanup;
 		}
@@ -794,7 +794,7 @@ cleanup:
  */
 #define WLRvalue(TPE)                                                   \
 	{	TPE val = *getArgReference_##TPE(stk,pci,5);            \
-			if (BUNappend(upd, (void*) &val, FALSE) != GDK_SUCCEED) { \
+			if (BUNappend(upd, (void*) &val, false) != GDK_SUCCEED) { \
 				msg = createException(MAL, "WLRupdate", "BUNappend failed"); \
 				goto cleanup;                                   \
 			}                                                       \
@@ -842,7 +842,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(((BAT *) tids)->batCacheid);
 		throw(SQL,"WLRupdate",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	if (BUNappend(tids, &o, FALSE) != GDK_SUCCEED) {
+	if (BUNappend(tids, &o, false) != GDK_SUCCEED) {
 		msg = createException(MAL, "WLRupdate", "BUNappend failed");
 		goto cleanup;
 	}
@@ -862,7 +862,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_str:
 		{
 			str val = *getArgReference_str(stk,pci,5);
-			if (BUNappend(upd, (void*) val, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(upd, (void*) val, false) != GDK_SUCCEED) {
 				msg = createException(MAL, "WLRupdate", "BUNappend failed");
 				goto cleanup;
 			}

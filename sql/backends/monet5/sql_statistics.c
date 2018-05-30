@@ -64,7 +64,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *maxval = NULL, *minval = NULL;
 	size_t minlen = 0, maxlen = 0;
 	str sch = 0, tbl = 0, col = 0;
-	int sorted, revsorted;
+	bool sorted, revsorted;
 	lng nils = 0;
 	lng uniq = 0;
 	lng samplesize = *getArgReference_lng(stk, pci, 2);
@@ -153,7 +153,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							bsample = BATsample(bn, (BUN) samplesize);
 						} else
 							bsample = NULL;
-						br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 1, 0, 0);
+						br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, true, false, false);
 						if (br == NULL) {
 							BBPunfix(bn->batCacheid);
 							/* XXX throw error instead? */

@@ -22,56 +22,39 @@ node_create(sql_allocator *sa, void *data)
 	return n;
 }
 
+static list *
+list_init(list *l, sql_allocator *sa, fdestroy destroy)
+{
+	if (l) {
+		l->sa = sa;
+		l->destroy = destroy;
+		l->h = l->t = NULL;
+		l->cnt = 0;
+		l->expected_cnt = 0;
+		l->ht = NULL;
+		MT_lock_init(&l->ht_lock, "sa_ht_lock");
+	}
+	return l;
+}
+
 list *
 list_create(fdestroy destroy)
 {
-	list *l = MNEW(list);
-	if (!l) {
-		return NULL;
-	}
-
-	l->sa = NULL;
-	l->destroy = destroy;
-	l->h = l->t = NULL;
-	l->cnt = 0;
-	l->expected_cnt = 0;
-	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "sa_ht_lock");
-	return l;
+	return list_init(MNEW(list), NULL, destroy);
 }
 
 list *
 sa_list(sql_allocator *sa)
 {
-	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
-	if (!l) {
-		return NULL;
-	}
-
-	l->sa = sa;
-	l->destroy = NULL;
-	l->h = l->t = NULL;
-	l->cnt = 0;
-	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "sa_ht_lock");
-	return l;
+	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
+	return list_init(l, sa, NULL);
 }
 
 list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
-	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
-	if (!l) {
-		return NULL;
-	}
-
-	l->sa = sa;
-	l->destroy = destroy;
-	l->h = l->t = NULL;
-	l->cnt = 0;
-	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "sa_ht_lock");
-	return l;
+	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
+	return list_init(l, sa, destroy);
 }
 
 static list *

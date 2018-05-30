@@ -250,7 +250,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		BATsetcount(r1, cnt);
 	} else {
 		cnt = lend - lstart;
-		HEAPfree(&r1->theap, 1);
+		HEAPfree(&r1->theap, true);
 		r1->theap.storage = r1->theap.newstorage = STORE_MEM;
 		r1->theap.size = 0;
 		r1->ttype = TYPE_void;
@@ -264,7 +264,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	}
 	r1->tnorevsorted = !(r1->trevsorted = BATcount(r1) <= 1);
 	if (r2) {
-		HEAPfree(&r2->theap, 1);
+		HEAPfree(&r2->theap, true);
 		r2->theap.storage = r2->theap.newstorage = STORE_MEM;
 		r2->theap.size = 0;
 		r2->ttype = TYPE_void;
@@ -582,7 +582,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					 * [hi'..seq+cnt) is empty, so
 					 * the result is the other
 					 * range and thus dense */
-					HEAPfree(&r1->theap, 1);
+					HEAPfree(&r1->theap, true);
 					r1->theap.storage = STORE_MEM;
 					r1->theap.newstorage = STORE_MEM;
 					r1->theap.size = 0;
@@ -612,7 +612,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				}
 				goto doreturn;
 			}
-			HEAPfree(&r1->theap, 1);
+			HEAPfree(&r1->theap, true);
 			r1->theap.storage = STORE_MEM;
 			r1->theap.newstorage = STORE_MEM;
 			r1->theap.size = 0;
@@ -656,7 +656,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			BATsetcount(r1, hi - lo);
 			BATtseqbase(r1, l->hseqbase + lo - l->tseqbase);
 			if (r2) {
-				HEAPfree(&r2->theap, 1);
+				HEAPfree(&r2->theap, true);
 				r2->theap.storage = STORE_MEM;
 				r2->theap.newstorage = STORE_MEM;
 				r2->theap.size = 0;
@@ -3846,7 +3846,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
  * with the oids of matching tuples.  The result is in the same order
  * as l (i.e. r1 is sorted). */
 gdk_return
-BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
 			false, false, false, estimate, "BATleftjoin",
@@ -3859,7 +3859,7 @@ BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
  * not occur in r.  The result is in the same order as l (i.e. r1 is
  * sorted). */
 gdk_return
-BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
 			true, false, false, estimate, "BATouterjoin",
@@ -3871,7 +3871,7 @@ BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_mat
  * as l (i.e. r1 is sorted).  If a single bat is returned, it is a
  * candidate list. */
 gdk_return
-BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
 			false, true, false, estimate, "BATsemijoin",
@@ -3881,7 +3881,7 @@ BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 /* Return a candidate list with the list of rows in l whose value also
  * occurs in r.  This is just the left output of a semi-join. */
 BAT *
-BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	BAT *bn;
 
@@ -3896,7 +3896,7 @@ BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
  * oids of those values in l that do not occur in r.  This is what you
  * might call an anti-semi-join.  The result is a candidate list. */
 BAT *
-BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	BAT *bn;
 
@@ -3908,7 +3908,7 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 }
 
 gdk_return
-BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate)
+BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, bool nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN maxsize;
@@ -3955,7 +3955,7 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int
 }
 
 gdk_return
-BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN lcount, rcount, lpcount, rpcount;
@@ -4118,7 +4118,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 
 gdk_return
 BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	       const void *c1, const void *c2, int li, int hi, BUN estimate)
+	       const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN maxsize;
@@ -4142,7 +4142,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 gdk_return
 BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
-		BAT *sl, BAT *sr, int li, int hi, BUN estimate)
+		BAT *sl, BAT *sr, bool li, bool hi, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN maxsize;

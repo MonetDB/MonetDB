@@ -541,7 +541,7 @@ pop(oid x)
 
 gdk_return
 BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
-		  BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
+		  BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 {
 	BAT *gn = NULL, *en = NULL, *hn = NULL;
 	int t;
@@ -719,7 +719,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
+			gn = COLcopy(g, g->ttype, false, TRANSIENT);
 			if (gn == NULL)
 				goto error;
 			if (!is_oid_nil(maxgrp)) {
@@ -730,13 +730,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 			*groups = gn;
 			if (extents) {
-				en = COLcopy(e, e->ttype, 0, TRANSIENT);
+				en = COLcopy(e, e->ttype, false, TRANSIENT);
 				if (en == NULL)
 					goto error;
 				*extents = en;
 			}
 			if (histo) {
-				hn = COLcopy(h, h->ttype, 0, TRANSIENT);
+				hn = COLcopy(h, h->ttype, false, TRANSIENT);
 				if (hn == NULL)
 					goto error;
 				*histo = hn;
@@ -1082,7 +1082,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		}
 	} else {
-		bit gc = g && (BATordered(g) || BATordered_rev(g));
+		bool gc = g != NULL && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
 		BUN prb;
 		int bits;
@@ -1207,7 +1207,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		HEAPfree(&hs->heap, 1);
+		HEAPfree(&hs->heap, true);
 		GDKfree(hs);
 	}
 	if (extents) {
@@ -1244,7 +1244,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	return GDK_SUCCEED;
   error:
 	if (hs != NULL && hs != b->thash) {
-		HEAPfree(&hs->heap, 1);
+		HEAPfree(&hs->heap, true);
 		GDKfree(hs);
 	}
 	if (gn)
@@ -1260,5 +1260,5 @@ gdk_return
 BATgroup(BAT **groups, BAT **extents, BAT **histo,
 	 BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
 {
-	return BATgroup_internal(groups, extents, histo, b, s, g, e, h, 0);
+	return BATgroup_internal(groups, extents, histo, b, s, g, e, h, false);
 }

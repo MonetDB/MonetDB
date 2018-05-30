@@ -162,7 +162,7 @@ getBBPsize(void)
 /*
  * other globals
  */
-int BBP_dirty = 0;		/* BBP structures modified? */
+bool BBP_dirty = false;		/* BBP structures modified? */
 int BBPin = 0;			/* bats loaded statistic */
 int BBPout = 0;			/* bats saved statistic */
 
@@ -446,7 +446,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 	*strrchr(srcdir, DIR_SEP) = 0;
 
 	/* load string heap */
-	if (HEAPload(b->tvheap, nme, "theap", 0) != GDK_SUCCEED)
+	if (HEAPload(b->tvheap, nme, "theap", false) != GDK_SUCCEED)
 		GDKfatal("fixstroffheap: loading string (theap) heap "
 			 "for BAT %d failed\n", b->batCacheid);
 	h = b->tvheap;		/* abbreviation */
@@ -466,7 +466,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		offsets[noffsets++] = (int) pos; /* < 65536, i.e. fits */
 		pos += GDK_STRLEN(s);
 	}
-	HEAPfree(b->tvheap, 0);
+	HEAPfree(b->tvheap, false);
 
 	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
 		bnme++;
@@ -496,11 +496,11 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		snprintf(h1.filename, sizeof(h1.filename), "%s.theap", filename);
 		h1.base = NULL;
 		h1.dirty = 0;
-		if (HEAPload(&h1, filename, "theap", 0) != GDK_SUCCEED)
+		if (HEAPload(&h1, filename, "theap", false) != GDK_SUCCEED)
 			GDKfatal("fixstroffheap: loading old tail heap "
 				 "for BAT %d failed\n", b->batCacheid);
 		memcpy(h2.base, h1.base, h2.free);
-		HEAPfree(&h1, 0);
+		HEAPfree(&h1, false);
 		h2.dirty = 1;
 		if ((*BATatoms[TYPE_str].atomPut)(&h2, &emptyoff, "") == 0)
 			GDKfatal("fixstroffheap: cannot insert empty string "
@@ -523,7 +523,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 	snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
 	h1.base = NULL;
 	h1.dirty = 0;
-	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
+	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED)
 		GDKfatal("fixstroffheap: loading old tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
 
@@ -591,15 +591,15 @@ fixstroffheap(BAT *b, int *restrict offsets)
 	}
 
 	/* cleanup */
-	HEAPfree(&h1, 0);
+	HEAPfree(&h1, false);
 	if (nofix) {
 		/* didn't fix anything, move backups back */
 		if (h2.dirty) {
-			HEAPfree(&h2, 1);
+			HEAPfree(&h2, true);
 			if (GDKmove(b->tvheap->farmid, BAKDIR, bnme, "theap", srcdir, bnme, "theap") != GDK_SUCCEED)
 				GDKfatal("fixstroffheap: cannot restore backup of %s.theap\n", nme);
 		}
-		HEAPfree(&h3, 1);
+		HEAPfree(&h3, true);
 		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED)
 			GDKfatal("fixstroffheap: cannot restore backup of %s.tail\n", nme);
 	} else {
@@ -611,12 +611,12 @@ fixstroffheap(BAT *b, int *restrict offsets)
 			 * the string heap */
 			if (HEAPsave(&h2, nme, "theap") != GDK_SUCCEED)
 				GDKfatal("fixstroffheap: saving heap failed\n");
-			HEAPfree(&h2, 0);
+			HEAPfree(&h2, false);
 			*b->tvheap = h2;
 		}
 		if (HEAPsave(&h3, nme, "tail") != GDK_SUCCEED)
 			GDKfatal("fixstroffheap: saving heap failed\n");
-		HEAPfree(&h3, 0);
+		HEAPfree(&h3, false);
 		b->theap = h3;
 	}
 	GDKfree(srcdir);
@@ -706,7 +706,7 @@ fixfltheap(BAT *b)
 	snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
 	h1.base = NULL;
 	h1.dirty = 0;
-	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
+	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED)
 		GDKfatal("fixfltheap: loading old tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
 
@@ -777,10 +777,10 @@ fixfltheap(BAT *b)
 	}
 
 	/* cleanup */
-	HEAPfree(&h1, 0);
+	HEAPfree(&h1, false);
 	if (nofix) {
 		/* didn't fix anything, move backup back */
-		HEAPfree(&h2, 1);
+		HEAPfree(&h2, true);
 		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED)
 			GDKfatal("fixfltheap: cannot restore backup of %s.tail\n", nme);
 	} else {
@@ -788,7 +788,7 @@ fixfltheap(BAT *b)
 		b->batDirtydesc = 1;
 		if (HEAPsave(&h2, nme, "tail") != GDK_SUCCEED)
 			GDKfatal("fixfltheap: saving heap failed\n");
-		HEAPfree(&h2, 0);
+		HEAPfree(&h2, false);
 		b->theap = h2;
 	}
 	GDKfree(srcdir);
@@ -1353,7 +1353,7 @@ BBPinit(void)
 	BBPlimit = 0;
 	memset(BBP, 0, sizeof(BBP));
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
-	BBPdirty(1);
+	BBP_dirty = true;
 
 	bbpversion = BBPheader(fp);
 
@@ -2077,7 +2077,7 @@ BBPinsert(BAT *bn)
 		BATDEBUG fprintf(stderr, "#%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
 	}
 
-	BBPdirty(1);
+	BBP_dirty = true;
 
 	return i;
 }
@@ -2270,7 +2270,7 @@ BBPrename(bat bid, const char *nme)
 		BBP_status_on(bid, BBPRENAMED, "BBPrename");
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
-		BBPdirty(1);
+		BBP_dirty = true;
 	}
 	MT_lock_unset(&GDKnameLock);
 	MT_lock_unset(&GDKtrimLock(idx));
@@ -2700,7 +2700,7 @@ BBPsave(BAT *b)
 
 		if (DELTAdirty(b)) {
 			flags |= BBPSWAPPED;
-			BBPdirty(1);
+			BBP_dirty = true;
 		}
 		if (b->batPersistence != PERSISTENT) {
 			flags |= BBPTMP;
@@ -3162,7 +3162,7 @@ gdk_return
 BBPsync(int cnt, bat *subcommit)
 {
 	gdk_return ret = GDK_SUCCEED;
-	int bbpdirty = 0;
+	bool bbpdirty = false;
 	int t0 = 0, t1 = 0;
 
 	str bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL);
@@ -3261,7 +3261,7 @@ BBPsync(int cnt, bat *subcommit)
 
 		/* AFTERMATH */
 		if (ret == GDK_SUCCEED) {
-			BBP_dirty = 0;
+			BBP_dirty = false;
 			backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 			backup_dir = backup_subdir = 0;
 			if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
@@ -3688,7 +3688,7 @@ gdk_bbp_reset(void)
 	BBP_hash = 0;
 	BBP_mask = 0;
 
-	BBP_dirty = 0;
+	BBP_dirty = false;
 	BBPin = 0;
 	BBPout = 0;
 

@@ -74,7 +74,7 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"bat.single", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (ATOMextern(b->ttype))
 		u = (ptr) *(str *)u;
-	if (BUNappend(b, u, FALSE) != GDK_SUCCEED) {
+	if (BUNappend(b, u, false) != GDK_SUCCEED) {
 		BBPreclaim(b);
 		throw(MAL, "bat.single", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}

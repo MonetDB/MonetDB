@@ -219,7 +219,7 @@ BATcheckhash(BAT *b)
 				    hdata[4] == (size_t) BATcount(b) &&
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) (h->heap.size = h->heap.free = (hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
-				    HEAPload(&h->heap, nme, "thash", 0) == GDK_SUCCEED) {
+				    HEAPload(&h->heap, nme, "thash", false) == GDK_SUCCEED) {
 					h->lim = (BUN) hdata[1];
 					h->type = ATOMtype(b->ttype);
 					h->mask = (BUN) (hdata[2] - 1);
@@ -383,7 +383,7 @@ BAThash(BAT *b, BUN masksize)
 			BUN nslots = mask >> 3;	/* 1/8 full is too full */
 
 			r = 0;
-			HEAPfree(&h->heap, 1);
+			HEAPfree(&h->heap, true);
 			/* create the hash structures */
 			if (HASHnew(h, ATOMtype(b->ttype), BATcapacity(b), mask, BATcount(b)) != GDK_SUCCEED) {
 
@@ -561,7 +561,7 @@ HASHdestroy(BAT *b)
 			if ((!hp || hs != hp->thash) && hs != (Hash *) -1) {
 				ALGODEBUG if (*(size_t *) hs->heap.base & (1 << 24))
 					fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
-				HEAPfree(&hs->heap, 1);
+				HEAPfree(&hs->heap, true);
 				GDKfree(hs);
 			}
 		}
@@ -584,7 +584,7 @@ HASHfree(BAT *b)
 						    b->thash->heap.base,
 						    b->thash->heap.free,
 						    STORE_MEM,
-						    FALSE) != GDK_SUCCEED) {
+						    false) != GDK_SUCCEED) {
 						/* if saving failed, remove */
 						GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
 							  BATDIR,
@@ -594,7 +594,7 @@ HASHfree(BAT *b)
 					}
 					b->thash->heap.dirty = FALSE;
 				}
-				HEAPfree(&b->thash->heap, 0);
+				HEAPfree(&b->thash->heap, false);
 				GDKfree(b->thash);
 				b->thash = err ? NULL : (Hash *) 1;
 			}

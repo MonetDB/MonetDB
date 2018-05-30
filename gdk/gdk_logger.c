@@ -281,7 +281,7 @@ la_bat_clear(logger *lg, logaction *la)
 	if (b) {
 		int access = b->batRestricted;
 		b->batRestricted = BAT_WRITE;
-		BATclear(b, TRUE);
+		BATclear(b, true);
 		b->batRestricted = access;
 		logbat_destroy(b);
 	}
@@ -303,16 +303,16 @@ log_read_seq(logger *lg, logformat *l)
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &val, FALSE) != GDK_SUCCEED)
+		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
 			return LOG_ERR;
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
-			if (BUNappend(lg->dseqs, &pos, FALSE) != GDK_SUCCEED)
+			if (BUNappend(lg->dseqs, &pos, false) != GDK_SUCCEED)
 				return LOG_ERR;
 		}
-		if (BUNappend(lg->seqs_id, &seq, FALSE) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &val, FALSE) != GDK_SUCCEED)
+		if (BUNappend(lg->seqs_id, &seq, false) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_val, &val, false) != GDK_SUCCEED)
 			return LOG_ERR;
 	}
 	return LOG_OK;
@@ -447,7 +447,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 						res = LOG_ERR;
 					break;
 				}
-				if (BUNappend(r, t, TRUE) != GDK_SUCCEED)
+				if (BUNappend(r, t, true) != GDK_SUCCEED)
 					res = LOG_ERR;
 				if (t != tv)
 					GDKfree(t);
@@ -470,8 +470,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 						res = LOG_EOF;
 					else
 						res = LOG_ERR;
-				} else if (BUNappend(uid, h, TRUE) != GDK_SUCCEED ||
-					   BUNappend(r, t, TRUE) != GDK_SUCCEED)
+				} else if (BUNappend(uid, h, true) != GDK_SUCCEED ||
+					   BUNappend(r, t, true) != GDK_SUCCEED)
 					res = LOG_ERR;
 				if (t != tv)
 					GDKfree(t);
@@ -525,7 +525,7 @@ la_bat_updates(logger *lg, logaction *la)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (la->type == LOG_INSERT) {
-		if (BATappend(b, la->b, NULL, TRUE) != GDK_SUCCEED) {
+		if (BATappend(b, la->b, NULL, true) != GDK_SUCCEED) {
 			logbat_destroy(b);
 			return GDK_FAIL;
 		}
@@ -548,18 +548,18 @@ la_bat_updates(logger *lg, logaction *la)
 					const void *tv = ATOMnilptr(b->ttype);
 
 					while (b->hseqbase + b->batCount < h) {
-						if (BUNappend(b, tv, TRUE) != GDK_SUCCEED) {
+						if (BUNappend(b, tv, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
 							return GDK_FAIL;
 						}
 					}
 				}
-				if (BUNappend(b, t, TRUE) != GDK_SUCCEED) {
+				if (BUNappend(b, t, true) != GDK_SUCCEED) {
 					logbat_destroy(b);
 					return GDK_FAIL;
 				}
 			} else {
-				if (BUNreplace(b, h, t, TRUE) != GDK_SUCCEED) {
+				if (BUNreplace(b, h, t, true) != GDK_SUCCEED) {
 					logbat_destroy(b);
 					return GDK_FAIL;
 				}
@@ -604,7 +604,7 @@ la_bat_destroy(logger *lg, logaction *la)
 				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
 			}
 #endif
-			if (BUNappend(lg->dsnapshots, &p, FALSE) != GDK_SUCCEED)
+			if (BUNappend(lg->dsnapshots, &p, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 	}
@@ -718,18 +718,18 @@ la_bat_use(logger *lg, logaction *la)
 #endif
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 	    p >= lg->snapshots_bid->batInserted) {
-		if (BUNinplace(lg->snapshots_tid, p, &lg->tid, FALSE) != GDK_SUCCEED)
+		if (BUNinplace(lg->snapshots_tid, p, &lg->tid, false) != GDK_SUCCEED)
 			goto bailout;
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
-			if (BUNappend(lg->dsnapshots, &pos, FALSE) != GDK_SUCCEED)
+			if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 		/* move to the dirty new part of the snapshots list,
 		 * new snapshots will get flushed to disk */
-		if (BUNappend(lg->snapshots_bid, &b->batCacheid, FALSE) != GDK_SUCCEED ||
-		    BUNappend(lg->snapshots_tid, &lg->tid, FALSE) != GDK_SUCCEED)
+		if (BUNappend(lg->snapshots_bid, &b->batCacheid, false) != GDK_SUCCEED ||
+		    BUNappend(lg->snapshots_tid, &lg->tid, false) != GDK_SUCCEED)
 			goto bailout;
 	}
 	logbat_destroy(b);
@@ -1225,21 +1225,21 @@ logger_commit(logger *lg)
 
 	p = log_find(lg->seqs_id, lg->dseqs, id);
 	if (p >= lg->seqs_val->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &lg->id, FALSE) != GDK_SUCCEED)
+		if (BUNinplace(lg->seqs_val, p, &lg->id, false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else {
 		oid pos = p;
-		if (BUNappend(lg->dseqs, &pos, FALSE) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_id, &id, FALSE) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &lg->id, FALSE) != GDK_SUCCEED)
+		if (BUNappend(lg->dseqs, &pos, false) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_id, &id, false) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_val, &lg->id, false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 
 	/* cleanup old snapshots */
 	if (BATcount(lg->snapshots_bid)) {
-		if (BATclear(lg->snapshots_bid, TRUE) != GDK_SUCCEED ||
-		    BATclear(lg->snapshots_tid, TRUE) != GDK_SUCCEED ||
-		    BATclear(lg->dsnapshots, TRUE) != GDK_SUCCEED)
+		if (BATclear(lg->snapshots_bid, true) != GDK_SUCCEED ||
+		    BATclear(lg->snapshots_tid, true) != GDK_SUCCEED ||
+		    BATclear(lg->dsnapshots, true) != GDK_SUCCEED)
 			return GDK_FAIL;
 		BATcommit(lg->snapshots_bid);
 		BATcommit(lg->snapshots_tid);
@@ -1289,7 +1289,7 @@ bm_tids(BAT *b, BAT *d)
 		return NULL;
 
 	if (BATcount(d)) {
-		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
+		BAT *diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
 		logbat_destroy(tids);
 		tids = diff;
 	}
@@ -1383,8 +1383,8 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			return GDK_FAIL;
 		}
 
-		if (BATappend(bids, catalog_bid, tids, TRUE) != GDK_SUCCEED ||
-		    BATappend(nmes, catalog_nme, tids, TRUE) != GDK_SUCCEED) {
+		if (BATappend(bids, catalog_bid, tids, true) != GDK_SUCCEED ||
+		    BATappend(nmes, catalog_nme, tids, true) != GDK_SUCCEED) {
 			logbat_destroy(tids);
 			logbat_destroy(bids);
 			logbat_destroy(nmes);
@@ -1392,7 +1392,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			return GDK_FAIL;
 		}
 		logbat_destroy(tids);
-		BATclear(dcatalog, TRUE);
+		BATclear(dcatalog, true);
 
 		if (logger_switch_bat(catalog_bid, bids, lg->fn, "catalog_bid") != GDK_SUCCEED ||
 		    logger_switch_bat(catalog_nme, nmes, lg->fn, "catalog_nme") != GDK_SUCCEED) {
@@ -1704,8 +1704,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		}
 
 		/* create LOG_SID sequence number */
-		if (BUNappend(lg->seqs_id, &id, FALSE) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &lg->id, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(lg->seqs_id, &id, false) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_val, &lg->id, false) != GDK_SUCCEED) {
 			GDKerror("logger_load: failed to append value to "
 				 "sequences bat");
 			goto error;
@@ -1781,8 +1781,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				goto error;
 			}
 
-			lg->seqs_id = COLcopy(o_id, TYPE_int, 1, TRANSIENT);
-			lg->seqs_val = COLcopy(o_val, TYPE_lng, 1, TRANSIENT);
+			lg->seqs_id = COLcopy(o_id, TYPE_int, true, TRANSIENT);
+			lg->seqs_val = COLcopy(o_val, TYPE_lng, true, TRANSIENT);
 			BBPunfix(o_id->batCacheid);
 			BBPunfix(o_val->batCacheid);
 			BAThseqbase(lg->seqs_id, 0);
@@ -2496,16 +2496,16 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 		       BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 		    p >= lg->snapshots_tid->batInserted) {
-			if (BUNinplace(lg->snapshots_tid, p, &lg->tid, FALSE) != GDK_SUCCEED)
+			if (BUNinplace(lg->snapshots_tid, p, &lg->tid, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else {
 			if (p != BUN_NONE) {
 				oid pos = p;
-				if (BUNappend(lg->dsnapshots, &pos, FALSE) != GDK_SUCCEED)
+				if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED)
 					return GDK_FAIL;
 			}
-			if (BUNappend(lg->snapshots_bid, &b->batCacheid, FALSE) != GDK_SUCCEED ||
-			    BUNappend(lg->snapshots_tid, &lg->tid, FALSE) != GDK_SUCCEED)
+			if (BUNappend(lg->snapshots_bid, &b->batCacheid, false) != GDK_SUCCEED ||
+			    BUNappend(lg->snapshots_tid, &lg->tid, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 		return GDK_SUCCEED;
@@ -2553,13 +2553,13 @@ log_bat_transient(logger *lg, const char *name)
 #endif
 		//	if (lg->tid == tid)
 		if (p >= lg->snapshots_tid->batInserted) {
-			if (BUNinplace(lg->snapshots_tid, p, &lg->tid, FALSE) != GDK_SUCCEED)
+			if (BUNinplace(lg->snapshots_tid, p, &lg->tid, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		} else {
 			oid pos = p;
-			if (BUNappend(lg->dsnapshots, &pos, FALSE) != GDK_SUCCEED ||
-			    BUNappend(lg->snapshots_tid, &lg->tid, FALSE) != GDK_SUCCEED ||
-			    BUNappend(lg->snapshots_bid, &bid, FALSE) != GDK_SUCCEED)
+			if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED ||
+			    BUNappend(lg->snapshots_tid, &lg->tid, false) != GDK_SUCCEED ||
+			    BUNappend(lg->snapshots_bid, &bid, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 		//	else
@@ -2755,7 +2755,7 @@ log_tend(logger *lg)
 			return GDK_FAIL;
 		}
 		cands = BATselect(lg->snapshots_tid, tids, &lg->tid, &lg->tid,
-				     TRUE, TRUE, FALSE);
+				     true, true, false);
 		if (cands == NULL) {
 			fprintf(stderr, "!ERROR: log_tend: select failed\n");
 			return GDK_FAIL;
@@ -2864,16 +2864,16 @@ log_sequence(logger *lg, int seq, lng val)
 
 	if ((p = log_find(lg->seqs_id, lg->dseqs, seq)) != BUN_NONE &&
 	    p >= lg->seqs_id->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &val, FALSE) != GDK_SUCCEED)
+		if (BUNinplace(lg->seqs_val, p, &val, false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	} else {
 		if (p != BUN_NONE) {
 			oid pos = p;
-			if (BUNappend(lg->dseqs, &pos, FALSE) != GDK_SUCCEED)
+			if (BUNappend(lg->dseqs, &pos, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
-		if (BUNappend(lg->seqs_id, &seq, FALSE) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &val, FALSE) != GDK_SUCCEED)
+		if (BUNappend(lg->seqs_id, &seq, false) != GDK_SUCCEED ||
+		    BUNappend(lg->seqs_val, &val, false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	return log_sequence_(lg, seq, val, 1);
@@ -2907,7 +2907,7 @@ bm_commit(logger *lg)
 			fprintf(stderr,
 				"#commit deleted (snapshot) %s (%d)\n",
 				name, bid);
-		if (BUNappend(n, name, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(n, name, false) != GDK_SUCCEED) {
 			logbat_destroy(lb);
 			logbat_destroy(n);
 			return GDK_FAIL;
@@ -2943,7 +2943,7 @@ bm_commit(logger *lg)
 	res = bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, n, lg->debug);
 	BBPreclaim(n);
 	if (res == GDK_SUCCEED) {
-		BATclear(lg->freed, FALSE);
+		BATclear(lg->freed, false);
 		BATcommit(lg->freed);
 		return GDK_SUCCEED;
 	}
@@ -2979,8 +2979,8 @@ logger_add_bat(logger *lg, BAT *b, const char *name)
 		fprintf(stderr, "#create %s\n", name);
 	assert(log_find(lg->catalog_bid, lg->dcatalog, bid) == BUN_NONE);
 	lg->changes += BATcount(b) + 1;
-	if (BUNappend(lg->catalog_bid, &bid, FALSE) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_nme, name, FALSE) != GDK_SUCCEED)
+	if (BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
+	    BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	BBPretain(bid);
 	return GDK_SUCCEED;
@@ -3004,7 +3004,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	if (p >= lg->catalog_bid->batInserted &&
 	    (q = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 
-		if (BUNappend(lg->dsnapshots, &q, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(lg->dsnapshots, &q, false) != GDK_SUCCEED) {
 			logbat_destroy(b);
 			return GDK_FAIL;
 		}
@@ -3012,14 +3012,14 @@ logger_del_bat(logger *lg, log_bid bid)
 			fprintf(stderr,
 				"#logger_del_bat release snapshot %d (%d)\n",
 				bid, BBP_lrefs(bid));
-		if (BUNappend(lg->freed, &bid, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(lg->freed, &bid, false) != GDK_SUCCEED) {
 			logbat_destroy(b);
 			return GDK_FAIL;
 		}
 	} else if (p >= lg->catalog_bid->batInserted) {
 		BBPrelease(bid);
 	} else {
-		if (BUNappend(lg->freed, &bid, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(lg->freed, &bid, false) != GDK_SUCCEED) {
 			logbat_destroy(b);
 			return GDK_FAIL;
 		}
@@ -3028,7 +3028,7 @@ logger_del_bat(logger *lg, log_bid bid)
 		lg->changes += BATcount(b) + 1;
 		BBPunfix(b->batCacheid);
 	}
-	return BUNappend(lg->dcatalog, &p, FALSE);
+	return BUNappend(lg->dcatalog, &p, false);
 /*assert(BBP_lrefs(bid) == 0);*/
 }
 

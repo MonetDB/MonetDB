@@ -1048,13 +1048,11 @@ done
   statement
 - BZ#6574: server crashed could not find ordered index while creating
   a table
-- BZ#6575: Sqlitelogictest crash on groupby query with coalesce call
 - BZ#6576: Sqlitelogictest aritmetic expressions with negative numbers
   handling
 - BZ#6577: creating temp table kills performance of the original query
 - BZ#6578: One two-tuple insert gives different results than two single
   inserts
-- BZ#6579: Sqlitelogic test infinite loop while compiling SQL query
 - BZ#6581: Join condition errors.
 - BZ#6583: Fixed size string concatenation with integer results in fixed
   size string of size 0
@@ -1073,7 +1071,6 @@ done
 - BZ#6602: Sqlitelogictest wrong results in IN query
 - BZ#6603: Sqlitelogictest: Aggregation query with distinct clause
   produces duplicated rows
-- BZ#6605: Sqlitelogictest set queries with wrong results
 
 * Thu May 17 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.5-20180525
 - sql: Corrected the definition of view: sys.ids.

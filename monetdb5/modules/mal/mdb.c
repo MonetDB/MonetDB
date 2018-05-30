@@ -291,8 +291,8 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
 			if ((buf = ATOMformat(v->vtype, VALptr(v))) == NULL ||
-				BUNappend(b, getVarName(mb, i), FALSE) != GDK_SUCCEED ||
-				BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
+				BUNappend(b, getVarName(mb, i), false) != GDK_SUCCEED ||
+				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				GDKfree(buf);
@@ -414,8 +414,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 		getModuleId(getInstrPtr(m,0)),
 		getFunctionId(getInstrPtr(m,0)), getPC(m, p));
-	if (BUNappend(b, &k, FALSE) != GDK_SUCCEED ||
-		BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
+	if (BUNappend(b, &k, false) != GDK_SUCCEED ||
+		BUNappend(bn, buf, false) != GDK_SUCCEED) {
 		GDKfree(msg);
 		GDKfree(buf);
 		BBPreclaim(b);
@@ -445,8 +445,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
 			getModuleId(getInstrPtr(s->blk,0)),
 			getFunctionId(getInstrPtr(s->blk,0)), s->pcup);
-		if (BUNappend(b, &k, FALSE) != GDK_SUCCEED ||
-			BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b, &k, false) != GDK_SUCCEED ||
+			BUNappend(bn, buf, false) != GDK_SUCCEED) {
 			GDKfree(buf);
 			GDKfree(msg);
 			BBPunfix(b->batCacheid);
@@ -574,7 +574,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 			BBPreclaim(b);
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if (BUNappend(b, ps, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b, ps, false) != GDK_SUCCEED) {
 			GDKfree(ps);
 			BBPreclaim(b);
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -720,7 +720,7 @@ TBL_getdir(void)
 		if (len < extlen || strcmp(dent->d_name + len - extlen, MAL_EXT) != 0)
 			continue;
 		dent->d_name[len - extlen] = 0;
-		if (BUNappend(b, dent->d_name, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b, dent->d_name, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			if (dirp)
 				closedir(dirp);

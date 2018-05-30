@@ -386,6 +386,7 @@ int yydebug=1;
 	column_def_opt_list
 	opt_column_def_opt_list
 	table_exp
+	with_opt_credentials
 	table_ref_commalist
 	table_element_list
 	table_opt_storage
@@ -1381,9 +1382,10 @@ table_def:
 	  append_symbol(l, $4);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $2);
 	  append_list(l, $5);
-	  append_list(l, NULL); /* only used for merge table */
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  TABLE if_not_exists qname FROM sqlLOADER func_ref
     {
@@ -1401,8 +1403,9 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
-	  append_list(l, NULL); /* only used for merge table */
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  MERGE TABLE if_not_exists qname table_content_source opt_partition_by
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
@@ -1436,9 +1439,9 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
 	  append_symbol(l, $6);
-	  append_symbol(l, part);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  REPLICA TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_REPLICA_TABLE;
@@ -1449,13 +1452,14 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
-	  append_list(l, NULL); /* only used for merge table */
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
     We assume the monetdb user with default password */
- |  REMOTE TABLE if_not_exists qname table_content_source ON STRING
+ |  REMOTE TABLE if_not_exists qname table_content_source ON STRING with_opt_credentials
 	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
 	  dlist *l = L();
 
@@ -1464,8 +1468,9 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, $7);
+	  append_list(l, $8);
 	  append_int(l, $3);
-	  append_list(l, NULL); /* only used for merge table */
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
   | opt_temp TABLE if_not_exists qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
@@ -1478,8 +1483,9 @@ table_def:
 		commit_action = $6;
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
-	  append_list(l, NULL); /* only used for merge table */
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 
@@ -1552,6 +1558,27 @@ opt_as_partition:
  /* empty */						 { $$ = NULL; }
  | AS PARTITION opt_partition_spec	 { $$ = $3; }
  ;
+
+with_opt_credentials:
+  /* empty */
+  {
+	  $$ = append_string(L(), NULL);
+	  append_int($$, SQL_PW_ENCRYPTED);
+	  append_string($$, NULL);
+  }
+  | WITH USER string opt_encrypted PASSWORD string
+  {
+	  $$ = append_string(L(), $3);
+	  append_int($$, $4);
+	  append_string($$, $6);
+  }
+  | WITH opt_encrypted PASSWORD string
+  {
+	  $$ = append_string(L(), NULL);
+	  append_int($$, $2);
+	  append_string($$, $4);
+  }
+  ;
 
 opt_temp:
     TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }

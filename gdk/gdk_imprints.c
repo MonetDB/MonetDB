@@ -235,7 +235,7 @@ BATcheckimprints(BAT *b)
 							   hdata[2] * sizeof(cchdc_t) +
 							   sizeof(uint64_t) /* padding for alignment */
 							   + 4 * SIZEOF_SIZE_T) &&
-				    HEAPload(&imprints->imprints, nme, "timprints", 0) == GDK_SUCCEED) {
+				    HEAPload(&imprints->imprints, nme, "timprints", false) == GDK_SUCCEED) {
 					/* usable */
 					imprints->bits = (bte) (hdata[0] & 0xFF);
 					imprints->impcnt = (BUN) hdata[1];
@@ -351,7 +351,7 @@ BATimprints(BAT *b)
 			return GDK_FAIL;
 		}
 		s3->tkey = 1;	/* we know is unique on tail now */
-		if (BATsort(&s4, NULL, NULL, s3, NULL, NULL, 0, 0) != GDK_SUCCEED) {
+		if (BATsort(&s4, NULL, NULL, s3, NULL, NULL, false, false) != GDK_SUCCEED) {
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			BBPunfix(s1->batCacheid);
 			BBPunfix(s2->batCacheid);
@@ -620,7 +620,7 @@ IMPSfree(BAT *b)
 		if (imprints != NULL && imprints != (Imprints *) 1) {
 			b->timprints = (Imprints *) 1;
 			if (!VIEWtparent(b)) {
-				HEAPfree(&imprints->imprints, 0);
+				HEAPfree(&imprints->imprints, false);
 				GDKfree(imprints);
 			}
 		}

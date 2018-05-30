@@ -2767,7 +2767,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		if (BATtdense(g)) {
 			/* singleton groups, so calculating quantile is
 			 * easy */
-			bn = COLcopy(b, tp, 0, TRANSIENT);
+			bn = COLcopy(b, tp, false, TRANSIENT);
 			BAThseqbase(bn, g->tseqbase); /* deals with NULL */
 			if (freeb)
 				BBPunfix(b->batCacheid);
@@ -2775,14 +2775,14 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
-		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0) != GDK_SUCCEED)
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false) != GDK_SUCCEED)
 			goto bunins_failed;
 		if (freeg)
 			BBPunfix(g->batCacheid);
 		g = t1;
 		freeg = true;
 
-		if (BATsort(&t1, NULL, NULL, b, t2, g, 0, 0) != GDK_SUCCEED) {
+		if (BATsort(&t1, NULL, NULL, b, t2, g, false, false) != GDK_SUCCEED) {
 			BBPunfix(t2->batCacheid);
 			goto bunins_failed;
 		}
@@ -2855,7 +2855,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		     BATcheckorderidx(pb))) {
 			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 		} else {
-			if (BATsort(NULL, &t1, NULL, b, NULL, g, 0, 0) != GDK_SUCCEED)
+			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false) != GDK_SUCCEED)
 				goto bunins_failed;
 			if (BATtdense(t1))
 				ords = NULL;
@@ -2892,7 +2892,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		}
 		if (t1)
 			BBPunfix(t1->batCacheid);
-		if (BUNappend(bn, v, FALSE) != GDK_SUCCEED)
+		if (BUNappend(bn, v, false) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 
@@ -3324,7 +3324,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 				}
 				single_str[offset] = '\0';
 				if(what == IS_A_BAT) {
-					if(BUNappend(bn, single_str, FALSE) != GDK_SUCCEED) {
+					if(BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 						GDKerror("%s: malloc failure\n", func);
 						rres = GDK_FAIL;
 						goto finish;
@@ -3339,7 +3339,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					}
 				}
 			} else if(what == IS_A_BAT) {
-				if(BUNappend(bn, str_nil, FALSE) != GDK_SUCCEED) {
+				if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 					GDKerror("%s: malloc failure\n", func);
 					rres = GDK_FAIL;
 					goto finish;
@@ -3403,12 +3403,12 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					}
 				}
 				single_str[offset] = '\0';
-				if (BUNappend(bn, single_str, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
 					GDKerror("%s: malloc failure\n", func);
 					rres = GDK_FAIL;
 					goto finish;
 				}
-			} else if (BUNappend(bn, str_nil, FALSE) != GDK_SUCCEED) {
+			} else if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 				GDKerror("%s: malloc failure\n", func);
 				rres = GDK_FAIL;
 				goto finish;
@@ -3472,12 +3472,12 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 			for (i = 0; i < ngrp; i++) {
 				if (lastoid[i] < BUN_NONE) {
 					astrings[i][lengths[i]] = '\0';
-					if(BUNappend(bn, astrings[i], FALSE) != GDK_SUCCEED) {
+					if(BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
 						GDKerror("%s: malloc failure\n", func);
 						rres = GDK_FAIL;
 						goto finish;
 					}
-				} else if(BUNappend(bn, str_nil, FALSE) != GDK_SUCCEED) {
+				} else if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 					GDKerror("%s: malloc failure\n", func);
 					rres = GDK_FAIL;
 					goto finish;
@@ -3536,12 +3536,12 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 			for (i = 0; i < ngrp; i++) {
 				if (lastoid[i] < BUN_NONE) {
 					astrings[i][lengths[i]] = '\0';
-					if(BUNappend(bn, astrings[i], FALSE) != GDK_SUCCEED) {
+					if(BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
 						GDKerror("%s: malloc failure\n", func);
 						rres = GDK_FAIL;
 						goto finish;
 					}
-				} else if(BUNappend(bn, str_nil, FALSE) != GDK_SUCCEED) {
+				} else if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 					GDKerror("%s: malloc failure\n", func);
 					rres = GDK_FAIL;
 					goto finish;

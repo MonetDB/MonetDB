@@ -52,7 +52,7 @@ BATunique(BAT *b, BAT *s)
 			ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: already unique, slice candidates\n",
 					  BATgetId(b), BATcount(b),
 					  BATgetId(s), BATcount(s));
-			b = BATselect(s, NULL, &lo, &hi, 1, 0, 0);
+			b = BATselect(s, NULL, &lo, &hi, true, false, false);
 			if (b == NULL)
 				return NULL;
 			bn = BATproject(b, s);
@@ -347,7 +347,7 @@ BATunique(BAT *b, BAT *s)
 				HASHput(hs, prb, p);
 			}
 		}
-		HEAPfree(&hs->heap, 1);
+		HEAPfree(&hs->heap, true);
 		GDKfree(hs);
 	}
 
@@ -362,7 +362,7 @@ BATunique(BAT *b, BAT *s)
 	if (seen)
 		GDKfree(seen);
 	if (hs != NULL && hs != b->thash) {
-		HEAPfree(&hs->heap, 1);
+		HEAPfree(&hs->heap, true);
 		GDKfree(hs);
 	}
 	BBPreclaim(bn);

@@ -1221,7 +1221,7 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 		str t =  (str) BUNtail(bi, p);
 
 		if ((msg = STRsubstring(&res, &t, start, length)) != MAL_SUCCEED ||
-			BUNappend(bn, (ptr)res, FALSE) != GDK_SUCCEED) {
+			BUNappend(bn, (ptr)res, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			if (msg != MAL_SUCCEED)
@@ -1285,7 +1285,7 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 		int *t2 = (int *) BUNtail(lengthi,p);
 		str msg;
 		if ((msg = STRsubstring(&v, &tl, t1, t2)) != MAL_SUCCEED ||
-			BUNappend(bn, v, FALSE) != GDK_SUCCEED) {
+			BUNappend(bn, v, false) != GDK_SUCCEED) {
 			BBPunfix(left->batCacheid);
 			BBPunfix(start->batCacheid);
 			BBPreclaim(bn);

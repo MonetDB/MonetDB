@@ -657,10 +657,10 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 {
 	if (task->cntxt->error_row != NULL) {
 		MT_lock_set(&errorlock);
-		if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
-			BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
-			BUNappend(task->cntxt->error_msg, msg, FALSE) != GDK_SUCCEED ||
-			BUNappend(task->cntxt->error_input, fcn, FALSE) != GDK_SUCCEED)
+		if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_msg, msg, false) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_input, fcn, false) != GDK_SUCCEED)
 			task->besteffort = 0;
 		if (task->as->error == NULL && (msg == NULL || (task->as->error = GDKstrdup(msg)) == NULL)) {
 			task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -857,10 +857,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 					task->rowerror[idx]++;
 					task->errorcnt++;
 					task->besteffort = 0; /* no longer best effort */
-					if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
-						BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
-						BUNappend(task->cntxt->error_msg, SQLSTATE(HY001) MAL_MALLOC_FAIL, FALSE) != GDK_SUCCEED ||
-						BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED) {
+					if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+						BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
+						BUNappend(task->cntxt->error_msg, SQLSTATE(HY001) MAL_MALLOC_FAIL, false) != GDK_SUCCEED ||
+						BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
 						;		/* ignore error here: we're already not best effort */
 					}
 					GDKfree(err);
@@ -880,10 +880,10 @@ SQLinsert_val(READERtask *task, int col, int idx)
 				task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			task->rowerror[idx]++;
 			task->errorcnt++;
-			if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
-				BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
-				BUNappend(task->cntxt->error_msg, buf, FALSE) != GDK_SUCCEED ||
-				BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+				BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
+				BUNappend(task->cntxt->error_msg, buf, false) != GDK_SUCCEED ||
+				BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
 				freeException(err);
 				task->besteffort = 0; /* no longer best effort */
 				MT_lock_unset(&errorlock);
@@ -903,11 +903,11 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	if (task->rowerror) {
 		lng row = BATcount(fmt->c);
 		MT_lock_set(&errorlock);
-		if (BUNappend(task->cntxt->error_row, &row, FALSE) != GDK_SUCCEED ||
-			BUNappend(task->cntxt->error_fld, &col, FALSE) != GDK_SUCCEED ||
-			BUNappend(task->cntxt->error_msg, "insert failed", FALSE) != GDK_SUCCEED ||
+		if (BUNappend(task->cntxt->error_row, &row, false) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
+			BUNappend(task->cntxt->error_msg, "insert failed", false) != GDK_SUCCEED ||
 			(err = SQLload_error(task, idx,task->as->nr_attrs)) == NULL ||
-			BUNappend(task->cntxt->error_input, err, FALSE) != GDK_SUCCEED)
+			BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED)
 			task->besteffort = 0;
 		freeException(err);
 		task->rowerror[idx]++;
@@ -2044,10 +2044,10 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	if (cntxt->error_row) {
 		MT_lock_set(&errorlock);
-		BATclear(cntxt->error_row, TRUE);
-		if(cntxt->error_fld) BATclear(cntxt->error_fld, TRUE);
-		if(cntxt->error_msg) BATclear(cntxt->error_msg, TRUE);
-		if(cntxt->error_input) BATclear(cntxt->error_input, TRUE);
+		BATclear(cntxt->error_row, true);
+		if(cntxt->error_fld) BATclear(cntxt->error_fld, true);
+		if(cntxt->error_msg) BATclear(cntxt->error_msg, true);
+		if(cntxt->error_input) BATclear(cntxt->error_input, true);
 		MT_lock_unset(&errorlock);
 	}
 	(void) mb;
