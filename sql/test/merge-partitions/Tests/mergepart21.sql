@@ -39,12 +39,12 @@ DROP FUNCTION dosomething;
 
 CREATE FUNCTION dosomethingelse(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i); END;
 
-CREATE MERGE TABLE nexttest (a int, dd real) PARTITION BY VALUES USING (dosomethingelse(a));
+CREATE MERGE TABLE nexttest (a int, dd real) PARTITION BY VALUES USING (dosomethingelse(a)); --error
 CREATE TABLE subtable3 (a int, dd real);
 INSERT INTO subtable3 VALUES (0, 1.68);
 
-ALTER TABLE nexttest ADD TABLE subtable3 AS PARTITION IN (1, 2, 10);
+ALTER TABLE nexttest ADD TABLE subtable3 AS PARTITION IN (1, 2, 10); --error
 
 DROP TABLE subtable3;
-DROP TABLE nexttest;
+DROP TABLE nexttest; --error
 DROP FUNCTION dosomethingelse;

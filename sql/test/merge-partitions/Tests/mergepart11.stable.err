@@ -30,19 +30,19 @@ stderr of test 'mergepart11` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-21121/.s.monetdb.39288
 QUERY = UPDATE moveaccrosspartitions SET a = a + 1 WHERE a % 50 = 0;
-ERROR = !UPDATE: Update on the partitioned column not possible at the moment
+ERROR = !UPDATE: Update on the partitioned column is not possible at the moment
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-21121/.s.monetdb.39288
 QUERY = UPDATE moveaccrosspartitions SET a = a - 50, b = 'p' || b || 's' WHERE a % 60 = 0;
-ERROR = !UPDATE: Update on the partitioned column not possible at the moment
+ERROR = !UPDATE: Update on the partitioned column is not possible at the moment
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-21121/.s.monetdb.39288
 QUERY = UPDATE moveaccrosspartitions SET a = a - 60 WHERE a % 10 = 0; --error
-ERROR = !UPDATE: Update on the partitioned column not possible at the moment
+ERROR = !UPDATE: Update on the partitioned column is not possible at the moment
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-21121/.s.monetdb.39288
 QUERY = UPDATE moveaccrosspartitions SET a = a + 100, b = 'moved' WHERE a % 10 = 0 AND a < 100;
-ERROR = !UPDATE: Update on the partitioned column not possible at the moment
+ERROR = !UPDATE: Update on the partitioned column is not possible at the moment
 CODE  = 42000
 
 # 09:47:13 >  

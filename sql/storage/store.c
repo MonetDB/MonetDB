@@ -1539,8 +1539,8 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 		nt->part.pexp->type = t->part.pexp->type;
 		nt->part.pexp->cols = sa_list(sa);
 		for(node *n = t->part.pexp->cols->h; n; n = n->next) {
-			sqlid *nid = sa_alloc(sa, sizeof(sqlid));
-			*nid = *(sqlid *) n->data;
+			int *nid = sa_alloc(sa, sizeof(int));
+			*nid = *(int *) n->data;
 			list_append(nt->part.pexp->cols, nid);
 		}
 	}
@@ -2680,8 +2680,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		t->part.pexp->type = *empty;
 		t->part.pexp->cols = sa_list(sa);
 		for(node *n = ot->part.pexp->cols->h; n; n = n->next) {
-			sqlid *nid = sa_alloc(sa, sizeof(sqlid));
-			*nid = *(sqlid *) n->data;
+			int *nid = sa_alloc(sa, sizeof(int));
+			*nid = *(int *) n->data;
 			list_append(t->part.pexp->cols, nid);
 		}
 	}

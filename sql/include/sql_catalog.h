@@ -544,7 +544,7 @@ typedef struct sql_part {
 typedef struct sql_expression {
 	sql_subtype type; /* the returning sql_subtype of the expression */
 	char *exp;        /* the expression itself */
-	list *cols;       /* list of oids of the columns of the table used in the expression */
+	list *cols;       /* list of colnr of the columns of the table used in the expression */
 } sql_expression;
 
 typedef struct sql_table {

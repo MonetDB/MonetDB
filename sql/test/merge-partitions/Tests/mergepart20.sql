@@ -49,5 +49,6 @@ ALTER TABLE testme DROP TABLE subtable2;
 
 DROP TABLE subtable1;
 DROP TABLE subtable2;
+DROP TABLE subtable3;
 DROP TABLE testme;
 DROP FUNCTION iamdummy;

@@ -894,23 +894,31 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
+		sql_table *mt = NULL;
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
-		list *exps;
+		list *exps, *pcols = NULL;
 		dnode *n;
 		const char *rname = NULL;
 		sql_rel *res = NULL, *bt = rel_basetable(sql, t, t->base.name);
-		int partitioned_column = -1;
 
-		if(isPartitionedByColumnTable(t)) { //TODO for expressions
-			partitioned_column = t->part.pcol->colnr;
+		if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
+			mt = t;
 		} else if(t->p) {
 			sql_part *pt = find_sql_part(t->p, t->base.name);
 			if(!pt) {
 				t->p = NULL;
-			} else if(isPartitionedByColumnTable(t->p)) {
-				partitioned_column = t->p->part.pcol->colnr;
+			} else if(isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p)) {
+				mt = t->p;
 			}
+		}
+		if(mt && isPartitionedByColumnTable(mt)) {
+			pcols = sa_list(sql->sa);
+			int *nid = sa_alloc(sql->sa, sizeof(int));
+			*nid = mt->part.pcol->colnr;
+			list_append(pcols, nid);
+		} else if(mt && isPartitionedByExpressionTable(mt)) {
+			pcols = mt->part.pexp->cols;
 		}
 		res = bt;
 #if 0
@@ -1086,8 +1094,18 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 					sql_column *c = mvc_bind_column(sql, t, cname);
 					sql_exp *v = n->data;
 
-					if(partitioned_column == c->colnr)
-						return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column not possible at the moment");
+					if(mt && pcols) {
+						for(node *nn = pcols->h; nn; nn = n->next) {
+							int next = *(int*) nn->data;
+							if(next == c->colnr) {
+								if(isPartitionedByColumnTable(mt)) {
+									return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column is not possible at the moment");
+								} else if(isPartitionedByExpressionTable(mt)) {
+									return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update a column used by the partition's expression is not possible at the moment");
+								}
+							}
+						}
+					}
 					if (!exp_name(v))
 						exp_label(sql->sa, v, ++sql->label);
 					v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
@@ -1105,8 +1123,18 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				char *cname = assignment->h->next->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, cname);
 
-				if(partitioned_column == c->colnr)
-					return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column not possible at the moment");
+				if(mt && pcols) {
+					for(node *nn = pcols->h; nn; nn = nn->next) {
+						int next = *(int*) nn->data;
+						if(next == c->colnr) {
+							if(isPartitionedByColumnTable(mt)) {
+								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column is not possible at the moment");
+							} else if(isPartitionedByExpressionTable(mt)) {
+								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update a column used by the partition's expression is not possible at the moment");
+							}
+						}
+					}
+				}
 				if (!v) {
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				} else if ((v = update_check_column(sql, t, c, v, r, cname)) == NULL) {

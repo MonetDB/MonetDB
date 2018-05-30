@@ -82,9 +82,9 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 			if(!strcmp(e->l, t->base.name)) {
 				sql_column *col = find_sql_column(t, e->r);
 				if(col) {
-					sqlid *nid = sa_alloc(cols->sa, sizeof(sqlid));
-					*nid = col->base.id;
-					list_append(cols, nid);
+					int *cnr = sa_alloc(cols->sa, sizeof(int));
+					*cnr = col->colnr;
+					list_append(cols, cnr);
 				}
 			}
 		} break;

@@ -30,15 +30,15 @@ stderr of test 'mergepart12` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27133/.s.monetdb.35212
 QUERY = UPDATE testme SET a = a + 1;
-ERROR = !UPDATE: Update on the partitioned column not possible at the moment
+ERROR = !UPDATE: Update on the partitioned column is not possible at the moment
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-27133/.s.monetdb.35212
 QUERY = UPDATE sublimits1 SET a = a * 3;
-ERROR = !UPDATE: Update on the partitioned column not possible at the moment
+ERROR = !UPDATE: Update on the partitioned column is not possible at the moment
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-27133/.s.monetdb.35212
 QUERY = UPDATE sublimits2 SET a = a * 3;
-ERROR = !UPDATE: Update on the partitioned column not possible at the moment
+ERROR = !UPDATE: Update on the partitioned column is not possible at the moment
 CODE  = 42000
 
 # 10:52:09 >  

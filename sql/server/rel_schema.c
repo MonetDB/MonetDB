@@ -892,8 +892,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 		if (isPartitionedByExpressionTable(t)) {
 			for(node *n = t->part.pexp->cols->h; n; n = n->next) {
-				sqlid next = *(sqlid*) n->data;
-				if(next == col->base.id) {
+				int next = *(int*) n->data;
+				if(next == col->colnr) {
 					sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot drop column '%s': the expression used in '%s' depends on it\n", cname, t->base.name);
 					return SQL_ERR;
 				}
