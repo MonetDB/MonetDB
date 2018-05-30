@@ -137,7 +137,7 @@ do_batstr_int(bat *ret, const bat *l, const char *name, str (*func)(int *, const
 		} else if ((msg = (*func)(&y, &x)) != MAL_SUCCEED) {
 			goto bunins_failed;
 		}
-		bunfastapp(bn, &y);
+		bunfastappTYPE(int, bn, &y);
 	}
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
@@ -183,7 +183,7 @@ do_batstr_str(bat *ret, const bat *l, const char *name, str (*func)(str *, const
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -228,7 +228,7 @@ do_batstr_conststr_str(bat *ret, const bat *l, const str *s2, const char *name, 
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -281,7 +281,7 @@ do_batstr_batstr_str(bat *ret, const bat *l, const bat *l2, const char *name, st
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -327,7 +327,7 @@ do_batstr_constint_str(bat *ret, const bat *l, const int *n, const char *name, s
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -380,7 +380,7 @@ do_batstr_batint_str(bat *ret, const bat *l, const bat *n, const char *name, str
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -426,7 +426,7 @@ do_batstr_constint_conststr_str(bat *ret, const bat *l, const int *n, const str 
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -479,7 +479,7 @@ do_batstr_batint_conststr_str(bat *ret, const bat *l, const bat *n, const str *s
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -533,7 +533,7 @@ do_batstr_constint_batstr_str(bat *ret, const bat *l, const int *n, const bat *l
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -600,7 +600,7 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 			goto bunins_failed1;
 		if (y == NULL)
 			y = (str) str_nil;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y == str_nil) {
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -771,7 +771,7 @@ str STRbatPrefix(bat *ret, const bat *l, const bat *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	bit v;
 
 	prepareOperand2(left,l,right,r,"batstr.startsWith");
 	if(BATcount(left) != BATcount(right)) {
@@ -787,8 +787,8 @@ str STRbatPrefix(bat *ret, const bat *l, const bat *r)
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
 		str tr = (str) BUNtail(righti,p);
-		STRPrefix(vp, &tl, &tr);
-		bunfastapp(bn, vp);
+		STRPrefix(&v, &tl, &tr);
+		bunfastappTYPE(bit, bn, &v);
 	}
 	bn->tnonil = 0;
 	BBPunfix(right->batCacheid);
@@ -807,7 +807,7 @@ str STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	bit v, *vp= &v;
+	bit v;
 
 	prepareOperand(left,l,"batstr.startsWith");
 	prepareResult(bn,left,TYPE_bit,"batstr.startsWith");
@@ -816,8 +816,8 @@ str STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
 
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
-		STRPrefix(vp, &tl, cst);
-		bunfastapp(bn, vp);
+		STRPrefix(&v, &tl, cst);
+		bunfastappTYPE(bit, bn, &v);
 	}
 	bn->tnonil = 0;
 	finalizeResult(ret,bn,left);
@@ -834,7 +834,7 @@ str STRbatSuffix(bat *ret, const bat *l, const bat *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	bit v;
 
 	prepareOperand2(left,l,right,r,"batstr.endsWith");
 	if(BATcount(left) != BATcount(right)) {
@@ -850,8 +850,8 @@ str STRbatSuffix(bat *ret, const bat *l, const bat *r)
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
 		str tr = (str) BUNtail(righti,p);
-		STRSuffix(vp, &tl, &tr);
-		bunfastapp(bn, vp);
+		STRSuffix(&v, &tl, &tr);
+		bunfastappTYPE(bit, bn, &v);
 	}
 	bn->tnonil = 0;
 	BBPunfix(right->batCacheid);
@@ -870,7 +870,7 @@ str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	bit v, *vp= &v;
+	bit v;
 
 	prepareOperand(left,l,"batstr.endsWith");
 	prepareResult(bn,left,TYPE_bit,"batstr.endsWith");
@@ -879,8 +879,8 @@ str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
 
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
-		STRSuffix(vp, &tl, cst);
-		bunfastapp(bn, vp);
+		STRSuffix(&v, &tl, cst);
+		bunfastappTYPE(bit, bn, &v);
 	}
 	bn->tnonil = 0;
 	finalizeResult(ret,bn,left);
@@ -897,7 +897,7 @@ str STRbatstrSearch(bat *ret, const bat *l, const bat *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	int v, *vp= &v;
+	int v;
 
 	prepareOperand2(left,l,right,r,"batstr.search");
 	if(BATcount(left) != BATcount(right)) {
@@ -913,8 +913,8 @@ str STRbatstrSearch(bat *ret, const bat *l, const bat *r)
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
 		str tr = (str) BUNtail(righti,p);
-		STRstrSearch(vp, &tl, &tr);
-		bunfastapp(bn, vp);
+		STRstrSearch(&v, &tl, &tr);
+		bunfastappTYPE(int, bn, &v);
 	}
 	bn->tnonil = 0;
 	BBPunfix(right->batCacheid);
@@ -933,7 +933,7 @@ str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	int v, *vp= &v;
+	int v;
 
 	prepareOperand(left,l,"batstr.search");
 	prepareResult(bn,left,TYPE_int,"batstr.search");
@@ -942,8 +942,8 @@ str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst)
 
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
-		STRstrSearch(vp, &tl, cst);
-		bunfastapp(bn, vp);
+		STRstrSearch(&v, &tl, cst);
+		bunfastappTYPE(int, bn, &v);
 	}
 	bn->tnonil = 0;
 	finalizeResult(ret,bn,left);
@@ -960,7 +960,7 @@ str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	int v, *vp= &v;
+	int v;
 
 	prepareOperand2(left,l,right,r,"batstr.r_search");
 	if(BATcount(left) != BATcount(right)) {
@@ -976,8 +976,8 @@ str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
 		str tr = (str) BUNtail(righti,p);
-		STRReverseStrSearch(vp, &tl, &tr);
-		bunfastapp(bn, vp);
+		STRReverseStrSearch(&v, &tl, &tr);
+		bunfastappTYPE(int, bn, &v);
 	}
 	bn->tnonil = 0;
 	BBPunfix(right->batCacheid);
@@ -996,7 +996,7 @@ str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	int v, *vp= &v;
+	int v;
 
 	prepareOperand(left,l,"batstr.r_search");
 	prepareResult(bn,left,TYPE_int,"batstr.r_search");
@@ -1005,8 +1005,8 @@ str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
-		STRReverseStrSearch(vp, &tl, cst);
-		bunfastapp(bn, vp);
+		STRReverseStrSearch(&v, &tl, cst);
+		bunfastappTYPE(int, bn, &v);
 	}
 	bn->tnonil = 0;
 	finalizeResult(ret,bn,left);
@@ -1042,7 +1042,7 @@ str STRbatTail(bat *ret, const bat *l, const bat *r)
 		int *tr = (int *) BUNtail(righti,p);
 		if ((msg = STRTail(&v, &tl, tr)) != MAL_SUCCEED)
 			goto bunins_failed;
-		bunfastapp(bn, v);
+		bunfastappVAR(bn, v);
 		GDKfree(v);
 	}
 	bn->tnonil = 0;
@@ -1077,7 +1077,7 @@ str STRbatTailcst(bat *ret, const bat *l, const int *cst)
 		str tl = (str) BUNtail(lefti,p);
 		if ((msg = STRTail(&v, &tl, cst)) != MAL_SUCCEED)
 			goto bunins_failed;
-		bunfastapp(bn, v);
+		bunfastappVAR(bn, v);
 		GDKfree(v);
 	}
 	bn->tnonil = 0;
@@ -1098,7 +1098,7 @@ str STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	int v, *vp= &v;
+	int v;
 
 	prepareOperand2(left,l,right,r,"batstr.unicodeAt");
 	if(BATcount(left) != BATcount(right)) {
@@ -1114,8 +1114,8 @@ str STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
 		ptr tr = BUNtail(righti,p);
-		STRWChrAt(vp, &tl, tr);
-		bunfastapp(bn, vp);
+		STRWChrAt(&v, &tl, tr);
+		bunfastappTYPE(int, bn, &v);
 	}
 	bn->tnonil = 0;
 	BBPunfix(right->batCacheid);
@@ -1134,7 +1134,7 @@ str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	int v, *vp= &v;
+	int v;
 
 	prepareOperand(left,l,"batstr.unicodeAt");
 	prepareResult(bn,left,TYPE_int,"batstr.unicodeAt");
@@ -1143,8 +1143,8 @@ str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 
 	BATloop(left, p, q) {
 		str tl = (str) BUNtail(lefti,p);
-		STRWChrAt(vp, &tl, cst);
-		bunfastapp(bn, vp);
+		STRWChrAt(&v, &tl, cst);
+		bunfastappTYPE(int, bn, &v);
 	}
 	bn->tnonil = 0;
 	finalizeResult(ret,bn,left);
@@ -1177,7 +1177,7 @@ STRbatSubstitutecst(bat *ret, const bat *l, const str *arg2, const str *arg3, co
 		if (x != 0 && strcmp(x, str_nil) != 0 &&
 			(err = STRSubstitute(&y, &x, arg2, arg3, rep)) != MAL_SUCCEED)
 			goto bunins_failed;
-		bunfastapp(bn, y);
+		bunfastappVAR(bn, y);
 		if (y != str_nil)
 			GDKfree(y);
 	}

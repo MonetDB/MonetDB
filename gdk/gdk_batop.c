@@ -276,25 +276,38 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			v = (var_t) ((size_t) v + toff);
 			assert(v >= GDK_VAROFFSET);
 			assert((size_t) v < b->tvheap->free);
+			if (BUNlast(b) >= BATcapacity(b)) {
+				if (BATcount(b) == BUN_MAX) {
+					GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX);
+					goto bunins_failed;
+				}
+				if (BATextend(b, BATgrows(b)) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
 			switch (b->twidth) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-				tbv = (unsigned char) (v - GDK_VAROFFSET);
+				((uint8_t *) b->theap.base)[b->batCount++] = (uint8_t) (v - GDK_VAROFFSET);
+				b->theap.free += 1;
 				break;
 			case 2:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-				tsv = (unsigned short) (v - GDK_VAROFFSET);
+				((uint16_t *) b->theap.base)[b->batCount++] = (uint16_t) (v - GDK_VAROFFSET);
+				b->theap.free += 2;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
 				assert(v < ((var_t) 1 << 32));
-				tiv = (unsigned int) v;
+				((uint32_t *) b->theap.base)[b->batCount++] = (uint32_t) v;
+				b->theap.free += 4;
 				break;
 #endif
 			default:
+				((var_t *) b->theap.base)[b->batCount++] = v;
+				b->theap.free += sizeof(var_t);
 				break;
 			}
-			bunfastapp(b, tp);
+			b->theap.dirty = true;
 		}
 		b->tvarsized = true;
 		b->ttype = TYPE_str;
@@ -310,7 +323,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			oid hseq = n->hseqbase;
 			while (cand < candend) {
 				tp = BUNtvar(ni, *cand - hseq);
-				bunfastapp(b, tp);
+				bunfastappVAR(b, tp);
 				HASHins(b, r, tp);
 				r++;
 				cand++;
@@ -318,7 +331,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 		} else {
 			while (start < end) {
 				tp = BUNtvar(ni, start);
-				bunfastapp(b, tp);
+				bunfastappVAR(b, tp);
 				HASHins(b, r, tp);
 				r++;
 				start++;
@@ -387,7 +400,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				}
 				b->batCount++;
 			} else {
-				bunfastapp(b, tp);
+				bunfastappVAR(b, tp);
 			}
 			HASHins(b, r, tp);
 			r++;
@@ -479,7 +492,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		oid hseq = n->hseqbase;
 		while (cand < candend) {
 			const void *t = BUNtvar(ni, *cand - hseq);
-			bunfastapp_nocheck(b, r, t, Tsize(b));
+			bunfastapp_nocheckVAR(b, r, t, Tsize(b));
 			HASHins(b, r, t);
 			r++;
 			cand++;
@@ -487,7 +500,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 	} else {
 		while (start < end) {
 			const void *t = BUNtvar(ni, start);
-			bunfastapp_nocheck(b, r, t, Tsize(b));
+			bunfastapp_nocheckVAR(b, r, t, Tsize(b));
 			HASHins(b, r, t);
 			r++;
 			start++;

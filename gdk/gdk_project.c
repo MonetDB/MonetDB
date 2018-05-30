@@ -692,7 +692,7 @@ BATprojectchain(BAT **bats)
 				}
 				v = BUNtvar(bi, o + off);
 			}
-			bunfastapp(bn, v);
+			bunfastappVAR(bn, v);
 		}
 	} else {
 		/* generic code for fixed-sized atoms */
@@ -723,7 +723,18 @@ BATprojectchain(BAT **bats)
 				}
 				v = BUNtloc(bi, o + off);
 			}
-			bunfastapp(bn, v);
+			if (BATcount(bn) >= BATcapacity(bn)) {
+				if (BATcount(bn) == BUN_MAX) {
+					GDKerror("BATprojectchain: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX);
+					goto bunins_failed;
+				}
+				if (BATextend(bn, BATgrows(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
+			bn->theap.free += Tsize(bn);
+			bn->theap.dirty |= Tsize(bn) != 0;
+			ATOMputFIX(bn->ttype, Tloc(bn, bn->batCount), v);
+			bn->batCount++;
 		}
 	}
 	BATsetcount(bn, cnt);

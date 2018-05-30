@@ -143,7 +143,7 @@ BATunique(BAT *b, BAT *s)
 			v = VALUE(i);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
 				o = i + b->hseqbase;
-				bunfastapp(bn, &o);
+				bunfastappTYPE(oid, bn, &o);
 			}
 			prev = v;
 		}
@@ -174,7 +174,7 @@ BATunique(BAT *b, BAT *s)
 			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
 				seen[val >> 4] |= 1U << (val & 0xF);
 				o = i + b->hseqbase;
-				bunfastapp(bn, &o);
+				bunfastappTYPE(oid, bn, &o);
 				if (bn->batCount == 256) {
 					/* there cannot be more than
 					 * 256 distinct values */
@@ -211,7 +211,7 @@ BATunique(BAT *b, BAT *s)
 			if (!(seen[val >> 4] & (1U << (val & 0xF)))) {
 				seen[val >> 4] |= 1U << (val & 0xF);
 				o = i + b->hseqbase;
-				bunfastapp(bn, &o);
+				bunfastappTYPE(oid, bn, &o);
 				if (bn->batCount == 65536) {
 					/* there cannot be more than
 					 * 65536 distinct values */
@@ -281,7 +281,7 @@ BATunique(BAT *b, BAT *s)
 			}
 			if (hb == HASHnil(hs) || hb < lo) {
 				o = i + seq;
-				bunfastapp(bn, &o);
+				bunfastappTYPE(oid, bn, &o);
 			}
 		}
 	} else {
@@ -341,7 +341,7 @@ BATunique(BAT *b, BAT *s)
 			if (hb == HASHnil(hs)) {
 				o = i + b->hseqbase;
 				p = i;
-				bunfastapp(bn, &o);
+				bunfastappTYPE(oid, bn, &o);
 				/* enter into hash table */
 				HASHputlink(hs, p, HASHget(hs, prb));
 				HASHput(hs, prb, p);
