@@ -8,13 +8,14 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
 # Serving database 'mTests_clients', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
-# Found 7.734 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-
-Ready.
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:39285/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1158/.s.monetdb.39285
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -56,9 +57,11 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 12:57:39 >  
-# 12:57:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21549" "--port=35702"
-# 12:57:39 >  
+Ready.
+
+# 16:09:44 >  
+# 16:09:44 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1158" "--port=39285"
+# 16:09:44 >  
 
 #select * from sys.malfunctions() order by module, "function", address, signature, comment;
 % .L1,	.L1,	.L1,	.L1,	.L1 # table_name
@@ -15084,7 +15087,7 @@ Ready.
 [ "sql",	"optimizer_updates",	"pattern sql.optimizer_updates():void ",	"SQLoptimizersUpdate;",	""	]
 [ "sql",	"optimizers",	"command sql.optimizers() (X_0:bat[:str], X_1:bat[:str], X_2:bat[:str]) ",	"getPipeCatalog;",	""	]
 [ "sql",	"password",	"pattern sql.password(user:str):str ",	"db_password_wrap;",	"Return password hash of user"	]
-[ "sql",	"prelude",	"command sql.prelude():void ",	"SQLprelude;",	""	]
+[ "sql",	"prelude",	"pattern sql.prelude():void ",	"SQLprelude;",	""	]
 [ "sql",	"project",	"command sql.project(col:bat[:oid], l:bat[:oid], r:bat[:oid]):bat[:oid] ",	"BATleftproject;",	"Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)"	]
 [ "sql",	"projectdelta",	"command sql.projectdelta(select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3]):bat[:any_3] ",	"DELTAproject2;",	"Return column bat with delta's applied."	]
 [ "sql",	"projectdelta",	"command sql.projectdelta(select:bat[:oid], col:bat[:any_3], uid:bat[:oid], uval:bat[:any_3], ins:bat[:any_3]):bat[:any_3] ",	"DELTAproject;",	"Return column bat with delta's applied."	]
@@ -15338,13 +15341,7 @@ Ready.
 [ "url",	"url",	"command url.url(s:str):url ",	"URLnew;",	"Create an URL from a string literal"	]
 [ "url",	"url",	"command url.url(s:url):url ",	"URLnoop;",	"Create an URL from a string literal"	]
 [ "user",	"main",	"function user.main():void;",	"",	""	]
-[ "user",	"main",	"function user.main():void;",	"",	""	]
-[ "user",	"main",	"function user.main():void;",	"",	""	]
-[ "user",	"main",	"function user.main():void;",	"",	""	]
-[ "user",	"main",	"function user.main():void;",	"",	""	]
-[ "user",	"main",	"function user.main():void;",	"",	""	]
 [ "user",	"s2_1",	"function user.s2_1():void;",	"",	""	]
-[ "user",	"sql.init",	"function user.sql.init():void;",	"",	""	]
 [ "uuid",	"#cmp",	"command uuid.#cmp():void ",	"UUIDcompare;",	""	]
 [ "uuid",	"#fromstr",	"command uuid.#fromstr():void ",	"UUIDfromString;",	""	]
 [ "uuid",	"#hash",	"command uuid.#hash():void ",	"UUIDhash;",	""	]

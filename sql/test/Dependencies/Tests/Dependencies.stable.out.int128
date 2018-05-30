@@ -7,17 +7,15 @@ stdout of test 'Dependencies` in directory 'sql/test/Dependencies` itself:
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
-# Serving database 'mTests_sql_test_Dependencies', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.333 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:38541/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6347/.s.monetdb.38541
-# MonetDB/SQL module loaded
-
-Ready.
+# Serving database 'mTests_sql_test_Dependencies', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:31345/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4412/.s.monetdb.31345
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -45,9 +43,11 @@ Ready.
 # loading sql script: 85_bam.sql
 # loading sql script: 99_system.sql
 
-# 09:38:22 >  
-# 09:38:22 >  "/usr/bin/python2" "Dependencies.SQL.py" "Dependencies"
-# 09:38:22 >  
+Ready.
+
+# 17:33:38 >  
+# 17:33:38 >  "/usr/bin/python" "Dependencies.SQL.py" "Dependencies"
+# 17:33:38 >  
 
 Dependencies between User and Schema
 #CREATE USER "monet_test" WITH PASSWORD 'pass_test' NAME 'TEST_USER' SCHEMA "sys";

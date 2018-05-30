@@ -15,9 +15,6 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://lab03:33047/
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -50,9 +47,11 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
 
-# 22:58:57 >  
-# 22:58:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36275"
-# 22:58:57 >  
+Ready.
+
+# 16:06:52 >  
+# 16:06:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25090" "--port=39713"
+# 16:06:52 >  
 
 #set optimizer = 'sequential_pipe'; -- to get predictable errors
 #create table ttt (a int, b int, c int);

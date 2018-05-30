@@ -16,10 +16,6 @@ stdout of test 'ingestion` in directory 'sql/test/copy` itself:
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31743/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22769/.s.monetdb.31743
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -54,6 +50,9 @@ Ready.
 # loading sql script: 89_generator_hge.sql
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 15:50:36 >  
 # 15:50:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22769" "--port=31743"

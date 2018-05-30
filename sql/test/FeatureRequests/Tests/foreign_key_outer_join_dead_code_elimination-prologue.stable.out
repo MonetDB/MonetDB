@@ -16,11 +16,6 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 # Listening for connection requests on mapi:monetdb://earth.da.cwi.nl:33793/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6225/.s.monetdb.33793
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Python2 module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -62,6 +57,9 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 97_comments.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 01:44:33 >  
 # 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6225" "--port=33793"
@@ -161,37 +159,37 @@ Ready.
 [ 5,	4,	NULL,	4,	14,	NULL,	NULL	]
 [ 6,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select count(*) from fk;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v0;
-% sys.L10 # table_name
+% sys.L7 # table_name
 % L7 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v1;
-% sys.L12 # table_name
+% sys.L11 # table_name
 % L11 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v2;
-% sys.L14 # table_name
+% sys.L13 # table_name
 % L13 # name
 % bigint # type
 % 1 # length

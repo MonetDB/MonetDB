@@ -16,12 +16,6 @@ stdout of test 'load` in directory 'sql/test/emptydb` itself:
 # Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:38607/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1617/.s.monetdb.38607
 # MonetDB/GIS module loaded
-# Start processing logs sql/sql_logs version 52200
-# Finished processing logs sql/sql_logs
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -59,6 +53,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 14:10:08 >  
 # 14:10:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1617" "--port=38607"
