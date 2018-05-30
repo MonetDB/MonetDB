@@ -7,15 +7,15 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 
 # MonetDB 5 server v11.16.0 (hg id: fd9db07674cf+)
 # This is an unreleased version
-# Serving database 'mTests_sql_test_testdb-upgrade', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.591 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-
-
-Ready.
+# Serving database 'mTests_sql_test_testdb-upgrade', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.513 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:35768/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13647/.s.monetdb.35768
+# MonetDB/GIS module loaded
 Running database upgrade commands:
 set schema "sys";
 delete from sys.dependencies where id < 2000;
@@ -5291,7 +5291,7 @@ insert into sys.functions values (135, 'count', 'count', 'aggr', 0, 3, false, fa
 insert into sys.args values (12027, 135, 'res', 'bigint', 64, 0, 0, 0);
 delete from sys.systemfunctions where function_id < 2000;
 insert into sys.systemfunctions (select id from sys.functions where id < 2000);
-set schema "testschema";
+set schema "sys";
 
 Running database upgrade commands:
 set schema "sys";
@@ -5341,7 +5341,7 @@ grant execute on aggregate sys.median(hugeint) to public;
 grant execute on aggregate sys.quantile(hugeint, double) to public;
 grant execute on aggregate sys.corr(hugeint, hugeint) to public;
 grant execute on function json.filter(json, hugeint) to public;
-set schema "testschema";
+set schema "sys";
 commit;
 
 Running database upgrade commands:
@@ -5352,7 +5352,7 @@ RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
 RETURN TABLE (SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
 insert into sys.systemfunctions (select id from sys.functions where name in ('dependencies_functions_on_triggers') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 delete from systemfunctions where function_id not in (select id from functions);
-set schema "testschema";
+set schema "sys";
 commit;
 
 Running database upgrade commands:
@@ -5389,7 +5389,7 @@ SELECT d.id, i1.obj_type, i1.name,
  ORDER BY id, depend_id;
 GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
 update sys._tables set system = true where name in ('ids', 'dependencies_vw') and schema_id in (select id from sys.schemas where name = 'sys');
-set schema "testschema";
+set schema "sys";
 commit;
 
 Running database upgrade commands:
@@ -5399,16 +5399,19 @@ grant execute on aggregate sys.group_concat(string) to public;
 create aggregate sys.group_concat(str string, sep string) returns string external name "aggr"."str_group_concat";
 grant execute on aggregate sys.group_concat(string, string) to public;
 insert into sys.systemfunctions (select id from sys.functions where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-set schema "testschema";
+set schema "sys";
 commit;
 
 Running database upgrade commands:
 set schema sys;
 create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
 insert into sys.systemfunctions (select id from sys.functions where name='remote_table_credentials' and id not in (select function_id from sys.systemfunctions));
-set schema "testschema";
+set schema "sys";
 commit;
 
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 11:43:08 >  
 # 11:43:08 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
