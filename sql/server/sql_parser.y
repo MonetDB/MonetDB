@@ -1068,8 +1068,10 @@ alter_statement:
 	{ dlist *l = L(), *part;
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
-	  part = $7->data.lval;
-	  append_int(part, FALSE);
+	  if($7) {
+	  	  part = $7->data.lval;
+	  	  append_int(part, FALSE);
+	  }
 	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element

@@ -13,6 +13,7 @@
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
+#include "rel_optimizer.h"
 #include "rel_updates.h"
 #include "mal_exception.h"
 
@@ -80,8 +81,11 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 		case e_column: {
 			if(!strcmp(e->l, t->base.name)) {
 				sql_column *col = find_sql_column(t, e->r);
-				if(col)
-					list_append(cols, col);
+				if(col) {
+					sqlid *nid = sa_alloc(cols->sa, sizeof(sqlid));
+					*nid = col->base.id;
+					list_append(cols, nid);
+				}
 			}
 		} break;
 		case e_cmp: {
@@ -149,19 +153,21 @@ find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
 	return NULL;
 }
 
+extern list *rel_dependencies(sql_allocator *sa, sql_rel *r);
+
 str
-bootstrap_partition_expression(mvc* sql, sql_table *mt)
+bootstrap_partition_expression(mvc* sql, sql_table *mt, int instantiate)
 {
 	sql_exp *exp;
 	char *query, *msg = NULL;
 	int sql_ec;
-	sql_rel* baset;
+	sql_rel *r;
 
-	assert(isPartitionedByExpressionTable(mt));
+	assert(isPartitionedByExpressionTable(mt) && mt->part.pexp->cols);
 
-	baset = rel_basetable(sql, mt, mt->base.name);
+	r = rel_basetable(sql, mt, mt->base.name);
 	query = mt->part.pexp->exp;
-	if((exp = rel_parse_val(sql, sa_message(sql->sa, "select %s;", query), sql->emode, baset)) == NULL) {
+	if((exp = rel_parse_val(sql, sa_message(sql->sa, "select %s;", query), sql->emode, r)) == NULL) {
 		if(*sql->errstr) {
 			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
 				throw(SQL, "sql.partition", "%s", sql->errstr);
@@ -171,8 +177,6 @@ bootstrap_partition_expression(mvc* sql, sql_table *mt)
 		throw(SQL,"sql.partition", SQLSTATE(42000) "Incorrect expression '%s'", query);
 	}
 
-	if(!mt->part.pexp->cols)
-		mt->part.pexp->cols = sa_list(sql->sa);
 	exp_find_table_columns(sql, exp, mt, mt->part.pexp->cols);
 
 	if((msg = find_expression_type(exp, &(mt->part.pexp->type), query)) != NULL)
@@ -189,25 +193,41 @@ bootstrap_partition_expression(mvc* sql, sql_table *mt)
 			GDKfree(err);
 		}
 	}
+
+	if(instantiate) {
+		r = rel_project(sql->sa, r, NULL);
+		r->exps = sa_list(sql->sa);
+		list_append(r->exps, exp);
+
+		if (r)
+			r = rel_optimizer(sql, r, 0);
+		if (r) {
+			int i;
+			node *n, *found = NULL;
+			list *id_l = rel_dependencies(sql->sa, r);
+			for(i = 0, n = id_l->h ; n ; n = n->next, i++) { //remove the table itself from the list of dependencies
+				if(*(int *) n->data == mt->base.id)
+					found = n;
+			}
+			assert(found);
+			list_remove_node(id_l, found);
+			mvc_create_dependencies(sql, id_l, mt->base.id, TABLE_DEPENDENCY);
+		}
+	}
+
 	return msg;
 }
 
-str
-find_partition_type(mvc* sql, sql_subtype *tpe, sql_table *mt)
+void
+find_partition_type(sql_subtype *tpe, sql_table *mt)
 {
-	str res = NULL;
-	sql_subtype *empty = sql_bind_localtype("void");
-
 	if(isPartitionedByColumnTable(mt)) {
 		*tpe = mt->part.pcol->type;
 	} else if(isPartitionedByExpressionTable(mt)) {
-		if(!strcmp(mt->part.pexp->type.type->base.name, empty->type->base.name) && (res = bootstrap_partition_expression(sql, mt)) != NULL)
-			return res;
 		*tpe = mt->part.pexp->type;
 	} else {
 		assert(0);
 	}
-	return res;
 }
 
 str
@@ -217,10 +237,12 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 	sql_subtype found;
 	int localtype;
 
-	if((res = find_partition_type(sql, &found, mt)) != NULL)
+	if((res = bootstrap_partition_expression(sql, mt, 0)) != NULL)
 		return res;
+	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
-	if(localtype != TYPE_str) {
+
+	if(localtype != TYPE_str && mt->members.set && list_length(mt->members.set)) {
 		list *new = sa_list(sql->sa), *old = sa_list(sql->sa);
 
 		for (node *n = mt->members.set->h; n; n = n->next) {

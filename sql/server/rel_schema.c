@@ -886,6 +886,19 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				}
 			}
 		}
+		if (isPartitionedByColumnTable(t) && t->part.pcol->base.id == col->base.id) {
+			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot drop column '%s': is the partitioned column on the table '%s'\n", cname, t->base.name);
+			return SQL_ERR;
+		}
+		if (isPartitionedByExpressionTable(t)) {
+			for(node *n = t->part.pexp->cols->h; n; n = n->next) {
+				sqlid next = *(sqlid*) n->data;
+				if(next == col->base.id) {
+					sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot drop column '%s': the expression used in '%s' depends on it\n", cname, t->base.name);
+					return SQL_ERR;
+				}
+			}
+		}
 		if(mvc_drop_column(sql, t, col, drop_action)) {
 			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s\n", MAL_MALLOC_FAIL);
 			return SQL_ERR;
@@ -947,6 +960,7 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_de
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
 			t->part.pexp->exp = sa_strdup(sql->sa, query);
 			t->part.pexp->type = *empty;
+			t->part.pexp->cols = sa_list(sql->sa);
 			_DELETE(query);
 		}
 	}
@@ -1446,7 +1460,6 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
 				if(extra->token == SQL_PARTITION_RANGE) {
-					char *err;
 					sql_subtype tpe;
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
@@ -1458,8 +1471,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 								(t->type == tt_merge_table)?"merge":"list partition");
 					}
 
-					if((err = find_partition_type(sql, &tpe, t)))
-						return sql_error(sql, 02, "%s", err);
+					find_partition_type(&tpe, t);
 
 					if(min && min->token == SQL_MINVALUE) {
 						amin = atom_absolute_min(sql->sa, &tpe);

@@ -22,7 +22,7 @@
 #include "gdk_logger.h"
 #include "wlc.h"
 
-extern str bootstrap_partition_expression(mvc* sql, sql_table *mt);
+extern str bootstrap_partition_expression(mvc* sql, sql_table *mt, int instantiate);
 extern str initialize_sql_parts(mvc* sql, sql_table *mt);
 
 static int mvc_debug = 0;
@@ -290,7 +290,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		if(ss->tables.set) {
 			for (node *nn = ss->tables.set->h; nn; nn = nn->next) {
 				sql_table *tt = (sql_table*) nn->data;
-				if(isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
+				if(isPartitionedByExpressionTable(tt)) {
 					char *err;
 					if((err = initialize_sql_parts(m, tt)) != NULL) {
 						fprintf(stderr, "!mvc_init: unable to start partitioned table: %s.%s: %s\n",
@@ -1321,7 +1321,7 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		t->s = s;
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
-		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, t))) {
+		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, t, 1))) {
 			(void) sql_error(m, 02, "%s", err);
 			return SQL_ERR;
 		}

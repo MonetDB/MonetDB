@@ -209,8 +209,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		goto finish;
 	}
 
-	if((msg = find_partition_type(sql, &tpe, mt)))
-		goto finish;
+	find_partition_type(&tpe, mt);
 	tp1 = tpe.type->localtype;
 	if(ATOMcmp(TYPE_str, min, ATOMnilptr(TYPE_str))) {
 		if (tp1 == TYPE_str) {
@@ -344,8 +343,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		goto finish;
 	}
 
-	if((msg = find_partition_type(sql, &tpe, mt)))
-		goto finish;
+	find_partition_type(&tpe, mt);
 	tp1 = tpe.type->localtype;
 	ninserts = pci->argc - pci->retc - 6;
 	if(ninserts <= 0 && !with_nills) {

@@ -770,6 +770,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
 		t->part.pexp->exp = exp;
 		t->part.pexp->type = *empty;
+		t->part.pexp->cols = sa_list(tr->sa);
 	}
 	for(rid = table_funcs.subrids_next(nrs); !is_oid_nil(rid); rid = table_funcs.subrids_next(nrs)) {
 		sql_column* next = load_column(tr, t, rid);
@@ -1489,16 +1490,6 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 	pt->with_nills = opt->with_nills;
 
 	if(isRangePartitionTable(ot)) {
-		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
-		assert(!err);
-	} else if(isListPartitionTable(ot)) {
-		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_values_part_validate_and_insert);
-		assert(!err);
-	} else {
-		cs_add(&mt->members, pt, TR_NEW);
-	}
-
-	if(isRangePartitionTable(ot)) {
 		pt->part.range.minvalue = sa_alloc(sa, opt->part.range.minlength);
 		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
 		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
@@ -1517,6 +1508,16 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 		}
 	}
 
+	if(isRangePartitionTable(ot)) {
+		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
+		assert(!err);
+	} else if(isListPartitionTable(ot)) {
+		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_values_part_validate_and_insert);
+		assert(!err);
+	} else {
+		cs_add(&mt->members, pt, TR_NEW);
+	}
+
 	return pt;
 }
 
@@ -1533,14 +1534,24 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	nt->p = t->p;
 
 	if(isPartitionedByExpressionTable(nt)) {
-		sql_subtype *empty = sql_bind_localtype("void");
-		t->part.pexp = SA_ZNEW(sa, sql_expression);
-		t->part.pexp->cols = sa_list(sa);
-		t->part.pexp->type = *empty;
+		nt->part.pexp = SA_ZNEW(sa, sql_expression);
+		nt->part.pexp->exp = sa_strdup(sa, t->part.pexp->exp);
+		nt->part.pexp->type = t->part.pexp->type;
+		nt->part.pexp->cols = sa_list(sa);
+		for(node *n = t->part.pexp->cols->h; n; n = n->next) {
+			sqlid *nid = sa_alloc(sa, sizeof(sqlid));
+			*nid = *(sqlid *) n->data;
+			list_append(nt->part.pexp->cols, nid);
+		}
 	}
 
-	for (n = t->columns.set->h; n; n = n->next) 
-		dup_sql_column(sa, nt, n->data);
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		sql_column *dup = dup_sql_column(sa, nt, c);
+		if(isPartitionedByColumnTable(nt) && c->base.id == t->part.pcol->base.id)
+			nt->part.pcol = dup;
+	}
+
 	nt->columns.dset = NULL;
 	nt->columns.nelm = NULL;
 
@@ -1567,13 +1578,6 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	t->query = NULL;
 	t->s = s;
 	cs_add(&s->tables, t, TR_NEW);
-
-	if(isPartitionedByExpressionTable(t)) {
-		sql_subtype *empty = sql_bind_localtype("void");
-		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
-		t->part.pexp->cols = sa_list(tr->sa);
-		t->part.pexp->type = *empty;
-	}
 
 	if (isTable(t))
 		store_funcs.create_del(tr, t);
@@ -2674,11 +2678,17 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		t->part.pexp = SA_ZNEW(sa, sql_expression);
 		t->part.pexp->exp = sa_strdup(sa, ot->part.pexp->exp);
 		t->part.pexp->type = *empty;
+		t->part.pexp->cols = sa_list(sa);
+		for(node *n = ot->part.pexp->cols->h; n; n = n->next) {
+			sqlid *nid = sa_alloc(sa, sizeof(sqlid));
+			*nid = *(sqlid *) n->data;
+			list_append(t->part.pexp->cols, nid);
+		}
 	}
 	if (ot->columns.set) {
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data, *copy = column_dup(tr, flag, c, t);
-			if(isPartitionedByColumnTable(ot) && ot->part.pcol == c)
+			if(isPartitionedByColumnTable(ot) && ot->part.pcol->base.id == c->base.id)
 				t->part.pcol = copy;
 
 			cs_add(&t->columns, copy, tr_flag(&c->base, flag));
@@ -4938,8 +4948,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if(isPartitionedByExpressionTable(t)) {
 		sql_subtype *empty = sql_bind_localtype("void");
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
-		t->part.pexp->cols = sa_list(tr->sa);
 		t->part.pexp->type = *empty;
+		t->part.pexp->cols = sa_list(tr->sa);
 	}
 
 	ca = t->commit_action;

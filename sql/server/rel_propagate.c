@@ -118,14 +118,13 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 	list *exps = new_exp_list(sql->sa);
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *e1, *e2, *anti_nils;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	char buf[BUFSIZ], *pmin = min ? atom2string(sql->sa, min): NULL, *pmax = max ? atom2string(sql->sa, max) : NULL, *err;
+	char buf[BUFSIZ], *pmin = min ? atom2string(sql->sa, min): NULL, *pmax = max ? atom2string(sql->sa, max) : NULL;
 	sql_subtype tpe;
 
 	if(!rel_psm || !exps)
 		return NULL;
 
-	if((err = find_partition_type(sql, &tpe, mt)))
-		return sql_error(sql, 02,"%s", err);
+	find_partition_type(&tpe, mt);
 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
 	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
@@ -195,14 +194,13 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	int with_nills = 0;
-	char buf[BUFSIZ], *err;
+	char buf[BUFSIZ];
 	sql_subtype tpe;
 
 	if(!rel_psm || !exps)
 		return NULL;
 
-	if((err = find_partition_type(sql, &tpe, mt)))
-		return sql_error(sql, 02,"%s", err);
+	find_partition_type(&tpe, mt);
 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
 	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
