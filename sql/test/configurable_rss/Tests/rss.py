@@ -39,6 +39,10 @@ end;
 call loop_insert(1000000);
 
 -- it seems that it requires an analytical query to keep memory in ram.
+select '#~BeginVariableOutput~#';
+select getrss() as resident_set_size_in_kB, quantile(c/a, 0.8) * 0  from test;
+select '#~EndVariableOutput~#';
+
 select getrss() {compare_sign} {cap_in_kB} as resident_set_size_is_{compare_string}_then_{cap_in_kB}_kB, quantile(c/a, 0.8) * 0  from test;
 
 drop table test cascade;
