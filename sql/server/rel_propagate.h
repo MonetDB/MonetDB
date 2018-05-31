@@ -14,9 +14,9 @@
 #include "sql_mvc.h"
 
 extern sql_rel* rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char *sname, char *tname,
-                                                    char *sname2, char *tname2, atom* min, atom* max, int with_nills, int update);
+                                                    char *sname2, char *tname2, symbol* min, symbol* max, int with_nills, int update);
 extern sql_rel* rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char *sname, char *tname,
-                                                   char *sname2, char *tname2, dlist* values, int update);
+                                                   char *sname2, char *tname2, dlist* values, int with_nills, int update);
 extern sql_rel* rel_propagate(mvc *sql, sql_rel *rel, int *changes);
 
 #endif //_REL_PROPAGATE_H_

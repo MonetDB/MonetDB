@@ -1477,59 +1477,38 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 			if (te->token == SQL_TABLE) {
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
-				if(extra->token == SQL_PARTITION_RANGE) {
-					sql_subtype tpe;
+				if(extra->token == SQL_MERGE_PARTITION) {
+					dlist* ll = extra->data.lval;
+					int update = ll->h->next->next->next->data.i_val;
+
+					if(isRangePartitionTable(t)) {
+						return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, NULL, NULL, 1, update);
+					} else if(isListPartitionTable(t)) {
+						return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, NULL, 1, update);
+					} else {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a merge table");
+					}
+				} else if(extra->token == SQL_PARTITION_RANGE) {
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
 					int nills = ll->h->next->next->data.i_val, update = ll->h->next->next->next->data.i_val;
-					atom *amin = NULL, *amax = NULL;
 
 					if(!isRangePartitionTable(t)) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s table",
 								(t->type == tt_merge_table)?"merge":"list partition");
 					}
 
-					find_partition_type(&tpe, t);
-
-					if(min && min->token == SQL_MINVALUE) {
-						amin = atom_absolute_min(sql->sa, &tpe);
-						if(!amin) {
-							sql_rel *res = NULL;
-							char *err = sql_subtype_string(&tpe);
-							if(!err)
-								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-							res = sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
-							GDKfree(err);
-							return res;
-						}
-					} else if(min) {
-						amin = ((AtomNode *) min)->a;
-					}
-					if(max && max->token == SQL_MAXVALUE) {
-						amax = atom_absolute_max(sql->sa, &tpe);
-						if(!amax) {
-							sql_rel *res = NULL;
-							char *err = sql_subtype_string(&tpe);
-							if(!err)
-								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-							res = sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
-							GDKfree(err);
-							return res;
-						}
-					} else if(max) {
-						amax = ((AtomNode *) max)->a;
-					}
-					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, amin, amax, nills, update);
+					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, min, max, nills, update);
 				} else if(extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
-					int update = ll->h->next->data.i_val;
+					int nills = ll->h->next->data.i_val, update = ll->h->next->next->data.i_val;
 
 					if(!isListPartitionTable(t)) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
 								(t->type == tt_merge_table)?"merge":"range partition");
 					}
 
-					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, values, update);
+					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, values, nills, update);
 				}
 				assert(0);
 			} else {

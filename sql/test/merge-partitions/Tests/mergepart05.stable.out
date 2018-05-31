@@ -80,8 +80,8 @@ Ready.
 % .range_partitions,	.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
-% 7,	7 # length
-[ "\"hello\"",	"\"world\""	]
+% 5,	5 # length
+[ "hello",	"world"	]
 #ALTER TABLE listparts DROP TABLE subtable1;
 #ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '"hello"' AND '"world"';
 #SELECT minimum, maximum FROM range_partitions;
@@ -96,9 +96,7 @@ Ready.
 % .range_partitions,	.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
-% 7,	7 # length
-[ "\"hello\"",	"\"world\""	]
-#ALTER TABLE listparts DROP TABLE subtable1;
+% 0,	0 # length
 #INSERT INTO subtable1 VALUES ('wrong');
 [ 1	]
 #SELECT minimum, maximum FROM range_partitions;

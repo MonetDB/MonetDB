@@ -96,6 +96,8 @@ typedef struct expression {
 #define DDL_CREATE_SEQ			5
 #define DDL_ALTER_SEQ			6
 #define DDL_DROP_SEQ			7
+#define DDL_ALTER_TABLE_ADD_RANGE_PARTITION		8
+#define DDL_ALTER_TABLE_ADD_LIST_PARTITION		9
 
 #define DDL_RELEASE			11
 #define DDL_COMMIT			12
@@ -135,10 +137,8 @@ typedef struct expression {
 #define DDL_ALTER_TABLE_ADD_TABLE				63
 #define DDL_ALTER_TABLE_DEL_TABLE				64
 #define DDL_ALTER_TABLE_SET_ACCESS				65
-#define DDL_ALTER_TABLE_ADD_RANGE_PARTITION		66
-#define DDL_ALTER_TABLE_ADD_LIST_PARTITION		67
 
-#define DDL_COMMENT_ON			68
+#define DDL_COMMENT_ON			66
 
 #define DDL_EMPTY 100
 

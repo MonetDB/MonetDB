@@ -14,9 +14,9 @@ ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '"hello"' AND '"w
 SELECT minimum, maximum FROM range_partitions;
 ALTER TABLE listparts DROP TABLE subtable1;
 
-ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello"' AND '"world';
+ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello"' AND '"world'; --error
 SELECT minimum, maximum FROM range_partitions;
-ALTER TABLE listparts DROP TABLE subtable1;
+ALTER TABLE listparts DROP TABLE subtable1; --error
 
 INSERT INTO subtable1 VALUES ('wrong');
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '"hello' AND 'world"'; --error

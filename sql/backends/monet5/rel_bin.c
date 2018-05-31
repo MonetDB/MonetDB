@@ -4953,6 +4953,31 @@ rel2bin_psm(backend *be, sql_rel *rel)
 }
 
 static stmt *
+rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
+{
+	stmt *l = NULL, *r = NULL;
+	node *n = NULL;
+	list *slist = sa_list(be->mvc->sa);
+
+	if (rel->l)  /* first construct the sub relation */
+		l = subrel_bin(be, rel->l, refs);
+	if (rel->r)  /* first construct the sub relation */
+		r = subrel_bin(be, rel->r, refs);
+
+	assert(rel->exps);
+	assert(rel->flag == DDL_ALTER_TABLE_ADD_RANGE_PARTITION || rel->flag == DDL_ALTER_TABLE_ADD_LIST_PARTITION);
+
+	if(rel->exps) {
+		for(n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL);
+			append(slist, s);
+		}
+	}
+	return stmt_catalog(be, rel->flag, stmt_list(be, slist));
+}
+
+static stmt *
 rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 {
 	stmt *l = NULL, *r = NULL;
@@ -5127,6 +5152,9 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 		sql->type = Q_SCHEMA;
 	} else if (rel->flag <= DDL_DROP_SEQ) {
 		s = rel2bin_catalog2(be, rel, refs);
+		sql->type = Q_SCHEMA;
+	} else if (rel->flag <= DDL_ALTER_TABLE_ADD_LIST_PARTITION) {
+		s = rel2bin_partition_limits(be, rel, refs);
 		sql->type = Q_SCHEMA;
 	} else if (rel->flag <= DDL_TRANS) {
 		s = rel2bin_trans(be, rel, refs);

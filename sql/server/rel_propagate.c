@@ -110,15 +110,56 @@ generate_alter_table_error_message(char* buf, sql_table *mt)
 	}
 }
 
+static sql_exp *
+generate_partition_limits(mvc *sql, sql_rel **r, symbol *s, sql_subtype tpe)
+{
+	if(!s) {
+		return NULL;
+	} else if (s->token == SQL_NULL) {
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
+	} else if (s->token == SQL_MINVALUE) {
+		atom *amin = atom_absolute_min(sql->sa, &tpe);
+		if(!amin) {
+			char *err = sql_subtype_string(&tpe);
+			if(!err)
+				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
+			GDKfree(err);
+			return NULL;
+		}
+		return exp_atom(sql->sa, amin);
+	} else if (s->token == SQL_MAXVALUE) {
+		atom *amax = atom_absolute_max(sql->sa, &tpe);
+		if(!amax) {
+			char *err = sql_subtype_string(&tpe);
+			if(!err)
+				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
+			GDKfree(err);
+			return NULL;
+		}
+		return exp_atom(sql->sa, amax);
+	} else {
+		int is_last = 0;
+		exp_kind ek = {type_value, card_value, FALSE};
+		sql_exp *e = rel_value_exp2(sql, r, s, sql_sel, ek, &is_last);
+
+		if (!e) {
+			return NULL;
+		}
+		return rel_check_type(sql, &tpe, e, type_equal);
+	}
+}
+
 sql_rel *
 rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
-									char *tname2, atom* min, atom* max, int with_nills, int update)
+									char *tname2, symbol* min, symbol* max, int with_nills, int update)
 {
 	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
 	list *exps = new_exp_list(sql->sa);
-	sql_exp *exception, *aggr, *anti_exp, *anti_le, *e1, *e2, *anti_nils;
+	sql_exp *exception, *aggr, *anti_exp, *anti_le, *e1, *e2, *anti_nils, *pmin, *pmax;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	char buf[BUFSIZ], *pmin = min ? atom2string(sql->sa, min): NULL, *pmax = max ? atom2string(sql->sa, max) : NULL;
+	char buf[BUFSIZ];
 	sql_subtype tpe;
 
 	if(!rel_psm || !exps)
@@ -131,11 +172,17 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 
 	assert((!min && !max && with_nills) || (min && max));
 	if(min && max) {
-		e1 = create_table_part_atom_exp(sql, min->tpe, VALget(&min->data));
+		pmin = generate_partition_limits(sql, &rel_psm, min, tpe);
+		pmax = generate_partition_limits(sql, &rel_psm, max, tpe);
+
+		if(!pmin || !pmax)
+			return NULL;
+
+		e1 = exp_copy(sql->sa, pmin);
 		if (subtype_cmp(&e1->tpe, &tpe) != 0)
 			e1 = exp_convert(sql->sa, e1, &e1->tpe, &tpe);
 
-		e2 = create_table_part_atom_exp(sql, max->tpe, VALget(&max->data));
+		e2 = exp_copy(sql->sa, pmax);
 		if (subtype_cmp(&e2->tpe, &tpe) != 0)
 			e2 = exp_convert(sql->sa, e2, &e2->tpe, &tpe);
 
@@ -147,6 +194,8 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 							  list_append(new_exp_list(sql->sa), anti_nils), 0);
 		}
 	} else {
+		pmin = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
+		pmax = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
 		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
 	}
 
@@ -170,8 +219,8 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 		append(exps, exp_atom_clob(sql->sa, sname2));
 		append(exps, exp_atom_clob(sql->sa, tname2));
 	}
-	append(exps, exp_atom_clob(sql->sa, pmin));
-	append(exps, exp_atom_clob(sql->sa, pmax));
+	append(exps, pmin);
+	append(exps, pmax);
 	append(exps, exp_atom_int(sql->sa, with_nills));
 	append(exps, exp_atom_int(sql->sa, update));
 	rel_psm->l = NULL;
@@ -187,13 +236,12 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 
 sql_rel *
 rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
-								   char *tname2, dlist* values, int update)
+								   char *tname2, dlist* values, int with_nills, int update)
 {
 	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
 	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	int with_nills = 0;
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
@@ -205,19 +253,17 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
 	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
 
-	for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
-		symbol* next = dn->data.sym;
-		if(next->token == SQL_NULL || next->token == SQL_COLUMN) {
-			with_nills = 1;
-		} else {
-			atom *a = ((AtomNode *) next)->a;
-			char *nvalue = atom2string(sql->sa, a);
-			sql_exp *nval = create_table_part_atom_exp(sql, a->tpe, VALget(&a->data));
-			if (subtype_cmp(&a->tpe, &tpe) != 0)
-				nval = exp_convert(sql->sa, nval, &a->tpe, &tpe);
+	if(values) {
+		for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
+			symbol* next = dn->data.sym;
+			sql_exp *pnext = generate_partition_limits(sql, &rel_psm, next, tpe);
+			if (subtype_cmp(&pnext->tpe, &tpe) != 0)
+				pnext = exp_convert(sql->sa, pnext, &pnext->tpe, &tpe);
 
-			append(lvals, exp_atom_clob(sql->sa, nvalue));
-			append(anti_exps, nval);
+			if(next->token == SQL_NULL)
+				return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a list value cannot be null");
+			append(lvals, pnext);
+			append(anti_exps, exp_copy(sql->sa, pnext));
 		}
 	}
 

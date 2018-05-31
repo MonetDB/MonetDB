@@ -150,48 +150,14 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 }
 
 static char *
-add_quotes(char *atom_str) /* always produce a string between quotes, placing them if they do not exist */
-{
-	size_t len;
-	int plus = 0, off = 0;
-	char *res;
-
-	if(!atom_str)
-		return atom_str;
-
-	len = strlen(atom_str);
-
-	if(atom_str[0] != '"')
-		plus++;
-	if(len == 0 || atom_str[len - 1] != '"')
-		plus++;
-	res = GDKmalloc(len + plus + 1);
-	if(res) {
-		if(atom_str[0] != '"') {
-			res[off] = '"';
-			off++;
-		}
-		strcpy(res + off, atom_str);
-		off += len;
-		if(len == 0 || atom_str[len - 1] != '"') {
-			res[off] = '"';
-			off++;
-		}
-		res[off] = '\0';
-	}
-	return res;
-}
-
-static char *
-alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, char *min, char *max,
+alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, ptr min, ptr max,
 								int with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
-	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, escaped_min = NULL, escaped_max = NULL;
-	int tp1 = 0, errcode = 0;
-	ptr pmin = NULL, pmax = NULL;
-	size_t smin = 0, smax = 0, serr_min = 0, serr_max = 0;
+	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, conflict_err_min = NULL, conflict_err_max = NULL;
+	int tp1 = 0, errcode = 0, min_null = 0, max_null = 0;
+	size_t length = 0;
 	ssize_t (*atomtostr)(str *, size_t *, const void *);
 	sql_subtype tpe;
 
@@ -211,59 +177,23 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 
 	find_partition_type(&tpe, mt);
 	tp1 = tpe.type->localtype;
-	if(ATOMcmp(TYPE_str, min, ATOMnilptr(TYPE_str))) {
-		if (tp1 == TYPE_str) {
-			if ((escaped_min = add_quotes(min)) == NULL) {
-				msg = createException(SQL, "sql.alter_table_add_range_partition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto finish;
-			}
-			if (ATOMfromstr(tp1, &pmin, &smin, escaped_min) < 0) {
-				msg = createException(SQL, "sql.alter_table_add_range_partition",
-									  SQLSTATE(42000) "ALTER TABLE: error while parsing minimum value");
-				goto finish;
-			}
-		} else if (ATOMfromstr(tp1, &pmin, &smin, min) < 0) {
-			msg = createException(SQL, "sql.alter_table_add_range_partition",
-								  SQLSTATE(42000) "ALTER TABLE: error while parsing minimum value");
-			goto finish;
-		}
-	} else {
-		//if the ranges are not set, the partition is for null values only
-		assert(with_nills && !ATOMcmp(TYPE_str, max, ATOMnilptr(TYPE_str)));
-	}
+	min_null = ATOMcmp(tp1, min, ATOMnilptr(tp1)) == 0;
+	max_null = ATOMcmp(tp1, max, ATOMnilptr(tp1)) == 0;
+	if(min_null || max_null)
+		with_nills = 1;
 
-	if(ATOMcmp(TYPE_str, max, ATOMnilptr(TYPE_str))) {
-		if (tp1 == TYPE_str) {
-			if((escaped_max = add_quotes(max)) == NULL) {
-				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto finish;
-			}
-			if(ATOMfromstr(tp1, &pmax, &smax, escaped_max) < 0) {
-				msg = createException(SQL,"sql.alter_table_add_range_partition",
-									  SQLSTATE(42000) "ALTER TABLE: error while parsing maximum value");
-				goto finish;
-			}
-		} else if(ATOMfromstr(tp1, &pmax, &smax, max) < 0) {
-			msg = createException(SQL,"sql.alter_table_add_range_partition",
-								  SQLSTATE(42000) "ALTER TABLE: error while parsing maximum value");
-			goto finish;
-		}
-	} else {
-		assert(with_nills && !ATOMcmp(TYPE_str, min, ATOMnilptr(TYPE_str)));
-	}
-
-	if(pmin && ATOMcmp(tp1, pmin, ATOMnilptr(tp1)) == 0) {
+	if(!max_null && min_null) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
 		goto finish;
-	} else if(pmax && ATOMcmp(tp1, pmax, ATOMnilptr(tp1)) == 0) {
+	} else if(!min_null && max_null) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: range bound cannot be null");
 		goto finish;
-	} else if(pmin && pmax && ATOMcmp(tp1, pmin, pmax) > 0) {
+	} else if(!with_nills && ATOMcmp(tp1, min, max) > 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
 	}
 
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, pmin, pmax, with_nills, update, &err);
+	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, min, max, with_nills, update, &err);
 	switch(errcode) {
 		case 0:
 			break;
@@ -286,17 +216,18 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 										"one partition can store null values at the time", err->t->s->base.name, err->t->base.name);
 			} else {
 				atomtostr = BATatoms[tp1].atomToStr;
-				if(atomtostr(&err_min, &serr_min, err->part.range.minvalue) < 0) {
+				if(atomtostr(&conflict_err_min, &length, err->part.range.minvalue) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				} else if(atomtostr(&err_max, &serr_max, err->part.range.maxvalue) < 0) {
-					GDKfree(err_min);
+				} else if(atomtostr(&conflict_err_max, &length, err->part.range.maxvalue) < 0) {
+					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				} else if(atomtostr(&err_min, &length, min) < 0) {
+					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				} else if(atomtostr(&err_max, &length, max) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				} else {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									  "ALTER TABLE: conflicting partitions: %s to %s and %s to %s from table %s.%s",
-									  min, max, err_min, err_max, err->t->s->base.name, err->t->base.name);
-					GDKfree(err_min);
-					GDKfree(err_max);
+									  err_min, err_max, conflict_err_min, conflict_err_max, err->t->s->base.name, err->t->base.name);
 				}
 			}
 			break;
@@ -305,14 +236,14 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 finish:
-	if(escaped_min)
-		GDKfree(escaped_min);
-	if(escaped_max)
-		GDKfree(escaped_max);
-	if(pmin)
-		GDKfree(pmin);
-	if(pmax)
-		GDKfree(pmax);
+	if(err_min)
+		GDKfree(err_min);
+	if(err_max)
+		GDKfree(err_max);
+	if(conflict_err_min)
+		GDKfree(conflict_err_min);
+	if(conflict_err_max)
+		GDKfree(conflict_err_max);
 	if(msg != MAL_SUCCEED)
 		pt->p = NULL;
 	return msg;
@@ -323,9 +254,9 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 								char *ptname, int with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
-	str msg = MAL_SUCCEED, escaped = NULL;
+	str msg = MAL_SUCCEED;
 	sql_part *err = NULL;
-	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
+	int errcode = 0, i = 0, ninserts = 0;
 	list *values = list_new(sql->sa, (fdestroy) NULL);
 	sql_subtype tpe;
 
@@ -344,43 +275,18 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 	find_partition_type(&tpe, mt);
-	tp1 = tpe.type->localtype;
 	ninserts = pci->argc - pci->retc - 6;
 	if(ninserts <= 0 && !with_nills) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
 	for( i = pci->retc+6; i < pci->argc; i++){
-		ptr pnext = NULL;
-		size_t len = 0;
-		str next = *getArgReference_str(stk, pci, i);
 		sql_part_value *nextv = NULL;
+		ValRecord *vnext = &(stk)->stk[(pci)->argv[i]];
+		ptr pnext = VALget(vnext);
+		size_t len = ATOMlen(vnext->vtype, pnext);
 
-		if(escaped) {
-			GDKfree(escaped);
-			escaped = NULL;
-		}
-
-		if(tp1 == TYPE_str && ATOMcmp(tp1, next, ATOMnilptr(tp1)) == 0) {
-			if ((escaped = add_quotes(next)) == NULL) { /* escape string atoms properly */
-				msg = createException(SQL, "sql.alter_table_add_value_partition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto finish;
-			}
-			if(ATOMfromstr(tp1, &pnext, &len, escaped) < 0) {
-				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-										"ALTER TABLE: error while parsing value %s", next);
-				goto finish;
-			}
-		} else {
-			if(ATOMfromstr(tp1, &pnext, &len, next) < 0) {
-				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-										"ALTER TABLE: error while parsing value %s", next);
-				goto finish;
-			}
-		}
-
-		if(ATOMcmp(tp1, pnext, ATOMnilptr(tp1)) == 0) { /* check for an eventual null value which cannot be */
-			GDKfree(pnext);
+		if(VALisnil(vnext)) { /* check for an eventual null value which cannot be */
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 																			"ALTER TABLE: list value cannot be null");
 			goto finish;
@@ -393,12 +299,10 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		nextv->length = len;
 
 		if(list_append_sorted(values, nextv, sql_values_list_element_validate_and_insert) != NULL) {
-			GDKfree(pnext);
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: there are duplicated values in the list");
 			goto finish;
 		}
-		GDKfree(pnext);
 	}
 
 	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tpe, values, with_nills, update, &err);
@@ -418,8 +322,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 finish:
-	if(escaped)
-		GDKfree(escaped);
 	if(msg != MAL_SUCCEED)
 		pt->p = NULL;
 	return msg;
@@ -1516,13 +1418,13 @@ SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *mtname = SaveArgReference(stk, pci, 2);
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
-	char *min = *getArgReference_str(stk, pci, 5);
-	char *max = *getArgReference_str(stk, pci, 6);
+	ValRecord *min = &(stk)->stk[(pci)->argv[5]];
+	ValRecord *max = &(stk)->stk[(pci)->argv[6]];
 	int with_nills = *getArgReference_int(stk, pci, 7);
 	int update = *getArgReference_int(stk, pci, 8);
 
 	initcontext();
-	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, min, max, with_nills, update);
+	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, VALget(min), VALget(max), with_nills, update);
 	return msg;
 }
 

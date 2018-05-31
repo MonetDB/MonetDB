@@ -1518,13 +1518,13 @@ partition_list_value:
  ;
 
 partition_range_from:
-   literal
- | MINVALUE { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
+   simple_scalar_exp { $$ = $1; }
+ | MINVALUE          { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
  ;
 
 partition_range_to:
-   literal
- | MAXVALUE { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
+   simple_scalar_exp { $$ = $1; }
+ | MAXVALUE          { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
  ;
 
 partition_list:
@@ -1538,8 +1538,11 @@ opt_with_nulls:
  ;
 
 opt_partition_spec:
-   sqlIN '(' partition_list ')'
-    { $$ = _symbol_create_list( SQL_PARTITION_LIST, append_list(L(), $3) ); }
+   sqlIN '(' partition_list ')' opt_with_nulls
+    { dlist *l = L();
+      append_list(l, $3);
+      append_int(l, $5);
+      $$ = _symbol_create_list( SQL_PARTITION_LIST, l ); }
  | BETWEEN partition_range_from AND partition_range_to opt_with_nulls
     { dlist *l = L();
       append_symbol(l, $2);
@@ -1551,7 +1554,7 @@ opt_partition_spec:
       append_symbol(l, NULL);
       append_symbol(l, NULL);
       append_int(l, TRUE);
-      $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
+      $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
  ;
 
 opt_as_partition:
