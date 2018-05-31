@@ -1033,6 +1033,9 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu May 31 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.7-20180531
+- Rebuilt.
+
 * Fri May 25 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.5-20180525
 - Rebuilt.
 - BZ#6562: Sqlitelogictest crash on group by query with not in operator
