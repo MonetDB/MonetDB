@@ -19,7 +19,7 @@ CREATE TABLE subtable2 (a int, b int, dd real);
 
 INSERT INTO subtable1 VALUES (4, 2, 1.2);
 
-ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN ('ups', 'me'); --error
+ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN ('ups'); --error
 
 ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN (1, 2, 10);
 ALTER TABLE nexttest ADD TABLE subtable2 AS PARTITION IN (11, 12, 20);

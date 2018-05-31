@@ -47,7 +47,7 @@ ALTER TABLE testme DROP TABLE subtable1;\
 ALTER TABLE testme DROP TABLE subtable2;\
 ALTER TABLE anothertest DROP TABLE subtable3;\
 ALTER TABLE anothertest DROP TABLE subtable4;\
-SELECT "minimum", "maximum" FROM range_partitions;
+SELECT "minimum", "maximum" FROM range_partitions;\
 DROP TABLE testme;\
 DROP TABLE subtable1;\
 DROP TABLE subtable2;\
