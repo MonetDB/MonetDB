@@ -22,8 +22,8 @@ stderr of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
 # cmdline opt 	gdk_debug = 553648138
-MAPI  = (monetdb) /var/tmp/mtest-20394/.s.monetdb.38240
-QUERY = ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION BETWEEN 11 AND 20;
+MAPI  = (monetdb) /var/tmp/mtest-24606/.s.monetdb.34023
+QUERY = SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
 ERROR = !ALTER TABLE: table sys.subtable1 is already part of another range partition table
 CODE  = 42000
 # builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo

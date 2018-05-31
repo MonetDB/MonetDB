@@ -1513,8 +1513,7 @@ opt_partition_by:
  ;
 
 partition_list_value:
-   literal
- | null
+   simple_scalar_exp { $$ = $1; }
  ;
 
 partition_range_from:

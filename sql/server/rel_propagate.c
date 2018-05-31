@@ -179,11 +179,11 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 			return NULL;
 
 		e1 = exp_copy(sql->sa, pmin);
-		if (subtype_cmp(&e1->tpe, &tpe) != 0)
+		if (subtype_cmp(exp_subtype(e1), &tpe) != 0)
 			e1 = exp_convert(sql->sa, e1, &e1->tpe, &tpe);
 
 		e2 = exp_copy(sql->sa, pmax);
-		if (subtype_cmp(&e2->tpe, &tpe) != 0)
+		if (subtype_cmp(exp_subtype(e2), &tpe) != 0)
 			e2 = exp_convert(sql->sa, e2, &e2->tpe, &tpe);
 
 		anti_exp = exp_compare2(sql->sa, anti_le, e1, e2, 3);
@@ -257,8 +257,8 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 		for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
 			symbol* next = dn->data.sym;
 			sql_exp *pnext = generate_partition_limits(sql, &rel_psm, next, tpe);
-			if (subtype_cmp(&pnext->tpe, &tpe) != 0)
-				pnext = exp_convert(sql->sa, pnext, &pnext->tpe, &tpe);
+			if (subtype_cmp(exp_subtype(pnext), &tpe) != 0)
+				pnext = exp_convert(sql->sa, pnext, exp_subtype(pnext), &tpe);
 
 			if(next->token == SQL_NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a list value cannot be null");

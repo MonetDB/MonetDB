@@ -225,9 +225,10 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 				} else if(atomtostr(&err_max, &length, max) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				} else {
+					sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									  "ALTER TABLE: conflicting partitions: %s to %s and %s to %s from table %s.%s",
-									  err_min, err_max, conflict_err_min, conflict_err_max, err->t->s->base.name, err->t->base.name);
+									  err_min, err_max, conflict_err_min, conflict_err_max, errt->s->base.name, errt->base.name);
 				}
 			}
 			break;

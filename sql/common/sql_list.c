@@ -179,7 +179,7 @@ list_append_with_validate(list *l, void *data, fvalidate cmp)
 void*
 list_append_sorted(list *l, void *data, fcmpvalidate cmp)
 {
-	node *n = node_create(l->sa, data), *m;
+	node *n = node_create(l->sa, data), *m, *prev = NULL;
 	int first = 1, comp = 0;
 	void* err = NULL;
 
@@ -196,6 +196,7 @@ list_append_sorted(list *l, void *data, fcmpvalidate cmp)
 			if(comp < 0)
 				break;
 			first = 0;
+			prev = m;
 		}
 		if(first) {
 			n->next = l->h;
@@ -203,8 +204,11 @@ list_append_sorted(list *l, void *data, fcmpvalidate cmp)
 		} else if(!m) {
 			l->t->next = n;
 			l->t = n;
-		} else
-			m->next = n;
+		} else {
+			assert(prev);
+			n->next = m;
+			prev->next = n;
+		}
 	}
 	l->cnt++;
 	MT_lock_set(&l->ht_lock);
