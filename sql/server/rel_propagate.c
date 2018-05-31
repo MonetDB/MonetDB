@@ -649,7 +649,6 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sel = rel_generate_subupdates(sql, rel, t, changes);
 		sel = rel_exception(sql->sa, sel, NULL, NULL);
 		sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
-		return sel;
 	} else { //harder scenario, has to insert and delete across partitions.
 		/*sql_exp *exception = NULL;
 		sql_rel *inserts = NULL, *deletes = NULL, *anti_rel = NULL;
@@ -661,6 +660,7 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		return rel_list(sql->sa, deletes, inserts);*/
 		assert(0);
 	}
+	return sel;
 }
 
 static sql_rel*

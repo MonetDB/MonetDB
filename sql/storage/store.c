@@ -1509,11 +1509,9 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 	}
 
 	if(isRangePartitionTable(ot)) {
-		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
-		assert(!err);
+		(void) cs_add_with_validate(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
 	} else if(isListPartitionTable(ot)) {
-		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_values_part_validate_and_insert);
-		assert(!err);
+		(void) cs_add_with_validate(&mt->members, pt, TR_NEW, sql_values_part_validate_and_insert);
 	} else {
 		cs_add(&mt->members, pt, TR_NEW);
 	}
@@ -4885,21 +4883,17 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	if (is_oid_nil(obj_oid))
 		return NULL;
 
-	if(isRangePartitionTable(mt) || isListPartitionTable(mt)) {
-		sql_part *ppt = n->data;
-		assert(ppt);
-		if(isRangePartitionTable(mt)) {
-			sql_table *ranges = find_sql_table(syss, "_range_partitions");
-			rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "id"), &pt->base.id, NULL);
-			table_funcs.table_delete(tr, ranges, rid);
-		} else if(isListPartitionTable(mt)) {
-			sql_table *values = find_sql_table(syss, "_value_partitions");
-			rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "id"), &pt->base.id, &pt->base.id, NULL);
-			for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
-				table_funcs.table_delete(tr, values, rid);
-			}
-			table_funcs.rids_destroy(rs);
+	if(isRangePartitionTable(mt)) {
+		sql_table *ranges = find_sql_table(syss, "_range_partitions");
+		rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "id"), &pt->base.id, NULL);
+		table_funcs.table_delete(tr, ranges, rid);
+	} else if(isListPartitionTable(mt)) {
+		sql_table *values = find_sql_table(syss, "_value_partitions");
+		rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "id"), &pt->base.id, &pt->base.id, NULL);
+		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+			table_funcs.table_delete(tr, values, rid);
 		}
+		table_funcs.rids_destroy(rs);
 	}
 
 	/* merge table depends on part table */

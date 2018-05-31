@@ -1458,8 +1458,8 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 
 		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
 			dlist *nqname = te->data.lval->h->data.lval;
-			sql_schema *spt;
-			sql_table *pt;
+			sql_schema *spt = NULL;
+			sql_table *pt = NULL;
 			char *nsname = qname_schema(nqname);
 			char *ntname = qname_table(nqname);
 
