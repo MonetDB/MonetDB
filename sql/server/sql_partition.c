@@ -328,10 +328,8 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 			sql_part *err = NULL;
 
 			pt->p = mt;
-			if(isRangePartitionTable(mt)) {
+			if(isRangePartitionTable(mt) || isListPartitionTable(mt)) {
 				err = cs_add_with_validate(&mt->members, next, TR_NEW, sql_range_part_validate_and_insert);
-			} else if(isListPartitionTable(mt)) {
-				err = cs_add_with_validate(&mt->members, next, TR_NEW, sql_values_part_validate_and_insert);
 			} else {
 				assert(0);
 			}

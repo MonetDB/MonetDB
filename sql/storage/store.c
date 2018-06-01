@@ -1508,13 +1508,7 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 		}
 	}
 
-	if(isRangePartitionTable(ot)) {
-		(void) cs_add_with_validate(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
-	} else if(isListPartitionTable(ot)) {
-		(void) cs_add_with_validate(&mt->members, pt, TR_NEW, sql_values_part_validate_and_insert);
-	} else {
-		cs_add(&mt->members, pt, TR_NEW);
-	}
+	cs_add(&mt->members, pt, TR_NEW);
 
 	return pt;
 }
