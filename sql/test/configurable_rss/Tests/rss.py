@@ -21,7 +21,7 @@ create function getrss()
 returns bigint external name status.rss_cursize;
 
 create function printf(message string)
-returns bigint external name io.printf(message);
+returns void external name io.printf;
 
 create table test(a int, b int, c double);
 
