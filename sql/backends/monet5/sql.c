@@ -3591,7 +3591,7 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *table = getArgReference_str(stk, pci, 3);
 	str uris;
 	str unames;
-	str hashs;
+	str hashs = NULL;
 	str msg = MAL_SUCCEED;
 	(void)mb;
 	(void)cntxt;
@@ -3620,12 +3620,14 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*uname = unameb->batCacheid);
 	BBPkeepref(*hash = hashb->batCacheid);
 
+	if (hashs) GDKfree(hashs);
 	return MAL_SUCCEED;
 
   lbailout:
 	MT_lock_unset(&mal_contextLock);
 	msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
   bailout:
+	if (hashs) GDKfree(hashs);
 	if (urib) BBPunfix(urib->batCacheid);
 	if (unameb) BBPunfix(unameb->batCacheid);
 	if (hashb) BBPunfix(hashb->batCacheid);
