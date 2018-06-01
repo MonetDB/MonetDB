@@ -4692,7 +4692,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if(min) {
 		ok = VALinit(&vmin, localtype, min);
-		if(ok)
+		if(ok && localtype != TYPE_str)
 			ok = VALconvert(TYPE_str, &vmin);
 	} else {
 		ok = VALinit(&vmin, TYPE_str, ATOMnilptr(TYPE_str));
@@ -4710,7 +4710,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if(max) {
 		ok = VALinit(&vmax, localtype, max);
-		if(ok)
+		if(ok && localtype != TYPE_str)
 			ok = VALconvert(TYPE_str, &vmax);
 	} else {
 		ok = VALinit(&vmax, TYPE_str, ATOMnilptr(TYPE_str));
@@ -4844,7 +4844,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 			return -i - 1;
 		}
 		ok = VALinit(&vvalue, localtype, next->value);
-		if(ok)
+		if(ok && localtype != TYPE_str)
 			ok = VALconvert(TYPE_str, &vvalue);
 		if(!ok) {
 			_DELETE(v);

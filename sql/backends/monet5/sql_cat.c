@@ -258,7 +258,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	str msg = MAL_SUCCEED;
 	sql_part *err = NULL;
 	int errcode = 0, i = 0, ninserts = 0;
-	list *values = list_new(sql->sa, (fdestroy) NULL);
+	list *values = list_new(sql->session->tr->sa, (fdestroy) NULL);
 	sql_subtype tpe;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt, update))) {

@@ -531,8 +531,8 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table(t->s, pt->base.name);
-		sql_rel *s1, *dup;
-		sql_exp *le;
+		sql_rel *s1 = NULL, *dup = NULL;
+		sql_exp *le = NULL;
 
 		if(isPartitionedByColumnTable(t)) {
 			dup = rel_dup(rel->r);

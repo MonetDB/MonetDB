@@ -243,23 +243,23 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 	localtype = found.type->localtype;
 
 	if(localtype != TYPE_str && mt->members.set && list_length(mt->members.set)) {
-		list *new = sa_list(sql->sa), *old = sa_list(sql->sa);
+		list *new = sa_list(sql->session->tr->sa), *old = sa_list(sql->session->tr->sa);
 
 		for (node *n = mt->members.set->h; n; n = n->next) {
-			sql_part* next = (sql_part*) n->data, *p = SA_ZNEW(sql->sa, sql_part);
+			sql_part* next = (sql_part*) n->data, *p = SA_ZNEW(sql->session->tr->sa, sql_part);
 			sql_table* pt = find_sql_table(mt->s, next->base.name);
 
-			base_init(sql->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+			base_init(sql->session->tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 			p->t = pt;
 			p->tpe = found;
 			p->with_nills = next->with_nills;
 
 			if(isListPartitionTable(mt)) {
 				p->part_type = PARTITION_LIST;
-				p->part.values = sa_list(sql->sa);
+				p->part.values = sa_list(sql->session->tr->sa);
 
 				for (node *m = next->part.values->h; m; m = m->next) {
-					sql_part_value *v = (sql_part_value*) m->data, *nv = SA_ZNEW(sql->sa, sql_part_value);
+					sql_part_value *v = (sql_part_value*) m->data, *nv = SA_ZNEW(sql->session->tr->sa, sql_part_value);
 					ValRecord vvalue;
 					ptr ok;
 
@@ -269,7 +269,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 					if(ok)
 						ok = VALconvert(localtype, &vvalue);
 					if(ok) {
-						nv->value = sa_alloc(sql->sa, vvalue.len);
+						nv->value = sa_alloc(sql->session->tr->sa, vvalue.len);
 						memcpy(nv->value, VALget(&vvalue), vvalue.len);
 						nv->length = vvalue.len;
 					}
@@ -296,8 +296,8 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				if(ok)
 					ok = VALconvert(localtype, &vmax);
 				if(ok) {
-					p->part.range.minvalue = sa_alloc(sql->sa, vmin.len);
-					p->part.range.maxvalue = sa_alloc(sql->sa, vmax.len);
+					p->part.range.minvalue = sa_alloc(sql->session->tr->sa, vmin.len);
+					p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, vmax.len);
 					memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
 					memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
 					p->part.range.minlength = vmin.len;
