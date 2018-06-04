@@ -1,0 +1,67 @@
+stderr of test 'mergepart16` in directory 'sql/test/merge-partitions` itself:
+
+
+# 16:36:19 >  
+# 16:36:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30967" "--set" "mapi_usock=/var/tmp/mtest-20495/.s.monetdb.30967" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 16:36:19 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30967
+# cmdline opt 	mapi_usock = /var/tmp/mtest-20495/.s.monetdb.30967
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 16:36:19 >  
+# 16:36:19 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20495" "--port=30967"
+# 16:36:19 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
+QUERY = INSERT INTO testnestedpartitions VALUES (1, 'ups'); --error
+ERROR = !INSERT INTO: list partitioned table 'testnestedpartitions' has no partitions set
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
+QUERY = ALTER TABLE testnestedpartitions ADD TABLE subnested1 AS PARTITION IN ('1', '2', '3'); --error
+ERROR = !The RANGE PARTITION TABLE table sys.subnested1 should have at least one table associated
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
+QUERY = INSERT INTO subnested1 VALUES (-1, 'ups'); --error
+ERROR = !INSERT: table sys.subnested1 is part of merge table sys.testnestedpartitions and the insert violates the partition list of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
+QUERY = INSERT INTO testnestedpartitions VALUES (3, 'ups'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
+QUERY = ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4', '5'); --error
+ERROR = !The RANGE PARTITION TABLE table sys.subnested2 should have at least one table associated
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
+QUERY = ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4', '5'); --error
+ERROR = !ALTER TABLE: the new partition is conflicting with the existing partition sys.subnested1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
+QUERY = INSERT INTO testnestedpartitions VALUES (4, 'not'), (2, 'going'), (5, 'through'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
+QUERY = ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION BETWEEN '1' AND '200'; --error
+ERROR = !ALTER TABLE: conflicting partitions: 1 to 200 and 0 to 100 from table sys.subt1
+CODE  = 42000
+
+# 16:36:19 >  
+# 16:36:19 >  "Done."
+# 16:36:19 >  
+

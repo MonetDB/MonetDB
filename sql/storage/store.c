@@ -629,6 +629,7 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 		memset(&vvalue, 0, sizeof(ValRecord));
 		void *v = table_funcs.column_find_value(tr, find_sql_column(values, "value"), rid);
 		ok = VALinit(&vvalue, TYPE_str, v);
+		_DELETE(v);
 
 		if(ok) {
 			if(VALisnil(&vvalue)) { /* check for null value */

@@ -1077,9 +1077,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		if ((tt == tt_merge_table || tt == tt_list_partition_col || tt == tt_range_partition_col ||
 			 tt == tt_list_partition_exp || tt == tt_range_partition_exp || tt == tt_remote || tt == tt_replica_table) && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s table 'with data'",
-				tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":
-				(tt == tt_list_partition_col || tt == tt_list_partition_exp)?"LIST PARTITION TABLE":
-				(tt == tt_range_partition_col || tt == tt_range_partition_exp)?"RANGE PARTITION TABLE":"REPLICA TABLE");
+							 TABLE_TYPE_DESCRIPTION(tt));
 
 		/* create table */
 		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
@@ -1477,7 +1475,12 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 			if (te->token == SQL_TABLE) {
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
-				if(extra->token == SQL_MERGE_PARTITION) {
+
+				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
+					return sql_error(sql, 02, SQLSTATE(42000) "The %s table %s.%s should have at least one table associated",
+									 TABLE_TYPE_DESCRIPTION(pt->type), spt->base.name, pt->base.name);
+
+				if(extra->token == SQL_MERGE_PARTITION) { //partition to hold null values only
 					dlist* ll = extra->data.lval;
 					int update = ll->h->next->next->next->data.i_val;
 

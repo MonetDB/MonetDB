@@ -79,6 +79,23 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 {
 	sql_exp* res = NULL;
 
+	if((*anti_rel)->op != op_project) { //needed for nested partitions
+		sql_rel *inserts;
+		list *l = new_exp_list(sql->sa);
+		*anti_rel = rel_project(sql->sa, *anti_rel, l);
+
+		inserts = ((sql_rel*)((*anti_rel)->l))->l;
+		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
+			sql_column *col = n->data;
+			sql_exp *before = m->data;
+			sql_exp *help = exp_column(sql->sa, t->base.name, col->base.name, exp_subtype(before), before->card,
+									   has_nil(before), is_intern(before));
+			help->l = sa_strdup(sql->sa, exp_relname(before));
+			help->r = sa_strdup(sql->sa, exp_name(before));
+			list_append(l, help);
+		}
+	}
+
 	if(isPartitionedByColumnTable(t)) {
 		int colr = t->part.pcol->colnr;
 		res = list_fetch((*anti_rel)->exps, colr);
@@ -231,6 +248,7 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
+	sql->caching = 0;
 	return rel_exception(sql->sa, rel_psm, anti_rel, list_append(new_exp_list(sql->sa), exception));
 }
 
@@ -309,6 +327,7 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
+	sql->caching = 0;
 	return rel_exception(sql->sa, rel_psm, anti_rel, list_append(new_exp_list(sql->sa), exception));
 }
 
@@ -590,8 +609,7 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 		}
 
 		new_table = rel_basetable(sql, sub, sub->base.name);
-		if(list_length(sub->members.set) == 0) //if this table has no partitions, set it as used
-			new_table->p = prop_create(sql->sa, PROP_USED, new_table->p);
+		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); //don't create infinite loops in the optimizer
 
 		if(isPartitionedByExpressionTable(t)) {
 			sql_exp *del;
@@ -771,32 +789,48 @@ rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 }
 
 sql_rel *
-rel_propagate(mvc *sql, sql_rel *rel, int *changes) //TODO sql->caching = 0;
+rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 {
-	sql_rel *l = rel->l;
+	bool isSubtable = false;
+	sql_rel *l = rel->l, *propagate = rel;
 
 	if(l->op == op_basetable) {
 		sql_table *t = l->l;
 
-		if((isRangePartitionTable(t) || isListPartitionTable(t)) && !find_prop(l->p, PROP_USED)) {
-			assert(list_length(t->members.set) > 0);
-			if(is_delete(rel->op) || is_truncate(rel->op)) { //propagate deletions to the partitions
-				return rel_propagate_delete(sql, rel, t, changes);
-			} else if(is_insert(rel->op)) { //on inserts create a selection for each partition
-				return rel_propagate_insert(sql, rel, t, changes);
-			} else if(is_update(rel->op)) { //for updates create both a insertion and deletion for each partition
-				return rel_propagate_update(sql, rel, t, changes);
-			} else {
-				assert(0);
-			}
-		} else if(t->p) {
+		if(t->p) {
 			sql_part *pt = find_sql_part(t->p, t->base.name);
 			if(!pt) {
 				t->p = NULL;
 			} else if((isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
+				isSubtable = true;
 				if(is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
-					return rel_subtable_insert(sql, rel, t, changes);
+					sql->caching = 0;
+					rel = rel_subtable_insert(sql, rel, t, changes);
+					propagate = rel->l;
 				}
+			}
+		}
+		if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+			assert(list_length(t->members.set) > 0);
+			if(is_delete(propagate->op) || is_truncate(propagate->op)) { //propagate deletions to the partitions
+				sql->caching = 0;
+				rel = rel_propagate_delete(sql, rel, t, changes);
+			} else if(is_insert(propagate->op)) { //on inserts create a selection for each partition
+				sql->caching = 0;
+				if(isSubtable) {
+					rel->l = rel_propagate_insert(sql, propagate, t, changes);
+				} else {
+					rel = rel_propagate_insert(sql, rel, t, changes);
+				}
+			} else if(is_update(propagate->op)) { //for updates propagate like in deletions
+				sql->caching = 0;
+				if(isSubtable) {
+					rel->l = rel_propagate_update(sql, propagate, t, changes);
+				} else {
+					rel = rel_propagate_update(sql, rel, t, changes);
+				}
+			} else {
+				assert(0);
 			}
 		}
 	}

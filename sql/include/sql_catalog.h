@@ -500,6 +500,12 @@ typedef enum table_types {
 	tt_range_partition_exp = 10 /* partitioned by a range of values on an expression */
 } table_types;
 
+#define TABLE_TYPE_DESCRIPTION(tt)                                                                     \
+(tt == tt_table)?"TABLE":(tt == tt_view)?"VIEW":(tt == tt_merge_table)?"MERGE TABLE":                  \
+(tt == tt_stream)?"STREAM TABLE":(tt == tt_remote)?"REMOTE TABLE":                                     \
+(tt == tt_list_partition_col || tt == tt_list_partition_exp)?"LIST PARTITION TABLE":                   \
+(tt == tt_range_partition_col || tt == tt_range_partition_exp)?"RANGE PARTITION TABLE":"REPLICA TABLE"
+
 #define isTable(x) 	  (x->type==tt_table)
 #define isView(x)  	  (x->type==tt_view)
 #define isNonPartitionedTable(x) (x->type==tt_merge_table)
