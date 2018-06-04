@@ -590,17 +590,14 @@ TKNZRgetIndex(bat *r)
 str
 TKNZRgetLevel(bat *r, int *level)
 {
-	BAT* view;
 	if (TRANS == NULL)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	if (*level < 0 || *level >= tokenDepth)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
-	view = VIEWcreate(tokenBAT[*level].val->hseqbase, tokenBAT[*level].val);
-	if (view == NULL)
-		throw(MAL, "tokenizer.getLevel", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	*r = view->batCacheid;
 
-	BBPkeepref(*r);
+	*r = tokenBAT[*level].val->batCacheid;
+
+	BBPretain(*r);
 	return MAL_SUCCEED;
 }
 
