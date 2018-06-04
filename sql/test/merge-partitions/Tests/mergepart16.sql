@@ -23,7 +23,7 @@ SELECT a, b FROM subnested1;
 SELECT a, b FROM subt1;
 
 ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4', '5'); --error
-ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('4', '5', '6', NULL);
+ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('4', '5', '6') WITH NULL;
 
 ALTER TABLE subnested2 ADD TABLE subt2 AS PARTITION BETWEEN '1' AND '99';
 
