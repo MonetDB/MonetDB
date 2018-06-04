@@ -1225,7 +1225,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (g && BATtdense(g)) {
 		/* singleton groups: return group ID's (g's tail) and original
 		 * values from b */
-		bn = VIEWcreate(g->tseqbase, b);
+		bn = BATslice(b, g->tseqbase, BATcount(g));
 		goto out;
 	}
 
