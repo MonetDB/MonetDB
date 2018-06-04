@@ -1045,52 +1045,6 @@ gdk_export bte ATOMelmshift(int sz);
 			ATOMputFIX((b)->ttype, (p), v);			\
 		}							\
 	} while (false)
-#define Treplacevalue(b, p, v)						\
-	do {								\
-		if ((b)->tvarsized && (b)->ttype) {			\
-			var_t _d;					\
-			ptr _ptr;					\
-			_ptr = (p);					\
-			switch ((b)->twidth) {				\
-			case 1:						\
-				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET; \
-				break;					\
-			case 2:						\
-				_d = (var_t) * (uint16_t *) _ptr + GDK_VAROFFSET; \
-				break;					\
-			case 4:						\
-				_d = (var_t) * (uint32_t *) _ptr;	\
-				break;					\
-			case 8:						\
-				_d = * (var_t *) _ptr;			\
-				break;					\
-			}						\
-			ATOMreplaceVAR((b)->ttype, (b)->tvheap, &_d, v); \
-			if ((b)->twidth < SIZEOF_VAR_T &&		\
-			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
-				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b), _d, false, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
-					goto bunins_failed;		\
-			}						\
-			_ptr = (p);					\
-			switch ((b)->twidth) {				\
-			case 1:						\
-				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 2:						\
-				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 4:						\
-				* (uint32_t *) _ptr = (uint32_t) _d;	\
-				break;					\
-			case 8:						\
-				* (var_t *) _ptr = _d;			\
-				break;					\
-			}						\
-		} else {						\
-			ATOMreplaceFIX((b)->ttype, (p), v);		\
-		}							\
-	} while (false)
 #else
 #define Tputvalue(b, p, v, copyall)					\
 	do {								\
@@ -1120,46 +1074,6 @@ gdk_export bte ATOMelmshift(int sz);
 			ATOMputFIX((b)->ttype, (p), v);			\
 		}							\
 	} while (false)
-#define Treplacevalue(b, p, v)						\
-	do {								\
-		if ((b)->tvarsized && (b)->ttype) {			\
-			var_t _d;					\
-			ptr _ptr;					\
-			_ptr = (p);					\
-			switch ((b)->twidth) {				\
-			case 1:						\
-				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET; \
-				break;					\
-			case 2:						\
-				_d = (var_t) * (uint16_t *) _ptr + GDK_VAROFFSET; \
-				break;					\
-			case 4:						\
-				_d = * (var_t *) _ptr;			\
-				break;					\
-			}						\
-			ATOMreplaceVAR((b)->ttype, (b)->tvheap, &_d, v); \
-			if ((b)->twidth < SIZEOF_VAR_T &&		\
-			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
-				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b), _d, false, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
-					goto bunins_failed;		\
-			}						\
-			_ptr = (p);					\
-			switch ((b)->twidth) {				\
-			case 1:						\
-				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 2:						\
-				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 4:						\
-				* (var_t *) _ptr = _d;			\
-				break;					\
-			}						\
-		} else {						\
-			ATOMreplaceFIX((b)->ttype, (p), v);		\
-		}							\
-	} while (false)
 #endif
 #define tfastins_nocheck(b, p, v, s)			\
 	do {						\
@@ -1168,30 +1082,85 @@ gdk_export bte ATOMelmshift(int sz);
 		Tputvalue((b), Tloc((b), (p)), (v), 0);	\
 	} while (false)
 
-#define bunfastapp_nocheck(b, p, t, ts)		\
+#define bunfastapp_nocheck(b, p, v, ts)		\
 	do {					\
-		tfastins_nocheck(b, p, t, ts);	\
+		tfastins_nocheck(b, p, v, ts);	\
 		(b)->batCount++;		\
 	} while (false)
 
-#define bunfastapp_nocheck_inc(b, p, t)			\
-	do {						\
-		bunfastapp_nocheck(b, p, t, Tsize(b));	\
-		p++;					\
-	} while (false)
-
-#define bunfastapp(b, t)						\
+#define bunfastapp(b, v)						\
 	do {								\
-		BUN _p = BUNlast(b);					\
-		if (_p >= BATcapacity(b)) {				\
-			if (_p == BUN_MAX || BATcount(b) == BUN_MAX) {	\
+		if (BATcount(b) >= BATcapacity(b)) {				\
+			if (BATcount(b) == BUN_MAX) {			\
 				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
 				goto bunins_failed;			\
 			}						\
 			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
 				goto bunins_failed;			\
 		}							\
-		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
+		bunfastapp_nocheck(b, (b)->batCount, v, Tsize(b));	\
+	} while (false)
+
+#define bunfastappTYPE(TYPE, b, v)					\
+	do {								\
+		if (BATcount(b) >= BATcapacity(b)) {			\
+			if (BATcount(b) == BUN_MAX) {	\
+				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
+				goto bunins_failed;			\
+			}						\
+			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
+				goto bunins_failed;			\
+		}							\
+		(b)->theap.dirty = true;				\
+		(b)->theap.free += sizeof(TYPE);			\
+		((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v); \
+	} while (false)
+
+#define tfastins_nocheckVAR(b, p, v, s)					\
+	do {								\
+		var_t _d;						\
+		(b)->theap.free += (s);					\
+		(b)->theap.dirty = true;				\
+		ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);		\
+		if ((b)->twidth < SIZEOF_VAR_T &&			\
+		    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
+			/* doesn't fit in current heap, upgrade it */	\
+			if (GDKupgradevarheap((b), _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				goto bunins_failed;			\
+		}							\
+		switch ((b)->twidth) {					\
+		case 1:							\
+			((uint8_t *) (b)->theap.base)[p] = (uint8_t) (_d - GDK_VAROFFSET); \
+			break;						\
+		case 2:							\
+			((uint16_t *) (b)->theap.base)[p] = (uint16_t) (_d - GDK_VAROFFSET); \
+			break;						\
+		case 4:							\
+			((uint32_t *) (b)->theap.base)[p] = (uint32_t) _d; \
+			break;						\
+		case 8:		/* superfluous on 32-bit archs */	\
+			((uint64_t *) (b)->theap.base)[p] = (uint64_t) _d; \
+			break;						\
+		}							\
+	} while (false)
+
+#define bunfastapp_nocheckVAR(b, p, v, ts)		\
+	do {						\
+		tfastins_nocheckVAR(b, p, v, ts);	\
+		(b)->batCount++;			\
+	} while (false)
+
+#define bunfastappVAR(b, v)						\
+	do {								\
+		if ((b)->batCount >= BATcapacity(b)) {			\
+			if ((b)->batCount == BUN_MAX || BATcount(b) == BUN_MAX) { \
+				GDKerror("bunfastapp: too many elements to accomodate (" BUNFMT ")\n", BUN_MAX); \
+				goto bunins_failed;			\
+			}						\
+			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
+				goto bunins_failed;			\
+		}							\
+		bunfastapp_nocheckVAR(b, (b)->batCount, v, Tsize(b));	\
 	} while (false)
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, bool mayshare)

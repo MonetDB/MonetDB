@@ -3397,12 +3397,12 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	if (s == NULL)
 		goto bunins_failed;
 	for (i = 0; i < start; i++)
-		tfastins_nocheck(bn, i, str_nil, Tsize(bn));
+		tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn));
 	for (i = start; i < end; i++) {
 		if (cand) {
 			if (i < *cand - candoff) {
 				nils++;
-				tfastins_nocheck(bn, i, str_nil, Tsize(bn));
+				tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn));
 				continue;
 			}
 			assert(i == *cand - candoff);
@@ -3415,7 +3415,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 			r = BUNtvar(b2i, i);
 		if (strcmp(l, str_nil) == 0 || strcmp(r, str_nil) == 0) {
 			nils++;
-			tfastins_nocheck(bn, i, str_nil, Tsize(bn));
+			tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn));
 		} else {
 			llen = strlen(l);
 			rlen = strlen(r);
@@ -3432,11 +3432,11 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 #else
 			(void) strcpy(strcpy(s, l) + llen, r);
 #endif
-			tfastins_nocheck(bn, i, s, Tsize(bn));
+			tfastins_nocheckVAR(bn, i, s, Tsize(bn));
 		}
 	}
 	for (i = end; i < cnt; i++)
-		tfastins_nocheck(bn, i, str_nil, Tsize(bn));
+		tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn));
 	GDKfree(s);
 	return nils;
 
@@ -13158,7 +13158,7 @@ BATcalcifthenelse_intern(BAT *b,
 				else
 					p = col2;
 			}
-			tfastins_nocheck(bn, i, p, Tsize(bn));
+			tfastins_nocheckVAR(bn, i, p, Tsize(bn));
 			k += incr1;
 			l += incr2;
 		}
@@ -13614,7 +13614,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 
 	for (i = 0; i < start; i++)
-		tfastins_nocheck(bn, i, str_nil, bn->twidth);
+		tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 	if (atomtostr == BATatoms[TYPE_str].atomToStr) {
 		/* compatible with str, we just copy the value */
 		BATiter bi = bat_iterator(b);
@@ -13624,7 +13624,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 			if (cand) {
 				if (i < *cand - candoff) {
 					nils++;
-					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 					continue;
 				}
 				assert(i == *cand - candoff);
@@ -13634,7 +13634,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 			src = BUNtvar(bi, i);
 			if ((*atomcmp)(src, str_nil) == 0)
 				nils++;
-			tfastins_nocheck(bn, i, src, bn->twidth);
+			tfastins_nocheckVAR(bn, i, src, bn->twidth);
 		}
 	} else if (b->tvarsized) {
 		BATiter bi = bat_iterator(b);
@@ -13644,7 +13644,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 			if (cand) {
 				if (i < *cand - candoff) {
 					nils++;
-					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 					continue;
 				}
 				assert(i == *cand - candoff);
@@ -13656,7 +13656,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 				goto bunins_failed;
 			if ((*atomcmp)(src, nil) == 0)
 				nils++;
-			tfastins_nocheck(bn, i, dst, bn->twidth);
+			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
 		}
 	} else {
 		size_t size = ATOMsize(tp);
@@ -13666,7 +13666,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 			if (cand) {
 				if (i < *cand - candoff) {
 					nils++;
-					tfastins_nocheck(bn, i, str_nil, bn->twidth);
+					tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 					continue;
 				}
 				assert(i == *cand - candoff);
@@ -13677,12 +13677,12 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 				goto bunins_failed;
 			if ((*atomcmp)(src, nil) == 0)
 				nils++;
-			tfastins_nocheck(bn, i, dst, bn->twidth);
+			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
 			src = (const void *) ((const char *) src + size);
 		}
 	}
 	for (i = end; i < cnt; i++)
-		tfastins_nocheck(bn, i, str_nil, bn->twidth);
+		tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 	BATsetcount(bn, cnt);
 	GDKfree(dst);
 	return nils;
@@ -13851,12 +13851,12 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			break;
 		case TYPE_str:
 			for (i = 0; i < start; i++)
-				tfastins_nocheck(bn, i, str_nil, bn->twidth);
+				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 			for (i = 0; i < end; i++) {
 				if (cand) {
 					if (i < *cand - candoff) {
 						nils++;
-						tfastins_nocheck(bn, i, str_nil,
+						tfastins_nocheckVAR(bn, i, str_nil,
 								 bn->twidth);
 						continue;
 					}
@@ -13866,7 +13866,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 				}
 				if ((*atomtostr)(&s, &len, &seq) < 0)
 					goto bunins_failed;
-				tfastins_nocheck(bn, i, s, bn->twidth);
+				tfastins_nocheckVAR(bn, i, s, bn->twidth);
 				seq++;
 			}
 			break;
@@ -13911,7 +13911,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 		if ((*atomtostr)(&s, &len, &seq) < 0)
 			goto bunins_failed;
 		for (; i < cnt; i++) {
-			tfastins_nocheck(bn, i, s, bn->twidth);
+			tfastins_nocheckVAR(bn, i, s, bn->twidth);
 		}
 		break;
 	default:

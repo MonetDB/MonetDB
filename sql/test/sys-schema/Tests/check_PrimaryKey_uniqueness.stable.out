@@ -16,9 +16,6 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 # Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:31486/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10384/.s.monetdb.31486
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -59,14 +56,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#WARNING To speedup user.columnsize a bulk operator implementation is needed
-#    X_61:bat[:lng] := mal.multiplex("user":str,"columnsize":str,X_46:bat[:str],X_53:bat[:lng],X_60:bat[:lng]);
-#WARNING To speedup user.heapsize a bulk operator implementation is needed
-#    X_71:bat[:lng] := mal.multiplex("user":str,"heapsize":str,X_46:bat[:str],X_60:bat[:lng],X_70:bat[:int]);
-#WARNING To speedup user.hashsize a bulk operator implementation is needed
-#    X_80:bat[:lng] := mal.multiplex("user":str,"hashsize":str,X_79:bat[:bit],X_53:bat[:lng]);
-#WARNING To speedup user.imprintsize a bulk operator implementation is needed
-#    X_82:bat[:lng] := mal.multiplex("user":str,"imprintsize":str,X_53:bat[:lng],X_46:bat[:str]);
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 16:31:34 >  
 # 16:31:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10384" "--port=31486"

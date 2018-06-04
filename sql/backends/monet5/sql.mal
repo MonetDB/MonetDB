@@ -1020,7 +1020,7 @@ pattern drop_hash(sch:str, tbl:str)
 address SQLdrop_hash
 comment "Drop hash indices for the given table";
 
-command prelude()
+pattern prelude()
 address SQLprelude;
 
 command epilogue()

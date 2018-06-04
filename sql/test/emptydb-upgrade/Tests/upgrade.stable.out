@@ -16,14 +16,6 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade` itself:
 # Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:39660/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30908/.s.monetdb.39660
 # MonetDB/GIS module loaded
-# Start processing logs sql/sql_logs version 52200
-# Start reading the write-ahead log 'sql_logs/sql/log.3'
-# Finished reading the write-ahead log 'sql_logs/sql/log.3'
-# Finished processing logs sql/sql_logs
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
 Running database upgrade commands:
 set schema "sys";
 drop function sys.dependencies_functions_os_triggers();
@@ -82,9 +74,20 @@ insert into sys.systemfunctions (select id from sys.functions where name in ('gr
 set schema "sys";
 commit;
 
-# 15:55:36 >  
-# 15:55:36 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12365" "--port=35877"
-# 15:55:36 >  
+Running database upgrade commands:
+set schema sys;
+create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
+insert into sys.systemfunctions (select id from sys.functions where name='remote_table_credentials' and id not in (select function_id from sys.systemfunctions));
+set schema "sys";
+commit;
+
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 21:10:45 >  
+# 21:10:45 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16714" "--port=36212"
+# 21:10:45 >  
 
 #select 1;
 % .L2 # table_name

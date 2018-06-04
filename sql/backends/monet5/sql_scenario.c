@@ -93,7 +93,7 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
+	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "sql");
 	// Wait for any recovery process to be finished
@@ -116,7 +116,7 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
+	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	msg = setScenario(cntxt, "msql");
 	// Wait for any recovery process to be finished
@@ -129,15 +129,19 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static str SQLinit(void);
+static str SQLinit(Client c);
 
 str
-SQLprelude(void *ret)
+//SQLprelude(void *ret)
+SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str tmp;
 	Scenario ms, s = getFreeScenario();
 
-	(void) ret;
+//	(void) ret;
+	(void) mb;
+	(void) stk;
+	(void) pci;
 	if (!s)
 		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
@@ -168,7 +172,7 @@ SQLprelude(void *ret)
 	/* ms->tactics = .. */
 	ms->engine = "MALengine";
 	ms->callback = "MALcallback";
-	tmp = SQLinit();
+	tmp = SQLinit(cntxt);
 	if (tmp != MAL_SUCCEED) {
 		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
 		freeException(tmp);
@@ -223,63 +227,6 @@ SQLepilogue(void *ret)
 	return res;
 }
 
-MT_Id sqllogthread, idlethread;
-
-static str
-SQLinit(void)
-{
-	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
-	int readonly = GDKgetenv_isyes("gdk_readonly");
-	int single_user = GDKgetenv_isyes("gdk_single_user");
-	const char *gmt = "GMT";
-	tzone tz;
-
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLinit Monet 5\n");
-#endif
-	if (SQLinitialized)
-		return MAL_SUCCEED;
-
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&sql_contextLock, "sql_contextLock");
-#endif
-
-	MT_lock_set(&sql_contextLock);
-	memset((char *) &be_funcs, 0, sizeof(backend_functions));
-	be_funcs.fstack = &monet5_freestack;
-	be_funcs.fcode = &monet5_freecode;
-	be_funcs.fresolve_function = &monet5_resolve_function;
-	monet5_user_init(&be_funcs);
-
-	msg = MTIMEtimezone(&tz, &gmt);
-	if (msg)
-		return msg;
-	(void) tz;
-	if (debug_str)
-		SQLdebug = strtol(debug_str, NULL, 10);
-	if (single_user)
-		SQLdebug |= 64;
-	if (readonly)
-		SQLdebug |= 32;
-	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0) {
-		MT_lock_unset(&sql_contextLock);
-		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
-	}
-	SQLinitialized = TRUE;
-	MT_lock_unset(&sql_contextLock);
-	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
-		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
-	}
-	GDKregister(sqllogthread);
-	if (!(SQLdebug&1024)) {
-		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
-			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
-		}
-		GDKregister(idlethread);
-	}
-	return WLCinit();
-}
-
 #define SQLglobal(name, val, failure)                                                                             \
 	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val))) \
 		failure--;
@@ -329,6 +276,324 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("last_id", &sql->last_id, failure);
 	SQLglobal("rowcnt", &sql->rowcnt, failure);
 	return failure;
+}
+
+static char*
+SQLprepareClient(Client c, int login)
+{
+	mvc *m;
+	str schema;
+	backend *be;
+
+	if (c->sqlcontext == 0) {
+		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
+		if( m == NULL) {
+			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+		if(global_variables(m, "monetdb", "sys") < 0) {
+			mvc_destroy(m);
+			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
+			m->reply_size = -1;
+		be = (void *) backend_create(m, c);
+		if( be == NULL) {
+			mvc_destroy(m);
+			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+	} else {
+		be = c->sqlcontext;
+		m = be->mvc;
+		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0) {
+			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+		backend_reset(be);
+	}
+	if (m->session->tr)
+		reset_functions(m->session->tr);
+	if (login) {
+		/* pass through credentials of the user if not console */
+		schema = monet5_user_set_def_schema(m, c->user);
+		if (!schema) {
+			_DELETE(schema);
+			throw(PERMD, "SQLinitClient", SQLSTATE(08004) "schema authorization error");
+		}
+		_DELETE(schema);
+	} 
+
+	/*expect SQL text first */
+	be->language = 'S';
+	/* Set state, this indicates an initialized client scenario */
+	c->state[MAL_SCENARIO_READER] = c;
+	c->state[MAL_SCENARIO_PARSER] = c;
+	c->state[MAL_SCENARIO_OPTIMIZE] = c;
+	c->sqlcontext = be;
+
+	initSQLreferences();
+	return NULL;
+}
+
+str
+SQLresetClient(Client c)
+{
+	str msg = MAL_SUCCEED;
+
+	if (c->sqlcontext == NULL)
+		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
+	if (c->sqlcontext) {
+		backend *be = c->sqlcontext;
+		mvc *m = be->mvc;
+
+		assert(m->session);
+		if (m->session->auto_commit && m->session->active) {
+			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0)
+				msg = handle_error(m, 0, 0);
+		}
+		if (m->session->active) {
+			mvc_rollback(m, 0, NULL);
+		}
+
+		res_tables_destroy(m->results);
+		m->results = NULL;
+
+		mvc_destroy(m);
+		backend_destroy(be);
+		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
+		c->state[MAL_SCENARIO_PARSER] = NULL;
+		c->sqlcontext = NULL;
+	}
+	c->state[MAL_SCENARIO_READER] = NULL;
+	return msg;
+}
+
+MT_Id sqllogthread, idlethread;
+
+static str
+SQLinit(Client c)
+{
+	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
+	int readonly = GDKgetenv_isyes("gdk_readonly");
+	int single_user = GDKgetenv_isyes("gdk_single_user");
+	const char *gmt = "GMT";
+	tzone tz;
+	static int maybeupgrade = 1;
+	backend *be = NULL;
+	mvc *m = NULL;
+
+
+#ifdef _SQL_SCENARIO_DEBUG
+	fprintf(stderr, "#SQLinit Monet 5\n");
+#endif
+	if (SQLinitialized)
+		return MAL_SUCCEED;
+
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_init(&sql_contextLock, "sql_contextLock");
+#endif
+
+	MT_lock_set(&sql_contextLock);
+	memset((char *) &be_funcs, 0, sizeof(backend_functions));
+	be_funcs.fstack = &monet5_freestack;
+	be_funcs.fcode = &monet5_freecode;
+	be_funcs.fresolve_function = &monet5_resolve_function;
+	monet5_user_init(&be_funcs);
+
+	msg = MTIMEtimezone(&tz, &gmt);
+	if (msg)
+		return msg;
+	(void) tz;
+	if (debug_str)
+		SQLdebug = strtol(debug_str, NULL, 10);
+	if (single_user)
+		SQLdebug |= 64;
+	if (readonly)
+		SQLdebug |= 32;
+	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0) {
+		MT_lock_unset(&sql_contextLock);
+		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
+	}
+	SQLinitialized = TRUE;
+	sqlinit = GDKgetenv("sqlinit");
+	if (sqlinit) {		/* add sqlinit to the fdin stack */
+		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
+		size_t len = strlen(sqlinit);
+		char* cbuf = _STRDUP(sqlinit);
+		stream *buf;
+		bstream *fdin;
+
+		if( b == NULL || cbuf == NULL) {
+			MT_lock_unset(&sql_contextLock);
+			GDKfree(b);
+			GDKfree(cbuf);
+			throw(SQL,"sql.init",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+
+		buffer_init(b, cbuf, len);
+		buf = buffer_rastream(b, "si");
+		if( buf == NULL) {
+			MT_lock_unset(&sql_contextLock);
+			buffer_destroy(b);
+			throw(SQL,"sql.init",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+
+		fdin = bstream_create(buf, b->len);
+		if( fdin == NULL) {
+			MT_lock_unset(&sql_contextLock);
+			buffer_destroy(b);
+			throw(SQL,"sql.init",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+
+		bstream_next(fdin);
+		if( MCpushClientInput(c, fdin, 0, "") < 0)
+			fprintf(stderr, "SQLinit:Could not switch client input stream");
+	}
+	if ((msg = SQLprepareClient(c, 0)) != NULL) {
+		MT_lock_unset(&sql_contextLock);
+		fprintf(stderr, "%s\n", msg);
+		return msg;
+	}
+	be = c->sqlcontext;
+	m = be->mvc;
+	/* initialize the database with predefined SQL functions */
+	if (SQLnewcatalog == 0) {
+		/* check whether table sys.systemfunctions exists: if
+		 * it doesn't, this is probably a restart of the
+		 * server after an incomplete initialization */
+		sql_schema *s = mvc_bind_schema(m, "sys");
+		sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
+		if (t == NULL)
+			SQLnewcatalog = 1;
+	}
+	if (SQLnewcatalog > 0) {
+#ifdef HAVE_EMBEDDED
+		SQLnewcatalog = 0;
+		maybeupgrade = 0;
+		{
+			size_t createdb_len = strlen(createdb_inline);
+			buffer* createdb_buf;
+			stream* createdb_stream;
+			bstream* createdb_bstream;
+			if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL)
+				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			buffer_init(createdb_buf, createdb_inline, createdb_len);
+			if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
+				GDKfree(createdb_buf);
+				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+			if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
+				mnstr_destroy(createdb_stream);
+				GDKfree(createdb_buf);
+				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+			if (bstream_next(createdb_bstream) >= 0)
+				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
+			else
+				msg = createException(MAL, "createdb", SQLSTATE(42000) "Could not load inlined createdb script");
+
+			bstream_destroy(createdb_bstream);
+			GDKfree(createdb_buf);
+			if (m->sa)
+				sa_destroy(m->sa);
+			m->sa = NULL;
+			m->sqs = NULL;
+		}
+
+#else
+		char path[FILENAME_MAX];
+		str fullname;
+
+		SQLnewcatalog = 0;
+		maybeupgrade = 0;
+		snprintf(path, FILENAME_MAX, "createdb");
+		slash_2_dir_sep(path);
+		fullname = MSP_locate_sqlscript(path, 1);
+		if (fullname) {
+			str filename = fullname;
+			str p, n, newmsg= MAL_SUCCEED;
+			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
+			do {
+				stream *fd = NULL;
+
+				p = strchr(filename, PATH_SEP);
+				if (p)
+					*p = '\0';
+				if ((n = strrchr(filename, DIR_SEP)) == NULL) {
+					n = filename;
+				} else {
+					n++;
+				}
+				fprintf(stdout, "# loading sql script: %s\n", n);
+				fd = open_rastream(filename);
+				if (p)
+					filename = p + 1;
+
+				if (fd) {
+					size_t sz;
+					sz = getFileSize(fd);
+					if (sz > (size_t) 1 << 29) {
+						mnstr_destroy(fd);
+						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
+					} else {
+						bstream *bfd = NULL;
+
+						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+							mnstr_destroy(fd);
+							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						} else {
+							if (bstream_next(bfd) >= 0)
+								newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
+							bstream_destroy(bfd);
+						}
+					}
+					if (m->sa)
+						sa_destroy(m->sa);
+					m->sa = NULL;
+					m->sqs = NULL;
+					if (newmsg){
+						fprintf(stderr,"%s",newmsg);
+						GDKfree(newmsg);
+					}
+				}
+			} while (p);
+			GDKfree(fullname);
+		} else
+			fprintf(stderr, "!could not read createdb.sql\n");
+#endif
+	} else {		/* handle upgrades */
+		m->sqs = NULL;
+		if (!m->sa)
+			m->sa = sa_create();
+		if (!m->sa) {
+			msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		} else if (maybeupgrade) {
+			SQLupgrades(c,m);
+		}
+		maybeupgrade = 0;
+	}
+	fflush(stdout);
+	fflush(stderr);
+
+	/* send error from create scripts back to the first client */
+	if (msg) {
+		msg = handle_error(m, 0, msg);
+		*m->errstr = 0;
+		sqlcleanup(m, mvc_status(m));
+	}
+	if ((msg = SQLresetClient(c)) != MAL_SUCCEED)
+		return msg;
+
+	MT_lock_unset(&sql_contextLock);
+	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
+		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
+	}
+	GDKregister(sqllogthread);
+	if (!(SQLdebug&1024)) {
+		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
+			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
+		}
+		GDKregister(idlethread);
+	}
+	return WLCinit();
 }
 
 #define TRANS_ABORTED SQLSTATE(25005) "Current transaction is aborted (please ROLLBACK)\n"
@@ -415,271 +680,24 @@ extern char* createdb_inline;
 str
 SQLinitClient(Client c)
 {
-	mvc *m;
-	str schema;
 	str msg = MAL_SUCCEED;
-	backend *be;
-	bstream *bfd = NULL;
-	stream *fd = NULL;
-	static int maybeupgrade = 1;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	fprintf(stderr, "#SQLinitClient\n");
 #endif
-	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
+	if (SQLinitialized == 0)// && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	MT_lock_set(&sql_contextLock);
 	if ((msg = WLRinit()) != MAL_SUCCEED) {
 		MT_lock_unset(&sql_contextLock);
 		return msg;
 	}
-	/*
-	 * Based on the initialization return value we can prepare a SQLinit
-	 * string with all information needed to initialize the catalog
-	 * based on the mandatory scripts to be executed.
-	 */
-	if (sqlinit) {		/* add sqlinit to the fdin stack */
-		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
-		size_t len = strlen(sqlinit);
-		char* cbuf = _STRDUP(sqlinit);
-		stream *buf;
-		bstream *fdin;
-
-		if( b == NULL || cbuf == NULL) {
-			MT_lock_unset(&sql_contextLock);
-			GDKfree(b);
-			GDKfree(cbuf);
-			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-
-		buffer_init(b, cbuf, len);
-		buf = buffer_rastream(b, "si");
-		if( buf == NULL) {
-			MT_lock_unset(&sql_contextLock);
-			buffer_destroy(b);
-			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-
-		fdin = bstream_create(buf, b->len);
-		if( fdin == NULL) {
-			MT_lock_unset(&sql_contextLock);
-			buffer_destroy(b);
-			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-
-		bstream_next(fdin);
-		if( MCpushClientInput(c, fdin, 0, "") < 0)
-			fprintf(stderr, "SQLinitClient:Could not switch client input stream");
-	}
-	if (c->sqlcontext == 0) {
-		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
-		if( m == NULL) {
-			MT_lock_unset(&sql_contextLock);
-			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		if(global_variables(m, "monetdb", "sys") < 0) {
-			MT_lock_unset(&sql_contextLock);
-			mvc_destroy(m);
-			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
-			m->reply_size = -1;
-		be = (void *) backend_create(m, c);
-		if( be == NULL) {
-			MT_lock_unset(&sql_contextLock);
-			mvc_destroy(m);
-			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-	} else {
-		be = c->sqlcontext;
-		m = be->mvc;
-		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0) {
-			MT_lock_unset(&sql_contextLock);
-			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		backend_reset(be);
-	}
-	if (m->session->tr)
-		reset_functions(m->session->tr);
 #ifndef HAVE_EMBEDDED
-	/* pass through credentials of the user if not console */
-	schema = monet5_user_set_def_schema(m, c->user);
-	if (!schema) {
-		_DELETE(schema);
-		MT_lock_unset(&sql_contextLock);
-		throw(PERMD, "SQLinitClient", SQLSTATE(08004) "schema authorization error");
-	}
-	_DELETE(schema);
+	msg = SQLprepareClient(c, 1);
 #else
-	(void) schema;
+	msg = SQLprepareClient(c, 0);
 #endif
-
-	/*expect SQL text first */
-	be->language = 'S';
-	/* Set state, this indicates an initialized client scenario */
-	c->state[MAL_SCENARIO_READER] = c;
-	c->state[MAL_SCENARIO_PARSER] = c;
-	c->state[MAL_SCENARIO_OPTIMIZE] = c;
-	c->sqlcontext = be;
-
-	initSQLreferences();
-	/* initialize the database with predefined SQL functions */
-	if (SQLnewcatalog == 0) {
-		/* check whether table sys.systemfunctions exists: if
-		 * it doesn't, this is probably a restart of the
-		 * server after an incomplete initialization */
-		sql_schema *s = mvc_bind_schema(m, "sys");
-		sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
-		if (t == NULL)
-			SQLnewcatalog = 1;
-	}
-	if (SQLnewcatalog > 0) {
-#ifdef HAVE_EMBEDDED
-		(void) bfd;
-		(void) fd;
-		SQLnewcatalog = 0;
-		maybeupgrade = 0;
-		{
-			size_t createdb_len = strlen(createdb_inline);
-			buffer* createdb_buf;
-			stream* createdb_stream;
-			bstream* createdb_bstream;
-			if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL)
-				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			buffer_init(createdb_buf, createdb_inline, createdb_len);
-			if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
-				GDKfree(createdb_buf);
-				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
-			if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
-				mnstr_destroy(createdb_stream);
-				GDKfree(createdb_buf);
-				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
-			if (bstream_next(createdb_bstream) >= 0)
-				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
-			else
-				msg = createException(MAL, "createdb", SQLSTATE(42000) "Could not load inlined createdb script");
-
-			bstream_destroy(createdb_bstream);
-			GDKfree(createdb_buf);
-			if (m->sa)
-				sa_destroy(m->sa);
-			m->sa = NULL;
-			m->sqs = NULL;
-		}
-
-#else
-		char path[FILENAME_MAX];
-		str fullname;
-
-		SQLnewcatalog = 0;
-		maybeupgrade = 0;
-		snprintf(path, FILENAME_MAX, "createdb");
-		slash_2_dir_sep(path);
-		fullname = MSP_locate_sqlscript(path, 1);
-		if (fullname) {
-			str filename = fullname;
-			str p, n, newmsg= MAL_SUCCEED;
-			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
-			do {
-				p = strchr(filename, PATH_SEP);
-				if (p)
-					*p = '\0';
-				if ((n = strrchr(filename, DIR_SEP)) == NULL) {
-					n = filename;
-				} else {
-					n++;
-				}
-				fprintf(stdout, "# loading sql script: %s\n", n);
-				fd = open_rastream(filename);
-				if (p)
-					filename = p + 1;
-
-				if (fd) {
-					size_t sz;
-					sz = getFileSize(fd);
-					if (sz > (size_t) 1 << 29) {
-						mnstr_destroy(fd);
-						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
-					} else {
-						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
-							mnstr_destroy(fd);
-							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-						} else {
-							if (bstream_next(bfd) >= 0)
-								newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
-							bstream_destroy(bfd);
-						}
-					}
-					if (m->sa)
-						sa_destroy(m->sa);
-					m->sa = NULL;
-					m->sqs = NULL;
-					if (newmsg){
-						fprintf(stderr,"%s",newmsg);
-						GDKfree(newmsg);
-					}
-				}
-			} while (p);
-			GDKfree(fullname);
-		} else
-			fprintf(stderr, "!could not read createdb.sql\n");
-#endif
-	} else {		/* handle upgrades */
-		m->sqs = NULL;
-		if (!m->sa)
-			m->sa = sa_create();
-		if (!m->sa) {
-			msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		} else if (maybeupgrade) {
-			SQLupgrades(c,m);
-		}
-		maybeupgrade = 0;
-	}
 	MT_lock_unset(&sql_contextLock);
-	fflush(stdout);
-	fflush(stderr);
-
-	/* send error from create scripts back to the first client */
-	if (msg) {
-		msg = handle_error(m, 0, msg);
-		*m->errstr = 0;
-		sqlcleanup(m, mvc_status(m));
-	}
-	return msg;
-}
-
-str
-SQLresetClient(Client c)
-{
-	str msg = MAL_SUCCEED;
-
-	if (c->sqlcontext == NULL)
-		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
-	if (c->sqlcontext) {
-		backend *be = c->sqlcontext;
-		mvc *m = be->mvc;
-
-		assert(m->session);
-		if (m->session->auto_commit && m->session->active) {
-			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0)
-				msg = handle_error(m, 0, 0);
-		}
-		if (m->session->active) {
-			mvc_rollback(m, 0, NULL);
-		}
-
-		res_tables_destroy(m->results);
-		m->results = NULL;
-
-		mvc_destroy(m);
-		backend_destroy(be);
-		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
-		c->state[MAL_SCENARIO_PARSER] = NULL;
-		c->sqlcontext = NULL;
-	}
-	c->state[MAL_SCENARIO_READER] = NULL;
 	return msg;
 }
 

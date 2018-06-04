@@ -16,10 +16,6 @@ stdout of test 'nobench` in directory 'sql/benchmarks/nobench` itself:
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:33349/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28559/.s.monetdb.33349
 # MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -48,6 +44,9 @@ Ready.
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 13:08:13 >  
 # 13:08:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28559" "--port=33349"
@@ -58,7 +57,7 @@ Ready.
 #{"nested_obj": {"num": 4, "str": "GBRDCMBQ"}, "dyn2": true, "dyn1": 9, "nested_arr": ["especially"], "str2": "GBRDCMBQ", "str1": "GBRDCMBQGE======", "sparse_093": "GBRDCMBQGE======", "thousandth": 9, "sparse_090": "GBRDCMBQGE======", "sparse_091": "GBRDCMBQGE======", "sparse_092": "GBRDCMBQGE======", "num": 9, "bool": true, "sparse_095": "GBRDCMBQGE======", "sparse_096": "GBRDCMBQGE======", "sparse_097": "GBRDCMBQGE======", "sparse_098": "GBRDCMBQGE======", "sparse_094": "GBRDCMBQGE======", "sparse_099": "GBRDCMBQGE======"},
 [ 10	]
 #select count(*) from bench10;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -281,7 +280,7 @@ Ready.
 #select f.h, count(*) from (
 #	select json.filter(js,'..thousanth') as g, json.number(json.filter(js,'num')) as h from bench10 where json.number(json.filter(js,'num')) between 0.0 and 3.0 ) as f
 #group by f.h;
-% sys.f,	sys.L10 # table_name
+% sys.f,	sys.L7 # table_name
 % h,	L7 # name
 % double,	bigint # type
 % 24,	1 # length

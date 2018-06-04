@@ -1161,7 +1161,79 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 	b->tprops = NULL;
 	OIDXdestroy(b);
 	IMPSdestroy(b);
-	Treplacevalue(b, BUNtloc(bi, p), t);
+	if (b->tvarsized && b->ttype) {
+		var_t _d;
+		ptr _ptr;
+		_ptr = BUNtloc(bi, p);
+		switch (b->twidth) {
+		case 1:
+			_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET;
+			break;
+		case 2:
+			_d = (var_t) * (uint16_t *) _ptr + GDK_VAROFFSET;
+			break;
+		case 4:
+			_d = (var_t) * (uint32_t *) _ptr;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			_d = (var_t) * (uint64_t *) _ptr;
+			break;
+#endif
+		}
+		ATOMreplaceVAR(b->ttype, b->tvheap, &_d, t);
+		if (b->twidth < SIZEOF_VAR_T &&
+		    (b->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * b->twidth))) {
+			/* doesn't fit in current heap, upgrade it */
+			if (GDKupgradevarheap(b, _d, false, b->batRestricted == BAT_READ) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
+		_ptr = BUNtloc(bi, p);
+		switch (b->twidth) {
+		case 1:
+			* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET);
+			break;
+		case 2:
+			* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET);
+			break;
+		case 4:
+			* (uint32_t *) _ptr = (uint32_t) _d;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 8:
+			* (uint64_t *) _ptr = (uint64_t) _d;
+			break;
+#endif
+		}
+	} else {
+		assert(BATatoms[b->ttype].atomPut == NULL);
+		ATOMfix(b->ttype, t);
+		ATOMunfix(b->ttype, BUNtloc(bi, p));
+		switch (ATOMsize(b->ttype)) {
+		case 0:	     /* void */
+			break;
+		case 1:
+			((bte *) b->theap.base)[p] = * (bte *) t;
+			break;
+		case 2:
+			((sht *) b->theap.base)[p] = * (sht *) t;
+			break;
+		case 4:
+			((int *) b->theap.base)[p] = * (int *) t;
+			break;
+		case 8:
+			((lng *) b->theap.base)[p] = * (lng *) t;
+			break;
+#ifdef HAVE_HGE
+		case 16:
+			((hge *) b->theap.base)[p] = * (hge *) t;
+			break;
+#endif
+		default:
+			memcpy(BUNtloc(bi, p), t, ATOMsize(b->ttype));
+			break;
+		}
+	}
 
 	tt = b->ttype;
 	prv = p > 0 ? p - 1 : BUN_NONE;

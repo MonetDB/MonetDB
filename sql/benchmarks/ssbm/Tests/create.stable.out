@@ -15,10 +15,9 @@ stdout of test 'create` in directory 'sql/benchmarks/ssbm` itself:
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37793/
 # MonetDB/SQL module loaded
 # MonetDB/GIS module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 
+Ready.
 
 # 17:32:45 >  
 # 17:32:45 >  mclient -lsql -ftest -i -e --host=rig --port=37793 

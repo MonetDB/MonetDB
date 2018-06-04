@@ -15,9 +15,6 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:37097/
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 10_math.sql
 # loading sql script: 11_times.sql
@@ -38,6 +35,9 @@ Ready.
 # loading sql script: 40_geom.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 17:10:01 >  
 # 17:10:01 >  "/usr/bin/python" "VOC.SQL.py" "VOC"

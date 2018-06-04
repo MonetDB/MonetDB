@@ -256,7 +256,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 			r = (BUN) (o - off);										\
 			v = BUNtail(bi, r);											\
 			if (TEST)													\
-				bunfastapp(bn, &o);										\
+				bunfastappTYPE(oid, bn, &o);							\
 			p++;														\
 		}																\
 	} while (0)
@@ -272,7 +272,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 			v = BUNtail(bi, p-off);										\
 			if (TEST) {													\
 				o = (oid) p;											\
-				bunfastapp(bn, &o);										\
+				bunfastappTYPE(oid, bn, &o);							\
 			}															\
 			p++;														\
 		}																\

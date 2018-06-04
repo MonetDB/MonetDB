@@ -7,18 +7,15 @@ stdout of test 'pyapi3_00` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 
 # MonetDB 5 server v11.26.0
 # This is an unreleased version
-# Serving database 'mTests_sql_backends_monet5_UDF_pyapi3', using 4 threads
-# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
-# Found 8.000 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://dhcp-158.eduroam.cwi.nl:39898/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-42996/.s.monetdb.39898
-# MonetDB/SQL module loaded
-# MonetDB/Python2 module loaded
-
-Ready.
+# Serving database 'mTests_sql_backends_monet5_UDF_pyapi3', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:39285/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1158/.s.monetdb.39285
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -55,10 +52,7 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 18:14:00 >  
-# 18:14:00 >  "./pyapi3_00.SQL.sh" "pyapi3_00"
-# 18:14:00 >  
-
+Ready.
 
 # 18:14:00 >  
 # 18:14:00 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-42996 --port=39898 < /Users/myth/Programs/MonetDB/sql/backends/monet5/UDF/pyapi3/../../Tests/pyapi00.sql

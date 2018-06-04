@@ -16,14 +16,6 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade-chain` itself:
 # Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:39660/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30908/.s.monetdb.39660
 # MonetDB/GIS module loaded
-# Start processing logs sql/sql_logs version 52200
-# Start reading the write-ahead log 'sql_logs/sql/log.31'
-# Finished reading the write-ahead log 'sql_logs/sql/log.31'
-# Finished processing logs sql/sql_logs
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
 Running database upgrade commands:
 set schema "sys";
 drop function sys.dependencies_functions_os_triggers();
@@ -96,6 +88,9 @@ insert into sys.systemfunctions (select id from sys.functions where name='remote
 set schema "sys";
 commit;
 
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 16:02:52 >  
 # 16:02:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5391" "--port=32916"

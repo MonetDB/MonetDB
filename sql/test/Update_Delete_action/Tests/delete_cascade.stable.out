@@ -1,19 +1,21 @@
 stdout of test 'delete_cascade` in directory 'sql/test/Update_Delete_action` itself:
 
 
-# 16:59:16 >  
-# 16:59:16 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/goncalve/scratch/MonetDB/MonetDB5/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/sql_logs" --set "xquery_logdir=/ufs/goncalve/scratch/MonetDB/MonetDB5/var/MonetDB5/xquery_logs" --set mapi_port=33148 --set xrpc_port=45004 --set monet_prompt= --trace "--dbname=mTests_src_test_Update_Delete_action" --dbinit='include sql;' ; echo ; echo Over..
-# 16:59:16 >  
+# 17:39:26 >  
+# 17:39:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31345" "--set" "mapi_usock=/var/tmp/mtest-4412/.s.monetdb.31345" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_Update_Delete_action" "--set" "embedded_c=true"
+# 17:39:26 >  
 
-
-
-# MonetDB Server v5.0.0_beta2_1
-# Copyright (c) 1993-2007 CWI, all rights reserved
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
-# dbname:mTests_src_test_Update_Delete_action
-# Visit http://monetdb.cwi.nl/ for further information
-
-Ready.
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Update_Delete_action', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:31345/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4412/.s.monetdb.31345
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -47,9 +49,11 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
 
-# 16:59:17 >  
-# 16:59:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1552" "--port=38937"
-# 16:59:17 >  
+Ready.
+
+# 17:39:27 >  
+# 17:39:27 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4412" "--port=31345"
+# 17:39:27 >  
 
 #create table t1 (id int, name varchar(1024), PRIMARY KEY(id));
 #create table t2 (id int, age int, PRIMARY KEY (id), FOREIGN KEY(id) REFERENCES t1(id) ON DELETE CASCADE);

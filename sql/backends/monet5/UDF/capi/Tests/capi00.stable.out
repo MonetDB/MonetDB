@@ -13,11 +13,9 @@ stdout of test 'capi00` in directory 'sql/backends/monet5/UDF/capi` itself:
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://dhcp-21.eduroam.cwi.nl:34757/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12037/.s.monetdb.34757
-# MonetDB/SQL module loaded
-
-Ready.
+# Listening for connection requests on mapi:monetdb://xps13:39285/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1158/.s.monetdb.39285
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -55,9 +53,11 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 11:55:59 >  
-# 11:55:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12037" "--port=34757"
-# 11:55:59 >  
+Ready.
+
+# 16:15:27 >  
+# 16:15:27 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1158" "--port=39285"
+# 16:15:27 >  
 
 #START TRANSACTION;
 #CREATE FUNCTION capi00(inp INTEGER) RETURNS INTEGER LANGUAGE C {

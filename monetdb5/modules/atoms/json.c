@@ -2235,7 +2235,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						break;
 					}
 				}
-				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+				bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
 			}
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
@@ -2256,10 +2256,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				strncpy(buf + buflen, " ]", maxlen - buflen);
 				buflen += 2;
 				while (BATcount(bn) < prev - min) {
-					bunfastapp_nocheck(bn, BUNlast(bn), str_nil, Tsize(bn));
+					bunfastapp_nocheckVAR(bn, BUNlast(bn), str_nil, Tsize(bn));
 					nils++;
 				}
-				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+				bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
 				nils += strNil(buf);
 				strncpy(buf + buflen, str_nil, maxlen - buflen);
 				buflen = 0;
@@ -2381,7 +2381,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				break;
 			}
 		}
-		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+		bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
 	}
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
