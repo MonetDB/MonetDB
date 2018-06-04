@@ -663,32 +663,36 @@ rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	return rel;
 }
 
-static int
+static bool
 update_move_across_partitions(sql_rel *rel, sql_table *t)
 {
-	int found_partition_col = 0;
+	for (node *n = ((sql_rel*)rel->r)->exps->h; n; n = n->next) {
+		sql_exp* exp = (sql_exp*) n->data;
+		if(exp->type == e_column && exp->l && exp->r && !strcmp((char*)exp->l, t->base.name)) {
+			char* colname = (char*)exp->r;
 
-	if(isPartitionedByColumnTable(t)) {
-		for (node *n = ((sql_rel*)rel->r)->exps->h; n; n = n->next) {
-			sql_exp* exp = (sql_exp*) n->data;
-			if(exp->type == e_column && exp->l && exp->r && !strcmp((char*)exp->l, t->base.name) &&
-			   !strcmp((char*)exp->r, t->part.pcol->base.name)) {
-				found_partition_col = 1;
+			if(isPartitionedByColumnTable(t)) {
+				if(!strcmp(colname, t->part.pcol->base.name))
+					return true;
+			} else if(isPartitionedByExpressionTable(t)) {
+				for (node *nn = t->part.pexp->cols->h; nn; nn = nn->next) {
+					int next = *(int*) nn->data;
+					sql_column *col = find_sql_column(t, colname);
+					if(col && next == col->colnr)
+						return true;
+				}
+			} else {
+				assert(0);
 			}
 		}
-	} else if(isPartitionedByExpressionTable(t)) {
-		//TODO
-	} else {
-		assert(0);
 	}
-
-	return found_partition_col;
+	return false;
 }
 
 static sql_rel*
 rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 {
-	int found_partition_col = update_move_across_partitions(rel, t);
+	bool found_partition_col = update_move_across_partitions(rel, t);
 	sql_rel *sel = NULL;
 
 	if(!found_partition_col) { //easy scenario where the partitioned column is not being updated, just propagate
