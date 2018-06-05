@@ -50,6 +50,7 @@ select getrss() {compare_sign} {cap_in_kB} as resident_set_size_is_{compare_stri
 
 drop table test cascade;
 drop function getrss;
+drop function printf;
 """
 
     def __init__(self, test):
