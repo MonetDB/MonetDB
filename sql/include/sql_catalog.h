@@ -534,7 +534,6 @@ typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value of the merge table */
 	sql_subtype tpe;     /* the column/expression type */
-	sht part_type;       /* by range, list/values or none */
 	int with_nills;
 	union {
 		list *values;         /* partition by values/list */

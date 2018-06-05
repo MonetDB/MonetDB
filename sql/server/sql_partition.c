@@ -255,7 +255,6 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 			p->with_nills = next->with_nills;
 
 			if(isListPartitionTable(mt)) {
-				p->part_type = PARTITION_LIST;
 				p->part.values = sa_list(sql->session->tr->sa);
 
 				for (node *m = next->part.values->h; m; m = m->next) {
@@ -285,7 +284,6 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				ValRecord vmin, vmax;
 				ptr ok;
 
-				p->part_type = PARTITION_RANGE;
 				memset(&vmin, 0, sizeof(ValRecord));
 				memset(&vmax, 0, sizeof(ValRecord));
 				ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue);

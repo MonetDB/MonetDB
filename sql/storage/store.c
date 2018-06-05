@@ -562,7 +562,6 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	sql_subtype *empty = sql_bind_localtype("void");
 
 	pt->tpe = *empty;
-	pt->part_type = PARTITION_RANGE;
 	rs = table_funcs.rids_select(tr, find_sql_column(ranges, "id"), &pt->base.id, &pt->base.id, NULL);
 	if((rid = table_funcs.rids_next(rs)) != oid_nil) {
 		void *v1, *v2, *v3;
@@ -619,7 +618,6 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	}
 
 	pt->tpe = *empty;
-	pt->part_type = PARTITION_LIST;
 
 	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 		sql_part_value* nextv;
@@ -1487,7 +1485,6 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 	base_init(sa, &pt->base, opt->base.id, opt->base.flag, opt->base.name);
 	pt->tpe = opt->tpe;
 	pt->t = mt;
-	pt->part_type = opt->part_type;
 	pt->with_nills = opt->with_nills;
 
 	if(isRangePartitionTable(ot)) {
@@ -2484,7 +2481,6 @@ part_dup(sql_trans *tr, int flag, sql_part *opt, sql_table *ot)
 
 	base_init(sa, &pt->base, opt->base.id, tr_flag(&opt->base, flag), opt->base.name);
 	pt->tpe = opt->tpe;
-	pt->part_type = opt->part_type;
 	pt->with_nills = opt->with_nills;
 	if (isNew(opt) && flag == TR_NEW && tr->parent == gtrans)
 		opt->base.flag = TR_OLD;
@@ -4741,7 +4737,6 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	pt->p = mt;
 	p->t = pt;
 	p->tpe = tpe;
-	p->part_type = PARTITION_RANGE;
 	p->with_nills = with_nills;
 
 	/* add range partition values */
@@ -4811,7 +4806,6 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	pt->p = mt;
 	p->t = pt;
 	p->tpe = tpe;
-	p->part_type = PARTITION_LIST;
 	p->with_nills = with_nills;
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);

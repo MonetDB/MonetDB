@@ -168,35 +168,23 @@ generate_partition_limits(mvc *sql, sql_rel **r, symbol *s, sql_subtype tpe)
 	}
 }
 
-sql_rel *
-rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
-									char *tname2, symbol* min, symbol* max, int with_nills, int update)
+static sql_rel*
+create_range_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with_nills, sql_exp *pmin, sql_exp *pmax)
 {
-	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
-	list *exps = new_exp_list(sql->sa);
-	sql_exp *exception, *aggr, *anti_exp, *anti_le, *e1, *e2, *anti_nils, *pmin, *pmax;
+	sql_rel *anti_rel;
+	sql_exp *exception, *aggr, *anti_exp, *anti_le, *e1, *e2, *anti_nils;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
-
-	if(!rel_psm || !exps)
-		return NULL;
 
 	find_partition_type(&tpe, mt);
 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
 	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
 
-	assert((!min && !max && with_nills) || (min && max));
-	if(min && max) {
-		pmin = generate_partition_limits(sql, &rel_psm, min, tpe);
-		pmax = generate_partition_limits(sql, &rel_psm, max, tpe);
-
-		if(!pmin || !pmax)
-			return NULL;
-
+	if(pmin && pmax) {
 		e1 = exp_copy(sql->sa, pmin);
-		if (subtype_cmp(exp_subtype(e1), &tpe) != 0)
+		if (subtype_cmp(exp_subtype(pmin), &tpe) != 0)
 			e1 = exp_convert(sql->sa, e1, &e1->tpe, &tpe);
 
 		e2 = exp_copy(sql->sa, pmax);
@@ -211,8 +199,6 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 							  list_append(new_exp_list(sql->sa), anti_nils), 0);
 		}
 	} else {
-		pmin = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
-		pmax = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
 		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
 	}
 
@@ -228,62 +214,22 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 	generate_alter_table_error_message(buf, mt);
 	exception = exp_exception(sql->sa, aggr, buf);
 
-	//generate the psm statement
-	append(exps, exp_atom_clob(sql->sa, sname));
-	append(exps, exp_atom_clob(sql->sa, tname));
-	assert((sname2 && tname2) || (!sname2 && !tname2));
-	if (sname2) {
-		append(exps, exp_atom_clob(sql->sa, sname2));
-		append(exps, exp_atom_clob(sql->sa, tname2));
-	}
-	append(exps, pmin);
-	append(exps, pmax);
-	append(exps, exp_atom_int(sql->sa, with_nills));
-	append(exps, exp_atom_int(sql->sa, update));
-	rel_psm->l = NULL;
-	rel_psm->r = NULL;
-	rel_psm->op = op_ddl;
-	rel_psm->flag = DDL_ALTER_TABLE_ADD_RANGE_PARTITION;
-	rel_psm->exps = exps;
-	rel_psm->card = CARD_MULTI;
-	rel_psm->nrcols = 0;
-
-	sql->caching = 0;
-	return rel_exception(sql->sa, rel_psm, anti_rel, list_append(new_exp_list(sql->sa), exception));
+	return rel_exception(sql->sa, NULL, anti_rel, list_append(new_exp_list(sql->sa), exception));
 }
 
-sql_rel *
-rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
-								   char *tname2, dlist* values, int with_nills, int update)
+static sql_rel*
+create_list_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with_nills, list *anti_exps)
 {
-	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
-	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
+	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
-	if(!rel_psm || !exps)
-		return NULL;
-
 	find_partition_type(&tpe, mt);
 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
 	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
-
-	if(values) {
-		for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
-			symbol* next = dn->data.sym;
-			sql_exp *pnext = generate_partition_limits(sql, &rel_psm, next, tpe);
-			if (subtype_cmp(exp_subtype(pnext), &tpe) != 0)
-				pnext = exp_convert(sql->sa, pnext, exp_subtype(pnext), &tpe);
-
-			if(next->token == SQL_NULL)
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a list value cannot be null");
-			append(lvals, pnext);
-			append(anti_exps, exp_copy(sql->sa, pnext));
-		}
-	}
 
 	if(list_length(anti_exps) > 0) {
 		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
@@ -309,6 +255,116 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	generate_alter_table_error_message(buf, mt);
 	exception = exp_exception(sql->sa, aggr, buf);
 
+	return rel_exception(sql->sa, NULL, anti_rel, list_append(new_exp_list(sql->sa), exception));
+}
+
+static sql_rel *
+propagate_validation_to_upper_tables(mvc* sql, sql_table *mt, sql_table *pt, sql_rel *rel)
+{
+	for(sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
+		sql_part *spt = find_sql_part(it, prev->base.name);
+		if(!spt) {
+			prev->p = NULL;
+			break;
+		} else {
+			if(isRangePartitionTable(it)) {
+				sql_exp *e1 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.minvalue),
+						*e2 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.maxvalue);
+				rel = rel_list(sql->sa, rel, create_range_partition_anti_rel(sql, it, pt, spt->with_nills, e1, e2));
+			} else if(isListPartitionTable(it)) {
+				list *exps = new_exp_list(sql->sa);
+				for(node *n = spt->part.values->h ; n ; n = n->next) {
+					sql_part_value *next = (sql_part_value*) n->data;
+					sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
+					list_append(exps, e1);
+				}
+				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(sql, it, pt, spt->with_nills, exps));
+			} else {
+				assert(0);
+			}
+		}
+	}
+	return rel;
+}
+
+sql_rel *
+rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
+									char *tname2, symbol* min, symbol* max, int with_nills, int update)
+{
+	sql_rel *rel_psm = rel_create(sql->sa), *res;
+	list *exps = new_exp_list(sql->sa);
+	sql_exp *pmin, *pmax;
+	sql_subtype tpe;
+
+	if(!rel_psm || !exps)
+		return NULL;
+
+	find_partition_type(&tpe, mt);
+
+	assert((!min && !max && with_nills) || (min && max));
+	if(min && max) {
+		pmin = generate_partition_limits(sql, &rel_psm, min, tpe);
+		pmax = generate_partition_limits(sql, &rel_psm, max, tpe);
+		if(!pmin || !pmax)
+			return NULL;
+	} else {
+		pmin = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
+		pmax = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
+	}
+
+	//generate the psm statement
+	append(exps, exp_atom_clob(sql->sa, sname));
+	append(exps, exp_atom_clob(sql->sa, tname));
+	assert((sname2 && tname2) || (!sname2 && !tname2));
+	if (sname2) {
+		append(exps, exp_atom_clob(sql->sa, sname2));
+		append(exps, exp_atom_clob(sql->sa, tname2));
+	}
+	append(exps, pmin);
+	append(exps, pmax);
+	append(exps, exp_atom_int(sql->sa, with_nills));
+	append(exps, exp_atom_int(sql->sa, update));
+	rel_psm->l = NULL;
+	rel_psm->r = NULL;
+	rel_psm->op = op_ddl;
+	rel_psm->flag = DDL_ALTER_TABLE_ADD_RANGE_PARTITION;
+	rel_psm->exps = exps;
+	rel_psm->card = CARD_MULTI;
+	rel_psm->nrcols = 0;
+
+	res = create_range_partition_anti_rel(sql, mt, pt, with_nills, pmin, pmax);
+	res->l = rel_psm;
+
+	return propagate_validation_to_upper_tables(sql, mt, pt, res);
+}
+
+sql_rel *
+rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
+								   char *tname2, dlist* values, int with_nills, int update)
+{
+	sql_rel *rel_psm = rel_create(sql->sa), *res;
+	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
+	sql_subtype tpe;
+
+	if(!rel_psm || !exps)
+		return NULL;
+
+	find_partition_type(&tpe, mt);
+
+	if(values) {
+		for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
+			symbol* next = dn->data.sym;
+			sql_exp *pnext = generate_partition_limits(sql, &rel_psm, next, tpe);
+			if (subtype_cmp(exp_subtype(pnext), &tpe) != 0)
+				pnext = exp_convert(sql->sa, pnext, exp_subtype(pnext), &tpe);
+
+			if(next->token == SQL_NULL)
+				return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: a list value cannot be null");
+			append(lvals, pnext);
+			append(anti_exps, exp_copy(sql->sa, pnext));
+		}
+	}
+
 	//generate the psm statement
 	append(exps, exp_atom_clob(sql->sa, sname));
 	append(exps, exp_atom_clob(sql->sa, tname));
@@ -327,8 +383,10 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
-	sql->caching = 0;
-	return rel_exception(sql->sa, rel_psm, anti_rel, list_append(new_exp_list(sql->sa), exception));
+	res = create_list_partition_anti_rel(sql, mt, pt, with_nills, anti_exps);
+	res->l = rel_psm;
+
+	return propagate_validation_to_upper_tables(sql, mt, pt, res);
 }
 
 static sql_rel* rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt);
@@ -824,11 +882,7 @@ rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 				}
 			} else if(is_update(propagate->op)) { //for updates propagate like in deletions
 				sql->caching = 0;
-				if(isSubtable) {
-					rel->l = rel_propagate_update(sql, propagate, t, changes);
-				} else {
-					rel = rel_propagate_update(sql, rel, t, changes);
-				}
+				rel = rel_propagate_update(sql, rel, t, changes);
 			} else {
 				assert(0);
 			}

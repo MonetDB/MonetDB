@@ -16,11 +16,6 @@ stdout of test 'mergepart00` in directory 'sql/test/merge-partitions` itself:
 # Listening for connection requests on mapi:monetdb://dhcp-23.eduroam.cwi.nl:36923/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4925/.s.monetdb.36923
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Python2 module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -63,6 +58,9 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 97_comments.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 14:00:22 >  
 # 14:00:22 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4925" "--port=36923"
