@@ -4516,14 +4516,17 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(p);
 		}
 	} else {
-		r = VIEWcreate(s->hseqbase, s);
+		r = COLnew(s->hseqbase, TYPE_int, BATcount(s), TRANSIENT);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		r->ttype = TYPE_int;
-		r->tvarsized = 0;
-		r->tvheap = NULL;
+		memcpy(Tloc(r,0), Tloc(s,0), s->theap.size);
+		BATsetcount(r, BATcount(s));
+		r->tsorted = s->tsorted;
+		r->trevsorted = s->trevsorted;
+		r->tkey = s->tkey;
+		r->tnonil = s->tnonil;
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
@@ -4574,14 +4577,17 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(s);
 		}
 	} else {
-		r = VIEWcreate(s->hseqbase, s);
+		r = COLnew(s->hseqbase, TYPE_sht, BATcount(s), TRANSIENT);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		r->ttype = TYPE_sht;
-		r->tvarsized = 0;
-		r->tvheap = NULL;
+		memcpy(Tloc(r,0), Tloc(s,0), s->theap.size);
+		BATsetcount(r, BATcount(s));
+		r->tsorted = s->tsorted;
+		r->trevsorted = s->trevsorted;
+		r->tkey = s->tkey;
+		r->tnonil = s->tnonil;
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
@@ -4633,14 +4639,17 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			pos += GDK_STRLEN(p);
 		}
 	} else {
-		r = VIEWcreate(s->hseqbase, s);
+		r = COLnew(s->hseqbase, TYPE_bte, BATcount(s), TRANSIENT);
 		if (r == NULL) {
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		r->ttype = TYPE_bte;
-		r->tvarsized = 0;
-		r->tvheap = NULL;
+		memcpy(Tloc(r,0), Tloc(s,0), s->theap.size);
+		BATsetcount(r, BATcount(s));
+		r->tsorted = s->tsorted;
+		r->trevsorted = s->trevsorted;
+		r->tkey = s->tkey;
+		r->tnonil = s->tnonil;
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));
