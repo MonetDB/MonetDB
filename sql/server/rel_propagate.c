@@ -261,6 +261,7 @@ create_list_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with_
 static sql_rel *
 propagate_validation_to_upper_tables(mvc* sql, sql_table *mt, sql_table *pt, sql_rel *rel)
 {
+	sql->caching = 0;
 	for(sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
 		sql_part *spt = find_sql_part(it, prev->base.name);
 		if(!spt) {
