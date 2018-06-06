@@ -20,9 +20,6 @@ class RSSTestConfig:
 create function getrss()
 returns bigint external name status.rss_cursize;
 
-create function printf(message string)
-returns void external name io.printf;
-
 create table test(a int, b int, c double);
 
 insert into test values (1, 0, 1);
@@ -42,15 +39,10 @@ end;
 call loop_insert(1000000);
 
 -- it seems that it requires an analytical query to keep memory in ram.
-select printf('#~BeginVariableOutput~#');
-select getrss() as resident_set_size_in_kB, quantile(c/a, 0.8) * 0  from test;
-select printf('#~EndVariableOutput~#');
-
 select getrss() {compare_sign} {cap_in_kB} as resident_set_size_is_{compare_string}_then_{cap_in_kB}_kB, quantile(c/a, 0.8) * 0  from test;
 
 drop table test cascade;
 drop function getrss;
-drop function printf;
 """
 
     def __init__(self, test):
