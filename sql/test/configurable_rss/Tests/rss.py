@@ -39,7 +39,7 @@ end;
 call loop_insert(1000000);
 
 -- it seems that it requires an analytical query to keep memory in ram.
-select getrss() as resident_set_size_in_kB, quantile(c/a, 0.8) * 0  from test;
+select quantile(c/a, 0.7) * 0, getrss() as resident_set_size_in_kB, quantile(c/a, 0.8) * 0  from test;
 
 drop table test cascade;
 drop function getrss;
