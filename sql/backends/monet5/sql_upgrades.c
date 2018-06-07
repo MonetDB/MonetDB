@@ -1760,6 +1760,7 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
 	if (buf == NULL)
 		throw(SQL, "sql_drop_functions_dependencies_Xs_on_Ys", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	schema = stack_get_string(sql, "current_schema");
+	/* remove functions which were created in sql/scripts/21_dependency_functions.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"DROP FUNCTION dependencies_schemas_on_users();\n"
@@ -1974,7 +1975,7 @@ SQLupgrades(Client c, mvc *m)
 	 && sql_bind_func(m->sa, s, "dependencies_tables_on_views", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_tables_on_indexes", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_tables_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_foreignKeys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_foreignkeys", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_tables_on_functions", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_columns_on_views", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_columns_on_keys", NULL, NULL, F_UNION)
@@ -1985,7 +1986,7 @@ SQLupgrades(Client c, mvc *m)
 	 && sql_bind_func(m->sa, s, "dependencies_views_on_triggers", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_functions_on_functions", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignKeys", NULL, NULL, F_UNION)) {
+	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
