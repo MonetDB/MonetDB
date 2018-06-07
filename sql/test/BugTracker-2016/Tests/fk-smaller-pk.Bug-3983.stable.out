@@ -31,19 +31,19 @@ Ready.
 
 #CREATE TABLE parent2(a int, b int, PRIMARY KEY(a,b));
 #CREATE TABLE child1(x int, y int, FOREIGN KEY(x,y) REFERENCES parent2);
-#SELECT * FROM dependencies_columns_on_keys() WHERE usr LIKE 'parent%';
-% .L1,	.L1,	.L1 # table_name
-% sch,	usr,	dep_type # name
-% varchar,	varchar,	varchar # type
-% 1,	16,	7 # length
-[ "a",	"parent2_a_b_pkey",	"DEP_KEY"	]
-[ "b",	"parent2_a_b_pkey",	"DEP_KEY"	]
-#SELECT * FROM dependencies_keys_on_foreignkeys() WHERE usr LIKE 'child%';
-% .L1,	.L1,	.L1 # table_name
-% sch,	usr,	dep_type # name
-% varchar,	varchar,	varchar # type
-% 16,	15,	8 # length
-[ "parent2_a_b_pkey",	"child1_x_y_fkey",	"DEP_FKEY"	]
+#SELECT table_name, column_name, key_name, key_col_nr, key_type, depend_type FROM dependency_columns_on_keys WHERE table_name LIKE 'parent%' AND key_name LIKE 'parent%';
+% .dependency_columns_on_keys,	.dependency_columns_on_keys,	.dependency_columns_on_keys,	.dependency_columns_on_keys,	.dependency_columns_on_keys,	.dependency_columns_on_keys # table_name
+% table_name,	column_name,	key_name,	key_col_nr,	key_type,	depend_type # name
+% varchar,	varchar,	varchar,	int,	smallint,	smallint # type
+% 7,	1,	16,	1,	1,	1 # length
+[ "parent2",	"a",	"parent2_a_b_pkey",	1,	0,	4	]
+[ "parent2",	"b",	"parent2_a_b_pkey",	2,	0,	4	]
+#SELECT key_name, fk_name, key_type, depend_type FROM dependency_keys_on_foreignkeys WHERE fk_name LIKE 'child%';
+% sys.dependency_keys_on_foreignkeys,	sys.dependency_keys_on_foreignkeys,	sys.dependency_keys_on_foreignkeys,	.dependency_keys_on_foreignkeys # table_name
+% key_name,	fk_name,	key_type,	depend_type # name
+% varchar,	varchar,	smallint,	smallint # type
+% 16,	15,	1,	2 # length
+[ "parent2_a_b_pkey",	"child1_x_y_fkey",	0,	11	]
 #drop table child1;
 #drop table parent2;
 

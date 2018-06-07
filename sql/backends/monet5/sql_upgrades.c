@@ -1750,6 +1750,47 @@ sql_update_default(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
+{
+	size_t bufsize = 1600, pos = 0;
+	char *schema = NULL, *err = NULL;
+	char *buf = GDKmalloc(bufsize);
+
+	if (buf == NULL)
+		throw(SQL, "sql_drop_functions_dependencies_Xs_on_Ys", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	schema = stack_get_string(sql, "current_schema");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"DROP FUNCTION dependencies_schemas_on_users();\n"
+			"DROP FUNCTION dependencies_owners_on_schemas();\n"
+			"DROP FUNCTION dependencies_tables_on_views();\n"
+			"DROP FUNCTION dependencies_tables_on_indexes();\n"
+			"DROP FUNCTION dependencies_tables_on_triggers();\n"
+			"DROP FUNCTION dependencies_tables_on_foreignKeys();\n"
+			"DROP FUNCTION dependencies_tables_on_functions();\n"
+			"DROP FUNCTION dependencies_columns_on_views();\n"
+			"DROP FUNCTION dependencies_columns_on_keys();\n"
+			"DROP FUNCTION dependencies_columns_on_indexes();\n"
+			"DROP FUNCTION dependencies_columns_on_functions();\n"
+			"DROP FUNCTION dependencies_columns_on_triggers();\n"
+			"DROP FUNCTION dependencies_views_on_functions();\n"
+			"DROP FUNCTION dependencies_views_on_triggers();\n"
+			"DROP FUNCTION dependencies_functions_on_functions();\n"
+			"DROP FUNCTION dependencies_functions_on_triggers();\n"
+			"DROP FUNCTION dependencies_keys_on_foreignKeys();\n"
+			"delete from systemfunctions where function_id not in (select id from functions);\n");
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1892,7 +1933,7 @@ SQLupgrades(Client c, mvc *m)
 			BAT *b = BATdescriptor(output->cols[0].b);
 			if (b) {
 				if (BATcount(b) > 0) {
-					/* yes old view definiton exists, it needs to be replaced */
+					/* yes old view definition exists, it needs to be replaced */
 					if ((err = sql_replace_Mar2018_ids_view(c, m)) != NULL) {
 						fprintf(stderr, "!%s\n", err);
 						freeException(err);
@@ -1923,6 +1964,29 @@ SQLupgrades(Client c, mvc *m)
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (sql_bind_aggr(m->sa, s, "group_concat", &tp) == NULL) {
 		if ((err = sql_update_default(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (sql_bind_func(m->sa, s, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_views", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_indexes", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_foreignKeys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_views", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_keys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_indexes", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_views_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_views_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_functions_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignKeys", NULL, NULL, F_UNION)) {
+		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
