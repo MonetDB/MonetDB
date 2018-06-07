@@ -16,9 +16,6 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:34708/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11915/.s.monetdb.34708
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 Running database upgrade commands:
 set schema "sys";
 drop function sys.dependencies_functions_os_triggers();
