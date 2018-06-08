@@ -169,15 +169,10 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 									(mt->type == tt_merge_table)?"merge":"list partition");
 		goto finish;
 	} else if(!update && pt->p) {
-		sql_part *spt = find_sql_part(pt->p, pt->base.name);
-		if(!spt) {
-			pt->p = NULL;
-		} else {
-			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
-								  "ALTER TABLE: table %s.%s is already part of another range partition table",
-								  psname, ptname);
-			goto finish;
-		}
+		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+							  "ALTER TABLE: table %s.%s is already part of another range partition table",
+							  psname, ptname);
+		goto finish;
 	}
 
 	find_partition_type(&tpe, mt);
@@ -274,15 +269,10 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 									(mt->type == tt_merge_table)?"merge":"range partition");
 		goto finish;
 	} else if(!update && pt->p) {
-		sql_part *spt = find_sql_part(pt->p, pt->base.name);
-		if(!spt) {
-			pt->p = NULL;
-		} else {
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-								  "ALTER TABLE: table %s.%s is already part of another list partition table",
-								  psname, ptname);
-			goto finish;
-		}
+		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+							  "ALTER TABLE: table %s.%s is already part of another list partition table",
+							  psname, ptname);
+		goto finish;
 	}
 
 	find_partition_type(&tpe, mt);

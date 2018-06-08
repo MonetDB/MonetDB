@@ -1017,6 +1017,11 @@ set_members(changeset *ts)
 				pt->p = t;
 			}
 		}
+		if(t->p) {
+			sql_part *pt = find_sql_part(t->p, t->base.name);
+			if(!pt)
+				t->p = NULL;
+		}
 	}
 }
 

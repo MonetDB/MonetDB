@@ -904,13 +904,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 
 		if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
 			mt = t;
-		} else if(t->p) {
-			sql_part *pt = find_sql_part(t->p, t->base.name);
-			if(!pt) {
-				t->p = NULL;
-			} else if(isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p)) {
-				mt = t->p;
-			}
+		} else if(t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
+			mt = t->p;
 		}
 		if(mt && isPartitionedByColumnTable(mt)) {
 			pcols = sa_list(sql->sa);

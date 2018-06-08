@@ -264,10 +264,7 @@ propagate_validation_to_upper_tables(mvc* sql, sql_table *mt, sql_table *pt, sql
 	sql->caching = 0;
 	for(sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
 		sql_part *spt = find_sql_part(it, prev->base.name);
-		if(!spt) {
-			prev->p = NULL;
-			break;
-		} else {
+		if(spt) {
 			if(isRangePartitionTable(it)) {
 				sql_exp *e1 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.minvalue),
 						*e2 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.maxvalue);
@@ -283,6 +280,8 @@ propagate_validation_to_upper_tables(mvc* sql, sql_table *mt, sql_table *pt, sql
 			} else {
 				assert(0);
 			}
+		} else { //the sql_part should exist
+			assert(0);
 		}
 	}
 	return rel;
@@ -856,17 +855,12 @@ rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 	if(l->op == op_basetable) {
 		sql_table *t = l->l;
 
-		if(t->p) {
-			sql_part *pt = find_sql_part(t->p, t->base.name);
-			if(!pt) {
-				t->p = NULL;
-			} else if((isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
-				isSubtable = true;
-				if(is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
-					sql->caching = 0;
-					rel = rel_subtable_insert(sql, rel, t, changes);
-					propagate = rel->l;
-				}
+		if(t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
+			isSubtable = true;
+			if(is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
+				sql->caching = 0;
+				rel = rel_subtable_insert(sql, rel, t, changes);
+				propagate = rel->l;
 			}
 		}
 		if(isRangePartitionTable(t) || isListPartitionTable(t)) {
