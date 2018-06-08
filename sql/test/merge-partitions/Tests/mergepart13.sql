@@ -29,8 +29,8 @@ SELECT t, b FROM onedecade;
 SELECT t, b FROM twodecades;
 SELECT t, b FROM threedecades;
 
-ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND MAXVALUE WITH NULL; --error
-ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND MAXVALUE;
+ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND RANGE MAXVALUE WITH NULL; --error
+ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND RANGE MAXVALUE;
 
 INSERT INTO testtime VALUES (timestamp '1950-11-24 10:12:01', 1234); --error
 INSERT INTO testtime VALUES (timestamp '3300-10-10 22:12:00', 3300), (timestamp '2030-01-01 00:00:00', 2033),

@@ -1,9 +1,9 @@
 CREATE MERGE TABLE listparts (b varchar(32)) PARTITION BY RANGE ON (b);
 CREATE TABLE subtable1 (b varchar(32));
 
-ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN MINVALUE AND 'something'; --error
-ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'else' AND MAXVALUE; --error
-ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN MINVALUE AND MAXVALUE; --error
+ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN RANGE MINVALUE AND 'something'; --error
+ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'else' AND RANGE MAXVALUE; --error
+ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN RANGE MINVALUE AND RANGE MAXVALUE; --error
 SELECT minimum, maximum FROM range_partitions;
 
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello' AND 'world';
@@ -30,7 +30,7 @@ CREATE TABLE subtime (b timestamp);
 
 ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN timestamp '2002-01-01 00:00' AND timestamp '2001-01-01 00:00'; --error
 
-ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN MINVALUE AND MAXVALUE;
+ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN RANGE MINVALUE AND RANGE MAXVALUE;
 ALTER TABLE testtimestamps DROP TABLE subtime;
 
 INSERT INTO subtime VALUES (timestamp '2018-02-01 00:00');
@@ -47,15 +47,15 @@ DROP TABLE subtime;
 CREATE MERGE TABLE testrangelimits (a int) PARTITION BY RANGE ON (a);
 CREATE TABLE sublimits (a int);
 
-ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN MINVALUE AND MAXVALUE;
+ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND RANGE MAXVALUE;
 ALTER TABLE testrangelimits DROP TABLE sublimits;
 
 INSERT INTO sublimits VALUES (0);
-ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN MINVALUE AND 0;
+ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND 0;
 ALTER TABLE testrangelimits DROP TABLE sublimits;
 
 INSERT INTO sublimits VALUES (1);
-ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN MINVALUE AND 0; --error
+ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND 0; --error
 
 DROP TABLE testrangelimits;
 DROP TABLE sublimits;

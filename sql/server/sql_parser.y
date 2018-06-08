@@ -1518,12 +1518,12 @@ partition_list_value:
 
 partition_range_from:
    simple_scalar_exp { $$ = $1; }
- | MINVALUE          { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
+ | RANGE MINVALUE    { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
  ;
 
 partition_range_to:
    simple_scalar_exp { $$ = $1; }
- | MAXVALUE          { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
+ | RANGE MAXVALUE    { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
  ;
 
 partition_list:
