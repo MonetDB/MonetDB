@@ -906,6 +906,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			     type == 4 ? "STREAM " :
 			     type == 5 ? "REMOTE " :
 			     type == 6 ? "REPLICA " :
+			     (type == 7 || type == 9) ? "LIST PARTITION " :
+			     (type == 8 || type == 10) ? "RANGE PARTITION " :
 			     "",
 			     schema, tname);
 
