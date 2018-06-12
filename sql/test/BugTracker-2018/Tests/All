@@ -67,3 +67,4 @@ sqlitelogictest-groupby-distinct-duplicate.Bug-6603
 procedure-create-table.Bug-6604
 sqlitelogictest-cast-null-not-in.Bug-6605
 sqlitelogictest-groupby-coalesce-error-message.Bug-6608
+sqlitelogictest-algebra-rangejoin-undefined.Bug-6610

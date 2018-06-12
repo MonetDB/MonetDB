@@ -143,23 +143,6 @@ Ready.
 \dSf sys."db_users"
 \dSf sys."debug"
 \dSf sys."degrees"
-\dSf sys."dependencies_columns_on_functions"
-\dSf sys."dependencies_columns_on_indexes"
-\dSf sys."dependencies_columns_on_keys"
-\dSf sys."dependencies_columns_on_triggers"
-\dSf sys."dependencies_columns_on_views"
-\dSf sys."dependencies_functions_on_functions"
-\dSf sys."dependencies_functions_on_triggers"
-\dSf sys."dependencies_keys_on_foreignkeys"
-\dSf sys."dependencies_owners_on_schemas"
-\dSf sys."dependencies_schemas_on_users"
-\dSf sys."dependencies_tables_on_foreignkeys"
-\dSf sys."dependencies_tables_on_functions"
-\dSf sys."dependencies_tables_on_indexes"
-\dSf sys."dependencies_tables_on_triggers"
-\dSf sys."dependencies_tables_on_views"
-\dSf sys."dependencies_views_on_functions"
-\dSf sys."dependencies_views_on_triggers"
 \dSf sys."droporderindex"
 \dSf sys."env"
 \dSf sys."epoch"
@@ -508,23 +491,6 @@ SYSTEM FUNCTION         sys.db_users
 SYSTEM FUNCTION         sys.debug
 SYSTEM FUNCTION         sys.degrees
 SYSTEM FUNCTION         sys.dense_rank
-SYSTEM FUNCTION         sys.dependencies_columns_on_functions
-SYSTEM FUNCTION         sys.dependencies_columns_on_indexes
-SYSTEM FUNCTION         sys.dependencies_columns_on_keys
-SYSTEM FUNCTION         sys.dependencies_columns_on_triggers
-SYSTEM FUNCTION         sys.dependencies_columns_on_views
-SYSTEM FUNCTION         sys.dependencies_functions_on_functions
-SYSTEM FUNCTION         sys.dependencies_functions_on_triggers
-SYSTEM FUNCTION         sys.dependencies_keys_on_foreignkeys
-SYSTEM FUNCTION         sys.dependencies_owners_on_schemas
-SYSTEM FUNCTION         sys.dependencies_schemas_on_users
-SYSTEM FUNCTION         sys.dependencies_tables_on_foreignkeys
-SYSTEM FUNCTION         sys.dependencies_tables_on_functions
-SYSTEM FUNCTION         sys.dependencies_tables_on_indexes
-SYSTEM FUNCTION         sys.dependencies_tables_on_triggers
-SYSTEM FUNCTION         sys.dependencies_tables_on_views
-SYSTEM FUNCTION         sys.dependencies_views_on_functions
-SYSTEM FUNCTION         sys.dependencies_views_on_triggers
 SYSTEM FUNCTION         sys.diff
 SYSTEM FUNCTION         sys.difference
 SYSTEM PROCEDURE        sys.droporderindex
@@ -966,23 +932,6 @@ create function date_to_str(d date, format string) returns string external name 
 CREATE FUNCTION db_users () RETURNS TABLE(name varchar(2048)) EXTERNAL NAME sql.db_users;
 create function sys.debug(debug int) returns integer external name mdb."setDebug";
 create function degrees(r double) returns double return r*180/pi();
-create function dependencies_columns_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7);
-create function dependencies_columns_on_indexes() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name and kc.id = i.id and c.table_id = i.table_id and i.name not in (select name from keys));
-create function dependencies_columns_on_keys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name and kc.id = k.id and k.table_id = c.table_id and k.rkey = -1);
-create function dependencies_columns_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id and dep.depend_id =tri.id and dep.depend_type = 8);
-create function dependencies_columns_on_views() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
-create function dependencies_functions_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);
-create function dependencies_functions_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);
-create function dependencies_keys_on_foreignkeys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);
-create function dependencies_owners_on_schemas() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);
-create function dependencies_schemas_on_users() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);
-create function dependencies_tables_on_foreignkeys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id);
-create function dependencies_tables_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and t.type = 0);
-create function dependencies_tables_on_indexes() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);
-create function dependencies_tables_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table ((select t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) union (select t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id and dep.depend_id =tri.id and dep.depend_type = 8));
-create function dependencies_tables_on_views() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
-create function dependencies_views_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);
-create function dependencies_views_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);
 create procedure sys.droporderindex(sys string, tab string, col string) external name sql.droporderindex;
 CREATE FUNCTION env () RETURNS TABLE(name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;
 create function sys."epoch"(sec bigint) returns timestamp external name timestamp."epoch";
@@ -2094,7 +2043,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.f,	.L4,	.f,	.fl,	.ft,	.f,	.f,	.f,	.L14,	.L16,	.L20,	.L22,	.L24,	.L26,	.L30,	.L32,	.L34,	.L36,	.L40,	.L42,	.L44,	.L46,	.L50,	.L52,	.L54,	.L56,	.L60,	.L62,	.L64,	.L66,	.L70,	.L72,	.L74,	.L76,	.L100,	.L102,	.L104,	.L106,	.L110,	.L112,	.L114,	.L116,	.L120,	.L122,	.L124,	.L126,	.L130,	.L132,	.L134,	.L136,	.L140,	.L142,	.L144,	.L146,	.L150,	.L152,	.L154,	.L156,	.L160,	.L162,	.L164,	.L166,	.L170,	.L172,	.L174,	.L176,	.L200,	.L202,	.L204,	.L206,	.L210,	.L212,	.L214,	.L216,	.L220,	.L222,	.L224,	.L226,	.L230,	.L232,	.L234,	.L236,	.L240,	.L242,	.L244,	.L246,	.L250,	.L252 # table_name
 % name,	name,	query,	mod,	language_name,	function_type_name,	side_effect,	varres,	vararg,	name0,	type0,	type_digits0,	type_scale0,	inout0,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	boolean,	boolean,	boolean,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char # type
-% 8,	35,	831,	9,	10,	26,	5,	5,	5,	11,	14,	4,	1,	3,	16,	14,	4,	1,	3,	16,	14,	3,	1,	3,	27,	12,	3,	1,	3,	12,	7,	2,	1,	3,	10,	7,	2,	1,	3,	8,	7,	2,	1,	3,	9,	6,	2,	1,	3,	10,	6,	2,	1,	3,	8,	7,	2,	1,	3,	9,	7,	2,	1,	3,	6,	7,	2,	1,	3,	8,	6,	2,	1,	3,	6,	7,	1,	1,	3,	9,	7,	1,	1,	3,	6,	7,	1,	1,	3 # length
+% 8,	24,	831,	9,	10,	26,	5,	5,	5,	11,	14,	4,	1,	3,	16,	14,	4,	1,	3,	16,	14,	3,	1,	3,	27,	12,	3,	1,	3,	12,	7,	2,	1,	3,	10,	7,	2,	1,	3,	8,	7,	2,	1,	3,	9,	6,	2,	1,	3,	10,	6,	2,	1,	3,	8,	7,	2,	1,	3,	9,	7,	2,	1,	3,	6,	7,	2,	1,	3,	8,	6,	2,	1,	3,	6,	7,	1,	1,	3,	9,	7,	1,	1,	3,	6,	7,	1,	1,	3 # length
 [ "bam",	"bam_drop_file",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint) external name bam.bam_drop_file;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"file_id",	"bigint",	64,	0,	"in",	"dbschema",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_export",	"create procedure bam.bam_export(output_path string) external name bam.bam_export;",	"bam",	"MAL",	"Procedure",	true,	false,	false,	"output_path",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_flag",	"create function bam.bam_flag(flag smallint, name string) returns boolean external name bam.bam_flag;",	"bam",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"flag",	"smallint",	16,	0,	"in",	"name",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2287,23 +2236,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"debug",	"create function sys.debug(debug int) returns integer external name mdb.\"setDebug\";",	"mdb",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"debug",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"degrees",	"create function degrees(r double) returns double return r*180/pi();",	"user",	"SQL",	"Scalar function",	false,	false,	false,	"result",	"double",	53,	0,	"out",	"r",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"dense_rank",	"dense_rank",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"boolean",	1,	0,	"in",	"arg_3",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_columns_on_functions",	"create function dependencies_columns_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_columns_on_indexes",	"create function dependencies_columns_on_indexes() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc.\"name\" = c.name and kc.id = i.id and c.table_id = i.table_id and i.name not in (select name from keys));",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_columns_on_keys",	"create function dependencies_columns_on_keys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc.\"name\" = c.name and kc.id = k.id and k.table_id = c.table_id and k.rkey = -1);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_columns_on_triggers",	"create function dependencies_columns_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id and dep.depend_id =tri.id and dep.depend_type = 8);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_columns_on_views",	"create function dependencies_columns_on_views() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_functions_on_functions",	"create function dependencies_functions_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_functions_on_triggers",	"create function dependencies_functions_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id and dep.depend_id =tri.id and dep.depend_type = 8);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_keys_on_foreignkeys",	"create function dependencies_keys_on_foreignkeys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_owners_on_schemas",	"create function dependencies_owners_on_schemas() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select a.name, s.name, 'DEP_SCHEMA' from schemas as s, auths a where s.owner = a.id);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_schemas_on_users",	"create function dependencies_schemas_on_users() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select s.name, u.name, 'DEP_USER' from schemas as s, users u where u.default_schema = s.id);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_tables_on_foreignkeys",	"create function dependencies_tables_on_foreignkeys() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_tables_on_functions",	"create function dependencies_tables_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and t.type = 0);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_tables_on_indexes",	"create function dependencies_tables_on_indexes() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_tables_on_triggers",	"create function dependencies_tables_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table ((select t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) union (select t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id and dep.depend_id =tri.id and dep.depend_type = 8));",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_tables_on_views",	"create function dependencies_tables_on_views() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_views_on_functions",	"create function dependencies_views_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"dependencies_views_on_triggers",	"create function dependencies_views_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);",	"user",	"SQL",	"Function returning a table",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"diff",	"diff",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"diff",	"diff",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"boolean",	1,	0,	"in",	"arg_2",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"difference",	"stringdiff",	"txtsim",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	"arg_2",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3925,52 +3857,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t,	sys.s2,	sys.f,	.dt # table_name
 % name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	17,	3,	35,	9 # length
-[ "sys",	"columns",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"columns",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"idxs",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"objects",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"columns",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"keys",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"objects",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"columns",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"columns",	"sys",	"dependencies_columns_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_columns_on_views",	"FUNCTION"	]
-[ "sys",	"tables",	"sys",	"dependencies_columns_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"keys",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"auths",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"schemas",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"schemas",	"sys",	"dependencies_schemas_on_users",	"FUNCTION"	]
-[ "sys",	"users",	"sys",	"dependencies_schemas_on_users",	"FUNCTION"	]
-[ "sys",	"keys",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"tables",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"tables",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"idxs",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"tables",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"tables",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_tables_on_views",	"FUNCTION"	]
-[ "sys",	"tables",	"sys",	"dependencies_tables_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"tables",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"tables",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
+% 3,	17,	3,	16,	9 # length
 [ "sys",	"spatial_ref_sys",	"sys",	"getproj4",	"FUNCTION"	]
 [ "sys",	"storagemodelinput",	"sys",	"storagemodel",	"FUNCTION"	]
 [ "sys",	"keys",	"sys",	"storagemodelinit",	"PROCEDURE"	]
@@ -3982,184 +3869,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t,	sys.c,	sys.s2,	sys.f,	.dt # table_name
 % name,	name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	17,	13,	3,	35,	9 # length
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"func",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"id",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"language",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"mod",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"name",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"type",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"vararg",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"varres",	"sys",	"dependencies_columns_on_functions",	"FUNCTION"	]
-[ "sys",	"idxs",	"id",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"idxs",	"name",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"idxs",	"table_id",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"idxs",	"type",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"action",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"id",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"name",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"rkey",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"table_id",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"type",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"objects",	"id",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"objects",	"name",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"objects",	"nr",	"sys",	"dependencies_columns_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"action",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"keys",	"id",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"keys",	"name",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"keys",	"rkey",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"keys",	"table_id",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"keys",	"type",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"objects",	"id",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"objects",	"name",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"objects",	"nr",	"sys",	"dependencies_columns_on_keys",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"condition",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"event",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"id",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"name",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"new_name",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"old_name",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"orientation",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"statement",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"table_id",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"time",	"sys",	"dependencies_columns_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_columns_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_columns_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_columns_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"func",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"id",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"language",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"mod",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"name",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"type",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"vararg",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"varres",	"sys",	"dependencies_functions_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"func",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"id",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"language",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"mod",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"name",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"type",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"vararg",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"functions",	"varres",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"condition",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"event",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"id",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"name",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"new_name",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"old_name",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"orientation",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"statement",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"table_id",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"time",	"sys",	"dependencies_functions_on_triggers",	"FUNCTION"	]
-[ "sys",	"keys",	"action",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"id",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"name",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"rkey",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"table_id",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"type",	"sys",	"dependencies_keys_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"auths",	"grantor",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"auths",	"id",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"auths",	"name",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"schemas",	"authorization",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"schemas",	"id",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"schemas",	"name",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"schemas",	"owner",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"schemas",	"system",	"sys",	"dependencies_owners_on_schemas",	"FUNCTION"	]
-[ "sys",	"schemas",	"authorization",	"sys",	"dependencies_schemas_on_users",	"FUNCTION"	]
-[ "sys",	"schemas",	"id",	"sys",	"dependencies_schemas_on_users",	"FUNCTION"	]
-[ "sys",	"schemas",	"name",	"sys",	"dependencies_schemas_on_users",	"FUNCTION"	]
-[ "sys",	"schemas",	"owner",	"sys",	"dependencies_schemas_on_users",	"FUNCTION"	]
-[ "sys",	"schemas",	"system",	"sys",	"dependencies_schemas_on_users",	"FUNCTION"	]
-[ "sys",	"keys",	"action",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"id",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"name",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"rkey",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"table_id",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"keys",	"type",	"sys",	"dependencies_tables_on_foreignkeys",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"func",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"id",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"language",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"mod",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"name",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"type",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"vararg",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"varres",	"sys",	"dependencies_tables_on_functions",	"FUNCTION"	]
-[ "sys",	"idxs",	"id",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"idxs",	"name",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"idxs",	"table_id",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"idxs",	"type",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"action",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"id",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"name",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"rkey",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"table_id",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"keys",	"type",	"sys",	"dependencies_tables_on_indexes",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"condition",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"event",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"id",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"name",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"new_name",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"old_name",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"orientation",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"statement",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"table_id",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"time",	"sys",	"dependencies_tables_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_tables_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_tables_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_tables_on_views",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"func",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"id",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"language",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"mod",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"name",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"side_effect",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"type",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"vararg",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"functions",	"varres",	"sys",	"dependencies_views_on_functions",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"condition",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"event",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"id",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"name",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"new_name",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"old_name",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"orientation",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"statement",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"table_id",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
-[ "sys",	"triggers",	"time",	"sys",	"dependencies_views_on_triggers",	"FUNCTION"	]
+% 3,	17,	13,	3,	16,	9 # length
 [ "sys",	"spatial_ref_sys",	"auth_name",	"sys",	"getproj4",	"FUNCTION"	]
 [ "sys",	"spatial_ref_sys",	"auth_srid",	"sys",	"getproj4",	"FUNCTION"	]
 [ "sys",	"spatial_ref_sys",	"proj4text",	"sys",	"getproj4",	"FUNCTION"	]
@@ -5150,7 +4860,7 @@ drop function pcre_replace(string, string, string, string);
 % .f # table_name
 % name # name
 % varchar # type
-% 35 # length
+% 24 # length
 [ "<"	]
 [ "<="	]
 [ "<>"	]
@@ -5310,23 +5020,6 @@ drop function pcre_replace(string, string, string, string);
 [ "debug"	]
 [ "degrees"	]
 [ "dense_rank"	]
-[ "dependencies_columns_on_functions"	]
-[ "dependencies_columns_on_indexes"	]
-[ "dependencies_columns_on_keys"	]
-[ "dependencies_columns_on_triggers"	]
-[ "dependencies_columns_on_views"	]
-[ "dependencies_functions_on_functions"	]
-[ "dependencies_functions_on_triggers"	]
-[ "dependencies_keys_on_foreignkeys"	]
-[ "dependencies_owners_on_schemas"	]
-[ "dependencies_schemas_on_users"	]
-[ "dependencies_tables_on_foreignkeys"	]
-[ "dependencies_tables_on_functions"	]
-[ "dependencies_tables_on_indexes"	]
-[ "dependencies_tables_on_triggers"	]
-[ "dependencies_tables_on_views"	]
-[ "dependencies_views_on_functions"	]
-[ "dependencies_views_on_triggers"	]
 [ "diff"	]
 [ "diff"	]
 [ "difference"	]

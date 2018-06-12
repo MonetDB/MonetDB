@@ -80,6 +80,29 @@ insert into sys.systemfunctions (select id from sys.functions where name='remote
 set schema "sys";
 commit;
 
+Running database upgrade commands:
+set schema "sys";
+DROP FUNCTION dependencies_schemas_on_users();
+DROP FUNCTION dependencies_owners_on_schemas();
+DROP FUNCTION dependencies_tables_on_views();
+DROP FUNCTION dependencies_tables_on_indexes();
+DROP FUNCTION dependencies_tables_on_triggers();
+DROP FUNCTION dependencies_tables_on_foreignKeys();
+DROP FUNCTION dependencies_tables_on_functions();
+DROP FUNCTION dependencies_columns_on_views();
+DROP FUNCTION dependencies_columns_on_keys();
+DROP FUNCTION dependencies_columns_on_indexes();
+DROP FUNCTION dependencies_columns_on_functions();
+DROP FUNCTION dependencies_columns_on_triggers();
+DROP FUNCTION dependencies_views_on_functions();
+DROP FUNCTION dependencies_views_on_triggers();
+DROP FUNCTION dependencies_functions_on_functions();
+DROP FUNCTION dependencies_functions_on_triggers();
+DROP FUNCTION dependencies_keys_on_foreignKeys();
+delete from systemfunctions where function_id not in (select id from functions);
+set schema "sys";
+commit;
+
 # MonetDB/SQL module loaded
 
 Ready.
