@@ -227,6 +227,10 @@ pattern alter_set_table( sname:str, tnme:str, access:int)
 address WLRgeneric
 comment "Catalog operation alter_set_table";
 
+pattern comment_on(objid:int, remark:str)
+address WLRgeneric
+comment "Catalog operation comment_on";
+
 pattern transaction_release(chain:int,name:str):void
 address WLRgeneric
 comment "A transaction statement (type can be commit,release,rollback or start)";
