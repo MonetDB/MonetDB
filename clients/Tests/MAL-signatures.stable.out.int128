@@ -56,6 +56,9 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
 
 Ready.
 

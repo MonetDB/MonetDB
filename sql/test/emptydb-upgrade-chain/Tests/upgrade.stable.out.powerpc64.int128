@@ -5393,13 +5393,6 @@ set schema "sys";
 commit;
 
 Running database upgrade commands:
-set schema "sys";
-drop function sys.chi2prob(double, double);
-delete from systemfunctions where function_id not in (select id from functions);
-set schema "sys";
-commit;
-
-Running database upgrade commands:
 set schema sys;
 create aggregate sys.group_concat(str string) returns string external name "aggr"."str_group_concat";
 grant execute on aggregate sys.group_concat(string) to public;
