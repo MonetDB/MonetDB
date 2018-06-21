@@ -42,6 +42,12 @@ cs_add(changeset * cs, void *elm, int flag)
 		cs->nelm = cs->set->t;
 }
 
+void *
+cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp)
+{
+	return list_traverse_with_validate(cs->set, elm, cmp);
+}
+
 void*
 cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp)
 {
@@ -49,19 +55,6 @@ cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp)
 	if (!cs->set)
 		cs->set = list_new(cs->sa, cs->destroy);
 	if((res = list_append_with_validate(cs->set, elm, cmp)) != NULL)
-		return res;
-	if (flag == TR_NEW && !cs->nelm)
-		cs->nelm = cs->set->t;
-	return res;
-}
-
-void*
-cs_add_sorted(changeset * cs, void *elm, int flag, fcmpvalidate cmp)
-{
-	void* res = NULL;
-	if (!cs->set)
-		cs->set = list_new(cs->sa, cs->destroy);
-	if((res = list_append_sorted(cs->set, elm, cmp)) != NULL)
 		return res;
 	if (flag == TR_NEW && !cs->nelm)
 		cs->nelm = cs->set->t;

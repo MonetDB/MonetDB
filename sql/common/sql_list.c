@@ -385,6 +385,19 @@ list_traverse(list *l, traverse_func f, void *clientdata)
 	return res;
 }
 
+void *
+list_traverse_with_validate(list *l, void *data, fvalidate cmp)
+{
+	void* err = NULL;
+
+	for (node *n = l->h; n; n = n->next) {
+		err = cmp(n->data, data);
+		if(err)
+			break;
+	}
+	return err;
+}
+
 node *
 list_find(list *l, void *key, fcmp cmp)
 {

@@ -66,6 +66,7 @@ typedef void *(*freduce) (void *v1, void *v2);
 typedef void *(*freduce2) (sql_allocator *sa, void *v1, void *v2);
 typedef void *(*fmap) (void *data, void *clientdata);
 
+extern void *list_traverse_with_validate(list *l, void *data, fvalidate cmp);
 extern void *list_append_with_validate(list *l, void *data, fvalidate cmp);
 extern void *list_append_sorted(list *l, void *data, fcmpvalidate cmp);
 extern node *list_find(list *l, void *key, fcmp cmp);

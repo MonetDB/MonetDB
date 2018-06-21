@@ -103,9 +103,6 @@
 #define EXCLUDE_TIES 3
 #define EXCLUDE_NO_OTHERS 4
 
-#define PARTITION_BY_COLUMN 1
-#define PARTITION_BY_EXPRESSION 2
-
 #define PARTITION_NONE  0
 #define PARTITION_RANGE 1
 #define PARTITION_LIST  2
@@ -204,9 +201,9 @@ extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
 extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
-extern void *cs_add_sorted(changeset * cs, void *elm, int flag, fcmpvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
+extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, int id);
