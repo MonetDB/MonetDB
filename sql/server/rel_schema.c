@@ -447,7 +447,7 @@ column_option(
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 		}
-	       	r = symbol2string(sql, s->data.sym, &err);
+	       	r = symbol2string(sql, s->data.sym, 0, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
@@ -773,7 +773,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
-		r = symbol2string(sql, sym, &err);
+		r = symbol2string(sql, sym, 0, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
@@ -953,7 +953,7 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_de
 			}
 		} else if(tt == tt_list_partition_exp || tt == tt_range_partition_exp) {
 			sql_subtype *empty = sql_bind_localtype("void");
-			char *query = symbol2string(sql, list2->h->data.sym, &err);
+			char *query = symbol2string(sql, list2->h->data.sym, 1, &err);
 			if (!query) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: error compiling expression '%s'", err?err:"");
 				if (err) _DELETE(err);
