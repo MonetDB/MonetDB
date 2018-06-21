@@ -304,7 +304,7 @@ This information can be used to determine memory footprint and variable life tim
 					logadd("],%s\"arg\":[",prettify);
 				}
 				logadd("{");
-				logadd("\"index\":\"%d\",%s", j,pret);
+				logadd("\"index\":%d,%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
 				if( getVarSTC(mb,getArg(pci,j))){
 					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
@@ -323,9 +323,9 @@ This information can be used to determine memory footprint and variable life tim
 						cnt = BATcount(d);
 						if( isVIEW(d)){
 							logadd("\"view\":\"true\",%s", pret);
-							logadd("\"parent\":\"%d\",%s", VIEWtparent(d), pret);
-							logadd("\"seqbase\":\""BUNFMT"\",%s", d->hseqbase, pret);
-							logadd("\"hghbase\":\""BUNFMT"\",%s", d->hseqbase + cnt, pret);
+							logadd("\"parent\":%d,%s", VIEWtparent(d), pret);
+							logadd("\"seqbase\":"BUNFMT",%s", d->hseqbase, pret);
+							logadd("\"hghbase\":"BUNFMT",%s", d->hseqbase + cnt, pret);
 							v= BBPquickdesc(VIEWtparent(d),0);
 							logadd("\"kind\":\"%s\",%s", (v &&  v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						} else
@@ -336,8 +336,8 @@ This information can be used to determine memory footprint and variable life tim
 						total += IMPSimprintsize(d);
 						BBPunfix(d->batCacheid);
 					}
-					logadd("\"bid\":\"%d\",%s", bid,pret);
-					logadd("\"count\":\""BUNFMT"\",%s",cnt,pret);
+					logadd("\"bid\":%d,%s", bid,pret);
+					logadd("\"count\":"BUNFMT",%s",cnt,pret);
 					logadd("\"size\":" LLFMT",%s", total,pret);
 				} else{
 					char *truncated = NULL;
