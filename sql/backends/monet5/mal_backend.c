@@ -21,6 +21,7 @@ backend_reset(backend *b)
 	b->mb = NULL;
 	b->mvc_var = 0;
 	b->cur_append = 0;
+	b->first_statement_generated = 0;
 	b->output_format = OFMT_CSV;
 	return b;
 }
@@ -37,6 +38,7 @@ backend_create(mvc *m, Client c)
 	b->client = c;
 	b->mvc_var = 0;
 	b->cur_append = 0;
+	b->first_statement_generated = 0;
 	b->output_format = OFMT_CSV;
 	return backend_reset(b);
 }

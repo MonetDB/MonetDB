@@ -3433,8 +3433,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
 
-	if (constraint)
-		sql_insert_check_null(be, t, inserts->op4.lval);
+	if (constraint && !be->first_statement_generated)
+		sql_insert_check_null(be, be->cur_append? t->p : t, inserts->op4.lval);
 
 	l = sa_list(sql->sa);
 
@@ -3446,6 +3446,12 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 
 /* before */
+	if(be->cur_append && !be->first_statement_generated) {
+		for(sql_table *up = t->p ; up ; up = up->p) {
+			if (!sql_insert_triggers(be, up, updates, 0))
+				return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: triggers failed for table '%s'", up->base.name);
+		}
+	}
 	if (!sql_insert_triggers(be, t, updates, 0)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
@@ -3457,7 +3463,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		if ((hash_index(i->type) && list_length(i->columns) <= 1) ||
 		    i->type == no_idx)
 			is = NULL;
-		if (i->key && constraint) {
+		if (i->key && constraint /*&& !be->first_statement_generated*/) {
 			stmt *ckeys = sql_insert_key(be, inserts->op4.lval, i->key, is, pin);
 
 			list_append(l, ckeys);
@@ -3480,6 +3486,12 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!insert)
 		return NULL;
 
+	if(be->cur_append && !be->first_statement_generated) {
+		for(sql_table *up = t->p ; up ; up = up->p) {
+			if (!sql_insert_triggers(be, up, updates, 1))
+				return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: triggers failed for table '%s'", up->base.name);
+		}
+	}
 	if (!sql_insert_triggers(be, t, updates, 1)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (ddl) {
@@ -4328,7 +4340,8 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	list *l = sa_list(sql->sa);
 	node *n;
 
-	sql_update_check_null(be, t, updates);
+	if (!be->first_statement_generated)
+		sql_update_check_null(be, be->cur_append? t->p : t, updates);
 
 	/* check keys + get idx */
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
@@ -4338,6 +4351,12 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	}
 
 /* before */
+	if(be->cur_append && !be->first_statement_generated) {
+		for(sql_table *up = t->p ; up ; up = up->p) {
+			if (!sql_update_triggers(be, up, rows, updates, 0))
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", up->base.name);
+		}
+	}
 	if (!sql_update_triggers(be, t, rows, updates, 0)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
@@ -4352,6 +4371,12 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
+	if(be->cur_append && !be->first_statement_generated) {
+		for(sql_table *up = t->p ; up ; up = up->p) {
+			if (!sql_update_triggers(be, up, rows, updates, 1))
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", up->base.name);
+		}
+	}
 	if (!sql_update_triggers(be, t, rows, updates, 1)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
@@ -4410,7 +4435,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		if (c) 
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
-	sql_update_check_null(be, t, updates);
+	if (!be->first_statement_generated)
+		sql_update_check_null(be, be->cur_append? t->p : t, updates);
 
 	/* check keys + get idx */
 	updcol = first_updated_col(updates, list_length(t->columns.set));
@@ -4435,6 +4461,12 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	}
 
 /* before */
+	if(be->cur_append && !be->first_statement_generated) {
+		for(sql_table *up = t->p ; up ; up = up->p) {
+			if (!sql_update_triggers(be, up, tids, updates, 0))
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", up->base.name);
+		}
+	}
 	if (!sql_update_triggers(be, t, tids, updates, 0)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
@@ -4451,6 +4483,12 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
+	if(be->cur_append && !be->first_statement_generated) {
+		for(sql_table *up = t->p ; up ; up = up->p) {
+			if (!sql_update_triggers(be, up, tids, updates, 1))
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", up->base.name);
+		}
+	}
 	if (!sql_update_triggers(be, t, tids, updates, 1)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
@@ -4632,6 +4670,12 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	}
 
 /* before */
+	if(be->cur_append && !be->first_statement_generated) {
+		for(sql_table *up = t->p ; up ; up = up->p) {
+			if (!sql_delete_triggers(be, up, v, 0, 1, 3))
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", up->base.name);
+		}
+	}
 	if (!sql_delete_triggers(be, t, v, 0, 1, 3))
 		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: triggers failed for table '%s'", t->base.name);
 
@@ -4650,6 +4694,12 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	}
 
 /* after */
+	if(be->cur_append && !be->first_statement_generated) {
+		for(sql_table *up = t->p ; up ; up = up->p) {
+			if (!sql_delete_triggers(be, up, v, 1, 1, 3))
+				return sql_error(sql, 02, SQLSTATE(42000) "DELETE: triggers failed for table '%s'", up->base.name);
+		}
+	}
 	if (!sql_delete_triggers(be, t, v, 1, 1, 3))
 		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: triggers failed for table '%s'", t->base.name);
 	if (rows)
@@ -4809,6 +4859,15 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		v = stmt_tid(be, next, 0);
 
 		/* before */
+		if(be->cur_append && !be->first_statement_generated) {
+			for(sql_table *up = t->p ; up ; up = up->p) {
+				if (!sql_delete_triggers(be, up, v, 0, 3, 4)) {
+					sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
+					error = 1;
+					goto finalize;
+				}
+			}
+		}
 		if (!sql_delete_triggers(be, next, v, 0, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
@@ -4826,15 +4885,24 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		if(next == t)
 			ret = other;
 
-		if(be->cur_append) //building the total number of rows affected across all tables
-			other->nr = add_to_merge_partitions_accumulator(be, other->nr);
-
 		/* after */
+		if(be->cur_append && !be->first_statement_generated) {
+			for(sql_table *up = t->p ; up ; up = up->p) {
+				if (!sql_delete_triggers(be, up, v, 1, 3, 4)) {
+					sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
+					error = 1;
+					goto finalize;
+				}
+			}
+		}
 		if (!sql_delete_triggers(be, next, v, 1, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
 		}
+
+		if(be->cur_append) //building the total number of rows affected across all tables
+			other->nr = add_to_merge_partitions_accumulator(be, other->nr);
 	}
 
 finalize:
@@ -5322,6 +5390,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 		if(be->cur_append) { /* finish the output bat */
 			s->nr = be->cur_append;
 			be->cur_append = 0;
+			be->first_statement_generated = 0;
 		}
 		s = stmt_affected_rows(be, s);
 	}
