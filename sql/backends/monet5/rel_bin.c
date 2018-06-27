@@ -764,6 +764,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				l = stmt_const(be, bin_first_column(be, swapped?right:left), l); 
 			if (r->nrcols == 0)
 				r = stmt_const(be, bin_first_column(be, swapped?left:right), r); 
+			if (r2 && r2->nrcols == 0)
+				r2 = stmt_const(be, bin_first_column(be, swapped?left:right), r2); 
 			if (r2) {
 				s = stmt_join2(be, l, r, r2, (comp_type)e->flag, is_anti(e), swapped);
 			} else if (swapped) {
