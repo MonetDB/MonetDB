@@ -388,7 +388,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 }
 
 
-static sql_table *
+sql_table *
 insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 {
 	if (!t) {
@@ -421,7 +421,7 @@ copy_allowed(mvc *sql, int from)
 	return 1;
 }
 
-static sql_table *
+sql_table *
 update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
 {
 	if (!t) {

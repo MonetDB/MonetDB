@@ -25,4 +25,7 @@ extern sql_exp * rel_parse_val(mvc *m, char *query, char emode, sql_rel *from);
 
 extern sql_rel *rel_updates(mvc *sql, symbol *sym);
 
+extern sql_table *insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname);
+extern sql_table *update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete);
+
 #endif /*_REL_UPDATES_H_*/

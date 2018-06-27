@@ -9175,6 +9175,9 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 		return rel;
 
 	rel = rewriter(has_changes, sql, rel);
+	if (!rel)
+		return rel;
+
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:

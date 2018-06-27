@@ -533,6 +533,10 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_table *sub = find_sql_table(t->s, pt->base.name);
 		sql_rel *s1, *dup = NULL;
 
+		if(!update_allowed(sql, sub, sub->base.name, is_delete(rel->op) ? "DELETE": "TRUNCATE",
+						   is_delete(rel->op) ? "delete": "truncate",  is_delete(rel->op) ? 1 : 2))
+			return NULL;
+
 		if(rel->r) {
 			dup = rel_copy(sql->sa, rel->r, 1);
 			dup = rel_change_base_table(sql, dup, t, sub);
@@ -563,6 +567,9 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_table *sub = find_sql_table(t->s, pt->base.name);
 		sql_rel *s1, *dup = NULL;
 		list *uexps = exps_copy(sql->sa, rel->exps);
+
+		if(!update_allowed(sql, sub, sub->base.name, "UPDATE", "update", 0))
+			return NULL;
 
 		if(rel->r) {
 			dup = rel_copy(sql->sa, rel->r, 1);
@@ -610,6 +617,9 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 		sql_table *sub = find_sql_table(t->s, pt->base.name);
 		sql_rel *s1 = NULL, *dup = NULL;
 		sql_exp *le = NULL;
+
+		if(!insert_allowed(sql, sub, sub->base.name, "INSERT", "insert"))
+			return NULL;
 
 		if(isPartitionedByColumnTable(t)) {
 			dup = rel_dup(rel->r);
@@ -725,8 +735,10 @@ rel_propagate_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	sql_rel* anti_rel = NULL;
 	sql_rel* res = rel_generate_subinserts(sql, rel, &anti_rel, &exception, t, changes, "INSERT", "insert");
 
-	res = rel_exception(sql->sa, res, anti_rel, list_append(new_exp_list(sql->sa), exception));
-	res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
+	if(res) {
+		res = rel_exception(sql->sa, res, anti_rel, list_append(new_exp_list(sql->sa), exception));
+		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
+	}
 	return res;
 }
 
@@ -734,8 +746,10 @@ static sql_rel*
 rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 {
 	rel = rel_generate_subdeletes(sql, rel, t, changes);
-	rel = rel_exception(sql->sa, rel, NULL, NULL);
-	rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
+	if(rel) {
+		rel = rel_exception(sql->sa, rel, NULL, NULL);
+		rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
+	}
 	return rel;
 }
 
@@ -773,8 +787,10 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	if(!found_partition_col) { //easy scenario where the partitioned column is not being updated, just propagate
 		sel = rel_generate_subupdates(sql, rel, t, changes);
-		sel = rel_exception(sql->sa, sel, NULL, NULL);
-		sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
+		if(sel) {
+			sel = rel_exception(sql->sa, sel, NULL, NULL);
+			sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
+		}
 	} else { //harder scenario, has to insert and delete across partitions.
 		/*sql_exp *exception = NULL;
 		sql_rel *inserts = NULL, *deletes = NULL, *anti_rel = NULL;

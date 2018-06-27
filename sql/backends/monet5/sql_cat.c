@@ -86,6 +86,12 @@ rel_check_tables(sql_table *nt, sql_table *nnt, const char* errtable)
 
 		if (subtype_cmp(&nc->type, &mc->type) != 0)
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table column type doesn't match %s TABLE definition", errtable, errtable);
+		if(isRangePartitionTable(nt) || isListPartitionTable(nt)) {
+			if (nc->null != mc->null)
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table column NULL check doesn't match %s TABLE definition", errtable, errtable);
+			if ((!nc->def && mc->def) || (nc->def && !mc->def) || (nc->def && mc->def && strcmp(nc->def, mc->def) != 0))
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table column DEFAULT value doesn't match %s TABLE definition", errtable, errtable);
+		}
 	}
 	if(isNonPartitionedTable(nt)) {
 		if (cs_size(&nt->idxs) != cs_size(&nnt->idxs))
@@ -118,9 +124,7 @@ rel_check_tables(sql_table *nt, sql_table *nnt, const char* errtable)
 						throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key's columns doesn't match %s TABLE definition", errtable, errtable);
 				}
 			}
-		if(nt->pkey && !nnt->pkey)
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: both tables must have the same primary key", errtable);
-		else if(!nt->pkey && nnt->pkey)
+		if((nt->pkey && !nnt->pkey) || (!nt->pkey && nnt->pkey))
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: both tables must have the same primary key", errtable);
 		else if(nt->pkey && nnt->pkey) {
 			if (nt->pkey->k.type != nnt->pkey->k.type)

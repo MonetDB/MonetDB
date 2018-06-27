@@ -118,15 +118,14 @@ sql_symbol2relation(mvc *c, symbol *sym)
 	sql_rel *r;
 
 	r = rel_semantic(c, sym);
-	if (!r)
-		return NULL;
-	if (r) {
+	if (r)
 		r = rel_optimizer(c, r, 1);
+	if (r)
 		r = rel_distribute(c, r);
+	if (r)
 		r = rel_partition(c, r);
-		if (rel_no_mitosis(r) || rel_need_distinct_query(r))
-			c->no_mitosis = 1;
-	}
+	if (r && (rel_no_mitosis(r) || rel_need_distinct_query(r)))
+		c->no_mitosis = 1;
 	return r;
 }
 
