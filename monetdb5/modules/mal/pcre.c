@@ -1601,7 +1601,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	if (is_strcmpable(*pat, *esc)) {
 		use_re = 1;
 		use_strcmp = 1;
-	} else if ((strcmp(*esc, str_nil) == 0 || strlen(*esc) == 0) &&
+	} else if ((strcmp(*esc, str_nil) == 0 || strlen(*esc) == 0 || strchr(*pat, **esc) == NULL) &&
 			   re_simple(*pat) > 0) {
 		use_re = 1;
 	} else {
