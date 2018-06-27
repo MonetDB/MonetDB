@@ -150,6 +150,12 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 		   descriptor handle */
 		addStmtError(stmt, "HY017", NULL, 0);
 		return SQL_ERROR;
+	case SQL_ATTR_MAX_LENGTH:		/* SQLULEN */
+	case SQL_ATTR_MAX_ROWS:			/* SQLULEN */
+		if ((SQLULEN) (uintptr_t) ValuePtr != 0 &&
+		    (SQLULEN) (uintptr_t) ValuePtr != 2147483647)
+			addStmtError(stmt, "01S02", NULL, 0);
+		break;
 	case SQL_ATTR_NOSCAN:			/* SQLULEN */
 		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_NOSCAN_ON:
@@ -274,8 +280,6 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 	case SQL_ATTR_CURSOR_SENSITIVITY:	/* SQLULEN */
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:	/* SQLLEN* */
 	case SQL_ATTR_KEYSET_SIZE:		/* SQLULEN */
-	case SQL_ATTR_MAX_LENGTH:		/* SQLULEN */
-	case SQL_ATTR_MAX_ROWS:			/* SQLULEN */
 	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
 	case SQL_ATTR_SIMULATE_CURSOR:		/* SQLULEN */
 	case SQL_ATTR_USE_BOOKMARKS:		/* SQLULEN */
