@@ -55,6 +55,9 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 		/* SQL_ASYNC_ENABLE */
 		WriteData(ValuePtr, SQL_ASYNC_ENABLE_OFF, SQLULEN);
 		break;
+	case SQL_ATTR_ENABLE_AUTO_IPD:		/* SQLULEN */
+		WriteData(ValuePtr, SQL_TRUE, SQLULEN);
+		break;
 	case SQL_ATTR_CONCURRENCY:		/* SQLULEN */
 		/* SQL_CONCURRENCY */
 		WriteData(ValuePtr, SQL_CONCUR_READ_ONLY, SQLULEN);
@@ -165,7 +168,6 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 #ifdef SQL_ATTR_ASYNC_STMT_PCONTEXT
 	case SQL_ATTR_ASYNC_PCONTEXT:		/* SQLPOINTER */
 #endif
-	case SQL_ATTR_ENABLE_AUTO_IPD:		/* SQLULEN */
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:	/* SQLLEN* */
 	case SQL_ATTR_KEYSET_SIZE:		/* SQLULEN */
 		/* SQL_KEYSET_SIZE */
