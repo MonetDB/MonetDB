@@ -1041,6 +1041,8 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	int specials;
 	int c;
 
+	if (strlen(esc_str) > 1)
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": ESCAPE string must have length 1");
 	if (pat == NULL )
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 	ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
