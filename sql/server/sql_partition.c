@@ -17,6 +17,61 @@
 #include "rel_updates.h"
 #include "mal_exception.h"
 
+static int
+key_column_colnr(sql_kc *pkey)
+{
+	return pkey->c->colnr;
+}
+
+static int
+table_column_colnr(int *colnr)
+{
+	return *colnr;
+}
+
+str
+sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op)
+{
+	if(isPartitionedByColumnTable(nt)) {
+		assert(nt->part.pcol);
+		if(list_length(k->columns) != 1) {
+			throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
+									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
+		} else {
+			sql_kc *kcol = k->columns->h->data;
+			if(kcol->c->colnr != nt->part.pcol->colnr)
+				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must "
+									   "match the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
+		}
+	} else if(isPartitionedByExpressionTable(nt)) {
+		list *kcols, *pcols;
+		sql_allocator *p1, *p2;
+
+		assert(nt->part.pexp->cols);
+		if(list_length(k->columns) != list_length(nt->part.pexp->cols))
+			throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
+									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
+
+		p1 = k->columns->sa; /* save the original sql allocators */
+		p2 = nt->part.pexp->cols->sa;
+		k->columns->sa = sql->sa;
+		nt->part.pexp->cols->sa = sql->sa;
+		kcols = list_sort(k->columns, (fkeyvalue)&key_column_colnr, NULL);
+		pcols = list_sort(nt->part.pexp->cols, (fkeyvalue)&table_column_colnr, NULL);
+		k->columns->sa = p1;
+		nt->part.pexp->cols->sa = p2;
+
+		for (node *nn = kcols->h, *mm = pcols->h; nn && mm; nn = nn->next, mm = mm->next) {
+			sql_kc *kcol = nn->data;
+			int *colnr = mm->data;
+			if (kcol->c->colnr != *colnr)
+				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
+									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
+		}
+	}
+	return NULL;
+}
+
 static void exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols);
 
 static void
@@ -156,14 +211,14 @@ find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
 extern list *rel_dependencies(sql_allocator *sa, sql_rel *r);
 
 str
-bootstrap_partition_expression(mvc* sql, sql_table *mt, int instantiate)
+bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
 {
 	sql_exp *exp;
 	char *query, *msg = NULL;
 	int sql_ec;
 	sql_rel *r;
 
-	assert(isPartitionedByExpressionTable(mt) && mt->part.pexp->cols);
+	assert(isPartitionedByExpressionTable(mt));
 
 	r = rel_basetable(sql, mt, mt->base.name);
 	query = mt->part.pexp->exp;
@@ -177,6 +232,8 @@ bootstrap_partition_expression(mvc* sql, sql_table *mt, int instantiate)
 		throw(SQL,"sql.partition", SQLSTATE(42000) "Incorrect expression '%s'", query);
 	}
 
+	if(!mt->part.pexp->cols)
+		mt->part.pexp->cols = sa_list(rsa);
 	exp_find_table_columns(sql, exp, mt, mt->part.pexp->cols);
 
 	if((msg = find_expression_type(exp, &(mt->part.pexp->type), query)) != NULL)
@@ -237,7 +294,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 	sql_subtype found;
 	int localtype;
 
-	if(isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, mt, 0)) != NULL)
+	if(isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, sql->session->tr->sa, mt, 0)) != NULL)
 		return res;
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;

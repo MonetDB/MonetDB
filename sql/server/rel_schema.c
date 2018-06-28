@@ -698,7 +698,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
 		(isPartition(t) && (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT)) ||
 		(isPartition(t) && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) &&
-		(s->token == SQL_DEFAULT ||s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL ||
+		(s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL ||
 		 s->token == SQL_DROP_CONSTRAINT)))){
 		char *msg = "";
 
@@ -965,7 +965,6 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_de
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
 			t->part.pexp->exp = sa_strdup(sql->sa, query);
 			t->part.pexp->type = *empty;
-			t->part.pexp->cols = sa_list(sql->sa);
 			_DELETE(query);
 		}
 	}

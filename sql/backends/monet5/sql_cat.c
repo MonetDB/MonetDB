@@ -114,6 +114,8 @@ rel_check_tables(sql_table *nt, sql_table *nnt, const char* errtable)
 
 				if (ni->type != mi->type)
 					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key type doesn't match %s TABLE definition", errtable, errtable);
+				if (ni->type != pkey && ni->t->base.id != mi->t->base.id)
+					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key type doesn't match %s TABLE definition", errtable, errtable);
 				if (list_length(ni->columns) != list_length(mi->columns))
 					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key type doesn't match %s TABLE definition", errtable, errtable);
 				for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {
@@ -124,21 +126,6 @@ rel_check_tables(sql_table *nt, sql_table *nnt, const char* errtable)
 						throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key's columns doesn't match %s TABLE definition", errtable, errtable);
 				}
 			}
-		if((nt->pkey && !nnt->pkey) || (!nt->pkey && nnt->pkey))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: both tables must have the same primary key", errtable);
-		else if(nt->pkey && nnt->pkey) {
-			if (nt->pkey->k.type != nnt->pkey->k.type)
-				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table primary key type doesn't match %s TABLE definition", errtable, errtable);
-			if (list_length(nt->pkey->k.columns) != list_length(nnt->pkey->k.columns))
-				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table primary key type doesn't match %s TABLE definition", errtable, errtable);
-			for (nn = nt->pkey->k.columns->h, mm = nnt->pkey->k.columns->h; nn && mm; nn = nn->next, mm = mm->next) {
-				sql_kc *nni = nn->data;
-				sql_kc *mmi = mm->data;
-
-				if (nni->c->colnr != mmi->c->colnr)
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table primary key's columns doesn't match %s TABLE definition", errtable, errtable);
-			}
-		}
 	}
 
 	for(sql_table *up = nt->p ; up ; up = up->p) {
@@ -953,6 +940,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		/* alter add key */
 		for (n = t->keys.nelm; n; n = n->next) {
 			sql_key *k = n->data;
+			str err;
+			if((err = sql_partition_validate_key(sql, t, k, "ALTER")))
+				return err;
 			mvc_copy_key(sql, nt, k);
 		}
 	}

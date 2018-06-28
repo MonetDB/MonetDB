@@ -4995,7 +4995,6 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 		sql_subtype *empty = sql_bind_localtype("void");
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
 		t->part.pexp->type = *empty;
-		t->part.pexp->cols = sa_list(tr->sa);
 	}
 
 	ca = t->commit_action;
