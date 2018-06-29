@@ -857,8 +857,10 @@ AS_VAR_IF([enable_debug], [yes], [
 	# remove "-Ox" as some compilers don't like "-g -Ox" combinations
 	CFLAGS=" $CFLAGS "
 	CFLAGS=`AS_ECHO(["$CFLAGS"]) | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`
-	# add "-g"
-	CFLAGS="$CFLAGS -g"
+	# add "-g or -g3"
+	AS_CASE([$CC_ver],
+		[gcc-*], [CFLAGS="$CFLAGS -g3"],
+		[CFLAGS="$CFLAGS -g"])
 	AS_CASE([$GCC-$host_os],
 		[yes-aix*], [CFLAGS="$CFLAGS -gxcoff"])
 	changedCFLAGS=
