@@ -35,7 +35,7 @@ farm_dir = tempfile.mkdtemp()
 
 # node1 is the worker
 prt1 = freeport()
-prc1 = process.server(mapiport=prt1, dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE)
+prc1 = process.server(mapiport=prt1, dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 conn1 = pymonetdb.connect(database='node1', port=prt1, autocommit=True)
 
 q = "create table s1 (i int)"
@@ -49,7 +49,7 @@ print(q); conn1.execute(q)
 
 # node2 is the master
 prt2 = freeport()
-prc2 = process.server(mapiport=prt2, dbname='node2', dbfarm=os.path.join(farm_dir, 'node2'), stdin=process.PIPE, stdout=process.PIPE)
+prc2 = process.server(mapiport=prt2, dbname='node2', dbfarm=os.path.join(farm_dir, 'node2'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 conn2 = pymonetdb.connect(database='node2', port=prt2, autocommit=True)
 
 q = "create table s2 (i int)"
@@ -89,11 +89,11 @@ for r in res:
 
 # cleanup: shutdown the monetdb servers and remove tempdir
 out, err = prc1.communicate()
-if err is not None:
-  sys.stderr.write(err)
+sys.stdout.write(out)
+sys.stderr.write(err)
 
 out, err = prc2.communicate()
-if err is not None:
-  sys.stderr.write(err)
+sys.stdout.write(out)
+sys.stderr.write(err)
 
 shutil.rmtree(farm_dir)
