@@ -114,8 +114,6 @@ rel_check_tables(sql_table *nt, sql_table *nnt, const char* errtable)
 
 				if (ni->type != mi->type)
 					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key type doesn't match %s TABLE definition", errtable, errtable);
-				if (ni->type != pkey && ni->t->base.id != mi->t->base.id)
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key type doesn't match %s TABLE definition", errtable, errtable);
 				if (list_length(ni->columns) != list_length(mi->columns))
 					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key type doesn't match %s TABLE definition", errtable, errtable);
 				for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {

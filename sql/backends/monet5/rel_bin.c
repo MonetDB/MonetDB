@@ -3463,7 +3463,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		if ((hash_index(i->type) && list_length(i->columns) <= 1) ||
 		    i->type == no_idx)
 			is = NULL;
-		if (i->key && constraint /*&& !be->first_statement_generated*/) {
+		if (i->key && constraint) {
 			stmt *ckeys = sql_insert_key(be, inserts->op4.lval, i->key, is, pin);
 
 			list_append(l, ckeys);

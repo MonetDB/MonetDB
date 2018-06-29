@@ -58,8 +58,24 @@ ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe); --err
 ALTER TABLE checkkeys ADD FOREIGN KEY (b) REFERENCES otherref (othermeme); --error
 
 ALTER TABLE checkkeys DROP TABLE subt1;
-DROP TABLE referenceme;
-DROP TABLE otherref;
+
+CREATE TABLE subt3 (a int PRIMARY KEY, b varchar(32), FOREIGN KEY (a) REFERENCES referenceme(mememe));
+CREATE TABLE another (mememe int PRIMARY KEY);
+
+ALTER TABLE checkkeys ADD TABLE subt3 AS PARTITION BETWEEN 1 AND 100; --error checkkeys does not have the foreign key
+ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe);
+ALTER TABLE checkkeys ADD TABLE subt3 AS PARTITION BETWEEN 1 AND 100;
+ALTER TABLE checkkeys DROP TABLE subt3;
+ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_a_fkey;
+ALTER TABLE subt3 DROP CONSTRAINT subt3_a_fkey;
+
+ALTER TABLE subt3 ADD FOREIGN KEY (a) REFERENCES another (mememe);
+ALTER TABLE checkkeys ADD TABLE subt3 AS PARTITION BETWEEN 1 AND 100; --error foreign keys reference different tables
+
 DROP TABLE checkkeys;
 DROP TABLE subt1;
 DROP TABLE subt2;
+DROP TABLE subt3;
+DROP TABLE referenceme;
+DROP TABLE otherref;
+DROP TABLE another;

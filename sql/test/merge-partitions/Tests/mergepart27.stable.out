@@ -1,9 +1,9 @@
 stdout of test 'mergepart27` in directory 'sql/test/merge-partitions` itself:
 
 
-# 17:05:50 >  
-# 17:05:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30986" "--set" "mapi_usock=/var/tmp/mtest-32626/.s.monetdb.30986" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
-# 17:05:50 >  
+# 11:15:34 >  
+# 11:15:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38633" "--set" "mapi_usock=/var/tmp/mtest-12261/.s.monetdb.38633" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 11:15:34 >  
 
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -13,8 +13,8 @@ stdout of test 'mergepart27` in directory 'sql/test/merge-partitions` itself:
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:30986/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32626/.s.monetdb.30986
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:38633/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12261/.s.monetdb.38633
 # MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
@@ -60,9 +60,9 @@ stdout of test 'mergepart27` in directory 'sql/test/merge-partitions` itself:
 
 Ready.
 
-# 17:05:51 >  
-# 17:05:51 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32626" "--port=30986"
-# 17:05:51 >  
+# 11:15:35 >  
+# 11:15:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12261" "--port=38633"
+# 11:15:35 >  
 
 #CREATE MERGE TABLE checkreadonly (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 #CREATE TABLE subt1 (a int, b varchar(32));
@@ -89,20 +89,29 @@ Ready.
 #CREATE MERGE TABLE checkkeys (a int, b int, PRIMARY KEY(a, b)) PARTITION BY RANGE USING (a + b + 1);
 #DROP TABLE checkkeys;
 #CREATE MERGE TABLE checkkeys (a int PRIMARY KEY, b varchar(32)) PARTITION BY RANGE ON (a);
-#CREATE TABLE referenceme (mememe int primary key);
-#CREATE TABLE otherref (othermeme varchar(32) primary key);
+#CREATE TABLE referenceme (mememe int PRIMARY KEY);
+#CREATE TABLE otherref (othermeme varchar(32) PRIMARY KEY);
 #ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe);
 #ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_a_fkey;
 #CREATE TABLE subt1 (a int PRIMARY KEY, b varchar(32));
 #CREATE TABLE subt2 (a int, b varchar(32) PRIMARY KEY);
 #ALTER TABLE checkkeys DROP TABLE subt1;
-#DROP TABLE referenceme;
-#DROP TABLE otherref;
+#CREATE TABLE subt3 (a int PRIMARY KEY, b varchar(32), FOREIGN KEY (a) REFERENCES referenceme(mememe));
+#CREATE TABLE another (mememe int PRIMARY KEY);
+#ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe);
+#ALTER TABLE checkkeys DROP TABLE subt3;
+#ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_a_fkey;
+#ALTER TABLE subt3 DROP CONSTRAINT subt3_a_fkey;
+#ALTER TABLE subt3 ADD FOREIGN KEY (a) REFERENCES another (mememe);
 #DROP TABLE checkkeys;
 #DROP TABLE subt1;
 #DROP TABLE subt2;
+#DROP TABLE subt3;
+#DROP TABLE referenceme;
+#DROP TABLE otherref;
+#DROP TABLE another;
 
-# 17:05:52 >  
-# 17:05:52 >  "Done."
-# 17:05:52 >  
+# 11:15:35 >  
+# 11:15:35 >  "Done."
+# 11:15:35 >  
 
