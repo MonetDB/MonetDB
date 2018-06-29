@@ -5,6 +5,7 @@ import socket
 import sys
 import tempfile
 import threading
+import shutil
 
 import pymonetdb
 
@@ -60,10 +61,10 @@ print(q); conn2.execute(q)
 q = "insert into t2 values ('foo'), ('bar')"
 print(q); conn2.execute(q)
 
-print("#create remote table s1 (i int) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
-conn2.execute("create remote table s1 (i int) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
-print(       "#create remote table t1 (s varchar(10)) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
-conn2.execute("create remote table t1 (s varchar(10)) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
+q = "create remote table s1 (i int) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';"
+print("#"+q); conn2.execute(q)
+q = "create remote table t1 (s varchar(10)) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';"
+print("#"+q); conn2.execute(q)
 
 q = "create replica table repS(i int)"
 print(q); conn2.execute(q)
@@ -86,7 +87,7 @@ res = query(conn2, "plan select * from repS, mrgT")
 for r in res:
     print('\n'.join(r))
 
-# shutdown the monetdb servers
+# cleanup: shutdown the monetdb servers and remove tempdir
 out, err = prc1.communicate()
 if err is not None:
   sys.stderr.write(err)
@@ -95,3 +96,4 @@ out, err = prc2.communicate()
 if err is not None:
   sys.stderr.write(err)
 
+shutil.rmtree(farm_dir)

@@ -5,6 +5,7 @@ import socket
 import sys
 import tempfile
 import threading
+import shutil
 
 import pymonetdb
 
@@ -64,3 +65,14 @@ print(node2_cur.fetchall())
 print("# node2: SELECT * FROM tbl")
 node2_cur.execute("SELECT * FROM tbl")
 print(node2_cur.fetchall())
+
+# cleanup: shutdown the monetdb servers and remove tempdir
+out, err = prc1.communicate()
+if err is not None:
+  sys.stderr.write(err)
+
+out, err = prc2.communicate()
+if err is not None:
+  sys.stderr.write(err)
+
+shutil.rmtree(farm_dir)
