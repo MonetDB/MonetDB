@@ -27,7 +27,7 @@ def freeport():
 farm_dir = tempfile.mkdtemp()
 
 node1_port = freeport()
-node1_proc = process.server(mapiport=node1_port, dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE)
+node1_proc = process.server(mapiport=node1_port, dbname='node1', dbfarm=os.path.join(farm_dir, 'node1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 node1_conn = pymonetdb.connect(database='node1', port=node1_port, autocommit=True)
 node1_cur = node1_conn.cursor();
 
@@ -50,7 +50,7 @@ node1_cur.execute("SELECT * FROM tbl")
 print(node1_cur.fetchall())
 
 node2_port = freeport()
-node2_proc = process.server(mapiport=node2_port, dbname='node2', dbfarm=os.path.join(farm_dir, 'node2'), stdin=process.PIPE, stdout=process.PIPE)
+node2_proc = process.server(mapiport=node2_port, dbname='node2', dbfarm=os.path.join(farm_dir, 'node2'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 node2_conn = pymonetdb.connect(database='node2', port=node2_port, autocommit=True)
 node2_cur = node2_conn.cursor();
 
@@ -67,12 +67,12 @@ node2_cur.execute("SELECT * FROM tbl")
 print(node2_cur.fetchall())
 
 # cleanup: shutdown the monetdb servers and remove tempdir
-out, err = prc1.communicate()
-if err is not None:
-  sys.stderr.write(err)
+out, err = node1_proc.communicate()
+sys.stdout.write(out)
+sys.stderr.write(err)
 
-out, err = prc2.communicate()
-if err is not None:
-  sys.stderr.write(err)
+out, err = node1_proc.communicate()
+sys.stdout.write(out)
+sys.stderr.write(err)
 
 shutil.rmtree(farm_dir)
