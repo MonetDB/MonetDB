@@ -1,0 +1,125 @@
+stdout of test 'remote-table-where-not-equal.Bug-6621` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:29:55 >  
+# 18:29:55 >  "/usr/local/opt/python@2/bin/python2.7" "remote-table-where-not-equal.Bug-6621.py" "remote-table-where-not-equal.Bug-6621"
+# 18:29:55 >  
+
+create table t1 (i int, v varchar(10))
+insert into t1 values (48, 'foo'), (29, 'bar'), (63, 'abc')
+#create remote table t1 (i int, v varchar(10)) on 'mapi:monetdb://localhost:61212/node1';
+select * from t1
+[(48, u'foo'), (29, u'bar'), (63, u'abc')]
+select * from t1 where i < 50
+[(48, u'foo'), (29, u'bar')]
+select * from t1 where i > 50
+[(63, u'abc')]
+select * from t1 where i <> 50
+[(48, u'foo'), (29, u'bar'), (63, u'abc')]
+select * from t1 where v = 'foo'
+[(48, u'foo')]
+select * from t1 where v <> 'foo'
+[(29, u'bar'), (63, u'abc')]
+select * from t1 where v <> 'bla'
+[(48, u'foo'), (29, u'bar'), (63, u'abc')]
+# MonetDB 5 server v11.29.8
+# This is an unreleased version
+# Serving database 'node1', using 4 threads
+# Compiled for x86_64-apple-darwin17.6.0/64bit with 128bit integers
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-87.eduroam.cwi.nl:61212/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24605/.s.monetdb.61212
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB 5 server v11.29.8
+# This is an unreleased version
+# Serving database 'node2', using 4 threads
+# Compiled for x86_64-apple-darwin17.6.0/64bit with 128bit integers
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-87.eduroam.cwi.nl:61214/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24605/.s.monetdb.61214
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  
+
