@@ -120,18 +120,9 @@ AC_SUBST([Qexec_prefix])
 AS_CASE([$CC],
 	[*icc*-no-gcc*], [],
 	[*icc*], [
-		#  Since version 8.0, ecc/ecpc are also called icc/icpc,
-		#  and icc/icpc requires "-no-gcc" to avoid predefining
-		#  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
-		icc_ver=`$CC -dumpversion 2>/dev/null`
-		AS_CASE([$icc_ver],
-			[8.*], [CC="$CC -no-gcc"],
-			[9.*], [CC="$CC -no-gcc"],
-			[10.*], [CC="$CC -no-gcc"],
-			[11.*], [CC="$CC -no-gcc"],
-			[15.*], [CC="$CC -no-gcc"],
-			[17.*], [CC="$CC -no-gcc"],
-			[AC_MSG_WARN([icc ($CC) $icc_ver not handled, yet])])])
+		#  Use "-no-gcc" to avoid predefining __GNUC__,
+		#  __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
+		CC="$CC -no-gcc"])
 
 AS_IF([test -f "$srcdir"/vertoo.data],
 	[
@@ -866,8 +857,10 @@ AS_VAR_IF([enable_debug], [yes], [
 	# remove "-Ox" as some compilers don't like "-g -Ox" combinations
 	CFLAGS=" $CFLAGS "
 	CFLAGS=`AS_ECHO(["$CFLAGS"]) | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`
-	# add "-g"
-	CFLAGS="$CFLAGS -g"
+	# add "-g or -g3"
+	AS_CASE([$CC_ver],
+		[gcc-*], [CFLAGS="$CFLAGS -g3"],
+		[CFLAGS="$CFLAGS -g"])
 	AS_CASE([$GCC-$host_os],
 		[yes-aix*], [CFLAGS="$CFLAGS -gxcoff"])
 	changedCFLAGS=
