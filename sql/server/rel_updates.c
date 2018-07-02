@@ -1671,7 +1671,14 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 		if (!t)
 			t = stack_find_table(sql, tname);
 	}
+	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {
+		return NULL;
+	} else if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
+		return NULL;
+	} else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
 		return NULL;
 	}
 

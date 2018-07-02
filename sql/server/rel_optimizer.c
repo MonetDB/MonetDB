@@ -263,6 +263,9 @@ psm_exps_properties(mvc *sql, global_props *gp, list *exps)
 static void
 rel_properties(mvc *sql, global_props *gp, sql_rel *rel) 
 {
+	if(!rel)
+		return;
+
 	gp->cnt[(int)rel->op]++;
 	switch (rel->op) {
 	case op_basetable:
