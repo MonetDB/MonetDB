@@ -304,9 +304,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 		throw (SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 
-	if(mvc_drop_table(sql, s, t, drop_action))
-		throw(SQL,"sql.droptable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
+	return mvc_drop_table(sql, s, t, drop_action);
 }
 
 static char *
@@ -335,11 +333,8 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 		throw(SQL,"sql.drop_view", SQLSTATE(42000) "DROP VIEW: cannot drop system view '%s'", tname);
 	} else if (!drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
 		throw(SQL,"sql.drop_view", SQLSTATE(42000) "DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
-	} else {
-		if(mvc_drop_table(sql, ss, t, drop_action))
-			throw(SQL,"sql.drop_view", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		return MAL_SUCCEED;
 	}
+	return mvc_drop_table(sql, ss, t, drop_action);
 }
 
 static str

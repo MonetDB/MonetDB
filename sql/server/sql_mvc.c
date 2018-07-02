@@ -116,12 +116,23 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		assert(m->session->schema != NULL);
 
 		if (!first) {
+			str output;
 			t = mvc_bind_table(m, s, "tables");
 			tid = t->base.id;
-			mvc_drop_table(m, s, t, 0);
+			if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {
+				mvc_destroy(m);
+				fprintf(stderr, "!mvc_init: %s\n", output);
+				GDKfree(output);
+				return -1;
+			}
 			t = mvc_bind_table(m, s, "columns");
 			cid = t->base.id;
-			mvc_drop_table(m, s, t, 0);
+			if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {
+				mvc_destroy(m);
+				fprintf(stderr, "!mvc_init: %s\n", output);
+				GDKfree(output);
+				return -1;
+			}
 		}
 
 		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";", 1);
@@ -1245,36 +1256,37 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 	return t;
 }
 
-int
+str
 mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_table %s %s\n", s->base.name, t->base.name);
 
-
 	if (isRemote(t)) {
+		str AUTHres;
 		sql_allocator *sa = m->sa;
+
 		m->sa = sa_create();
-		if (!m->sa) {
-			return -1;
-		}
+		if (!m->sa)
+			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		char *qualified_name = sa_strconcat(m->sa, sa_strconcat(m->sa, t->s->base.name, "."), t->base.name);
 		if (!qualified_name) {
 			sa_destroy(m->sa);
 			m->sa = sa;
-			return -1;
+			throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
-		if (AUTHdeleteRemoteTableCredentials(qualified_name)) {
-			sa_destroy(m->sa);
-			m->sa = sa;
-			return -1;
-		}
+		AUTHres = AUTHdeleteRemoteTableCredentials(qualified_name);
 		sa_destroy(m->sa);
 		m->sa = sa;
+
+		if(AUTHres != MAL_SUCCEED)
+			return AUTHres;
 	}
 
-	return sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	if(sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT))
+		throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
 }
 
 BUN
