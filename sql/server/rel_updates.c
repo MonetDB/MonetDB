@@ -397,6 +397,8 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isMergeTable(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if (isRemote(t)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
 	} else if (isStream(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s stream '%s'", op, opname, tname);
 	} else if (t->access == TABLE_READONLY) {
@@ -428,6 +430,8 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isMergeTable(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if (isRemote(t)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
 	} else if (isStream(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s stream '%s'", op, opname, tname);
 	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
