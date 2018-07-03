@@ -384,7 +384,9 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 
 			pt->p = mt;
 			if(isRangePartitionTable(mt) || isListPartitionTable(mt)) {
-				err = cs_add_with_validate(&mt->members, next, TR_NEW, sql_range_part_validate_and_insert);
+				err = cs_add_with_validate(&mt->members, next, TR_NEW,
+										   isRangePartitionTable(mt) ?
+										   sql_range_part_validate_and_insert : sql_values_part_validate_and_insert);
 			} else {
 				assert(0);
 			}

@@ -2152,6 +2152,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		}
 		mnstr_printf(toConsole, "ALTER TABLE \"%s\".\"%s\" ADD TABLE \"%s\"", schema1, tname1, tname2);
 		if(type1 != 3) {
+			MapiHdl shdl = NULL;
+
 			mnstr_printf(toConsole, " AS PARTITION");
 			if(type1 == 7 || type1 == 9) {
 				int i = 0, first = 1, found_nil = 0;
@@ -2159,10 +2161,13 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 						 "SELECT vp.value FROM schemas s, tables t, value_partitions vp "
 						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = vp.table_id",
 						 schema2, tname2);
-				if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+				if ((shdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+					if(shdl)
+						mapi_close_handle(shdl);
 					goto bailout;
-				while(mapi_fetch_row(hdl) != 0) {
-					char *nextv = mapi_fetch_field(hdl, 0);
+				}
+				while(mapi_fetch_row(shdl) != 0) {
+					char *nextv = mapi_fetch_field(shdl, 0);
 					if(first == 1 && !nextv) {
 						found_nil = 1;
 						first = 0; // if the partition can hold null values, that is explicit in the first entry
@@ -2170,7 +2175,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 					}
 					if(nextv) {
 						if(i == 0) { //start by writing the IN clause
-							mnstr_printf(toConsole, "IN (");
+							mnstr_printf(toConsole, " IN (");
 							quoted_print(toConsole, nextv, true);
 						} else {
 							mnstr_printf(toConsole, ",");
@@ -2180,8 +2185,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 					}
 					first = 0;
 				}
-				mapi_close_handle(hdl);
-				hdl = NULL;
+				mapi_close_handle(shdl);
 				if(i > 0) {
 					mnstr_printf(toConsole, ")");
 				}
@@ -2189,21 +2193,23 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 					mnstr_printf(toConsole, " WITH NULL");
 				}
 			} else {
-				char *minv, *maxv, *wnulls;
+				char *minv = NULL, *maxv = NULL, *wnulls = NULL;
 				snprintf(query, query_size,
 						 "SELECT rp.minimum, rp.maximum, CASE WHEN rp.with_nulls = true THEN 1 ELSE 0 END "
 						 "FROM schemas s, tables t, range_partitions rp "
 						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = rp.table_id",
 						 schema2, tname2);
-				if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+				if ((shdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
+					if(shdl)
+						mapi_close_handle(shdl);
 					goto bailout;
-				while(mapi_fetch_row(hdl) != 0) {
-					minv = mapi_fetch_field(hdl, 0);
-					maxv = mapi_fetch_field(hdl, 1);
-					wnulls = mapi_fetch_field(hdl, 2);
 				}
-				mapi_close_handle(hdl);
-				hdl = NULL;
+				while(mapi_fetch_row(shdl) != 0) {
+					minv = mapi_fetch_field(shdl, 0);
+					maxv = mapi_fetch_field(shdl, 1);
+					wnulls = mapi_fetch_field(shdl, 2);
+				}
+				mapi_close_handle(shdl);
 				if(minv && maxv) {
 					mnstr_printf(toConsole, " BETWEEN ");
 					quoted_print(toConsole, minv, true);

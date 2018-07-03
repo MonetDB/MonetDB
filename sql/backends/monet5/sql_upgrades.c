@@ -1639,12 +1639,25 @@ sql_update_merge_partitions(Client c, mvc *sql)
 						"create table _table_partitions (id int, table_id int, column_id int, expression varchar(%d));\n",
 						STORAGE_MAX_VALUE_LENGTH);
 		pos += snprintf(buf + pos, bufsize - pos,
-						"create table _range_partitions (table_id int, partition_id int, minimum varchar(%d),"
+						"create table _range_partitions (table_id int, partition_id int, minimum varchar(%d), "
 						"maximum varchar(%d), with_nulls boolean);\n", STORAGE_MAX_VALUE_LENGTH, STORAGE_MAX_VALUE_LENGTH);
 		pos += snprintf(buf + pos, bufsize - pos,
 						"create table _value_partitions (table_id int, partition_id int, value varchar(%d));\n",
 						STORAGE_MAX_VALUE_LENGTH);
 	}
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schemas_to_set[0]);
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create view table_partitions as select \"id\", \"table_id\", \"column_id\", \"expression\" "
+					"from \"sys\".\"_table_partitions\" union all select \"id\", \"table_id\", \"column_id\", "
+					"\"expression\" from \"tmp\".\"_table_partitions\";\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create view range_partitions as select \"table_id\", \"partition_id\", \"minimum\", \"maximum\", "
+					"\"with_nulls\" from \"sys\".\"_range_partitions\" union all select \"table_id\", \"partition_id\", "
+					"\"minimum\", \"maximum\", \"with_nulls\" from \"tmp\".\"_range_partitions\";");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create view value_partitions as select \"table_id\", \"partition_id\", \"value\" from "
+					"\"sys\".\"_value_partitions\" union all select \"table_id\", \"partition_id\", \"value\" "
+					"from \"tmp\".\"_value_partitions\";");
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 

@@ -56,6 +56,24 @@ DROP TABLE subtable3;\
 DROP TABLE subtable4;
 '''
 
+script4 = '''\
+CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);\
+CREATE TABLE subtable1 (a int, b varchar(32));\
+CREATE TABLE subtable2 (a int, b varchar(32));\
+ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);\
+ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);\
+SELECT "value" FROM value_partitions;
+'''
+
+script5 = '''\
+ALTER TABLE upsme DROP TABLE subtable1;\
+ALTER TABLE upsme DROP TABLE subtable2;\
+SELECT "value" FROM value_partitions;\
+DROP TABLE upsme;\
+DROP TABLE subtable1;\
+DROP TABLE subtable2;
+'''
+
 s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 client(script1)
 server_stop(s)
@@ -64,4 +82,10 @@ client(script2)
 server_stop(s)
 s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 client(script3)
+server_stop(s)
+s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+client(script4)
+server_stop(s)
+s = process.server(args = [], stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+client(script5)
 server_stop(s)
