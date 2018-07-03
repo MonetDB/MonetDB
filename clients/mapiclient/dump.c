@@ -925,6 +925,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 				rt_hash = mapi_fetch_field(hdl, 1);
 			}
 			mnstr_printf(toConsole, " ON '%s' WITH USER '%s' ENCRYPTED PASSWORD '%s'", view, rt_user, rt_hash);
+			mapi_close_handle(hdl);
+			hdl = NULL;
 		}
 		mnstr_printf(toConsole, ";\n");
 		comment_on(toConsole, "TABLE", schema, tname, NULL, remark);
