@@ -902,14 +902,12 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	} else {
 		/* the table is a real table */
 		mnstr_printf(toConsole, "CREATE %sTABLE \"%s\".\"%s\" ",
-			     type == 3 ? "MERGE " :
-			     type == 4 ? "STREAM " :
-			     type == 5 ? "REMOTE " :
-			     type == 6 ? "REPLICA " :
-			     (type == 7 || type == 9) ? "LIST PARTITION " :
-			     (type == 8 || type == 10) ? "RANGE PARTITION " :
-			     "",
-			     schema, tname);
+			    (type == 3 || type == 7 || type == 8 || type == 9 || type == 10) ? "MERGE " :
+			    type == 4 ? "STREAM " :
+			    type == 5 ? "REMOTE " :
+			    type == 6 ? "REPLICA " :
+			    "",
+			    schema, tname);
 
 		if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign, hashge))
 			goto bailout;
@@ -927,6 +925,29 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 				rt_hash = mapi_fetch_field(hdl, 1);
 			}
 			mnstr_printf(toConsole, " ON '%s' WITH USER '%s' ENCRYPTED PASSWORD '%s'", view, rt_user, rt_hash);
+			mapi_close_handle(hdl);
+			hdl = NULL;
+		} else if(type >= 7 && type <= 10) {
+			const char *phow = (type == 7 || type == 9) ? "VALUES" : "RANGE";
+			const char *pusing = (type == 8 || type == 9) ? "ON" : "USING";
+			const char *expr = NULL;
+
+			if(type == 7 || type == 8) {
+				snprintf(query, maxquerylen,
+						 "SELECT c.name FROM schemas s, tables t, columns c, table_partitions tp "
+						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = c.table_id "
+						 "AND c.id = tp.column_id", schema, tname);
+			} else {
+				snprintf(query, maxquerylen,
+						 "SELECT tp.expression FROM schemas s, tables t, table_partitions tp "
+						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = tp.table_id",
+						 schema, tname);
+			}
+			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+				goto bailout;
+			while(mapi_fetch_row(hdl) != 0)
+				expr = mapi_fetch_field(hdl, 0);
+			mnstr_printf(toConsole, " PARTITION BY %s %s (%s)", phow, pusing, expr);
 			mapi_close_handle(hdl);
 			hdl = NULL;
 		}
@@ -1853,7 +1874,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		      "s.id = t.schema_id AND "
 		      "s.name <> 'tmp' "
 		"ORDER BY t.id";
-	const char *mergetables = "SELECT s1.name, t1.name, s2.name, t2.name FROM sys.schemas s1, sys._tables t1, sys.dependencies d, sys.schemas s2, sys._tables t2 WHERE t1.type = 3 AND t1.schema_id = s1.id AND s1.name <> 'tmp' AND t1.system = FALSE AND t1.id = d.depend_id AND d.id = t2.id AND t2.schema_id = s2.id ORDER BY t1.id, t2.id";
+	const char *mergetables = "SELECT t1.type, s1.name, t1.name, s2.name, t2.name FROM sys.schemas s1, sys._tables t1, "
+							  "sys.dependencies d, sys.schemas s2, sys._tables t2 WHERE t1.type IN (3, 7, 8, 9, 10) "
+							  "AND t1.schema_id = s1.id AND s1.name <> 'tmp' AND t1.system = FALSE "
+							  "AND t1.id = d.depend_id AND d.id = t2.id AND t2.schema_id = s2.id ORDER BY t1.id, t2.id";
 	/* we must dump views, functions and triggers in order of
 	 * creation since they can refer to each other */
 	const char *views_functions_triggers =
@@ -2105,10 +2129,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	while (rc == 0 &&
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
-		const char *schema1 = mapi_fetch_field(hdl, 0);
-		const char *tname1 = mapi_fetch_field(hdl, 1);
-		const char *schema2 = mapi_fetch_field(hdl, 2);
-		const char *tname2 = mapi_fetch_field(hdl, 3);
+		int type1 = atoi(mapi_fetch_field(hdl, 0));
+		const char *schema1 = mapi_fetch_field(hdl, 1);
+		const char *tname1 = mapi_fetch_field(hdl, 2);
+		const char *schema2 = mapi_fetch_field(hdl, 3);
+		const char *tname2 = mapi_fetch_field(hdl, 4);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -2125,8 +2150,72 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
 				     curschema);
 		}
-		mnstr_printf(toConsole, "ALTER TABLE \"%s\".\"%s\" ADD TABLE \"%s\";\n",
-				     schema1, tname1, tname2);
+		mnstr_printf(toConsole, "ALTER TABLE \"%s\".\"%s\" ADD TABLE \"%s\"", schema1, tname1, tname2);
+		if(type1 != 3) {
+			mnstr_printf(toConsole, " AS PARTITION");
+			if(type1 == 7 || type1 == 9) {
+				int i = 0, first = 1, found_nil = 0;
+				snprintf(query, query_size,
+						 "SELECT vp.value FROM schemas s, tables t, value_partitions vp "
+						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = vp.table_id",
+						 schema2, tname2);
+				if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+					goto bailout;
+				while(mapi_fetch_row(hdl) != 0) {
+					char *nextv = mapi_fetch_field(hdl, 0);
+					if(first == 1 && !nextv) {
+						found_nil = 1;
+						first = 0; // if the partition can hold null values, that is explicit in the first entry
+						continue;
+					}
+					if(nextv) {
+						if(i == 0) { //start by writing the IN clause
+							mnstr_printf(toConsole, "IN (");
+							quoted_print(toConsole, nextv, true);
+						} else {
+							mnstr_printf(toConsole, ",");
+							quoted_print(toConsole, nextv, true);
+						}
+						i++;
+					}
+					first = 0;
+				}
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				if(i > 0) {
+					mnstr_printf(toConsole, ")");
+				}
+				if(found_nil) {
+					mnstr_printf(toConsole, " WITH NULL");
+				}
+			} else {
+				char *minv, *maxv, *wnulls;
+				snprintf(query, query_size,
+						 "SELECT rp.minimum, rp.maximum, CASE WHEN rp.with_nulls = true THEN 1 ELSE 0 END "
+						 "FROM schemas s, tables t, range_partitions rp "
+						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = rp.table_id",
+						 schema2, tname2);
+				if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+					goto bailout;
+				while(mapi_fetch_row(hdl) != 0) {
+					minv = mapi_fetch_field(hdl, 0);
+					maxv = mapi_fetch_field(hdl, 1);
+					wnulls = mapi_fetch_field(hdl, 2);
+				}
+				mapi_close_handle(hdl);
+				hdl = NULL;
+				if(minv && maxv) {
+					mnstr_printf(toConsole, " BETWEEN ");
+					quoted_print(toConsole, minv, true);
+					mnstr_printf(toConsole, " AND ");
+					quoted_print(toConsole, maxv, true);
+				}
+				if(strcmp(wnulls, "1") == 0) {
+					mnstr_printf(toConsole, " WITH NULL");
+				}
+			}
+		}
+		mnstr_printf(toConsole, ";\n");
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;

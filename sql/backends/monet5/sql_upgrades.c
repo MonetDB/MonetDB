@@ -1639,10 +1639,10 @@ sql_update_merge_partitions(Client c, mvc *sql)
 						"create table _table_partitions (id int, table_id int, column_id int, expression varchar(%d));\n",
 						STORAGE_MAX_VALUE_LENGTH);
 		pos += snprintf(buf + pos, bufsize - pos,
-						"create table _range_partitions (id int, partition_id int, minimum varchar(%d),"
+						"create table _range_partitions (table_id int, partition_id int, minimum varchar(%d),"
 						"maximum varchar(%d), with_nulls boolean);\n", STORAGE_MAX_VALUE_LENGTH, STORAGE_MAX_VALUE_LENGTH);
 		pos += snprintf(buf + pos, bufsize - pos,
-						"create table _value_partitions (id int, partition_id int, value varchar(%d));\n",
+						"create table _value_partitions (table_id int, partition_id int, value varchar(%d));\n",
 						STORAGE_MAX_VALUE_LENGTH);
 	}
 	if (schema)
