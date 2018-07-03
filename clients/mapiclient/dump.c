@@ -1777,7 +1777,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			    "WHEN 4 THEN 'INSERT' "
 			    "WHEN 8 THEN 'DELETE' "
 			    "WHEN 16 THEN 'EXECUTE' "
-			    "WHEN 32 THEN 'GRANT' END, "
+			    "WHEN 32 THEN 'GRANT' "
+			    "WHEN 64 THEN 'TRUNCATE' END, "
 		       "g.name, p.grantable "
 		"FROM sys.schemas s, sys.tables t, "
 		     "sys.columns c, sys.auths a, "
@@ -1797,7 +1798,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			    "WHEN 4 THEN 'INSERT' "
 			    "WHEN 8 THEN 'DELETE' "
 			    "WHEN 16 THEN 'EXECUTE' "
-			    "WHEN 32 THEN 'GRANT' END, "
+			    "WHEN 32 THEN 'GRANT' "
+			    "WHEN 64 THEN 'TRUNCATE' END, "
 		       "g.name, p.grantable "
 		"FROM sys.schemas s, sys.functions f, "
 		     "sys.auths a, sys.privileges p, sys.auths g "
@@ -2292,6 +2294,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			}
 			if (priv & 32) {
 				mnstr_printf(toConsole, "%s GRANT", sep);
+				sep = ",";
+			}
+			if (priv & 64) {
+				mnstr_printf(toConsole, "%s TRUNCATE", sep);
 				sep = ",";
 			}
 		}
