@@ -302,8 +302,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool s
 		fflush(stderr);
 		return;
 	}
-	if (timermode == T_PERF && (!total || singleinstr != total) &&
-	    (sqloptimizer > 0 || maloptimizer > 0 || querytime > 0)) {
+	if (timermode == T_PERF && (!total || singleinstr != total)) {
 		/* for performance measures we use milliseconds as the base */
 		fflush(stderr);
 		mnstr_flush(toConsole);

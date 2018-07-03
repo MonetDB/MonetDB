@@ -927,6 +927,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 				rt_hash = mapi_fetch_field(hdl, 1);
 			}
 			mnstr_printf(toConsole, " ON '%s' WITH USER '%s' ENCRYPTED PASSWORD '%s'", view, rt_user, rt_hash);
+			mapi_close_handle(hdl);
+			hdl = NULL;
 		}
 		mnstr_printf(toConsole, ";\n");
 		comment_on(toConsole, "TABLE", schema, tname, NULL, remark);
@@ -1783,7 +1785,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			    "WHEN 4 THEN 'INSERT' "
 			    "WHEN 8 THEN 'DELETE' "
 			    "WHEN 16 THEN 'EXECUTE' "
-			    "WHEN 32 THEN 'GRANT' END, "
+			    "WHEN 32 THEN 'GRANT' "
+			    "WHEN 64 THEN 'TRUNCATE' END, "
 		       "g.name, p.grantable "
 		"FROM sys.schemas s, sys.tables t, "
 		     "sys.columns c, sys.auths a, "
@@ -1803,7 +1806,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			    "WHEN 4 THEN 'INSERT' "
 			    "WHEN 8 THEN 'DELETE' "
 			    "WHEN 16 THEN 'EXECUTE' "
-			    "WHEN 32 THEN 'GRANT' END, "
+			    "WHEN 32 THEN 'GRANT' "
+			    "WHEN 64 THEN 'TRUNCATE' END, "
 		       "g.name, p.grantable "
 		"FROM sys.schemas s, sys.functions f, "
 		     "sys.auths a, sys.privileges p, sys.auths g "
@@ -2276,6 +2280,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			}
 			if (priv & 32) {
 				mnstr_printf(toConsole, "%s GRANT", sep);
+				sep = ",";
+			}
+			if (priv & 64) {
+				mnstr_printf(toConsole, "%s TRUNCATE", sep);
 				sep = ",";
 			}
 		}
