@@ -224,6 +224,35 @@ __hidden void gdk_bbp_reset(void)
 __hidden void gdk_system_reset(void)
 	__attribute__((__visibility__("hidden")));
 
+/* some macros to help print info about BATs when using ALGODEBUG */
+#define ALGOBATFMT	"%s#" BUNFMT "[%s]%s%s%s%s%s%s%s"
+#define ALGOBATPAR(b)	BATgetId(b),			\
+			BATcount(b),			\
+			ATOMname(b->ttype),		\
+			BATtdense(b) ? "D" : "",	\
+			b->tsorted ? "S" : "",		\
+			b->trevsorted ? "R" : "",	\
+			b->tkey ? "K" : "",		\
+			b->tnonil ? "N" : "",		\
+			b->thash ? "H" : "",		\
+			b->torderidx ? "O" : ""
+/* use ALGOOPTBAT* when BAT is optional (can be NULL) */
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATPAR(b)				\
+			b ? BATgetId(b) : "",		\
+			b ? "#" : "",			\
+			b ? BATcount(b) : 0,		\
+			b ? "[" : "",			\
+			b ? ATOMname(b->ttype) : "",	\
+			b ? "]" : "",			\
+			b && BATtdense(b) ? "D" : "",	\
+			b && b->tsorted ? "S" : "",	\
+			b && b->trevsorted ? "R" : "",	\
+			b && b->tkey ? "K" : "",	\
+			b && b->tnonil ? "N" : "",	\
+			b && b->thash ? "H" : "",	\
+			b && b->torderidx ? "O" : ""
+
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
 
