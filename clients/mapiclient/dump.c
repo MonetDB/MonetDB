@@ -929,7 +929,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			hdl = NULL;
 		} else if(type >= 7 && type <= 10) {
 			const char *phow = (type == 7 || type == 9) ? "VALUES" : "RANGE";
-			const char *pusing = (type == 8 || type == 9) ? "ON" : "USING";
+			const char *pusing = (type == 8 || type == 10) ? "ON" : "USING";
 			const char *expr = NULL;
 
 			if(type == 7 || type == 8) {
@@ -1869,7 +1869,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		       "t.type AS type "
 		"FROM sys.schemas s, "
 		     "sys._tables t "
-		"WHERE t.type IN (0, 3, 4, 5, 6) AND "
+		"WHERE t.type IN (0, 3, 4, 5, 6, 7, 8, 9, 10) AND "
 		      "t.system = FALSE AND "
 		      "s.id = t.schema_id AND "
 		      "s.name <> 'tmp' "
