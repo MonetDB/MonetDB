@@ -196,16 +196,9 @@ BATproject(BAT *l, BAT *r)
 
 	ALGODEBUG t0 = GDKusec();
 
-	ALGODEBUG fprintf(stderr, "#BATproject(l=%s#" BUNFMT "%s%s%s,"
-			  "r=%s#" BUNFMT "[%s]%s%s%s)\n",
-			  BATgetId(l), BATcount(l),
-			  l->tsorted ? "-sorted" : "",
-			  l->trevsorted ? "-revsorted" : "",
-			  l->tkey ? "-key" : "",
-			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
-			  r->tsorted ? "-sorted" : "",
-			  r->trevsorted ? "-revsorted" : "",
-			  r->tkey ? "-key" : "");
+	ALGODEBUG fprintf(stderr, "#BATproject(l=" ALGOBATFMT ","
+			  "r=" ALGOBATFMT ")\n",
+			  ALGOBATPAR(l), ALGOBATPAR(r));
 
 	assert(ATOMtype(l->ttype) == TYPE_oid);
 
@@ -217,14 +210,9 @@ BATproject(BAT *l, BAT *r)
 			return NULL;
 		}
 		bn = BATslice(r, lo - r->hseqbase, hi - r->hseqbase);
-		if (bn == NULL)
-			return NULL;
 		BAThseqbase(bn, l->hseqbase + (lo - l->tseqbase));
-		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
-				  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
-				  bn->tsorted ? "-sorted" : "",
-				  bn->trevsorted ? "-revsorted" : "",
-				  bn->tkey ? "-key" : "");
+		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=" ALGOOPTBATFMT " (slice)\n",
+				  BATgetId(l), BATgetId(r),  ALGOOPTBATPAR(bn));
 		return bn;
 	}
 	/* if l has type void, it is either empty or not dense (i.e. nil) */
@@ -235,19 +223,14 @@ BATproject(BAT *l, BAT *r)
 
 		bn = BATconstant(l->hseqbase, r->ttype == TYPE_oid ? TYPE_void : r->ttype,
 				 nil, BATcount(l), TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		if (ATOMtype(bn->ttype) == TYPE_oid &&
+		if (bn != NULL &&
+		    ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
 			bn->tdense = true;
 			BATtseqbase(bn, 0);
 		}
-		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
-				  BATgetId(l), BATgetId(r),
-				  BATgetId(bn), BATcount(bn),
-				  bn->tsorted ? "-sorted" : "",
-				  bn->trevsorted ? "-revsorted" : "",
-				  bn->tkey ? "-key" : "");
+		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=" ALGOOPTBATFMT " (constant)\n",
+				  BATgetId(l), BATgetId(r), ALGOOPTBATPAR(bn));
 		return bn;
 	}
 	assert(l->ttype == TYPE_oid);
@@ -270,8 +253,11 @@ BATproject(BAT *l, BAT *r)
 		stringtrick = true;
 	}
 	bn = COLnew(l->hseqbase, tpe, BATcount(l), TRANSIENT);
-	if (bn == NULL)
+	if (bn == NULL) {
+		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=0\n",
+				  BATgetId(l), BATgetId(r));
 		return NULL;
+	}
 	if (stringtrick) {
 		/* "string type" */
 		bn->tsorted = false;
@@ -385,11 +371,8 @@ BATproject(BAT *l, BAT *r)
 
 	if (!BATtdense(r))
 		BATtseqbase(bn, oid_nil);
-	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s%s " LLFMT "us\n",
-			  BATgetId(l), BATgetId(r), BATgetId(bn), BATcount(bn),
-			  bn->tsorted ? "-sorted" : "",
-			  bn->trevsorted ? "-revsorted" : "",
-			  bn->tkey ? "-key" : "",
+	ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=" ALGOBATFMT "%s " LLFMT "us\n",
+			  BATgetId(l), BATgetId(r), ALGOBATPAR(bn),
 			  bn->ttype == TYPE_str && bn->tvheap == r->tvheap ? " shared string heap" : "",
 			  GDKusec() - t0);
 	return bn;
