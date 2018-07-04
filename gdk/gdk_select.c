@@ -1650,9 +1650,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 
-		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOBATFMT
+		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec)\n",
-				  BATgetId(b), ALGOBATPAR(bn), GDKusec() - t0);
+				  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 		return virtualize(bn);
 	}
@@ -1815,9 +1815,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				    lval, hval, lnil, maximum, use_imprints);
 	}
 
-	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOBATFMT
+	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 			  " (" LLFMT " usec)\n",
-			  BATgetId(b), ALGOBATPAR(bn), GDKusec() - t0);
+			  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return virtualize(bn);
 }
