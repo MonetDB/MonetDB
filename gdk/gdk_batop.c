@@ -1335,9 +1335,12 @@ gdk_return
 BATsort(BAT **sorted, BAT **order, BAT **groups,
 	   BAT *b, BAT *o, BAT *g, int reverse, int stable)
 {
-	BAT *bn = NULL, *on = NULL, *gn, *pb = NULL;
+	BAT *bn = NULL, *on = NULL, *gn = NULL, *pb = NULL;
 	oid *restrict grps, *restrict ords, prev;
 	BUN p, q, r;
+	lng t0 = 0;
+
+	ALGODEBUG t0 = GDKusec();
 
 	if (b == NULL) {
 		GDKerror("BATsort: b must exist\n");
@@ -1416,6 +1419,15 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			}
 			*groups = gn;
 		}
+		ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o="
+				  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
+				  ",reverse=%d,stable=%d) = (" ALGOOPTBATFMT
+				  "," ALGOOPTBATFMT "," ALGOOPTBATFMT
+				  ") -- trivial (" LLFMT " usec)\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(o),
+				  ALGOOPTBATPAR(g), reverse, stable,
+				  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
+				  ALGOOPTBATPAR(on), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	if (VIEWtparent(b)) {
@@ -1464,13 +1476,26 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			}
 			if (sorted)
 				*sorted = bn;
-			else
+			else {
 				BBPunfix(bn->batCacheid);
+				bn = NULL;
+			}
 		}
 		if (order)
 			*order = on;
-		else
+		else {
 			BBPunfix(on->batCacheid);
+			on = NULL;
+		}
+		ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o="
+				  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
+				  ",reverse=%d,stable=%d) = (" ALGOOPTBATFMT
+				  "," ALGOOPTBATFMT "," ALGOOPTBATFMT
+				  ") -- orderidx (" LLFMT " usec)\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(o),
+				  ALGOOPTBATPAR(g), reverse, stable,
+				  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
+				  ALGOOPTBATPAR(on), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	if (o) {
@@ -1478,9 +1503,9 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (bn == NULL)
 			goto error;
 		if (bn->ttype == TYPE_void || isVIEW(bn)) {
-			b = COLcopy(bn, ATOMtype(bn->ttype), TRUE, TRANSIENT);
+			BAT *b2 = COLcopy(bn, ATOMtype(bn->ttype), TRUE, TRANSIENT);
 			BBPunfix(bn->batCacheid);
-			bn = b;
+			bn = b2;
 		}
 		pb = NULL;
 	} else {
@@ -1530,6 +1555,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				*sorted = bn;
 			} else {
 				BBPunfix(bn->batCacheid);
+				bn = NULL;
 			}
 			if (order) {
 				*order = on;
@@ -1559,6 +1585,16 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 					goto error;
 				*groups = gn;
 			}
+			ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT
+					  ",o=" ALGOOPTBATFMT ",g=" ALGOBATFMT
+					  ",reverse=%d,stable=%d) = ("
+					  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
+					  ALGOOPTBATFMT ") -- key group (" LLFMT
+					  " usec)\n", ALGOBATPAR(b),
+					  ALGOOPTBATPAR(o), ALGOBATPAR(g),
+					  reverse, stable, ALGOOPTBATPAR(bn),
+					  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
+					  GDKusec() - t0);
 			return GDK_SUCCEED;
 		}
 		assert(g->ttype == TYPE_oid);
@@ -1667,9 +1703,19 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 
 	if (sorted)
 		*sorted = bn;
-	else
+	else {
 		BBPunfix(bn->batCacheid);
+		bn = NULL;
+	}
 
+	ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o=" ALGOOPTBATFMT
+			  ",g=" ALGOOPTBATFMT ",reverse=%d,stable=%d) = ("
+			  ALGOOPTBATFMT "," ALGOOPTBATFMT "," ALGOOPTBATFMT
+			  ") -- %ssort (" LLFMT " usec)\n", ALGOBATPAR(b),
+			  ALGOOPTBATPAR(o), ALGOOPTBATPAR(g), reverse, stable,
+			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
+			  ALGOOPTBATPAR(on), g ? "grouped " : "",
+			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
   error:

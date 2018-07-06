@@ -91,7 +91,7 @@ BATcheckorderidx(BAT *b)
 				    HEAPload(hp, nme, "torderidx", 0) == GDK_SUCCEED) {
 					close(fd);
 					b->torderidx = hp;
-					ALGODEBUG fprintf(stderr, "#BATcheckorderidx: reusing persisted orderidx %d\n", b->batCacheid);
+					ALGODEBUG fprintf(stderr, "#BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
 					MT_lock_unset(&GDKhashLock(b->batCacheid));
 					return true;
 				}
@@ -105,7 +105,7 @@ BATcheckorderidx(BAT *b)
 	}
 	ret = b->torderidx != NULL;
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckorderidx: already has orderidx %d, waited " LLFMT " usec\n", b->batCacheid, GDKusec() - t);
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 	return ret;
 }
 
