@@ -314,9 +314,8 @@ BATimprints(BAT *b)
 		size_t pages;
 		int fd;
 
-		ALGODEBUG fprintf(stderr, "#BATimprints(b=%s#" BUNFMT ") %s: "
-				  "created imprints\n", BATgetId(b),
-				  BATcount(b), b->theap.filename);
+		ALGODEBUG fprintf(stderr, "#BATimprints(b=" ALGOBATFMT "): "
+				  "creating imprints\n", ALGOBATPAR(b));
 
 		imprints = GDKzalloc(sizeof(Imprints));
 		if (imprints == NULL) {
@@ -454,7 +453,7 @@ BATimprints(BAT *b)
 		    HEAPsave(&imprints->imprints, nme, "timprints") == GDK_SUCCEED &&
 		    (fd = GDKfdlocate(imprints->imprints.farmid, nme, "rb+",
 				      "timprints")) >= 0) {
-			ALGODEBUG fprintf(stderr, "#BATimprints: persisting imprints\n");
+			ALGODEBUG fprintf(stderr, "#BATimprints(%s): persisting imprints\n", BATgetId(b));
 			/* add version number */
 			((size_t *) imprints->imprints.base)[0] |= (size_t) IMPRINTS_VERSION << 8;
 			/* sync-on-disk checked bit */
@@ -476,7 +475,7 @@ BATimprints(BAT *b)
 		b->timprints = imprints;
 	}
 
-	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", GDKusec() - t0);
+	ALGODEBUG fprintf(stderr, "#BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 
 	/* BBPUnfix tries to get the imprints lock which might lead to

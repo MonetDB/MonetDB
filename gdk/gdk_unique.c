@@ -49,9 +49,10 @@ BATunique(BAT *b, BAT *s)
 			/* we can return a slice of the candidate list */
 			oid lo = b->hseqbase;
 			oid hi = lo + BATcount(b);
-			ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: already unique, slice candidates\n",
-					  BATgetId(b), BATcount(b),
-					  BATgetId(s), BATcount(s));
+			ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT
+					  ",s=" ALGOBATFMT "): trivial case: "
+					  "already unique, slice candidates\n",
+					  ALGOBATPAR(b), ALGOBATPAR(s));
 			b = BATselect(s, NULL, &lo, &hi, 1, 0, 0);
 			if (b == NULL)
 				return NULL;
@@ -60,8 +61,9 @@ BATunique(BAT *b, BAT *s)
 			return virtualize(bn);
 		}
 		/* we can return all values */
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=NULL): trivial case: already unique, return all\n",
-				  BATgetId(b), BATcount(b));
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s=NULL):"
+				  " trivial case: already unique, return all\n",
+				  ALGOBATPAR(b));
 		return BATdense(0, b->hseqbase, BATcount(b));
 	}
 
@@ -69,30 +71,27 @@ BATunique(BAT *b, BAT *s)
 
 	if (start == end) {
 		/* trivial: empty result */
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: empty\n",
-				  BATgetId(b), BATcount(b),
-				  s ? BATgetId(s) : "NULL",
-				  s ? BATcount(s) : 0);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+				  ALGOOPTBATFMT "): trivial case: empty\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		return BATdense(0, b->hseqbase, 0);
 	}
 
 	if ((BATordered(b) && BATordered_rev(b)) ||
 	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: all equal\n",
-				  BATgetId(b), BATcount(b),
-				  s ? BATgetId(s) : "NULL",
-				  s ? BATcount(s) : 0);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+				  ALGOOPTBATFMT "): trivial case: all equal\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		return BATdense(0, cand ? *cand : b->hseqbase, 1);
 	}
 
 	if (cand && BATcount(b) > 16 * BATcount(s)) {
 		BAT *nb, *r, *nr;
 
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): recurse: few candidates\n",
-				  BATgetId(b), BATcount(b),
-				  s ? BATgetId(s) : "NULL",
-				  s ? BATcount(s) : 0);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+				  ALGOBATFMT "): recurse: few candidates\n",
+				  ALGOBATPAR(b), ALGOBATPAR(s));
 		nb = BATproject(s, b);
 		if (nb == NULL)
 			return NULL;
@@ -124,10 +123,9 @@ BATunique(BAT *b, BAT *s)
 	if (BATordered(b) || BATordered_rev(b)) {
 		const void *prev = NULL;
 
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): (reverse) sorted\n",
-				  BATgetId(b), BATcount(b),
-				  s ? BATgetId(s) : "NULL",
-				  s ? BATcount(s) : 0);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+				  ALGOOPTBATFMT "): (reverse) sorted\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		for (;;) {
 			if (cand) {
 				if (cand == candend)
@@ -150,10 +148,9 @@ BATunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
 		unsigned char val;
 
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): byte sized atoms\n",
-				  BATgetId(b), BATcount(b),
-				  s ? BATgetId(s) : "NULL",
-				  s ? BATcount(s) : 0);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+				  ALGOOPTBATFMT "): byte sized atoms\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		assert(vars == NULL);
 		seen = GDKzalloc((256 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
@@ -187,10 +184,9 @@ BATunique(BAT *b, BAT *s)
 	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
 		unsigned short val;
 
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): short sized atoms\n",
-				  BATgetId(b), BATcount(b),
-				  s ? BATgetId(s) : "NULL",
-				  s ? BATcount(s) : 0);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+				  ALGOOPTBATFMT "): short sized atoms\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		assert(vars == NULL);
 		seen = GDKzalloc((65536 / 16) * sizeof(seen[0]));
 		if (seen == NULL)
@@ -235,10 +231,9 @@ BATunique(BAT *b, BAT *s)
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): use existing hash\n",
-				  BATgetId(b), BATcount(b),
-				  s ? BATgetId(s) : "NULL",
-				  s ? BATcount(s) : 0);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+				  ALGOOPTBATFMT "): use existing hash\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		seq = b->hseqbase;
 #ifndef DISABLE_PARENT_HASH
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
@@ -290,10 +285,9 @@ BATunique(BAT *b, BAT *s)
 		BUN mask;
 
 		GDKclrerr();	/* not interested in BAThash errors */
-		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): create partial hash\n",
-				  BATgetId(b), BATcount(b),
-				  s ? BATgetId(s) : "NULL",
-				  s ? BATcount(s) : 0);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s="
+				  ALGOOPTBATFMT "): create partial hash\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		nme = BBP_physical(b->batCacheid);
 		if (ATOMbasetype(b->ttype) == TYPE_bte) {
 			mask = (BUN) 1 << 8;

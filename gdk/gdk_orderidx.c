@@ -43,7 +43,9 @@ BATidxsync(void *arg)
 			}
 			close(fd);
 		}
-		ALGODEBUG fprintf(stderr, "#BATidxsync: persisting orderidx %s (" LLFMT " usec)\n", hp->filename, GDKusec() - t0);
+		ALGODEBUG fprintf(stderr, "#BATidxsync(%s): orderidx persisted"
+				  " (" LLFMT " usec)\n",
+				  BATgetId(b), GDKusec() - t0);
 	}
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	BBPunfix(b->batCacheid);
@@ -146,7 +148,7 @@ persistOIDX(BAT *b)
 		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		ALGODEBUG fprintf(stderr, "#BATorderidx: NOT persisting index %d\n", b->batCacheid);
+		ALGODEBUG fprintf(stderr, "#BATorderidx(%s): NOT persisting index\n", BATgetId(b));
 #else
 	(void) b;
 #endif
@@ -159,6 +161,7 @@ BATorderidx(BAT *b, int stable)
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
 		BAT *on;
+		ALGODEBUG fprintf(stderr, "#BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
 		if (BATsort(NULL, &on, NULL, b, NULL, NULL, 0, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
 		assert(BATcount(b) == BATcount(on));
@@ -328,6 +331,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
+	ALGODEBUG fprintf(stderr, "#GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->torderidx) {
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
@@ -451,7 +455,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		ALGODEBUG fprintf(stderr, "#GDKmergeidx: NOT persisting index %d\n", b->batCacheid);
+		ALGODEBUG fprintf(stderr, "#GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
 #endif
 
 	b->batDirtydesc = TRUE;

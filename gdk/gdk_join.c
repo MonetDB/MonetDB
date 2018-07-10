@@ -2546,9 +2546,10 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 	ALGODEBUG fprintf(stderr, "#hashjoin(l=" ALGOBATFMT ","
 			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
 			  "sr=" ALGOOPTBATFMT ",nil_matches=%d,"
-			  "nil_on_miss=%d,semi=%d)%s%s%s\n",
-			  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
-			  nil_matches, nil_on_miss, semi,
+			  "nil_on_miss=%d,semi=%d,only_misses=%d)%s%s%s\n",
+			  ALGOBATPAR(l), ALGOBATPAR(r),
+			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr),
+			  nil_matches, nil_on_miss, semi, only_misses,
 			  swapped ? " swapped" : "",
 			  *reason ? " " : "", reason);
 
@@ -2916,7 +2917,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 		if (r2 && r2->tdense)
 			r2->tseqbase = ((oid *) r2->theap.base)[0];
 	}
-	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s,r=%s)=(" ALGOBATFMT ","
+			  ALGOOPTBATFMT ") " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
 			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
 			  GDKusec() - t0);
