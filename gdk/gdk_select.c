@@ -136,7 +136,7 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 		     (*cmp)(v, BUNtail(bi, hb)) == 0))
 
 static BAT *
-BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
+BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 {
 	BATiter bi;
 	BUN i, cnt;
@@ -150,31 +150,19 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	l = 0;
 	h = BUNlast(b);
 
-#ifndef DISABLE_PARENT_HASH
-	if (VIEWtparent(b)) {
+	if (phash) {
 		BAT *b2 = BBPdescriptor(VIEWtparent(b));
-		if (b2->batPersistence == PERSISTENT || BATcheckhash(b2)) {
-			/* only use parent's hash if it is persistent
-			 * or already has a hash */
-			ALGODEBUG
-				fprintf(stderr, "#hashselect(" ALGOBATFMT "): "
-					"using parent(" ALGOBATFMT ") "
-					"for hash\n",
-					ALGOBATPAR(b),
-					ALGOBATPAR(b2));
-			l = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
-			h = l + BATcount(b);
-			b = b2;
-		} else {
-			ALGODEBUG
-				fprintf(stderr, "#hashselect(" ALGOBATFMT "): "
-					"not using parent(" ALGOBATFMT ") "
-					"for hash\n",
-					ALGOBATPAR(b),
-					ALGOBATPAR(b2));
-		}
+		ALGODEBUG
+			fprintf(stderr, "#hashselect(" ALGOBATFMT "): "
+				"using parent(" ALGOBATFMT ") "
+				"for hash\n",
+				ALGOBATPAR(b),
+				ALGOBATPAR(b2));
+		l = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+		h = l + BATcount(b);
+		b = b2;
 	}
-#endif
+
 	if (s && BATtdense(s)) {
 		/* no need for binary search in s, we just adjust the
 		 * boundaries */
@@ -1179,6 +1167,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	     bool li, bool hi, bool anti)
 {
 	bool hval, lval, equi, lnil, hash;
+	bool phash = false;	/* use hash on parent BAT (if view) */
 	int t;
 	bat parent;
 	const void *nil;
@@ -1635,9 +1624,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 
-		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOBATFMT
+		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec)\n",
-				  BATgetId(b), ALGOBATPAR(bn), GDKusec() - t0);
+				  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 		return virtualize(bn);
 	}
@@ -1697,32 +1686,32 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	hash = equi &&
-		(((b->batPersistence == PERSISTENT
-#ifndef DISABLE_PARENT_HASH
-		   || (parent != 0 &&
-		       (tmp = BBPquickdesc(parent, 0)) != NULL &&
-		       tmp->batPersistence == PERSISTENT)
-#endif
-			  ) &&
+		((b->batPersistence == PERSISTENT &&
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
-		 (BATcheckhash(b)
+		 BATcheckhash(b));
 #ifndef DISABLE_PARENT_HASH
-		  || (parent != 0 &&
-		      BATcheckhash(BBPdescriptor(parent)))
+	if (equi && !hash && parent != 0) {
+		/* use parent hash if it already exists and if either
+		 * a quick check shows the value we're looking for
+		 * does not occur, or if there are plenty of distinct
+		 * values in the parent BAT (occupied slots in hash
+		 * table is at least a quarter of the size of the
+		 * BAT) */
+		tmp = BBPquickdesc(parent, 0);
+		hash = phash = BATcheckhash(tmp) &&
+			(BATcount(tmp) == BATcount(b) ||
+			 ((size_t *) tmp->thash->heap.base)[5] > BATcount(tmp) / 4 ||
+			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
+	}
 #endif
-			 ));
 	if (hash &&
+	    !phash && /* phash implies there is a hash table already */
 	    estimate == BUN_NONE &&
-	    !BATcheckhash(b)
-#ifndef DISABLE_PARENT_HASH
-	    && (parent == 0 || !BATcheckhash(BBPdescriptor(parent)))
-#endif
-		) {
-		/* no exact result size, but we need estimate to choose
-		 * between hash- & scan-select
-		 * (if we already have a hash, it's a no-brainer: we
-		 * use it) */
+	    !BATcheckhash(b)) {
+		/* no exact result size, but we need estimate to
+		 * choose between hash- & scan-select (if we already
+		 * have a hash, it's a no-brainer: we use it) */
 		BUN cnt = BATcount(b);
 		if (s && BATcount(s) < cnt)
 			cnt = BATcount(s);
@@ -1753,7 +1742,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 			if (smpl_cnt > 0 && slct_cnt > 0) {
 				/* linear extrapolation plus 10% margin */
-				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt 
+				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt
 						  * (dbl) BATcount(b) * 1.1);
 			} else if (smpl_cnt > 0 && slct_cnt == 0) {
 				/* estimate low enough to trigger hash select */
@@ -1775,12 +1764,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (bn == NULL)
 		return NULL;
 
-	if (equi && hash) {
+	if (hash) {
 		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d): "
 				  "hash select\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-		bn = BAT_hashselect(b, s, bn, tl, maximum);
+		bn = BAT_hashselect(b, s, bn, tl, maximum, phash);
 	} else {
 		bool use_imprints = false;
 		if (!equi &&
@@ -1800,9 +1789,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				    lval, hval, lnil, maximum, use_imprints);
 	}
 
-	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOBATFMT
+	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 			  " (" LLFMT " usec)\n",
-			  BATgetId(b), ALGOBATPAR(bn), GDKusec() - t0);
+			  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return virtualize(bn);
 }

@@ -12,8 +12,13 @@
 #error this file should not be included outside its source directory
 #endif
 
-#define DISABLE_PARENT_HASH 1
+/* if the parent BAT of a view has a hash, don't use it */
+/* #define DISABLE_PARENT_HASH 1 */
+
+/* persist hash heaps for persistent BATs */
 /* #define PERSISTENTHASH 1 */
+
+/* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
@@ -57,6 +62,8 @@ __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+__hidden Hash *BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -225,7 +232,7 @@ __hidden void gdk_system_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 /* some macros to help print info about BATs when using ALGODEBUG */
-#define ALGOBATFMT	"%s#" BUNFMT "[%s]%s%s%s%s%s%s%s"
+#define ALGOBATFMT	"%s#" BUNFMT "[%s]%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)	BATgetId(b),			\
 			BATcount(b),			\
 			ATOMname(b->ttype),		\
@@ -235,9 +242,10 @@ __hidden void gdk_system_reset(void)
 			b->tkey ? "K" : "",		\
 			b->tnonil ? "N" : "",		\
 			b->thash ? "H" : "",		\
-			b->torderidx ? "O" : ""
+			b->torderidx ? "O" : "",	\
+			b->timprints ? "I" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
-#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)				\
 			b ? BATgetId(b) : "",		\
 			b ? "#" : "",			\
@@ -251,7 +259,8 @@ __hidden void gdk_system_reset(void)
 			b && b->tkey ? "K" : "",	\
 			b && b->tnonil ? "N" : "",	\
 			b && b->thash ? "H" : "",	\
-			b && b->torderidx ? "O" : ""
+			b && b->torderidx ? "O" : "",	\
+			b && b->timprints ? "I" : ""
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63
