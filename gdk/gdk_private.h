@@ -12,8 +12,13 @@
 #error this file should not be included outside its source directory
 #endif
 
-#define DISABLE_PARENT_HASH 1
+/* if the parent BAT of a view has a hash, don't use it */
+/* #define DISABLE_PARENT_HASH 1 */
+
+/* persist hash heaps for persistent BATs */
 /* #define PERSISTENTHASH 1 */
+
+/* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
@@ -57,6 +62,8 @@ __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+__hidden Hash *BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));

@@ -45,7 +45,7 @@
  * BATthetajoin
  *	theta-join: an extra operator must be provided encoded as an
  *	integer (macros JOIN_EQ, JOIN_NE, JOIN_LT, JOIN_LE, JOIN_GT,
- *	JOIN_GE); value match if the left input has the given
+ *	JOIN_GE); values match if the left input has the given
  *	relationship with the right input; order of the outputs is not
  *	guaranteed
  * BATbandjoin
@@ -2520,18 +2520,18 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 static gdk_return
 hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 	 bool nil_on_miss, bool semi, bool only_misses, BUN maxsize, lng t0,
-	 bool swapped, const char *reason)
+	 bool swapped, bool phash, const char *reason)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
 	BUN rstart, rend, rcnt;
 	const oid *rcand = NULL, *rcandend = NULL;
 	oid lo, ro;
-	BATiter ri;
+	BATiter ri, sri;
 	BUN rb;
 	BUN rl, rh;
 	oid rseq;
-	BUN nr, nrcand, newcap;
+	BUN nr, newcap;
 	const char *lvals;
 	const char *lvars;
 	int lwidth;
@@ -2540,7 +2540,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 	oid lval = oid_nil;	/* hold value if l is dense */
 	const char *v = (const char *) &lval;
 	bool lskipped = false;	/* whether we skipped values in l */
-	const Hash *restrict hsh;
+	Hash *restrict hsh;
 	int t;
 
 	ALGODEBUG fprintf(stderr, "#hashjoin(l=" ALGOBATFMT ","
@@ -2560,6 +2560,8 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
+	lcnt = lcand ? (BUN) (lcandend - lcand) : lend - lstart;
+	rcnt = rcand ? (BUN) (rcandend - rcand) : rend - rstart;
 	lwidth = l->twidth;
 	lvals = (const char *) Tloc(l, 0);
 	if (l->tvarsized && l->ttype) {
@@ -2592,75 +2594,48 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 			       nil_on_miss, only_misses, "hashjoin", t0);
 
 	rl = 0;
-#ifndef DISABLE_PARENT_HASH
-	if (VIEWtparent(r)) {
+	if (phash) {
 		BAT *b = BBPdescriptor(VIEWtparent(r));
-		if (b->batPersistence == PERSISTENT || BATcheckhash(b)) {
-			/* only use parent's hash if it is persistent
-			 * or already has a hash */
-			ALGODEBUG
-				fprintf(stderr, "#hashjoin(%s): using "
-					"parent(" ALGOBATFMT ") for hash\n",
-					BATgetId(r), ALGOBATPAR(b));
-			rl = (BUN) ((r->theap.base - b->theap.base) >> r->tshift);
-			r = b;
-		} else {
-			ALGODEBUG
-				fprintf(stderr, "#hashjoin(%s): not using "
-					"parent(" ALGOBATFMT ") for hash\n",
-					BATgetId(r), ALGOBATPAR(b));
-		}
+		assert(sr == NULL);
+		ALGODEBUG fprintf(stderr, "#hashjoin(%s): using "
+				  "parent(" ALGOBATFMT ") for hash\n",
+				  BATgetId(r), ALGOBATPAR(b));
+		rl = (BUN) ((r->theap.base - b->theap.base) >> r->tshift);
+		r = b;
 	}
-#endif
 	rh = rl + rend;
 	rl += rstart;
 	rseq += rstart;
 
-	if (BAThash(r, 0) != GDK_SUCCEED)
-		goto bailout;
+	if (sr) {
+		if (BATtdense(sr) &&
+		    BATcheckhash(r) &&
+		    BATcount(r) / ((size_t *) r->thash->heap.base)[5] * lcnt < lcnt + rcnt) {
+			ALGODEBUG fprintf(stderr, "#hashjoin(%s): using "
+					  "existing hash with candidate list\n",
+					  BATgetId(r));
+			hsh = r->thash;
+			sr = NULL;
+		} else {
+			char ext[32];
+			assert(!phash);
+			ALGODEBUG fprintf(stderr, "#hashjoin(%s): creating "
+					  "hash for candidate list\n",
+					  BATgetId(r));
+			snprintf(ext, sizeof(ext), "thash%x", sr->batCacheid);
+			if ((hsh = BAThash_impl(r, sr, 0, ext)) == NULL)
+				goto bailout;
+		}
+	} else {
+		if (BAThash(r, 0) != GDK_SUCCEED)
+			goto bailout;
+		hsh = r->thash;
+	}
 	ri = bat_iterator(r);
-	nrcand = (BUN) (rcandend - rcand);
-	hsh = r->thash;
+	sri = bat_iterator(sr);
 	t = ATOMbasetype(r->ttype);
 
-	if (lcand == NULL && rcand == NULL && lvars == NULL &&
-	    !nil_matches && !nil_on_miss && !semi && !only_misses &&
-	    !BATtvoid(l) && (t == TYPE_int || t == TYPE_lng)) {
-		/* special case for a common way of calling this
-		 * function */
-		const void *restrict base = Tloc(r, 0);
-
-		if (t == TYPE_int) {
-			switch (hsh->width) {
-			case BUN2:
-				HASHJOIN(int, 2);
-				break;
-			case BUN4:
-				HASHJOIN(int, 4);
-				break;
-#ifdef BUN8
-			case BUN8:
-				HASHJOIN(int, 8);
-				break;
-#endif
-			}
-		} else {
-			/* t == TYPE_lng */
-			switch (hsh->width) {
-			case BUN2:
-				HASHJOIN(lng, 2);
-				break;
-			case BUN4:
-				HASHJOIN(lng, 4);
-				break;
-#ifdef BUN8
-			case BUN8:
-				HASHJOIN(lng, 8);
-				break;
-#endif
-			}
-		}
-	} else if (lcand) {
+	if (lcand) {
 		while (lcand < lcandend) {
 			lo = *lcand++;
 			if (BATtvoid(l)) {
@@ -2672,10 +2647,12 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 			nr = 0;
 			if (!nil_matches && cmp(v, nil) == 0) {
 				/* no match */
-			} else if (rcand) {
-				HASHloop_bound(ri, hsh, rb, v, rl, rh) {
-					ro = (oid) (rb - rl + rseq);
-					if (!binsearchcand(rcand, 0, nrcand, ro))
+			} else if (sr) {
+				for (rb = HASHget(hsh, HASHprobe(hsh, v));
+				     rb != HASHnil(hsh);
+				     rb = HASHgetlink(hsh, rb)) {
+					ro = * (const oid *) BUNtail(sri, rb);
+					if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0)
 						continue;
 					if (only_misses) {
 						nr++;
@@ -2751,6 +2728,45 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 			if (nr > 0 && BATcount(r1) > nr)
 				r1->trevsorted = false;
 		}
+	} else if (rcand == NULL && lvars == NULL && sr == NULL &&
+		   !nil_matches && !nil_on_miss && !semi && !only_misses &&
+		   !BATtvoid(l) && (t == TYPE_int || t == TYPE_lng)) {
+		/* special case for a common way of calling this
+		 * function */
+		const void *restrict base = Tloc(r, 0);
+
+		assert(lcand == NULL);
+
+		if (t == TYPE_int) {
+			switch (hsh->width) {
+			case BUN2:
+				HASHJOIN(int, 2);
+				break;
+			case BUN4:
+				HASHJOIN(int, 4);
+				break;
+#ifdef BUN8
+			case BUN8:
+				HASHJOIN(int, 8);
+				break;
+#endif
+			}
+		} else {
+			/* t == TYPE_lng */
+			switch (hsh->width) {
+			case BUN2:
+				HASHJOIN(lng, 2);
+				break;
+			case BUN4:
+				HASHJOIN(lng, 4);
+				break;
+#ifdef BUN8
+			case BUN8:
+				HASHJOIN(lng, 8);
+				break;
+#endif
+			}
+		}
 	} else {
 		for (lo = lstart + l->hseqbase; lstart < lend; lo++) {
 			if (BATtvoid(l)) {
@@ -2761,11 +2777,13 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 			}
 			lstart++;
 			nr = 0;
-			if (rcand) {
+			if (sr) {
 				if (nil_matches || cmp(v, nil) != 0) {
-					HASHloop_bound(ri, hsh, rb, v, rl, rh) {
-						ro = (oid) (rb - rl + rseq);
-						if (!binsearchcand(rcand, 0, nrcand, ro))
+					for (rb = HASHget(hsh, HASHprobe(hsh, v));
+					     rb != HASHnil(hsh);
+					     rb = HASHgetlink(hsh, rb)) {
+						ro = * (const oid *) BUNtail(sri, rb);
+						if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0)
 							continue;
 						if (only_misses) {
 							nr++;
@@ -2893,6 +2911,10 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 				r1->trevsorted = false;
 		}
 	}
+	if (sr) {
+		HEAPfree(&hsh->heap, 1);
+		GDKfree(hsh);
+	}
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
 	if (BATcount(r1) <= 1) {
@@ -2925,6 +2947,10 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 	return GDK_SUCCEED;
 
   bailout:
+	if (sr && hsh) {
+		HEAPfree(&hsh->heap, 1);
+		GDKfree(hsh);
+	}
 	BBPreclaim(r1);
 	BBPreclaim(r2);
 	return GDK_FAIL;
@@ -3592,6 +3618,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 {
 	BAT *r1, *r2 = NULL;
 	BUN lcount, rcount, maxsize;
+	bool phash = false;
 
 	/* only_misses implies left output only */
 	assert(!only_misses || r2p == NULL);
@@ -3606,11 +3633,23 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		return GDK_FAIL;
 
 	lcount = BATcount(l);
-	if (sl)
-		lcount = MIN(lcount, BATcount(sl));
+	if (sl) {
+		if (BATtdense(sl) &&
+		    sl->tseqbase <= l->hseqbase &&
+		    sl->tseqbase + BATcount(sl) >= l->hseqbase + lcount)
+			sl = NULL;
+		else
+			lcount = MIN(lcount, BATcount(sl));
+	}
 	rcount = BATcount(r);
-	if (sr)
-		rcount = MIN(rcount, BATcount(sr));
+	if (sr) {
+		if (BATtdense(sr) &&
+		    sr->tseqbase <= r->hseqbase &&
+		    sr->tseqbase + BATcount(sr) >= r->hseqbase + rcount)
+			sr = NULL;
+		else
+			rcount = MIN(rcount, BATcount(sr));
+	}
 
 	if ((maxsize = joininitresults(&r1, r2p ? &r2 : NULL, lcount, rcount,
 				       l->tkey, r->tkey, semi, nil_on_miss,
@@ -3640,8 +3679,11 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 false);
 	if (BATtdense(l) && ATOMtype(l->ttype) == TYPE_oid && sl == NULL && sr == NULL && !semi && !nil_matches && !only_misses && (rcount * 1024) < lcount && BATordered(r))
 		return fetchjoin(r1, r2, l, r);
-	return hashjoin(r1, r2, l, r, sl, sr, nil_matches,
-			nil_on_miss, semi, only_misses, maxsize, t0, false, "leftjoin");
+	phash = sr == NULL &&
+		VIEWtparent(r) != 0 &&
+		BATcount(BBPquickdesc(VIEWtparent(r), 0)) == BATcount(r);
+	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, nil_on_miss, semi,
+			only_misses, maxsize, t0, false, phash, "leftjoin");
 }
 
 /* Perform an equi-join over l and r.  Returns two new, aligned, bats
@@ -3746,13 +3788,11 @@ gdk_return
 BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *r1, *r2;
-	BUN lcount, rcount, lpcount, rpcount;
+	BUN lcount, rcount;
 	BUN lsize, rsize;
 	BUN maxsize;
-	int lhash, rhash;
-#ifndef DISABLE_PARENT_HASH
-	bat lparent, rparent;
-#endif
+	bool lhash = false, rhash = false;
+	bool plhash = false, prhash = false;
 	bool swap;
 	size_t mem_size;
 	lng t0 = 0;
@@ -3765,11 +3805,23 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	if (joinparamcheck(l, r, NULL, sl, sr, "BATjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
 	lcount = BATcount(l);
-	if (sl)
-		lcount = MIN(lcount, BATcount(sl));
+	if (sl) {
+		if (BATtdense(sl) &&
+		    sl->tseqbase <= l->hseqbase &&
+		    sl->tseqbase + BATcount(sl) >= l->hseqbase + lcount)
+			sl = NULL;
+		else
+			lcount = MIN(lcount, BATcount(sl));
+	}
 	rcount = BATcount(r);
-	if (sr)
-		rcount = MIN(rcount, BATcount(sr));
+	if (sr) {
+		if (BATtdense(sr) &&
+		    sr->tseqbase <= r->hseqbase &&
+		    sr->tseqbase + BATcount(sr) >= r->hseqbase + rcount)
+			sr = NULL;
+		else
+			rcount = MIN(rcount, BATcount(sr));
+	}
 	if (lcount == 0 || rcount == 0) {
 		r1 = BATdense(0, 0, 0);
 		r2 = BATdense(0, 0, 0);
@@ -3795,27 +3847,43 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	rsize = (BUN) (BATcount(r) * (Tsize(r)) + (r->tvheap ? r->tvheap->size : 0) + 2 * sizeof(BUN));
 	mem_size = GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1);
 
-#ifndef DISABLE_PARENT_HASH
-	lparent = VIEWtparent(l);
-	if (lparent) {
-		lpcount = BATcount(BBPdescriptor(lparent));
-		lhash = BATcheckhash(l) || BATcheckhash(BBPdescriptor(lparent));
-	} else
-#endif
-	{
-		lpcount = BATcount(l);
+	if (sl == NULL) {
 		lhash = BATcheckhash(l);
-	}
 #ifndef DISABLE_PARENT_HASH
-	rparent = VIEWtparent(r);
-	if (rparent) {
-		rpcount = BATcount(BBPdescriptor(rparent));
-		rhash = BATcheckhash(r) || BATcheckhash(BBPdescriptor(rparent));
-	} else
+		bat lparent;
+		if (!lhash && (lparent = VIEWtparent(l)) != 0) {
+			BAT *b = BBPdescriptor(lparent);
+			/* use hash on parent if the average chain
+			 * length times the number of required probes
+			 * is less than the cost for creating and
+			 * probing a new hash on the view */
+			lhash = BATcheckhash(b) &&
+				(BATcount(b) == BATcount(l) ||
+				 BATcount(b) / ((size_t *) b->thash->heap.base)[5] * rcount < lcount + rcount);
+			plhash = lhash;
+		}
 #endif
-	{
-		rpcount = BATcount(r);
+	} else if (BATtdense(sl) && BATcheckhash(l)) {
+		lhash = BATcount(l) / ((size_t *) l->thash->heap.base)[5] * rcount < lcount + rcount;
+	}
+	if (sr == NULL) {
 		rhash = BATcheckhash(r);
+#ifndef DISABLE_PARENT_HASH
+		bat rparent;
+		if (!rhash && (rparent = VIEWtparent(r)) != 0) {
+			BAT *b = BBPdescriptor(rparent);
+			/* use hash on parent if the average chain
+			 * length times the number of required probes
+			 * is less than the cost for creating and
+			 * probing a new hash on the view */
+			rhash = BATcheckhash(b) &&
+				(BATcount(b) == BATcount(r) ||
+				 BATcount(b) / ((size_t *) b->thash->heap.base)[5] * lcount < lcount + rcount);
+			prhash = rhash;
+		}
+#endif
+	} else if (BATtdense(sr) && BATcheckhash(r)) {
+		rhash = BATcount(r) / ((size_t *) r->thash->heap.base)[5] * lcount < lcount + rcount;
 	}
 	if (lcount == 1 || (BATordered(l) && BATordered_rev(l))) {
 		/* single value to join, use select */
@@ -3859,48 +3927,29 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		 * large (i.e. prefer hash over binary search, but
 		 * only if the hash table doesn't cause thrashing) */
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, false, false, false, maxsize, t0, false);
-	} else if ((l->batPersistence == PERSISTENT
-#ifndef DISABLE_PARENT_HASH
-		     || (lparent != 0 &&
-			 BBPquickdesc(lparent, 0)->batPersistence == PERSISTENT)
-#endif
-			   ) &&
-		   !(r->batPersistence == PERSISTENT
-#ifndef DISABLE_PARENT_HASH
-		     || (rparent != 0 &&
-			 BBPquickdesc(rparent, 0)->batPersistence == PERSISTENT)
-#endif
-			   )) {
-		/* l (or its parent) is persistent and r is not,
-		 * create hash on l since it may be reused */
+	} else if (l->batPersistence == PERSISTENT &&
+		   r->batPersistence != PERSISTENT) {
+		/* l is persistent and r is not, create hash on l
+		 * since it may be reused */
 		swap = true;
 		reason = "left is persistent";
-	} else if (!(l->batPersistence == PERSISTENT
-#ifndef DISABLE_PARENT_HASH
-		     || (lparent != 0 &&
-			 BBPquickdesc(lparent, 0)->batPersistence == PERSISTENT)
-#endif
-			   ) &&
-		   (r->batPersistence == PERSISTENT
-#ifndef DISABLE_PARENT_HASH
-		    || (rparent != 0 &&
-			BBPquickdesc(rparent, 0)->batPersistence == PERSISTENT)
-#endif
-			   )) {
-		/* l (and its parent) is not persistent but r (or its
-		 * parent) is, create hash on r since it may be
-		 * reused */
+	} else if (l->batPersistence != PERSISTENT &&
+		   r->batPersistence == PERSISTENT) {
+		/* l is not persistent but r is, create hash on r
+		 * since it may be reused */
 		/* nothing */;
 		reason = "right is persistent";
-	} else if (lpcount < rpcount) {
+	} else if (lcount < rcount) {
 		/* no hashes, not sorted, create hash on smallest BAT */
 		swap = true;
 		reason = "left is smaller";
 	}
 	if (swap) {
-		return hashjoin(r2, r1, r, l, sr, sl, nil_matches, false, false, false, maxsize, t0, true, reason);
+		return hashjoin(r2, r1, r, l, sr, sl, nil_matches, false, false,
+				false, maxsize, t0, true, plhash, reason);
 	} else {
-		return hashjoin(r1, r2, l, r, sl, sr, nil_matches, false, false, false, maxsize, t0, false, reason);
+		return hashjoin(r1, r2, l, r, sl, sr, nil_matches, false, false,
+				false, maxsize, t0, false, prhash, reason);
 	}
 }
 
