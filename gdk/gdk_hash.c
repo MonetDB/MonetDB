@@ -289,8 +289,11 @@ BAThashsync(void *arg)
 			for (; p < cnt1; p++) {				\
 				c = hash_##TYPE(h, v + cand[p] - b->hseqbase); \
 				hget = HASHget(h, c);			\
-				if (hget == hnil && ++nslots == maxslots) \
-					break; /* mask too full */	\
+				if (hget == hnil) {			\
+					if (nslots == maxslots)		\
+						break; /* mask too full */ \
+					nslots++;			\
+				}					\
 				HASHputlink(h, p, hget);		\
 				HASHput(h, c, p);			\
 			}						\
@@ -299,8 +302,11 @@ BAThashsync(void *arg)
 			for (; p < cnt1; p++) {				\
 				c = hash_##TYPE(h, v + p);		\
 				hget = HASHget(h, c);			\
-				if (hget == hnil && ++nslots == maxslots) \
-					break; /* mask too full */	\
+				if (hget == hnil) {			\
+					if (nslots == maxslots)		\
+						break; /* mask too full */ \
+					nslots++;			\
+				}					\
 				HASHputlink(h, p, hget);		\
 				HASHput(h, c, p);			\
 			}						\
@@ -402,7 +408,7 @@ BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 	}
 
 	do {
-		BUN maxslots = mask >> 3;	/* 1/8 full is too full */
+		BUN maxslots = (mask >> 3) - 1;	/* 1/8 full is too full */
 
 		nslots = 0;
 		p = 0;
@@ -447,8 +453,11 @@ BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 					const void *restrict v = BUNtail(bi, cand[p] - b->hseqbase);
 					c = heap_hash_any(b->tvheap, h, v);
 					hget = HASHget(h, c);
-					if (hget == hnil && ++nslots == maxslots)
-						break; /* mask too full */
+					if (hget == hnil) {
+						if (nslots == maxslots)
+							break; /* mask too full */
+						nslots++;
+					}
 					HASHputlink(h, p, hget);
 					HASHput(h, c, p);
 				}
@@ -457,8 +466,11 @@ BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 					const void *restrict v = BUNtail(bi, p + start);
 					c = heap_hash_any(b->tvheap, h, v);
 					hget = HASHget(h, c);
-					if (hget == hnil && ++nslots == maxslots)
-						break; /* mask too full */
+					if (hget == hnil) {
+						if (nslots == maxslots)
+							break; /* mask too full */
+						nslots++;
+					}
 					HASHputlink(h, p, hget);
 					HASHput(h, c, p);
 				}
