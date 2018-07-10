@@ -45,6 +45,10 @@ BATunique(BAT *b, BAT *s)
 	BATcheck(b, "BATunique", NULL);
 	if (b->tkey || BATcount(b) <= 1 || BATtdense(b)) {
 		/* trivial: already unique */
+		if (!b->tkey) {
+			b->tkey = true;
+			b->batDirtydesc = true;
+		}
 		if (s) {
 			/* we can return a slice of the candidate list */
 			oid lo = b->hseqbase;
@@ -345,11 +349,18 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(hs);
 	}
 
-	bn->tsorted = 1;
+	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
-	bn->tkey = 1;
-	bn->tnil = 0;
-	bn->tnonil = 1;
+	bn->tkey = true;
+	bn->tnil = false;
+	bn->tnonil = true;
+	if (BATcount(bn) == BATcount(b)) {
+		/* it turns out all values are distinct */
+		assert(b->tnokey[0] == 0);
+		assert(b->tnokey[1] == 0);
+		b->tkey = true;
+		b->batDirtydesc = true;
+	}
 	return virtualize(bn);
 
   bunins_failed:
