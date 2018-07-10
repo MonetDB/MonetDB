@@ -532,6 +532,12 @@ BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 	memset((char *) h->Link + cnt * h->width, 0, (h->lim - cnt) * h->width);
 #endif
 	h->heap.parentid = b->batCacheid;
+	/* if the number of occupied slots is equal to the bat count,
+	 * all values are necessarily distinct */
+	if (nslots == BATcount(b) && !b->tkey) {
+		b->tkey = true;
+		b->batDirtydesc = true;
+	}
 	ALGODEBUG {
 		fprintf(stderr, "#BAThash: hash construction " LLFMT " usec\n", GDKusec() - t0);
 		HASHcollisions(b, h);
