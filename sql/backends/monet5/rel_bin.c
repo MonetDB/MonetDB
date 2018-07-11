@@ -5218,15 +5218,15 @@ output_rel_bin(backend *be, sql_rel *rel )
 	return s;
 }
 
-static int exp_deps(sql_allocator *sa, sql_exp *e, list *refs, list *l);
+static int exp_deps(mvc *sql, sql_exp *e, list *refs, list *l);
 
 static int
-exps_deps(sql_allocator *sa, list *exps, list *refs, list *l)
+exps_deps(mvc *sql, list *exps, list *refs, list *l)
 {
 	node *n;
 
 	for(n = exps->h; n; n = n->next) {
-		if (exp_deps(sa, n->data, refs, l) != 0)
+		if (exp_deps(sql, n->data, refs, l) != 0)
 			return -1;
 	}
 	return 0;
@@ -5248,43 +5248,56 @@ cond_append(list *l, int *id)
 	return l;
 }
 
-static int rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l);
+static int rel_deps(mvc *sql, sql_rel *r, list *refs, list *l);
 
 static int
-exp_deps(sql_allocator *sa, sql_exp *e, list *refs, list *l)
+exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 {
 	switch(e->type) {
 	case e_psm:
 		if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
-			return exp_deps(sa, e->l, refs, l);
+			return exp_deps(sql, e->l, refs, l);
 		} else if (e->flag & PSM_VAR) {
 			return 0;
 		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-			if (exp_deps(sa, e->l, refs, l) != 0 ||
-		            exps_deps(sa, e->r, refs, l) != 0)
+			if (exp_deps(sql, e->l, refs, l) != 0 ||
+		            exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
 			if (e->flag == PSM_IF && e->f)
-		            return exps_deps(sa, e->r, refs, l);
+		            return exps_deps(sql, e->r, refs, l);
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
-			rel_deps(sa, rel, refs, l);
+			rel_deps(sql, rel, refs, l);
 		}
 	case e_atom: 
 	case e_column: 
 		break;
 	case e_convert: 
-		return exp_deps(sa, e->l, refs, l);
+		return exp_deps(sql, e->l, refs, l);
 	case e_func: {
 			sql_subfunc *f = e->f;
 
-			if (e->l && exps_deps(sa, e->l, refs, l) != 0)
+			if (e->l && exps_deps(sql, e->l, refs, l) != 0)
 				return -1;
 			cond_append(l, &f->func->base.id);
+			if (e->l && list_length(e->l) == 2 && strcmp(f->func->base.name, "next_value_for") == 0) {
+				/* add dependency on seq nr */
+				list *nl = e->l;
+				sql_exp *schname = nl->h->data;
+				sql_exp *seqname = nl->t->data;
+
+				char *sch_name = ((atom*)schname->l)->data.val.sval;
+				char *seq_name = ((atom*)seqname->l)->data.val.sval;
+				sql_schema *sche = mvc_bind_schema(sql, sch_name);
+				sql_sequence *seq = find_sql_sequence(sche, seq_name);
+
+				cond_append(l, &seq->base.id);
+			}
 		} break;
 	case e_aggr: {
 			sql_subaggr *a = e->f;
 
-			if (e->l &&exps_deps(sa, e->l, refs, l) != 0)
+			if (e->l &&exps_deps(sql, e->l, refs, l) != 0)
 				return -1;
 			cond_append(l, &a->aggr->base.id);
 		} break;
@@ -5294,19 +5307,19 @@ exp_deps(sql_allocator *sa, sql_exp *e, list *refs, list *l)
 					sql_subfunc *f = e->f;
 					cond_append(l, &f->func->base.id);
 				}
-				if (exps_deps(sa, e->l, refs, l) != 0 ||
-			    	    exps_deps(sa, e->r, refs, l) != 0)
+				if (exps_deps(sql, e->l, refs, l) != 0 ||
+			    	    exps_deps(sql, e->r, refs, l) != 0)
 					return -1;
 			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-				if (exp_deps(sa, e->l, refs, l) != 0 ||
-			            exps_deps(sa, e->r, refs, l) != 0)
+				if (exp_deps(sql, e->l, refs, l) != 0 ||
+			            exps_deps(sql, e->r, refs, l) != 0)
 					return -1;
 			} else {
-				if (exp_deps(sa, e->l, refs, l) != 0 ||
-				    exp_deps(sa, e->r, refs, l) != 0)
+				if (exp_deps(sql, e->l, refs, l) != 0 ||
+				    exp_deps(sql, e->r, refs, l) != 0)
 					return -1;
 				if (e->f)
-					return exp_deps(sa, e->f, refs, l);
+					return exp_deps(sql, e->f, refs, l);
 			}
 		}	break;
 	}
@@ -5314,7 +5327,7 @@ exp_deps(sql_allocator *sa, sql_exp *e, list *refs, list *l)
 }
 
 static int
-rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l)
+rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 {
 	if (THRhighwater())
 		return -1;
@@ -5370,8 +5383,8 @@ rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l)
 	case op_union: 
 	case op_except: 
 	case op_inter: 
-		if (rel_deps(sa, r->l, refs, l) != 0 ||
-		    rel_deps(sa, r->r, refs, l) != 0)
+		if (rel_deps(sql, r->l, refs, l) != 0 ||
+		    rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
 		break;
 	case op_apply:
@@ -5382,38 +5395,38 @@ rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l)
 	case op_groupby: 
 	case op_topn: 
 	case op_sample:
-		if (rel_deps(sa, r->l, refs, l) != 0)
+		if (rel_deps(sql, r->l, refs, l) != 0)
 			return -1;
 		break;
 	case op_insert: 
 	case op_update: 
 	case op_delete:
 	case op_truncate:
-		if (rel_deps(sa, r->l, refs, l) != 0 ||
-		    rel_deps(sa, r->r, refs, l) != 0)
+		if (rel_deps(sql, r->l, refs, l) != 0 ||
+		    rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
 		break;
 	case op_ddl:
 		if (r->flag == DDL_OUTPUT) {
 			if (r->l)
-				return rel_deps(sa, r->l, refs, l);
+				return rel_deps(sql, r->l, refs, l);
 		} else if (r->flag <= DDL_LIST) {
 			if (r->l)
-				return rel_deps(sa, r->l, refs, l);
+				return rel_deps(sql, r->l, refs, l);
 			if (r->r)
-				return rel_deps(sa, r->r, refs, l);
+				return rel_deps(sql, r->r, refs, l);
 		} else if (r->flag == DDL_PSM) {
 			break;
 		} else if (r->flag <= DDL_ALTER_SEQ) {
 			if (r->l)
-				return rel_deps(sa, r->l, refs, l);
+				return rel_deps(sql, r->l, refs, l);
 		}
 		break;
 	}
 	if (r->exps)
-		exps_deps(sa, r->exps, refs, l);
+		exps_deps(sql, r->exps, refs, l);
 	if (is_groupby(r->op) && r->r)
-		exps_deps(sa, r->r, refs, l);
+		exps_deps(sql, r->r, refs, l);
 	if (rel_is_ref(r)) {
 		list_append(refs, r);
 		list_append(refs, l);
@@ -5422,12 +5435,12 @@ rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l)
 }
 
 list *
-rel_dependencies(sql_allocator *sa, sql_rel *r)
+rel_dependencies(mvc *sql, sql_rel *r)
 {
-	list *refs = sa_list(sa);
-	list *l = sa_list(sa);
+	list *refs = sa_list(sql->sa);
+	list *l = sa_list(sql->sa);
 
-	if (rel_deps(sa, r, refs, l) != 0)
+	if (rel_deps(sql, r, refs, l) != 0)
 		return NULL;
 	return l;
 }

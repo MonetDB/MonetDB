@@ -10,8 +10,8 @@ insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736');
 insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736');
 select * from seqdeftest;
 
-drop sequence test_seq;
 drop table seqdeftest;
+drop sequence test_seq;
 
 create table seqdeftest (
 	d date,
