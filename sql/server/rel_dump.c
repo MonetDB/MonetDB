@@ -1140,8 +1140,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;
-			} else if (e)
-				return exp_compare(sql->sa, exp, e, f);
+			} else if (e) {
+				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
+				if (is_anti(exp))
+					set_anti(ne);
+				return ne;
+			}
 		}
 	}
 	return exp;

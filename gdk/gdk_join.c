@@ -3820,6 +3820,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	bool lhash = false, rhash = false;
 	bool plhash = false, prhash = false;
 	bool swap;
+	bat parent;
 	size_t mem_size;
 	lng t0 = 0;
 	const char *reason = "";
@@ -3875,10 +3876,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	if (sl == NULL) {
 		lhash = BATcheckhash(l);
-#ifndef DISABLE_PARENT_HASH
-		bat lparent;
-		if (!lhash && (lparent = VIEWtparent(l)) != 0) {
-			BAT *b = BBPdescriptor(lparent);
+		if (!lhash && (parent = VIEWtparent(l)) != 0) {
+			BAT *b = BBPdescriptor(parent);
 			/* use hash on parent if the average chain
 			 * length times the number of required probes
 			 * is less than the cost for creating and
@@ -3888,16 +3887,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 				 BATcount(b) / ((size_t *) b->thash->heap.base)[5] * rcount < lcount + rcount);
 			plhash = lhash;
 		}
-#endif
 	} else if (BATtdense(sl) && BATcheckhash(l)) {
 		lhash = BATcount(l) / ((size_t *) l->thash->heap.base)[5] * rcount < lcount + rcount;
 	}
 	if (sr == NULL) {
 		rhash = BATcheckhash(r);
-#ifndef DISABLE_PARENT_HASH
-		bat rparent;
-		if (!rhash && (rparent = VIEWtparent(r)) != 0) {
-			BAT *b = BBPdescriptor(rparent);
+		if (!rhash && (parent = VIEWtparent(r)) != 0) {
+			BAT *b = BBPdescriptor(parent);
 			/* use hash on parent if the average chain
 			 * length times the number of required probes
 			 * is less than the cost for creating and
@@ -3907,7 +3903,6 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 				 BATcount(b) / ((size_t *) b->thash->heap.base)[5] * lcount < lcount + rcount);
 			prhash = rhash;
 		}
-#endif
 	} else if (BATtdense(sr) && BATcheckhash(r)) {
 		rhash = BATcount(r) / ((size_t *) r->thash->heap.base)[5] * lcount < lcount + rcount;
 	}

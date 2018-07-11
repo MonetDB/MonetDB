@@ -50,16 +50,14 @@ Ready.
 
 create table t (i int auto_increment, val int)
 insert into t(val) values (10), (20)
-drop sequence seq_8376
-insert into t(val) values (30), (40)
-[(1, 10), (2, 20), (3, 30), (4, 40)]
+drop sequence seq_7622
+[(1, 10), (2, 20)]
 drop table t
 create sequence myseq as int
 create table t2 (i int default next value for myseq, val int)
 insert into t2(val) values (10), (20)
 drop sequence myseq
-insert into t2(val) values (30), (40)
-[(1, 10), (2, 20), (3, 30), (4, 40)]
+[(1, 10), (2, 20)]
 drop table t2
 
 # 15:49:25 >  

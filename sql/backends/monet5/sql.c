@@ -304,6 +304,9 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 
 	osa = sql->sa;
 	sql->sa = NULL;
+
+	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
+
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -322,13 +325,16 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 			r = rel_parse(sql, s, buf, m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL)
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
+			if (r) {
+				list *id_l = rel_dependencies(sql, r);
+				mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+			}
+
 			rel_destroy(r);
 			sa_destroy(sql->sa);
 			sql->sa = NULL;
 		}
 	}
-
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
 
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -360,7 +366,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {
-			list *id_l = rel_dependencies(sql->sa, r);
+			list *id_l = rel_dependencies(sql, r);
 
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
 		}
