@@ -1743,7 +1743,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
 		 BATcheckhash(b));
-#ifndef DISABLE_PARENT_HASH
 	if (equi && !hash && parent != 0) {
 		/* use parent hash if it already exists and if either
 		 * a quick check shows the value we're looking for
@@ -1759,7 +1758,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
 			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
 	}
-#endif
 	if (hash &&
 	    !phash && /* phash implies there is a hash table already */
 	    estimate == BUN_NONE &&

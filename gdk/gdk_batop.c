@@ -1052,12 +1052,9 @@ BATkeyed(BAT *b)
 			b->tkey = 1;
 		} else if (BATcheckhash(b) ||
 			   (b->batPersistence == PERSISTENT &&
-			    BAThash(b, 0) == GDK_SUCCEED)
-#ifndef DISABLE_PARENT_HASH
-			   || (VIEWtparent(b) != 0 &&
-			       BATcheckhash(BBPdescriptor(VIEWtparent(b))))
-#endif
-			) {
+			    BAThash(b, 0) == GDK_SUCCEED) ||
+			   (VIEWtparent(b) != 0 &&
+			    BATcheckhash(BBPdescriptor(VIEWtparent(b))))) {
 			/* we already have a hash table on b, or b is
 			 * persistent and we could create a hash
 			 * table, or b is a view on a bat that already
@@ -1065,13 +1062,11 @@ BATkeyed(BAT *b)
 			BUN lo = 0;
 
 			hs = b->thash;
-#ifndef DISABLE_PARENT_HASH
-			if (b->thash == NULL && VIEWtparent(b) != 0) {
+			if (hs == NULL && VIEWtparent(b) != 0) {
 				BAT *b2 = BBPdescriptor(VIEWtparent(b));
 				lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 				hs = b2->thash;
 			}
-#endif
 			for (q = BUNlast(b), p = 0; p < q; p++) {
 				const void *v = BUNtail(bi, p);
 				for (hb = HASHgetlink(hs, p + lo);

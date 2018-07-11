@@ -38,9 +38,7 @@ BATunique(BAT *b, BAT *s)
 	BUN hb;
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
-#ifndef DISABLE_PARENT_HASH
 	bat parent;
-#endif
 
 	BATcheck(b, "BATunique", NULL);
 	if (b->tkey || BATcount(b) <= 1 || BATtdense(b)) {
@@ -223,12 +221,9 @@ BATunique(BAT *b, BAT *s)
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
 		   (b->batPersistence == PERSISTENT &&
-		    BAThash(b, 0) == GDK_SUCCEED)
-#ifndef DISABLE_PARENT_HASH
-		   || ((parent = VIEWtparent(b)) != 0 &&
-		       BATcheckhash(BBPdescriptor(parent)))
-#endif
-		) {
+		    BAThash(b, 0) == GDK_SUCCEED) ||
+		   ((parent = VIEWtparent(b)) != 0 &&
+		    BATcheckhash(BBPdescriptor(parent)))) {
 		BUN lo;
 		oid seq;
 
@@ -239,15 +234,12 @@ BATunique(BAT *b, BAT *s)
 				  ALGOOPTBATFMT "): use existing hash\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		seq = b->hseqbase;
-#ifndef DISABLE_PARENT_HASH
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
 			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 			b = b2;
 			bi = bat_iterator(b);
-		} else
-#endif
-		{
+		} else {
 			lo = 0;
 		}
 		hs = b->thash;

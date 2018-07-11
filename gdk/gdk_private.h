@@ -12,9 +12,6 @@
 #error this file should not be included outside its source directory
 #endif
 
-/* if the parent BAT of a view has a hash, don't use it */
-/* #define DISABLE_PARENT_HASH 1 */
-
 /* persist hash heaps for persistent BATs */
 /* #define PERSISTENTHASH 1 */
 
