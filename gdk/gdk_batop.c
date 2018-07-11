@@ -584,9 +584,11 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	OIDXdestroy(b);
 	PROPdestroy(b->tprops);
 	b->tprops = NULL;
-	if (b->thash == (Hash *) 1 || BATcount(b) == 0) {
+	if (b->thash == (Hash *) 1 || BATcount(b) == 0 ||
+	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
-		 * it, or updating the hash if we replace the heap */
+		 * it, or updating the hash if we replace the heap,
+		 * also, we cannot maintain persistent hashes */
 		HASHdestroy(b);
 	}
 

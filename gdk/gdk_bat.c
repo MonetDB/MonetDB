@@ -1057,8 +1057,10 @@ BUNappend(BAT *b, const void *t, bit force)
 	OIDXdestroy(b);
 	PROPdestroy(b->tprops);
 	b->tprops = NULL;
-	if (b->thash == (Hash *) 1) {
-		/* don't bother first loading the hash to then change it */
+	if (b->thash == (Hash *) 1 ||
+	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
+		/* don't bother first loading the hash to then change
+		 * it, also, cannot maintain persistent hashes */
 		HASHdestroy(b);
 	}
 	if (b->thash) {
