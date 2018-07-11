@@ -989,6 +989,44 @@ scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	return bn;
 }
 
+/* calculate the integer 2 logarithm (i.e. position of highest set
+ * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
+ * 0x8 to 0xF give 4, etc.) */
+static unsigned
+ilog2(BUN x)
+{
+	unsigned n = 0;
+	BUN y;
+
+	/* use a "binary search" method */
+#if SIZEOF_BUN == 8
+	if ((y = x >> 32) != 0) {
+		x = y;
+		n += 32;
+	}
+#endif
+	if ((y = x >> 16) != 0) {
+		x = y;
+		n += 16;
+	}
+	if ((y = x >> 8) != 0) {
+		x = y;
+		n += 8;
+	}
+	if ((y = x >> 4) != 0) {
+		x = y;
+		n += 4;
+	}
+	if ((y = x >> 2) != 0) {
+		x = y;
+		n += 2;
+	}
+	if ((y = x >> 1) != 0) {
+		x = y;
+		n += 1;
+	}
+	return n + (x != 0);
+}
 
 /* Normalize the variables li, hi, lval, hval, possibly changing anti
  * in the process.  This works for all (and only) numeric types.
@@ -1709,14 +1747,16 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (equi && !hash && parent != 0) {
 		/* use parent hash if it already exists and if either
 		 * a quick check shows the value we're looking for
-		 * does not occur, or if there are plenty of distinct
-		 * values in the parent BAT (occupied slots in hash
-		 * table is at least a quarter of the size of the
-		 * BAT) */
+		 * does not occur, or if it is cheaper to check the
+		 * candidate list for each value in the hash chain
+		 * than to scan (cost for probe is average length of
+		 * hash chain (count divided by #slots) times the cost
+		 * to do a binary search on the candidate list (or 1
+		 * if no need for search)) */
 		tmp = BBPquickdesc(parent, 0);
 		hash = phash = BATcheckhash(tmp) &&
 			(BATcount(tmp) == BATcount(b) ||
-			 ((size_t *) tmp->thash->heap.base)[5] > BATcount(tmp) / 4 ||
+			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
 			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
 	}
 #endif
