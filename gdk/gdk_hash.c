@@ -396,18 +396,21 @@ BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 		 * adjusting the hash mask */
 		mask = HASHmask(cnt);
  	} else {
-		/* dynamic hash: we start with
-		 * HASHmask(cnt)/64; if there are too many
-		 * collisions we try HASHmask(cnt)/16, then
-		 * HASHmask(cnt)/4, and finally
-		 * HASHmask(cnt).  */
+		/* dynamic hash: we start with HASHmask(cnt)/64, or,
+		 * if cnt large enough, HASHmask(cnt)/256; if there
+		 * are too many collisions we try HASHmask(cnt)/64,
+		 * HASHmask(cnt)/16, HASHmask(cnt)/4, and finally
+		 * HASHmask(cnt), but we might skip some of these if
+		 * there are many distinct values.  */
 		maxmask = HASHmask(cnt);
 		mask = maxmask >> 6;
+		while (mask > 4096)
+			mask >>= 2;
 		/* try out on first 25% of b */
 		cnt1 = cnt >> 2;
 	}
 
-	do {
+	for (;;) {
 		BUN maxslots = (mask >> 3) - 1;	/* 1/8 full is too full */
 
 		nslots = 0;
@@ -477,7 +480,18 @@ BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 			}
 			break;
 		}
-	} while (p < cnt1 && mask < maxmask && (mask <<= 2));
+		ALGODEBUG if (p < cnt1)
+			fprintf(stderr, "#BAThash(%s): abort starthash with "
+				"mask " BUNFMT " at " BUNFMT "\n", BATgetId(b),
+				mask, p);
+		if (p == cnt1 || mask == maxmask)
+			break;
+		mask <<= 2;
+		/* if we fill up the slots fast (p <= maxslots * 1.2)
+		 * increase mask size a bit more quickly */
+		if (mask < maxmask && p <= maxslots * 1.2)
+			mask <<= 2;
+	}
 
 	/* finish the hashtable with the current mask */
 	switch (tpe) {
