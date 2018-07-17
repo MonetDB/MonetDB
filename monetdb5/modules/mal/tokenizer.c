@@ -68,7 +68,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 	BATiter biidx = bat_iterator(bidx);
 	BUN p;
 
-	if (BAThash(b, 2 * BATcount(b)) == GDK_SUCCEED) {
+	if (BAThash(b, 0) == GDK_SUCCEED) {
 		HASHloop_str(bi, b->thash, p, part) {
 			if (*((oid *) BUNtail(biidx, p)) == *prv) {
 				*prv = (oid) p;
@@ -363,7 +363,7 @@ TKNZRappend(oid *pos, str *s)
 			tokenBAT[i].val->thash == (Hash *) 1 ||
 			BATcount(tokenBAT[i].val) > 4 * tokenBAT[i].val->thash->mask) {
 			HASHdestroy(tokenBAT[i].val);
-			BAThash(tokenBAT[i].val, 2 * BATcount(tokenBAT[i].val));
+			BAThash(tokenBAT[i].val, 0);
 		}
 
 		if (BUNappend(tokenBAT[i].idx, (ptr) & prv, TRUE) != GDK_SUCCEED) {
@@ -385,7 +385,7 @@ TKNZRappend(oid *pos, str *s)
 		tokenBAT[INDEX].val->thash == (Hash *) 1 ||
 		BATcount(tokenBAT[INDEX].val) > 4 * tokenBAT[INDEX].val->thash->mask) {
 		HASHdestroy(tokenBAT[INDEX].val);
-		BAThash(tokenBAT[INDEX].val, 2 * BATcount(tokenBAT[INDEX].val));
+		BAThash(tokenBAT[INDEX].val, 0);
 	}
 
 	GDKfree(url);
