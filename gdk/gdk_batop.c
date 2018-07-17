@@ -1685,6 +1685,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	bn->tnosorted = 0;
 	bn->tnorevsorted = 0;
+	bn->tnokey[0] = bn->tnokey[1] = 0;
 	if (groups) {
 		if (BATgroup_internal(groups, NULL, NULL, bn, NULL, g, NULL, NULL, 1) != GDK_SUCCEED)
 			goto error;
