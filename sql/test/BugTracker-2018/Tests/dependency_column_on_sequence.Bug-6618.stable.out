@@ -50,7 +50,6 @@ Ready.
 
 create table t (i int auto_increment, val int)
 insert into t(val) values (10), (20)
-drop sequence seq_7622
 [(1, 10), (2, 20)]
 drop table t
 create sequence myseq as int
