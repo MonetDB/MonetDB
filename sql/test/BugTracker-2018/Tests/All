@@ -67,3 +67,4 @@ sqlitelogictest-algebra-rangejoin-undefined.Bug-6610
 dependency_column_on_sequence.Bug-6618
 local_replica_table_not_detected.Bug-6620
 remote-table-where-not-equal.Bug-6621
+groupby_having_orderby_count.Bug-6624
