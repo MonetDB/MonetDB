@@ -749,17 +749,20 @@ def msc_library(fd, var, libmap, msc):
     else:
         makelib = makedll
     if 'COND' in libmap:
-        condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
-        mkname = (pref + v).replace('.', '_').replace('-', '_')
-        fd.write('!IF %s\n' % condname)
-        fd.write('C_%s_dll = %s%s%s\n' % (mkname, pref, v, dll))
-        fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
-        fd.write('!ELSE\n')
-        fd.write('C_%s_dll =\n' % mkname)
-        fd.write('C_%s_lib =\n' % mkname)
-        fd.write('!ENDIF\n')
-        makelib = '$(C_%s_lib)' % mkname
-        makedll = '$(C_%s_dll)' % mkname
+        if len(libmap['COND']) == 1 and libmap['COND'][0] in ('WIN32', 'NATIVE_WIN32'):
+            condname = ''
+        else:
+            condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
+            mkname = (pref + v).replace('.', '_').replace('-', '_')
+            fd.write('!IF %s\n' % condname)
+            fd.write('C_%s_dll = %s%s%s\n' % (mkname, pref, v, dll))
+            fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
+            fd.write('!ELSE\n')
+            fd.write('C_%s_dll =\n' % mkname)
+            fd.write('C_%s_lib =\n' % mkname)
+            fd.write('!ENDIF\n')
+            makelib = '$(C_%s_lib)' % mkname
+            makedll = '$(C_%s_dll)' % mkname
     else:
         condname = ''
 
