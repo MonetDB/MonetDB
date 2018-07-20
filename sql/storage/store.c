@@ -192,7 +192,7 @@ trans_drop_tmp(sql_trans *tr)
 	}
 }
 
-/*#define STORE_DEBUG 1*/
+#define STORE_DEBUG 1
 
 sql_trans *
 sql_trans_destroy(sql_trans *t)
@@ -1805,7 +1805,7 @@ void
 store_manager(void)
 {
 	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
-	const int timeout = GDKdebug & FORCEMITOMASK ? 500 : 50000;
+	const int timeout = GDKdebug & FORCEMITOMASK ? 500 : 5000;
 
 	while (!GDKexiting()) {
 		int res = LOG_OK;
@@ -1834,7 +1834,8 @@ store_manager(void)
 			MT_lock_unset(&bs_lock);
 			return;
 		}
-		if ((!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
+		t = logger_funcs.changes();
+		if ((!need_flush && t < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
