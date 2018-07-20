@@ -1686,7 +1686,8 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	return store_load();
 }
 
-static int logging = 0;
+static int logging_enabled = 1; /* disabled during snapshots */
+static int currently_logging = 0;
 
 void
 store_exit(void)
@@ -1697,7 +1698,7 @@ store_exit(void)
 	fprintf(stderr, "#store exit locked\n");
 #endif
 	/* busy wait till the logmanager is ready */
-	while (logging) {
+	while (currently_logging) {
 		MT_lock_unset(&bs_lock);
 		MT_sleep_ms(100);
 		MT_lock_set(&bs_lock);
@@ -1737,15 +1738,22 @@ store_apply_deltas(void)
 {
 	int res = LOG_OK;
 
-	logging = 1;
+	if (!logging_enabled) {
+#ifdef STORE_DEBUG
+		fprintf(stderr, "#not applying deltas because logging disabled\n");
+#endif
+		return;
+	}
+
+	currently_logging = 1;
 	/* make sure we reset all transactions on re-activation */
 	gtrans->wstime = timestamp();
 	if (store_funcs.gtrans_update)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
-	if (logging && res == LOG_OK)
+	if (currently_logging && res == LOG_OK)
 		res = logger_funcs.cleanup(keep_persisted_log_files);
-	logging = 0;
+	currently_logging = 0;
 }
 
 static int need_flush = 0;
@@ -1839,7 +1847,7 @@ store_manager(void)
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
-		need_flush = 0;
+
 		while (store_nr_active) { /* find a moment to flush */
 			MT_lock_unset(&bs_lock);
 			if (GDKexiting())
@@ -1871,7 +1879,20 @@ store_manager(void)
 			MT_lock_set(&bs_lock);
 		}
 
-		logging = 1;
+		if (!logging_enabled) {
+			MT_lock_unset(&bs_lock);
+#ifdef STORE_DEBUG
+			fprintf(stderr, "#not logging because it is disabled\n");
+#endif
+			continue;
+		}
+
+		need_flush = 0;
+		currently_logging = 1;
+
+#ifdef STORE_DEBUG
+			fprintf(stderr, "#begin logging\n");
+#endif
 		/* make sure we reset all transactions on re-activation */
 		gtrans->wstime = timestamp();
 		if (store_funcs.gtrans_update) {
@@ -1880,13 +1901,16 @@ store_manager(void)
 		res = logger_funcs.restart();
 
 		MT_lock_unset(&bs_lock);
-		if (logging && res == LOG_OK) {
+		if (currently_logging && res == LOG_OK) {
 			res = logger_funcs.cleanup(keep_persisted_log_files);
 		}
 
 		MT_lock_set(&bs_lock);
-		logging = 0;
+		currently_logging = 0;
 		MT_lock_unset(&bs_lock);
+#ifdef STORE_DEBUG
+			fprintf(stderr, "#done logging\n");
+#endif
 
 		if (res != LOG_OK)
 			GDKfatal("write-ahead logging failure, disk full?");
