@@ -240,7 +240,8 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		return msg;
 
 	sql_ec = mt->part.pexp->type.type->eclass;
-	if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || EC_NUMBER(sql_ec) || sql_ec == EC_BLOB)) {
+	if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
+		 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
 		char *err = sql_subtype_string(&(mt->part.pexp->type));
 		if (!err) {
 			throw(SQL, "sql.partition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
