@@ -737,13 +737,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *predicate = bin_first_column(be, left);
 				
 				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-				sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, anti);
+				sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/);
 			}
 			if (sel2->nrcols == 0) {
 				stmt *predicate = bin_first_column(be, left);
 				
 				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-				sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, anti);
+				sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/);
 			}
 			if (anti)
 				return stmt_project(be, stmt_tinter(be, sel1, sel2), sel1);

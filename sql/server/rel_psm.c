@@ -18,7 +18,7 @@
 
 static list *sequential_block(mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
-static sql_rel *
+sql_rel *
 rel_psm_block(sql_allocator *sa, list *l)
 {
 	if (l) {

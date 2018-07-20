@@ -25,11 +25,6 @@ int debug=0;
 char *currentquery=0;
 int eventcounter = 0;
 
-#ifndef HAVE_STRPTIME
-extern char *strptime(const char *, const char *, struct tm *);
-#include "strptime.c"
-#endif
-
 #define DATETIME_CHAR_LENGTH 27
 
 static void

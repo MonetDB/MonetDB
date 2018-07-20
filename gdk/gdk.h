@@ -1476,8 +1476,24 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
 				}					\
 				(b)->tseqbase = sqbs;			\
 			}						\
-		}							\
-		if (!ATOMlinear((b)->ttype)) {				\
+		} else if ((b)->batCount == 2 && ATOMlinear((b)->ttype)) { \
+			int _c_;					\
+			if ((b)->tvarsized)				\
+				_c_ = ATOMcmp((b)->ttype,		\
+					      Tbase(b) + VarHeapVal((b)->theap.base, 0, (b)->twidth), \
+					      Tbase(b) + VarHeapVal((b)->theap.base, 1, (b)->twidth)); \
+			else						\
+				_c_ = ATOMcmp((b)->ttype,		\
+					      Tloc((b), 0),		\
+					      Tloc((b), 1));		\
+			(b)->tsorted = _c_ <= 0;			\
+			(b)->tnosorted = !(b)->tsorted;			\
+			(b)->trevsorted = _c_ >= 0;			\
+			(b)->tnorevsorted = !(b)->trevsorted;		\
+			(b)->tkey = _c_ != 0;				\
+			(b)->tnokey[0] = 0;				\
+			(b)->tnokey[1] = !(b)->tkey;			\
+		} else if (!ATOMlinear((b)->ttype)) {			\
 			(b)->tsorted = false;				\
 			(b)->trevsorted = false;			\
 		}							\

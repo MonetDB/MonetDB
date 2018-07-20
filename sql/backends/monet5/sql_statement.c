@@ -1431,16 +1431,16 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			q = pushStr(mb, q, anti?"==":"!=");
 			break;
 		case cmp_lt:
-			q = pushStr(mb, q, anti?">":"<");
+			q = pushStr(mb, q, anti?">=":"<");
 			break;
 		case cmp_lte:
-			q = pushStr(mb, q, anti?">=":"<=");
+			q = pushStr(mb, q, anti?">":"<=");
 			break;
 		case cmp_gt:
-			q = pushStr(mb, q, anti?"<":">");
+			q = pushStr(mb, q, anti?"<=":">");
 			break;
 		case cmp_gte:
-			q = pushStr(mb, q, anti?"<=":">=");
+			q = pushStr(mb, q, anti?"<":">=");
 			break;
 		default:
 			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");

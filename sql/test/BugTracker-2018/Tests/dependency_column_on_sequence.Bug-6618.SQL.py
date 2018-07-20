@@ -22,8 +22,9 @@ def query(conn, sql):
     cur.close()
     return r
 
-def run(conn, sql):
-    print(sql)
+def run(conn, sql, echo=True):
+    if echo:
+        print(sql)
     r = conn.execute(sql)
 
 # Test automatically created sequence:
@@ -43,7 +44,7 @@ elif len(res[0]) != 1 :
     exit(1)
 seqname = res[0][0]
 try:
-  run(c1, 'drop sequence ' + seqname)
+  run(c1, 'drop sequence ' + seqname, False)
   run(c1, 'insert into t(val) values (30), (40)')
 except Exception, e:
   print(e, file=sys.stderr)

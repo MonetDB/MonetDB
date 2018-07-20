@@ -344,8 +344,8 @@ def msc_dep(fd, tar, deplist, msc):
             name = name[1:]
         if target == "LIB":
             d, dext = split_filename(deplist[0])
-            if dext in ("c", "yy.c", "tab.c"):
-                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s "-Fo%s" -c "%s"\n' %
+            if dext in ("c", "cpp", "yy.c", "tab.c"):
+                fd.write('\t$(CC) /EHsc $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s "-Fo%s" -c "%s"\n' %
                          (split_filename(msc_basename(src))[0], name, t, src))
     if ext == 'res':
         fd.write("\t$(RC) -fo%s %s\n" % (t, src))
@@ -749,17 +749,20 @@ def msc_library(fd, var, libmap, msc):
     else:
         makelib = makedll
     if 'COND' in libmap:
-        condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
-        mkname = (pref + v).replace('.', '_').replace('-', '_')
-        fd.write('!IF %s\n' % condname)
-        fd.write('C_%s_dll = %s%s%s\n' % (mkname, pref, v, dll))
-        fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
-        fd.write('!ELSE\n')
-        fd.write('C_%s_dll =\n' % mkname)
-        fd.write('C_%s_lib =\n' % mkname)
-        fd.write('!ENDIF\n')
-        makelib = '$(C_%s_lib)' % mkname
-        makedll = '$(C_%s_dll)' % mkname
+        if len(libmap['COND']) == 1 and libmap['COND'][0] in ('WIN32', 'NATIVE_WIN32'):
+            condname = ''
+        else:
+            condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
+            mkname = (pref + v).replace('.', '_').replace('-', '_')
+            fd.write('!IF %s\n' % condname)
+            fd.write('C_%s_dll = %s%s%s\n' % (mkname, pref, v, dll))
+            fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
+            fd.write('!ELSE\n')
+            fd.write('C_%s_dll =\n' % mkname)
+            fd.write('C_%s_lib =\n' % mkname)
+            fd.write('!ENDIF\n')
+            makelib = '$(C_%s_lib)' % mkname
+            makedll = '$(C_%s_dll)' % mkname
     else:
         condname = ''
 

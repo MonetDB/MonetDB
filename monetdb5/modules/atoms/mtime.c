@@ -193,7 +193,6 @@
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
-#include "strptime.c"
 #endif
 
 

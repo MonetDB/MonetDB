@@ -722,6 +722,8 @@ def am_library(fd, var, libmap, am):
     cond = ''
     condname = ''
     if 'COND' in libmap:
+        if len(libmap['COND']) == 1 and libmap['COND'][0] in ('WIN32', 'NATIVE_WIN32'):
+            return
         for condname in libmap['COND']:
             fd.write("if %s\n" % condname)
         fd.write(" C_%s = %s\n" % (libname, libname))

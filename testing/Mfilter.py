@@ -116,6 +116,9 @@ norm_out = (
 table_name = re.compile(r'^%.*[\t ](|sys)\.L[0-9]*[, ].*# table_name$')
 name = re.compile(r'^%.*[\t ]L[0-9]*[, ].*# name$')
 
+# match automatically generated sequence numbers
+seqre = re.compile(r'^.*\bseq_[0-9]+\b.*$')
+
 attrre = re.compile(r'\b[-:a-zA-Z_0-9]+\s*=\s*(?:\'[^\']*\'|"[^"]*")')
 elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s*/?>')
 # we're only interested in elements with attributes, hence the +^
@@ -209,6 +212,10 @@ def mFilter (FILE, IGNORE) :
             oline = re.sub(r'([ \t])L[0-9]*([, ])', r'\1L\2', iline)
             # keep original line for reference as comment (i.e., ignore diffs, if any)
             xline = iline.replace('%','#',1)
+        elif seqre.match(iline):
+            # normalize "seq_[0-9]+" to "seq_AUTO"
+            oline = re.sub(r'\bseq_[0-9]+\b', 'seq_AUTO', iline)
+            xline = norm_hint + iline
         else:
             oline = iline
         if iline == "#~EndVariableOutput~#\n" or iline == "[ \"~EndVariableOutput~\"\t]\n":

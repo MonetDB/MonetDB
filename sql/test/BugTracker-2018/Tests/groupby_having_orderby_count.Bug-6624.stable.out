@@ -1,0 +1,67 @@
+stdout of test 'groupby_having_orderby_count.Bug-6624` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:32:54 >  
+# 18:32:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30905" "--set" "mapi_usock=/var/tmp/mtest-8372/.s.monetdb.30905" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 18:32:54 >  
+
+# MonetDB 5 server v11.29.8
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:30905/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8372/.s.monetdb.30905
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:32:54 >  
+# 18:32:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8372" "--port=30905"
+# 18:32:54 >  
+
+#SELECT type,COUNT(id) FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY COUNT(id) DESC;
+% .columns,	.L16 # table_name
+% type,	L16 # name
+% varchar,	bigint # type
+% 9,	3 # length
+[ "int",	223	]
+[ "varchar",	142	]
+[ "clob",	68	]
+[ "smallint",	55	]
+[ "bigint",	53	]
+[ "boolean",	25	]
+[ "timestamp",	12	]
+#SELECT type,COUNT(id) FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY 2 DESC;
+% .columns,	.L16 # table_name
+% type,	L16 # name
+% varchar,	bigint # type
+% 9,	3 # length
+[ "int",	223	]
+[ "varchar",	142	]
+[ "clob",	68	]
+[ "smallint",	55	]
+[ "bigint",	53	]
+[ "boolean",	25	]
+[ "timestamp",	12	]
+#SELECT type,COUNT(id) as cnt FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY cnt DESC;
+% .columns,	.L17 # table_name
+% type,	cnt # name
+% varchar,	bigint # type
+% 9,	3 # length
+[ "int",	223	]
+[ "varchar",	142	]
+[ "clob",	68	]
+[ "smallint",	55	]
+[ "bigint",	53	]
+[ "boolean",	25	]
+[ "timestamp",	12	]
+
+# 18:32:54 >  
+# 18:32:54 >  "Done."
+# 18:32:54 >  
+
