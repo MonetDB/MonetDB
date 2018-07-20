@@ -117,28 +117,20 @@ BATsample(BAT *b, BUN n)
 
 	BATcheck(b, "BATsample", NULL);
 	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n", NULL);
-	ALGODEBUG
-		fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
-
 	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {
 		bn = BATdense(0, 0, 0);
-		if (bn == NULL) {
-			return NULL;
-		}
-	/* sample size is larger than the input BAT, return all oids */
 	} else if (cnt <= n) {
+		/* sample size is larger than the input BAT, return
+		 * all oids */
 		bn = BATdense(0, b->hseqbase, cnt);
-		if (bn == NULL) {
-			return NULL;
-		}
 	} else {
 		oid minoid = b->hseqbase;
 		oid maxoid = b->hseqbase + cnt;
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
-		bit antiset = n > cnt / 2;
+		bool antiset = n > cnt / 2;
 		slen = n;
 		if (antiset)
 			n = cnt - n;
@@ -175,5 +167,8 @@ BATsample(BAT *b, BUN n)
 		bn->tkey = 1;
 		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
+	ALGODEBUG fprintf(stderr, "#BATsample(" ALGOBATFMT "," BUNFMT ")="
+			  ALGOOPTBATFMT "\n",
+			  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;
 }

@@ -23,7 +23,7 @@ alter table mrgT add table t1
 alter table mrgT add table t2
 plan select * from repS
 project (
-| table(sys.s2) [ "s2"."i" as "reps"."i"] COUNT
+| table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ]
 ) [ "reps"."i" ]
 plan select * from repS, mrgT
 union (
@@ -35,10 +35,11 @@ union (
 | | | | | REMOTE(sys.t1) [ "t1"."s" as "mrgt"."s" ] COUNT 
 | | | | ) [ "mrgt"."s" ]
 | | | ) [  ]
-| | ) [ "reps"."i", "mrgt"."s" ] REMOTE mapi:monetdb://localhost:57465/node1 [ "reps"."i", "mrgt"."s" ],
+| | ) [ "reps"."i", "mrgt"."s" ] REMOTE mapi:monetdb://localhost:52345/node1 [ "reps"."i", "mrgt"."s" ],
 | project (
 | | crossproduct (
-| | | | table(sys.s2) [ "s2"."i" as "reps"."i"] COUNT ,
+| | | table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
+| | | project (
 | | | | table(sys.t2) [ "t2"."s" as "mrgt"."s" ] COUNT 
 | | | ) [ "mrgt"."s" ]
 | | ) [  ]

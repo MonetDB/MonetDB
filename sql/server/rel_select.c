@@ -4377,7 +4377,29 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
 
-				e = rel_order_by_column_exp(sql, &rel, col, f);
+				/* check for project->select->groupby */
+				if (is_project(rel->op) && f == sql_orderby) {
+					sql_rel *s = rel->l;
+					sql_rel *p = rel;
+					sql_rel *g = s;
+
+					if (is_select(s->op)) {
+						g = s->l;
+						p = s;
+					}
+					if (is_groupby(g->op)) { /* check for is processed */
+						e = rel_order_by_column_exp(sql, &g, col, sql_sel);
+						if (e && g != p->l)
+							p->l = g;
+						if (!e && sql->session->status != -ERR_AMBIGUOUS) {
+							/* reset error */
+							sql->session->status = 0;
+							sql->errstr[0] = '\0';
+						}
+					}
+				}
+				if (!e)
+					e = rel_order_by_column_exp(sql, &rel, col, f);
 				if (e && e->card != rel->card) 
 					e = NULL;
 			}

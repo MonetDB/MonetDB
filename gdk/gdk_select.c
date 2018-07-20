@@ -136,7 +136,7 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 		     (*cmp)(v, BUNtail(bi, hb)) == 0))
 
 static BAT *
-BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
+hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 {
 	BATiter bi;
 	BUN i, cnt;
@@ -150,31 +150,19 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	l = 0;
 	h = BUNlast(b);
 
-#ifndef DISABLE_PARENT_HASH
-	if (VIEWtparent(b)) {
+	if (phash) {
 		BAT *b2 = BBPdescriptor(VIEWtparent(b));
-		if (b2->batPersistence == PERSISTENT || BATcheckhash(b2)) {
-			/* only use parent's hash if it is persistent
-			 * or already has a hash */
-			ALGODEBUG
-				fprintf(stderr, "#hashselect(" ALGOBATFMT "): "
-					"using parent(" ALGOBATFMT ") "
-					"for hash\n",
-					ALGOBATPAR(b),
-					ALGOBATPAR(b2));
-			l = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
-			h = l + BATcount(b);
-			b = b2;
-		} else {
-			ALGODEBUG
-				fprintf(stderr, "#hashselect(" ALGOBATFMT "): "
-					"not using parent(" ALGOBATFMT ") "
-					"for hash\n",
-					ALGOBATPAR(b),
-					ALGOBATPAR(b2));
-		}
+		ALGODEBUG
+			fprintf(stderr, "#hashselect(" ALGOBATFMT "): "
+				"using parent(" ALGOBATFMT ") "
+				"for hash\n",
+				ALGOBATPAR(b),
+				ALGOBATPAR(b2));
+		l = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+		h = l + BATcount(b);
+		b = b2;
 	}
-#endif
+
 	if (s && BATtdense(s)) {
 		/* no need for binary search in s, we just adjust the
 		 * boundaries */
@@ -850,9 +838,9 @@ scan_sel(fullscan, o = (oid) (p+off), w = (BUN) (q+off))
 
 
 static BAT *
-BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
-	       bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	       bool lnil, BUN maximum, bool use_imprints)
+scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+	   bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
+	   bool lnil, BUN maximum, bool use_imprints)
 {
 #ifndef NDEBUG
 	int (*cmp)(const void *, const void *);
@@ -997,78 +985,44 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	return bn;
 }
 
-/* generic range select
- *
- * Return a BAT with the OID values of b for qualifying tuples.  The
- * return BAT is sorted (i.e. in the same order as the input BAT).
- *
- * If s is non-NULL, it is a list of candidates.  s must be sorted.
- *
- * tl may not be NULL, li, hi, and anti must be either 0 or 1.
- *
- * If th is NULL, hi is ignored.
- *
- * If anti is 0, qualifying tuples are those whose value is between tl
- * and th (as in x >[=] tl && x <[=] th, where equality depends on li
- * and hi--so if tl > th, nothing will be returned).  If li or hi is
- * 1, the respective boundary is inclusive, otherwise exclusive.  If
- * th is NULL it is taken to be equal to tl, turning this into an
- * equi- or point-select.  Note that for a point select to return
- * anything, li (and hi if th was not NULL) must be 1.  There is a
- * special case if tl is nil and th is NULL.  This is the only way to
- * select for nil values.
- *
- * If anti is 1, the result is the complement of what the result would
- * be if anti were 0, except that nils are filtered out.
- *
- * In brief:
- * - if tl==nil and th==NULL and anti==0, return all nils (only way to
- *   get nils);
- * - it tl==nil and th==nil, return all but nils;
- * - if tl==nil and th!=NULL, no lower bound;
- * - if th==NULL or tl==th, point (equi) select;
- * - if th==nil, no upper bound
- *
- * A complete breakdown of the various arguments follows.  Here, v, v1
- * and v2 are values from the appropriate domain, and
- * v != nil, v1 != nil, v2 != nil, v1 < v2.
- *	tl	th	li	hi	anti	result list of OIDs for values
- *	-----------------------------------------------------------------
- *	nil	NULL	true	ignored	false	x == nil (only way to get nil)
- *	nil	NULL	false	ignored	false	NOTHING
- *	nil	NULL	ignored	ignored	true	x != nil
- *	nil	nil	ignored	ignored	false	x != nil
- *	nil	nil	ignored	ignored	true	NOTHING
- *	nil	v	ignored	false	false	x < v
- *	nil	v	ignored	true	false	x <= v
- *	nil	v	ignored	false	true	x >= v
- *	nil	v	ignored	true	true	x > v
- *	v	nil	false	ignored	false	x > v
- *	v	nil	true	ignored	false	x >= v
- *	v	nil	false	ignored	true	x <= v
- *	v	nil	true	ignored	true	x < v
- *	v	NULL	false	ignored	false	NOTHING
- *	v	NULL	true	ignored	false	x == v
- *	v	NULL	false	ignored	true	x != nil
- *	v	NULL	true	ignored	true	x != v
- *	v	v	false	false	false	NOTHING
- *	v	v	true	false	false	NOTHING
- *	v	v	false	true	false	NOTHING
- *	v	v	true	true	false	x == v
- *	v	v	false	false	true	x != nil
- *	v	v	true	false	true	x != nil
- *	v	v	false	true	true	x != nil
- *	v	v	true	true	true	x != v
- *	v1	v2	false	false	false	v1 < x < v2
- *	v1	v2	true	false	false	v1 <= x < v2
- *	v1	v2	false	true	false	v1 < x <= v2
- *	v1	v2	true	true	false	v1 <= x <= v2
- *	v1	v2	false	false	true	x <= v1 or x >= v2
- *	v1	v2	true	false	true	x < v1 or x >= v2
- *	v1	v2	false	true	true	x <= v1 or x > v2
- *	v1	v2	true	true	true	x < v1 or x > v2
- *	v2	v1	ignored	ignored	ignored	NOTHING
- */
+/* calculate the integer 2 logarithm (i.e. position of highest set
+ * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
+ * 0x8 to 0xF give 4, etc.) */
+static unsigned
+ilog2(BUN x)
+{
+	unsigned n = 0;
+	BUN y;
+
+	/* use a "binary search" method */
+#if SIZEOF_BUN == 8
+	if ((y = x >> 32) != 0) {
+		x = y;
+		n += 32;
+	}
+#endif
+	if ((y = x >> 16) != 0) {
+		x = y;
+		n += 16;
+	}
+	if ((y = x >> 8) != 0) {
+		x = y;
+		n += 8;
+	}
+	if ((y = x >> 4) != 0) {
+		x = y;
+		n += 4;
+	}
+	if ((y = x >> 2) != 0) {
+		x = y;
+		n += 2;
+	}
+	if ((y = x >> 1) != 0) {
+		x = y;
+		n += 1;
+	}
+	return n + (x != 0);
+}
 
 /* Normalize the variables li, hi, lval, hval, possibly changing anti
  * in the process.  This works for all (and only) numeric types.
@@ -1174,11 +1128,84 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		/* in the case where equi==true, the check is x == *tl */ \
 	} while (false)
 
+/* generic range select
+ *
+ * Return a BAT with the OID values of b for qualifying tuples.  The
+ * return BAT is sorted (i.e. in the same order as the input BAT).
+ *
+ * If s is non-NULL, it is a list of candidates.  s must be sorted.
+ *
+ * tl may not be NULL, li, hi, and anti must be either 0 or 1.
+ *
+ * If th is NULL, hi is ignored.
+ *
+ * If anti is 0, qualifying tuples are those whose value is between tl
+ * and th (as in x >[=] tl && x <[=] th, where equality depends on li
+ * and hi--so if tl > th, nothing will be returned).  If li or hi is
+ * 1, the respective boundary is inclusive, otherwise exclusive.  If
+ * th is NULL it is taken to be equal to tl, turning this into an
+ * equi- or point-select.  Note that for a point select to return
+ * anything, li (and hi if th was not NULL) must be 1.  There is a
+ * special case if tl is nil and th is NULL.  This is the only way to
+ * select for nil values.
+ *
+ * If anti is 1, the result is the complement of what the result would
+ * be if anti were 0, except that nils are filtered out.
+ *
+ * In brief:
+ * - if tl==nil and th==NULL and anti==0, return all nils (only way to
+ *   get nils);
+ * - it tl==nil and th==nil, return all but nils;
+ * - if tl==nil and th!=NULL, no lower bound;
+ * - if th==NULL or tl==th, point (equi) select;
+ * - if th==nil, no upper bound
+ *
+ * A complete breakdown of the various arguments follows.  Here, v, v1
+ * and v2 are values from the appropriate domain, and
+ * v != nil, v1 != nil, v2 != nil, v1 < v2.
+ *	tl	th	li	hi	anti	result list of OIDs for values
+ *	-----------------------------------------------------------------
+ *	nil	NULL	true	ignored	false	x == nil (only way to get nil)
+ *	nil	NULL	false	ignored	false	NOTHING
+ *	nil	NULL	ignored	ignored	true	x != nil
+ *	nil	nil	ignored	ignored	false	x != nil
+ *	nil	nil	ignored	ignored	true	NOTHING
+ *	nil	v	ignored	false	false	x < v
+ *	nil	v	ignored	true	false	x <= v
+ *	nil	v	ignored	false	true	x >= v
+ *	nil	v	ignored	true	true	x > v
+ *	v	nil	false	ignored	false	x > v
+ *	v	nil	true	ignored	false	x >= v
+ *	v	nil	false	ignored	true	x <= v
+ *	v	nil	true	ignored	true	x < v
+ *	v	NULL	false	ignored	false	NOTHING
+ *	v	NULL	true	ignored	false	x == v
+ *	v	NULL	false	ignored	true	x != nil
+ *	v	NULL	true	ignored	true	x != v
+ *	v	v	false	false	false	NOTHING
+ *	v	v	true	false	false	NOTHING
+ *	v	v	false	true	false	NOTHING
+ *	v	v	true	true	false	x == v
+ *	v	v	false	false	true	x != nil
+ *	v	v	true	false	true	x != nil
+ *	v	v	false	true	true	x != nil
+ *	v	v	true	true	true	x != v
+ *	v1	v2	false	false	false	v1 < x < v2
+ *	v1	v2	true	false	false	v1 <= x < v2
+ *	v1	v2	false	true	false	v1 < x <= v2
+ *	v1	v2	true	true	false	v1 <= x <= v2
+ *	v1	v2	false	false	true	x <= v1 or x >= v2
+ *	v1	v2	true	false	true	x < v1 or x >= v2
+ *	v1	v2	false	true	true	x <= v1 or x > v2
+ *	v1	v2	true	true	true	x < v1 or x > v2
+ *	v2	v1	ignored	ignored	ignored	NOTHING
+ */
 BAT *
 BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	     bool li, bool hi, bool anti)
 {
 	bool hval, lval, equi, lnil, hash;
+	bool phash = false;	/* use hash on parent BAT (if view) */
 	int t;
 	bat parent;
 	const void *nil;
@@ -1635,9 +1662,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 
-		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOBATFMT
+		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec)\n",
-				  BATgetId(b), ALGOBATPAR(bn), GDKusec() - t0);
+				  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 		return virtualize(bn);
 	}
@@ -1697,32 +1724,32 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	hash = equi &&
-		(((b->batPersistence == PERSISTENT
-#ifndef DISABLE_PARENT_HASH
-		   || (parent != 0 &&
-		       (tmp = BBPquickdesc(parent, 0)) != NULL &&
-		       tmp->batPersistence == PERSISTENT)
-#endif
-			  ) &&
+		((b->batPersistence == PERSISTENT &&
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
-		 (BATcheckhash(b)
-#ifndef DISABLE_PARENT_HASH
-		  || (parent != 0 &&
-		      BATcheckhash(BBPdescriptor(parent)))
-#endif
-			 ));
+		 BATcheckhash(b));
+	if (equi && !hash && parent != 0) {
+		/* use parent hash if it already exists and if either
+		 * a quick check shows the value we're looking for
+		 * does not occur, or if it is cheaper to check the
+		 * candidate list for each value in the hash chain
+		 * than to scan (cost for probe is average length of
+		 * hash chain (count divided by #slots) times the cost
+		 * to do a binary search on the candidate list (or 1
+		 * if no need for search)) */
+		tmp = BBPquickdesc(parent, 0);
+		hash = phash = BATcheckhash(tmp) &&
+			(BATcount(tmp) == BATcount(b) ||
+			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
+			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
+	}
 	if (hash &&
+	    !phash && /* phash implies there is a hash table already */
 	    estimate == BUN_NONE &&
-	    !BATcheckhash(b)
-#ifndef DISABLE_PARENT_HASH
-	    && (parent == 0 || !BATcheckhash(BBPdescriptor(parent)))
-#endif
-		) {
-		/* no exact result size, but we need estimate to choose
-		 * between hash- & scan-select
-		 * (if we already have a hash, it's a no-brainer: we
-		 * use it) */
+	    !BATcheckhash(b)) {
+		/* no exact result size, but we need estimate to
+		 * choose between hash- & scan-select (if we already
+		 * have a hash, it's a no-brainer: we use it) */
 		BUN cnt = BATcount(b);
 		if (s && BATcount(s) < cnt)
 			cnt = BATcount(s);
@@ -1753,7 +1780,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 			if (smpl_cnt > 0 && slct_cnt > 0) {
 				/* linear extrapolation plus 10% margin */
-				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt 
+				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt
 						  * (dbl) BATcount(b) * 1.1);
 			} else if (smpl_cnt > 0 && slct_cnt == 0) {
 				/* estimate low enough to trigger hash select */
@@ -1775,34 +1802,31 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (bn == NULL)
 		return NULL;
 
-	if (equi && hash) {
+	if (hash) {
 		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d): "
 				  "hash select\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
-		bn = BAT_hashselect(b, s, bn, tl, maximum);
+		bn = hashselect(b, s, bn, tl, maximum, phash);
 	} else {
-		bool use_imprints = false;
-		if (!equi &&
-		    !b->tvarsized &&
-		    (b->batPersistence == PERSISTENT ||
-		     (parent != 0 &&
-		      (tmp = BBPquickdesc(parent, 0)) != NULL &&
-		      tmp->batPersistence == PERSISTENT))) {
-			/* use imprints if
-			 *   i) bat is persistent, or parent is persistent
-			 *  ii) it is not an equi-select, and
-			 * iii) is not var-sized.
-			 */
-			use_imprints = true;
-		}
-		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti,
-				    lval, hval, lnil, maximum, use_imprints);
+		/* use imprints if
+		 *   i) bat is persistent, or parent is persistent
+		 *  ii) it is not an equi-select, and
+		 * iii) is not var-sized.
+		 */
+		bool use_imprints = !equi &&
+			!b->tvarsized &&
+			(b->batPersistence == PERSISTENT ||
+			 (parent != 0 &&
+			  (tmp = BBPquickdesc(parent, 0)) != NULL &&
+			  tmp->batPersistence == PERSISTENT));
+		bn = scanselect(b, s, bn, tl, th, li, hi, equi, anti,
+				lval, hval, lnil, maximum, use_imprints);
 	}
 
-	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOBATFMT
+	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 			  " (" LLFMT " usec)\n",
-			  BATgetId(b), ALGOBATPAR(bn), GDKusec() - t0);
+			  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
 	return virtualize(bn);
 }

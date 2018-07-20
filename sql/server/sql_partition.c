@@ -208,7 +208,7 @@ find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
 	return NULL;
 }
 
-extern list *rel_dependencies(sql_allocator *sa, sql_rel *r);
+extern list *rel_dependencies(mvc *sql, sql_rel *r);
 
 str
 bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
@@ -261,7 +261,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		if (r) {
 			int i;
 			node *n, *found = NULL;
-			list *id_l = rel_dependencies(sql->sa, r);
+			list *id_l = rel_dependencies(sql, r);
 			for(i = 0, n = id_l->h ; n ; n = n->next, i++) { //remove the table itself from the list of dependencies
 				if(*(int *) n->data == mt->base.id)
 					found = n;

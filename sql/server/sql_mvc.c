@@ -16,6 +16,7 @@
 #include "sql_types.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
+#include "sql_partition.h"
 #include "sql_privileges.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -23,9 +24,6 @@
 #include "wlc.h"
 
 #include "mal_authorize.h"
-
-extern str bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate);
-extern str initialize_sql_parts(mvc* sql, sql_table *mt);
 
 static int mvc_debug = 0;
 

@@ -23,6 +23,7 @@
 #include "store_sequence.h"
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
+#include "sql_partition.h"
 #include "rel_optimizer.h"
 #include "rel_partition.h"
 #include "rel_distribute.h"
@@ -38,9 +39,6 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
-
-extern str sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op);
-extern str bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate);
 
 static int
 rel_is_table(sql_rel *rel)
@@ -306,6 +304,9 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 
 	osa = sql->sa;
 	sql->sa = NULL;
+
+	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
+
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -313,6 +314,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		if (c->def) {
 			char *buf;
 			sql_rel *r = NULL;
+			list *id_l;
 
 			sql->sa = sa_create();
 			if(!sql->sa) {
@@ -334,13 +336,13 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 			}
+			id_l = rel_dependencies(sql, r);
+			mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
 			rel_destroy(r);
 			sa_destroy(sql->sa);
 			sql->sa = NULL;
 		}
 	}
-
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
 
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c);
@@ -420,7 +422,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {
-			list *id_l = rel_dependencies(sql->sa, r);
+			list *id_l = rel_dependencies(sql, r);
 
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
 		}

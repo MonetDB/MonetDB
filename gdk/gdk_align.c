@@ -167,7 +167,8 @@ BATmaterialize(BAT *b)
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
-	ALGODEBUG fprintf(stderr, "#BATmaterialize(%d);\n", (int) b->batCacheid);
+	ALGODEBUG fprintf(stderr, "#BATmaterialize(" ALGOBATFMT ")\n",
+			  ALGOBATPAR(b));
 
 	if (tt != TYPE_void) {
 		/* no voids */
