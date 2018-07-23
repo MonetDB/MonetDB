@@ -70,4 +70,5 @@ remote-table-where-not-equal.Bug-6621
 groupby_having_orderby_count.Bug-6624
 or_in_subselect.Bug-6625
 strptime.Bug-6626
+singleton-stddev.Bug-6627
 create_table_if_not_exists_returns_42000.Bug-6629
