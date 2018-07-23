@@ -229,10 +229,11 @@ __hidden void gdk_system_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 /* some macros to help print info about BATs when using ALGODEBUG */
-#define ALGOBATFMT	"%s#" BUNFMT "[%s]%s%s%s%s%s%s%s%s"
+#define ALGOBATFMT	"%s#" BUNFMT "[%s]%s%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)	BATgetId(b),			\
 			BATcount(b),			\
 			ATOMname(b->ttype),		\
+			b->batPersistence == PERSISTENT ? "P" : isVIEW(b) ? "V" : "T", \
 			BATtdense(b) ? "D" : "",	\
 			b->tsorted ? "S" : "",		\
 			b->trevsorted ? "R" : "",	\
@@ -242,7 +243,7 @@ __hidden void gdk_system_reset(void)
 			b->torderidx ? "O" : "",	\
 			b->timprints ? "I" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
-#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)				\
 			b ? BATgetId(b) : "",		\
 			b ? "#" : "",			\
@@ -250,6 +251,7 @@ __hidden void gdk_system_reset(void)
 			b ? "[" : "",			\
 			b ? ATOMname(b->ttype) : "",	\
 			b ? "]" : "",			\
+			b ? b->batPersistence == PERSISTENT ? "P" : isVIEW(b) ? "V" : "T" : "", \
 			b && BATtdense(b) ? "D" : "",	\
 			b && b->tsorted ? "S" : "",	\
 			b && b->trevsorted ? "R" : "",	\
