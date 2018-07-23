@@ -623,6 +623,11 @@ dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
 			[clang-3.*], [],
 			[MCHECK_ADD_FLAG([-Wunreachable-code])])
 
+		# GCC has become too smart for our code: disable some checks
+		AS_VAR_IF([CC_ver], [gcc-8], [
+			MCHECK_ADD_FLAG([-Wno-array-bounds])
+			MCHECK_ADD_FLAG([-Wno-stringop-overflow])])
+
 		dnl  Our code is not (yet?) up to these:
 		dnl  MCHECK_ADD_FLAG([-pedantic-errors])
 		dnl  MCHECK_ADD_FLAG([-Wno-long-long])
