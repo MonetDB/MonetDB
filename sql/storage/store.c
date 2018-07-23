@@ -1761,7 +1761,31 @@ static int need_flush = 0;
 void
 store_flush_log(void)
 {
+	MT_lock_set(&bs_lock);
 	need_flush = 1;
+	MT_lock_unset(&bs_lock);
+}
+
+void
+store_resume_log(void)
+{
+	MT_lock_set(&bs_lock);
+	logging_enabled = 1;
+	MT_lock_unset(&bs_lock);
+}
+
+void
+store_suspend_log(void)
+{
+	MT_lock_set(&bs_lock);
+	logging_enabled = 0;
+	/* busy wait till the logmanager is ready */
+	while (currently_logging && !GDKexiting()) {
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(100);
+		MT_lock_set(&bs_lock);
+	}
+	MT_lock_unset(&bs_lock);
 }
 
 static int
