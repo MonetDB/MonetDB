@@ -3926,7 +3926,11 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 		if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
 				stmt *sq;
-				char *msg = sa_message(sql->sa, "select %s;", fc->c->def);
+				char *msg, *typestr = subtype2string2(&fc->c->type);
+				if(!typestr)
+					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
+				_DELETE(typestr);
 				sq = rel_parse_value(be, msg, sql->emode);
 				if (!sq) 
 					return NULL;
@@ -3985,7 +3989,11 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 		} else if (action == ACT_SET_DEFAULT) {
 			if (fc->c->def) {
 				stmt *sq;
-				char *msg = sa_message(sql->sa, "select %s;", fc->c->def);
+				char *msg, *typestr = subtype2string2(&fc->c->type);
+				if(!typestr)
+					return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				msg = sa_message(sql->sa, "select cast(%s as %s);", fc->c->def, typestr);
+				_DELETE(typestr);
 				sq = rel_parse_value(be, msg, sql->emode);
 				if (!sq) 
 					return NULL;

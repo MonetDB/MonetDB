@@ -82,6 +82,7 @@ extern int subtype_cmp(sql_subtype *t1, sql_subtype *t2);
 extern int arg_subtype_cmp(sql_arg *a, sql_subtype *t);
 extern int is_subtype(sql_subtype *t1, sql_subtype *t2);
 extern char *subtype2string(sql_subtype *t);
+extern char *subtype2string2(sql_subtype *tpe);
 
 extern void type_destroy(sql_type *t);
 

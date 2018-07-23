@@ -312,7 +312,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		sql_column *c = n->data;
 
 		if (c->def) {
-			char *buf;
+			char *buf, *typestr;
 			sql_rel *r = NULL;
 			list *id_l;
 
@@ -327,7 +327,14 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 				sql->sa = osa;
 				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
-			snprintf(buf, BUFSIZ, "select %s;", c->def);
+			typestr = subtype2string2(&c->type);
+			if(!typestr) {
+				sa_destroy(sql->sa);
+				sql->sa = osa;
+				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+			snprintf(buf, BUFSIZ, "select cast(%s as %s);", c->def, typestr);
+			_DELETE(typestr);
 			r = rel_parse(sql, s, buf, m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL) {
 				if(r)

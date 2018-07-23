@@ -3108,7 +3108,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
-	    (BATtdense(g) || (g->tkey && g->tnonil))) {
+	    (BATtdense(g) || (g->tkey && g->tnonil)) &&
+	    (issample || b->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
 		 * to zero (population) or nil (sample) */
 		dbl v = issample ? dbl_nil : 0;
@@ -3193,7 +3194,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	} else {
 		GDKfree(mean);
 	}
-	nils += nils2;
+	if (issample)
+		nils += nils2;
 	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);
