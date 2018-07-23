@@ -1402,7 +1402,11 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 			for (n = nt->columns.nelm; n; n = n->next) {
 				sql_column *c = n->data;
 				if (c->def) {
-					char *d = sql_message("select %s;", c->def);
+					char *d, *typestr = subtype2string2(&c->type);
+					if(!typestr)
+						return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					d = sql_message("select cast(%s as %s);", c->def, typestr);
+					_DELETE(typestr);
 					e = rel_parse_val(sql, d, sql->emode);
 					_DELETE(d);
 				} else {

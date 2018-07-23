@@ -418,6 +418,28 @@ subtype2string(sql_subtype *t)
 	return _STRDUP(buf);
 }
 
+char *
+subtype2string2(sql_subtype *tpe) //distinguish char(n), decimal(n,m) from other SQL types
+{
+	char buf[BUFSIZ];
+
+	switch (tpe->type->eclass) {
+		case EC_SEC:
+			snprintf(buf, BUFSIZ, "BIGINT");
+			break;
+		case EC_MONTH:
+			snprintf(buf, BUFSIZ, "INT");
+			break;
+		case EC_CHAR:
+		case EC_STRING:
+		case EC_DEC:
+			return subtype2string(tpe);
+		default:
+			snprintf(buf, BUFSIZ, "%s", tpe->type->sqlname);
+	}
+	return _STRDUP(buf);
+}
+
 int 
 subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2)
 {

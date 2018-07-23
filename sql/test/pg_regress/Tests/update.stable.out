@@ -38,22 +38,21 @@ Ready.
 #INSERT INTO update_test VALUES (10, 15);
 [ 1 ]
 #SELECT * FROM update_test;
-% sys.L0,	sys.L0 # table_name
+% sys.update_test,	sys.update_test # table_name
 % a,	b # name
-% ?,	? # type
-% ?,	? # length
+% int,	int # type
+% 2,	2 # length
 [ 5,	10 ]
 [ 10,	15 ]
 
 #UPDATE update_test SET a = DEFAULT, b = DEFAULT;
 #SELECT * FROM update_test;
-% sys.L0,	sys.L0 # table_name
+% sys.update_test,	sys.update_test # table_name
 % a,	b # name
-% ?,	? # type
-% ?,	? # length
-[ 10,	"" ]
-[ 10,	"" ]
-
+% int,	int # type
+% 2,	2 # length
+[ 5,	10	]
+[ 10,	15	]
 #DROP TABLE update_test;
 
 = ! Correct / expected output still needs to be provided / verified / approved ! =
