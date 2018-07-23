@@ -813,9 +813,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 }
 
 int
-describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int foreign)
+describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int foreign, bool databaseDump)
 {
-	int cnt;
+	int cnt, table_id = 0;
 	MapiHdl hdl = NULL;
 	char *query;
 	char *view = NULL;
@@ -846,7 +846,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
 		 "%s "
-		 "SELECT t.name, t.query, t.type, c.remark "
+		 "SELECT t.name, t.query, t.type, t.id, c.remark "
 		 "FROM sys.schemas s, sys._tables t LEFT OUTER JOIN comments c ON t.id = c.id "
 		 "WHERE s.name = '%s' AND "
 		       "t.schema_id = s.id AND "
@@ -863,7 +863,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		if (view)
 			type = atoi(view);
 		view = mapi_fetch_field(hdl, 1);
-		remark = mapi_fetch_field(hdl, 3);
+		table_id = atoi(mapi_fetch_field(hdl, 3));
+		remark = mapi_fetch_field(hdl, 4);
 	}
 	if (mapi_error(mid)) {
 		view = NULL;
@@ -900,6 +901,26 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		mnstr_printf(toConsole, "%s\n", view);
 		comment_on(toConsole, "VIEW", schema, tname, NULL, remark);
 	} else {
+		if(!databaseDump) { //if it is not a database dump the table might depend on UDFs that must be dumped first
+			assert(table_id);
+			snprintf(query, maxquerylen,
+					 "SELECT f.id, s.name, f.name "
+					 "FROM sys.schemas s, "
+					      "sys.functions f "
+					 "WHERE s.id = f.schema_id AND "
+					       "f.id IN (SELECT id FROM sys.dependencies WHERE depend_id = '%d')",
+					 table_id);
+			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+				goto bailout;
+			while(mapi_fetch_row(hdl) != 0) {
+				const char* function_id = mapi_fetch_field(hdl, 0);
+				const char* schema_name = mapi_fetch_field(hdl, 1);
+				const char* function_name = mapi_fetch_field(hdl, 2);
+				dump_functions(mid, toConsole, 0, schema_name, function_name, function_id);
+			}
+			mapi_close_handle(hdl);
+			hdl = NULL;
+		}
 		/* the table is a real table */
 		mnstr_printf(toConsole, "CREATE %sTABLE \"%s\".\"%s\" ",
 			    (type == 3 || type == 7 || type == 8 || type == 9 || type == 10) ? "MERGE " :
@@ -1435,11 +1456,12 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 }
 
 int
-dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign, bool useInserts)
+dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign,
+		   bool useInserts, bool databaseDump)
 {
 	int rc;
 
-	rc = describe_table(mid, schema, tname, toConsole, foreign);
+	rc = describe_table(mid, schema, tname, toConsole, foreign, databaseDump);
 	if (rc == 0 && !describe)
 		rc = dump_table_data(mid, schema, tname, toConsole, useInserts);
 	return rc;
@@ -2131,7 +2153,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 				dont_describe = (ptype == 3 || ptype == 5 || ptype == 7 || ptype == 8 || ptype == 9 || ptype == 10);
 			schema = strdup(schema);
 			name = strdup(name);
-			rc = dump_table(mid, schema, name, toConsole, dont_describe ? 1 : describe, describe, useInserts);
+			rc = dump_table(mid, schema, name, toConsole, dont_describe ? 1 : describe, describe, useInserts, true);
 			free(schema);
 			free(name);
 		} else if (query) {

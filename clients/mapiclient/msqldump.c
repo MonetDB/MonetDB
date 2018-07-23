@@ -203,7 +203,7 @@ main(int argc, char **argv)
 	if (functions)
 		c = dump_functions(mid, out, true, NULL, NULL, NULL);
 	else if (table)
-		c = dump_table(mid, NULL, table, out, describe, true, useinserts);
+		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false);
 	else
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);
