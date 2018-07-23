@@ -3874,6 +3874,23 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	rsize = (BUN) (BATcount(r) * (Tsize(r)) + (r->tvheap ? r->tvheap->size : 0) + 2 * sizeof(BUN));
 	mem_size = GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1);
 
+	if (lcount == 1 || (BATordered(l) && BATordered_rev(l))) {
+		/* single value to join, use select */
+		return selectjoin(r1, r2, l, r, sl, sr, nil_matches, t0, false);
+	} else if (rcount == 1 || (BATordered(r) && BATordered_rev(r))) {
+		/* single value to join, use select */
+		return selectjoin(r2, r1, r, l, sr, sl, nil_matches, t0, true);
+	} else if (BATtdense(r) && (sr == NULL || BATtdense(sr))) {
+		/* use special implementation for dense right-hand side */
+		return mergejoin_void(r1, r2, l, r, sl, sr, false, false, t0, false);
+	} else if (BATtdense(l) && (sl == NULL || BATtdense(sl))) {
+		/* use special implementation for dense right-hand side */
+		return mergejoin_void(r2, r1, r, l, sr, sl, false, false, t0, true);
+	} else if ((BATordered(l) || BATordered_rev(l)) &&
+		   (BATordered(r) || BATordered_rev(r))) {
+		/* both sorted */
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, false, false, false, maxsize, t0, false);
+	}
 	if (sl == NULL) {
 		lhash = BATcheckhash(l);
 		if (!lhash && (parent = VIEWtparent(l)) != 0) {
@@ -3906,23 +3923,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	} else if (BATtdense(sr) && BATcheckhash(r)) {
 		rhash = BATcount(r) / ((size_t *) r->thash->heap.base)[5] * lcount < lcount + rcount;
 	}
-	if (lcount == 1 || (BATordered(l) && BATordered_rev(l))) {
-		/* single value to join, use select */
-		return selectjoin(r1, r2, l, r, sl, sr, nil_matches, t0, false);
-	} else if (rcount == 1 || (BATordered(r) && BATordered_rev(r))) {
-		/* single value to join, use select */
-		return selectjoin(r2, r1, r, l, sr, sl, nil_matches, t0, true);
-	} else if (BATtdense(r) && (sr == NULL || BATtdense(sr))) {
-		/* use special implementation for dense right-hand side */
-		return mergejoin_void(r1, r2, l, r, sl, sr, false, false, t0, false);
-	} else if (BATtdense(l) && (sl == NULL || BATtdense(sl))) {
-		/* use special implementation for dense right-hand side */
-		return mergejoin_void(r2, r1, r, l, sr, sl, false, false, t0, true);
-	} else if ((BATordered(l) || BATordered_rev(l)) &&
-		   (BATordered(r) || BATordered_rev(r))) {
-		/* both sorted */
-		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, false, false, false, maxsize, t0, false);
-	} else if (lhash && rhash) {
+	if (lhash && rhash) {
 		/* both have hash, smallest on right */
 		swap = lcount < rcount;
 		reason = "both have hash";
