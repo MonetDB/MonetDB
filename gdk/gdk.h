@@ -1314,7 +1314,7 @@ bat_iterator(BAT *b)
  * the association dimension are not permitted.
  *
  * The persistency indicator tells the retention period of BATs.  The
- * system support three modes: PERSISTENT and TRANSIENT.
+ * system support two modes: PERSISTENT and TRANSIENT.
  * The PERSISTENT BATs are automatically saved upon session boundary
  * or transaction commit.  TRANSIENT BATs are removed upon transaction
  * boundary.  All BATs are initially TRANSIENT unless their mode is
