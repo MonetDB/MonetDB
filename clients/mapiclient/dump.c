@@ -1863,30 +1863,28 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id "
 		"ORDER BY s.name, seq.name";
-	const char *tables =
-		"SELECT s.name AS sname, "
-		       "t.name AS name, "
-		       "t.type AS type "
-		"FROM sys.schemas s, "
-		     "sys._tables t "
-		"WHERE t.type IN (0, 3, 4, 5, 6, 7, 8, 9, 10) AND "
-		      "t.system = FALSE AND "
-		      "s.id = t.schema_id AND "
-		      "s.name <> 'tmp' "
-		"ORDER BY t.id";
-	const char *mergetables = "SELECT t1.type, s1.name, t1.name, s2.name, t2.name FROM sys.schemas s1, sys._tables t1, "
-							  "sys.dependencies d, sys.schemas s2, sys._tables t2 WHERE t1.type IN (3, 7, 8, 9, 10) "
-							  "AND t1.schema_id = s1.id AND s1.name <> 'tmp' AND t1.system = FALSE "
-							  "AND t1.id = d.depend_id AND d.id = t2.id AND t2.schema_id = s2.id ORDER BY t1.id, t2.id";
-	/* we must dump views, functions and triggers in order of
-	 * creation since they can refer to each other */
-	const char *views_functions_triggers =
-		", vft (sname, name, id, query, remark) AS ("
-			"SELECT s.name AS sname, "
+	/* we must dump tables, views, procedures and triggers in order of creation since they can refer to each other */
+	const char *tables_views_functions_triggers =
+		", vft (sname, name, id, query, remark, type) AS ("
+			"SELECT s.name AS sname, " /* tables */
+			       "t.name AS name, "
+			       "t.id AS id, "
+			       "NULL AS query, "
+			       "NULL AS remark, "
+			       "t.type AS type "
+			"FROM sys.schemas s, "
+			      "sys._tables t "
+			"WHERE t.type IN (0, 3, 4, 5, 6, 7, 8, 9, 10) AND "
+			      "t.system = FALSE AND "
+			      "s.id = t.schema_id AND "
+			      "s.name <> 'tmp' "
+			"UNION "
+			"SELECT s.name AS sname, " /* views */
 			       "t.name AS name, "
 			       "t.id AS id, "
 			       "t.query AS query, "
-			       "rem.remark AS remark "
+			       "rem.remark AS remark, "
+			       "NULL AS type "
 			"FROM sys.schemas s, "
 			     "sys._tables t LEFT OUTER JOIN comments rem ON t.id = rem.id "
 			"WHERE t.type = 1 AND "
@@ -1894,28 +1892,34 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
 			"UNION "
-			"SELECT s.name AS sname, "
+			"SELECT s.name AS sname, " /* functions */
 			       "f.name AS name, "
 			       "f.id AS id, "
 			       "NULL AS query, "
-			       "NULL AS remark " /* emitted separately */
+			       "NULL AS remark, " /* emitted separately */
+			       "NULL AS type "
 			"FROM sys.schemas s, "
 			     "sys.functions f "
 			"WHERE s.id = f.schema_id "
 			"AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
 			"UNION "
-			"SELECT s.name AS sname, "
+			"SELECT s.name AS sname, " /* triggers */
 			       "tr.name AS name, "
 			       "tr.id AS id, "
 			       "tr.\"statement\" AS query, "
-			       "NULL AS remark " /* not available yet */
+			       "NULL AS remark, " /* not available yet */
+			       "NULL AS type "
 			"FROM sys.triggers tr, "
 			     "sys.schemas s, "
 			     "sys._tables t "
 			"WHERE s.id = t.schema_id AND "
 			      "t.id = tr.table_id AND t.system = FALSE"
 		") "
-		"SELECT id, sname, name, query, remark FROM vft ORDER BY id";
+		"SELECT id, sname, name, query, remark, type FROM vft ORDER BY id";
+	const char *mergetables = "SELECT t1.type, s1.name, t1.name, s2.name, t2.name FROM sys.schemas s1, sys._tables t1, "
+							  "sys.dependencies d, sys.schemas s2, sys._tables t2 WHERE t1.type IN (3, 7, 8, 9, 10) "
+							  "AND t1.schema_id = s1.id AND s1.name <> 'tmp' AND t1.system = FALSE "
+							  "AND t1.id = d.depend_id AND d.id = t2.id AND t2.schema_id = s2.id ORDER BY t1.id, t2.id";
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
@@ -2084,19 +2088,28 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	/* dump tables, note that merge tables refer to other tables,
+	/* dump tables, views, functions and triggers
+	 * note that merge tables refer to other tables,
 	 * so we make sure the contents of merge tables are added
 	 * (ALTERed) after all table definitions */
-	if ((hdl = mapi_query(mid, tables)) == NULL ||
+	query_len = snprintf(query, query_size, "%s%s",
+			      get_compat_clause(mid), tables_views_functions_triggers);
+	assert(query_len < (int) query_size);
+	if (query_len < 0 ||
+	    query_len >= (int) query_size ||
+	    (hdl = mapi_query(mid, query)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 
 	while (rc == 0 &&
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *tname = mapi_fetch_field(hdl, 1);
-		int type = atoi(mapi_fetch_field(hdl, 2));
+		const char *id = mapi_fetch_field(hdl, 0);
+		char *schema = mapi_fetch_field(hdl, 1);
+		char *name = mapi_fetch_field(hdl, 2);
+		const char *query = mapi_fetch_field(hdl, 3);
+		const char *remark = mapi_fetch_field(hdl, 4);
+		const char *type = mapi_fetch_field(hdl, 5);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -2113,14 +2126,39 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
 				     curschema);
 		}
-		schema = strdup(schema);
-		tname = strdup(tname);
-		rc = dump_table(mid, schema, tname, toConsole, type == 3 || type == 5 ? 1 : describe, describe, useInserts);
-		free(schema);
-		free(tname);
+		if(type) { /* table */
+			int ptype = atoi(type),
+				dont_describe = (ptype == 3 || ptype == 5 || ptype == 7 || ptype == 8 || ptype == 9 || ptype == 10);
+			schema = strdup(schema);
+			name = strdup(name);
+			rc = dump_table(mid, schema, name, toConsole, dont_describe ? 1 : describe, describe, useInserts);
+			free(schema);
+			free(name);
+		} else if (query) {
+			/* view or trigger */
+			mnstr_printf(toConsole, "%s\n", query);
+			/* only views have comments due to query */
+			comment_on(toConsole, "VIEW", schema, name, NULL, remark);
+		} else {
+			/* procedure */
+			dump_functions(mid, toConsole, 0, schema, name, id);
+		}
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
+
+	if (curschema) {
+		if (strcmp(sname ? sname : "sys", curschema) != 0) {
+			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
+				     sname ? sname : "sys");
+		}
+		free(curschema);
+		curschema = strdup(sname ? sname : "sys");
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	if (mnstr_errnr(toConsole))
+		goto bailout2;
 
 	if ((hdl = mapi_query(mid, mergetables)) == NULL ||
 	    mapi_error(mid))
@@ -2225,66 +2263,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
-
-	/* dump views, functions, and triggers */
-	query_len = snprintf(query, query_size, "%s%s",
-			      get_compat_clause(mid), views_functions_triggers);
-	assert(query_len < (int) query_size);
-	if (query_len < 0 ||
-	    query_len >= (int) query_size ||
-	    (hdl = mapi_query(mid, query)) == NULL ||
-	    mapi_error(mid))
-		goto bailout;
-
-	while (rc == 0 &&
-	       !mnstr_errnr(toConsole) &&
-	       mapi_fetch_row(hdl) != 0) {
-		const char *id = mapi_fetch_field(hdl, 0);
-		const char *schema = mapi_fetch_field(hdl, 1);
-		const char *name = mapi_fetch_field(hdl, 2);
-		const char *query = mapi_fetch_field(hdl, 3);
-		const char *remark = mapi_fetch_field(hdl, 4);
-
-		if (mapi_error(mid))
-			goto bailout;
-		if (schema == NULL) {
-			/* cannot happen, but make analysis tools happy */
-			continue;
-		}
-		if (sname != NULL && strcmp(schema, sname) != 0)
-			continue;
-		if (curschema == NULL || strcmp(schema, curschema) != 0) {
-			if (curschema)
-				free(curschema);
-			curschema = strdup(schema);
-			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
-				     curschema);
-		}
-		if (query) {
-			/* view or trigger */
-			mnstr_printf(toConsole, "%s\n", query);
-			/* only views have comments due to query */
-			comment_on(toConsole, "VIEW", schema, name, NULL, remark);
-		} else {
-			/* function */
-			dump_functions(mid, toConsole, 0, schema, name, id);
-		}
-	}
-	mapi_close_handle(hdl);
-	hdl = NULL;
-
-	if (curschema) {
-		if (strcmp(sname ? sname : "sys", curschema) != 0) {
-			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
-				     sname ? sname : "sys");
-		}
-		free(curschema);
-		curschema = strdup(sname ? sname : "sys");
-	}
-	if (mapi_error(mid))
-		goto bailout;
-	if (mnstr_errnr(toConsole))
-		goto bailout2;
 
 	if (!describe) {
 		if (dump_foreign_keys(mid, NULL, NULL, NULL, toConsole))
