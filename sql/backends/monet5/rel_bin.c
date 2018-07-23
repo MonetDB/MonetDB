@@ -2985,6 +2985,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 
 	m->caching = 0;
 	m->emode = mode;
+	be->depth++;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	if (b == 0)
@@ -3001,10 +3002,12 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
 		buffer_destroy(b);
+		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if((bst = bstream_create(buf, b->len)) == NULL) {
 		close_stream(buf);
+		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	scanner_init( &m->scanner, bst, NULL);
@@ -3023,6 +3026,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 		GDKfree(query);
 		GDKfree(b);
 		bstream_destroy(m->scanner.rs);
+		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
@@ -3042,6 +3046,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	GDKfree(query);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
+	be->depth--;
 	if (m->sa && m->sa != sa)
 		sa_destroy(m->sa);
 	m->sym = NULL;
