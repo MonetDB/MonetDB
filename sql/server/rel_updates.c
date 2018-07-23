@@ -25,7 +25,12 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
-			sql_exp *e = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+			sql_exp *e;
+			char *typestr = subtype2string2(&c->type);
+			if(!typestr)
+				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode);
+			_DELETE(typestr);
 			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
 				return NULL;
 			return e;
@@ -351,7 +356,11 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 						sql_exp *e = NULL;
 
 						if (c->def) {
-							char *q = sa_message(sql->sa, "select %s;", c->def);
+							char *q, *typestr = subtype2string2(&c->type);
+							if(!typestr)
+								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							q = sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr);
+							_DELETE(typestr);
 							e = rel_parse_val(sql, q, sql->emode);
 							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
 								return NULL;
@@ -1010,7 +1019,11 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 					char *colname = assignment->h->next->data.sval;
 					sql_column *col = mvc_bind_column(sql, t, colname);
 					if (col->def) {
-						v = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", col->def, col->type.type->sqlname), sql->emode);
+						char *typestr = subtype2string2(&col->type);
+						if(!typestr)
+							return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode);
+						_DELETE(typestr);
 					} else {
 						return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: column '%s' has no valid default value", col->base.name);
 					}
