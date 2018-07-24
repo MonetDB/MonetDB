@@ -332,7 +332,7 @@ CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	sto=  *getArgReference_lng(stk,pci,1);
 	if( sto < 0)
-		throw(MAL,"timeout","Query time out should be > 0");
+		throw(MAL,"timeout","Query time out should be >= 0");
 	cntxt->stimeout = sto * 1000 * 1000;
     return MAL_SUCCEED;
 }
@@ -344,12 +344,12 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	qto=  *getArgReference_lng(stk,pci,1);
 	if( qto < 0)
-		throw(MAL,"timeout","Query time out should be > 0");
+		throw(MAL,"timeout","Query time out should be >= 0");
 	cntxt->qtimeout = qto * 1000 * 1000;
 	if ( pci->argc == 3){
 		sto=  *getArgReference_lng(stk,pci,2);
 		if( sto < 0)
-			throw(MAL,"timeout","Session time out should be > 0");
+			throw(MAL,"timeout","Session time out should be >= 0");
 		cntxt->stimeout = sto * 1000 * 1000;
 	}
     return MAL_SUCCEED;
