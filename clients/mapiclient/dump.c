@@ -923,7 +923,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		}
 		/* the table is a real table */
 		mnstr_printf(toConsole, "CREATE %sTABLE \"%s\".\"%s\" ",
-			    (type == 3 || type == 7 || type == 8 || type == 9 || type == 10) ? "MERGE " :
+			    (type == 3 || type == 12 || type == 13 || type == 14 || type == 15) ? "MERGE " :
 			    type == 4 ? "STREAM " :
 			    type == 5 ? "REMOTE " :
 			    type == 6 ? "REPLICA " :
@@ -948,17 +948,17 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			mnstr_printf(toConsole, " ON '%s' WITH USER '%s' ENCRYPTED PASSWORD '%s'", view, rt_user, rt_hash);
 			mapi_close_handle(hdl);
 			hdl = NULL;
-		} else if(type >= 7 && type <= 10) {
-			const char *phow = (type == 7 || type == 9) ? "VALUES" : "RANGE";
-			const char *pusing = (type == 8 || type == 10) ? "ON" : "USING";
+		} else if(type >= 12 && type <= 15) { /* partitioned table */
+			const char *phow = (type == 12 || type == 14) ? "VALUES" : "RANGE";
+			const char *pusing = (type == 12 || type == 13) ? "ON" : "USING";
 			const char *expr = NULL;
 
-			if(type == 7 || type == 8) {
+			if(type == 12 || type == 13) { /* by column */
 				snprintf(query, maxquerylen,
 						 "SELECT c.name FROM schemas s, tables t, columns c, table_partitions tp "
 						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = c.table_id "
 						 "AND c.id = tp.column_id", schema, tname);
-			} else {
+			} else { /* by expression */
 				snprintf(query, maxquerylen,
 						 "SELECT tp.expression FROM schemas s, tables t, table_partitions tp "
 						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = tp.table_id",
@@ -1896,7 +1896,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "t.type AS type "
 			"FROM sys.schemas s, "
 			      "sys._tables t "
-			"WHERE t.type IN (0, 3, 4, 5, 6, 7, 8, 9, 10) AND "
+			"WHERE t.type IN (0, 3, 4, 5, 6, 12, 13, 14, 15) AND "
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
@@ -1939,7 +1939,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		") "
 		"SELECT id, sname, name, query, remark, type FROM vft ORDER BY id";
 	const char *mergetables = "SELECT t1.type, s1.name, t1.name, s2.name, t2.name FROM sys.schemas s1, sys._tables t1, "
-							  "sys.dependencies d, sys.schemas s2, sys._tables t2 WHERE t1.type IN (3, 7, 8, 9, 10) "
+							  "sys.dependencies d, sys.schemas s2, sys._tables t2 WHERE t1.type IN (3, 12, 13, 14, 15) "
 							  "AND t1.schema_id = s1.id AND s1.name <> 'tmp' AND t1.system = FALSE "
 							  "AND t1.id = d.depend_id AND d.id = t2.id AND t2.schema_id = s2.id ORDER BY t1.id, t2.id";
 	char *sname = NULL;
@@ -2150,7 +2150,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		}
 		if(type) { /* table */
 			int ptype = atoi(type),
-				dont_describe = (ptype == 3 || ptype == 5 || ptype == 7 || ptype == 8 || ptype == 9 || ptype == 10);
+				dont_describe = (ptype == 3 || ptype == 5 || ptype == 12 || ptype == 13 || ptype == 14 || ptype == 15);
 			schema = strdup(schema);
 			name = strdup(name);
 			rc = dump_table(mid, schema, name, toConsole, dont_describe ? 1 : describe, describe, useInserts, true);
@@ -2202,7 +2202,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			MapiHdl shdl = NULL;
 
 			mnstr_printf(toConsole, " AS PARTITION");
-			if(type1 == 7 || type1 == 9) {
+			if(type1 == 12 || type1 == 14) { /* by values */
 				int i = 0, first = 1, found_nil = 0;
 				snprintf(query, query_size,
 						 "SELECT vp.value FROM schemas s, tables t, value_partitions vp "
@@ -2217,7 +2217,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 					char *nextv = mapi_fetch_field(shdl, 0);
 					if(first == 1 && !nextv) {
 						found_nil = 1;
-						first = 0; // if the partition can hold null values, that is explicit in the first entry
+						first = 0; // if the partition can hold null values, is explicit in the first entry
 						continue;
 					}
 					if(nextv) {
@@ -2239,7 +2239,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 				if(found_nil) {
 					mnstr_printf(toConsole, " WITH NULL");
 				}
-			} else {
+			} else { /* by range */
 				char *minv = NULL, *maxv = NULL, *wnulls = NULL;
 				snprintf(query, query_size,
 						 "SELECT rp.minimum, rp.maximum, CASE WHEN rp.with_nulls = true THEN 1 ELSE 0 END "
@@ -2256,7 +2256,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 					maxv = mapi_fetch_field(shdl, 1);
 					wnulls = mapi_fetch_field(shdl, 2);
 				}
-				mapi_close_handle(shdl);
 				if(minv && maxv) {
 					mnstr_printf(toConsole, " BETWEEN ");
 					quoted_print(toConsole, minv, true);
@@ -2266,6 +2265,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 				if(strcmp(wnulls, "1") == 0) {
 					mnstr_printf(toConsole, " WITH NULL");
 				}
+				mapi_close_handle(shdl);
 			}
 		}
 		mnstr_printf(toConsole, ";\n");

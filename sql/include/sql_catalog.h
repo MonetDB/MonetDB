@@ -491,10 +491,11 @@ typedef enum table_types {
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
 	tt_replica_table = 6,	/* multiple replica of the same table */
-	tt_list_partition_col = 7, /* partitioned by a list of values on a column */
-	tt_range_partition_col = 8, /* partitioned by a range of values on a column */
-	tt_list_partition_exp = 9, /* partitioned by a list of values on an expression */
-	tt_range_partition_exp = 10 /* partitioned by a range of values on an expression */
+	/* the gap is needed because of system tables and views */
+	tt_list_partition_col = 12, /* partitioned by a list of values on a column */
+	tt_range_partition_col = 13, /* partitioned by a range of values on a column */
+	tt_list_partition_exp = 14, /* partitioned by a list of values on an expression */
+	tt_range_partition_exp = 15 /* partitioned by a range of values on an expression */
 } table_types;
 
 #define TABLE_TYPE_DESCRIPTION(tt)                                                                     \

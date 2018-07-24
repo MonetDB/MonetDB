@@ -1641,6 +1641,21 @@ sql_update_merge_partitions(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 					"create table value_partitions (table_id int, partition_id int, value varchar(%d));\n",
 					STORAGE_MAX_VALUE_LENGTH);
+	/* The table_type_name column's length had to be increased, hence sys.table_types table is re-created */
+	pos += snprintf(buf + pos, bufsize - pos, "drop table table_types;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create table table_types "
+					"(table_type_id smallint not null primary key, table_type_name varchar(50) not null unique);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into table_types (table_type_id, table_type_name) values "
+					"(0, 'TABLE'),(1, 'VIEW'),(3, 'MERGE TABLE'),(4, 'STREAM TABLE'),(5, 'REMOTE TABLE'),"
+					"(6, 'REPLICA TABLE'),(10, 'SYSTEM TABLE'),(11, 'SYSTEM VIEW'),"
+					"(12, 'MERGE TABLE PARTITION BY VALUES ON COLUMN'),"
+					"(13, 'MERGE TABLE PARTITION BY RANGE ON COLUMN'),"
+					"(14, 'MERGE TABLE PARTITION BY VALUES USING EXPRESSION'),"
+					"(15, 'MERGE TABLE PARTITION BY RANGE USING EXPRESSION'),(20, 'GLOBAL TEMPORARY TABLE'),"
+					"(30, 'LOCAL TEMPORARY TABLE');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "ALTER TABLE sys.table_types SET READ ONLY;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "GRANT SELECT ON sys.table_types TO PUBLIC;\n");
+
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 

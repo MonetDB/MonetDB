@@ -239,11 +239,11 @@ GRANT SELECT ON sys.keywords TO PUBLIC;
 
 CREATE TABLE sys.table_types (
     table_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    table_type_name VARCHAR(25) NOT NULL UNIQUE);
+    table_type_name VARCHAR(50) NOT NULL UNIQUE);
 
 -- Values taken from sql/include/sql_catalog.h see enum table_types:
--- table = 0, view = 1, merge_table = 3, stream = 4, remote = 5,
--- replica_table = 6.
+-- table = 0, view = 1, merge_table = 3, stream = 4, remote = 5, replica_table = 6,
+-- list_partition_col = 12, range_partition_col = 13, list_partition_exp = 14, range_partition_exp = 15.
 -- Note: values 10, 11, 20 and 30 are synthetically constructed, see
 -- view sys.tables. Do not change them as they are used by ODBC
 -- SQLTables(SQL_ALL_TABLE_TYPES) and JDBC methods getTableTypes() and
@@ -259,6 +259,10 @@ INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
 -- sys._tables.type value when sys._tables.system is true).
   (10, 'SYSTEM TABLE'),
   (11, 'SYSTEM VIEW'),
+  (12, 'MERGE TABLE PARTITION BY VALUES ON COLUMN'),
+  (13, 'MERGE TABLE PARTITION BY RANGE ON COLUMN'),
+  (14, 'MERGE TABLE PARTITION BY VALUES USING EXPRESSION'),
+  (15, 'MERGE TABLE PARTITION BY RANGE USING EXPRESSION'),
 -- synthetically constructed temporary variants (added 20 or 30 to
 -- sys._tables.type value depending on values of temporary and
 -- commit_action).

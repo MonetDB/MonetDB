@@ -862,7 +862,7 @@ CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJ
 CREATE TABLE "sys"."storagemodelinput" ("schema" CHARACTER LARGE OBJECT, "table" CHARACTER LARGE OBJECT, "column" CHARACTER LARGE OBJECT, "type" CHARACTER LARGE OBJECT, "typewidth" INTEGER, "count" BIGINT, "distinct" BIGINT, "atomwidth" INTEGER, "reference" BOOLEAN, "sorted" BOOLEAN, "revsorted" BOOLEAN, "unique" BOOLEAN, "orderidx" BIGINT);
 CREATE TABLE "sys"."systemfunctions" ("function_id" INTEGER NOT NULL);
 CREATE TABLE "sys"."table_partitions" ("id" INTEGER, "table_id" INTEGER, "column_id" INTEGER, "expression" VARCHAR(2048));
-CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
+CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(50) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
 CREATE TABLE "sys"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 CREATE TABLE "sys"."types" ("id" INTEGER, "systemname" VARCHAR(256), "sqlname" VARCHAR(1024), "digits" INTEGER, "scale" INTEGER, "radix" INTEGER, "eclass" INTEGER, "schema_id" INTEGER);
 CREATE TABLE "sys"."user_role" ("login_id" INTEGER, "role_id" INTEGER);
@@ -1989,7 +1989,7 @@ drop function pcre_replace(string, string, string, string);
 [ "table_partitions",	"column_id",	"int",	32,	0,	NULL,	true,	2,	NULL	]
 [ "table_partitions",	"expression",	"varchar",	2048,	0,	NULL,	true,	3,	NULL	]
 [ "table_types",	"table_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
-[ "table_types",	"table_type_name",	"varchar",	25,	0,	NULL,	false,	1,	NULL	]
+[ "table_types",	"table_type_name",	"varchar",	50,	0,	NULL,	false,	1,	NULL	]
 [ "tables",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "tables",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "tables",	"schema_id",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -6921,7 +6921,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.table_types,	sys.table_types # table_name
 % table_type_id,	table_type_name # name
 % smallint,	varchar # type
-% 2,	22 # length
+% 2,	48 # length
 [ 0,	"TABLE"	]
 [ 1,	"VIEW"	]
 [ 3,	"MERGE TABLE"	]
@@ -6930,6 +6930,10 @@ drop function pcre_replace(string, string, string, string);
 [ 6,	"REPLICA TABLE"	]
 [ 10,	"SYSTEM TABLE"	]
 [ 11,	"SYSTEM VIEW"	]
+[ 12,	"MERGE TABLE PARTITION BY VALUES ON COLUMN"	]
+[ 13,	"MERGE TABLE PARTITION BY RANGE ON COLUMN"	]
+[ 14,	"MERGE TABLE PARTITION BY VALUES USING EXPRESSION"	]
+[ 15,	"MERGE TABLE PARTITION BY RANGE USING EXPRESSION"	]
 [ 20,	"GLOBAL TEMPORARY TABLE"	]
 [ 30,	"LOCAL TEMPORARY TABLE"	]
 #select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
