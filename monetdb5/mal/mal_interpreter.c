@@ -355,7 +355,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
 		freeStack(stk);
-	if (ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
+	if (ret == MAL_SUCCEED && cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -452,7 +452,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	}
 	if (stk) 
 		garbageCollector(cntxt, mb, stk, TRUE);
-	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
+	if ( ret == MAL_SUCCEED && cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -777,7 +777,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			runtimeProfileExit(cntxt, mb, stk, getInstrPtr(mb,0), &runtimeProfileFunction);
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
-			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
+			if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
 				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				break;
 			}
@@ -796,7 +796,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			} else {
 				ret = createException(MAL,"interpreter", "failed instruction2str");
 			}
-			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
+			if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
 				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				break;
 			}
@@ -916,7 +916,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
-				if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
+				if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				stkpc = mb->stop;
 				continue;
@@ -962,7 +962,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
+				if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
 				}
@@ -1192,7 +1192,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		default:
 			stkpc++;
 		}
-		if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
+		if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
 			if (ret == MAL_SUCCEED)
 				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 			stkpc= mb->stop;
