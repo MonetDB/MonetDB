@@ -331,6 +331,7 @@ extern void store_apply_deltas(void);
 extern void store_flush_log(void);
 extern void store_resume_log(void);
 extern void store_suspend_log(void);
+extern char *store_hot_snapshot(const char *dir);
 
 extern void store_manager(void);
 extern void idle_manager(void);

@@ -83,6 +83,10 @@ command suspend_log_flushing( ) :void
 address SQLsuspend_log_flushing
 comment "Suspend WAL log flushing";
 
+command hot_snapshot(dir:str) :void
+address SQLhot_snapshot
+comment "Create a hot snapshot in the given directory";
+
 pattern assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";

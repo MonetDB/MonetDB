@@ -4803,6 +4803,19 @@ SQLsuspend_log_flushing(void *ret)
 }
 
 str
+SQLhot_snapshot(void *ret, const str *dir)
+{
+	(void)ret;
+
+	char *dest = *dir;
+	const char *errmsg = store_hot_snapshot(dest);
+	if (errmsg)
+		throw(SQL, "sql.hot_snapshot", SQLSTATE(42000) "Snapshot to %s failed: %s", dest, errmsg);
+	
+	return MAL_SUCCEED;
+}
+
+str
 SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit *res = getArgReference_bit(stk, pci, 0);

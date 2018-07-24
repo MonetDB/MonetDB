@@ -1788,6 +1788,13 @@ store_suspend_log(void)
 	MT_lock_unset(&bs_lock);
 }
 
+char *
+store_hot_snapshot(const char *dir)
+{
+	fprintf(stderr, "#hot_snapshot %s\n", dir);
+	return NULL;
+}
+
 static int
 store_needs_vacuum( sql_trans *tr )
 {

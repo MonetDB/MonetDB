@@ -314,6 +314,8 @@ sql5_export str SQLflush_log(void *ret);
 sql5_export str SQLresume_log_flushing(void *ret);
 sql5_export str SQLsuspend_log_flushing(void *ret);
 
+sql5_export str SQLhot_snapshot(void *ret, const str *dir);
+
 sql5_export str SQLexist(bit *res, bat *id);
 sql5_export str SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
