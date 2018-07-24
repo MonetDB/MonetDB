@@ -241,7 +241,7 @@ __hidden void gdk_system_reset(void)
 			b->tnonil ? "N" : "",		\
 			b->thash ? "H" : "",		\
 			b->torderidx ? "O" : "",	\
-			b->timprints ? "I" : ""
+			b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)				\
@@ -259,7 +259,7 @@ __hidden void gdk_system_reset(void)
 			b && b->tnonil ? "N" : "",	\
 			b && b->thash ? "H" : "",	\
 			b && b->torderidx ? "O" : "",	\
-			b && b->timprints ? "I" : ""
+			b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63

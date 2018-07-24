@@ -62,6 +62,7 @@ typedef struct tODBCDRIVERDBC {
 	/* MonetDB connection handle & status information */
 	Mapi mid;		/* connection with server */
 	int cachelimit;		/* cache limit we requested */
+	SQLULEN qtimeout;	/* current query timeout */
 	short major, minor, patch; /* version of server */
 	int Mdebug;
 

@@ -148,7 +148,7 @@ persistOIDX(BAT *b)
 		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		ALGODEBUG fprintf(stderr, "#BATorderidx(%s): NOT persisting index\n", BATgetId(b));
+		ALGODEBUG fprintf(stderr, "#persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
 #else
 	(void) b;
 #endif

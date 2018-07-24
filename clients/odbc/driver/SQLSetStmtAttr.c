@@ -195,6 +195,14 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 		return MNDBSetDescField(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					StringLength);
+	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
+		if ((uintptr_t) ValuePtr > 0x7FFFFFFF) {
+			stmt->qtimeout = 0x7FFFFFFF;
+			addStmtError(stmt, "01S02", NULL, 0);
+		} else {
+			stmt->qtimeout = (SQLULEN) (uintptr_t) ValuePtr;
+		}
+		break;
 	case SQL_ATTR_RETRIEVE_DATA:		/* SQLULEN */
 		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_RD_ON:
@@ -280,7 +288,6 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 	case SQL_ATTR_CURSOR_SENSITIVITY:	/* SQLULEN */
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:	/* SQLLEN* */
 	case SQL_ATTR_KEYSET_SIZE:		/* SQLULEN */
-	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
 	case SQL_ATTR_SIMULATE_CURSOR:		/* SQLULEN */
 	case SQL_ATTR_USE_BOOKMARKS:		/* SQLULEN */
 		/* Optional feature not implemented */

@@ -447,6 +447,12 @@ MNDBExecute(ODBCStmt *stmt)
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
+	if (stmt->qtimeout != stmt->Dbc->qtimeout) {
+		snprintf(query, querylen, "call sys.settimeout(%" PRIu64 ")",
+			 (uint64_t) stmt->qtimeout);
+		if (mapi_query_handle(hdl, query) == MOK)
+			stmt->Dbc->qtimeout = stmt->qtimeout;
+	}
 	querypos = snprintf(query, querylen, "execute %d (", stmt->queryid);
 	/* XXX fill in parameter values */
 	if (desc->sql_desc_bind_offset_ptr)

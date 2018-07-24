@@ -123,7 +123,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 					BufferLength, StringLengthPtr);
 	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
 		/* SQL_QUERY_TIMEOUT */
-		WriteData(ValuePtr, 0, SQLULEN);
+		WriteData(ValuePtr, stmt->qtimeout, SQLULEN);
 		break;
 	case SQL_ATTR_RETRIEVE_DATA:		/* SQLULEN */
 		/* SQL_RETRIEVE_DATA */

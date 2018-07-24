@@ -247,7 +247,7 @@ BATcheckimprints(BAT *b)
 					close(fd);
 					imprints->imprints.parentid = b->batCacheid;
 					b->timprints = imprints;
-					ALGODEBUG fprintf(stderr, "#BATcheckimprints: reusing persisted imprints %d\n", b->batCacheid);
+					ALGODEBUG fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
 					MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 
 					return true;
@@ -262,7 +262,7 @@ BATcheckimprints(BAT *b)
 	}
 	ret = b->timprints != NULL;
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckimprints: already has imprints %d\n", b->batCacheid);
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
 	return ret;
 }
 
@@ -299,9 +299,9 @@ BATimpsync(void *arg)
 #endif
 			}
 			close(fd);
-			ALGODEBUG fprintf(stderr, "#BATimpsync(%s): "
+			ALGODEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
 					  "imprints persisted "
-					  "(" LLFMT " usec)\n", BATgetId(b),
+					  "(" LLFMT " usec)\n", ALGOBATPAR(b),
 					  GDKusec() - t0);
 		}
 	}
@@ -343,6 +343,7 @@ BATimprints(BAT *b)
 	if (VIEWtparent(b)) {
 		/* views always keep null pointer and need to obtain
 		 * the latest imprint from the parent at query time */
+		s2 = b;		/* remember for ALGODEBUG print */
 		b = BBPdescriptor(VIEWtparent(b));
 		assert(b);
 		if (BATcheckimprints(b))
@@ -356,8 +357,18 @@ BATimprints(BAT *b)
 		const char *nme = BBP_physical(b->batCacheid);
 		size_t pages;
 
-		ALGODEBUG fprintf(stderr, "#BATimprints(b=" ALGOBATFMT "): "
-				  "creating imprints\n", ALGOBATPAR(b));
+		ALGODEBUG {
+			if (s2)
+				fprintf(stderr, "#BATimprints(b=" ALGOBATFMT
+					"): creating imprints on parent "
+					ALGOBATFMT "\n",
+					ALGOBATPAR(s2), ALGOBATPAR(b));
+			else
+				fprintf(stderr, "#BATimprints(b=" ALGOBATFMT
+					"): creating imprints\n",
+					ALGOBATPAR(b));
+		}
+		s2 = NULL;
 
 		imprints = GDKzalloc(sizeof(Imprints));
 		if (imprints == NULL) {

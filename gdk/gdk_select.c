@@ -1302,7 +1302,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=%d): "
-					  "anti: switch ranges\n",
+					  "anti: switch ranges...\n",
 					  ALGOBATPAR(b), ALGOOPTBATPAR(s),
 					  anti);
 		} else if (!lval && !hval) {
@@ -1325,7 +1325,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			hval = false;
 			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=0): "
-					  "anti-nil\n",
+					  "anti-nil...\n",
 					  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		} else if (equi) {
 			equi = false;
@@ -1339,7 +1339,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				ALGODEBUG fprintf(stderr, "#BATselect(b="
 						  ALGOBATFMT ",s="
 						  ALGOOPTBATFMT ",anti=0): "
-						  "anti-nothing\n",
+						  "anti-nothing...\n",
 						  ALGOBATPAR(b),
 						  ALGOOPTBATPAR(s));
 			}
@@ -1352,7 +1352,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			hval = false;
 			ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=0): "
-					  "anti-nil\n",
+					  "anti-nil...\n",
 					  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		}
 	}
@@ -1804,9 +1804,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	if (hash) {
 		ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=%d): "
+				  ",s=" ALGOOPTBATFMT "): "
 				  "hash select\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		bn = hashselect(b, s, bn, tl, maximum, phash);
 	} else {
 		/* use imprints if
