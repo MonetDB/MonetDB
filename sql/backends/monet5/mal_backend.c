@@ -15,6 +15,7 @@ backend_reset(backend *b)
 {
 	b->out = b->client->fdout;
 	b->language = 0;
+	b->depth = 0;
 
 	b->vtop = 0;
 	b->q = NULL;
