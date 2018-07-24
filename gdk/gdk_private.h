@@ -60,7 +60,7 @@ __hidden void BATfree(BAT *b)
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden Hash *BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
+__hidden Hash *BAThash_impl(BAT *b, BAT *s, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));

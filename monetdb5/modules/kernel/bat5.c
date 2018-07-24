@@ -978,7 +978,7 @@ BKCsetHash(bit *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setHash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*ret = BAThash(b, 0) == GDK_SUCCEED;
+	*ret = BAThash(b) == GDK_SUCCEED;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

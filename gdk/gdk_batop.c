@@ -1060,7 +1060,7 @@ BATkeyed(BAT *b)
 			b->tkey = true;
 		} else if (BATcheckhash(b) ||
 			   (b->batPersistence == PERSISTENT &&
-			    BAThash(b, 0) == GDK_SUCCEED) ||
+			    BAThash(b) == GDK_SUCCEED) ||
 			   (VIEWtparent(b) != 0 &&
 			    BATcheckhash(BBPdescriptor(VIEWtparent(b))))) {
 			/* we already have a hash table on b, or b is

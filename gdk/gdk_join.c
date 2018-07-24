@@ -2628,11 +2628,11 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 					  "hash for candidate list\n",
 					  BATgetId(r));
 			snprintf(ext, sizeof(ext), "thash%x", sr->batCacheid);
-			if ((hsh = BAThash_impl(r, sr, 0, ext)) == NULL)
+			if ((hsh = BAThash_impl(r, sr, ext)) == NULL)
 				goto bailout;
 		}
 	} else {
-		if (BAThash(r, 0) != GDK_SUCCEED)
+		if (BAThash(r) != GDK_SUCCEED)
 			goto bailout;
 		hsh = r->thash;
 	}

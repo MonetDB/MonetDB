@@ -304,7 +304,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 	if (!kvh && kvl != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	if (key_value_low) {
-		BAThash(b, 0);
+		BAThash(b);
 		r = BATselect(b, s, kvl, kvh, true, hi, false);
 		bat_destroy(s);
 		s = r;

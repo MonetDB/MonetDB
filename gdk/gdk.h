@@ -1813,17 +1813,17 @@ gdk_export ptr ATOMdup(int id, const void *val);
  * @multitable @columnfractions 0.08 0.7
  * @item BAT*
  * @tab
- *  BAThash (BAT *b, BUN masksize)
+ *  BAThash (BAT *b)
  * @end multitable
  *
  * The current BAT implementation supports three search accelerators:
- * hashing, imprints, and oid ordered index.
+ * hashing, imprints, and ordered index.
  *
  * The routine BAThash makes sure that a hash accelerator on the tail of the
  * BAT exists. GDK_FAIL is returned upon failure to create the supportive
  * structures.
  */
-gdk_export gdk_return BAThash(BAT *b, BUN masksize);
+gdk_export gdk_return BAThash(BAT *b);
 
 /*
  * @- Column Imprints Functions

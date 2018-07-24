@@ -174,7 +174,7 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 		}
 		s = NULL;
 	}
-	if (BAThash(b, 0) != GDK_SUCCEED) {
+	if (BAThash(b) != GDK_SUCCEED) {
 		BBPreclaim(bn);
 		return NULL;
 	}
