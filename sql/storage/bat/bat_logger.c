@@ -342,10 +342,43 @@ bl_reload_shared(void)
 	return logger_reload(bat_logger_shared) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
+static const char*
+snapshot_wal(stream *plan)
+{
+	stream *log = bat_logger->log;
+	char *log_file = mnstr_name(log);
+	long pos = ftell(getFile(log));
+	if (pos < 0)
+		return strerror(errno);
+	
+	/* ASSUMPTION: the logger does not seek around in the logfile so
+	 * everything after pos is currently garbage and irrelevant to this
+	 * snapshot.
+	 */
+	mnstr_printf(plan, "%ld %s\n", pos, log_file);
+	return NULL;
+}
+
+static const char*
+snapshot_bbp(stream *plan)
+{
+	/* to be implemented */
+	(void) plan;
+	return NULL;
+}
+
 static const char* 
 bl_snapshot(stream *plan)
 {
-	mnstr_printf(plan, "Here's the plan: make a snapshot!\n");
+	const char *err;
+
+	err = snapshot_wal(plan);
+	if (err)
+		return err;
+	err = snapshot_bbp(plan);
+	if (err)
+		return err;
+
 	return NULL;
 }
 
