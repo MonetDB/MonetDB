@@ -342,6 +342,14 @@ bl_reload_shared(void)
 	return logger_reload(bat_logger_shared) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
+static const char* 
+bl_snapshot(stream *plan)
+{
+	mnstr_printf(plan, "Here's the plan: make a snapshot!\n");
+	return NULL;
+}
+
+
 void
 bat_logger_init( logger_functions *lf )
 {
@@ -351,6 +359,7 @@ bat_logger_init( logger_functions *lf )
 	lf->cleanup = bl_cleanup;
 	lf->changes = bl_changes;
 	lf->get_sequence = bl_get_sequence;
+	lf->snapshot = bl_snapshot;
 	lf->log_isnew = bl_log_isnew;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;

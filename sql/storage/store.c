@@ -1788,11 +1788,61 @@ store_suspend_log(void)
 	MT_lock_unset(&bs_lock);
 }
 
-char *
+const char *
 store_hot_snapshot(const char *dir)
 {
-	fprintf(stderr, "#hot_snapshot %s\n", dir);
-	return NULL;
+	stream *plan_stream = NULL;
+	const char *err;
+	int reenable_logging = 0;
+
+	if (!logger_funcs.snapshot) {
+		err = "backend does not support snapshots";
+		goto end;
+	}
+	plan_stream = file_wastream(stderr, "stderr");
+	if (!plan_stream) {
+		err = "file_wastream(stderr)";
+		goto end;
+	}
+
+	fprintf(stderr, "#suspend logger for hot_snapshot %s\n", dir);
+	MT_lock_set(&bs_lock);
+	reenable_logging = logging_enabled;
+	logging_enabled = 0;
+	while (currently_logging) {
+		/* logging in progress, wait for it to finish */
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(100);
+		if (GDKexiting()) {
+			err = "server is exiting";
+			goto end;  /* note lock not held */
+		}
+		MT_lock_set(&bs_lock);
+	}
+
+	/* WE STILL HAVE THE LOCK */
+	fprintf(stderr, "#begin prepare hot_snapshot %s\n", dir);
+	err = logger_funcs.snapshot(plan_stream);
+	MT_lock_unset(&bs_lock);
+
+	if (err)
+		goto end;  /* note lock not held */
+	fprintf(stderr, "#end prepare hot_snapshot %s\n", dir);
+
+	fprintf(stderr, "#begin execute hot_snapshot %s\n", dir);
+	(void)dir;
+	fprintf(stderr, "#end execute hot_snapshot %s\n", dir);
+
+end:
+	if (reenable_logging) {
+		fprintf(stderr, "#resume logger for hot_snapshot %s\n", dir);
+		MT_lock_set(&bs_lock);
+		logging_enabled = reenable_logging;
+		MT_lock_unset(&bs_lock);
+	}
+	if (plan_stream)
+		close_stream(plan_stream);
+	return err;
 }
 
 static int

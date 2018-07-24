@@ -285,6 +285,7 @@ typedef lng (*logger_read_last_transaction_id_fptr)(void);
 typedef lng (*logger_get_transaction_drift_fptr)(void);
 
 typedef int (*logger_reload_fptr) (void);
+typedef const char* (*logger_snapshot_fptr)(stream *plan);
 
 typedef int (*log_isnew_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
@@ -304,6 +305,7 @@ typedef struct logger_functions {
 	logger_get_transaction_drift_fptr get_transaction_drift;
 
 	logger_reload_fptr reload;
+	logger_snapshot_fptr snapshot;
 
 	log_isnew_fptr log_isnew;
 	log_tstart_fptr log_tstart;
@@ -331,7 +333,7 @@ extern void store_apply_deltas(void);
 extern void store_flush_log(void);
 extern void store_resume_log(void);
 extern void store_suspend_log(void);
-extern char *store_hot_snapshot(const char *dir);
+extern const char *store_hot_snapshot(const char *dir);
 
 extern void store_manager(void);
 extern void idle_manager(void);
