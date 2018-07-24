@@ -1624,40 +1624,23 @@ sql_update_remote_tables(Client c, mvc *sql)
 static str
 sql_update_merge_partitions(Client c, mvc *sql)
 {
-	int i;
 	size_t bufsize = 2048, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
-	char *schemas_to_set[2] = {"sys", "tmp"};
 
 	if( buf== NULL)
 		throw(SQL, "sql_update_merge_partitions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	for(i = 0; i < 2; i++) {
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schemas_to_set[i]);
-		pos += snprintf(buf + pos, bufsize - pos,
-						"create table _table_partitions (id int, table_id int, column_id int, expression varchar(%d));\n",
-						STORAGE_MAX_VALUE_LENGTH);
-		pos += snprintf(buf + pos, bufsize - pos,
-						"create table _range_partitions (table_id int, partition_id int, minimum varchar(%d), "
-						"maximum varchar(%d), with_nulls boolean);\n", STORAGE_MAX_VALUE_LENGTH, STORAGE_MAX_VALUE_LENGTH);
-		pos += snprintf(buf + pos, bufsize - pos,
-						"create table _value_partitions (table_id int, partition_id int, value varchar(%d));\n",
-						STORAGE_MAX_VALUE_LENGTH);
-	}
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schemas_to_set[0]);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-					"create view table_partitions as select \"id\", \"table_id\", \"column_id\", \"expression\" "
-					"from \"sys\".\"_table_partitions\" union all select \"id\", \"table_id\", \"column_id\", "
-					"\"expression\" from \"tmp\".\"_table_partitions\";\n");
+					"create table table_partitions (id int, table_id int, column_id int, expression varchar(%d));\n",
+					STORAGE_MAX_VALUE_LENGTH);
 	pos += snprintf(buf + pos, bufsize - pos,
-					"create view range_partitions as select \"table_id\", \"partition_id\", \"minimum\", \"maximum\", "
-					"\"with_nulls\" from \"sys\".\"_range_partitions\" union all select \"table_id\", \"partition_id\", "
-					"\"minimum\", \"maximum\", \"with_nulls\" from \"tmp\".\"_range_partitions\";");
+					"create table range_partitions (table_id int, partition_id int, minimum varchar(%d), "
+					"maximum varchar(%d), with_nulls boolean);\n", STORAGE_MAX_VALUE_LENGTH, STORAGE_MAX_VALUE_LENGTH);
 	pos += snprintf(buf + pos, bufsize - pos,
-					"create view value_partitions as select \"table_id\", \"partition_id\", \"value\" from "
-					"\"sys\".\"_value_partitions\" union all select \"table_id\", \"partition_id\", \"value\" "
-					"from \"tmp\".\"_value_partitions\";");
+					"create table value_partitions (table_id int, partition_id int, value varchar(%d));\n",
+					STORAGE_MAX_VALUE_LENGTH);
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
@@ -2040,7 +2023,7 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (mvc_bind_table(m, s, "_table_partitions") == NULL) {
+	if (mvc_bind_table(m, s, "table_partitions") == NULL) {
 		if ((err = sql_update_merge_partitions(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);

@@ -556,7 +556,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 static int
 load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 {
-	sql_table *ranges = find_sql_table(syss, "_range_partitions");
+	sql_table *ranges = find_sql_table(syss, "range_partitions");
 	oid rid;
 	rids *rs;
 	sql_subtype *empty = sql_bind_localtype("void");
@@ -604,7 +604,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 static int
 load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 {
-	sql_table *values = find_sql_table(syss, "_value_partitions");
+	sql_table *values = find_sql_table(syss, "value_partitions");
 	list *vals = NULL;
 	oid rid;
 	rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
@@ -748,7 +748,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 		fprintf(stderr, "#\tload table %s\n", t->base.name);
 
 	if(isRangePartitionTable(t) || isListPartitionTable(t)) {
-		sql_table *partitions = find_sql_table(syss, "_table_partitions");
+		sql_table *partitions = find_sql_table(syss, "table_partitions");
 		sql_column *table_id = find_sql_column(partitions, "table_id");
 		rs = table_funcs.rids_select(tr, table_id, &t->base.id, &t->base.id, NULL);
 		if((rid = table_funcs.rids_next(rs)) != oid_nil) {
@@ -1716,6 +1716,24 @@ store_load(void) {
 	bootstrap_create_column(tr, t, "cacheinc", "bigint", 64);
 	bootstrap_create_column(tr, t, "cycle", "boolean", 1);
 
+	t = bootstrap_create_table(tr, s, "table_partitions");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "table_id", "int", 32);
+	bootstrap_create_column(tr, t, "column_id", "int", 32);
+	bootstrap_create_column(tr, t, "expression", "varchar", STORAGE_MAX_VALUE_LENGTH);
+
+	t = bootstrap_create_table(tr, s, "range_partitions");
+	bootstrap_create_column(tr, t, "table_id", "int", 32);
+	bootstrap_create_column(tr, t, "partition_id", "int", 32);
+	bootstrap_create_column(tr, t, "minimum", "varchar", STORAGE_MAX_VALUE_LENGTH);
+	bootstrap_create_column(tr, t, "maximum", "varchar", STORAGE_MAX_VALUE_LENGTH);
+	bootstrap_create_column(tr, t, "with_nulls", "boolean", 1);
+
+	t = bootstrap_create_table(tr, s, "value_partitions");
+	bootstrap_create_column(tr, t, "table_id", "int", 32);
+	bootstrap_create_column(tr, t, "partition_id", "int", 32);
+	bootstrap_create_column(tr, t, "value", "varchar", STORAGE_MAX_VALUE_LENGTH);
+
 	t = bootstrap_create_table(tr, s, "dependencies");
 	bootstrap_create_column(tr, t, "id", "int", 32);
 	bootstrap_create_column(tr, t, "depend_id", "int", 32);
@@ -1743,24 +1761,6 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "null", "boolean", 1);
 		bootstrap_create_column(tr, t, "number", "int", 32);
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
-
-		t = bootstrap_create_table(tr, s, "_table_partitions");
-		bootstrap_create_column(tr, t, "id", "int", 32);
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "column_id", "int", 32);
-		bootstrap_create_column(tr, t, "expression", "varchar", STORAGE_MAX_VALUE_LENGTH);
-
-		t = bootstrap_create_table(tr, s, "_range_partitions");
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "partition_id", "int", 32);
-		bootstrap_create_column(tr, t, "minimum", "varchar", STORAGE_MAX_VALUE_LENGTH);
-		bootstrap_create_column(tr, t, "maximum", "varchar", STORAGE_MAX_VALUE_LENGTH);
-		bootstrap_create_column(tr, t, "with_nulls", "boolean", 1);
-
-		t = bootstrap_create_table(tr, s, "_value_partitions");
-		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "partition_id", "int", 32);
-		bootstrap_create_column(tr, t, "value", "varchar", STORAGE_MAX_VALUE_LENGTH);
 
 		t = bootstrap_create_table(tr, s, "keys");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -4278,7 +4278,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 		sys_drop_parts(tr, t, drop_action);
 
 	if(isRangePartitionTable(t) || isListPartitionTable(t)) {
-		sql_table *partitions = find_sql_table(syss, "_table_partitions");
+		sql_table *partitions = find_sql_table(syss, "table_partitions");
 		sql_column *pcols = find_sql_column(partitions, "table_id");
 		rids *rs = table_funcs.rids_select(tr, pcols, &t->base.id, &t->base.id, NULL);
 		oid poid;
@@ -4720,10 +4720,10 @@ int
 sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max,
 							  int with_nills, int update, sql_part **err)
 {
-	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sysobj = find_sql_table(syss, "objects");
-	sql_table *partitions = find_sql_table(syss, "_table_partitions");
-	sql_table *ranges = find_sql_table(syss, "_range_partitions");
+	sql_table *partitions = find_sql_table(syss, "table_partitions");
+	sql_table *ranges = find_sql_table(syss, "range_partitions");
 	sql_part *p;
 	int localtype = tpe.type->localtype, *v, res = 0;
 	ValRecord vmin, vmax;
@@ -4732,6 +4732,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	oid rid;
 	ptr ok;
 
+	assert(isGlobal(mt));
 	memset(&vmin, 0, sizeof(ValRecord));
 	memset(&vmax, 0, sizeof(ValRecord));
 
@@ -4836,14 +4837,15 @@ int
 sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, int with_nills,
 							  int update, sql_part **err)
 {
-	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sysobj = find_sql_table(syss, "objects");
-	sql_table *partitions = find_sql_table(syss, "_table_partitions");
-	sql_table *values = find_sql_table(syss, "_value_partitions");
+	sql_table *partitions = find_sql_table(syss, "table_partitions");
+	sql_table *values = find_sql_table(syss, "value_partitions");
 	sql_part *p;
 	oid rid;
 	int localtype = tpe.type->localtype, *v, i = 0;
 
+	assert(isGlobal(mt));
 	if(!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
 		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
@@ -4936,11 +4938,13 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 		return NULL;
 
 	if(isRangePartitionTable(mt)) {
-		sql_table *ranges = find_sql_table(syss, "_range_partitions");
+		assert(isGlobal(mt));
+		sql_table *ranges = find_sql_table(syss, "range_partitions");
 		rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
 		table_funcs.table_delete(tr, ranges, rid);
 	} else if(isListPartitionTable(mt)) {
-		sql_table *values = find_sql_table(syss, "_value_partitions");
+		assert(isGlobal(mt));
+		sql_table *values = find_sql_table(syss, "value_partitions");
 		rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
 		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 			table_funcs.table_delete(tr, values, rid);
@@ -5014,7 +5018,7 @@ sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
 {
 	if(t && (isRangePartitionTable(t) || isListPartitionTable(t))) {
 		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
-		sql_table *partitions = find_sql_table(syss, "_table_partitions");
+		sql_table *partitions = find_sql_table(syss, "table_partitions");
 		oid next = next_oid();
 		if(isPartitionedByColumnTable(t)) {
 			assert(t->part.pcol);

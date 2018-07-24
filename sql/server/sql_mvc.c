@@ -60,7 +60,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	int first = 0;
 	sql_schema *s;
 	sql_table *t;
-	sqlid tid = 0, ntid, cid = 0, ncid, pid, rrid, lid, dpid, drid, dlid;
+	sqlid tid = 0, ntid, cid = 0, ncid;
 	mvc *m;
 
 	logger_settings log_settings;
@@ -133,9 +133,6 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		if (!first) {
 			str output;
 			MVC_INIT_DROP_TABLE(tid,  "tables")
-			MVC_INIT_DROP_TABLE(pid,  "table_partitions")
-			MVC_INIT_DROP_TABLE(rrid, "range_partitions")
-			MVC_INIT_DROP_TABLE(lid,  "value_partitions")
 			MVC_INIT_DROP_TABLE(cid,  "columns")
 		}
 
@@ -167,72 +164,6 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
 			}
 			table_funcs.rids_destroy(rs);
-		}
-
-		t = mvc_create_view(m, s, "table_partitions", SQL_PERSIST, "SELECT \"id\", \"table_id\", \"column_id\", \"expression\" FROM \"sys\".\"_table_partitions\" UNION ALL SELECT \"id\", \"table_id\", \"column_id\", \"expression\" FROM \"tmp\".\"_table_partitions\";", 1);
-		dpid = t->base.id;
-		mvc_create_column_(m, t, "id", "int", 32);
-		mvc_create_column_(m, t, "table_id", "int", 32);
-		mvc_create_column_(m, t, "column_id", "int", 32);
-		mvc_create_column_(m, t, "expression", "varchar", 2048);
-
-		if (!first) {
-			int pub = ROLE_PUBLIC;
-			int p = PRIV_SELECT;
-			int zero = 0;
-			sql_table *privs = find_sql_table(s, "privileges");
-			sql_table *deps = find_sql_table(s, "dependencies");
-			sql_column *depids = find_sql_column(deps, "id");
-			oid rid;
-
-			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &pid, NULL)) != oid_nil) {
-				table_funcs.column_update_value(m->session->tr, depids, rid, &dpid);
-			}
-		}
-
-		t = mvc_create_view(m, s, "range_partitions", SQL_PERSIST, "SELECT \"table_id\", \"partition_id\", \"minimum\", \"maximum\", \"with_nulls\" FROM \"sys\".\"_range_partitions\" UNION ALL SELECT \"table_id\", \"partition_id\", \"minimum\", \"maximum\", \"with_nulls\" FROM \"tmp\".\"_range_partitions\";", 1);
-		drid = t->base.id;
-		mvc_create_column_(m, t, "table_id", "int", 32);
-		mvc_create_column_(m, t, "partition_id", "int", 32);
-		mvc_create_column_(m, t, "minimum", "varchar", STORAGE_MAX_VALUE_LENGTH);
-		mvc_create_column_(m, t, "maximum", "varchar", STORAGE_MAX_VALUE_LENGTH);
-		mvc_create_column_(m, t, "with_nulls", "boolean", 1);
-
-		if (!first) {
-			int pub = ROLE_PUBLIC;
-			int p = PRIV_SELECT;
-			int zero = 0;
-			sql_table *privs = find_sql_table(s, "privileges");
-			sql_table *deps = find_sql_table(s, "dependencies");
-			sql_column *depids = find_sql_column(deps, "id");
-			oid rid;
-
-			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &rrid, NULL)) != oid_nil) {
-				table_funcs.column_update_value(m->session->tr, depids, rid, &drid);
-			}
-		}
-
-		t = mvc_create_view(m, s, "value_partitions", SQL_PERSIST, "SELECT \"table_id\", \"partition_id\", \"value\" FROM \"sys\".\"_value_partitions\" UNION ALL SELECT \"table_id\", \"partition_id\", \"value\" FROM \"tmp\".\"_value_partitions\";", 1);
-		dlid = t->base.id;
-		mvc_create_column_(m, t, "table_id", "int", 32);
-		mvc_create_column_(m, t, "partition_id", "int", 32);
-		mvc_create_column_(m, t, "value", "varchar", STORAGE_MAX_VALUE_LENGTH);
-
-		if (!first) {
-			int pub = ROLE_PUBLIC;
-			int p = PRIV_SELECT;
-			int zero = 0;
-			sql_table *privs = find_sql_table(s, "privileges");
-			sql_table *deps = find_sql_table(s, "dependencies");
-			sql_column *depids = find_sql_column(deps, "id");
-			oid rid;
-
-			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &lid, NULL)) != oid_nil) {
-				table_funcs.column_update_value(m->session->tr, depids, rid, &dlid);
-			}
 		}
 
 		t = mvc_create_view(m, s, "columns", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;", 1);
