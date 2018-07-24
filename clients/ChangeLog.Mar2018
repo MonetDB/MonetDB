@@ -1,3 +1,6 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Jul 24 2018 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Implemented SQL_ATTR_QUERY_TIMEOUT parameter in SQLSetStmtAttr.
+
