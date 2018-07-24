@@ -71,7 +71,7 @@ Ready.
 #ALTER TABLE updateme ADD TABLE subt2 AS PARTITION BETWEEN '201' AND '300';
 #ALTER TABLE updateme ADD TABLE subt1 AS PARTITION BETWEEN '1' AND '100';
 #SELECT minimum, maximum, with_nulls FROM range_partitions;
-% .range_partitions,	.range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum,	with_nulls # name
 % varchar,	varchar,	boolean # type
 % 3,	3,	5 # length
@@ -104,7 +104,7 @@ Ready.
 [ 2	]
 #ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '-100' AND '0';
 #SELECT minimum, maximum, with_nulls FROM range_partitions;
-% .range_partitions,	.range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum,	with_nulls # name
 % varchar,	varchar,	boolean # type
 % 4,	3,	5 # length
@@ -117,7 +117,7 @@ Ready.
 #START TRANSACTION;
 #ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '0' AND '200';
 #SELECT minimum, maximum, with_nulls FROM range_partitions;
-% .range_partitions,	.range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum,	with_nulls # name
 % varchar,	varchar,	boolean # type
 % 3,	3,	5 # length
@@ -127,7 +127,7 @@ Ready.
 [ 1	]
 #ROLLBACK;
 #SELECT minimum, maximum, with_nulls FROM range_partitions;
-% .range_partitions,	.range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum,	with_nulls # name
 % varchar,	varchar,	boolean # type
 % 4,	3,	5 # length

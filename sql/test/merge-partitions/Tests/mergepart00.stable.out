@@ -67,28 +67,28 @@ Ready.
 # 14:00:22 >  
 
 #SELECT COUNT(*) from table_partitions;
-% .L21 # table_name
-% L21 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) from table_partitions;
-% .L21 # table_name
-% L21 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #CREATE MERGE TABLE mysecondattempt (a int, b varchar(32)) PARTITION BY RANGE (a);
 #SELECT COUNT(*) from table_partitions;
-% .L21 # table_name
-% L21 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #DROP TABLE mysecondattempt;
 #SELECT COUNT(*) from table_partitions;
-% .L21 # table_name
-% L21 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]

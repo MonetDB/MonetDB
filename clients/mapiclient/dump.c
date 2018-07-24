@@ -2169,19 +2169,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	if (curschema) {
-		if (strcmp(sname ? sname : "sys", curschema) != 0) {
-			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
-				     sname ? sname : "sys");
-		}
-		free(curschema);
-		curschema = strdup(sname ? sname : "sys");
-	}
-	if (mapi_error(mid))
-		goto bailout;
-	if (mnstr_errnr(toConsole))
-		goto bailout2;
-
 	if ((hdl = mapi_query(mid, mergetables)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;

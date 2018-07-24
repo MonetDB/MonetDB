@@ -69,7 +69,7 @@ Ready.
 #CREATE TABLE subtable1 (a int, b varchar(32));
 #CREATE TABLE subtable2 (a int, b varchar(32));
 #SELECT column_id, expression FROM table_partitions;
-% .table_partitions,	.table_partitions # table_name
+% sys.table_partitions,	sys.table_partitions # table_name
 % column_id,	expression # name
 % int,	varchar # type
 % 1,	6 # length
@@ -107,7 +107,7 @@ Ready.
 #DROP TABLE subtable2;
 #DROP TABLE testme;
 #SELECT column_id, expression FROM table_partitions;
-% .table_partitions,	.table_partitions # table_name
+% sys.table_partitions,	sys.table_partitions # table_name
 % column_id,	expression # name
 % int,	varchar # type
 % 1,	0 # length

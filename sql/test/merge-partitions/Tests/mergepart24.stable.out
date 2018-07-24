@@ -73,7 +73,7 @@ Ready.
 #ALTER TABLE testagain ADD TABLE sublimits1 AS PARTITION IN (2, -2, addone(0), 1 + 2);
 #ALTER TABLE testagain ADD TABLE sublimits2 AS PARTITION IN (-100 * 2, '-90', '120', addtwo(55), 11.2);
 #SELECT "value" FROM value_partitions;
-% .value_partitions # table_name
+% sys.value_partitions # table_name
 % value # name
 % varchar # type
 % 4 # length
@@ -89,7 +89,7 @@ Ready.
 #ALTER TABLE testagain DROP TABLE sublimits1;
 #ALTER TABLE testagain DROP TABLE sublimits2;
 #SELECT "value" FROM value_partitions;
-% .value_partitions # table_name
+% sys.value_partitions # table_name
 % value # name
 % varchar # type
 % 0 # length
@@ -102,7 +102,7 @@ Ready.
 #ALTER TABLE testing ADD TABLE sublimits1 AS PARTITION BETWEEN 28 + 2 AND 72 - 2;
 #ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION BETWEEN addone(70) AND addtwo(98);
 #SELECT "minimum", "maximum" FROM range_partitions;
-% .range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 2,	3 # length
@@ -111,7 +111,7 @@ Ready.
 #ALTER TABLE testing DROP TABLE sublimits1;
 #ALTER TABLE testing DROP TABLE sublimits2;
 #SELECT "minimum", "maximum" FROM range_partitions;
-% .range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 0,	0 # length

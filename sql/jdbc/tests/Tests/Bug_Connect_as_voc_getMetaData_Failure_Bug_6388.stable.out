@@ -90,10 +90,7 @@ DatabaseMinorVersion = 27+
 4.7. getTables(null, 'tmp', null, null)
 List Tables in schema tmp:
 _columns
-_range_partitions
-_table_partitions
 _tables
-_value_partitions
 idxs
 keys
 objects

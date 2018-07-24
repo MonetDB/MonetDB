@@ -71,13 +71,13 @@ Ready.
 #CREATE MERGE TABLE listparts (b varchar(32)) PARTITION BY RANGE (b);
 #CREATE TABLE subtable1 (b varchar(32));
 #SELECT minimum, maximum FROM range_partitions;
-% .range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 0,	0 # length
 #ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello' AND 'world';
 #SELECT minimum, maximum FROM range_partitions;
-% .range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 5,	5 # length
@@ -85,7 +85,7 @@ Ready.
 #ALTER TABLE listparts DROP TABLE subtable1;
 #ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '"hello"' AND '"world"';
 #SELECT minimum, maximum FROM range_partitions;
-% .range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 7,	7 # length
@@ -93,14 +93,14 @@ Ready.
 #ALTER TABLE listparts DROP TABLE subtable1;
 #ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello"' AND '"world';
 #SELECT minimum, maximum FROM range_partitions;
-% .range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 0,	0 # length
 #INSERT INTO subtable1 VALUES ('wrong');
 [ 1	]
 #SELECT minimum, maximum FROM range_partitions;
-% .range_partitions,	.range_partitions # table_name
+% sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 0,	0 # length
