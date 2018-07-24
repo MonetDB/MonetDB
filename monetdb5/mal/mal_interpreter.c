@@ -356,7 +356,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	if (stk && stk != env)
 		freeStack(stk);
 	if (ret == MAL_SUCCEED && cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
-		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
 
@@ -453,7 +453,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	if (stk) 
 		garbageCollector(cntxt, mb, stk, TRUE);
 	if ( ret == MAL_SUCCEED && cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
-		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+		throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
 
@@ -526,7 +526,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (cntxt->stimeout && cntxt->session && GDKusec()- cntxt->session > cntxt->stimeout) {
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
-			throw(MAL, "mal.interpreter", RUNTIME_SESSION_TIMEOUT);
+			throw(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
 		}
 	} 
 	stkpc = startpc;
@@ -778,7 +778,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 				garbageCollector(cntxt, mb, stk, TRUE);
 			if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
-				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				break;
 			}
 			stkpc = mb->stop;	// force end of loop
@@ -797,7 +797,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				ret = createException(MAL,"interpreter", "failed instruction2str");
 			}
 			if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
-				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				break;
 			}
 			stkpc= mb->stop;
@@ -917,7 +917,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* unknown exceptions lead to propagation */
 			if (exceptionVar == -1) {
 				if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout)
-					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+					ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 				stkpc = mb->stop;
 				continue;
 			}
@@ -963,7 +963,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			if (stkpc == mb->stop) {
 				if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
-					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+					ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
 				}
 				continue;
@@ -1194,7 +1194,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 		if (cntxt->qtimeout && mb->starttime && GDKusec()- mb->starttime > cntxt->qtimeout){
 			if (ret == MAL_SUCCEED)
-				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				ret= createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
 			stkpc= mb->stop;
 		}
 	}
