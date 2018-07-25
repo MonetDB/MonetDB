@@ -1196,6 +1196,7 @@ atom *
 atom_add(atom *a1, atom *a2)
 {
 	ValRecord dst;
+
 	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
 		return NULL;
 	}
@@ -1211,6 +1212,8 @@ atom_add(atom *a1, atom *a2)
 		return NULL;
 	a1->data = dst;
 	dst.vtype = TYPE_dbl;
+	if (a1->isnull || a2->isnull)
+		a1->isnull = 1;
 	if (VARconvert(&dst, &a1->data, 1) == GDK_SUCCEED)
 		a1->d = dst.val.dval;
 	return a1;
@@ -1220,6 +1223,7 @@ atom *
 atom_sub(atom *a1, atom *a2)
 {
 	ValRecord dst;
+
 	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
 		return NULL;
 	}
@@ -1237,6 +1241,8 @@ atom_sub(atom *a1, atom *a2)
 		a1 = a2;
 	a1->data = dst;
 	dst.vtype = TYPE_dbl;
+	if (a1->isnull || a2->isnull) 
+		a1->isnull = 1;
 	if (VARconvert(&dst, &a1->data, 1) == GDK_SUCCEED)
 		a1->d = dst.val.dval;
 	return a1;
@@ -1255,6 +1261,10 @@ atom_mul(atom *a1, atom *a2)
 		dst.vtype = v1.vtype = v2.vtype = TYPE_dbl;
 		v1.val.dval = a1->d;
 		v2.val.dval = a2->d;
+		if (a1->isnull)
+			return a1;
+		if (a2->isnull)
+			return a2;
 		if (VARcalcmul(&dst, &v1, &v2, 1) != GDK_SUCCEED)
 			return NULL;
 		a1->data.vtype = TYPE_dbl;
@@ -1267,6 +1277,10 @@ atom_mul(atom *a1, atom *a2)
 		atom *t = a1;
 		a1 = a2;
 		a2 = t;
+	}
+	if (a1->isnull || a2->isnull) {
+		a1->isnull = 1;
+		return a1;
 	}
 	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
@@ -1283,6 +1297,9 @@ int
 atom_inc( atom *a )
 {
 	ValRecord dst;
+
+	if (a->isnull)
+		return -1;
 	dst.vtype = a->data.vtype;
 	if (VARcalcincr(&dst, &a->data, 1) != GDK_SUCCEED)
 		return -1;
@@ -1296,6 +1313,8 @@ atom_inc( atom *a )
 int
 atom_is_zero( atom *a )
 {
+	if (a->isnull)
+		return 0;
 	switch(a->tpe.type->localtype) {
 	case TYPE_bte:
 		return a->data.val.btval == 0;
@@ -1322,6 +1341,8 @@ atom_is_zero( atom *a )
 int
 atom_is_true( atom *a )
 {
+	if (a->isnull)
+		return 0;
 	switch(a->tpe.type->localtype) {
 	case TYPE_bit:
 		return a->data.val.btval != 0;
