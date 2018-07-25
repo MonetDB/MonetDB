@@ -5742,8 +5742,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 static void
 positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 {
-	if (!rel->exps) 
-		assert(0);
+	assert(rel->exps);
 
 	if ((is_topn(subrel->op) || is_sample(subrel->op)) && subrel->l)
 		subrel = subrel->l;
