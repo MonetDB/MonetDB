@@ -5914,8 +5914,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 static void
 positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 {
-	if (!rel->exps) 
-		assert(0);
+	assert(rel->exps);
 
 	if ((is_topn(subrel->op) || is_sample(subrel->op)) && subrel->l)
 		subrel = subrel->l;
@@ -8593,7 +8592,8 @@ exp_find_conflicts(mvc *sql, sql_exp *e, list *aexps, list *conflicts)
 			exps_find_conflicts(sql, e->l, aexps, conflicts);
 			exps_find_conflicts(sql, e->r, aexps, conflicts);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			exps_find_conflicts(sql, e->l, aexps, conflicts);
+			exp_find_conflicts(sql, e->l, aexps, conflicts);
+			exps_find_conflicts(sql, e->r, aexps, conflicts);
 		} else {
 			exp_find_conflicts(sql, e->l, aexps, conflicts);
 			exp_find_conflicts(sql, e->r, aexps, conflicts);

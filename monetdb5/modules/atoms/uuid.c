@@ -37,7 +37,12 @@
 #endif
 #define UUID_STRLEN	36			/* length of string representation */
 
-typedef struct {
+typedef union {
+#ifdef HAVE_HGE
+	hge h;						/* force alignment, not otherwise used */
+#else
+	lng l[2];					/* force alignment, not otherwise used */
+#endif
 #ifdef HAVE_UUID
 	uuid_t u;
 #else

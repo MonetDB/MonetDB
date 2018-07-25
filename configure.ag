@@ -735,6 +735,12 @@ AS_VAR_IF([enable_sanitizer], [no], [], [
 AC_SUBST([CFLAGS])
 AC_SUBST([X_CFLAGS])
 
+# see https://software.intel.com/en-us/forums/intel-c-compiler/topic/760979
+AS_CASE([$CC_ver], [icc-*], [
+	AS_IF([test -f /usr/include/math.h && ! grep -q _LIB_VERSION_TYPE /usr/include/math.h],
+		[AC_DEFINE([INTEL_MATH_H_HACK], 1,
+			[Define if using Intel compiler with icompatible system math.h])])])
+
 AC_MSG_CHECKING([for ld -Bsymbolic-functions option])
 save_LDFLAGS="$LDFLAGS"
 LDFLAGS="$LDFLAGS -Wl,-Bsymbolic-functions"
@@ -2920,6 +2926,17 @@ AH_TOP([
 @%:@define _SEEN_MONETDB_CONFIG_H 1
 ])
 AH_BOTTOM([
+@%:@ifdef INTEL_MATH_H_HACK
+/* see https://software.intel.com/en-us/forums/intel-c-compiler/topic/760979 */
+typedef enum {
+	_IEEE_ = -1,	/* According to IEEE 754/IEEE 854.  */
+	_SVID_,		/* According to System V, release 4.  */
+	_XOPEN_,	/* Nowadays also Unix98.  */
+	_POSIX_,
+	_ISOC_		/* Actually this is ISO C99.  */
+} _LIB_VERSION_TYPE;
+@%:@endif
+
 @%:@ifdef HAVE_SYS_TYPES_H
 @%:@ include <sys/types.h>
 @%:@endif
