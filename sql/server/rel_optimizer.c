@@ -8416,7 +8416,8 @@ exp_find_conflicts(mvc *sql, sql_exp *e, list *aexps, list *conflicts)
 			exps_find_conflicts(sql, e->l, aexps, conflicts);
 			exps_find_conflicts(sql, e->r, aexps, conflicts);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			exps_find_conflicts(sql, e->l, aexps, conflicts);
+			exp_find_conflicts(sql, e->l, aexps, conflicts);
+			exps_find_conflicts(sql, e->r, aexps, conflicts);
 		} else {
 			exp_find_conflicts(sql, e->l, aexps, conflicts);
 			exp_find_conflicts(sql, e->r, aexps, conflicts);
