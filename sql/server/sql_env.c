@@ -44,10 +44,18 @@
 #define SESSION_RO 1
 
 str
+#ifdef HAVE_HGE
+sql_update_var(mvc *m, const char *name, char *sval, hge sgn)
+#else
 sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
+#endif
 {
 	if (strcmp(name, "debug") == 0) {
+#ifdef HAVE_HGE
+		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 		m->debug = (int) sgn;
 	} else if (strcmp(name, "current_schema") == 0) {
 		if (!mvc_set_schema(m, sval)) {
@@ -58,13 +66,25 @@ sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
 			throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", sval);
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
+#ifdef HAVE_HGE
+		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 		m->timezone = (int) sgn;
 	} else if (strcmp(name, "cache") == 0) {
+#ifdef HAVE_HGE
+		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 		m->cache = (int) sgn;
 	} else if (strcmp(name, "history") == 0) {
+#ifdef HAVE_HGE
+		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 		m->history = (sgn != 0);
 	} 
 	return NULL;

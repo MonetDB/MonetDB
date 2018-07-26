@@ -687,8 +687,8 @@ IMPSprint(BAT *b)
 	bte j;
 	int i;
 
-	if (BATimprints(b) != GDK_SUCCEED) {
-		GDKclrerr(); /* not interested in BATimprints errors */
+	if (!BATcheckimprints(b)) {
+		fprintf(stderr, "no imprint\n");
 		return;
 	}
 	imprints = b->timprints;
