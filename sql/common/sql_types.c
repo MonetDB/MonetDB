@@ -1228,7 +1228,7 @@ sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char
 }
 
 static sql_func *
-sql_create_func_res(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale, int scale)
+sql_create_func_res(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale, unsigned int scale)
 {
 	list *l = sa_list(sa);
 	sql_arg *sres;

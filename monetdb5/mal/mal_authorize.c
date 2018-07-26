@@ -76,7 +76,7 @@ AUTHfindUser(const char *username)
 	BATiter cni = bat_iterator(user);
 	BUN p;
 
-	if (BAThash(user, 0) == GDK_SUCCEED) {
+	if (BAThash(user) == GDK_SUCCEED) {
 		HASHloop_str(cni, cni.b->thash, p, username) {
 			oid pos = p;
 			if (BUNfnd(duser, &pos) == BUN_NONE)
@@ -975,7 +975,7 @@ lookupRemoteTableKey(const char *key)
 	assert(rt_key);
 	assert(rt_deleted);
 
-	if (BAThash(rt_key, 0) == GDK_SUCCEED) {
+	if (BAThash(rt_key) == GDK_SUCCEED) {
 		HASHloop_str(cni, cni.b->thash, p, key) {
 			oid pos = p;
 			if (BUNfnd(rt_deleted, &pos) == BUN_NONE)

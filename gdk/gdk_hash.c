@@ -341,7 +341,7 @@ BAThashsync(void *arg)
  * stored under the hash function.
  */
 Hash *
-BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
+BAThash_impl(BAT *b, BAT *s, const char *ext)
 {
 	lng t0 = 0;
 	unsigned int tpe = ATOMbasetype(b->ttype);
@@ -382,10 +382,7 @@ BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 
 	/* determine hash mask size */
 	cnt1 = 0;
-	if (masksize > 0) {
-		/* specified by caller */
-		mask = HASHmask(masksize);
-	} else if (ATOMsize(tpe) == 1) {
+	if (ATOMsize(tpe) == 1) {
 		/* perfect hash for one-byte sized atoms */
 		mask = (1 << 8);
 	} else if (ATOMsize(tpe) == 2) {
@@ -560,7 +557,7 @@ BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
 }
 
 gdk_return
-BAThash(BAT *b, BUN masksize)
+BAThash(BAT *b)
 {
 	assert(b->batCacheid > 0);
 	if (BATcheckhash(b)) {
@@ -568,7 +565,7 @@ BAThash(BAT *b, BUN masksize)
 	}
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->thash == NULL) {
-		if ((b->thash = BAThash_impl(b, NULL, masksize, "thash")) == NULL) {
+		if ((b->thash = BAThash_impl(b, NULL, "thash")) == NULL) {
 			MT_lock_unset(&GDKhashLock(b->batCacheid));
 			return GDK_FAIL;
 		}

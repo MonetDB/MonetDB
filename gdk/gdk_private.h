@@ -18,6 +18,13 @@
 /* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
 
+#if !__has_attribute(__visibility__)
+#define __visibility__(a)
+#endif
+#if !__has_attribute(__cold__)
+#define __cold__
+#endif
+
 #include "gdk_system_private.h"
 
 enum heaptype {
@@ -60,7 +67,7 @@ __hidden void BATfree(BAT *b)
 __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden Hash *BAThash_impl(BAT *b, BAT *s, BUN masksize, const char *ext)
+__hidden Hash *BAThash_impl(BAT *b, BAT *s, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -77,7 +84,8 @@ __hidden void BATsetdims(BAT *b)
 __hidden gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void BBPdump(void);		/* never called: for debugging only */
+void BBPdump(void)		/* never called: for debugging only */
+	__attribute__((__cold__));
 __hidden void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BBPgetdesc(bat i)
@@ -189,8 +197,8 @@ __hidden void IMPSfree(BAT *b)
 __hidden int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
-__hidden void IMPSprint(BAT *b)
-	__attribute__((__visibility__("hidden")));
+void IMPSprint(BAT *b)		/* never called: for debugging only */
+	__attribute__((__cold__));
 #endif
 __hidden void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
@@ -241,7 +249,7 @@ __hidden void gdk_system_reset(void)
 			b->tnonil ? "N" : "",		\
 			b->thash ? "H" : "",		\
 			b->torderidx ? "O" : "",	\
-			b->timprints ? "I" : ""
+			b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)				\
@@ -259,7 +267,7 @@ __hidden void gdk_system_reset(void)
 			b && b->tnonil ? "N" : "",	\
 			b && b->thash ? "H" : "",	\
 			b && b->torderidx ? "O" : "",	\
-			b && b->timprints ? "I" : ""
+			b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
 
 #define BBP_BATMASK	511
 #define BBP_THREADMASK	63

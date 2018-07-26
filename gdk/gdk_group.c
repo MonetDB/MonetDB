@@ -966,7 +966,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
 		    (b->batPersistence == PERSISTENT &&
-		     BAThash(b, 0) == GDK_SUCCEED) ||
+		     BAThash(b) == GDK_SUCCEED) ||
 		    ((parent = VIEWtparent(b)) != 0 &&
 		     BATcheckhash(BBPdescriptor(parent))))) {
 		/* we already have a hash table on b, or b is

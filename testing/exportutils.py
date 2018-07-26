@@ -48,7 +48,8 @@ def preprocess(data):
             args = tuple([x.strip() for x in args.split(',')])
             if len(args) == 1 and args[0] == '':
                 args = ()       # empty argument list
-            if name not in defines or not defines[name][1].strip():
+            if name not in ('__attribute__', '__format__', '__alloc_size__') and \
+               (name not in defines or not defines[name][1].strip()):
                 defines[name] = (args, body)
         else:
             changed = True
