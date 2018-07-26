@@ -581,7 +581,11 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	src = &stk->stk[getArg(pci, 3)];
 	if (stack_find_var(m, varname)) {
+#ifdef HAVE_HGE
+		hge sgn = val_get_number(src);
+#else
 		lng sgn = val_get_number(src);
+#endif
 		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL) {
 			snprintf(buf, BUFSIZ, "%s", msg);
 			if (strlen(msg) > 6 && msg[5] == '!')
