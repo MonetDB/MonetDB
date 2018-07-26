@@ -541,7 +541,7 @@ atom_num_digits( atom *a )
 #else
 	lng v = 0;
 #endif
-	int inlen = 1;
+	unsigned int inlen = 1;
 
 	switch(a->tpe.type->localtype) {
 	case TYPE_bte:
