@@ -38,6 +38,10 @@ enum malexception {
 #define rethrow(FCN, TMP, PRV) \
 	{if ((TMP = PRV) != MAL_SUCCEED) return(TMP);}
 
+#if !__has_attribute(__returns_nonnull__)
+#define __returns_nonnull__
+#endif
+
 mal_export str createException(enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 3, 4)))
