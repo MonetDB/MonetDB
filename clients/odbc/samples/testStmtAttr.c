@@ -81,21 +81,21 @@ GetSetReGetStmtAttr(SQLHANDLE stmt, SQLINTEGER attribute, const char * attr_name
 
 	// first get the actual value from the server
 	ret = SQLGetStmtAttr(stmt, attribute, &ul, sizeof(ul), &resultlen);
-	fprintf(stderr, "Get %s: %u\n", attr_name, (unsigned int) ul);
+	fprintf(stderr, "Get %s: %lu\n", attr_name, (long unsigned int) ul);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLGetStmtAttr");
 
 	// next change the value on the server
 	ret = SQLSetStmtAttr(stmt, attribute, &value, 0);
-	fprintf(stderr, "Set %s: %u\n", attr_name, (unsigned int) value);
+	fprintf(stderr, "Set %s: %lu\n", attr_name, (long unsigned int) value);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLSetStmtAttr");
 
 	// next re-get the value from the server, should be the same as the set value
 	ul = 123456789;
 	ret = SQLGetStmtAttr(stmt, attribute, &ul, sizeof(ul), &resultlen);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLGetStmtAttr");
-	fprintf(stderr, "Get changed %s: %u", attr_name, (unsigned int) ul);
+	fprintf(stderr, "Get changed %s: %lu", attr_name, (long unsigned int) ul);
 	if (ul != value)
-		fprintf(stderr, " which is different from %u !!", value);
+		fprintf(stderr, " which is different from %lu !!", (long unsigned int) value);
 	fprintf(stderr, "\n\n");
 }
 
