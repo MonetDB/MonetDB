@@ -1788,6 +1788,54 @@ store_suspend_log(void)
 	MT_lock_unset(&bs_lock);
 }
 
+static const char *
+snapshot_prepare_target(const char *dest)
+{
+	struct stat statbuf;
+	char path[FILENAME_MAX];
+	DIR *dir;
+	struct dirent *dirent;
+
+	if (!MT_path_absolute(dest))
+		return "destination must be absolute path";
+
+	// check if parent dir exists
+	strncpy(path, dest, sizeof(path));
+	*strrchr(path, DIR_SEP) = '\0';
+	if (stat(path, &statbuf) < 0)
+		return errno == ENOENT ? "parent of destdir must exist" : strerror(errno);
+	if ((statbuf.st_mode & S_IFDIR) == 0)
+		return "parent of destdir must be a directory";
+
+	// create dir if necessary
+	if (mkdir(dest, 0755) < 0 && errno != EEXIST)
+		return strerror(errno);
+	// EEXIST may also mean it's an existing FILE
+	if (stat(dest, &statbuf) < 0)
+		return strerror(errno);
+	if ((statbuf.st_mode & S_IFDIR) == 0)
+		return "destdir must be a directory";
+
+	// if it already existed it should be empty
+	dir = opendir(dest);
+	if (!dir)
+		return strerror(errno); // unlikely
+	while ((dirent = readdir(dir)) != NULL) {
+		if (strcmp(".", dirent->d_name) == 0)
+			continue;
+		if (strcmp("..", dirent->d_name) == 0)
+			continue;
+		closedir(dir);
+		if (dirent->d_name[0] == '.')
+			return "destdir must be empty but contains a hidden file";
+		else
+			return "if destdir exists it must be empty";
+	}
+	closedir(dir);
+	
+	return NULL;
+}
+
 const char *
 store_hot_snapshot(const char *dir)
 {
@@ -1830,7 +1878,9 @@ store_hot_snapshot(const char *dir)
 	fprintf(stderr, "#end prepare hot_snapshot %s\n", dir);
 
 	fprintf(stderr, "#begin execute hot_snapshot %s\n", dir);
-	(void)dir;
+	err = snapshot_prepare_target(dir);
+	if (err)
+		goto end;
 	fprintf(stderr, "#end execute hot_snapshot %s\n", dir);
 
 end:
@@ -1842,6 +1892,8 @@ end:
 	}
 	if (plan_stream)
 		close_stream(plan_stream);
+	if (err)
+		fprintf(stderr, "#abort hot_snapshot: %s\n", err);
 	return err;
 }
 
