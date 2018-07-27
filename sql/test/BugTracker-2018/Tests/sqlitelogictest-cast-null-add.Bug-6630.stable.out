@@ -1,28 +1,28 @@
 stdout of test 'sqlitelogictest-cast-null-add.Bug-6630` in directory 'sql/test/BugTracker-2018` itself:
 
 
-# 16:13:37 >  
-# 16:13:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35639" "--set" "mapi_usock=/var/tmp/mtest-10835/.s.monetdb.35639" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
-# 16:13:37 >  
+# 09:45:20 >  
+# 09:45:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38173" "--set" "mapi_usock=/var/tmp/mtest-7370/.s.monetdb.38173" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Mar2018/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 09:45:20 >  
 
 # MonetDB 5 server v11.29.8
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
-# Found 15.386 GiB available main-memory.
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://xps13:35639/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10835/.s.monetdb.35639
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:38173/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7370/.s.monetdb.38173
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 16:13:37 >  
-# 16:13:37 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10835" "--port=35639"
-# 16:13:37 >  
+# 09:45:20 >  
+# 09:45:20 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7370" "--port=38173"
+# 09:45:20 >  
 
 #CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
@@ -30,10 +30,10 @@ Ready.
 [ 3	]
 #INSERT INTO tab2 VALUES(64,77,40), (75,67,58), (46,51,23);
 [ 3	]
-#SELECT 0 + CAST ( NULL AS INTEGER ) + 0; -- NULL
+#SELECT CAST ( 0 + CAST ( NULL AS INTEGER ) + 0 AS BIGINT ); -- NULL
 % .L3 # table_name
 % L3 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ NULL	]
 #SELECT CAST ( 90 + CAST ( NULL AS INTEGER ) + + - 90 AS BIGINT ) FROM tab1 AS cor0 WHERE NULL IS NULL;
@@ -84,7 +84,7 @@ Ready.
 #DROP TABLE tab1;
 #DROP TABLE tab2;
 
-# 16:13:37 >  
-# 16:13:37 >  "Done."
-# 16:13:37 >  
+# 09:45:20 >  
+# 09:45:20 >  "Done."
+# 09:45:20 >  
 
