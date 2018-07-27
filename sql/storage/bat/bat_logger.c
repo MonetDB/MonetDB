@@ -342,6 +342,20 @@ bl_reload_shared(void)
 	return logger_reload(bat_logger_shared) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
+static void
+snapshot_file(stream *plan, char *name, long extent)
+{
+	mnstr_printf(plan, "%ld %s\n", extent, name);
+}
+
+static void
+snapshot_heap(stream *plan, Heap *heap)
+{
+	long extent = heap->free;
+	char *name = heap->filename;
+	mnstr_printf(plan, "%ld %s%c%s\n", extent, BATDIR, DIR_SEP, name);
+}
+
 static const char*
 snapshot_wal(stream *plan)
 {
@@ -355,15 +369,35 @@ snapshot_wal(stream *plan)
 	 * everything after pos is currently garbage and irrelevant to this
 	 * snapshot.
 	 */
-	mnstr_printf(plan, "%ld %s\n", pos, log_file);
+	snapshot_file(plan, log_file, pos);
 	return NULL;
 }
 
 static const char*
 snapshot_bbp(stream *plan)
 {
-	/* to be implemented */
-	(void) plan;
+	/* UH OH we probably have to obtain some sort of lock first */
+
+	bat active_bats = getBBPsize();
+
+	for (bat id = 1; id < active_bats; id++) {
+		if (BBP_status(id) & BBPPERSISTENT) {
+			BAT *b = BBP_desc(id);
+			snapshot_heap(plan, &b->theap);
+			if (b->tvheap)
+				snapshot_heap(plan, b->tvheap);
+			if (b->torderidx)
+				snapshot_heap(plan, b->torderidx);
+			if (b->thash)
+				snapshot_heap(plan, &b->thash->heap);
+			// HMMM.. definition of b->timprints not available here so
+			// b->timprints->heap unreachable. Hopefully the system can 
+			//reconstruct them.
+		}
+	}
+
+	/* UH OH don't forget to include the contents of BBP.dir */
+
 	return NULL;
 }
 
