@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Jul 27 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Removed batDirty flag from BAT record.  Its function is completely
+  superseded by batDirtydesc and the dirty flags on the various heaps.
+
 * Tue Jul 24 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Removed "masksize" argument of function BAThash.
 

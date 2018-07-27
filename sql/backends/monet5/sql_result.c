@@ -1007,7 +1007,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					}
 				}
 				fmt[i].ci = bat_iterator(fmt[i].c);
-				fmt[i].c->batDirty = TRUE;
+				fmt[i].c->batDirtydesc = TRUE;
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){

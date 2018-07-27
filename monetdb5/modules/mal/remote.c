@@ -1355,7 +1355,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	if (bb.Ttype == TYPE_str && bb.size)
 		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
 	BATsetcount(b, bb.size);
-	b->batDirty = TRUE;
+	b->batDirtydesc = true;
 
 	/* read blockmode flush */
 	while (mnstr_read(in, &tmp, 1, 1) > 0) {

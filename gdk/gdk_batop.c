@@ -111,6 +111,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				}
 				BBPshare(n->tvheap->parentid);
 				b->tvheap = n->tvheap;
+				b->batDirtydesc = true;
 				toff = 0;
 			} else if (b->tvheap->parentid == n->tvheap->parentid &&
 				   cand == NULL) {
@@ -406,6 +407,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			r++;
 		}
 	}
+	b->theap.dirty = true;
 	return GDK_SUCCEED;
       bunins_failed:
 	b->tvarsized = true;
@@ -446,6 +448,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		}
 		BBPshare(n->tvheap->parentid);
 		b->tvheap = n->tvheap;
+		b->batDirtydesc = true;
 	}
 	if (b->tvheap == n->tvheap) {
 		/* if b and n use the same vheap, we only need to copy
@@ -464,6 +467,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 			while (cand < candend)
 				*dst++ = src[*cand++ - hseq];
 		}
+		b->theap.dirty = true;
 		BATsetcount(b, BATcount(b) + cnt);
 		return GDK_SUCCEED;
 	}
@@ -591,7 +595,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		return GDK_FAIL;
 	}
 
-	b->batDirty = true;
+	b->batDirtydesc = true;
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
@@ -731,6 +735,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 			       Tloc(n, start),
 			       cnt * Tsize(n));
 			BATsetcount(b, BATcount(b) + cnt);
+			b->theap.dirty = true;
 		} else {
 			BATiter ni = bat_iterator(n);
 
@@ -949,9 +954,11 @@ BATslice(BAT *b, BUN l, BUN h)
 		    (!bn->tvarsized &&
 		     BATatoms[bn->ttype].atomPut == NULL &&
 		     BATatoms[bn->ttype].atomFix == NULL)) {
-			if (bn->ttype)
+			if (bn->ttype) {
 				memcpy(Tloc(bn, 0), Tloc(b, p),
 				       (q - p) * Tsize(bn));
+				bn->theap.dirty = true;
+			}
 			BATsetcount(bn, h - l);
 		} else {
 			for (; p < q; p++) {

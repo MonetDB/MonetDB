@@ -719,7 +719,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           bool   batCopiedtodisk;  // BAT is saved on disk?
  *           // dynamic BAT properties
  *           int    batHeat;          // heat of BAT in the BBP
- *           sht    batDirty;         // BAT modified after last commit?
  *           bool   batDirtydesc;     // BAT descriptor specific dirty flag
  *           Heap*  batBuns;          // Heap where the buns are stored
  *           // DELTA status
@@ -838,7 +837,6 @@ typedef struct BATiter {
 /* macros to hide complexity of the BAT structure */
 #define batPersistence	S.persistence
 #define batCopiedtodisk	S.copiedtodisk
-#define batDirty	S.dirty
 #define batConvert	S.convert
 #define batDirtyflushed	S.dirtyflushed
 #define batDirtydesc	S.descdirty
@@ -1332,10 +1330,10 @@ gdk_export gdk_return BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
 
 
-#define BATdirty(b)	(!(b)->batCopiedtodisk || (b)->batDirty ||	\
+#define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->batDirtydesc ||				\
 			 (b)->theap.dirty ||				\
-			 ((b)->tvheap?(b)->tvheap->dirty:false))
+			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 
 #define PERSISTENT		0
 #define TRANSIENT		1

@@ -1771,8 +1771,6 @@ BBPdump(void)
 			b->batCount);
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
-		if (b->batDirty)
-			fprintf(stderr, " Dirty");
 		if (b->batDirtydesc)
 			fprintf(stderr, " DirtyDesc");
 		if (b->theap.parentid) {
@@ -3134,11 +3132,13 @@ BBPbackup(BAT *b, bool subcommit)
 
 	if (b->ttype != TYPE_void &&
 	    do_backup(srcdir, nme, "tail", &b->theap,
-		      b->batDirty || b->theap.dirty, subcommit) != GDK_SUCCEED)
+		      b->batDirtydesc || b->theap.dirty,
+		      subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->tvheap &&
 	    do_backup(srcdir, nme, "theap", b->tvheap,
-		      b->batDirty || b->tvheap->dirty, subcommit) != GDK_SUCCEED)
+		      b->batDirtydesc || b->tvheap->dirty,
+		      subcommit) != GDK_SUCCEED)
 		goto fail;
 	GDKfree(srcdir);
 	return GDK_SUCCEED;

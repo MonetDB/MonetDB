@@ -212,7 +212,7 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 			b->trevsorted = 0;
 		if (BATtdense(b))
 			b->tkey = TRUE;
-		b->batDirty = TRUE;
+		b->batDirtydesc = true;
 
 		if (offset > 0) {
 			BBPunfix(bv->batCacheid);

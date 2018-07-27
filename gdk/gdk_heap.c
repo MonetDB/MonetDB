@@ -552,6 +552,7 @@ HEAPcopy(Heap *dst, Heap *src)
 		memcpy(dst->base, src->base, src->free);
 		dst->hashash = src->hashash;
 		dst->cleanhash = src->cleanhash;
+		dst->dirty = true;
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
