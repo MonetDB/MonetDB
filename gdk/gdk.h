@@ -340,7 +340,9 @@
  * specific attributes that we use are known */
 #ifndef __has_attribute
 #define __has_attribute(attr)	0
+#ifndef __attribute__
 #define __attribute__(attr)	/* empty */
+#endif
 #endif
 #if !__has_attribute(__warn_unused_result__)
 #define __warn_unused_result__

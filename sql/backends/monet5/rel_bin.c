@@ -1118,10 +1118,8 @@ rel_parse_value(backend *be, char *query, char emode)
 		GDKfree(n);
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	strncpy(n, query, len);
+	snprintf(n, len + 2, "%s\n", query);
 	query = n;
-	query[len] = '\n';
-	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
 	sr = buffer_rastream(b, "sqlstatement");
@@ -2986,10 +2984,8 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	n = GDKmalloc(len + 1 + 1);
 	if (n == 0)
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	strncpy(n, query, len);
+	snprintf(n, len + 2, "%s\n", query);
 	query = n;
-	query[len] = '\n';
-	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
 	buf = buffer_rastream(b, "sqlstatement");

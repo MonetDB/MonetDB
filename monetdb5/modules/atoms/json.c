@@ -525,16 +525,8 @@ JSONglue(str res, str r, char sep)
 		GDKfree(r);
 		return NULL;
 	}
-	strcpy(n, res);
+	snprintf(n, l + len + 3, "%s%s%s", res, sep ? "," : "", r);
 	GDKfree(res);
-	if (sep) {
-		n[l] = ',';
-		strncpy(n + l + 1, r, len);
-		n[l + 1 + len] = 0;
-	} else {
-		strncpy(n + l, r, len);
-		n[l + len] = 0;
-	}
 	GDKfree(r);
 	return n;
 }

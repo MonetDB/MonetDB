@@ -66,7 +66,7 @@ WLRgetConfig(void){
 	while( fgets(line, MAXLINE, fd) ){
 		line[strlen(line)-1]= 0;
 		if( strncmp("master=", line,7) == 0)
-			strncpy(wlr_master, line + 7, IDLENGTH);
+			snprintf(wlr_master, IDLENGTH, "%s", line + 7);
 		if( strncmp("batches=", line, 8) == 0)
 			wlr_batches = atoi(line+ 8);
 		if( strncmp("tag=", line, 4) == 0)
@@ -78,7 +78,7 @@ WLRgetConfig(void){
 		if( strncmp("timelimit=", line, 10) == 0)
 			strcpy(wlr_timelimit, line + 10);
 		if( strncmp("error=", line, 6) == 0)
-			strncpy(wlr_error, line+ 6, FILENAME_MAX);
+			snprintf(wlr_error, FILENAME_MAX, "%s", line + 6);
 	}
 	fclose(fd);
 	return MAL_SUCCEED;
@@ -249,7 +249,7 @@ WLRprocess(void *arg)
 			if( mb->errors){
 				char line[FILENAME_MAX];
 				snprintf(line, FILENAME_MAX,"#wlr.process:failed further parsing '%s':\n",path);
-				strncpy(wlr_error,line, FILENAME_MAX);
+				snprintf(wlr_error, FILENAME_MAX, "%.*s", FILENAME_MAX, line);
 				mnstr_printf(GDKerr,"%s",line);
 				printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 			}
@@ -271,7 +271,7 @@ WLRprocess(void *arg)
 				goto wrapup;
 			} else
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef ){
-				strncpy(wlr_read, getVarConstant(mb, getArg(q,2)).val.sval,26);
+				snprintf(wlr_read, 26, "%s", getVarConstant(mb, getArg(q,2)).val.sval);
 				wlr_tag = getVarConstant(mb, getArg(q,1)).val.lval;
 #ifdef _WLR_DEBUG_
 				mnstr_printf(GDKerr,"#run tlimit %s  tag %s\n", wlr_timelimit, wlr_read);
@@ -317,7 +317,7 @@ WLRprocess(void *arg)
 				} else {
 					char line[FILENAME_MAX];
 					snprintf(line, FILENAME_MAX,"#wlr.process:typechecking failed '%s':\n",path);
-					strncpy(wlr_error, line, FILENAME_MAX);
+					snprintf(wlr_error, FILENAME_MAX, "%s", line);
 					mnstr_printf(GDKerr,"%s",line);
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 				}
@@ -455,7 +455,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			wlr_limit = -1;
 			if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
 				throw(SQL,"wlr.replicate",SQLSTATE(42000) "Master and replicate should be different");
-			strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
+			snprintf(wlr_master, IDLENGTH, "%s", *getArgReference_str(stk,pci,1));
 		}
 	} else  {
 		timelimit[0]=0;
