@@ -51,10 +51,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		GDKfree(b);
 		return NULL;
 	}
-	strncpy(n, query, len);
+	snprintf(n, len + 2, "%s\n", query);
 	query = n;
-	query[len] = '\n';
-	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
 	buf = buffer_rastream(b, "sqlstatement");

@@ -434,6 +434,7 @@ developer.
 %{_bindir}/smack01
 %{_bindir}/shutdowntest
 %{_bindir}/testgetinfo
+%{_bindir}/testStmtAttr
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl

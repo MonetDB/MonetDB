@@ -184,13 +184,13 @@ WLCreadConfig(FILE *fd)
 	while( fgets(path, FILENAME_MAX, fd) ){
 		path[strlen(path)-1] = 0;
 		if( strncmp("logs=", path,5) == 0)
-			strncpy(wlc_dir, path + 5, FILENAME_MAX);
+			snprintf(wlc_dir, FILENAME_MAX, "%s", path + 5);
 		if( strncmp("snapshot=", path,9) == 0)
-			strncpy(wlc_snapshot, path + 9, FILENAME_MAX);
+			snprintf(wlc_snapshot, FILENAME_MAX, "%s", path + 9);
 		if( strncmp("id=", path,3) == 0)
 			wlc_id = atol(path+ 3);
 		if( strncmp("write=", path,6) == 0)
-			strncpy(wlc_write, path + 6, 26);
+			snprintf(wlc_write, 26, "%s", path + 6);
 		if( strncmp("batches=", path, 8) == 0)
 			wlc_batches = atoi(path+ 8);
 		if( strncmp("beat=", path, 5) == 0)
@@ -338,7 +338,7 @@ WLCinit(void)
 		}
 		GDKfree(conf);
 		// we are in master mode
-		strncpy(wlc_name, GDKgetenv("gdk_dbname"),IDLENGTH );
+		snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
 		msg =  WLCgetConfig();
 		if( msg)
 			GDKerror("%s",msg);
@@ -417,7 +417,7 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( wlc_state == WLC_RUN)
 		throw(MAL,"master","WARNING: already in master mode, call ignored");
 	if( pci->argc == 2)
-		strncpy(path, *getArgReference_str(stk, pci,1), FILENAME_MAX);
+		snprintf(path, FILENAME_MAX, "%s", *getArgReference_str(stk, pci,1));
 	else{
 		if((l = GDKfilepath(0,0,"wlc_logs",0)) == NULL)
 			throw(SQL,"wlc.master", MAL_MALLOC_FAIL);
@@ -427,8 +427,8 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// set location for logs
 	if( GDKcreatedir(path) == GDK_FAIL)
 		throw(SQL,"wlc.master","Could not create %s\n", path);
-	strncpy(wlc_name, GDKgetenv("gdk_dbname"),IDLENGTH );
-	strncpy(wlc_dir,path, FILENAME_MAX);
+	snprintf(wlc_name, IDLENGTH, "%s", GDKgetenv("gdk_dbname"));
+	snprintf(wlc_dir, FILENAME_MAX, "%s", path);
 	wlc_state= WLC_RUN;
 	return WLCsetConfig();
 }
@@ -897,7 +897,7 @@ WLCwrite(Client cntxt)
 		
 		// Update wlc administration
 		wlc_id++;
-		strncpy(wlc_write, getVarConstant(cntxt->wlc, getArg(p, 2)).val.sval, 26);
+		snprintf(wlc_write, 26, "%s", getVarConstant(cntxt->wlc, getArg(p, 2)).val.sval);
 
 		// close file if no delay is allowed
 		if( wlc_beat == 0 )
