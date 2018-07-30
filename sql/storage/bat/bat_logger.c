@@ -391,9 +391,15 @@ snapshot_bbp(stream *plan)
 				snapshot_heap(plan, b->tvheap);
 			if (b->torderidx)
 				snapshot_heap(plan, b->torderidx);
-			if (b->thash)
-				snapshot_heap(plan, &b->thash->heap);
-			// HMMM.. definition of b->timprints not available here so
+			// 
+			// UH OH.. even if b->thash exists, there may not
+			// be a corresponding heap file.
+			// Let's skip it, the target system can probably build
+			// its own hash tables if it needs them.
+			// if (b->thash)
+			// 	snapshot_heap(plan, &b->thash->heap);
+			//
+			// UH OH.. definition of b->timprints not available here so
 			// b->timprints->heap unreachable. Hopefully the system can 
 			//reconstruct them.
 		}

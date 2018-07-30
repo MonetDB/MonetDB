@@ -1836,16 +1836,141 @@ snapshot_prepare_target(const char *dest)
 	return NULL;
 }
 
+static const char *
+snapshot_copy_file(const char *src_file, const char *dest_file, size_t bytes)
+{
+	const char *err = NULL;
+	FILE *src = NULL;
+	FILE *dest = NULL;
+	char *buf = NULL;
+	const size_t bufsize = 64 * 1024;
+	size_t bytes_read;
+	size_t bytes_written;
+
+	// there are many ways to make this more efficient.
+	if (GDKcreatedir(dest_file) != GDK_SUCCEED) {
+		err = "can't create directory";
+		goto end;
+	}
+
+	src = fopen(src_file, "rb");
+	if (!src) {
+		err = strerror(errno);
+		goto end;
+	}
+	dest = fopen(dest_file, "wb");
+	if (!dest) {
+		err = strerror(errno);
+		goto end;
+	}
+
+	buf = malloc(bufsize);
+	if (!buf) {
+		err = "malloc(buf)";
+		goto end;
+	}
+
+	while (bytes > 0) {
+		size_t to_read = (bytes > bufsize) ? bufsize : bytes;
+		bytes_read = fread(buf, 1, to_read, src);
+		if (bytes_read < to_read) {
+			if (ferror(src)) 
+				err = strerror(errno);
+			else if (feof(src)) 
+				err = "source file shorter than expected";
+			else
+				err = "unexplainable short read";
+			goto end;
+		}
+		bytes_written = fwrite(buf, 1, bytes_read, dest);
+		if (bytes_read < to_read) {
+			err = strerror(errno);
+			goto end;
+		}
+		bytes -= bytes_written;
+	}
+
+end:
+	free(buf);
+	if (src)
+		fclose(src);
+	if (dest)
+		fclose(dest);
+	return err;
+}
+
+static const char *
+snapshot_copy_data(const char *plan, const char *dest_dir)
+{
+	const char *p = plan;
+	int len;
+	char abs_src[2 * FILENAME_MAX];
+	char abs_dest[2 * FILENAME_MAX];
+	int scanned;
+	char command;
+	long size;
+	char *src;
+	char *dest;
+
+	strncpy(abs_dest, dest_dir, sizeof(abs_dest));
+	dest = abs_dest + strlen(abs_dest);
+	*dest++ = DIR_SEP;
+
+	if (sscanf(p, "%[^\n]\n%n", abs_src, &len) == 1) {
+		p += len;
+	} else {
+		return "no dest!";
+	}
+	src = abs_src + strlen(abs_src);
+	*src++ = DIR_SEP;
+
+	while ((scanned = sscanf(p, "%c %ld %200s\n%n", &command, &size, src, &len)) == 3) {
+		const char *err;
+
+		p += len;
+		strcpy(dest, src);
+		if (size < 0)
+			return "malformed plan: size < 0";
+		err = snapshot_copy_file(abs_src, abs_dest, size);
+		if (err) {
+			fprintf(stderr, "#snapshot: %s[%ld] %s\n", src, size, err);
+			return err;
+		}
+	}
+	if (scanned != EOF) {
+		return "malformed plan";
+	}
+
+	*src = *dest = '\0';
+	fprintf(stderr, "ALL THIS FROM %s TO %s\n", abs_src, abs_dest);
+
+	len = strlen(plan);
+	assert(len == p - plan);
+	
+	return NULL;
+}
+
 const char *
 store_hot_snapshot(const char *dir)
 {
 	buffer *plan_buf = NULL;
 	stream *plan_stream = NULL;
+	char *final_plan = NULL;
 	const char *err;
 	int reenable_logging = 0;
 
 	if (!logger_funcs.snapshot) {
 		err = "backend does not support snapshots";
+		goto end;
+	}
+
+	if (strlen(dir) >= FILENAME_MAX) {
+		// The path in `dir` may not be normalized and
+		// might contain /../../../blaaaaaaaaaaaaaaaaaaaa/bla/bla
+		// or similar.
+		// We must catch this because we use `char path[FILENAME_MAX]`
+		// all over the place.
+		err = "destdir path too long";
 		goto end;
 	}
 
@@ -1888,7 +2013,14 @@ store_hot_snapshot(const char *dir)
 	err = snapshot_prepare_target(dir);
 	if (err)
 		goto end;
-	fprintf(stderr, "%s", buffer_get_buf(plan_buf));
+	final_plan = buffer_get_buf(plan_buf);
+	if (!final_plan) {
+		err = "buffer_get_buf";
+		goto end;
+	}
+	err = snapshot_copy_data(final_plan, dir);
+	if (err)
+		goto end;
 	fprintf(stderr, "#end execute hot_snapshot %s\n", dir);
 
 end:
@@ -1902,6 +2034,8 @@ end:
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
+	if (final_plan)
+		free(final_plan);
 	if (err)
 		fprintf(stderr, "#abort hot_snapshot: %s\n", err);
 	return err;
