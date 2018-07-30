@@ -360,7 +360,10 @@ static const char*
 snapshot_wal(stream *plan)
 {
 	stream *log = bat_logger->log;
-	char *log_file = mnstr_name(log);
+	char log_file[FILENAME_MAX];
+
+	// TODO replace %lld by the proper macro
+	sprintf(log_file, "%s%s.%lld", bat_logger->dir, LOGFILE, bat_logger->id);
 	long pos = ftell(getFile(log));
 	if (pos < 0)
 		return strerror(errno);
