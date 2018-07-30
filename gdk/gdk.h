@@ -1101,7 +1101,6 @@ gdk_export bte ATOMelmshift(int sz);
 #define tfastins_nocheck(b, p, v, s)			\
 	do {						\
 		(b)->theap.free += (s);			\
-		(b)->theap.dirty |= (s) != 0;		\
 		Tputvalue((b), Tloc((b), (p)), (v), 0);	\
 	} while (false)
 
@@ -1134,7 +1133,6 @@ gdk_export bte ATOMelmshift(int sz);
 			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
 				goto bunins_failed;			\
 		}							\
-		(b)->theap.dirty = true;				\
 		(b)->theap.free += sizeof(TYPE);			\
 		((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v); \
 	} while (false)
@@ -1143,7 +1141,6 @@ gdk_export bte ATOMelmshift(int sz);
 	do {								\
 		var_t _d;						\
 		(b)->theap.free += (s);					\
-		(b)->theap.dirty = true;				\
 		ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);		\
 		if ((b)->twidth < SIZEOF_VAR_T &&			\
 		    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \

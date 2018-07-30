@@ -178,6 +178,7 @@ project_any(BAT *bn, BAT *l, BAT *r, bool nilcheck)
 	}
 	assert(n == BATcount(l));
 	BATsetcount(bn, n);
+	bn->theap.dirty = true;
 	return GDK_SUCCEED;
 bunins_failed:
 	return GDK_FAIL;
@@ -720,6 +721,7 @@ BATprojectchain(BAT **bats)
 			bn->batCount++;
 		}
 	}
+	bn->theap.dirty = true;
 	BATsetcount(bn, cnt);
 	if (stringtrick) {
 		bn->tnonil = bn->tnil = false;

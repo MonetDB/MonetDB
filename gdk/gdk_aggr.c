@@ -2834,6 +2834,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		while (BATcount(bn) < ngrp) {
 			bunfastapp_nocheck(bn, BUNlast(bn), nil, Tsize(bn));
 		}
+		bn->theap.dirty = true;
 		BBPunfix(g->batCacheid);
 	} else {
 		BUN index, r, p = BATcount(b);

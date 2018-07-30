@@ -384,6 +384,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 	regfree(&re);
 #endif
 	BATsetcount(bn, BATcount(bn)); /* set some properties */
+	bn->theap.dirty |= BATcount(bn) > 0;
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;

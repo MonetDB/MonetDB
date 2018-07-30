@@ -777,6 +777,7 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 				bunfastapp_nocheck(bn, r, t, Tsize(bn));
 				r++;
 			}
+			bn->theap.dirty |= bunstocopy > 0;
 		} else if (tt != TYPE_void && b->ttype == TYPE_void) {
 			/* case (4): optimized for unary void
 			 * materialization */
@@ -1044,6 +1045,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	if (b->ttype != TYPE_void) {
 		bunfastapp(b, t);
+		b->theap.dirty = true;
 	} else {
 		BATsetcount(b, b->batCount + 1);
 	}
