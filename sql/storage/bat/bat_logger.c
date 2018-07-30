@@ -408,6 +408,18 @@ static const char*
 bl_snapshot(stream *plan)
 {
 	const char *err;
+	char *db_dir;
+	size_t db_dir_len;
+
+	// UH OH Is it always 0? It seems dbfarm is 0 and dbextra is 1
+	// but that may not be carved in stone.
+	db_dir = GDKfilepath(0, NULL, "", NULL);
+	db_dir_len = strlen(db_dir);
+	if (db_dir[db_dir_len - 1] == DIR_SEP)
+		db_dir[db_dir_len - 1] = '\0';
+
+	mnstr_printf(plan, "%s\n", db_dir);
+	GDKfree(db_dir);
 
 	err = snapshot_wal(plan);
 	if (err)
