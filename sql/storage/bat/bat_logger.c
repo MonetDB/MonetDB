@@ -345,7 +345,7 @@ bl_reload_shared(void)
 static void
 snapshot_file(stream *plan, char *name, long extent)
 {
-	mnstr_printf(plan, "%ld %s\n", extent, name);
+	mnstr_printf(plan, "c %ld %s\n", extent, name);
 }
 
 static void
@@ -353,7 +353,7 @@ snapshot_heap(stream *plan, Heap *heap)
 {
 	long extent = heap->free;
 	char *name = heap->filename;
-	mnstr_printf(plan, "%ld %s%c%s\n", extent, BATDIR, DIR_SEP, name);
+	mnstr_printf(plan, "c %ld %s%c%s\n", extent, BATDIR, DIR_SEP, name);
 }
 
 static const char*
