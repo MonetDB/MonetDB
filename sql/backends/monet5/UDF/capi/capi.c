@@ -1582,29 +1582,29 @@ wrapup:
 			if (inputs[i]) {
 				if (isaBatType(getArgType(mb, pci, i))) {
 					bat_type = getBatType(getArgType(mb, pci, i));
-					if (bat_type == TYPE_str || bat_type == TYPE_date ||
-						bat_type == TYPE_daytime ||
-						bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
-						bat_type == TYPE_sqlblob) {
-						// have to free input data
-						void *data = GetTypeData(bat_type, inputs[i]);
-						if (data) {
-							GDKfree(data);
+				}
+				if (bat_type == TYPE_str || bat_type == TYPE_date ||
+				    bat_type == TYPE_daytime ||
+				    bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
+				    bat_type == TYPE_sqlblob) {
+					// have to free input data
+					void *data = GetTypeData(bat_type, inputs[i]);
+					if (data) {
+						GDKfree(data);
+					}
+				} else if (bat_type > TYPE_str) {
+					// this type was converted to individually malloced
+					// strings
+					// we have to free all the individual strings
+					char **data = (char **)GetTypeData(bat_type, inputs[i]);
+					size_t count = GetTypeCount(bat_type, inputs[i]);
+					for (j = 0; j < count; j++) {
+						if (data[j]) {
+							GDKfree(data[j]);
 						}
-					} else if (bat_type > TYPE_str) {
-						// this type was converted to individually malloced
-						// strings
-						// we have to free all the individual strings
-						char **data = (char **)GetTypeData(bat_type, inputs[i]);
-						size_t count = GetTypeCount(bat_type, inputs[i]);
-						for (j = 0; j < count; j++) {
-							if (data[j]) {
-								GDKfree(data[j]);
-							}
-						}
-						if (data) {
-							GDKfree(data);
-						}
+					}
+					if (data) {
+						GDKfree(data);
 					}
 				}
 				GDKfree(inputs[i]);
