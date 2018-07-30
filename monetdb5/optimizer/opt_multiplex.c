@@ -94,7 +94,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (alias == NULL || resB == NULL)  {
 		GDKfree(alias);
 		GDKfree(resB);
-		return NULL;
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* resB := new(refBat) */
