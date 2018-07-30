@@ -3868,7 +3868,9 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	}
 	if (sl == NULL) {
 		lhash = BATcheckhash(l);
-		if (!lhash && (parent = VIEWtparent(l)) != 0) {
+		if (lhash) {
+			lslots = ((size_t *) l->thash->heap.base)[5];
+		} else if ((parent = VIEWtparent(l)) != 0) {
 			BAT *b = BBPdescriptor(parent);
 			/* use hash on parent if the average chain
 			 * length times the number of required probes
@@ -3887,7 +3889,9 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	}
 	if (sr == NULL) {
 		rhash = BATcheckhash(r);
-		if (!rhash && (parent = VIEWtparent(r)) != 0) {
+		if (rhash) {
+			rslots = ((size_t *) r->thash->heap.base)[5];
+		} else if ((parent = VIEWtparent(r)) != 0) {
 			BAT *b = BBPdescriptor(parent);
 			/* use hash on parent if the average chain
 			 * length times the number of required probes
