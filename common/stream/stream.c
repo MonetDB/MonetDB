@@ -135,8 +135,8 @@
 /* use intrinsic functions on Windows */
 #define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
 /* on Windows, long is the same size as int */
-#define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
-#define long_long_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (s)))
+#define normal_int_SWAP(i)	((int) _byteswap_ulong((unsigned long) (i)))
+#define long_long_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (l)))
 #else
 #define short_int_SWAP(s)				\
 	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\

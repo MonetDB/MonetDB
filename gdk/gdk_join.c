@@ -3819,6 +3819,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	BUN maxsize;
 	bool lhash = false, rhash = false;
 	bool plhash = false, prhash = false;
+	BUN lslots = 0, rslots = 0;
 	bool swap;
 	bat parent;
 	size_t mem_size;
@@ -3899,13 +3900,16 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			 * length times the number of required probes
 			 * is less than the cost for creating and
 			 * probing a new hash on the view */
-			lhash = BATcheckhash(b) &&
-				(BATcount(b) == BATcount(l) ||
-				 BATcount(b) / ((size_t *) b->thash->heap.base)[5] * rcount < lcount + rcount);
+			if (BATcheckhash(b)) {
+				lslots = ((size_t *) b->thash->heap.base)[5];
+				lhash = (BATcount(b) == BATcount(l) ||
+					 BATcount(b) / lslots * rcount < lcount + rcount);
+			}
 			plhash = lhash;
 		}
 	} else if (BATtdense(sl) && BATcheckhash(l)) {
-		lhash = BATcount(l) / ((size_t *) l->thash->heap.base)[5] * rcount < lcount + rcount;
+		lslots = ((size_t *) l->thash->heap.base)[5];
+		lhash = BATcount(l) / lslots * rcount < lcount + rcount;
 	}
 	if (sr == NULL) {
 		rhash = BATcheckhash(r);
@@ -3915,17 +3919,28 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 			 * length times the number of required probes
 			 * is less than the cost for creating and
 			 * probing a new hash on the view */
-			rhash = BATcheckhash(b) &&
-				(BATcount(b) == BATcount(r) ||
-				 BATcount(b) / ((size_t *) b->thash->heap.base)[5] * lcount < lcount + rcount);
+			if (BATcheckhash(b)) {
+				rslots = ((size_t *) b->thash->heap.base)[5];
+				rhash = (BATcount(b) == BATcount(r) ||
+					 BATcount(b) / rslots * lcount < lcount + rcount);
+			}
 			prhash = rhash;
 		}
 	} else if (BATtdense(sr) && BATcheckhash(r)) {
-		rhash = BATcount(r) / ((size_t *) r->thash->heap.base)[5] * lcount < lcount + rcount;
+		rslots = ((size_t *) r->thash->heap.base)[5];
+		rhash = BATcount(r) / rslots * rcount < lcount + rcount;
 	}
 	if (lhash && rhash) {
-		/* both have hash, smallest on right */
-		swap = lcount < rcount;
+		if (lcount == lslots && rcount == rslots) {
+			/* both perfect hashes, smallest on right */
+			swap = lcount < rcount;
+		} else if (lcount == lslots) {
+			/* left is perfect (right isn't): swap */
+			swap = true;
+		} else if (rcount != rslots) {
+			/* neither is perfect, shortest chains on right */
+			swap = lcount / lslots < rcount / rslots;
+		} /* else: right is perfect */
 		reason = "both have hash";
 	} else if (lhash) {
 		/* only left has hash, swap */

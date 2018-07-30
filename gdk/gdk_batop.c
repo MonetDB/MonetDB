@@ -979,6 +979,10 @@ BATslice(BAT *b, BUN l, BUN h)
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
 	}
+	bn->tnonil = b->tnonil || bn->batCount == 0;
+	bn->tnil = false;	/* we just don't know */
+	bn->tnosorted = 0;
+	bn->tnokey[0] = bn->tnokey[1] = 0;
 	bni = bat_iterator(bn);
 	if (BATtdense(b)) {
 		BATtseqbase(bn, (oid) (b->tseqbase + low));
@@ -1002,10 +1006,6 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->trevsorted = b->trevsorted;
 		BATkey(bn, BATtkey(b));
 	}
-	bn->tnonil = b->tnonil || bn->batCount == 0;
-	bn->tnil = false;		/* we just don't know */
-	bn->tnosorted = 0;
-	bn->tnokey[0] = bn->tnokey[1] = 0;
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
