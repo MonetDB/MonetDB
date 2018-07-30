@@ -1900,6 +1900,36 @@ end:
 }
 
 static const char *
+snapshot_write_file(const char *dest_file, const char *data, size_t size)
+{
+	const char *err = NULL;
+	FILE *dest = NULL;
+	size_t bytes_written;
+
+	if (GDKcreatedir(dest_file) != GDK_SUCCEED) {
+		err = "can't create directory";
+		goto end;
+	}
+
+	dest = fopen(dest_file, "wb");
+	if (!dest) {
+		err = strerror(errno);
+		goto end;
+	}
+	
+	bytes_written = fwrite(data, 1, size, dest);
+	if (bytes_written < size) {
+		err = strerror(errno);
+		goto end;
+	}
+
+end:
+	if (dest)
+		fclose(dest);
+	return err;
+}
+
+static const char *
 snapshot_copy_data(const char *plan, const char *dest_dir)
 {
 	const char *p = plan;
@@ -1931,7 +1961,18 @@ snapshot_copy_data(const char *plan, const char *dest_dir)
 		strcpy(dest, src);
 		if (size < 0)
 			return "malformed plan: size < 0";
-		err = snapshot_copy_file(abs_src, abs_dest, size);
+		switch (command) {
+			case 'c':
+				err = snapshot_copy_file(abs_src, abs_dest, size);
+				break;
+			case 'w':
+				err = snapshot_write_file(abs_dest, p, size);
+				p += size;
+				break;
+			default:
+				err = "unknown command";
+				break;
+		}
 		if (err) {
 			fprintf(stderr, "#snapshot: %s[%ld] %s\n", src, size, err);
 			return err;
@@ -2018,6 +2059,7 @@ store_hot_snapshot(const char *dir)
 		err = "buffer_get_buf";
 		goto end;
 	}
+	fprintf(stderr, "%s", final_plan);
 	err = snapshot_copy_data(final_plan, dir);
 	if (err)
 		goto end;

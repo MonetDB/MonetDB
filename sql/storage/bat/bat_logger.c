@@ -343,13 +343,67 @@ bl_reload_shared(void)
 }
 
 static void
-snapshot_file(stream *plan, char *name, long extent)
+snapshot_lazy_copy_file(stream *plan, char *name, long extent)
 {
 	mnstr_printf(plan, "c %ld %s\n", extent, name);
 }
 
+static const char*
+snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
+{
+	const char *err = NULL;
+	struct stat statbuf;
+	char *buf = NULL;
+	FILE *f = NULL;
+	long size;
+	size_t bytes_read;
+	size_t bytes_written;
+
+	if (stat(path, &statbuf) < 0) {
+		err = strerror(errno);
+		goto end;
+	}
+	size = (long)statbuf.st_size;
+
+	buf = malloc(size);
+	if (!buf) {
+		err = "malloc(buf)";
+		goto end;
+	}
+
+	f = fopen(path, "rb");
+	if (!f) {
+		err = strerror(errno);
+		goto end;
+	}
+
+	bytes_read = fread(buf, 1, size, f);
+	if ((long)bytes_read < size) {
+		if (ferror(f))
+			err = strerror(errno);
+		else if (feof(f)) 
+			err = "file unexpectedly short";
+		else
+			err = "read unexplainably truncated";
+		goto end;
+	}
+
+	mnstr_printf(plan, "w %ld %s\n", size, name);
+	bytes_written = mnstr_write(plan, buf, 1, bytes_read);
+	if (bytes_written < bytes_read) {
+		err = "write to plan truncated";
+		goto end;
+	}
+
+end:
+	free(buf);
+	if (f)
+		fclose(f);
+	return err;
+}
+
 static void
-snapshot_heap(stream *plan, Heap *heap)
+snapshot_lazy_copy_heap(stream *plan, Heap *heap)
 {
 	long extent = heap->free;
 	char *name = heap->filename;
@@ -357,13 +411,16 @@ snapshot_heap(stream *plan, Heap *heap)
 }
 
 static const char*
-snapshot_wal(stream *plan)
+snapshot_wal(stream *plan, const char *db_dir)
 {
 	stream *log = bat_logger->log;
 	char log_file[FILENAME_MAX];
 
+	snprintf(log_file, sizeof(log_file), "%s/%s%s", db_dir, bat_logger->dir, LOGFILE);
+	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
+
 	// TODO replace %lld by the proper macro
-	sprintf(log_file, "%s%s.%lld", bat_logger->dir, LOGFILE, bat_logger->id);
+	snprintf(log_file, sizeof(log_file), "%s%s.%lld", bat_logger->dir, LOGFILE, bat_logger->id);
 	long pos = ftell(getFile(log));
 	if (pos < 0)
 		return strerror(errno);
@@ -372,32 +429,42 @@ snapshot_wal(stream *plan)
 	 * everything after pos is currently garbage and irrelevant to this
 	 * snapshot.
 	 */
-	snapshot_file(plan, log_file, pos);
+	snapshot_lazy_copy_file(plan, log_file, pos);
+
 	return NULL;
 }
 
 static const char*
-snapshot_bbp(stream *plan)
+snapshot_bbp(stream *plan, const char *db_dir)
 {
+	char bbpdir[FILENAME_MAX];
+	bat active_bats;
+	const char *err;
+
 	/* UH OH we probably have to obtain some sort of lock first */
 
-	bat active_bats = getBBPsize();
+	active_bats = getBBPsize();
+
+	snprintf(bbpdir, sizeof(bbpdir), "%s%c%s%c%s", db_dir, DIR_SEP, BAKDIR, DIR_SEP, "BBP.dir");
+	err = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
+	if (err)
+		return err;
 
 	for (bat id = 1; id < active_bats; id++) {
 		if (BBP_status(id) & BBPPERSISTENT) {
 			BAT *b = BBP_desc(id);
-			snapshot_heap(plan, &b->theap);
+			snapshot_lazy_copy_heap(plan, &b->theap);
 			if (b->tvheap)
-				snapshot_heap(plan, b->tvheap);
+				snapshot_lazy_copy_heap(plan, b->tvheap);
 			if (b->torderidx)
-				snapshot_heap(plan, b->torderidx);
+				snapshot_lazy_copy_heap(plan, b->torderidx);
 			// 
 			// UH OH.. even if b->thash exists, there may not
 			// be a corresponding heap file.
 			// Let's skip it, the target system can probably build
 			// its own hash tables if it needs them.
 			// if (b->thash)
-			// 	snapshot_heap(plan, &b->thash->heap);
+			// 	snapshot_lazy_copy_heap(plan, &b->thash->heap);
 			//
 			// UH OH.. definition of b->timprints not available here so
 			// b->timprints->heap unreachable. Hopefully the system can 
@@ -414,7 +481,7 @@ static const char*
 bl_snapshot(stream *plan)
 {
 	const char *err;
-	char *db_dir;
+	char *db_dir = NULL;
 	size_t db_dir_len;
 
 	// UH OH Is it always 0? It seems dbfarm is 0 and dbextra is 1
@@ -425,14 +492,18 @@ bl_snapshot(stream *plan)
 		db_dir[db_dir_len - 1] = '\0';
 
 	mnstr_printf(plan, "%s\n", db_dir);
-	GDKfree(db_dir);
 
-	err = snapshot_wal(plan);
-	if (err)
+	err = snapshot_wal(plan, db_dir);
+	if (err) {
+		GDKfree(db_dir);
 		return err;
-	err = snapshot_bbp(plan);
-	if (err)
+	}
+
+	err = snapshot_bbp(plan, db_dir);
+	if (err) {
+		GDKfree(db_dir);
 		return err;
+	}
 
 	return NULL;
 }
