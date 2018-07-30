@@ -1455,7 +1455,6 @@ stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 			xz->todo = xz->strm.avail_in;
 			if (xz->todo > 0)
 				memmove(xz->buf, xz->strm.next_in, xz->todo);
-			outbuf[origsize] = 0;	/* add EOS */
 			ressize = origsize;
 			break;
 		}
