@@ -1,23 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Wed Apr  4 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
-- Changed the monetdb profilerstart command to be more robust.  If the
-  server or stethoscope crashed before, the pid file is still there,
-  so the next time we try to start stethoscope, it will fail.  Now the
-  profilerstart command will check if a stethoscope process with the
-  recorded pid is running. If not, we start stethoscope, assuming that
-  something went wrong before.
-- Changed the monetdb stop command to try to stop stethoscope before
-  stoping the server. The error conditions that can arrise from attempting
-  to stop stethoscope are:
-  - The database is not running.
-  - The profilerlogpath is not set.
-  - The profiler.pid file does not exist or is inaccessible.
-  - The contents of the profiler.pid are not valid.
-  - Shutdown of stethoscope did not succeed.
-  - Removing the profiler.pid file failed.
-  In all the cases, the attempt to stop the server can continue normally,
-  so we actually ignore any errors that rise from the attempt to stop
-  stethoscope.
-
