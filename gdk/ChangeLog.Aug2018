@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Mon Jul 30 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Hash indexes are now persistent across server restarts.
 - The macros bunfastapp and tfastins and variants no longer set the dirty
   flag of the heap they write to.  This now needs to be done separately
   (and preferably outside of the inner loop).
