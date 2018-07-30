@@ -1839,6 +1839,7 @@ snapshot_prepare_target(const char *dest)
 const char *
 store_hot_snapshot(const char *dir)
 {
+	buffer *plan_buf = NULL;
 	stream *plan_stream = NULL;
 	const char *err;
 	int reenable_logging = 0;
@@ -1847,9 +1848,15 @@ store_hot_snapshot(const char *dir)
 		err = "backend does not support snapshots";
 		goto end;
 	}
-	plan_stream = file_wastream(stderr, "stderr");
+
+	plan_buf = buffer_create(16 * 1024);
+	if (!plan_buf) {
+		err = "buffer_create()";
+		goto end;
+	}
+	plan_stream = buffer_wastream(plan_buf, "snapshot_plan");
 	if (!plan_stream) {
-		err = "file_wastream(stderr)";
+		err = "buffer_wastream(snapshot_plan)";
 		goto end;
 	}
 
@@ -1881,6 +1888,7 @@ store_hot_snapshot(const char *dir)
 	err = snapshot_prepare_target(dir);
 	if (err)
 		goto end;
+	fprintf(stderr, "%s", buffer_get_buf(plan_buf));
 	fprintf(stderr, "#end execute hot_snapshot %s\n", dir);
 
 end:
@@ -1892,6 +1900,8 @@ end:
 	}
 	if (plan_stream)
 		close_stream(plan_stream);
+	if (plan_buf)
+		buffer_destroy(plan_buf);
 	if (err)
 		fprintf(stderr, "#abort hot_snapshot: %s\n", err);
 	return err;
