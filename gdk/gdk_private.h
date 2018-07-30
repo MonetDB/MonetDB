@@ -13,7 +13,7 @@
 #endif
 
 /* persist hash heaps for persistent BATs */
-/* #define PERSISTENTHASH 1 */
+#define PERSISTENTHASH 1
 
 /* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
