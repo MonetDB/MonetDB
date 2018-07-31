@@ -2351,7 +2351,7 @@ AS_VAR_IF([enable_fits], [no], [], [
 	PKG_CHECK_MODULES([cfitsio], [cfitsio],
 		[have_fits="yes"; AC_DEFINE([HAVE_FITS], 1, [Define if the fits module is to be enabled])],
 		[have_fits="no"; why_not_fits="(cfitsio library not found)"
-		 AS_VAR_IF([enable_fits], [yes], [AC_MSG_ERROR([cfitsio library required for FITS support])]);
+		 AS_VAR_IF([enable_fits], [yes], [AC_MSG_ERROR([cfitsio library required for FITS support])])
 		 enable_fits=no; why_not_fits="(cfitsio library not found)"])])
 AM_CONDITIONAL([HAVE_FITS], [test x"$have_fits" != xno])
 
