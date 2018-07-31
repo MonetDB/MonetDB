@@ -1543,9 +1543,13 @@ BBPinit(void)
 	FILE *fp = NULL;
 	struct stat st;
 	unsigned bbpversion;
-	str bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir");
-	str backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir");
+	str bbpdirstr, backupbbpdirstr;
 	int i;
+
+	if(!(bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir")))
+		GDKfatal("BBPinit: GDKmalloc failed\n");
+	if(!(backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir")))
+		GDKfatal("BBPinit: GDKmalloc failed\n");
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
@@ -3232,10 +3236,15 @@ BBPprepare(bool subcommit)
 {
 	bool start_subcommit;
 	int set = 1 + subcommit;
-	str bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
-	str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
-
+	str bakdirpath, subdirpath;
 	gdk_return ret = GDK_SUCCEED;
+
+	if(!(bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL)))
+		return GDK_FAIL;
+	if(!(subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL))) {
+		GDKfree(bakdirpath);
+		return GDK_FAIL;
+	}
 
 	/* tmLock is only used here, helds usually very shortly just
 	 * to protect the file counters */
@@ -3374,7 +3383,8 @@ BBPbackup(BAT *b, bool subcommit)
 		return GDK_SUCCEED;
 	}
 	/* determine location dir and physical suffix */
-	srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL);
+	if (!(srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL)))
+		goto fail;
 	s = strrchr(srcdir, DIR_SEP);
 	if (!s)
 		goto fail;
@@ -3392,8 +3402,9 @@ BBPbackup(BAT *b, bool subcommit)
 		goto fail;
 	GDKfree(srcdir);
 	return GDK_SUCCEED;
-  fail:
-	GDKfree(srcdir);
+fail:
+	if(srcdir)
+		GDKfree(srcdir);
 	return GDK_FAIL;
 }
 
@@ -3414,9 +3425,14 @@ BBPsync(int cnt, bat *subcommit)
 	gdk_return ret = GDK_SUCCEED;
 	int bbpdirty = 0;
 	int t0 = 0, t1 = 0;
+	str bakdir, deldir;
 
-	str bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL);
-	str deldir = GDKfilepath(0, NULL, DELDIR, NULL);
+	if(!(bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL)))
+		return GDK_FAIL;
+	if(!(deldir = GDKfilepath(0, NULL, DELDIR, NULL))) {
+		GDKfree(bakdir);
+		return GDK_FAIL;
+	}
 
 	PERFDEBUG t0 = t1 = GDKms();
 
@@ -3549,7 +3565,10 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		strncpy(srcpath, name, len);
 		srcpath[len] = '\0';
-		dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL);
+		if(!(dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL))) {
+			GDKsyserror("force_move: malloc fail\n");
+			return GDK_FAIL;
+		}
 
 		/* step 1: remove the X.new file that is going to be
 		 * overridden by X */
@@ -3564,7 +3583,10 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
-		killfile = GDKfilepath(farmid, srcdir, name, NULL);
+		if(!(killfile = GDKfilepath(farmid, srcdir, name, NULL))) {
+			GDKsyserror("force_move: malloc fail\n");
+			return GDK_FAIL;
+		}
 		if (remove(killfile) != 0) {
 			ret = GDK_FAIL;
 			GDKsyserror("force_move: remove(%s)\n", killfile);
@@ -3580,8 +3602,12 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		/* two legal possible causes: file exists or dir
 		 * doesn't exist */
-		dstpath = GDKfilepath(farmid, dstdir, name, NULL);
-		srcpath = GDKfilepath(farmid, srcdir, name, NULL);
+		if(!(dstpath = GDKfilepath(farmid, dstdir, name, NULL)))
+			return GDK_FAIL;
+		if(!(srcpath = GDKfilepath(farmid, srcdir, name, NULL))) {
+			GDKfree(dstpath);
+			return GDK_FAIL;
+		}
 		if (remove(dstpath) != 0)	/* clear destination */
 			ret = GDK_FAIL;
 		IODEBUG fprintf(stderr, "#remove %s = %d\n", dstpath, (int) ret);

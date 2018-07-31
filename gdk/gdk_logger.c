@@ -1473,14 +1473,15 @@ static gdk_return
 logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 {
 	int id = LOG_SID;
-	FILE *fp;
+	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
 	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
-	filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL);
+	if(!(filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL)))
+		goto error;
 	snprintf(filename, FILENAME_MAX, "%s", filenamestr);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
 	GDKfree(filenamestr);
