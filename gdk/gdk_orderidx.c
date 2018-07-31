@@ -142,7 +142,8 @@ persistOIDX(BAT *b)
 {
 #ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-	    b->batInserted == b->batCount) {
+	    b->batInserted == b->batCount &&
+	    !b->theap.dirty) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
 		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
