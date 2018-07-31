@@ -153,12 +153,12 @@ static struct winthread {
 #define DETACHED	2
 #define WAITING		4
 static CRITICAL_SECTION winthread_cs;
-static int winthread_cs_init = 0;
+static bool winthread_cs_init = false;
 
 void
 gdk_system_reset(void)
 {
-	winthread_cs_init = 0;
+	winthread_cs_init = false;
 }
 
 static struct winthread *
@@ -202,10 +202,10 @@ static void
 join_threads(void)
 {
 	struct winthread *w;
-	int waited;
+	bool waited;
 
 	do {
-		waited = 0;
+		waited = false;
 		EnterCriticalSection(&winthread_cs);
 		for (w = winthreads; w; w = w->next) {
 			if ((w->flags & (EXITED | DETACHED | WAITING)) == (EXITED | DETACHED)) {
@@ -214,7 +214,7 @@ join_threads(void)
 				WaitForSingleObject(w->hdl, INFINITE);
 				CloseHandle(w->hdl);
 				rm_winthread(w);
-				waited = 1;
+				waited = true;
 				EnterCriticalSection(&winthread_cs);
 				break;
 			}
@@ -227,10 +227,10 @@ void
 join_detached_threads(void)
 {
 	struct winthread *w;
-	int waited;
+	bool waited;
 
 	do {
-		waited = 0;
+		waited = false;
 		EnterCriticalSection(&winthread_cs);
 		for (w = winthreads; w; w = w->next) {
 			if ((w->flags & (DETACHED | WAITING)) == DETACHED) {
@@ -239,7 +239,7 @@ join_detached_threads(void)
 				WaitForSingleObject(w->hdl, INFINITE);
 				CloseHandle(w->hdl);
 				rm_winthread(w);
-				waited = 1;
+				waited = true;
 				EnterCriticalSection(&winthread_cs);
 				break;
 			}
@@ -256,12 +256,12 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	if (w == NULL)
 		return -1;
 
-	if (winthread_cs_init == 0) {
+	if (!winthread_cs_init) {
 		/* we only get here before any threads are created,
 		 * and this is the only time that winthread_cs_init is
 		 * ever changed */
 		InitializeCriticalSection(&winthread_cs);
-		winthread_cs_init = 1;
+		winthread_cs_init = true;
 	}
 	join_threads();
 	w->func = f;
@@ -499,12 +499,12 @@ static void
 join_threads(void)
 {
 	struct posthread *p;
-	int waited;
+	bool waited;
 	pthread_t tid;
 
 	pthread_mutex_lock(&posthread_lock);
 	do {
-		waited = 0;
+		waited = false;
 		for (p = posthreads; p; p = p->next) {
 			if (p->exited) {
 				tid = p->tid;
@@ -513,7 +513,7 @@ join_threads(void)
 				pthread_mutex_unlock(&posthread_lock);
 				pthread_join(tid, NULL);
 				pthread_mutex_lock(&posthread_lock);
-				waited = 1;
+				waited = true;
 				break;
 			}
 		}

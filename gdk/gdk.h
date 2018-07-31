@@ -2333,18 +2333,19 @@ VALptr(const ValRecord *v)
  * each thread. This speeds up access to tid and file descriptors.
  */
 #define THREADS	1024
-#define THREADDATA	16
+#define THREADDATA	3
 
 typedef struct threadStruct {
-	int tid;		/* logical ID by MonetDB; val == index into this array + 1 (0 is invalid) */
-	MT_Id pid;		/* physical thread id (pointer-sized) from the OS thread library */
+	int tid;		/* logical ID by MonetDB; val == index
+				 * into this array + 1 (0 is
+				 * invalid) */
+	MT_Id pid;		/* physical thread id (pointer-sized)
+				 * from the OS thread library */
 	str name;
-	ptr data[THREADDATA];
+	void *data[THREADDATA];
 	uintptr_t sp;
 } ThreadRec, *Thread;
 
-
-gdk_export ThreadRec GDKthreads[THREADS];
 
 gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);

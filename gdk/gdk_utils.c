@@ -639,6 +639,7 @@ GDKinit(opt *set, int setlen)
 
 int GDKnr_threads = 0;
 static int GDKnrofthreads;
+static ThreadRec GDKthreads[THREADS];
 
 int
 GDKexiting(void)
@@ -1282,7 +1283,6 @@ GDKms(void)
  * descriptors are the same as for the server and should be
  * subsequently reset.
  */
-ThreadRec GDKthreads[THREADS];
 void *THRdata[THREADDATA] = { 0 };
 
 Thread

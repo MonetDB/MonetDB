@@ -269,7 +269,6 @@ ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict
 str GDKstrdup(const char *s) __attribute__((__warn_unused_result__));
 str GDKstrndup(const char *s, size_t n) __attribute__((__warn_unused_result__));
 void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 1, 2)));
-ThreadRec GDKthreads[THREADS];
 size_t GDKuniqueid(size_t offset);
 gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, bool mayshare) __attribute__((__warn_unused_result__));
 lng GDKusec(void);
