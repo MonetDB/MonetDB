@@ -82,6 +82,7 @@ static struct worker {
 	enum {IDLE, RUNNING, JOINING, EXITED} flag;
 	Client cntxt;				/* client we do work for (NULL -> any) */
 	MT_Sema s;
+	MT_Sema startup;
 } workers[THREADS];
 
 static Queue *todo = 0;	/* pending instructions */
@@ -331,6 +332,12 @@ DFLOWworker(void *T)
 	InstrPtr p;
 
 	thr = THRnew("DFLOWworker");
+	if (thr == NULL) {
+		t->flag = IDLE;
+		MT_sema_up(&t->startup);
+		return;
+	}
+	MT_sema_up(&t->startup);
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -508,8 +515,10 @@ DFLOWinitialize(void)
 		MT_lock_unset(&mal_contextLock);
 		return -1;
 	}
-	for (i = 0; i < THREADS; i++)
+	for (i = 0; i < THREADS; i++) {
 		MT_sema_init(&workers[i].s, 0, "DFLOWinitialize");
+		MT_sema_init(&workers[i].startup, 0, "DFLOWinitialize:startup");
+	}
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 #ifdef NEED_MT_LOCK_INIT
 	ATOMIC_INIT(exitingLock);
@@ -521,8 +530,13 @@ DFLOWinitialize(void)
 		workers[i].cntxt = NULL;
 		if (MT_create_thread(&workers[i].id, DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0)
 			workers[i].flag = IDLE;
-		else
-			created++;
+		else {
+			/* wait until it started */
+			MT_sema_down(&workers[i].startup);
+			/* then check whether it finished right away */
+			if (workers[i].flag != IDLE)
+				created++;
+		}
 	}
 	MT_lock_unset(&dataflowLock);
 	if (created == 0) {
@@ -891,6 +905,13 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 				workers[i].flag = IDLE;
 				MT_lock_unset(&dataflowLock);
 				return MAL_SUCCEED;
+			}
+			/* wait until it started */
+			MT_sema_down(&workers[i].startup);
+			/* then check whether it finished right away */
+			if (workers[i].flag == IDLE) {
+				/* it wasn't to be */
+				i = THREADS;
 			}
 			break;
 		}
