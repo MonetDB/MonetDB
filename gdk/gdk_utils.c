@@ -913,7 +913,8 @@ GDKlockHome(int farmid)
 	/*
 	 * Print the new process list in the global lock file.
 	 */
-	fseek(GDKlockFile, 0, SEEK_SET);
+	if(fseek(GDKlockFile, 0, SEEK_SET) == -1)
+		GDKfatal("GDKlockHome: Error while setting the file pointer on %s\n", gdklockpath);
 	if (ftruncate(fileno(GDKlockFile), 0) < 0)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", gdklockpath);
 	fflush(GDKlockFile);

@@ -536,7 +536,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			FILE *fp;
 			char address[1000];
 			struct stat buffer;
-			size_t length;
+			ssize_t length;
 			if (exprStr[0] == '/') {
 				// absolute path
 				snprintf(address, 1000, "%s", exprStr);
@@ -557,16 +557,31 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					SQLSTATE(PY000) "Could not open Python source file \"%s\".", address);
 				goto wrapup;
 			}
-			fseek(fp, 0, SEEK_END);
-			length = ftell(fp);
-			fseek(fp, 0, SEEK_SET);
+			if(fseek(fp, 0, SEEK_END) == -1) {
+				msg = createException(
+						MAL, "pyapi.eval",
+						SQLSTATE(PY000) "Failed to set file pointer on Python source file \"%s\".", address);
+				goto wrapup;
+			}
+			if((length = ftell(fp)) == -1) {
+				msg = createException(
+						MAL, "pyapi.eval",
+						SQLSTATE(PY000) "Failed to set file pointer on Python source file \"%s\".", address);
+				goto wrapup;
+			}
+			if(fseek(fp, 0, SEEK_SET) == -1) {
+				msg = createException(
+						MAL, "pyapi.eval",
+						SQLSTATE(PY000) "Failed to set file pointer on Python source file \"%s\".", address);
+				goto wrapup;
+			}
 			exprStr = GDKzalloc(length + 1);
 			if (exprStr == NULL) {
 				msg = createException(MAL, "pyapi.eval",
 									  SQLSTATE(HY001) MAL_MALLOC_FAIL " function body string.");
 				goto wrapup;
 			}
-			if (fread(exprStr, 1, length, fp) != length) {
+			if (fread(exprStr, 1, (size_t) length, fp) != (size_t) length) {
 				msg = createException(MAL, "pyapi.eval",
 									  SQLSTATE(PY000) "Failed to read from file \"%s\".",
 									  address);
