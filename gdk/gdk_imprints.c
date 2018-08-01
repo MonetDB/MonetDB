@@ -504,7 +504,8 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints.base)[3] = (size_t) BATcount(b);
 		imprints->imprints.parentid = b->batCacheid;
 		b->timprints = imprints;
-		if (BBP_status(b->batCacheid) & BBPEXISTING) {
+		if (BBP_status(b->batCacheid) & BBPEXISTING &&
+		    !b->theap.dirty) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			if (MT_create_thread(&tid, BATimpsync, b, MT_THR_DETACHED) < 0)
