@@ -111,7 +111,6 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
 bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 bat BBP_mask = 0;		/* number of buckets = & mask */
 
-static void BBPspin(bat bid, const char *debug, int event);
 static gdk_return BBPfree(BAT *b, const char *calledFrom);
 static void BBPdestroy(BAT *b);
 static void BBPuncacheit(bat bid, bool unloaddesc);
@@ -1538,7 +1537,7 @@ new_bbpentry(FILE *fp, bat i, const char *prefix)
 	}
 #endif
 
-	if (fprintf(fp, "%s%zd %d %s %s %d " BUNFMT " "
+	if (fprintf(fp, "%s%zd %u %s %s %d " BUNFMT " "
 		    BUNFMT " " OIDFMT, prefix,
 		    /* BAT info */
 		    (ssize_t) i,
@@ -1765,7 +1764,7 @@ BBPdump(void)
 			continue;
 		fprintf(stderr,
 			"# %d[%s]: nme='%s' refs=%d lrefs=%d "
-			"status=%d count=" BUNFMT,
+			"status=%u count=" BUNFMT,
 			i,
 			ATOMname(b->ttype),
 			BBP_logical(i) ? BBP_logical(i) : "<NULL>",
@@ -2088,7 +2087,7 @@ gdk_return
 BBPcacheit(BAT *bn, bool lock)
 {
 	bat i = bn->batCacheid;
-	int mode;
+	unsigned mode;
 
 	if (lock)
 		lock = locked_by == 0 || locked_by != MT_getpid();
@@ -2291,16 +2290,16 @@ BBPrename(bat bid, const char *nme)
  * memory references can be unloaded.
  */
 static inline void
-BBPspin(bat i, const char *s, int event)
+BBPspin(bat i, const char *s, unsigned event)
 {
 	if (BBPcheck(i, "BBPspin") && (BBP_status(i) & event)) {
 		lng spin = LL_CONSTANT(0);
 
-		while (BBP_status(i) & event) {
+		do {
 			MT_sleep_ms(KITTENNAP);
 			spin++;
-		}
-		BATDEBUG fprintf(stderr, "#BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
+		} while (BBP_status(i) & event);
+		BATDEBUG fprintf(stderr, "#BBPspin(%d,%s,%u): " LLFMT " loops\n", (int) i, s, event, spin);
 	}
 }
 
@@ -2722,7 +2721,7 @@ BBPsave(BAT *b)
 		BBPspin(bid, "BBPsave", BBPSAVING);
 	} else {
 		/* save it */
-		int flags = BBPSAVING;
+		unsigned flags = BBPSAVING;
 
 		if (DELTAdirty(b)) {
 			flags |= BBPSWAPPED;

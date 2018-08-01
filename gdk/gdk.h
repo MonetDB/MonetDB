@@ -1589,7 +1589,7 @@ typedef struct {
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
-	volatile int status;	/* status mask used for spin locking */
+	volatile unsigned status; /* status mask used for spin locking */
 	/* MT_Id pid;           non-zero thread-id if this BAT is private */
 } BBPrec;
 
@@ -1624,7 +1624,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
-#define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):-1)
+#define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):0)
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
 #define BBPname(i)						\

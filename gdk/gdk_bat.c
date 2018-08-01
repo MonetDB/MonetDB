@@ -2057,7 +2057,7 @@ BATmode(BAT *b, int mode)
 void
 BATassertProps(BAT *b)
 {
-	int bbpstatus;
+	unsigned bbpstatus;
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
