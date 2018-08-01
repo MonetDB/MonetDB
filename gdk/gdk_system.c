@@ -559,8 +559,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 
 	join_threads();
 #ifdef HAVE_PTHREAD_SIGMASK
-	if(sigfillset(&new_mask))
-		return -1;
+	(void) sigfillset(&new_mask);
 	if(MT_thread_sigmask(&new_mask, &orig_mask))
 		return -1;
 #endif

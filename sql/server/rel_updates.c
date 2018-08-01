@@ -1386,7 +1386,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		if (headers)
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: not allowed with column lists");
 		store_lock();
-		while (store_nr_active > 1) {
+		while (ATOMIC_GET(store_nr_active, store_nr_active_lock) > 1) {
 			store_unlock();
 			MT_sleep_ms(100);
 			store_lock();

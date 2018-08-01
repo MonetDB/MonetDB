@@ -441,7 +441,7 @@ build up the hash (not copied in the trans dup)) */
 	}
 
 	/*
-	while (tr->schema_updates && store_nr_active > 1) {
+	while (tr->schema_updates && ATOMIC_GET(store_nr_active, store_nr_active_lock) > 1) {
 		store_unlock();
 		MT_sleep_ms(100);
 		wait += 100;

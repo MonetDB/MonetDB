@@ -1773,34 +1773,31 @@ start_pager(stream **saveFD)
 
 		/* ignore SIGPIPE so that we get an error instead of signal */
 		act.sa_handler = SIG_IGN;
-		if(sigemptyset(&act.sa_mask) == -1) {
+		(void) sigemptyset(&act.sa_mask);
+		act.sa_flags = 0;
+		if(sigaction(SIGPIPE, &act, NULL) == -1) {
 			fprintf(stderr, "Starting '%s' failed\n", pager);
 		} else {
-			act.sa_flags = 0;
-			if(sigaction(SIGPIPE, &act, NULL) == -1) {
+			p = popen(pager, "w");
+			if (p == NULL)
 				fprintf(stderr, "Starting '%s' failed\n", pager);
-			} else {
-				p = popen(pager, "w");
-				if (p == NULL)
+			else {
+				*saveFD = toConsole;
+				/* put | in name to indicate that file should be closed with pclose */
+				if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+					toConsole = *saveFD;
+					*saveFD = NULL;
 					fprintf(stderr, "Starting '%s' failed\n", pager);
-				else {
-					*saveFD = toConsole;
-					/* put | in name to indicate that file should be closed with pclose */
-					if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+				}
+#ifdef HAVE_ICONV
+				if (encoding != NULL) {
+					if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
 						toConsole = *saveFD;
 						*saveFD = NULL;
 						fprintf(stderr, "Starting '%s' failed\n", pager);
 					}
-#ifdef HAVE_ICONV
-					if (encoding != NULL) {
-						if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
-							toConsole = *saveFD;
-							*saveFD = NULL;
-							fprintf(stderr, "Starting '%s' failed\n", pager);
-						}
-					}
-#endif
 				}
+#endif
 			}
 		}
 	}
