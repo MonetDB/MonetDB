@@ -38,7 +38,10 @@ typedef enum store_type {
 
 extern sql_trans *gtrans;
 extern list *active_sessions;
-extern int store_nr_active;
+extern volatile ATOMIC_TYPE store_nr_active;
+#ifdef ATOMIC_LOCK
+extern MT_Lock store_nr_active_lock;
+#endif
 extern store_type active_store_type;
 extern int store_readonly;
 extern int store_singleuser;
