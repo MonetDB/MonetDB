@@ -417,7 +417,7 @@ MT_init(void)
 
 #define CATNAP		50	/* time to sleep in ms for catnaps */
 
-static void THRinit(void);
+static int THRinit(void);
 static void GDKlockHome(int farmid);
 
 #ifndef STATIC_CODE_ANALYSIS
@@ -481,9 +481,11 @@ GDKinit(opt *set, int setlen)
 	if (mnstr_init() < 0)
 		return 0;
 	MT_init_posix();
-	THRinit();
+	if (THRinit() < 0)
+		return 0;
 #ifndef NATIVE_WIN32
-	BATSIGinit();
+	if (BATSIGinit() < 0)
+		return 0;
 #endif
 #ifdef WIN32
 	(void) signal(SIGABRT, BATSIGabort);
@@ -639,6 +641,7 @@ GDKinit(opt *set, int setlen)
 
 int GDKnr_threads = 0;
 static int GDKnrofthreads;
+static ThreadRec GDKthreads[THREADS];
 
 int
 GDKexiting(void)
@@ -883,7 +886,8 @@ GDKlockHome(int farmid)
 	assert(BBPfarms[farmid].dirname != NULL);
 	assert(BBPfarms[farmid].lock_file == NULL);
 
-	gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
+	if(!(gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL)))
+		GDKfatal("GDKlockHome: malloc failure\n");
 
 	/*
 	 * Obtain the global database lock.
@@ -910,7 +914,8 @@ GDKlockHome(int farmid)
 	/*
 	 * Print the new process list in the global lock file.
 	 */
-	fseek(GDKlockFile, 0, SEEK_SET);
+	if(fseek(GDKlockFile, 0, SEEK_SET) == -1)
+		GDKfatal("GDKlockHome: Error while setting the file pointer on %s\n", gdklockpath);
 	if (ftruncate(fileno(GDKlockFile), 0) < 0)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", gdklockpath);
 	fflush(GDKlockFile);
@@ -1282,7 +1287,6 @@ GDKms(void)
  * descriptors are the same as for the server and should be
  * subsequently reset.
  */
-ThreadRec GDKthreads[THREADS];
 void *THRdata[THREADDATA] = { 0 };
 
 Thread
@@ -1352,6 +1356,12 @@ THRnew(const char *name)
 
 		GDKnrofthreads++;
 		s->name = GDKstrdup(name);
+		if(!s->name) {
+			MT_lock_unset(&GDKthreadLock);
+			IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
+			GDKerror("THRnew: malloc failure\n");
+			return NULL;
+		}
 	}
 	MT_lock_unset(&GDKthreadLock);
 
@@ -1399,16 +1409,22 @@ THRhighwater(void)
  * the network.  The code below should be improved to gain speed.
  */
 
-static void
+static int
 THRinit(void)
 {
 	int i = 0;
 
-	THRdata[0] = (void *) file_wastream(stdout, "stdout");
-	THRdata[1] = (void *) file_rastream(stdin, "stdin");
+	if((THRdata[0] = (void *) file_wastream(stdout, "stdout")) == NULL)
+		return -1;
+	if((THRdata[1] = (void *) file_rastream(stdin, "stdin")) == NULL) {
+		close_stream(THRdata[0]);
+		THRdata[0] = NULL;
+		return -1;
+	}
 	for (i = 0; i < THREADS; i++) {
 		GDKthreads[i].tid = i + 1;
 	}
+	return 0;
 }
 
 void

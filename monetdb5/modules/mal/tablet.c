@@ -212,7 +212,7 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 			b->trevsorted = 0;
 		if (BATtdense(b))
 			b->tkey = TRUE;
-		b->batDirty = TRUE;
+		b->batDirtydesc = true;
 
 		if (offset > 0) {
 			BBPunfix(bv->batCacheid);
@@ -945,6 +945,7 @@ SQLworker_column(READERtask *task, int col)
 		}
 	}
 	BATsetcount(fmt[col].c, BATcount(fmt[col].c));
+	fmt[col].c->theap.dirty |= BATcount(fmt[col].c) > 0;
 
 	return 0;
 }
@@ -1098,6 +1099,13 @@ SQLworker(void *arg)
 	Thread thr;
 
 	thr = THRnew("SQLworker");
+	if (thr == NULL) {
+		task->id = -1;			/* signal failure */
+		MT_sema_up(&task->reply);
+		return;
+	}
+	MT_sema_up(&task->reply);
+
 	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
@@ -1236,6 +1244,18 @@ SQLproducer(void *p)
 	Thread thr;
 
 	thr = THRnew("SQLproducer");
+	if (thr == NULL) {
+		task->id = -1;
+		tablet_error(task, lng_nil, int_nil, "cannot create producer thread", "SQLproducer");
+		MT_sema_up(&task->consumer);
+		return;
+	}
+	MT_sema_up(&task->consumer);
+	MT_sema_down(&task->producer);
+	if (task->id < 0) {
+		THRdel(thr);
+		return;
+	}
 
 #ifdef _DEBUG_TABLET_CNTRL
 	mnstr_printf(GDKout, "#SQLproducer started size %zu len %zu\n",
@@ -1544,6 +1564,7 @@ SQLproducer(void *p)
 		tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
 		task->b->pos += partial;
 	}
+	THRdel(thr);
 }
 
 static void
@@ -1698,8 +1719,15 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		goto bailout;
 	}
 
+	task.id = 0;
 	if(MT_create_thread(&task.tid, SQLproducer, (void *) &task, MT_THR_JOINABLE) < 0) {
 		tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start producer thread", "SQLload_file");
+		goto bailout;
+	}
+	/* wait until producer started */
+	MT_sema_down(&task.consumer);
+	if (task.id < 0) {
+		/* producer failed to properly start */
 		goto bailout;
 	}
 #ifdef _DEBUG_TABLET_
@@ -1714,6 +1742,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(HY001) MAL_MALLOC_FAIL, "SQLload_file");
+			task.id = -1;
+			MT_sema_up(&task.producer);
 			goto bailout;
 		}
 #ifdef MLOCK_TST
@@ -1723,9 +1753,27 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
 		if(MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE) < 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
-			goto bailout;
+			threads = j;
+			for (j = 0; j < threads; j++)
+				ptask[j].workers = threads;
+		}
+		/* wait until thread started */
+		MT_sema_down(&ptask[j].reply);
+		if (ptask[j].id == -1) {
+			/* allocation failure inside thread */
+			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
+			threads = j;
+			for (j = 0; j < threads; j++)
+				ptask[j].workers = threads;
 		}
 	}
+	if (threads == 0) {
+		/* no threads started */
+		task.id = -1;
+		MT_sema_up(&task.producer);
+		goto bailout;
+	}
+	MT_sema_up(&task.producer);
 
 	tio = GDKusec();
 	tio = GDKusec() - tio;

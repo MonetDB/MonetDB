@@ -127,7 +127,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 		bn->tvheap->parentid = bn->batCacheid;
 		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
-	bn->batDirty = true;
+	bn->batDirtydesc = true;
 	return bn;
       bailout:
 	BBPclear(bn->batCacheid);
@@ -519,6 +519,7 @@ BATclear(BAT *b, bool force)
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			th.parentid = b->tvheap->parentid;
+			th.dirty = true;
 			HEAPfree(b->tvheap, false);
 			*b->tvheap = th;
 		}
@@ -533,6 +534,7 @@ BATclear(BAT *b, bool force)
 
 			for (p = b->batInserted, q = BUNlast(b); p < q; p++)
 				(*tatmdel)(b->tvheap, (var_t*) BUNtloc(bi,p));
+			b->tvheap->dirty = true;
 		}
 	}
 
@@ -541,7 +543,8 @@ BATclear(BAT *b, bool force)
 	BATsetcount(b,0);
 	BAThseqbase(b, 0);
 	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
-	b->batDirty = true;
+	b->batDirtydesc = true;
+	b->theap.dirty = true;
 	BATsettrivprop(b);
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
@@ -774,6 +777,7 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 				bunfastapp_nocheck(bn, r, t, Tsize(bn));
 				r++;
 			}
+			bn->theap.dirty |= bunstocopy > 0;
 		} else if (tt != TYPE_void && b->ttype == TYPE_void) {
 			/* case (4): optimized for unary void
 			 * materialization */
@@ -1019,7 +1023,7 @@ BUNappend(BAT *b, const void *t, bool force)
 	}
 
 	ALIGNapp(b, "BUNappend", force, GDK_FAIL);
-	b->batDirty = true;
+	b->batDirtydesc = true;
 	if (b->thash && b->tvheap)
 		tsize = b->tvheap->size;
 
@@ -1041,6 +1045,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	if (b->ttype != TYPE_void) {
 		bunfastapp(b, t);
+		b->theap.dirty = true;
 	} else {
 		BATsetcount(b, b->batCount + 1);
 	}
@@ -1083,7 +1088,7 @@ BUNdelete(BAT *b, oid o)
 		GDKerror("BUNdelete: cannot delete committed value\n");
 		return GDK_FAIL;
 	}
-	b->batDirty = true;
+	b->batDirtydesc = true;
 	ATOMunfix(b->ttype, BUNtail(bi, p));
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BUNlast(b) - 1 &&
@@ -1096,6 +1101,7 @@ BUNdelete(BAT *b, oid o)
 		memcpy(Tloc(b, p), Tloc(b, BUNlast(b) - 1), Tsize(b));
 		/* no longer sorted */
 		b->tsorted = b->trevsorted = false;
+		b->theap.dirty = true;
 	}
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;

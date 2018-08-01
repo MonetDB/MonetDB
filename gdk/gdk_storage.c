@@ -631,7 +631,6 @@ void
 DESCclean(BAT *b)
 {
 	b->batDirtyflushed = DELTAdirty(b) ? TRUE : FALSE;
-	b->batDirty = 0;
 	b->batDirtydesc = 0;
 	b->theap.dirty = 0;
 	if (b->tvheap)
@@ -767,10 +766,10 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->batCopiedtodisk == 0 || b->batDirty || b->theap.dirty)
+	if (b->batCopiedtodisk == 0 || b->batDirtydesc || b->theap.dirty)
 		if (err == GDK_SUCCEED && b->ttype)
 			err = HEAPsave(&b->theap, nme, "tail");
-	if (b->tvheap && (b->batCopiedtodisk == 0 || b->batDirty || b->tvheap->dirty))
+	if (b->tvheap && (b->batCopiedtodisk == 0 || b->batDirtydesc || b->tvheap->dirty))
 		if (b->ttype && b->tvarsized) {
 			if (err == GDK_SUCCEED)
 				err = HEAPsave(b->tvheap, nme, "theap");

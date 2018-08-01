@@ -1005,6 +1005,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
@@ -1088,6 +1089,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
@@ -1166,6 +1168,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
@@ -1254,6 +1257,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
@@ -1339,6 +1343,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
@@ -1422,6 +1427,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
@@ -1500,6 +1506,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
@@ -1588,6 +1595,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	}
 	for (i = end; i < cnt; i++)
 		bunfastapp(bn, nil);
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
@@ -3437,6 +3445,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	}
 	for (i = end; i < cnt; i++)
 		tfastins_nocheckVAR(bn, i, str_nil, Tsize(bn));
+	bn->theap.dirty = true;
 	GDKfree(s);
 	return nils;
 
@@ -13206,6 +13215,7 @@ BATcalcifthenelse_intern(BAT *b,
 	}
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 
 	bn->tsorted = cnt <= 1 || nils == cnt;
 	bn->trevsorted = cnt <= 1 || nils == cnt;
@@ -13683,6 +13693,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 	}
 	for (i = end; i < cnt; i++)
 		tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
+	bn->theap.dirty = true;
 	BATsetcount(bn, cnt);
 	GDKfree(dst);
 	return nils;
@@ -13917,6 +13928,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 	default:
 		return BUN_NONE + 1;
 	}
+	bn->theap.dirty = true;
 	nils += cnt - end;
 	GDKfree(s);
 	return nils;

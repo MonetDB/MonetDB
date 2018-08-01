@@ -1,7 +1,3 @@
 # ChangeLog file for testing
 # This file is updated with Maddlog
 
-* Tue Apr  3 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Removed helper programs Mtimeout and MkillUsers: they have long been
-  superseded by timeout handling by Mtest.py itself.
-

@@ -135,8 +135,8 @@
 /* use intrinsic functions on Windows */
 #define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
 /* on Windows, long is the same size as int */
-#define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
-#define long_long_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (s)))
+#define normal_int_SWAP(i)	((int) _byteswap_ulong((unsigned long) (i)))
+#define long_long_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (l)))
 #else
 #define short_int_SWAP(s)				\
 	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\
@@ -1456,7 +1456,6 @@ stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 			xz->todo = xz->strm.avail_in;
 			if (xz->todo > 0)
 				memmove(xz->buf, xz->strm.next_in, xz->todo);
-			outbuf[origsize] = 0;	/* add EOS */
 			ressize = origsize;
 			break;
 		}

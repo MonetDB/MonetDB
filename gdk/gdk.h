@@ -339,9 +339,23 @@
  * attributes completely; if it is known, use it to find out whether
  * specific attributes that we use are known */
 #ifndef __has_attribute
+#ifndef __GNUC__
 #define __has_attribute(attr)	0
 #ifndef __attribute__
 #define __attribute__(attr)	/* empty */
+#endif
+#else
+/* older GCC does have attributes, but not __has_attribute and not all
+ * attributes that we use are known */
+#define __has_attribute__alloc_size__ 1
+#define __has_attribute__cold__ 1
+#define __has_attribute__format__ 1
+#define __has_attribute__malloc__ 1
+#define __has_attribute__noreturn__ 1
+#define __has_attribute__returns_nonnull__ 0
+#define __has_attribute__visibility__ 1
+#define __has_attribute__warn_unused_result__ 1
+#define __has_attribute(attr)	__has_attribute##attr
 #endif
 #endif
 #if !__has_attribute(__warn_unused_result__)
@@ -719,7 +733,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *           bool   batCopiedtodisk;  // BAT is saved on disk?
  *           // dynamic BAT properties
  *           int    batHeat;          // heat of BAT in the BBP
- *           sht    batDirty;         // BAT modified after last commit?
  *           bool   batDirtydesc;     // BAT descriptor specific dirty flag
  *           Heap*  batBuns;          // Heap where the buns are stored
  *           // DELTA status
@@ -838,7 +851,6 @@ typedef struct BATiter {
 /* macros to hide complexity of the BAT structure */
 #define batPersistence	S.persistence
 #define batCopiedtodisk	S.copiedtodisk
-#define batDirty	S.dirty
 #define batConvert	S.convert
 #define batDirtyflushed	S.dirtyflushed
 #define batDirtydesc	S.descdirty
@@ -1103,7 +1115,6 @@ gdk_export bte ATOMelmshift(int sz);
 #define tfastins_nocheck(b, p, v, s)			\
 	do {						\
 		(b)->theap.free += (s);			\
-		(b)->theap.dirty |= (s) != 0;		\
 		Tputvalue((b), Tloc((b), (p)), (v), 0);	\
 	} while (false)
 
@@ -1136,7 +1147,6 @@ gdk_export bte ATOMelmshift(int sz);
 			if (BATextend((b), BATgrows(b)) != GDK_SUCCEED)	\
 				goto bunins_failed;			\
 		}							\
-		(b)->theap.dirty = true;				\
 		(b)->theap.free += sizeof(TYPE);			\
 		((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v); \
 	} while (false)
@@ -1145,7 +1155,6 @@ gdk_export bte ATOMelmshift(int sz);
 	do {								\
 		var_t _d;						\
 		(b)->theap.free += (s);					\
-		(b)->theap.dirty = true;				\
 		ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);		\
 		if ((b)->twidth < SIZEOF_VAR_T &&			\
 		    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
@@ -1332,10 +1341,10 @@ gdk_export gdk_return BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
 
 
-#define BATdirty(b)	(!(b)->batCopiedtodisk || (b)->batDirty ||	\
+#define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->batDirtydesc ||				\
 			 (b)->theap.dirty ||				\
-			 ((b)->tvheap?(b)->tvheap->dirty:false))
+			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 
 #define PERSISTENT		0
 #define TRANSIENT		1
@@ -2324,18 +2333,19 @@ VALptr(const ValRecord *v)
  * each thread. This speeds up access to tid and file descriptors.
  */
 #define THREADS	1024
-#define THREADDATA	16
+#define THREADDATA	3
 
 typedef struct threadStruct {
-	int tid;		/* logical ID by MonetDB; val == index into this array + 1 (0 is invalid) */
-	MT_Id pid;		/* physical thread id (pointer-sized) from the OS thread library */
+	int tid;		/* logical ID by MonetDB; val == index
+				 * into this array + 1 (0 is
+				 * invalid) */
+	MT_Id pid;		/* physical thread id (pointer-sized)
+				 * from the OS thread library */
 	str name;
-	ptr data[THREADDATA];
+	void *data[THREADDATA];
 	uintptr_t sp;
 } ThreadRec, *Thread;
 
-
-gdk_export ThreadRec GDKthreads[THREADS];
 
 gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);

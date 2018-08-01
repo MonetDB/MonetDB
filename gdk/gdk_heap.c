@@ -120,7 +120,10 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		char *nme;
 		struct stat st;
 
-		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+		if(!(nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL))) {
+			GDKerror("HEAPalloc: malloc failure");
+			return GDK_FAIL;
+		}
 		if (stat(nme, &st) < 0) {
 			h->storage = STORE_MMAP;
 			h->base = HEAPcreatefile(NOFARM, &h->size, nme);
@@ -336,7 +339,8 @@ HEAPshrink(Heap *h, size_t size)
 			/* don't grow */
 			return GDK_SUCCEED;
 		}
-		path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+		if(!(path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL)))
+			return GDK_FAIL;
 		p = GDKmremap(path,
 			      h->storage == STORE_PRIV ?
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
@@ -552,6 +556,7 @@ HEAPcopy(Heap *dst, Heap *src)
 		memcpy(dst->base, src->base, src->free);
 		dst->hashash = src->hashash;
 		dst->cleanhash = src->cleanhash;
+		dst->dirty = true;
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;

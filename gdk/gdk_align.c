@@ -122,8 +122,6 @@ VIEWcreate(oid seq, BAT *b)
 	if (tp)
 		bn->theap.parentid = tp;
 	BATinit_idents(bn);
-	/* Some bits must be copied individually. */
-	bn->batDirty = BATdirty(b);
 	bn->batRestricted = BAT_READ;
 	if (!tp || isVIEW(b))
 		bn->thash = NULL;
@@ -190,7 +188,6 @@ BATmaterialize(BAT *b)
 	/* point of no return */
 	b->ttype = tt;
 	BATsetdims(b);
-	b->batDirty = TRUE;
 	b->batDirtydesc = TRUE;
 	b->theap.dirty = TRUE;
 
@@ -346,7 +343,7 @@ VIEWreset(BAT *b)
 		}
 		b->batSharecnt = 0;
 		b->batCopiedtodisk = 0;
-		b->batDirty = 1;
+		b->batDirtydesc = true;
 
 		b->tkey = BATtkey(v);
 		b->tunique = 0;

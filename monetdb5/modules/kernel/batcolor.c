@@ -54,6 +54,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			goto bunins_failed;											\
 		APP;															\
 	}																	\
+	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\
@@ -137,6 +138,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			goto bunins_failed;											\
 		bunfastappTYPE(color, bn, &y);									\
 	}																	\
+	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\

@@ -83,6 +83,7 @@ See
 .TP
 .B \-\-daemon=yes
 .PD 0
+.TP
 .B \-\-daemon=no
 .PD
 Disable the console prompt, do not read commands from standard input.

@@ -570,7 +570,7 @@ BAThash(BAT *b)
 			return GDK_FAIL;
 		}
 #ifdef PERSISTENTHASH
-		if (BBP_status(b->batCacheid) & BBPEXISTING) {
+		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			if (MT_create_thread(&tid, BAThashsync, b,

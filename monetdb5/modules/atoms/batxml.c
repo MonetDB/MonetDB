@@ -72,6 +72,7 @@ mal_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat
 #define finalizeResult(X,Y,Z)					\
 	do {										\
 		BATsetcount((Y), (Y)->batCount);		\
+		(Y)->theap.dirty |= (Y)->batCount > 0;	\
 		*(X) = (Y)->batCacheid;					\
 		BBPkeepref(*(X));						\
 		BBPunfix((Z)->batCacheid);				\
@@ -1355,6 +1356,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 		bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
 	}
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 	bn->tsorted = BATcount(bn) <= 1;

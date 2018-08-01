@@ -1298,7 +1298,13 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (option_enable_mprotect) {
 		memset(&sa, 0, sizeof(sa));
 		sa.sa_flags = SA_SIGINFO;
-		sigfillset(&sa.sa_mask);
+		if(sigfillset(&sa.sa_mask) == -1) {
+			msg = createException(MAL, "cudf.eval",
+								  "Failed to set signal handler: %s",
+								  strerror(errno));
+			errno = 0;
+			goto wrapup;
+		}
 		sa.sa_sigaction = handler;
 		if (sigaction(SIGSEGV, &sa, &oldsa) == -1 ||
 			sigaction(SIGBUS, &sa, &oldsb) == -1) {
@@ -1528,8 +1534,8 @@ wrapup:
 	// remove the signal handler, if any was set
 	if (option_enable_mprotect) {
 		if (sa.sa_sigaction) {
-			sigaction(SIGSEGV, &oldsa, NULL);
-			sigaction(SIGBUS, &oldsb, NULL);
+			(void) sigaction(SIGSEGV, &oldsa, NULL);
+			(void) sigaction(SIGBUS, &oldsb, NULL);
 
 			memset(&sa, 0, sizeof(sa));
 		}
@@ -1582,29 +1588,29 @@ wrapup:
 			if (inputs[i]) {
 				if (isaBatType(getArgType(mb, pci, i))) {
 					bat_type = getBatType(getArgType(mb, pci, i));
-					if (bat_type == TYPE_str || bat_type == TYPE_date ||
-						bat_type == TYPE_daytime ||
-						bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
-						bat_type == TYPE_sqlblob) {
-						// have to free input data
-						void *data = GetTypeData(bat_type, inputs[i]);
-						if (data) {
-							GDKfree(data);
+				}
+				if (bat_type == TYPE_str || bat_type == TYPE_date ||
+				    bat_type == TYPE_daytime ||
+				    bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
+				    bat_type == TYPE_sqlblob) {
+					// have to free input data
+					void *data = GetTypeData(bat_type, inputs[i]);
+					if (data) {
+						GDKfree(data);
+					}
+				} else if (bat_type > TYPE_str) {
+					// this type was converted to individually malloced
+					// strings
+					// we have to free all the individual strings
+					char **data = (char **)GetTypeData(bat_type, inputs[i]);
+					size_t count = GetTypeCount(bat_type, inputs[i]);
+					for (j = 0; j < count; j++) {
+						if (data[j]) {
+							GDKfree(data[j]);
 						}
-					} else if (bat_type > TYPE_str) {
-						// this type was converted to individually malloced
-						// strings
-						// we have to free all the individual strings
-						char **data = (char **)GetTypeData(bat_type, inputs[i]);
-						size_t count = GetTypeCount(bat_type, inputs[i]);
-						for (j = 0; j < count; j++) {
-							if (data[j]) {
-								GDKfree(data[j]);
-							}
-						}
-						if (data) {
-							GDKfree(data);
-						}
+					}
+					if (data) {
+						GDKfree(data);
 					}
 				}
 				GDKfree(inputs[i]);

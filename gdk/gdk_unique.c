@@ -341,6 +341,7 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(hs);
 	}
 
+	bn->theap.dirty = true;
 	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
 	bn->tkey = true;

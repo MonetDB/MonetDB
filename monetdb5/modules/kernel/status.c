@@ -621,6 +621,7 @@ SYSgdkThread(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
 	int i;
+	Thread thr;
 
 	bn = COLnew(0,TYPE_int, THREADS, TRANSIENT);
 	b = COLnew(0, TYPE_str, THREADS, TRANSIENT);
@@ -630,10 +631,11 @@ SYSgdkThread(bat *ret, bat *ret2)
 		throw(MAL, "status.getThreads", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	for (i = 0; i < THREADS; i++) {
-		if (GDKthreads[i].pid){
-			if (BUNappend(bn, &GDKthreads[i].tid, false) != GDK_SUCCEED ||
-				BUNappend(b, GDKthreads[i].name? GDKthreads[i].name:"", false) != GDK_SUCCEED)
+	for (i = 1; i <= THREADS; i++) {
+		thr = THRget(i);
+		if (thr->pid){
+			if (BUNappend(bn, &thr->tid, false) != GDK_SUCCEED ||
+				BUNappend(b, thr->name? thr->name:"", false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}

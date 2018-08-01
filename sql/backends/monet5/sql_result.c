@@ -42,7 +42,7 @@ mystpcpy (char *yydest, const char *yysrc) {
 #define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
 /* on Windows, long is the same size as int */
 #define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
-#define long_long_SWAP(l)	((lng) _byteswap_uint64((unsigned __int64) (s)))
+#define long_long_SWAP(s)	((lng) _byteswap_uint64((unsigned __int64) (s)))
 #else
 #define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
 
@@ -1007,7 +1007,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					}
 				}
 				fmt[i].ci = bat_iterator(fmt[i].c);
-				fmt[i].c->batDirty = TRUE;
+				fmt[i].c->batDirtydesc = TRUE;
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
