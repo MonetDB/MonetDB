@@ -1147,7 +1147,8 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_UNDEFINED);
 
-	BBPfix(bid);
+	if (BBPfix(bid) <= 0)
+		throw(MAL, "remote.bincopyto", MAL_MALLOC_FAIL);
 
 	sendtheap = b->ttype != TYPE_void && b->tvarsized;
 

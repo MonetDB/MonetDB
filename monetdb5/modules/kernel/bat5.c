@@ -934,14 +934,17 @@ BKCsave(bit *res, const char * const *input)
 	BAT *b;
 
 	*res = FALSE;
-	if (bid) {
-		BBPfix(bid);
-		b = BBP_cache(bid);
-		if (b && BATdirty(b)) {
-			if (BBPsave(b) == GDK_SUCCEED)
-				*res = TRUE;
+	if (!is_bat_nil(bid)) {
+		if (BBPfix(bid) > 0) {
+			b = BBP_cache(bid);
+			if (b && BATdirty(b)) {
+				if (BBPsave(b) == GDK_SUCCEED)
+					*res = TRUE;
+			}
+			BBPunfix(bid);
+			return MAL_SUCCEED;
 		}
-		BBPunfix(bid);
+		throw(MAL, "bat.save", "fix failed");
 	}
 	return MAL_SUCCEED;
 }
