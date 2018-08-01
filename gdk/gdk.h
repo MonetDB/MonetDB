@@ -1550,8 +1550,6 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
  * @tab BBPindex  (str nme)
  * @item BAT*
  * @tab BATdescriptor (bat bi)
- * @item bat
- * @tab BBPcacheid (BAT *b)
  * @end multitable
  *
  * The BAT Buffer Pool module contains the code to manage the storage
@@ -1565,8 +1563,7 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
  *
  * BATs loaded into memory are retained in a BAT buffer pool.  They
  * retain their position within the cache during their life cycle,
- * which make indexing BATs a stable operation.  Their descriptor can
- * be obtained using BBPcacheid.
+ * which make indexing BATs a stable operation.
  *
  * The BBPindex routine checks if a BAT with a certain name is
  * registered in the buffer pools. If so, it returns its BAT id.  The
@@ -1623,7 +1620,6 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBP_pid(i)	BBP[(i)>>BBPINITLOG][(i)&(BBPINIT-1)].pid
 
 /* macros that nicely check parameters */
-#define BBPcacheid(b)	((b)->batCacheid)
 #define BBPstatus(i)	(BBPcheck((i),"BBPstatus")?BBP_status(i):0)
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)

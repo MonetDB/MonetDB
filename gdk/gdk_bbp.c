@@ -19,7 +19,7 @@
  * data-intensive applications.  To eliminate all overhead, read-only
  * access to the BBP may be done by table-lookups. The integer index
  * type for these lookups is @emph{bat}, as retrieved by
- * @emph{BBPcacheid(b)}. The @emph{bat} zero is reserved for the nil
+ * @emph{b->batCacheid}. The @emph{bat} zero is reserved for the nil
  * bat.
  *
  * @item persistence
