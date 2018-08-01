@@ -2556,6 +2556,13 @@ BBPspin(bat i, const char *s, int event)
 	}
 }
 
+/* This function can fail if the input parameter (i) is incorrect
+ * (unlikely), of if the bat is a view, this is a physical (not
+ * logical) incref (i.e. called through BBPfix(), and it is the first
+ * reference (refs was 0 and should become 1).  It can fail in this
+ * case if the parent bat cannot be loaded.
+ * This means the return value of BBPfix should be checked in these
+ * circumstances, but not necessarily in others. */
 static inline int
 incref(bat i, bool logical, bool lock)
 {
@@ -2563,13 +2570,6 @@ incref(bat i, bool logical, bool lock)
 	bat tp, tvp;
 	BAT *b, *pb = NULL, *pvb = NULL;
 	bool load = false;
-
-	if (is_bat_nil(i)) {
-		/* Stefan: May this happen? Or should we better call
-		 * GDKerror(), here? */
-		/* GDKerror("BBPincref() called with bat_nil!\n"); */
-		return 0;
-	}
 
 	if (!BBPcheck(i, logical ? "BBPretain" : "BBPfix"))
 		return 0;
@@ -2667,6 +2667,7 @@ incref(bat i, bool logical, bool lock)
 	return refs;
 }
 
+/* see comment for incref */
 int
 BBPfix(bat i)
 {
