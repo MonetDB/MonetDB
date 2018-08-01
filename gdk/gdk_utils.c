@@ -1356,6 +1356,12 @@ THRnew(const char *name)
 
 		GDKnrofthreads++;
 		s->name = GDKstrdup(name);
+		if(!s->name) {
+			MT_lock_unset(&GDKthreadLock);
+			IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
+			GDKerror("THRnew: malloc failure\n");
+			return NULL;
+		}
 	}
 	MT_lock_unset(&GDKthreadLock);
 

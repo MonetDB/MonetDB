@@ -2676,8 +2676,13 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sprintf((char*) rsep, "%c", STREAM_FWF_RECORD_SEP);
 			if (!ssep) {
 				ssep = GDKmalloc(2);
-				if(ssep == NULL)
+				if(ssep == NULL) {
+					mnstr_destroy(ss);
+					GDKfree(tsep);
+					GDKfree(rsep);
+					GDKfree(ns);
 					throw(SQL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 			}
 			ssep[0] = 0;
 

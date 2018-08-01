@@ -3114,10 +3114,21 @@ main(int argc, char **argv)
 	 * causes the output to be converted (we could set it to
 	 * ".OCP" if we knew for sure that we were running in a cmd
 	 * window) */
-	setlocale(LC_CTYPE, "");
+	if(setlocale(LC_CTYPE, "") == NULL) {
+		fprintf(stderr, "error: could not set locale\n");
+		exit(2);
+	}
 #endif
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
+	if(!stdout_stream || !stderr_stream) {
+		if(stdout_stream)
+			close_stream(stdout_stream);
+		if(stderr_stream)
+			close_stream(stderr_stream);
+		fprintf(stderr, "error: could not open an output stream\n");
+		exit(2);
+	}
 
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
@@ -3528,6 +3539,13 @@ main(int argc, char **argv)
 
 	if (!has_fileargs && command == NULL) {
 		stream *s = file_rastream(stdin, "<stdin>");
+		if(!s) {
+			mapi_destroy(mid);
+			mnstr_destroy(stdout_stream);
+			mnstr_destroy(stderr_stream);
+			fprintf(stderr,"Failed to open stream for stdin\n");
+			exit(2);
+		}
 		c = doFile(mid, s, useinserts, interactive, save_history);
 	}
 
