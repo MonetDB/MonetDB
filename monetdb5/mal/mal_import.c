@@ -317,6 +317,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	str msg = MAL_SUCCEED;
 	str qry;
 	str old = s;
+	stream *bs;
 	bstream *fdin = NULL;
 
 	s = mal_cmdline(s, &len);
@@ -335,7 +336,13 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 
 	buffer_init(b, qry, len);
-	fdin = bstream_create(buffer_rastream(b, "compileString"), b->len);
+	bs = buffer_rastream(b, "compileString");
+	if (bs == NULL) {
+		GDKfree(qry);
+		GDKfree(b);
+		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	fdin = bstream_create(bs, b->len);
 	if (fdin == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
@@ -385,6 +392,7 @@ callString(Client cntxt, str s, int listing)
 	buffer *b;
 	str old =s;
 	str msg = MAL_SUCCEED, qry;
+	bstream *bs;
 
 	s = mal_cmdline(s, &len);
 	qry = s;
@@ -402,7 +410,13 @@ callString(Client cntxt, str s, int listing)
 	}
 
 	buffer_init(b, qry, len);
-	c= MCinitClient((oid)0, bstream_create(buffer_rastream(b, "callString"), b->len),0);
+	bs = bstream_create(buffer_rastream(b, "callString"), b->len);
+	if (bs == NULL){
+		GDKfree(b);
+		GDKfree(qry);
+		throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	c= MCinitClient((oid)0, bs,0);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
@@ -428,7 +442,13 @@ callString(Client cntxt, str s, int listing)
 		MCcloseClient(c);
 		return msg;
 	}
-	runScenario(c,1);
+	if((msg = runScenario(c,1)) != MAL_SUCCEED) {
+		c->usermodule = 0;
+		GDKfree(b);
+		GDKfree(qry);
+		MCcloseClient(c);
+		return msg;
+	}
 	// The command may have changed the environment of the calling client.
 	// These settings should be propagated for further use.
 	//if( msg == MAL_SUCCEED){
