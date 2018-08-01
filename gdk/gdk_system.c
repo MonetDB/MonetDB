@@ -446,13 +446,18 @@ find_posthread(pthread_t tid)
 #endif
 
 #ifdef HAVE_PTHREAD_SIGMASK
-static void
+static int
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
-	(void) sigdelset(new_mask, SIGQUIT);
-	(void) sigdelset(new_mask, SIGALRM);	/* else sleep doesn't work */
-	(void) sigdelset(new_mask, SIGPROF);
-	(void) pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
+	if(sigdelset(new_mask, SIGQUIT))
+		return -1;
+	if(sigdelset(new_mask, SIGALRM))	/* else sleep doesn't work */
+		return -1;
+	if(sigdelset(new_mask, SIGPROF))
+		return -1;
+	if(pthread_sigmask(SIG_SETMASK, new_mask, orig_mask))
+		return -1;
+	return 0;
 }
 #endif
 
@@ -554,8 +559,10 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 
 	join_threads();
 #ifdef HAVE_PTHREAD_SIGMASK
-	(void) sigfillset(&new_mask);
-	MT_thread_sigmask(&new_mask, &orig_mask);
+	if(sigfillset(&new_mask))
+		return -1;
+	if(MT_thread_sigmask(&new_mask, &orig_mask))
+		return -1;
 #endif
 	if(pthread_attr_init(&attr))
 		return -1;
@@ -570,7 +577,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	p = malloc(sizeof(struct posthread));
 	if (p == NULL) {
 #ifdef HAVE_PTHREAD_SIGMASK
-		MT_thread_sigmask(&orig_mask, NULL);
+		(void) MT_thread_sigmask(&orig_mask, NULL); //going to fail anyway
 #endif
 		pthread_attr_destroy(&attr);
 		return -1;
@@ -603,7 +610,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		free(p);
 	}
 #ifdef HAVE_PTHREAD_SIGMASK
-	MT_thread_sigmask(&orig_mask, NULL);
+	if(MT_thread_sigmask(&orig_mask, NULL))
+		return -1;
 #endif
 	return ret ? -1 : 0;
 }
