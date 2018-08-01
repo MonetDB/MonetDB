@@ -16,7 +16,7 @@ lib_mapi = {
 		../../common/utils/libmcrypt \
 		WIN32?../../common/stream/libstream \
 		WIN32?$(SOCKET_LIBS) \
-		$(openssl_LIBS)
+		WIN32?$(openssl_LIBS)
 }
 
 headers_mapi = {
