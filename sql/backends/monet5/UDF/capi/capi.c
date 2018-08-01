@@ -1298,13 +1298,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (option_enable_mprotect) {
 		memset(&sa, 0, sizeof(sa));
 		sa.sa_flags = SA_SIGINFO;
-		if(sigfillset(&sa.sa_mask) == -1) {
-			msg = createException(MAL, "cudf.eval",
-								  "Failed to set signal handler: %s",
-								  strerror(errno));
-			errno = 0;
-			goto wrapup;
-		}
+		(void) sigfillset(&sa.sa_mask);
 		sa.sa_sigaction = handler;
 		if (sigaction(SIGSEGV, &sa, &oldsa) == -1 ||
 			sigaction(SIGBUS, &sa, &oldsb) == -1) {

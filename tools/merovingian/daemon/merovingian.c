@@ -829,64 +829,42 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	if(sigemptyset(&sa.sa_mask) == -1) {
+	(void) sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = handler;
+	if (sigaction(SIGINT, &sa, NULL) == -1 ||
+		sigaction(SIGQUIT, &sa, NULL) == -1 ||
+		sigaction(SIGTERM, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
 				 argv[0], strerror(errno));
 		MERO_EXIT(1);
-	} else {
-		sa.sa_flags = 0;
-		sa.sa_handler = handler;
-		if (
-				sigaction(SIGINT, &sa, NULL) == -1 ||
-				sigaction(SIGQUIT, &sa, NULL) == -1 ||
-				sigaction(SIGTERM, &sa, NULL) == -1)
-		{
-			Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-					 argv[0], strerror(errno));
-			MERO_EXIT(1);
-		}
 	}
 
-	if(sigemptyset(&sa.sa_mask) == -1) {
+	(void) sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = huphandler;
+	if (sigaction(SIGHUP, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
 				 argv[0], strerror(errno));
 		MERO_EXIT(1);
-	} else {
-		sa.sa_flags = 0;
-		sa.sa_handler = huphandler;
-		if (sigaction(SIGHUP, &sa, NULL) == -1) {
-			Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-					 argv[0], strerror(errno));
-			MERO_EXIT(1);
-		}
 	}
 
-	if(sigemptyset(&sa.sa_mask) == -1) {
+	(void) sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = segvhandler;
+	if (sigaction(SIGSEGV, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
 				 argv[0], strerror(errno));
 		MERO_EXIT(1);
-	} else {
-		sa.sa_flags = 0;
-		sa.sa_handler = segvhandler;
-		if (sigaction(SIGSEGV, &sa, NULL) == -1) {
-			Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-					 argv[0], strerror(errno));
-			MERO_EXIT(1);
-		}
 	}
 
-	if(sigemptyset(&sa.sa_mask) == -1) {
+	(void) sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = SIG_IGN;
+	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
 				 argv[0], strerror(errno));
 		MERO_EXIT(1);
-	} else {
-		sa.sa_flags = 0;
-		sa.sa_handler = SIG_IGN;
-		if (sigaction(SIGPIPE, &sa, NULL) == -1) {
-			Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-					 argv[0], strerror(errno));
-			MERO_EXIT(1);
-		}
 	}
 
 	/* make sure we will be able to write our pid */

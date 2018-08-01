@@ -566,18 +566,13 @@ main(int argc, char **av)
 	{
 		struct sigaction sa;
 
-		if(sigemptyset(&sa.sa_mask) == -1) {
+		(void) sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sa.sa_handler = handler;
+		if (sigaction(SIGINT, &sa, NULL) == -1 ||
+		    sigaction(SIGQUIT, &sa, NULL) == -1 ||
+		    sigaction(SIGTERM, &sa, NULL) == -1) {
 			fprintf(stderr, "!unable to create signal handlers\n");
-		} else {
-			sa.sa_flags = 0;
-			sa.sa_handler = handler;
-			if (
-					sigaction(SIGINT, &sa, NULL) == -1 ||
-					sigaction(SIGQUIT, &sa, NULL) == -1 ||
-					sigaction(SIGTERM, &sa, NULL) == -1)
-			{
-				fprintf(stderr, "!unable to create signal handlers\n");
-			}
 		}
 	}
 #else
