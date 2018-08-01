@@ -228,6 +228,9 @@ mvc_logmanager(void)
 {
 	Thread thr = THRnew("logmanager");
 
+	if (thr == NULL)
+		GDKfatal("logmanager: cannot allocate thread");
+
 	store_manager();
 	THRdel(thr);
 }
@@ -236,6 +239,9 @@ void
 mvc_idlemanager(void)
 {
 	Thread thr = THRnew("idlemanager");
+
+	if (thr == NULL)
+		GDKfatal("idlemanager: cannot allocate thread");
 
 	idle_manager();
 	THRdel(thr);
