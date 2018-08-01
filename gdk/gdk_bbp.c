@@ -2561,7 +2561,7 @@ incref(bat i, bool logical, bool lock)
 {
 	int refs;
 	bat tp, tvp;
-	BAT *b;
+	BAT *b, *pb = NULL, *pvb = NULL;
 	bool load = false;
 
 	if (is_bat_nil(i)) {
@@ -2573,6 +2573,28 @@ incref(bat i, bool logical, bool lock)
 
 	if (!BBPcheck(i, logical ? "BBPretain" : "BBPfix"))
 		return 0;
+
+	/* Before we get the lock and before we do all sorts of
+	 * things, make sure we can load the parent bats if there are
+	 * any.  If we can't load them, we can still easily fail.  If
+	 * this is indeed a view, but not the first physical
+	 * reference, getting the parent BAT descriptor is
+	 * superfluous, but not too expensive, so we do it anyway. */
+	if (!logical && (b = BBP_desc(i)) != NULL) {
+		if (b->theap.parentid) {
+			pb = BATdescriptor(b->theap.parentid);
+			if (pb == NULL)
+				return 0;
+		}
+		if (b->tvheap && b->tvheap->parentid != i) {
+			pvb = BATdescriptor(b->tvheap->parentid);
+			if (pvb == NULL) {
+				if (pb)
+					BBPunfix(pb->batCacheid);
+				return 0;
+			}
+		}
+	}
 
 	if (lock) {
 		for (;;) {
@@ -2623,9 +2645,7 @@ incref(bat i, bool logical, bool lock)
 		 * to the correct values */
 		assert(!logical);
 		if (tp) {
-			BAT *pb;
-			incref(tp, false, lock);
-			pb = getBBPdescriptor(tp, lock);
+			assert(pb != NULL);
 			b->theap.base = pb->theap.base + (size_t) b->theap.base;
 			/* if we shared the hash before, share it
 			 * again note that if the parent's hash is
@@ -2634,12 +2654,15 @@ incref(bat i, bool logical, bool lock)
 			if (b->thash == (Hash *) -1)
 				b->thash = pb->thash;
 		}
-		if (tvp) {
-			incref(tvp, false, lock);
-			(void) getBBPdescriptor(tvp, lock);
-		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING, "BBPfix");
+	} else if (!logical) {
+		/* this wasn't the first physical reference, so undo
+		 * the fixes on the parent bats */
+		if (pb)
+			BBPunfix(pb->batCacheid);
+		if (pvb)
+			BBPunfix(pvb->batCacheid);
 	}
 	return refs;
 }

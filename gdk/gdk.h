@@ -2423,7 +2423,8 @@ BATdescriptor(bat i)
 	BAT *b = NULL;
 
 	if (BBPcheck(i, "BATdescriptor")) {
-		BBPfix(i);
+		if (BBPfix(i) <= 0)
+			return NULL;
 		b = BBP_cache(i);
 		if (b == NULL)
 			b = BBPdescriptor(i);
