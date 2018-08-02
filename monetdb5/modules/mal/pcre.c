@@ -82,9 +82,8 @@ mal_export str ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, cons
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {
 	char *k;
-	int search;
-	int skip;
-	int len;
+	bool search;
+	ptrdiff_t len;
 	struct RE *n;
 } RE;
 
@@ -124,99 +123,95 @@ re_simple(const char *pat)
 	return nr;
 }
 
-static int
+static bool
 is_strcmpable(const char *pat, const str esc)
 {
 	if (pat[strcspn(pat, "%_")])
-		return 0;
+		return false;
 	return strlen(esc) == 0 || strstr(pat, esc) == NULL;
 }
 
-static int
+static bool
 re_match_ignore(const char *s, RE *pattern)
 {
 	RE *r;
 
 	for (r = pattern; r; r = r->n) {
 		if (!*s ||
-			(!r->search && strncasecmp(s, r->k, r->len) != 0) ||
-			(r->search && (s = strcasestr(s, r->k)) == NULL))
-			return 0;
+			(r->search ? (s = strcasestr(s, r->k)) == NULL : strncasecmp(s, r->k, r->len) != 0))
+			return false;
 		s += r->len;
 	}
-	return 1;
+	return true;
 }
 
-static int
+static bool
 re_match_no_ignore(const char *s, RE *pattern)
 {
 	RE *r;
 
 	for (r = pattern; r; r = r->n) {
 		if (!*s ||
-			(!r->search && strncmp(s, r->k, r->len) != 0) ||
-			(r->search && (s = strstr(s, r->k)) == NULL))
-			return 0;
+			(r->search ? (s = strstr(s, r->k)) == NULL : strncmp(s, r->k, r->len) != 0))
+			return false;
 		s += r->len;
 	}
-	return 1;
+	return true;
 }
 
 static void
 re_destroy(RE *p)
 {
-	while (p) {
-		RE *n = p->n;
-
+	if (p) {
 		GDKfree(p->k);
-		GDKfree(p);
-		p = n;
+		do {
+			RE *n = p->n;
+
+			GDKfree(p);
+			p = n;
+		} while (p);
 	}
 }
 
+/* Create a linked list of RE structures.  The k field in the first
+ * structure is allocated, whereas the k field in all subsequent
+ * structures point into the allocated buffer of the first. */
 static RE *
 re_create(const char *pat, int nr)
 {
-	char *x = GDKstrdup(pat);
 	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
-	char *p = x, *q = x;
+	char *p, *q;
 
-	if (x == NULL || r == NULL) {
-		GDKfree(x);
+	if (r == NULL)
+		return NULL;
+	r->n = NULL;
+	r->search = 0;
+	r->k = NULL;
+
+	if (*pat == '%') {
+		pat++; /* skip % */
+		r->search = true;
+	}
+	if ((p = GDKstrdup(pat)) == NULL) {
 		GDKfree(r);
 		return NULL;
 	}
-	r->n = NULL;
-	r->search = 0;
-	r->skip = 0;
-	r->k = NULL;
-
-	if (*p == '%') {
-		p++; /* skip % */
-		r->search = 1;
-	}
-	q = p;
 	while ((q = strchr(p, '%')) != NULL) {
 		*q = 0;
-		n->k = GDKstrdup(p);
-		if (n->k == NULL)
-			goto bailout;
-		n->len = (int) strlen(n->k);
+		n->k = p;
+		n->len = q - p;
 		if (--nr > 0) {
 			n = n->n = (RE*)GDKmalloc(sizeof(RE));
 			if (n == NULL)
 				goto bailout;
-			n->search = 1;
-			n->skip = 0;
+			n->search = true;
 			n->n = NULL;
 			n->k = NULL;
 		}
 		p = q + 1;
 	}
-	GDKfree(x);
 	return r;
   bailout:
-	GDKfree(x);
 	re_destroy(r);
 	return NULL;
 }
@@ -279,7 +274,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 	} while (0)
 
 static str
-pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int anti)
+pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool anti)
 {
 #ifdef HAVE_LIBPCRE
 	int options = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
@@ -300,7 +295,6 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 	const char *v;
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
-	assert(anti == 0 || anti == 1);
 
 	if (caseignore) {
 #ifdef HAVE_LIBPCRE
@@ -405,7 +399,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 }
 
 static str
-re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int anti, int use_strcmp)
+re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool anti, bool use_strcmp)
 {
 	BATiter bi = bat_iterator(b);
 	BAT *bn;
@@ -416,7 +410,6 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 	RE *re = NULL;
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
-	assert(anti == 0 || anti == 1);
 
 	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL)
@@ -1585,8 +1578,8 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	BAT *b, *s = NULL, *bn = NULL;
 	str res;
 	char *ppat = NULL;
-	int use_re = 0;
-	int use_strcmp = 0;
+	bool use_re = false;
+	bool use_strcmp = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1598,11 +1591,11 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 
 	/* no escape, try if a simple list of keywords works */
 	if (is_strcmpable(*pat, *esc)) {
-		use_re = 1;
-		use_strcmp = 1;
+		use_re = true;
+		use_strcmp = true;
 	} else if ((strcmp(*esc, str_nil) == 0 || strlen(*esc) == 0 || strchr(*pat, **esc) == NULL) &&
 			   re_simple(*pat) > 0) {
-		use_re = 1;
+		use_re = true;
 	} else {
 		res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
 		if (res != MAL_SUCCEED) {
@@ -1630,7 +1623,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	}
 
 	if (use_re) {
-		res = re_likeselect(&bn, b, s, *pat, *caseignore, *anti, use_strcmp);
+		res = re_likeselect(&bn, b, s, *pat, (bool) *caseignore, (bool) *anti, use_strcmp);
 	} else if (ppat == NULL) {
 		/* no pattern and no special characters: can use normal select */
 		bn = BATselect(b, s, *pat, NULL, true, true, *anti);
@@ -1639,7 +1632,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 		else
 			res = MAL_SUCCEED;
 	} else {
-		res = pcre_likeselect(&bn, b, s, ppat, *caseignore, *anti);
+		res = pcre_likeselect(&bn, b, s, ppat, (bool) *caseignore, (bool) *anti);
 	}
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -1690,7 +1683,7 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 
 static char *
 pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
-		 const char *esc, int caseignore)
+		 const char *esc, bool caseignore)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
@@ -1978,7 +1971,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 static str
 PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
-		 const char *esc, int caseignore)
+		 const char *esc, bool caseignore)
 {
 	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
 	BAT *result1 = NULL, *result2 = NULL;
