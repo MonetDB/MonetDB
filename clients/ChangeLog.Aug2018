@@ -1,6 +1,13 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Thu Aug  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- ODBC SQLGetInfo now returns a positive numeric value for InfoTypes:
+  SQL_MAX_COLUMN_NAME_LEN, SQL_MAX_DRIVER_CONNECTIONS,
+  SQL_MAX_IDENTIFIER_LEN, SQL_MAX_PROCEDURE_NAME_LEN,
+  SQL_MAX_SCHEMA_NAME_LEN, SQL_MAX_TABLE_NAME_LEN and
+  SQL_MAX_USER_NAME_LEN.
+
 * Fri May 25 2018 Ying Zhang <y.zhang@cwi.nl>
 - Added a '-f rowcount' option in mclient to repress printing the actual
   data of a resultset, but only print the number of returned tuples
