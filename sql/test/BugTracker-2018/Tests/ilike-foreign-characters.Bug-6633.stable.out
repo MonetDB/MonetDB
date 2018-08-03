@@ -16,9 +16,6 @@ stdout of test 'ilike-foreign-characters.Bug-6633` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:38893/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20516/.s.monetdb.38893
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -60,6 +57,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 10:10:04 >  
 # 10:10:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20516" "--port=38893"

@@ -24,6 +24,9 @@
 #include "mal.h"
 #include "mal_exception.h"
 
+#include <wchar.h>
+#include <wctype.h>
+
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
 #ifndef PCRE_STUDY_JIT_COMPILE
@@ -87,21 +90,183 @@ typedef struct RE {
 	struct RE *n;
 } RE;
 
-#ifndef HAVE_STRCASESTR
+/* we cannot use strcasecmp and strncasecmp since they work byte for
+ * byte and don't deal with multibyte encodings (such as UTF-8) */
+
+#ifdef _MSC_VER
+/* on Windows, we cannot set the UTF-8 locale, so we need to implement
+ * our own version of mbrtowc and mbstowcs */
+
+static size_t
+my_mbrtowc(wchar_t *dst, const char *src, size_t len)
+{
+	if (len == 0)
+		return (size_t) -1;
+	if ((src[0] & 0x80) == 0) {
+		*dst = src[0];
+		return 1;
+	}
+	if (len == 1)
+		return (size_t) -1;
+	if ((src[0] & 0xE0) == 0xC0) {
+		*dst = ((src[0] & 0x1F) << 6) | (src[1] & 0x3F);
+		return 2;
+	}
+	if (len == 2)
+		return (size_t) -1;
+	if ((src[0] & 0xF0) == 0xE0) {
+		*dst = ((src[0] & 0x0F) << 12) | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F);
+		return 3;
+	}
+	if (len == 3)
+		return (size_t) -1;
+	if ((src[0] & 0xF8) == 0xF0) {
+		*dst = ((src[0] & 0x0F) << 18) | ((src[1] & 0x3F) << 12) | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F);
+		return 4;
+	}
+	return (size_t) -1;
+}
+
+static size_t
+my_mbstowcs(wchar_t *dst, const char *src, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if ((src[0] & 0x80) == 0) {
+			*dst = src[0];
+			src += 1;
+		} else if ((src[0] & 0xE0) == 0xC0) {
+			*dst = ((src[0] & 0x1F) << 6) | (src[1] & 0x3F);
+			src += 2;
+		} else if ((src[0] & 0xF0) == 0xE0) {
+			*dst = ((src[0] & 0x0F) << 12) | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F);
+			src += 3;
+		} else if ((src[0] & 0xF8) == 0xF0) {
+			*dst = ((src[0] & 0x0F) << 18) | ((src[1] & 0x3F) << 12) | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F);
+			src += 4;
+		} else {
+			return (size_t) -1;
+		}
+		if (*dst == 0)
+			return i;
+		dst++;
+	}
+	return i;
+}
+#define mbrtowc(dst, src, len, ps)	my_mbrtowc(dst, src, len)
+#define mbstowcs(dst, src, len)	my_mbstowcs(dst, src, len)
+#endif
+
+static int
+mystrncasecmp(const char *s1, const char *s2, size_t n1)
+{
+	wchar_t c1, c2;
+	size_t n2 = n1;
+
+#ifndef _MSC_VER
+	mbstate_t ps1, ps2;
+	memset(&ps1, 0, sizeof(ps1));
+	memset(&ps2, 0, sizeof(ps2));
+#endif
+	while (n1 > 0 && n2 > 0) {
+		size_t nn1 = mbrtowc(&c1, s1, n1, &ps1);
+		size_t nn2 = mbrtowc(&c2, s2, n2, &ps2);
+		if (nn1 == 0)
+			return -(nn2 != 0);
+		if (nn2 == 0)
+			return 1;
+		if (nn1 == (size_t) -1 || nn1 == (size_t) -2 ||
+			nn2 == (size_t) -1 || nn2 == (size_t) -2)
+			return 0;	 /* actually an error that shouldn't happen */
+		if (towlower((wint_t) c1) != towlower((wint_t) c2))
+			return towlower((wint_t) c1) - towlower((wint_t) c2);
+		n1 -= nn1;
+		s1 += nn1;
+		n2 -= nn2;
+		s2 += nn2;
+	}
+	return 0;
+}
+
+static int
+mystrcasecmp(const char *s1, const char *s2)
+{
+	wchar_t c1, c2;
+
+#ifndef _MSC_VER
+	mbstate_t ps1, ps2;
+	memset(&ps1, 0, sizeof(ps1));
+	memset(&ps2, 0, sizeof(ps2));
+#endif
+	for (;;) {
+		/* use some ridiculously high number as the length of the
+		 * input strings: we will still not go beyond the terminating
+		 * '\0' */
+		size_t nn1 = mbrtowc(&c1, s1, 1000, &ps1);
+		size_t nn2 = mbrtowc(&c2, s2, 1000, &ps2);
+		if (nn1 == 0)
+			return -(nn2 != 0);
+		if (nn2 == 0)
+			return 1;
+		if (nn1 == (size_t) -1 || nn1 == (size_t) -2 ||
+			nn2 == (size_t) -1 || nn2 == (size_t) -2)
+			return 0;	 /* actually an error that shouldn't happen */
+		if (towlower((wint_t) c1) != towlower((wint_t) c2))
+			return towlower((wint_t) c1) - towlower((wint_t) c2);
+		s1 += nn1;
+		s2 += nn2;
+	}
+}
+
 static const char *
-strcasestr(const char *haystack, const char *needle)
+mystrcasestr(const char *haystack, const char *needle)
 {
 	size_t nlen = strlen(needle);
 
 	if (nlen == 0)
 		return haystack;
-	for (size_t hlen = strlen(haystack); nlen <= hlen; haystack++, hlen--) {
-		if (strncasecmp(haystack, needle, nlen) == 0)
-			return haystack;
+	wchar_t *wneedle = GDKmalloc((nlen + 1) * sizeof(wchar_t));
+	if (wneedle == NULL || (nlen = mbstowcs(wneedle, needle, nlen + 1)) == (size_t) -1) {
+		GDKfree(wneedle);
+		nlen = strlen(needle);
+		/* fallback code */
+		for (size_t hlen = strlen(haystack); nlen <= hlen; hlen--) {
+			if (mystrncasecmp(haystack, needle, nlen) == 0)
+				return haystack;
+			while ((*++haystack & 0xC0) == 0x80)
+				hlen--;
+		}
+		return NULL;
 	}
+	for (wchar_t *w = wneedle; *w; w++)
+		*w = (wchar_t) towlower((wint_t) *w);
+#ifndef _MSC_VER
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
+#endif
+	for (size_t hlen = strlen(haystack); *haystack; hlen--) {
+		size_t i;
+		for (i = 0; i < nlen; i++) {
+			wchar_t c;
+			size_t j = mbrtowc(&c, haystack, hlen, &ps);
+			if (j == 0) {
+				GDKfree(wneedle);
+				return NULL;
+			}
+			if (towlower((wint_t) c) != (wint_t) wneedle[i])
+				break;
+		}
+		if (i == nlen) {
+			GDKfree(wneedle);
+			return haystack;
+		}
+		while ((*++haystack & 0xC0) == 0x80)
+			hlen--;
+	}
+	GDKfree(wneedle);
 	return NULL;
 }
-#endif
 
 static int
 re_simple(const char *pat)
@@ -138,7 +303,7 @@ re_match_ignore(const char *s, RE *pattern)
 
 	for (r = pattern; r; r = r->n) {
 		if (!*s ||
-			(r->search ? (s = strcasestr(s, r->k)) == NULL : strncasecmp(s, r->k, r->len) != 0))
+			(r->search ? (s = mystrcasestr(s, r->k)) == NULL : mystrncasecmp(s, r->k, r->len) != 0))
 			return false;
 		s += r->len;
 	}
@@ -439,10 +604,10 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 			if (caseignore) {
 				if (anti)
 					candscanloop(v && *v != '\200' &&
-								 strcasecmp(v, pat) != 0);
+								 mystrcasecmp(v, pat) != 0);
 				else
 					candscanloop(v && *v != '\200' &&
-								 strcasecmp(v, pat) == 0);
+								 mystrcasecmp(v, pat) == 0);
 			} else {
 				if (anti)
 					candscanloop(v && *v != '\200' &&
@@ -485,10 +650,10 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 			if (caseignore) {
 				if (anti)
 					scanloop(v && *v != '\200' &&
-							 strcasecmp(v, pat) != 0);
+							 mystrcasecmp(v, pat) != 0);
 				else
 					scanloop(v && *v != '\200' &&
-							 strcasecmp(v, pat) == 0);
+							 mystrcasecmp(v, pat) == 0);
 			} else {
 				if (anti)
 					scanloop(v && *v != '\200' &&
@@ -1284,7 +1449,7 @@ PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *ise
 		if (strcmp(ppat, str_nil) == 0) {
 			*ret = FALSE;
 			if (*isens) {
-				if (strcasecmp(*s, *pat) == 0)
+				if (mystrcasecmp(*s, *pat) == 0)
 					*ret = TRUE;
 			} else {
 				if (strcmp(*s, *pat) == 0)
