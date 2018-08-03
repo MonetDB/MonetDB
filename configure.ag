@@ -2963,6 +2963,8 @@ typedef __uint128_t uhge;
 @%:@endif
 
 @%:@if !defined(_MSC_VER) && !defined(_In_z_)
+/* see https://docs.microsoft.com/en-us/visualstudio/code-quality/using-sal-annotations-to-reduce-c-cpp-code-defects
+ * and Visual Studio include file <sal.h> */
 @%:@ define _In_z_
 @%:@ define _Printf_format_string_
 @%:@ define __declspec(x)

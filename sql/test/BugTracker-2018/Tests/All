@@ -77,3 +77,4 @@ strptime.Bug-6626
 singleton-stddev.Bug-6627
 create_table_if_not_exists_returns_42000.Bug-6629
 sqlitelogictest-cast-null-add.Bug-6630
+ilike-foreign-characters.Bug-6633
