@@ -1415,29 +1415,13 @@ AC_ARG_WITH([lz4],
 		[lz4 library is installed in DIR])],
 	[have_lz4="$withval"])
 
-AS_CASE(["$have_lz4"],
-	[yes|no|auto], [],
-	[
-		lz4_CFLAGS="-I$withval/include"
-		lz4_LIBS="-L$withval/lib -llz4"])
-
 AS_VAR_IF([have_lz4], [no], [], [
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $lz4_CFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	LDFLAGS="$LDFLAGS $lz4_LDFLAGS"
-	AC_CHECK_HEADER([lz4.h],
-		[AC_CHECK_LIB([lz4], [LZ4_compress_fast],
-			[AC_DEFINE([HAVE_LIBLZ4], 1, [Define if you have the lz4 library])],
-			[AS_VAR_IF([have_lz4], [auto], [], [AC_MSG_ERROR([-llz4 library not found])])
-			 have_lz4=no; why_not_lz4="(lz4 library not found)"])],
-		[AS_VAR_IF([have_lz4], [auto], [], [AC_MSG_ERROR([lz4.h header not found])])
-			 have_lz4=no; why_not_lz4="(lz4.h header not found)"])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"])
-AS_VAR_IF([have_lz4], [no], [lz4_CFLAGS=""; lz4_LIBS=""])
-AC_SUBST([lz4_CFLAGS])
-AC_SUBST([lz4_LIBS])
+	PKG_CHECK_MODULES([lz4], [liblz4 >= 1.8.0],
+		[have_lz4=yes],
+		[have_lz4=no; why_not_lz4="(liblz4 not found)"])
+	AS_VAR_IF([have_lz4], [yes], [
+		AC_DEFINE([HAVE_LIBLZ4], 1, [Define if you have the lz4 library])
+		AC_SUBST([PKG_LZ4], [liblz4])])])
 AM_CONDITIONAL([HAVE_LIBLZ4], [test x$have_lz4 != xno])
 
 
