@@ -2448,7 +2448,7 @@ AS_VAR_IF([have_atomic_ops], [yes], [
 		save_CFLAGS="$CFLAGS"
 		CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
 		AC_CHECK_HEADERS([atomic_ops.h], [have_atomic_ops=yes], [have_atomic_ops=no why_not_atomic_ops="(atomic_ops was incorrectly installed (happens on at least Solaris/OpenIndiana))"])
-		CFAGS="$save_CFLAGS"
+		CFLAGS="$save_CFLAGS"
 		AS_VAR_IF([have_atomic_ops], [yes], [
 			AC_DEFINE([HAVE_LIBATOMIC_OPS], 1, [Define if you have the libatomic_ops library])
 			CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
