@@ -449,8 +449,8 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	int errpos;
 	int ovector[10];
 #else
-	int options = REG_NEWLINE | REG_NOSUB;
-	pcre re;
+	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
+	regex_t re;
 	int errcode;
 #endif
 	BATiter bi = bat_iterator(b);
@@ -1098,7 +1098,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	pcre *re;
 #else
 	int options = REG_NOSUB;
-	pcre re;
+	regex_t re;
 	int errcode;
 	int retval;
 #endif
@@ -1200,14 +1200,14 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": ESCAPE string must have length 1");
 	if (pat == NULL )
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
-	ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
+	ppat = GDKmalloc(strlen(pat)*3+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
 		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	*r = ppat;
 	/* The escape character can be a char which is special in a PCRE
 	 * expression.  If the user used the "+" char as escape and has "++"
-	 * in its pattern, then replacing this with "+" is not correct and
+	 * in their pattern, then replacing this with "+" is not correct and
 	 * should be "\+" instead. */
 	specials = (*esc_str && strchr(pcre_specials, esc) != NULL);
 
@@ -1237,7 +1237,12 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		} else if (c == '%' && !escaped) {
 			*ppat++ = '.';
 			*ppat++ = '*';
+			*ppat++ = '?';
 			hasWildcard = 1;
+			/* collapse multiple %, but only if it isn't the escape */
+			if (esc != '%')
+				while (*pat == '%')
+					pat++;
 		} else if (c == '_' && !escaped) {
 			*ppat++ = '.';
 			hasWildcard = 1;
@@ -1354,13 +1359,23 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat, const str *r
 str
 PCREmatch(bit *ret, const str *val, const str *pat)
 {
-	return pcre_match_with_flags(ret, *val, *pat, "s");
+	return pcre_match_with_flags(ret, *val, *pat,
+#ifdef HAVE_LIBPCRE
+								 "s"
+#else
+								 "x"
+#endif
+		);
 }
 
 str
 PCREimatch(bit *ret, const str *val, const str *pat)
 {
-	return pcre_match_with_flags(ret, *val, *pat, "i");
+	return pcre_match_with_flags(ret, *val, *pat, "i"
+#ifndef HAVE_LIBPCRE
+								 "x"
+#endif
+		);
 }
 
 str
@@ -1591,8 +1606,8 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 			int options = PCRE_UTF8 | PCRE_DOTALL;
 			pcre *re;
 #else
-			pcre re;
-			int options = REG_NEWLINE | REG_NOSUB;
+			regex_t re;
+			int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
 			int errcode;
 #endif
 
@@ -1875,8 +1890,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	int pcreopt = PCRE_UTF8 | PCRE_MULTILINE;
 #else
 	int pcrere = 0;
-	pcre regex;
-	int options =  REG_NEWLINE | REG_NOSUB;
+	regex_t regex;
+	int options =  REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
 	int errcode = -1;
 #endif
 
