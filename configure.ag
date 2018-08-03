@@ -1408,8 +1408,6 @@ AM_CONDITIONAL([HAVE_LIBSNAPPY], [test x$have_snappy != xno])
 dnl  check for lz4 (de)compression library
 org_have_lz4=auto
 have_lz4=$org_have_lz4
-lz4_CFLAGS=""
-lz4_LIBS="-llz4"
 AC_ARG_WITH([lz4],
 	[AS_HELP_STRING([--with-lz4=DIR],
 		[lz4 library is installed in DIR])],
