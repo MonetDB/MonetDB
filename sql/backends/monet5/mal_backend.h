@@ -31,16 +31,22 @@ typedef enum output_format {
 	OFMT_NONE = 3
 } ofmt;
 
+/* The cur_append variable on an insert/update/delete on a partitioned table, tracks the current MAL variable holding
+ * the total number of rows affected. The first_statement_generated looks if the first of the sub-statements was
+ * generated or not */
+
 typedef struct backend {
 	char 	console;
 	char 	language;		/* 'S' or 's' or 'X' */
 	char 	depth;
+	bit		first_statement_generated;
 	mvc 	*mvc;
 	stream 	*out;
 	ofmt	output_format;	/* csv, json */
 	Client 	client;
 	MalBlkPtr mb;		/* needed during mal generation */
-	int 	mvc_var;	
+	int 	mvc_var;
+	int		cur_append;
 	int	vtop;		/* top of the variable stack before the current function */
 	cq 	*q;		/* pointer to the cached query */
 } backend;

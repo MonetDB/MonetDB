@@ -124,6 +124,9 @@ typedef struct stmt {
 	InstrPtr q;
 } stmt;
 
+extern void create_merge_partitions_accumulator(backend *be);
+extern int add_to_merge_partitions_accumulator(backend *be, int nr);
+
 extern int stmt_key(stmt *s);
 
 extern stmt *stmt_none(backend *be);

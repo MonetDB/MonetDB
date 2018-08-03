@@ -271,7 +271,7 @@ char * toUpperCopy(char *dest, const char *src)
 	return(dest);
 }
 
-char *dlist2string(mvc *sql, dlist *l, char **err)
+char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
 {
 	char *b = NULL;
 	dnode *n;
@@ -282,7 +282,7 @@ char *dlist2string(mvc *sql, dlist *l, char **err)
 		if (n->type == type_string && n->data.sval)
 			s = _STRDUP(n->data.sval);
 		else if (n->type == type_symbol)
-			s = symbol2string(sql, n->data.sym, err);
+			s = symbol2string(sql, n->data.sym, expression, err);
 
 		if (!s)
 			return NULL;
@@ -301,7 +301,7 @@ char *dlist2string(mvc *sql, dlist *l, char **err)
 	return b;
 }
 
-char *symbol2string(mvc *sql, symbol *se, char **err)
+char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 {
 	int len = 0;
 	char buf[BUFSIZ];
@@ -315,7 +315,7 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 
 		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
 		for (; ops; ops = ops->next) {
-			char *tmp = symbol2string(sql, ops->data.sym, err);
+			char *tmp = symbol2string(sql, ops->data.sym, expression, err);
 			if (tmp == NULL)
 				return NULL;
 			len = snprintf( buf+len, BUFSIZ-len, "%s%s", 
@@ -330,10 +330,10 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		char *op = qname_fname(lst->data.lval);
 		char *l;
 		char *r;
-		l = symbol2string(sql, lst->next->data.sym, err);
+		l = symbol2string(sql, lst->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
-		r = symbol2string(sql, lst->next->next->data.sym, err);
+		r = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (r == NULL) {
 			_DELETE(l);
 			return NULL;
@@ -350,7 +350,7 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym, err);
+		char *l = symbol2string(sql, lst->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
@@ -388,8 +388,11 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
 			atom *a = sql_bind_arg(sql, l->h->data.i_val);
 			return atom2sql(a);
+		} else if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
+			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
+			return _STRDUP(l->h->data.sval);
 		} else {
-			char *e = dlist2string(sql, l, err);
+			char *e = dlist2string(sql, l, expression, err);
 			if (e)
 				*err = e;
 		}
@@ -400,7 +403,7 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		char *val;
 		char *tpe;
 
-		val = symbol2string(sql, dl->h->data.sym, err);
+		val = symbol2string(sql, dl->h->data.sym, expression, err);
 		if (val == NULL)
 			return NULL;
 		tpe = subtype2string(&dl->h->next->data.typeval);

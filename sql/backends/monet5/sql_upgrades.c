@@ -1622,6 +1622,51 @@ sql_update_remote_tables(Client c, mvc *sql)
 }
 
 static str
+sql_update_merge_partitions(Client c, mvc *sql)
+{
+	size_t bufsize = 2048, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_merge_partitions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create table table_partitions (id int, table_id int, column_id int, expression varchar(%d));\n",
+					STORAGE_MAX_VALUE_LENGTH);
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create table range_partitions (table_id int, partition_id int, minimum varchar(%d), "
+					"maximum varchar(%d), with_nulls boolean);\n", STORAGE_MAX_VALUE_LENGTH, STORAGE_MAX_VALUE_LENGTH);
+	pos += snprintf(buf + pos, bufsize - pos,
+					"create table value_partitions (table_id int, partition_id int, value varchar(%d));\n",
+					STORAGE_MAX_VALUE_LENGTH);
+	/* The table_type_name column's length had to be increased, hence sys.table_types table is re-created */
+	pos += snprintf(buf + pos, bufsize - pos, "drop table table_types;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "create table table_types "
+					"(table_type_id smallint not null primary key, table_type_name varchar(50) not null unique);\n");
+	pos += snprintf(buf + pos, bufsize - pos, "insert into table_types (table_type_id, table_type_name) values "
+					"(0, 'TABLE'),(1, 'VIEW'),(3, 'MERGE TABLE'),(4, 'STREAM TABLE'),(5, 'REMOTE TABLE'),"
+					"(6, 'REPLICA TABLE'),(10, 'SYSTEM TABLE'),(11, 'SYSTEM VIEW'),"
+					"(12, 'MERGE TABLE PARTITION BY VALUES ON COLUMN'),"
+					"(13, 'MERGE TABLE PARTITION BY RANGE ON COLUMN'),"
+					"(14, 'MERGE TABLE PARTITION BY VALUES USING EXPRESSION'),"
+					"(15, 'MERGE TABLE PARTITION BY RANGE USING EXPRESSION'),(20, 'GLOBAL TEMPORARY TABLE'),"
+					"(30, 'LOCAL TEMPORARY TABLE');\n");
+	pos += snprintf(buf + pos, bufsize - pos, "ALTER TABLE sys.table_types SET READ ONLY;\n");
+	pos += snprintf(buf + pos, bufsize - pos, "GRANT SELECT ON sys.table_types TO PUBLIC;\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "create partition system tables", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
 sql_replace_Mar2018_ids_view(Client c, mvc *sql)
 {
 	size_t bufsize = 4400, pos = 0;
@@ -1988,6 +2033,13 @@ SQLupgrades(Client c, mvc *m)
 	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (mvc_bind_table(m, s, "table_partitions") == NULL) {
+		if ((err = sql_update_merge_partitions(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

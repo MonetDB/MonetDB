@@ -1,0 +1,55 @@
+stderr of test 'mergepart15` in directory 'sql/test/merge-partitions` itself:
+
+
+# 11:35:39 >  
+# 11:35:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37352" "--set" "mapi_usock=/var/tmp/mtest-26053/.s.monetdb.37352" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 11:35:39 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37352
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26053/.s.monetdb.37352
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 11:35:39 >  
+# 11:35:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26053" "--port=37352"
+# 11:35:39 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-26053/.s.monetdb.37352
+QUERY = ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION WITH NULL; --error
+ERROR = !ALTER TABLE: there are values in the column a outside the partition range
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-18994/.s.monetdb.34581
+QUERY = INSERT INTO testme VALUES (2, 'third'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-26053/.s.monetdb.37352
+QUERY = INSERT INTO sublimits1 VALUES (2, 'third'); --error
+ERROR = !INSERT: table sys.sublimits1 is part of merge table sys.testme and the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-26053/.s.monetdb.37352
+QUERY = ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION WITH NULL; --error
+ERROR = !ALTER TABLE: conflicting partitions: table sys.sublimits1 stores null values and only one partition can store null values at the time
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-26053/.s.monetdb.37352
+QUERY = ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION BETWEEN '301' AND '500' WITH NULL; --error
+ERROR = !ALTER TABLE: conflicting partitions: table sys.sublimits1 stores null values and only one partition can store null values at the time
+CODE  = 42000
+
+# 11:35:39 >  
+# 11:35:39 >  "Done."
+# 11:35:39 >  
+

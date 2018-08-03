@@ -300,6 +300,14 @@ int yydebug=1;
 	XML_value_expression
 	XML_primary
 	opt_comma_string_value_expression
+	opt_partition_by
+	opt_as_partition
+	opt_partition_spec
+	partition_list_value
+	partition_range_from
+	partition_range_to
+	partition_on
+	partition_expression
 
 %type <type>
 	data_type
@@ -433,6 +441,7 @@ int yydebug=1;
 	window_frame_between
 	routine_designator
 	drop_routine_designator
+	partition_list
 
 %type <i_val>
 	any_all_some
@@ -484,6 +493,7 @@ int yydebug=1;
 	window_frame_units
 	window_frame_exclusion
 	subgeometry_type
+	partition_type
 
 %type <l_val>
 	lngval
@@ -501,6 +511,7 @@ int yydebug=1;
 	opt_constraint
 	set_distinct
 	opt_with_check_option
+	opt_with_nulls
 	create
 	create_or_replace
 	if_exists
@@ -1052,36 +1063,47 @@ alter_statement:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $6);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname ADD TABLE qname
-	{ dlist *l = L();
+ | ALTER TABLE qname ADD TABLE qname opt_as_partition
+	{ dlist *l = L(), *part;
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
+	  if($7) {
+	  	  part = $7->data.lval;
+	  	  append_int(part, FALSE);
+	  }
+	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname DROP drop_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET READ ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_readonly));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET INSERT ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_append));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET READ WRITE
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_writable));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
@@ -1103,6 +1125,14 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
+ | ALTER TABLE qname SET TABLE qname opt_as_partition
+	{ dlist *l = L(), *part;
+	  append_list(l, $3);
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
+	  part = $7->data.lval;
+	  append_int(part, TRUE);
+	  append_symbol(l, $7);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
 
 passwd_schema:
@@ -1343,7 +1373,7 @@ table_opt_storage:
  ;
 
 table_def:
-    TABLE if_not_exists qname table_content_source  table_opt_storage
+    TABLE if_not_exists qname table_content_source table_opt_storage
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
@@ -1355,6 +1385,7 @@ table_def:
 	  append_list(l, NULL);
 	  append_int(l, $2);
 	  append_list(l, $5);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  TABLE if_not_exists qname FROM sqlLOADER func_ref
     {
@@ -1374,10 +1405,34 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  MERGE TABLE if_not_exists qname table_content_source 
+ |  MERGE TABLE if_not_exists qname table_content_source opt_partition_by
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
 	  dlist *l = L();
+	  symbol* part = $6;
+
+	  if(part != NULL) {
+	  	dlist *prop = part->data.lval;
+	  	symbol *other = prop->h->next->data.sym;
+	  	if(prop->h->data.i_val == PARTITION_RANGE) {
+	  		if(other->token == SQL_PARTITION_COLUMN) {
+	  			tpe = SQL_MERGE_RANGE_PARTITION_COL;
+	  		} else if(other->token == SQL_PARTITION_EXPRESSION) {
+	  			tpe = SQL_MERGE_RANGE_PARTITION_EXP;
+	  		} else {
+	  			assert(0);
+	  		}
+	  	} else if(prop->h->data.i_val == PARTITION_LIST) {
+	  		if(other->token == SQL_PARTITION_COLUMN) {
+	  			tpe = SQL_MERGE_LIST_PARTITION_COL;
+	  		} else if(other->token == SQL_PARTITION_EXPRESSION) {
+	  			tpe = SQL_MERGE_LIST_PARTITION_EXP;
+	  		} else {
+	  			assert(0);
+	  		}
+	  	}
+	  }
 
 	  append_int(l, tpe);
 	  append_list(l, $4);
@@ -1386,6 +1441,7 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  REPLICA TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_REPLICA_TABLE;
@@ -1398,6 +1454,7 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
@@ -1413,6 +1470,7 @@ table_def:
 	  append_string(l, $7);
 	  append_list(l, $8);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
   | opt_temp TABLE if_not_exists qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
@@ -1427,7 +1485,80 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ ;
+
+partition_type:
+   RANGE	{ $$ = PARTITION_RANGE; }
+ | VALUES	{ $$ = PARTITION_LIST; }
+ ;
+
+partition_expression:
+   simple_scalar_exp 	{ $$ = $1; }
+ ;
+
+partition_on:
+   ON '(' ident ')'                   { $$ = _symbol_create_list( SQL_PARTITION_COLUMN, append_string(L(), $3) ); }
+ | USING '(' partition_expression ')' { $$ = _symbol_create_list( SQL_PARTITION_EXPRESSION, append_symbol(L(), $3) ); }
+ ;
+
+opt_partition_by:
+ /* empty */									 { $$ = NULL; }
+ | PARTITION BY partition_type partition_on
+   { dlist *l = L();
+     append_int(l, $3);
+     append_symbol(l, $4);
+     $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
+ ;
+
+partition_list_value:
+   simple_scalar_exp { $$ = $1; }
+ ;
+
+partition_range_from:
+   simple_scalar_exp { $$ = $1; }
+ | RANGE MINVALUE    { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
+ ;
+
+partition_range_to:
+   simple_scalar_exp { $$ = $1; }
+ | RANGE MAXVALUE    { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
+ ;
+
+partition_list:
+   partition_list_value						{ $$ = append_symbol(L(), $1 ); }
+ | partition_list ',' partition_list_value  { $$ = append_symbol($1, $3 ); }
+ ;
+
+opt_with_nulls:
+    /* empty */		{ $$ = FALSE; }
+ |  WITH sqlNULL	{ $$ = TRUE; }
+ ;
+
+opt_partition_spec:
+   sqlIN '(' partition_list ')' opt_with_nulls
+    { dlist *l = L();
+      append_list(l, $3);
+      append_int(l, $5);
+      $$ = _symbol_create_list( SQL_PARTITION_LIST, l ); }
+ | BETWEEN partition_range_from AND partition_range_to opt_with_nulls
+    { dlist *l = L();
+      append_symbol(l, $2);
+      append_symbol(l, $4);
+      append_int(l, $5);
+      $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
+ | WITH sqlNULL
+    { dlist *l = L();
+      append_symbol(l, NULL);
+      append_symbol(l, NULL);
+      append_int(l, TRUE);
+      $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
+ ;
+
+opt_as_partition:
+ /* empty */						 { $$ = NULL; }
+ | AS PARTITION opt_partition_spec	 { $$ = $3; }
  ;
 
 with_opt_credentials:

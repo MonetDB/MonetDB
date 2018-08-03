@@ -16,6 +16,7 @@
 #include "sql_types.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
+#include "sql_partition.h"
 #include "sql_privileges.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -43,10 +44,24 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
+#define MVC_INIT_DROP_TABLE(SQLID, TNAME)                      \
+	t = mvc_bind_table(m, s, TNAME);                           \
+	SQLID = t->base.id;                                        \
+	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
+		mvc_destroy(m);                                        \
+		fprintf(stderr, "!mvc_init: %s\n", output);            \
+		GDKfree(output);                                       \
+		return -1;                                             \
+	}
+
 int
 mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
+	sql_schema *s;
+	sql_table *t;
+	sqlid tid = 0, ntid, cid = 0, ncid;
+	mvc *m;
 
 	logger_settings log_settings;
 	/* Set the default WAL directory. "sql_logs" by default */
@@ -84,55 +99,41 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
+
+	m = mvc_create(0, stk, 0, NULL, NULL);
+	if (!m) {
+		fprintf(stderr, "!mvc_init: malloc failure\n");
+		return -1;
+	}
+
+	m->sa = sa_create();
+	if (!m->sa) {
+		mvc_destroy(m);
+		fprintf(stderr, "!mvc_init: malloc failure\n");
+		return -1;
+	}
+
+	/* disable caching */
+	m->caching = 0;
+	/* disable history */
+	m->history = 0;
+	/* disable size header */
+	m->sizeheader = 0;
+
 	if (first || catalog_version) {
-		sql_schema *s;
-		sql_table *t;
-		sqlid tid = 0, ntid, cid = 0, ncid;
-		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
-		if (!m) {
-			fprintf(stderr, "!mvc_init: malloc failure\n");
-			return -1;
-		}
-
-		m->sa = sa_create();
-		if (!m->sa) {
-			mvc_destroy(m);
-			fprintf(stderr, "!mvc_init: malloc failure\n");
-			return -1;
-		}
-
-		/* disable caching */
-		m->caching = 0;
-		/* disable history */
-		m->history = 0;
-		/* disable size header */
-		m->sizeheader = 0;
 		if(mvc_trans(m) < 0) {
 			mvc_destroy(m);
 			fprintf(stderr, "!mvc_init: failed to start transaction\n");
 			return -1;
 		}
+
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
 
 		if (!first) {
 			str output;
-			t = mvc_bind_table(m, s, "tables");
-			tid = t->base.id;
-			if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {
-				mvc_destroy(m);
-				fprintf(stderr, "!mvc_init: %s\n", output);
-				GDKfree(output);
-				return -1;
-			}
-			t = mvc_bind_table(m, s, "columns");
-			cid = t->base.id;
-			if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {
-				mvc_destroy(m);
-				fprintf(stderr, "!mvc_init: %s\n", output);
-				GDKfree(output);
-				return -1;
-			}
+			MVC_INIT_DROP_TABLE(tid,  "tables")
+			MVC_INIT_DROP_TABLE(cid,  "columns")
 		}
 
 		t = mvc_create_view(m, s, "tables", SQL_PERSIST, "SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";", 1);
@@ -173,7 +174,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "type_digits", "int", 32);
 		mvc_create_column_(m, t, "type_scale", "int", 32);
 		mvc_create_column_(m, t, "table_id", "int", 32);
-		mvc_create_column_(m, t, "default", "varchar", 2048);
+		mvc_create_column_(m, t, "default", "varchar", STORAGE_MAX_VALUE_LENGTH);
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage", "varchar", 2048);
@@ -207,9 +208,38 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			fprintf(stderr, "!mvc_init: unable to commit system tables\n");
 			return -1;
 		}
-
-		mvc_destroy(m);
 	}
+
+	if(mvc_trans(m) < 0) {
+		mvc_destroy(m);
+		fprintf(stderr, "!mvc_init: failed to start transaction\n");
+		return -1;
+	}
+
+	//as the sql_parser is not yet initialized in the storage, we determine the sql type of the sql_parts here
+	for (node *n = m->session->tr->schemas.set->h; n; n = n->next) {
+		sql_schema *ss = (sql_schema*) n->data;
+		if(ss->tables.set) {
+			for (node *nn = ss->tables.set->h; nn; nn = nn->next) {
+				sql_table *tt = (sql_table*) nn->data;
+				if(isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
+					char *err;
+					if((err = initialize_sql_parts(m, tt)) != NULL) {
+						fprintf(stderr, "!mvc_init: unable to start partitioned table: %s.%s: %s\n",
+								ss->base.name, tt->base.name, err);
+						return -1;
+					}
+				}
+			}
+		}
+	}
+
+	if (mvc_commit(m, 0, NULL) < 0) {
+		fprintf(stderr, "!mvc_init: unable to commit system tables\n");
+		return -1;
+	}
+
+	mvc_destroy(m);
 	return first;
 }
 
@@ -328,15 +358,21 @@ sql_trans_deref( sql_trans *tr )
 				table_destroy(p);
 			}
 
-			if (t->columns.set)
-			for ( o = t->columns.set->h; o; o = o->next) {
-				sql_column *c = o->data;
+			if (t->columns.set) {
+				for ( o = t->columns.set->h; o; o = o->next) {
+					sql_column *c = o->data;
 
-				if (c->po) {
-					sql_column *p = c->po;
+					if (c->po) {
+						sql_column *p = c->po;
 
-					c->po = c->po->po;
-					column_destroy(p);
+						c->po = c->po->po;
+						column_destroy(p);
+					}
+				}
+				if(isPartitionedByColumnTable(t)) {
+					t->part.pcol = t->po->part.pcol;
+				} else if(isPartitionedByExpressionTable(t)) {
+					t->part.pexp = t->po->part.pexp;
 				}
 			}
 			if (t->idxs.set)
@@ -1213,6 +1249,8 @@ sql_table *
 mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz)
 {
 	sql_table *t = NULL;
+	char *err = NULL;
+	int check = 0;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
@@ -1222,6 +1260,18 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		t->s = s;
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
+		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, m->session->tr->sa, t, 1))) {
+			(void) sql_error(m, 02, "%s", err);
+			return NULL;
+		}
+		check = sql_trans_set_partition_table(m->session->tr, t);
+		if(check == -1) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
+			return NULL;
+		} else if (check) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
+			return NULL;
+		}
 	}
 	return t;
 }

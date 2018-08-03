@@ -245,7 +245,6 @@ static int CUMLEAPDAYS[13] = {
 
 static date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
-#define YEAR_MAX		5867411
 #define YEAR_MIN		(-YEAR_MAX)
 #define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : leapyear(y) ? 29 : 28)
 #define YEARDAYS(y)		(leapyear(y) ? 366 : 365)

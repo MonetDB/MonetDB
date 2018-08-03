@@ -15,6 +15,8 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
+#include "mtime.h"
+#include "blob.h"
 
 comp_type 
 swap_compare( comp_type t )
@@ -623,6 +625,19 @@ exp_rel(mvc *sql, sql_rel *rel)
 	*/
 	e->l = rel;
 	e->flag = PSM_REL;
+	return e;
+}
+
+sql_exp *
+exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	if (e == NULL)
+		return NULL;
+	e->l = cond;
+	e->r = sa_strdup(sa, error_message);
+	e->flag = PSM_EXCEPTION;
 	return e;
 }
 
@@ -2016,4 +2031,95 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 		}
 		*res = t;
 	}
+}
+
+sql_exp *
+create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
+{
+	str buf = NULL;
+	size_t len = 0;
+	sql_exp *res = NULL;
+
+	switch (tpe.type->eclass) {
+		case EC_BIT: {
+			bit bval = *((bit*) value);
+			return exp_atom_bool(sql->sa, bval ? 1 : 0);
+		}
+		case EC_POS:
+		case EC_NUM:
+		case EC_DEC:
+		case EC_SEC:
+		case EC_MONTH:
+			switch (tpe.type->localtype) {
+#ifdef HAVE_HGE
+				case TYPE_hge: {
+					hge hval = *((hge*) value);
+					return exp_atom_hge(sql->sa, hval);
+				}
+#endif
+				case TYPE_lng: {
+					lng lval = *((lng*) value);
+					return exp_atom_lng(sql->sa, lval);
+				}
+				case TYPE_int: {
+					int ival = *((int*) value);
+					return exp_atom_int(sql->sa, ival);
+				}
+				case TYPE_sht: {
+					sht sval = *((sht*) value);
+					return exp_atom_sht(sql->sa, sval);
+				}
+				case TYPE_bte: {
+					bte bbval = *((bte *) value);
+					return exp_atom_bte(sql->sa, bbval);
+				}
+				default:
+					return NULL;
+			}
+		case EC_FLT:
+			switch (tpe.type->localtype) {
+				case TYPE_flt: {
+					flt fval = *((flt*) value);
+					return exp_atom_flt(sql->sa, fval);
+				}
+				case TYPE_dbl: {
+					dbl dval = *((dbl*) value);
+					return exp_atom_dbl(sql->sa, dval);
+				}
+				default:
+					return NULL;
+			}
+		case EC_DATE: {
+			if(date_tostr(&buf, &len, (const date *)value) < 0)
+				return NULL;
+			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
+			break;
+		}
+		case EC_TIME: {
+			if(daytime_tostr(&buf, &len, (const daytime *)value) < 0)
+				return NULL;
+			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
+			break;
+		}
+		case EC_TIMESTAMP: {
+			if(timestamp_tostr(&buf, &len, (const timestamp *)value) < 0)
+				return NULL;
+			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
+			break;
+		}
+		case EC_BLOB: {
+			if(SQLBLOBtostr(&buf, &len, (const blob *)value) < 0)
+				return NULL;
+			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
+			break;
+		}
+		case EC_CHAR:
+		case EC_STRING:
+			return exp_atom_clob(sql->sa, sa_strdup(sql->sa, value));
+		default:
+			assert(0);
+	}
+	if(buf)
+		GDKfree(buf);
+	return res;
 }

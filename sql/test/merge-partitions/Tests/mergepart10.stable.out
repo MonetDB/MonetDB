@@ -1,0 +1,290 @@
+stdout of test 'mergepart10` in directory 'sql/test/merge-partitions` itself:
+
+
+# 16:03:30 >  
+# 16:03:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33102" "--set" "mapi_usock=/var/tmp/mtest-28164/.s.monetdb.33102" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true" "--set" "embedded_c=true"
+# 16:03:30 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-23.eduroam.cwi.nl:33102/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28164/.s.monetdb.33102
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:03:30 >  
+# 16:03:30 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28164" "--port=33102"
+# 16:03:30 >  
+
+#CREATE MERGE TABLE testsmallpartitions (a int, b varchar(32)) PARTITION BY VALUES (a);
+#CREATE TABLE testingme (a int, b varchar(32));
+#ALTER TABLE testsmallpartitions ADD TABLE testingme AS PARTITION IN ('100', 300, '400');
+#DELETE FROM testsmallpartitions;
+[ 0	]
+#DELETE FROM testsmallpartitions WHERE a < 400;
+[ 0	]
+#TRUNCATE testsmallpartitions;
+[ 0	]
+#UPDATE testsmallpartitions SET b = 'updating';
+[ 0	]
+#INSERT INTO testsmallpartitions VALUES (100, 'ok'), (100, 'also'), (100, 'ok');
+[ 3	]
+#DELETE FROM testsmallpartitions;
+[ 3	]
+#INSERT INTO testsmallpartitions VALUES (100, 'another'), (100, 'test'), (100, 'todo');
+[ 3	]
+#DELETE FROM testsmallpartitions WHERE a < 400;
+[ 3	]
+#INSERT INTO testsmallpartitions VALUES (100, 'more'), (100, 'testing'), (100, 'please'), (100, 'now');
+[ 4	]
+#TRUNCATE testsmallpartitions;
+[ 4	]
+#INSERT INTO testsmallpartitions VALUES (300, 'just'), (100, 'one'), (300, 'more'), (100, 'insert');
+[ 4	]
+#SELECT a, b FROM testsmallpartitions;
+% sys.testsmallpartitions,	sys.testsmallpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	6 # length
+[ 300,	"just"	]
+[ 100,	"one"	]
+[ 300,	"more"	]
+[ 100,	"insert"	]
+#SELECT a, b FROM testingme;
+% sys.testingme,	sys.testingme # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	6 # length
+[ 300,	"just"	]
+[ 100,	"one"	]
+[ 300,	"more"	]
+[ 100,	"insert"	]
+#UPDATE testsmallpartitions SET b = 'nothing' WHERE a = 0;
+[ 0	]
+#UPDATE testsmallpartitions SET b = 'another update' WHERE a = 100;
+[ 2	]
+#SELECT a, b FROM testsmallpartitions;
+% sys.testsmallpartitions,	sys.testsmallpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	14 # length
+[ 300,	"just"	]
+[ 100,	"another update"	]
+[ 300,	"more"	]
+[ 100,	"another update"	]
+#SELECT a, b FROM testingme;
+% sys.testingme,	sys.testingme # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	14 # length
+[ 300,	"just"	]
+[ 100,	"another update"	]
+[ 300,	"more"	]
+[ 100,	"another update"	]
+#UPDATE testsmallpartitions SET b = 'change' || 'me' WHERE a = 300;
+[ 2	]
+#SELECT a, b FROM testsmallpartitions;
+% sys.testsmallpartitions,	sys.testsmallpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	14 # length
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+#SELECT a, b FROM testingme;
+% sys.testingme,	sys.testingme # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	14 # length
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+#CREATE TABLE testmealso (a int, b varchar(32));
+#ALTER TABLE testsmallpartitions ADD TABLE testmealso AS PARTITION IN ('200', 500);
+#INSERT INTO testsmallpartitions VALUES (100, 'more'), (200, 'data'), (100, 'to'), (400, 'test'), (500, 'on');
+[ 5	]
+#UPDATE testsmallpartitions SET b = 'on both partitions' WHERE a = 400 OR a = 200;
+[ 2	]
+#SELECT a, b FROM testsmallpartitions;
+% .testsmallpartitions,	.testsmallpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	18 # length
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 100,	"more"	]
+[ 100,	"to"	]
+[ 400,	"on both partitions"	]
+[ 200,	"on both partitions"	]
+[ 500,	"on"	]
+#SELECT a, b FROM testingme;
+% sys.testingme,	sys.testingme # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	18 # length
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 100,	"more"	]
+[ 100,	"to"	]
+[ 400,	"on both partitions"	]
+#SELECT a, b FROM testmealso;
+% sys.testmealso,	sys.testmealso # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	18 # length
+[ 200,	"on both partitions"	]
+[ 500,	"on"	]
+#UPDATE testsmallpartitions SET b = 'just on the second partition' WHERE a = 500;
+[ 1	]
+#SELECT a, b FROM testsmallpartitions;
+% .testsmallpartitions,	.testsmallpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	28 # length
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 100,	"more"	]
+[ 100,	"to"	]
+[ 400,	"on both partitions"	]
+[ 200,	"on both partitions"	]
+[ 500,	"just on the second partition"	]
+#SELECT a, b FROM testingme;
+% sys.testingme,	sys.testingme # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	18 # length
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 100,	"more"	]
+[ 100,	"to"	]
+[ 400,	"on both partitions"	]
+#SELECT a, b FROM testmealso;
+% sys.testmealso,	sys.testmealso # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	28 # length
+[ 200,	"on both partitions"	]
+[ 500,	"just on the second partition"	]
+#UPDATE testsmallpartitions SET b = 'no partition' WHERE a = 1000;
+[ 0	]
+#SELECT a, b FROM testsmallpartitions;
+% .testsmallpartitions,	.testsmallpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	28 # length
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 100,	"more"	]
+[ 100,	"to"	]
+[ 400,	"on both partitions"	]
+[ 200,	"on both partitions"	]
+[ 500,	"just on the second partition"	]
+#SELECT a, b FROM testingme;
+% sys.testingme,	sys.testingme # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	18 # length
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 300,	"changeme"	]
+[ 100,	"another update"	]
+[ 100,	"more"	]
+[ 100,	"to"	]
+[ 400,	"on both partitions"	]
+#SELECT a, b FROM testmealso;
+% sys.testmealso,	sys.testmealso # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	28 # length
+[ 200,	"on both partitions"	]
+[ 500,	"just on the second partition"	]
+#TRUNCATE testsmallpartitions;
+[ 9	]
+#SELECT a, b FROM testsmallpartitions;
+% .testsmallpartitions,	.testsmallpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	0 # length
+#SELECT a, b FROM testingme;
+% sys.testingme,	sys.testingme # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	0 # length
+#SELECT a, b FROM testmealso;
+% sys.testmealso,	sys.testmealso # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	0 # length
+#ALTER TABLE testsmallpartitions DROP TABLE testingme;
+#ALTER TABLE testsmallpartitions DROP TABLE testmealso;
+#DROP TABLE testingme;
+#DROP TABLE testmealso;
+#DROP TABLE testsmallpartitions;
+
+# 16:03:31 >  
+# 16:03:31 >  "Done."
+# 16:03:31 >  
+

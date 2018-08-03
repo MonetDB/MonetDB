@@ -22,6 +22,8 @@ mal_export  str algebraRef;
 mal_export  str alter_add_tableRef;
 mal_export  str alter_constraintRef;
 mal_export  str alter_del_tableRef;
+mal_export  str alter_add_range_partitionRef;
+mal_export  str alter_add_value_partitionRef;
 mal_export  str alter_functionRef;
 mal_export  str alter_indexRef;
 mal_export  str alter_roleRef;

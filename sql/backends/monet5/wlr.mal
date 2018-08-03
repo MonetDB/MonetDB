@@ -227,6 +227,10 @@ pattern alter_set_table( sname:str, tnme:str, access:int)
 address WLRgeneric
 comment "Catalog operation alter_set_table";
 
+pattern alter_add_range_partition( sname:str, mtnme:str, psnme:str, ptnme:str, min:str, max:str, nills:int, update:int)
+address WLRgeneric
+comment "Catalog operation alter_add_range_partition";
+
 pattern comment_on(objid:int, remark:str)
 address WLRgeneric
 comment "Catalog operation comment_on";
@@ -251,3 +255,10 @@ unsafe pattern transaction()
 address WLRgeneric
 comment "Start an autocommit transaction";
 
+pattern alter_add_value_partition( sname:str, mtnme:str, psnme:str, ptnme:str, nills:int, update:int)
+address WLRgeneric
+comment "Catalog operation alter_add_value_partition";
+
+pattern alter_add_value_partition( sname:str, mtnme:str, psnme:str, ptnme:str, nills:int, update:int, arg:str...)
+address WLRgeneric
+comment "Catalog operation alter_add_value_partition";

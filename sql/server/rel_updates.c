@@ -29,7 +29,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 			char *typestr = subtype2string2(&c->type);
 			if(!typestr)
 				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode);
+			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode, NULL);
 			_DELETE(typestr);
 			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
 				return NULL;
@@ -361,7 +361,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							q = sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr);
 							_DELETE(typestr);
-							e = rel_parse_val(sql, q, sql->emode);
+							e = rel_parse_val(sql, q, sql->emode, NULL);
 							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
 								return NULL;
 						} else {
@@ -397,15 +397,17 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 }
 
 
-static sql_table *
+sql_table *
 insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 {
 	if (!t) {
 		return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
-	} else if (isMergeTable(t)) {
+	} else if (isNonPartitionedTable(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members) == 0) {
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
 	} else if (isStream(t)) {
@@ -430,15 +432,17 @@ copy_allowed(mvc *sql, int from)
 	return 1;
 }
 
-static sql_table *
+sql_table *
 update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
 {
 	if (!t) {
 		return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
-	} else if (isMergeTable(t)) {
+	} else if (isNonPartitionedTable(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members) == 0) {
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
 	} else if (isStream(t)) {
@@ -841,7 +845,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	if(!r)
 		return NULL;
 
-	if (tab)
+	if (tab && updates)
 	for (m = tab->columns.set->h; m; m = m->next) {
 		sql_column *c = m->data;
 		sql_exp *v = updates[c->colnr];
@@ -903,13 +907,27 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
+		sql_table *mt = NULL;
 		sql_exp *e = NULL, **updates;
 		sql_rel *r = NULL;
-		list *exps;
+		list *exps, *pcols = NULL;
 		dnode *n;
 		const char *rname = NULL;
 		sql_rel *res = NULL, *bt = rel_basetable(sql, t, t->base.name);
 
+		if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
+			mt = t;
+		} else if(t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
+			mt = t->p;
+		}
+		if(mt && isPartitionedByColumnTable(mt)) {
+			pcols = sa_list(sql->sa);
+			int *nid = sa_alloc(sql->sa, sizeof(int));
+			*nid = mt->part.pcol->colnr;
+			list_append(pcols, nid);
+		} else if(mt && isPartitionedByExpressionTable(mt)) {
+			pcols = mt->part.pexp->cols;
+		}
 		res = bt;
 #if 0
 			dlist *selection = dlist_create(sql->sa);
@@ -1022,7 +1040,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 						char *typestr = subtype2string2(&col->type);
 						if(!typestr)
 							return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-						v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode);
+						v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode, NULL);
 						_DELETE(typestr);
 					} else {
 						return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: column '%s' has no valid default value", col->base.name);
@@ -1088,6 +1106,18 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 					sql_column *c = mvc_bind_column(sql, t, cname);
 					sql_exp *v = n->data;
 
+					if(mt && pcols) {
+						for(node *nn = pcols->h; nn; nn = n->next) {
+							int next = *(int*) nn->data;
+							if(next == c->colnr) {
+								if(isPartitionedByColumnTable(mt)) {
+									return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column is not possible at the moment");
+								} else if(isPartitionedByExpressionTable(mt)) {
+									return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update a column used by the partition's expression is not possible at the moment");
+								}
+							}
+						}
+					}
 					if (!exp_name(v))
 						exp_label(sql->sa, v, ++sql->label);
 					v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
@@ -1105,6 +1135,18 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				char *cname = assignment->h->next->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, cname);
 
+				if(mt && pcols) {
+					for(node *nn = pcols->h; nn; nn = nn->next) {
+						int next = *(int*) nn->data;
+						if(next == c->colnr) {
+							if(isPartitionedByColumnTable(mt)) {
+								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column is not possible at the moment");
+							} else if(isPartitionedByExpressionTable(mt)) {
+								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update a column used by the partition's expression is not possible at the moment");
+							}
+						}
+					}
+				}
 				if (!v) {
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				} else if ((v = update_check_column(sql, t, c, v, r, cname)) == NULL) {
@@ -1234,9 +1276,8 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 		if (!t)
 			t = stack_find_table(sql, tname);
 	}
-	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL) {
+	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
 		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
-	}
 	return NULL;
 }
 
@@ -1643,7 +1684,14 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 		if (!t)
 			t = stack_find_table(sql, tname);
 	}
+	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) {
+		return NULL;
+	} else if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
+		return NULL;
+	} else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
 		return NULL;
 	}
 
@@ -1726,7 +1774,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 }
 
 sql_exp *
-rel_parse_val(mvc *m, char *query, char emode)
+rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 {
 	mvc o = *m;
 	sql_exp *e = NULL;
@@ -1781,7 +1829,7 @@ rel_parse_val(mvc *m, char *query, char emode)
 		SelectNode *sn = (SelectNode *)m->sym;
 		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
 			int is_last = 0;
-			sql_rel *r = NULL;
+			sql_rel *r = from;
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
 			e = rel_value_exp2(m, &r, sq, sql_sel, ek, &is_last);
 		}

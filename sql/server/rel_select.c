@@ -1590,7 +1590,7 @@ exp_is_subquery( mvc *sql, sql_exp *e)
 	return 0;
 }
 
-static sql_rel *
+sql_rel *
 rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti )
 {
 	sql_exp *L = ls, *R = rs, *e = NULL;

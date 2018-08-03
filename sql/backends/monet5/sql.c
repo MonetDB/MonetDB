@@ -23,6 +23,7 @@
 #include "store_sequence.h"
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
+#include "sql_partition.h"
 #include "rel_optimizer.h"
 #include "rel_partition.h"
 #include "rel_distribute.h"
@@ -116,15 +117,14 @@ sql_symbol2relation(mvc *c, symbol *sym)
 	sql_rel *r;
 
 	r = rel_semantic(c, sym);
-	if (!r)
-		return NULL;
-	if (r) {
+	if (r)
 		r = rel_optimizer(c, r, 1);
+	if (r)
 		r = rel_distribute(c, r);
+	if (r)
 		r = rel_partition(c, r);
-		if (rel_no_mitosis(r) || rel_need_distinct_query(r))
-			c->no_mitosis = 1;
-	}
+	if (r && (rel_no_mitosis(r) || rel_need_distinct_query(r)))
+		c->no_mitosis = 1;
 	return r;
 }
 
@@ -284,6 +284,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
 	node *n;
+	int check = 0;
 
 	(void)tname;
 	if (STORE_READONLY)
@@ -299,7 +300,6 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
 		return sql_message(SQLSTATE(42000) "DECLARE TABLE: '%s' cannot have constraints", t->base.name);
-
 	}
 
 	osa = sql->sa;
@@ -314,26 +314,37 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		if (c->def) {
 			char *buf, *typestr;
 			sql_rel *r = NULL;
+			list *id_l;
 
 			sql->sa = sa_create();
-			if(!sql->sa)
+			if(!sql->sa) {
+				sql->sa = osa;
 				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			buf = sa_alloc(sql->sa, strlen(c->def) + 8);
-			if(!buf)
+			if(!buf) {
+				sa_destroy(sql->sa);
+				sql->sa = osa;
 				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			typestr = subtype2string2(&c->type);
-			if(!typestr)
+			if(!typestr) {
+				sa_destroy(sql->sa);
+				sql->sa = osa;
 				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			snprintf(buf, BUFSIZ, "select cast(%s as %s);", c->def, typestr);
 			_DELETE(typestr);
 			r = rel_parse(sql, s, buf, m_deps);
-			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL)
+			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL) {
+				if(r)
+					rel_destroy(r);
+				sa_destroy(sql->sa);
+				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
-			if (r) {
-				list *id_l = rel_dependencies(sql, r);
-				mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
 			}
-
+			id_l = rel_dependencies(sql, r);
+			mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
 			rel_destroy(r);
 			sa_destroy(sql->sa);
 			sql->sa = NULL;
@@ -341,11 +352,43 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	}
 
 	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data;
-		if (mvc_copy_column(sql, nt, c) == NULL)
-			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c);
 
+		if (copied == NULL) {
+			sql->sa = osa;
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+		}
+		if(isPartitionedByColumnTable(t) && c->base.id == t->part.pcol->base.id)
+			nt->part.pcol = copied;
 	}
+	if(isPartitionedByExpressionTable(t)) {
+		char *err = NULL;
+
+		nt->part.pexp->exp = sa_strdup(sql->session->tr->sa, t->part.pexp->exp);
+
+		sql->sa = sa_create();
+		if(!sql->sa) {
+			sql->sa = osa;
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+
+		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1);
+		sa_destroy(sql->sa);
+		sql->sa = NULL;
+		if(err) {
+			sql->sa = osa;
+			return err;
+		}
+	}
+	check = sql_trans_set_partition_table(sql->session->tr, nt);
+	if(check == -1) {
+		sql->sa = osa;
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
+	} else if(check) {
+		sql->sa = osa;
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
+	}
+
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
@@ -355,7 +398,21 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	if (t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
+			char *err = NULL;
 
+			sql->sa = sa_create();
+			if(!sql->sa) {
+				sql->sa = osa;
+				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+
+			err = sql_partition_validate_key(sql, nt, k, "CREATE");
+			sa_destroy(sql->sa);
+			sql->sa = NULL;
+			if(err) {
+				sql->sa = osa;
+				return err;
+			}
 			mvc_copy_key(sql, nt, k);
 		}
 	}
@@ -364,8 +421,10 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		sql_rel *r = NULL;
 
 		sql->sa = sa_create();
-		if(!sql->sa)
+		if(!sql->sa) {
+			sql->sa = osa;
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r, 0);

@@ -117,6 +117,31 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 		return pushNil(mb, q, TYPE_str);
 }
 
+void
+create_merge_partitions_accumulator(backend *be)
+{
+	sql_subtype tpe;
+
+	sql_find_subtype(&tpe, "bigint", 0, 0);
+	be->cur_append = constantAtom(be, be->mb, atom_int(be->mvc->sa, &tpe, 0));
+}
+
+int
+add_to_merge_partitions_accumulator(backend *be, int nr)
+{
+	MalBlkPtr mb = be->mb;
+	int help = be->cur_append;
+	InstrPtr q = newStmt(mb, calcRef, "+");
+
+	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_lng);
+	q = pushArgument(mb, q, help);
+	q = pushArgument(mb, q, nr);
+
+	be->first_statement_generated = 1; /* set the first statement as generated */
+
+	return getDestVar(q);
+}
+
 int
 stmt_key(stmt *s)
 {
@@ -2334,6 +2359,8 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_ALTER_TABLE_ADD_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
 	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
 	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
+	case DDL_ALTER_TABLE_ADD_RANGE_PARTITION:	q = newStmt(mb, sqlcatalogRef, alter_add_range_partitionRef); break;
+	case DDL_ALTER_TABLE_ADD_LIST_PARTITION:	q = newStmt(mb, sqlcatalogRef, alter_add_value_partitionRef); break;
 	case DDL_COMMENT_ON:	q = newStmt(mb, sqlcatalogRef, comment_onRef); break;
 	default:
 		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
@@ -2594,7 +2621,7 @@ stmt_table_clear(backend *be, sql_table *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-       
+
 	if (!t->s && t->data) { /* declared table */
 		int *l = t->data; 
 		int cnt = list_length(t->columns.set)+1, i;

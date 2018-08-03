@@ -68,16 +68,19 @@ Ready.
 \dSt sys.objects
 \dSt sys.privilege_codes
 \dSt sys.privileges
+\dSt sys.range_partitions
 \dSt sys.schemas
 \dSt sys.sequences
 \dSt sys.spatial_ref_sys
 \dSt sys.statistics
 \dSt sys.storagemodelinput
 \dSt sys.systemfunctions
+\dSt sys.table_partitions
 \dSt sys.table_types
 \dSt sys.triggers
 \dSt sys.types
 \dSt sys.user_role
+\dSt sys.value_partitions
 \dSt tmp._columns
 \dSt tmp._tables
 \dSt tmp.idxs
@@ -381,16 +384,19 @@ SYSTEM TABLE  sys.netcdf_vars
 SYSTEM TABLE  sys.objects
 SYSTEM TABLE  sys.privilege_codes
 SYSTEM TABLE  sys.privileges
+SYSTEM TABLE  sys.range_partitions
 SYSTEM TABLE  sys.schemas
 SYSTEM TABLE  sys.sequences
 SYSTEM TABLE  sys.spatial_ref_sys
 SYSTEM TABLE  sys.statistics
 SYSTEM TABLE  sys.storagemodelinput
 SYSTEM TABLE  sys.systemfunctions
+SYSTEM TABLE  sys.table_partitions
 SYSTEM TABLE  sys.table_types
 SYSTEM TABLE  sys.triggers
 SYSTEM TABLE  sys.types
 SYSTEM TABLE  sys.user_role
+SYSTEM TABLE  sys.value_partitions
 SYSTEM VIEW  sys.columns
 SYSTEM VIEW  sys.dependencies_vw
 SYSTEM VIEW  sys.dependency_args_on_types
@@ -848,16 +854,19 @@ CREATE TABLE "sys"."netcdf_vars" ("var_id" INTEGER, "file_id" INTEGER, "name" VA
 CREATE TABLE "sys"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
 CREATE TABLE "sys"."privilege_codes" ("privilege_code_id" INTEGER NOT NULL, "privilege_code_name" VARCHAR(40) NOT NULL, CONSTRAINT "privilege_codes_privilege_code_id_pkey" PRIMARY KEY ("privilege_code_id"), CONSTRAINT "privilege_codes_privilege_code_name_unique" UNIQUE ("privilege_code_name"));
 CREATE TABLE "sys"."privileges" ("obj_id" INTEGER, "auth_id" INTEGER, "privileges" INTEGER, "grantor" INTEGER, "grantable" INTEGER);
+CREATE TABLE "sys"."range_partitions" ("table_id" INTEGER, "partition_id" INTEGER, "minimum" VARCHAR(2048), "maximum" VARCHAR(2048), "with_nulls" BOOLEAN);
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
 CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
 CREATE TABLE "sys"."spatial_ref_sys" ("srid" INTEGER NOT NULL, "auth_name" VARCHAR(256), "auth_srid" INTEGER, "srtext" VARCHAR(2048), "proj4text" VARCHAR(2048), CONSTRAINT "spatial_ref_sys_srid_pkey" PRIMARY KEY ("srid"));
 CREATE TABLE "sys"."statistics" ("column_id" INTEGER, "type" CHARACTER LARGE OBJECT, "width" INTEGER, "stamp" TIMESTAMP, "sample" BIGINT, "count" BIGINT, "unique" BIGINT, "nils" BIGINT, "minval" CHARACTER LARGE OBJECT, "maxval" CHARACTER LARGE OBJECT, "sorted" BOOLEAN, "revsorted" BOOLEAN);
 CREATE TABLE "sys"."storagemodelinput" ("schema" CHARACTER LARGE OBJECT, "table" CHARACTER LARGE OBJECT, "column" CHARACTER LARGE OBJECT, "type" CHARACTER LARGE OBJECT, "typewidth" INTEGER, "count" BIGINT, "distinct" BIGINT, "atomwidth" INTEGER, "reference" BOOLEAN, "sorted" BOOLEAN, "revsorted" BOOLEAN, "unique" BOOLEAN, "orderidx" BIGINT);
 CREATE TABLE "sys"."systemfunctions" ("function_id" INTEGER NOT NULL);
-CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
+CREATE TABLE "sys"."table_partitions" ("id" INTEGER, "table_id" INTEGER, "column_id" INTEGER, "expression" VARCHAR(2048));
+CREATE TABLE "sys"."table_types" ("table_type_id" SMALLINT NOT NULL, "table_type_name" VARCHAR(50) NOT NULL, CONSTRAINT "table_types_table_type_id_pkey" PRIMARY KEY ("table_type_id"), CONSTRAINT "table_types_table_type_name_unique" UNIQUE ("table_type_name"));
 CREATE TABLE "sys"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 CREATE TABLE "sys"."types" ("id" INTEGER, "systemname" VARCHAR(256), "sqlname" VARCHAR(1024), "digits" INTEGER, "scale" INTEGER, "radix" INTEGER, "eclass" INTEGER, "schema_id" INTEGER);
 CREATE TABLE "sys"."user_role" ("login_id" INTEGER, "role_id" INTEGER);
+CREATE TABLE "sys"."value_partitions" ("table_id" INTEGER, "partition_id" INTEGER, "value" VARCHAR(2048));
 CREATE TABLE "tmp"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048));
 CREATE TABLE "tmp"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(2048), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
 CREATE TABLE "tmp"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
@@ -1413,6 +1422,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"querylog_catalog",	"create view sys.querylog_catalog as select * from sys.querylog_catalog();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"querylog_history",	"create view sys.querylog_history as select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io from sys.querylog_catalog() qd, sys.querylog_calls() ql where qd.id = ql.id and qd.owner = user;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"queue",	"create view sys.queue as select * from sys.queue();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"range_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"rejects",	"create view sys.rejects as select * from sys.rejects();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"roles",	"create view sys.roles as select id, name, grantor from sys.auths a where a.name not in (select u.name from sys.db_users() u);",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"schemas",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
@@ -1424,6 +1434,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"storagemodel",	"create view sys.storagemodel as select * from sys.storagemodel();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"storagemodelinput",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"systemfunctions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"table_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"table_types",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
 [ "sys",	"tables",	"SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(CASE WHEN \"system\" THEN \"type\" + 10 /* system table/view */ ELSE (CASE WHEN \"commit_action\" = 0 THEN \"type\" /* table/view */ ELSE \"type\" + 20 /* global temp table */ END) END AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", CASE WHEN (NOT \"system\" AND \"commit_action\" > 0) THEN 1 ELSE 0 END AS \"temporary\" FROM \"sys\".\"_tables\" WHERE \"type\" <> 2 UNION ALL SELECT \"id\", \"name\", \"schema_id\", \"query\", CAST(\"type\" + 30 /* local temp table */ AS SMALLINT) AS \"type\", \"system\", \"commit_action\", \"access\", 1 AS \"temporary\" FROM \"tmp\".\"_tables\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"tablestoragemodel",	"create view sys.tablestoragemodel as select \"schema\",\"table\",max(count) as \"count\", sum(columnsize) as columnsize, sum(heapsize) as heapsize, sum(hashes) as hashes, sum(\"imprints\") as \"imprints\", sum(case when sorted = false then 8 * count else 0 end) as auxiliary from sys.storagemodel() group by \"schema\",\"table\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
@@ -1432,6 +1443,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"types",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"user_role",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"users",	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\" ;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"value_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"var_values",	"create view sys.var_values (var_name, value) as select 'cache' as var_name, convert(cache, varchar(10)) as value union all select 'current_role', current_role union all select 'current_schema', current_schema union all select 'current_timezone', current_timezone union all select 'current_user', current_user union all select 'debug', debug union all select 'history', history union all select 'last_id', last_id union all select 'optimizer', optimizer union all select 'pi', pi() union all select 'rowcnt', rowcnt;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "tmp",	"_columns",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE"	]
 [ "tmp",	"_tables",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE"	]
@@ -1859,6 +1871,11 @@ drop function pcre_replace(string, string, string, string);
 [ "queue",	"status",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "queue",	"tag",	"oid",	63,	0,	NULL,	true,	6,	NULL	]
 [ "queue",	"query",	"clob",	0,	0,	NULL,	true,	7,	NULL	]
+[ "range_partitions",	"table_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "range_partitions",	"partition_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
+[ "range_partitions",	"minimum",	"varchar",	2048,	0,	NULL,	true,	2,	NULL	]
+[ "range_partitions",	"maximum",	"varchar",	2048,	0,	NULL,	true,	3,	NULL	]
+[ "range_partitions",	"with_nulls",	"boolean",	1,	0,	NULL,	true,	4,	NULL	]
 [ "rejects",	"rowid",	"bigint",	64,	0,	NULL,	true,	0,	NULL	]
 [ "rejects",	"fldid",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "rejects",	"message",	"clob",	0,	0,	NULL,	true,	2,	NULL	]
@@ -1967,8 +1984,12 @@ drop function pcre_replace(string, string, string, string);
 [ "storagemodelinput",	"unique",	"boolean",	1,	0,	NULL,	true,	11,	NULL	]
 [ "storagemodelinput",	"orderidx",	"bigint",	64,	0,	NULL,	true,	12,	NULL	]
 [ "systemfunctions",	"function_id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
+[ "table_partitions",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "table_partitions",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
+[ "table_partitions",	"column_id",	"int",	32,	0,	NULL,	true,	2,	NULL	]
+[ "table_partitions",	"expression",	"varchar",	2048,	0,	NULL,	true,	3,	NULL	]
 [ "table_types",	"table_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
-[ "table_types",	"table_type_name",	"varchar",	25,	0,	NULL,	false,	1,	NULL	]
+[ "table_types",	"table_type_name",	"varchar",	50,	0,	NULL,	false,	1,	NULL	]
 [ "tables",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "tables",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "tables",	"schema_id",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -2032,6 +2053,9 @@ drop function pcre_replace(string, string, string, string);
 [ "users",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "users",	"fullname",	"varchar",	2024,	0,	NULL,	true,	1,	NULL	]
 [ "users",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
+[ "value_partitions",	"table_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "value_partitions",	"partition_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
+[ "value_partitions",	"value",	"varchar",	2048,	0,	NULL,	true,	2,	NULL	]
 [ "var_values",	"var_name",	"char",	16,	0,	NULL,	true,	0,	NULL	]
 [ "var_values",	"value",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 #with funcs as (select name, pcre_replace(func, '--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
@@ -4531,6 +4555,7 @@ drop function pcre_replace(string, string, string, string);
 [ "pg",	"public",	"SELECT",	"monetdb",	0	]
 [ "privilege_codes",	"public",	"SELECT",	"monetdb",	0	]
 [ "privileges",	"public",	"SELECT",	NULL,	0	]
+[ "range_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "rg",	"public",	"SELECT",	"monetdb",	0	]
 [ "roles",	"public",	"SELECT",	"monetdb",	0	]
 [ "schemas",	"public",	"SELECT",	NULL,	0	]
@@ -4538,11 +4563,13 @@ drop function pcre_replace(string, string, string, string);
 [ "spatial_ref_sys",	"public",	"SELECT",	"monetdb",	0	]
 [ "sq",	"public",	"SELECT",	"monetdb",	0	]
 [ "systemfunctions",	"public",	"SELECT",	"monetdb",	0	]
+[ "table_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "table_types",	"public",	"SELECT",	"monetdb",	0	]
 [ "tables",	"public",	"SELECT",	NULL,	0	]
 [ "triggers",	"public",	"SELECT",	NULL,	0	]
 [ "types",	"public",	"SELECT",	NULL,	0	]
 [ "user_role",	"public",	"SELECT",	NULL,	0	]
+[ "value_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "var_values",	"public",	"SELECT",	"monetdb",	0	]
 #select t.name, c.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
 % sys.t,	sys.c,	sys.a,	.pc,	.g,	.p # table_name
@@ -6894,7 +6921,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.table_types,	sys.table_types # table_name
 % table_type_id,	table_type_name # name
 % smallint,	varchar # type
-% 2,	22 # length
+% 2,	48 # length
 [ 0,	"TABLE"	]
 [ 1,	"VIEW"	]
 [ 3,	"MERGE TABLE"	]
@@ -6903,6 +6930,10 @@ drop function pcre_replace(string, string, string, string);
 [ 6,	"REPLICA TABLE"	]
 [ 10,	"SYSTEM TABLE"	]
 [ 11,	"SYSTEM VIEW"	]
+[ 12,	"MERGE TABLE PARTITION BY VALUES ON COLUMN"	]
+[ 13,	"MERGE TABLE PARTITION BY RANGE ON COLUMN"	]
+[ 14,	"MERGE TABLE PARTITION BY VALUES USING EXPRESSION"	]
+[ 15,	"MERGE TABLE PARTITION BY RANGE USING EXPRESSION"	]
 [ 20,	"GLOBAL TEMPORARY TABLE"	]
 [ 30,	"LOCAL TEMPORARY TABLE"	]
 #select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;

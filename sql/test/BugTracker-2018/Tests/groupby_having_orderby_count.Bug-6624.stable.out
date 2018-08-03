@@ -29,36 +29,36 @@ Ready.
 % type,	L16 # name
 % varchar,	bigint # type
 % 9,	3 # length
-[ "int",	223	]
-[ "varchar",	142	]
+[ "int",	244	]
+[ "varchar",	154	]
 [ "clob",	68	]
 [ "smallint",	55	]
 [ "bigint",	53	]
-[ "boolean",	25	]
+[ "boolean",	28	]
 [ "timestamp",	12	]
 #SELECT type,COUNT(id) FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY 2 DESC;
 % .columns,	.L16 # table_name
 % type,	L16 # name
 % varchar,	bigint # type
 % 9,	3 # length
-[ "int",	223	]
-[ "varchar",	142	]
+[ "int",	244	]
+[ "varchar",	154	]
 [ "clob",	68	]
 [ "smallint",	55	]
 [ "bigint",	53	]
-[ "boolean",	25	]
+[ "boolean",	28	]
 [ "timestamp",	12	]
 #SELECT type,COUNT(id) as cnt FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY cnt DESC;
 % .columns,	.L17 # table_name
 % type,	cnt # name
 % varchar,	bigint # type
 % 9,	3 # length
-[ "int",	223	]
-[ "varchar",	142	]
+[ "int",	244	]
+[ "varchar",	154	]
 [ "clob",	68	]
 [ "smallint",	55	]
 [ "bigint",	53	]
-[ "boolean",	25	]
+[ "boolean",	28	]
 [ "timestamp",	12	]
 
 # 18:32:54 >  

@@ -24,6 +24,8 @@ str algebraRef;
 str alter_add_tableRef;
 str alter_constraintRef;
 str alter_del_tableRef;
+str alter_add_range_partitionRef;
+str alter_add_value_partitionRef;
 str alter_functionRef;
 str alter_indexRef;
 str alter_roleRef;
@@ -333,6 +335,8 @@ void optimizerInit(void)
 	alter_add_tableRef = putName("alter_add_table");
 	alter_del_tableRef = putName("alter_del_table");
 	alter_set_tableRef = putName("alter_set_table");
+	alter_add_range_partitionRef = putName("alter_add_range_partition");
+	alter_add_value_partitionRef = putName("alter_add_value_partition");
 	avgRef = putName("avg");
 	arrayRef = putName("array");
 	batRef = putName("bat");
