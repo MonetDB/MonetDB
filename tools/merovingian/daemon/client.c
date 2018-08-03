@@ -459,7 +459,17 @@ acceptConnections(int sock, int usock)
 		if (retval == -1) {
 			if (_mero_keep_listening == 0)
 				break;
-			if (errnr != EINTR) {
+			switch (errnr) {
+			case EINTR:
+				/* interrupted */
+				break;
+			case EMFILE:
+			case ENFILE:
+			case ENOBUFS:
+			case ENOMEM:
+				/* transient failures */
+				break;
+			default:
 				msg = strerror(errnr);
 				goto error;
 			}
@@ -469,8 +479,21 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				if (errno != EINTR) {
-					msg = strerror(errno);
+				switch (errnr) {
+				case EINTR:
+					/* interrupted */
+					break;
+				case EMFILE:
+				case ENFILE:
+				case ENOBUFS:
+				case ENOMEM:
+					/* transient failures */
+					break;
+				case ECONNABORTED:
+					/* connection aborted before we began */
+					break;
+				default:
+					msg = strerror(errnr);
 					goto error;
 				}
 				continue;
@@ -488,8 +511,21 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				if (errno != EINTR) {
-					msg = strerror(errno);
+				switch (errnr) {
+				case EINTR:
+					/* interrupted */
+					break;
+				case EMFILE:
+				case ENFILE:
+				case ENOBUFS:
+				case ENOMEM:
+					/* transient failures */
+					break;
+				case ECONNABORTED:
+					/* connection aborted before we began */
+					break;
+				default:
+					msg = strerror(errnr);
 					goto error;
 				}
 				continue;
