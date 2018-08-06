@@ -1925,10 +1925,10 @@ rel_simplify_count_fk_join(int *changes, mvc *sql, sql_rel *r, list *gexps)
 static sql_rel *
 rel_simplify_fk_joins(int *changes, mvc *sql, sql_rel *rel)
 {
-	sql_rel *r;
+	sql_rel *r = NULL;
 
 	if (rel->op == op_project)
-       		r = rel->l;
+		r = rel->l;
 
 	while (rel->op == op_project && r && r->exps && list_length(r->exps) == 1 && is_join(r->op) && !(rel_is_ref(r))) {
 		sql_rel *or = r;
@@ -1943,7 +1943,7 @@ rel_simplify_fk_joins(int *changes, mvc *sql, sql_rel *rel)
 	if (!is_groupby(rel->op))
 		return rel;
 
-       	r = rel->l;
+	r = rel->l;
 	while(r && r->op == op_project)
 		r = r->l;
 
@@ -2345,7 +2345,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	case e_aggr:
 	case e_func: {
 		list *l = e->l, *nl = NULL;
-	        sql_exp *ne = NULL;
+		sql_exp *ne = NULL;
 
 		if (e->type == e_func && exp_unsafe(e))
 			return NULL;
@@ -3469,7 +3469,7 @@ rel_select_cse(int *changes, mvc *sql, sql_rel *rel)
 		if (!needed)
 			return rel;
 
- 		nexps = new_exp_list(sql->sa);
+		nexps = new_exp_list(sql->sa);
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *l = NULL;
 
@@ -3495,7 +3495,7 @@ rel_select_cse(int *changes, mvc *sql, sql_rel *rel)
 		}
 		if (!needed)
 			return rel;
- 		nexps = new_exp_list(sql->sa);
+		nexps = new_exp_list(sql->sa);
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -6216,7 +6216,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 			if (!needed)
 				return rel;
 
- 			exps = new_exp_list(sql->sa);
+			exps = new_exp_list(sql->sa);
 			for(n=rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
@@ -7341,10 +7341,10 @@ reduce_scale(atom *a)
 		int i = 0;
 
 		if (v != 0) 
-                        while( (v/10)*10 == v ) {
-                                i++;
-                                v /= 10;
-                        }
+			while( (v/10)*10 == v ) {
+				i++;
+				v /= 10;
+			}
 		a->data.val.hval = v;
 		return i;
 	}
@@ -7353,11 +7353,11 @@ reduce_scale(atom *a)
 		lng v = a->data.val.lval;
 		int i = 0;
 
-		if (v != 0) 
-                        while( (v/10)*10 == v ) {
-                                i++;
-                                v /= 10;
-                        }
+		if (v != 0)
+			while( (v/10)*10 == v ) {
+				i++;
+				v /= 10;
+			}
 		a->data.val.lval = v;
 		return i;
 	}
@@ -7365,11 +7365,11 @@ reduce_scale(atom *a)
 		int v = a->data.val.ival;
 		int i = 0;
 
-		if (v != 0) 
-                        while( (v/10)*10 == v ) {
-                                i++;
-                                v /= 10;
-                        }
+		if (v != 0)
+			while( (v/10)*10 == v ) {
+				i++;
+				v /= 10;
+			}
 		a->data.val.ival = v;
 		return i;
 	}
@@ -7377,11 +7377,11 @@ reduce_scale(atom *a)
 		sht v = a->data.val.shval;
 		int i = 0;
 
-		if (v != 0) 
-                        while( (v/10)*10 == v ) {
-                                i++;
-                                v /= 10;
-                        }
+		if (v != 0)
+			while( (v/10)*10 == v ) {
+				i++;
+				v /= 10;
+			}
 		a->data.val.shval = v;
 		return i;
 	}
