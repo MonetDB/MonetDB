@@ -602,11 +602,11 @@ forkMserver(char *database, sabdb** stats, int force)
 		close(pfdo[1]);
 
 		close(pfde[0]);
-		if(dup_err)
+		if(dup_err == -1)
 			perror("dup2");
 		dup_err = dup2(pfde[1], 2);
 		close(pfde[1]);
-		if(dup_err)
+		if(dup_err == -1)
 			perror("dup2");
 
 		write_error = write(1, "arguments:", 10);
