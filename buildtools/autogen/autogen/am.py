@@ -762,6 +762,8 @@ def am_library(fd, var, libmap, am):
     if 'MODULE' in libmap:
         ldflags.append('-module')
         ldflags.append('-avoid-version')
+    if 'NOINST' not in libmap:
+        ldflags.append('@NO_UNDEFINED@')
     if "LDFLAGS" in libmap:
         for x in libmap["LDFLAGS"]:
             ldflags.append(x)

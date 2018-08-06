@@ -18,13 +18,6 @@
 /* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
 
-#if !__has_attribute(__visibility__)
-#define __visibility__(a)
-#endif
-#if !__has_attribute(__cold__)
-#define __cold__
-#endif
-
 #include "gdk_system_private.h"
 
 enum heaptype {

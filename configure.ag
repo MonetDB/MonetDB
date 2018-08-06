@@ -588,7 +588,9 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wno-format-truncation])
 		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
 dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
-		MCHECK_ADD_FLAG([-Wno-cast-function-type])
+		AS_VAR_IF([target_os], [cygwin],
+			[MCHECK_ADD_FLAG([-Wno-error=suggest-attribute=format])],
+			[MCHECK_ADD_FLAG([-Wno-cast-function-type])])
 		MCHECK_ADD_FLAG([-Winit-self])
 		MCHECK_ADD_FLAG([-Winvalid-pch])
 		MCHECK_ADD_FLAG([-Wmissing-declarations])
@@ -764,6 +766,9 @@ AC_LINK_IFELSE([
 	[result=yes],
 	[LDFLAGS="$save_LDFLAGS"; result=no])
 AC_MSG_RESULT([$result])
+AS_VAR_IF([target_os], [cygwin],
+	[NO_UNDEFINED="-no-undefined"])
+AC_SUBST(NO_UNDEFINED)
 
 # icc needs -fPIC (but the current autoconf still uses -KPIC)
 AS_CASE([$GCC-$CC-$host_os],
@@ -2944,11 +2949,14 @@ typedef __uint128_t uhge;
 @%:@define SIZEOF_HGE SIZEOF___INT128_T
 @%:@endif
 
-@%:@if !defined(_MSC_VER) && !defined(_In_z_)
+@%:@if !defined(WIN32) && !defined(_In_z_)
 /* see https://docs.microsoft.com/en-us/visualstudio/code-quality/using-sal-annotations-to-reduce-c-cpp-code-defects
  * and Visual Studio include file <sal.h> */
 @%:@ define _In_z_
 @%:@ define _Printf_format_string_
+@%:@endif
+
+@%:@ifndef WIN32
 @%:@ define __declspec(x)
 @%:@endif
 
@@ -2971,7 +2979,7 @@ AS_CASE([$GCC-$CC-$enable_assert],
 	X_CFLAGS="$X_CFLAGS -wd279"])
 
 # CFLAGS for our code are stricter than what autoconf can cope with.
-CFLAGS="$CFLAGS \$(X_CFLAGS)"
+CFLAGS="$CFLAGS ${X_CFLAGS}"
 
 # bootstrap adds a (long) list of file names inside the
 # AC_CONFIG_FILES command

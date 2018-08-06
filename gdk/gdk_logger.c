@@ -79,7 +79,7 @@
 #define printf(fmt,...) ((void) 0)
 #endif
 
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
 #else
 #ifdef HAVE_FSEEKO
@@ -2236,7 +2236,7 @@ logger_exit(logger *lg)
 
 		if (fflush(fp) < 0 ||
 		    (!(GDKdebug & NOSYNCMASK)
-#if defined(WIN32)
+#if defined(NATIVE_WIN32)
 		     && _commit(_fileno(fp)) < 0
 #elif defined(HAVE_FDATASYNC)
 		     && fdatasync(fileno(fp)) < 0

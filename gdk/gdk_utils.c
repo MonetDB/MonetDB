@@ -43,6 +43,10 @@ static char THRprintbuf[BUFSIZ];
 # include <sys/sysctl.h>
 #endif
 
+#ifdef __CYGWIN__
+#include <sysinfoapi.h>
+#endif
+
 #ifdef NATIVE_WIN32
 #define chdir _chdir
 #endif
@@ -220,6 +224,7 @@ GDKlog(FILE *lockFile, const char *format, ...)
 static void
 BATSIGignore(int nr)
 {
+	(void) nr;
 	GDKsyserror("! ERROR signal %d caught by thread %zu\n", nr, (size_t) MT_getpid());
 }
 #endif
@@ -228,6 +233,7 @@ BATSIGignore(int nr)
 static void
 BATSIGabort(int nr)
 {
+	(void) nr;
 	GDKexit(3);		/* emulate Windows exit code without pop-up */
 }
 #endif
@@ -489,7 +495,7 @@ GDKinit(opt *set, int setlen)
 #endif
 #ifdef WIN32
 	(void) signal(SIGABRT, BATSIGabort);
-#ifndef __MINGW32__ // MinGW does not have these
+#if !defined(__MINGW32__) && !defined(__CYGWIN__)
 	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
 	_set_error_mode(_OUT_TO_STDERR);
 #endif
