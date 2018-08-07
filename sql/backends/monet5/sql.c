@@ -358,7 +358,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	}
 
 	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c, rename);
+		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c, !rename);
 
 		if (copied == NULL) {
 			sql->sa = osa;
@@ -400,7 +400,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
-			mvc_copy_idx(sql, nt, i, rename);
+			mvc_copy_idx(sql, nt, i, !rename);
 		}
 	}
 	if (t->keys.set) {
@@ -421,10 +421,22 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 				sql->sa = osa;
 				return err;
 			}
-			mvc_copy_key(sql, nt, k, rename);
+			mvc_copy_key(sql, nt, k, !rename);
 		}
 	}
-	/* also create dependencies */
+	if (t->members.set) {
+		for (n = t->members.set->h; n; n = n->next) {
+			sql_part *pt = n->data;
+			mvc_copy_part(sql, nt, pt, !rename);
+		}
+	}
+	if (t->triggers.set) {
+		for (n = t->triggers.set->h; n; n = n->next) {
+			sql_trigger *tr = n->data;
+			mvc_copy_trigger(sql, nt, tr, !rename);
+		}
+	}
+	/* also create dependencies when not renaming */
 	if (!rename && nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 

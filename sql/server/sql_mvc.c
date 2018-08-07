@@ -1915,21 +1915,33 @@ stack_get_number(mvc *sql, const char *name)
 }
 
 sql_column *
-mvc_copy_column( mvc *m, sql_table *t, sql_column *c, bool delete_row)
+mvc_copy_column( mvc *m, sql_table *t, sql_column *c, bool create_row)
 {
-	return sql_trans_copy_column(m->session->tr, t, c, delete_row);
+	return sql_trans_copy_column(m->session->tr, t, c, create_row);
 }
 
 sql_key *
-mvc_copy_key(mvc *m, sql_table *t, sql_key *k, bool delete_row)
+mvc_copy_key(mvc *m, sql_table *t, sql_key *k, bool create_row)
 {
-	return sql_trans_copy_key(m->session->tr, t, k, delete_row);
+	return sql_trans_copy_key(m->session->tr, t, k, create_row);
 }
 
 sql_idx *
-mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, bool delete_row)
+mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, bool create_row)
 {
-	return sql_trans_copy_idx(m->session->tr, t, i, delete_row);
+	return sql_trans_copy_idx(m->session->tr, t, i, create_row);
+}
+
+sql_trigger *
+mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, bool create_row)
+{
+	return sql_trans_copy_trigger(m->session->tr, t, tr, create_row);
+}
+
+sql_part *
+mvc_copy_part(mvc *m, sql_table *t, sql_part *pt, bool create_row)
+{
+	return sql_trans_copy_part(m->session->tr, t, pt, create_row);
 }
 
 sql_subquery *

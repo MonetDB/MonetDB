@@ -881,7 +881,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
 		sql_column *c = n->data;
-		mvc_copy_column(sql, nt, c, false);
+		mvc_copy_column(sql, nt, c, true);
 	}
 	if (t->idxs.set) {
 		/* alter drop index */
@@ -916,7 +916,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (r != GDK_SUCCEED)
 					throw(SQL, "sql.alter_table", GDK_EXCEPTION);
 			}
-			mvc_copy_idx(sql, nt, i, false);
+			mvc_copy_idx(sql, nt, i, true);
 		}
 	}
 	if (t->keys.set) {
@@ -936,7 +936,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			str err;
 			if((err = sql_partition_validate_key(sql, t, k, "ALTER")))
 				return err;
-			mvc_copy_key(sql, nt, k, false);
+			mvc_copy_key(sql, nt, k, true);
 		}
 	}
 	return MAL_SUCCEED;

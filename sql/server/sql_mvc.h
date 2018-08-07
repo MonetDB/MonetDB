@@ -263,9 +263,11 @@ extern lng stack_get_number(mvc *sql, const char *name);
 extern void stack_set_number(mvc *sql, const char *name, lng v);
 #endif
 
-extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c, bool rename);
-extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k, bool rename);
-extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, bool rename);
+extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c, bool create_row);
+extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k, bool create_row);
+extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, bool create_row);
+extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, bool create_row);
+extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt, bool create_row);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
