@@ -1779,7 +1779,7 @@ AC_ARG_WITH([libxml2],
 		[include libxml2 support (default=yes)])],
 	[have_libxml2=$withval])
 AS_VAR_IF([have_libxml2], [no], [], [
-	PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"; why_not_libxml2="(libxml2 not found)"])
+	PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2=yes], [have_libxml2=no; why_not_libxml2="(libxml2 not found)"])
 	AS_VAR_IF([have_libxml2], [yes], [
 		AC_DEFINE([HAVE_LIBXML], 1, [Define if you have the xml library])])])
 AM_CONDITIONAL([HAVE_LIBXML], [test x"$have_libxml2" != xno])
@@ -1792,14 +1792,14 @@ AC_ARG_WITH([curl],
 		[include cURL support (default=yes)])],
 	[have_curl=$withval])
 AS_VAR_IF([have_curl], [no], [], [
-	PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_not_curl="(libcurl not found)"])
+	PKG_CHECK_MODULES([curl], [libcurl], [have_curl=yes], [have_curl=no; why_not_curl="(libcurl not found)"])
 	AS_VAR_IF([have_curl], [yes], [
 		AC_DEFINE([HAVE_CURL], 1, [Define if you have the cURL library])
 		AC_SUBST([PKG_CURL], [libcurl])])])
 AM_CONDITIONAL([HAVE_CURL], [test x"$have_curl" != xno])
 
 
-PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"; why_not_zlib="(zlib not found)"])
+PKG_CHECK_MODULES([zlib], [zlib], [have_zlib=yes], [have_zlib=no; why_not_zlib="(zlib not found)"])
 AS_CASE([$have_zlib],
 	[no],
 		[# Solaris doesn't provide zlib.pc, but zlib may well be present
@@ -1817,7 +1817,7 @@ AC_ARG_WITH([lzma],
 		[include lzma support (default=yes)])],
 	[have_lzma=$withval])
 AS_VAR_IF([have_lzma], [no], [], [
-	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma="yes"], [have_liblzma="no"; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma=yes], [have_liblzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
 	AS_VAR_IF([have_liblzma], [yes], [
 		AC_SUBST([PKG_LIBLZMA], [liblzma])])
 	AS_VAR_IF([have_liblzma], [yes], [
@@ -1847,7 +1847,7 @@ AS_VAR_IF([enable_rintegration], [no], [], [
    	AS_VAR_IF([RCMD], [],
 		[AS_VAR_IF([enable_rintegration], [yes],
 			[AC_MSG_ERROR([libR library required for R integration support])],
-			[have_libr="no"
+			[have_libr=no
 			 why_not_libr="(libR library not found)"
 			 enable_rintegration=no
 			 why_not_rintegration="(libR library not found)"])],
@@ -1874,12 +1874,11 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 		   	AC_PATH_PROG([PYCMD2], [python-config], [no], [$PATH])
 		   	AS_VAR_IF([PYCMD2], [no], [
 		   		AS_VAR_IF([enable_pyintegration], [yes],
-				[AC_MSG_ERROR([python2-config library required for Python integration support])],
-				[have_libpy="no"
-			 	why_not_libpy="(python2-config command not found)"
-				enable_pyintegration="no"
-				why_not_pyintegration="(python2-config command not found)"
-				])
+					[AC_MSG_ERROR([python2-config library required for Python integration support])],
+					[have_libpy=no
+					 why_not_libpy="(python2-config command not found)"
+					 enable_pyintegration=no
+					 why_not_pyintegration="(python2-config command not found)"])
 			], [PY2CONFIG="$PYCMD2"])
 	   	], [])
 	], [PY2CONFIG="$have_py2config"])
@@ -2338,8 +2337,8 @@ org_have_fits=no
 have_fits=$org_have_fits
 AS_VAR_IF([enable_fits], [no], [], [
 	PKG_CHECK_MODULES([cfitsio], [cfitsio],
-		[have_fits="yes"; AC_DEFINE([HAVE_FITS], 1, [Define if the fits module is to be enabled])],
-		[have_fits="no"; why_not_fits="(cfitsio library not found)"
+		[have_fits=yes; AC_DEFINE([HAVE_FITS], 1, [Define if the fits module is to be enabled])],
+		[have_fits=no; why_not_fits="(cfitsio library not found)"
 		 AS_VAR_IF([enable_fits], [yes], [AC_MSG_ERROR([cfitsio library required for FITS support])])
 		 enable_fits=no; why_not_fits="(cfitsio library not found)"])])
 AM_CONDITIONAL([HAVE_FITS], [test x"$have_fits" != xno])
@@ -2350,8 +2349,8 @@ have_netcdf=$org_have_netcdf
 AS_VAR_IF([enable_netcdf], [no], [], [
 	req_netcdf='4.2'
 	PKG_CHECK_MODULES([netcdf], [netcdf],
-		[have_netcdf="yes"; AC_DEFINE([HAVE_NETCDF], 1, [Define if the netcdf module is to be enabled])],
-		[have_netcdf="no"; why_not_netcdf="(netcdf library not found)"
+		[have_netcdf=yes; AC_DEFINE([HAVE_NETCDF], 1, [Define if the netcdf module is to be enabled])],
+		[have_netcdf=no; why_not_netcdf="(netcdf library not found)"
 		 AS_VAR_IF([enable_netcdf], [yes], [AC_MSG_ERROR([netcdf library required for NetCDF support])])
 		 enable_netcdf=no; why_not_netcdf="(netcdf library not found)"])])
 AM_CONDITIONAL([HAVE_NETCDF], [test x"$have_netcdf" != xno])
@@ -2435,15 +2434,15 @@ AC_SUBST([LIBLAS_LIBS])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
 
-PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
-	[have_atomic_ops="no"; why_not_atomic_ops="(atomic_ops library not found)"])
+PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops=yes],
+	[have_atomic_ops=no; why_not_atomic_ops="(atomic_ops library not found)"])
 AS_VAR_IF([have_atomic_ops], [yes], [
 	AS_CASE([$GCC-$CC],
 	[-*icc*], [
 		# Even with libatomic_ops available, compilation with
 		# atomic_ops enabled fails with Intel's icc (version 11.1);
 		# hence, we refrain from from using atomic_ops with icc.
-		have_atomic_ops="no"
+		have_atomic_ops=no
 		why_not_atomic_ops="(atomic_ops do not compile with Intel's icc)"],
 	[
 		# On some systems, notably OpenIndiana, atomic_ops may
@@ -3083,7 +3082,7 @@ for comp in \
 	AS_ECHO_N(["    $comp = "])
 	AS_VAR_IF([have], [no],
 		[AS_ECHO(["no  $why_not"])],
-		[AS_VAR_IF([have], [auto], [AS_ECHO(["yes"])], [AS_ECHO(["$have"])])])
+		[AS_VAR_IF([have], [auto], [AS_ECHO([yes])], [AS_ECHO(["$have"])])])
 done
 AS_VAR_IF([have_hge], [yes], [
 	hge_bits='128'
