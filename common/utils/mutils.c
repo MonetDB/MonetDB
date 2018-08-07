@@ -444,7 +444,7 @@ get_bin_path(void)
 {
 	/* getting the path to the executable's binary, isn't all that
 	 * simple, unfortunately */
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 	if (GetModuleFileName(NULL, _bin_path,
 			      (DWORD) sizeof(_bin_path)) != 0)
 		return _bin_path;
@@ -479,7 +479,7 @@ get_bin_path(void)
 		if (realpath(execn, _bin_path) != NULL)
 			return(_bin_path);
 	}
-#else  /* try Linux approach */
+#else  /* try Linux approach, also works on Cygwin */
 	if (readlink("/proc/self/exe",
 				_bin_path, sizeof(_bin_path)) != -1)
 			return _bin_path;

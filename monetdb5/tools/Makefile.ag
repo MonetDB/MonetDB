@@ -19,7 +19,7 @@ lib_monetdb5 = {
 		../optimizer/liboptimizer ../scheduler/libscheduler \
 		../../common/utils/libmsabaoth \
 		../../common/utils/libmuuid \
-		WIN32?../../common/utils/libstrptime \
+		NATIVE_WIN32?../../common/utils/libstrptime \
 		WIN32?../../gdk/libbat \
 		WIN32&HAVE_MAPI?../../clients/mapilib/libmapi \
 		WIN32?../../common/stream/libstream \

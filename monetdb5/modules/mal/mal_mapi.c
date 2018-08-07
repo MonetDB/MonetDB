@@ -42,7 +42,7 @@
 # include <CommonCrypto/CommonRandom.h>
 #endif
 #endif
-#ifdef _WIN32   /* Windows specific */
+#ifdef HAVE_WINSOCK_H   /* Windows specific */
 # include <winsock.h>
 #else           /* UNIX specific */
 # include <sys/select.h>
