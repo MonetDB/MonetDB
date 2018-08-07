@@ -2549,11 +2549,12 @@ AC_CHECK_TYPE([SOCKET], [], [AC_DEFINE([SOCKET], [int], [type used for sockets])
 AC_CHECK_TYPE([socklen_t],
 	[AC_DEFINE([HAVE_SOCKLEN_T], 1, [Define to 1 if the system has the type `socklen_t'.])],
 	[AC_DEFINE([socklen_t], [int], [type used by connect])],
-	[[@%:@include <sys/types.h>
-@%:@include <sys/socket.h>]])
-
-# don't check for closesocket on Cygwin: it'll be found but we don't want to use it
-AC_DEFINE([closesocket], [close], [function to close a socket])
+	[[@%:@ifdef HAVE_WINSOCK_H
+@%:@include <winsock.h>
+@%:@else
+@%:@include <sys/types.h>
+@%:@include <sys/socket.h>
+@%:@endif]])
 
 AC_SUBST([SOCKET_LIBS])
 
@@ -2948,6 +2949,11 @@ typedef __int128_t hge;
 typedef __uint128_t uhge;
 @%:@define HAVE_HGE 1
 @%:@define SIZEOF_HGE SIZEOF___INT128_T
+@%:@endif
+
+@%:@ifndef HAVE_WINSOCK_H
+/* on Windows use closesocket, otherwise just close */
+@%:@define closesocket close
 @%:@endif
 
 @%:@if !defined(WIN32) && !defined(_In_z_)
