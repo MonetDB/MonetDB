@@ -109,7 +109,7 @@ rel_create_seq(
 	if (max < 0) max = 0;
 	if (cache <= 0) cache = 1;
 
-	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle);  
+	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle, 0);
 	seq->bedropped = bedropped;
 	res = rel_seq(sql->sa, DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
 	/* for multi statements we keep the sequence around */
@@ -233,7 +233,7 @@ rel_alter_seq(
 	}
 
 	/* first alter the known values */
-	seq = create_sql_sequence(sql->sa, s, name, seq->start, min, max, inc, cache, cycle);  
+	seq = create_sql_sequence(sql->sa, s, name, seq->start, min, max, inc, cache, cycle, 0);
 
 	/* restart may be a query, i.e. we create a statement 
 	   restart(ssname,seqname,value) */ 

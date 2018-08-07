@@ -211,7 +211,7 @@ find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 
 str
-bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
+bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate, bool delete_row)
 {
 	sql_exp *exp;
 	char *query, *msg = NULL;
@@ -252,7 +252,7 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		}
 	}
 
-	if(instantiate) {
+	if(instantiate && !delete_row) {
 		r = rel_project(sql->sa, r, NULL);
 		r->exps = sa_list(sql->sa);
 		list_append(r->exps, exp);
@@ -295,7 +295,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 	sql_subtype found;
 	int localtype;
 
-	if(isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, sql->session->tr->sa, mt, 0)) != NULL)
+	if(isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, sql->session->tr->sa, mt, 0, false)) != NULL)
 		return res;
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;

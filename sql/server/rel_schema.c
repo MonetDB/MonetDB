@@ -2446,6 +2446,44 @@ credentials_password(dlist *credentials)
 	return password;
 }
 
+static sql_rel *
+rel_rename(sql_allocator *sa, unsigned int cat_type, char *old_name, char *new_name)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+	if(!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_clob(sa, old_name));
+	append(exps, exp_atom_clob(sa, new_name));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = cat_type;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_rename_schema(mvc *sql, char *old_name, char *new_name)
+{
+	sql_schema *s;
+
+	assert(old_name && new_name);
+	if (!(s = mvc_bind_schema(sql, old_name)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
+	if (s->system)
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
+	if (s == cur_schema(sql))
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename current schema");
+	if (mvc_bind_schema(sql, new_name))
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+	return rel_rename(sql->sa, DDL_RENAME_SCHEMA, old_name, new_name);
+}
 
 sql_rel *
 rel_schemas(mvc *sql, symbol *s)
@@ -2650,6 +2688,10 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = rel_schema2(sql->sa, DDL_RENAME_USER, l->h->data.sval, l->h->next->data.sval, 0);
+	} 	break;
+	case SQL_RENAME_SCHEMA: {
+		dlist *l = s->data.lval;
+		ret = rel_rename_schema(sql, l->h->data.sval, l->h->next->data.sval);
 	} 	break;
 	case SQL_CREATE_TYPE: {
 		dlist *l = s->data.lval;

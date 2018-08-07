@@ -235,6 +235,10 @@ pattern comment_on(objid:int, remark:str)
 address WLRgeneric
 comment "Catalog operation comment_on";
 
+pattern rename_schema(sname:str, newnme:str)
+address WLRgeneric
+comment "Catalog operation rename_schema";
+
 pattern transaction_release(chain:int,name:str):void
 address WLRgeneric
 comment "A transaction statement (type can be commit,release,rollback or start)";

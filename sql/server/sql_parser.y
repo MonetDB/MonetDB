@@ -1110,6 +1110,14 @@ alter_statement:
 	  append_string(l, $3);
 	  append_list(l, $4);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
+ | ALTER TABLE qname SET TABLE qname opt_as_partition
+	{ dlist *l = L(), *part;
+	  append_list(l, $3);
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
+	  part = $7->data.lval;
+	  append_int(part, TRUE);
+	  append_symbol(l, $7);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER USER ident RENAME TO ident
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -1125,14 +1133,11 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
- | ALTER TABLE qname SET TABLE qname opt_as_partition
-	{ dlist *l = L(), *part;
-	  append_list(l, $3);
-	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
-	  part = $7->data.lval;
-	  append_int(part, TRUE);
-	  append_symbol(l, $7);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER SCHEMA ident RENAME TO ident
+	{ dlist *l = L();
+	  append_string(l, $3);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_RENAME_SCHEMA, l ); }
   ;
 
 passwd_schema:

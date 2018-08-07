@@ -278,7 +278,7 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
+create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp, bool rename)
 {
 	sql_allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
@@ -290,22 +290,26 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	if (STORE_READONLY)
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
-	if (!s)
-		return sql_message(SQLSTATE(3F000) "CREATE %s: schema '%s' doesn't exist", (t->query) ? "TABLE" : "VIEW", sname);
-
-	if (mvc_bind_table(sql, s, t->base.name)) {
-		char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
-		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
-	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
-		return sql_message(SQLSTATE(42000) "DECLARE TABLE: '%s' cannot have constraints", t->base.name);
+	if(!rename) {
+		if (!s)
+			return sql_message(SQLSTATE(3F000) "CREATE %s: schema '%s' doesn't exist", (t->query) ? "TABLE" : "VIEW", sname);
+		if (mvc_bind_table(sql, s, t->base.name)) {
+			char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
+			return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, t->base.name);
+		} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
+			return sql_message(SQLSTATE(42000) "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
+			return sql_message(SQLSTATE(42000) "DECLARE TABLE: '%s' cannot have constraints", t->base.name);
+		}
+	} else {
+		assert(s);
 	}
 
 	osa = sql->sa;
 	sql->sa = NULL;
 
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
+	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action,
+								t->sz, rename ? t->base.id : 0);
 
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -343,8 +347,10 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 			}
-			id_l = rel_dependencies(sql, r);
-			mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+			if(!rename) {
+				id_l = rel_dependencies(sql, r);
+				mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+			}
 			rel_destroy(r);
 			sa_destroy(sql->sa);
 			sql->sa = NULL;
@@ -352,7 +358,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	}
 
 	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c);
+		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c, rename);
 
 		if (copied == NULL) {
 			sql->sa = osa;
@@ -372,7 +378,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
-		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1);
+		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1, rename);
 		sa_destroy(sql->sa);
 		sql->sa = NULL;
 		if(err) {
@@ -380,19 +386,21 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 			return err;
 		}
 	}
-	check = sql_trans_set_partition_table(sql->session->tr, nt);
-	if(check == -1) {
-		sql->sa = osa;
-		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
-	} else if(check) {
-		sql->sa = osa;
-		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
+	if(!rename) {
+		check = sql_trans_set_partition_table(sql->session->tr, nt);
+		if(check == -1) {
+			sql->sa = osa;
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
+		} else if(check) {
+			sql->sa = osa;
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
+		}
 	}
 
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
-			mvc_copy_idx(sql, nt, i);
+			mvc_copy_idx(sql, nt, i, rename);
 		}
 	}
 	if (t->keys.set) {
@@ -413,11 +421,11 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 				sql->sa = osa;
 				return err;
 			}
-			mvc_copy_key(sql, nt, k);
+			mvc_copy_key(sql, nt, k, rename);
 		}
 	}
 	/* also create dependencies */
-	if (nt->query && isView(nt)) {
+	if (!rename && nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
 		sql->sa = sa_create();
@@ -485,7 +493,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			goto cleanup;
 		}
 	}
-	msg = create_table_or_view(sql, sname, t->base.name, t, 0);
+	msg = create_table_or_view(sql, sname, t->base.name, t, 0, false);
 	if (msg != MAL_SUCCEED) {
 		goto cleanup;
 	}

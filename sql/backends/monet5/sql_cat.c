@@ -375,7 +375,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 		if (!pt || (n = cs_find_id(&mt->members, pt->base.id)) == NULL)
 			throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
 
-		sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
+		sql_trans_del_table(sql->session->tr, mt, pt, drop_action, false);
 	} else if (mt) {
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
 	} else {
@@ -635,7 +635,7 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 	} else if (!mvc_schema_privs(sql, s)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
-	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
+	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped, 0);
 	return NULL;
 }
 
@@ -881,7 +881,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
 		sql_column *c = n->data;
-		mvc_copy_column(sql, nt, c);
+		mvc_copy_column(sql, nt, c, false);
 	}
 	if (t->idxs.set) {
 		/* alter drop index */
@@ -916,7 +916,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (r != GDK_SUCCEED)
 					throw(SQL, "sql.alter_table", GDK_EXCEPTION);
 			}
-			mvc_copy_idx(sql, nt, i);
+			mvc_copy_idx(sql, nt, i, false);
 		}
 	}
 	if (t->keys.set) {
@@ -936,7 +936,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			str err;
 			if((err = sql_partition_validate_key(sql, t, k, "ALTER")))
 				return err;
-			mvc_copy_key(sql, nt, k);
+			mvc_copy_key(sql, nt, k, false);
 		}
 	}
 	return MAL_SUCCEED;
@@ -1056,7 +1056,7 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, tname, t, temp);
+	msg = create_table_or_view(sql, sname, tname, t, temp, false);
 	return msg;
 }
 
@@ -1065,12 +1065,12 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
-	str vname = *getArgReference_str(stk, pci, 2); 
+	str vname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, vname, t, temp);
+	msg = create_table_or_view(sql, sname, vname, t, temp, false);
 	return msg;
 }
 
@@ -1551,5 +1551,64 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (ok != LOG_OK)
 		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "operation failed");
+	return MAL_SUCCEED;
+}
+
+str
+SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg;
+	str old_name = *getArgReference_str(stk, pci, 1);
+	str new_name = *getArgReference_str(stk, pci, 2);
+	sql_schema *olds, *news;
+	node *n;
+
+	initcontext();
+	if (!(olds = mvc_bind_schema(sql, old_name)))
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
+	if (!mvc_schema_privs(sql, olds))
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
+	if (olds->system)
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
+	if (olds == cur_schema(sql))
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename current schema");
+	if (!new_name || strcmp(new_name, str_nil) == 0)
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
+	if (mvc_bind_schema(sql, new_name))
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+
+	if(sql_trans_drop_schema(sql->session->tr, olds->base.id, DROP_RESTRICT, true))
+		throw(SQL, "sql.rename_schema", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	news = sql_trans_create_schema(sql->session->tr, new_name, sql->role_id, sql->user_id, olds->base.id);
+
+	if (olds->types.set) {
+		for (n = olds->types.set->h; n; n = n->next) {
+			sql_type *ot = n->data;
+			if(sql_trans_create_type(sql->session->tr, news, ot->sqlname, ot->digits, ot->scale, ot->radix, ot->base.name, ot->base.id))
+				throw(SQL,"sql.rename_schema", SQLSTATE(0D000) "ALTER SCHEMA: unknown external type '%s'", ot->base.name);
+		}
+	}
+	if (olds->tables.set) {
+		for (n = olds->tables.set->h; n; n = n->next) {
+			sql_table *ot = n->data;
+			if((msg = create_table_or_view(sql, news->base.name, ot->base.name, ot, ot->persistence, true)) != MAL_SUCCEED)
+				return msg;
+		}
+	}
+	if (olds->funcs.set) {
+		for (n = olds->funcs.set->h; n; n = n->next) {
+			sql_func *of = n->data;
+			(void) sql_trans_create_func(sql->session->tr, news, of->base.name, of->ops, of->res, of->type, of->lang,
+										 of->mod, of->imp, of->query, of->varres, of->vararg, of->base.id);
+		}
+	}
+	if (olds->seqs.set) {
+		for (n = olds->seqs.set->h; n; n = n->next) {
+			sql_sequence *os = n->data;
+			(void) sql_trans_create_sequence(sql->session->tr, news, os->base.name, os->start, os->minvalue,
+											 os->maxvalue, os->increment, os->cacheinc, os->cycle, 0, os->base.id);
+		}
+	}
 	return MAL_SUCCEED;
 }

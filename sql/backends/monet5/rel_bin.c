@@ -5244,7 +5244,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	} else if (rel->flag <= DDL_ALTER_TABLE) {
 		s = rel2bin_catalog_table(be, rel, refs);
 		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_COMMENT_ON) {
+	} else if (rel->flag <= DDL_RENAME_SCHEMA) {
 		s = rel2bin_catalog2(be, rel, refs);
 		sql->type = Q_SCHEMA;
 	}

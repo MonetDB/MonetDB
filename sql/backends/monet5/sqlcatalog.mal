@@ -162,3 +162,7 @@ comment "Catalog operation alter_add_value_partition";
 pattern comment_on(objid:int, remark:str)
 address SQLcomment_on
 comment "Catalog operation comment_on";
+
+pattern rename_schema(sname:str, newnme:str)
+address SQLrename_schema
+comment "Catalog operation rename_schema";

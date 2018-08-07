@@ -234,6 +234,7 @@ str register_supervisorRef;
 str releaseRef;
 str remapRef;
 str remoteRef;
+str rename_schemaRef;
 str rename_userRef;
 str replaceRef;
 str replicatorRef;
@@ -538,6 +539,7 @@ void optimizerInit(void)
 	releaseRef = putName("release");
 	remapRef = putName("remap");
 	remoteRef = putName("remote");
+	rename_schemaRef = putName("rename_schema");
 	rename_userRef = putName("rename_user");
 	replaceRef = putName("replace");
 	replicatorRef = putName("replicator");
