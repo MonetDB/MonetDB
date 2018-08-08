@@ -200,6 +200,7 @@ extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
+extern sql_column *mvc_rename_column(mvc *c, sql_column *col, char *new_name);
 extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 
@@ -263,7 +264,7 @@ extern lng stack_get_number(mvc *sql, const char *name);
 extern void stack_set_number(mvc *sql, const char *name, lng v);
 #endif
 
-extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c, bool create_row);
+extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c, char* new_name, bool create_row);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k, bool create_row);
 extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, bool create_row);
 extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, bool create_row);

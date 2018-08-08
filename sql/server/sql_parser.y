@@ -1118,6 +1118,17 @@ alter_statement:
 	  append_int(part, TRUE);
 	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE qname RENAME TO ident
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_RENAME_TABLE, l ); }
+ | ALTER TABLE qname ALTER opt_column ident RENAME TO ident
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_string(l, $6);
+	  append_string(l, $9);
+	  $$ = _symbol_create_list( SQL_RENAME_COLUMN, l); }
  | ALTER USER ident RENAME TO ident
 	{ dlist *l = L();
 	  append_string(l, $3);

@@ -2447,29 +2447,11 @@ credentials_password(dlist *credentials)
 }
 
 static sql_rel *
-rel_rename(sql_allocator *sa, unsigned int cat_type, char *old_name, char *new_name)
-{
-	sql_rel *rel = rel_create(sa);
-	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
-		return NULL;
-
-	append(exps, exp_atom_clob(sa, old_name));
-	append(exps, exp_atom_clob(sa, new_name));
-	rel->l = NULL;
-	rel->r = NULL;
-	rel->op = op_ddl;
-	rel->flag = cat_type;
-	rel->exps = exps;
-	rel->card = 0;
-	rel->nrcols = 0;
-	return rel;
-}
-
-static sql_rel *
 rel_rename_schema(mvc *sql, char *old_name, char *new_name)
 {
 	sql_schema *s;
+	sql_rel *rel;
+	list *exps;
 
 	assert(old_name && new_name);
 	if (!(s = mvc_bind_schema(sql, old_name)))
@@ -2482,7 +2464,86 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename current schema");
 	if (mvc_bind_schema(sql, new_name))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
-	return rel_rename(sql->sa, DDL_RENAME_SCHEMA, old_name, new_name);
+
+	rel = rel_create(sql->sa);
+	exps = new_exp_list(sql->sa);
+	append(exps, exp_atom_clob(sql->sa, old_name));
+	append(exps, exp_atom_clob(sql->sa, new_name));
+	rel->op = op_ddl;
+	rel->flag = DDL_RENAME_SCHEMA;
+	rel->exps = exps;
+	return rel;
+}
+
+static sql_rel *
+rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name)
+{
+	sql_schema *s;
+	sql_table *t;
+	sql_rel *rel;
+	list *exps;
+
+	assert(schema_name && old_name && new_name);
+
+	if (!(s = mvc_bind_schema(sql, schema_name)))
+		return sql_error(sql, 02,SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
+	if (!(t = mvc_bind_table(sql, s, old_name)))
+		return sql_error(sql, 02,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", old_name, schema_name);
+	if (t->system)
+		return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot rename system table '%s'", old_name);
+	if (!new_name || strcmp(new_name, str_nil) == 0)
+		return sql_error(sql, 02,SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
+	if (mvc_bind_table(sql, s, new_name))
+		return sql_error(sql, 02,SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
+
+	rel = rel_create(sql->sa);
+	exps = new_exp_list(sql->sa);
+	append(exps, exp_atom_clob(sql->sa, schema_name));
+	append(exps, exp_atom_clob(sql->sa, old_name));
+	append(exps, exp_atom_clob(sql->sa, new_name));
+	rel->op = op_ddl;
+	rel->flag = DDL_RENAME_TABLE;
+	rel->exps = exps;
+	return rel;
+}
+
+static sql_rel *
+rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name, char *new_name)
+{
+	sql_schema *s;
+	sql_table *t;
+	sql_rel *rel;
+	list *exps;
+
+	assert(schema_name && table_name && old_name && new_name);
+
+	if (!(s = mvc_bind_schema(sql, schema_name)))
+		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
+	if (!(t = mvc_bind_table(sql, s, table_name)))
+		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", table_name, schema_name);
+	if (t->system)
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename system table '%s'", t->base.name);
+	if (isView(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, t->base.name);
+	if (!mvc_bind_column(sql, t, old_name))
+		return sql_error(sql, 02, "ALTER TABLE: no such column '%s' in table '%s'", old_name, t->base.name);
+	if (mvc_bind_column(sql, t, new_name))
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, t->base.name);
+
+	rel = rel_create(sql->sa);
+	exps = new_exp_list(sql->sa);
+	append(exps, exp_atom_clob(sql->sa, schema_name));
+	append(exps, exp_atom_clob(sql->sa, table_name));
+	append(exps, exp_atom_clob(sql->sa, old_name));
+	append(exps, exp_atom_clob(sql->sa, new_name));
+	rel->op = op_ddl;
+	rel->flag = DDL_RENAME_COLUMN;
+	rel->exps = exps;
+	return rel;
 }
 
 sql_rel *
@@ -2692,6 +2753,22 @@ rel_schemas(mvc *sql, symbol *s)
 	case SQL_RENAME_SCHEMA: {
 		dlist *l = s->data.lval;
 		ret = rel_rename_schema(sql, l->h->data.sval, l->h->next->data.sval);
+	} 	break;
+	case SQL_RENAME_TABLE: {
+		dlist *l = s->data.lval;
+		char *sname = qname_schema(l->h->data.lval);
+		char *tname = qname_table(l->h->data.lval);
+		if (!sname)
+			sname = cur_schema(sql)->base.name;
+		ret = rel_rename_table(sql, sname, tname, l->h->next->data.sval);
+	} 	break;
+	case SQL_RENAME_COLUMN: {
+		dlist *l = s->data.lval;
+		char *sname = qname_schema(l->h->data.lval);
+		char *tname = qname_table(l->h->data.lval);
+		if (!sname)
+			sname = cur_schema(sql)->base.name;
+		ret = rel_rename_column(sql, sname, tname, l->h->next->data.sval, l->h->next->next->data.sval);
 	} 	break;
 	case SQL_CREATE_TYPE: {
 		dlist *l = s->data.lval;

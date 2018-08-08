@@ -19,3 +19,4 @@ drop table "changed"."testme";
 
 drop schema "changeme"; --error
 drop schema "changed";
+select "name", "system" from sys.schemas where "name" in ('changeme', 'changed');

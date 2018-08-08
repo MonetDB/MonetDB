@@ -109,6 +109,11 @@ Ready.
 [ NULL	]
 #drop table "changed"."testme";
 #drop schema "changed";
+#select "name", "system" from sys.schemas where "name" in ('changeme', 'changed');
+% sys.schemas,	sys.schemas # table_name
+% name,	system # name
+% varchar,	boolean # type
+% 0,	5 # length
 
 # 16:50:35 >  
 # 16:50:35 >  "Done."

@@ -101,6 +101,16 @@ Ready.
 % varchar # type
 % 0 # length
 #drop schema "testing";
+#select "name" from sys.schemas where "name" in ('testing', 'altered');
+% sys.schemas # table_name
+% name # name
+% varchar # type
+% 0 # length
+#select "name" from sys.tables where name = 'anothertable';
+% .tables # table_name
+% name # name
+% varchar # type
+% 0 # length
 
 # 17:22:11 >  
 # 17:22:11 >  "Done."

@@ -226,7 +226,7 @@ typedef struct store_functions {
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;
 	create_del_fptr create_del;
-	
+
 	dup_col_fptr dup_col;
 	dup_idx_fptr dup_idx;
 	dup_del_fptr dup_del;
@@ -371,7 +371,7 @@ extern int sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_a
 extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 
-extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
+extern sql_column *sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe, sqlid reuse);
 extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action, bool delete_row);
 extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
@@ -418,7 +418,7 @@ extern int sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, shor
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int id);
 
 extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, sqlid reuse);
-extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);
+extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe, sqlid reuse);
 extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
 extern sql_key *create_sql_kc(sql_allocator *sa, sql_key *k, sql_column *c);
@@ -434,7 +434,7 @@ extern void drop_sql_column(sql_table *t, int id, int drop_action);
 extern void drop_sql_idx(sql_table *t, int id);
 extern void drop_sql_key(sql_table *t, int id, int drop_action);
 
-extern sql_column *sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c, bool create_row);
+extern sql_column *sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c, char* new_name, bool create_row);
 extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k, bool create_row);
 extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i, bool create_row);
 extern sql_trigger *sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri, bool create_row);

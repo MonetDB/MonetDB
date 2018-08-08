@@ -278,7 +278,7 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp, bool rename)
+create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp, sqlid reuse, bool rename)
 {
 	sql_allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
@@ -286,7 +286,6 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	node *n;
 	int check = 0;
 
-	(void)tname;
 	if (STORE_READONLY)
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
@@ -308,8 +307,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	osa = sql->sa;
 	sql->sa = NULL;
 
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action,
-								t->sz, rename ? t->base.id : 0);
+	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
+								t->sz, reuse ? reuse : 0);
 
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -358,7 +357,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	}
 
 	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c, !rename);
+		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c, NULL, !rename);
 
 		if (copied == NULL) {
 			sql->sa = osa;
@@ -378,7 +377,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
-		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1, rename);
+		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1, !rename);
 		sa_destroy(sql->sa);
 		sql->sa = NULL;
 		if(err) {
@@ -505,7 +504,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			goto cleanup;
 		}
 	}
-	msg = create_table_or_view(sql, sname, t->base.name, t, 0, false);
+	msg = create_table_or_view(sql, sname, t->base.name, t, 0, 0, false);
 	if (msg != MAL_SUCCEED) {
 		goto cleanup;
 	}

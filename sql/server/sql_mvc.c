@@ -1109,7 +1109,7 @@ mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_schema %s\n", s->base.name);
-	return sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, false);
+	return sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, true);
 }
 
 sql_ukey *
@@ -1260,7 +1260,7 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		t->s = s;
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, 0);
-		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, m->session->tr->sa, t, 1, false))) {
+		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, m->session->tr->sa, t, 1, true))) {
 			(void) sql_error(m, 02, "%s", err);
 			return NULL;
 		}
@@ -1340,7 +1340,7 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 			return AUTHres;
 	}
 
-	if(sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, false))
+	if(sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, true))
 		throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -1359,7 +1359,7 @@ mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, int
 	if (!sql_find_subtype(&tpe, type, digits, 0))
 		return NULL;
 
-	return sql_trans_create_column(m->session->tr, t, name, &tpe);
+	return sql_trans_create_column(m->session->tr, t, name, &tpe, 0);
 }
 
 sql_column *
@@ -1369,9 +1369,9 @@ mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 		fprintf(stderr, "#mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
 	if (t->persistence == SQL_DECLARED_TABLE && (!t->s || strcmp(t->s->base.name, dt_schema))) 
 		/* declared tables should not end up in the catalog */
-		return create_sql_column(m->sa, t, name, tpe);
+		return create_sql_column(m->sa, t, name, tpe, 0);
 	else
-		return sql_trans_create_column(m->session->tr, t, name, tpe);
+		return sql_trans_create_column(m->session->tr, t, name, tpe, 0);
 }
 
 int
@@ -1383,7 +1383,7 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 		drop_sql_column(t, col->base.id, drop_action);
 		return 0;
 	} else
-		return sql_trans_drop_column(m->session->tr, t, col->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, false);
+		return sql_trans_drop_column(m->session->tr, t, col->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, true);
 }
 
 void
@@ -1915,9 +1915,9 @@ stack_get_number(mvc *sql, const char *name)
 }
 
 sql_column *
-mvc_copy_column( mvc *m, sql_table *t, sql_column *c, bool create_row)
+mvc_copy_column( mvc *m, sql_table *t, sql_column *c, char* new_name, bool create_row)
 {
-	return sql_trans_copy_column(m->session->tr, t, c, create_row);
+	return sql_trans_copy_column(m->session->tr, t, c, new_name, create_row);
 }
 
 sql_key *
