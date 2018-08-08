@@ -4689,7 +4689,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	sys_drop_func(tr, func, DROP_CASCADE, false);
+	sys_drop_func(tr, func, DROP_CASCADE, true);
 
 	func->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
@@ -4708,7 +4708,7 @@ build_drop_func_list_item(sql_trans *tr, sql_schema *s, int id)
 	node *n = find_sql_func_node(s, id);
 	sql_func *func = n->data;
 
-	sys_drop_func(tr, func, DROP_CASCADE, false);
+	sys_drop_func(tr, func, DROP_CASCADE, true);
 
 	func->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
@@ -5930,7 +5930,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		cs_del(&k->t->keys, n, k->base.flag);
 
 	if (!isTempTable(k->t)) 
-		sys_drop_key(tr, k, drop_action, false);
+		sys_drop_key(tr, k, drop_action, true);
 
 	k->base.wtime = k->t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(k->t)) 
@@ -6044,7 +6044,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	}
 
 	if (!isTempTable(i->t))
-		sys_drop_idx(tr, i, drop_action, false);
+		sys_drop_idx(tr, i, drop_action, true);
 
 	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(i->t)) 
@@ -6195,7 +6195,7 @@ void
 sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action)
 {
 	node *n = cs_find_name(&s->seqs, seq->base.name);
-	sys_drop_sequence(tr, seq, drop_action, false);
+	sys_drop_sequence(tr, seq, drop_action, true);
 	seq->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	cs_del(&s->seqs, n, seq->base.flag);
 	tr->schema_updates ++;
