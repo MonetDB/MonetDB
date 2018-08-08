@@ -15,4 +15,4 @@ extern int dump_database(Mapi mid, stream *toConsole, int describe, bool useInse
 extern void dump_version(Mapi mid, stream *toConsole, const char *prefix);
 
 /* used for backward compatibility with older server versions */
-extern const char *get_with_comments_as_clause(Mapi mid);
+extern const char *get_comments_clause(Mapi mid);
