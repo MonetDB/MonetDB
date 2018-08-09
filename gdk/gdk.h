@@ -2662,7 +2662,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (* (const TYPE *) v == * (const TYPE *) BUNtloc(bi, hb))
+		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
