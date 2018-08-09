@@ -2437,14 +2437,14 @@ BBPshare(bat parent)
 	bool lock = locked_by == 0 || locked_by != MT_getpid();
 
 	assert(parent > 0);
+	(void) incref(parent, true, lock);
 	if (lock)
 		MT_lock_set(&GDKswapLock(parent));
-	(void) incref(parent, true, 0);
 	++BBP_cache(parent)->batSharecnt;
 	assert(BBP_refs(parent) > 0);
-	(void) incref(parent, false, 0);
 	if (lock)
 		MT_lock_unset(&GDKswapLock(parent));
+	(void) incref(parent, false, lock);
 }
 
 static inline int
