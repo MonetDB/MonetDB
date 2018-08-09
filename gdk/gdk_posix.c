@@ -1094,7 +1094,7 @@ win_mkdir(const char *pathname, const int mode)
 }
 #endif
 
-#ifndef WIN32
+#ifndef NATIVE_WIN32
 
 void
 MT_sleep_ms(unsigned int ms)

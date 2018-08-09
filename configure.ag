@@ -588,7 +588,9 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wno-format-truncation])
 		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
 dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
-		MCHECK_ADD_FLAG([-Wno-cast-function-type])
+		AS_VAR_IF([target_os], [cygwin],
+			[MCHECK_ADD_FLAG([-Wno-error=suggest-attribute=format])],
+			[MCHECK_ADD_FLAG([-Wno-cast-function-type])])
 		MCHECK_ADD_FLAG([-Winit-self])
 		MCHECK_ADD_FLAG([-Winvalid-pch])
 		MCHECK_ADD_FLAG([-Wmissing-declarations])
@@ -764,6 +766,9 @@ AC_LINK_IFELSE([
 	[result=yes],
 	[LDFLAGS="$save_LDFLAGS"; result=no])
 AC_MSG_RESULT([$result])
+AS_VAR_IF([target_os], [cygwin],
+	[NO_UNDEFINED="-no-undefined"])
+AC_SUBST(NO_UNDEFINED)
 
 # icc needs -fPIC (but the current autoconf still uses -KPIC)
 AS_CASE([$GCC-$CC-$host_os],
@@ -1774,7 +1779,7 @@ AC_ARG_WITH([libxml2],
 		[include libxml2 support (default=yes)])],
 	[have_libxml2=$withval])
 AS_VAR_IF([have_libxml2], [no], [], [
-	PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"; why_not_libxml2="(libxml2 not found)"])
+	PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2=yes], [have_libxml2=no; why_not_libxml2="(libxml2 not found)"])
 	AS_VAR_IF([have_libxml2], [yes], [
 		AC_DEFINE([HAVE_LIBXML], 1, [Define if you have the xml library])])])
 AM_CONDITIONAL([HAVE_LIBXML], [test x"$have_libxml2" != xno])
@@ -1787,14 +1792,14 @@ AC_ARG_WITH([curl],
 		[include cURL support (default=yes)])],
 	[have_curl=$withval])
 AS_VAR_IF([have_curl], [no], [], [
-	PKG_CHECK_MODULES([curl], [libcurl], [have_curl="yes"], [have_curl="no"; why_not_curl="(libcurl not found)"])
+	PKG_CHECK_MODULES([curl], [libcurl], [have_curl=yes], [have_curl=no; why_not_curl="(libcurl not found)"])
 	AS_VAR_IF([have_curl], [yes], [
 		AC_DEFINE([HAVE_CURL], 1, [Define if you have the cURL library])
 		AC_SUBST([PKG_CURL], [libcurl])])])
 AM_CONDITIONAL([HAVE_CURL], [test x"$have_curl" != xno])
 
 
-PKG_CHECK_MODULES([zlib], [zlib], [have_zlib="yes"], [have_zlib="no"; why_not_zlib="(zlib not found)"])
+PKG_CHECK_MODULES([zlib], [zlib], [have_zlib=yes], [have_zlib=no; why_not_zlib="(zlib not found)"])
 AS_CASE([$have_zlib],
 	[no],
 		[# Solaris doesn't provide zlib.pc, but zlib may well be present
@@ -1812,7 +1817,7 @@ AC_ARG_WITH([lzma],
 		[include lzma support (default=yes)])],
 	[have_lzma=$withval])
 AS_VAR_IF([have_lzma], [no], [], [
-	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma="yes"], [have_liblzma="no"; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
+	PKG_CHECK_MODULES([liblzma], [liblzma], [have_liblzma=yes], [have_liblzma=no; why_not_liblzma="(liblzma not found, install xz-libs and xz-devel)"])
 	AS_VAR_IF([have_liblzma], [yes], [
 		AC_SUBST([PKG_LIBLZMA], [liblzma])])
 	AS_VAR_IF([have_liblzma], [yes], [
@@ -1842,7 +1847,7 @@ AS_VAR_IF([enable_rintegration], [no], [], [
    	AS_VAR_IF([RCMD], [],
 		[AS_VAR_IF([enable_rintegration], [yes],
 			[AC_MSG_ERROR([libR library required for R integration support])],
-			[have_libr="no"
+			[have_libr=no
 			 why_not_libr="(libR library not found)"
 			 enable_rintegration=no
 			 why_not_rintegration="(libR library not found)"])],
@@ -1869,51 +1874,51 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 		   	AC_PATH_PROG([PYCMD2], [python-config], [no], [$PATH])
 		   	AS_VAR_IF([PYCMD2], [no], [
 		   		AS_VAR_IF([enable_pyintegration], [yes],
-				[AC_MSG_ERROR([python2-config library required for Python integration support])],
-				[have_libpy="no"
-			 	why_not_libpy="(python2-config command not found)"
-				enable_pyintegration="no"
-				why_not_pyintegration="(python2-config command not found)"
-				])
+					[AC_MSG_ERROR([python2-config library required for Python integration support])],
+					[have_libpy=no
+					 why_not_libpy="(python2-config command not found)"
+					 enable_pyintegration=no
+					 why_not_pyintegration="(python2-config command not found)"])
 			], [PY2CONFIG="$PYCMD2"])
 	   	], [])
 	], [PY2CONFIG="$have_py2config"])
-	PYTHON_CMD=$PYTHON2
-	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
-	# check numpyconfig.h because autoconf tests includes by
-	# compiling a small C program, and other numpy headers do
-	# not compile without Python.h
-	AC_CHECK_HEADER([numpy/numpyconfig.h],
-		[NUMPYHEADERS=True],
-		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
-	AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
-		[AS_VAR_IF([enable_pyintegration], [yes],
-			[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])],
-			[have_libpy="no"
-			 why_not_libpy="(numpy version >= 1.7.0 not found)"
-			 enable_pyintegration="no"
-			 why_not_pyintegration="(numpy version >= 1.7.0 not found)"])],
-		[test "x$NUMPYHEADERS" = xFalse ],
-		[AS_VAR_IF([enable_pyintegration], [yes],
-			[AC_MSG_ERROR([numpy/arrayobject.h not found])],
-			[have_libpy="no"
-			 why_not_libpy="(numpy/arrayobject.h not found)"
-			 enable_pyintegration="no"
-			 why_not_pyintegration="(numpy/arrayobject.h not found)"])],
-		[libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
-		 libpy_LIBS=`$PY2CONFIG --ldflags`
-		 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
-		 AS_VAR_IF([HAVEPYTHONHEADER], [True],
-		 	[have_libpy=yes
-			 AC_DEFINE([HAVE_LIBPY], 1, [Define if we can link to python])
-			 AC_SUBST([libpy_CFLAGS], [$libpy_CFLAGS])
-			 AC_SUBST([libpy_LIBS], [$libpy_LIBS])],
+	AS_VAR_IF([enable_pyintegration], [no], [], [
+		PYTHON_CMD=$PYTHON2
+		NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
+		# check numpyconfig.h because autoconf tests includes by
+		# compiling a small C program, and other numpy headers do
+		# not compile without Python.h
+		AC_CHECK_HEADER([numpy/numpyconfig.h],
+			[NUMPYHEADERS=True],
+			[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
+		AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
 			[AS_VAR_IF([enable_pyintegration], [yes],
-				[AC_MSG_ERROR([Python.h not found])],
-				[have_libpy="no"
-			 	 why_not_libpy="Python.h not found"
-				 enable_pyintegration="no"
-				 why_not_pyintegration="Python.h not found"])])])])
+				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])],
+				[have_libpy=no
+				 why_not_libpy="(numpy version >= 1.7.0 not found)"
+				 enable_pyintegration=no
+				 why_not_pyintegration="(numpy version >= 1.7.0 not found)"])],
+			[test "x$NUMPYHEADERS" = xFalse ],
+			[AS_VAR_IF([enable_pyintegration], [yes],
+				[AC_MSG_ERROR([numpy/arrayobject.h not found])],
+				[have_libpy=no
+				 why_not_libpy="(numpy/arrayobject.h not found)"
+				 enable_pyintegration=no
+				 why_not_pyintegration="(numpy/arrayobject.h not found)"])],
+			[libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
+			 libpy_LIBS=`$PY2CONFIG --ldflags`
+			 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
+			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
+				[have_libpy=yes
+				 AC_DEFINE([HAVE_LIBPY], 1, [Define if we can link to python])
+				 AC_SUBST([libpy_CFLAGS], [$libpy_CFLAGS])
+				 AC_SUBST([libpy_LIBS], [$libpy_LIBS])],
+				[AS_VAR_IF([enable_pyintegration], [yes],
+					[AC_MSG_ERROR([Python.h not found])],
+					[have_libpy=no
+					 why_not_libpy="Python.h not found"
+					 enable_pyintegration=no
+					 why_not_pyintegration="Python.h not found"])])])])])
 AM_CONDITIONAL([HAVE_LIBPY], [test x"$have_libpy" != xno])
 
 
@@ -1953,42 +1958,43 @@ AS_VAR_IF([enable_py3integration], [no], [],
 				 why_not_py3integration="(python3-config command not found)"])])],
 		[PY3CONFIG="$have_py3config"])
 
-	PYTHON_CMD=$PYTHON3
+	AS_VAR_IF([enable_py3integration], [no], [], [
+		PYTHON_CMD=$PYTHON3
 
-	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
-	# check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
-	AC_CHECK_HEADER(
-		[numpy/numpyconfig.h], 
-		[NUMPYHEADERS=True],
-		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
-	AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
-		[AS_VAR_IF([enable_py3integration], [yes],
-			[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python3 integration support])],
-			[have_libpy3="no"
-			 why_not_libpy3="(numpy version >= 1.7.0 not found)"
-			 enable_py3integration=no
-			 why_not_py3integration="(numpy version >= 1.7.0 not found)"])],
-		[test "x$NUMPYHEADERS" = xFalse],
-		[AS_VAR_IF([enable_py3integration], [yes],
-			[AC_MSG_ERROR([numpy/arrayobject.h not found])],
-			[have_libpy3="no"
-			 why_not_libpy3="(numpy/arrayobject.h not found)"
-			 enable_py3integration=no
-			 why_not_py3integration="(numpy/arrayobject.h not found)"])],
-		[libpy3_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
-		 libpy3_LIBS=`$PY3CONFIG --ldflags`
-		 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
-		 AS_VAR_IF([HAVEPYTHONHEADER], [True],
-		 	[have_libpy3=yes
-			 AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python])
-			 AC_SUBST(libpy3_CFLAGS, $libpy3_CFLAGS)
-			 AC_SUBST(libpy3_LIBS, $libpy3_LIBS)],
+		NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
+		# check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
+		AC_CHECK_HEADER(
+			[numpy/numpyconfig.h], 
+			[NUMPYHEADERS=True],
+			[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
+		AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
 			[AS_VAR_IF([enable_py3integration], [yes],
-				[AC_MSG_ERROR([Python.h not found])],
-				[have_libpy3="no"
-				 why_not_libpy3="Python.h not found"
+				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python3 integration support])],
+				[have_libpy3=no
+				 why_not_libpy3="(numpy version >= 1.7.0 not found)"
 				 enable_py3integration=no
-				 why_not_py3integration="Python.h not found"])])])])
+				 why_not_py3integration="(numpy version >= 1.7.0 not found)"])],
+			[test "x$NUMPYHEADERS" = xFalse],
+			[AS_VAR_IF([enable_py3integration], [yes],
+				[AC_MSG_ERROR([numpy/arrayobject.h not found])],
+				[have_libpy3=no
+				 why_not_libpy3="(numpy/arrayobject.h not found)"
+				 enable_py3integration=no
+				 why_not_py3integration="(numpy/arrayobject.h not found)"])],
+			[libpy3_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
+			 libpy3_LIBS=`$PY3CONFIG --ldflags`
+			 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
+			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
+				[have_libpy3=yes
+				 AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python])
+				 AC_SUBST(libpy3_CFLAGS, $libpy3_CFLAGS)
+				 AC_SUBST(libpy3_LIBS, $libpy3_LIBS)],
+				[AS_VAR_IF([enable_py3integration], [yes],
+					[AC_MSG_ERROR([Python.h not found])],
+					[have_libpy3=no
+					 why_not_libpy3="Python.h not found"
+					 enable_py3integration=no
+					 why_not_py3integration="Python.h not found"])])])])])
 AM_CONDITIONAL(HAVE_LIBPY3, test x"$have_libpy3" != xno)
 
 
@@ -2331,8 +2337,8 @@ org_have_fits=no
 have_fits=$org_have_fits
 AS_VAR_IF([enable_fits], [no], [], [
 	PKG_CHECK_MODULES([cfitsio], [cfitsio],
-		[have_fits="yes"; AC_DEFINE([HAVE_FITS], 1, [Define if the fits module is to be enabled])],
-		[have_fits="no"; why_not_fits="(cfitsio library not found)"
+		[have_fits=yes; AC_DEFINE([HAVE_FITS], 1, [Define if the fits module is to be enabled])],
+		[have_fits=no; why_not_fits="(cfitsio library not found)"
 		 AS_VAR_IF([enable_fits], [yes], [AC_MSG_ERROR([cfitsio library required for FITS support])])
 		 enable_fits=no; why_not_fits="(cfitsio library not found)"])])
 AM_CONDITIONAL([HAVE_FITS], [test x"$have_fits" != xno])
@@ -2343,8 +2349,8 @@ have_netcdf=$org_have_netcdf
 AS_VAR_IF([enable_netcdf], [no], [], [
 	req_netcdf='4.2'
 	PKG_CHECK_MODULES([netcdf], [netcdf],
-		[have_netcdf="yes"; AC_DEFINE([HAVE_NETCDF], 1, [Define if the netcdf module is to be enabled])],
-		[have_netcdf="no"; why_not_netcdf="(netcdf library not found)"
+		[have_netcdf=yes; AC_DEFINE([HAVE_NETCDF], 1, [Define if the netcdf module is to be enabled])],
+		[have_netcdf=no; why_not_netcdf="(netcdf library not found)"
 		 AS_VAR_IF([enable_netcdf], [yes], [AC_MSG_ERROR([netcdf library required for NetCDF support])])
 		 enable_netcdf=no; why_not_netcdf="(netcdf library not found)"])])
 AM_CONDITIONAL([HAVE_NETCDF], [test x"$have_netcdf" != xno])
@@ -2428,15 +2434,15 @@ AC_SUBST([LIBLAS_LIBS])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
 
-PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
-	[have_atomic_ops="no"; why_not_atomic_ops="(atomic_ops library not found)"])
+PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops=yes],
+	[have_atomic_ops=no; why_not_atomic_ops="(atomic_ops library not found)"])
 AS_VAR_IF([have_atomic_ops], [yes], [
 	AS_CASE([$GCC-$CC],
 	[-*icc*], [
 		# Even with libatomic_ops available, compilation with
 		# atomic_ops enabled fails with Intel's icc (version 11.1);
 		# hence, we refrain from from using atomic_ops with icc.
-		have_atomic_ops="no"
+		have_atomic_ops=no
 		why_not_atomic_ops="(atomic_ops do not compile with Intel's icc)"],
 	[
 		# On some systems, notably OpenIndiana, atomic_ops may
@@ -2543,11 +2549,12 @@ AC_CHECK_TYPE([SOCKET], [], [AC_DEFINE([SOCKET], [int], [type used for sockets])
 AC_CHECK_TYPE([socklen_t],
 	[AC_DEFINE([HAVE_SOCKLEN_T], 1, [Define to 1 if the system has the type `socklen_t'.])],
 	[AC_DEFINE([socklen_t], [int], [type used by connect])],
-	[[@%:@include <sys/types.h>
-@%:@include <sys/socket.h>]])
-
-# don't check for closesocket on Cygwin: it'll be found but we don't want to use it
-AC_DEFINE([closesocket], [close], [function to close a socket])
+	[[@%:@ifdef HAVE_WINSOCK_H
+@%:@include <winsock.h>
+@%:@else
+@%:@include <sys/types.h>
+@%:@include <sys/socket.h>
+@%:@endif]])
 
 AC_SUBST([SOCKET_LIBS])
 
@@ -2944,11 +2951,19 @@ typedef __uint128_t uhge;
 @%:@define SIZEOF_HGE SIZEOF___INT128_T
 @%:@endif
 
-@%:@if !defined(_MSC_VER) && !defined(_In_z_)
+@%:@ifndef HAVE_WINSOCK_H
+/* on Windows use closesocket, otherwise just close */
+@%:@define closesocket close
+@%:@endif
+
+@%:@if !defined(WIN32) && !defined(_In_z_)
 /* see https://docs.microsoft.com/en-us/visualstudio/code-quality/using-sal-annotations-to-reduce-c-cpp-code-defects
  * and Visual Studio include file <sal.h> */
 @%:@ define _In_z_
 @%:@ define _Printf_format_string_
+@%:@endif
+
+@%:@ifndef WIN32
 @%:@ define __declspec(x)
 @%:@endif
 
@@ -2971,7 +2986,7 @@ AS_CASE([$GCC-$CC-$enable_assert],
 	X_CFLAGS="$X_CFLAGS -wd279"])
 
 # CFLAGS for our code are stricter than what autoconf can cope with.
-CFLAGS="$CFLAGS \$(X_CFLAGS)"
+CFLAGS="$CFLAGS ${X_CFLAGS}"
 
 # bootstrap adds a (long) list of file names inside the
 # AC_CONFIG_FILES command
@@ -3073,7 +3088,7 @@ for comp in \
 	AS_ECHO_N(["    $comp = "])
 	AS_VAR_IF([have], [no],
 		[AS_ECHO(["no  $why_not"])],
-		[AS_VAR_IF([have], [auto], [AS_ECHO(["yes"])], [AS_ECHO(["$have"])])])
+		[AS_VAR_IF([have], [auto], [AS_ECHO([yes])], [AS_ECHO(["$have"])])])
 done
 AS_VAR_IF([have_hge], [yes], [
 	hge_bits='128'
