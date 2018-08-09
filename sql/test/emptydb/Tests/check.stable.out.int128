@@ -1280,6 +1280,10 @@ select name, authorization, owner, system from sys.schemas order by name;
 select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, '--.*\n*', '', ''), '[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 -- _columns
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
+-- partitioned tables
+select t.name, c.name, p.expression from sys.table_partitions p left outer join sys._tables t on p.table_id = t.id left outer join sys._columns c on p.column_id = c.id;
+select t.name, p.expression, r.minimum, r.maximum, r.with_nulls from sys.range_partitions r left outer join sys._tables t on t.id = r.table_id left outer join sys.table_partitions p on r.partition_id = p.id;
+select t.name, p.expression, v.value from sys.value_partitions v left outer join sys._tables t on t.id = v.table_id left outer join sys.table_partitions p on v.partition_id = p.id;
 -- external functions that don't reference existing MAL function (should be empty)
 with funcs as (select name, pcre_replace(func, '--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 -- args
@@ -2058,6 +2062,21 @@ drop function pcre_replace(string, string, string, string);
 [ "value_partitions",	"value",	"varchar",	2048,	0,	NULL,	true,	2,	NULL	]
 [ "var_values",	"var_name",	"char",	16,	0,	NULL,	true,	0,	NULL	]
 [ "var_values",	"value",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
+#select t.name, c.name, p.expression from sys.table_partitions p left outer join sys._tables t on p.table_id = t.id left outer join sys._columns c on p.column_id = c.id;
+% .t,	.c,	.p # table_name
+% name,	name,	expression # name
+% varchar,	varchar,	varchar # type
+% 0,	0,	0 # length
+#select t.name, p.expression, r.minimum, r.maximum, r.with_nulls from sys.range_partitions r left outer join sys._tables t on t.id = r.table_id left outer join sys.table_partitions p on r.partition_id = p.id;
+% .t,	.p,	.r,	.r,	.r # table_name
+% name,	expression,	minimum,	maximum,	with_nulls # name
+% varchar,	varchar,	varchar,	varchar,	boolean # type
+% 0,	0,	0,	0,	5 # length
+#select t.name, p.expression, v.value from sys.value_partitions v left outer join sys._tables t on t.id = v.table_id left outer join sys.table_partitions p on v.partition_id = p.id;
+% .t,	.p,	.v # table_name
+% name,	expression,	value # name
+% varchar,	varchar,	varchar # type
+% 0,	0,	0 # length
 #with funcs as (select name, pcre_replace(func, '--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 % .x,	.x,	.x # table_name
 % sname,	name,	modfunc # name
