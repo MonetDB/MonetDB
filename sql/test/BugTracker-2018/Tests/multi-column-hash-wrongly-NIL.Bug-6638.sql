@@ -69,5 +69,9 @@ select * from s9;
 select * from r9 natural join s9 order by x,y;
 select * from s9 natural join r9 order by x,y;
 
+alter table r2 add constraint ab_unique unique (a,b);
+insert into r2 (a,b) values (2199023255552,0);
+select * from r2;
+
 rollback;
 
