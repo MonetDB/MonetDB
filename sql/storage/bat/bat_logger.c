@@ -11,6 +11,9 @@
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
 
+#define CATALOG_JUL2015 52200
+#define CATALOG_MAR2018 52201
+
 logger *bat_logger = NULL;
 logger *bat_logger_shared = NULL;
 
@@ -19,44 +22,44 @@ logger *bat_logger_shared = NULL;
 static gdk_return
 bl_preversion(int oldversion, int newversion)
 {
-#define CATALOG_JUL2015 52200
-
 	(void)newversion;
+#ifdef CATALOG_JUL2015
 	if (oldversion == CATALOG_JUL2015) {
 		/* upgrade to Jun2016 releases */
 		catalog_version = oldversion;
 		geomversion_set();
 		return GDK_SUCCEED;
 	}
+#endif
+
+#ifdef CATALOG_MAR2018
+	if (oldversion == CATALOG_MAR2018) {
+		/* upgrade to Aug2018 releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
 
 	return GDK_FAIL;
 }
 
-static char *
-N( char *buf, char *pre, char *schema, char *post)
-{
-	if (pre)
-		snprintf(buf, 64, "%s_%s_%s", pre, schema, post);
-	else
-		snprintf(buf, 64, "%s_%s", schema, post);
-	return buf;
-}
+#define N(schema, table, column)	schema "_" table "_" column
 
 static gdk_return
 bl_postversion( void *lg) 
 {
 	(void)lg;
 
+#ifdef CATALOG_JUL2015
 	if (catalog_version <= CATALOG_JUL2015) {
 		BAT *b;
 		BATiter bi;
 		BAT *te, *tne;
 		BUN p, q;
 		int geomUpgrade = 0;
-		char *s = "sys", n[64];
 		geomcatalogfix_fptr func;
 
-		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "types_eclass")));
+		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass")));
 		if (te == NULL)
 			return GDK_FAIL;
 		bi = bat_iterator(te);
@@ -78,7 +81,7 @@ bl_postversion( void *lg)
 		}
 		bat_destroy(te);
 		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
-		    logger_add_bat(lg, tne, N(n, NULL, s, "types_eclass")) != GDK_SUCCEED) {
+		    logger_add_bat(lg, tne, N("sys", "types", "eclass")) != GDK_SUCCEED) {
 			bat_destroy(tne);
 			return GDK_FAIL;
 		}
@@ -87,7 +90,7 @@ bl_postversion( void *lg)
 		/* in the past, the args.inout column may have been
 		 * incorrectly upgraded to a bit instead of a bte
 		 * column */
-		te = temp_descriptor(logger_find_bat(lg, N(n, NULL, s, "args_inout")));
+		te = temp_descriptor(logger_find_bat(lg, N("sys", "args", "inout")));
 		if (te == NULL)
 			return GDK_FAIL;
 		if (te->ttype == TYPE_bit) {
@@ -107,7 +110,7 @@ bl_postversion( void *lg)
 				}
 			}
 			if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
-			    logger_add_bat(lg, tne, N(n, NULL, s, "args_inout")) != GDK_SUCCEED) {
+			    logger_add_bat(lg, tne, N("sys", "args", "inout")) != GDK_SUCCEED) {
 				bat_destroy(tne);
 				bat_destroy(te);
 				return GDK_FAIL;
@@ -118,7 +121,7 @@ bl_postversion( void *lg)
 
 		/* test whether the catalog contains information
 		 * regarding geometry types */
-		b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "types_systemname")));
+		b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "types", "systemname")));
 		if (b == NULL)
 			return GDK_FAIL;
 		bi = bat_iterator(b);
@@ -138,7 +141,7 @@ bl_postversion( void *lg)
 		if (!geomUpgrade) {
 			/* test whether the catalog contains
 			 * information about geometry columns */
-			b = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
+			b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "_columns", "type")));
 			if (b == NULL)
 				return GDK_FAIL;
 			bi = bat_iterator(b);
@@ -189,6 +192,216 @@ bl_postversion( void *lg)
 			 * nothing */
 		}
 	}
+#endif
+
+#ifdef CATALOG_MAR2018
+	if (catalog_version <= CATALOG_MAR2018) {
+		/* In the past, the sys._tables.readlonly and
+		 * tmp._tables.readonly columns were renamed to
+		 * (sys|tmp)._tables.access and the type was changed
+		 * from BOOLEAN to SMALLINT.  It may be that this
+		 * change didn't make it to the sys._columns table but
+		 * was only done in the internal representation of the
+		 * (sys|tmp)._tables tables.  Here we fix this. */
+
+		/* first figure out whether there are any columns in
+		 * the catalog called "readonly" (if there are fewer
+		 * then 2, then we don't have to do anything) */
+		BAT *cn = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "name")));
+		if (cn == NULL)
+			return GDK_FAIL;
+		BAT *cs = BATselect(cn, NULL, "readonly", NULL, 1, 1, 0);
+		if (cs == NULL) {
+			bat_destroy(cn);
+			return GDK_FAIL;
+		}
+		if (BATcount(cs) >= 2) {
+			/* find the OIDs of the rows of sys.schemas
+			 * where the name is either 'sys' or 'tmp',
+			 * result in ss */
+			BAT *sn = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name")));
+			if (sn == NULL) {
+				bat_destroy(cs);
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			BAT *ss1 = BATselect(sn, NULL, "sys", NULL, 1, 1, 0);
+			BAT *ss2 = BATselect(sn, NULL, "tmp", NULL, 1, 1, 0);
+			bat_destroy(sn);
+			if (ss1 == NULL || ss2 == NULL) {
+				bat_destroy(ss1);
+				bat_destroy(ss2);
+				bat_destroy(cs);
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			assert(BATcount(ss1) == 1);
+			assert(BATcount(ss2) == 1);
+			BAT *ss = BATmergecand(ss1, ss2);
+			bat_destroy(ss1);
+			bat_destroy(ss2);
+			if (ss == NULL) {
+				bat_destroy(cs);
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			assert(BATcount(ss) == 2);
+			/* find the OIDs of the rows of sys._tables
+			 * where the name is '_tables', result in
+			 * ts */
+			BAT *tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "name")));
+			if (tn == NULL) {
+				bat_destroy(ss);
+				bat_destroy(cs);
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			BAT *ts = BATselect(tn, NULL, "_tables", NULL, 1, 1, 0);
+			bat_destroy(tn);
+			if (ts == NULL) {
+				bat_destroy(ss);
+				bat_destroy(cs);
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			/* find the OIDs of the rows of sys._tables
+			 * where the name is '_tables' (candidate list
+			 * ts) and the schema is either 'sys' or 'tmp'
+			 * (candidate list ss for sys.schemas.id
+			 * column), result in ts1 */
+			tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "schema_id")));
+			sn = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "id")));
+			if (tn == NULL || sn == NULL) {
+				bat_destroy(tn);
+				bat_destroy(sn);
+				bat_destroy(ts);
+				bat_destroy(ss);
+				bat_destroy(cs);
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			BAT *ts1 = BATintersect(tn, sn, ts, ss, 0, 2);
+			bat_destroy(tn);
+			bat_destroy(sn);
+			bat_destroy(ts);
+			bat_destroy(ss);
+			if (ts1 == NULL) {
+				bat_destroy(cs);
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			/* find the OIDs of the rows of sys._columns
+			 * where the name is 'readonly' (candidate
+			 * list cs) and the table is either
+			 * sys._tables or tmp._tables (candidate list
+			 * ts1 for sys._tables.table_id), result in
+			 * cs1, transferred to cs) */
+			BAT *ct = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "table_id")));
+			tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "id")));
+			if (ct == NULL || tn == NULL) {
+				bat_destroy(ct);
+				bat_destroy(tn);
+				bat_destroy(ts1);
+				bat_destroy(cs);
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			BAT *cs1 = BATintersect(ct, tn, cs, ts1, 0, 2);
+			bat_destroy(ct);
+			bat_destroy(tn);
+			bat_destroy(ts1);
+			bat_destroy(cs);
+			if (cs1 == NULL) {
+				bat_destroy(cn);
+				return GDK_FAIL;
+			}
+			cs = cs1;
+			if (BATcount(cs) == 2) {
+				/* in cs we now have the OIDs of the
+				 * rows in sys._columns where we have
+				 * to change the name and type from
+				 * "readonly" and "boolean" to
+				 * "access" and "smallint" */
+				ct = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "type")));
+				BAT *cd = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "type_digits")));
+				BAT *ctn = COLnew(ct->hseqbase, ct->ttype, BATcount(ct), PERSISTENT);
+				BAT *cdn = COLnew(cd->hseqbase, cd->ttype, BATcount(cd), PERSISTENT);
+				BAT *cnn = COLnew(cn->hseqbase, cn->ttype, BATcount(cn), PERSISTENT);
+				if (ct == NULL || cd == NULL || ctn == NULL || cdn == NULL || cnn == NULL) {
+				  bailout1:
+					bat_destroy(ct);
+					bat_destroy(cd);
+					bat_destroy(ctn);
+					bat_destroy(cdn);
+					bat_destroy(cnn);
+					bat_destroy(cs);
+					bat_destroy(cn);
+					return GDK_FAIL;
+				}
+				BATiter csi = bat_iterator(cs);
+				BATiter cti = bat_iterator(ct);
+				BATiter cdi = bat_iterator(cd);
+				BATiter cni = bat_iterator(cn);
+				BUN p;
+				BUN q = *(const oid *) BUNtail(csi, 0) - cn->hseqbase;
+				for (p = 0; p < q; p++) {
+					if (BUNappend(cnn, BUNtail(cni, p), false) != GDK_SUCCEED ||
+					    BUNappend(cdn, BUNtail(cdi, p), false) != GDK_SUCCEED ||
+					    BUNappend(ctn, BUNtail(cti, p), false) != GDK_SUCCEED) {
+						goto bailout1;
+					}
+				}
+				int i = 16;
+				if (BUNappend(cnn, "access", false) != GDK_SUCCEED ||
+				    BUNappend(cdn, &i, false) != GDK_SUCCEED ||
+				    BUNappend(ctn, "smallint", false) != GDK_SUCCEED) {
+					goto bailout1;
+				}
+				q = *(const oid *) BUNtail(csi, 1) - cn->hseqbase;
+				for (p++; p < q; p++) {
+					if (BUNappend(cnn, BUNtail(cni, p), false) != GDK_SUCCEED ||
+					    BUNappend(cdn, BUNtail(cdi, p), false) != GDK_SUCCEED ||
+					    BUNappend(ctn, BUNtail(cti, p), false) != GDK_SUCCEED) {
+						goto bailout1;
+					}
+				}
+				if (BUNappend(cnn, "access", false) != GDK_SUCCEED ||
+				    BUNappend(cdn, &i, false) != GDK_SUCCEED ||
+				    BUNappend(ctn, "smallint", false) != GDK_SUCCEED) {
+					goto bailout1;
+				}
+				q = BATcount(cn);
+				for (p++; p < q; p++) {
+					if (BUNappend(cnn, BUNtail(cni, p), false) != GDK_SUCCEED ||
+					    BUNappend(cdn, BUNtail(cdi, p), false) != GDK_SUCCEED ||
+					    BUNappend(ctn, BUNtail(cti, p), false) != GDK_SUCCEED) {
+						goto bailout1;
+					}
+				}
+				bat_destroy(ct);
+				bat_destroy(cd);
+				bat_destroy(cs); cs = NULL;
+				bat_destroy(cn); cn = NULL;
+				if (BATsetaccess(cnn, BAT_READ) != GDK_SUCCEED ||
+				    BATsetaccess(cdn, BAT_READ) != GDK_SUCCEED ||
+				    BATsetaccess(ctn, BAT_READ) != GDK_SUCCEED ||
+				    logger_add_bat(lg, cnn, N("sys", "_columns", "name")) != GDK_SUCCEED ||
+				    logger_add_bat(lg, cdn, N("sys", "_columns", "type_digits")) != GDK_SUCCEED ||
+				    logger_add_bat(lg, ctn, N("sys", "_columns", "type")) != GDK_SUCCEED) {
+					bat_destroy(ctn);
+					bat_destroy(cdn);
+					bat_destroy(cnn);
+					return GDK_FAIL;
+				}
+				bat_destroy(ctn);
+				bat_destroy(cdn);
+				bat_destroy(cnn);
+			}
+		}
+		bat_destroy(cs);
+		bat_destroy(cn);
+	}
+#endif
 	return GDK_SUCCEED;
 }
 
