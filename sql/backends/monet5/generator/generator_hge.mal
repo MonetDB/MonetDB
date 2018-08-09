@@ -6,18 +6,18 @@
 
 module generator;
 
-pattern series(first:hge,last:hge):bat[:hge]
+pattern series(first:hge,limit:hge):bat[:hge]
 address VLTgenerator_table;
 
-pattern series(first:hge,last:hge,step:hge):bat[:hge]
+pattern series(first:hge,limit:hge,step:hge):bat[:hge]
 address VLTgenerator_table
 comment "Create and materialize a generator table";
 
-pattern parameters(first:hge,last:hge,step:hge):bat[:hge]
+pattern parameters(first:hge,limit:hge,step:hge):bat[:hge]
 address VLTgenerator_noop
 comment "Retain the table definition, but don't materialize";
 
-pattern parameters(first:hge,last:hge):bat[:hge]
+pattern parameters(first:hge,limit:hge):bat[:hge]
 address VLTgenerator_noop;
 
 pattern thetaselect(b:bat[:hge], low:hge, oper:str) :bat[:oid]

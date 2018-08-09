@@ -2611,9 +2611,16 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
 						char *name_column = hasSchema ? "fullname" : "name";
+						const char *comments_clause = get_comments_clause(mid);
 
-						if (!query)
-							return true;
+						if (query == NULL) {
+							fprintf(stderr, "memory allocation failure\n");
+							continue;
+						}
+						if (comments_clause == NULL) {
+							free(query);
+							continue;
+						}
 
 						/*
 						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
@@ -2625,7 +2632,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq - q, "%s", get_with_comments_as_clause(mid));
+						q += snprintf(q, endq - q, "%s", comments_clause);
 						q += snprintf(q, endq - q, "%s", with_clause);
 						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM describe_all_objects\n");
 						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);

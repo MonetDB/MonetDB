@@ -82,7 +82,6 @@ Ready.
 #    _emit.emit({'d': ['2014-05-20'], 's': ['00:02:30'], 't': ['2014-05-20 00:02:30']});
 #};
 #COPY LOADER INTO tstamp FROM pyloader07();
-[ 2	]
 #SELECT * FROM tstamp;
 % sys.tstamp,	sys.tstamp,	sys.tstamp # table_name
 % d,	s,	t # name
