@@ -493,6 +493,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	sql_column *schemas_id = NULL;
 	sql_table *auths = NULL;
 	sql_column *auths_name = NULL;
+	str other;
 
 	void *p = 0;
 
@@ -551,8 +552,10 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 
 	if (!schema || !mvc_set_schema(m, schema)) {
-		if (m->session->active)
-			mvc_rollback(m, 0, NULL);
+		if (m->session->active) {
+			if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
+				GDKfree(other);
+		}
 		GDKfree(username);
 		return NULL;
 	}
@@ -563,6 +566,9 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 	GDKfree(username);
-	mvc_rollback(m, 0, NULL);
+	if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
+		GDKfree(other);
+		return NULL;
+	}
 	return schema;
 }

@@ -226,7 +226,6 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int ret;
 	mvc *sql = NULL;
 	str msg;
 	(void) stk;
@@ -239,11 +238,7 @@ SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (sql->session->auto_commit != 0)
 		throw(SQL, "sql.trans", SQLSTATE(2DM30) "COMMIT not allowed in auto commit mode");
-	ret = mvc_commit(sql, 0, 0);
-	if (ret < 0) {
-		throw(SQL, "sql.trans", SQLSTATE(2D000) "transaction commit failed");
-	}
-	return msg;
+	return mvc_commit(sql, 0, 0, false);
 }
 
 str
@@ -260,7 +255,7 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (sql->session->active) {
-		mvc_rollback(sql, 0, NULL);
+		msg = mvc_rollback(sql, 0, NULL, false);
 	}
 	return msg;
 }

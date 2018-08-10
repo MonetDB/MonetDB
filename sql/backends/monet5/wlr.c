@@ -161,7 +161,7 @@ WLRprocess(void *arg)
 	size_t sz;
 	MalBlkPtr mb;
 	InstrPtr q;
-	str msg;
+	str msg, other;
 	mvc *sql;
 	lng currid =0;
 	Symbol prev = NULL;
@@ -304,15 +304,18 @@ WLRprocess(void *arg)
 							// they should always succeed
 							mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
 							printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-							mvc_rollback(sql,0,NULL);
+							if((other = mvc_rollback(sql,0,NULL, false)) != MAL_SUCCEED) //an error was already established
+								GDKfree(other);
 							// cleanup
 							fprintFunction(stderr,mb,0,63);
 							resetMalBlkAndFreeInstructions(mb, 1);
 							trimMalVariables(mb, NULL);
 							pc = 0;
 						} else
-						if( mvc_commit(sql, 0, 0) < 0)
-							mnstr_printf(GDKerr,"#wlr.process transaction commit failed\n");
+						if((msg = mvc_commit(sql, 0, 0, false)) != MAL_SUCCEED) {
+							mnstr_printf(GDKerr,"#wlr.process transaction commit failed: %s\n", msg);
+							GDKfree(msg);
+						}
 					}
 				} else {
 					char line[FILENAME_MAX];
