@@ -756,7 +756,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
 		s = cur_schema(sql);
-	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg);
+	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system);
 	if (nf && nf->query && nf->lang <= FUNC_LANG_SQL) {
 		char *buf;
 		sql_rel *r = NULL;

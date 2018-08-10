@@ -88,7 +88,7 @@ MAXARGS = 16
 # columns of the args table we're interested in
 args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
 
-out += r"select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg"
+out += r"select s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg"
 for i in range(0, MAXARGS):
     for a in args[:-1]:
         out += ", a%d.%s as %s%d" % (i, a, a, i)
@@ -148,8 +148,6 @@ select s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc,
 select count(*) from sys.statistics;
 -- storagemodelinput (expect empty)
 select count(*) from sys.storagemodelinput;
--- systemfunctions
-select f.name from sys.systemfunctions s left outer join sys.functions f on s.function_id = f.id order by f.name;
 -- triggers
 select t.name, g.name, case g.time when 0 then 'BEFORE' when 1 then 'AFTER' when 2 then 'INSTEAD OF' end as time, case g.orientation when 0 then 'ROW' when 1 then 'STATEMENT' end as orientation, case g.event when 0 then 'insert' when 1 then 'DELETE' when 2 then 'UPDATE' end as event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
 -- types

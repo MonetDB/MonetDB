@@ -341,6 +341,7 @@ typedef struct sql_func {
 	bit side_effect;
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */
+	bit system;	/* system function */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing

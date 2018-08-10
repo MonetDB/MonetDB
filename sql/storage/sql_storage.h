@@ -294,6 +294,7 @@ typedef int (*log_tstart_fptr) (void);
 typedef int (*log_tend_fptr) (void);
 typedef int (*log_sequence_fptr) (int seq, lng id);
 
+typedef void *(*log_find_table_value_fptr)(const char *, const char *, const void *, ...);
 typedef struct logger_functions {
 	logger_create_fptr create;
 	logger_create_shared_fptr create_shared;
@@ -312,6 +313,7 @@ typedef struct logger_functions {
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
 	log_sequence_fptr log_sequence;
+	log_find_table_value_fptr log_find_table_value;
 } logger_functions;
 
 sqlstore_export logger_functions logger_funcs;
@@ -347,7 +349,7 @@ extern int sql_trans_commit(sql_trans *tr);
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema * s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, int id, int drop_action);
 
-extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg);
+extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -426,7 +428,7 @@ extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
 extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg);
+extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);

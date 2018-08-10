@@ -2634,19 +2634,18 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						 */
 						q += snprintf(q, endq - q, "%s", comments_clause);
 						q += snprintf(q, endq - q, "%s", with_clause);
-						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM describe_all_objects\n");
-						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);
+						q += snprintf(q, endq - q, " SELECT type, fullname, remark FROM describe_all_objects");
+						q += snprintf(q, endq - q, " WHERE (ntype & %u) > 0", x);
 						if (!wantsSystem) {
-							q += snprintf(q, endq - q, "AND NOT system\n");
+							q += snprintf(q, endq - q, " AND NOT system");
 						}
 						if (!hasSchema) {
-							q += snprintf(q, endq - q, "AND (sname IS NULL OR sname = current_schema)\n");
+							q += snprintf(q, endq - q, " AND (sname IS NULL OR sname = current_schema)");
 						}
 						if (*line) {
-							q += snprintf(q, endq - q, "AND (%s LIKE '%s')\n", name_column, line);
+							q += snprintf(q, endq - q, " AND (%s LIKE '%s')", name_column, line);
 						}
-						q += snprintf(q, endq - q, "ORDER BY fullname, type, remark\n");
-						q += snprintf(q, endq - q, ";\n");
+						q += snprintf(q, endq - q, " ORDER BY fullname, type, remark");
 
 						hdl = mapi_query(mid, query);
 						free(query);

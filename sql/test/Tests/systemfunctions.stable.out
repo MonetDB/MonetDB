@@ -16,10 +16,6 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36066/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26153/.s.monetdb.36066
 # MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -49,13 +45,16 @@ Ready.
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 16:20:25 >  
 # 16:20:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26153" "--port=36066"
 # 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
-% sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L16 # table_name
+% sys.L16,	sys.L20,	sys.L22,	sys.L24,	sys.L26 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	611 # length

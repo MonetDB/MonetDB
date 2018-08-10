@@ -687,7 +687,7 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 				if (n->next)
 					append(nexps, ae);
 			}
-			f = mvc_create_func(sql, sql->sa, s, nfname, args, res, F_UNION, FUNC_LANG_SQL, "user", "intern", "intern", FALSE, sf->func->vararg);
+			f = mvc_create_func(sql, sql->sa, s, nfname, args, res, F_UNION, FUNC_LANG_SQL, "user", "intern", "intern", FALSE, sf->func->vararg, FALSE);
 			/* call normal table function */
 			ie = exp_op(sql->sa, nexps, sf);
 			nexps = sa_list(sql->sa);

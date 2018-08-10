@@ -895,7 +895,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
  					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
 			sql->params = NULL;
 			if (create) {
-				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
 			} /*else {
@@ -914,7 +914,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 
 			if (create) { /* needed for recursive functions */
 				q = query_cleaned(q);
-				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
+				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg, FALSE);
 				GDKfree(q);
 			}
 			sql->session->schema = s;
@@ -947,7 +947,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			sql->params = NULL;
 			if (create) {
 				q = query_cleaned(q);
-				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE);
 				GDKfree(q);
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: external name %s.%s not bound (%s.%s)", KF, F, fmod, fnme, s->base.name, fname );

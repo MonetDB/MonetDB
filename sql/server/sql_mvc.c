@@ -1060,17 +1060,17 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg)
+mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_func %s\n", name);
 	if (sa) {
-		f = create_sql_func(sa, name, args, res, type, lang, mod, impl, query, varres, vararg);
+		f = create_sql_func(sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 		f->s = s;
 	} else 
-		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg);
+		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 	return f;
 }
 

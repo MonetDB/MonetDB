@@ -13,6 +13,7 @@
 
 #define CATALOG_JUL2015 52200
 #define CATALOG_MAR2018 52201
+#define CATALOG_AUG2018 52202
 
 logger *bat_logger = NULL;
 logger *bat_logger_shared = NULL;
@@ -40,13 +41,144 @@ bl_preversion(int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_AUG2018
+	if (oldversion == CATALOG_AUG2018) {
+		/* upgrade to default releases */
+		catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
 #define N(schema, table, column)	schema "_" table "_" column
 
+#ifdef CATALOG_AUG2018
+static int
+find_table_id(logger *lg, const char *val, int *sid)
+{
+	BAT *s = NULL;
+	BAT *b, *t;
+	BATiter bi;
+	oid o;
+	int id;
+
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name")));
+	if (b == NULL)
+		return 0;
+	s = BATselect(b, NULL, "sys", NULL, 1, 1, 0);
+	bat_destroy(b);
+	if (s == NULL)
+		return 0;
+	if (BATcount(s) == 0) {
+		bat_destroy(s);
+		return 0;
+	}
+	bi = bat_iterator(s);
+	o = * (const oid *) BUNtail(bi, 0);
+	bat_destroy(s);
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "id")));
+	if (b == NULL)
+		return 0;
+	bi = bat_iterator(b);
+	id = * (const int *) BUNtail(bi, o - b->hseqbase);
+	bat_destroy(b);
+	/* store id of schema "sys" */
+	*sid = id;
+
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "name")));
+	if (b == NULL) {
+		bat_destroy(s);
+		return 0;
+	}
+	s = BATselect(b, NULL, val, NULL, 1, 1, 0);
+	bat_destroy(b);
+	if (s == NULL)
+		return 0;
+	if (BATcount(s) == 0) {
+		bat_destroy(s);
+		return 0;
+	}
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "schema_id")));
+	if (b == NULL) {
+		bat_destroy(s);
+		return 0;
+	}
+	t = BATselect(b, s, &id, NULL, 1, 1, 0);
+	bat_destroy(b);
+	bat_destroy(s);
+	s = t;
+	if (s == NULL)
+		return 0;
+	if (BATcount(s) == 0) {
+		bat_destroy(s);
+		return 0;
+	}
+
+	bi = bat_iterator(s);
+	o = * (const oid *) BUNtail(bi, 0);
+	bat_destroy(s);
+
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "id")));
+	if (b == NULL)
+		return 0;
+	bi = bat_iterator(b);
+	id = * (const int *) BUNtail(bi, o - b->hseqbase);
+	bat_destroy(b);
+	return id;
+}
+
 static gdk_return
-bl_postversion( void *lg) 
+tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const char *tname, ...)
+{
+	va_list va;
+	char lname[64];
+	const char *cname;
+	const void *cval;
+	gdk_return rc;
+	BAT *b;
+
+	va_start(va, tname);
+	while ((cname = va_arg(va, char *)) != NULL) {
+		cval = va_arg(va, void *);
+		snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
+		if ((b = temp_descriptor(logger_find_bat(lg, lname))) == NULL)
+			return GDK_FAIL;
+		if (first) {
+			BAT *bn;
+			if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
+				BBPunfix(b->batCacheid);
+				return GDK_FAIL;
+			}
+			BBPunfix(b->batCacheid);
+			if (BATsetaccess(bn, BAT_READ) != GDK_SUCCEED ||
+			    logger_add_bat(lg, bn, lname) != GDK_SUCCEED) {
+				BBPunfix(bn->batCacheid);
+				return GDK_FAIL;
+			}
+			b = bn;
+		}
+		rc = BUNappend(b, cval, true);
+		BBPunfix(b->batCacheid);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	if (tt >= 0) {
+		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
+			return GDK_FAIL;
+		if ((rc = BATsetaccess(b, BAT_READ)) == GDK_SUCCEED)
+			rc = logger_add_bat(lg, b, nname);
+		BBPunfix(b->batCacheid);
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	return GDK_SUCCEED;
+}
+#endif
+
+static gdk_return
+bl_postversion(void *lg)
 {
 	(void)lg;
 
@@ -402,6 +534,357 @@ bl_postversion( void *lg)
 		bat_destroy(cn);
 	}
 #endif
+
+#ifdef CATALOG_AUG2018
+	if (catalog_version <= CATALOG_AUG2018) {
+		int id;
+		lng lid;
+		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id")));
+		BAT *sf = temp_descriptor(logger_find_bat(lg, N("sys", "systemfunctions", "function_id")));
+		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
+		    fid == NULL || sf == NULL) {
+			bat_destroy(fid);
+			bat_destroy(sf);
+			return GDK_FAIL;
+		}
+		id = (int) lid;
+		BAT *b = COLnew(fid->hseqbase, TYPE_bit, BATcount(fid), PERSISTENT);
+		if (b == NULL) {
+			bat_destroy(fid);
+			bat_destroy(sf);
+			return GDK_FAIL;
+		}
+		const int *fids = (const int *) Tloc(fid, 0);
+		bit *fsys = (bit *) Tloc(b, 0);
+		BATiter sfi = bat_iterator(sf);
+		if (BAThash(sf) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			bat_destroy(fid);
+			bat_destroy(sf);
+			return GDK_FAIL;
+		}
+		for (BUN p = 0, q = BATcount(fid); p < q; p++) {
+			BUN i;
+			fsys[p] = 0;
+			HASHloop_int(sfi, sf->thash, i, fids + p) {
+				fsys[p] = 1;
+				break;
+			}
+		}
+		b->tkey = false;
+		b->tsorted = b->trevsorted = false;
+		b->tnonil = true;
+		b->tnil = false;
+		BATsetcount(b, BATcount(fid));
+		bat_destroy(fid);
+		bat_destroy(sf);
+		if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED ||
+		    logger_add_bat(lg, b, N("sys", "functions", "system")) != GDK_SUCCEED) {
+
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		bat_destroy(b);
+		int one = 1, zero = 0, col = 10;
+		bit t = 1;
+		int sid;
+		int tid = find_table_id(lg, "functions", &sid);
+		if (tabins(lg, true, -1, NULL, "sys", "_columns",
+			   "id", &id,
+			   "name", "system",
+			   "type", "boolean",
+			   "type_digits", &one,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+
+		/* also create entries for new tables
+		 * {table,range,value}_partitions */
+
+		sht tp = tt_table;
+		sht ca = CA_COMMIT;
+		sht ac = 0;
+		tid = id;
+		if (tabins(lg, true, -1, NULL, "sys", "_tables",
+			   "id", &tid,
+			   "name", "table_partitions",
+			   "schema_id", &sid,
+			   "query", str_nil,
+			   "type", &tp,
+			   "system", &t,
+			   "commit_action", &ca,
+			   "access", &ac,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		int thirtytwo = 32;
+		col = 0;
+		if (tabins(lg, false, TYPE_int,
+			   N("sys", "table_partitions", "id"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "id",
+			   "type", "int",
+			   "type_digits", &thirtytwo,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		if (tabins(lg, false, TYPE_int,
+			   N("sys", "table_partitions", "table_id"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "table_id",
+			   "type", "int",
+			   "type_digits", &thirtytwo,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		if (tabins(lg, false, TYPE_int,
+			   N("sys", "table_partitions", "column_id"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "column_id",
+			   "type", "int",
+			   "type_digits", &thirtytwo,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		int slen = STORAGE_MAX_VALUE_LENGTH;
+		if (tabins(lg, false, TYPE_str,
+			   N("sys", "table_partitions", "expression"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "expression",
+			   "type", "varchar",
+			   "type_digits", &slen,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		int pub = ROLE_PUBLIC;
+		int priv = PRIV_SELECT;
+		if (tabins(lg, true, -1, NULL, "sys", "privileges",
+			   "obj_id", &tid,
+			   "auth_id", &pub,
+			   "privileges", &priv,
+			   "grantor", &zero,
+			   "grantable", &zero,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		tid = id;
+		if (tabins(lg, false, -1, NULL, "sys", "_tables",
+			   "id", &tid,
+			   "name", "range_partitions",
+			   "schema_id", &sid,
+			   "query", str_nil,
+			   "type", &tp,
+			   "system", &t,
+			   "commit_action", &ca,
+			   "access", &ac,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col = 0;
+		if (tabins(lg, false, TYPE_int,
+			   N("sys", "range_partitions", "table_id"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "table_id",
+			   "type", "int",
+			   "type_digits", &thirtytwo,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		if (tabins(lg, false, TYPE_int,
+			   N("sys", "range_partitions", "partition_id"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "partition_id",
+			   "type", "int",
+			   "type_digits", &thirtytwo,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		if (tabins(lg, false, TYPE_str,
+			   N("sys", "range_partitions", "minimum"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "minimum",
+			   "type", "varchar",
+			   "type_digits", &slen,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		if (tabins(lg, false, TYPE_str,
+			   N("sys", "range_partitions", "maximum"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "maximum",
+			   "type", "varchar",
+			   "type_digits", &slen,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		if (tabins(lg, false, TYPE_bit,
+			   N("sys", "range_partitions", "with_nulls"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "with_nulls",
+			   "type", "boolean",
+			   "type_digits", &one,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		if (tabins(lg, false, -1, NULL, "sys", "privileges",
+			   "obj_id", &tid,
+			   "auth_id", &pub,
+			   "privileges", &priv,
+			   "grantor", &zero,
+			   "grantable", &zero,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+
+		tid = id;
+		if (tabins(lg, false, -1, NULL, "sys", "_tables",
+			   "id", &tid,
+			   "name", "value_partitions",
+			   "schema_id", &sid,
+			   "query", str_nil,
+			   "type", &tp,
+			   "system", &t,
+			   "commit_action", &ca,
+			   "access", &ac,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col = 0;
+		if (tabins(lg, false, TYPE_int,
+			   N("sys", "value_partitions", "table_id"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "table_id",
+			   "type", "int",
+			   "type_digits", &thirtytwo,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		if (tabins(lg, false, TYPE_int,
+			   N("sys", "value_partitions", "partition_id"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "partition_id",
+			   "type", "int",
+			   "type_digits", &thirtytwo,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		id++;
+		col++;
+		if (tabins(lg, false, TYPE_str,
+			   N("sys", "value_partitions", "value"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "value",
+			   "type", "varchar",
+			   "type_digits", &slen,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", str_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", str_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg, false, -1, NULL, "sys", "privileges",
+			   "obj_id", &tid,
+			   "auth_id", &pub,
+			   "privileges", &priv,
+			   "grantor", &zero,
+			   "grantable", &zero,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
+		//log_sequence(lg, OBJ_SID, id);
+	}
+#endif
+
 	return GDK_SUCCEED;
 }
 
@@ -555,6 +1038,51 @@ bl_reload_shared(void)
 	return logger_reload(bat_logger_shared) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
+static void *
+bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
+{
+	BAT *s = NULL;
+	BAT *b;
+	va_list va;
+
+	va_start(va, val);
+	do {
+		b = temp_descriptor(logger_find_bat(bat_logger, tab));
+		if (b == NULL) {
+			bat_destroy(s);
+			return NULL;
+		}
+		BAT *t = BATselect(b, s, val, val, 1, 1, 0);
+		bat_destroy(b);
+		bat_destroy(s);
+		if (t == NULL)
+			return NULL;
+		s = t;
+		if (BATcount(s) == 0) {
+			bat_destroy(s);
+			return NULL;
+		}
+	} while ((tab = va_arg(va, const char *)) != NULL &&
+		 (val = va_arg(va, const void *)) != NULL);
+	va_end(va);
+
+	BATiter bi = bat_iterator(s);
+	oid o = * (const oid *) BUNtail(bi, 0);
+	bat_destroy(s);
+
+	b = temp_descriptor(logger_find_bat(bat_logger, tabnam));
+	if (b == NULL)
+		return NULL;
+	bi = bat_iterator(b);
+	val = BUNtail(bi, o - b->hseqbase);
+	size_t sz = ATOMlen(b->ttype, val);
+	void *res = GDKmalloc(sz);
+	if (res)
+		memcpy(res, val, sz);
+	bat_destroy(b);
+	return res;
+}
+
 void
 bat_logger_init( logger_functions *lf )
 {
@@ -568,6 +1096,7 @@ bat_logger_init( logger_functions *lf )
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
+	lf->log_find_table_value = bl_find_table_value;
 }
 
 void

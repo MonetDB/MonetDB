@@ -1,6 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 10 2018 Sjoerd Mullender <sjoerd@acm.org>
+- The sys.functions table now has an extra column called "system" of
+  type BOOLEAN whose value is TRUE for system functions (i.e. functions
+  that should not be dumped).  The table sys.systemfunctions has been
+  changed to a view and is now officially deprecated.
+
 * Fri Aug  3 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Extended merge tables with partitioning using a predicate:
   > CREATE MERGE TABLE [ IF NOT EXISTS ] table_name (... columns ...)

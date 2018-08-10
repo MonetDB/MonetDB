@@ -1678,8 +1678,10 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			bat bid = *(log_bid *) Tloc(b, p);
 			oid pos = p;
 
-			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
-				BBPretain(bid);
+			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE &&
+			    BBPretain(bid) == 0 &&
+			    BUNappend(lg->dcatalog, &pos, false) != GDK_SUCCEED)
+				goto error;
 		}
 	}
 	lg->freed = logbat_new(TYPE_int, 1, TRANSIENT);

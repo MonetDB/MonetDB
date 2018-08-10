@@ -1191,6 +1191,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	t->side_effect = side_effect;
 	t->fix_scale = fix_scale;
 	t->s = NULL;
+	t->system = TRUE;
 	if (type == F_AGGR) {
 		list_append(aggrs, t);
 	} else {
