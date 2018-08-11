@@ -500,7 +500,7 @@ str
 mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 {
 	sql_trans *tr = m->session->tr;
-	str msg = MAL_SUCCEED;
+	str msg;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s\n", (name) ? name : "");
@@ -516,7 +516,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
 		if (!tr) {
-			msg = createException(SQL, "sql.rollback", SQLSTATE(42000) "ROLLBACK: no such savepoint: '%s'", name);
+			msg = createException(SQL, "sql.rollback", SQLSTATE(42000) "ROLLBACK TO SAVEPOINT: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			store_unlock();
 			return msg;
