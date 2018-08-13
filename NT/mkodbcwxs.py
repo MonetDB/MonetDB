@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # python mkodbcwxs.py VERSION makedefs.txt PREFIX > PREFIX/MonetDB-ODBC-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB-ODBC-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB-ODBC-Installer.wixobj
@@ -32,9 +34,11 @@ def main():
     if makedefs['bits'] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
+        libcrypto = '-x64'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
+        libcrypto = ''
     vs = os.getenv('vs')        # inherited from TestTools\common.bat
     features = []
     print(r'<?xml version="1.0"?>')
@@ -46,25 +50,34 @@ def main():
     print(r'    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp"/>')
     # print(r'    <WixVariable Id="WixUIDialogBmp" Value="backgroundRipple.bmp"/>')
     print(r'    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>')
+    print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <CustomAction Id="driverinstall" FileKey="odbcinstall" ExeCommand="/Install" Execute="deferred" Impersonate="no"/>')
     print(r'    <CustomAction Id="driveruninstall" FileKey="odbcinstall" ExeCommand="/Uninstall" Execute="deferred" Impersonate="no"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
+    if vs == '17':
+        msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC'
+        d = sorted(os.listdir(msvc))[-1]
+        msm = '_CRT_%s.msm' % arch
+        for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
+            if msm in f:
+                fn = f
+        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="%s\%s\MergeModules\%s"/>' % (msvc, d, fn))
+    else:
+        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
     print(r'      <Directory Id="%s">' % folder)
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
     print(r'          <Directory Id="INSTALLDIR" Name="MonetDB ODBC Driver">')
     id = 1
     print(r'            <Directory Id="lib" Name="lib">')
     id = comp(features, id, 14,
-              [r'lib\libmapi.dll',
-               r'lib\libMonetODBC.dll',
-               r'lib\libMonetODBCs.dll',
-               r'lib\libstream.dll',
-               r'%s\bin\iconv.dll' % makedefs['LIBICONV'],
+              [r'lib\libmapi.dll', r'lib\libmapi.pdb',
+               r'lib\libMonetODBC.dll', r'lib\libMonetODBC.pdb',
+               r'lib\libMonetODBCs.dll', r'lib\libMonetODBCs.pdb',
+               r'lib\libstream.dll', r'lib\libstream.pdb',
+               r'%s\bin\iconv-2.dll' % makedefs['LIBICONV'],
                r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
-               r'%s\bin\libeay32.dll' % makedefs['LIBOPENSSL'],
-               r'%s\bin\ssleay32.dll' % makedefs['LIBOPENSSL'],
+               r'%s\bin\libcrypto-1_1%s.dll' % (makedefs['LIBOPENSSL'], libcrypto),
                r'%s\bin\zlib1.dll' % makedefs['LIBZLIB']])
     print(r'            </Directory>')
     id = comp(features, id, 12,

@@ -29,7 +29,7 @@ Ready.
 
 #create table tmp(i int);
 #select i from tmp union select i from tmp;
-% .L # table_name
+% .L7 # table_name
 % i # name
 % int # type
 % 1 # length

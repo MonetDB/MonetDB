@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #define dec_round_body_nonil	FUN(TYPE, dec_round_body_nonil)
@@ -29,7 +29,7 @@ dec_round_body_nonil(TYPE v, TYPE r)
 {
 	TYPE add = r >> 1;
 
-	assert(v != NIL(TYPE));
+	assert(!ISNIL(TYPE)(v));
 
 	if (v < 0)
 		add = -add;
@@ -41,7 +41,7 @@ static inline TYPE
 dec_round_body(TYPE v, TYPE r)
 {
 	/* shortcut nil */
-	if (v == NIL(TYPE)) {
+	if (ISNIL(TYPE)(v)) {
 		return NIL(TYPE);
 	} else {
 		return dec_round_body_nonil(v, r);
@@ -71,20 +71,20 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
+		throw(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
 	}
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", MAL_MALLOC_FAIL);
+		throw(MAL, "round", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */
@@ -97,7 +97,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
 		for (i = 0; i < cnt; i++) {
-			if (src[i] == NIL(TYPE)) {
+			if (ISNIL(TYPE)(src[i])) {
 				nonil = FALSE;
 				dst[i] = NIL(TYPE);
 			} else {
@@ -108,15 +108,13 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
-	/* result head is aligned with argument head */
-	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
-	res->tdense = FALSE;
+	res->tseqbase = oid_nil;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(res, FALSE);
+	BATkey(res, false);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -132,7 +130,7 @@ round_body_nonil(TYPE v, int d, int s, int r)
 {
 	TYPE res = NIL(TYPE);
 
-	assert(v != NIL(TYPE));
+	assert(!ISNIL(TYPE)(v));
 
 	if (-r > d) {
 		res = 0;
@@ -170,7 +168,7 @@ static inline TYPE
 round_body(TYPE v, int d, int s, int r)
 {
 	/* shortcut nil */
-	if (v == NIL(TYPE)) {
+	if (ISNIL(TYPE)(v)) {
 		return NIL(TYPE);
 	} else {
 		return round_body_nonil(v, d, s, r);
@@ -200,20 +198,20 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
+		throw(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
 	}
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", MAL_MALLOC_FAIL);
+		throw(MAL, "round", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */
@@ -226,7 +224,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 			dst[i] = round_body_nonil(src[i], *d, *s, *r);
 	} else {
 		for (i = 0; i < cnt; i++) {
-			if (src[i] == NIL(TYPE)) {
+			if (ISNIL(TYPE)(src[i])) {
 				nonil = FALSE;
 				dst[i] = NIL(TYPE);
 			} else {
@@ -237,15 +235,13 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
-	/* result head is aligned with argument head */
-	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
-	res->tdense = FALSE;
+	res->tseqbase = oid_nil;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(res, FALSE);
+	BATkey(res, false);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -294,9 +290,9 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 	value = 0;
 
 	if (digits < 0)
-		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
+		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 	if (*d < 0 || *d >= (int) (sizeof(scales) / sizeof(scales[0])))
-		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
+		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 
 	value = decimal_from_str(s, &end);
 	if (*s == '+' || *s == '-')
@@ -322,11 +318,11 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 		scale -= dff;
 		digits -= dff;
 		if (value >= scales[*d] || value <= -scales[*d]) {
-			throw(SQL, STRING(TYPE), "rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
+			throw(SQL, STRING(TYPE), SQLSTATE(42000) "Rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
 		}
 	}
 	if (value <= -scales[*d] || value >= scales[*d]  || *end) {
-		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
+		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 	}
 	*res = (TYPE) value;
 	return MAL_SUCCEED;
@@ -355,19 +351,19 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	(void) d;
 	(void) sc;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2dec_" STRING(TYPE), "Cannot access descriptor");
+		throw(SQL, "batcalc.nil_2dec_" STRING(TYPE), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TYPE r = NIL(TYPE);
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -384,13 +380,13 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -401,10 +397,10 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -428,13 +424,13 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2num_" STRING(TYPE), "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2num_" STRING(TYPE), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.num_" STRING(TYPE), MAL_MALLOC_FAIL);
+		throw(SQL, "sql.num_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -445,10 +441,10 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.num_" STRING(TYPE), MAL_MALLOC_FAIL);
+			throw(SQL, "sql.num_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -474,7 +470,7 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 		value /= scales[d];
 	}
 #if defined(HAVE_HGE) && TPE(TYPE) == TYPE_hge
-	assert((hge) GDK_lng_min < value && value <= (hge) GDK_lng_max);
+	assert((hge) GDK_lng_min <= value && value <= (hge) GDK_lng_max);
 #endif
 	*res = value;
 	return MAL_SUCCEED;

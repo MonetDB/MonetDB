@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -25,6 +25,7 @@
 #include "mutils.h"
 #include "sql_mvc.h"
 #include "sql_scenario.h"
+#include "sql_execute.h"
 #include "sql.h"
 #include "clients.h"
 #include "mal_exception.h"
@@ -84,8 +85,11 @@ FITSinitCatalog(mvc *m)
 }
 
 static int
-fits2mtype(int t)
+fits2mtype(int t, int rep)
 {
+	if (rep > 1) {
+		return TYPE_sqlblob;
+	}
 	switch (t) {
 	case TBIT:
 	case TLOGICAL:
@@ -120,7 +124,10 @@ fits2mtype(int t)
 static int
 fits2subtype(sql_subtype *tpe, int t, long rep, long wid) /* type long used by fits library */
 {
-	(void)rep;
+	if (rep > 1) {
+		sql_find_subtype(tpe, "blob", (unsigned int)rep*wid, 0);
+		return 1;
+	}
 	switch (t) {
 	case TBIT:
 	case TLOGICAL:
@@ -202,20 +209,23 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = mvc_bind_schema(m, "sys");
 
 	/* First step: look if the table exists in the database. If the table is not in the database, the export function cannot continue */
- 
+
 	tbl = mvc_bind_table(m, sch, tname);
 	if (tbl == NULL) {
-		msg = createException (MAL, "fits.exporttable", "Table %s is missing.\n", tname);
+		msg = createException (MAL, "fits.exporttable", SQLSTATE(FI000) "Table %s is missing.\n", tname);
 		return msg;
 	}
 
 	set = (*tbl).columns.set;
 
 	columns = list_length(set);
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	colname = (str *) GDKmalloc(columns * sizeof(str));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	tform = (str *) GDKmalloc(columns * sizeof(str));
+	if (colname == NULL || tform == NULL) {
+		GDKfree(colname);
+		GDKfree(tform);
+		throw(MAL, "fits.exporttable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 
 	/*	fprintf(stderr,"Number of columns: %d\n", columns);*/
 
@@ -232,7 +242,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rs = table_funcs.rids_select(m->session->tr, col, (void *) fid, (void *) fid, NULL);
 	GDKfree(fid);
 
-	while ((rid = table_funcs.rids_next(rs)) != oid_nil)
+	while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid))
 	{
 		col = mvc_bind_column(m, column, "name");
 		name = (char *) table_funcs.column_find_value(m->session->tr, col, rid);
@@ -315,7 +325,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tm0 = GDKms();
 			fits_write_col(fptr, TLOGICAL, cc+1, (optimal*block)+1, 1, dimension, readboolrows, &status);
 			texportboolean += GDKms() - tm0;
-			GDKfree(readboolrows);		
+			GDKfree(readboolrows);
 		}
 
 		if (strcmp(columntype,"char")==0)
@@ -405,7 +415,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					readshortrows = (short *) GDKmalloc (sizeof(short) * optimal);
 					block++;
 				}
-			} 
+			}
 			tm0 = GDKms();
 			fits_write_col(fptr, TSHORT, cc+1, (optimal*block)+1, 1, dimension, readshortrows, &status);
 			texportshort += GDKms() - tm0;
@@ -435,11 +445,11 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					readintrows = (int *) GDKmalloc (sizeof(int) * optimal);
 					block++;
 				}
-			} 
+			}
 			tm0 = GDKms();
 			fits_write_col(fptr, TINT, cc+1, (optimal*block)+1, 1, dimension, readintrows, &status);
 			texportint += GDKms() - tm0;
-			GDKfree(readintrows);	
+			GDKfree(readintrows);
 		}
 
 		if (strcmp(columntype,"bigint")==0)
@@ -465,7 +475,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					readlngrows = (lng *) GDKmalloc (sizeof(lng) * optimal);
 					block++;
 				}
-			} 
+			}
 			tm0 = GDKms();
 			fits_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, dimension, readlngrows, &status);
 			texportlng += GDKms() - tm0;
@@ -495,7 +505,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					readfloatrows = (float *) GDKmalloc (sizeof(float) * optimal);
 					block++;
 				}
-			} 
+			}
 			tm0 = GDKms();
 			fits_write_col(fptr, TFLOAT, cc+1, (optimal*block)+1, 1, dimension, readfloatrows, &status);
 			texportfloat += GDKms() - tm0;
@@ -529,12 +539,12 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tm0 = GDKms();
 			fits_write_col(fptr, TDOUBLE, cc+1, (optimal*block)+1, 1, optimal, readdoublerows, &status);
 			texportdouble += GDKms() - tm0;
-			GDKfree(readdoublerows); 
+			GDKfree(readdoublerows);
 		}
 	}
 
 	/* print all the times that were needed to export each one of the columns
-		
+
 	fprintf(stderr, "\n\n");
 	if (texportboolean > 0)		fprintf(stderr, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols,   texportboolean);
 	if (texportchar > 0)		fprintf(stderr, "%d Char\t\tcolumn(s) exported in %d ms\n",    charcols,   texportchar);
@@ -572,7 +582,7 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		while ((ep = readdir(dp)) != NULL && !msg) {
 			char *filename = SQLescapeString(ep->d_name);
 			if (!filename) {
-				msg = createException(MAL, "fits.listdir", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "fits.listdir", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				break;
 			}
 
@@ -592,7 +602,7 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		(void)closedir(dp);
 	} else
-		msg = createException(MAL, "listdir", "Couldn't open the directory");
+		msg = createException(MAL, "listdir", SQLSTATE(FI000) "Couldn't open the directory");
 
 	return msg;
 }
@@ -619,7 +629,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/*	fprintf(stderr,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
 
 	if (globbuf.gl_pathc == 0)
-		throw(MAL, "fits.listdirpat", "Couldn't open the directory or there are no files that match the pattern");
+		throw(MAL, "fits.listdirpat", SQLSTATE(FI000) "Couldn't open the directory or there are no files that match the pattern");
 
 	for (j = 0; j < globbuf.gl_pathc; j++) {
 		char stmt[BUFSIZ];
@@ -629,7 +639,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		snprintf(fname, BUFSIZ, "%s", globbuf.gl_pathv[j]);
 		filename = SQLescapeString(fname);
 		if (!filename) {
-			throw(MAL, "fits.listdirpat", MAL_MALLOC_FAIL);
+			throw(MAL, "fits.listdirpat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		status = 0;
 		fits_open_file(&fptr, filename, READONLY, &status);
@@ -659,7 +669,7 @@ FITStest(int *res, str *fname)
 
 	*res = 0;
 	if (fits_open_file(&fptr, *fname, READONLY, &status))
-		msg = createException(MAL, "fits.test", "Missing FITS file %s", *fname);
+		msg = createException(MAL, "fits.test", SQLSTATE(FI000) "Missing FITS file %s", *fname);
 	else {
 		fits_movabs_hdu(fptr, 2, &hdutype, &status);
 		*res = hdutype;
@@ -695,7 +705,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (fits_open_file(&fptr, fname, READONLY, &status)) {
-		msg = createException(MAL, "fits.attach", "Missing FITS file %s.\n", fname);
+		msg = createException(MAL, "fits.attach", SQLSTATE(FI000) "Missing FITS file %s.\n", fname);
 		return msg;
 	}
 
@@ -714,9 +724,9 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, fits_fl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		fits_close_file(fptr, &status);
-		msg = createException(SQL, "fits.attach", "File %s already attached\n", fname);
+		msg = createException(SQL, "fits.attach", SQLSTATE(FI000) "File %s already attached\n", fname);
 		return msg;
 	}
 
@@ -757,7 +767,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			rid = table_funcs.column_find_row(m->session->tr, col, tname_low, NULL);
 			/* or as regular SQL table */
 			tbl = mvc_bind_table(m, sch, tname_low);
-			if (rid != oid_nil || tbl) {
+			if (!is_oid_nil(rid) || tbl) {
 				snprintf(tname, BUFSIZ, "%s_%d", bname, i);
 				tname_low = toLower(tname);
 			}
@@ -831,18 +841,18 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* escape the various strings to avoid SQL injection attacks */
 			esc_cname = SQLescapeString(cname);
 			if (!esc_cname) {
-				throw(MAL, "fits.attach", MAL_MALLOC_FAIL);
+				throw(MAL, "fits.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			esc_tform = SQLescapeString(tform);
 			if (!esc_tform) {
 				GDKfree(esc_cname);
-				throw(MAL, "fits.attach", MAL_MALLOC_FAIL);
+				throw(MAL, "fits.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			esc_tunit = SQLescapeString(tunit);
 			if (!esc_tform) {
 				GDKfree(esc_tform);
 				GDKfree(esc_cname);
-				throw(MAL, "fits.attach", MAL_MALLOC_FAIL);
+				throw(MAL, "fits.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, esc_cname, esc_tform, esc_tunit, j, (int)tid);
 			GDKfree(esc_tunit);
@@ -887,20 +897,20 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
 	if (fits_tbl == NULL) {
-		msg = createException(MAL, "fits.loadtable", "FITS catalog is missing.\n");
+		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "FITS catalog is missing.\n");
 		return msg;
 	}
 
 	tbl = mvc_bind_table(m, sch, tname);
 	if (tbl) {
-		msg = createException(MAL, "fits.loadtable", "Table %s is already created.\n", tname);
+		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Table %s is already created.\n", tname);
 		return msg;
 	}
 
 	col = mvc_bind_column(m, fits_tbl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
-	if (rid == oid_nil) {
-		msg = createException(MAL, "fits.loadtable", "Table %s is unknown in FITS catalog. Attach first the containing file\n", tname);
+	if (is_oid_nil(rid)) {
+		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Table %s is unknown in FITS catalog. Attach first the containing file\n", tname);
 		return msg;
 	}
 
@@ -915,7 +925,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, fits_fl, "name");
 	fname = (char *)table_funcs.column_find_value(m->session->tr, col, frid);
 	if (fits_open_file(&fptr, fname, READONLY, &status)) {
-		msg = createException(MAL, "fits.loadtable", "Missing FITS file %s.\n", fname);
+		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Missing FITS file %s.\n", fname);
 		GDKfree(fname);
 		return msg;
 	}
@@ -925,7 +935,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	hdu = (int*)table_funcs.column_find_value(m->session->tr, col, rid);
 	fits_movabs_hdu(fptr, *hdu, &hdutype, &status);
 	if (hdutype != ASCII_TBL && hdutype != BINARY_TBL) {
-		msg = createException(MAL, "fits.loadtable", "HDU %d is not a table.\n", *hdu);
+		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "HDU %d is not a table.\n", *hdu);
 		GDKfree(hdu);
 		fits_close_file(fptr, &status);
 		return msg;
@@ -938,6 +948,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fits_get_num_cols(fptr, &cnum, &status);
 	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum);
 
+	// TODO: Check that the allocations succeeded
 	tpcode = (int *)GDKzalloc(sizeof(int) * cnum);
 	rep = (long *)GDKzalloc(sizeof(long) * cnum);
 	wid = (long *)GDKzalloc(sizeof(long) * cnum);
@@ -966,24 +977,72 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
 		int time0 = GDKms();
-		mtype = fits2mtype(tpcode[j - 1]);
+		mtype = fits2mtype(tpcode[j - 1], rep[j - 1]);
 		nilptr = ATOMnilptr(mtype);
 		col = mvc_bind_column(m, tbl, cname[j - 1]);
 
 		tmp = COLnew(0, mtype, rows, TRANSIENT);
-		if ( tmp == NULL){
+		if (tmp == NULL){
 			GDKfree(tpcode);
 			GDKfree(rep);
 			GDKfree(wid);
 			GDKfree(cname);
-			throw(MAL,"fits.load", MAL_MALLOC_FAIL);
+			throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if (mtype != TYPE_str) {
-			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
-			BATsetcount(tmp, rows);
-			tmp->tsorted = 0;
-			tmp->trevsorted = 0;
-		} else {
+		if (mtype == TYPE_sqlblob) {
+			long i;
+			unsigned long nbytes = rep[j - 1] * wid[j - 1];
+			sqlblob **v = (sqlblob **)GDKzalloc(sizeof(sqlblob *) * rows);
+
+			mtype = fits2mtype(tpcode[j - 1], 1);
+			nilptr = ATOMnilptr(mtype);
+
+			if (v == NULL) {
+				GDKfree(tpcode);
+				GDKfree(rep);
+				GDKfree(wid);
+				GDKfree(cname);
+				throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+
+			for(i = 0; i < rows; i++) {
+				v[i] = (sqlblob *)GDKmalloc(offsetof(sqlblob, data) + nbytes);
+				if (v[i] == NULL) {
+					GDKfree(tpcode);
+					GDKfree(rep);
+					GDKfree(wid);
+					GDKfree(cname);
+					long k = 0;
+					for (k = 0; k < i; k++) {
+						GDKfree(v[k]);
+					}
+					GDKfree(v);
+					throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
+				fits_read_col(fptr, tpcode[j - 1], j, i + 1, 1, rep[j - 1], (void *)nilptr,
+					      (void *)v[i]->data, &anynull, &status);
+				v[i]->nitems = nbytes;
+				if (BUNappend(tmp, v[i], true) != GDK_SUCCEED) {
+					BBPreclaim(tmp);
+					msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					GDKfree(tpcode);
+					GDKfree(rep);
+					GDKfree(wid);
+					GDKfree(cname);
+					for (i = 0; i < rows; i++) {
+						GDKfree(v[i]);
+					}
+					GDKfree(v);
+					return msg;
+				}
+			}
+
+			for(i = 0; i < rows; i++) {
+				GDKfree(v[i]);
+			}
+			GDKfree(v);
+		}
+		else if (mtype == TYPE_str) {
 /*			char *v = GDKzalloc(wid[j-1]);*/
 			/* type long demanded by "rows", i.e., by fits library */
 			long bsize = 50, batch = bsize, k, i;
@@ -998,9 +1057,9 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				tloadtm += GDKms() - tm0;
 				tm0 = GDKms();
 				for(k = 0; k < batch ; k++)
-					if (BUNappend(tmp, v[k], TRUE) != GDK_SUCCEED) {
+					if (BUNappend(tmp, v[k], true) != GDK_SUCCEED) {
 						BBPreclaim(tmp);
-						msg = createException(MAL, "fits.loadtable", MAL_MALLOC_FAIL);
+						msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 				tattachtm += GDKms() - tm0;
@@ -1010,17 +1069,23 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(v);
 			fprintf(stderr,"#String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
 		}
+		else {
+			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
+			BATsetcount(tmp, rows);
+			tmp->tsorted = 0;
+			tmp->trevsorted = 0;
+		}
 
 		if (status) {
 			char buf[FLEN_ERRMSG + 1];
 			fits_read_errmsg(buf);
-			msg = createException(MAL, "fits.loadtable", "Cannot load column %s of %s table: %s.\n", cname[j - 1], tname, buf);
+			msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Cannot load column %s of %s table: %s.\n", cname[j - 1], tname, buf);
 			break;
 		}
 		fprintf(stderr,"#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
 		if (store_funcs.append_col(m->session->tr, col, tmp, TYPE_bat) != LOG_OK) {
 			BBPunfix(tmp->batCacheid);
-			msg = createException(MAL, "fits.loadtable", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			break;
 		}
 		fprintf(stderr,"#Total %d ms\n", GDKms() - time0);
@@ -1037,4 +1102,3 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fits_close_file(fptr, &status);
 	return msg;
 }
-

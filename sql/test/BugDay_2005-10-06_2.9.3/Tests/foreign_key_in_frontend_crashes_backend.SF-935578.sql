@@ -12,7 +12,7 @@
     tend time,
     primary key (cid)
   );
-  create table groups(
+  create table "groups"(
     cid integer,
     sid integer,
     foreign key (cid) references classes(cid),
@@ -28,7 +28,7 @@
        from stdin
        using delimiters ',','\n','''';
 1,'2004-4-20','13:45','14:30'
-  copy 2 records into groups
+  copy 2 records into "groups"
        from stdin
        using delimiters ',','\n';
 1,1

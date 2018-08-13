@@ -54,8 +54,8 @@ Ready.
 #    return(numpy.mean(i))
 #};
 #SELECT pyapi11_mean(pyapi11_mult(i,j)) FROM pyapi11_random_table_nulls(5000);
-% .L2 # table_name
-% L2 # name
+% .L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 5603.14638	]

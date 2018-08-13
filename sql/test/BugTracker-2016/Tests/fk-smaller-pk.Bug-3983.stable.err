@@ -33,9 +33,11 @@ stderr of test 'fk-smaller-pk.Bug-3983` in directory 'sql/test/BugTracker-2016` 
 MAPI  = (monetdb) /var/tmp/mtest-19615/.s.monetdb.32890
 QUERY = CREATE TABLE child3(x int,y int,z int, FOREIGN KEY(x,y,z) REFERENCES parent2);
 ERROR = !CONSTRAINT FOREIGN KEY: not all columns are handled
-MAPI  = (monetdb) /var/tmp/mtest-19615/.s.monetdb.32890
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE TABLE child2(x int REFERENCES parent2);
 ERROR = !CONSTRAINT FOREIGN KEY: not all columns are handled
+CODE  = 42000
 
 # 14:07:28 >  
 # 14:07:28 >  "Done."

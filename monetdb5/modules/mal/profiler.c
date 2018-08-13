@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -83,7 +83,7 @@ CMDstartTrace(void *res)
 }
 
 // if you haven't started the stethoscope
-// then the output is saved in a file 
+// then the output is saved in a file
 str
 CMDstartTracePath(void *res, str *path)
 {
@@ -141,7 +141,7 @@ CMDgetTrace(bat *res, str *ev)
 		BBPkeepref(*res = bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "getTrace", RUNTIME_OBJECT_MISSING  "%s",*ev);
+	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s",*ev);
 }
 /*
  * Tracing an active system.

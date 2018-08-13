@@ -75,6 +75,23 @@ Ready.
 #DROP TABLE pyloader07table;
 #DROP LOADER pyloader07;
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE tstamp(d DATE, s TIME, t TIMESTAMP);
+#CREATE LOADER pyloader07() LANGUAGE PYTHON {
+#    _emit.emit({'d': '2014-05-20', 's': '00:02:30', 't': '2014-05-20 00:02:30'});
+#    _emit.emit({'d': ['2014-05-20'], 's': ['00:02:30'], 't': ['2014-05-20 00:02:30']});
+#};
+#COPY LOADER INTO tstamp FROM pyloader07();
+#SELECT * FROM tstamp;
+% sys.tstamp,	sys.tstamp,	sys.tstamp # table_name
+% d,	s,	t # name
+% date,	time,	timestamp # type
+% 10,	8,	26 # length
+[ 2014-05-20,	00:02:30,	2014-05-20 00:02:30.000000	]
+[ 2014-05-20,	00:02:30,	2014-05-20 00:02:30.000000	]
+#DROP TABLE tstamp;
+#DROP LOADER pyloader07;
+#ROLLBACK;
 
 # 15:06:46 >  
 # 15:06:46 >  "Done."

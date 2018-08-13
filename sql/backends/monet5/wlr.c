@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -23,6 +23,7 @@
 #include "wlc.h"
 #include "wlr.h"
 #include "sql_scenario.h"
+#include "sql_execute.h"
 #include "opt_prelude.h"
 #include "mal_parser.h"
 #include "mal_client.h"
@@ -38,7 +39,7 @@
 
 /* The current status of the replica  processing */
 static char wlr_master[IDLENGTH];
-static char wlr_error[PATHLENGTH];		// errors should stop the process
+static char wlr_error[FILENAME_MAX];		// errors should stop the process
 static int wlr_batches; 	// the next file to be processed
 static lng wlr_tag;			// the next transaction id to be processed
 static lng wlr_limit = -1;		// stop re-processing transactions when limit is reached
@@ -50,47 +51,50 @@ static MT_Id wlr_thread;
 
 #define MAXLINE 2048
 
-static void
+static str
 WLRgetConfig(void){
-    char *path;
+	char *path;
 	char line[MAXLINE];
-    FILE *fd;
+	FILE *fd;
 
-	path = GDKfilepath(0,0,"wlr.config",0);
-    fd = fopen(path,"r");
+	if((path = GDKfilepath(0,0,"wlr.config",0)) == NULL)
+		throw(MAL,"wlr.getConfig","Could not access wlr.config file\n");
+	fd = fopen(path,"r");
 	GDKfree(path);
-    if( fd == NULL)
-        return ;
-    while( fgets(line, MAXLINE, fd) ){
+	if( fd == NULL)
+		return MAL_SUCCEED;
+	while( fgets(line, MAXLINE, fd) ){
 		line[strlen(line)-1]= 0;
-        if( strncmp("master=", line,7) == 0)
-            strncpy(wlr_master, line + 7, IDLENGTH);
-        if( strncmp("batches=", line, 8) == 0)
-            wlr_batches = atoi(line+ 8);
-        if( strncmp("tag=", line, 4) == 0)
-            wlr_tag = atoi(line+ 4);
-        if( strncmp("beat=", line, 5) == 0)
-            wlr_beat = atoi(line+ 5);
-        if( strncmp("limit=", line, 6) == 0)
-            wlr_limit = atol(line+ 6);
-        if( strncmp("timelimit=", line, 10) == 0)
-            strcpy(wlr_timelimit, line + 10);
-        if( strncmp("error=", line, 6) == 0)
-            strncpy(wlr_error, line+ 6, PATHLENGTH);
-    }
-    fclose(fd);
+		if( strncmp("master=", line,7) == 0)
+			snprintf(wlr_master, IDLENGTH, "%s", line + 7);
+		if( strncmp("batches=", line, 8) == 0)
+			wlr_batches = atoi(line+ 8);
+		if( strncmp("tag=", line, 4) == 0)
+			wlr_tag = atoi(line+ 4);
+		if( strncmp("beat=", line, 5) == 0)
+			wlr_beat = atoi(line+ 5);
+		if( strncmp("limit=", line, 6) == 0)
+			wlr_limit = atol(line+ 6);
+		if( strncmp("timelimit=", line, 10) == 0)
+			strcpy(wlr_timelimit, line + 10);
+		if( strncmp("error=", line, 6) == 0)
+			snprintf(wlr_error, FILENAME_MAX, "%s", line + 6);
+	}
+	fclose(fd);
+	return MAL_SUCCEED;
 }
 
-static void
+static str
 WLRsetConfig(void){
-    char *path;
-    stream *fd;
+	char *path;
+	stream *fd;
 
-	path = GDKfilepath(0,0,"wlr.config",0);
-    fd = open_wastream(path);
+	if((path = GDKfilepath(0,0,"wlr.config",0)) == NULL)
+		throw(MAL,"wlr.setMaster","Could not access wlr.config file\n");
+	fd = open_wastream(path);
 	GDKfree(path);
-    if( fd == NULL){
-        return;
+	if( fd == NULL){
+		return MAL_SUCCEED;
 	}
 	mnstr_printf(fd,"master=%s\n", wlr_master);
 	mnstr_printf(fd,"batches=%d\n", wlr_batches);
@@ -101,7 +105,8 @@ WLRsetConfig(void){
 		mnstr_printf(fd,"timelimit=%s\n", wlr_timelimit);
 	if( wlr_error[0])
 		mnstr_printf(fd,"error=%s\n", wlr_error);
-    close_stream(fd);
+	close_stream(fd);
+	return MAL_SUCCEED;
 }
 
 /*
@@ -114,26 +119,29 @@ WLRsetConfig(void){
  * process by grabbing a new set of log files.
  * This calls for keeping track in the replica what log files have been applied.
  */
-static void
+static str
 WLRgetMaster(void)
 {
-	char path[PATHLENGTH];
+	char path[FILENAME_MAX];
 	str dir;
 	FILE *fd;
 
 	if( wlr_master[0] == 0 )
-		return ;
+		return MAL_SUCCEED;
 
 	/* collect master properties */
-	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,wlr_master);
-	dir = GDKfilepath(0,path,"wlc.config",0);
+	snprintf(path,FILENAME_MAX,"..%c%s",DIR_SEP,wlr_master);
+	if((dir = GDKfilepath(0,path,"wlc.config",0)) == NULL)
+		throw(MAL,"wlr.getMaster","Could not access wlc.config file\n");
 
 	fd = fopen(dir,"r");
+	GDKfree(dir);
 	if( fd ){
 		WLCreadConfig(fd);
 		wlc_state = WLC_CLONE; // not used as master
-	}
-	GDKfree(dir);
+	} else
+		throw(MAL,"wlr.getMaster","Could not access wlc.config file\n");
+	return MAL_SUCCEED;
 }
 
 /* 
@@ -144,11 +152,11 @@ static int wlrprocessrunning;
 
 static void
 WLRprocess(void *arg)
-{	
+{
 	Client cntxt = (Client) arg;
 	int i, pc;
-	char path[PATHLENGTH];
-	stream *fd;
+	char path[FILENAME_MAX];
+	stream *fd = NULL;
 	Client c;
 	size_t sz;
 	MalBlkPtr mb;
@@ -156,25 +164,38 @@ WLRprocess(void *arg)
 	str msg;
 	mvc *sql;
 	lng currid =0;
+	Symbol prev = NULL;
 
-    MT_lock_set(&wlc_lock);
+	MT_lock_set(&wlc_lock);
 	if( wlrprocessrunning){
 		MT_lock_unset(&wlc_lock);
 		return;
 	}
 	wlrprocessrunning ++;
-    MT_lock_unset(&wlc_lock);
+	MT_lock_unset(&wlc_lock);
 	c =MCforkClient(cntxt);
 	if( c == 0){
 		wlrprocessrunning =0;
 		GDKerror("Could not create user for WLR process\n");
 		return;
 	}
-    c->prompt = GDKstrdup("");  /* do not produce visible prompts */
-    c->promptlength = 0;
-    c->listing = 0;
+	c->promptlength = 0;
+	c->listing = 0;
 	c->fdout = open_wastream(".wlr");
-	c->curprg = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
+	if(c->fdout == NULL) {
+		wlrprocessrunning =0;
+		MCcloseClient(c);
+		GDKerror("Could not create user for WLR process\n");
+		return;
+	}
+	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
+	if(prev == NULL) {
+		wlrprocessrunning =0;
+		MCcloseClient(c);
+		GDKerror("Could not create user for WLR process\n");
+		return;
+	}
+	c->curprg = prev;
 	mb = c->curprg->def;
 	setVarType(mb, 0, TYPE_void);
 
@@ -184,16 +205,16 @@ WLRprocess(void *arg)
 	msg = getSQLContext(c, mb, &sql, NULL);
 	if( msg)
 		mnstr_printf(GDKerr,"#Failed to access the transaction context: %s\n",msg);
-    if ((msg = checkSQLContext(c)) != NULL)
-		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
+	if ((msg = checkSQLContext(c)) != NULL)
+		mnstr_printf(GDKerr,"#Inconsitent SQL context: %s\n",msg);
 
 #ifdef _WLR_DEBUG_
-	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d\n", 
+	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d\n",
 		wlr_archive, wlr_firstbatch, wlr_batches );
 #endif
 	path[0]=0;
 	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
-		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
+		snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlr.process:'%s' can not be accessed \n",path);
@@ -203,11 +224,15 @@ WLRprocess(void *arg)
 		}
 		sz = getFileSize(fd);
 		if (sz > (size_t) 1 << 29) {
-			mnstr_destroy(fd);
+			close_stream(fd);
 			mnstr_printf(GDKerr, "wlr.process File %s too large to process", path);
 			continue;
 		}
-		c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
+		if((c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz)) == NULL) {
+			close_stream(fd);
+			mnstr_printf(GDKerr, "wlr.process Failed to open stream for file %s", path);
+			continue;
+		}
 		if (bstream_next(c->fdin) < 0)
 			mnstr_printf(GDKerr, "!WARNING: could not read %s\n", path);
 
@@ -219,32 +244,34 @@ WLRprocess(void *arg)
 		// now parse the file line by line to reconstruct the WLR blocks
 		do{
 			pc = mb->stop;
-			if( parseMAL(c, c->curprg, 1, 1)  || mb->errors){
-				char line[PATHLENGTH];
-				snprintf(line, PATHLENGTH,"#wlr.process:failed further parsing '%s':\n",path);
-				strncpy(wlr_error,line, PATHLENGTH);
+			parseMAL(c, c->curprg, 1, 1);
+			mb = c->curprg->def; // needed
+			if( mb->errors){
+				char line[FILENAME_MAX];
+				snprintf(line, FILENAME_MAX,"#wlr.process:failed further parsing '%s':\n",path);
+				snprintf(wlr_error, FILENAME_MAX, "%.*s", FILENAME_MAX, line);
 				mnstr_printf(GDKerr,"%s",line);
 				printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 			}
-			mb = c->curprg->def; // needed
 			q= getInstrPtr(mb, mb->stop-1);
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef && (currid = getVarConstant(mb, getArg(q,1)).val.lval) < wlr_tag){
 				/* skip already executed transactions */
 			} else
-			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef && 
+			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef &&
 				( ( (currid = getVarConstant(mb, getArg(q,1)).val.lval) >= wlr_limit && wlr_limit != -1) ||
-				( wlr_timelimit[0] && strcmp(getVarConstant(mb, getArg(q,2)).val.sval, wlr_timelimit) >= 0))
-				){
+				  ( wlr_timelimit[0] && strcmp(getVarConstant(mb, getArg(q,2)).val.sval, wlr_timelimit) >= 0))
+					){
 				/* stop execution of the transactions if your reached the limit */
 #ifdef _WLR_DEBUG_
 				mnstr_printf(GDKerr,"#skip tlimit %s  tag %s\n", wlr_timelimit,getVarConstant(mb, getArg(q,2)).val.sval);
 #endif
-				resetMalBlk(mb, 1);
+				resetMalBlkAndFreeInstructions(mb, 1);
 				trimMalVariables(mb, NULL);
+				bstream_destroy(c->fdin);
 				goto wrapup;
 			} else
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef ){
-				strncpy(wlr_read, getVarConstant(mb, getArg(q,2)).val.sval,26);
+				snprintf(wlr_read, 26, "%s", getVarConstant(mb, getArg(q,2)).val.sval);
 				wlr_tag = getVarConstant(mb, getArg(q,1)).val.lval;
 #ifdef _WLR_DEBUG_
 				mnstr_printf(GDKerr,"#run tlimit %s  tag %s\n", wlr_timelimit, wlr_read);
@@ -254,49 +281,54 @@ WLRprocess(void *arg)
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) ==commitRef ){
 				pushEndInstruction(mb);
 				// execute this block if no errors are found
-				chkTypes(c->fdout,c->nspace, mb, FALSE);
-				chkFlow(c->fdout,mb);
-				chkDeclarations(c->fdout,mb);
+				chkTypes(c->usermodule, mb, FALSE);
+				chkFlow(mb);
+				chkDeclarations(mb);
 
 				if( mb->errors == 0){
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
-					(void) mvc_trans(sql);
-					//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-					msg= runMAL(c,mb,0,0);
-					wlr_tag++;
-					WLRsetConfig( );
-					// ignore warnings
-					if (msg && strstr(msg,"WARNING"))
-						msg = MAL_SUCCEED;
-					if( msg != MAL_SUCCEED){
-						// they should always succeed
-						mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
-						printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-						mvc_rollback(sql,0,NULL);
-						// cleanup
-						resetMalBlk(mb, 1);
-						trimMalVariables(mb, NULL);
-						pc = 0;
-					} else
-					if( mvc_commit(sql, 0, 0) < 0)
-						mnstr_printf(GDKerr,"#wlr.process transaction commit failed");
+					if(mvc_trans(sql) < 0) {
+						mnstr_printf(GDKerr,"Allocation failure while starting the transaction \n");
+					} else {
+						//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+						msg= runMAL(c,mb,0,0);
+						wlr_tag++;
+						if( msg == MAL_SUCCEED)
+							msg = WLRsetConfig( );
+						// ignore warnings
+						if (msg && strstr(msg,"WARNING"))
+							msg = MAL_SUCCEED;
+						if( msg != MAL_SUCCEED){
+							// they should always succeed
+							mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
+							printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+							mvc_rollback(sql,0,NULL);
+							// cleanup
+							fprintFunction(stderr,mb,0,63);
+							resetMalBlkAndFreeInstructions(mb, 1);
+							trimMalVariables(mb, NULL);
+							pc = 0;
+						} else
+						if( mvc_commit(sql, 0, 0) < 0)
+							mnstr_printf(GDKerr,"#wlr.process transaction commit failed\n");
+					}
 				} else {
-					char line[PATHLENGTH];
-					snprintf(line, PATHLENGTH,"#wlr.process:typechecking failed '%s':\n",path);
-					strncpy(wlr_error, line, PATHLENGTH);
+					char line[FILENAME_MAX];
+					snprintf(line, FILENAME_MAX,"#wlr.process:typechecking failed '%s':\n",path);
+					snprintf(wlr_error, FILENAME_MAX, "%s", line);
 					mnstr_printf(GDKerr,"%s",line);
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 				}
 				// cleanup
-				resetMalBlk(mb, 1);
+				resetMalBlkAndFreeInstructions(mb, 1);
 				trimMalVariables(mb, NULL);
 				pc = 0;
 			} else
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) == rollbackRef ){
 				// cleanup
-				resetMalBlk(mb, 1);
+				resetMalBlkAndFreeInstructions(mb, 1);
 				trimMalVariables(mb, NULL);
 				pc = 0;
 			}
@@ -306,15 +338,25 @@ WLRprocess(void *arg)
 #endif
 		// skip to next file when all is read
 		wlr_batches++;
-		WLRsetConfig();
+		if((msg = WLRsetConfig()) != MAL_SUCCEED) {
+			mnstr_printf(GDKerr,"%s\n",msg);
+			GDKfree(msg);
+		}
 		// stop when we are about to read beyond the limited transaction (timestamp)
-		if( (wlr_limit != -1 || (wlr_timelimit[0] && wlr_read[0] && strncmp(wlr_read,wlr_timelimit,26)>= 0) )  && wlr_limit <= wlr_tag)
+		if( (wlr_limit != -1 || (wlr_timelimit[0] && wlr_read[0] && strncmp(wlr_read,wlr_timelimit,26)>= 0) )  && wlr_limit <= wlr_tag) {
+			bstream_destroy(c->fdin);
 			break;
+		}
+		bstream_destroy(c->fdin);
 	}
 wrapup:
 	wlrprocessrunning =0;
 	(void) mnstr_flush(c->fdout);
+	close_stream(c->fdout);
+	SQLexitClient(c);
 	MCcloseClient(c);
+	if(prev)
+		freeSymbol(prev);
 }
 
 /*
@@ -331,8 +373,12 @@ WLRprocessScheduler(void *arg)
 	time_t clk;
 	struct tm ctm;
 	char clktxt[26];
+	str msg;
 
-	WLRgetConfig();
+	if((msg = WLRgetConfig()) != MAL_SUCCEED) {
+		mnstr_printf(GDKerr,"%s\n",msg);
+		GDKfree(msg);
+	}
 	wlr_state = WLR_RUN;
 	while(!GDKexiting() && wlr_state == WLR_RUN){
 		// wait at most for the cycle period, also at start
@@ -353,7 +399,10 @@ WLRprocessScheduler(void *arg)
 			MT_sleep_ms( 100);
 		}
 		if( wlr_master[0] && wlr_state != WLR_PAUSE){
-			WLRgetMaster();
+			if((msg = WLRgetMaster()) != MAL_SUCCEED) {
+				mnstr_printf(GDKerr,"%s\n",msg);
+				GDKfree(msg);
+			}
 			if( wlrprocessrunning == 0 && 
 				( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||
 				  (wlr_limit == -1 && wlr_timelimit[0] == 0 && wlr_batches < wlc_batches) ||
@@ -366,16 +415,18 @@ WLRprocessScheduler(void *arg)
 
 str
 WLRinit(void)
-{	Client cntxt = &mal_clients[0];
-	
-	WLRgetConfig();
+{
+	str msg;
+	Client cntxt = &mal_clients[0];
+	if((msg = WLRgetConfig()) != MAL_SUCCEED)
+		return msg;
 	if( wlr_master[0] == 0)
 		return MAL_SUCCEED;
 	if( wlr_state != WLR_START)
 		return MAL_SUCCEED;
 	// time to continue the consolidation process in the background
 	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlr.init","Starting wlr manager failed");
+			throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
 	}
 	GDKregister(wlr_thread);
 	return MAL_SUCCEED;
@@ -384,12 +435,13 @@ WLRinit(void)
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str timelimit  = wlr_timelimit;
-	int size = 26;
+	size_t size = 26;
 	str msg;
 	(void) mb;
 
 	// first stop the background process
-	WLRgetConfig();
+	if((msg = WLRgetConfig()) != MAL_SUCCEED)
+		return msg;
 	if( wlr_state != WLR_START){
 		wlr_state = WLR_PAUSE;
 		while(wlr_state != WLR_START){
@@ -402,8 +454,8 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( getArgType(mb, pci, 1) == TYPE_str){
 			wlr_limit = -1;
 			if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
-				throw(SQL,"wlr.replicate","Master and replicate should be different");
-			strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
+				throw(SQL,"wlr.replicate",SQLSTATE(42000) "Master and replicate should be different");
+			snprintf(wlr_master, IDLENGTH, "%s", *getArgReference_str(stk,pci,1));
 		}
 	} else  {
 		timelimit[0]=0;
@@ -411,7 +463,8 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp){
-		timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local);
+		if (timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local) < 0)
+			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
 		mnstr_printf(cntxt->fdout,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_bte)
@@ -426,14 +479,14 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_lng)
 		wlr_limit = getVarConstant(mb,getArg(pci,2)).val.lval;
 	// stop any concurrent WLRprocess first
-	WLRsetConfig();
-	WLRgetMaster();
+	if((msg = WLRsetConfig()) != MAL_SUCCEED)
+		return msg;
+	if((msg = WLRgetMaster()) != MAL_SUCCEED)
+		return msg;
 	// The client has to wait initially for all logs known to be processed.
 	WLRprocess(cntxt);
 	if( wlr_limit < 0){
-		msg = WLRinit();
-		if( msg )
-			GDKfree(msg);
+		return WLRinit();
 	}
 	return MAL_SUCCEED;
 }
@@ -477,28 +530,34 @@ str
 WLRgetreplicaclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret = getArgReference_str(stk,pci,0);
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
 
-	WLRgetConfig();
+	if((msg = WLRgetConfig()) != MAL_SUCCEED)
+		return msg;
 	if( wlr_read[0])
 		*ret= GDKstrdup(wlr_read);
 	else *ret= GDKstrdup(str_nil);
-	return MAL_SUCCEED;
+	if (*ret == NULL)
+		throw(MAL, "wlr.getreplicaclock", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg;
 }
 
 str
 WLRgetreplicatick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = getArgReference_lng(stk,pci,0);
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
 
-	WLRgetConfig();
+	if((msg = WLRgetConfig()) != MAL_SUCCEED)
+		return msg;
 	*ret = wlr_tag;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /* the replica cycle can be set to fixed interval.
@@ -511,7 +570,7 @@ WLRsetreplicabeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	new = *getArgReference_int(stk,pci,1);
 	if ( new < wlc_beat || new < 1)
-		throw(SQL,"replicatebeat","Cycle time should be larger then master or >= 1 second");
+		throw(SQL,"replicatebeat",SQLSTATE(42000) "Cycle time should be larger then master or >= 1 second");
 	wlr_beat = new;
 	return MAL_SUCCEED;
 }
@@ -529,7 +588,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// we need to get rid of the escaped quote.
 	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
 	if( qtxt == NULL)
-		throw(SQL,"wlr.query",MAL_MALLOC_FAIL);
+		throw(SQL,"wlr.query",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for(y = qry; *y; y++){
 		if( *y == '\\' ){
 			if( *(y+1) ==  '\'')
@@ -599,25 +658,25 @@ WLRgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * (variable msg and tag cleanup will not be defined).
  */
 #define WLRcolumn(TPE) \
-        for( i = 4; i < pci->argc; i++){                                \
-                TPE val = *getArgReference_##TPE(stk,pci,i);            \
-                if (BUNappend(ins, (void*) &val, FALSE) != GDK_SUCCEED) { \
-                        msg = createException(MAL, "WLRappend", "BUNappend failed"); \
-                        goto cleanup;                                   \
-                }                                                       \
-        }
+	for( i = 4; i < pci->argc; i++){                                \
+		TPE val = *getArgReference_##TPE(stk,pci,i);            \
+		if (BUNappend(ins, (void*) &val, false) != GDK_SUCCEED) { \
+			msg = createException(MAL, "WLRappend", "BUNappend failed"); \
+			goto cleanup;                                   \
+		}                                                       \
+	}
 
 str
 WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-        str sname, tname, cname;
-        int tpe,i;
+	str sname, tname, cname;
+	int tpe,i;
 	mvc *m=NULL;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
 	BAT *ins = 0;
-        str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 
 	if( cntxt->wlc_kind == WLC_ROLLBACK || cntxt->wlc_kind == WLC_ERROR)
 		return msg;
@@ -632,16 +691,16 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append", "Schema missing");
+		throw(SQL, "sql.append", SQLSTATE(3F000) "Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append", "Table missing");
+		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	tpe= getArgType(mb,pci,4);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"WLRappend",MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	switch(ATOMstorage(tpe)){
@@ -653,16 +712,16 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_oid: WLRcolumn(oid); break;
 	case TYPE_flt: WLRcolumn(flt); break;
 	case TYPE_dbl: WLRcolumn(dbl); break;
-#ifdef HAVE
+#ifdef HAVE_HGE
 	case TYPE_hge: WLRcolumn(hge); break;
 #endif
 	case TYPE_str:
 		for( i = 4; i < pci->argc; i++){
 			str val = *getArgReference_str(stk,pci,i);
-                        if (BUNappend(ins, (void*) val, FALSE) != GDK_SUCCEED) {
-                                msg = createException(MAL, "WLRappend", "BUNappend failed");
-                                goto cleanup;
-                        }
+			if (BUNappend(ins, (void*) val, false) != GDK_SUCCEED) {
+				msg = createException(MAL, "WLRappend", "BUNappend failed");
+				goto cleanup;
+			}
 		}
 		break;
 	}
@@ -673,18 +732,17 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
 			store_funcs.append_idx(m->session->tr, i, ins, tpe);
-        }
-  cleanup:
+	}
+cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
-
-        return msg;
+	return msg;
 }
 
 str
 WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sname, tname;
-        int i;
+	int i;
 	mvc *m=NULL;
 	sql_schema *s;
 	sql_table *t;
@@ -704,30 +762,29 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append", "Schema missing");
+		throw(SQL, "sql.append", SQLSTATE(3F000) "Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append", "Table missing");
+		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	ins = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"WLRappend",MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for( i = 3; i < pci->argc; i++){
 		o = *getArgReference_oid(stk,pci,i);
-                if (BUNappend(ins, (void*) &o, FALSE) != GDK_SUCCEED) {
-                        msg = createException(MAL, "WLRdelete", "BUNappend failed");
-                        goto cleanup;
-                }
+		if (BUNappend(ins, (void*) &o, false) != GDK_SUCCEED) {
+			msg = createException(MAL, "WLRdelete", "BUNappend failed");
+			goto cleanup;
+		}
 	}
 
-        store_funcs.delete_tab(m->session->tr, t, ins, TYPE_bat);
-  cleanup:
+	store_funcs.delete_tab(m->session->tr, t, ins, TYPE_bat);
+cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
-
-        return msg;
+	return msg;
 }
 
 /* TODO: Martin take a look at this.
@@ -736,12 +793,12 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * (variable msg and tag cleanup will not be defined).
  */
 #define WLRvalue(TPE)                                                   \
-        {	TPE val = *getArgReference_##TPE(stk,pci,5);            \
-                if (BUNappend(upd, (void*) &val, FALSE) != GDK_SUCCEED) { \
-                        msg = createException(MAL, "WLRupdate", "BUNappend failed"); \
-                        goto cleanup;                                   \
-                }                                                       \
-        }
+	{	TPE val = *getArgReference_##TPE(stk,pci,5);            \
+			if (BUNappend(upd, (void*) &val, false) != GDK_SUCCEED) { \
+				msg = createException(MAL, "WLRupdate", "BUNappend failed"); \
+				goto cleanup;                                   \
+			}                                                       \
+	}
 
 str
 WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -770,25 +827,25 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.update", "Schema missing");
+		throw(SQL, "sql.update", SQLSTATE(3F000) "Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.update", "Table missing");
+		throw(SQL, "sql.update", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	tids = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( tids == NULL){
-		throw(SQL,"WLRupdate",MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	upd = COLnew(0, tpe, 0, TRANSIENT);
 	if( upd == NULL){
 		BBPunfix(((BAT *) tids)->batCacheid);
-		throw(SQL,"WLRupdate",MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-        if (BUNappend(tids, &o, FALSE) != GDK_SUCCEED) {
-                msg = createException(MAL, "WLRupdate", "BUNappend failed");
-                goto cleanup;
-        }
+	if (BUNappend(tids, &o, false) != GDK_SUCCEED) {
+		msg = createException(MAL, "WLRupdate", "BUNappend failed");
+		goto cleanup;
+	}
 
 	switch(ATOMstorage(tpe)){
 	case TYPE_bit: WLRvalue(bit); break;
@@ -799,36 +856,36 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_oid: WLRvalue(oid); break;
 	case TYPE_flt: WLRvalue(flt); break;
 	case TYPE_dbl: WLRvalue(dbl); break;
-#ifdef HAVE
+#ifdef HAVE_HGE
 	case TYPE_hge: WLRvalue(hge); break;
 #endif
 	case TYPE_str:
-        {
-                str val = *getArgReference_str(stk,pci,5);
-                if (BUNappend(upd, (void*) val, FALSE) != GDK_SUCCEED) {
-                        msg = createException(MAL, "WLRupdate", "BUNappend failed");
-                        goto cleanup;
-                }
-        }
-        break;
+		{
+			str val = *getArgReference_str(stk,pci,5);
+			if (BUNappend(upd, (void*) val, false) != GDK_SUCCEED) {
+				msg = createException(MAL, "WLRupdate", "BUNappend failed");
+				goto cleanup;
+			}
+		}
+		break;
 	default:
 		GDKerror("Missing type in WLRupdate");
 	}
 
 	BATmsync(tids);
 	BATmsync(upd);
-        if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-                store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
-        } else if (cname[0] == '%') {
-                sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-                if (i)
-                        store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
-        }
+	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
+		store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+	} else if (cname[0] == '%') {
+		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
+		if (i)
+			store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+	}
 
-  cleanup:
+cleanup:
 	BBPunfix(((BAT *) tids)->batCacheid);
 	BBPunfix(((BAT *) upd)->batCacheid);
-        return msg;
+	return msg;
 }
 
 str
@@ -849,10 +906,10 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if (s == NULL)
-		throw(SQL, "sql.clear_table", "3F000!Schema missing");
+		throw(SQL, "sql.clear_table", SQLSTATE(3F000) "Schema missing %s",*sname);
 	t = mvc_bind_table(m, s, *tname);
 	if (t == NULL)
-		throw(SQL, "sql.clear_table", "42S02!Table missing");
+		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s",*sname,*tname);
 	(void) mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }

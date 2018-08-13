@@ -10,6 +10,8 @@ bat.append(b, "foo");
 bat.append(b, "bar");
 bat.append(b, "baz");
 
+no := algebra.select (b,"bar":str,nil:str,true,true,false);
+n := remote.put(conn, no);
 bo:= bat.new(:oid);
 bok := remote.put(conn, bo);
 k := remote.put(conn, b);
@@ -23,7 +25,7 @@ tt:= remote.put(conn,true:bit);
 tf:= remote.put(conn,false:bit);
 
 # perform a selection remote, and get the result back
-bok := remote.exec(conn, "algebra", "select", k, l, m, tt,tt,tf);
+bok := remote.exec(conn, "algebra", "select", k, n, l, m, tt,tt,tf);
 j:bat[:oid] := remote.get(conn, bok);
 io.print(j);
 

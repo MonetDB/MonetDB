@@ -26,7 +26,7 @@ end load;
 function qry(z:bat[:lng],low:int,hgh:int):lng;
 	l:= calc.lng(low);
 	h:= calc.lng(hgh);
-	s:= algebra.select(z,l,h,true,true,false);
+	s:= algebra.select(z,nil:bat[:oid],l,h,true,true,false);
 	c:= aggr.count(s);
 	return qry:= c;
 end qry;

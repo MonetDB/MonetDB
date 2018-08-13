@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -24,9 +24,12 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	e = eid ? BATdescriptor(*eid) : NULL;
 	h = hid ? BATdescriptor(*hid) : NULL;
 	if (b == NULL ||
+		(sid != NULL && s == NULL) ||
 		(gid != NULL && g == NULL) ||
 		(eid != NULL && e == NULL) ||
 		(hid != NULL && h == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		if (g)
@@ -35,15 +38,17 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 			BBPunfix(e->batCacheid);
 		if (h)
 			BBPunfix(h->batCacheid);
-		throw(MAL, gid ? "group.subgroup" : "group.group", RUNTIME_OBJECT_MISSING);
+		throw(MAL, gid ? "group.subgroup" : "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if ((r = BATgroup(&gn, &en, &hn, b, s, g, e, h)) == GDK_SUCCEED) {
+	if ((r = BATgroup(&gn, &en, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;
 		*next = en->batCacheid;
-		*nhis = hn->batCacheid;
+		if (nhis){
+			*nhis = hn->batCacheid;
+			BBPkeepref(*nhis);
+		}
 		BBPkeepref(*ngid);
 		BBPkeepref(*next);
-		BBPkeepref(*nhis);
 	}
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -55,6 +60,30 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	if (h)
 		BBPunfix(h->batCacheid);
 	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL, gid ? "group.subgroup" : "group.group", GDK_EXCEPTION);
+}
+
+str
+GRPsubgroup9(bat *ngid, bat *next, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, eid, hid);
+}
+
+str
+GRPsubgroup8(bat *ngid, bat *next, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, eid, hid);
+}
+
+str
+GRPsubgroup7(bat *ngid, bat *next, const bat *bid, const bat *sid, const bat *gid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, NULL, NULL);
+}
+
+str
+GRPsubgroup6(bat *ngid, bat *next, const bat *bid, const bat *gid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, NULL, NULL);
 }
 
 str
@@ -73,6 +102,18 @@ str
 GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, NULL, NULL);
+}
+
+str
+GRPgroup4(bat *ngid, bat *next, const bat *bid, const bat *sid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, sid, NULL, NULL, NULL);
+}
+
+str
+GRPgroup3(bat *ngid, bat *next, const bat *bid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, NULL, NULL, NULL, NULL);
 }
 
 str

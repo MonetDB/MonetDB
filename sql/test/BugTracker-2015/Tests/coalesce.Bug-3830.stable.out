@@ -65,14 +65,14 @@ Ready.
 # 13:27:32 >  
 
 #select coalesce(0, false);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % tinyint # type
 % 1 # length
 [ 0	]
 #select coalesce(null, false);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]

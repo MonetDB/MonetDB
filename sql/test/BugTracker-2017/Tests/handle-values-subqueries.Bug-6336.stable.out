@@ -1,0 +1,59 @@
+stdout of test 'handle-values-subqueries.Bug-6336` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 22:11:28 >  
+# 22:11:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30613" "--set" "mapi_usock=/var/tmp/mtest-5397/.s.monetdb.30613" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 22:11:28 >  
+
+# MonetDB 5 server v11.27.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.331 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30613/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5397/.s.monetdb.30613
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:11:29 >  
+# 22:11:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5397" "--port=30613"
+# 22:11:29 >  
+
+#START TRANSACTION;
+#create table data(i integer);
+#insert into data values(0),(1),(2);
+[ 3	]
+#create table multiples(i integer);
+#insert into multiples VALUES((select count(*) from data)), ((select count(distinct i) from data));
+[ 2	]
+#select * from multiples;
+% sys.multiples # table_name
+% i # name
+% int # type
+% 1 # length
+[ 3	]
+[ 3	]
+#insert into multiples VALUES((select count(*) from data)); 
+[ 1	]
+#insert into multiples VALUES((select count(distinct i) from data));
+[ 1	]
+#select * from multiples;
+% sys.multiples # table_name
+% i # name
+% int # type
+% 1 # length
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+#ROLLBACK;
+
+# 22:11:29 >  
+# 22:11:29 >  "Done."
+# 22:11:29 >  
+

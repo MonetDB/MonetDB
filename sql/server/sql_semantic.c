@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -16,12 +16,11 @@
 #include "sql_atom.h"
 
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-#include <rel_semantic.h>
-#include <rel_optimizer.h>
+#include "rel_semantic.h"
+#include "rel_optimizer.h"
 
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 
@@ -33,28 +32,44 @@
  * !SQL  <informative message, reserved for ...rows affected>
  */
 
-void
+atom *
 sql_add_arg(mvc *sql, atom *v)
 {
-	if (sql->argc == sql->argmax) {
-		sql->argmax *= 2;
-		sql->args = RENEW_ARRAY(atom*,sql->args,sql->argmax);
+	atom** new_args;
+	int next_size = sql->argmax;
+	if (sql->argc == next_size) {
+		next_size *= 2;
+		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
+		if(new_args) {
+			sql->args = new_args;
+			sql->argmax = next_size;
+		} else
+			return NULL;
 	}
 	sql->args[sql->argc++] = v;
+	return v;
 }
 
-void
+atom *
 sql_set_arg(mvc *sql, int nr, atom *v)
 {
-	if (nr >= sql->argmax) {
-		sql->argmax *= 2;
-		if (nr >= sql->argmax)
-			sql->argmax = nr*2;
-		sql->args = RENEW_ARRAY(atom*,sql->args,sql->argmax);
+	atom** new_args;
+	int next_size = sql->argmax;
+	if (nr >= next_size) {
+		next_size *= 2;
+		if (nr >= next_size)
+			next_size = nr*2;
+		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
+		if(new_args) {
+			sql->args = new_args;
+			sql->argmax = next_size;
+		} else
+			return NULL;
 	}
 	if (sql->argc < nr+1)
 		sql->argc = nr+1;
 	sql->args[nr] = v;
+	return v;
 }
 
 void
@@ -179,6 +194,7 @@ qname_catalog(dlist *qname)
 	return NULL;
 }
 
+
 int
 set_type_param(mvc *sql, sql_subtype *type, int nr)
 {
@@ -200,16 +216,19 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	int idigits = i->digits;
 	int rdigits = r->digits;
 	unsigned int scale = sql_max(i->scale, r->scale);
+	sql_subtype lsuper;
 
-	*super = *r;
+	lsuper = *r;
 	if (i->type->base.id > r->type->base.id || 
 	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
-		*super = *i;
+		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->sqlname;
 	}
+	if (!lsuper.type->localtype)
+		tpe = "smallint";
 	/* 
-	 * Incase of different radix we should change one. 
+	 * In case of different radix we should change one.
 	 */
 	if (i->type->radix != r->type->radix) {
 		if (radix == 10 || radix == 0 /* strings */) {
@@ -226,11 +245,12 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		}
 	}
 	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
-		sql_find_subtype(super, tpe, 0, 0);
+		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
 		digits = sql_max(idigits - i->scale, rdigits - r->scale);
-		sql_find_subtype(super, tpe, digits+scale, scale);
+		sql_find_subtype(&lsuper, tpe, digits+scale, scale);
 	}
+	*super = lsuper;
 	return super;
 }
 
@@ -251,7 +271,7 @@ char * toUpperCopy(char *dest, const char *src)
 	return(dest);
 }
 
-char *dlist2string(mvc *sql, dlist *l, char **err)
+char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
 {
 	char *b = NULL;
 	dnode *n;
@@ -262,7 +282,7 @@ char *dlist2string(mvc *sql, dlist *l, char **err)
 		if (n->type == type_string && n->data.sval)
 			s = _STRDUP(n->data.sval);
 		else if (n->type == type_symbol)
-			s = symbol2string(sql, n->data.sym, err);
+			s = symbol2string(sql, n->data.sym, expression, err);
 
 		if (!s)
 			return NULL;
@@ -281,7 +301,7 @@ char *dlist2string(mvc *sql, dlist *l, char **err)
 	return b;
 }
 
-char *symbol2string(mvc *sql, symbol *se, char **err)
+char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 {
 	int len = 0;
 	char buf[BUFSIZ];
@@ -295,7 +315,7 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 
 		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
 		for (; ops; ops = ops->next) {
-			char *tmp = symbol2string(sql, ops->data.sym, err);
+			char *tmp = symbol2string(sql, ops->data.sym, expression, err);
 			if (tmp == NULL)
 				return NULL;
 			len = snprintf( buf+len, BUFSIZ-len, "%s%s", 
@@ -310,10 +330,10 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		char *op = qname_fname(lst->data.lval);
 		char *l;
 		char *r;
-		l = symbol2string(sql, lst->next->data.sym, err);
+		l = symbol2string(sql, lst->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
-		r = symbol2string(sql, lst->next->next->data.sym, err);
+		r = symbol2string(sql, lst->next->next->data.sym, expression, err);
 		if (r == NULL) {
 			_DELETE(l);
 			return NULL;
@@ -330,7 +350,7 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		char *op = qname_fname(lst->data.lval);
-		char *l = symbol2string(sql, lst->next->data.sym, err);
+		char *l = symbol2string(sql, lst->next->data.sym, expression, err);
 		if (l == NULL)
 			return NULL;
 		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
@@ -352,10 +372,13 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		const char *seq = qname_table(se->data.lval);
 		const char *sname = qname_schema(se->data.lval);
 		const char *s;
-		
+
 		if (!sname)
 			sname = sql->session->schema->base.name;
-		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s=sql_escape_ident(seq)); 
+		s = sql_escape_ident(seq);
+		if(!s)
+			return NULL;
+		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s);
 		c_delete(s);
 	}	break;
 	case SQL_COLUMN: {
@@ -365,8 +388,11 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
 			atom *a = sql_bind_arg(sql, l->h->data.i_val);
 			return atom2sql(a);
+		} else if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
+			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
+			return _STRDUP(l->h->data.sval);
 		} else {
-			char *e = dlist2string(sql, l, err);
+			char *e = dlist2string(sql, l, expression, err);
 			if (e)
 				*err = e;
 		}
@@ -377,7 +403,7 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		char *val;
 		char *tpe;
 
-		val = symbol2string(sql, dl->h->data.sym, err);
+		val = symbol2string(sql, dl->h->data.sym, expression, err);
 		if (val == NULL)
 			return NULL;
 		tpe = subtype2string(&dl->h->next->data.typeval);

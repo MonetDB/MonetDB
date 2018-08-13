@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -35,11 +35,11 @@ BATcommit(BAT *b)
 {
 	if (b == NULL)
 		return;
-	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free " SZFMT " ins " BUNFMT " base " PTRFMT "\n",
+	DELTADEBUG fprintf(stderr, "#BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
 			   BATgetId(b),
 			   b->theap.free,
 			   b->batInserted,
-			   PTRFMTCAST b->theap.base);
+			   b->theap.base);
 	if (!BATdirty(b)) {
 		b->batDirtyflushed = 0;
 	}
@@ -47,11 +47,11 @@ BATcommit(BAT *b)
 		b->batDirtydesc = 1;
 	}
 	b->batInserted = BUNlast(b);
-	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free " SZFMT " ins " BUNFMT " base " PTRFMT "\n",
+	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
 			   BATgetId(b),
 			   b->theap.free,
 			   b->batInserted,
-			   PTRFMTCAST b->theap.base);
+			   b->theap.base);
 }
 
 /*
@@ -63,7 +63,6 @@ BATfakeCommit(BAT *b)
 {
 	if (b) {
 		BATcommit(b);
-		b->batDirty = 0;
 		b->batDirtydesc = b->theap.dirty = 0;
 		if (b->tvheap)
 			b->tvheap->dirty = 0;
@@ -88,7 +87,6 @@ BATundo(BAT *b)
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->theap.dirty = 1;
 	} else {
-		b->batDirty = 0;
 		b->batDirtydesc = b->theap.dirty = 0;
 		if (b->tvheap)
 			b->tvheap->dirty = 0;

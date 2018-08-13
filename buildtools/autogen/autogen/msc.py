@@ -2,7 +2,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+
+from __future__ import print_function
 
 import string
 import os
@@ -98,7 +100,7 @@ def msc_assignment(fd, var, values, msc):
     o = ""
     for v in values:
         o = o + " " + v.replace('/', '\\')
-    if var[0] != '@':
+    if var[0] != '@' and '.' not in var:
         fd.write("%s = %s\n" % (var, o))
 
 def msc_cflags(fd, var, values, msc):
@@ -121,25 +123,24 @@ def msc_libdir(fd, var, values, msc):
 def msc_mtsafe(fd, var, values, msc):
     fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
 
-def msc_add_srcdir(path, msc, prefix =""):
-    dir = path
+def msc_add_srcdir(dir, msc, prefix = ""):
     if dir[0] == '$':
         return ""
     elif not os.path.isabs(dir):
-        dir = "$(srcdir)/" + dir
+        return prefix + "$(srcdir)\\" + dir.replace('/', '\\')
     else:
         return ""
-    return prefix+dir.replace('/', '\\')
 
 def msc_translate_dir(path, msc):
-    dir = path
-    rest = ""
-    if path.find('/') >= 0:
-        dir, rest = path.split('/', 1)
+    path = path.replace('/' , '\\')
+    if path.find('\\') >= 0:
+        dir, rest = path.split('\\', 1)
+    else:
+        dir, rest = path, ''
     if dir == "top_builddir":
         dir = "$(TOPDIR)"
     elif dir == "top_srcdir":
-        dir = "$(TOPDIR)/.."
+        dir = "$(TOPDIR)\\.."
     elif dir == "builddir":
         dir = "."
     elif dir == "srcdir":
@@ -153,12 +154,12 @@ def msc_translate_dir(path, msc):
         dir = "$("+dir+")"
     if rest:
         dir = dir+ "\\" + rest
-    return dir.replace('/', '\\')
+    return dir
 
 def msc_translate_file(path, msc):
     if os.path.isfile(os.path.join(msc['cwd'], path)):
-        return "$(srcdir)\\" + path
-    return path
+        path = "$(srcdir)/" + path
+    return path.replace('/', '\\')
 
 def msc_space_sep_list(l):
     res = ""
@@ -207,6 +208,15 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
     for l in list:
         if '?' in l:
             c, l = l.split('?', 1)
+            c = c.split('&')
+            try:
+                c.remove('NATIVE_WIN32')
+            except ValueError:
+                pass
+            try:
+                c.remove('WIN32')
+            except ValueError:
+                pass
         else:
             c = None
         d = None
@@ -239,7 +249,7 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
             global libno
             v = 'LIB%d' % libno
             libno = libno + 1
-            cond += '!IF defined(%s)\n%s = %s\n!ELSE\n%s =\n!ENDIF\n' % (c, v, l, v)
+            cond += '!IF defined(%s)\n%s = %s\n!ELSE\n%s =\n!ENDIF\n' % (') && defined('.join(c), v, l, v)
             l = '$(%s)' % v
             if d:
                 deps = '%s %s' % (deps, l)
@@ -310,8 +320,8 @@ def msc_dep(fd, tar, deplist, msc):
         msc['_IN'].append(y)
     getsrc = ""
     src = msc_translate_dir(msc_translate_ext(msc_translate_file(deplist[0], msc)), msc)
-    if os.path.split(src)[0]:
-        getsrc = '\t$(INSTALL) "%s" "%s"\n' % (src, os.path.split(src)[1])
+    if '\\' in src:
+        getsrc = '\t$(INSTALL) "%s" "%s"\n' % (src, src.split('\\')[-1])
     if ext == "tab.h":
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
@@ -333,8 +343,8 @@ def msc_dep(fd, tar, deplist, msc):
             name = name[1:]
         if target == "LIB":
             d, dext = split_filename(deplist[0])
-            if dext in ("c", "yy.c", "tab.c"):
-                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s "-Fo%s" -c "%s"\n' %
+            if dext in ("c", "cpp", "yy.c", "tab.c"):
+                fd.write('\t$(CC) /EHsc $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s "-Fo%s" -c "%s"\n' %
                          (split_filename(msc_basename(src))[0], name, t, src))
     if ext == 'res':
         fd.write("\t$(RC) -fo%s %s\n" % (t, src))
@@ -693,6 +703,7 @@ def msc_library(fd, var, libmap, msc):
     sep = ""
     pref = 'lib'
     dll = '.dll'
+    pdb = '.pdb'
     if "NAME" in libmap:
         libname = libmap['NAME'][0]
     else:
@@ -737,17 +748,20 @@ def msc_library(fd, var, libmap, msc):
     else:
         makelib = makedll
     if 'COND' in libmap:
-        condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
-        mkname = (pref + v).replace('.', '_').replace('-', '_')
-        fd.write('!IF %s\n' % condname)
-        fd.write('C_%s_dll = %s%s%s\n' % (mkname, pref, v, dll))
-        fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
-        fd.write('!ELSE\n')
-        fd.write('C_%s_dll =\n' % mkname)
-        fd.write('C_%s_lib =\n' % mkname)
-        fd.write('!ENDIF\n')
-        makelib = '$(C_%s_lib)' % mkname
-        makedll = '$(C_%s_dll)' % mkname
+        if len(libmap['COND']) == 1 and libmap['COND'][0] in ('WIN32', 'NATIVE_WIN32'):
+            condname = ''
+        else:
+            condname = 'defined(' + ') && defined('.join(libmap['COND']) + ')'
+            mkname = (pref + v).replace('.', '_').replace('-', '_')
+            fd.write('!IF %s\n' % condname)
+            fd.write('C_%s_dll = %s%s%s\n' % (mkname, pref, v, dll))
+            fd.write('C_%s_lib = %s%s.lib\n' % (mkname, pref, v))
+            fd.write('!ELSE\n')
+            fd.write('C_%s_dll =\n' % mkname)
+            fd.write('C_%s_lib =\n' % mkname)
+            fd.write('!ENDIF\n')
+            makelib = '$(C_%s_lib)' % mkname
+            makedll = '$(C_%s_dll)' % mkname
     else:
         condname = ''
 
@@ -823,9 +837,6 @@ def msc_library(fd, var, libmap, msc):
         fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))
         fd.write('\tpython "$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s%s @<< /link @<<\n$(%s_OBJS)\n<<\n$(%s_LIBS)%s\n<<\n' % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
-        if sep == '_':
-            fd.write('\tif not exist .libs $(MKDIR) .libs\n')
-            fd.write('\t$(INSTALL) "%s%s" ".libs\\%s%s"\n' % (ln, dll, ln, dll))
     fd.write("\n")
 
     if SCRIPTS:
@@ -1039,6 +1050,7 @@ def output(tree, cwd, topdir):
             fd.write('install_bin_%s: %s\n' % (dst, src))
             fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (dst.replace('-','_'), dst.replace('-','_')))
             fd.write('\t$(INSTALL) %s "$(%sdir)"\n' % (src,dst.replace('-','_')))
+            fd.write('\t$(INSTALL) %s.pdb "$(%sdir)"\n' % (dst,dst.replace('-','_')))
             if cond:
                 fd.write('!ELSE\n')
                 fd.write('install_bin_%s:\n' % dst)
@@ -1053,6 +1065,8 @@ def output(tree, cwd, topdir):
             fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (src, dir, dst, ext))
             if instlib:
                 fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (instlib, dir, dst, '.lib'))
+            if src.endswith('.dll'):
+                fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (src.replace('.dll', '.pdb'), dir, dst, '.pdb'))
             if cond:
                 fd.write('!ELSE\n')
                 fd.write('install_%s:\n' % dst)

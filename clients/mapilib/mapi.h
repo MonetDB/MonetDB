@@ -3,13 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _MAPI_H_INCLUDED
 #define _MAPI_H_INCLUDED 1
 
 #include <stdio.h>		/* for FILE * */
+#include <stdint.h>		/* for int64_t */
 
 #define MAPI_AUTO	0	/* automatic type detection */
 #define MAPI_TINY	1
@@ -94,16 +95,6 @@ extern "C" {
 #define mapi_export extern
 #endif
 
-#if defined(_MSC_VER)
-/* Microsoft & Intel compilers under Windows have type __int64 */
-typedef unsigned __int64 mapi_uint64;
-typedef __int64 mapi_int64;
-#else
-/* gcc and other (Unix-) compilers (usually) have type long long */
-typedef unsigned long long mapi_uint64;
-typedef long long mapi_int64;
-#endif
-
 /* three structures used for communicating date/time information */
 /* these structs are deliberately compatible with the ODBC versions
    SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */
@@ -141,12 +132,12 @@ mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_ping(Mapi mid);
 
 mapi_export MapiMsg mapi_error(Mapi mid);
-mapi_export char *mapi_error_str(Mapi mid);
+mapi_export const char *mapi_error_str(Mapi mid);
 mapi_export void mapi_noexplain(Mapi mid, char *errorprefix);
-mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
-mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
+mapi_export void mapi_explain(Mapi mid, FILE *fd);
+mapi_export void mapi_explain_query(MapiHdl hdl, FILE *fd);
+mapi_export void mapi_explain_result(MapiHdl hdl, FILE *fd);
+mapi_export void mapi_trace(Mapi mid, int flag);
 #ifdef ST_READ			/* if stream.h was included */
 mapi_export stream *mapi_get_from(Mapi mid);
 mapi_export stream *mapi_get_to(Mapi mid);
@@ -157,7 +148,8 @@ mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
 mapi_export MapiMsg mapi_set_size_header(Mapi mid, int value);
 mapi_export MapiMsg mapi_release_id(Mapi mid, int id);
-mapi_export char *mapi_result_error(MapiHdl hdl);
+mapi_export const char *mapi_result_error(MapiHdl hdl);
+mapi_export const char *mapi_result_errorcode(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
 mapi_export MapiMsg mapi_needmore(MapiHdl hdl);
 mapi_export int mapi_more_results(MapiHdl hdl);
@@ -189,15 +181,18 @@ mapi_export MapiHdl mapi_stream_query(Mapi mid, const char *cmd, int windowsize)
 mapi_export MapiMsg mapi_cache_limit(Mapi mid, int limit);
 mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage);
-mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rowne, int whence);
+mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence);
 
 mapi_export MapiMsg mapi_timeout(Mapi mid, unsigned int time);
 mapi_export int mapi_fetch_row(MapiHdl hdl);
-mapi_export mapi_int64 mapi_fetch_all_rows(MapiHdl hdl);
+mapi_export int64_t mapi_fetch_all_rows(MapiHdl hdl);
 mapi_export int mapi_get_field_count(MapiHdl hdl);
-mapi_export mapi_int64 mapi_get_row_count(MapiHdl hdl);
-mapi_export mapi_int64 mapi_get_last_id(MapiHdl hdl);
-mapi_export mapi_int64 mapi_rows_affected(MapiHdl hdl);
+mapi_export int64_t mapi_get_row_count(MapiHdl hdl);
+mapi_export int64_t mapi_get_last_id(MapiHdl hdl);
+mapi_export int64_t mapi_rows_affected(MapiHdl hdl);
+mapi_export int64_t mapi_get_querytime(MapiHdl hdl);
+mapi_export int64_t mapi_get_maloptimizertime(MapiHdl hdl);
+mapi_export int64_t mapi_get_sqloptimizertime(MapiHdl hdl);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
 mapi_export size_t mapi_fetch_field_len(MapiHdl hdl, int fnr);

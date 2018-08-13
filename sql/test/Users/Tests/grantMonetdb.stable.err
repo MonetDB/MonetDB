@@ -33,9 +33,11 @@ stderr of test 'grantMonetdb` in directory 'sql/test/Users` itself:
 MAPI  = (alice) /var/tmp/mtest-8540/.s.monetdb.34898
 QUERY = CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;
 ERROR = !CREATE USER: access denied for user 'alice'
-MAPI  = (alice) /var/tmp/mtest-8540/.s.monetdb.34898
+CODE  = M0M27
+MAPI  = (alice) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = GRANT sysadmin TO april;
-ERROR = !GRANT: insufficient privileges to grant ROLE 'sysadmin'
+ERROR = !Insufficient privileges to grant ROLE 'sysadmin'
+CODE  = 0P000
 
 # 10:44:51 >  
 # 10:44:51 >  "Done."

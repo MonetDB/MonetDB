@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -40,15 +40,19 @@
 #include "mal_builder.h"
 #include "mal_debugger.h"
 
-#include <rel_select.h>
-#include <rel_optimizer.h>
-#include <rel_prop.h>
-#include <rel_rel.h>
-#include <rel_exp.h>
-#include <rel_psm.h>
-#include <rel_bin.h>
-#include <rel_dump.h>
-#include <rel_remote.h>
+#include "rel_select.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_partition.h"
+#include "rel_prop.h"
+#include "rel_rel.h"
+#include "rel_exp.h"
+#include "rel_psm.h"
+#include "rel_bin.h"
+#include "rel_dump.h"
+#include "rel_remote.h"
+
+#include "muuid.h"
 
 int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
@@ -59,7 +63,8 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 
 	(void) sql;
 	cst.vtype = 0;
-	VALcopy(&cst, vr);
+	if(VALcopy(&cst, vr) == NULL)
+		return -1;
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
 }
@@ -71,7 +76,7 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 void
 initSQLreferences(void)
 {
-	if (algebraRef == NULL)
+	if (zero_or_oneRef == NULL)
 		GDKfatal("error initSQLreferences");
 }
 
@@ -137,19 +142,15 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 	return q;
 }
 
-
 static int
-_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
+_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *r, stmt *call, list *rel_ops, int inline_func)
 {
-	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
 	backend *be = (backend *) c->sqlcontext;
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL, curPrg = NULL;
 	int old_argc = be->mvc->argc;
-
-	r = rel_optimizer(m, rel);
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
@@ -160,6 +161,8 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	curInstr = getInstrPtr(curBlk, 0);
 
 	curInstr = relational_func_create_result(m, curBlk, curInstr, r);
+	if( curInstr == NULL)
+		return -1;
 	setVarUDFtype(curBlk, 0);
 
 	/* ops */
@@ -194,7 +197,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			int varid = 0;
 			char buf[64];
 
-			snprintf(buf,64,"A%d",e->flag);
+			if (e->type == e_atom)
+				snprintf(buf,64,"A%d",e->flag);
+			else
+				snprintf(buf,64,"A%s",e->name);
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -217,11 +223,12 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		curBlk->inlineProp = 1;
 	/* optimize the code */
 	SQLaddQueryToCache(c);
-	if( curBlk->inlineProp == 0)
-		SQLoptimizeQuery(c, c->curprg->def);
-	else{
-		chkProgram(c->fdout, c->nspace, c->curprg->def);
-		SQLoptimizeFunction(c,c->curprg->def);
+	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
+		c->curprg->def->errors = SQLoptimizeQuery(c, c->curprg->def);
+	} else if(curBlk->inlineProp != 0) {
+		chkProgram(c->usermodule, c->curprg->def);
+		if(!c->curprg->def->errors)
+			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (backup)
 		c->curprg = backup;
@@ -231,20 +238,36 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 static str
 rel2str( mvc *sql, sql_rel *rel)
 {
-	buffer *b;
-	stream *s = buffer_wastream(b = buffer_create(1024), "rel_dump");
-	list *refs = sa_list(sql->sa);
-	char *res = NULL; 
+	buffer *b = NULL;
+	stream *s = NULL;
+	list *refs = NULL;
+	char *res = NULL;
+
+	b = buffer_create(1024);
+	if(b == NULL) {
+		goto cleanup;
+	}
+	s = buffer_wastream(b, "rel_dump");
+	if(s == NULL) {
+		goto cleanup;
+	}
+	refs = sa_list(sql->sa);
+	if (!refs) {
+		goto cleanup;
+	}
 
 	rel_print_refs(sql, s, rel, 0, refs, 0);
 	rel_print_(sql, s, rel, 0, refs, 0);
 	mnstr_printf(s, "\n");
 	res = buffer_get_buf(b);
-	buffer_destroy(b);
-	mnstr_destroy(s);
+
+cleanup:
+	if(b)
+		buffer_destroy(b);
+	if(s)
+		mnstr_destroy(s);
 	return res;
 }
-
 
 /* stub and remote function */
 static int
@@ -254,30 +277,51 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	const char *uri = mapiuri_uri(prp->value, m->sa);
+	const char *local_tbl = prp->value;
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
-	char *lname = GDKstrdup(name);
+	char *lname;
 	sql_rel *r = rel;
+
+	if(local_tbl == NULL)
+		return -1;
+
+	lname = GDKstrdup(name);
+	if(lname == NULL)
+		return -1;
 
 	if (is_topn(r->op))
 		r = r->l;
 	if (!is_project(r->op))
 		r = rel_project(m->sa, r, rel_projections(m, r, NULL, 1, 1));
 	lret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
+	if(lret == NULL) {
+		GDKfree(lname);
+		return -1;
+	}
 	rret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
+	if(rret == NULL) {
+		GDKfree(lname);
+		return -1;
+	}
 
 	/* create stub */
 	backup = c->curprg;
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
-	if( c->curprg == NULL)
+	if( c->curprg == NULL) {
+		GDKfree(lname);
 		return -1;
+	}
 	lname[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
 	curInstr = relational_func_create_result(m, curBlk, curInstr, rel);
+	if( curInstr == NULL) {
+		GDKfree(lname);
+		return -1;
+	}
 	setVarUDFtype(curBlk, 0);
 
 	/* ops */
@@ -312,11 +356,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		lret[i] = getArg(p, 0);
 	}
 
-	/* q := remote.connect("uri", "user", "pass"); */
+	/* q := remote.connect("schema.table", "msql"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
-	p = pushStr(curBlk, p, uri);
-	p = pushStr(curBlk, p, "monetdb");
-	p = pushStr(curBlk, p, "monetdb");
+	p = pushStr(curBlk, p, local_tbl);
 	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 
@@ -345,9 +387,15 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	int len = 1024, nr = 0;
 	char *s, *buf = GDKmalloc(len);
 	if (!buf) {
+		GDKfree(lname);
 		return -1;
 	}
 	s = rel2str(m, rel);
+	if (!s) {
+		GDKfree(lname);
+		GDKfree(buf);
+		return -1;
+	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
 	o = pushStr(curBlk, o, s);	/* relational plan */
@@ -364,17 +412,92 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			sql_subtype *t = tail_type(op);
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
+			if ((nr + 100) > len) {
+				buf = GDKrealloc(buf, len*=2);
+				if(buf == NULL)
+					break;
+			}
+
 			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
 		}
 		s = buf;
 	}
-	o = newFcnCall(curBlk, remoteRef, putRef);
-	o = pushArgument(curBlk, o, q);
-	o = pushStr(curBlk, o, s);	/* signature */
-	p = pushArgument(curBlk, p, getArg(o,0));
-	GDKfree(buf);
+	if(buf) {
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, s);	/* signature */
+		p = pushArgument(curBlk, p, getArg(o,0));
+		GDKfree(buf);
+	} else {
+		GDKfree(lname);
+		return -1;
+	}
 	}
 	pushInstruction(curBlk, p);
+
+	if (mal_session_uuid) {
+		str rsupervisor_session = GDKstrdup(mal_session_uuid);
+		if (rsupervisor_session == NULL) {
+			return -1;
+		}
+
+		str lsupervisor_session = GDKstrdup(mal_session_uuid);
+		if (lsupervisor_session == NULL) {
+			GDKfree(rsupervisor_session);
+			return -1;
+		}
+
+		str rworker_plan_uuid = generateUUID();
+		if (rworker_plan_uuid == NULL) {
+			GDKfree(rsupervisor_session);
+			GDKfree(lsupervisor_session);
+			return -1;
+		}
+		str lworker_plan_uuid = GDKstrdup(rworker_plan_uuid);
+		if (lworker_plan_uuid == NULL) {
+			free(rworker_plan_uuid);
+			GDKfree(lsupervisor_session);
+			GDKfree(rsupervisor_session);
+			return -1;
+		}
+
+		/* remote.supervisor_register(connection, supervisor_uuid, plan_uuid) */
+		p = newInstruction(curBlk, remoteRef, execRef);
+		p = pushArgument(curBlk, p, q);
+		p = pushStr(curBlk, p, remoteRef);
+		p = pushStr(curBlk, p, register_supervisorRef);
+		getArg(p, 0) = -1;
+
+		/* We don't really care about the return value of supervisor_register,
+		 * but I have not found a good way to remotely execute a void mal function
+		 */
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushInt(curBlk, o, TYPE_int);  
+		p = pushReturn(curBlk, p, getArg(o, 0));
+
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, rsupervisor_session);
+		p = pushArgument(curBlk, p, getArg(o, 0));
+
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, rworker_plan_uuid);
+		p = pushArgument(curBlk, p, getArg(o, 0));
+
+		pushInstruction(curBlk, p);
+
+		/* Execute the same instruction locally */
+		p = newStmt(curBlk, remoteRef, register_supervisorRef);
+		p = pushStr(curBlk, p, lsupervisor_session);
+		p = pushStr(curBlk, p, lworker_plan_uuid);
+
+		GDKfree(lworker_plan_uuid);
+		free(rworker_plan_uuid);   /* This was created with strdup */
+		GDKfree(lsupervisor_session);
+		GDKfree(rsupervisor_session);
+	}
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
@@ -426,6 +549,16 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	for (i = 0; i < curInstr->retc; i++)
 		p = pushArgument(curBlk, p, lret[i]);
 	pushInstruction(curBlk, p);
+
+	/* catch exceptions */
+	p = newCatchStmt(curBlk,"MALexception");
+        p = newExitStmt(curBlk,"MALexception");
+        p = newCatchStmt(curBlk,"SQLexception");
+        p = newExitStmt(curBlk,"SQLexception");
+	/* remote.disconnect(q); */
+	p = newStmt(curBlk, remoteRef, disconnectRef);
+	p = pushArgument(curBlk, p, q);
+
 	pushEndInstruction(curBlk);
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
@@ -433,8 +566,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
-	//chkProgram(c->fdout, c->nspace, c->curprg->def);
-	SQLoptimizeFunction(c, c->curprg->def);
+	//chkProgram(c->usermodule, c->curprg->def);
+	if(!c->curprg->def->errors)
+		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
 	if (backup)
 		c->curprg = backup;
 	GDKfree(lname);		/* make sure stub is called */
@@ -483,25 +617,24 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
 	stmt *s;
-	char *t, *tt;
-       
+
 	// Always keep the SQL query around for monitoring
 
 	if (query) {
-		tt = t = GDKstrdup(query);
-		while (t && isspace((int) *t))
-			t++;
+		while (*query && isspace((unsigned char) *query))
+			query++;
 
 		querylog = q = newStmt(mb, querylogRef, defineRef);
 		if (q == NULL) {
-			GDKfree(tt);
 			return -1;
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
 		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, t);
-		GDKfree(tt);
+		q = pushStr(mb, q, query);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
+		if (q == NULL) {
+			return -1;
+		}
 	}
 
 	/* announce the transaction mode */
@@ -519,7 +652,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
-	if (top && c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+	if (top && c->clientid && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL)
 			return -1;
@@ -547,6 +680,7 @@ backend_callinline(backend *be, Client c)
 	InstrPtr curInstr = 0;
 	MalBlkPtr curBlk = c->curprg->def;
 
+	setVarType(curBlk, 0, 0);
 	if (m->argc) {	
 		int argc = 0;
 
@@ -566,7 +700,9 @@ backend_callinline(backend *be, Client c)
 				sql_subtype *t = atom_type(a);
 				(void) pushNil(curBlk, curInstr, t->type->localtype);
 			} else {
-				int _t = constantAtom(be, curBlk, a);
+				int _t;
+				if((_t = constantAtom(be, curBlk, a)) == -1)
+					return -1;
 				(void) pushArgument(curBlk, curInstr, _t);
 			}
 		}
@@ -643,8 +779,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (cq){
 		SQLaddQueryToCache(c);
 		// optimize this code the 'old' way
-		if ( m->emode == m_prepare || !qc_isaquerytemplate(getFunctionId(getInstrPtr(c->curprg->def,0))) )
-			SQLoptimizeFunction(c,c->curprg->def);
+		if ( (m->emode == m_prepare || !qc_isaquerytemplate(getFunctionId(getInstrPtr(c->curprg->def,0)))) && !c->curprg->def->errors )
+			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	}
 
 	// restore the context for the wrapper code
@@ -696,7 +832,11 @@ backend_call(backend *be, Client c, cq *cq)
 				/* need type from the prepared argument */
 				q = pushNil(mb, q, t->type->localtype);
 			} else {
-				int _t = constantAtom(be, mb, a);
+				int _t;
+				if((_t = constantAtom(be, mb, a)) == -1) {
+					(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure during function call: %s\n", atom_type(a)->type->sqlname);
+					break;
+				}
 				q = pushArgument(mb, q, _t);
 			}
 		}
@@ -712,11 +852,11 @@ monet5_resolve_function(ptr M, sql_func *f)
 
 	/*
 	   fails to search outer modules!
-	   if (!findSymbol(c->nspace, f->mod, f->imp))
+	   if (!findSymbol(c->usermodule, f->mod, f->imp))
 	   return 0;
 	 */
 
-	for (m = findModule(c->nspace, f->mod); m; m = m->link) {
+	for (m = findModule(c->usermodule, f->mod); m; m = m->link) {
 		if (strcmp(m->name, f->mod) == 0) {
 			Symbol s = m->space[(int) (getSymbolIndex(f->imp))];
 			for (; s; s = s->peer) {
@@ -853,6 +993,27 @@ backend_create_map_py3_func(backend *be, sql_func *f)
 	return 0;
 }
 
+/* Create the MAL block for a registered function and optimize it */
+static int
+backend_create_c_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "capi";
+		f->imp = "eval_aggr";
+		break;
+	case F_LOADER:
+	case F_PROC: /* no output */
+	case F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "capi";
+		f->imp = "eval";
+		break;
+	}
+	return 0;
+}
+
 static int
 backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
@@ -870,8 +1031,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!vararg)
 		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
-	if (r)
-		r = rel_optimizer(m, r);
+	if (r) {
+		r = rel_optimizer(m, r, 0);
+		r = rel_distribute(m, r);
+		r = rel_partition(m, r);
+	}
 	if (r && !f->sql) 	/* native function */
 		return 0;
 
@@ -892,8 +1056,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 	if (f->res) {
 		sql_arg *res = f->res->h->data;
-		if (f->type == F_UNION)
+		if (f->type == F_UNION) {
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
+			if( curInstr == NULL)
+				goto cleanup;
+		}
 		else
 			setArgType(curBlk, curInstr, 0, res->type.type->localtype);
 	} else {
@@ -960,11 +1127,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		curBlk->unsafeProp = 1;
 	/* optimize the code */
 	SQLaddQueryToCache(c);
-	if( curBlk->inlineProp == 0)
-		SQLoptimizeFunction(c, c->curprg->def);
-	else{
-		chkProgram(c->fdout, c->nspace, c->curprg->def);
-		SQLoptimizeFunction(c,c->curprg->def);
+	if( curBlk->inlineProp == 0 && !c->curprg->def->errors) {
+		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
+	} else if(curBlk->inlineProp != 0){
+		chkProgram(c->usermodule, c->curprg->def);
+		if(!c->curprg->def->errors)
+			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (backup)
 		c->curprg = backup;
@@ -1000,6 +1168,8 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_MAP_PY3:
 		return backend_create_map_py3_func(be, f);
 	case FUNC_LANG_C:
+	case FUNC_LANG_CPP:
+		return backend_create_c_func(be, f);
 	case FUNC_LANG_J:
 	default:
 		return -1;
@@ -1073,12 +1243,12 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	b->buf[b->pos - 1] = '\0';  /* should always end with a \n, can overwrite */
 
 	/* craft a semi-professional header */
-	mnstr_printf(fd, "&1 0 " SZFMT " 1 " SZFMT "\n", /* type id rows columns tuples */
+	mnstr_printf(fd, "&1 0 %zu 1 %zu\n", /* type id rows columns tuples */
 			nl, nl);
 	mnstr_printf(fd, "%% .plan # table_name\n");
 	mnstr_printf(fd, "%% rel # name\n");
 	mnstr_printf(fd, "%% clob # type\n");
-	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 1 /* remove = */);
+	mnstr_printf(fd, "%% %zu # length\n", len - 1 /* remove = */);
 
 	/* output the data */
 	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);

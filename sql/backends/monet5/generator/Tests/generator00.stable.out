@@ -16,9 +16,6 @@ stdout of test 'generator00` in directory 'sql/backends/monet5/generator` itself
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:30145/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27022/.s.monetdb.30145
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -47,13 +44,16 @@ Ready.
 # loading sql script: 80_udf.sql
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 18:09:06 >  
 # 18:09:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27022" "--port=30145"
 # 18:09:06 >  
 
 #select * from generate_series(0,10);
-% . # table_name
+% .L3 # table_name
 % value # name
 % tinyint # type
 % 1 # length
@@ -68,7 +68,7 @@ Ready.
 [ 8	]
 [ 9	]
 #select * from generate_series(0,10,2);
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 1 # length
@@ -78,7 +78,7 @@ Ready.
 [ 6	]
 [ 8	]
 #select * from generate_series(0,10) where value <5;
-% . # table_name
+% .L3 # table_name
 % value # name
 % tinyint # type
 % 1 # length
@@ -88,7 +88,7 @@ Ready.
 [ 3	]
 [ 4	]
 #select * from generate_series(0,10,2) where value <5;
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 1 # length
@@ -96,13 +96,13 @@ Ready.
 [ 2	]
 [ 4	]
 #select * from generate_series(0,10,2) where value =4;
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 1 # length
 [ 4	]
 #select * from generate_series(0,10,2) where value <>4;
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 1 # length
@@ -127,7 +127,7 @@ Ready.
 [ 4	]
 [ 6	]
 #select * from generate_series(10,0);
-% . # table_name
+% .L3 # table_name
 % value # name
 % tinyint # type
 % 2 # length
@@ -142,7 +142,7 @@ Ready.
 [ 2	]
 [ 1	]
 #select * from generate_series(10,0,-2);
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 2 # length
@@ -152,7 +152,7 @@ Ready.
 [ 4	]
 [ 2	]
 #select * from generate_series(10,0) where value <5;
-% . # table_name
+% .L3 # table_name
 % value # name
 % tinyint # type
 % 1 # length
@@ -161,23 +161,24 @@ Ready.
 [ 2	]
 [ 1	]
 #select * from generate_series(10,0,-2) where value <5;
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 1 # length
 [ 4	]
 [ 2	]
 #select * from generate_series(10,0,-2) where value = 6;
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 1 # length
 [ 6	]
 #select * from generate_series(10,0,-2) where value <> 6;
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
-% 1 # length
+% 2 # length
+[ 10	]
 [ 8	]
 [ 4	]
 [ 2	]
@@ -196,7 +197,7 @@ Ready.
 [ 6	]
 [ 4	]
 #select * from generate_series(-2,8,2);
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 2 # length
@@ -206,7 +207,7 @@ Ready.
 [ 4	]
 [ 6	]
 #select * from generate_series(0,0,2);
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 1 # length

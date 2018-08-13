@@ -70,6 +70,8 @@ utility are
 .BR start ,
 .BR stop ,
 .BR kill ,
+.BR profilerstart ,
+.BR profilerstop ,
 .BR set ,
 .BR get ,
 .BR inherit ,
@@ -94,6 +96,7 @@ steps before releasing it to users, unless the
 argument is supplied.  See also
 .BR "monetdb lock" .
 The name of the database must match the expression [A\-Za\-z0\-9\-_]+.
+.RS
 .TP
 \fB\-m\fP \fIpattern\fP
 With the
@@ -119,6 +122,7 @@ user.  Since this protects the database from being accessed via
 well-known credentials, the created database is not locked after
 creation.  This way, a new database can be created and used right away
 using the password supplied.
+.RE
 .TP
 \fBdestroy\fP [\fB\-f\fP] \fIdatabase\fP [\fIdatabase\fP ...]
 Removes the given
@@ -126,6 +130,7 @@ Removes the given
 including all its data and logfiles.  Once
 destroy has completed, all data is lost.  Be careful when using this
 command.
+.RS
 .TP
 .B \-f
 By default, a confirmation question is asked, however the
@@ -135,6 +140,7 @@ right away.  Note that without this option you cannot destroy a running
 database, bring it down first using the
 .B stop
 command.
+.RE
 .TP
 \fBlock\fP \fIdatabase\fP [\fIdatabase\fP ...]
 Puts the given database in maintenance mode.  A database under
@@ -232,6 +238,7 @@ flag is absent, is
 .PD 0
 .TP
 \fBkill\fP [\fB\-a\fP] \fIdatabase\fP [\fIdatabase\fP ...]
+.PD
 Starts, stops or kills the given database, or, when
 .B \-a
 is supplied, all known databases.  The
@@ -263,6 +270,22 @@ the return code of
 indicates failure if one of the databases had a failure, even though
 the operation on other databases was successful.
 .TP
+\fBprofilerstart\fP \fIdatabase\fP [\fIdatabase\fP ...]
+.PD 0
+.TP
+\fBprofilerstop\fP \fIdatabase\fP [\fIdatabase\fP ...]
+.PD
+Starts or stops the collection of profiling logs for the given database. The property
+.B profilerlogpath
+must be set for the given database, and it should point to a directory where the logs
+will be gathered. The filenames of the logs have the format:
+.I proflog_<database>_YYYY-MM-DD_HH-MM-SS.json
+where the last part is the date and time when the collection started. Please
+note that a file recording the pid of the profiler is written in the log
+directory, therefore each database needs to have a different
+.B profilerlogpath
+value.
+.TP
 \fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> [\fIdatabase\fP ...]
 Prints the requested properties, or all known properties, for the given
 database.  For each property its source and value are printed.  Source
@@ -274,6 +297,7 @@ Sets property to value for the given database.  For a list of
 properties, run
 .BR "monetdb get all" .
 Most properties require the database to be stopped when set.
+.RS
 .TP
 \fBshared=\fP<\fByes\fP|\fBno\fP|\fItag\fP>
 Defines if and how the database is being announced to other monetdbds
@@ -317,6 +341,7 @@ the same time.  Setting this to a high value is discouraged.  A
 multiplex-funnel may be more performant, see
 .I MULTIPLEX-FUNNEL
 below.
+.RE
 .TP
 \fBinherit\fP \fIproperty\fP \fIdatabase\fP [\fIdatabase\fP ...]
 Like set, but unsets the database-local value, and reverts to inherit
@@ -348,12 +373,14 @@ setting for that monetdbd must be enabled in the configuration file.
 .PD 0
 .TP
 \fBhelp\fP [\fIcommand\fP]
+.PD
 Shows general help, or short help for a given command.
 .TP
 .B \-v
 .PD 0
 .TP
 .B version
+.PD
 Shows the version of the
 .I monetdb
 utility.

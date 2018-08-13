@@ -12,7 +12,7 @@ create table mtcars (
     carb DOUBLE PRECISION
 );
 
-copy into mtcars from '$TSTSRCDIR/mtcars' using delimiters 'a','b','c' null as '' fwf (4, 2, 6, 4, 5, 6, 6, 2, 2, 2, 2);
+copy into mtcars from '$QTSTSRCDIR/mtcars' using delimiters 'a','b','c' null as '' fwf (4, 2, 6, 4, 5, 6, 6, 2, 2, 2, 2);
 
 select * from mtcars;
 

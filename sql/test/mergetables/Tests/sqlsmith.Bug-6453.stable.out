@@ -1,0 +1,66 @@
+stdout of test 'sqlsmith.Bug-6453` in directory 'sql/test/mergetables` itself:
+
+
+# 16:10:41 >  
+# 16:10:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37601" "--set" "mapi_usock=/var/tmp/mtest-17805/.s.monetdb.37601" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 16:10:41 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37601/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17805/.s.monetdb.37601
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:10:42 >  
+# 16:10:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17805" "--port=37601"
+# 16:10:42 >  
+
+#select  
+#  cast(nullif(subq_0.c3,
+#    subq_0.c3) as int) as c0
+#from 
+#  (select  
+#        ref_0.x as c0, 
+#        ref_0.y as c1, 
+#        ref_0.z as c2, 
+#        ref_0.x as c3, 
+#        ref_0.y as c4
+#      from 
+#        sys.s2 as ref_0
+#      where (ref_0.z is NULL) 
+#        and (EXISTS (
+#          select  
+#              ref_1.role_id as c0, 
+#              ref_0.z as c1, 
+#              ref_1.role_id as c2, 
+#              ref_1.role_id as c3, 
+#              ref_0.z as c4, 
+#              ref_1.login_id as c5, 
+% .L133 # table_name
+% c0 # name
+% int # type
+% 1 # length
+#select  ref_0.x from sys.s2 as ref_0 
+# where 	EXISTS (
+#          select ref_1.role_id as c0 from sys.user_role as ref_1 
+#	   where (EXISTS ( select ref_0.y as c0 from sys.netcdf_vars)) or (ref_0.y is NULL)
+#	)
+#;
+% sys.ref_0 # table_name
+% x # name
+% int # type
+% 1 # length
+
+# 16:10:42 >  
+# 16:10:42 >  "Done."
+# 16:10:42 >  
+

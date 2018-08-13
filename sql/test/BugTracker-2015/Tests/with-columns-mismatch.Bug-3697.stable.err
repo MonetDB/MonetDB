@@ -36,6 +36,7 @@ QUERY = WITH cte(qtime, open, close, sdate, id, rnk) as (
           from quotes where sym='SPY'
         ) select * from cte where rnk=1;
 ERROR = !WITH CLAUSE: number of columns does not match
+CODE  = 21S02
 
 # 09:14:41 >  
 # 09:14:41 >  "Done."

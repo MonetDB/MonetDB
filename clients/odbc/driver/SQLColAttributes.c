@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -99,12 +99,12 @@ SQLColAttributes(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributes " PTRFMT " %u %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLColAttributes %p %u %s %p %d %p %p\n",
+		StatementHandle,
 		(unsigned int) ColumnNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr, PTRFMTCAST NumericAttributePtr);
+		CharacterAttributePtr, (int) BufferLength,
+		StringLengthPtr, NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -154,12 +154,12 @@ SQLColAttributesW(SQLHSTMT StatementHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributesW " PTRFMT " %u %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLColAttributesW %p %u %s %p %d %p %p\n",
+		StatementHandle,
 		(unsigned int) ColumnNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr, PTRFMTCAST NumericAttributePtr);
+		CharacterAttributePtr, (int) BufferLength,
+		StringLengthPtr, NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))

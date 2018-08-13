@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
 
-#ifdef NATIVE_WIN32
+#ifdef WIN32
 #ifndef LIBGDK
 #define gdk_export extern __declspec(dllimport)
 #else
@@ -17,6 +17,54 @@
 #endif
 #else
 #define gdk_export extern
+#endif
+
+/* if __has_attribute is not known to the preprocessor, we ignore
+ * attributes completely; if it is known, use it to find out whether
+ * specific attributes that we use are known */
+#ifndef __has_attribute
+#ifndef __GNUC__
+#define __has_attribute(attr)	0
+#ifndef __attribute__
+#define __attribute__(attr)	/* empty */
+#endif
+#else
+/* older GCC does have attributes, but not __has_attribute and not all
+ * attributes that we use are known */
+#define __has_attribute__alloc_size__ 1
+#define __has_attribute__cold__ 1
+#define __has_attribute__format__ 1
+#define __has_attribute__malloc__ 1
+#define __has_attribute__noreturn__ 1
+#define __has_attribute__returns_nonnull__ 0
+#define __has_attribute__visibility__ 1
+#define __has_attribute__warn_unused_result__ 1
+#define __has_attribute(attr)	__has_attribute##attr
+#endif
+#endif
+#if !__has_attribute(__warn_unused_result__)
+#define __warn_unused_result__
+#endif
+#if !__has_attribute(__malloc__)
+#define __malloc__
+#endif
+#if !__has_attribute(__alloc_size__)
+#define __alloc_size__(a)
+#endif
+#if !__has_attribute(__format__)
+#define __format__(a,b,c)
+#endif
+#if !__has_attribute(__noreturn__)
+#define __noreturn__
+#endif
+/* these are used in some *private.h files */
+#if !__has_attribute(__visibility__)
+#define __visibility__(a)
+#elif defined(__CYGWIN__)
+#define __visibility__(a)
+#endif
+#if !__has_attribute(__cold__)
+#define __cold__
 #endif
 
 /*
@@ -31,17 +79,6 @@
 #endif
 #include <sched.h>
 #include <pthread.h>
-#ifndef WIN32
-/* Linux gprof messes up on multithreaded programs */
-#ifdef PROFILE
-/* Linux gprof messes up on multithreaded programs */
-gdk_export int gprof_pthread_create(pthread_t * __restrict,
-				    __const pthread_attr_t * __restrict,
-				    void *(*fcn) (void *),
-				    void *__restrict);
-#define pthread_create gprof_pthread_create
-#endif
-#endif
 #endif
 
 #ifdef HAVE_SEMAPHORE_H
@@ -209,8 +246,11 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
 		if (strncmp((n), "sa_", 3) != 0) {			\
+			MT_Lock * volatile _p;				\
 			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
+			for (_p = GDKlocklist; _p; _p = _p->next)	\
+				assert(_p != (l));			\
 			(l)->next = GDKlocklist;			\
 			GDKlocklist = (l);				\
 			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
@@ -225,19 +265,12 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
 		if (strncmp((l)->name, "sa_", 3) != 0) {		\
-			MT_Lock * volatile _p;				\
-			/* save a copy for statistical purposes */	\
-			_p = GDKmalloc(sizeof(MT_Lock));		\
+			MT_Lock * volatile *_p;				\
 			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
-			if (_p) {					\
-				memcpy(_p, l, sizeof(MT_Lock));		\
-				_p->next = GDKlocklist;			\
-				GDKlocklist = _p;			\
-			}						\
-			for (_p = GDKlocklist; _p; _p = _p->next)	\
-				if (_p->next == (l)) {			\
-					_p->next = (l)->next;		\
+			for (_p = &GDKlocklist; *_p; _p = &(*_p)->next)	\
+				if ((l) == *_p) {			\
+					*_p = (l)->next;		\
 					break;				\
 				}					\
 			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
@@ -350,14 +383,5 @@ typedef struct {
 	} while (0)
 
 gdk_export int MT_check_nr_cores(void);
-
-/*
- * @- Timers
- * The following relative timers are available for inspection.
- * Note that they may consume recognizable overhead.
- *
- */
-gdk_export lng GDKusec(void);
-gdk_export int GDKms(void);
 
 #endif /*_GDK_SYSTEM_H_*/

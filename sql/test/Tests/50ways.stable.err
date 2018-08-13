@@ -84,13 +84,16 @@ stderr of test '50ways` in directory 'sql/test` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table s;
 ERROR = !DROP TABLE: no such table 's'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table sp;
 ERROR = !DROP TABLE: no such table 'sp'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = commit;
 ERROR = !COMMIT: not allowed in auto commit mode
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 2DM30
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT  DISTINCT S.SNAME
               FROM  (  ( SELECT * FROM S )
                                INTERSECT CORRESPONDING 
@@ -98,7 +101,8 @@ QUERY = SELECT  DISTINCT S.SNAME
                                  WHERE SP.PNR = 'P2' ) ) AS POINTLESS
                                NATURAL JOIN S;
 ERROR = !SELECT: no such column 's.sname'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT  DISTINCT S.SNAME
               FROM  (  ( SELECT * FROM S )
                                INTERSECT CORRESPONDING BY ( SNR )
@@ -106,6 +110,8 @@ QUERY = SELECT  DISTINCT S.SNAME
                                  WHERE SP.PNR = 'P2' ) ) AS POINTLESS
                                NATURAL JOIN S;
 ERROR = !SELECT: no such column 's.sname'
+CODE  = 42S22
+
 
 # 16:07:26 >  
 # 16:07:26 >  Done.

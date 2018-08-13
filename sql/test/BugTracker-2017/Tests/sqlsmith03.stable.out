@@ -39,7 +39,7 @@ Ready.
 #          right join sys.privileges as ref_111
 #              left join sys.systemfunctions as ref_112
 #                left join sys.querylog_calls as ref_113
-% .L152 # table_name
+% .L155 # table_name
 % c0 # name
 % tinyint # type
 % 1 # length

@@ -33,12 +33,15 @@ stderr of test 'foreign_key.Bug-3114` in directory 'sql/test/BugTracker-2012` it
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into "second" values (101, 1);
 ERROR = !INSERT INTO: FOREIGN KEY constraint 'second.second_ref_fkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = update "second" set ref = 1 WHERE id = 100;
 ERROR = !UPDATE: FOREIGN KEY constraint 'second.second_ref_fkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = update "second" set ref = 1 WHERE id = 100;
 ERROR = !UPDATE: FOREIGN KEY constraint 'second.second_ref_fkey' violated
+CODE  = M0M29
 
 # 17:09:14 >  
 # 17:09:14 >  "Done."

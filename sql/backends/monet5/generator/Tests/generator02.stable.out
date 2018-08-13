@@ -25,7 +25,7 @@ Ready.
 # 21:17:52 >  
 
 #select * from generate_series(0.0,10.0,1.6);
-% . # table_name
+% .L4 # table_name
 % value # name
 % decimal # type
 % 12 # length
@@ -37,7 +37,7 @@ Ready.
 [ 8.00	]
 [ 9.60	]
 #select * from generate_series(cast(0.0 as real),cast(10.0 as real),cast(1.6 as real));
-% . # table_name
+% .L4 # table_name
 % value # name
 % real # type
 % 15 # length
@@ -49,7 +49,7 @@ Ready.
 [ 8	]
 [ 9.6	]
 #select * from generate_series(cast(0.0 as double),cast(10.0 as double),cast(1.6 as double));
-% . # table_name
+% .L4 # table_name
 % value # name
 % double # type
 % 24 # length
@@ -61,7 +61,7 @@ Ready.
 [ 8	]
 [ 9.6	]
 #select * from generate_series(cast(0.0 as decimal(10,2)),cast(10.0 as decimal(10,2)),cast(1.6 as decimal(10,2)));
-% . # table_name
+% .L4 # table_name
 % value # name
 % decimal # type
 % 12 # length
@@ -74,7 +74,7 @@ Ready.
 [ 9.60	]
 #select * from generate_series(0.1,10.0,1.77) 
 #where value <5.0;
-% . # table_name
+% .L4 # table_name
 % value # name
 % decimal # type
 % 12 # length
@@ -83,7 +83,7 @@ Ready.
 [ 3.64	]
 #select * from generate_series(cast(0.1 as real),cast(10.0 as real),cast(1.77 as real)) 
 #where value <5.0;
-% . # table_name
+% .L4 # table_name
 % value # name
 % real # type
 % 15 # length
@@ -92,7 +92,7 @@ Ready.
 [ 3.64	]
 #select * from generate_series(cast(0.1 as double),cast(10.0 as double),cast(1.77 as double)) 
 #where value <5.0;
-% . # table_name
+% .L4 # table_name
 % value # name
 % double # type
 % 24 # length
@@ -101,7 +101,7 @@ Ready.
 [ 3.64	]
 #select * from generate_series(cast(0.1 as decimal(10,2)),cast(10.0 as decimal(10,2)),cast(1.77 as decimal(10,2))) 
 #where value <5.0;
-% . # table_name
+% .L4 # table_name
 % value # name
 % decimal # type
 % 12 # length
@@ -141,7 +141,7 @@ Ready.
 [ 4.00	]
 [ 5.90	]
 #select * from generate_series(0.0e0,10.0e0,1.6e0);
-% . # table_name
+% .L4 # table_name
 % value # name
 % double # type
 % 24 # length
@@ -154,7 +154,7 @@ Ready.
 [ 9.6	]
 #select * from generate_series(0.1e0,10.0e0,1.77e0) 
 #where value <5.0e0;
-% . # table_name
+% .L4 # table_name
 % value # name
 % double # type
 % 24 # length

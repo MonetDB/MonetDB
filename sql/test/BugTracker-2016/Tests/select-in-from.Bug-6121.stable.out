@@ -88,9 +88,9 @@ Ready.
 % 5 # length
 [ true	]
 [ true	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
+[ false	]
+[ false	]
+[ false	]
 #SELECT ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) THEN 1 ELSE 0 END ) AS new_column FROM table_one;
 % .L5 # table_name
 % new_column # name
@@ -163,7 +163,7 @@ Ready.
 #UNION ALL
 #SELECT COUNT(*) AS count, 0 AS new_column FROM table_one
 # WHERE this_column NOT IN (SELECT this_column FROM table_two);
-% .L37,	.L37 # table_name
+% .L31,	.L31 # table_name
 % count,	new_column # name
 % bigint,	tinyint # type
 % 1,	1 # length
@@ -189,8 +189,8 @@ Ready.
 #    except
 #    (select this_column from table_two)
 #) as "missing";
-% .L36,	.L36 # table_name
-% count,	L15 # name
+% .L41,	.L41 # table_name
+% count,	L16 # name
 % bigint,	tinyint # type
 % 1,	1 # length
 [ 2,	1	]

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _SQL_ENV_H_
@@ -13,7 +13,11 @@
 #include "sql_symbol.h"
 #include "sql_mvc.h"
 
-extern str sql_update_var(mvc *sql, char *name, char *sval, lng sgn);
+#ifdef HAVE_HGE
+extern str sql_update_var(mvc *sql, const char *name, char *sval, hge sgn);
+#else
+extern str sql_update_var(mvc *sql, const char *name, char *sval, lng sgn);
+#endif
 
 extern int sql_create_env(mvc *sql, sql_schema *s);
 

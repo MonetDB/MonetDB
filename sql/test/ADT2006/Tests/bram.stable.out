@@ -373,7 +373,7 @@ Ready.
 #(select 4 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 4)
 #UNION ALL
 #(select 5 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 5)
-% .L164,	.L164 # table_name
+% .L177,	.L177 # table_name
 % mon,	murders # name
 % tinyint,	bigint # type
 % 2,	1 # length
@@ -400,7 +400,7 @@ Ready.
 #(select 5 AS mon, v.name AS victim from victim v where extract(month from v.date) = 5)
 #UNION ALL
 #(select 6 AS mon, v.name AS victim from victim v where extract(month from v.date) = 6)
-% .L134,	.L134 # table_name
+% .L147,	.L147 # table_name
 % mon,	victim # name
 % tinyint,	varchar # type
 % 2,	42 # length
@@ -456,7 +456,7 @@ Ready.
 #    WHERE name LIKE '%Inspector%')
 #    UNION ALL
 #(SELECT 'Major' AS grade, count(name) AS inspectors FROM inspector
-% .L56,	.L56 # table_name
+% .L62,	.L62 # table_name
 % grade,	inspectors # name
 % char,	bigint # type
 % 9,	1 # length
@@ -473,8 +473,8 @@ Ready.
 #UNION ALL
 #(select name, (12*cast(substring(length from 0 for (position('\'' in length) - 1)) AS integer)
 #    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) - position('\'' in length) - 1)) AS integer)) as height from victim v
-% .L64,	.L64 # table_name
-% L17,	average_height # name
+% .L67,	.L67 # table_name
+% L20,	average_height # name
 % char,	varchar # type
 % 6,	4 # length
 [ "blonde",	"5'7\""	]

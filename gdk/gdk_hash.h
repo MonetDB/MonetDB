@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _GDK_SEARCH_H_
@@ -134,10 +134,31 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			 ((unsigned int) (X) >> 13) ^	\
 			 ((unsigned int) (X) >> 21) ^	\
 			 (unsigned int) (X))
-#define mix_lng(X)	mix_int((unsigned int) ((ulng) (X) ^		\
-						((ulng) (X) >> 32)))
+#define mix_lng(X)	(((ulng) (X) >> 7) ^	\
+			 ((ulng) (X) >> 13) ^	\
+			 ((ulng) (X) >> 21) ^	\
+			 ((ulng) (X) >> 31) ^	\
+			 ((ulng) (X) >> 38) ^	\
+			 ((ulng) (X) >> 46) ^	\
+			 ((ulng) (X) >> 56) ^	\
+			 (ulng) (X))
 #ifdef HAVE_HGE
-#define mix_hge(X)	mix_lng((ulng) ((uhge) (X) ^ ((uhge) (X) >> 64)))
+#define mix_hge(X)	(((uhge) (X) >> 7) ^	\
+			 ((uhge) (X) >> 13) ^	\
+			 ((uhge) (X) >> 21) ^	\
+			 ((uhge) (X) >> 31) ^	\
+			 ((uhge) (X) >> 38) ^	\
+			 ((uhge) (X) >> 46) ^	\
+			 ((uhge) (X) >> 56) ^	\
+			 ((uhge) (X) >> 65) ^	\
+			 ((uhge) (X) >> 70) ^	\
+			 ((uhge) (X) >> 78) ^	\
+			 ((uhge) (X) >> 85) ^	\
+			 ((uhge) (X) >> 90) ^	\
+			 ((uhge) (X) >> 98) ^	\
+			 ((uhge) (X) >> 107) ^	\
+			 ((uhge) (X) >> 116) ^	\
+			 (uhge) (X))
 #endif
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)
@@ -164,7 +185,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
+		if (BAThash((y).b) == GDK_SUCCEED) {			\
 			HASHloop_str((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -176,7 +197,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {							\
 		BUN _i;						\
 		(x) = BUN_NONE;					\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {		\
+		if (BAThash((y).b) == GDK_SUCCEED) {		\
 			HASHloop((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;			\
 				break;				\
@@ -188,7 +209,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
+		if (BAThash((y).b) == GDK_SUCCEED) {			\
 			HASHloop_##TYPE((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -211,18 +232,19 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
  * a pointer to the value to be stored.
  *
  * HASHins receives a BAT* param and is adaptive, killing wrongly
- * configured hash tables.
- * Use HASHins_any or HASHins_<tpe> instead if you know what you're
- * doing or want to keep the hash. */
+ * configured hash tables.  Also, persistent hashes cannot be
+ * maintained, so must be destroyed before this macro is called. */
 #define HASHins(b,i,v)							\
 	do {								\
 		if ((b)->thash) {					\
+			assert((b)->thash != (Hash *) 1);		\
+			assert((((size_t *) (b)->thash->heap.base)[0] & (1 << 24)) == 0); \
 			if (((i) & 1023) == 1023 && HASHgonebad((b), (v))) { \
 				HASHdestroy(b);				\
 			} else {					\
 				BUN _c = HASHprobe((b)->thash, (v));	\
 				HASHputall((b)->thash, (i), _c);	\
-				(b)->thash->heap->dirty = TRUE;		\
+				(b)->thash->heap.dirty = TRUE;		\
 			}						\
 		}							\
 	} while (0)

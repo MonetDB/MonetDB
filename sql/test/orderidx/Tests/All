@@ -2,3 +2,5 @@ simpletable
 smalltable
 oidx_all_types
 HAVE_HGE?oidx_hge_type
+imprints_all_types
+HAVE_HGE?imprints_hge_type

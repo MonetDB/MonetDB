@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* author M.Kersten
@@ -41,6 +41,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng usec = GDKusec();
 	OLTPlocks wlocks, rlocks;
 	char buf[256];
+	str msg = MAL_SUCCEED;
 
 	(void) pci;
 	(void) cntxt;
@@ -100,8 +101,10 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// Now optimize the code
-	if ( newMalBlkStmt(mb,mb->ssize + 6) < 0)
+	if ( newMalBlkStmt(mb,mb->ssize + 6) < 0) {
+		freeInstruction(lcks);
 		return 0;
+	}
 	pushInstruction(mb,old[0]);
 	pushInstruction(mb,lcks);
 	for (i = 1; i < limit; i++) {
@@ -113,6 +116,13 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q= newCatchStmt(mb,"SQLexception");
 			q= newExitStmt(mb,"SQLexception");
 			q= copyInstruction(lcks);
+			if( q == NULL){
+				for(; i<slimit; i++)
+					if( old[i])
+						freeInstruction(old[i]);
+				GDKfree(old);
+				throw(MAL,"optimizer.oltp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			setFunctionId(q, releaseRef);
 			pushInstruction(mb,q);
 		}
@@ -124,14 +134,14 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions, usec);
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	return msg;
 }

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os, sys, zipfile
 try:
     from MonetDBtesting import process
@@ -19,9 +21,9 @@ def mkpardir(path):
         i = path.find('/')
 
 z = zipfile.ZipFile(archive)
-print 'Archive:  %s' % archive
+print('Archive:  %s' % archive)
 for name in z.namelist():
-    print '  inflating: %s' % name
+    print('  inflating: %s' % name)
     mkpardir(name)
     data = z.read(name)
     f = open(name, 'wb')

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -59,9 +59,9 @@ SQLGetCursorName(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetCursorName " PTRFMT " " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, PTRFMTCAST CursorName,
-		(int) BufferLength, PTRFMTCAST NameLengthPtr);
+	ODBCLOG("SQLGetCursorName %p %p %d %p\n",
+		StatementHandle, CursorName,
+		(int) BufferLength, NameLengthPtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -96,9 +96,9 @@ SQLGetCursorNameW(SQLHSTMT StatementHandle,
 	SQLCHAR *cursor;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetCursorNameW " PTRFMT " " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, PTRFMTCAST CursorName,
-		(int) BufferLength, PTRFMTCAST NameLengthPtr);
+	ODBCLOG("SQLGetCursorNameW %p %p %d %p\n",
+		StatementHandle, CursorName,
+		(int) BufferLength, NameLengthPtr);
 #endif
 
 	if (!isValidStmt(stmt))

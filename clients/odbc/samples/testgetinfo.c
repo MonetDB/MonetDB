@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifdef _MSC_VER
@@ -42,7 +42,6 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 		fprintf(stderr, "%s: %s, unexpected error from SQLGetDiagRec\n", func, pref);
 		break;
 	case SQL_NO_DATA:
-		fprintf(stderr, "%s: %s, no error message from driver\n", func, pref);
 		break;
 	default:
 		fprintf(stderr, "%s: %s, weird return value from SQLGetDiagRec\n", func, pref);
@@ -61,7 +60,7 @@ check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 		break;
 	case SQL_ERROR:
 		prerr(tpe, hnd, func, "Error");
-		exit(1);
+		break;
 	case SQL_INVALID_HANDLE:
 		fprintf(stderr, "%s: Error: invalid handle\n", func);
 		exit(1);
@@ -726,6 +725,14 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
 	printf("SQL_XOPEN_CLI_YEAR: %.*s\n", resultlen, str);
 
-	return 0;
+	ret = SQLDisconnect(dbc);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLDisconnect");
 
+	ret = SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLFreeHandle (DBC)");
+
+	ret = SQLFreeHandle(SQL_HANDLE_ENV, env);
+	check(ret, SQL_HANDLE_ENV, env, "SQLFreeHandle (ENV)");
+
+	return 0;
 }

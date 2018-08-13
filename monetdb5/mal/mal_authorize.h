@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _MAL_AUTHORIZE_H
@@ -27,6 +27,9 @@ mal_export str AUTHgetPasswordHash(str *ret, Client c, const char *username);
 
 mal_export str AUTHinitTables(const char *passwd);
 
+mal_export str AUTHaddRemoteTableCredentials(const char *local_table, const char *localuser, const char *uri, const char *remoteuser, const char *pass, bool pw_encrypted);
+mal_export str AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, str *password);
+mal_export str AUTHdeleteRemoteTableCredentials(const char *local_table);
 
 /*
  * Authorisation is based on a password.  The passwords are stored hashed

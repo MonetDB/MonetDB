@@ -102,8 +102,8 @@ Ready.
 [ 3,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"Herman Melville\",\n        \"title\": \"Moby Dick\",\n        \"isbn\": \"0-553-21311-3\",\n        \"price\": 8.99\n      }}"	]
 [ 3,	" { \n    \"book\": \n      { \"category\": \"fiction\",\n        \"author\": \"J. R. R. Tolkien\",\n        \"title\": \"The Lord of the Rings\",\n        \"isbn\": \"0-395-19395-8\",\n        \"price\": 22.99\n      }}"	]
 #SELECT json.filter(j,'book.author') FROM books;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 20 # length
 [ "[\"Nigel Rees\"]"	]
@@ -111,8 +111,8 @@ Ready.
 [ "[\"Herman Melville\"]"	]
 [ "[\"J. R. R. Tolkien\"]"	]
 #SELECT json.text(json.filter(j,'book.author')) FROM books;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 16 # length
 [ "Nigel Rees"	]

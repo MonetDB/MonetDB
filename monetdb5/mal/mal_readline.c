@@ -3,20 +3,16 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #ifndef HAVE_EMBEDDED
 #include "mal.h"
-#undef PATHLENGTH
 #include "mal_client.h"
 #include "mal_scenario.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
-#ifdef HAVE_STRINGS_H
-#include <strings.h>		/* for strncasecmp */
-#endif
 
 #ifndef S_ISCHR
 #define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)
@@ -69,7 +65,7 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 			/* test for special commands */
 			while (length > 0 &&
 			       (*line & ~0x7F) == 0 &&
-			       isspace((int) *line)) {
+			       isspace((unsigned char) *line)) {
 				line++;
 				length--;
 			}
@@ -118,13 +114,15 @@ readConsole(Client cntxt)
 	if( buf) {
 		size_t len= strlen(buf);
 		if( len >= cntxt->fdin->size) {
-			/* extremly dirty inplace buffer overwriting */
-			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
-			if( cntxt->fdin->buf == NULL) {
+			char *nbuf;
+			/* extremely dirty inplace buffer overwriting */
+			nbuf= realloc(cntxt->fdin->buf, len+1);
+			if( nbuf == NULL) {
 				GDKerror("readConsole: " MAL_MALLOC_FAIL);
 				free(buf);
 				goto bailout;
 			}
+			cntxt->fdin->buf = nbuf;
 			cntxt->fdin->size = len;
 		}
 		strcpy(cntxt->fdin->buf, buf);

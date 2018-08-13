@@ -1,0 +1,62 @@
+stdout of test 'corr_coersion.Bug-6287` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 11:20:25 >  
+# 11:20:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36186" "--set" "mapi_usock=/var/tmp/mtest-7703/.s.monetdb.36186" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 11:20:25 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36186/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7703/.s.monetdb.36186
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:20:26 >  
+# 11:20:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7703" "--port=36186"
+# 11:20:26 >  
+
+#CREATE TABLE x ( a DOUBLE , b DOUBLE );
+#INSERT INTO x VALUES (1.0,2.0);
+[ 1	]
+#INSERT INTO x VALUES (2.0,3.0);
+[ 1	]
+#SELECT * FROM x;
+% sys.x,	sys.x # table_name
+% a,	b # name
+% double,	double # type
+% 24,	24 # length
+[ 1,	2	]
+[ 2,	3	]
+#SELECT CORR( a , b ) FROM x;
+% sys.L4 # table_name
+% L3 # name
+% double # type
+% 24 # length
+[ 0.5	]
+#SELECT CORR( a , CAST( b AS INTEGER ) ) FROM x;
+% sys.L5 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0.5	]
+#SELECT CORR( CAST( a AS INTEGER ) , b ) FROM x;
+% sys.L5 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0.5	]
+#drop table x;
+
+# 11:20:26 >  
+# 11:20:26 >  "Done."
+# 11:20:26 >  
+

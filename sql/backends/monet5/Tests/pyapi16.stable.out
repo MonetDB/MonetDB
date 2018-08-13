@@ -47,7 +47,7 @@ Ready.
 #	return True
 #};
 #SELECT * FROM pyapi16( (SELECT * FROM vals) );
-% . # table_name
+% .L3 # table_name
 % d # name
 % boolean # type
 % 5 # length

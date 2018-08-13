@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /**
@@ -26,11 +26,8 @@
 #include "properties.h"
 #include "glob.h"
 #include "control.h"
-#include <msabaoth.h>
-#include <mutils.h>
-#include <stdlib.h> /* exit, getenv, qsort */
-#include <stdarg.h>	/* variadic stuff */
-#include <stdio.h> /* fprintf, rename */
+#include "msabaoth.h"
+#include "mutils.h"
 #include <string.h> /* strerror */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
@@ -42,7 +39,7 @@
 #include <sys/un.h> /* sockaddr_un */
 #endif
 #ifdef HAVE_STROPTS_H
-#include <stropts.h> /* ioctl */
+#include <stropts.h>		/* ioctl on Solaris */
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
@@ -50,7 +47,6 @@
 #ifdef HAVE_TERMIOS_H
 #include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
 #endif
-#include <errno.h>
 
 static char *mero_host = NULL;
 static int mero_port = -1;
@@ -66,6 +62,7 @@ command_help(int argc, char *argv[])
 		printf("  where command is one of:\n");
 		printf("    create, destroy, lock, release\n");
 		printf("    status, start, stop, kill\n");
+		printf("    profilerstart, profilerstop\n");
 		printf("    set, get, inherit\n");
 		printf("    discover, help, version\n");
 		printf("  options can be:\n");
@@ -101,6 +98,14 @@ command_help(int argc, char *argv[])
 		printf("  Brings back a database from maintenance mode.  A released\n");
 		printf("  database is available again for normal use.  Use the\n");
 		printf("  \"lock\" command to take a database under maintenance.\n");
+	} else if (strcmp(argv[1], "profilerstart") == 0) {
+		printf("Usage: monetdb profilerstart database [database ...]\n");
+		printf("  Starts the collection of profiling events. The property\n");
+		printf("  \""PROFILERLOGPROPERTY"\" should be set. Use the \"profilerstop\"\n");
+		printf("  command to stop the profiler.\n");
+	} else if (strcmp(argv[1], "profilerstop") == 0) {
+		printf("Usage: monetdb profilerstop database [database ...]\n");
+		printf("  Stops the collection of profiling events.\n");
 	} else if (strcmp(argv[1], "status") == 0) {
 		printf("Usage: monetdb status [-lc] [expression ...]\n");
 		printf("  Shows the state of a given glob-style database match, or\n");
@@ -1317,14 +1322,16 @@ command_get(int argc, char *argv[])
 		fprintf(stderr, "get: %s\n", e);
 		free(e);
 		exit(2);
-	} else if ( buf && strncmp(buf, "OK\n", 3) != 0) {
+	} else if (buf == NULL) {
+		fprintf(stderr, "get: malloc failed\n");
+		exit(2);
+	} else if (strncmp(buf, "OK\n", 3) != 0) {
 		fprintf(stderr, "get: %s\n", buf);
 		free(buf);
 		exit(1);
 	}
 	readPropsBuf(defprops, buf + 3);
-	if( buf)
-		free(buf);
+	free(buf);
 
 	if (twidth > 0) {
 		/* name = 15 */
@@ -1342,6 +1349,9 @@ command_get(int argc, char *argv[])
 		if (e != NULL) {
 			fprintf(stderr, "get: %s\n", e);
 			free(e);
+			exit(2);
+		} else if (buf == NULL) {
+			fprintf(stderr, "get: malloc failed\n");
 			exit(2);
 		} else if (strncmp(buf, "OK\n", 3) != 0) {
 			fprintf(stderr, "get: %s\n", buf);
@@ -1624,6 +1634,18 @@ command_release(int argc, char *argv[])
 	simple_command(argc, argv, "release", "taken database out of maintenance mode", 1);
 }
 
+static void
+command_profilerstart(int argc, char *argv[])
+{
+	simple_command(argc, argv, "profilerstart", "started profiler", 1);
+}
+
+static void
+command_profilerstop(int argc, char *argv[])
+{
+	simple_command(argc, argv, "profilerstop", "stopped profiler", 1);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1802,6 +1824,10 @@ main(int argc, char *argv[])
 		command_lock(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "release") == 0) {
 		command_release(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "profilerstart") == 0) {
+		command_profilerstart(argc - i, &argv[i]);
+	} else if (strcmp(argv[i], "profilerstop") == 0) {
+		command_profilerstop(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "status") == 0) {
 		command_status(argc - i, &argv[i]);
 	} else if (strcmp(argv[i], "start") == 0) {

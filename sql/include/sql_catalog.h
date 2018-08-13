@@ -3,15 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
 #define SQL_CATALOG_H
 
-#include <sql_mem.h>
-#include <sql_list.h>
-#include <stream.h>
+#include "sql_mem.h"
+#include "sql_list.h"
+#include "stream.h"
 
 #define tr_none		0
 #define tr_readonly	1
@@ -35,6 +35,7 @@
 #define PRIV_DELETE 8
 #define PRIV_EXECUTE 16
 #define PRIV_GRANT 32
+#define PRIV_TRUNCATE 64
 /* global privs */
 #define PRIV_COPYFROMFILE 1
 #define PRIV_COPYINTOFILE 2
@@ -58,6 +59,8 @@
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
+#define DEPENDENCY_CHECK_ERROR 3
+#define DEPENDENCY_CHECK_OK 0
 
 #define NO_TRIGGER 0
 #define IS_TRIGGER 1
@@ -103,6 +106,12 @@
 #define EXCLUDE_GROUP 2		/* exclude group */
 #define EXCLUDE_TIES 3		/* exclude group but not the current row */
 
+#define PARTITION_NONE  0
+#define PARTITION_RANGE 1
+#define PARTITION_LIST  2
+
+#define STORAGE_MAX_VALUE_LENGTH 2048
+
 #define cur_user 1
 #define cur_role 2
 
@@ -122,7 +131,11 @@ typedef enum temp_t {
 	SQL_MERGE_TABLE = 4,
 	SQL_STREAM = 5,
 	SQL_REMOTE = 6,
-	SQL_REPLICA_TABLE = 7
+	SQL_REPLICA_TABLE = 7,
+	SQL_MERGE_LIST_PARTITION_COL = 8,
+	SQL_MERGE_RANGE_PARTITION_COL = 9,
+	SQL_MERGE_LIST_PARTITION_EXP = 10,
+	SQL_MERGE_RANGE_PARTITION_EXP = 11
 } temp_t;
 
 typedef enum comp_type {
@@ -153,7 +166,7 @@ typedef enum comp_type {
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
-#define is_complex_exp(e) ((e) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e&CMPMASK) == cmp_filter)
+#define is_complex_exp(e) ((e&CMPMASK) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e&CMPMASK) == cmp_filter)
 
 typedef enum commit_action_t { 
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -190,8 +203,10 @@ typedef struct changeset {
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
+extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
+extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, int id);
@@ -298,15 +313,16 @@ typedef struct sql_arg {
 #define FUNC_LANG_MAL 1 /* create sql external mod.func */
 #define FUNC_LANG_SQL 2 /* create ... sql function/procedure */
 #define FUNC_LANG_R   3 /* create .. language R */
-#define FUNC_LANG_C   4
+#define FUNC_LANG_C   4 /* create .. language C */
 #define FUNC_LANG_J   5
 // this should probably be done in a better way
 #define FUNC_LANG_PY  6 /* create .. language PYTHON */
 #define FUNC_LANG_MAP_PY  7 /* create .. language PYTHON_MAP */
-#define FUNC_LANG_PY2  8 /* create .. language PYTHON */
-#define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON_MAP */
+#define FUNC_LANG_PY2  8 /* create .. language PYTHON2 */
+#define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON2_MAP */
 #define FUNC_LANG_PY3  10 /* create .. language PYTHON3 */
 #define FUNC_LANG_MAP_PY3  11 /* create .. language PYTHON3_MAP */
+#define FUNC_LANG_CPP   12 /* create .. language CPP */
 
 #define LANG_EXT(l)  (l>FUNC_LANG_SQL)
 
@@ -328,6 +344,7 @@ typedef struct sql_func {
 	bit side_effect;
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */
+	bit system;	/* system function */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing
@@ -348,6 +365,7 @@ typedef struct sql_func {
 typedef struct sql_subfunc {
 	sql_func *func;
 	list *res;
+	list *coltypes; /* we need this for copy into from loader */
 	list *colnames; /* we need this for copy into from loader */
 	char *sname, *tname; /* we need this for create table from loader */
 } sql_subfunc;
@@ -420,7 +438,7 @@ typedef struct sql_trigger {
 	sql_base base;
 	sht time;		/* before or after */
 	sht orientation; 	/* row or statement */
-	sht event;		/* insert, delete, update */
+	sht event;		/* insert, delete, update, truncate */
 	/* int action_order;	 TODO, order within the set of triggers */
 	struct list *columns;	/* update trigger on list of (sql_kc) columns */
 
@@ -476,12 +494,28 @@ typedef enum table_types {
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
-	tt_replica_table = 6	/* multiple replica of the same table */
+	tt_replica_table = 6,	/* multiple replica of the same table */
+	/* the gap is needed because of system tables and views */
+	tt_list_partition_col = 12, /* partitioned by a list of values on a column */
+	tt_range_partition_col = 13, /* partitioned by a range of values on a column */
+	tt_list_partition_exp = 14, /* partitioned by a list of values on an expression */
+	tt_range_partition_exp = 15 /* partitioned by a range of values on an expression */
 } table_types;
+
+#define TABLE_TYPE_DESCRIPTION(tt)                                                                     \
+(tt == tt_table)?"TABLE":(tt == tt_view)?"VIEW":(tt == tt_merge_table)?"MERGE TABLE":                  \
+(tt == tt_stream)?"STREAM TABLE":(tt == tt_remote)?"REMOTE TABLE":                                     \
+(tt == tt_list_partition_col || tt == tt_list_partition_exp)?"LIST PARTITION TABLE":                   \
+(tt == tt_range_partition_col || tt == tt_range_partition_exp)?"RANGE PARTITION TABLE":"REPLICA TABLE"
 
 #define isTable(x) 	  (x->type==tt_table)
 #define isView(x)  	  (x->type==tt_view)
-#define isMergeTable(x)   (x->type==tt_merge_table)
+#define isNonPartitionedTable(x) (x->type==tt_merge_table)
+#define isRangePartitionTable(x) (x->type==tt_range_partition_col || x->type==tt_range_partition_exp)
+#define isListPartitionTable(x)  (x->type==tt_list_partition_col || x->type==tt_list_partition_exp)
+#define isPartitionedByColumnTable(x)     (x->type==tt_range_partition_col || x->type==tt_list_partition_col)
+#define isPartitionedByExpressionTable(x) (x->type==tt_list_partition_exp || x->type==tt_range_partition_exp)
+#define isMergeTable(x)   (x->type==tt_merge_table || isListPartitionTable(x) || isRangePartitionTable(x))
 #define isStream(x)  	  (x->type==tt_stream)
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
@@ -491,6 +525,34 @@ typedef enum table_types {
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
 #define TABLE_APPENDONLY	2
+
+typedef struct sql_part_value {
+	sql_subtype tpe;
+	ptr value;
+	size_t length;
+} sql_part_value;
+
+typedef struct sql_part {
+	sql_base base;
+	struct sql_table *t; /* cached value of the merge table */
+	sql_subtype tpe;     /* the column/expression type */
+	int with_nills;
+	union {
+		list *values;         /* partition by values/list */
+		struct sql_range {    /* partition by range */
+			ptr minvalue;
+			ptr maxvalue;
+			size_t minlength;
+			size_t maxlength;
+		} range;
+	} part;
+} sql_part;
+
+typedef struct sql_expression {
+	sql_subtype type; /* the returning sql_subtype of the expression */
+	char *exp;        /* the expression itself */
+	list *cols;       /* list of colnr of the columns of the table used in the expression */
+} sql_expression;
 
 typedef struct sql_table {
 	sql_base base;
@@ -507,14 +569,19 @@ typedef struct sql_table {
 	changeset idxs;
 	changeset keys;
 	changeset triggers;
-	changeset tables;
+	changeset members;
 	int drop_action;	/* only needed for alter drop table */
 
 	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
-	struct sql_table *p;	/* The table is part of this merge table */
 	struct sql_table *po;	/* the outer transactions table */
+
+	struct sql_table *p;	 /* The table is part of this merge table */
+	union {
+		struct sql_column *pcol; /* If it is partitioned on a column */
+		struct sql_expression *pexp; /* If it is partitioned by an expression */
+	} part;
 } sql_table;
 
 typedef struct res_col {
@@ -574,6 +641,8 @@ extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
+extern sql_part *find_sql_part(sql_table *t, const char *tname);
+
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);
 extern node *find_sql_table_node(sql_schema *s, int id);
@@ -594,9 +663,14 @@ extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
 
+extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
+extern void *sql_range_part_validate_and_insert(void *v1, void *v2);
+extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
+
 typedef struct {
 	BAT *b;
 	char* name;
+	void* def;
 } sql_emit_col;
 
 #endif /* SQL_CATALOG_H */

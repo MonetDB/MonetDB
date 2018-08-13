@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -12,13 +12,13 @@
 #include "store_dependency.h"
 #include "store_sequence.h"
 
-#include <bat/bat_utils.h>
-#include <bat/bat_storage.h>
-#include <bat/bat_table.h>
-#include <bat/bat_logger.h>
+#include "bat/bat_utils.h"
+#include "bat/bat_storage.h"
+#include "bat/bat_table.h"
+#include "bat/bat_logger.h"
 
-/* version 05.21.00 of catalog */
-#define CATALOG_VERSION 52201
+/* version 05.22.03 of catalog */
+#define CATALOG_VERSION 52203
 int catalog_version = 0;
 
 static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
@@ -26,9 +26,14 @@ static int store_oid = 0;
 static int prev_oid = 0;
 static int nr_sessions = 0;
 static int transactions = 0;
+static int *store_oids = NULL;
+static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
-int store_nr_active = 0;
+volatile ATOMIC_TYPE store_nr_active = 0;
+#ifdef ATOMIC_LOCK
+MT_Lock store_nr_active_lock MT_LOCK_INITIALIZER("store_nr_active_lock");
+#endif
 store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
@@ -54,6 +59,9 @@ static int logger_debug = 0;
 static sql_trans *spare_trans[MAX_SPARES];
 static int spares = 0;
 
+/* builtin functions have ids less than this */
+#define FUNC_OIDS 2000
+
 static int
 key_cmp(sql_key *k, sqlid *id)
 {
@@ -66,6 +74,26 @@ static int stamp = 1;
 
 static int timestamp (void) {
 	return stamp++;
+}
+
+static inline bool
+instore(int id, int maxid)
+{
+	if (store_oids == NULL)
+		return id < maxid;
+	int lo = 0, hi = nstore_oids - 1;
+	if (id < store_oids[0] || id > store_oids[hi])
+		return false;
+	while (hi > lo) {
+		int mid = (lo + hi) / 2;
+		if (store_oids[mid] == id)
+			return true;
+		if (store_oids[mid] < id)
+			lo = mid + 1;
+		else
+			hi = mid - 1;
+	}
+	return store_oids[lo] == id;
 }
 
 void
@@ -150,7 +178,7 @@ table_destroy(sql_table *t)
 	cs_destroy(&t->idxs);
 	cs_destroy(&t->triggers);
 	cs_destroy(&t->columns);
-	cs_destroy(&t->tables);
+	cs_destroy(&t->members);
 	if (isTable(t))
 		store_funcs.destroy_del(NULL, t);
 }
@@ -199,7 +227,6 @@ sql_trans_destroy(sql_trans *t)
 {
 	sql_trans *res = t->parent;
 
-	transactions--;
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#destroy trans (%p)\n", t);
 #endif
@@ -219,6 +246,7 @@ sql_trans_destroy(sql_trans *t)
 	cs_destroy(&t->schemas);
 	sa_destroy(t->sa);
 	_DELETE(t);
+	transactions--;
 	return res;
 }
 
@@ -322,7 +350,7 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 	kc_nr = find_sql_column(objects, "nr");
 	rs = table_funcs.rids_select(tr, kc_id, &nk->base.id, &nk->base.id, NULL);
 	rs = table_funcs.rids_orderby(tr, rs, kc_nr); 
-	for(r = table_funcs.rids_next(rs); r != oid_nil; r = table_funcs.rids_next(rs)) 
+	for(r = table_funcs.rids_next(rs); !is_oid_nil(r); r = table_funcs.rids_next(rs)) 
 		load_keycolumn(tr, nk, r);
 	table_funcs.rids_destroy(rs);
 
@@ -353,7 +381,7 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 
 		rs = table_funcs.rids_select(tr, key_rkey, &nk->base.id, &nk->base.id, NULL);
 
-		for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 			sqlid fkey;
 			sql_fkey *fk;
 
@@ -426,7 +454,7 @@ load_idx(sql_trans *tr, sql_table *t, oid rid)
 	kc_nr = find_sql_column(objects, "nr");
 	rs = table_funcs.rids_select(tr, kc_id, &ni->base.id, &ni->base.id, NULL);
 	rs = table_funcs.rids_orderby(tr, rs, kc_nr); 
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
 		load_idxcolumn(tr, ni, rid);
 	table_funcs.rids_destroy(rs);
 	return ni;
@@ -482,7 +510,10 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0)
 		nt->condition = sa_strdup(tr->sa, v);
 	_DELETE(v);	
-	nt->statement = table_funcs.column_find_value(tr, find_sql_column(triggers, "statement"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "statement"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) 
+		nt->statement = sa_strdup(tr->sa, v);
+	_DELETE(v);
 
 	nt->t = t;
 	nt->columns = list_new(tr->sa, (fdestroy) NULL);
@@ -491,7 +522,7 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	kc_nr = find_sql_column(objects, "nr");
 	rs = table_funcs.rids_select(tr, kc_id, &nt->base.id, &nt->base.id, NULL);
 	rs = table_funcs.rids_orderby(tr, rs, kc_nr); 
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
 		load_triggercolumn(tr, nt, rid);
 	table_funcs.rids_destroy(rs);
 	return nt;
@@ -516,10 +547,6 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	tpe = table_funcs.column_find_value(tr, find_sql_column(columns, "type"), rid);
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "type_digits"), rid);
 	sz = *(int *)v;				_DELETE(v);
-	if (strcmp(tpe, "wrd") == 0) {
-		_DELETE(tpe);
-		tpe = sz == 64 ? _STRDUP("bigint") : _STRDUP("int");
-	}
 	v = table_funcs.column_find_value(tr, find_sql_column(columns, "type_scale"), rid);
 	d = *(int *)v;				_DELETE(v);
 	if (!sql_find_subtype(&c->type, tpe, sz, d)) {
@@ -554,42 +581,134 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	return c;
 }
 
-static void
-load_table_parts(sql_trans *tr, sql_table *t, oid rid)
+static int
+load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 {
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *objects = find_sql_table(syss, "objects");
-	void *v = table_funcs.column_find_value(tr, find_sql_column(objects, "name"), rid);
-	sql_table *tp = find_sql_table(t->s, v); 	_DELETE(v);
+	sql_table *ranges = find_sql_table(syss, "range_partitions");
+	oid rid;
+	rids *rs;
+	sql_subtype *empty = sql_bind_localtype("void");
 
-	assert(tp);
-	cs_add(&t->tables, tp, TR_OLD);
-	tp->p = t;
-}
+	pt->tpe = *empty;
+	rs = table_funcs.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->base.id, &pt->base.id, NULL);
+	if((rid = table_funcs.rids_next(rs)) != oid_nil) {
+		void *v1, *v2, *v3;
+		ValRecord vmin, vmax;
+		ptr ok;
 
-static void
-load_tables_of_tables(sql_trans *tr, sql_schema *s)
-{
-	node *n;
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *objects = find_sql_table(syss, "objects");
-	sql_column *mt_id = find_sql_column(objects, "id");
-	sql_column *mt_nr = find_sql_column(objects, "nr");
+		memset(&vmin, 0, sizeof(ValRecord));
+		memset(&vmax, 0, sizeof(ValRecord));
 
-	if (s->tables.set)
-	for (n=s->tables.set->h; n; n = n->next) {
-		sql_table *t = n->data;
-		oid r = oid_nil;
+		v1 = table_funcs.column_find_value(tr, find_sql_column(ranges, "minimum"), rid);
+		v2 = table_funcs.column_find_value(tr, find_sql_column(ranges, "maximum"), rid);
+		ok = VALinit(&vmin, TYPE_str, v1);
+		if(ok)
+			ok = VALinit(&vmax, TYPE_str, v2);
+		_DELETE(v1);
+		_DELETE(v2);
+		if(ok) {
+			v3 = table_funcs.column_find_value(tr, find_sql_column(ranges, "with_nulls"), rid);
+			pt->with_nills = (int)*((bit*)v3);
+			_DELETE(v3);
 
-		if (isMergeTable(t) || isReplicaTable(t)) {
-			rids *rs = table_funcs.rids_select(tr, mt_id, &t->base.id, &t->base.id, NULL);
-
-			rs = table_funcs.rids_orderby(tr, rs, mt_nr); 
-			for(r = table_funcs.rids_next(rs); r != oid_nil; r = table_funcs.rids_next(rs)) 
-				load_table_parts(tr, t, r);
+			pt->part.range.minvalue = sa_alloc(tr->sa, vmin.len);
+			pt->part.range.maxvalue = sa_alloc(tr->sa, vmax.len);
+			memcpy(pt->part.range.minvalue, VALget(&vmin), vmin.len);
+			memcpy(pt->part.range.maxvalue, VALget(&vmax), vmax.len);
+			pt->part.range.minlength = vmin.len;
+			pt->part.range.maxlength = vmax.len;
+		}
+		VALclear(&vmin);
+		VALclear(&vmax);
+		if(!ok) {
 			table_funcs.rids_destroy(rs);
+			return -1;
 		}
 	}
+	table_funcs.rids_destroy(rs);
+	return 0;
+}
+
+static int
+load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
+{
+	sql_table *values = find_sql_table(syss, "value_partitions");
+	list *vals = NULL;
+	oid rid;
+	rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
+	int i = 0;
+	sql_subtype *empty = sql_bind_localtype("void");
+
+	vals = list_new(tr->sa, (fdestroy) NULL);
+	if(!vals) {
+		table_funcs.rids_destroy(rs);
+		return -1;
+	}
+
+	pt->tpe = *empty;
+
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+		sql_part_value* nextv;
+		ValRecord vvalue;
+		ptr ok;
+
+		memset(&vvalue, 0, sizeof(ValRecord));
+		void *v = table_funcs.column_find_value(tr, find_sql_column(values, "value"), rid);
+		ok = VALinit(&vvalue, TYPE_str, v);
+		_DELETE(v);
+
+		if(ok) {
+			if(VALisnil(&vvalue)) { /* check for null value */
+				pt->with_nills = 1;
+			} else {
+				nextv = SA_ZNEW(tr->sa, sql_part_value);
+				nextv->tpe = *empty;
+				nextv->value = sa_alloc(tr->sa, vvalue.len);
+				memcpy(nextv->value, VALget(&vvalue), vvalue.len);
+				nextv->length = vvalue.len;
+				if(list_append_sorted(vals, nextv, sql_values_list_element_validate_and_insert) != NULL) {
+					VALclear(&vvalue);
+					table_funcs.rids_destroy(rs);
+					list_destroy(vals);
+					return -i - 1;
+				}
+			}
+		}
+		VALclear(&vvalue);
+		if(!ok) {
+			table_funcs.rids_destroy(rs);
+			list_destroy(vals);
+			return -i - 1;
+		}
+		i++;
+	}
+	table_funcs.rids_destroy(rs);
+	pt->part.values = vals;
+	return 0;
+}
+
+static sql_part*
+load_part(sql_trans *tr, sql_table *t, oid rid)
+{
+	void *v;
+	sql_part *pt = SA_ZNEW(tr->sa, sql_part);
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *objects = find_sql_table(syss, "objects");
+	sqlid id;
+
+	pt->t = t;
+	v = table_funcs.column_find_value(tr, find_sql_column(objects, "nr"), rid);
+	id = *(sqlid*)v; _DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(objects, "name"), rid);
+	base_init(tr->sa, &pt->base, id, TR_OLD, v);	_DELETE(v);
+	return pt;
+}
+
+void
+sql_trans_update_tables(sql_trans* tr, sql_schema *s)
+{
+	(void)tr;
+	(void)s;
 }
 
 static sql_table *
@@ -605,6 +724,8 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	char *query;
 	sql_column *idx_table_id, *key_table_id, *trigger_table_id;
 	oid rid;
+	sqlid pcolid = int_nil;
+	void* exp = NULL;
 	rids *rs;
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(tables, "id"), &tid, NULL);
@@ -641,7 +762,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	cs_new(&t->idxs, tr->sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, tr->sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
-	cs_new(&t->tables, tr->sa, (fdestroy) NULL);
+	cs_new(&t->members, tr->sa, (fdestroy) NULL);
 
 	if (isTable(t)) {
 		if (store_funcs.create_del(tr, t) != LOG_OK) {
@@ -654,8 +775,37 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	if (bs_debug)
 		fprintf(stderr, "#\tload table %s\n", t->base.name);
 
-	for(rid = table_funcs.subrids_next(nrs); rid != oid_nil; rid = table_funcs.subrids_next(nrs)) 
-		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
+	if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+		sql_table *partitions = find_sql_table(syss, "table_partitions");
+		sql_column *table_id = find_sql_column(partitions, "table_id");
+		rs = table_funcs.rids_select(tr, table_id, &t->base.id, &t->base.id, NULL);
+		if((rid = table_funcs.rids_next(rs)) != oid_nil) {
+			void* v = table_funcs.column_find_value(tr, find_sql_column(partitions, "column_id"), rid);
+			pcolid = *((sqlid*)v);
+			_DELETE(v);
+			v = table_funcs.column_find_value(tr, find_sql_column(partitions, "expression"), rid);
+			if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0)
+				exp = sa_strdup(tr->sa, v);
+			_DELETE(v);
+		}
+		table_funcs.rids_destroy(rs);
+	}
+
+	assert((!isRangePartitionTable(t) && !isListPartitionTable(t)) || (!exp && !is_int_nil(pcolid)) || (exp && is_int_nil(pcolid)));
+	if(isPartitionedByExpressionTable(t)) {
+		sql_subtype *empty = sql_bind_localtype("void");
+		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
+		t->part.pexp->exp = exp;
+		t->part.pexp->type = *empty;
+		t->part.pexp->cols = sa_list(tr->sa);
+	}
+	for(rid = table_funcs.subrids_next(nrs); !is_oid_nil(rid); rid = table_funcs.subrids_next(nrs)) {
+		sql_column* next = load_column(tr, t, rid);
+		cs_add(&t->columns, next, TR_OLD);
+		if(pcolid == next->base.id) {
+			t->part.pcol = next;
+		}
+	}
 
 	if (!isKindOfTable(t))
 		return t;
@@ -663,7 +813,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	/* load idx's first as the may be needed by the keys */
 	idx_table_id = find_sql_column(idxs, "table_id");
 	rs = table_funcs.rids_select(tr, idx_table_id, &t->base.id, &t->base.id, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 		sql_idx *i = load_idx(tr, t, rid);
 
 		cs_add(&t->idxs, i, TR_OLD);
@@ -673,7 +823,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 
 	key_table_id = find_sql_column(keys, "table_id");
 	rs = table_funcs.rids_select(tr, key_table_id, &t->base.id, &t->base.id, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 		sql_key *k = load_key(tr, t, rid);
 
 		cs_add(&t->keys, k, TR_OLD);
@@ -683,13 +833,32 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 
 	trigger_table_id = find_sql_column(triggers, "table_id");
 	rs = table_funcs.rids_select(tr, trigger_table_id, &t->base.id, &t->base.id,NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 		sql_trigger *k = load_trigger(tr, t, rid);
 
 		cs_add(&t->triggers, k, TR_OLD);
 		list_append(s->triggers, k);
 	}
 	table_funcs.rids_destroy(rs);
+
+	if (isMergeTable(t) || isReplicaTable(t)) {
+		sql_table *objects = find_sql_table(syss, "objects");
+		sql_column *mt_id = find_sql_column(objects, "id");
+		sql_column *mt_nr = find_sql_column(objects, "nr");
+		rids *rs = table_funcs.rids_select(tr, mt_id, &t->base.id, &t->base.id, NULL);
+
+		rs = table_funcs.rids_orderby(tr, rs, mt_nr);
+		for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+			sql_part *pt = load_part(tr, t, rid);
+			if(isRangePartitionTable(t)) {
+				load_range_partition(tr, syss, pt);
+			} else if(isListPartitionTable(t)) {
+				load_value_partition(tr, syss, pt);
+			}
+			cs_add(&t->members, pt, TR_OLD);
+		}
+		table_funcs.rids_destroy(rs);
+	}
 	return t;
 }
 
@@ -782,6 +951,8 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->varres = *(bit *)v;	_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "vararg"), rid);
 	t->vararg = *(bit *)v;	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(funcs, "system"), rid);
+	t->system = *(bit *)v;	_DELETE(v);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
@@ -796,7 +967,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 
 	t->ops = list_new(tr->sa, (fdestroy)NULL);
 	if (rs)
-	for(rid = table_funcs.subrids_next(rs); rid != oid_nil; rid = table_funcs.subrids_next(rs)) {
+	for(rid = table_funcs.subrids_next(rs); !is_oid_nil(rid); rid = table_funcs.subrids_next(rs)) {
 		sql_arg *a = load_arg(tr, t, rid);
 
 		if (a->inout == ARG_OUT) {
@@ -858,6 +1029,60 @@ load_seq(sql_trans *tr, sql_schema * s, oid rid)
 	return seq;
 }
 
+static void
+set_members(changeset *ts)
+{
+	node *n, *m;
+
+	if (ts && ts->set)
+	for (n = ts->set->h; n; n = n->next) {
+		sql_table *t = n->data;
+
+		if (isMergeTable(t) || isReplicaTable(t)) {
+			if (t->members.set)
+			for (m = t->members.set->h; m; m = m->next) {
+				sql_part *p = m->data;
+				sql_table *pt = find_sql_table(t->s, p->base.name);
+
+				pt->p = t;
+			}
+		}
+		if(t->p) {
+			sql_part *pt = find_sql_part(t->p, t->base.name);
+			if(!pt)
+				t->p = NULL;
+		}
+	}
+}
+
+static void 
+sql_trans_update_schema(sql_trans *tr, oid rid)
+{
+	void *v;
+	sql_schema *s = NULL, *syss = find_sql_schema(tr, "sys");
+	sql_table *ss = find_sql_table(syss, "schemas");
+	sqlid sid;
+
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "id"), rid);
+	sid = *(sqlid *)v; 	_DELETE(v);
+	s = find_sql_schema_id(tr, sid);
+
+	if (s==NULL) 
+		return ;
+
+	if (bs_debug)
+		fprintf(stderr, "#update schema %s %d\n", s->base.name, s->base.id);
+
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
+	base_init(tr->sa, &s->base, sid, TR_OLD, v); _DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
+	s->auth_id = *(sqlid *)v; 	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "system"), rid);
+	s->system = *(bit *)v;          _DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
+	s->owner = *(sqlid *)v;		_DELETE(v);
+}
+
 static sql_schema *
 load_schema(sql_trans *tr, sqlid id, oid rid)
 {
@@ -875,7 +1100,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 
 	v = table_funcs.column_find_value(tr, find_sql_column(ss, "id"), rid);
 	sid = *(sqlid *)v; 	_DELETE(v);
-	if (sid < id) {
+	if (instore(sid, id)) {
 		s = find_sql_schema_id(tr, sid);
 
 		if (s==NULL) {
@@ -897,9 +1122,6 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		s->auth_id = *(sqlid *)v; 	_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "system"), rid);
 		s->system = *(bit *)v;          _DELETE(v);
-		v = table_funcs.column_find_value(tr,
-			find_sql_column(tables, "system"), rid);
-		s->system = *(bit *)v;		_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
 		s->owner = *(sqlid *)v;		_DELETE(v);
 		s->keys = list_new(tr->sa, (fdestroy) NULL);
@@ -915,11 +1137,13 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	if (bs_debug)
 		fprintf(stderr, "#load schema %s %d\n", s->base.name, s->base.id);
 
+	sqlid tmpid = store_oids ? FUNC_OIDS : id;
+
 	/* first load simple types */
 	type_schema = find_sql_column(types, "schema_id");
 	type_id = find_sql_column(types, "id");
-	rs = table_funcs.rids_select(tr, type_schema, &s->base.id, &s->base.id, type_id, &id, NULL, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+	rs = table_funcs.rids_select(tr, type_schema, &s->base.id, &s->base.id, type_id, &tmpid, NULL, NULL);
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
 	    	cs_add(&s->types, load_type(tr, s, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
@@ -927,7 +1151,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	table_schema = find_sql_column(tables, "schema_id");
 	table_id = find_sql_column(tables, "id");
 	/* all tables with id >= id */
-	rs = table_funcs.rids_select(tr, table_schema, &sid, &sid, table_id, &id, NULL, NULL);
+	rs = table_funcs.rids_select(tr, table_schema, &sid, &sid, table_id, &tmpid, NULL, NULL);
 	if (rs && !table_funcs.rids_empty(rs)) {
 		sql_table *columns = find_sql_table(syss, "_columns");
 		sql_column *column_table_id = find_sql_column(columns, "table_id");
@@ -935,17 +1159,21 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		subrids *nrs = table_funcs.subrids_create(tr, rs, table_id, column_table_id, column_number);
 		sqlid tid;
 
-		for(tid = table_funcs.subrids_nextid(nrs); tid >= 0; tid = table_funcs.subrids_nextid(nrs)) 
-			cs_add(&s->tables, load_table(tr, s, tid, nrs), TR_OLD);
+		for(tid = table_funcs.subrids_nextid(nrs); tid >= 0; tid = table_funcs.subrids_nextid(nrs)) {
+			if (!instore(tid, id))
+				cs_add(&s->tables, load_table(tr, s, tid, nrs), TR_OLD);
+			else
+				while (!is_oid_nil(table_funcs.subrids_next(nrs)))
+					;
+		}
 		table_funcs.subrids_destroy(nrs);
 	}
 	table_funcs.rids_destroy(rs);
-	load_tables_of_tables(tr, s);
 
 	/* next functions which could use these types */
 	func_schema = find_sql_column(funcs, "schema_id");
 	func_id = find_sql_column(funcs, "id");
-	rs = table_funcs.rids_select(tr, func_schema, &s->base.id, &s->base.id, func_id, &id, NULL, NULL);
+	rs = table_funcs.rids_select(tr, func_schema, &s->base.id, &s->base.id, func_id, &tmpid, NULL, NULL);
 	if (rs && !table_funcs.rids_empty(rs)) {
 		sql_table *args = find_sql_table(syss, "args");
 		sql_column *arg_func_id = find_sql_column(args, "func_id");
@@ -957,7 +1185,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 			cs_add(&s->funcs, load_func(tr, s, fid, nrs), TR_OLD);
 		/* Handle all procedures without arguments (no args) */
 		rs = table_funcs.rids_diff(tr, rs, func_id, nrs, arg_func_id);
-		for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 			void *v = table_funcs.column_find_value(tr, func_id, rid);
 			fid = *(sqlid*)v; _DELETE(v);
 			cs_add(&s->funcs, load_func(tr, s, fid, NULL), TR_OLD);
@@ -969,8 +1197,8 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	/* last sequence numbers */
 	seq_schema = find_sql_column(seqs, "schema_id");
 	seq_id = find_sql_column(seqs, "id");
-	rs = table_funcs.rids_select(tr, seq_schema, &s->base.id, &s->base.id, seq_id, &id, NULL, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+	rs = table_funcs.rids_select(tr, seq_schema, &s->base.id, &s->base.id, seq_id, &tmpid, NULL, NULL);
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
 		cs_add(&s->seqs, load_seq(tr, s, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 	return s;
@@ -980,6 +1208,9 @@ static sql_trans *
 create_trans(sql_allocator *sa, backend_stack stk)
 {
 	sql_trans *t = ZNEW(sql_trans);
+
+	if(!t)
+		return NULL;
 
 	t->sa = sa;
 	t->name = NULL;
@@ -996,8 +1227,8 @@ create_trans(sql_allocator *sa, backend_stack stk)
 	return t;
 }
 
-static void
-load_trans(sql_trans* tr, sqlid id)
+void
+sql_trans_update_schemas(sql_trans* tr)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sysschema = find_sql_table(syss, "schemas");
@@ -1006,12 +1237,37 @@ load_trans(sql_trans* tr, sqlid id)
 	oid rid;
 	
 	if (bs_debug)
+		fprintf(stderr, "#update schemas\n");
+
+	for(rid = table_funcs.rids_next(schemas); !is_oid_nil(rid); rid = table_funcs.rids_next(schemas)) {
+		sql_trans_update_schema(tr, rid);
+	}
+	table_funcs.rids_destroy(schemas);
+}
+
+static void
+load_trans(sql_trans* tr, sqlid id)
+{
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysschema = find_sql_table(syss, "schemas");
+	sql_column *sysschema_ids = find_sql_column(sysschema, "id");
+	rids *schemas = table_funcs.rids_select(tr, sysschema_ids, NULL, NULL);
+	oid rid;
+	node *n;
+	
+	if (bs_debug)
 		fprintf(stderr, "#load trans\n");
 
-	for(rid = table_funcs.rids_next(schemas); rid != oid_nil; rid = table_funcs.rids_next(schemas)) {
+	for(rid = table_funcs.rids_next(schemas); !is_oid_nil(rid); rid = table_funcs.rids_next(schemas)) {
 		sql_schema *ns = load_schema(tr, id, rid);
-		if (ns && ns->base.id > id)
+		if (ns && !instore(ns->base.id, id))
 			cs_add(&tr->schemas, ns, TR_OLD);
+	}
+	/* members maybe from different schemas */
+	for (n = tr->schemas.set->h; n; n = n->next) {
+		sql_schema *s = n->data;
+
+		set_members(&s->tables);
 	}
 	table_funcs.rids_destroy(schemas);
 }
@@ -1094,9 +1350,9 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		char arg_nme[7] = "arg_0";
 
 		if (f->s)
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &f->s->base.id);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &f->s->base.id, &f->system);
 		else
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &zero);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &lang, &f->type, &se, &f->varres, &f->vararg, &zero, &f->system);
 
 		if (f->res) {
 			char res_nme[] = "res_0";
@@ -1147,9 +1403,9 @@ insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		int number = 0;
 
 		if (aggr->s)
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &aggr->s->base.id, &aggr->system);
 		else
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &zero);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &lang, &aggr->type, &F, &aggr->varres, &aggr->vararg, &zero, &aggr->system);
 		
 		res = aggr->res->h->data;
 		id = next_oid();
@@ -1188,7 +1444,14 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	if (bs_debug)
 		fprintf(stderr, "#bootstrap_create_column %s\n", name );
 
-	base_init(tr->sa, &col->base, next_oid(), t->base.flag, name);
+	if (store_oids) {
+		int *idp = logger_funcs.log_find_table_value("sys__columns_id", "sys__columns_name", name, "sys__columns_table_id", &t->base.id, NULL, NULL);
+		base_init(tr->sa, &col->base, *idp, t->base.flag, name);
+		store_oids[nstore_oids++] = *idp;
+		GDKfree(idp);
+	} else {
+		base_init(tr->sa, &col->base, next_oid(), t->base.flag, name);
+	}
 	sql_find_subtype(&col->type, sqltype, digits, 0);
 	col->def = NULL;
 	col->null = 1;
@@ -1225,11 +1488,12 @@ create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, 
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
-	cs_new(&t->tables, sa, (fdestroy) NULL);
+	cs_new(&t->members, sa, (fdestroy) NULL);
 	t->pkey = NULL;
 	t->sz = COLSIZE;
 	t->cleared = 0;
 	t->s = NULL;
+	memset(&t->part, 0, sizeof(t->part));
 	return t;
 }
 
@@ -1262,28 +1526,38 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	return col;
 }
 
-#if 0
-static sql_table *
-dup_sql_ptable(sql_allocator *sa, sql_table *mt, sql_table *t)
+static sql_part *
+dup_sql_part(sql_allocator *sa, sql_table *t, sql_part *opt)
 {
-	node *n;
-	sql_table *nt = create_sql_table_with_id(sa, t->base.id, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
+	sql_part *pt = SA_ZNEW(sa, sql_part);
 
-	nt->base.flag = t->base.flag;
+	base_init(sa, &pt->base, opt->base.id, opt->base.flag, opt->base.name);
+	pt->tpe = opt->tpe;
+	pt->t = t;
+	pt->with_nills = opt->with_nills;
 
-	nt->access = t->access;
-	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
+	if(isRangePartitionTable(t)) {
+		pt->part.range.minvalue = sa_alloc(sa, opt->part.range.minlength);
+		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
+		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
+		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
+		pt->part.range.minlength = opt->part.range.minlength;
+		pt->part.range.maxlength = opt->part.range.maxlength;
+	} else if(isListPartitionTable(t)) {
+		pt->part.values = list_new(sa, (fdestroy) NULL);
+		for(node *n = opt->part.values->h ; n ; n = n->next) {
+			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
+			nextv->tpe = prev->tpe;
+			nextv->value = sa_alloc(sa, prev->length);
+			memcpy(nextv->value, prev->value, prev->length);
+			nextv->length = prev->length;
+			list_append(pt->part.values, nextv);
+		}
+	}
 
-	for (n = t->columns.set->h; n; n = n->next) 
-		dup_sql_column(sa, nt, n->data);
-	nt->columns.dset = NULL;
-	nt->columns.nelm = NULL;
-	cs_add(&mt->tables, nt, TR_NEW);
-	/* we need a valid schema */
-	nt->s = t->s;
-	return nt;
+	cs_add(&t->members, pt, TR_NEW);
+	return pt;
 }
-#endif
 
 sql_table *
 dup_sql_table(sql_allocator *sa, sql_table *t)
@@ -1295,21 +1569,35 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 
 	nt->access = t->access;
 	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
+	nt->p = t->p;
 
-	for (n = t->columns.set->h; n; n = n->next) 
-		dup_sql_column(sa, nt, n->data);
+	if(isPartitionedByExpressionTable(nt)) {
+		nt->part.pexp = SA_ZNEW(sa, sql_expression);
+		nt->part.pexp->exp = sa_strdup(sa, t->part.pexp->exp);
+		nt->part.pexp->type = t->part.pexp->type;
+		nt->part.pexp->cols = sa_list(sa);
+		for(node *n = t->part.pexp->cols->h; n; n = n->next) {
+			int *nid = sa_alloc(sa, sizeof(int));
+			*nid = *(int *) n->data;
+			list_append(nt->part.pexp->cols, nid);
+		}
+	}
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		sql_column *dup = dup_sql_column(sa, nt, c);
+		if(isPartitionedByColumnTable(nt) && c->base.id == t->part.pcol->base.id)
+			nt->part.pcol = dup;
+	}
+
 	nt->columns.dset = NULL;
 	nt->columns.nelm = NULL;
 
-	/*
-	if (t->tables.set)
-		for (n = t->tables.set->h; n; n = n->next) 
-			dup_sql_ptable(sa, nt, n->data);
-			*/
-	nt->tables.dset = NULL;
-	nt->tables.nelm = NULL;
-	/* record if table is a partition */
-	nt->p = t->p;
+	if (t->members.set)
+		for (n = t->members.set->h; n; n = n->next) 
+			dup_sql_part(sa, nt, n->data);
+	nt->members.dset = NULL;
+	nt->members.nelm = NULL;
 	return nt;
 }
 
@@ -1319,7 +1607,15 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	int istmp = isTempSchema(s);
 	int persistence = istmp?SQL_GLOBAL_TEMP:SQL_PERSIST;
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
-	sql_table *t = create_sql_table(tr->sa, name, tt_table, 1, persistence, commit_action);
+	sql_table *t;
+	if (store_oids) {
+		int *idp = logger_funcs.log_find_table_value("sys__tables_id", "sys__tables_name", name, "sys__tables_schema_id", &s->base.id, NULL, NULL);
+		t = create_sql_table_with_id(tr->sa, *idp, name, tt_table, 1, persistence, commit_action);
+		store_oids[nstore_oids++] = *idp;
+		GDKfree(idp);
+	} else {
+		t = create_sql_table(tr->sa, name, tt_table, 1, persistence, commit_action);
+	}
 
 	if (bs_debug)
 		fprintf(stderr, "#bootstrap_create_table %s\n", name );
@@ -1344,7 +1640,18 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 	if (bs_debug)
 		fprintf(stderr, "#bootstrap_create_schema %s %d %d\n", name, auth_id, owner);
 
-	base_init(tr->sa, &s->base, next_oid(), TR_NEW, name);
+	if (store_oids) {
+		int *idp = logger_funcs.log_find_table_value("sys_schemas_id", "sys_schemas_name", name, NULL, NULL);
+		if (idp == NULL && strcmp(name, dt_schema) == 0)
+			base_init(tr->sa, &s->base, (sqlid) FUNC_OIDS - 1, TR_NEW, name);
+		else {
+			base_init(tr->sa, &s->base, (sqlid) *idp, TR_NEW, name);
+			store_oids[nstore_oids++] = *idp;
+			GDKfree(idp);
+		}
+	} else {
+		base_init(tr->sa, &s->base, next_oid(), TR_NEW, name);
+	}
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = TRUE;
@@ -1370,7 +1677,7 @@ store_schema_number(void)
 
 static int
 store_load(void) {
-	int first = 1;
+	bool first;
 
 	sql_allocator *sa;
 	sql_trans *tr;
@@ -1381,33 +1688,43 @@ store_load(void) {
 	sqlid id = 0;
 
 	sa = sa_create();
+	if(!sa)
+		return -1;
+
+	first = logger_funcs.log_isnew();
+
 	types_init(sa, logger_debug);
 
-#define FUNC_OIDS 2000
 	// TODO: Niels: Are we fine running this twice?
-	
+
 	/* we store some spare oids */
 	store_oid = FUNC_OIDS;
 
-	sequences_init();
+	if(!sequences_init())
+		return -1;
 	gtrans = tr = create_trans(sa, backend_stk);
+	if(!gtrans)
+		return -1;
+
+	transactions = 0;
 	active_sessions = sa_list(sa);
 
-	if (logger_funcs.log_isnew()) {
+	if (first) {
 		/* cannot initialize database in readonly mode
 		 * unless this is a slave instance with a read-only/shared logger */
 		if (store_readonly && !create_shared_logger) {
 			return -1;
 		}
 		tr = sql_trans_create(backend_stk, NULL, NULL);
+		if(!tr)
+			return -1;
 	} else {
-		first = 0;
+		store_oids = GDKzalloc(300 * sizeof(int)); /* 150 suffices */
 	}
 
 	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
-	if (!first) {
+	if (!first)
 		s->base.flag = TR_OLD;
-	}
 
 	t = bootstrap_create_table(tr, s, "schemas");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -1441,6 +1758,7 @@ store_load(void) {
 	bootstrap_create_column(tr, t, "varres", "boolean", 1);
 	bootstrap_create_column(tr, t, "vararg", "boolean", 1);
 	bootstrap_create_column(tr, t, "schema_id", "int", 32);
+	bootstrap_create_column(tr, t, "system", "boolean", 1);
 
 	args = t = bootstrap_create_table(tr, s, "args");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -1462,6 +1780,24 @@ store_load(void) {
 	bootstrap_create_column(tr, t, "increment", "bigint", 64);
 	bootstrap_create_column(tr, t, "cacheinc", "bigint", 64);
 	bootstrap_create_column(tr, t, "cycle", "boolean", 1);
+
+	t = bootstrap_create_table(tr, s, "table_partitions");
+	bootstrap_create_column(tr, t, "id", "int", 32);
+	bootstrap_create_column(tr, t, "table_id", "int", 32);
+	bootstrap_create_column(tr, t, "column_id", "int", 32);
+	bootstrap_create_column(tr, t, "expression", "varchar", STORAGE_MAX_VALUE_LENGTH);
+
+	t = bootstrap_create_table(tr, s, "range_partitions");
+	bootstrap_create_column(tr, t, "table_id", "int", 32);
+	bootstrap_create_column(tr, t, "partition_id", "int", 32);
+	bootstrap_create_column(tr, t, "minimum", "varchar", STORAGE_MAX_VALUE_LENGTH);
+	bootstrap_create_column(tr, t, "maximum", "varchar", STORAGE_MAX_VALUE_LENGTH);
+	bootstrap_create_column(tr, t, "with_nulls", "boolean", 1);
+
+	t = bootstrap_create_table(tr, s, "value_partitions");
+	bootstrap_create_column(tr, t, "table_id", "int", 32);
+	bootstrap_create_column(tr, t, "partition_id", "int", 32);
+	bootstrap_create_column(tr, t, "value", "varchar", STORAGE_MAX_VALUE_LENGTH);
 
 	t = bootstrap_create_table(tr, s, "dependencies");
 	bootstrap_create_column(tr, t, "id", "int", 32);
@@ -1486,7 +1822,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "type_digits", "int", 32);
 		bootstrap_create_column(tr, t, "type_scale", "int", 32);
 		bootstrap_create_column(tr, t, "table_id", "int", 32);
-		bootstrap_create_column(tr, t, "default", "varchar", 2048);
+		bootstrap_create_column(tr, t, "default", "varchar", STORAGE_MAX_VALUE_LENGTH);
 		bootstrap_create_column(tr, t, "null", "boolean", 1);
 		bootstrap_create_column(tr, t, "number", "int", 32);
 		bootstrap_create_column(tr, t, "storage", "varchar", 2048);
@@ -1543,6 +1879,9 @@ store_load(void) {
 			fprintf(stderr, "cannot commit initial transaction\n");
 		}
 		sql_trans_destroy(tr);
+	} else {
+		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(int), 0, TYPE_int);
+		store_oid = store_oids[nstore_oids - 1] + 1;
 	}
 
 	id = store_oid; /* db objects up till id are already created */
@@ -1551,12 +1890,17 @@ store_load(void) {
 	} else {
 		shared_logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
 	}
-	prev_oid = store_oid = (sqlid)lng_store_oid;
+	prev_oid = (sqlid)lng_store_oid;
+	if (store_oid < prev_oid)
+		store_oid = prev_oid;
 
 	/* load remaining schemas, tables, columns etc */
 	if (!first)
 		load_trans(gtrans, id);
 	store_initialized = 1;
+	GDKfree(store_oids);
+	store_oids = NULL;
+	nstore_oids = 0;
 	return first;
 }
 
@@ -1590,7 +1934,10 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 
 	/* initialize empty bats */
 	if (store == store_bat) {
-		bat_utils_init();
+		if(bat_utils_init() == -1) {
+			MT_lock_unset(&bs_lock);
+			return -1;
+		}
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
 		bat_logger_init(&logger_funcs);
@@ -1705,11 +2052,9 @@ store_needs_vacuum( sql_trans *tr )
 		if (!t->system)
 			continue;
 		/* no inserts, updates and enough deletes ? */
-		if (store_funcs.count_col(tr, c, 0) && 
-		    (store_funcs.count_col(tr, c, 1) -
-		    store_funcs.count_col(tr, c, 0)) == 0 && 
-		    !store_funcs.count_upd(tr, t) && 
-		    store_funcs.count_del(tr, t) >= max_dels) 
+		if (store_funcs.count_col(tr, c, 0) == 0 &&
+		    store_funcs.count_upd(tr, t) == 0 &&
+		    store_funcs.count_del(tr, t) >= max_dels)
 			return 1;
 	}
 	return 0;
@@ -1729,10 +2074,8 @@ store_vacuum( sql_trans *tr )
 
 		if (!t->system)
 			continue;
-		if (store_funcs.count_col(tr, c, 0) && 
-		    (store_funcs.count_col(tr, c, 1) -
-		    store_funcs.count_col(tr, c, 0)) == 0 && 
-		    !store_funcs.count_upd(tr, t) && 
+		if (store_funcs.count_col(tr, c, 0) == 0 &&
+		    store_funcs.count_upd(tr, t) == 0 &&
 		    store_funcs.count_del(tr, t) >= max_dels)
 			if (table_funcs.table_vacuum(tr, t) != SQL_OK)
 				return -1;
@@ -1769,22 +2112,22 @@ store_manager(void)
 		}
 
 		MT_lock_set(&bs_lock);
-        	if (GDKexiting()) {
-            		MT_lock_unset(&bs_lock);
-            		return;
-        	}
-        	if ((!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
-            		MT_lock_unset(&bs_lock);
-            		continue;
-        	}
+		if (GDKexiting()) {
+			MT_lock_unset(&bs_lock);
+			return;
+		}
+		if ((!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
+			MT_lock_unset(&bs_lock);
+			continue;
+		}
 		need_flush = 0;
-        	while (store_nr_active) { /* find a moment to flush */
-            		MT_lock_unset(&bs_lock);
+		while (ATOMIC_GET(store_nr_active, store_nr_active_lock)) { /* find a moment to flush */
+			MT_lock_unset(&bs_lock);
 			if (GDKexiting())
 				return;
-            		MT_sleep_ms(sleeptime);
-            		MT_lock_set(&bs_lock);
-        	}
+			MT_sleep_ms(sleeptime);
+			MT_lock_set(&bs_lock);
+		}
 
 		if (create_shared_logger) {
 			/* (re)load data from shared write-ahead log */
@@ -1847,12 +2190,16 @@ idle_manager(void)
 				return;
 		}
 		MT_lock_set(&bs_lock);
-		if (store_nr_active || GDKexiting() || !store_needs_vacuum(gtrans)) {
+		if (ATOMIC_GET(store_nr_active, store_nr_active_lock) || GDKexiting() || !store_needs_vacuum(gtrans)) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
 
 		s = sql_session_create(gtrans->stk, 0);
+		if(!s) {
+			MT_lock_unset(&bs_lock);
+			continue;
+		}
 		sql_trans_begin(s);
 		if (store_vacuum( s->tr ) == 0)
 			sql_trans_commit(s->tr);
@@ -2203,6 +2550,40 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	return c;
 }
 
+static sql_part *
+part_dup(sql_trans *tr, int flag, sql_part *opt, sql_table *ot)
+{
+	sql_allocator *sa = (flag == TR_NEW)?tr->parent->sa:tr->sa;
+	sql_part *pt = SA_ZNEW(sa, sql_part);
+
+	base_init(sa, &pt->base, opt->base.id, tr_flag(&opt->base, flag), opt->base.name);
+	pt->tpe = opt->tpe;
+	pt->with_nills = opt->with_nills;
+	if (flag == TR_NEW && tr->parent == gtrans)
+		opt->base.flag = TR_OLD;
+
+	if(isRangePartitionTable(ot)) {
+		pt->part.range.minvalue = sa_alloc(sa, opt->part.range.minlength);
+		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
+		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
+		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
+		pt->part.range.minlength = opt->part.range.minlength;
+		pt->part.range.maxlength = opt->part.range.maxlength;
+	} else if(isListPartitionTable(ot)) {
+		pt->part.values = list_new(sa, (fdestroy) NULL);
+		for(node *n = opt->part.values->h ; n ; n = n->next) {
+			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
+			nextv->tpe = prev->tpe;
+			nextv->value = sa_alloc(sa, prev->length);
+			memcpy(nextv->value, prev->value, prev->length);
+			nextv->length = prev->length;
+			list_append(pt->part.values, nextv);
+		}
+	}
+
+	return pt;
+}
+
 static int
 sql_trans_cname_conflict( sql_trans *tr, sql_table *t, const char *extra, const char *cname)
 {
@@ -2324,31 +2705,6 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 }
 
 static sql_table *
-schema_table_find(sql_schema *s, sql_table *ot)
-{
-	if (s) 
-		return find_sql_table(s, ot->base.name);
-	assert(NULL);
-	return NULL;
-}
-
-static sql_table *
-table_find(sql_trans *tr, int flag, sql_table *ot, sql_table *omt)
-{
-	node *n;
-	sql_schema *s = NULL;
-
-	(void)flag;
-	for (n = tr->schemas.set->h; n && !s; n = n->next) {
-		sql_schema *ss = n->data;
-
-		if (ss->base.id == omt->s->base.id)
-			s = ss;
-	}
-	return schema_table_find(s, ot);
-}
-
-static sql_table *
 table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 {
 	sql_allocator *sa = (flag == TR_NEW)?tr->parent->sa:tr->sa;
@@ -2368,7 +2724,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
-	cs_new(&t->tables, sa, (fdestroy) NULL);
+	cs_new(&t->members, sa, (fdestroy) NULL);
 
 	t->pkey = NULL;
 
@@ -2383,28 +2739,38 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->sz = ot->sz;
 	t->cleared = 0;
 
+	if(isPartitionedByExpressionTable(ot)) {
+		sql_subtype *empty = sql_bind_localtype("void");
+		t->part.pexp = SA_ZNEW(sa, sql_expression);
+		t->part.pexp->exp = sa_strdup(sa, ot->part.pexp->exp);
+		t->part.pexp->type = *empty;
+		t->part.pexp->cols = sa_list(sa);
+		for(node *n = ot->part.pexp->cols->h; n; n = n->next) {
+			int *nid = sa_alloc(sa, sizeof(int));
+			*nid = *(int *) n->data;
+			list_append(t->part.pexp->cols, nid);
+		}
+	}
 	if (ot->columns.set) {
 		for (n = ot->columns.set->h; n; n = n->next) {
-			sql_column *c = n->data;
+			sql_column *c = n->data, *copy = column_dup(tr, flag, c, t);
+			if(isPartitionedByColumnTable(ot) && ot->part.pcol->base.id == c->base.id)
+				t->part.pcol = copy;
 
-			cs_add(&t->columns, column_dup(tr, flag, c, t), tr_flag(&c->base, flag));
+			cs_add(&t->columns, copy, tr_flag(&c->base, flag));
 		}
 		if (tr->parent == gtrans)
 			ot->columns.nelm = NULL;
 	}
-	/*
-	if (ot->tables.set) {
-		for (n = ot->tables.set->h; n; n = n->next) {
-			sql_table *pt = n->data;
-			sql_table *npt = schema_table_find(s, pt);
-
-			cs_add(&t->tables, npt, tr_flag(&pt->base, flag));
-			npt->p = t;
+	if (ot->members.set) {
+		for (n = ot->members.set->h; n; n = n->next) {
+			sql_part *pt = n->data, *dupped = part_dup(tr, flag, pt, ot);
+			dupped->t = t;
+			cs_add(&t->members, dupped, tr_flag(&pt->base, flag));
 		}
 		if (tr->parent == gtrans)
-			ot->tables.nelm = NULL;
+			ot->members.nelm = NULL;
 	}
-	*/
 	if (ot->idxs.set) {
 		for (n = ot->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
@@ -2476,6 +2842,7 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	f->vararg = of->vararg;
 	f->ops = list_new(sa, of->ops->destroy);
 	f->fix_scale = of->fix_scale;
+	f->system = of->system;
 	for(n=of->ops->h; n; n = n->next) 
 		list_append(f->ops, arg_dup(sa, n->data));
 	if (of->res) {
@@ -2504,24 +2871,6 @@ seq_dup(sql_trans *tr, int flag, sql_sequence *oseq, sql_schema * s)
 	seq->cycle = oseq->cycle;
 	seq->s = s;
 	return seq;
-}
-
-static void
-table_of_tables_dup(sql_trans *tr, sql_table *omt, sql_schema *s, int flag) 
-{
-	node *n;
-	sql_table *mt = schema_table_find(s, omt);
-	
-	if (omt->tables.set) {
-		for (n = omt->tables.set->h; n; n = n->next) {
-			sql_table *pt = n->data;
-			sql_table *npt = schema_table_find(s, pt);
-			cs_add(&mt->tables, npt, tr_flag(&pt->base, flag));
-			npt->p = mt;
-		}
-		if (tr->parent == gtrans)
-			mt->tables.nelm = NULL;
-	}
 }
 
 static sql_schema *
@@ -2558,14 +2907,6 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 
 			if (ot->persistence != SQL_LOCAL_TEMP)
 				cs_add(&s->tables, table_dup(tr, flag, ot, s), tr_flag(&ot->base, flag));
-		}
-		if (tr->parent == gtrans)
-			os->tables.nelm = NULL;
-		for (n = os->tables.set->h; n; n = n->next) {
-			sql_table *ot = n->data;
-
-			if (ot->persistence != SQL_LOCAL_TEMP && (isMergeTable(ot) || isReplicaTable(ot)))
-				table_of_tables_dup(tr, ot, s, flag);
 		}
 		if (tr->parent == gtrans)
 			os->tables.nelm = NULL;
@@ -2618,7 +2959,14 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 	node *n;
 	sql_trans *t = ZNEW(sql_trans);
 
+	if(!t)
+		return NULL;
+
 	t->sa = sa_create();
+	if(!t->sa) {
+		_DELETE(t);
+		return NULL;
+	}
 	t = trans_init(t, stk, ot);
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
@@ -2684,7 +3032,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			fs->dset = NULL;
 		}
 		/* only cleanup when alone */
-		if (apply && ts->dset && store_nr_active == 1) {
+		if (apply && ts->dset && ATOMIC_GET(store_nr_active, store_nr_active_lock) == 1) {
 			for (n = ts->dset->h; ok == LOG_OK && n; n = n->next) {
 				sql_base *tb = n->data;
 
@@ -2876,19 +3224,19 @@ rollforward_create_column(sql_trans *tr, sql_column *c, int mode)
 	return c;
 }
 
-static sql_table *
-rollforward_add_table(sql_trans *tr, sql_table *t, int mode)
+static sql_part *
+rollforward_create_part(sql_trans *tr, sql_part *p, int mode)
 {
 	(void) tr;
 	(void) mode;
-	return t;
+	return p;
 }
 
 static int
-rollforward_del_table(sql_trans *tr, sql_table *t, int mode)
+rollforward_drop_part(sql_trans *tr, sql_part *p, int mode)
 {
 	(void) tr;
-	(void) t;
+	(void) p;
 	(void) mode;
 	return LOG_OK;
 }
@@ -2917,7 +3265,7 @@ rollforward_create_table(sql_trans *tr, sql_table *t, int mode)
 		}
 	
 		if (ok == LOG_OK)
-			ok = rollforward_changeset_creates(tr, &t->tables, (rfcfunc) &rollforward_add_table, mode);
+			ok = rollforward_changeset_creates(tr, &t->members, (rfcfunc) &rollforward_create_part, mode);
 		if (ok == LOG_OK)
 			ok = rollforward_changeset_creates(tr, &t->keys, (rfcfunc) &rollforward_create_key, mode);
 		if (ok == LOG_OK)
@@ -3034,7 +3382,7 @@ rollforward_drop_table(sql_trans *tr, sql_table *t, int mode)
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_deletes(tr, &t->columns, (rfdfunc) &rollforward_drop_column, mode);
  	if (ok == LOG_OK)
-		ok = rollforward_changeset_deletes(tr, &t->tables, (rfdfunc) &rollforward_del_table, mode);
+		ok = rollforward_changeset_deletes(tr, &t->members, (rfdfunc) &rollforward_drop_part, mode);
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_deletes(tr, &t->idxs, (rfdfunc) &rollforward_drop_idx, mode);
 	if (ok == LOG_OK)
@@ -3060,7 +3408,43 @@ rollforward_create_schema(sql_trans *tr, sql_schema *s, int mode)
 {
 	if (rollforward_changeset_creates(tr, &s->tables, (rfcfunc) &rollforward_create_table, mode) != LOG_OK)
 		return NULL;
+	set_members(&s->tables);
 	return s;
+}
+
+static int
+rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
+{
+	if (mode == R_APPLY) {
+		sql_part *pt = (sql_part *) tpt;
+		sql_part *opt = (sql_part *) fpt;
+
+		if(isRangePartitionTable(opt->t->p)) {
+			pt->part.range.minvalue = sa_alloc(tr->sa, opt->part.range.minlength);
+			pt->part.range.maxvalue = sa_alloc(tr->sa, opt->part.range.maxlength);
+			memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
+			memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
+			pt->part.range.minlength = opt->part.range.minlength;
+			pt->part.range.maxlength = opt->part.range.maxlength;
+		} else if(isListPartitionTable(opt->t->p)) {
+			pt->part.values = list_new(tr->sa, (fdestroy) NULL);
+			for(node *n = opt->part.values->h ; n ; n = n->next) {
+				sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
+				nextv->tpe = prev->tpe;
+				nextv->value = sa_alloc(tr->sa, prev->length);
+				memcpy(nextv->value, prev->value, prev->length);
+				nextv->length = prev->length;
+				list_append(pt->part.values, nextv);
+			}
+		}
+
+		if (tpt->rtime < fpt->rtime)
+			tpt->rtime = fpt->rtime;
+		if (tpt->wtime < fpt->wtime)
+			tpt->wtime = fpt->wtime;
+		fpt->rtime = fpt->wtime = 0;
+	}
+	return LOG_OK;
 }
 
 static int
@@ -3075,7 +3459,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 
 	ok = rollforward_changeset_updates(tr, &ft->columns, &tt->columns, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_column, (rfdfunc) &rollforward_drop_column, (dupfunc) &column_dup, mode);
  	if (ok == LOG_OK)
-		ok = rollforward_changeset_updates(tr, &ft->tables, &tt->tables, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_add_table, (rfdfunc) &rollforward_del_table, (dupfunc) &table_find, mode);
+		ok = rollforward_changeset_updates(tr, &ft->members, &tt->members, &tt->base, (rfufunc) &rollforward_update_part, (rfcfunc) &rollforward_create_part, (rfdfunc) &rollforward_drop_part, (dupfunc) &part_dup, mode);
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &ft->idxs, &tt->idxs, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_idx, (rfdfunc) &rollforward_drop_idx, (dupfunc) &idx_dup, mode);
 	if (ok == LOG_OK)
@@ -3134,7 +3518,7 @@ conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {
-			sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
+			(void) sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
 		}
 	}
 	return NULL;
@@ -3159,7 +3543,8 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
 				} else if (t->commit_action == CA_DROP) {
-					sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT);
+					if(sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT))
+						ok = LOG_ERR;
 				}
 				n = nxt;
 			}
@@ -3179,6 +3564,7 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 	if (ok == LOG_OK) /* last as it may require complex (table) types */
 		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup, mode);
 
+	set_members(&fs->tables);
 	return ok;
 }
 
@@ -3369,6 +3755,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		if (pfc->def)
 			fc->def = pfc->def;
 		fc->base.wtime = fc->base.rtime = 0;
+		fc->min = fc->max = NULL;
 	}
 	return LOG_OK;
 }
@@ -3386,6 +3773,21 @@ reset_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *pft)
 	return LOG_OK;
 }
 
+static int
+reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
+{
+	if (ft->base.rtime || ft->base.wtime || tr->stime < pft->base.wtime) {
+
+		ft->with_nills = pft->with_nills;
+		if(isRangePartitionTable(ft->t->p)) {
+			ft->part.range = pft->part.range;
+		} else if(isListPartitionTable(ft->t->p)) {
+			ft->part.values = pft->part.values;
+		}
+		ft->base.wtime = ft->base.rtime = 0;
+	}
+	return LOG_OK;
+}
 
 static int
 reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
@@ -3402,6 +3804,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 
 		ft->base.wtime = ft->base.rtime = 0;
 		ft->cleared = 0;
+		ft->access = pft->access;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->idxs, &pft->idxs, &ft->base, (resetf) &reset_idx, (dupfunc) &idx_dup);
@@ -3409,26 +3812,11 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 			ok = reset_changeset( tr, &ft->keys, &pft->keys, &ft->base, (resetf) NULL, (dupfunc) &key_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->triggers, &pft->triggers, &ft->base, (resetf) NULL, (dupfunc) &trigger_dup);
+		if (ok == LOG_OK)
+			ok = reset_changeset( tr, &ft->members, &pft->members, &ft->base, (resetf) &reset_part, (dupfunc) &part_dup);
 		return ok;
 	}
 	return LOG_OK;
-}
-
-static void
-reset_table_of_tables_dup(sql_table *omt, sql_schema *s, int flag) 
-{
-	node *n;
-	sql_table *mt = schema_table_find(s, omt);
-	
-	if (omt->tables.set && !mt->tables.set) {
-		for (n = omt->tables.set->h; n; n = n->next) {
-			sql_table *pt = n->data;
-			sql_table *npt = schema_table_find(s, pt);
-			cs_add(&mt->tables, npt, tr_flag(&pt->base, flag));
-			npt->p = mt;
-		}
-		mt->tables.nelm = NULL;
-	}
 }
 
 static int
@@ -3455,7 +3843,8 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
 				} else if (t->commit_action == CA_DROP) {
-					sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT);
+					if(sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT))
+						ok = LOG_ERR;
 				}
 				n = nxt;
 			}
@@ -3477,15 +3866,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 
 		if (ok == LOG_OK)
 			ok = reset_changeset(tr, &fs->tables, &pfs->tables, &fs->base, (resetf) &reset_table, (dupfunc) &table_dup);
-		if (ok == LOG_OK && cs_size(&pfs->tables)) {
-			node *n;
-			for (n = pfs->tables.set->h; n; n = n->next) {
-				sql_table *ot = n->data;
-
-				if (ot->persistence != SQL_LOCAL_TEMP && (isMergeTable(ot) || isReplicaTable(ot)))
-					reset_table_of_tables_dup(ot, fs, ot->base.flag);
-			}
-		}
+		set_members(&fs->tables);
 	}
 	return ok;
 }
@@ -3506,7 +3887,6 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name)
 {
 	sql_trans *tr = NULL;
 
-	transactions++;
 	if (gtrans) {
 		if (!parent && spares > 0 && !name) {
 			tr = spare_trans[--spares];
@@ -3518,6 +3898,8 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name)
 #ifdef STORE_DEBUG
 			fprintf(stderr, "#new trans (%p)\n", tr);
 #endif
+			if(tr)
+				transactions++;
 		}
 	}
 	return tr;
@@ -3614,7 +3996,7 @@ sql_trans_commit(sql_trans *tr)
 }
 
 
-static void
+static int
 sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type)
 {
 	int dep_id=0, t_id = -1;
@@ -3622,7 +4004,12 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 	sql_table *t = NULL;
 
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
-	node *n = dep->h;
+	node *n;
+
+	if(!dep)
+		return DEPENDENCY_CHECK_ERROR;
+
+	n = dep->h;
 
 	while (n) {
 		dep_id = *(int*) n->data;
@@ -3632,35 +4019,36 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 
 			switch (dep_type){
 				case SCHEMA_DEPENDENCY :
-							sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
+							//FIXME malloc failure scenario!
+							(void) sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
 							break;
 				case TABLE_DEPENDENCY :
-							sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case COLUMN_DEPENDENCY :
 							t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY);
 							t = find_sql_table_id(s, t_id);
-							sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
 							t = NULL;
 							break;
 				case VIEW_DEPENDENCY :
-							sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE );
+							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE );
 							break;
 				case TRIGGER_DEPENDENCY :
-							sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
-								break;
+							(void) sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
+							break;
 				case KEY_DEPENDENCY :
-							sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case FKEY_DEPENDENCY :
-							sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case INDEX_DEPENDENCY :
-							sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case PROC_DEPENDENCY :
 				case FUNC_DEPENDENCY :
-							sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case TYPE_DEPENDENCY :
 							sql_trans_drop_type(tr, s, dep_id, DROP_CASCADE);
@@ -3669,10 +4057,11 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 							break;
 			}
 		}
-		
-		n = n->next->next;	
+
+		n = n->next->next;
 	}
 	list_destroy(dep);
+	return DEPENDENCY_CHECK_OK;
 }
 
 static void
@@ -3682,7 +4071,7 @@ sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc)
 	sql_table *syskc = find_sql_table(syss, "objects");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskc, "id"), &k->base.id, find_sql_column(syskc, "name"), kc->c->base.name, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, syskc, rid);
 
@@ -3697,7 +4086,7 @@ sys_drop_ic(sql_trans *tr, sql_idx * i, sql_kc *kc)
 	sql_table *sysic = find_sql_table(syss, "objects");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysic, "id"), &i->base.id, find_sql_column(sysic, "name"), kc->c->base.name, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, sysic, rid);
 
@@ -3713,9 +4102,10 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	sql_table *sysidx = find_sql_table(syss, "idxs");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysidx, "id"), &i->base.id, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, sysidx, rid);
+	sql_trans_drop_any_comment(tr, i->base.id);
 
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *ic = n->data;
@@ -3741,7 +4131,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 	sql_table *syskey = find_sql_table(syss, "keys");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syskey, "id"), &k->base.id, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, syskey, rid);
 
@@ -3782,7 +4172,7 @@ sys_drop_tc(sql_trans *tr, sql_trigger * i, sql_kc *kc)
 	sql_table *systc = find_sql_table(syss, "objects");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(systc, "id"), &i->base.id, find_sql_column(systc, "name"), kc->c->base.name, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, systc, rid);
 	if (isGlobal(i->t)) 
@@ -3797,7 +4187,7 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 	sql_table *systrigger = find_sql_table(syss, "triggers");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(systrigger, "id"), &i->base.id, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, systrigger, rid);
 
@@ -3820,14 +4210,31 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 	sql_table *sysseqs = find_sql_table(syss, "sequences");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysseqs, "id"), &seq->base.id, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, sysseqs, rid);
 	sql_trans_drop_dependencies(tr, seq->base.id);
+	sql_trans_drop_any_comment(tr, seq->base.id);
 
 	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, seq->s, seq->base.id, SEQ_DEPENDENCY);
-		
+
+}
+
+static void
+sys_drop_statistics(sql_trans *tr, sql_column *col)
+{
+	if (isGlobal(col->t)) {
+		sql_schema *syss = find_sql_schema(tr, "sys"); 
+		sql_table *sysstats = find_sql_table(syss, "statistics");
+
+		oid rid = table_funcs.column_find_row(tr, find_sql_column(sysstats, "column_id"), &col->base.id, NULL);
+
+		if (is_oid_nil(rid))
+			return ;
+
+		table_funcs.table_delete(tr, sysstats, rid);
+	}
 }
 
 static void
@@ -3840,10 +4247,11 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
 				  &col->base.id, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, syscolumn, rid);
 	sql_trans_drop_dependencies(tr, col->base.id);
+	sql_trans_drop_any_comment(tr, col->base.id);
 
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 		sql_sequence * seq = NULL;
@@ -3863,6 +4271,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	if (isGlobal(col->t)) 
 		tr->schema_updates ++;
 
+	sys_drop_statistics(tr, col);
 	if (drop_action) 
 		sql_trans_drop_all_dependencies(tr, col->t->s, col->base.id, COLUMN_DEPENDENCY);
 	if (col->type.type->s) 
@@ -3909,16 +4318,17 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 }
 
 static void
-sys_table_del_tables(sql_trans *tr, sql_table *t, int drop_action)
+sys_drop_parts(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
 
-	if (cs_size(&t->tables)) {
-		for (n = t->tables.set->h; n; ) {
-			sql_table *pt = n->data;
+	if (cs_size(&t->members)) {
+		for (n = t->members.set->h; n; ) {
+			sql_part *pt = n->data;
+			sql_table *tt = find_sql_table(t->s, pt->base.name);
 
 			n = n->next;
-			sql_trans_del_table(tr, t, pt, drop_action);
+			sql_trans_del_table(tr, t, tt, drop_action);
 		}
 	}
 }
@@ -3932,14 +4342,27 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	sql_column *syscol = find_sql_column(systable, "id");
 	oid rid = table_funcs.column_find_row(tr, syscol, &t->base.id, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, systable, rid);
 	sys_drop_keys(tr, t, drop_action);
 	sys_drop_idxs(tr, t, drop_action);
-	if (isMergeTable(t) || isReplicaTable(t))
-		sys_table_del_tables(tr, t, drop_action);
 
+	if (isMergeTable(t) || isReplicaTable(t))
+		sys_drop_parts(tr, t, drop_action);
+
+	if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+		sql_table *partitions = find_sql_table(syss, "table_partitions");
+		sql_column *pcols = find_sql_column(partitions, "table_id");
+		rids *rs = table_funcs.rids_select(tr, pcols, &t->base.id, &t->base.id, NULL);
+		oid poid;
+		if((poid = table_funcs.rids_next(rs)) != oid_nil) {
+			table_funcs.table_delete(tr, partitions, poid);
+		}
+		table_funcs.rids_destroy(rs);
+	}
+
+	sql_trans_drop_any_comment(tr, t->base.id);
 	sql_trans_drop_dependencies(tr, t->base.id);
 
 	if (isKindOfTable(t) || isView(t))
@@ -3960,7 +4383,7 @@ sys_drop_type(sql_trans *tr, sql_type *type, int drop_action)
 	sql_column *sys_type_col = find_sql_column(sys_tab_type, "id");
 	oid rid = table_funcs.column_find_row(tr, sys_type_col, &type->base.id, NULL);
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, sys_tab_type, rid);
 
@@ -3980,7 +4403,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	sql_table *sys_tab_func = find_sql_table(syss, "functions");
 	sql_column *sys_func_col = find_sql_column(sys_tab_func, "id");
 	oid rid_func = table_funcs.column_find_row(tr, sys_func_col, &func->base.id, NULL);
-	if (rid_func == oid_nil)
+	if (is_oid_nil(rid_func))
 		return ;
 	if (IS_AGGR(func) || 1) {
 		sql_table *sys_tab_args = find_sql_table(syss, "args");
@@ -3989,15 +4412,16 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 		oid r = oid_nil;
 
 
-		for(r = table_funcs.rids_next(args); r != oid_nil; r = table_funcs.rids_next(args)) 
+		for(r = table_funcs.rids_next(args); !is_oid_nil(r); r = table_funcs.rids_next(args)) 
 			table_funcs.table_delete(tr, sys_tab_args, r);
 		table_funcs.rids_destroy(args);
 	}
 
-	assert(rid_func != oid_nil);
+	assert(!is_oid_nil(rid_func));
 	table_funcs.table_delete(tr, sys_tab_func, rid_func);
 
 	sql_trans_drop_dependencies(tr, func->base.id);
+	sql_trans_drop_any_comment(tr, func->base.id);
 
 	tr->schema_updates ++;
 
@@ -4102,7 +4526,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, int id, int drop_action)
 }
 
 sql_func *
-create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg)
+create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -4121,11 +4545,12 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int 
 	t->query = (query)?sa_strdup(sa, query):NULL;
 	t->fix_scale = SCALE_EQ;
 	t->s = NULL;
+	t->system = system;
 	return t;
 }
 
 sql_func *
-sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg)
+sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);
 	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions");
@@ -4146,6 +4571,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 	t->vararg = vararg;
 	t->ops = sa_list(tr->sa);
 	t->fix_scale = SCALE_EQ;
+	t->system = system;
 	for(n=args->h; n; n = n->next) 
 		list_append(t->ops, arg_dup(tr->sa, n->data));
 	if (res) {
@@ -4157,7 +4583,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 	t->s = s;
 
 	cs_add(&s->funcs, t, TR_NEW);
-	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &lang, &type, &se, &t->varres, &t->vararg, &s->base.id);
+	table_funcs.table_insert(tr, sysfunc, &t->base.id, t->base.name, query?query:t->imp, t->mod, &lang, &type, &se, &t->varres, &t->vararg, &s->base.id, &t->system);
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
 		sqlid id = next_oid();
@@ -4176,18 +4602,24 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 	return t;
 }
 
-void
+int
 sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = find_sql_func_node(s, id);
 	sql_func *func = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = func->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -4197,40 +4629,79 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	func->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	cs_del(&s->funcs, n, func->base.flag);
-	
+
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-	
+	return 0;
 }
 
-void
+static void
+build_drop_func_list_item(sql_trans *tr, sql_schema *s, int id) {
+	node *n = find_sql_func_node(s, id);
+	sql_func *func = n->data;
+
+	sys_drop_func(tr, func, DROP_CASCADE);
+
+	func->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
+	tr->schema_updates ++;
+	cs_del(&s->funcs, n, func->base.flag);
+}
+
+int
 sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop_action)
 {
 	node *n = NULL;
 	sql_func *func = NULL;
+	list* to_drop = NULL;
 
-	if (!tr->dropped)
+	(void) drop_action;
+
+	if (!tr->dropped) {
 		tr->dropped = list_create((fdestroy) GDKfree);
+		if(!tr->dropped)
+			return -1;
+	}
 	for (n = list_func->h; n ; n = n->next ) {
 		func = (sql_func *) n->data;
 
-		if (! list_find_id(tr->dropped, func->base.id)){ 
-			// FIXME unchecked_malloc MNEW can return NULL
+		if (! list_find_id(tr->dropped, func->base.id)){
 			int *local_id = MNEW(int);
-
+			if(!local_id) {
+				list_destroy(tr->dropped);
+				tr->dropped = NULL;
+				if(to_drop)
+					list_destroy(to_drop);
+				return -1;
+			}
+			if(!to_drop) {
+				to_drop = list_create(NULL);
+				if(!to_drop) {
+					list_destroy(tr->dropped);
+					return -1;
+				}
+			}
 			*local_id = func->base.id;
 			list_append(tr->dropped, local_id);
-			sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
+			list_append(to_drop, func);
+			//sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
 		}
 	}
-	
+
+	if(to_drop) {
+		for (n = to_drop->h; n ; n = n->next ) {
+			func = (sql_func *) n->data;
+			build_drop_func_list_item(tr, s, func->base.id);
+		}
+		list_destroy(to_drop);
+	}
+
 	if ( tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-	
+	return 0;
 }
 
 sql_schema *
@@ -4259,7 +4730,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, int auth_id, int owner)
 	return s;
 }
 
-void
+int
 sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 {
 	node *n = find_sql_schema_node(tr, id);
@@ -4267,14 +4738,20 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 
-	if (rid == oid_nil)
-		return ;
+	if (is_oid_nil(rid))
+		return 0;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
-		int *local_id = MNEW(int);
+		int* local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = s->base.id;
 		list_append(tr->dropped, local_id);
 	} 
@@ -4284,6 +4761,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	sys_drop_tables(tr, s, drop_action);
 	sys_drop_types(tr, s, drop_action);
 	sys_drop_sequences(tr, s, drop_action);
+	sql_trans_drop_any_comment(tr, s->base.id);
 
 	s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
@@ -4293,7 +4771,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-		
+	return 0;
 }
 
 sql_table *
@@ -4301,15 +4779,227 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
-	int nr = list_length(mt->tables.set);
+	sql_part *p = SA_ZNEW(tr->sa, sql_part);
 
 	/* merge table depends on part table */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
-	cs_add(&mt->tables, pt, TR_NEW);
 	pt->p = mt;
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
-	table_funcs.table_insert(tr, sysobj, &mt->base.id, pt->base.name, &nr);
+	p->t = pt;
+	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+	cs_add(&mt->members, p, TR_NEW);
+	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
+	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
 	return mt;
+}
+
+int
+sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max,
+							  int with_nills, int update, sql_part **err)
+{
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysobj = find_sql_table(syss, "objects");
+	sql_table *partitions = find_sql_table(syss, "table_partitions");
+	sql_table *ranges = find_sql_table(syss, "range_partitions");
+	sql_part *p;
+	int localtype = tpe.type->localtype, *v, res = 0;
+	ValRecord vmin, vmax;
+	size_t smin, smax;
+	bit to_insert = (bit) with_nills;
+	oid rid;
+	ptr ok;
+
+	assert(isGlobal(mt));
+	memset(&vmin, 0, sizeof(ValRecord));
+	memset(&vmax, 0, sizeof(ValRecord));
+
+	if(min) {
+		ok = VALinit(&vmin, localtype, min);
+		if(ok && localtype != TYPE_str)
+			ok = VALconvert(TYPE_str, &vmin);
+	} else {
+		ok = VALinit(&vmin, TYPE_str, ATOMnilptr(TYPE_str));
+		min = (ptr) ATOMnilptr(localtype);
+	}
+	if(!ok) {
+		res = -1;
+		goto finish;
+	}
+	smin = ATOMlen(localtype, min);
+	if(smin > STORAGE_MAX_VALUE_LENGTH) {
+		res = -2;
+		goto finish;
+	}
+
+	if(max) {
+		ok = VALinit(&vmax, localtype, max);
+		if(ok && localtype != TYPE_str)
+			ok = VALconvert(TYPE_str, &vmax);
+	} else {
+		ok = VALinit(&vmax, TYPE_str, ATOMnilptr(TYPE_str));
+		max = (ptr) ATOMnilptr(localtype);
+	}
+	if(!ok) {
+		res = -1;
+		goto finish;
+	}
+	smax = ATOMlen(localtype, max);
+	if(smax > STORAGE_MAX_VALUE_LENGTH) {
+		res = -2;
+		goto finish;
+	}
+
+	if(!update) {
+		p = SA_ZNEW(tr->sa, sql_part);
+		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+		pt->p = mt;
+		p->t = pt;
+		p->tpe = tpe;
+	} else {
+		p = find_sql_part(mt, pt->base.name);
+	}
+
+	/* add range partition values */
+	p->part.range.minvalue = sa_alloc(tr->sa, smin);
+	p->part.range.maxvalue = sa_alloc(tr->sa, smax);
+	memcpy(p->part.range.minvalue, min, smin);
+	memcpy(p->part.range.maxvalue, max, smax);
+	p->part.range.minlength = smin;
+	p->part.range.maxlength = smax;
+	p->with_nills = with_nills;
+
+	if(!update) {
+		*err = cs_add_with_validate(&mt->members, p, TR_NEW, sql_range_part_validate_and_insert);
+	} else {
+		*err = cs_transverse_with_validate(&mt->members, p, sql_range_part_validate_and_insert);
+	}
+	if(*err) {
+		res = -4;
+		goto finish;
+	}
+
+	if(!update) {
+		rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
+		assert(!is_oid_nil(rid));
+
+		/* add merge table dependency */
+		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+		v = (int*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
+		table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+		table_funcs.table_insert(tr, ranges, &pt->base.id, v, VALget(&vmin), VALget(&vmax), &to_insert);
+		_DELETE(v);
+	} else {
+		sql_column *cmin = find_sql_column(ranges, "minimum"), *cmax = find_sql_column(ranges, "maximum"),
+				   *wnulls = find_sql_column(ranges, "with_nulls");
+
+		rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
+		assert(!is_oid_nil(rid));
+
+		table_funcs.column_update_value(tr, cmin, rid, VALget(&vmin));
+		table_funcs.column_update_value(tr, cmax, rid, VALget(&vmax));
+		table_funcs.column_update_value(tr, wnulls, rid, &to_insert);
+		if (isGlobal(mt))
+			tr->schema_updates ++;
+	}
+
+	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
+
+finish:
+	VALclear(&vmin);
+	VALclear(&vmax);
+	return res;
+}
+
+int
+sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, int with_nills,
+							  int update, sql_part **err)
+{
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysobj = find_sql_table(syss, "objects");
+	sql_table *partitions = find_sql_table(syss, "table_partitions");
+	sql_table *values = find_sql_table(syss, "value_partitions");
+	sql_part *p;
+	oid rid;
+	int localtype = tpe.type->localtype, *v, i = 0;
+
+	assert(isGlobal(mt));
+	if(!update) {
+		p = SA_ZNEW(tr->sa, sql_part);
+		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+		pt->p = mt;
+		p->t = pt;
+		p->tpe = tpe;
+	} else {
+		rids *rs;
+		p = find_sql_part(mt, pt->base.name);
+
+		rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
+		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+			table_funcs.table_delete(tr, values, rid); /* eliminate the old values */
+		}
+		table_funcs.rids_destroy(rs);
+	}
+	p->with_nills = with_nills;
+
+	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
+	assert(!is_oid_nil(rid));
+
+	v = (int*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
+
+	if(with_nills) { /* store the null value first */
+		ValRecord vnnil;
+		if(VALinit(&vnnil, TYPE_str, ATOMnilptr(TYPE_str)) == NULL) {
+			_DELETE(v);
+			return -1;
+		}
+		table_funcs.table_insert(tr, values, &pt->base.id, v, VALget(&vnnil));
+		VALclear(&vnnil);
+	}
+
+	for(node *n = vals->h ; n ; n = n->next) {
+		sql_part_value *next = (sql_part_value*) n->data;
+		ValRecord vvalue;
+		ptr ok;
+
+		if(ATOMlen(localtype, next->value) > STORAGE_MAX_VALUE_LENGTH) {
+			_DELETE(v);
+			return -i - 1;
+		}
+		ok = VALinit(&vvalue, localtype, next->value);
+		if(ok && localtype != TYPE_str)
+			ok = VALconvert(TYPE_str, &vvalue);
+		if(!ok) {
+			_DELETE(v);
+			VALclear(&vvalue);
+			return -i - 1;
+		}
+		table_funcs.table_insert(tr, values, &pt->base.id, v, VALget(&vvalue));
+		VALclear(&vvalue);
+		i++;
+	}
+	_DELETE(v);
+
+	p->part.values = vals;
+
+	if(!update) {
+		*err = cs_add_with_validate(&mt->members, p, TR_NEW, sql_values_part_validate_and_insert);
+	} else {
+		*err = cs_transverse_with_validate(&mt->members, p, sql_values_part_validate_and_insert);
+	}
+	if(*err)
+		return -1;
+
+	if(!update) {
+		/* add merge table dependency */
+		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+		table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+	} else {
+		if (isGlobal(mt))
+			tr->schema_updates ++;
+	}
+
+	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
+
+	return 0;
 }
 
 sql_table *
@@ -4317,19 +5007,36 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
-	node *n = cs_find_name(&mt->tables, pt->base.name);
-	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "name"), pt->base.name, NULL);
+	node *n = cs_find_name(&mt->members, pt->base.name);
+	oid obj_oid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
 
-	if (rid == oid_nil)
+	if (is_oid_nil(obj_oid))
 		return NULL;
+
+	if(isRangePartitionTable(mt)) {
+		assert(isGlobal(mt));
+		sql_table *ranges = find_sql_table(syss, "range_partitions");
+		rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
+		table_funcs.table_delete(tr, ranges, rid);
+	} else if(isListPartitionTable(mt)) {
+		assert(isGlobal(mt));
+		sql_table *values = find_sql_table(syss, "value_partitions");
+		rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
+		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+			table_funcs.table_delete(tr, values, rid);
+		}
+		table_funcs.rids_destroy(rs);
+	}
+
 	/* merge table depends on part table */
 	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
-	cs_del(&mt->tables, n, pt->base.flag);
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
-	table_funcs.table_delete(tr, sysobj, rid);
+	cs_del(&mt->members, n, pt->base.flag);
 	pt->p = NULL;
-	if (drop_action == DROP_CASCADE)
-		sql_trans_drop_table(tr, pt->s, pt->base.id, drop_action);
+	table_funcs.table_delete(tr, sysobj, obj_oid);
+	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
+
+	if (drop_action == DROP_CASCADE) 
+		sql_trans_drop_table(tr, mt->s, pt->base.id, drop_action);
 	return mt;
 }
 
@@ -4364,6 +5071,11 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 			t->persistence = SQL_GLOBAL_TEMP;
 		}
 	}
+	if(isPartitionedByExpressionTable(t)) {
+		sql_subtype *empty = sql_bind_localtype("void");
+		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
+		t->part.pexp->type = *empty;
+	}
 
 	ca = t->commit_action;
 	if (!isDeclaredTable(t))
@@ -4375,6 +5087,28 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return t;
+}
+
+int
+sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
+{
+	if(t && (isRangePartitionTable(t) || isListPartitionTable(t))) {
+		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
+		sql_table *partitions = find_sql_table(syss, "table_partitions");
+		oid next = next_oid();
+		if(isPartitionedByColumnTable(t)) {
+			assert(t->part.pcol);
+			table_funcs.table_insert(tr, partitions, &next, &t->base.id, &t->part.pcol->base.id, ATOMnilptr(TYPE_str));
+		} else if(isPartitionedByExpressionTable(t)) {
+			assert(t->part.pexp->exp);
+			if(strlen(t->part.pexp->exp) > STORAGE_MAX_VALUE_LENGTH)
+				return -1;
+			table_funcs.table_insert(tr, partitions, &next, &t->base.id, ATOMnilptr(TYPE_int), t->part.pexp->exp);
+		} else {
+			assert(0);
+		}
+	}
+	return 0;
 }
 
 sql_key *
@@ -4499,7 +5233,7 @@ create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype
 	return col;
 }
 
-void
+int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = find_sql_table_node(s, id);
@@ -4507,14 +5241,20 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 
 	if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) && 
 	    tr->dropped && list_find_id(tr->dropped, t->base.id))
-		return;
+		return 0;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = t->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -4531,6 +5271,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
 BUN
@@ -4621,18 +5362,24 @@ drop_sql_key(sql_table *t, int id, int drop_action)
 	cs_del(&t->keys, n, TR_OLD);
 }
 
-void
+int
 sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 {
 	node *n = list_find_base_id(t->columns.set, id);
 	sql_column *col = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = col->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -4649,6 +5396,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
 sql_column *
@@ -4660,7 +5408,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
 					  &col->base.id, NULL);
 
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return NULL;
 		table_funcs.column_update_value(tr, find_sql_column(syscolumn, "null"), rid, &isnull);
 		col->null = isnull;
@@ -4681,7 +5429,7 @@ sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access)
 		oid rid = table_funcs.column_find_row(tr, find_sql_column(systable, "id"),
 					  &t->base.id, NULL);
 
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return NULL;
 		table_funcs.column_update_value(tr, find_sql_column(systable, "access"), rid, &access);
 		t->access = access;
@@ -4706,7 +5454,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		sql_column *col_dfs = find_sql_column(syscolumn, "default");
 		oid rid = table_funcs.column_find_row(tr, col_ids, &col->base.id, NULL);
 
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return NULL;
 		table_funcs.column_update_value(tr, col_dfs, rid, p);
 		col->def = NULL;
@@ -4733,7 +5481,7 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 		sql_column *col_dfs = find_sql_column(syscolumn, "storage");
 		oid rid = table_funcs.column_find_row(tr, col_ids, &col->base.id, NULL);
 
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return NULL;
 		table_funcs.column_update_value(tr, col_dfs, rid, p);
 		col->storage_type = NULL;
@@ -4767,7 +5515,7 @@ sql_trans_dist_count( sql_trans *tr, sql_column *col )
 		if (stats) {
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = table_funcs.column_find_row(tr, stats_column_id, &col->base.id, NULL);
-			if (rid != oid_nil) {
+			if (!is_oid_nil(rid)) {
 				sql_column *stats_unique = find_sql_column(stats, "unique");
 				void *v = table_funcs.column_find_value(tr, stats_unique, rid);
 
@@ -4798,7 +5546,7 @@ sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
 		if (stats) {
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = table_funcs.column_find_row(tr, stats_column_id, &col->base.id, NULL);
-			if (rid != oid_nil) {
+			if (!is_oid_nil(rid)) {
 				char *v;
 				sql_column *stats_min = find_sql_column(stats, "minval");
 				sql_column *stats_max = find_sql_column(stats, "maxval");
@@ -4968,12 +5716,13 @@ table_has_idx( sql_table *t, list *keycols)
 	node *n, *m, *o;
 	char *found = NULL;
 	int len = list_length(keycols);
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	found = NEW_ARRAY(char, len);
+	if(!found)
+		return NULL;
 	if (t->idxs.set) for ( n = t->idxs.set->h; n; n = n->next ) {
 		sql_idx *i = n->data;
 		int nr;
-		
+
 		memset(found, 0, len);
 		for (m = keycols->h, nr = 0; m; m = m->next, nr++ ) {
 			sql_kc *kc = m->data;
@@ -5063,18 +5812,25 @@ sql_trans_key_done(sql_trans *tr, sql_key *k)
 	return k;
 }
 
-void
+int
 sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->keys, id);
 	sql_key *k = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id) {
+			return -1;
+		}
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = k->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -5098,7 +5854,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-
+	return 0;
 }
 
 sql_idx *
@@ -5159,7 +5915,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 		sql_column *sysidxtype = find_sql_column(sysidx, "type");
 		oid rid = table_funcs.column_find_row(tr, sysidxid, &i->base.id, NULL);
 	
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return NULL;
 		/*i->type = oph_idx;*/
 		i->type = no_idx;
@@ -5174,22 +5930,29 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 	return i;
 }
 
-void
+int
 sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->idxs, id);
 	sql_idx *i;
-       
+
 	if (!n) /* already dropped */
-		return;
+		return 0;
 
 	i = n->data;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc NNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id) {
+			return -1;
+		}
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = i->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -5209,6 +5972,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
 sql_trigger *
@@ -5266,18 +6030,24 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c )
 	return i;
 }
 
-void
+int
 sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->triggers, id);
 	sql_trigger *i = n->data;
 	
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = i->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -5294,6 +6064,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
 sql_sequence *
@@ -5351,7 +6122,7 @@ sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng
 	sql_column *c;
 	int changed = 0;
 
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return NULL;
 	if (min >= 0 && seq->minvalue != min) {
 		seq->minvalue = min; 
@@ -5400,9 +6171,9 @@ sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start)
 				  &seq->base.id, NULL);
 		sql_column *c = find_sql_column(seqs, "start");
 
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return -1;
-		assert(rid != oid_nil);
+		assert(!is_oid_nil(rid));
 		seq->start = start; 
 		table_funcs.column_update_value(tr, c, rid, &seq->start);
 
@@ -5425,10 +6196,18 @@ sql_session_create(backend_stack stk, int ac )
 	if (!s)
 		return NULL;
 	s->tr = sql_trans_create(s->stk, NULL, NULL);
+	if(!s->tr) {
+		_DELETE(s);
+		return NULL;
+	}
 	s->schema_name = NULL;
 	s->active = 0;
 	s->stk = stk;
-	sql_session_reset(s, ac);
+	if(!sql_session_reset(s, ac)) {
+		sql_trans_destroy(s->tr);
+		_DELETE(s);
+		return NULL;
+	}
 	nr_sessions++;
 	return s;
 }
@@ -5445,17 +6224,21 @@ sql_session_destroy(sql_session *s)
 	nr_sessions--;
 }
 
-void
+int
 sql_session_reset(sql_session *s, int ac) 
 {
 	sql_schema *tmp;
+	char *def_schema_name = _STRDUP("sys");
 
-	if (!s->tr)
-		return;
+	if (!s->tr || !def_schema_name) {
+		if(def_schema_name)
+			_DELETE(def_schema_name);
+		return 0;
+	}
 
 	/* TODO cleanup "dt" schema */
 	tmp = find_sql_schema(s->tr, "tmp");
-		
+
 	if (tmp->tables.set) {
 		node *n;
 		for (n = tmp->tables.set->h; n; n = n->next) {
@@ -5469,10 +6252,11 @@ sql_session_reset(sql_session *s, int ac)
 
 	if (s->schema_name)
 		_DELETE(s->schema_name);
-	s->schema_name = _STRDUP("sys");
+	s->schema_name = def_schema_name;
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = ISO_SERIALIZABLE;
+	return 1;
 }
 
 int
@@ -5491,7 +6275,7 @@ sql_trans_begin(sql_session *s)
 	s->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
-	store_nr_active ++;
+	(void) ATOMIC_INC(store_nr_active, store_nr_active_lock);
 	list_append(active_sessions, s); 
 	s->status = 0;
 #ifdef STORE_DEBUG
@@ -5509,6 +6293,29 @@ sql_trans_end(sql_session *s)
 	s->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	list_remove_data(active_sessions, s);
-	store_nr_active --;
-	assert(list_length(active_sessions) == store_nr_active);
+	(void) ATOMIC_DEC(store_nr_active, store_nr_active_lock);
+	assert((ATOMIC_TYPE) list_length(active_sessions) == ATOMIC_GET(store_nr_active, store_nr_active_lock));
+}
+
+void
+sql_trans_drop_any_comment(sql_trans *tr, int id) {
+	sql_schema *sys;
+	sql_column *id_col;
+	sql_table *comments;
+	oid row;
+
+	sys = find_sql_schema(tr, "sys");
+	assert(sys);
+
+	comments = find_sql_table(sys, "comments");
+	if (!comments) /* for example during upgrades */
+		return;
+
+	id_col = find_sql_column(comments, "id");
+	assert(id_col);
+
+	row = table_funcs.column_find_row(tr, id_col, &id, NULL);
+	if (!is_oid_nil(row)) {
+		table_funcs.table_delete(tr, comments, row);
+	}
 }

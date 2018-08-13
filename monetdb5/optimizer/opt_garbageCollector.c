@@ -3,12 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "opt_garbageCollector.h"
-#include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_interpreter.h"
 #include "mal_builder.h"
 #include "mal_function.h"
 #include "opt_prelude.h"
@@ -30,6 +30,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 	//int *varlnk, *stmtlnk;
 
 	(void) pci;
@@ -81,12 +82,13 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 */
 
 	if ( newMalBlkStmt(mb,mb->ssize) < 0) 
-		throw(MAL, "optimizer.garbagecollector", MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	p = NULL;
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		p->gc &=  ~GARBAGECONTROL;
+		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
 
@@ -118,9 +120,11 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		}
 */
 	}
-	assert(p);
-	assert( p->token == ENDsymbol);
+	/* A good MAL plan should end with an END instruction */
 	pushInstruction(mb, p);
+	if( p && p->token != ENDsymbol){
+		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
+	}
 	for (i++; i < limit; i++) 
 		pushInstruction(mb, old[i]);
 	for (; i < slimit; i++) 
@@ -137,7 +141,12 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
 			getVarName(mb,k), mb->var[k]->eolife,
 			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
-		chkFlow(cntxt->fdout,mb);
+		chkFlow(mb);
+		if ( mb->errors != MAL_SUCCEED ){
+			fprintf(stderr,"%s\n",mb->errors);
+			GDKfree(mb->errors);
+			mb->errors = MAL_SUCCEED;
+		}
 		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
 		fprintf(stderr, "End of GCoptimizer\n");
 	}
@@ -153,19 +162,19 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
-    /* Defense line against incorrect plans */
-    if( actions+1 > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
-    }
-    /* keep all actions taken as a post block comment */
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		chkTypes(cntxt->usermodule, mb, FALSE);
+		chkFlow(mb);
+		chkDeclarations(mb);
+	}
+	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
-    newComment(mb,buf);
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
+	newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return MAL_SUCCEED;
+	return msg;
 }
 

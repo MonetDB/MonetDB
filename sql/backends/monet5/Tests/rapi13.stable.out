@@ -86,7 +86,7 @@ Ready.
 #create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)), lat, lon, alt*0.3048 FROM streams WHERE type = 2 and alt > 0 with data;
 #select * from planes;
 % tmp.planes,	tmp.planes,	tmp.planes,	tmp.planes,	tmp.planes # table_name
-% station,	L2,	lat,	lon,	L3 # name
+% station,	L4,	lat,	lon,	L10 # name
 % clob,	sec_interval,	double,	double,	double # type
 % 8,	14,	24,	24,	24 # length
 [ "\"4CA56B\"",	1433344277.000,	52.08069,	5.86654,	11582.4	]
@@ -95,7 +95,7 @@ Ready.
 [ "\"4006A4\"",	1433344277.000,	52.44951,	5.21294,	11285.22	]
 [ "\"45AC45\"",	1433344277.000,	52.12491,	6.03063,	10972.8	]
 #select * from working_test( (SELECT * FROM planes AS p) );
-% .,	.,	. # table_name
+% .L3,	.L3,	.L3 # table_name
 % i,	j,	k # name
 % int,	int,	int # type
 % 2,	2,	2 # length
@@ -110,7 +110,7 @@ Ready.
 [ 9,	9,	9	]
 [ 10,	10,	10	]
 #select * from broken_test( (SELECT * FROM planes AS p) );
-% .,	.,	.,	. # table_name
+% .L3,	.L3,	.L3,	.L3 # table_name
 % i,	j,	k,	l # name
 % int,	int,	int,	int # type
 % 2,	2,	2,	2 # length

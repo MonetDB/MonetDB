@@ -80,6 +80,7 @@ QUERY = create function next_a()
             return col_a;
         end;
 ERROR = !CREATE FUNCTION: name 'next_a' already in use
+CODE  = 42000
 
 # 09:47:40 >  
 # 09:47:40 >  Done.

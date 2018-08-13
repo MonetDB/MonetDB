@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -24,11 +24,14 @@
 #include "mal.h"
 #include "mal_exception.h"
 
+#include <wchar.h>
+#include <wctype.h>
+
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
-
-#if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 13)
-#define pcre_free_study my_pcre_free
+#ifndef PCRE_STUDY_JIT_COMPILE
+/* old library version on e.g. EPEL 6 */
+#define pcre_free_study(x)		pcre_free(x)
 #endif
 
 #else
@@ -47,6 +50,8 @@ mal_export str PCREindex(int *ret, const pcre *pat, const str *val);
 mal_export str PCREpatindex(int *ret, const str *pat, const str *val);
 mal_export str PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags);
 mal_export str PCREreplace_bat_wrap(bat *res, const bat *or, const str *pat, const str *repl, const str *flags);
+mal_export str PCREreplacefirst_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags);
+mal_export str PCREreplacefirst_bat_wrap(bat *res, const bat *or, const str *pat, const str *repl, const str *flags);
 mal_export str PCREsql2pcre(str *ret, const str *pat, const str *esc);
 
 mal_export str PCRElike3(bit *ret, const str *s, const str *pat, const str *esc);
@@ -80,36 +85,188 @@ mal_export str ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, cons
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {
 	char *k;
-	int search;
-	int skip;
-	int len;
+	bool search;
+	ptrdiff_t len;
 	struct RE *n;
 } RE;
 
-#ifndef HAVE_STRCASESTR
-static const char *
-strcasestr(const char *haystack, const char *needle)
+/* we cannot use strcasecmp and strncasecmp since they work byte for
+ * byte and don't deal with multibyte encodings (such as UTF-8) */
+
+#ifdef _MSC_VER
+/* on Windows, we cannot set the UTF-8 locale, so we need to implement
+ * our own version of mbrtowc and mbstowcs */
+
+static size_t
+my_mbrtowc(wchar_t *dst, const char *src, size_t len)
 {
-	const char *p, *np = 0, *startn = 0;
-
-	for (p = haystack; *p; p++) {
-		if (np) {
-			if (toupper(*p) == toupper(*np)) {
-				if (!*++np)
-					return startn;
-			} else
-				np = 0;
-		} else if (toupper(*p) == toupper(*needle)) {
-			np = needle + 1;
-			startn = p;
-			if (!*np)
-				return startn;
-		}
+	if (len == 0)
+		return (size_t) -1;
+	if ((src[0] & 0x80) == 0) {
+		*dst = src[0];
+		return 1;
 	}
+	if (len == 1)
+		return (size_t) -1;
+	if ((src[0] & 0xE0) == 0xC0) {
+		*dst = ((src[0] & 0x1F) << 6) | (src[1] & 0x3F);
+		return 2;
+	}
+	if (len == 2)
+		return (size_t) -1;
+	if ((src[0] & 0xF0) == 0xE0) {
+		*dst = ((src[0] & 0x0F) << 12) | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F);
+		return 3;
+	}
+	if (len == 3)
+		return (size_t) -1;
+	if ((src[0] & 0xF8) == 0xF0) {
+		*dst = ((src[0] & 0x0F) << 18) | ((src[1] & 0x3F) << 12) | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F);
+		return 4;
+	}
+	return (size_t) -1;
+}
 
+static size_t
+my_mbstowcs(wchar_t *dst, const char *src, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if ((src[0] & 0x80) == 0) {
+			*dst = src[0];
+			src += 1;
+		} else if ((src[0] & 0xE0) == 0xC0) {
+			*dst = ((src[0] & 0x1F) << 6) | (src[1] & 0x3F);
+			src += 2;
+		} else if ((src[0] & 0xF0) == 0xE0) {
+			*dst = ((src[0] & 0x0F) << 12) | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F);
+			src += 3;
+		} else if ((src[0] & 0xF8) == 0xF0) {
+			*dst = ((src[0] & 0x0F) << 18) | ((src[1] & 0x3F) << 12) | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F);
+			src += 4;
+		} else {
+			return (size_t) -1;
+		}
+		if (*dst == 0)
+			return i;
+		dst++;
+	}
+	return i;
+}
+#define mbrtowc(dst, src, len, ps)	my_mbrtowc(dst, src, len)
+#define mbstowcs(dst, src, len)	my_mbstowcs(dst, src, len)
+#endif
+
+static int
+mystrncasecmp(const char *s1, const char *s2, size_t n1)
+{
+	wchar_t c1, c2;
+	size_t n2 = n1;
+
+#ifndef _MSC_VER
+	mbstate_t ps1, ps2;
+	memset(&ps1, 0, sizeof(ps1));
+	memset(&ps2, 0, sizeof(ps2));
+#endif
+	while (n1 > 0 && n2 > 0) {
+		size_t nn1 = mbrtowc(&c1, s1, n1, &ps1);
+		size_t nn2 = mbrtowc(&c2, s2, n2, &ps2);
+		if (nn1 == 0)
+			return -(nn2 != 0);
+		if (nn2 == 0)
+			return 1;
+		if (nn1 == (size_t) -1 || nn1 == (size_t) -2 ||
+			nn2 == (size_t) -1 || nn2 == (size_t) -2)
+			return 0;	 /* actually an error that shouldn't happen */
+		if (towlower((wint_t) c1) != towlower((wint_t) c2))
+			return towlower((wint_t) c1) - towlower((wint_t) c2);
+		n1 -= nn1;
+		s1 += nn1;
+		n2 -= nn2;
+		s2 += nn2;
+	}
 	return 0;
 }
+
+static int
+mystrcasecmp(const char *s1, const char *s2)
+{
+	wchar_t c1, c2;
+
+#ifndef _MSC_VER
+	mbstate_t ps1, ps2;
+	memset(&ps1, 0, sizeof(ps1));
+	memset(&ps2, 0, sizeof(ps2));
 #endif
+	for (;;) {
+		/* use some ridiculously high number as the length of the
+		 * input strings: we will still not go beyond the terminating
+		 * '\0' */
+		size_t nn1 = mbrtowc(&c1, s1, 1000, &ps1);
+		size_t nn2 = mbrtowc(&c2, s2, 1000, &ps2);
+		if (nn1 == 0)
+			return -(nn2 != 0);
+		if (nn2 == 0)
+			return 1;
+		if (nn1 == (size_t) -1 || nn1 == (size_t) -2 ||
+			nn2 == (size_t) -1 || nn2 == (size_t) -2)
+			return 0;	 /* actually an error that shouldn't happen */
+		if (towlower((wint_t) c1) != towlower((wint_t) c2))
+			return towlower((wint_t) c1) - towlower((wint_t) c2);
+		s1 += nn1;
+		s2 += nn2;
+	}
+}
+
+static const char *
+mystrcasestr(const char *haystack, const char *needle)
+{
+	size_t nlen = strlen(needle);
+
+	if (nlen == 0)
+		return haystack;
+	wchar_t *wneedle = GDKmalloc((nlen + 1) * sizeof(wchar_t));
+	if (wneedle == NULL || (nlen = mbstowcs(wneedle, needle, nlen + 1)) == (size_t) -1) {
+		GDKfree(wneedle);
+		nlen = strlen(needle);
+		/* fallback code */
+		for (size_t hlen = strlen(haystack); nlen <= hlen; hlen--) {
+			if (mystrncasecmp(haystack, needle, nlen) == 0)
+				return haystack;
+			while ((*++haystack & 0xC0) == 0x80)
+				hlen--;
+		}
+		return NULL;
+	}
+	for (wchar_t *w = wneedle; *w; w++)
+		*w = (wchar_t) towlower((wint_t) *w);
+#ifndef _MSC_VER
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
+#endif
+	for (size_t hlen = strlen(haystack); *haystack; hlen--) {
+		size_t i;
+		for (i = 0; i < nlen; i++) {
+			wchar_t c;
+			size_t j = mbrtowc(&c, haystack, hlen, &ps);
+			if (j == 0) {
+				GDKfree(wneedle);
+				return NULL;
+			}
+			if (towlower((wint_t) c) != (wint_t) wneedle[i])
+				break;
+		}
+		if (i == nlen) {
+			GDKfree(wneedle);
+			return haystack;
+		}
+		while ((*++haystack & 0xC0) == 0x80)
+			hlen--;
+	}
+	GDKfree(wneedle);
+	return NULL;
+}
 
 static int
 re_simple(const char *pat)
@@ -131,190 +288,158 @@ re_simple(const char *pat)
 	return nr;
 }
 
-static int
+static bool
 is_strcmpable(const char *pat, const str esc)
 {
 	if (pat[strcspn(pat, "%_")])
-		return 0;
+		return false;
 	return strlen(esc) == 0 || strstr(pat, esc) == NULL;
 }
 
-static int
+static bool
 re_match_ignore(const char *s, RE *pattern)
 {
 	RE *r;
 
-	for(r = pattern; r; r = r->n) {
+	for (r = pattern; r; r = r->n) {
 		if (!*s ||
-			(!r->search && strncasecmp(s, r->k, r->len) != 0) ||
-			(r->search && (s = strcasestr(s, r->k)) == NULL))
-			return 0;
+			(r->search ? (s = mystrcasestr(s, r->k)) == NULL : mystrncasecmp(s, r->k, r->len) != 0))
+			return false;
 		s += r->len;
 	}
-	return 1;
+	return true;
 }
 
-static int
+static bool
 re_match_no_ignore(const char *s, RE *pattern)
 {
 	RE *r;
 
-	for(r = pattern; r; r = r->n) {
+	for (r = pattern; r; r = r->n) {
 		if (!*s ||
-			(!r->search && strncmp(s, r->k, r->len) != 0) ||
-			(r->search && (s = strstr(s, r->k)) == NULL))
-			return 0;
+			(r->search ? (s = strstr(s, r->k)) == NULL : strncmp(s, r->k, r->len) != 0))
+			return false;
 		s += r->len;
 	}
-	return 1;
+	return true;
 }
 
+static void
+re_destroy(RE *p)
+{
+	if (p) {
+		GDKfree(p->k);
+		do {
+			RE *n = p->n;
+
+			GDKfree(p);
+			p = n;
+		} while (p);
+	}
+}
+
+/* Create a linked list of RE structures.  The k field in the first
+ * structure is allocated, whereas the k field in all subsequent
+ * structures point into the allocated buffer of the first. */
 static RE *
 re_create(const char *pat, int nr)
 {
-	char *x = GDKstrdup(pat);
 	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
-	char *p = x, *q = x;
+	char *p, *q;
 
-	if (x == NULL || r == NULL) {
-		GDKfree(x);
+	if (r == NULL)
+		return NULL;
+	r->n = NULL;
+	r->search = 0;
+	r->k = NULL;
+
+	if (*pat == '%') {
+		pat++; /* skip % */
+		r->search = true;
+	}
+	if ((p = GDKstrdup(pat)) == NULL) {
 		GDKfree(r);
 		return NULL;
 	}
-	r->n = NULL;
-	r->search = 0;
-	r->skip = 0;
-
-	if (*p == '%') {
-		p++; /* skip % */
-		r->search = 1;
-	}
-	q = p;
-	while((q = strchr(p, '%')) != NULL) {
+	while ((q = strchr(p, '%')) != NULL) {
 		*q = 0;
-		n->k = GDKstrdup(p);
-		n->len = (int) strlen(n->k);
-		n->n = NULL;
-		if ((--nr) > 0) {
+		n->k = p;
+		n->len = q - p;
+		if (--nr > 0) {
 			n = n->n = (RE*)GDKmalloc(sizeof(RE));
-			if ( n == NULL){
-				GDKfree(x);
-				GDKfree(r);
-				return NULL;
-			}
-			n->search = 1;
-			n->skip = 0;
+			if (n == NULL)
+				goto bailout;
+			n->search = true;
+			n->n = NULL;
+			n->k = NULL;
 		}
-		p = q+1;
+		p = q + 1;
 	}
-	GDKfree(x);
 	return r;
+  bailout:
+	re_destroy(r);
+	return NULL;
 }
-
-static void
-re_destroy( RE *p)
-{
-	while(p) {
-		RE *n = p->n;
-
-		GDKfree(p->k);
-		GDKfree(p);
-		p = n;
-	}
-}
-
-#define m2p(p) (pcre*)(((size_t*)p)+1)
-#define p2m(p) (pcre*)(((size_t*)p)-1)
 
 #ifdef HAVE_LIBPCRE
-static void *
-my_pcre_malloc(size_t s)
-{
-	size_t *sz = (size_t *) GDKmalloc(s + sizeof(size_t));
-
-	if ( sz == NULL)
-		return NULL;
-	*sz = s + sizeof(size_t);
-	return (void *) (sz + 1);
-}
-
-static void
-my_pcre_free(void *blk)
-{
-	size_t *sz;
-
-	if (blk == NULL)
-		return;
-	sz = (size_t *) blk;
-	sz -= 1;
-	GDKfree(sz);
-}
-#endif
-
 static str
 pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 {
-#ifdef HAVE_LIBPCRE
 	pcre *r;
-	const char err[BUFSIZ], *err_p = err;
+	const char *err_p = NULL;
 	int errpos = 0;
 	int options = PCRE_UTF8 | PCRE_MULTILINE;
 	if (insensitive)
 		options |= PCRE_CASELESS;
 
 	if ((r = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL,"pcre.compile", OPERATION_FAILED
-			" with\n'%s'\nat %d in\n'%s'.\n",
-				err_p, errpos, pattern);
+		throw(MAL, "pcre.compile", OPERATION_FAILED
+			  " with\n'%s'\nat %d in\n'%s'.\n",
+			  err_p, errpos, pattern);
 	}
-	*(pcre **) res = p2m(r);
+	*res = r;
 	return MAL_SUCCEED;
-#else
-	(void) res;
-	(void) pattern;
-	(void) insensitive;
-	throw(MAL,"pcre.compile", "Database was compiled without PCRE support.");
-#endif
 }
+#endif
 
 /* these two defines are copies from gdk_select.c */
 
 /* scan select loop with candidates */
-#define candscanloop(TEST)										\
-	do {														\
-		ALGODEBUG fprintf(stderr,								\
-			    "#BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
-			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
-			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
-		while (p < q) {											\
-			o = *candlist++;									\
-			r = (BUN) (o - off);								\
-			v = BUNtail(bi, r);									\
-			if (TEST)											\
-				bunfastapp(bn, &o);								\
-			p++;												\
-		}														\
+#define candscanloop(TEST)												\
+	do {																\
+		ALGODEBUG fprintf(stderr,										\
+						  "#BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
+						  "scanselect %s\n", BATgetId(b), BATcount(b),	\
+						  s ? BATgetId(s) : "NULL", anti, #TEST);		\
+		while (p < q) {													\
+			o = *candlist++;											\
+			r = (BUN) (o - off);										\
+			v = BUNtail(bi, r);											\
+			if (TEST)													\
+				bunfastappTYPE(oid, bn, &o);							\
+			p++;														\
+		}																\
 	} while (0)
 
 /* scan select loop without candidates */
-#define scanloop(TEST)											\
-	do {														\
-		ALGODEBUG fprintf(stderr,								\
-			    "#BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
-			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
-			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
-		while (p < q) {											\
-			v = BUNtail(bi, p-off);								\
-			if (TEST) {											\
-				o = (oid) p;									\
-				bunfastapp(bn, &o);								\
-			}													\
-			p++;												\
-		}														\
+#define scanloop(TEST)													\
+	do {																\
+		ALGODEBUG fprintf(stderr,										\
+						  "#BATselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
+						  "scanselect %s\n", BATgetId(b), BATcount(b),	\
+						  s ? BATgetId(s) : "NULL", anti, #TEST);		\
+		while (p < q) {													\
+			v = BUNtail(bi, p-off);										\
+			if (TEST) {													\
+				o = (oid) p;											\
+				bunfastappTYPE(oid, bn, &o);							\
+			}															\
+			p++;														\
+		}																\
 	} while (0)
 
 static str
-pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int anti)
+pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool anti)
 {
 #ifdef HAVE_LIBPCRE
 	int options = PCRE_UTF8 | PCRE_MULTILINE | PCRE_DOTALL;
@@ -324,8 +449,8 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 	int errpos;
 	int ovector[10];
 #else
-	int options = REG_NEWLINE | REG_NOSUB;
-	pcre re;
+	int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
+	regex_t re;
 	int errcode;
 #endif
 	BATiter bi = bat_iterator(b);
@@ -335,7 +460,6 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 	const char *v;
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
-	assert(anti == 0 || anti == 1);
 
 	if (caseignore) {
 #ifdef HAVE_LIBPCRE
@@ -350,8 +474,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 			  OPERATION_FAILED ": compilation of pattern \"%s\" failed\n", pat);
 	pe = pcre_study(re, 0, &error);
 	if (error != NULL) {
-		my_pcre_free(re);
-		pcre_free_study(pe);
+		pcre_free(re);
 		throw(MAL, "pcre.likeselect",
 			  OPERATION_FAILED ": studying pattern \"%s\" failed\n", pat);
 	}
@@ -364,12 +487,12 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 #ifdef HAVE_LIBPCRE
-		my_pcre_free(re);
 		pcre_free_study(pe);
+		pcre_free(re);
 #else
 		regfree(&re);
 #endif
-		throw(MAL, "pcre.likeselect", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	off = b->hseqbase;
 
@@ -414,26 +537,25 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 			scanloop(v && *v != '\200' && BODY);
 	}
 #ifdef HAVE_LIBPCRE
-	my_pcre_free(re);
 	pcre_free_study(pe);
+	pcre_free(re);
 #else
 	regfree(&re);
 #endif
 	BATsetcount(bn, BATcount(bn)); /* set some properties */
+	bn->theap.dirty |= BATcount(bn) > 0;
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase =  * (oid *) Tloc(bn, 0);
+	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
 	*bnp = bn;
 	return MAL_SUCCEED;
 
   bunins_failed:
 	BBPreclaim(bn);
 #ifdef HAVE_LIBPCRE
-	my_pcre_free(re);
 	pcre_free_study(pe);
+	pcre_free(re);
 #else
 	regfree(&re);
 #endif
@@ -442,7 +564,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 }
 
 static str
-re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int anti, int use_strcmp)
+re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool anti, bool use_strcmp)
 {
 	BATiter bi = bat_iterator(b);
 	BAT *bn;
@@ -453,18 +575,17 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 	RE *re = NULL;
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
-	assert(anti == 0 || anti == 1);
 
 	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL)
-		throw(MAL, "pcre.likeselect", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	off = b->hseqbase;
 
 	if (!use_strcmp) {
 		nr = re_simple(pat);
 		re = re_create(pat, nr);
 		if (!re)
-			throw(MAL, "pcre.likeselect", MAL_MALLOC_FAIL);
+			throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (s && !BATtdense(s)) {
 		const oid *candlist;
@@ -483,10 +604,10 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 			if (caseignore) {
 				if (anti)
 					candscanloop(v && *v != '\200' &&
-								 strcasecmp(v, pat) != 0);
+								 mystrcasecmp(v, pat) != 0);
 				else
 					candscanloop(v && *v != '\200' &&
-								 strcasecmp(v, pat) == 0);
+								 mystrcasecmp(v, pat) == 0);
 			} else {
 				if (anti)
 					candscanloop(v && *v != '\200' &&
@@ -529,10 +650,10 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 			if (caseignore) {
 				if (anti)
 					scanloop(v && *v != '\200' &&
-							 strcasecmp(v, pat) != 0);
+							 mystrcasecmp(v, pat) != 0);
 				else
 					scanloop(v && *v != '\200' &&
-							 strcasecmp(v, pat) == 0);
+							 mystrcasecmp(v, pat) == 0);
 			} else {
 				if (anti)
 					scanloop(v && *v != '\200' &&
@@ -563,9 +684,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase =  * (oid *) Tloc(bn, 0);
+	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
 	*bnp = bn;
 	re_destroy(re);
 	return MAL_SUCCEED;
@@ -577,113 +696,250 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 	throw(MAL, "pcre.likeselect", OPERATION_FAILED);
 }
 
-#define MAX_NR_CAPTURES  1024 /* Maximal number of captured substrings in one original string */
+/* maximum number of back references and quoted \ or $ in replacement string */
+#define MAX_NR_REFS		20
+
+struct backref {
+	int idx;
+	int start;
+	int end;
+};
+
+#ifdef HAVE_LIBPCRE
+/* fill in parameter backrefs (length maxrefs) with information about
+ * back references in the replacement string; a back reference is a
+ * dollar or backslash followed by a number */
+static int
+parse_replacement(const char *replacement, int len_replacement,
+				  struct backref *backrefs, int maxrefs)
+{
+	int nbackrefs = 0;
+
+	for (int i = 0; i < len_replacement && nbackrefs < maxrefs; i++) {
+		if (replacement[i] == '$' || replacement[i] == '\\') {
+			char *endptr;
+			backrefs[nbackrefs].idx = strtol(replacement + i + 1, &endptr, 10);
+			if (endptr > replacement + i + 1) {
+				int k = (int) (endptr - (replacement + i + 1));
+				backrefs[nbackrefs].start = i;
+				backrefs[nbackrefs].end = i + k + 1;
+				nbackrefs++;
+			} else if (replacement[i] == replacement[i + 1]) {
+				/* doubled $ or \, we must copy just one to the output */
+				backrefs[nbackrefs].idx = INT_MAX; /* impossible value > 0 */
+				backrefs[nbackrefs].start = i;
+				backrefs[nbackrefs].end = i + 1;
+				i++;			/* don't look at second $ or \ again */
+				nbackrefs++;
+			}
+			/* else: $ or \ followed by something we don't recognize,
+			 * so just leave it */
+		}
+	}
+	return nbackrefs;
+}
+
+static char *
+single_replace(pcre *pcre_code, pcre_extra *extra,
+			   const char *origin_str, int len_origin_str,
+			   int exec_options, int *ovector, int ovecsize,
+			   const char *replacement, int len_replacement,
+			   struct backref *backrefs, int nbackrefs,
+			   bool global, char *result, int *max_result)
+{
+	int offset = 0;
+	int len_result = 0;
+	int addlen;
+	char *tmp;
+
+	do {
+		int j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, offset,
+					  exec_options, ovector, ovecsize);
+		if (j <= 0)
+			break;
+		addlen = ovector[0] - offset + (nbackrefs == 0 ? len_replacement : 0);
+		if (len_result + addlen >= *max_result) {
+			tmp = GDKrealloc(result, len_result + addlen + 1);
+			if (tmp == NULL) {
+				GDKfree(result);
+				return NULL;
+			}
+			result = tmp;
+			*max_result = len_result + addlen + 1;
+		}
+		if (ovector[0] > offset) {
+			strncpy(result + len_result, origin_str + offset,
+					ovector[0] - offset);
+			len_result += ovector[0] - offset;
+		}
+		if (nbackrefs == 0) {
+			strncpy(result + len_result, replacement, len_replacement);
+			len_result += len_replacement;
+		} else {
+			int prevend = 0;
+			for (int i = 0; i < nbackrefs; i++) {
+				int off, len;
+				if (backrefs[i].idx >= ovecsize / 3) {
+					/* out of bounds, replace with empty string */
+					off = 0;
+					len = 0;
+				} else {
+					off = ovector[backrefs[i].idx * 2];
+					len = ovector[backrefs[i].idx * 2 + 1] - off;
+				}
+				addlen = backrefs[i].start - prevend + len;
+				if (len_result + addlen >= *max_result) {
+					tmp = GDKrealloc(result, len_result + addlen + 1);
+					if (tmp == NULL) {
+						GDKfree(result);
+						return NULL;
+					}
+					result = tmp;
+					*max_result = len_result + addlen + 1;
+				}
+				if (backrefs[i].start > prevend) {
+					strncpy(result + len_result, replacement + prevend,
+							backrefs[i].start - prevend);
+					len_result += backrefs[i].start - prevend;
+				}
+				if (len > 0) {
+					strncpy(result + len_result, origin_str + off, len);
+					len_result += len;
+				}
+				prevend = backrefs[i].end;
+			}
+			/* copy rest of replacement string (after last backref) */
+			addlen = len_replacement - prevend;
+			if (addlen > 0) {
+				if (len_result + addlen >= *max_result) {
+					tmp = GDKrealloc(result, len_result + addlen + 1);
+					if (tmp == NULL) {
+						GDKfree(result);
+						return NULL;
+					}
+					result = tmp;
+					*max_result = len_result + addlen + 1;
+				}
+				strncpy(result + len_result, replacement + prevend, addlen);
+				len_result += addlen;
+			}
+		}
+		offset = ovector[1];
+	} while (offset < len_origin_str && global);
+	if (offset < len_origin_str) {
+		addlen = len_origin_str - offset;
+		if (len_result + addlen >= *max_result) {
+			tmp = GDKrealloc(result, len_result + addlen + 1);
+			if (tmp == NULL) {
+				GDKfree(result);
+				return NULL;
+			}
+			result = tmp;
+			*max_result = len_result + addlen + 1;
+		}
+		strncpy(result + len_result, origin_str + offset, addlen);
+		len_result += addlen;
+	}
+	/* null terminate string */
+	result[len_result] = '\0';
+	return result;
+}
+#endif
 
 static str
-pcre_replace(str *res, const char *origin_str, const char *pattern, const char *replacement, const char *flags)
+pcre_replace(str *res, const char *origin_str, const char *pattern,
+			 const char *replacement, const char *flags, bool global)
 {
 #ifdef HAVE_LIBPCRE
-	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
+	const char *err_p = NULL;
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	char *tmpres;
-	int i, j, k, len, errpos = 0, offset = 0;
+	int max_result;
+	int i, errpos = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	int *ovector, ovecsize;
 	int len_origin_str = (int) strlen(origin_str);
 	int len_replacement = (int) strlen(replacement);
-	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
+	struct backref backrefs[MAX_NR_REFS];
+	int nbackrefs = 0;
 
-	for (i = 0; i < (int)strlen(flags); i++) {
-		if (flags[i] == 'e') {
-			exec_options -= PCRE_NOTEMPTY;
-/*
-			mnstr_printf(GDKout, "exec_options %d, PCRE_NOTEMPTY %d\n",
-					exec_options, PCRE_NOTEMPTY);
-*/
-		} else if (flags[i] == 'i') {
+	while (*flags) {
+		switch (*flags) {
+		case 'e':
+			exec_options &= ~PCRE_NOTEMPTY;
+			break;
+		case 'i':
 			compile_options |= PCRE_CASELESS;
-		} else if (flags[i] == 'm') {
+			break;
+		case 'm':
 			compile_options |= PCRE_MULTILINE;
-		} else if (flags[i] == 's') {
+			break;
+		case 's':
 			compile_options |= PCRE_DOTALL;
-		} else if (flags[i] == 'x') {
+			break;
+		case 'x':
 			compile_options |= PCRE_EXTENDED;
-		} else {
-			throw(MAL,"pcre_replace",OPERATION_FAILED "unsupported flag character '%c'\n", flags[i]);
+			break;
+		default:
+			throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+				  ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n",
+				  *flags);
 		}
+		flags++;
 	}
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL,"pcre_replace",OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
+		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+			  OPERATION_FAILED ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
+			  pattern, errpos, err_p);
 	}
 
 	/* Since the compiled pattern is going to be used several times, it is
 	 * worth spending more time analyzing it in order to speed up the time
 	 * taken for matching.
 	 */
-	extra = pcre_study(pcre_code, 0, &err_p2);
+	extra = pcre_study(pcre_code, 0, &err_p);
+	if (err_p != NULL) {
+		pcre_free(pcre_code);
+		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+			  OPERATION_FAILED ": pcre study of pattern (%s) failed with '%s'.\n",
+			  pattern, err_p);
+	}
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKmalloc(sizeof(int) * ovecsize)) == NULL) {
-		my_pcre_free(pcre_code);
-		throw(MAL, "pcre_replace",MAL_MALLOC_FAIL);
+		pcre_free_study(extra);
+		pcre_free(pcre_code);
+		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	i = 0;
-	do {
-		j = pcre_exec(pcre_code, extra, origin_str, len_origin_str,
-						offset, exec_options, ovector, ovecsize);
-		if (j > 0){
-			capture_offsets[i] = ovector[0];
-			capture_offsets[i+1] = ovector[1];
-			ncaptures++;
-			i += 2;
-			len_del += (ovector[1] - ovector[0]);
-			offset = ovector[1];
-		}
-	} while((j > 0) && (offset < len_origin_str) && (ncaptures < MAX_NR_CAPTURES));
-	pcre_free_study(extra);
+	/* identify back references in the replacement string */
+	nbackrefs = parse_replacement(replacement, len_replacement,
+								  backrefs, MAX_NR_REFS);
 
-	if (ncaptures > 0){
-		tmpres = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
-		if (!tmpres) {
-			my_pcre_free(pcre_code);
-			GDKfree(ovector);
-			throw(MAL, "pcre_replace", MAL_MALLOC_FAIL);
-		}
-
-		j = k = 0;
-
-		/* possibly copy the substring before the first captured substring */
-		strncpy(tmpres, origin_str, capture_offsets[j]);
-		k = capture_offsets[j];
-		j++;
-
-		for (i = 0; i < ncaptures - 1; i++) {
-			strncpy(tmpres+k, replacement, len_replacement);
-			k += len_replacement;
-			/* copy the substring between two captured substrings */
-			len = capture_offsets[j+1] - capture_offsets[j];
-			strncpy(tmpres+k, origin_str+capture_offsets[j], len);
-			k += len;
-			j += 2;
-		}
-
-		/* replace the last captured substring */
-		strncpy(tmpres+k, replacement, len_replacement);
-		k += len_replacement;
-		/* possibly copy the substring after the last captured substring */
-		len = len_origin_str - capture_offsets[j];
-		strncpy(tmpres+k, origin_str+capture_offsets[j], len);
-		k += len;
-		tmpres[k] = '\0';
-	} else { /* no captured substrings, return the original string*/
-		tmpres = GDKstrdup(origin_str);
+	max_result = len_origin_str + 1;
+	tmpres = GDKmalloc(max_result);
+	if (tmpres == NULL) {
+		GDKfree(ovector);
+		pcre_free_study(extra);
+		pcre_free(pcre_code);
+		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	my_pcre_free(pcre_code);
+	tmpres = single_replace(pcre_code, extra, origin_str, len_origin_str,
+							exec_options, ovector, ovecsize, replacement,
+							len_replacement, backrefs, nbackrefs, global,
+							tmpres, &max_result);
 	GDKfree(ovector);
+	pcre_free_study(extra);
+	pcre_free(pcre_code);
+	if (tmpres == NULL)
+		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
 	*res = tmpres;
 	return MAL_SUCCEED;
 #else
@@ -692,144 +948,124 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 	(void) pattern;
 	(void) replacement;
 	(void) flags;
-	throw(MAL,"pcre.replace", "Database was compiled without PCRE support.");
+	(void) global;
+	throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+		  "Database was compiled without PCRE support.");
 #endif
 }
 
 static str
-pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *replacement, const char *flags)
+pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
+				 const char *replacement, const char *flags, bool global)
 {
 #ifdef HAVE_LIBPCRE
 	BATiter origin_strsi = bat_iterator(origin_strs);
-	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
-	int i, j, k, len, errpos = 0, offset = 0;
+	const char *err_p = NULL;
+	char *tmpres;
+	int i, errpos = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	BAT *tmpbat;
 	BUN p, q;
 	int *ovector, ovecsize;
-	int len_origin_str, len_replacement = (int) strlen(replacement);
-	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
+	int len_replacement = (int) strlen(replacement);
+	struct backref backrefs[MAX_NR_REFS];
+	int nbackrefs = 0;
 	const char *origin_str;
-	char *replaced_str;
+	int max_dest_size = 0;
 
-	for (i = 0; i < (int)strlen(flags); i++) {
-		if (flags[i] == 'e') {
-			exec_options |= (~PCRE_NOTEMPTY);
-		} else if (flags[i] == 'i') {
+	while (*flags) {
+		switch (*flags) {
+		case 'e':
+			exec_options &= ~PCRE_NOTEMPTY;
+			break;
+		case 'i':
 			compile_options |= PCRE_CASELESS;
-		} else if (flags[i] == 'm') {
+			break;
+		case 'm':
 			compile_options |= PCRE_MULTILINE;
-		} else if (flags[i] == 's') {
+			break;
+		case 's':
 			compile_options |= PCRE_DOTALL;
-		} else if (flags[i] == 'x') {
+			break;
+		case 'x':
 			compile_options |= PCRE_EXTENDED;
-		} else {
-			throw(MAL,"pcre_replace_bat", ILLEGAL_ARGUMENT
-				" \"flags\" contains invalid character '%c'\n", flags[i]);
+			break;
+		default:
+			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+				  ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n",
+				  *flags);
 		}
+		flags++;
 	}
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL,"pcre_replace_bat", OPERATION_FAILED
+		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+			  OPERATION_FAILED
 			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
 			  pattern, errpos, err_p);
 	}
 
-	/* Since the compiled pattern is ging to be used several times, it is worth spending
-	 * more time analyzing it in order to speed up the time taken for matching.
+	/* Since the compiled pattern is going to be used several times,
+	 * it is worth spending more time analyzing it in order to speed
+	 * up the time taken for matching.
 	 */
-	extra = pcre_study(pcre_code, 0, &err_p2);
+	extra = pcre_study(pcre_code, 0, &err_p);
+	if (err_p != NULL) {
+		pcre_free(pcre_code);
+		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+			  OPERATION_FAILED);
+	}
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
-		my_pcre_free(pcre_code);
-		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+		pcre_free_study(extra);
+		pcre_free(pcre_code);
+		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
+	/* identify back references in the replacement string */
+	nbackrefs = parse_replacement(replacement, len_replacement,
+								  backrefs, MAX_NR_REFS);
+
 	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs), TRANSIENT);
-	if( tmpbat==NULL) {
-		my_pcre_free(pcre_code);
+
+	/* the buffer for all destination strings is allocated only once,
+	 * and extended when needed */
+	max_dest_size = len_replacement + 1;
+	tmpres = GDKmalloc(max_dest_size);
+	if (tmpbat == NULL || tmpres == NULL) {
+		pcre_free_study(extra);
+		pcre_free(pcre_code);
 		GDKfree(ovector);
-		throw(MAL,"pcre.replace",MAL_MALLOC_FAIL);
+		BBPreclaim(tmpbat);
+		GDKfree(tmpres);
+		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
-		len_origin_str = (int) strlen(origin_str);
-		i = ncaptures = len_del = offset = 0;
-		do {
-			j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, offset,
-					exec_options, ovector, ovecsize);
-			if (j > 0){
-				capture_offsets[i] = ovector[0];
-				capture_offsets[i+1] = ovector[1];
-				ncaptures++;
-				i += 2;
-				len_del += (ovector[1] - ovector[0]);
-				offset = ovector[1];
-			}
-		} while((j > 0) && (offset < len_origin_str) && (ncaptures < MAX_NR_CAPTURES));
-
-		if (ncaptures > 0){
-			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
-			if (replaced_str == NULL) {
-				my_pcre_free(pcre_code);
-				pcre_free_study(extra);
-				GDKfree(ovector);
-				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
-			}
-
-			j = k = 0;
-
-			/* copy eventually the substring before the first captured
-			 * substring */
-			strncpy(replaced_str, origin_str, capture_offsets[j]);
-			k = capture_offsets[j];
-			j++;
-
-			for (i = 0; i < ncaptures - 1; i++) {
-				strncpy(replaced_str+k, replacement, len_replacement);
-				k += len_replacement;
-				/* copy the substring between two captured substrings */
-				len = capture_offsets[j+1] - capture_offsets[j];
-				strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
-				k += len;
-				j += 2;
-			}
-
-			/* replace the last captured substring */
-			strncpy(replaced_str+k, replacement, len_replacement);
-			k += len_replacement;
-			/* copy eventually the substring after the last captured substring */
-			len = len_origin_str - capture_offsets[j];
-			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
-			k += len;
-			replaced_str[k] = '\0';
-			if (BUNappend(tmpbat, replaced_str, FALSE) != GDK_SUCCEED) {
-				my_pcre_free(pcre_code);
-				pcre_free_study(extra);
-				GDKfree(ovector);
-				GDKfree(replaced_str);
-				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
-			}
-			GDKfree(replaced_str);
-		} else { /* no captured substrings, copy the original string into new bat */
-			if (BUNappend(tmpbat, origin_str, FALSE) != GDK_SUCCEED) {
-				my_pcre_free(pcre_code);
-				pcre_free_study(extra);
-				GDKfree(ovector);
-				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
-			}
+		tmpres = single_replace(pcre_code, extra, origin_str,
+								(int) strlen(origin_str), exec_options,
+								ovector, ovecsize, replacement,
+								len_replacement, backrefs, nbackrefs, global,
+								tmpres, &max_dest_size);
+		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
+			pcre_free_study(extra);
+			pcre_free(pcre_code);
+			GDKfree(ovector);
+			GDKfree(tmpres);
+			BBPreclaim(tmpbat);
+			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
-
 	pcre_free_study(extra);
-	my_pcre_free(pcre_code);
+	pcre_free(pcre_code);
 	GDKfree(ovector);
+	GDKfree(tmpres);
 	*res = tmpbat;
 	return MAL_SUCCEED;
 #else
@@ -838,7 +1074,9 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	(void) pattern;
 	(void) replacement;
 	(void) flags;
-	throw(MAL,"pcre.replace_bat", "Database was compiled without PCRE support.");
+	(void) global;
+	throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+		  "Database was compiled without PCRE support.");
 #endif
 }
 
@@ -846,62 +1084,58 @@ str
 pcre_init(void *ret)
 {
 	(void) ret;
-#ifdef HAVE_LIBPCRE
-#if defined(HAVE_EMBEDDED) && defined(WIN32)
-	// TODO: what should we do here?
-#else
-	pcre_malloc = my_pcre_malloc;
-	pcre_free = my_pcre_free;
-#endif
-#else
-#endif
 	return NULL;
 }
 
 static str
 pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *flags)
 {
-	int i;
 	int pos;
 #ifdef HAVE_LIBPCRE
-	const char err[BUFSIZ], *err_p = err;
+	const char *err_p = NULL;
 	int errpos = 0;
 	int options = PCRE_UTF8;
 	pcre *re;
 #else
 	int options = REG_NOSUB;
-	pcre re;
+	regex_t re;
 	int errcode;
 	int retval;
 #endif
 
-	for (i = 0; i < (int)strlen(flags); i++) {
-		if (flags[i] == 'i') {
+	while (*flags) {
+		switch (*flags) {
+		case 'i':
 #ifdef HAVE_LIBPCRE
 			options |= PCRE_CASELESS;
 #else
 			options |= REG_ICASE;
 #endif
-		} else if (flags[i] == 'm') {
+			break;
+		case 'm':
 #ifdef HAVE_LIBPCRE
 			options |= PCRE_MULTILINE;
 #else
 			options |= REG_NEWLINE;
 #endif
-		} else if (flags[i] == 's') {
+			break;
 #ifdef HAVE_LIBPCRE
+		case 's':
 			options |= PCRE_DOTALL;
+			break;
 #endif
-		} else if (flags[i] == 'x') {
+		case 'x':
 #ifdef HAVE_LIBPCRE
 			options |= PCRE_EXTENDED;
 #else
 			options |= REG_EXTENDED;
 #endif
-		} else {
+			break;
+		default:
 			throw(MAL, "pcre.match", ILLEGAL_ARGUMENT
-					": unsupported flag character '%c'\n", flags[i]);
+				  ": unsupported flag character '%c'\n", *flags);
 		}
+		flags++;
 	}
 	if (strcmp(val, str_nil) == 0) {
 		*ret = FALSE;
@@ -911,20 +1145,21 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 #ifdef HAVE_LIBPCRE
 	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL) 
 #else
-	if ((errcode = regcomp(&re, pat, options)) != 0)
+		if ((errcode = regcomp(&re, pat, options)) != 0)
 #endif
-	{
-		throw(MAL, "pcre.match", OPERATION_FAILED
-				": compilation of regular expression (%s) failed "
+			{
+				throw(MAL, "pcre.match", OPERATION_FAILED
+					  ": compilation of regular expression (%s) failed "
 #ifdef HAVE_LIBPCRE
-				"at %d with '%s'", pat, errpos, err_p);
+					  "at %d with '%s'", pat, errpos, err_p
 #else
-				, pat);
+					  , pat
 #endif
-	}
+					);
+			}
 #ifdef HAVE_LIBPCRE
 	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
-	my_pcre_free(re);
+	pcre_free(re);
 #else
 	retval = regexec(&re, val, (size_t) 0, NULL, 0);
 	pos = retval == REG_NOMATCH ? -1 : (retval == REG_ENOSYS ? -2 : 0);
@@ -936,8 +1171,8 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 		*ret = FALSE;
 	else
 		throw(MAL, "pcre.match", OPERATION_FAILED
-				": matching of regular expression (%s) failed with %d",
-				pat, pos);
+			  ": matching of regular expression (%s) failed with %d",
+			  pat, pos);
 	return MAL_SUCCEED;
 }
 
@@ -961,16 +1196,18 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	int specials;
 	int c;
 
+	if (strlen(esc_str) > 1)
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(22019) ILLEGAL_ARGUMENT ": ESCAPE string must have length 1");
 	if (pat == NULL )
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
-	ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
+	ppat = GDKmalloc(strlen(pat)*3+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
-		throw(MAL, "pcre.sql2pcre", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	*r = ppat;
 	/* The escape character can be a char which is special in a PCRE
 	 * expression.  If the user used the "+" char as escape and has "++"
-	 * in its pattern, then replacing this with "+" is not correct and
+	 * in their pattern, then replacing this with "+" is not correct and
 	 * should be "\+" instead. */
 	specials = (*esc_str && strchr(pcre_specials, esc) != NULL);
 
@@ -1000,7 +1237,12 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		} else if (c == '%' && !escaped) {
 			*ppat++ = '.';
 			*ppat++ = '*';
+			*ppat++ = '?';
 			hasWildcard = 1;
+			/* collapse multiple %, but only if it isn't the escape */
+			if (esc != '%')
+				while (*pat == '%')
+					pat++;
 		} else if (c == '_' && !escaped) {
 			*ppat++ = '.';
 			hasWildcard = 1;
@@ -1020,6 +1262,8 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		if (escaped)
 			throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 		*r = GDKstrdup(str_nil);
+		if (*r == NULL)
+			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;
@@ -1027,6 +1271,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	return MAL_SUCCEED;
 }
 
+#ifdef HAVE_LIBPCRE
 /* change SQL PATINDEX pattern into PCRE pattern */
 static str
 pat2pcre(str *r, const char *pat)
@@ -1036,7 +1281,7 @@ pat2pcre(str *r, const char *pat)
 	int start = 0;
 
 	if (ppat == NULL)
-		throw(MAL, "pcre.sql2pcre", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*r = ppat;
 	while (*pat) {
 		int c = *pat++;
@@ -1059,25 +1304,52 @@ pat2pcre(str *r, const char *pat)
 	*ppat = 0;
 	return MAL_SUCCEED;
 }
+#endif
+
 /*
  * @+ Wrapping
  */
 #include "mal.h"
 str
-PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags){
-	return pcre_replace(res,*or,*pat,*repl,*flags);
+PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags)
+{
+	return pcre_replace(res, *or, *pat, *repl, *flags, true);
 }
 
 str
-PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, const str *flags){
+PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, const str *flags)
+{
+	BAT *b, *bn = NULL;
+	str msg;
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batpcre.replace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, true);
+	if (msg == MAL_SUCCEED) {
+		*res = bn->batCacheid;
+		BBPkeepref(*res);
+	}
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+str
+PCREreplacefirst_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags)
+{
+	return pcre_replace(res, *or, *pat, *repl, *flags, false);
+}
+
+str
+PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, const str *flags)
+{
 	BAT *b,*bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "pcre.replace", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batpcre.replace_first", RUNTIME_OBJECT_MISSING);
 
-	msg = pcre_replace_bat(&bn,b,*pat,*repl,*flags);
-	if( msg == MAL_SUCCEED){
-		*res= bn->batCacheid;
+	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, false);
+	if (msg == MAL_SUCCEED) {
+		*res = bn->batCacheid;
 		BBPkeepref(*res);
 	}
 	BBPunfix(b->batCacheid);
@@ -1087,15 +1359,23 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 str
 PCREmatch(bit *ret, const str *val, const str *pat)
 {
-	char *flags = "s";
-	return pcre_match_with_flags(ret, *val, *pat, flags);
+	return pcre_match_with_flags(ret, *val, *pat,
+#ifdef HAVE_LIBPCRE
+								 "s"
+#else
+								 "x"
+#endif
+		);
 }
 
 str
 PCREimatch(bit *ret, const str *val, const str *pat)
 {
-	char *flags = "i";
-	return pcre_match_with_flags(ret, *val, *pat, flags);
+	return pcre_match_with_flags(ret, *val, *pat, "i"
+#ifndef HAVE_LIBPCRE
+								 "x"
+#endif
+		);
 }
 
 str
@@ -1105,7 +1385,7 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 	int v[2];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec(m2p(pattern), NULL, *s, (int) strlen(*s), 0, 0, v, 2) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0, 0, v, 2) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
@@ -1113,7 +1393,7 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 	(void) res;
 	(void) pattern;
 	(void) s;
-	throw(MAL,"pcre.index", "Database was compiled without PCRE support.");
+	throw(MAL, "pcre.index", "Database was compiled without PCRE support.");
 #endif
 }
 
@@ -1121,17 +1401,26 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 str
 PCREpatindex(int *ret, const str *pat, const str *val)
 {
+#ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
 	char *ppat = NULL, *msg;
 
 	if ((msg = pat2pcre(&ppat, *pat)) != MAL_SUCCEED)
 		return msg;
-	if ((msg = pcre_compile_wrap(&re, ppat, FALSE)) != MAL_SUCCEED)
+	if ((msg = pcre_compile_wrap(&re, ppat, FALSE)) != MAL_SUCCEED) {
+		GDKfree(ppat);
 		return msg;
+	}
 	GDKfree(ppat);
 	msg = PCREindex(ret, re, val);
-	GDKfree(re);
+	pcre_free(re);
 	return msg;
+#else
+	(void) ret;
+	(void) pat;
+	(void) val;
+	throw(MAL, "pcre.patindex", "Database was compiled without PCRE support.");
+#endif
 }
 
 str
@@ -1142,7 +1431,7 @@ PCREquote(str *ret, const str *val)
 
 	*ret = p = GDKmalloc(strlen(s) * 2 + 1); /* certainly long enough */
 	if (p == NULL)
-		throw(MAL, "pcre.quote", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.quote", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	/* quote all non-alphanumeric ASCII characters (i.e. leave
 	   non-ASCII and alphanumeric alone) */
 	while (*s) {
@@ -1175,7 +1464,7 @@ PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *ise
 		if (strcmp(ppat, str_nil) == 0) {
 			*ret = FALSE;
 			if (*isens) {
-				if (strcasecmp(*s, *pat) == 0)
+				if (mystrcasecmp(*s, *pat) == 0)
 					*ret = TRUE;
 			} else {
 				if (strcmp(*s, *pat) == 0)
@@ -1199,7 +1488,7 @@ PCRElike3(bit *ret, const str *s, const str *pat, const str *esc)
 {
 	bit no = FALSE;
 
-	return(PCRElike4(ret, s, pat, esc, &no));
+	return PCRElike4(ret, s, pat, esc, &no);
 }
 
 str
@@ -1218,7 +1507,7 @@ PCREnotlike3(bit *ret, const str *s, const str *pat, const str *esc)
 
 	rethrow("str.not_like", tmp, PCRElike3(&r, s, pat, esc));
 	*ret = !r;
-	return(MAL_SUCCEED);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1229,7 +1518,7 @@ PCREnotlike2(bit *ret, const str *s, const str *pat)
 
 	rethrow("str.not_like", tmp, PCRElike2(&r, s, pat));
 	*ret = !r;
-	return(MAL_SUCCEED);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1237,7 +1526,7 @@ PCREilike3(bit *ret, const str *s, const str *pat, const str *esc)
 {
 	bit yes = TRUE;
 
-	return(PCRElike4(ret, s, pat, esc, &yes));
+	return PCRElike4(ret, s, pat, esc, &yes);
 }
 
 str
@@ -1256,7 +1545,7 @@ PCREnotilike3(bit *ret, const str *s, const str *pat, const str *esc)
 
 	rethrow("str.not_ilike", tmp, PCREilike3(&r, s, pat, esc));
 	*ret = !r;
-	return(MAL_SUCCEED);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1267,7 +1556,7 @@ PCREnotilike2(bit *ret, const str *s, const str *pat)
 
 	rethrow("str.not_ilike", tmp, PCREilike2(&r, s, pat));
 	*ret = !r;
-	return(MAL_SUCCEED);
+	return MAL_SUCCEED;
 }
 
 static str
@@ -1289,9 +1578,10 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		}
 
 		r = COLnew(strs->hseqbase, TYPE_bit, BATcount(strs), TRANSIENT);
-		if( r==NULL) {
+		if (r==NULL) {
 			GDKfree(ppat);
-			throw(MAL,"pcre.like3",MAL_MALLOC_FAIL);
+			BBPunfix(strs->batCacheid);
+			throw(MAL, "pcre.like3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		br = (bit*)Tloc(r, 0);
 		strsi = bat_iterator(strs);
@@ -1311,13 +1601,13 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		} else {
 			int pos;
 #ifdef HAVE_LIBPCRE
-			const char err[BUFSIZ], *err_p = err;
+			const char *err_p = NULL;
 			int errpos = 0;
 			int options = PCRE_UTF8 | PCRE_DOTALL;
 			pcre *re;
 #else
-			pcre re;
-			int options = REG_NEWLINE | REG_NOSUB;
+			regex_t re;
+			int options = REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
 			int errcode;
 #endif
 
@@ -1328,21 +1618,23 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 				options |= REG_ICASE;
 #endif
 			}
+			if (
 #ifdef HAVE_LIBPCRE
-			if ((re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL)
+				(re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL
 #else
-			if ((errcode = regcomp(&re, ppat, options)) != 0) 
+				(errcode = regcomp(&re, ppat, options)) != 0
 #endif
-			{
+				) {
 				BBPunfix(strs->batCacheid);
 				BBPunfix(r->batCacheid);
 				res = createException(MAL, "pcre.match", OPERATION_FAILED
-						": compilation of regular expression (%s) failed "
+									  ": compilation of regular expression (%s) failed"
 #ifdef HAVE_LIBPCRE
-						"at %d with '%s'", ppat, errpos, err_p);
+									  " at %d with '%s'", ppat, errpos, err_p
 #else
-						, ppat);
+									  , ppat
 #endif
+					);
 				GDKfree(ppat);
 				return res;
 			}
@@ -1377,7 +1669,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 				i++;
 			}
 #ifdef HAVE_LIBPCRE
-			my_pcre_free(re);
+			pcre_free(re);
 #else
 			regfree(&re);
 #endif
@@ -1385,7 +1677,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		r->trevsorted = 0;
-		BATkey(r,FALSE);
+		BATkey(r, false);
 
 		BBPkeepref(*ret = r->batCacheid);
 		BBPunfix(strs->batCacheid);
@@ -1399,7 +1691,7 @@ BATPCRElike(bat *ret, const bat *bid, const str *pat, const str *esc)
 {
 	bit no = FALSE;
 
-	return(BATPCRElike3(ret, bid, pat, esc, &no, &no));
+	return BATPCRElike3(ret, bid, pat, esc, &no, &no);
 }
 
 str
@@ -1416,7 +1708,7 @@ BATPCREnotlike(bat *ret, const bat *bid, const str *pat, const str *esc)
 	bit no = FALSE;
 	bit yes = TRUE;
 
-	return(BATPCRElike3(ret, bid, pat, esc, &no, &yes));
+	return BATPCRElike3(ret, bid, pat, esc, &no, &yes);
 }
 
 str
@@ -1424,7 +1716,7 @@ BATPCREnotlike2(bat *ret, const bat *bid, const str *pat)
 {
 	char *esc = "\\";
 
-	return(BATPCREnotlike(ret, bid, pat, &esc));
+	return BATPCREnotlike(ret, bid, pat, &esc);
 }
 
 str
@@ -1433,7 +1725,7 @@ BATPCREilike(bat *ret, const bat *bid, const str *pat, const str *esc)
 	bit yes = TRUE;
 	bit no = FALSE;
 
-	return(BATPCRElike3(ret, bid, pat, esc, &yes, &no));
+	return BATPCRElike3(ret, bid, pat, esc, &yes, &no);
 }
 
 str
@@ -1449,7 +1741,7 @@ BATPCREnotilike(bat *ret, const bat *bid, const str *pat, const str *esc)
 {
 	bit yes = TRUE;
 
-	return(BATPCRElike3(ret, bid, pat, esc, &yes, &yes));
+	return BATPCRElike3(ret, bid, pat, esc, &yes, &yes);
 }
 
 str
@@ -1457,7 +1749,7 @@ BATPCREnotilike2(bat *ret, const bat *bid, const str *pat)
 {
 	char *esc = "\\";
 
-	return(BATPCREnotilike(ret, bid, pat, &esc));
+	return BATPCREnotilike(ret, bid, pat, &esc);
 }
 
 str
@@ -1466,24 +1758,24 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	BAT *b, *s = NULL, *bn = NULL;
 	str res;
 	char *ppat = NULL;
-	int use_re = 0;
-	int use_strcmp = 0;
+	bool use_re = false;
+	bool use_strcmp = false;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && (*sid) != bat_nil && *sid && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && *sid && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/* no escape, try if a simple list of keywords works */
 	if (is_strcmpable(*pat, *esc)) {
-		use_re = 1;
-		use_strcmp = 1;
-	} else if ((strcmp(*esc, str_nil) == 0 || strlen(*esc) == 0) &&
-             re_simple(*pat) > 0) {
-		use_re = 1;
+		use_re = true;
+		use_strcmp = true;
+	} else if ((strcmp(*esc, str_nil) == 0 || strlen(*esc) == 0 || strchr(*pat, **esc) == NULL) &&
+			   re_simple(*pat) > 0) {
+		use_re = true;
 	} else {
 		res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
 		if (res != MAL_SUCCEED) {
@@ -1497,8 +1789,12 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 			ppat = NULL;
 			if (*caseignore) {
 				ppat = GDKmalloc(strlen(*pat) + 3);
-				if (ppat == NULL)
-					throw(MAL, "algebra.likeselect", MAL_MALLOC_FAIL);
+				if (ppat == NULL) {
+					BBPunfix(b->batCacheid);
+					if (s)
+						BBPunfix(s->batCacheid);
+					throw(MAL, "algebra.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 				ppat[0] = '^';
 				strcpy(ppat + 1, *pat);
 				strcat(ppat, "$");
@@ -1507,16 +1803,16 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	}
 
 	if (use_re) {
-		res = re_likeselect(&bn, b, s, *pat, *caseignore, *anti, use_strcmp);
+		res = re_likeselect(&bn, b, s, *pat, (bool) *caseignore, (bool) *anti, use_strcmp);
 	} else if (ppat == NULL) {
 		/* no pattern and no special characters: can use normal select */
-		bn = BATselect(b, s, *pat, NULL, 1, 1, *anti);
+		bn = BATselect(b, s, *pat, NULL, true, true, *anti);
 		if (bn == NULL)
 			res = createException(MAL, "algebra.likeselect", GDK_EXCEPTION);
 		else
 			res = MAL_SUCCEED;
 	} else {
-		res = pcre_likeselect(&bn, b, s, ppat, *caseignore, *anti);
+		res = pcre_likeselect(&bn, b, s, ppat, (bool) *caseignore, (bool) *anti);
 	}
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -1567,7 +1863,7 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 
 static char *
 pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
-			const char *esc, int caseignore)
+		 const char *esc, bool caseignore)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
@@ -1589,22 +1885,22 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #ifdef HAVE_LIBPCRE
 	pcre *pcrere = NULL;
 	pcre_extra *pcreex = NULL;
-	const char errbuf[BUFSIZ], *err_p = errbuf;
+	const char *err_p = NULL;
 	int errpos;
 	int pcreopt = PCRE_UTF8 | PCRE_MULTILINE;
 #else
 	int pcrere = 0;
-	pcre regex;
-	int options =  REG_NEWLINE | REG_NOSUB;
+	regex_t regex;
+	int options =  REG_NEWLINE | REG_NOSUB | REG_EXTENDED;
 	int errcode = -1;
 #endif
 
 
 	if (caseignore)
 #ifdef HAVE_LIBPCRE
-				pcreopt |= PCRE_CASELESS;
+		pcreopt |= PCRE_CASELESS;
 #else
-				options |= REG_ICASE;
+	options |= REG_ICASE;
 #endif
 
 	ALGODEBUG fprintf(stderr, "#pcrejoin(l=%s#" BUNFMT "[%s]%s%s,"
@@ -1666,7 +1962,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (*esc == 0 && (nr = re_simple(vr)) > 0) {
 			re = re_create(vr, nr);
 			if (re == NULL) {
-				msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		} else {
@@ -1679,7 +1975,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (caseignore) {
 					pcrepat = GDKmalloc(strlen(vr) + 3);
 					if (pcrepat == NULL) {
-						msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
+						msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 					sprintf(pcrepat, "^%s$", vr);
@@ -1699,7 +1995,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					goto bailout;
 				}
 				pcreex = pcre_study(pcrere, 0, &err_p);
-				if (pcreex == NULL) {
+				if (err_p != NULL) {
 					msg = createException(MAL, "pcre.join", OPERATION_FAILED
 										  ": pcre study of pattern (%s) "
 										  "failed with '%s'", pcrepat, err_p);
@@ -1762,14 +2058,14 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				BATsetcount(r2, BATcount(r2));
 				if (BATextend(r1, newcap) != GDK_SUCCEED ||
 					BATextend(r2, newcap) != GDK_SUCCEED) {
-					msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				assert(BATcapacity(r1) == BATcapacity(r2));
 			}
 			if (BATcount(r1) > 0) {
 				if (lastl + 1 != lo)
-					r1->tdense = 0;
+					r1->tseqbase = oid_nil;
 				if (nl == 0) {
 					r2->trevsorted = 0;
 					if (lastl > lo) {
@@ -1793,8 +2089,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		if (pcrere) {
 #ifdef HAVE_LIBPCRE
-			my_pcre_free(pcrere);
 			pcre_free_study(pcreex);
+			pcre_free(pcrere);
 			pcrere = NULL;
 			pcreex = NULL;
 #else
@@ -1804,12 +2100,12 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		if (nl > 1) {
 			r2->tkey = 0;
-			r2->tdense = 0;
+			r2->tseqbase = oid_nil;
 			r1->trevsorted = 0;
 		} else if (nl == 0) {
 			rskipped = BATcount(r2) > 0;
 		} else if (rskipped) {
-			r2->tdense = 0;
+			r2->tseqbase = oid_nil;
 		}
 	}
 	assert(BATcount(r1) == BATcount(r2));
@@ -1817,10 +2113,12 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BATsetcount(r1, BATcount(r1));
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
-		if (r1->tdense)
+		if (BATtdense(r1))
 			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2->tdense)
+		if (BATtdense(r2))
 			r2->tseqbase = ((oid *) r2->theap.base)[0];
+	} else {
+		r1->tseqbase = r2->tseqbase = 0;
 	}
 	ALGODEBUG fprintf(stderr, "#pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
 					  BATgetId(l), BATgetId(r),
@@ -1838,10 +2136,10 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (pcrepat)
 		GDKfree(pcrepat);
 #ifdef HAVE_LIBPCRE
-	if (pcrere)
-		my_pcre_free(pcrere);
 	if (pcreex)
 		pcre_free_study(pcreex);
+	if (pcrere)
+		pcre_free(pcrere);
 #else
 	if (pcrere)
 		regfree(&regex);
@@ -1853,7 +2151,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 static str
 PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
-			const char *esc, int caseignore)
+		 const char *esc, bool caseignore)
 {
 	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
 	BAT *result1 = NULL, *result2 = NULL;
@@ -1863,14 +2161,14 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		goto fail;
 	if ((right = BATdescriptor(rid)) == NULL)
 		goto fail;
-	if (slid != bat_nil && (candleft = BATdescriptor(slid)) == NULL)
+	if (!is_bat_nil(slid) && (candleft = BATdescriptor(slid)) == NULL)
 		goto fail;
-	if (srid != bat_nil && (candright = BATdescriptor(srid)) == NULL)
+	if (!is_bat_nil(srid) && (candright = BATdescriptor(srid)) == NULL)
 		goto fail;
 	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	if (result1 == NULL || result2 == NULL) {
-		msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto fail;
 	}
 	result1->tnil = 0;
@@ -1878,15 +2176,15 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 	result1->tkey = 1;
 	result1->tsorted = 1;
 	result1->trevsorted = 1;
-	result1->tdense = 1;
+	result1->tseqbase = 0;
 	result2->tnil = 0;
 	result2->tnonil = 1;
 	result2->tkey = 1;
 	result2->tsorted = 1;
 	result2->trevsorted = 1;
-	result2->tdense = 1;
+	result2->tseqbase = 0;
 	msg = pcrejoin(result1, result2, left, right, candleft, candright,
-					  esc, caseignore);
+				   esc, caseignore);
 	if (msg)
 		goto fail;
 	*r1 = result1->batCacheid;
@@ -1916,35 +2214,37 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		BBPunfix(result2->batCacheid);
 	if (msg)
 		return msg;
-	throw(MAL, "pcre.join", RUNTIME_OBJECT_MISSING);
+	throw(MAL, "pcre.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
 str
 LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
-	(void)nil_matches;
-	(void)estimate;
+	(void) nil_matches;
+	(void) estimate;
 	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 0);
 }
 
 str
 LIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
-	const str esc = "";
-	return LIKEjoin(r1, r2, lid, rid, &esc, slid, srid, nil_matches, estimate);
+	(void) nil_matches;
+	(void) estimate;
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 0);
 }
 
 str
 ILIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
-	(void)nil_matches;
-	(void)estimate;
+	(void) nil_matches;
+	(void) estimate;
 	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 1);
 }
 
 str
 ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
-	const str esc = "";
-	return ILIKEjoin(r1, r2, lid, rid, &esc, slid,srid,nil_matches, estimate);
+	(void) nil_matches;
+	(void) estimate;
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 1);
 }

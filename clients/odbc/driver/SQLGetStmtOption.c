@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -40,9 +40,9 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 	SQLRETURN r;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtOption " PTRFMT " %s " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, translateStmtOption(Option),
-		PTRFMTCAST ValuePtr);
+	ODBCLOG("SQLGetStmtOption %p %s %p\n",
+		StatementHandle, translateStmtOption(Option),
+		ValuePtr);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -1,5 +1,5 @@
 funcs
 load
-xml
-xml_attribute_parsing.SF-1855673
-xmlelement_segfault.SF-2812767
+HAVE_LIBXML?xml
+HAVE_LIBXML?xml_attribute_parsing.SF-1855673
+HAVE_LIBXML?xmlelement_segfault.SF-2812767

@@ -1,0 +1,117 @@
+stdout of test 'mergepart27` in directory 'sql/test/merge-partitions` itself:
+
+
+# 11:15:34 >  
+# 11:15:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38633" "--set" "mapi_usock=/var/tmp/mtest-12261/.s.monetdb.38633" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 11:15:34 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:38633/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12261/.s.monetdb.38633
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:15:35 >  
+# 11:15:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12261" "--port=38633"
+# 11:15:35 >  
+
+#CREATE MERGE TABLE checkreadonly (a int, b varchar(32)) PARTITION BY RANGE ON (a);
+#CREATE TABLE subt1 (a int, b varchar(32));
+#ALTER TABLE subt1 SET READ ONLY;
+#ALTER TABLE subt1 SET READ WRITE;
+#INSERT INTO checkreadonly VALUES (1, 'ok');
+[ 1	]
+#ALTER TABLE checkreadonly DROP TABLE subt1;
+#DROP TABLE checkreadonly;
+#DROP TABLE subt1;
+#CREATE MERGE TABLE checksequence (a int auto_increment, b varchar(32)) PARTITION BY RANGE ON (a);
+#CREATE TABLE subt1 (a int auto_increment, b varchar(32));
+#DROP TABLE checksequence;
+#DROP TABLE subt1;
+#CREATE MERGE TABLE checkdefault (a int default '1', b clob default 'something') PARTITION BY RANGE ON (a);
+#CREATE TABLE subt1 (a int default '2', b clob default 'else');
+#CREATE TABLE subt2 (a int default '1', b clob default 'something');
+#INSERT INTO checkdefault VALUES (DEFAULT, DEFAULT);
+[ 1	]
+#ALTER TABLE checkdefault DROP TABLE subt2;
+#DROP TABLE checkdefault;
+#DROP TABLE subt1;
+#DROP TABLE subt2;
+#CREATE MERGE TABLE checkkeys (a int, b int, PRIMARY KEY(a, b)) PARTITION BY RANGE USING (a + b + 1);
+#DROP TABLE checkkeys;
+#CREATE MERGE TABLE checkkeys (a int PRIMARY KEY, b varchar(32)) PARTITION BY RANGE ON (a);
+#CREATE TABLE referenceme (mememe int PRIMARY KEY);
+#CREATE TABLE otherref (othermeme varchar(32) PRIMARY KEY);
+#ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe);
+#ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_a_fkey;
+#CREATE TABLE subt1 (a int PRIMARY KEY, b varchar(32));
+#CREATE TABLE subt2 (a int, b varchar(32) PRIMARY KEY);
+#ALTER TABLE checkkeys DROP TABLE subt1;
+#CREATE TABLE subt3 (a int PRIMARY KEY, b varchar(32), FOREIGN KEY (a) REFERENCES referenceme(mememe));
+#CREATE TABLE another (mememe int PRIMARY KEY);
+#ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe);
+#ALTER TABLE checkkeys DROP TABLE subt3;
+#ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_a_fkey;
+#ALTER TABLE subt3 DROP CONSTRAINT subt3_a_fkey;
+#ALTER TABLE subt3 ADD FOREIGN KEY (a) REFERENCES another (mememe);
+#DROP TABLE checkkeys;
+#DROP TABLE subt1;
+#DROP TABLE subt2;
+#DROP TABLE subt3;
+#DROP TABLE referenceme;
+#DROP TABLE otherref;
+#DROP TABLE another;
+
+# 11:15:35 >  
+# 11:15:35 >  "Done."
+# 11:15:35 >  
+

@@ -1,3 +1,32 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 10 2018 Sjoerd Mullender <sjoerd@acm.org>
+- The sys.functions table now has an extra column called "system" of
+  type BOOLEAN whose value is TRUE for system functions (i.e. functions
+  that should not be dumped).  The table sys.systemfunctions has been
+  changed to a view and is now officially deprecated.
+
+* Fri Aug  3 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Extended merge tables with partitioning using a predicate:
+  > CREATE MERGE TABLE [ IF NOT EXISTS ] table_name (... columns ...)
+  [ PARTITION BY { RANGE | VALUES }
+  { ON '(' column_name ')' | USING '(' expression ')' } ]
+  The partitioning can occur by range or list of values using one of
+  the table's columns or an expression. The domain of the partitioning
+  scheme will be covered by each child table added with alter statements
+  depending if the table is partitioned by range or list of values:
+  > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+  AS PARTITION IN '(' expression [ ',' ... ] ')' [ WITH NULL ]
+  > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+  AS PARTITION BETWEEN { RANGE MINVALUE | expression } AND
+  { RANGE MAXVALUE | expression } [ WITH NULL ]
+  > ALTER TABLE merge_table_name { ADD | SET } TABLE child_table_name
+  AS PARTITION WITH NULL
+  When updating a single partition range/list of values, the SET
+  keyword should be used instead of ADD.
+  INSERT, UPDATE and DELETE statements are possible on partitioned
+  tables with corresponding validation on each partition domain.
+  The system tables sys.table_partitions, sys.range_partitions and
+  sys.value_partitions were added to store meta-information about
+  each existing partition.

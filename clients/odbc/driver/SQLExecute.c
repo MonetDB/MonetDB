@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -28,6 +28,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
+#include <limits.h>
 
 static struct msql_types {
 	char *name;
@@ -41,7 +42,10 @@ static struct msql_types {
 	{"date", SQL_TYPE_DATE},
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
+	{"hugeint", SQL_HUGEINT},
+	/* {"inet", SQL_WCHAR}, */
 	{"int", SQL_INTEGER},
+	/* {"json", SQL_WCHAR}, */
 	{"month_interval", SQL_INTERVAL_MONTH},
 	{"oid", SQL_BIGINT},
 	{"real", SQL_REAL},
@@ -53,10 +57,9 @@ static struct msql_types {
 	{"timestamp", SQL_TYPE_TIMESTAMP},
 	{"timestamptz", SQL_TYPE_TIMESTAMP},
 	{"tinyint", SQL_TINYINT},
-/* 	{"ubyte", SQL_TINYINT}, */
+	/* {"url", SQL_WCHAR}, */
 	{"uuid", SQL_GUID},
 	{"varchar", SQL_WVARCHAR},
-	{"wrd", SQL_BIGINT},
 	{0, 0},			/* sentinel */
 };
 
@@ -103,7 +106,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	int nrCols;
 	ODBCDescRec *rec;
 	MapiHdl hdl;
-	char *errstr;
+	const char *errstr;
 
 	hdl = stmt->hdl;
 
@@ -117,10 +120,10 @@ ODBCInitResult(ODBCStmt *stmt)
       repeat:
 	errstr = mapi_result_error(hdl);
 	if (errstr) {
-		const char *emsg, *sqlstate;
+		const char *sqlstate;
 
-		if ((sqlstate = ODBCErrorType(errstr, &emsg)) != NULL)
-			addStmtError(stmt, sqlstate, emsg, 0);
+		if ((sqlstate = mapi_result_errorcode(hdl)) != NULL)
+			addStmtError(stmt, sqlstate, errstr, 0);
 		else {
 			/* Syntax error or access violation */
 			addStmtError(stmt, "42000", errstr, 0);
@@ -130,7 +133,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	nrCols = mapi_get_field_count(hdl);
 	stmt->querytype = mapi_get_querytype(hdl);
 #if SIZEOF_SIZE_T == SIZEOF_INT
-	if (mapi_rows_affected(hdl) >= (mapi_int64) 1 << (sizeof(int) * 8)) {
+	if (mapi_rows_affected(hdl) >= (int64_t) 1 << (sizeof(int) * CHAR_BIT)) {
 		/* General error */
 		addStmtError(stmt, "HY000", "Too many rows to handle", 0);
 		return SQL_ERROR;
@@ -397,6 +400,7 @@ MNDBExecute(ODBCStmt *stmt)
 	MapiHdl hdl;
 	MapiMsg msg;
 	char *query;
+	const char *errstr;
 	char *sep;
 	size_t querylen;
 	size_t querypos;
@@ -443,6 +447,12 @@ MNDBExecute(ODBCStmt *stmt)
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
+	if (stmt->qtimeout != stmt->Dbc->qtimeout) {
+		snprintf(query, querylen, "call sys.settimeout(%" PRIu64 ")",
+			 (uint64_t) stmt->qtimeout);
+		if (mapi_query_handle(hdl, query) == MOK)
+			stmt->Dbc->qtimeout = stmt->qtimeout;
+	}
 	querypos = snprintf(query, querylen, "execute %d (", stmt->queryid);
 	/* XXX fill in parameter values */
 	if (desc->sql_desc_bind_offset_ptr)
@@ -471,7 +481,7 @@ MNDBExecute(ODBCStmt *stmt)
 	query[querypos] = 0;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute " PTRFMT " %s\n", PTRFMTCAST stmt, query);
+	ODBCLOG("SQLExecute %p %s\n", stmt, query);
 #endif
 
 	/* Have the server execute the query */
@@ -496,20 +506,19 @@ MNDBExecute(ODBCStmt *stmt)
 		addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
-		/* reuse variable query for error message */
-		query = mapi_result_error(hdl);
-		if (query == NULL)
-			query = mapi_error_str(stmt->Dbc->mid);
-		if (query) {
-			const char *emsg, *sqlstate;
+		errstr = mapi_result_error(hdl);
+		if (errstr == NULL)
+			errstr = mapi_error_str(stmt->Dbc->mid);
+		if (errstr) {
+			const char *sqlstate;
 
-			if ((sqlstate = ODBCErrorType(query, &emsg)) != NULL) {
-				addStmtError(stmt, sqlstate, emsg, 0);
+			if ((sqlstate = mapi_result_errorcode(hdl)) != NULL) {
+				addStmtError(stmt, sqlstate, errstr, 0);
 				return SQL_ERROR;
 			}
 		}
 		/* General error */
-		addStmtError(stmt, "HY000", query, 0);
+		addStmtError(stmt, "HY000", errstr, 0);
 		return SQL_ERROR;
 	}
 
@@ -522,7 +531,7 @@ SQLRETURN SQL_API
 SQLExecute(SQLHSTMT StatementHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLExecute %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))

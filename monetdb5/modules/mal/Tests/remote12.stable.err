@@ -32,17 +32,6 @@ stderr of test 'remote12` in directory 'monetdb5/modules/mal` itself:
 # 09:46:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-26774" "--port=35410"
 # 09:46:27 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26774/.s.monetdb.35410
-QUERY = #causing a segfault 
-        uri := sabaoth.getLocalConnectionURI();
-        conn:str := remote.connect(uri, "monetdb", "monetdb");
-        e := nil:bat[:int];
-        m:str := remote.put(conn, e);
-        io.print(m);
-        v:bat[:int] := remote.get(conn,m);
-        io.print(v);
-        mdb.var();
-ERROR = !MALException:remote.put:Object not found
 
 # 20:06:20 >  
 # 20:06:20 >  Done.

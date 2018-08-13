@@ -31,26 +31,28 @@ stderr of test 'box` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-10494/.s.monetdb.39553
 QUERY = INSERT INTO BOX_TBL (f1) VALUES (MBR('(2.3, 4.5)'));
-ERROR = !GEOSWKTReader_read failed
-        !ParseException: Unknown type: '('
-MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
+ERROR = !Geos operation GEOSWKTReader_read failed
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO BOX_TBL (f1) VALUES (MBR('linestring(2.3, 4.5)'));
-ERROR = !GEOSWKTReader_read failed
-        !ParseException: Expected number but encountered ','
-MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
+ERROR = !Geos operation GEOSWKTReader_read failed
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO BOX_TBL (f1) VALUES (MBR('asdfasdf(ad'));
-ERROR = !GEOSWKTReader_read failed
-        !ParseException: Unknown type: 'ASDFASDF'
-MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
+ERROR = !Geos operation GEOSWKTReader_read failed
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO BOX_TBL (f1) VALUES (MBR('linestring(asdfasdf(ad)'));
-ERROR = !GEOSWKTReader_read failed
-        !ParseException: Expected number but encountered word: 'asdfasdf'
-MAPI  = (monetdb) /var/tmp/mtest-12501/.s.monetdb.34321
+ERROR = !Geos operation GEOSWKTReader_read failed
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS four, @@(b1.f1) AS p FROM BOX_TBL_VW b1;
 ERROR = !syntax error, unexpected AT in: "select '' as four, @@"
-MAPI  = (monetdb) /var/tmp/mtest-10494/.s.monetdb.39553
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS four, height(f1), width(f1) FROM BOX_TBL_VW;
 ERROR = !SELECT: no such unary operator 'height(mbr)'
+CODE  = 42000
 
 # 19:04:23 >  
 # 19:04:23 >  "Done."

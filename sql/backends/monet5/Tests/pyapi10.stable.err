@@ -39,7 +39,8 @@ ERROR = !Could not parse Python code
         !> 2.     return(i*j 
         !  3. 
         !invalid syntax (<string>, line 2)
-MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = SELECT AVG(pyapi10_indentation_error(i,j)) FROM pyapi10_random_table_nulls(5000);
 ERROR = !Could not parse Python code
         !  7.     f = 6
@@ -48,7 +49,8 @@ ERROR = !Could not parse Python code
         !  10.     i = 9
         !  11.     j = 10
         !unexpected indent (<string>, line 9)
-MAPI  = (monetdb) /var/tmp/mtest-30156/.s.monetdb.35525
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = SELECT AVG(pyapi10_runtime_exception(i,j)) FROM pyapi10_random_table_nulls(5000);
 ERROR = !Python exception
         !  4.   mydivision = 0
@@ -57,6 +59,7 @@ ERROR = !Python exception
         !  7.   # comments
         !  8.   return return_val
         !integer division or modulo by zero
+CODE  = PY000
 
 # 15:32:31 >  
 # 15:32:31 >  "Done."

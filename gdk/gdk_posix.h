@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef GDK_POSIX_H
@@ -11,26 +11,16 @@
 
 #include <sys/types.h>
 
-#ifdef HAVE_MALLOC_H
-# include <malloc.h>
-#endif
+#include <time.h>
 
 #ifdef HAVE_FTIME
-#include <sys/timeb.h>
+#include <sys/timeb.h>		/* ftime */
+#endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
 #endif
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
-#if defined(HAVE_WINSOCK_H) && defined(NATIVE_WIN32)
+#ifdef HAVE_WINSOCK_H
 #include <winsock.h>		/* for timeval */
 #endif
 
@@ -39,29 +29,6 @@
 #ifdef NATIVE_WIN32
 #include <io.h>
 #include <direct.h>
-#endif
-
-/* Some systems (SGI, Sun) call malloc before we get a chance to call
- * mallopt, and mallopt should be called before the first call to
- * malloc.  Therefore we do as if we don't have mallopt, even though
- * in reality we do. */
-#ifdef HAVE_MALLOPT
-#undef HAVE_MALLOPT
-#endif
-
-#ifndef M_MXFAST
-#define M_MXFAST	1	/* set size of blocks to be fast */
-#endif
-#ifndef M_NLBLKS
-#define M_NLBLKS	2	/* set number of block in a holding block */
-#endif
-#ifndef M_GRAIN
-#define M_GRAIN		3	/* set number of sizes mapped to one, for */
-				/* small blocks */
-#endif
-#ifndef M_KEEP
-#define M_KEEP		4	/* retain contents of block after a free */
-				/* until another allocation */
 #endif
 
 /*
@@ -215,7 +182,7 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define mkdir		win_mkdir
 #define rmdir		win_rmdir
 #define rename		win_rename
-#define unlink		win_unlink
+#define remove		win_unlink
 
 #endif	/* NATIVE_WIN32 */
 

@@ -72,6 +72,7 @@ QUERY = copy 2 records into tbl_bug2575 from stdin using delimiters '\t','\n',''
         10001160000	29	.v.
         10001690001	0	co√
 ERROR = !Failed to import table 'tbl_bug2575', line 2 field trigram 'char(3)' expected in 'co<C3>'
+CODE  = 42000
 
 # 14:47:29 >  
 # 14:47:29 >  Done.

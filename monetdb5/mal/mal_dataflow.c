@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -82,6 +82,7 @@ static struct worker {
 	enum {IDLE, RUNNING, JOINING, EXITED} flag;
 	Client cntxt;				/* client we do work for (NULL -> any) */
 	MT_Sema s;
+	MT_Sema startup;
 } workers[THREADS];
 
 static Queue *todo = 0;	/* pending instructions */
@@ -331,6 +332,12 @@ DFLOWworker(void *T)
 	InstrPtr p;
 
 	thr = THRnew("DFLOWworker");
+	if (thr == NULL) {
+		t->flag = IDLE;
+		MT_sema_up(&t->startup);
+		return;
+	}
+	MT_sema_up(&t->startup);
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -508,8 +515,10 @@ DFLOWinitialize(void)
 		MT_lock_unset(&mal_contextLock);
 		return -1;
 	}
-	for (i = 0; i < THREADS; i++)
+	for (i = 0; i < THREADS; i++) {
 		MT_sema_init(&workers[i].s, 0, "DFLOWinitialize");
+		MT_sema_init(&workers[i].startup, 0, "DFLOWinitialize:startup");
+	}
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 #ifdef NEED_MT_LOCK_INIT
 	ATOMIC_INIT(exitingLock);
@@ -521,8 +530,13 @@ DFLOWinitialize(void)
 		workers[i].cntxt = NULL;
 		if (MT_create_thread(&workers[i].id, DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0)
 			workers[i].flag = IDLE;
-		else
-			created++;
+		else {
+			/* wait until it started */
+			MT_sema_down(&workers[i].startup);
+			/* then check whether it finished right away */
+			if (workers[i].flag != IDLE)
+				created++;
+		}
 	}
 	MT_lock_unset(&dataflowLock);
 	if (created == 0) {
@@ -556,7 +570,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 	PARDEBUG fprintf(stderr, "#Initialize dflow block\n");
 	assign = (int *) GDKzalloc(mb->vtop * sizeof(int));
 	if (assign == NULL)
-		throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	etop = flow->stop - flow->start;
 	for (n = 0, pc = flow->start; pc < flow->stop; pc++, n++) {
 		p = getInstrPtr(mb, pc);
@@ -595,13 +609,13 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 						tmp = (int*) GDKrealloc(flow->nodes, sizeof(int) * 2 * size);
 						if (tmp == NULL) {
 							GDKfree(assign);
-							throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+							throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						}
 						flow->nodes = tmp;
 						tmp = (int*) GDKrealloc(flow->edges, sizeof(int) * 2 * size);
 						if (tmp == NULL) {
 							GDKfree(assign);
-							throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+							throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						}
 						flow->edges = tmp;
 						size *=2;
@@ -639,13 +653,13 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 							tmp = (int*) GDKrealloc(flow->nodes, sizeof(int) * 2 * size);
 							if (tmp == NULL) {
 								GDKfree(assign);
-								throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+								throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
 							flow->nodes = tmp;
 							tmp = (int*) GDKrealloc(flow->edges, sizeof(int) * 2 * size);
 							if (tmp == NULL) {
 								GDKfree(assign);
-								throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+								throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
 							flow->edges = tmp;
 							size *=2;
@@ -892,6 +906,13 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 				MT_lock_unset(&dataflowLock);
 				return MAL_SUCCEED;
 			}
+			/* wait until it started */
+			MT_sema_down(&workers[i].startup);
+			/* then check whether it finished right away */
+			if (workers[i].flag == IDLE) {
+				/* it wasn't to be */
+				i = THREADS;
+			}
 			break;
 		}
 	}
@@ -904,7 +925,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 	flow = (DataFlow)GDKzalloc(sizeof(DataFlowRec));
 	if (flow == NULL)
-		throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	flow->cntxt = cntxt;
 	flow->mb = mb;
@@ -928,7 +949,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	size = DFLOWgraphSize(mb, startpc, stoppc);
 	size += stoppc - startpc;
@@ -938,7 +959,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
 	if (flow->edges == NULL) {
@@ -947,7 +968,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		q_destroy(flow->done);
 		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
-		throw(MAL, "dataflow", MAL_MALLOC_FAIL);
+		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	msg = DFLOWinitBlk(flow, mb, size);
 

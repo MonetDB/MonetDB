@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import pymonetdb
 
@@ -56,7 +58,7 @@ cn = connect()
 #print()
 
 for x in query(cn, 'SELECT name FROM tables WHERE system=0', True):
-    print x[0]
+    print(x[0])
 query(cn, 'DROP TABLE a')
 
 cn.close()

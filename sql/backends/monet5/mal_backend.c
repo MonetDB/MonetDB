@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -15,11 +15,14 @@ backend_reset(backend *b)
 {
 	b->out = b->client->fdout;
 	b->language = 0;
+	b->depth = 0;
 
 	b->vtop = 0;
 	b->q = NULL;
 	b->mb = NULL;
 	b->mvc_var = 0;
+	b->cur_append = 0;
+	b->first_statement_generated = 0;
 	b->output_format = OFMT_CSV;
 	return b;
 }
@@ -27,7 +30,6 @@ backend_reset(backend *b)
 backend *
 backend_create(mvc *m, Client c)
 {
-	// FIXME unchecked_malloc MNEW can return NULL
 	backend *b = MNEW(backend);
 
 	if( b== NULL)
@@ -36,6 +38,8 @@ backend_create(mvc *m, Client c)
 	b->mvc = m;
 	b->client = c;
 	b->mvc_var = 0;
+	b->cur_append = 0;
+	b->first_statement_generated = 0;
 	b->output_format = OFMT_CSV;
 	return backend_reset(b);
 }

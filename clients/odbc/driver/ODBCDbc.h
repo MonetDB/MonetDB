@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -53,7 +53,8 @@ typedef struct tODBCDRIVERDBC {
 	char *host;		/* Server host */
 	int port;		/* Server port */
 	char *dbname;		/* Database Name or NULL */
-	int Connected;		/* 1 is Yes, 0 is No */
+	bool Connected;		/* whether we are connecte to a server */
+	bool has_comment;	/* whether the server has sys.comments */
 	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
 	SQLUINTEGER sql_attr_connection_timeout;
@@ -61,6 +62,7 @@ typedef struct tODBCDRIVERDBC {
 	/* MonetDB connection handle & status information */
 	Mapi mid;		/* connection with server */
 	int cachelimit;		/* cache limit we requested */
+	SQLULEN qtimeout;	/* current query timeout */
 	short major, minor, patch; /* version of server */
 	int Mdebug;
 

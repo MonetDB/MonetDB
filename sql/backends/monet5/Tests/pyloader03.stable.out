@@ -33,8 +33,7 @@ Ready.
 #    a4 = ((a3 - a2) * 3).astype(numpy.int64)
 #    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
 #};
-#COPY INTO restable FROM LOADER myloader(10);
-[ 10	]
+#COPY LOADER INTO restable FROM myloader(10);
 #SELECT * FROM restable;
 % sys.restable,	sys.restable,	sys.restable,	sys.restable # table_name
 % a1,	a2,	a3,	a4 # name
@@ -60,8 +59,7 @@ Ready.
 #    a4 = ["33", "44", "55", "66", "77"]
 #    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
 #};
-#COPY INTO restable FROM LOADER myloader();
-[ 5	]
+#COPY LOADER INTO restable FROM myloader();
 #SELECT * FROM restable;
 % sys.restable,	sys.restable,	sys.restable,	sys.restable # table_name
 % a1,	a2,	a3,	a4 # name
@@ -93,8 +91,7 @@ Ready.
 #    a4 = [None] * nvalues
 #    _emit.emit({'a1': a1, 'a2': a2, 'a3': a3, 'a4': a4})
 #};
-#COPY INTO restable FROM LOADER myloader(50);
-[ 50	]
+#COPY LOADER INTO restable FROM myloader(50);
 #SELECT * FROM restable;
 % sys.restable,	sys.restable,	sys.restable,	sys.restable # table_name
 % a1,	a2,	a3,	a4 # name
@@ -169,8 +166,7 @@ Ready.
 #        a2 = (a1 * 2).astype(numpy.float64)
 #        a3 = (a1 * 4 + 20).astype(numpy.float32)
 #        a4 = ((a3 - a2) * 3).astype(numpy.int64)
-#COPY INTO restable FROM LOADER myloader();
-[ 216	]
+#COPY LOADER INTO restable FROM myloader();
 #SELECT * FROM restable;
 % sys.restable,	sys.restable,	sys.restable,	sys.restable # table_name
 % a1,	a2,	a3,	a4 # name

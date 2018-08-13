@@ -1,3 +1,11 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ */
+
 #define RSTR(somestr) mkCharCE(somestr, CE_UTF8)
 
 
@@ -21,7 +29,7 @@
 		} else {                                            \
 		for (j = 0; j < BATcount(bat); j++) {				\
 			v = p[j];                                       \
-			if ( v == tpe##_nil)							\
+			if ( is_##tpe##_nil(v))							\
 				valptr[j] = naval;	                        \
 			else											\
 				valptr[j] = (ctype) v;	                    \
@@ -40,16 +48,17 @@
 		b = COLnew(0, TYPE_##tpe, cnt, TRANSIENT);						\
 		if (!b) break;                                                  \
 		b->tnil = 0; b->tnonil = 1; b->tkey = 0;						\
-		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
-		p = (tpe*) Tloc(b, 0);								\
+		b->tsorted = 1; b->trevsorted = 1;								\
+		b->tseqbase = oid_nil;											\
+		p = (tpe*) Tloc(b, 0);											\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = (tpe) access_fun(s)[j];							    \
 			if (na_check){ b->tnil = 1; 	b->tnonil = 0; 	*p= tpe##_nil;} \
 			if (j > 0){													\
-				if (*p > prev && b->trevsorted){						\
+				if (b->trevsorted && !is_##tpe##_nil(*p) && (is_##tpe##_nil(prev) || *p > prev)){						\
 					b->trevsorted = 0;									\
 				} else													\
-					if (*p < prev && b->tsorted){						\
+					if (b->tsorted && !is_##tpe##_nil(prev) && (is_##tpe##_nil(*p) || *p < prev)){ \
 						b->tsorted = 0;									\
 					}													\
 			}															\
@@ -62,7 +71,7 @@
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	// TODO: deal with SQL types (DECIMAL/DATE)
-	switch (ATOMstorage(getBatType(b->ttype))) {
+	switch (ATOMstorage(b->ttype)) {
 		case TYPE_void: {
 			size_t i = 0;
 			varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));
@@ -187,7 +196,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		if (!IS_NUMERIC(s)) {
 			return NULL;
 		}
-		SXP_TO_BAT(dbl, NUMERIC_POINTER, (ISNA(*p) || MNisnan(*p) || MNisinf(*p)));
+		SXP_TO_BAT(dbl, NUMERIC_POINTER, (ISNA(*p) || isnan(*p) || isinf(*p)));
 		break;
 	}
 	case TYPE_str: {
@@ -221,12 +230,12 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 			if (rse == NA_STRING) {
 				b->tnil = 1;
 				b->tnonil = 0;
-				if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, str_nil, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 				}
 			} else {
-				if (BUNappend(b, CHAR(rse), FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, CHAR(rse), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 				}

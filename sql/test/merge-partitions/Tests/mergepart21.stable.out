@@ -1,0 +1,55 @@
+stdout of test 'mergepart21` in directory 'sql/test/merge-partitions` itself:
+
+
+# 11:15:07 >  
+# 11:15:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34012" "--set" "mapi_usock=/var/tmp/mtest-9195/.s.monetdb.34012" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 11:15:07 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:34012/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9195/.s.monetdb.34012
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:15:08 >  
+# 11:15:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9195" "--port=34012"
+# 11:15:08 >  
+
+#CREATE FUNCTION dosomething(a int) RETURNS INT BEGIN RETURN a + 2; END;
+#CREATE MERGE TABLE trydropme (a int, b int, cc varchar(32), dd real) PARTITION BY VALUES ON (cc);
+#ALTER TABLE trydropme DROP COLUMN b;
+#DROP TABLE trydropme;
+#CREATE MERGE TABLE nexttest (a int, b int, cc varchar(32), dd real) PARTITION BY VALUES USING (dosomething(a) + dosomething(b));
+#ALTER TABLE nexttest DROP COLUMN cc;
+#CREATE TABLE subtable1 (a int, b int, dd real);
+#CREATE TABLE subtable2 (a int, b int, dd real);
+#INSERT INTO subtable1 VALUES (4, 2, 1.2);
+[ 1	]
+#ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN (1, 2, 10);
+#ALTER TABLE nexttest ADD TABLE subtable2 AS PARTITION IN (11, 12, 20);
+#ALTER TABLE nexttest DROP TABLE subtable1;
+#ALTER TABLE nexttest DROP TABLE subtable2;
+#DROP TABLE subtable1;
+#DROP TABLE subtable2;
+#DROP TABLE nexttest;
+#DROP FUNCTION dosomething;
+#CREATE FUNCTION dosomethingelse(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i); END;
+#CREATE TABLE subtable3 (a int, dd real);
+#INSERT INTO subtable3 VALUES (0, 1.68);
+[ 1	]
+#DROP TABLE subtable3;
+#DROP FUNCTION dosomethingelse;
+
+# 11:15:08 >  
+# 11:15:08 >  "Done."
+# 11:15:08 >  
+

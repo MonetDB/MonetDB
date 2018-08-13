@@ -30,8 +30,8 @@ Ready.
 #insert into foo values (42);
 [ 1	]
 #select id-row_number() over (order by id) from (select id from foo union all select id from foo) as z;
-% .L13 # table_name
-% L13 # name
+% .L14 # table_name
+% L14 # name
 % bigint # type
 % 2 # length
 [ 41	]

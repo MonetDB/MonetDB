@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -93,8 +93,8 @@ SQLDataSources(SQLHENV EnvironmentHandle,
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDataSources " PTRFMT " %s\n",
-		PTRFMTCAST EnvironmentHandle, translateDirection(Direction));
+	ODBCLOG("SQLDataSources %p %s\n",
+		EnvironmentHandle, translateDirection(Direction));
 #endif
 
 	if (!isValidEnv(env))
@@ -138,8 +138,8 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle,
 	SQLSMALLINT length1, length2;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDataSourcesW " PTRFMT " %s\n",
-		PTRFMTCAST EnvironmentHandle, translateDirection(Direction));
+	ODBCLOG("SQLDataSourcesW %p %s\n",
+		EnvironmentHandle, translateDirection(Direction));
 #endif
 
 	if (!isValidEnv(env))

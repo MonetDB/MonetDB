@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,17 +11,17 @@
 #include "sql_result.h"
 #include "sql_cast.h"
 #include "sql_gencode.h"
-#include <sql_storage.h>
-#include <sql_scenario.h>
-#include <store_sequence.h>
-#include <sql_optimizer.h>
-#include <sql_datetime.h>
-#include <rel_optimizer.h>
-#include <rel_distribute.h>
-#include <rel_select.h>
-#include <rel_exp.h>
-#include <rel_dump.h>
-#include <opt_pipes.h>
+#include "sql_storage.h"
+#include "sql_scenario.h"
+#include "store_sequence.h"
+#include "sql_optimizer.h"
+#include "sql_datetime.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_select.h"
+#include "rel_exp.h"
+#include "rel_dump.h"
+#include "opt_pipes.h"
 #include "clients.h"
 #include "mal_instruction.h"
 
@@ -37,16 +37,16 @@ str
 str_2_timestamp(timestamp *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_timestamp, &p, &len, *val);
 	if (e < 0 || !p || (ATOMcmp(TYPE_timestamp, p, ATOMnilptr(TYPE_timestamp)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "timestamp", "%s", buf);
+		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
+		throw(SQL, "timestamp", SQLSTATE(42000) "%s", buf);
 	}
 	*res = *(timestamp *) p;
 	if (!ATOMextern(TYPE_timestamp)) {
@@ -63,19 +63,19 @@ batnil_2_timestamp(bat *res, const bat *bid)
 	BUN p, q;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2_timestamp", "Cannot access descriptor");
+		throw(SQL, "batcalc.nil_2_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_timestamp", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		timestamp r = *timestamp_nil;
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -92,13 +92,13 @@ batstr_2_timestamp(bat *res, const bat *bid)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_timestamp", "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_timestamp", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -109,10 +109,10 @@ batstr_2_timestamp(bat *res, const bat *bid)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -132,16 +132,16 @@ str
 str_2_daytime(daytime *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_daytime, &p, &len, *val);
 	if (e < 0 || !p || (ATOMcmp(TYPE_daytime, p, ATOMnilptr(TYPE_daytime)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "daytime", "%s", buf);
+		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
+		throw(SQL, "daytime", SQLSTATE(42000) "%s", buf);
 	}
 	*res = *(daytime *) p;
 	if (!ATOMextern(TYPE_daytime)) {
@@ -158,19 +158,19 @@ batnil_2_daytime(bat *res, const bat *bid)
 	BUN p, q;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2_daytime", "Cannot access descriptor");
+		throw(SQL, "batcalc.nil_2_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_daytime", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		daytime r = daytime_nil;
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -187,13 +187,13 @@ batstr_2_daytime(bat *res, const bat *bid)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_daytime", "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2_daytime", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_daytime", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -204,10 +204,10 @@ batstr_2_daytime(bat *res, const bat *bid)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.daytime", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -227,16 +227,16 @@ str
 str_2_date(date *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_date, &p, &len, *val);
 	if (e < 0 || !p || (ATOMcmp(TYPE_date, p, ATOMnilptr(TYPE_date)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "date", "%s", buf);
+		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
+		throw(SQL, "date", SQLSTATE(42000) "%s", buf);
 	}
 	*res = *(date *) p;
 	if (!ATOMextern(TYPE_date)) {
@@ -250,8 +250,11 @@ str
 SQLdate_2_str(str *res, const date *val)
 {
 	char *p = NULL;
-	int len = 0;
-	date_tostr(&p, &len, val);
+	size_t len = 0;
+	if (date_tostr(&p, &len, val) < 0) {
+		GDKfree(p);
+		throw(SQL, "date", GDK_EXCEPTION);
+	}
 	*res = p;
 	return MAL_SUCCEED;
 }
@@ -263,19 +266,19 @@ batnil_2_date(bat *res, const bat *bid)
 	BUN p, q;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2_date", "Cannot access descriptor");
+		throw(SQL, "batcalc.nil_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	dst = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_date", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		date r = date_nil;
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.date", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -292,13 +295,13 @@ batstr_2_date(bat *res, const bat *bid)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_date", "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2_date", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_date", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -309,10 +312,10 @@ batstr_2_date(bat *res, const bat *bid)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.date", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -324,16 +327,16 @@ str
 str_2_sqlblob(sqlblob **res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_sqlblob, &p, &len, *val);
 	if (e < 0 || !p || (ATOMcmp(TYPE_sqlblob, p, ATOMnilptr(TYPE_sqlblob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
-		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "sqlblob", "%s", buf);
+		snprintf(buf, BUFSIZ, "Conversion of string '%s' failed", *val? *val:"");
+		throw(SQL, "sqlblob", SQLSTATE(42000) "%s", buf);
 	}
 	*res = (sqlblob *) p;
 	return MAL_SUCCEED;
@@ -343,8 +346,11 @@ str
 SQLsqlblob_2_str(str *res, const sqlblob *val)
 {
 	char *p = NULL;
-	int len = 0;
-	SQLBLOBtostr(&p, &len, val);
+	size_t len = 0;
+	if (SQLBLOBtostr(&p, &len, val) < 0) {
+		GDKfree(p);
+		throw(SQL, "blob", GDK_EXCEPTION);
+	}
 	*res = p;
 	return MAL_SUCCEED;
 }
@@ -358,13 +364,13 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2_sqlblob", "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2_sqlblob", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_sqlblob, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_sqlblob", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_sqlblob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -375,10 +381,10 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.blob", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.blob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(r);
 	}
@@ -399,7 +405,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 			sz = 6;
 		r = GDKmalloc(sz);
 		if (r == NULL)
-			throw(SQL, "str_cast", MAL_MALLOC_FAIL);
+			throw(SQL, "str_cast", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
 	} else {
 		str v = (str) p;
@@ -407,18 +413,18 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 		if (len == 0 || (sz >= 0 && sz <= len)) {
 			r = GDKstrdup(v);
 			if (r == NULL)
-				throw(SQL, "str_cast", MAL_MALLOC_FAIL);
+				throw(SQL, "str_cast", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	if ((len > 0 && sz > len) || sz < 0) {
 		if (r)
 			GDKfree(r);
 		if (ATOMcmp(tpe, ATOMnilptr(tpe), p) != 0) {
-			throw(SQL, "str_cast", "22001!value too long for type (var)char(%d)", len);
+			throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 		} else {
 			r = GDKstrdup(str_nil);
 			if (r == NULL)
-				throw(SQL, "str_cast", MAL_MALLOC_FAIL);
+				throw(SQL, "str_cast", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	*res = r;
@@ -471,13 +477,13 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str", "Cannot access descriptor");
+		throw(SQL, "batcalc.str", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.str_cast", MAL_MALLOC_FAIL);
+		throw(SQL, "sql.str_cast", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		ptr v = (ptr) BUNtail(bi, p);
@@ -487,10 +493,10 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.str_cast", MAL_MALLOC_FAIL);
+			throw(SQL, "sql.str_cast", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(r);
 		r = NULL;
@@ -499,19 +505,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	return msg;
 }
-
-#ifndef HAVE_ROUND
-static inline double
-round(double val)
-{
-	/* round to nearest integer, away from zero */
-	if (val < 0)
-		return -floor(-val + 0.5);
-	else
-		return floor(val + 0.5);
-}
-#define roundf(x)	((float)round((double)(x)))
-#endif
 
 /* up casting */
 

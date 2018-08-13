@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -25,6 +25,8 @@
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_linker.h"
+
+/*#define _DEBUG_OPT_PIPES_*/
 
 #define MAXOPTPIPES 64
 
@@ -87,6 +89,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -122,6 +126,8 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -162,6 +168,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -201,6 +209,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -239,7 +249,7 @@ optPipeInit(void)
 
 /* the session_pipe is the one defined by the user */
 str
-addPipeDefinition(Client cntxt, str name, str pipe)
+addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 {
 	int i;
 	str msg;
@@ -252,11 +262,11 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 
 	if (i == MAXOPTPIPES) {
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", "Out of slots");
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY001) "Out of slots");
 	}
 	if (pipes[i].name && pipes[i].builtin) {
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", "No overwrite of built in allowed");
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(42000) "No overwrite of built in allowed");
 	}
 
 	/* save old value */
@@ -264,6 +274,16 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 	pipes[i].name = GDKstrdup(name);
 	pipes[i].def = GDKstrdup(pipe);
 	pipes[i].status = GDKstrdup("experimental");
+	if(pipes[i].name == NULL || pipes[i].def == NULL || pipes[i].status == NULL) {
+		GDKfree(pipes[i].name);
+		GDKfree(pipes[i].def);
+		GDKfree(pipes[i].status);
+		pipes[i].name = oldpipe.name;
+		pipes[i].def = oldpipe.def;
+		pipes[i].status = oldpipe.status;
+		MT_lock_unset(&pipeLock);
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	pipes[i].mb = NULL;
 	MT_lock_unset(&pipeLock);
 	msg = compileOptimizer(cntxt, name);
@@ -272,8 +292,6 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 		MT_lock_set(&pipeLock);
 		GDKfree(pipes[i].name);
 		GDKfree(pipes[i].def);
-		if (pipes[i].mb)
-			freeMalBlk(pipes[i].mb);
 		GDKfree(pipes[i].status);
 		pipes[i] = oldpipe;
 		MT_lock_unset(&pipeLock);
@@ -292,7 +310,7 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 }
 
 int
-isOptimizerPipe(str name)
+isOptimizerPipe(const char *name)
 {
 	int i;
 
@@ -326,19 +344,23 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		BBPreclaim(bs);
-		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
-		if (pipes[i].prerequisite && getAddress(GDKout, NULL, pipes[i].prerequisite, TRUE) == NULL)
-			continue;
-		if (BUNappend(b, pipes[i].name, FALSE) != GDK_SUCCEED ||
-			BUNappend(bn, pipes[i].def, FALSE) != GDK_SUCCEED ||
-			BUNappend(bs, pipes[i].status, FALSE) != GDK_SUCCEED) {
+		if (pipes[i].prerequisite && getAddress(pipes[i].prerequisite) == NULL){
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
-			throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
+			throw(MAL,"getPipeCatalog", SQLSTATE(HY002) "#MAL.getAddress address of '%s' not found",pipes[i].name);
+		}
+		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
+			BUNappend(bn, pipes[i].def, false) != GDK_SUCCEED ||
+			BUNappend(bs, pipes[i].status, false) != GDK_SUCCEED) {
+			BBPreclaim(b);
+			BBPreclaim(bn);
+			BBPreclaim(bs);
+			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -353,45 +375,49 @@ validatePipe(MalBlkPtr mb)
 {
 	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
 	int i;
+	InstrPtr p;
 
-	if (mb == NULL || getInstrPtr(mb, 1) == 0)
-		throw(MAL, "optimizer.validate", "improper optimizer mal block\n");
-	if (getFunctionId(getInstrPtr(mb, 1)) == NULL || idcmp(getFunctionId(getInstrPtr(mb, 1)), "inline"))
-		throw(MAL, "optimizer.validate", "'inline' should be the first\n");
+	if (mb == NULL )
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizer mal block\n");
+	p = getInstrPtr(mb,1);
+	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline"))
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
 
-	for (i = 1; i < mb->stop - 1; i++)
+	for (i = 1; i < mb->stop - 1; i++){
+		p = getInstrPtr(mb,i);
 		if (getFunctionId(getInstrPtr(mb, i)) != NULL) {
-			if (strcmp(getFunctionId(getInstrPtr(mb, i)), "deadcode") == 0)
+			if (strcmp(getFunctionId(p), "deadcode") == 0)
 				deadcode = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "remap") == 0)
+			else if (strcmp(getFunctionId(p), "remap") == 0)
 				remap = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "mitosis") == 0)
+			else if (strcmp(getFunctionId(p), "mitosis") == 0)
 				mitosis = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "mergetable") == 0)
+			else if (strcmp(getFunctionId(p), "mergetable") == 0)
 				mergetable = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "multiplex") == 0)
+			else if (strcmp(getFunctionId(p), "multiplex") == 0)
 				multiplex = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "generator") == 0)
+			else if (strcmp(getFunctionId(p), "generator") == 0)
 				generator = TRUE;
-			else if (strcmp(getFunctionId(getInstrPtr(mb, i)), "garbageCollector") == 0)
+			else if (strcmp(getFunctionId(p), "garbageCollector") == 0)
 				garbage = TRUE;
 		} else
-			throw(MAL, "optimizer.validate", "Missing optimizer call\n");
+			throw(MAL, "optimizer.validate", SQLSTATE(42000) "Missing optimizer call\n");
+	}
 
 	if (mitosis == TRUE && mergetable == FALSE)
-		throw(MAL, "optimizer.validate", "'mitosis' needs 'mergetable'\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'mitosis' needs 'mergetable'\n");
 
 	/* several optimizer should be used */
 	if (multiplex == 0)
-		throw(MAL, "optimizer.validate", "'multiplex' should be used\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'multiplex' should be used\n");
 	if (deadcode == FALSE)
-		throw(MAL, "optimizer.validate", "'deadcode' should be used at least once\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'deadcode' should be used at least once\n");
 	if (garbage == FALSE)
-		throw(MAL, "optimizer.validate", "'garbageCollector' should be used as the last one\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
 	if (remap == FALSE)
-		throw(MAL, "optimizer.validate", "'remap' should be used\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'remap' should be used\n");
 	if (generator == FALSE)
-		throw(MAL, "optimizer.validate", "'generator' should be used\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'generator' should be used\n");
 
 	return MAL_SUCCEED;
 }
@@ -418,70 +444,56 @@ validateOptimizerPipes(void)
  * then copy the statements to the end of the MAL plan
 */
 str
-compileOptimizer(Client cntxt, str name)
+compileOptimizer(Client cntxt, const char *name)
 {
 	int i, j;
-	Symbol sym;
+	char buf[2048];
 	str msg = MAL_SUCCEED;
-	ClientRec c;
+	Symbol fcn, compiled;
 
-	memset((char*)&c, 0, sizeof(c));
 	MT_lock_set(&pipeLock);
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
+	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) 
 		if (strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0) {
-			/* precompile the pipeline as MAL string */
-			MCinitClientRecord(&c, cntxt->user, 0, 0);
-			c.nspace = newModule(NULL, putName("user"));
-			c.father = cntxt;	/* to avoid conflicts on GDKin */
-			c.fdout = cntxt->fdout;
-			if (setScenario(&c, "mal")) {
-				MT_lock_unset(&pipeLock);
-				throw(MAL, "optimizer.addOptimizerPipe", "failed to set scenario");
-			}
-			if( MCinitClientThread(&c) < 0){
-				MT_lock_unset(&pipeLock);
-				throw(MAL, "optimizer.addOptimizerPipe", "failed to create client thread");
-			}
+			/* precompile a pipeline as MAL string */
 			for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
 				if (pipes[j].mb == NULL) {
-					if (pipes[j].prerequisite && getAddress(c.fdout, NULL, pipes[j].prerequisite, TRUE) == NULL)
+					if (pipes[j].prerequisite && getAddress(pipes[j].prerequisite) == NULL)
 						continue;
-					MSinitClientPrg(&c, "user", pipes[j].name);
-					msg = compileString(&sym, &c, pipes[j].def);
-					if (msg != MAL_SUCCEED) 
-						break;
-					pipes[j].mb = copyMalBlk(sym->def);
+					snprintf(buf,2048,"function optimizer.%s(); %s;end %s;", pipes[j].name,pipes[j].def,pipes[j].name);
+					msg = compileString(&fcn,cntxt, buf);
+					if( msg == MAL_SUCCEED){
+						compiled = findSymbol(cntxt->usermodule,getName("optimizer"), getName(pipes[j].name));
+						if( compiled){
+							pipes[j].mb = compiled->def;
+							//fprintFunction(stderr, pipes[j].mb, 0, LIST_MAL_ALL);
+						}
+					}
 				}
 			}
-			/* don't cleanup thread info since the thread continues to
-			 * exist, just this client record is closed */
-			c.errbuf = NULL;
-			/* we must clear c.mythread because we're reusing a Thread
-			 * and must not delete that one */
-			c.mythread = 0;
-			/* destroy bstream using free */
-			free(c.fdin->buf);
-			free(c.fdin);
-			/* remove garbage from previous connection */
-			if (c.nspace) {
-				freeModule(c.nspace);
-				c.nspace = 0;
-			}
-			MCcloseClient(&c);
 			if (msg != MAL_SUCCEED ||
 				(msg = validateOptimizerPipes()) != MAL_SUCCEED)
 				break;
 		}
-	}
 	MT_lock_unset(&pipeLock);
 	return msg;
 }
 
 str
-addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
+compileAllOptimizers(Client cntxt)
+{
+    int i;
+    str msg = MAL_SUCCEED;
+
+    for(i=0;pipes[i].def && msg == MAL_SUCCEED; i++){
+        msg =compileOptimizer(cntxt,pipes[i].name);
+    }
+	return msg;
+}
+str
+addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 {
 	int i, j, k;
-	InstrPtr p;
+	InstrPtr p,q;
 	str msg = MAL_SUCCEED;
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
@@ -489,22 +501,34 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 			break;
 
 	if (i == MAXOPTPIPES)
-		throw(MAL, "optimizer.addOptimizerPipe", "Out of slots");
+		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) "Out of slots");
 
 	if (pipes[i].mb == NULL)
 		msg = compileOptimizer(cntxt, name);
 
-	if (pipes[i].mb) {
+	if (pipes[i].mb && pipes[i].mb->stop) {
 		for (j = 1; j < pipes[i].mb->stop - 1; j++) {
-			p = copyInstruction(pipes[i].mb->stmt[j]);
+			q= getInstrPtr(pipes[i].mb,j);
+			if( getModuleId(q) != optimizerRef)
+				continue;
+			p = copyInstruction(q);
 			if (!p) { // oh malloc you cruel mistress
-				throw(MAL, "optimizer.addOptimizerPipe", "Out of memory");
+				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
-			typeChecker(cntxt->fdout, cntxt->nspace, mb, p, FALSE);
+			typeChecker(cntxt->usermodule, mb, p, FALSE);
 			pushInstruction(mb, p);
 		}
 	}
 	return msg;
+}
+
+void
+opt_pipes_reset(void)
+{
+	int i;
+
+	for (i = 0; i < MAXOPTPIPES; i++)
+		pipes[i].mb = NULL;
 }

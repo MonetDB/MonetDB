@@ -1,6 +1,11 @@
+from __future__ import print_function
+
 import re, sys
 
-import exportutils
+try:
+    import exportutils
+except ImportError:
+    from MonetDBtesting import exportutils
 
 # MAL function: optional module with function name
 malfre = r'(?P<malf>(?:[a-zA-Z_][a-zA-Z_0-9]*\.)?(?:[a-zA-Z_][a-zA-Z_0-9]*|[-+/*<>%=!]+))\s*(?:{[^}]*}\s*)?'
@@ -20,7 +25,7 @@ treg = re.compile(r':\s*(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
 expre = re.compile(r'\b[a-zA-Z_0-9]+export\s+(?P<decl>[^;]*;)', re.MULTILINE)
 nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
 
-freg = re.compile(r'(?P<rtype>\w+(?:\s*\*)*)\s*\b(?P<name>\w+)\((?P<args>[^()]*)\)')
+freg = re.compile(r'(?P<rtype>(?:const\s+)?\w+(?:\s*\*)*)\s*\b(?P<name>\w+)\((?P<args>[^()]*)\)')
 creg = re.compile(r'\bconst\b')
 sreg = re.compile(r'\bchar\s*\*')
 areg = re.compile(r'\w+')
@@ -46,16 +51,16 @@ atomfunctypes = {
     'cmp': ('int', (('void *', True), ('void *', True))),
     'del': ('void', (('Heap *', False), ('var_t *', False))),
     'fix': ('int', (('void *', True),)),
-    'fromstr': ('int', (('char *', True), ('int *', False), ('ptr *', False))),
+    'fromstr': ('ssize_t', (('char *', True), ('size_t *', False), ('void **', False))),
     'hash': ('BUN', (('void *', True),)),
     'heap': ('void', (('Heap *', False), ('size_t', False))),
-    'length': ('int', (('void *', False),)),
+    'length': ('size_t', (('void *', True),)),
     'nequal': ('int', (('void *', True), ('void *', True))),
-    'null': ('void *', (('void', False),)),
+    'null': ('const void *', (('void', False),)),
     'put': ('var_t', (('Heap *', False), ('var_t *', False), ('void *', True))),
     'read': ('void *', (('void *', False), ('stream *', False), ('size_t', False))),
     'storage': ('long', (('void', False),)),
-    'tostr': ('int', (('str *', False), ('int *', False), ('void *', True))),
+    'tostr': ('ssize_t', (('char **', False), ('size_t *', False), ('void *', True))),
     'unfix': ('int', (('void *', True),)),
     'write': ('gdk_return', (('void *', True), ('stream *', False), ('size_t', False))),
     }
@@ -77,7 +82,7 @@ def process(f):
         data = re.sub(r'[ \t]*#.*', '', data) # remove comments
         for res in comreg.finditer(data):
             malf, args, rets, func = res.groups()
-            if not atomfunctypes.has_key(malf) or args.strip():
+            if malf not in atomfunctypes or args.strip():
                 rtypes = []
                 atypes = []
                 if not rets:
@@ -94,17 +99,17 @@ def process(f):
                     atypes.append(mappings.get(typ, typ))
                 malfuncs.append((tuple(rtypes), tuple(atypes), malf, func, f))
             elif args.strip():
-                print 'atom function %s should be declared without arguments in %s' % (malf, f)
+                print('atom function %s should be declared without arguments in %s' % (malf, f))
             else:
                 if rets:
-                    print 'atom function %s should be declared without return type in %s' % (malf, f)
+                    print('atom function %s should be declared without return type in %s' % (malf, f))
                 atom = None
                 base = None
                 for ares in atmreg.finditer(data, 0, res.start(0)):
                     atom = ares.group('atom')
                     base = ares.group('base')
                 if not atom:
-                    print 'atom function %s declared without known atom name in %s' % (malf, f)
+                    print('atom function %s declared without known atom name in %s' % (malf, f))
                     continue
                 atomfuncs.append((malf, atom, base, func, f))
         for res in patreg.finditer(data):
@@ -123,7 +128,7 @@ def process(f):
                 res = freg.match(decl)
                 if res is not None:
                     rtype, name, args = res.groups()
-                    args = map(lambda x: x.strip(), args.split(','))
+                    args = [y for y in map(lambda x: x.strip(), args.split(','))]
                     if len(args) == 4 and \
                        args[0].startswith('Client ') and \
                        args[1].startswith('MalBlkPtr ') and \
@@ -201,33 +206,33 @@ for f in files:
 
 if coverage:
     for rtypes, atypes, malf, func, f in malfuncs:
-        if decls.has_key(func):
+        if func in decls:
             del decls[func]
     for malf, func, f in malpats:
-        if pdecls.has_key(func):
+        if func in pdecls:
             del pdecls[func]
-    print 'commands:'
+    print('commands:')
     for func in sorted(decls.keys()):
-        print func
-    print
-    print 'patterns:'
+        print(func)
+    print('')
+    print('patterns:')
     for func in sorted(pdecls.keys()):
-        print func
+        print(func)
 else:
     for rtypes, atypes, malf, func, f in malfuncs:
-        if not decls.has_key(func):
-            print '%s: missing for MAL command %s in %s' % (func, malf, f)
+        if func not in decls:
+            print('%s: missing for MAL command %s in %s' % (func, malf, f))
         else:
             args, funcf = decls[func]
             if len(args) != len(rtypes) + len(atypes):
-                print '%s in %s: argument count mismatch for %s %s' % (func, funcf, malf, f)
+                print('%s in %s: argument count mismatch for %s %s' % (func, funcf, malf, f))
             else:
                 args = list(args)
                 i = 0
                 for t in rtypes:
                     i = i + 1
                     if t != args[0][0] or args[0][1]:
-                        print '%s in %s: return %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
+                        print('%s in %s: return %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0]))
                     del args[0]
                 i = 0
                 for t in atypes:
@@ -237,32 +242,40 @@ else:
                     if func in ('JSONstr2json', 'JSONisvalid', 'JSONisobject', 'JSONisarray') and t in ('str', 'json'):
                         t = args[0][0]
                     if t != args[0][0]:
-                        print '%s in %s: argument %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
+                        print('%s in %s: argument %d type mismatch for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0]))
                     elif report_const and not args[0][1]:
-                        print '%s in %s: argument %d not const for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0])
+                        print('%s in %s: argument %d not const for %s %s (%s vs %s)' % (func, funcf, i, malf, f, t, args[0][0]))
                     del args[0]
 
     for malf, func, f in malpats:
-        if not pdecls.has_key(func):
-            print '%s: missing for MAL pattern %s in %s' % (func, malf, f)
+        if func not in pdecls:
+            print('%s: missing for MAL pattern %s in %s' % (func, malf, f))
 
     for malf, atom, base, func, f in atomfuncs:
-        if not odecls.has_key(func):
-            print '%s: missing for MAL atom command %s in %s' % (func, malf, f)
+        if func not in odecls:
+            print('%s: missing for MAL atom command %s in %s' % (func, malf, f))
         else:
             atm = mappings.get(atom, atom)
             rtype, args = atomfunctypes[malf]
             crtype, cargs, funcf = odecls[func]
             if len(args) != len(cargs):
-                print '%s in %s: argument count mismatch for command %s for atom %s in %s' % (func, funcf, malf, atom, f)
-            elif rtype != crtype and rtype == 'void *' and crtype != atm + ' *' and (base != 'str' or (crtype != atm and crtype != 'char *')):
-                print '%s in %s: return type mismatch for command %s for atom %s in %s (%s vs %s)' % (func, funcf, malf, atom, f, rtype, crtype)
+                print('%s in %s: argument count mismatch for command %s for atom %s in %s' % (func, funcf, malf, atom, f))
+            elif rtype != crtype and (rtype != 'void *' or crtype != atm + ' *') and (rtype != 'const void *' or crtype != 'const ' + atm + ' *'):
+                print('%s in %s: return type mismatch for command %s for atom %s in %s (%s vs %s)' % (func, funcf, malf, atom, f, rtype, crtype))
             else:
                 for i in range(len(args)):
                     a1, r1 = args[i]
                     a2, r2 = cargs[i]
                     if r2 and not r1:
-                        print 'argument %d of %s in %s incorrectly declared const for atom command %s in %s' % (i+1, func, funcf, malf, f)
-                    if a1 != a2 and a1 == 'void *' and a2 != atm + ' *' and (base != 'str' or (a2 != atm and a2 != 'char *')):
-                        print (a1,a2,atom,base)
-                        print '%s in %s: argument %d mismatch for command %s for atom %s in %s (%s vs %s)' % (func, funcf, i+1, malf, atom, f, a1, a2)
+                        print('argument %d of %s in %s incorrectly declared const for atom command %s in %s' % (i+1, func, funcf, malf, f))
+                    if a1 != a2 and \
+                       (a1 != 'void *' or a2 != atm + ' *') and \
+                       (a1 != 'char **' or a2 != 'str *') and \
+                       (a1 != 'void **' or a2 != atm + ' **') and \
+                       (base != 'str' or a1 != 'void *' or a2 != atm) and \
+                       (base != 'str' or a1 != 'void *' or a2 != 'char *') and \
+                       (base != 'str' or a1 != 'void **' or a2 != atm + ' *') and \
+                       (base != 'str' or a1 != 'void **' or a2 != 'str *') and \
+                       (base != 'str' or a1 != 'char **' or a2 != atm + ' *'):
+                        print((a1,a2,atom,base))
+                        print('%s in %s: argument %d mismatch for command %s for atom %s in %s (%s vs %s)' % (func, funcf, i+1, malf, atom, f, a1, a2))

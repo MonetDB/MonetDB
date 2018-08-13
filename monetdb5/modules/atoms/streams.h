@@ -3,15 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
 
-#include <mal.h>
-#include <stdio.h>
-#include <stream_socket.h>
+#include "mal.h"
+#include "stream_socket.h"
 
 typedef ptr Stream;
 typedef ptr Bstream;
@@ -41,12 +40,4 @@ mal_export str mnstr_open_rstreamwrap(Stream *S, str *filename);
 mal_export str mnstr_open_wstreamwrap(Stream *S, str *filename);
 mal_export str mnstr_open_rastreamwrap(Stream *S, str *filename);
 mal_export str mnstr_open_wastreamwrap(Stream *S, str *filename);
-
-mal_export str mnstr_stream_rstreamwrap(Stream *sout, Stream *sin);
-mal_export str mnstr_stream_wstreamwrap(Stream *sout, Stream *sin);
-
-mal_export str mnstr_socket_rstreamwrap(Stream *S, int *socket, str *name);
-mal_export str mnstr_socket_wstreamwrap(Stream *S, int *socket, str *name);
-mal_export str mnstr_socket_rastreamwrap(Stream *S, int *socket, str *name);
-mal_export str mnstr_socket_wastreamwrap(Stream *S, int *socket, str *name);
 #endif /*_STREAMS_H_*/

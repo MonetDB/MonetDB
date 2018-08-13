@@ -88,9 +88,10 @@ QUERY = CREATE TABLE phpbb_attachments (
         	in_message smallint DEFAULT '0' NOT NULL ,
         	poster_id integer DEFAULT '0' NOT NULL ,
         	is_orphan LONG DEFAULT '1' NOT NULL ,
-ERROR = !type (long) unknown in: "create table phpbb_attachments (
+ERROR = !Type (long) unknown in: "create table phpbb_attachments (
         !	attach_id integer default next value for "sys""
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE TABLE phpbb_attachments (
         	attach_id integer DEFAULT next value for "sys"."phpbb_attachments_seq",
         	post_msg_id integer DEFAULT '0' NOT NULL ,
@@ -102,8 +103,9 @@ QUERY = CREATE TABLE phpbb_attachments (
         	real_filename varchar(255) DEFAULT '' NOT NULL,
         	download_count integer DEFAULT '0' NOT NULL ,
         	attach_comment varchar(4000) DEFAULT '' NOT NULL,
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !syntax error, unexpected STRING in: "'1'"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
 QUERY = CREATE TABLE phpbb_acl_groups (
         	group_id integer DEFAULT '0' NOT NULL ,
         	forum_id integer DEFAULT '0' NOT NULL ,
@@ -111,10 +113,12 @@ QUERY = CREATE TABLE phpbb_acl_groups (
         	auth_role_id integer DEFAULT '0' NOT NULL ,
         	auth_setting smallint DEFAULT '0' NOT NULL
         );
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
 QUERY = COMMIT;
 ERROR = !COMMIT: failed
+CODE  = 2D000
 
 # 11:34:05 >  
 # 11:34:05 >  Done.

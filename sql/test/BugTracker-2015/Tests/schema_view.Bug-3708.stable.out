@@ -54,19 +54,19 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 30 # length
+% 34 # length
 project (
-| table(s1.s3) [ s3.x ] COUNT 
-) [ s3.x as s4.x ]
+| table(s1.s3) [ "s3"."x" ] COUNT 
+) [ "s3"."x" as "s4"."x" ]
 #set schema s2;
 #plan select * from s1.s4;
 % .plan # table_name
 % rel # name
 % clob # type
-% 30 # length
+% 34 # length
 project (
-| table(s1.s3) [ s3.x ] COUNT 
-) [ s3.x as s4.x ]
+| table(s1.s3) [ "s3"."x" ] COUNT 
+) [ "s3"."x" as "s4"."x" ]
 #set schema sys;
 #drop schema s1;
 #drop schema s2;

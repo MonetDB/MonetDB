@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -29,7 +29,7 @@
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+#include <strings.h>		/* strcasecmp */
 #endif
 
 #ifdef HAVE_ODBCINST_H
@@ -265,7 +265,7 @@ SQLBrowseConnect(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnect " PTRFMT, PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLBrowseConnect %p", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -301,7 +301,7 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnectW " PTRFMT, PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLBrowseConnectW %p", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))

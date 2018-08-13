@@ -30,13 +30,16 @@ stderr of test 'timestamp.Bug-3401` in directory 'sql/test/BugTracker-2013` itse
 
 MAPI  = (monetdb) /var/tmp/mtest-12887/.s.monetdb.36170
 QUERY = select * from datebug where time < '2013-02-29';
-ERROR = !timestamp (2013-02-29) has incorrect format
-MAPI  = (monetdb) /var/tmp/mtest-12887/.s.monetdb.36170
+ERROR = !Timestamp (2013-02-29) has incorrect format
+CODE  = 22007
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from datebug where time > '2013-01-01' and time < '2013-02-30';
-ERROR = !timestamp (2013-02-30) has incorrect format
-MAPI  = (monetdb) /var/tmp/mtest-12887/.s.monetdb.36170
+ERROR = !Timestamp (2013-02-30) has incorrect format
+CODE  = 22007
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from datebug where time > '2013-01-01' and time < 'foobar';
-ERROR = !timestamp (foobar) has incorrect format
+ERROR = !Timestamp (foobar) has incorrect format
+CODE  = 22007
 
 # 13:17:09 >  
 # 13:17:09 >  "Done."

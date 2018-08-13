@@ -81,16 +81,21 @@ stderr of test 'decimal` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into decimaltest values (1234);
-ERROR = !too many digits (6 > 5)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !Too many digits (6 > 5)
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into decimaltest values (-1234);
-ERROR = !too many digits (6 > 5)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !Too many digits (6 > 5)
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into decimaltest values (1234.1);
-ERROR = !too many digits (6 > 5)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !Too many digits (6 > 5)
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into decimaltest values (-1234.1);
-ERROR = !too many digits (6 > 5)
+ERROR = !Too many digits (6 > 5)
+CODE  = 22003
+
 
 # 20:30:39 >  
 # 20:30:39 >  Done.

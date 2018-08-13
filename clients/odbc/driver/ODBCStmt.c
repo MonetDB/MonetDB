@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -76,6 +76,8 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->querytype = -1;
 	stmt->rowcount = 0;
 
+	stmt->qtimeout = dbc->qtimeout; /* inherit query timeout */
+
 	/* add this stmt to the administrative linked stmt list */
 	stmt->next = dbc->FirstStmt;
 	dbc->FirstStmt = stmt;
@@ -125,7 +127,7 @@ isValidStmt(ODBCStmt *stmt)
 {
 #ifdef ODBCDEBUG
 	if (!(stmt &&stmt->Type == ODBC_STMT_MAGIC_NR))
-		ODBCLOG("stmt " PTRFMT " not a valid statement handle\n", PTRFMTCAST stmt);
+		ODBCLOG("stmt %p not a valid statement handle\n", stmt);
 #endif
 	return stmt &&stmt->Type == ODBC_STMT_MAGIC_NR;
 }
@@ -145,7 +147,7 @@ addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg, int nativ
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("addStmtError " PTRFMT " %s %s %d\n", PTRFMTCAST stmt, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
+	ODBCLOG("addStmtError %p %s %s %d\n", stmt, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidStmt(stmt));
 

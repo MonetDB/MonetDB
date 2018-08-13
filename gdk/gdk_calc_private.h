@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
@@ -24,13 +24,6 @@
 #undef ABSOLUTE
 #endif
 #define ABSOLUTE(x)	((x) < 0 ? -(x) : (x))
-
-#ifndef HAVE_FABSF
-#define fabsf ABSOLUTE
-#endif
-#ifndef HAVE_LLABS
-#define llabs ABSOLUTE
-#endif
 
 #define LT(a, b)	((bit) ((a) < (b)))
 
@@ -257,17 +250,3 @@
 	} while (0)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
 #endif	/* HAVE_HGE */
-
-#define FLTDBLMUL_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
-	do {								\
-		/* only check for overflow, not for underflow */	\
-		if (ABSOLUTE(lft) > 1 &&				\
-		    (max) / ABSOLUTE(lft) < ABSOLUTE(rgt)) {		\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			(dst) = (TYPE3) (lft) * (rgt);			\
-		}							\
-	} while (0)

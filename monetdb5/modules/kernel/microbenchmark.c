@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -16,9 +16,9 @@
  * @f microbenchmark
  */
 #include "monetdb_config.h"
-#include <mal.h>
+#include "mal.h"
 #include <math.h>
-#include <mal_exception.h>
+#include "mal_exception.h"
 #include "microbenchmark.h"
 
 #ifdef STATIC_CODE_ANALYSIS
@@ -49,17 +49,17 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	if (n == 0) {
 		b->tsorted = 1;
 		b->trevsorted = 0;
-		b->tdense = FALSE;
-		BATkey(b, TRUE);
+		b->tseqbase = oid_nil;
+		BATkey(b, true);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
 	val = (int *) Tloc(b, 0);
 
 	/* create BUNs with random distribution */
-	if (seed != int_nil)
+	if (!is_int_nil(seed))
 		srand(seed);
-	if (*domain == int_nil) {
+	if (is_int_nil(*domain)) {
 	        for (i = 0; i < n; i++) {
 			val[i] = rand();
 		}
@@ -78,8 +78,8 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	BATsetcount(b, n);
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
-	b->tdense = FALSE;
-	BATkey(b, FALSE);
+	b->tseqbase = oid_nil;
+	BATkey(b, false);
 	*bn = b;
 	return GDK_SUCCEED;
 }
@@ -109,8 +109,8 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 	if (n == 0) {
 		b->tsorted = 1;
 		b->trevsorted = 0;
-		b->tdense = FALSE;
-		BATkey(b, TRUE);
+		b->tseqbase = oid_nil;
+		BATkey(b, true);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -135,7 +135,7 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 	BATsetcount(b, n);
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
-	b->tdense = FALSE;
+	b->tseqbase = oid_nil;
 	BATkey(b, *size <= *domain);
 	*bn = b;
 	return GDK_SUCCEED;
@@ -172,8 +172,8 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 	if (n == 0) {
 		b->tsorted = 1;
 		b->trevsorted = 0;
-		b->tdense = FALSE;
-		BATkey(b, TRUE);
+		b->tseqbase = oid_nil;
+		BATkey(b, true);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -197,7 +197,7 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 	BATsetcount(b, n);
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
-	b->tdense = FALSE;
+	b->tseqbase = oid_nil;
 	BATkey(b, *size <= *domain);
 	*bn = b;
 	return GDK_SUCCEED;
@@ -253,8 +253,8 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 	if (n == 0) {
 		b->tsorted = 1;
 		b->trevsorted = 0;
-		b->tdense = FALSE;
-		BATkey(b, TRUE);
+		b->tseqbase = oid_nil;
+		BATkey(b, true);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -309,7 +309,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 	BATsetcount(b, n);
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
-	b->tdense = FALSE;
+	b->tseqbase = oid_nil;
 	BATkey(b, n<2);
 	*bn = b;
 	return GDK_SUCCEED;
@@ -353,7 +353,7 @@ MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean){
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
 		BBPkeepref(*ret= bn->batCacheid);
-	} else throw(MAL, "microbenchmark.uniform", OPERATION_FAILED);
+	} else throw(MAL, "microbenchmark.normal", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -365,7 +365,7 @@ MBMmix(bat *bn, bat *batid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*batid)) == NULL)
-                throw(MAL, "microbenchmark.mix", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "microbenchmark.mix", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 	/* mix BUNs randomly */
@@ -391,6 +391,6 @@ MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 	BATskewed(&bn, base, size, domain, skew);
 	if( bn ){
 		BBPkeepref(*ret= bn->batCacheid);
-	} else throw(MAL, "microbenchmark,uniform", OPERATION_FAILED);
+	} else throw(MAL, "microbenchmark.skewed", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

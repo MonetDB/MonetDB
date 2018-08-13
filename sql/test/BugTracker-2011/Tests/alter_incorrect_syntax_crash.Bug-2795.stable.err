@@ -34,7 +34,8 @@ stderr of test 'alter_incorrect_syntax_crash.Bug-2795` in directory 'sql/test/Bu
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table t2795 add r float default sqrt(power(t2795.x, 2) + power(t2795.y, 2));
-ERROR = !incorrect default value 't2795.x'
+ERROR = !Incorrect default value 't2795.x'
+CODE  = 42000
 
 # 12:32:37 >  
 # 12:32:37 >  Done.

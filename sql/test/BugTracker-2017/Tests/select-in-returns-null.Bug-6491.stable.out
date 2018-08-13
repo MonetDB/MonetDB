@@ -1,0 +1,47 @@
+stdout of test 'select-in-returns-null.Bug-6491` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 11:53:37 >  
+# 11:53:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36593" "--set" "mapi_usock=/var/tmp/mtest-3679/.s.monetdb.36593" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 11:53:37 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36593/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3679/.s.monetdb.36593
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:53:38 >  
+# 11:53:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3679" "--port=36593"
+# 11:53:38 >  
+
+#CREATE TABLE t(i INT);
+#INSERT INTO t VALUES (1), (2), (3);
+[ 3	]
+#SELECT 1 IN (SELECT i FROM t);
+% .L5 # table_name
+% L5 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 4 IN (SELECT i FROM t);
+% .L5 # table_name
+% L5 # name
+% boolean # type
+% 5 # length
+[ false	]
+#drop table t;
+
+# 11:53:38 >  
+# 11:53:38 >  "Done."
+# 11:53:38 >  
+

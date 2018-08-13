@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -93,7 +93,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	if (isaBatType(tpe) ) {
 		BAT *b[2];
 
-		if (*(bat *) val == bat_nil || *(bat *) val == 0) {
+		if (is_bat_nil(*(bat *) val)) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
 			mnstr_printf(fp,"nil");
@@ -103,7 +103,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		}
 		b[1] = BATdescriptor(*(bat *) val);
 		if (b[1] == NULL) {
-			throw(MAL, "io.print", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "io.print", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (nobat) {
 			if (hd)
@@ -113,11 +113,17 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 				mnstr_printf(fp, "%s", tl);
 		} else {
 			b[0] = BATdense(b[1]->hseqbase, b[1]->hseqbase, BATcount(b[1]));
-			if( b[0]){
-				BATroles(b[0], "h");
-				BATprintcolumns(cntxt->fdout, 2, b);
-				BBPunfix(b[0]->batCacheid);
+			if (b[0] == NULL) {
+				BBPunfix(b[1]->batCacheid);
+				throw(MAL, "io.print", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
+			if (BATroles(b[0], "h") != GDK_SUCCEED) {
+				BBPunfix(b[0]->batCacheid);
+				BBPunfix(b[1]->batCacheid);
+				throw(MAL, "io.print", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+			BATprintcolumns(cntxt->fdout, 2, b);
+			BBPunfix(b[0]->batCacheid);
 		}
 		BBPunfix(b[1]->batCacheid);
 		return MAL_SUCCEED;
@@ -166,24 +172,24 @@ IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * New implementation that repeatedly invokes sprintf => hacking the va_alist
  * for using vfsprintf proved to be too compiler-dependent (OLD approach).
  */
-#define writemem(X1)										\
-	do {													\
-		if (dst+X1 > buf+size) {							\
-			ptrdiff_t offset = dst - buf;					\
-			char *tmp;										\
-			do {											\
-				size *= 2;									\
-			} while (dst+X1 > buf+size);					\
-			tmp = GDKrealloc(buf, size);					\
-			if (tmp == NULL) {								\
-				va_end(ap);									\
-				GDKfree(buf);								\
-				GDKfree(add);								\
-				throw(MAL, "io.printf", MAL_MALLOC_FAIL);	\
-			}												\
-			buf = tmp;										\
-			dst = buf + offset;								\
-		}													\
+#define writemem(X1)													\
+	do {																\
+		if (dst+X1 > buf+size) {										\
+			ptrdiff_t offset = dst - buf;								\
+			char *tmp;													\
+			do {														\
+				size *= 2;												\
+			} while (dst+X1 > buf+size);								\
+			tmp = GDKrealloc(buf, size);								\
+			if (tmp == NULL) {											\
+				va_end(ap);												\
+				GDKfree(buf);											\
+				GDKfree(add);											\
+				throw(MAL, "io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+			}															\
+			buf = tmp;													\
+			dst = buf + offset;											\
+		}																\
 	} while (0)
 
 #define m5sprintf(X1)\
@@ -243,17 +249,19 @@ IOprintf_(str *res, str format, ...)
 		throw(MAL,"io.printf", ILLEGAL_ARGUMENT " NULL pointer passed as format.\n");
 	} else if (strchr(format, '%') == NULL) {
 		*res = GDKstrdup(format);
+		if (*res == NULL)
+			throw(MAL,"io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	buf = dst = (str) GDKmalloc(size = 80);
 	if ( buf == NULL)
-		throw(MAL,"io.printf",MAL_MALLOC_FAIL);
+		throw(MAL,"io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*res = NULL;
 
 	add = GDKmalloc(adds);
 	if (add == NULL) {
 		GDKfree(buf);
-		throw(MAL,"io.printf",MAL_MALLOC_FAIL);
+		throw(MAL,"io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	va_start(ap,format);
@@ -400,7 +408,7 @@ IOprintf_(str *res, str format, ...)
 				width += (1 + prec);
 				m5sprintf(dval);
 			} else if (*cur == 's') {
-				int length;
+				size_t length;
 
 				if (extra) {
 					va_end(ap);
@@ -412,10 +420,10 @@ IOprintf_(str *res, str format, ...)
 				length = strLen(p);
 				width++;
 				prec++;	/* account for '\0' */
-				if (dotseen && prec < length)
-					length = prec;
-				if ((size_t) length > width)
-					width = (size_t) length;
+				if (dotseen && (size_t) prec < length)
+					length = (size_t) prec;
+				if (length > width)
+					width = length;
 				m5sprintf(p);
 			} else {
 				va_end(ap);
@@ -570,7 +578,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (piv[0] == NULL) {
 		for (i = 1; i < pci->argc; i++)
 			BBPunfix(piv[i]->batCacheid);
-		throw(MAL, "io.table", MAL_MALLOC_FAIL);
+		throw(MAL, "io.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATprintcolumns(cntxt->fdout, pci->argc, piv);
 	for (i = 0; i < pci->argc; i++)
@@ -602,7 +610,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		throw(MAL, "io.export", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "io.export", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	
 	s = open_wastream(*fnme);
 	if (s == NULL ){
@@ -628,13 +636,13 @@ str
 IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
-	int (*tconvert) (const char *, int *, ptr *);
-	int n;
+	ssize_t (*tconvert) (const char *, size_t *, ptr *);
+	ssize_t n;
 	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
 	char *buf;
 	ptr t = 0;
-	int lt = 0;
+	size_t lt = 0;
 	FILE *fp = fopen(*fnme, "r");
 	char msg[BUFSIZ];
 
@@ -642,7 +650,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		if (fp)
 			fclose(fp);
-		throw(MAL, "io.import", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "io.import", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
@@ -660,7 +668,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 		if ( buf == NULL) {
 			BBPunfix(b->batCacheid);
 			fclose(fp);
-			throw(MAL,"io.import",MAL_MALLOC_FAIL);
+			throw(MAL,"io.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
 		if ((fn = fileno(fp)) <= 0) {
@@ -717,7 +725,8 @@ IOimport(void *ret, bat *bid, str *fnme)
 					if (tmp == NULL) {
 						BBPunfix(b->batCacheid);
 						GDKfree(buf);
-						throw(MAL, "io.imports", MAL_MALLOC_FAIL);
+						GDKfree(t);
+						throw(MAL, "io.imports", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					}
 					buf = tmp;
 					dst = buf + len;
@@ -740,7 +749,8 @@ IOimport(void *ret, bat *bid, str *fnme)
 			if (tmp == NULL) {
 				BBPunfix(b->batCacheid);
 				GDKfree(buf);
-				throw(MAL, "io.imports", MAL_MALLOC_FAIL);
+				GDKfree(t);
+				throw(MAL, "io.imports", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			buf = tmp;
 			dst = buf + len;
@@ -764,20 +774,23 @@ IOimport(void *ret, bat *bid, str *fnme)
 			snprintf(msg,sizeof(msg),"error in input %s",buf);
 			GDKfree(buf);
 			MT_munmap(base, end - base);
+			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
 		n = tconvert(p, &lt, (ptr*)&t);
-		if (n <= 0) {
+		if (n < 0) {
 			BBPunfix(b->batCacheid);
 			snprintf(msg,sizeof(msg),"error in input %s",buf);
 			GDKfree(buf);
 			MT_munmap(base, end - base);
+			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
-		if (BUNappend(b, t, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b, t, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
+			GDKfree(t);
 			MT_munmap(base, end - base);
 			throw(MAL, "io.import", "insert failed");
 		}

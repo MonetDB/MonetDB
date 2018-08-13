@@ -17,4 +17,4 @@ END;
 SELECT * FROM foo();
 
 SET SCHEMA sys;
-DROP SCHEMA banana;
+DROP SCHEMA banana CASCADE;

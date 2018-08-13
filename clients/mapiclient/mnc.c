@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /**
@@ -17,13 +17,10 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapi.h>
-#include <stream.h>
-#include <stream_socket.h>
-#include <stdio.h>
+#include "mapi.h"
+#include "stream.h"
+#include "stream_socket.h"
 #include <string.h>
-#include <stdlib.h>
-#include <errno.h>
 #include <signal.h>
 #include <unistd.h>
 #ifdef HAVE_PTHREAD_H
@@ -33,7 +30,7 @@
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
-#ifdef NATIVE_WIN32
+#ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
 #ifdef HAVE_NETDB_H
@@ -58,6 +55,9 @@
 #define SOCKLEN int
 #endif
 
+#if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
+#define accept4(sockfd, addr, addlen, flags)	accept(sockfd, addr, addrlen)
+#endif
 
 static void
 usage(void)
@@ -165,13 +165,20 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		for (rp = res; rp; rp = rp->ai_next) {
-			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+			s = socket(rp->ai_family, rp->ai_socktype
+#ifdef SOCK_CLOEXEC
+				   | SOCK_CLOEXEC
+#endif
+				   , rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
 			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
 			closesocket(s);
 		}
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 		freeaddrinfo(res);
 		if (rp == NULL) {
 			fprintf(stderr, "could not connect to %s:%s: %s\n",
@@ -191,14 +198,22 @@ main(int argc, char **argv)
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
 		server.sin_family = hp->h_addrtype;
 		server.sin_port = htons((unsigned short) (port & 0xFFFF));
-		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
+		s = socket(server.sin_family, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+			   | SOCK_CLOEXEC
+#endif
+			   , IPPROTO_TCP);
 
 		if (s == INVALID_SOCKET) {
 			fprintf(stderr, "opening socket failed: %s\n", strerror(errno));
 			exit(1);
 		}
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
+			closesocket(s);
 			fprintf(stderr,
 				 "initiating connection on socket failed: %s\n",
 				 strerror(errno));
@@ -217,10 +232,17 @@ main(int argc, char **argv)
 			exit(1);
 		}
 
-		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		if ((sock = socket(AF_INET, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+				   | SOCK_CLOEXEC
+#endif
+				   , 0)) == INVALID_SOCKET) {
 			fprintf(stderr, "failed to create socket: %s\n", strerror(errno));
 			exit(1);
 		}
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
@@ -232,17 +254,27 @@ main(int argc, char **argv)
 
 		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 		if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
+			closesocket(sock);
 			fprintf(stderr, "bind to port %d failed: %s\n",
 					port, strerror(errno));
 			exit(1);
 		}
 
-		listen(sock, 1);
-		if ((s = accept(sock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
+		if(listen(sock, 1) == -1) {
+			closesocket(sock);
+			fprintf(stderr, "failed to set socket to listen: %s\n",
+					strerror(errno));
+			exit(1);
+		}
+		if ((s = accept4(sock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == INVALID_SOCKET) {
+			closesocket(sock);
 			fprintf(stderr, "failed to accept connection: %s\n",
 					strerror(errno));
 			exit(1);
 		}
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 	}
 
 	out = socket_wastream(s, "ascii write stream");
@@ -264,8 +296,11 @@ main(int argc, char **argv)
 				/* on Windows: unsigned int,
 				 * elsewhere: size_t, but then
 				 * unsigned int shouldn't harm */
-				if (!write(1, buf, (unsigned int) len))
+				if (!write(1, buf, (unsigned int) len)) {
+					mnstr_destroy(in);
+					mnstr_destroy(out);
 					exit(2);
+				}
 				seenflush = 0;
 			} else {
 				/* flush or error */

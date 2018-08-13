@@ -15,6 +15,7 @@ stderr of test 'update_pkey_bug.SF-1733712` in directory 'sql/test/BugTracker` i
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = update t1733712a set id = 10 where id =2;
 ERROR = !UPDATE: PRIMARY KEY constraint 't1733712a.t1733712a_id_pkey' violated
+CODE  = M0M29
 
 # 13:12:17 >  
 # 13:12:17 >  Done.

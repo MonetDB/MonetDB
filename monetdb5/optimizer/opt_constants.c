@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -41,7 +41,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
 	if ( alias == NULL || cst == NULL || index == NULL){
-		msg = createException(MAL,"optimizer.constants",MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
@@ -50,7 +50,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i=0; i< mb->vtop; i++)
 		alias[ i]= i;
-	for (i=0; i< mb->vtop; i++)
+	for (i=0; i< mb->vtop && n < 100; i++)
 		if ( isVarConstant(mb,i)  && isVarFixed(mb,i)  && getVarType(mb,i) != TYPE_ptr){
 			x= getVar(mb,i); 
 			fnd = 0;
@@ -81,23 +81,24 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} 
 		} 
 
-	if( actions)
+	if (actions)
 		for (i = 0; i < mb->stop; i++){
 			p= getInstrPtr(mb,i);
 			for (k=0; k < p->argc; k++)
 				getArg(p,k) = alias[getArg(p,k)];
 		}
+
     /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
-	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	//chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
     
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
-    newComment(mb,buf);
-	if( actions >= 0)
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
+	newComment(mb,buf);
+	if (actions >= 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -19,6 +19,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	if ( !(p->token == ASSIGNsymbol ||
 		   getModuleId(p) == calcRef ||
 		   getModuleId(p) == strRef ||
+		   getModuleId(p) == mtimeRef ||
 		   getModuleId(p) == mmathRef))
 		return FALSE;
 	if (getModuleId(p) == mmathRef && strcmp(getFunctionId(p), "rand") == 0)
@@ -57,12 +58,13 @@ static int OPTsimpleflow(MalBlkPtr mb, int pc)
 }
 
 /* barrier blocks can only be dropped when they are fully excluded.  */
-static int
+static str
 OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 {
 	/* catch and remove constant bounded blocks */
 	int i, j = 0, action = 0, block = -1, skip = 0, multipass = 1;
 	InstrPtr p;
+	str msg = MAL_SUCCEED;
 
 	while(multipass--){
 		block = -1;
@@ -107,11 +109,9 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 		for (; j < i; j++)
 			mb->stmt[j] = NULL;
 	}
-	if (action) {
-		chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
-		return mb->errors ? 0 : action;
-	}
-	return action;
+	if (action)
+		chkTypes(cntxt->usermodule, mb, TRUE);
+	return msg;
 }
 
 str
@@ -127,26 +127,26 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	cntxt->itrace = 0;
 	(void)stk;
 	(void)pci;
 
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
-	(void)cntxt;
+	cntxt->itrace = 0;
+
 #ifdef DEBUG_OPT_EVALUATE
 	fprintf(stderr, "Constant expression optimizer started\n");
 #endif
 
 	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
-		throw(MAL,"optimzier.evaluate", MAL_MALLOC_FAIL);
+		throw(MAL,"optimzier.evaluate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
 	if (alias == NULL){
 		GDKfree(assigned);
-		throw(MAL,"optimzier.evaluate", MAL_MALLOC_FAIL);
+		throw(MAL,"optimzier.evaluate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	// arguments are implicitly assigned by context
@@ -183,7 +183,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			if ( env == NULL) {
 				env = prepareMALstack(mb,  2 * mb->vsize);
 				if (!env) {
-					msg = createException(MAL,"optimizer.evaluate", MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.evaluate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 				env->keepAlive = TRUE;
@@ -239,14 +239,14 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	// produces errors in SQL when enabled
 	if ( constantblock)
-		actions += OPTremoveUnusedBlocks(cntxt, mb);
+		msg = OPTremoveUnusedBlocks(cntxt, mb);
 	cntxt->itrace = debugstate;
 
     /* Defense line against incorrect plans */
 	/* Plan is unaffected */
-	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	chkFlow(mb);
+	chkDeclarations(mb);
     
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

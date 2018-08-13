@@ -34,21 +34,25 @@ QUERY = SELECT *
            INTO TABLE tmp1
            FROM onek
            WHERE onek.unique1 < 2;
-ERROR = !syntax error, unexpected TABLE in: "select *
+ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select *
         !   into table tmp1"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP TABLE tmp1;
 ERROR = !DROP TABLE: no such table 'tmp1'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT *
            INTO TABLE tmp1
            FROM onek2
            WHERE onek2.unique1 < 2;
-ERROR = !syntax error, unexpected TABLE in: "select *
+ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select *
         !   into table tmp1"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP TABLE tmp1;
 ERROR = !DROP TABLE: no such table 'tmp1'
+CODE  = 42S02
 
 
 

@@ -32,9 +32,11 @@ stderr of test 'numerology` in directory 'sql/test/pg_regress` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE TABLE INT2_TBL(f1 smallint);
 ERROR = !CREATE TABLE: name 'int2_tbl' already in use
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S01
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE TABLE INT4_TBL(f1 integer);
 ERROR = !CREATE TABLE: name 'int4_tbl' already in use
+CODE  = 42S01
 
 
 

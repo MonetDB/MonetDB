@@ -74,6 +74,7 @@ stderr of test 'call_function_without_warning.Bug-2752` in directory 'sql/test/B
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = call sin(1);
 ERROR = !SELECT: no such unary operator 'sin(tinyint)'
+CODE  = 42000
 
 # 20:43:24 >  
 # 20:43:24 >  Done.

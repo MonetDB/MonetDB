@@ -38,12 +38,15 @@ QUERY = create function MyFunc1()
         	  return 0;
         end;
 ERROR = !UPDATE: no such column 't.i'
-MAPI  = (monetdb) /var/tmp/mtest-24279/.s.monetdb.39133
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select MyFunc1();
 ERROR = !SELECT: no such operator 'myfunc1'
-MAPI  = (monetdb) /var/tmp/mtest-24279/.s.monetdb.39133
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop function MyFunc1;
 ERROR = !DROP FUNCTION: no such function 'myfunc1'
+CODE  = 42000
 
 # 10:45:26 >  
 # 10:45:26 >  "Done."

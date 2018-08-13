@@ -33,6 +33,7 @@ stderr of test 'crash0` in directory 'sql/test/mergetables` itself:
 MAPI  = (monetdb) /var/tmp/mtest-15880/.s.monetdb.35320
 QUERY = ALTER TABLE complete SET READ ONLY;
 ERROR = !ALTER TABLE: read only MERGE TABLES are not supported
+CODE  = 42S02
 
 # 23:02:05 >  
 # 23:02:05 >  "Done."

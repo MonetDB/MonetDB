@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -27,7 +27,6 @@
 #  include "getopt.h"
 # endif
 #endif
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -128,7 +127,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 		char *s, *t, *val;
 		int quote;
 
-		for (s = buf; *s && isspace((int) (unsigned char) *s); s++)
+		for (s = buf; *s && isspace((unsigned char) *s); s++)
 			;
 		if (*s == '#')
 			continue;	/* commentary */
@@ -143,12 +142,12 @@ mo_config_file(opt **Set, int setlen, char *file)
 		}
 		*val = 0;
 
-		for (t = s; *t && !isspace((int) (unsigned char) *t); t++)
+		for (t = s; *t && !isspace((unsigned char) *t); t++)
 			;
 		*t = 0;
 
 		/* skip any leading blanks in the value part */
-		for (val++; *val && isspace((int) (unsigned char) *val); val++)
+		for (val++; *val && isspace((unsigned char) *val); val++)
 			;
 
 		/* search to unquoted # */
@@ -165,7 +164,7 @@ mo_config_file(opt **Set, int setlen, char *file)
 			exit(1);
 		}
 		/* remove trailing white space */
-		while (isspace((int) (unsigned char) t[-1]))
+		while (isspace((unsigned char) t[-1]))
 			t--;
 		*t++ = 0;
 

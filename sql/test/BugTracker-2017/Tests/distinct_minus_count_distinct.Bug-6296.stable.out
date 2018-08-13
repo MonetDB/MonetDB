@@ -78,8 +78,8 @@ Ready.
 % .L4 # table_name
 % col1 # name
 % bigint # type
-% 2 # length
-[ -1	]
+% 1 # length
+[ 0	]
 #DROP TABLE tab2;
 #DROP TABLE tab0;
 

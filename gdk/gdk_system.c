@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -32,26 +32,16 @@
 #include "gdk_system.h"
 #include "gdk_system_private.h"
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+#include <time.h>
 
-#ifndef HAVE_GETTIMEOFDAY
 #ifdef HAVE_FTIME
-#include <sys/timeb.h>
+#include <sys/timeb.h>		/* ftime */
 #endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
 #endif
 
-#ifdef HAVE_SIGNAL_H
-# include <signal.h>
-#endif
+#include <signal.h>
 
 #include <unistd.h>		/* for sysconf symbols */
 
@@ -138,14 +128,14 @@ GDKlockstatistics(int what)
 		    (what == 1 && l->count) ||
 		    (what == 2 && l->contention) ||
 		    (what == 3 && l->lock))
-			fprintf(stderr, "# %-18s\t" SZFMT "\t" SZFMT "\t" SZFMT "\t%s\t%s\n",
+			fprintf(stderr, "# %-18s\t%zu\t%zu\t%zu\t%s\t%s\n",
 				l->name ? l->name : "unknown",
 				l->count, l->contention, l->sleep,
 				l->lock ? "locked" : "",
 				l->locker ? l->locker : "");
-	fprintf(stderr, "#total lock count " SZFMT "\n", (size_t) GDKlockcnt);
-	fprintf(stderr, "#lock contention  " SZFMT "\n", (size_t) GDKlockcontentioncnt);
-	fprintf(stderr, "#lock sleep count " SZFMT "\n", (size_t) GDKlocksleepcnt);
+	fprintf(stderr, "#total lock count %zu\n", (size_t) GDKlockcnt);
+	fprintf(stderr, "#lock contention  %zu\n", (size_t) GDKlockcontentioncnt);
+	fprintf(stderr, "#lock sleep count %zu\n", (size_t) GDKlocksleepcnt);
 	ATOMIC_CLEAR(GDKlocklistlock, dummy);
 }
 #endif
@@ -163,12 +153,12 @@ static struct winthread {
 #define DETACHED	2
 #define WAITING		4
 static CRITICAL_SECTION winthread_cs;
-static int winthread_cs_init = 0;
+static bool winthread_cs_init = false;
 
 void
 gdk_system_reset(void)
 {
-	winthread_cs_init = 0;
+	winthread_cs_init = false;
 }
 
 static struct winthread *
@@ -212,10 +202,10 @@ static void
 join_threads(void)
 {
 	struct winthread *w;
-	int waited;
+	bool waited;
 
 	do {
-		waited = 0;
+		waited = false;
 		EnterCriticalSection(&winthread_cs);
 		for (w = winthreads; w; w = w->next) {
 			if ((w->flags & (EXITED | DETACHED | WAITING)) == (EXITED | DETACHED)) {
@@ -224,7 +214,7 @@ join_threads(void)
 				WaitForSingleObject(w->hdl, INFINITE);
 				CloseHandle(w->hdl);
 				rm_winthread(w);
-				waited = 1;
+				waited = true;
 				EnterCriticalSection(&winthread_cs);
 				break;
 			}
@@ -237,10 +227,10 @@ void
 join_detached_threads(void)
 {
 	struct winthread *w;
-	int waited;
+	bool waited;
 
 	do {
-		waited = 0;
+		waited = false;
 		EnterCriticalSection(&winthread_cs);
 		for (w = winthreads; w; w = w->next) {
 			if ((w->flags & (DETACHED | WAITING)) == DETACHED) {
@@ -249,7 +239,7 @@ join_detached_threads(void)
 				WaitForSingleObject(w->hdl, INFINITE);
 				CloseHandle(w->hdl);
 				rm_winthread(w);
-				waited = 1;
+				waited = true;
 				EnterCriticalSection(&winthread_cs);
 				break;
 			}
@@ -266,12 +256,12 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	if (w == NULL)
 		return -1;
 
-	if (winthread_cs_init == 0) {
+	if (!winthread_cs_init) {
 		/* we only get here before any threads are created,
 		 * and this is the only time that winthread_cs_init is
 		 * ever changed */
 		InitializeCriticalSection(&winthread_cs);
-		winthread_cs_init = 1;
+		winthread_cs_init = true;
 	}
 	join_threads();
 	w->func = f;
@@ -301,6 +291,7 @@ MT_exiting_thread(void)
 		w->flags |= EXITED;
 }
 
+/* coverity[+kill] */
 void
 MT_exit_thread(int s)
 {
@@ -435,7 +426,7 @@ find_posthread_locked(pthread_t tid)
 	struct posthread *p;
 
 	for (p = posthreads; p; p = p->next)
-		if (p->tid == tid)
+		if (pthread_equal(p->tid, tid))
 			return p;
 	return NULL;
 }
@@ -455,13 +446,18 @@ find_posthread(pthread_t tid)
 #endif
 
 #ifdef HAVE_PTHREAD_SIGMASK
-static void
+static int
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
-	(void) sigdelset(new_mask, SIGQUIT);
-	(void) sigdelset(new_mask, SIGALRM);	/* else sleep doesn't work */
-	(void) sigdelset(new_mask, SIGPROF);
-	(void) pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
+	if(sigdelset(new_mask, SIGQUIT))
+		return -1;
+	if(sigdelset(new_mask, SIGALRM))	/* else sleep doesn't work */
+		return -1;
+	if(sigdelset(new_mask, SIGPROF))
+		return -1;
+	if(pthread_sigmask(SIG_SETMASK, new_mask, orig_mask))
+		return -1;
+	return 0;
 }
 #endif
 
@@ -476,7 +472,7 @@ rm_posthread_locked(struct posthread *p)
 		*pp = p->next;
 }
 
-static void
+static void *
 thread_starter(void *arg)
 {
 	struct posthread *p = (struct posthread *) arg;
@@ -489,18 +485,31 @@ thread_starter(void *arg)
 	if ((p = find_posthread_locked(tid)) != NULL)
 		p->exited = 1;
 	pthread_mutex_unlock(&posthread_lock);
+	return NULL;
+}
+
+static void *
+thread_starter_simple(void *arg)
+{
+	struct posthread *p = (struct posthread *) arg;
+	void (*pfunc)(void *) = p->func;
+	void *parg = p->arg;
+
+	free(p);
+	(*pfunc)(parg);
+	return NULL;
 }
 
 static void
 join_threads(void)
 {
 	struct posthread *p;
-	int waited;
+	bool waited;
 	pthread_t tid;
 
 	pthread_mutex_lock(&posthread_lock);
 	do {
-		waited = 0;
+		waited = false;
 		for (p = posthreads; p; p = p->next) {
 			if (p->exited) {
 				tid = p->tid;
@@ -509,7 +518,7 @@ join_threads(void)
 				pthread_mutex_unlock(&posthread_lock);
 				pthread_join(tid, NULL);
 				pthread_mutex_lock(&posthread_lock);
-				waited = 1;
+				waited = true;
 				break;
 			}
 		}
@@ -546,51 +555,62 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	pthread_t newt, *newtp;
 	int ret;
 	struct posthread *p = NULL;
+	void *(*pf) (void *);
 
 	join_threads();
 #ifdef HAVE_PTHREAD_SIGMASK
 	(void) sigfillset(&new_mask);
-	MT_thread_sigmask(&new_mask, &orig_mask);
+	if(MT_thread_sigmask(&new_mask, &orig_mask))
+		return -1;
 #endif
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	if (d == MT_THR_DETACHED) {
-		p = malloc(sizeof(struct posthread));
-		if (p == NULL) {
+	if(pthread_attr_init(&attr))
+		return -1;
+	if(pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE)) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	if(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE)) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	p = malloc(sizeof(struct posthread));
+	if (p == NULL) {
 #ifdef HAVE_PTHREAD_SIGMASK
-			MT_thread_sigmask(&orig_mask, NULL);
+		(void) MT_thread_sigmask(&orig_mask, NULL); //going to fail anyway
 #endif
-			return -1;
-		}
-		p->func = f;
-		p->arg = arg;
-		p->exited = 0;
-		f = thread_starter;
-		arg = p;
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	p->func = f;
+	p->arg = arg;
+	p->exited = 0;
+	if (d == MT_THR_DETACHED) {
+		pf = thread_starter;
 		newtp = &p->tid;
 	} else {
+		pf = thread_starter_simple;
 		newtp = &newt;
 		assert(d == MT_THR_JOINABLE);
 	}
-	ret = pthread_create(newtp, &attr, (void *(*)(void *)) f, arg);
+	ret = pthread_create(newtp, &attr, pf, p);
 	if (ret == 0) {
 #ifdef PTW32
 		*t = (MT_Id) (((size_t) newtp->p) + 1);	/* use pthread-id + 1 */
 #else
 		*t = (MT_Id) (((size_t) *newtp) + 1);	/* use pthread-id + 1 */
 #endif
-		if (p) {
+		if (d == MT_THR_DETACHED) {
 			pthread_mutex_lock(&posthread_lock);
 			p->next = posthreads;
 			posthreads = p;
 			pthread_mutex_unlock(&posthread_lock);
 		}
-	} else if (p) {
+	} else {
 		free(p);
 	}
 #ifdef HAVE_PTHREAD_SIGMASK
-	MT_thread_sigmask(&orig_mask, NULL);
+	if(MT_thread_sigmask(&orig_mask, NULL))
+		return -1;
 #endif
 	return ret ? -1 : 0;
 }
@@ -607,6 +627,7 @@ MT_exiting_thread(void)
 	pthread_mutex_unlock(&posthread_lock);
 }
 
+/* coverity[+kill] */
 void
 MT_exit_thread(int s)
 {
@@ -695,80 +716,6 @@ pthread_sema_down(pthread_sema_t *s)
 #endif
 #endif
 
-#if !defined(WIN32) && defined(PROFILE) && defined(HAVE_PTHREAD_H)
-#undef pthread_create
-/* for profiling purposes (btw configure with --enable-profile *and*
- * --disable-shared --enable-static) without setting the ITIMER_PROF
- * per thread, all profiling info for everything except the main
- * thread is lost. */
-#include <stdlib.h>
-
-/* Our data structure passed to the wrapper */
-typedef struct wrapper_s {
-	void *(*start_routine) (void *);
-	void *arg;
-
-	pthread_mutex_t lock;
-	pthread_cond_t wait;
-
-	struct itimerval itimer;
-
-} wrapper_t;
-
-/* The wrapper function in charge for setting the itimer value */
-static void *
-wrapper_routine(void *data)
-{
-	/* Put user data in thread-local variables */
-	void *(*start_routine) (void *) = ((wrapper_t *) data)->start_routine;
-	void *arg = ((wrapper_t *) data)->arg;
-
-	/* Set the profile timer value */
-	setitimer(ITIMER_PROF, &((wrapper_t *) data)->itimer, NULL);
-
-	/* Tell the calling thread that we don't need its data anymore */
-	pthread_mutex_lock(&((wrapper_t *) data)->lock);
-
-	pthread_cond_signal(&((wrapper_t *) data)->wait);
-	pthread_mutex_unlock(&((wrapper_t *) data)->lock);
-
-	/* Call the real function */
-	return start_routine(arg);
-}
-
-/* Our wrapper function for the real pthread_create() */
-int
-gprof_pthread_create(pthread_t * __restrict thread, __const pthread_attr_t * __restrict attr, void *(*start_routine) (void *), void *__restrict arg)
-{
-	wrapper_t wrapper_data;
-	int i_return;
-
-	/* Initialize the wrapper structure */
-	wrapper_data.start_routine = start_routine;
-	wrapper_data.arg = arg;
-	getitimer(ITIMER_PROF, &wrapper_data.itimer);
-	pthread_cond_init(&wrapper_data.wait, NULL);
-	pthread_mutex_init(&wrapper_data.lock, NULL);
-	pthread_mutex_lock(&wrapper_data.lock);
-
-	/* The real pthread_create call */
-	i_return = pthread_create(thread, attr, &wrapper_routine, &wrapper_data);
-
-	/* If the thread was successfully spawned, wait for the data
-	 * to be released */
-	if (i_return == 0) {
-		pthread_cond_wait(&wrapper_data.wait, &wrapper_data.lock);
-	}
-
-	pthread_mutex_unlock(&wrapper_data.lock);
-	pthread_mutex_destroy(&wrapper_data.lock);
-
-	pthread_cond_destroy(&wrapper_data.wait);
-
-	return i_return;
-}
-#endif
-
 /* coverity[+kill] */
 void
 MT_global_exit(int s)
@@ -786,49 +733,6 @@ MT_getpid(void)
 #else
 	return (MT_Id) (((size_t) pthread_self()) + 1);
 #endif
-}
-
-#define SMP_TOLERANCE 0.40
-#define SMP_ROUNDS 1024*1024*128
-
-static void
-smp_thread(void *data)
-{
-	unsigned int s = 1, r;
-
-	(void) data;
-	for (r = 0; r < SMP_ROUNDS; r++)
-		s = s * r + r;
-	(void) s;
-}
-
-static int
-MT_check_nr_cores_(void)
-{
-	int i, curr = 1, cores = 1;
-	double lasttime = 0, thistime;
-	while (1) {
-		lng t0, t1;
-		MT_Id *threads = malloc(sizeof(MT_Id) * curr);
-
-		if (threads == NULL)
-			break;
-
-		t0 = GDKusec();
-		for (i = 0; i < curr; i++)
-			MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE);
-		for (i = 0; i < curr; i++)
-			MT_join_thread(threads[i]);
-		t1 = GDKusec();
-		free(threads);
-		thistime = (double) (t1 - t0) / 1000000;
-		if (lasttime > 0 && thistime / lasttime > 1 + SMP_TOLERANCE)
-			break;
-		lasttime = thistime;
-		cores = curr;
-		curr *= 2;	/* only check for powers of 2 */
-	}
-	return cores;
 }
 
 int
@@ -860,7 +764,7 @@ MT_check_nr_cores(void)
 	 * http://ndevilla.free.fr/threads/ */
 
 	if (ncpus <= 0)
-		ncpus = MT_check_nr_cores_();
+		ncpus = 1;
 #if SIZEOF_SIZE_T == SIZEOF_INT
 	/* On 32-bits systems with large amounts of cpus/cores, we quickly
 	 * run out of space due to the amount of threads in use.  Since it
@@ -873,77 +777,4 @@ MT_check_nr_cores(void)
 #endif
 
 	return ncpus;
-}
-
-
-
-lng
-GDKusec(void)
-{
-	/* Return the time in microseconds since an epoch.  The epoch
-	 * is roughly the time this program started. */
-#ifdef _MSC_VER
-	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */
-	LARGE_INTEGER ctr;
-
-	if (start.QuadPart == 0 &&
-	    (!QueryPerformanceFrequency(&freq) ||
-	     !QueryPerformanceCounter(&start)))
-		start.QuadPart = -1;
-	if (start.QuadPart > 0) {
-		QueryPerformanceCounter(&ctr);
-		return (lng) (((ctr.QuadPart - start.QuadPart) * 1000000) / freq.QuadPart);
-	}
-#endif
-#ifdef HAVE_CLOCK_GETTIME
-#if defined(CLOCK_UPTIME_FAST)
-#define CLK_ID CLOCK_UPTIME_FAST	/* FreeBSD */
-#else
-#define CLK_ID CLOCK_MONOTONIC		/* Posix (fallback) */
-#endif
-	{
-		static struct timespec tsbase;
-		struct timespec ts;
-		if (tsbase.tv_sec == 0) {
-			clock_gettime(CLK_ID, &tsbase);
-			return tsbase.tv_nsec / 1000;
-		}
-		if (clock_gettime(CLK_ID, &ts) == 0)
-			return (ts.tv_sec - tsbase.tv_sec) * 1000000 + ts.tv_nsec / 1000;
-	}
-#endif
-#ifdef HAVE_GETTIMEOFDAY
-	{
-		static struct timeval tpbase;	/* automatically initialized to 0 */
-		struct timeval tp;
-
-		if (tpbase.tv_sec == 0) {
-			gettimeofday(&tpbase, NULL);
-			return (lng) tpbase.tv_usec;
-		}
-		gettimeofday(&tp, NULL);
-		return (lng) (tp.tv_sec - tpbase.tv_sec) * 1000000 + (lng) tp.tv_usec;
-	}
-#else
-#ifdef HAVE_FTIME
-	{
-		static struct timeb tbbase;	/* automatically initialized to 0 */
-		struct timeb tb;
-
-		if (tbbase.time == 0) {
-			ftime(&tbbase);
-			return (lng) tbbase.millitm * 1000;
-		}
-		ftime(&tb);
-		return (lng) (tb.time - tbbase.time) * 1000000 + (lng) tb.millitm * 1000;
-	}
-#endif
-#endif
-}
-
-
-int
-GDKms(void)
-{
-	return (int) (GDKusec() / 1000);
 }

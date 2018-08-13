@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -26,13 +26,13 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batcalc.wkb", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.wkb", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT, aligned with input BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
+		throw(MAL, "batcalc.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -48,11 +48,11 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batcalc.wkb", MAL_MALLOC_FAIL);
+			throw(MAL, "batcalc.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;
@@ -75,13 +75,13 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbFromText", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.wkbFromText", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbFromText", MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.wkbFromText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -96,11 +96,11 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
-			throw(MAL, "batgeom.wkbFromText", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.wkbFromText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outSingle);
 		outSingle = NULL;
@@ -129,13 +129,13 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.coordinateFromMBR", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.coordinateFromMBR", MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -149,10 +149,10 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outDbl, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outDbl, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.coordinateFromMBR", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -175,13 +175,13 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("str"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -196,11 +196,11 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
-			throw(MAL, name, MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outSingle);
 		outSingle = NULL;
@@ -242,13 +242,13 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -263,11 +263,11 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
-			throw(MAL, name, MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outSingle);
 		outSingle = NULL;
@@ -303,13 +303,13 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -324,11 +324,11 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
-			throw(MAL, name, MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outSingle);
 		outSingle = NULL;
@@ -363,13 +363,13 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -384,10 +384,10 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, name, MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -446,13 +446,13 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -467,10 +467,10 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, name, MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -510,13 +510,13 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("int"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, name, MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -531,10 +531,10 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, name, MAL_MALLOC_FAIL);
+			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -574,13 +574,13 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbGetCoordinate", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.wkbGetCoordinate", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkbGetCoordinate", MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.wkbGetCoordinate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the input BAT
@@ -595,10 +595,10 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.wkbGetCoordinate", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.wkbGetCoordinate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -626,17 +626,17 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 	//get the BATs
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbBox2D", "Problem retrieving BATs");
+		ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto clean;
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
-		ret = createException(MAL, "batgeom.wkbBox2D", "BATs must be aligned");
+		ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(38000) "Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("mbr"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbBox2D", "Error creating new BAT");
+		ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -654,10 +654,10 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPreclaim(outBAT);
 			goto clean;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
 			GDKfree(outSingle);
-			ret = createException(MAL, "batgeom.wkbBox2D", MAL_MALLOC_FAIL);
+			ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto clean;
 		}
 		GDKfree(outSingle);
@@ -684,17 +684,17 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 	//get the BATs
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-		ret = createException(MAL, "batgeom.Contains", "Problem retrieving BATs");
+		ret = createException(MAL, "batgeom.Contains", SQLSTATE(38000) "Problem retrieving BATs");
 		goto clean;
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
-		ret = createException(MAL, "batgeom.Contains", "BATs must be aligned");
+		ret = createException(MAL, "batgeom.Contains", SQLSTATE(38000) "Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.Contains", "Error creating new BAT");
+		ret = createException(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -712,9 +712,9 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPreclaim(outBAT);
 			goto clean;
 		}
-		if (BUNappend(outBAT, &outBIT, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
-			ret = createException(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
+			ret = createException(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto clean;
 		}
 	}
@@ -739,13 +739,13 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.Contains", "Problem retrieving BAT");
+		throw(MAL, "batgeom.Contains", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", "Error creating new BAT");
+		throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -761,10 +761,10 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outBIT, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -784,13 +784,13 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.Contains", "Problem retrieving BAT");
+		throw(MAL, "batgeom.Contains", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", "Error creating new BAT");
+		throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -806,10 +806,10 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outBIT, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.Contains", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -831,13 +831,13 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkb", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.wkb", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT))) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.wkb", MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//pointers to the first valid elements of the x and y BATS
@@ -849,11 +849,11 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batgeom.wkb", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;
@@ -878,13 +878,13 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	str ret = MAL_SUCCEED;
 
 	if (*zmFlag == 11)
-		throw(MAL, "batgeom.wkbMakePoint", "POINTZM is not supported");
+		throw(MAL, "batgeom.wkbMakePoint", SQLSTATE(38000) "POINTZM is not supported");
 
 	//get the BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL || (yBAT = BATdescriptor(*yBAT_id)) == NULL || (*zmFlag == 10 && (zBAT = BATdescriptor(*zBAT_id)) == NULL)
 	    || (*zmFlag == 1 && (mBAT = BATdescriptor(*mBAT_id)) == NULL)) {
 
-		ret = createException(MAL, "batgeom.wkbMakePoint", "Problem retrieving BATs");
+		ret = createException(MAL, "batgeom.wkbMakePoint", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto clean;
 	}
 	//check if the BATs are aligned
@@ -892,12 +892,12 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	    BATcount(xBAT) != BATcount(yBAT) ||
 	    (zBAT && (xBAT->hseqbase != zBAT->hseqbase || BATcount(xBAT) != BATcount(zBAT))) ||
 	    (mBAT && (xBAT->hseqbase != mBAT->hseqbase || BATcount(xBAT) != BATcount(mBAT)))) {
-		ret = createException(MAL, "batgeom.wkbMakePoint", "BATs must be aligned");
+		ret = createException(MAL, "batgeom.wkbMakePoint", SQLSTATE(38000) "Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(xBAT->hseqbase, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbMakePoint", "Error creating new BAT");
+		ret = createException(MAL, "batgeom.wkbMakePoint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -927,10 +927,10 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 			BBPreclaim(outBAT);
 			goto clean;
 		}
-		if (BUNappend(outBAT, pointWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, pointWKB, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
 			GDKfree(pointWKB);
-			ret = createException(MAL, "batgeom.WkbMakePoint", MAL_MALLOC_FAIL);
+			ret = createException(MAL, "batgeom.WkbMakePoint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto clean;
 		}
 		GDKfree(pointWKB);
@@ -962,13 +962,13 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.SetSRID", "Problem retrieving BAT");
+		throw(MAL, "batgeom.SetSRID", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.SetSRID", "Error creating new BAT");
+		throw(MAL, "batgeom.SetSRID", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -984,11 +984,11 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batgeom.SetSRID", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.SetSRID", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;
@@ -1010,17 +1010,17 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 	//get the BATs
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-		ret = createException(MAL, "batgeom.Distance", "Problem retrieving BATs");
+		ret = createException(MAL, "batgeom.Distance", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto clean;
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
-		ret = createException(MAL, "batgeom.Distance", "BATs must be aligned");
+		ret = createException(MAL, "batgeom.Distance", SQLSTATE(38000) "Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("dbl"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.Distance", "Error creating new BAT");
+		ret = createException(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -1039,9 +1039,9 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPreclaim(outBAT);
 			goto clean;
 		}
-		if (BUNappend(outBAT, &distanceVal, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &distanceVal, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
-			ret = createException(MAL, "batgeom.Distance", MAL_MALLOC_FAIL);
+			ret = createException(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto clean;
 		}
 	}
@@ -1067,13 +1067,13 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.Distance", "Problem retrieving BAT");
+		throw(MAL, "batgeom.Distance", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Distance", "Error creating new BAT");
+		throw(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -1089,10 +1089,10 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &distanceVal, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &distanceVal, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			throw(MAL, "batgeom.Distance", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -1124,29 +1124,29 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 
 	//get the descriptor of the BAT
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
-		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (aBAT->hseqbase != bBAT->hseqbase ||	//the idxs of the headers of the BATs are not the same
 	    BATcount(aBAT) != BATcount(bBAT)) {	//the number of valid elements in the BATs are not the same
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", "The arguments must have dense and aligned heads");
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(38000) "The arguments must have dense and aligned heads");
 	}
 	//create two new BATs for the output
 	if ((aBATfiltered = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if ((bBATfiltered = COLnew(bBAT->hseqbase, ATOMindex("wkb"), BATcount(bBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -1167,13 +1167,13 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 			return err;
 		}
 		if (outBIT) {
-			if (BUNappend(aBATfiltered, aWKB, FALSE) != GDK_SUCCEED ||
-			    BUNappend(bBATfiltered, bWKB, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(aBATfiltered, aWKB, false) != GDK_SUCCEED ||
+			    BUNappend(bBATfiltered, bWKB, false) != GDK_SUCCEED) {
 				BBPunfix(aBAT->batCacheid);
 				BBPunfix(bBAT->batCacheid);
 				BBPunfix(aBATfiltered->batCacheid);
 				BBPunfix(bBATfiltered->batCacheid);
-				throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
+				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			remainingElements++;
 		}
@@ -1206,13 +1206,13 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 
 	//get the descriptor of the BAT
 	if ((BAToriginal = BATdescriptor(*BAToriginal_id)) == NULL) {
-		throw(MAL, "batgeom.MBRfilter", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create the new BAT
 	if ((BATfiltered = COLnew(BAToriginal->hseqbase, ATOMindex("wkb"), BATcount(BAToriginal), TRANSIENT)) == NULL) {
 		BBPunfix(BAToriginal->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -1249,12 +1249,12 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 		}
 
 		if (outBIT) {
-			if (BUNappend(BATfiltered, WKBoriginal, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(BATfiltered, WKBoriginal, false) != GDK_SUCCEED) {
 				BBPunfix(BAToriginal->batCacheid);
 				BBPunfix(BATfiltered->batCacheid);
 				GDKfree(geomMBR);
 				GDKfree(MBRoriginal);
-				throw(MAL, "batgeom.MBRfilter", MAL_MALLOC_FAIL);
+				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			remainingElements++;
 		}
@@ -1290,13 +1290,13 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.mbr", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.mbr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("mbr"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.mbr", MAL_MALLOC_FAIL);
+		throw(MAL, "batgeom.mbr", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -1310,11 +1310,11 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outMBR, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outMBR, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outMBR);
-			throw(MAL, "batgeom.mbr", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.mbr", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outMBR);
 		outMBR = NULL;
@@ -1347,24 +1347,26 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	BUN i;
 
 	//get the BATs
-	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+	aBAT = BATdescriptor(*aBAT_id);
+	bBAT = BATdescriptor(*bBAT_id);
+	if (aBAT == NULL || bBAT == NULL) {
 		if (aBAT)
 			BBPunfix(aBAT->batCacheid);
 		if (bBAT)
 			BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MakeLine", "Problem retrieving BATs");
+		throw(MAL, "batgeom.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MakeLine", "BATs must be aligned");
+		throw(MAL, "batgeom.MakeLine", SQLSTATE(38000) "Columns must be aligned");
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MakeLine", "Error creating new BAT");
+		throw(MAL, "batgeom.MakeLine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -1384,12 +1386,12 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(bBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(outBAT->batCacheid);
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batgeom.MakeLine", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.MakeLine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;
@@ -1410,24 +1412,26 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	BUN i;
 
 	//get the BATs
-	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+	aBAT = BATdescriptor(*aBAT_id);
+	bBAT = BATdescriptor(*bBAT_id);
+	if (aBAT == NULL || bBAT == NULL) {
 		if (aBAT)
 			BBPunfix(aBAT->batCacheid);
 		if (bBAT)
 			BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Union", "Problem retrieving BATs");
+		throw(MAL, "batgeom.Union", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Union", "BATs must be aligned");
+		throw(MAL, "batgeom.Union", SQLSTATE(38000) "Columns must be aligned");
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Union", "Error creating new BAT");
+		throw(MAL, "batgeom.Union", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -1447,12 +1451,12 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(bBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(outBAT->batCacheid);
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
 			GDKfree(outWKB);
-			throw(MAL, "batgeom.Union", MAL_MALLOC_FAIL);
+			throw(MAL, "batgeom.Union", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		GDKfree(outWKB);
 		outWKB = NULL;

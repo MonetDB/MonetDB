@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -20,21 +20,22 @@
 #include "monetdb_config.h"
 #include "batcolor.h"
 
-#define BATwalk(NAME,FUNC,TYPE1,TYPE2)									\
+#define BATwalk(NAME,FUNC,TYPE1,ISNIL,TYPE2,TPE,APP)					\
 str CLRbat##NAME(bat *ret, const bat *l)								\
 {																		\
 	BATiter bi;															\
 	BAT *bn, *b;														\
 	BUN p,q;															\
-	TYPE1 *x;															\
-	TYPE2 y, *yp = &y;													\
+	const TYPE1 *x;														\
+	TYPE2 y;															\
+	char *msg = MAL_SUCCEED;											\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
-		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
-	bn= COLnew(b->hseqbase,getAtomIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
+	bn= COLnew(b->hseqbase,TPE,BATcount(b), TRANSIENT);					\
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
-		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
 	}																	\
 	bn->tsorted=0;														\
 	bn->trevsorted=0;													\
@@ -44,15 +45,16 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	bi = bat_iterator(b);												\
 																		\
 	BATloop(b, p, q) {													\
-		x= (TYPE1 *) BUNtail(bi,p);										\
-		if (x== 0 || *x == TYPE1##_nil) {								\
+		x= (const TYPE1 *) BUNtail(bi,p);								\
+		if (x== 0 || ISNIL(*x)) {										\
 			y = (TYPE2) TYPE2##_nil;									\
 			bn->tnonil = 0;												\
 			bn->tnil = 1;												\
-		} else															\
-			FUNC(yp,x);													\
-		bunfastapp(bn, yp);												\
+		} else if ((msg = FUNC(&y,x)) != MAL_SUCCEED)					\
+			goto bunins_failed;											\
+		APP;															\
 	}																	\
+	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\
@@ -60,27 +62,29 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 bunins_failed:															\
 	BBPunfix(b->batCacheid);											\
 	BBPunfix(bn->batCacheid);											\
+	if (msg)															\
+		return msg;														\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
-BATwalk(Color,CLRcolor,str,color)
-BATwalk(Str,CLRstr,color,str)
+BATwalk(Color,CLRcolor,char *,GDK_STRNIL,color,getAtomIndex("color",5,TYPE_int),bunfastappTYPE(color, bn, &y))
+BATwalk(Str,CLRstr,color,is_color_nil,str,TYPE_str,bunfastappVAR(bn, &y))
 
-BATwalk(Red,CLRred,color,int)
-BATwalk(Green,CLRgreen,color,int)
-BATwalk(Blue,CLRblue,color,int)
+BATwalk(Red,CLRred,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
+BATwalk(Green,CLRgreen,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
+BATwalk(Blue,CLRblue,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
 
-BATwalk(Hue,CLRhue,color,flt)
-BATwalk(Saturation,CLRsaturation,color,flt)
-BATwalk(Value,CLRvalue,color,flt)
+BATwalk(Hue,CLRhue,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
+BATwalk(Saturation,CLRsaturation,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
+BATwalk(Value,CLRvalue,color,is_color_nil,flt,TYPE_flt,bunfastappTYPE(flt, bn, &y))
 
-BATwalk(HueInt,CLRhueInt,color,int)
-BATwalk(SaturationInt,CLRsaturationInt,color,int)
-BATwalk(ValueInt,CLRvalueInt,color,int)
+BATwalk(HueInt,CLRhueInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
+BATwalk(SaturationInt,CLRsaturationInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
+BATwalk(ValueInt,CLRvalueInt,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
 
-BATwalk(Luminance,CLRluminance,color,int)
-BATwalk(Cr,CLRcr,color,int)
-BATwalk(Cb,CLRcb,color,int)
+BATwalk(Luminance,CLRluminance,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
+BATwalk(Cr,CLRcr,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
+BATwalk(Cb,CLRcb,color,is_color_nil,int,TYPE_int,bunfastappTYPE(int, bn, &y))
 
 #define BATwalk3(NAME,FUNC,TYPE)										\
 str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
@@ -88,8 +92,9 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	BATiter bi, b2i, b3i;												\
 	BAT *bn, *b2,*b3, *b;												\
 	BUN p,q;															\
-	TYPE *x, *x2, *x3;													\
-	color y, *yp = &y;													\
+	const TYPE *x, *x2, *x3;											\
+	color y;															\
+	char *msg = MAL_SUCCEED;											\
 																		\
 	b= BATdescriptor(*l);												\
 	b2= BATdescriptor(*bid2);											\
@@ -101,14 +106,14 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			BBPunfix(b2->batCacheid);									\
 		if (b3)															\
 			BBPunfix(b3->batCacheid);									\
-		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	}																	\
 	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		BBPunfix(b2->batCacheid);										\
 		BBPunfix(b3->batCacheid);										\
-		throw(MAL, "batcolor." #NAME, MAL_MALLOC_FAIL);					\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
 	}																	\
 	bn->tsorted=0;														\
 	bn->trevsorted=0;													\
@@ -120,19 +125,20 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	b3i = bat_iterator(b3);												\
 																		\
 	BATloop(b, p, q) {													\
-		x= (TYPE *) BUNtail(bi,p);										\
-		x2= (TYPE *) BUNtail(b2i,p);									\
-		x3= (TYPE *) BUNtail(b3i,p);									\
-		if (x== 0 || *x == TYPE##_nil ||								\
-			x2== 0 || *x2 == TYPE##_nil ||								\
-			x3== 0 || *x3 == TYPE##_nil) {								\
+		x= (const TYPE *) BUNtail(bi,p);								\
+		x2= (const TYPE *) BUNtail(b2i,p);								\
+		x3= (const TYPE *) BUNtail(b3i,p);								\
+		if (x== 0 || is_##TYPE##_nil(*x) ||								\
+			x2== 0 || is_##TYPE##_nil(*x2) ||							\
+			x3== 0 || is_##TYPE##_nil(*x3)) {							\
 			y = color_nil;												\
 			bn->tnonil = 0;												\
 			bn->tnil = 1;												\
-		} else															\
-			FUNC(yp,x,x2,x3);											\
-		bunfastapp(bn, yp);												\
+		} else if ((msg = FUNC(&y,x,x2,x3)) != MAL_SUCCEED)				\
+			goto bunins_failed;											\
+		bunfastappTYPE(color, bn, &y);									\
 	}																	\
+	bn->theap.dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\
@@ -144,6 +150,8 @@ bunins_failed:															\
 	BBPunfix(b2->batCacheid);											\
 	BBPunfix(b3->batCacheid);											\
 	BBPunfix(bn->batCacheid);											\
+	if (msg)															\
+		return msg;														\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 

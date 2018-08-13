@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -55,7 +55,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (progress) BBPunfix(progress->batCacheid);
 		if (oids) BBPunfix(oids->batCacheid);
 		MT_lock_unset(&mal_delayLock);
-		throw(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
+		throw(MAL, "SYSMONqueue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for ( i = 0; i< qtop; i++)
@@ -67,19 +67,19 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			// calculate progress based on past observations
 			prog = (int) ((now- QRYqueue[i].start) / (QRYqueue[i].runtime/100.0));
 		now = QRYqueue[i].tag;	/* temporarily use so that we have correct type */
-		if (BUNappend(tag, &now, FALSE) != GDK_SUCCEED)
+		if (BUNappend(tag, &now, false) != GDK_SUCCEED)
 			goto bailout;
 		msg = AUTHgetUsername(&usr, cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
 
-		if (BUNappend(user, usr, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(user, usr, false) != GDK_SUCCEED) {
 			GDKfree(usr);
 			goto bailout;
 		}
 		GDKfree(usr);
-		if (BUNappend(query, QRYqueue[i].query, FALSE) != GDK_SUCCEED ||
-			BUNappend(activity, QRYqueue[i].status, FALSE) != GDK_SUCCEED)
+		if (BUNappend(query, QRYqueue[i].query, false) != GDK_SUCCEED ||
+			BUNappend(activity, QRYqueue[i].status, false) != GDK_SUCCEED)
 			goto bailout;
 
 		/* convert number of seconds into a timestamp */
@@ -90,11 +90,11 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = MTIMEtimestamp_add(&tsn, &ts, &now);
 		if (msg)
 			goto bailout;
-		if (BUNappend(started, &tsn, FALSE) != GDK_SUCCEED)
+		if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
 			goto bailout;
 
 		if ( QRYqueue[i].mb->runtime == 0) {
-			if (BUNappend(estimate, timestamp_nil, FALSE) != GDK_SUCCEED)
+			if (BUNappend(estimate, timestamp_nil, false) != GDK_SUCCEED)
 				goto bailout;
 		} else {
 			now = (QRYqueue[i].start * 1000 + QRYqueue[i].mb->runtime);
@@ -104,11 +104,11 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = MTIMEtimestamp_add(&tsn, &ts, &now);
 			if (msg)
 				goto bailout;
-			if (BUNappend(estimate, &tsn, FALSE) != GDK_SUCCEED)
+			if (BUNappend(estimate, &tsn, false) != GDK_SUCCEED)
 				goto bailout;
 		}
-		if (BUNappend(oids, &QRYqueue[i].mb->tag, FALSE) != GDK_SUCCEED ||
-			BUNappend(progress, &prog, FALSE) != GDK_SUCCEED)
+		if (BUNappend(oids, &QRYqueue[i].mb->tag, false) != GDK_SUCCEED ||
+			BUNappend(progress, &prog, false) != GDK_SUCCEED)
 			goto bailout;
 	}
 	MT_lock_unset(&mal_delayLock);
@@ -132,7 +132,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(estimate->batCacheid);
 	BBPunfix(progress->batCacheid);
 	BBPunfix(oids->batCacheid);
-	return msg ? msg : createException(MAL, "SYSMONqueue", MAL_MALLOC_FAIL);
+	return msg ? msg : createException(MAL, "SYSMONqueue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -151,7 +151,6 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Does this happen?
 		 * If so, what do we have TODO ? */
 		throw(MAL, "SYSMONpause", "type hge not handled, yet");
-		break;
 #endif
 	default:
 		assert(0);
@@ -182,7 +181,6 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Does this happen?
 		 * If so, what do we have TODO ? */
 		throw(MAL, "SYSMONresume", "type hge not handled, yet");
-		break;
 #endif
 	default:
 		assert(0);
@@ -213,7 +211,6 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Does this happen?
 		 * If so, what do we have TODO ? */
 		throw(MAL, "SYSMONstop", "type hge not handled, yet");
-		break;
 #endif
 	default:
 		assert(0);

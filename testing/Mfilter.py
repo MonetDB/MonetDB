@@ -2,7 +2,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+
+from __future__ import print_function
 
 import sys
 import os
@@ -83,7 +85,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 4: 3
     r'^(ERROR = !.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                # 5: 4
     r"^(DBD::monetdb::db table_info warning: Catalog parameter c has to be an empty string, as MonetDB does not support multiple catalogs at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pl line \d+\.)\n",            # 6: 3
-    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pm line \d+\.)\n',                         # 7: 4
+    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+/|[A-Z]:[/\\].+[/\\])([^/\\]+\.pm line \d+\.)\n',                         # 7: 4
 # filter for geos 3.3 vs. geos 3.2, can be removed if we have 3.3 everywhere
     r"^(ERROR = !ParseException: Expected )('EMPTY' or '\(')( but encountered : '\)')\n",                                                       # 8: 3
 # filter for AVG_of_SQRT.SF-2757642: result not always exactly 1.1
@@ -92,7 +94,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(\[.*POLYGON.*\(59\.0{16} 18\.0{16}, )(59\.0{16} 13\.0{16})(, 67\.0{16} 13\.0{16}, )(67\.0{16} 18\.0{16})(, 59\.0{16} 18\.0{16}\).*)',   # 10: 5
     # test geom/BugTracker/Tests/X_crash.SF-1971632.* might produce different error messages, depending on evaluation order
     r'^(ERROR = !MALException:geom.wkbGetCoordinate:Geometry ")(.*)(" not a Point)\n',                                                          # 11: 3
-    r"^(QUERY = COPY BINARY INTO)( .*);\n",                     # 12: 3
+    r"^(QUERY = COPY\b.* INTO .* FROM  *(?:\( *)?)('.*')(.*)\n", # 12: 3
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
@@ -113,6 +115,9 @@ norm_out = (
 # match "table_name" SQL table header line to normalize "(sys)?.L[0-9]*" to "(sys)?."
 table_name = re.compile(r'^%.*[\t ](|sys)\.L[0-9]*[, ].*# table_name$')
 name = re.compile(r'^%.*[\t ]L[0-9]*[, ].*# name$')
+
+# match automatically generated sequence numbers
+seqre = re.compile(r'^.*\bseq_[0-9]+\b.*$')
 
 attrre = re.compile(r'\b[-:a-zA-Z_0-9]+\s*=\s*(?:\'[^\']*\'|"[^"]*")')
 elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s*/?>')
@@ -207,6 +212,10 @@ def mFilter (FILE, IGNORE) :
             oline = re.sub(r'([ \t])L[0-9]*([, ])', r'\1L\2', iline)
             # keep original line for reference as comment (i.e., ignore diffs, if any)
             xline = iline.replace('%','#',1)
+        elif seqre.match(iline):
+            # normalize "seq_[0-9]+" to "seq_AUTO"
+            oline = re.sub(r'\bseq_[0-9]+\b', 'seq_AUTO', iline)
+            xline = norm_hint + iline
         else:
             oline = iline
         if iline == "#~EndVariableOutput~#\n" or iline == "[ \"~EndVariableOutput~\"\t]\n":

@@ -1,0 +1,93 @@
+stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
+
+
+# 21:49:40 >  
+# 21:49:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30515" "--set" "mapi_usock=/var/tmp/mtest-14642/.s.monetdb.30515" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_sql_test_testdb-upgrade" "--set" "mal_listing=0"
+# 21:49:40 >  
+
+# MonetDB 5 server v11.16.0 (hg id: fd9db07674cf+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_testdb-upgrade', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.591 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:34708/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11915/.s.monetdb.34708
+# MonetDB/GIS module loaded
+Running database upgrade commands:
+set schema sys;
+create aggregate sys.group_concat(str string) returns string external name "aggr"."str_group_concat";
+grant execute on aggregate sys.group_concat(string) to public;
+create aggregate sys.group_concat(str string, sep string) returns string external name "aggr"."str_group_concat";
+grant execute on aggregate sys.group_concat(string, string) to public;
+update sys.functions set system = true where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys');
+set schema "sys";
+commit;
+
+Running database upgrade commands:
+set schema sys;
+create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
+update sys.functions set system = true where name = 'remote_table_credentials' and schema_id = (select id from sys.schemas where name = 'sys');
+set schema "sys";
+commit;
+
+Running database upgrade commands:
+set schema sys;
+alter table sys.table_types set read write;
+drop table sys.table_types;
+create table sys.table_types (table_type_id SMALLINT NOT NULL PRIMARY KEY,
+table_type_name VARCHAR(50) NOT NULL UNIQUE);
+insert into sys.table_types values (0, 'TABLE'), (1, 'VIEW'), (3, 'MERGE TABLE'), (4, 'STREAM TABLE'), (5, 'REMOTE TABLE'), (6, 'REPLICA TABLE'), (10, 'SYSTEM TABLE'), (11, 'SYSTEM VIEW'), (12, 'MERGE TABLE PARTITION BY VALUES ON COLUMN'), (13, 'MERGE TABLE PARTITION BY RANGE ON COLUMN'), (14, 'MERGE TABLE PARTITION BY VALUES USING EXPRESSION'), (15, 'MERGE TABLE PARTITION BY RANGE USING EXPRESSION'), (20, 'GLOBAL TEMPORARY TABLE'), (30, 'LOCAL TEMPORARY TABLE');
+grant select on sys.table_types to public;
+alter table sys.table_types set read only;
+update sys._tables set system = true where name = 'table_types' and schema_id = (select id from sys.schemas where name = 'sys');
+drop table sys.systemfunctions;
+create view sys.systemfunctions as select id as function_id from sys.functions where system;
+grant select on sys.systemfunctions to public;
+update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');
+set schema "sys";
+commit;
+
+Running database upgrade commands:
+set schema "sys";
+DROP FUNCTION dependencies_schemas_on_users();
+DROP FUNCTION dependencies_owners_on_schemas();
+DROP FUNCTION dependencies_tables_on_views();
+DROP FUNCTION dependencies_tables_on_indexes();
+DROP FUNCTION dependencies_tables_on_triggers();
+DROP FUNCTION dependencies_tables_on_foreignKeys();
+DROP FUNCTION dependencies_tables_on_functions();
+DROP FUNCTION dependencies_columns_on_views();
+DROP FUNCTION dependencies_columns_on_keys();
+DROP FUNCTION dependencies_columns_on_indexes();
+DROP FUNCTION dependencies_columns_on_functions();
+DROP FUNCTION dependencies_columns_on_triggers();
+DROP FUNCTION dependencies_views_on_functions();
+DROP FUNCTION dependencies_views_on_triggers();
+DROP FUNCTION dependencies_functions_on_functions();
+DROP FUNCTION dependencies_functions_on_triggers();
+DROP FUNCTION dependencies_keys_on_foreignKeys();
+set schema "sys";
+commit;
+
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:03:28 >  
+# 16:03:28 >  "/usr/bin/python" "upgrade.SQL.py" "upgrade"
+# 16:03:28 >  
+
+#select count(*) from testschema.smallstring;
+% testschema.L3 # table_name
+% L3 # name
+% bigint # type
+% 2 # length
+[ 66	]
+
+# 21:49:42 >  
+# 21:49:42 >  "Done."
+# 21:49:42 >  
+

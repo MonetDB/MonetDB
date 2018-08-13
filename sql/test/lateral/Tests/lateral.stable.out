@@ -16,9 +16,6 @@ stdout of test 'lateral` in directory 'sql/test/lateral` itself:
 # Listening for connection requests on mapi:monetdb://localhost.nes.nl:35682/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27963/.s.monetdb.35682
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -58,8 +55,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#WARNING To speedup user.Lmps a bulk operator implementation is needed
-#    (X_17:bat[:str],X_18:bat[:oid]) := batmal.multiplex("user":str,"Lmps":str,X_13:bat[:int],X_1:bat[:oid]);
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 19:57:50 >  
 # 19:57:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27963" "--port=35682"
@@ -167,7 +165,7 @@ Ready.
 #	return TABLE(select employee_name from employees e where e.department_id = dep_id);
 #end;
 #select department_name, employee_name from departments as d, LATERAL emps(d.department_id) order by department_name, employee_name;
-% sys.d,	.L # table_name
+% sys.d,	.L2 # table_name
 % department_name,	employee_name # name
 % varchar,	clob # type
 % 10,	6 # length

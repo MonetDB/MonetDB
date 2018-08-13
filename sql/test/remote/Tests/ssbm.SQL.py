@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os, sys, socket, glob, pymonetdb, threading, time, codecs, shutil, tempfile
 try:
     from MonetDBtesting import process
@@ -174,40 +176,40 @@ c.execute(mtable)
 rptable = 'create replica table %s %s' % (repltable, replicatedtabledef)
 c.execute(rptable)
 for workerrec in workers:
-    rtable = 'create remote table %s%s %s on \'%s\'' % (shardtable, workerrec['tpf'], shardedtabledef, workerrec['mapi'])
+    rtable = "create remote table %s%s %s on '%s'" % (shardtable, workerrec['tpf'], shardedtabledef, workerrec['mapi'])
     atable = 'alter table %s add table %s%s' % (shardtable, shardtable, workerrec['tpf'])
     c.execute(rtable)
     c.execute(atable)
-    rtable = 'create remote table %s%s %s on \'%s\'' % (repltable, workerrec['tpf'], replicatedtabledef, workerrec['mapi'])
+    rtable = "create remote table %s%s %s on '%s'" % (repltable, workerrec['tpf'], replicatedtabledef, workerrec['mapi'])
     atable = 'alter table %s add table %s%s' % (repltable, repltable, workerrec['tpf'])
     c.execute(rtable)
     c.execute(atable)
 
 # sanity check
 c.execute("select count(*) from lineorder_0")
-print str(c.fetchall()[0][0]) + ' rows in remote table'
+print(str(c.fetchall()[0][0]) + ' rows in remote table')
 
 c.execute("select count(*) from lineorder")
-print str(c.fetchall()[0][0]) + ' rows in mergetable'
+print(str(c.fetchall()[0][0]) + ' rows in mergetable')
 
 c.execute("select * from lineorder where lo_orderkey=356")
-print str(c.fetchall()[0][0])
+print(str(c.fetchall()[0][0]))
 
 c.execute("select * from " + shardtable + workers[0]['tpf'] + " where lo_orderkey=356")
-print str(c.fetchall()[0][0])
+print(str(c.fetchall()[0][0]))
 
 # run queries, use mclient so output is comparable
 queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
 queries.sort()
 for q in queries:
-    print '# Running Q %s' % os.path.basename(q).replace('.sql','')
+    print('# Running Q %s' % os.path.basename(q).replace('.sql',''))
     mc = process.client('sql', stdin=open(q), dbname='master', host='localhost', port=masterport, stdout=process.PIPE, stderr=process.PIPE, log=1)
     out, err = mc.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
     # old way
     # c.execute(codecs.open(q, 'r', encoding='utf8').read())
-    # print c.fetchall()
+    # print(c.fetchall())
 
 
 for workerrec in workers:

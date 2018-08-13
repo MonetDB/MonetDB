@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -16,24 +16,9 @@
 #endif
 #include "mapi.h"
 #include <unistd.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <string.h>
-
-#ifdef HAVE_FTIME
-#include <sys/timeb.h>
-#endif
-
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+#include <time.h>
 
 #include "stream.h"
 #include "msqldump.h"
@@ -63,9 +48,6 @@ usage(const char *prog, int xit)
 	exit(xit);
 }
 
-/* hardwired defaults, only used if monet environment cannot be found */
-#define DEFAULTPORT 50000	
-
 int
 main(int argc, char **argv)
 {
@@ -75,14 +57,14 @@ main(int argc, char **argv)
 	char *host = NULL;
 	char *dbname = NULL;
 	int trace = 0;
-	int describe = 0;
-	int functions = 0;
-	int useinserts = 0;
+	bool describe = false;
+	bool functions = false;
+	bool useinserts = false;
 	int c;
 	Mapi mid;
-	int quiet = 0;
+	bool quiet = false;
 	stream *out;
-	char user_set_as_flag = 0;
+	bool user_set_as_flag = false;
 	char *table = NULL;
 	static struct option long_options[] = {
 		{"host", 1, 0, 'h'},
@@ -107,7 +89,7 @@ main(int argc, char **argv)
 			if (user)
 				free(user);
 			user = strdup(optarg);
-			user_set_as_flag = 1;
+			user_set_as_flag = true;
 			break;
 		case 'h':
 			host = optarg;
@@ -122,15 +104,15 @@ main(int argc, char **argv)
 			dbname = strdup(optarg);
 			break;
 		case 'D':
-			describe = 1;
+			describe = true;
 			break;
 		case 'N':
-			useinserts = 1;
+			useinserts = true;
 			break;
 		case 'f':
 			if (table)
 				usage(argv[0], -1);
-			functions = 1;
+			functions = true;
 			break;
 		case 't':
 			if (table || functions)
@@ -138,7 +120,7 @@ main(int argc, char **argv)
 			table = optarg;
 			break;
 		case 'q':
-			quiet = 1;
+			quiet = true;
 			break;
 		case 'X':
 			trace = MAPI_TRACE;
@@ -219,9 +201,9 @@ main(int argc, char **argv)
 		dump_version(mid, out, "--");
 	}
 	if (functions)
-		c = dump_functions(mid, out, NULL, NULL);
+		c = dump_functions(mid, out, true, NULL, NULL, NULL);
 	else if (table)
-		c = dump_table(mid, NULL, table, out, describe, 1, useinserts);
+		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false);
 	else
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);

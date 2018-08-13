@@ -1,0 +1,130 @@
+stdout of test 'spurious_error.Bug-6344` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 13:47:14 >  
+# 13:47:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39137" "--set" "mapi_usock=/var/tmp/mtest-7389/.s.monetdb.39137" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 13:47:14 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.331 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39137/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7389/.s.monetdb.39137
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:47:14 >  
+# 13:47:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7389" "--port=39137"
+# 13:47:14 >  
+
+#START TRANSACTION;
+#CREATE TABLE sys.objcts (
+#	"id"   INTEGER,
+#	"name" VARCHAR(1024),
+#	"nr"   INTEGER
+#);
+#COPY 54 RECORDS INTO sys.objcts FROM stdin USING DELIMITERS '\t','\n','"';
+#6965	"srid"	0
+#6964	"srid"	0
+#7676	"keyword"	0
+#7675	"keyword"	0
+#7681	"table_type_id"	0
+#7684	"table_type_name"	0
+#7680	"table_type_id"	0
+#7683	"table_type_name"	0
+#7689	"dependency_type_id"	0
+#7692	"dependency_type_name"	0
+#7688	"dependency_type_id"	0
+#7691	"dependency_type_name"	0
+#7697	"function_type_id"	0
+#7700	"function_type_name"	0
+#7696	"function_type_id"	0
+#7699	"function_type_name"	0
+#7709	"language_id"	0
+#7712	"language_name"	0
+#7708	"language_id"	0
+[ 54	]
+#select  
+#  sample_2.name as c0, 
+#  sample_2.id as c1, 
+#  sample_2.name as c2, 
+#  cast(coalesce(sample_2.id,
+#    sample_2.id) as int) as c3, 
+#  sample_2.id as c4, 
+#  11 as c5, 
+#  sample_2.id as c6
+#from 
+#  sys.objects as sample_2
+#where sample_2.name is not NULL
+#limit 61;
+% sys.L2,	sys.L4,	sys.L6,	sys.L11,	sys.L13,	.L15,	sys.L17 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6 # name
+% varchar,	int,	varchar,	int,	int,	tinyint,	int # type
+% 20,	4,	20,	4,	4,	2,	4 # length
+[ "srid",	6965,	"srid",	6965,	6965,	11,	6965	]
+[ "srid",	6964,	"srid",	6964,	6964,	11,	6964	]
+[ "keyword",	7676,	"keyword",	7676,	7676,	11,	7676	]
+[ "keyword",	7675,	"keyword",	7675,	7675,	11,	7675	]
+[ "table_type_id",	7681,	"table_type_id",	7681,	7681,	11,	7681	]
+[ "table_type_name",	7684,	"table_type_name",	7684,	7684,	11,	7684	]
+[ "table_type_id",	7680,	"table_type_id",	7680,	7680,	11,	7680	]
+[ "table_type_name",	7683,	"table_type_name",	7683,	7683,	11,	7683	]
+[ "dependency_type_id",	7689,	"dependency_type_id",	7689,	7689,	11,	7689	]
+[ "dependency_type_name",	7692,	"dependency_type_name",	7692,	7692,	11,	7692	]
+[ "dependency_type_id",	7688,	"dependency_type_id",	7688,	7688,	11,	7688	]
+[ "dependency_type_name",	7691,	"dependency_type_name",	7691,	7691,	11,	7691	]
+[ "function_type_id",	7697,	"function_type_id",	7697,	7697,	11,	7697	]
+[ "function_type_name",	7700,	"function_type_name",	7700,	7700,	11,	7700	]
+[ "function_type_id",	7696,	"function_type_id",	7696,	7696,	11,	7696	]
+[ "function_type_name",	7699,	"function_type_name",	7699,	7699,	11,	7699	]
+[ "language_id",	7709,	"language_id",	7709,	7709,	11,	7709	]
+[ "language_name",	7712,	"language_name",	7712,	7712,	11,	7712	]
+[ "language_id",	7708,	"language_id",	7708,	7708,	11,	7708	]
+[ "language_name",	7711,	"language_name",	7711,	7711,	11,	7711	]
+[ "key_type_id",	7717,	"key_type_id",	7717,	7717,	11,	7717	]
+[ "key_type_name",	7720,	"key_type_name",	7720,	7720,	11,	7720	]
+[ "key_type_id",	7716,	"key_type_id",	7716,	7716,	11,	7716	]
+[ "key_type_name",	7719,	"key_type_name",	7719,	7719,	11,	7719	]
+[ "index_type_id",	7725,	"index_type_id",	7725,	7725,	11,	7725	]
+[ "index_type_name",	7728,	"index_type_name",	7728,	7728,	11,	7728	]
+[ "index_type_id",	7724,	"index_type_id",	7724,	7724,	11,	7724	]
+[ "index_type_name",	7727,	"index_type_name",	7727,	7727,	11,	7727	]
+[ "privilege_code_id",	7733,	"privilege_code_id",	7733,	7733,	11,	7733	]
+[ "privilege_code_name",	7736,	"privilege_code_name",	7736,	7736,	11,	7736	]
+[ "privilege_code_id",	7732,	"privilege_code_id",	7732,	7732,	11,	7732	]
+[ "privilege_code_name",	7735,	"privilege_code_name",	7735,	7735,	11,	7735	]
+[ "file_id",	8159,	"file_id",	8159,	8159,	11,	8159	]
+[ "file_id",	8158,	"file_id",	8158,	8158,	11,	8158	]
+[ "sn",	8170,	"sn",	8170,	8170,	11,	8170	]
+[ "file_id",	8170,	"file_id",	8170,	8170,	11,	8170	]
+[ "file_id",	8172,	"file_id",	8172,	8172,	11,	8172	]
+[ "sn",	8169,	"sn",	8169,	8169,	11,	8169	]
+[ "file_id",	8169,	"file_id",	8169,	8169,	11,	8169	]
+[ "file_id",	8171,	"file_id",	8171,	8171,	11,	8171	]
+[ "id",	8189,	"id",	8189,	8189,	11,	8189	]
+[ "file_id",	8189,	"file_id",	8189,	8189,	11,	8189	]
+[ "file_id",	8191,	"file_id",	8191,	8191,	11,	8191	]
+[ "id",	8188,	"id",	8188,	8188,	11,	8188	]
+[ "file_id",	8188,	"file_id",	8188,	8188,	11,	8188	]
+[ "file_id",	8190,	"file_id",	8190,	8190,	11,	8190	]
+[ "id",	8201,	"id",	8201,	8201,	11,	8201	]
+[ "file_id",	8201,	"file_id",	8201,	8201,	11,	8201	]
+[ "file_id",	8203,	"file_id",	8203,	8203,	11,	8203	]
+[ "id",	8200,	"id",	8200,	8200,	11,	8200	]
+[ "file_id",	8200,	"file_id",	8200,	8200,	11,	8200	]
+[ "file_id",	8202,	"file_id",	8202,	8202,	11,	8202	]
+[ "id",	8300,	"id",	8300,	8300,	11,	8300	]
+[ "id",	8299,	"id",	8299,	8299,	11,	8299	]
+#ROLLBACK;
+
+# 13:47:14 >  
+# 13:47:14 >  "Done."
+# 13:47:14 >  
+

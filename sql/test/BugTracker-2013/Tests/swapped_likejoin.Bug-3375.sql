@@ -55,7 +55,7 @@ COPY 49 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
 7034	storage	2000	"create view sys.""storage"" as select * from sys.""storage""();"	1	true	0	0
 7046	storagemodelinput	2000		0	true	0	0
 7094	storagemodel	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	0
-7104	tablestoragemodel	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum("imprints") as "imprints",\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	0
+7104	tablestoragemodel	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(""imprints"") as ""imprints"",\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	0
 7117	statistics	2000		0	true	0	0
 7245	systemfunctions	2000		0	true	0	0
 

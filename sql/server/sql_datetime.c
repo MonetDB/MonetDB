@@ -3,13 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql_datetime.h"
 #include "sql_string.h"
-#include <stdlib.h>
 
 int
 parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep)
@@ -122,7 +121,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	if (!n)
 		return -1;
 	if (sk == isec) {
-		int msec = 0;
+		lng msec = 0;
 		val *= 1000;
 		if (n && n[0] == '.') {
 			char *nn;
@@ -226,7 +225,7 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	if (!n)
 		return -1;
 	if (sk == isec) {
-		int msec = 0;
+		lng msec = 0;
 		if (n && n[0] == '.') {
 			char *nn;
 			msec = strtol(n+1, &nn, 10);
@@ -292,6 +291,10 @@ datetime_field(itype f)
 		return "minute";
 	case isec:
 		return "second";
+	case iquarter:
+		return "quarter";
+	case iweek:
+		return "week";
 	}
 }
 

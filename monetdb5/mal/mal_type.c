@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -34,7 +34,7 @@
 str
 getTypeName(malType tpe)
 {
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 	int k;
 
 	if (tpe == TYPE_any)
@@ -64,11 +64,14 @@ str
 getTypeIdentifier(malType tpe){
 	str s,t,v;
 	s= getTypeName(tpe);
+	if (s == NULL)
+		return NULL;
 	for ( t=s; *t; t++)
-		if ( !isalnum((int) *t) )
+		if ( !isalnum((unsigned char) *t) )
 			*t='_';
 	t--;
-	if (*t == '_') *t = 0;
+	if (*t == '_')
+		*t = 0;
 	for (v=s, t=s+1; *t; t++){
 		if (  !(*t == '_' && *v == '_' ) )
 			*++v = *t;
@@ -179,10 +182,10 @@ findGDKtype(int type)
 int
 isIdentifier(str s)
 {
-	if (!isalpha((int) *s))
+	if (!isalpha((unsigned char) *s))
 		return -1;
 	for (; s && *s; s++)
-		if (!isalnum((int) *s) && *s != '_')
+		if (!isalnum((unsigned char) *s) && *s != '_')
 			return -1;
 	return 0;
 }

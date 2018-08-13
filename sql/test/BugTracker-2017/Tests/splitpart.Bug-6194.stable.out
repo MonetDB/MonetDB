@@ -27,8 +27,8 @@ Ready.
 #select splitpart('100-ača' , '-', 2);
 % .L2 # table_name
 % L2 # name
-% char # type
-% 7 # length
+% clob # type
+% 3 # length
 [ "ača"	]
 
 # 12:09:36 >  

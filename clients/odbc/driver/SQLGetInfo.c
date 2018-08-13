@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -55,7 +55,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 
 	switch (InfoType) {
 	case SQL_ACCESSIBLE_PROCEDURES:
-		sValue = "Y";	/* "N" */
+		sValue = "N";	/* "Y" */
 		break;
 	case SQL_ACCESSIBLE_TABLES:
 		sValue = "N";	/* "Y" */
@@ -659,21 +659,29 @@ MNDBGetInfo(ODBCDbc *dbc,
 		 * sql_scan.c:scanner_init_keywords with values
 		 * removed that are in
 		 * sql_parser.y:non_reserved_word */
-		sValue = "ADMIN,AFTER,AGGREGATE,ALWAYS,ASYMMETRIC,ATOMIC,"
-			"AUTO_INCREMENT,BEFORE,BIGINT,BIGSERIAL,BINARY,BLOB,"
-			"CALL,CHAIN,CLOB,COMMITTED,COPY,CORR,CUME_DIST,"
-			"CURRENT_ROLE,CYCLE,DATABASE,DELIMITERS,DENSE_RANK,"
-			"DO,EACH,ELSEIF,ENCRYPTED,EVERY,EXCLUDE,FOLLOWING,"
-			"FUNCTION,GENERATED,IF,ILIKE,INCREMENT,LAG,LEAD,"
-			"LIMIT,LOCALTIME,LOCALTIMESTAMP,LOCKED,MAXVALUE,"
-			"MEDIAN,MEDIUMINT,MERGE,MINVALUE,NEW,NOCYCLE,"
-			"NOMAXVALUE,NOMINVALUE,NOW,OFFSET,OLD,OTHERS,OVER,"
-			"PARTITION,PERCENT_RANK,PLAN,PRECEDING,PROD,QUANTILE,"
-			"RANGE,RANK,RECORDS,REFERENCING,REMOTE,RENAME,"
-			"REPEATABLE,REPLICA,RESTART,RETURN,RETURNS,"
-			"ROW_NUMBER,ROWS,SAMPLE,SAVEPOINT,SCHEMA,SEQUENCE,"
-			"SERIAL,SERIALIZABLE,SIMPLE,START,STATEMENT,STDIN,"
-			"STDOUT,STREAM,STRING,SYMMETRIC,TIES,TINYINT,TRIGGER,"
+		sValue = "ADD,ADMIN,AFTER,AGGREGATE,ALL,ALTER,ALWAYS,AND,ANY,"
+			"ASYMMETRIC,ATOMIC,AUTO_INCREMENT,BEFORE,BEST,BIGINT,"
+			"BIGSERIAL,BINARY,BLOB,CALL,CHAIN,CLOB,COMMITTED,COPY,"
+			"CUME_DIST,CURRENT_ROLE,DELIMITERS,DENSE_RANK,DO,"
+			"EACH,EFFORT,ELSEIF,ENCRYPTED,EVERY,EXCLUDE,FOLLOWING,"
+			"FUNCTION,FWF,GENERATED,GEOMETRYCOLLECTION,"
+			"GEOMETRYCOLLECTIONM,GEOMETRYCOLLECTIONZ,"
+			"GEOMETRYCOLLECTIONZM,HUGEINT,IF,ILIKE,"
+			"LATERAL,LIMIT,LINESTRING,LINESTRINGM,"
+			"LINESTRINGZ,LINESTRINGZM,LOADER,LOCALTIME,"
+			"LOCALTIMESTAMP,LOCKED,MEDIUMINT,MERGE,"
+			"MULTILINESTRING,MULTILINESTRINGM,MULTILINESTRINGZ,"
+			"MULTILINESTRINGZM,MULTIPOINT,MULTIPOINTM,MULTIPOINTZ,"
+			"MULTIPOINTZM,MULTIPOLYGON,MULTIPOLYGONM,"
+			"MULTIPOLYGONZ,MULTIPOLYGONZM,NEW,NOCYCLE,NOMAXVALUE,"
+			"NOMINVALUE,NOW,OFFSET,OLD,ORDERED,OTHERS,OVER,"
+			"PARTITION,PERCENT_RANK,POINT,POINTM,POINTZ,POINTZM,"
+			"POLYGON,POLYGONM,POLYGONZ,POLYGONZM,PRECEDING,"
+			"RANGE,RANK,RECORDS,REFERENCING,REMOTE,"
+			"RENAME,REPEATABLE,REPLICA,RESTART,RETURN,RETURNS,"
+			"ROW_NUMBER,SAMPLE,SAVEPOINT,SEQUENCE,SERIAL,"
+			"SERIALIZABLE,SIMPLE,SPLIT_PART,STDIN,STDOUT,STREAM,"
+			"STRING,SYMMETRIC,TIES,TINYINT,TRIGGER,TRUNCATE,"
 			"UNBOUNDED,UNCOMMITTED,UNENCRYPTED,WHILE,XMLAGG,"
 			"XMLATTRIBUTES,XMLCOMMENT,XMLCONCAT,XMLDOCUMENT,"
 			"XMLELEMENT,XMLFOREST,XMLNAMESPACES,XMLPARSE,XMLPI,"
@@ -692,6 +700,9 @@ MNDBGetInfo(ODBCDbc *dbc,
 	case SQL_MAX_CHAR_LITERAL_LEN:
 		break;
 	case SQL_MAX_COLUMN_NAME_LEN:
+		nValue = 1024;	/* max length of column sys._columns.name is defined as 1024 */
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_COLUMNS_IN_GROUP_BY:
 	case SQL_MAX_COLUMNS_IN_INDEX:
 	case SQL_MAX_COLUMNS_IN_ORDER_BY:
@@ -699,10 +710,22 @@ MNDBGetInfo(ODBCDbc *dbc,
 	case SQL_MAX_COLUMNS_IN_TABLE:
 	case SQL_MAX_CONCURRENT_ACTIVITIES:
 	case SQL_MAX_CURSOR_NAME_LEN:
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_DRIVER_CONNECTIONS:
+		nValue = 64;	/* default value of mserver5 */
+		/* TODO query the server for the actual value via SQL:
+		   SELECT value FROM sys.env() WHERE name = 'max_clients'; */
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_IDENTIFIER_LEN:
+		nValue = 1024;	/* max length of columns sys.*.name is defined as 1024 */
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_INDEX_SIZE:
+		break;
 	case SQL_MAX_PROCEDURE_NAME_LEN:
+		nValue = 256;	/* max length of column sys.functions.name is defined as 256 */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_ROW_SIZE:
@@ -711,13 +734,20 @@ MNDBGetInfo(ODBCDbc *dbc,
 		sValue = "Y";	/* "N" */
 		break;
 	case SQL_MAX_SCHEMA_NAME_LEN:
+		nValue = 1024;	/* max length of column sys.schemas.name is defined as 1024 */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_STATEMENT_LEN:
 		break;
 	case SQL_MAX_TABLE_NAME_LEN:
+		nValue = 1024;	/* max length of column sys._tables.name is defined as 1024 */
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_TABLES_IN_SELECT:
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_USER_NAME_LEN:
+		nValue = 1024;	/* max length of sys.db_user_info.name is defined as 1024 */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MULT_RESULT_SETS:
@@ -1145,10 +1175,14 @@ MNDBGetInfo(ODBCDbc *dbc,
 	if (sValue) {
 		copyString(sValue, strlen(sValue), InfoValuePtr, BufferLength, StringLengthPtr, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 	} else if (InfoValuePtr) {
-		if (len == sizeof(SQLULEN))
-			*(SQLULEN *) InfoValuePtr = (SQLULEN) nValue;
-		else if (len == sizeof(SQLUINTEGER))
+		if (len == sizeof(SQLUINTEGER))
 			*(SQLUINTEGER *) InfoValuePtr = (SQLUINTEGER) nValue;
+#ifndef SQLULEN
+		/* if SQLULEN is defined, it's defined as SQLUINTEGER
+		 * which we've handled */
+		else if (len == sizeof(SQLULEN))
+			*(SQLULEN *) InfoValuePtr = (SQLULEN) nValue;
+#endif
 		else if (len == sizeof(SQLUSMALLINT))
 			*(SQLUSMALLINT *) InfoValuePtr = (SQLUSMALLINT) nValue;
 		if (StringLengthPtr)
@@ -1563,10 +1597,10 @@ SQLGetInfo(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfo " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle, translateInfoType(InfoType),
-		PTRFMTCAST InfoValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+	ODBCLOG("SQLGetInfo %p %s %p %d %p\n",
+		ConnectionHandle, translateInfoType(InfoType),
+		InfoValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -1608,10 +1642,10 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfoW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle, translateInfoType(InfoType),
-		PTRFMTCAST InfoValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+	ODBCLOG("SQLGetInfoW %p %s %p %d %p\n",
+		ConnectionHandle, translateInfoType(InfoType),
+		InfoValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))

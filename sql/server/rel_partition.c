@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -85,6 +85,7 @@ find_basetables( sql_rel *rel, list *tables )
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_truncate:
 		if (rel->r)
 			find_basetables(rel->r, tables); 
 		break;
@@ -141,6 +142,9 @@ rel_partition(mvc *sql, sql_rel *rel)
 		rel->flag = REL_PARTITION;
 	} else if ((rel->op == op_topn || rel->op == op_sample || rel->op == op_select) && rel->l) {
 		rel_partition(sql, rel->l);
+	} else if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
+		if (rel->r)
+			rel_partition(sql, rel->r);
 	} else if (is_project(rel->op) && rel->l) {
 		rel_partition(sql, rel->l);
 	} else if (rel->op == op_semi && rel->l && rel->r) {

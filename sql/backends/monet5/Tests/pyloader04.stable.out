@@ -103,8 +103,7 @@ Ready.
 #CREATE LOADER pyloader04() LANGUAGE PYTHON {
 #	_emit.emit({'select': 3, 'from': 4})
 #};
-#COPY INTO pyloader04table FROM LOADER pyloader04();
-[ 1	]
+#COPY LOADER INTO pyloader04table FROM pyloader04();
 #SELECT * FROM pyloader04table;
 % sys.pyloader04table,	sys.pyloader04table # table_name
 % select,	from # name

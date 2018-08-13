@@ -57,164 +57,164 @@ Ready.
 # 15:21:06 >  
 
 #select st_astext(st_pointfromtext('point(10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 15 # length
 [ "\"POINT (10 10)\""	]
 #select st_astext(st_pointfromtext('point(20 20)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 15 # length
 [ "\"POINT (20 20)\""	]
 #select st_astext(st_pointfromtext('point(10 10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 20 # length
 [ "\"POINT Z (10 10 10)\""	]
 #select st_astext(st_makepoint(10, 10));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 15 # length
 [ "\"POINT (10 10)\""	]
 #select st_astext(st_point(20, 20));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 15 # length
 [ "\"POINT (20 20)\""	]
 #select st_astext(st_makepoint(10, 10, 10));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 20 # length
 [ "\"POINT Z (10 10 10)\""	]
 #select st_astext(st_linefromtext('linestring(10 10, 20 20, 30 30)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 34 # length
 [ "\"LINESTRING (10 10, 20 20, 30 30)\""	]
 #select st_astext(st_linefromtext('linestring(20 20, 30 30, 40 40)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 34 # length
 [ "\"LINESTRING (20 20, 30 30, 40 40)\""	]
 #select st_astext(st_linefromtext('linestring(20 20 20, 30 30 30, 40 40 40)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 45 # length
 [ "\"LINESTRING Z (20 20 20, 30 30 30, 40 40 40)\""	]
 #select st_astext(st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 40 # length
 [ "\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
 #select st_astext(st_polygonfromtext('polygon((20 20, 30 30, 40 40, 20 20))', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 40 # length
 [ "\"POLYGON ((20 20, 30 30, 40 40, 20 20))\""	]
 #select st_astext(st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 54 # length
 [ "\"POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))\""	]
 #select st_astext(st_mpointfromtext('multipoint(10 10, 20 20)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 27 # length
 [ "\"MULTIPOINT (10 10, 20 20)\""	]
 #select st_astext(st_mpointfromtext('multipoint(20 20, 30 30)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 27 # length
 [ "\"MULTIPOINT (20 20, 30 30)\""	]
 #select st_astext(st_mpointfromtext('multipoint(20 20 20, 30 30 30)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 35 # length
 [ "\"MULTIPOINT Z (20 20 20, 30 30 30)\""	]
 #select st_astext(st_mlinefromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 64 # length
 [ "\"MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))\""	]
 #select st_astext(st_mlinefromtext('multilinestring((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 64 # length
 [ "\"MULTILINESTRING ((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))\""	]
 #select st_astext(st_mlinefromtext('multilinestring((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 84 # length
 [ "\"MULTILINESTRING Z ((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))\""	]
 #select st_astext(st_mpolyfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 85 # length
 [ "\"MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))\""	]
 #select st_astext(st_mpolyfromtext('multipolygon(((20 20, 30 30, 40 40, 20 20),(200 200, 300 300, 400 400, 200 200)))', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 85 # length
 [ "\"MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 300 300, 400 400, 200 200)))\""	]
 #select st_astext(st_mpolyfromtext('multipolygon(((10 10 10, 20 20 20, 30 30 30, 10 10 10),(100 100 100, 200 200 200, 300 300 300, 100 100 100)))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 115 # length
 [ "\"MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 200 200 200, 300 300 300, 100 100 100)))\""	]
 #select st_astext(st_geomfromtext('point(10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 15 # length
 [ "\"POINT (10 10)\""	]
 #select st_astext(st_geomfromtext('linestring(10 10, 20 20, 30 30)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 34 # length
 [ "\"LINESTRING (10 10, 20 20, 30 30)\""	]
 #select st_astext(st_geomfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 40 # length
 [ "\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
 #select st_astext(st_geomfromtext('multipoint(10 10, 20 20)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 27 # length
 [ "\"MULTIPOINT (10 10, 20 20)\""	]
 #select st_astext(st_geomfromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 64 # length
 [ "\"MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))\""	]
 #select st_astext(st_geomfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 85 # length
 [ "\"MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))\""	]
@@ -222,8 +222,8 @@ Ready.
 #insert into points_tbl values (st_pointfromtext('point(10 10)'));
 [ 1	]
 #select st_astext(g) from points_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 15 # length
 [ "\"POINT (10 10)\""	]
@@ -232,8 +232,8 @@ Ready.
 #insert into lines_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 30)'));
 [ 1	]
 #select st_astext(g) from lines_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 34 # length
 [ "\"LINESTRING (10 10, 20 20, 30 30)\""	]
@@ -242,8 +242,8 @@ Ready.
 #insert into polygons_tbl values (st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
 [ 1	]
 #select st_astext(g) from polygons_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 40 # length
 [ "\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
@@ -252,8 +252,8 @@ Ready.
 #insert into points_tbl values (st_pointfromtext('point(10 10 10)'));
 [ 1	]
 #select st_astext(g) from points_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 20 # length
 [ "\"POINT Z (10 10 10)\""	]
@@ -262,8 +262,8 @@ Ready.
 #insert into lines_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)'));
 [ 1	]
 #select st_astext(g) from lines_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 45 # length
 [ "\"LINESTRING Z (10 10 10, 20 20 20, 30 30 30)\""	]
@@ -272,8 +272,8 @@ Ready.
 #insert into polygons_tbl values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
 [ 1	]
 #select st_astext(g) from polygons_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 54 # length
 [ "\"POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))\""	]

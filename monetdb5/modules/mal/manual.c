@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -42,10 +42,10 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(sig);
 		BBPreclaim(adr);
 		BBPreclaim(com);
-		throw(MAL, "manual.functions", MAL_MALLOC_FAIL);
+		throw(MAL, "manual.functions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	list[top++] = cntxt->nspace;
+	list[top++] = cntxt->usermodule;
 	getModuleList(&moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
@@ -67,11 +67,11 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							*tt = 0;
 							tt += 8;
 						}
-						if (BUNappend(mod, t->def->stmt[0]->modname, FALSE) != GDK_SUCCEED ||
-							BUNappend(fcn, t->def->stmt[0]->fcnname, FALSE) != GDK_SUCCEED ||
-							BUNappend(com, t->def->help ? t->def->help : "", TRUE) != GDK_SUCCEED ||
-							BUNappend(sig,buf,TRUE) != GDK_SUCCEED ||
-							BUNappend(adr, tt ? tt : "", TRUE) != GDK_SUCCEED) {
+						if (BUNappend(mod, t->def->stmt[0]->modname, false) != GDK_SUCCEED ||
+							BUNappend(fcn, t->def->stmt[0]->fcnname, false) != GDK_SUCCEED ||
+							BUNappend(com, t->def->help ? t->def->help : "", true) != GDK_SUCCEED ||
+							BUNappend(sig,buf,true) != GDK_SUCCEED ||
+							BUNappend(adr, tt ? tt : "", true) != GDK_SUCCEED) {
 							goto bailout;
 						}
 					}

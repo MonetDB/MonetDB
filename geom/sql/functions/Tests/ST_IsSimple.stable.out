@@ -25,14 +25,14 @@ Ready.
 # 14:37:11 >  
 
 #SELECT ST_IsSimple(ST_GeomFromText('POLYGON((1 2, 3 4, 5 6, 1 2))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_IsSimple(ST_GeomFromText('LINESTRING(1 1,2 2,2 3.5,1 3,1 2,2 1)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -40,8 +40,8 @@ Ready.
 #insert into geo values(ST_GeomFromText('POLYGON((1 2, 3 4, 5 6, 1 2))', 4326));
 [ 1	]
 #select st_IsSimple(g) from geo;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -50,8 +50,8 @@ Ready.
 #insert into geo values(ST_GeomFromText('LINESTRING(1 1,2 2,2 3.5,1 3,1 2,2 1)', 4326));
 [ 1	]
 #select st_IsSimple(g) from geo;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -62,15 +62,15 @@ Ready.
 #insert into geo values (st_mpointfromtext('multipoint(10 10, 20 20, 10 5)', 4326));
 [ 1	]
 #select st_isvalid(g) from geo;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 [ true	]
 #drop table geo;
 #SELECT geom AS "GEOMETRY" FROM geometries WHERE id<11 AND ST_IsSimple(geom);
-% sys.L1 # table_name
+% sys.L2 # table_name
 % GEOMETRY # name
 % geometry # type
 % 0 # length

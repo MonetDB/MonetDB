@@ -25,25 +25,25 @@ Ready.
 # 13:55:10 >  
 
 #SELECT ST_IsEmpty(ST_GeomFromText('GEOMETRYCOLLECTION EMPTY'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_IsEmpty(ST_GeomFromText('POLYGON((1 2, 3 4, 5 6, 1 2))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_IsEmpty(ST_GeomFromText('LINESTRING EMPTY'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT geom AS "GEOMETRY" FROM geometries WHERE ST_IsEmpty(geom);
-% sys.L1 # table_name
+% sys.L2 # table_name
 % GEOMETRY # name
 % geometry # type
 % 0 # length

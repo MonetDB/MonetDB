@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -87,9 +87,9 @@ SQLGetConnectOption(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOption " PTRFMT " %s " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle, translateConnectOption(Option),
-		PTRFMTCAST ValuePtr);
+	ODBCLOG("SQLGetConnectOption %p %s %p\n",
+		ConnectionHandle, translateConnectOption(Option),
+		ValuePtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -117,9 +117,9 @@ SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
 	SQLPOINTER ptr;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %s " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle, translateConnectOption(Option),
-		PTRFMTCAST ValuePtr);
+	ODBCLOG("SQLGetConnectOptionW %p %s %p\n",
+		ConnectionHandle, translateConnectOption(Option),
+		ValuePtr);
 #endif
 
 	if (!isValidDbc(dbc))

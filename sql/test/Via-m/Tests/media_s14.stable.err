@@ -73,6 +73,7 @@ stderr of test 'media_s14` in directory 'sql/test/Via-m` itself:
 MAPI  = monetdb@sofia:38256
 QUERY = set id_media1 = add_media(id_event1, id_media_description1, 'identifier2', 1, 25, 125);
 ERROR = !INSERT INTO: UNIQUE constraint 'media.unq_media_identifier' violated
+CODE  = M0M29
 
 # 16:30:12 >  
 # 16:30:12 >  Done.

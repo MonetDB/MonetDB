@@ -1,0 +1,39 @@
+stderr of test 'dependency_column_on_sequence.Bug-6618` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 15:00:25 >  
+# 15:00:25 >  "/usr/local/opt/python@2/bin/python2.7" "dependency_column_on_sequence.Bug-6618.py" "dependency_column_on_sequence.Bug-6618"
+# 15:00:25 >  
+
+# builtin opt 	gdk_dbpath = /mnt/niels/scratch/monetdb/Linux-aarch64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35707
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26874/.s.monetdb.35707
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /mnt/niels/scratch/monetdb/Linux-aarch64/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 16:44:25 >  
+# 16:44:25 >  "/usr/bin/python" "dependency_column_on_sequence.Bug-6618.SQL.py" "dependency_column_on_sequence.Bug-6618"
+# 16:44:25 >  
+
+2B000!DROP SEQUENCE: unable to drop sequence seq_7622 (there are database objects which depend on it)
+
+2B000!DROP SEQUENCE: unable to drop sequence myseq (there are database objects which depend on it)
+
+
+# 16:44:25 >  
+# 16:44:25 >  "Done."
+# 16:44:25 >  
+

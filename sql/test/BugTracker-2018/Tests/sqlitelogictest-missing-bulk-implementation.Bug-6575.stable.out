@@ -1,0 +1,43 @@
+stdout of test 'sqlitelogictest-missing-bulk-implementation.Bug-6575` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:29:47 >  
+# 18:29:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30252" "--set" "mapi_usock=/var/tmp/mtest-1971/.s.monetdb.30252" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 18:29:47 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.387 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:30252/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1971/.s.monetdb.30252
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:29:47 >  
+# 18:29:47 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1971" "--port=30252"
+# 18:29:47 >  
+
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab1 VALUES(22,6,8), (28,57,45), (82,44,71);
+[ 3	]
+#SELECT ALL - 52 * + COALESCE ( + col2, + 47 / + 25 ) FROM tab1 AS cor0 GROUP BY cor0.col2, cor0.col2;
+% sys.L2 # table_name
+% L2 # name
+% bigint # type
+% 5 # length
+[ -416	]
+[ -2340	]
+[ -3692	]
+#DROP TABLE tab1;
+
+# 18:29:47 >  
+# 18:29:47 >  "Done."
+# 18:29:47 >  
+

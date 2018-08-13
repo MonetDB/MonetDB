@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -49,6 +49,7 @@ struct OPTcatalog {
 {"mitosis",		0,	0,	0},
 {"multiplex",	0,	0,	0},
 {"oltp",		0,	0,	0},
+{"postfix",		0,	0,	0},
 {"reduce",		0,	0,	0},
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},
@@ -97,17 +98,24 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if ( mb->inlineProp)
         	return 0;
 
-	/* force at least once a complete type check by resetting the type check flag */
+	mb->optimize = 0;
+	if (mb->errors)
+		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) "Start with inconsistent MAL plan");
 
 	// strong defense line, assure that MAL plan is initially correct
-	if( mb->errors == 0){
+	if( mb->errors == 0 && mb->stop > 1){
 		resetMalBlk(mb, mb->stop);
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
+		if( msg) 
+			return msg;
+		if( mb->errors != MAL_SUCCEED){
+			msg = mb->errors;
+			mb->errors = MAL_SUCCEED;
+			return msg;
+		}
 	}
-	if (mb->errors)
-		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
 	/* Optimizers may massage the plan in such a way that a new pass is needed.
      * When no optimzer call is found, then terminate. */
@@ -123,16 +131,21 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
-					if (nmsg && place) {
-						freeException(msg);
-						msg = nmsg;
+					str nmsg = NULL;
+				       	if(place){
+						nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
 						GDKfree(place);
 					}
+					if (nmsg ) {
+						freeException(msg);
+						msg = nmsg;
+					} 
 					goto wrapup;
 				}
-				if (cntxt->mode == FINISHCLIENT)
-					throw(MAL, "optimizeMALBlock", "prematurely stopped client");
+				if (cntxt->mode == FINISHCLIENT){
+					mb->optimize = GDKusec() - clk;
+					throw(MAL, "optimizeMALBlock", SQLSTATE(42000) "prematurely stopped client");
+				}
 				pc= -1;
 			}
 		}
@@ -145,11 +158,8 @@ wrapup:
 		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total", actions, mb->optimize);
 		newComment(mb, buf);
 	}
-	if (msg != MAL_SUCCEED) {
-		mb->errors++;
-	}
 	if (cnt >= mb->stop)
-		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
+		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) OPTIMIZER_CYCLE);
 	return msg;
 }
 
@@ -167,9 +177,12 @@ MALoptimizer(Client c)
 
 	if ( c->curprg->def->inlineProp)
 		return MAL_SUCCEED;
+	// only a signature statement can be skipped
+	if (c ->curprg->def->stop == 1)
+		return MAL_SUCCEED;
 	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
-		OPTmultiplexSimple(c, c->curprg->def);
+		msg = OPTmultiplexSimple(c, c->curprg->def);
 	return msg;
 }
 
@@ -399,7 +412,8 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) == pyapimapRef ||
 		getModuleId(p) == pyapi3Ref ||
 		getModuleId(p) == pyapi3mapRef ||
-		getModuleId(p) == rapiRef)
+		getModuleId(p) == rapiRef || 
+		getModuleId(p) == capiRef)
 		return TRUE;
 
 	if (getModuleId(p) == sqlcatalogRef)
@@ -457,7 +471,7 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
 		return hasSideEffects(mb, p, strict);
-	if (MANIFOLDtypecheck(cntxt,mb,p) == NULL)
+	if (MANIFOLDtypecheck(cntxt,mb,p,1) == NULL)
 		return TRUE;
 	return FALSE;
 }
@@ -504,14 +518,14 @@ isBlocking(InstrPtr p)
 static int 
 isOrderDepenent(InstrPtr p)
 {
-    if( getModuleId(p) != batsqlRef)
-        return 0;
-    if ( getFunctionId(p) == differenceRef ||
-        getFunctionId(p) == row_numberRef ||
-        getFunctionId(p) == rankRef ||
-        getFunctionId(p) == dense_rankRef)
-        return 1;
-    return 0;
+	if( getModuleId(p) != batsqlRef)
+		return 0;
+	if ( getFunctionId(p) == differenceRef ||
+		getFunctionId(p) == row_numberRef ||
+		getFunctionId(p) == rankRef ||
+		getFunctionId(p) == dense_rankRef)
+		return 1;
+	return 0;
 }
 
 int isMapOp(InstrPtr p){
@@ -525,7 +539,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
 		 getModuleId(p) != batpyapiRef &&
-		 getModuleId(p) != batpyapi3Ref;
+		 getModuleId(p) != batpyapi3Ref &&
+		 getModuleId(p) != batcapiRef;
 }
 
 int isLikeOp(InstrPtr p){
@@ -566,12 +581,12 @@ int
 isMatJoinOp(InstrPtr p)
 {
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
-                (getFunctionId(p) == crossRef ||
-                 getFunctionId(p) == joinRef ||
-                 getFunctionId(p) == antijoinRef || /* is not mat save */
-                 getFunctionId(p) == thetajoinRef ||
-                 getFunctionId(p) == bandjoinRef ||
-                 getFunctionId(p) == rangejoinRef)
+				(getFunctionId(p) == crossRef ||
+				 getFunctionId(p) == joinRef ||
+				 getFunctionId(p) == antijoinRef || /* is not mat save */
+				 getFunctionId(p) == thetajoinRef ||
+				 getFunctionId(p) == bandjoinRef ||
+				 getFunctionId(p) == rangejoinRef)
 		));
 }
 
@@ -622,7 +637,7 @@ int isSubJoin(InstrPtr p)
 
 int isMultiplex(InstrPtr p)
 {
-	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef) &&
+	return (malRef && (getModuleId(p) == malRef || getModuleId(p) == batmalRef) &&
 		getFunctionId(p) == multiplexRef);
 }
 

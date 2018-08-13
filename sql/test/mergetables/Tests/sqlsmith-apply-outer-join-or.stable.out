@@ -1,0 +1,50 @@
+stdout of test 'sqlsmith-apply-outer-join-or` in directory 'sql/test/mergetables` itself:
+
+
+# 13:26:58 >  
+# 13:26:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39204" "--set" "mapi_usock=/var/tmp/mtest-12177/.s.monetdb.39204" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 13:26:58 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39204/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12177/.s.monetdb.39204
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:26:58 >  
+# 13:26:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12177" "--port=39204"
+# 13:26:58 >  
+
+#select
+#   cast(coalesce(ref_8.name,
+#     cast(nullif(ref_7.column,
+#       cast(null as clob)) as clob)) as clob) as c0,
+#   ref_10.function_id as c1,
+#   cast(coalesce(ref_6.action,
+#     ref_6.id) as int) as c2
+#from
+#   sys.types as ref_0
+#     left join sys.netcdf_attrs as ref_1
+#       inner join sys.keys as ref_6
+#         inner join sys.storagemodelinput as ref_7
+#             left join sys.optimizers as ref_8
+#               inner join sys.users as ref_9
+#                 right join sys.systemfunctions as ref_10
+% .L36,	.L40,	.L43 # table_name
+% c0,	c1,	c2 # name
+% clob,	int,	int # type
+% 0,	1,	1 # length
+
+# 13:26:58 >  
+# 13:26:58 >  "Done."
+# 13:26:58 >  
+

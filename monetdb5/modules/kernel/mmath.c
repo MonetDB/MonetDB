@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -19,61 +19,85 @@
  */
 #include "monetdb_config.h"
 #include "mmath.h"
-#ifdef HAVE_FENV_H
 #include <fenv.h>
-#else
-#define feclearexcept(x)
-#define fetestexcept(x)		0
+#ifndef FE_INVALID
+#define FE_INVALID			0
+#endif
+#ifndef FE_DIVBYZERO
+#define FE_DIVBYZERO		0
+#endif
+#ifndef FE_OVERFLOW
+#define FE_OVERFLOW			0
 #endif
 
 #define cot(x)				(1 / tan(x))
 #define radians(x)			((x) * 3.14159265358979323846 / 180.0)
 #define degrees(x)			((x) * 180.0 / 3.14159265358979323846)
 
-#define unopbaseM5(NAME, FUNC, TYPE)							\
-str																\
-MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)				\
-{																\
-	if (*a == TYPE##_nil) {										\
-		*res = TYPE##_nil;										\
-	} else {													\
-		double a1 = *a, r;										\
-		errno = 0;												\
-		feclearexcept(FE_ALL_EXCEPT);							\
-		r = FUNC(a1);											\
-		if (errno != 0 ||										\
-			fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
-						 FE_OVERFLOW | FE_UNDERFLOW) != 0)		\
-			throw(MAL, "mmath." #FUNC, "Math exception: %s",	\
-				  strerror(errno));								\
-		*res = (TYPE) r;										\
-	}															\
-	return MAL_SUCCEED;											\
+#define unopbaseM5(NAME, FUNC, TYPE)								\
+str																	\
+MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
+{																	\
+	if (is_##TYPE##_nil(*a)) {										\
+		*res = TYPE##_nil;											\
+	} else {														\
+		double a1 = *a, r;											\
+		int e = 0, ex = 0;											\
+		errno = 0;													\
+		feclearexcept(FE_ALL_EXCEPT);								\
+		r = FUNC(a1);												\
+		if ((e = errno) != 0 ||										\
+			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
+							   FE_OVERFLOW)) != 0) {				\
+			const char *err;										\
+			if (e) {												\
+				err = strerror(e);									\
+			} else if (ex & FE_DIVBYZERO)							\
+				err = "Divide by zero";								\
+			else if (ex & FE_OVERFLOW)								\
+				err = "Overflow";									\
+			else													\
+				err = "Invalid result";								\
+			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
+		}															\
+		*res = (TYPE) r;											\
+	}																\
+	return MAL_SUCCEED;												\
 }
 
 #define unopM5(NAME, FUNC)						\
 	unopbaseM5(NAME, FUNC, dbl)					\
 	unopbaseM5(NAME, FUNC, flt)
 
-#define binopbaseM5(NAME, FUNC, TYPE)							\
-str																\
-MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)	\
-{																\
-	if (*a == TYPE##_nil || *b == TYPE##_nil) {					\
-		*res = TYPE##_nil;										\
-	} else {													\
-		double r1, a1 = *a, b1 = *b;							\
-		errno = 0;												\
-		feclearexcept(FE_ALL_EXCEPT);							\
-		r1 = FUNC(a1, b1);										\
-		if (errno != 0 ||										\
-			fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
-						 FE_OVERFLOW | FE_UNDERFLOW) != 0)		\
-			throw(MAL, "mmath." #FUNC, "Math exception: %s",	\
-				  strerror(errno));								\
-		*res= (TYPE) r1;										\
-	}															\
-	return MAL_SUCCEED;											\
+#define binopbaseM5(NAME, FUNC, TYPE)								\
+str																	\
+MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
+{																	\
+	if (is_##TYPE##_nil(*a) || is_##TYPE##_nil(*b)) {				\
+		*res = TYPE##_nil;											\
+	} else {														\
+		double r1, a1 = *a, b1 = *b;								\
+		int e = 0, ex = 0;											\
+		errno = 0;													\
+		feclearexcept(FE_ALL_EXCEPT);								\
+		r1 = FUNC(a1, b1);											\
+		if ((e = errno) != 0 ||										\
+			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
+							   FE_OVERFLOW)) != 0) {				\
+			const char *err;										\
+			if (e) {												\
+				err = strerror(e);									\
+			} else if (ex & FE_DIVBYZERO)							\
+				err = "Divide by zero";								\
+			else if (ex & FE_OVERFLOW)								\
+				err = "Overflow";									\
+			else													\
+				err = "Invalid result";								\
+			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
+		}															\
+		*res= (TYPE) r1;											\
+	}																\
+	return MAL_SUCCEED;												\
 }
 
 #define unopM5NOT(NAME, FUNC)					\
@@ -96,7 +120,7 @@ MATHunary##NAME##flt(flt *res , const flt *a)	\
 str																\
 MATHbinary_ROUND##TYPE(TYPE *res, const TYPE *x, const int *y)	\
 {																\
-	if (*x == TYPE##_nil || *y == int_nil) {					\
+	if (is_##TYPE##_nil(*x) || is_int_nil(*y)) {				\
 		*res = TYPE##_nil;										\
 	} else {													\
 		dbl factor = pow(10,*y), integral;						\
@@ -151,7 +175,7 @@ unopM5(_FLOOR,floor)
 str
 MATHunary_FABSdbl(dbl *res , const dbl *a)
 {
-	*res = *a == dbl_nil ? dbl_nil : fabs(*a);
+	*res = is_dbl_nil(*a) ? dbl_nil : fabs(*a);
 	return MAL_SUCCEED;
 }
 
@@ -161,10 +185,10 @@ roundM5(flt)
 str
 MATHunary_ISNAN(bit *res, const dbl *a)
 {
-	if (*a == dbl_nil) {
+	if (is_dbl_nil(*a)) {
 		*res = bit_nil;
 	} else {
-		*res = MNisnan(*a);
+		*res = isnan(*a) != 0;
 	}
 	return MAL_SUCCEED;
 }
@@ -172,10 +196,10 @@ MATHunary_ISNAN(bit *res, const dbl *a)
 str
 MATHunary_ISINF(int *res, const dbl *a)
 {
-	if (*a == dbl_nil) {
+	if (is_dbl_nil(*a)) {
 		*res = int_nil;
 	} else {
-		if (MNisinf(*a)) {
+		if (isinf(*a)) {
 			*res = (*a < 0.0) ? -1 : 1;
 		} else {
 			*res = 0;
@@ -187,10 +211,10 @@ MATHunary_ISINF(int *res, const dbl *a)
 str
 MATHunary_FINITE(bit *res, const dbl *a)
 {
-	if (*a == dbl_nil) {
+	if (is_dbl_nil(*a)) {
 		*res = bit_nil;
 	} else {
-		*res = MNfinite(*a);
+		*res = isfinite(*a) != 0;
 	}
 	return MAL_SUCCEED;
 }

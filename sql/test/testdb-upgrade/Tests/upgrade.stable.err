@@ -22,9 +22,9 @@ stderr of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # cmdline opt 	mapi_open = true
 # cmdline opt 	mapi_port = 36219
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	mal_listing = 2
-# cmdline opt 	gdk_dbname = mTests_test_testdb-upgrade
-# cmdline opt 	mal_listing = 0
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_testdb-upgrade
+# cmdline opt 	gdk_debug = 553648138
+
 
 
 

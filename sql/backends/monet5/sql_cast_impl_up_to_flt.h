@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* This file is included multiple times (from sql_cast.c).
@@ -18,9 +18,11 @@
 
 /* concatenate two or four tokens */
 #define CONCAT_2(a,b)     a##b
+#define CONCAT_3(a,b,c)   a##b##c
 #define CONCAT_4(a,b,c,d) a##b##c##d
 
 #define NIL(t)       CONCAT_2(t,_nil)
+#define ISNIL(t)     CONCAT_3(is_,t,_nil)
 #define TPE(t)       CONCAT_2(TYPE_,t)
 #define FUN(a,b,c,d) CONCAT_4(a,b,c,d)
 
@@ -32,7 +34,7 @@ FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 	TP2 r;
 
 	/* shortcut nil */
-	if (*v == NIL(TP1)) {
+	if (ISNIL(TP1)(*v)) {
 		*res = NIL(TP2);
 		return (MAL_SUCCEED);
 	}
@@ -55,7 +57,7 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, c
 	TP2 r;
 
 	/* shortcut nil */
-	if (*v == NIL(TP1)) {
+	if (ISNIL(TP1)(*v)) {
 		*res = NIL(TP2);
 		return (MAL_SUCCEED);
 	}
@@ -66,7 +68,7 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, c
 	/* rounding is allowed */
 	inlen += (s2 - s1);
 	if (p && inlen > p) {
-		throw(SQL, "convert", "22003!too many digits (%d > %d)", inlen, p);
+		throw(SQL, "convert", SQLSTATE(22003) "too many digits (%d > %d)", inlen, p);
 	}
 
 	/* since the TP2 type is bigger than or equal to the TP1 type, it will
@@ -97,12 +99,12 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	TP2 *o;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), "Cannot access descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2_,TP2)), MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	o = (TP2 *) Tloc(bn, 0);
 	p = (TP1 *) Tloc(b, 0);
@@ -113,7 +115,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 			*o = (((TP2) *p) / scales[scale]);
 	} else {
 		for (; p < q; p++, o++) {
-			if (*p == NIL(TP1)) {
+			if (ISNIL(TP1)(*p)) {
 				*o = NIL(TP2);
 				bn->tnonil = FALSE;
 			} else
@@ -123,7 +125,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
-	BATkey(bn, FALSE);
+	BATkey(bn, false);
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -139,13 +141,13 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), "Cannot access descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TP1 *v = (TP1 *) BUNtail(bi, p);
@@ -156,10 +158,10 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -176,13 +178,13 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "Cannot access descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TP1 *v = (TP1 *) BUNtail(bi, p);
@@ -193,10 +195,10 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -207,9 +209,11 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 
 /* undo local defines */
 #undef FUN
+#undef ISNIL
 #undef NIL
 #undef TPE
 #undef CONCAT_2
+#undef CONCAT_3
 #undef CONCAT_4
 #undef STRNG
 #undef _STRNG_

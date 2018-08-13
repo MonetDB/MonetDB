@@ -75,6 +75,7 @@ table sys.testpk does not exist
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create temporary table testpk (hello int, primary key(hello));
 ERROR = !CREATE TABLE: name 'testpk' already in use
+CODE  = 42S01
 
 # 15:05:11 >  
 # 15:05:11 >  Done.

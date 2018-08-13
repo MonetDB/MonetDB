@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -12,11 +12,14 @@
  */
 #include "monetdb_config.h"
 #include "mal_backend.h"
-#include "sql_scenario.h"
+#include "sql_execute.h"
 #include "sql_mvc.h"
-#include <mtime.h>
+#include "mtime.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
+
+#include "rel_remote.h"
+#include "mal_authorize.h"
 
 #ifdef HAVE_EMBEDDED
 #define printf(fmt,...) ((void) 0)
@@ -35,7 +38,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 	sql_schema *s;
 
 	if (buf == NULL)
-		throw(SQL, "sql_fix_system_tables", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_fix_system_tables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -76,14 +79,15 @@ sql_fix_system_tables(Client c, mvc *sql)
 		pos += snprintf(buf + pos, bufsize - pos,
 				"insert into sys.functions values"
 				" (%d, '%s', '%s', '%s',"
-				" %d, %d, %s, %s, %s, %d);\n",
+				" %d, %d, %s, %s, %s, %d, %s);\n",
 				func->base.id, func->base.name,
 				func->imp, func->mod, FUNC_LANG_INT,
 				func->type,
 				func->side_effect ? "true" : "false",
 				func->varres ? "true" : "false",
 				func->vararg ? "true" : "false",
-				func->s ? func->s->base.id : s->base.id);
+				func->s ? func->s->base.id : s->base.id,
+				func->system ? "true" : "false");
 		if (func->res) {
 			for (m = func->res->h; m; m = m->next, number++) {
 				arg = m->data;
@@ -143,12 +147,13 @@ sql_fix_system_tables(Client c, mvc *sql)
 		pos += snprintf(buf + pos, bufsize - pos,
 				"insert into sys.functions values"
 				" (%d, '%s', '%s', '%s', %d, %d, false,"
-				" %s, %s, %d);\n",
+				" %s, %s, %d, %s);\n",
 				aggr->base.id, aggr->base.name, aggr->imp,
 				aggr->mod, FUNC_LANG_INT, aggr->type,
 				aggr->varres ? "true" : "false",
 				aggr->vararg ? "true" : "false",
-				aggr->s ? aggr->s->base.id : s->base.id);
+				aggr->s ? aggr->s->base.id : s->base.id,
+				aggr->system ? "true" : "false");
 		arg = aggr->res->h->data;
 		pos += snprintf(buf + pos, bufsize - pos,
 				"insert into sys.args values"
@@ -168,10 +173,6 @@ sql_fix_system_tables(Client c, mvc *sql)
 					arg->inout);
 		}
 	}
-	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id < 2000;\n"
-			"insert into sys.systemfunctions"
-			" (select id from sys.functions where id < 2000);\n");
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
@@ -196,7 +197,7 @@ sql_update_hugeint(Client c, mvc *sql)
 		return err;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_hugeint", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_hugeint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	schema = stack_get_string(sql, "current_schema");
 
@@ -233,7 +234,7 @@ sql_update_hugeint(Client c, mvc *sql)
 			"    external name \"aggr\".\"median\";\n"
 			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
 			"    external name \"aggr\".\"quantile\";\n"
-			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT\n"
+			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			"    external name \"aggr\".\"corr\";\n");
 
 	/* 40_json_hge.sql */
@@ -249,13 +250,13 @@ sql_update_hugeint(Client c, mvc *sql)
 			"  sum(columnsize) as columnsize,\n"
 			"  sum(heapsize) as heapsize,\n"
 			"  sum(hashes) as hashes,\n"
-			"  sum(imprints) as imprints,\n"
+			"  sum(\"imprints\") as \"imprints\",\n"
 			"  sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n"
 			"from sys.storagemodel() group by \"schema\",\"table\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
-			"insert into sys.systemfunctions (select id from sys.functions where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and id not in (select function_id from sys.systemfunctions));\n"
+			"update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');\n"
+			"update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');\n"
 			"update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	if (s != NULL) {
@@ -277,6 +278,7 @@ sql_update_hugeint(Client c, mvc *sql)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -285,278 +287,6 @@ sql_update_hugeint(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 #endif
-
-static str
-sql_update_epoch(Client c, mvc *m)
-{
-	size_t bufsize = 1000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(m, "current_schema");
-	sql_subtype tp;
-	int n = 0;
-	sql_schema *s = mvc_bind_schema(m, "sys");
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_epoch", MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	sql_find_subtype(&tp, "bigint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
-		n++;
-		pos += snprintf(buf + pos, bufsize - pos, "\
-create function sys.\"epoch\"(sec BIGINT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
-	}
-	sql_find_subtype(&tp, "int", 0, 0);
-	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
-		n++;
-		pos += snprintf(buf + pos, bufsize - pos, "\
-create function sys.\"epoch\"(sec INT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
-	}
-	sql_find_subtype(&tp, "timestamp", 0, 0);
-	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
-		n++;
-		pos += snprintf(buf + pos, bufsize - pos, "\
-create function sys.\"epoch\"(ts TIMESTAMP) returns INT external name timestamp.\"epoch\";\n");
-	}
-	sql_find_subtype(&tp, "timestamptz", 0, 0);
-	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
-		n++;
-		pos += snprintf(buf + pos, bufsize - pos, "\
-create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external name timestamp.\"epoch\";\n");
-	}
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name = 'epoch' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-
-	if (schema) 
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-	assert(pos < bufsize);
-	if (n) {
-		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	}
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_jun2016(Client c, mvc *sql)
-{
-	size_t bufsize = 10000, pos = 0;
-	char *buf, *err;
-	char *schema = stack_get_string(sql, "current_schema");
-	sql_schema *s;
-
-	if ((err = sql_fix_system_tables(c, sql)) != NULL)
-		return err;
-
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_jun2016", MAL_MALLOC_FAIL);
-
-	s = mvc_bind_schema(sql, "sys");
-
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"like\"(string, string, string) to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"ilike\"(string, string, string) to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"like\"(string, string) to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on filter function \"ilike\"(string, string) to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function degrees to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function radians to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on procedure times to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_date to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function date_to_str to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_time to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function time_to_str to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function str_to_timestamp to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function timestamp_to_str to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(BIGINT) to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(INT) to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(TIMESTAMP) to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function sys.\"epoch\"(TIMESTAMP WITH TIME ZONE) to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_STUFF to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_TRUNC to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_ROUND to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function MS_STR to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function alpha to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_encode to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_decode_x to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function zorder_decode_y to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function rejects to public;\n");
-	pos += snprintf(buf + pos, bufsize - pos, "grant execute on function md5 to public;\n");
-
-	/* 16_tracelog.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.profiler_openstream(string, int);\n");
-	pos += snprintf(buf + pos, bufsize - pos, "drop procedure sys.profiler_stethoscope(int);\n");
-
-	/* 25_debug.sql */
-	pos += snprintf(buf + pos, bufsize - pos, "drop function sys.bbp();\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-		"create function sys.bbp ()\n"
-		"returns table (id int, name string,\n"
-		"ttype string, count BIGINT, refcnt int, lrefcnt int,\n"
-		"location string, heat int, dirty string,\n"
-		"status string, kind string)\n"
-		"external name bbp.get;\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-		"create function sys.malfunctions()\n"
-		"returns table(\"signature\" string, \"address\" string, \"comment\" string)\n"
-		"external name \"manual\".\"functions\";\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-		"create procedure sys.flush_log ()\n"
-		"external name sql.\"flush_log\";\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-		"create function sys.debug(debug int) returns integer\n"
-		"external name mdb.\"setDebug\";\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-		"insert into sys.systemfunctions (select id from sys.functions where name in ('bbp', 'malfunctions', 'flush_log', 'debug') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-
-	/* 45_uuid.sql */
-	{
-		/* in previous updates, the functions
-		 * sys.isauuid(string) was not created, so we can't
-		 * always drop it here */
-		sql_subtype tp;
-		sql_find_subtype(&tp, "clob", 0, 0);
-		if (sql_bind_func(sql->sa, s, "isauuid", &tp, NULL, F_FUNC))
-			pos += snprintf(buf + pos, bufsize - pos,
-					"drop function sys.isaUUID(string);\n");
-	}
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function sys.isaUUID(uuid);\n"
-			"create function sys.isaUUID(s string)\n"
-			"returns boolean external name uuid.\"isaUUID\";\n"
-			"insert into sys.systemfunctions (select id from sys.functions where name = 'isauuid' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-
-	/* 46_profiler.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-		"create schema profiler;\n"
-		"create procedure profiler.start() external name profiler.\"start\";\n"
-		"create procedure profiler.stop() external name profiler.stop;\n"
-		"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;\n"
-		"create procedure profiler.setpoolsize(poolsize int) external name profiler.setpoolsize;\n"
-		"create procedure profiler.setstream(host string, port int) external name profiler.setstream;\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-		"update sys.schemas set system = true where name = 'profiler';\n"
-		"insert into sys.systemfunctions (select id from sys.functions where name in ('start', 'stop', 'setheartbeat', 'setpoolsize', 'setstream') and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));\n");
-
-	/* 51_sys_schema_extensions.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-		"delete from sys.keywords;\n"
-		"insert into sys.keywords values\n"
-		"('ADD'), ('ADMIN'), ('AFTER'), ('AGGREGATE'), ('ALL'), ('ALTER'), ('ALWAYS'), ('AND'), ('ANY'), ('ASC'), ('ASYMMETRIC'), ('ATOMIC'), ('AUTO_INCREMENT'),\n"
-		"('BEFORE'), ('BEGIN'), ('BEST'), ('BETWEEN'), ('BIGINT'), ('BIGSERIAL'), ('BINARY'), ('BLOB'), ('BY'),\n"
-		"('CALL'), ('CASCADE'), ('CASE'), ('CAST'), ('CHAIN'), ('CHAR'), ('CHARACTER'), ('CHECK'), ('CLOB'), ('COALESCE'), ('COMMIT'), ('COMMITTED'), ('CONSTRAINT'), ('CONVERT'), ('COPY'), ('CORRESPONDING'), ('CREATE'), ('CROSS'), ('CURRENT'), ('CURRENT_DATE'), ('CURRENT_ROLE'), ('CURRENT_TIME'), ('CURRENT_TIMESTAMP'), ('CURRENT_USER'),\n"
-		"('DAY'), ('DEC'), ('DECIMAL'), ('DECLARE'), ('DEFAULT'), ('DELETE'), ('DELIMITERS'), ('DESC'), ('DO'), ('DOUBLE'), ('DROP'),\n"
-		"('EACH'), ('EFFORT'), ('ELSE'), ('ELSEIF'), ('ENCRYPTED'), ('END'), ('ESCAPE'), ('EVERY'), ('EXCEPT'), ('EXCLUDE'), ('EXISTS'), ('EXTERNAL'), ('EXTRACT'),\n"
-		"('FALSE'), ('FLOAT'), ('FOLLOWING'), ('FOR'), ('FOREIGN'), ('FROM'), ('FULL'), ('FUNCTION'),\n"
-		"('GENERATED'), ('GLOBAL'), ('GRANT'), ('GROUP'),\n"
-		"('HAVING'), ('HOUR'), ('HUGEINT'),\n"
-		"('IDENTITY'), ('IF'), ('ILIKE'), ('IN'), ('INDEX'), ('INNER'), ('INSERT'), ('INT'), ('INTEGER'), ('INTERSECT'), ('INTO'), ('IS'), ('ISOLATION'),\n"
-		"('JOIN'),\n"
-		"('LEFT'), ('LIKE'), ('LIMIT'), ('LOCAL'), ('LOCALTIME'), ('LOCALTIMESTAMP'), ('LOCKED'),\n"
-		"('MEDIUMINT'), ('MERGE'), ('MINUTE'), ('MONTH'),\n"
-		"('NATURAL'), ('NEW'), ('NEXT'), ('NOCYCLE'), ('NOMAXVALUE'), ('NOMINVALUE'), ('NOT'), ('NOW'), ('NULL'), ('NULLIF'), ('NUMERIC'),\n"
-		"('OF'), ('OFFSET'), ('OLD'), ('ON'), ('ONLY'), ('OPTION'), ('OR'), ('ORDER'), ('OTHERS'), ('OUTER'), ('OVER'),\n"
-		"('PARTIAL'), ('PARTITION'), ('POSITION'), ('PRECEDING'), ('PRESERVE'), ('PRIMARY'), ('PRIVILEGES'), ('PROCEDURE'), ('PUBLIC'),\n"
-		"('RANGE'), ('READ'), ('REAL'), ('RECORDS'), ('REFERENCES'), ('REFERENCING'), ('REMOTE'), ('RENAME'), ('REPEATABLE'), ('REPLICA'), ('RESTART'), ('RESTRICT'), ('RETURN'), ('RETURNS'), ('REVOKE'), ('RIGHT'), ('ROLLBACK'), ('ROWS'),\n"
-		"('SAMPLE'), ('SAVEPOINT'), ('SECOND'), ('SELECT'), ('SEQUENCE'), ('SERIAL'), ('SERIALIZABLE'), ('SESSION_USER'), ('SET'), ('SIMPLE'), ('SMALLINT'), ('SOME'), ('SPLIT_PART'), ('STDIN'), ('STDOUT'), ('STORAGE'), ('STREAM'), ('STRING'), ('SUBSTRING'), ('SYMMETRIC'),\n"
-		"('THEN'), ('TIES'), ('TINYINT'), ('TO'), ('TRANSACTION'), ('TRIGGER'), ('TRUE'),\n"
-		"('UNBOUNDED'), ('UNCOMMITTED'), ('UNENCRYPTED'), ('UNION'), ('UNIQUE'), ('UPDATE'), ('USER'), ('USING'),\n"
-		"('VALUES'), ('VARCHAR'), ('VARYING'), ('VIEW'),\n"
-		"('WHEN'), ('WHERE'), ('WHILE'), ('WITH'), ('WORK'), ('WRITE'),\n"
-		"('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'), ('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');\n");
-
-	// Add new dependency_type 15 to table sys.dependency_types
-	pos += snprintf(buf + pos, bufsize - pos,
-		"insert into sys.dependency_types (dependency_type_id, dependency_type_name)\n"
-		" select 15 as id, 'TYPE' as name where 15 not in (select dependency_type_id from sys.dependency_types);\n");
-
-	// Add 46 missing sys.dependencies rows for new dependency_type: 15
-	pos += snprintf(buf + pos, bufsize - pos,
-		"insert into sys.dependencies (id, depend_id, depend_type)\n"
-		" select distinct types.id as type_id, args.func_id, 15 as depend_type from sys.args join sys.types on types.systemname = args.type where args.type in ('inet', 'json', 'url', 'uuid')\n"
-		" except\n"
-		" select distinct id, depend_id, depend_type from sys.dependencies where depend_type = 15;\n");
-
-	// Add the new storage inspection functions.
-	pos += snprintf(buf + pos, bufsize - pos,
-		"create function sys.\"storage\"( sname string)\n"
-		"returns table (\n"
-		"    \"schema\" string,\n"
-		"    \"table\" string,\n"
-		"    \"column\" string,\n"
-		"    \"type\" string,\n"
-		"    \"mode\" string,\n"
-		"    location string,\n"
-		"    \"count\" bigint,\n"
-		"    typewidth int,\n"
-		"    columnsize bigint,\n"
-		"    heapsize bigint,\n"
-		"    hashes bigint,\n"
-		"    phash boolean,\n"
-		"    imprints bigint,\n"
-		"    sorted boolean\n"
-		")\n"
-		"external name sql.\"storage\";\n"
-		"\n"
-		"create function sys.\"storage\"( sname string, tname string)\n"
-		"returns table (\n"
-		"    \"schema\" string,\n"
-		"    \"table\" string,\n"
-		"    \"column\" string,\n"
-		"    \"type\" string,\n"
-		"    \"mode\" string,\n"
-		"    location string,\n"
-		"    \"count\" bigint,\n"
-		"    typewidth int,\n"
-		"    columnsize bigint,\n"
-		"    heapsize bigint,\n"
-		"    hashes bigint,\n"
-		"    phash boolean,\n"
-		"    imprints bigint,\n"
-		"    sorted boolean\n"
-		")\n"
-		"external name sql.\"storage\";\n"
-		"\n"
-		"create function sys.\"storage\"( sname string, tname string, cname string)\n"
-		"returns table (\n"
-		"    \"schema\" string,\n"
-		"    \"table\" string,\n"
-		"    \"column\" string,\n"
-		"    \"type\" string,\n"
-		"    \"mode\" string,\n"
-		"    location string,\n"
-		"    \"count\" bigint,\n"
-		"    typewidth int,\n"
-		"    columnsize bigint,\n"
-		"    heapsize bigint,\n"
-		"    hashes bigint,\n"
-		"    phash boolean,\n"
-		"    imprints bigint,\n"
-		"    sorted boolean\n"
-		")\n"
-		"external name sql.\"storage\";\n"
-	);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name = 'storage' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-
-	/* change to 99_system.sql: correct invalid FK schema ids, set
-	 * them to schema id 2000 (the "sys" schema) */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"UPDATE sys.types SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n"
-			"UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas);\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
-
-	if (schema) 
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
 
 static str
 sql_update_geom(Client c, mvc *sql, int olddb)
@@ -574,12 +304,12 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 
 	geomupgrade = (*fixfunc)(olddb);
 	if (geomupgrade == NULL)
-		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	bufsize = strlen(geomupgrade) + 512;
 	buf = GDKmalloc(bufsize);
 	if (buf == NULL) {
 		GDKfree(geomupgrade);
-		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
@@ -596,8 +326,9 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
 	}
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -615,7 +346,7 @@ sql_update_dec2016(Client c, mvc *sql)
 	sql_schema *s;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_dec2016", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -805,472 +536,15 @@ sql_update_dec2016(Client c, mvc *sql)
 			"alter table sys.statistics add column \"revsorted\" boolean;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'storagemodel') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			"update sys.functions set system = true where name in ('storage', 'storagemodel') and type = %d and schema_id = (select id from sys.schemas where name = 'sys');\n",
 			F_UNION);
 	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('createorderindex', 'droporderindex', 'storagemodelinit') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
+			"update sys.functions set system = true where name in ('createorderindex', 'droporderindex', 'storagemodelinit') and type = %d and schema_id = (select id from sys.schemas where name = 'sys');\n",
 			F_PROC);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from systemfunctions where function_id not in (select id from functions);\n");
-
-	if (schema) 
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_nowrd(Client c, mvc *sql)
-{
-	size_t bufsize = 10240, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-	sql_schema *s;
-
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_nowrd", MAL_MALLOC_FAIL);
-	s = mvc_bind_schema(sql, "sys");
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	{
-		sql_table *t;
-
-		if ((t = mvc_bind_table(sql, s, "querylog_calls")) != NULL)
-			t->system = 0;
-		if ((t = mvc_bind_table(sql, s, "querylog_history")) != NULL)
-			t->system = 0;
-	}
-
-	/* 15_querylog.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.querylog_history;\n"
-			"drop view sys.querylog_calls;\n"
-			"drop function sys.querylog_calls();\n"
-			"create function sys.querylog_calls()\n"
-			"returns table(\n"
-			" id oid,\n"
-			" \"start\" timestamp,\n"
-			" \"stop\" timestamp,\n"
-			" arguments string,\n"
-			" tuples bigint,\n"
-			" run bigint,\n"
-			" ship bigint,\n"
-			" cpu int,\n"
-			" io int\n"
-			")\n"
-			"external name sql.querylog_calls;\n"
-			"create view sys.querylog_calls as select * from sys.querylog_calls();\n"
-			"create view sys.querylog_history as\n"
-			"select qd.*, ql.\"start\",ql.\"stop\", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io\n"
-			"from sys.querylog_catalog() qd, sys.querylog_calls() ql\n"
-			"where qd.id = ql.id and qd.owner = user;\n"
-			"update _tables set system = true where name in ('querylog_calls', 'querylog_history') and schema_id = (select id from schemas where name = 'sys');\n");
-
-	/* 39_analytics.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop aggregate sys.stddev_pop(wrd);\n"
-			"drop aggregate sys.stddev_samp(wrd);\n"
-			"drop aggregate sys.var_pop(wrd);\n"
-			"drop aggregate sys.var_samp(wrd);\n"
-			"drop aggregate sys.median(wrd);\n"
-			"drop aggregate sys.quantile(wrd, double);\n"
-			"drop aggregate sys.corr(wrd, wrd);\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('querylog_calls') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n",
-			F_UNION);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from systemfunctions where function_id not in (select id from functions);\n");
-
-	if (schema) 
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-/* older databases may have sys.median and sys.quantile aggregates on
- * decimal(1) which doesn't match plain decimal: fix those */
-#if 0
-static str
-sql_update_median(Client c, mvc *sql)
-{
-	char *q1 = "select id from sys.args where func_id in (select id from sys.functions where name = 'median' and schema_id = (select id from sys.schemas where name = 'sys')) and type = 'decimal' and type_digits = 1 and type_scale = 0 and number = 1;\n";
-	char *q2 = "select id from sys.args where func_id in (select id from sys.functions where name = 'median' and schema_id = (select id from sys.schemas where name = 'sys')) and type = 'date' and number = 1;\n";
-	size_t bufsize = 5000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-	res_table *output;
-	BAT *b;
-	int needed = 0;
-
-	if( buf== NULL)
-		throw(SQL, "sql_update_median", MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"set schema \"sys\";\n");
-	err = SQLstatementIntern(c, &q1, "update", 1, 0, &output);
-	if (err) {
-		GDKfree(buf);
-		return err;
-	}
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) > 0) {
-			pos += snprintf(buf + pos, bufsize - pos,
-					"drop aggregate median(decimal(1));\n"
-					"create aggregate median(val DECIMAL) returns DECIMAL"
-					" external name \"aggr\".\"median\";\n"
-					"drop aggregate quantile(decimal(1), double);\n"
-					"create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL"
-					" external name \"aggr\".\"quantile\";\n");
-			needed = 1;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_tables_destroy(output);
-	err = SQLstatementIntern(c, &q2, "update", 1, 0, &output);
-	if (err) {
-		GDKfree(buf);
-		return err;
-	}
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) == 0) {
-			pos += snprintf(buf + pos, bufsize - pos,
-					"create aggregate median(val DATE) returns DATE"
-					" external name \"aggr\".\"median\";\n"
-					"create aggregate median(val TIME) returns TIME"
-					" external name \"aggr\".\"median\";\n"
-					"create aggregate median(val TIMESTAMP) returns TIMESTAMP"
-					" external name \"aggr\".\"median\";\n"
-#if 0
-					"create aggregate quantile(val DATE, q DOUBLE) returns DATE"
-					" external name \"aggr\".\"quantile\";\n"
-					"create aggregate quantile(val TIME, q DOUBLE) returns TIME"
-					" external name \"aggr\".\"quantile\";\n"
-					"create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP"
-					" external name \"aggr\".\"quantile\";\n"
-#endif
-		);
-			needed = 1;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_tables_destroy(output);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-	assert(pos < bufsize);
-	if (needed) {
-		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	}
-
-	GDKfree(buf);
-
-	return err;		/* usually MAL_SUCCEED */
-}
-#endif
-
-static str
-sql_update_geom_jun2016_sp2(Client c, mvc *sql)
-{
-	size_t bufsize = 1000000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_geom_jun2016", MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"GRANT EXECUTE ON FUNCTION sys.Has_Z(integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.Has_M(integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.get_type(integer, integer) TO PUBLIC;\n"
-			"GRANT SELECT ON sys.spatial_ref_sys TO PUBLIC;\n"
-			"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.mbr(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Overlaps(mbr, mbr) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Contains(mbr, mbr) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Equals(mbr, mbr) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Distance(mbr, mbr) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_WKTToSQL(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_WKBToSQL(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_AsText(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_AsBinary(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Dimension(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_GeometryType(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_SRID(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_SetSRID(Geometry, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_IsEmpty(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_IsSimple(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Boundary(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Envelope(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Equals(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Disjoint(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Intersects(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Touches(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Crosses(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Within(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Contains(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Overlaps(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Relate(Geometry, Geometry, string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Distance(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Intersection(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Difference(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Union(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_SymDifference(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Buffer(Geometry, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_ConvexHull(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_X(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Y(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Z(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_StartPoint(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_EndPoint(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_IsRing(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Length(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_IsClosed(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_NumPoints(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_PointN(Geometry, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Centroid(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_PointOnSurface(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Area(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_ExteriorRing(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_SetExteriorRing(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_NumInteriorRing(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_InteriorRingN(Geometry, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_InteriorRings(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_NumGeometries(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_GeometryN(Geometry, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_NumPatches(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_PatchN(Geometry, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_GeomFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_PointFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_LineFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_PolygonFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MPointFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MLineFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MPolyFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_GeomCollFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_BdPolyFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_BdMPolyFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_GeometryFromText(string, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_GeomFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_GeometryFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_PointFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_LineFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_PolygonFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MPointFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MLineFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MPolyFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_GeomCollFromText(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakePoint(double, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Point(double, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakePoint(double, double, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakePoint(double, double, double, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakePointM(double, double, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakeLine(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakeEnvelope(double, double, double, double, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakeEnvelope(double, double, double, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakePolygon(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Polygon(Geometry, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_MakeBox2D(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.GeometryType(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_CoordDim(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_IsValid(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_IsValidReason(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_NPoints(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_NRings(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_NumInteriorRings(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_XMax(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_XMax(mbr) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_XMin(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_XMin(mbr) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_YMax(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_YMax(mbr) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_YMin(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_YMin(mbr) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Force2D(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Force3D(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Segmentize(Geometry, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getProj4(integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.InternalTransform(Geometry, integer, integer, string, string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Transform(Geometry, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Translate(Geometry, double, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Translate(Geometry, double, double, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_AsEWKT(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Covers(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_CoveredBy(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_DWithin(Geometry, Geometry, double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Length2D(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Collect(Geometry, Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_DelaunayTriangles(Geometry, double, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_Dump(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.ST_DumpPoints(Geometry) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.Contains(Geometry, double, double) TO PUBLIC;\n");
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_jun2016_sp2(Client c, mvc *sql)
-{
-	size_t bufsize = 1000000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_june2016_sp", MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"GRANT EXECUTE ON FUNCTION sys.getAnchor(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getBasename(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getContent(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getContext(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getDomain(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getExtension(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getFile(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getHost(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getPort(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getProtocol(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getQuery(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getUser(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.getRobotURL(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.isaURL(url) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.newurl(STRING, STRING, INT, STRING) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.newurl(STRING, STRING, STRING) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"broadcast\"(inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"host\"(inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"masklen\"(inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"setmasklen\"(inet, int) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"netmask\"(inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"hostmask\"(inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"network\"(inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"text\"(inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"abbrev\"(inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"left_shift\"(inet, inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"right_shift\"(inet, inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"left_shift_assign\"(inet, inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.\"right_shift_assign\"(inet, inet) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(TINYINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(INTEGER) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(BIGINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(REAL) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(DATE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(TIME) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(TIMESTAMP) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(TINYINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(INTEGER) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(BIGINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(REAL) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(DATE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(TIME) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(TIMESTAMP) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(TINYINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(INTEGER) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(BIGINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(REAL) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(DATE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(TIME) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_samp(TIMESTAMP) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(TINYINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(INTEGER) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(BIGINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(REAL) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(DATE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(TIME) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.var_pop(TIMESTAMP) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(TINYINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(INTEGER) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(BIGINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(DECIMAL) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(REAL) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(DATE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(TIME) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.median(TIMESTAMP) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(TINYINT, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(SMALLINT, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(INTEGER, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(BIGINT, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(DECIMAL, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(REAL, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(DOUBLE, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(DATE, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(TIME, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.quantile(TIMESTAMP, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.corr(TINYINT, TINYINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.corr(SMALLINT, SMALLINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.corr(INTEGER, INTEGER) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.corr(BIGINT, BIGINT) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.corr(REAL, REAL) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE sys.corr(DOUBLE, DOUBLE) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.filter(json, string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.filter(json, tinyint) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.filter(json, integer) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.filter(json, bigint) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.text(json, string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.number(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.\"integer\"(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.isvalid(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.isobject(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.isarray(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.isobject(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.isarray(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.length(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.keyarray(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.valuearray(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.text(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.text(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION json.text(int) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE json.output(json) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE json.tojsonarray(string) TO PUBLIC;\n"
-			"GRANT EXECUTE ON AGGREGATE json.tojsonarray(double) TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.uuid() TO PUBLIC;\n"
-			"GRANT EXECUTE ON FUNCTION sys.isaUUID(string) TO PUBLIC;\n");
-#ifdef HAVE_HGE
-	if (have_hge) {
-		pos += snprintf(buf + pos, bufsize - pos,
-				"GRANT EXECUTE ON AGGREGATE sys.stddev_samp(HUGEINT) TO PUBLIC;\n"
-				"GRANT EXECUTE ON AGGREGATE sys.stddev_pop(HUGEINT) TO PUBLIC;\n"
-				"GRANT EXECUTE ON AGGREGATE sys.var_samp(HUGEINT) TO PUBLIC;\n"
-				"GRANT EXECUTE ON AGGREGATE sys.var_pop(HUGEINT) TO PUBLIC;\n"
-				"GRANT EXECUTE ON AGGREGATE sys.median(HUGEINT) TO PUBLIC;\n"
-				"GRANT EXECUTE ON AGGREGATE sys.quantile(HUGEINT, DOUBLE) TO PUBLIC;\n"
-				"GRANT EXECUTE ON AGGREGATE sys.corr(HUGEINT, HUGEINT) TO PUBLIC;\n"
-				"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
-	}
-#endif
-
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1289,7 +563,7 @@ sql_update_dec2016_sp2(Client c, mvc *sql)
 	BAT *b;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016_sp2", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_dec2016_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "select id from sys.types where sqlname = 'decimal' and digits = %d;\n",
 #ifdef HAVE_HGE
 			have_hge ? 39 :
@@ -1319,6 +593,7 @@ sql_update_dec2016_sp2(Client c, mvc *sql)
 
 			if (schema)
 				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
@@ -1338,7 +613,9 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
-	pos += snprintf(buf + pos, bufsize - pos, 
+	if (buf == NULL)
+		throw(SQL, "sql_update_dec2016_sp3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"drop procedure sys.settimeout(bigint);\n"
 			"drop procedure sys.settimeout(bigint,bigint);\n"
@@ -1346,10 +623,10 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 			"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;\n"
 			"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;\n"
 			"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;\n"
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('settimeout', 'setsession') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
-			"delete from systemfunctions where function_id not in (select id from functions);\n");
-	if (schema) 
+			"update sys.functions set system = true where name in ('settimeout', 'setsession') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1368,8 +645,8 @@ sql_update_jul2017(Client c, mvc *sql)
 	res_table *output;
 	BAT *b;
 
-	if( buf== NULL)
-		throw(SQL, "sql_default", MAL_MALLOC_FAIL);
+	if( buf == NULL)
+		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1388,7 +665,7 @@ sql_update_jul2017(Client c, mvc *sql)
 			"create function sys.optimizer_stats() "
 			"returns table (optname string, count int, timing bigint) "
 			"external name inspect.optimizer_stats;\n"
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('malfunctions', 'optimizer_stats') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+			"update sys.functions set system = true where name in ('malfunctions', 'optimizer_stats') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	/* 46_profiler.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1396,7 +673,7 @@ sql_update_jul2017(Client c, mvc *sql)
 			"create procedure profiler.setlimit(lim integer) external name profiler.setlimit;\n"
 			"drop procedure profiler.setpoolsize;\n"
 			"drop procedure profiler.setstream;\n"
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('getlimit', 'setlimit') and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));\n");
+			"update sys.functions set system = true where name in ('getlimit', 'setlimit') and schema_id = (select id from sys.schemas where name = 'profiler');\n");
 
 	/* 51_sys_schema_extensions.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1416,7 +693,7 @@ sql_update_jul2017(Client c, mvc *sql)
 			"language_id   SMALLINT NOT NULL PRIMARY KEY,\n"
 			"language_name VARCHAR(20) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.function_languages (language_id, language_name) VALUES\n"
-			"(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (4, 'C'), (5, 'Java'), (6, 'Python'), (7, 'Python Mapped');\n"
+			"(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (6, 'Python'), (7, 'Python Mapped'), (8, 'Python2'), (9, 'Python2 Mapped'), (10, 'Python3'), (11, 'Python3 Mapped');\n"
 			"ALTER TABLE sys.function_languages SET READ ONLY;\n"
 
 			"CREATE TABLE sys.key_types (\n"
@@ -1457,19 +734,1105 @@ sql_update_jul2017(Client c, mvc *sql)
 			pos += snprintf(buf + pos, bufsize - pos,
 					"drop procedure SHPload(integer);\n"
 					"create procedure SHPload(fid integer) external name shp.import;\n"
-					"insert into sys.systemfunctions (select id from sys.functions where name = 'shpload' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+					"update sys.functions set system = true where name = 'shpload' and schema_id = (select id from sys.schemas where name = 'sys');\n");
 		}
 		BBPunfix(b->batCacheid);
 	}
 	res_tables_destroy(output);
 
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_jul2017_sp2(Client c)
+{
+	char *qry = "select obj_id from sys.privileges where auth_id = 1 and obj_id in (select id from sys._tables where name in ('keywords', 'table_types', 'dependency_types', 'function_types', 'function_languages', 'key_types', 'index_types', 'privilege_codes', 'environment')) and privileges = 1;\n";
+	char *err = NULL;
+	res_table *output;
+	BAT *b;
+
+	err = SQLstatementIntern(c, &qry, "update", 1, 0, &output);
+	if (err) {
+		return err;
+	}
+
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) < 9) {
+			/* we are missing grants on these system tables, add them */
+			size_t bufsize = 2048, pos = 0;
+			char *buf = GDKmalloc(bufsize);
+
+			if (buf == NULL)
+				throw(SQL, "sql_update_jul2017_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+			/* 51_sys_schema_extensions.sql and 25_debug.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+				"GRANT SELECT ON sys.keywords TO PUBLIC;\n"
+				"GRANT SELECT ON sys.table_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.dependency_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.function_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.function_languages TO PUBLIC;\n"
+				"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.index_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.privilege_codes TO PUBLIC;\n"
+				"GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;\n"
+				"GRANT SELECT ON sys.environment TO PUBLIC;\n"
+				);
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+			GDKfree(buf);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_tables_destroy(output);
+
+	return err;		/* usually NULL */
+}
+
+static str
+sql_update_jul2017_sp3(Client c, mvc *sql)
+{
+	char *err = NULL;
+	sql_schema *sys;
+	sql_table *tab;
+	sql_column *col;
+	oid rid;
+
+	/* if there is no value "sys_update_schemas" in
+	 * sys.functions.name, we need to update the sys.functions
+	 * table */
+	sys = find_sql_schema(sql->session->tr, "sys");
+	tab = find_sql_table(sys, "functions");
+	col = find_sql_column(tab, "name");
+	rid = table_funcs.column_find_row(sql->session->tr, col, "sys_update_schemas", NULL);
+	if (is_oid_nil(rid)) {
+		err = sql_fix_system_tables(c, sql);
+		if (err != NULL)
+			return err;
+	}
+	/* if there is no value "system_update_schemas" in
+	 * sys.triggers.name, we need to add the triggers */
+	tab = find_sql_table(sys, "triggers");
+	col = find_sql_column(tab, "name");
+	rid = table_funcs.column_find_row(sql->session->tr, col, "system_update_schemas", NULL);
+	if (is_oid_nil(rid)) {
+		char *schema = stack_get_string(sql, "current_schema");
+		size_t bufsize = 1024, pos = 0;
+		char *buf = GDKmalloc(bufsize);
+		if (buf == NULL)
+			throw(SQL, "sql_update_jul2017_sp3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		pos += snprintf(
+			buf + pos,
+			bufsize - pos,
+			"set schema \"sys\";\n"
+			"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
+			"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n");
+		if (schema)
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+		GDKfree(buf);
+	}
+	return err;
+}
+
+static str
+sql_update_mar2018_geom(Client c, mvc *sql, sql_table *t)
+{
+	size_t bufsize = 10000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_mar2018_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+			"drop view sys.geometry_columns cascade;\n"
+			"create view sys.geometry_columns as\n"
+			"\tselect cast(null as varchar(1)) as f_table_catalog,\n"
+			"\t\ts.name as f_table_schema,\n"
+			"\t\tt.name as f_table_name,\n"
+			"\t\tc.name as f_geometry_column,\n"
+			"\t\tcast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,\n"
+			"\t\tc.type_scale as srid,\n"
+			"\t\tget_type(c.type_digits, 0) as type\n"
+			"\tfrom sys.columns c, sys.tables t, sys.schemas s\n"
+			"\twhere c.table_id = t.id and t.schema_id = s.id\n"
+			"\t  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));\n"
+			"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
+			"update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');\n");
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_mar2018(Client c, mvc *sql)
+{
+	size_t bufsize = 30000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	sql_schema *s;
+	sql_table *t;
+	res_table *output;
+	BAT *b;
+
+	buf = "select id from sys.functions where name = 'quarter' and schema_id = (select id from sys.schemas where name = 'sys');\n";
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) == 0) {
+			/* if there is no value "quarter" in
+			 * sys.functions.name, we need to update the
+			 * sys.functions table */
+			err = sql_fix_system_tables(c, sql);
+			if (err != NULL)
+				return err;
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_tables_destroy(output);
+
+	schema = stack_get_string(sql, "current_schema");
+	buf = GDKmalloc(bufsize);
+	if (buf == NULL)
+		throw(SQL, "sql_update_mar2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	s = mvc_bind_schema(sql, "sys");
+
+	t = mvc_create_table(sql, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1);
+	sql_column *col = mvc_create_column_(sql, t, "id", "int", 32);
+	sql_key *k = sql_trans_create_ukey(sql->session->tr, t, "comments_id_pkey", pkey);
+	k = sql_trans_create_kc(sql->session->tr, k, col);
+	k = sql_trans_key_done(sql->session->tr, k);
+	sql_trans_create_dependency(sql->session->tr, col->base.id, k->idx->base.id, INDEX_DEPENDENCY);
+	col = mvc_create_column_(sql, t, "remark", "varchar", 65000);
+	sql_trans_alter_null(sql->session->tr, col, 0);
+
+	sql_table *privs = mvc_bind_table(sql, s, "privileges");
+	int pub = ROLE_PUBLIC;
+	int p = PRIV_SELECT;
+	int zero = 0;
+	table_funcs.table_insert(sql->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 21_dependency_views.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) AS\n"
+"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table FROM sys.auths UNION ALL\n"
+"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'schema', 'sys.schemas' FROM sys.schemas UNION ALL\n"
+"SELECT id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'sys._tables' FROM sys._tables UNION ALL\n"
+"SELECT id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'tmp._tables' FROM tmp._tables UNION ALL\n"
+"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL\n"
+"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL\n"
+"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' FROM tmp.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' FROM tmp.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' FROM tmp.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' FROM sys.functions UNION ALL\n"
+"SELECT a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' FROM sys.args a JOIN sys.functions f ON a.func_id = f.id UNION ALL\n"
+"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' FROM sys.sequences UNION ALL\n"
+"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' FROM sys.types WHERE id > 2000 /* exclude system types to prevent duplicates with auths.id */\n"
+" ORDER BY id;\n"
+"GRANT SELECT ON sys.ids TO PUBLIC;\n"
+"CREATE VIEW sys.dependencies_vw AS\n"
+"SELECT d.id, i1.obj_type, i1.name,\n"
+"       d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,\n"
+"       d.depend_type, dt.dependency_type_name\n"
+"  FROM sys.dependencies d\n"
+"  JOIN sys.ids i1 ON d.id = i1.id\n"
+"  JOIN sys.ids i2 ON d.depend_id = i2.id\n"
+"  JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id\n"
+" ORDER BY id, depend_id;\n"
+"GRANT SELECT ON sys.dependencies_vw TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_owners_on_schemas AS\n"
+"SELECT a.name AS owner_name, s.id AS schema_id, s.name AS schema_name, CAST(1 AS smallint) AS depend_type\n"
+"  FROM sys.schemas AS s, sys.auths AS a\n"
+" WHERE s.owner = a.id\n"
+" ORDER BY a.name, s.name;\n"
+"GRANT SELECT ON sys.dependency_owners_on_schemas TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_columns_on_keys AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, c.id AS column_id, c.name AS column_name, k.id AS key_id, k.name AS key_name, CAST(kc.nr +1 AS int) AS key_col_nr, CAST(k.type AS smallint) AS key_type, CAST(4 AS smallint) AS depend_type\n"
+"  FROM sys.columns AS c, sys.objects AS kc, sys.keys AS k, sys.tables AS t\n"
+" WHERE k.table_id = c.table_id AND c.table_id = t.id AND kc.id = k.id AND kc.name = c.name\n"
+"   AND k.type IN (0, 1)\n"
+" ORDER BY t.schema_id, t.name, c.name, k.type, k.name, kc.nr;\n"
+"GRANT SELECT ON sys.dependency_columns_on_keys TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_tables_on_views AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS t, sys.tables AS v, sys.dependencies AS dep\n"
+" WHERE t.id = dep.id AND v.id = dep.depend_id\n"
+"   AND dep.depend_type = 5 AND t.type NOT IN (1, 11) AND v.type IN (1, 11)\n"
+" ORDER BY t.schema_id, t.name, v.schema_id, v.name;\n"
+"GRANT SELECT ON sys.dependency_tables_on_views TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_views_on_views AS\n"
+"SELECT v1.schema_id AS view1_schema_id, v1.id AS view1_id, v1.name AS view1_name, v2.schema_id AS view2_schema_id, v2.id AS view2_id, v2.name AS view2_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS v1, sys.tables AS v2, sys.dependencies AS dep\n"
+" WHERE v1.id = dep.id AND v2.id = dep.depend_id\n"
+"   AND dep.depend_type = 5 AND v1.type IN (1, 11) AND v2.type IN (1, 11)\n"
+" ORDER BY v1.schema_id, v1.name, v2.schema_id, v2.name;\n"
+"GRANT SELECT ON sys.dependency_views_on_views TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_columns_on_views AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, c.id AS column_id, c.name AS column_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type\n"
+"  FROM sys.columns AS c, sys.tables AS v, sys.tables AS t, sys.dependencies AS dep\n"
+" WHERE c.id = dep.id AND v.id = dep.depend_id AND c.table_id = t.id\n"
+"   AND dep.depend_type = 5 AND v.type IN (1, 11)\n"
+" ORDER BY t.schema_id, t.name, c.name, v.name;\n"
+"GRANT SELECT ON sys.dependency_columns_on_views TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_functions_on_views AS\n"
+"SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep\n"
+" WHERE f.id = dep.id AND v.id = dep.depend_id\n"
+"   AND dep.depend_type = 5 AND v.type IN (1, 11)\n"
+" ORDER BY f.schema_id, f.name, v.schema_id, v.name;\n"
+"GRANT SELECT ON sys.dependency_functions_on_views TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_schemas_on_users AS\n"
+"SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type\n"
+"  FROM sys.users AS u, sys.schemas AS s\n"
+" WHERE u.default_schema = s.id\n"
+" ORDER BY s.name, u.name;\n"
+"GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_tables_on_functions AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.tables AS t, sys.dependencies AS dep\n"
+" WHERE t.id = dep.id AND f.id = dep.depend_id\n"
+"   AND dep.depend_type = 7 AND f.type <> 2 AND t.type NOT IN (1, 11)\n"
+" ORDER BY t.name, t.schema_id, f.name, f.id;\n"
+"GRANT SELECT ON sys.dependency_tables_on_functions TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_views_on_functions AS\n"
+"SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep\n"
+" WHERE v.id = dep.id AND f.id = dep.depend_id\n"
+"   AND dep.depend_type = 7 AND f.type <> 2 AND v.type IN (1, 11)\n"
+" ORDER BY v.name, v.schema_id, f.name, f.id;\n"
+"GRANT SELECT ON sys.dependency_views_on_functions TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_columns_on_functions AS\n"
+"SELECT c.table_id, c.id AS column_id, c.name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.columns AS c, sys.dependencies AS dep\n"
+" WHERE c.id = dep.id AND f.id = dep.depend_id\n"
+"   AND dep.depend_type = 7 AND f.type <> 2\n"
+" ORDER BY c.name, c.table_id, f.name, f.id;\n"
+"GRANT SELECT ON sys.dependency_columns_on_functions TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_functions_on_functions AS\n"
+"SELECT f1.schema_id, f1.id AS function_id, f1.name AS function_name, f1.type AS function_type,\n"
+"       f2.schema_id AS used_in_function_schema_id, f2.id AS used_in_function_id, f2.name AS used_in_function_name, f2.type AS used_in_function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f1, sys.functions AS f2, sys.dependencies AS dep\n"
+" WHERE f1.id = dep.id AND f2.id = dep.depend_id\n"
+"   AND dep.depend_type = 7 AND f2.type <> 2\n"
+" ORDER BY f1.name, f1.id, f2.name, f2.id;\n"
+"GRANT SELECT ON sys.dependency_functions_on_functions TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_tables_on_triggers AS\n"
+"(SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, tri.id AS trigger_id, tri.name AS trigger_name, CAST(8 AS smallint) AS depend_type\n"
+"  FROM sys.tables AS t, sys.triggers AS tri\n"
+" WHERE tri.table_id = t.id)\n"
+"UNION\n"
+"(SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, tri.id AS trigger_id, tri.name AS trigger_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS t, sys.triggers AS tri, sys.dependencies AS dep\n"
+" WHERE dep.id = t.id AND dep.depend_id = tri.id\n"
+"   AND dep.depend_type = 8)\n"
+" ORDER BY table_schema_id, table_name, trigger_name;\n"
+"GRANT SELECT ON sys.dependency_tables_on_triggers TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_columns_on_triggers AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, tri.id AS trigger_id, tri.name AS trigger_name, c.id AS column_id, c.name AS column_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS t, sys.columns AS c, sys.triggers AS tri, sys.dependencies AS dep\n"
+" WHERE dep.id = c.id AND dep.depend_id = tri.id AND c.table_id = t.id\n"
+"   AND dep.depend_type = 8\n"
+" ORDER BY t.schema_id, t.name, tri.name, c.name;\n"
+"GRANT SELECT ON sys.dependency_columns_on_triggers TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_functions_on_triggers AS\n"
+"SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, f.type AS function_type,\n"
+"       tri.id AS trigger_id, tri.name AS trigger_name, tri.table_id AS trigger_table_id, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.triggers AS tri, sys.dependencies AS dep\n"
+" WHERE dep.id = f.id AND dep.depend_id = tri.id\n"
+"   AND dep.depend_type = 8\n"
+" ORDER BY f.schema_id, f.name, tri.name;\n"
+"GRANT SELECT ON sys.dependency_functions_on_triggers TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_tables_on_indexes AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, i.id AS index_id, i.name AS index_name, i.type AS index_type, CAST(10 AS smallint) AS depend_type\n"
+"  FROM sys.tables AS t, sys.idxs AS i\n"
+" WHERE i.table_id = t.id\n"
+"    -- exclude internal system generated and managed indexes for enforcing declarative PKey and Unique constraints\n"
+"   AND (i.table_id, i.name) NOT IN (SELECT k.table_id, k.name FROM sys.keys k)\n"
+" ORDER BY t.schema_id, t.name, i.name;\n"
+"GRANT SELECT ON sys.dependency_tables_on_indexes TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_columns_on_indexes AS\n"
+"SELECT c.id AS column_id, c.name AS column_name, t.id AS table_id, t.name AS table_name, t.schema_id, i.id AS index_id, i.name AS index_name, i.type AS index_type, CAST(ic.nr +1 AS INT) AS seq_nr, CAST(10 AS smallint) AS depend_type\n"
+"  FROM sys.tables AS t, sys.columns AS c, sys.objects AS ic, sys.idxs AS i\n"
+" WHERE ic.name = c.name AND ic.id = i.id AND c.table_id = i.table_id AND c.table_id = t.id\n"
+"    -- exclude internal system generated and managed indexes for enforcing declarative PKey and Unique constraints\n"
+"   AND (i.table_id, i.name) NOT IN (SELECT k.table_id, k.name FROM sys.keys k)\n"
+" ORDER BY c.name, t.name, t.schema_id, i.name, ic.nr;\n"
+"GRANT SELECT ON sys.dependency_columns_on_indexes TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_tables_on_foreignkeys AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, fk.name AS fk_name, CAST(k.type AS smallint) AS key_type, CAST(11 AS smallint) AS depend_type\n"
+"  FROM sys.tables AS t, sys.keys AS k, sys.keys AS fk\n"
+" WHERE fk.rkey = k.id and k.table_id = t.id\n"
+" ORDER BY t.schema_id, t.name, fk.name;\n"
+"GRANT SELECT ON sys.dependency_tables_on_foreignkeys TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_keys_on_foreignkeys AS\n"
+"SELECT k.table_id AS key_table_id, k.id AS key_id, k.name AS key_name, fk.table_id AS fk_table_id, fk.id AS fk_id, fk.name AS fk_name, CAST(k.type AS smallint) AS key_type, CAST(11 AS smallint) AS depend_type\n"
+"  FROM sys.keys AS k, sys.keys AS fk\n"
+" WHERE k.id = fk.rkey\n"
+" ORDER BY k.name, fk.name;\n"
+"GRANT SELECT ON sys.dependency_keys_on_foreignkeys TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_tables_on_procedures AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS p, sys.tables AS t, sys.dependencies AS dep\n"
+" WHERE t.id = dep.id AND p.id = dep.depend_id\n"
+"   AND dep.depend_type = 13 AND p.type = 2 AND t.type NOT IN (1, 11)\n"
+" ORDER BY t.name, t.schema_id, p.name, p.id;\n"
+"GRANT SELECT ON sys.dependency_tables_on_procedures TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_views_on_procedures AS\n"
+"SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS p, sys.tables AS v, sys.dependencies AS dep\n"
+" WHERE v.id = dep.id AND p.id = dep.depend_id\n"
+"   AND dep.depend_type = 13 AND p.type = 2 AND v.type IN (1, 11)\n"
+" ORDER BY v.name, v.schema_id, p.name, p.id;\n"
+"GRANT SELECT ON sys.dependency_views_on_procedures TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_columns_on_procedures AS\n"
+"SELECT c.table_id, c.id AS column_id, c.name AS column_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS p, sys.columns AS c, sys.dependencies AS dep\n"
+" WHERE c.id = dep.id AND p.id = dep.depend_id\n"
+"   AND dep.depend_type = 13 AND p.type = 2\n"
+" ORDER BY c.name, c.table_id, p.name, p.id;\n"
+"GRANT SELECT ON sys.dependency_columns_on_procedures TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_functions_on_procedures AS\n"
+"SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, f.type AS function_type,\n"
+"       p.schema_id AS procedure_schema_id, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS p, sys.functions AS f, sys.dependencies AS dep\n"
+" WHERE f.id = dep.id AND p.id = dep.depend_id\n"
+"   AND dep.depend_type = 13 AND p.type = 2\n"
+" ORDER BY p.name, p.id, f.name, f.id;\n"
+"GRANT SELECT ON sys.dependency_functions_on_procedures TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_columns_on_types AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, dt.id AS type_id, dt.sqlname AS type_name, c.id AS column_id, c.name AS column_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS t, sys.columns AS c, sys.types AS dt, sys.dependencies AS dep\n"
+" WHERE dep.id = dt.id AND dep.depend_id = c.id AND c.table_id = t.id\n"
+"   AND dep.depend_type = 15\n"
+" ORDER BY dt.sqlname, t.name, c.name, c.id;\n"
+"GRANT SELECT ON sys.dependency_columns_on_types TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_functions_on_types AS\n"
+"SELECT dt.id AS type_id, dt.sqlname AS type_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.types AS dt, sys.dependencies AS dep\n"
+" WHERE dep.id = dt.id AND dep.depend_id = f.id\n"
+"   AND dep.depend_type = 15\n"
+" ORDER BY dt.sqlname, f.name, f.id;\n"
+"GRANT SELECT ON sys.dependency_functions_on_types TO PUBLIC;\n"
+"CREATE VIEW sys.dependency_args_on_types AS\n"
+"SELECT dt.id AS type_id, dt.sqlname AS type_name, f.id AS function_id, f.name AS function_name, a.id AS arg_id, a.name AS arg_name, a.number AS arg_nr, dep.depend_type AS depend_type\n"
+"  FROM sys.args AS a, sys.functions AS f, sys.types AS dt, sys.dependencies AS dep\n"
+" WHERE dep.id = dt.id AND dep.depend_id = a.id AND a.func_id = f.id\n"
+"   AND dep.depend_type = 15\n"
+" ORDER BY dt.sqlname, f.name, a.number, a.name;\n"
+"GRANT SELECT ON sys.dependency_args_on_types TO PUBLIC;\n"
+"UPDATE sys._tables SET system = true\n"
+" WHERE name IN ('ids', 'dependencies_vw', 'dependency_owners_on_schemas', 'dependency_columns_on_keys',\n"
+" 'dependency_tables_on_views', 'dependency_views_on_views', 'dependency_columns_on_views', 'dependency_functions_on_views',\n"
+" 'dependency_schemas_on_users',\n"
+" 'dependency_tables_on_functions', 'dependency_views_on_functions', 'dependency_columns_on_functions', 'dependency_functions_on_functions',\n"
+" 'dependency_tables_on_triggers', 'dependency_columns_on_triggers', 'dependency_functions_on_triggers',\n"
+" 'dependency_tables_on_indexes', 'dependency_columns_on_indexes',\n"
+" 'dependency_tables_on_foreignkeys', 'dependency_keys_on_foreignkeys',\n"
+" 'dependency_tables_on_procedures', 'dependency_views_on_procedures', 'dependency_columns_on_procedures', 'dependency_functions_on_procedures',\n"
+" 'dependency_columns_on_types', 'dependency_functions_on_types', 'dependency_args_on_types')\n"
+" AND schema_id IN (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+	);
+
+	/* 25_debug.sql */
+	t = mvc_bind_table(sql, s, "environment");
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.environment cascade;\n"
+			"drop function sys.environment() cascade;\n"
+			"create view sys.environment as select * from sys.env();\n"
+			"GRANT SELECT ON sys.environment TO PUBLIC;\n"
+			"update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from sys.schemas where name = 'sys');\n");
+
+	/* 39_analytics.sql, 39_analytics_hge.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop aggregate corr(tinyint, tinyint);\n"
+			"drop aggregate corr(smallint, smallint);\n"
+			"drop aggregate corr(integer, integer);\n"
+			"drop aggregate corr(bigint, bigint);\n"
+			"drop aggregate corr(real, real);\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"drop aggregate corr(hugeint, hugeint);\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(tinyint, tinyint) to public;\n"
+			"create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(smallint, smallint) to public;\n"
+			"create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(integer, integer) to public;\n"
+			"create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(bigint, bigint) to public;\n"
+			"create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(real, real) to public;\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(hugeint, hugeint) to public;\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys.functions set system = true where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 51_sys_schema_extensions.sql */
+	t = mvc_bind_table(sql, s, "privilege_codes");
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_users() u);\n"
+			"GRANT SELECT ON sys.roles TO PUBLIC;\n"
+			"CREATE VIEW sys.var_values (var_name, value) AS\n"
+			"SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL\n"
+			"SELECT 'current_role', current_role UNION ALL\n"
+			"SELECT 'current_schema', current_schema UNION ALL\n"
+			"SELECT 'current_timezone', current_timezone UNION ALL\n"
+			"SELECT 'current_user', current_user UNION ALL\n"
+			"SELECT 'debug', debug UNION ALL\n"
+			"SELECT 'history', history UNION ALL\n"
+			"SELECT 'last_id', last_id UNION ALL\n"
+			"SELECT 'optimizer', optimizer UNION ALL\n"
+			"SELECT 'pi', pi() UNION ALL\n"
+			"SELECT 'rowcnt', rowcnt;\n"
+			"GRANT SELECT ON sys.var_values TO PUBLIC;\n"
+			"UPDATE sys._tables SET system = true\n"
+			" WHERE name IN ('roles', 'var_values') AND schema_id IN (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+			"ALTER TABLE sys.privilege_codes SET READ WRITE;\n"
+			"DROP TABLE sys.privilege_codes;\n"
+			"CREATE TABLE sys.privilege_codes (\n"
+			"    privilege_code_id   INT NOT NULL PRIMARY KEY,\n"
+			"    privilege_code_name VARCHAR(40) NOT NULL UNIQUE);\n"
+			"INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES\n"
+			"  (1, 'SELECT'),\n"
+			"  (2, 'UPDATE'),\n"
+			"  (4, 'INSERT'),\n"
+			"  (8, 'DELETE'),\n"
+			"  (16, 'EXECUTE'),\n"
+			"  (32, 'GRANT'),\n"
+			"  (64, 'TRUNCATE'),\n"
+			"  (3, 'SELECT,UPDATE'),\n"
+			"  (5, 'SELECT,INSERT'),\n"
+			"  (6, 'INSERT,UPDATE'),\n"
+			"  (7, 'SELECT,INSERT,UPDATE'),\n"
+			"  (9, 'SELECT,DELETE'),\n"
+			"  (10, 'UPDATE,DELETE'),\n"
+			"  (11, 'SELECT,UPDATE,DELETE'),\n"
+			"  (12, 'INSERT,DELETE'),\n"
+			"  (13, 'SELECT,INSERT,DELETE'),\n"
+			"  (14, 'INSERT,UPDATE,DELETE'),\n"
+			"  (15, 'SELECT,INSERT,UPDATE,DELETE'),\n"
+			"  (65, 'SELECT,TRUNCATE'),\n"
+			"  (66, 'UPDATE,TRUNCATE'),\n"
+			"  (68, 'INSERT,TRUNCATE'),\n"
+			"  (72, 'DELETE,TRUNCATE'),\n"
+			"  (67, 'SELECT,UPDATE,TRUNCATE'),\n"
+			"  (69, 'SELECT,INSERT,TRUNCATE'),\n"
+			"  (73, 'SELECT,DELETE,TRUNCATE'),\n"
+			"  (70, 'INSERT,UPDATE,TRUNCATE'),\n"
+			"  (76, 'INSERT,DELETE,TRUNCATE'),\n"
+			"  (74, 'UPDATE,DELETE,TRUNCATE'),\n"
+			"  (71, 'SELECT,INSERT,UPDATE,TRUNCATE'),\n"
+			"  (75, 'SELECT,UPDATE,DELETE,TRUNCATE'),\n"
+			"  (77, 'SELECT,INSERT,DELETE,TRUNCATE'),\n"
+			"  (78, 'INSERT,UPDATE,DELETE,TRUNCATE'),\n"
+			"  (79, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE');\n"
+			"ALTER TABLE sys.privilege_codes SET READ ONLY;\n"
+			"GRANT SELECT ON sys.privilege_codes TO PUBLIC;\n"
+			"UPDATE sys._tables "
+			"SET system = TRUE "
+			"WHERE name = 'privilege_codes' "
+			"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');\n"
+			"ALTER TABLE sys.function_types SET READ WRITE;\n"
+			"ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30);\n"
+			"UPDATE sys.function_types SET function_type_keyword =\n"
+			"    (SELECT kw FROM (VALUES\n"
+			"        (1, 'FUNCTION'),\n"
+			"        (2, 'PROCEDURE'),\n"
+			"        (3, 'AGGREGATE'),\n"
+			"        (4, 'FILTER FUNCTION'),\n"
+			"        (5, 'FUNCTION'),\n"
+			"        (6, 'FUNCTION'),\n"
+			"        (7, 'LOADER'))\n"
+			"    AS ft (id, kw) WHERE function_type_id = id);\n"
+			"ALTER TABLE sys.function_types ALTER COLUMN function_type_keyword SET NOT NULL;\n"
+			"ALTER TABLE sys.function_languages SET READ WRITE;\n"
+			"ALTER TABLE sys.function_languages ADD COLUMN language_keyword VARCHAR(20);\n"
+			"UPDATE sys.function_languages SET language_keyword =\n"
+			"    (SELECT kw FROM (VALUES\n"
+			"        (3, 'R'),\n"
+			"        (6, 'PYTHON'),\n"
+			"        (7, 'PYTHON_MAP'),\n"
+			"        (8, 'PYTHON2'),\n"
+			"        (9, 'PYTHON2_MAP'),\n"
+			"        (10, 'PYTHON3'),\n"
+			"        (11, 'PYTHON3_MAP'))\n"
+			"    AS ft (id, kw) WHERE language_id = id);\n"
+			"INSERT INTO sys.function_languages VALUES (4, 'C', 'C'), (12, 'C++', 'CPP');\n"
+		);
+
+	/* 60_wlcr.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure master()\n"
+			"external name wlc.master;\n"
+			"create procedure master(path string)\n"
+			"external name wlc.master;\n"
+			"create procedure stopmaster()\n"
+			"external name wlc.stopmaster;\n"
+			"create procedure masterbeat( duration int)\n"
+			"external name wlc.\"setmasterbeat\";\n"
+			"create function masterClock() returns string\n"
+			"external name wlc.\"getmasterclock\";\n"
+			"create function masterTick() returns bigint\n"
+			"external name wlc.\"getmastertick\";\n"
+			"create procedure replicate()\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id tinyint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id smallint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id integer)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id bigint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicabeat(duration integer)\n"
+			"external name wlr.\"setreplicabeat\";\n"
+			"create function replicaClock() returns string\n"
+			"external name wlr.\"getreplicaclock\";\n"
+			"create function replicaTick() returns bigint\n"
+			"external name wlr.\"getreplicatick\";\n"
+			"update sys.functions set system = true where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys');\n"
+		);
+
+	/* comments */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"UPDATE sys._tables\n"
+			"SET system = true\n"
+			"WHERE name = 'comments'\n"
+			"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+		);
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	if (err == MAL_SUCCEED) {
+		schema = stack_get_string(sql, "current_schema");
+		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n"
+			       "ALTER TABLE sys.function_types SET READ ONLY;\n"
+			       "ALTER TABLE sys.function_languages SET READ ONLY;\n");
+		if (schema)
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	}
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+#ifdef HAVE_NETCDF
+static str
+sql_update_mar2018_netcdf(Client c, mvc *sql)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+	char *schema;
+
+	schema = stack_get_string(sql, "current_schema");
+	buf = GDKmalloc(bufsize);
+	if (buf == NULL)
+		throw(SQL, "sql_update_mar2018_netcdf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+	/* 74_netcdf.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"grant select on sys.netcdf_files to public;\n"
+			"grant select on sys.netcdf_dims to public;\n"
+			"grant select on sys.netcdf_vars to public;\n"
+			"grant select on sys.netcdf_vardim to public;\n"
+			"grant select on sys.netcdf_attrs to public;\n"
+			"grant execute on procedure sys.netcdf_attach(varchar(256)) to public;\n"
+			"grant execute on procedure sys.netcdf_importvar(integer, varchar(256)) to public;\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif	/* HAVE_NETCDF */
+
+#ifdef HAVE_SAMTOOLS
+static str
+sql_update_mar2018_samtools(Client c, mvc *sql)
+{
+	size_t bufsize = 2000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	sql_schema *s = mvc_bind_schema(sql, "bam");
+
+	if (s == NULL)
+		return MAL_SUCCEED;
+
+	schema = stack_get_string(sql, "current_schema");
+	buf = GDKmalloc(bufsize);
+	if (buf == NULL)
+		throw(SQL, "sql_update_mar2018_samtools", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+	/* 85_bam.sql */
+	list *l = sa_list(sql->sa);
+	sql_subtype tpi, tps;
+	sql_find_subtype(&tpi, "int", 0, 0);
+	sql_find_subtype(&tps, "clob", 0, 0);
+	list_append(l, &tpi);
+	list_append(l, &tps);
+	list_append(l, &tpi);
+	list_append(l, &tps);
+	if (sql_bind_func_(sql->sa, s, "seq_char", l, F_FUNC) == NULL) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"CREATE FUNCTION bam.seq_char(ref_pos INT, alg_seq STRING, alg_pos INT, alg_cigar STRING)\n"
+				"RETURNS CHAR(1) EXTERNAL NAME bam.seq_char;\n"
+				"update sys.functions set system = true where name in ('seq_char') and schema_id = (select id from sys.schemas where name = 'bam');\n");
+	}
+	sql_find_subtype(&tpi, "smallint", 0, 0);
+	if (sql_bind_func3(sql->sa, s, "bam_loader_repos", &tps, &tpi, &tpi, F_PROC) != NULL) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"drop procedure bam.bam_loader_repos(string, smallint, smallint);\n"
+				"drop procedure bam.bam_loader_files(string, smallint, smallint);\n");
+	}
+	if (sql_bind_func(sql->sa, s, "bam_loader_repos", &tps, &tpi, F_PROC) == NULL) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"CREATE PROCEDURE bam.bam_loader_repos(bam_repos STRING, dbschema SMALLINT)\n"
+				"EXTERNAL NAME bam.bam_loader_repos;\n"
+				"CREATE PROCEDURE bam.bam_loader_files(bam_files STRING, dbschema SMALLINT)\n"
+				"EXTERNAL NAME bam.bam_loader_files;\n"
+				"update sys.functions set system = true where name in ('bam_loader_repos', 'bam_loader_files') and schema_id = (select id from sys.schemas where name = 'bam');\n");
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"GRANT SELECT ON bam.files TO PUBLIC;\n"
+			"GRANT SELECT ON bam.sq TO PUBLIC;\n"
+			"GRANT SELECT ON bam.rg TO PUBLIC;\n"
+			"GRANT SELECT ON bam.pg TO PUBLIC;\n"
+			"GRANT SELECT ON bam.export TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.bam_flag(SMALLINT, STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.reverse_seq(STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.reverse_qual(STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.seq_length(STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.seq_char(INT, STRING, INT, STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_repos(STRING, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_files(STRING, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_file(STRING, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_drop_file(BIGINT, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.sam_export(STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_export(STRING) TO PUBLIC;\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif	/* HAVE_SAMTOOLS */
+
+static str
+sql_update_mar2018_sp1(Client c, mvc *sql)
+{
+	size_t bufsize = 2048, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_mar2018_sp1", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"drop function sys.dependencies_functions_os_triggers();\n"
+			"CREATE FUNCTION dependencies_functions_on_triggers()\n"
+			"RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))\n"
+			"RETURN TABLE (SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8);\n"
+			"update sys.functions set system = true where name in ('dependencies_functions_on_triggers') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_remote_tables(Client c, mvc *sql)
+{
+	res_table *output;
+	str err = MAL_SUCCEED;
+	size_t bufsize = 1000, pos = 0;
+	char *buf;
+	char *schema;
+	BAT *tbl = NULL;
+	BAT *uri = NULL;
+
+	schema = stack_get_string(sql, "current_schema");
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_remote_tables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* Create the SQL function needed to dump the remote table credentials */
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.remote_table_credentials (tablename string)"
+			" returns table (\"uri\" string, \"username\" string, \"hash\" string)"
+			" external name sql.rt_credentials;\n"
+			"update sys.functions set system = true where name = 'remote_table_credentials' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "create function", 1, 0, NULL);
+	if (err)
+		goto bailout;
+
+	pos = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"SELECT concat(concat(scm.name, '.'), tbl.name), tbl.query"
+			" FROM sys._tables AS tbl JOIN sys.schemas AS scm ON"
+			" tbl.schema_id=scm.id WHERE tbl.type=5;\n");
+
+	assert(pos < bufsize);
+
+	err = SQLstatementIntern(c, &buf, "get remote table names", 1, 0, &output);
+	if (err)
+		goto bailout;
+
+	/* We executed the query, now process the results */
+	tbl = BATdescriptor(output->cols[0].b);
+	uri = BATdescriptor(output->cols[1].b);
+
+	if (tbl && uri) {
+		size_t cnt;
+		assert(BATcount(tbl) == BATcount(uri));
+		if ((cnt = BATcount(tbl)) > 0) {
+			BATiter tbl_it = bat_iterator(tbl);
+			BATiter uri_it = bat_iterator(uri);
+			const void *restrict nil = ATOMnilptr(tbl->ttype);
+			int (*cmp)(const void *, const void *) = ATOMcompare(tbl->ttype);
+			const char *v;
+			const char *u;
+			const char *remote_server_uri;
+
+			/* This is probably not correct: offsets? */
+			for (BUN i = 0; i < cnt; i++) {
+				v = BUNtail(tbl_it, i);
+				u = BUNtail(uri_it, i);
+				if (v == NULL || (*cmp)(v, nil) == 0 ||
+				    u == NULL || (*cmp)(u, nil) == 0) {
+					BBPunfix(tbl->batCacheid);
+					BBPunfix(uri->batCacheid);
+					goto bailout;
+				}
+
+				/* Since the loop might fail, it might be a good idea
+				 * to update the credentials as a second step
+				 */
+				remote_server_uri = mapiuri_uri((char *)u, sql->sa);
+				AUTHaddRemoteTableCredentials((char *)v, "monetdb", remote_server_uri, "monetdb", "monetdb", false);
+			}
+		}
+		BBPunfix(tbl->batCacheid);
+		BBPunfix(uri->batCacheid);
+	}
+	res_table_destroy(output);
+
+  bailout:
+	GDKfree(buf);
+	return err;
+}
+
+static str
+sql_replace_Mar2018_ids_view(Client c, mvc *sql)
+{
+	size_t bufsize = 4400, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema;
+	sql_schema *s;
+	sql_table *t;
+
+	if (buf == NULL)
+		throw(SQL, "sql_replace_Mar2018_ids_view", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	schema = stack_get_string(sql, "current_schema");
+	s = mvc_bind_schema(sql, "sys");
+	t = mvc_bind_table(sql, s, "ids");
+	t->system = 0;	/* make it non-system else the drop view will fail */
+	t = mvc_bind_table(sql, s, "dependencies_vw");	/* dependencies_vw uses view sys.ids so must be removed first */
+	t->system = 0;
+
+	/* 21_dependency_views.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"DROP VIEW sys.dependencies_vw;\n"
+			"DROP VIEW sys.ids;\n"
+
+			"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) AS\n"
+			"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table FROM sys.auths UNION ALL\n"
+			"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'schema', 'sys.schemas' FROM sys.schemas UNION ALL\n"
+			"SELECT id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'sys._tables' FROM sys._tables UNION ALL\n"
+			"SELECT id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'tmp._tables' FROM tmp._tables UNION ALL\n"
+			"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL\n"
+			"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL\n"
+			"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+			"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' FROM tmp.keys k JOIN tmp._tables t ON k.table_id = t.id UNION ALL\n"
+			"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+			"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL\n"
+			"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+			"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL\n"
+			"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' FROM sys.functions UNION ALL\n"
+			"SELECT a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' FROM sys.args a JOIN sys.functions f ON a.func_id = f.id UNION ALL\n"
+			"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' FROM sys.sequences UNION ALL\n"
+			"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' FROM sys.types WHERE id > 2000 /* exclude system types to prevent duplicates with auths.id */\n"
+			" ORDER BY id;\n"
+			"GRANT SELECT ON sys.ids TO PUBLIC;\n"
+
+			"CREATE VIEW sys.dependencies_vw AS\n"
+			"SELECT d.id, i1.obj_type, i1.name,\n"
+			"       d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,\n"
+			"       d.depend_type, dt.dependency_type_name\n"
+			"  FROM sys.dependencies d\n"
+			"  JOIN sys.ids i1 ON d.id = i1.id\n"
+			"  JOIN sys.ids i2 ON d.depend_id = i2.id\n"
+			"  JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id\n"
+			" ORDER BY id, depend_id;\n"
+			"GRANT SELECT ON sys.dependencies_vw TO PUBLIC;\n"
+
+			"update sys._tables set system = true where name in ('ids', 'dependencies_vw') and schema_id in (select id from sys.schemas where name = 'sys');\n"
+			);
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_gsl(Client c, mvc *sql)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_gsl", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"drop function sys.chi2prob(double, double);\n");
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_aug2018(Client c, mvc *sql)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+	char *schema;
+
+	schema = stack_get_string(sql, "current_schema");
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_aug2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate sys.group_concat(str string) returns string external name \"aggr\".\"str_group_concat\";\n"
+			"grant execute on aggregate sys.group_concat(string) to public;\n"
+			"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";\n"
+			"grant execute on aggregate sys.group_concat(string, string) to public;\n"
+			"update sys.functions set system = true where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	if (err)
+		goto bailout;
+	err = sql_update_remote_tables(c, sql);
+
+  bailout:
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_default(Client c, mvc *sql)
+{
+	size_t bufsize = 2000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	sql_schema *s;
+	sql_table *t;
+
+	schema = stack_get_string(sql, "current_schema");
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	s = mvc_bind_schema(sql, "sys");
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+	/* 51_sys_schema_extensions.sql */
+	t = mvc_bind_table(sql, s, "table_types");
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"alter table sys.table_types set read write;\n"
+			"drop table sys.table_types;\n"
+			"create table sys.table_types ("
+			"table_type_id SMALLINT NOT NULL PRIMARY KEY,\n"
+			"table_type_name VARCHAR(50) NOT NULL UNIQUE);\n"
+			"insert into sys.table_types values"
+			" (0, 'TABLE'),"
+			" (1, 'VIEW'),"
+			" (3, 'MERGE TABLE'),"
+			" (4, 'STREAM TABLE'),"
+			" (5, 'REMOTE TABLE'),"
+			" (6, 'REPLICA TABLE'),"
+			" (10, 'SYSTEM TABLE'),"
+			" (11, 'SYSTEM VIEW'),"
+			" (12, 'MERGE TABLE PARTITION BY VALUES ON COLUMN'),"
+			" (13, 'MERGE TABLE PARTITION BY RANGE ON COLUMN'),"
+			" (14, 'MERGE TABLE PARTITION BY VALUES USING EXPRESSION'),"
+			" (15, 'MERGE TABLE PARTITION BY RANGE USING EXPRESSION'),"
+			" (20, 'GLOBAL TEMPORARY TABLE'),"
+			" (30, 'LOCAL TEMPORARY TABLE');\n"
+			"grant select on sys.table_types to public;\n"
+			"alter table sys.table_types set read only;\n"
+			"update sys._tables set system = true where name = 'table_types' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 99_system.sql */
+	t = mvc_bind_table(sql, s, "systemfunctions");
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop table sys.systemfunctions;\n"
+			"create view sys.systemfunctions as select id as function_id from sys.functions where system;\n"
+			"grant select on sys.systemfunctions to public;\n"
+			"update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
+{
+	size_t bufsize = 1600, pos = 0;
+	char *schema = NULL, *err = NULL;
+	char *buf = GDKmalloc(bufsize);
+
+	if (buf == NULL)
+		throw(SQL, "sql_drop_functions_dependencies_Xs_on_Ys", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	schema = stack_get_string(sql, "current_schema");
+	/* remove functions which were created in sql/scripts/21_dependency_functions.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"DROP FUNCTION dependencies_schemas_on_users();\n"
+			"DROP FUNCTION dependencies_owners_on_schemas();\n"
+			"DROP FUNCTION dependencies_tables_on_views();\n"
+			"DROP FUNCTION dependencies_tables_on_indexes();\n"
+			"DROP FUNCTION dependencies_tables_on_triggers();\n"
+			"DROP FUNCTION dependencies_tables_on_foreignKeys();\n"
+			"DROP FUNCTION dependencies_tables_on_functions();\n"
+			"DROP FUNCTION dependencies_columns_on_views();\n"
+			"DROP FUNCTION dependencies_columns_on_keys();\n"
+			"DROP FUNCTION dependencies_columns_on_indexes();\n"
+			"DROP FUNCTION dependencies_columns_on_functions();\n"
+			"DROP FUNCTION dependencies_columns_on_triggers();\n"
+			"DROP FUNCTION dependencies_views_on_functions();\n"
+			"DROP FUNCTION dependencies_views_on_triggers();\n"
+			"DROP FUNCTION dependencies_functions_on_functions();\n"
+			"DROP FUNCTION dependencies_functions_on_triggers();\n"
+			"DROP FUNCTION dependencies_keys_on_foreignKeys();\n");
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
@@ -1483,6 +1846,8 @@ SQLupgrades(Client c, mvc *m)
 	sql_subfunc *f;
 	char *err;
 	sql_schema *s = mvc_bind_schema(m, "sys");
+	sql_table *t;
+	sql_column *col;
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -1495,20 +1860,6 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 #endif
-
-	/* add missing epoch functions */
-	if ((err = sql_update_epoch(c, m)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
-	}
-
-	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!sql_bind_func(m->sa, s, "storage", &tp, NULL, F_UNION)) {
-		if ((err = sql_update_jun2016(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
 
 	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
 	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
@@ -1542,41 +1893,9 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	/*
-	if ((err = sql_update_median(c, m)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
-	}
-	*/
-
-	if (sql_find_subtype(&tp, "geometry", 0, 0) &&
-	    (f = sql_bind_func(m->sa, s, "mbr", &tp, NULL, F_FUNC)) != NULL &&
-	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
-		if ((err = sql_update_geom_jun2016_sp2(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
-	if ((f = sql_bind_func(m->sa, s, "uuid", NULL, NULL, F_FUNC)) != NULL &&
-	    sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
-		if ((err = sql_update_jun2016_sp2(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (!sql_bind_func3(m->sa, s, "createorderindex", &tp, &tp, &tp, F_PROC)) {
 		if ((err = sql_update_dec2016(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
-	sql_find_subtype(&tp, "wrd", 0, 0);
-	if (sql_bind_func(m->sa, s, "median", &tp, NULL, F_AGGR)) {
-		if ((err = sql_update_nowrd(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
@@ -1599,6 +1918,131 @@ SQLupgrades(Client c, mvc *m)
 
 	if (mvc_bind_table(m, s, "function_languages") == NULL) {
 		if ((err = sql_update_jul2017(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if ((err = sql_update_jul2017_sp2(c)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+
+	if ((err = sql_update_jul2017_sp3(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+
+	if ((t = mvc_bind_table(m, s, "geometry_columns")) != NULL &&
+	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
+	    strcmp(col->type.type->sqlname, "int") != 0) {
+		if ((err = sql_update_mar2018_geom(c, m, t)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_mar2018(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+#ifdef HAVE_NETCDF
+		if (mvc_bind_table(m, s, "netcdf_files") != NULL &&
+		    (err = sql_update_mar2018_netcdf(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+#endif
+#ifdef HAVE_SAMTOOLS
+		if ((err = sql_update_mar2018_samtools(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+#endif
+	}
+
+	if (sql_bind_func(m->sa, s, "dependencies_functions_os_triggers", NULL, NULL, F_UNION)) {
+		if ((err = sql_update_mar2018_sp1(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (mvc_bind_table(m, s, "ids") != NULL) {
+		/* determine if sys.ids needs to be updated (only the version of Mar2018) */
+		char * qry = "select id from sys._tables where name = 'ids' and query like '% tmp.keys k join sys._tables% tmp.idxs i join sys._tables% tmp.triggers g join sys._tables% ';";
+		res_table *output = NULL;
+		err = SQLstatementIntern(c, &qry, "update", 1, 0, &output);
+		if (err) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		} else {
+			BAT *b = BATdescriptor(output->cols[0].b);
+			if (b) {
+				if (BATcount(b) > 0) {
+					/* yes old view definition exists, it needs to be replaced */
+					if ((err = sql_replace_Mar2018_ids_view(c, m)) != NULL) {
+						fprintf(stderr, "!%s\n", err);
+						freeException(err);
+					}
+				}
+				BBPunfix(b->batCacheid);
+			}
+		}
+		if (output != NULL)
+			res_tables_destroy(output);
+	}
+
+	/* temporarily use variable `err' to check existence of MAL
+	 * module gsl */
+	if ((err = getName("gsl")) == NULL || getModule(err) == NULL) {
+		/* no MAL module gsl, check for SQL function sys.chi2prob */
+		sql_find_subtype(&tp, "double", 0, 0);
+		if (sql_bind_func(m->sa, s, "chi2prob", &tp, &tp, F_FUNC)) {
+			/* sys.chi2prob exists, but there is no
+			 * implementation */
+			if ((err = sql_update_gsl(c, m)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				freeException(err);
+			}
+		}
+	}
+
+	sql_find_subtype(&tp, "clob", 0, 0);
+	if (sql_bind_aggr(m->sa, s, "group_concat", &tp) == NULL) {
+		if ((err = sql_update_aug2018(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
+	    t->type == tt_table) {
+		if ((err = sql_update_default(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (sql_bind_func(m->sa, s, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_views", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_indexes", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_foreignkeys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_tables_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_views", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_keys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_indexes", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_columns_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_views_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_views_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_functions_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
+		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

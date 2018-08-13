@@ -27,69 +27,69 @@ Ready.
 
 #CREATE TABLE DOUBLE_TBL(x double);
 #SELECT x, cast(x as varchar(30)) as x_str FROM DOUBLE_TBL;
-% sys.double_tbl,	sys.L2 # table_name
+% sys.double_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % double,	varchar # type
 % 24,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM DOUBLE_TBL;
-% sys.double_tbl,	sys.L2 # table_name
+% sys.double_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % double,	varchar # type
 % 24,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM DOUBLE_TBL;
-% sys.double_tbl,	sys.L2 # table_name
+% sys.double_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % double,	varchar # type
 % 24,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM DOUBLE_TBL;
-% sys.double_tbl,	sys.L2 # table_name
+% sys.double_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % double,	varchar # type
 % 24,	0 # length
 #CREATE TABLE REAL_TBL(x real);
 #SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL;
-% sys.real_tbl,	sys.L2 # table_name
+% sys.real_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % real,	varchar # type
 % 15,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL;
-% sys.real_tbl,	sys.L2 # table_name
+% sys.real_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % real,	varchar # type
 % 15,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL;
-% sys.real_tbl,	sys.L2 # table_name
+% sys.real_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % real,	varchar # type
 % 15,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL;
-% sys.real_tbl,	sys.L2 # table_name
+% sys.real_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % real,	varchar # type
 % 15,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL;
-% sys.real_tbl,	sys.L2 # table_name
+% sys.real_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % real,	varchar # type
 % 15,	0 # length
 #CREATE TABLE FLOAT_TBL(x float);
 #SELECT x, cast(x as varchar(30)) as x_str FROM FLOAT_TBL;
-% sys.float_tbl,	sys.L2 # table_name
+% sys.float_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % double,	varchar # type
 % 24,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM FLOAT_TBL;
-% sys.float_tbl,	sys.L2 # table_name
+% sys.float_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % double,	varchar # type
 % 24,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM FLOAT_TBL;
-% sys.float_tbl,	sys.L2 # table_name
+% sys.float_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % double,	varchar # type
 % 24,	0 # length
 #SELECT x, cast(x as varchar(30)) as x_str FROM FLOAT_TBL;
-% sys.float_tbl,	sys.L2 # table_name
+% sys.float_tbl,	sys.L4 # table_name
 % x,	x_str # name
 % double,	varchar # type
 % 24,	0 # length

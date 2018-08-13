@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -281,11 +281,11 @@ SQLGetDescField(SQLHDESC DescriptorHandle,
 		SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescField " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST DescriptorHandle, (int) RecordNumber,
+	ODBCLOG("SQLGetDescField %p %d %s %p %d %p\n",
+		DescriptorHandle, (int) RecordNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST ValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+		ValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDesc((ODBCDesc *) DescriptorHandle))
@@ -330,11 +330,11 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescFieldW " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST DescriptorHandle, (int) RecordNumber,
+	ODBCLOG("SQLGetDescFieldW %p %d %s %p %d %p\n",
+		DescriptorHandle, (int) RecordNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST ValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+		ValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDesc(desc))

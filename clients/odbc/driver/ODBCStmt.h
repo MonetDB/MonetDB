@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -79,6 +79,8 @@ typedef struct tODBCDRIVERSTMT {
 	int nparams;		/* the number of parameters expected */
 
 	int querytype;		/* query type as returned by server */
+
+	SQLULEN qtimeout;	/* query timeout requested */
 
 	SQLUINTEGER cursorType;
 	SQLULEN cursorScrollable;
@@ -210,6 +212,5 @@ SQLRETURN MNDBPrepare(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 		      SQLINTEGER nSqlStrLength);
 SQLRETURN MNDBSetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);
-const char *ODBCErrorType(const char *msg, const char **emsg);
 
 #endif

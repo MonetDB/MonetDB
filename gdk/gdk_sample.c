@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -117,32 +117,20 @@ BATsample(BAT *b, BUN n)
 
 	BATcheck(b, "BATsample", NULL);
 	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n", NULL);
-	ALGODEBUG
-		fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
-
 	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {
-		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL) {
-			return NULL;
-		}
-		BATsetcount(bn, 0);
-		BATtseqbase(bn, 0);
-	/* sample size is larger than the input BAT, return all oids */
+		bn = BATdense(0, 0, 0);
 	} else if (cnt <= n) {
-		bn = COLnew(0, TYPE_void, cnt, TRANSIENT);
-		if (bn == NULL) {
-			return NULL;
-		}
-		BATsetcount(bn, cnt);
-		BATtseqbase(bn, b->hseqbase);
+		/* sample size is larger than the input BAT, return
+		 * all oids */
+		bn = BATdense(0, b->hseqbase, cnt);
 	} else {
 		oid minoid = b->hseqbase;
 		oid maxoid = b->hseqbase + cnt;
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
-		bit antiset = n > cnt / 2;
+		bool antiset = n > cnt / 2;
 		slen = n;
 		if (antiset)
 			n = cnt - n;
@@ -177,9 +165,10 @@ BATsample(BAT *b, BUN n)
 		bn->trevsorted = bn->batCount <= 1;
 		bn->tsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = bn->batCount <= 1;
-		if (bn->batCount == 1)
-			bn->tseqbase = *(oid *) Tloc(bn, 0);
+		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
+	ALGODEBUG fprintf(stderr, "#BATsample(" ALGOBATFMT "," BUNFMT ")="
+			  ALGOOPTBATFMT "\n",
+			  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;
 }

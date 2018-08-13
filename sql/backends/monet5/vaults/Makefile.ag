@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 SUBDIRS = HAVE_SAMTOOLS?bam HAVE_FITS?fits HAVE_LIDAR?lidar HAVE_NETCDF?netcdf HAVE_SHP?shp
 
@@ -25,8 +25,8 @@ lib__vault = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = vault.c vault.h
-	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-	       ../../../../gdk/libbat $(curl_LIBS)
+	LIBS = WIN32?../../../../monetdb5/tools/libmonetdb5 \
+	       WIN32?../../../../gdk/libbat
 }
 
 headers_mal = {

@@ -32,8 +32,8 @@ Ready.
 [ 10,	"1234567890",	"1234567890"	]
 [ 5,	"12345 ",	"12345"	]
 #SELECT COUNT(*) FROM T850 WHERE T850C = T850VC;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 1	]

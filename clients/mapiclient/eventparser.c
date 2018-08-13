@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* (c) M Kersten */
@@ -16,16 +16,14 @@ char *statenames[]= {"","start","done","action","ping","wait","system"};
 char *maltypes[MAXMALARGS];
 char *malvariables[MAXMALARGS];
 char *malvalues[MAXMALARGS];
+int malcount[MAXMALARGS];
+int malargc;
+int malretc;
 
 int malsize;
 int debug=0;
 char *currentquery=0;
 int eventcounter = 0;
-
-#ifndef HAVE_STRPTIME
-extern char *strptime(const char *, const char *, struct tm *);
-#include "strptime.c"
-#endif
 
 #define DATETIME_CHAR_LENGTH 27
 
@@ -73,7 +71,7 @@ stripQuotes(char *currentquery)
 		return NULL;
 	q = qry = (char *) malloc(strlen(currentquery) * 2);
 	if( q == NULL){
-		fprintf(stderr,"Could not allocate query buffer of size "SZFMT"\n", strlen(currentquery) * 2);
+		fprintf(stderr,"Could not allocate query buffer of size %zu\n", strlen(currentquery) * 2);
 		exit(-1);
 	}
 	c= currentquery;
@@ -199,7 +197,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 	*c++ = 0;
 	skipto(':');
 	c++;
-	while( *c && isspace((int)*c)) c++;
+	while( *c && isspace((unsigned char) *c)) c++;
 	if( *c == '"'){
 		val = ++c;
 		skipstr();
@@ -207,7 +205,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 	} else val =c;
 
 	if( strstr(key,"clk")){
-		ev->clk = atol(val);
+		ev->usec = atol(val);
 		return 0;
 	}
 	if( strstr(key,"ctime")){
@@ -233,14 +231,14 @@ keyvalueparser(char *txt, EventRecord *ev)
 				 c);
 		ev->clkticks = sec * 1000000;
 		if (c != NULL) {
-			lng usec;
+			int64_t usec;
 			/* microseconds */
 			usec = strtoll(c, NULL, 10);
 			assert(usec >= 0 && usec < 1000000);
 			ev->clkticks += usec;
 		}
 		if (ev->clkticks < 0) {
-			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, val);
+			fprintf(stderr, "parser: read negative value %"PRId64" from\n'%s'\n", ev->clkticks, val);
 		}
 		return 0;
 	}
@@ -318,3 +316,274 @@ keyvalueparser(char *txt, EventRecord *ev)
 	return 0;
 }
 
+void
+eventdump(void)
+{   int i;
+    for(i=0; i < malargc; i++)
+        fprintf(stderr,"arg[%d] %s %s %d\n",i,malvariables[i], maltypes[i], malcount[i]);
+    for(i=0; i < malretc; i++)
+        fprintf(stderr,"var[%d] %s\n",i,malvariables[i]);
+}
+
+int
+lineparser(char *row, EventRecord *ev)
+{
+	char *c, *cc, *v =0;
+	struct tm stm;
+
+	malargc = 0;
+	malretc = 0;
+	memset(malvariables, 0, sizeof(malvariables));
+	/* check basic validaty first */
+	if (row[0] =='#'){
+		return 1;	/* ok, but nothing filled in */
+	}
+	if (row[0] != '[')
+		return -1;
+	if ((cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
+		return -1;
+
+	/* scan event record number */
+	c = row+1;
+	ev->eventnr = atoi(c + 1);
+
+	/* scan event time" */
+	c = strchr(c + 1, '"');
+	if (c == NULL)
+		return -3;
+	/* convert time to epoch in seconds*/
+	cc =c;
+	memset(&stm, 0, sizeof(struct tm));
+#ifdef HAVE_STRPTIME
+	c = strptime(c + 1, "%H:%M:%S", &stm);
+	ev->clkticks = (((int64_t) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
+	if (c == NULL)
+		return -3;
+#else
+	int pos;
+	if (sscanf(c + 1, "%d:%d:%d%n", &stm.tm_hour, &stm.tm_min, &stm.tm_sec, &pos) < 3)
+		return -3;
+	c += pos + 1;
+#endif
+	if (*c == '.') {
+		int64_t usec;
+		/* microseconds */
+		usec = strtoll(c + 1, NULL, 10);
+		assert(usec >= 0 && usec < 1000000);
+		ev->clkticks += usec;
+	}
+	c = strchr(c + 1, '"');
+	if (c == NULL)
+		return -3;
+	if (ev->clkticks < 0) {
+		fprintf(stderr, "parser: read negative value %"PRId64" from\n'%s'\n", ev->clkticks, cc);
+	}
+	c++;
+
+	/* skip pc tag */
+	{	// decode qry[pc]tag
+		char *nme = c;
+		c= strchr(c+1,'[');
+		if( c == 0)
+			return -4;
+		*c = 0;
+		ev->function= strdup(nme);
+		*c = '[';
+		ev->pc = atoi(c+1);
+		c= strchr(c+1,']');
+		if ( c == 0)
+			return -4;
+		ev->tag = atoi(c+1);
+	}
+	c = strchr(c+1, ',');
+	if (c == 0)
+		return -4;
+
+	/* scan thread */
+	ev->thread = atoi(c+1);
+
+	/* scan status */
+	c = strchr(c, '"');
+	if (c == 0)
+		return -5;
+	if (strncmp(c + 1, "start", 5) == 0) {
+		ev->state = MDB_START;
+		c += 6;
+	} else if (strncmp(c + 1, "done", 4) == 0) {
+		ev->state = MDB_DONE;
+		c += 5;
+	} else if (strncmp(c + 1, "ping", 4) == 0) {
+		ev->state = MDB_PING;
+		c += 5;
+	} else if (strncmp(c + 1, "system", 6) == 0) {
+		ev->state = MDB_SYSTEM;
+		c += 5;
+	} else if (strncmp(c + 1, "wait", 4) == 0) {
+		ev->state = MDB_WAIT;
+		c += 5;
+	} else {
+		ev->state = 0;
+		c = strchr(c + 1, '"');
+		if (c == 0)
+			return -5;
+	}
+
+
+	/* scan usec */
+	c = strchr(c + 1, ',');
+	if (c == 0)
+		return -6;
+	ev->ticks = strtoll(c + 1, NULL, 10);
+
+	/* scan rssMB */
+	c = strchr(c + 1, ',');
+	if (c == 0)
+		return -7;
+	ev->rss = strtoll(c + 1, NULL, 10);
+
+	/* scan tmpMB */
+	c = strchr(c + 1, ',');
+	if (c == 0)
+		return -8;
+	ev->size = strtoll(c + 1, NULL, 10);
+
+#ifdef NUMAPROFILING
+	for(; *c && *c !='"'; c++) ;
+	ev->numa = c+1;
+	for(c++; *c && *c !='"'; c++)
+		;
+	if (*c == 0)
+		return -1;
+	*c = 0;
+	ev->numa= strdup(numa);
+	*c = '"';
+#endif
+
+	/* scan inblock */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -9;
+	ev->inblock = strtoll(c + 1, NULL, 10);
+
+	/* scan oublock */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -10;
+	ev->oublock = strtoll(c + 1, NULL, 10);
+
+	/* scan majflt */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -11;
+	ev->majflt = strtoll(c + 1, NULL, 10);
+
+	/* scan swaps */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -12;
+	ev->swaps = strtoll(c + 1, NULL, 10);
+
+	/* scan context switches */
+	c = strchr(c + 1, ',');
+	if (c == 0) 
+		return -13;
+	ev->csw = strtoll(c + 1, NULL, 10);
+
+	/* parse the MAL call, check basic validity */
+	c = strchr(c, '"');
+	if (c == 0)
+		return -15;
+	c++;
+	ev->fcn = strdup(c);
+	ev->stmt = strdup(ev->fcn);
+	c= ev->fcn;
+	if( *c != '[')
+	{
+		v=c;
+		c = strstr(c + 1, ":= ");
+		if (c) {
+			*c = 0;
+			parseArgument( (*v == '('? v++:v),ev);
+			malretc =malargc;
+			*c=':';
+			ev->fcn = c + 2;
+			/* find genuine function calls */
+			while (isspace((unsigned char) *ev->fcn) && *ev->fcn)
+				ev->fcn++;
+			if (strchr(ev->fcn, '.') == 0) 
+				ev->fcn = 0;
+		} 
+		if( ev->fcn){
+			v=  strchr(ev->fcn+1,';');
+			if ( v ) *v = 0;
+		}
+	}
+
+	if (ev->fcn && (v=strchr(ev->fcn, '('))){
+		*v = 0;
+		if( v)
+			parseArgument(v+1,ev);
+	 } else { //assigment statements
+		v= ev->stmt;
+		v = strstr(ev->stmt, ":= ");
+		if( v)
+			parseArgument(v+3,ev);
+	}
+	if (ev->stmt && (v=strstr(ev->stmt, ";\",\t")))
+		*v = 0;
+	return 0;
+}
+
+void
+renderJSONevent(FILE *fd, EventRecord *ev, int notfirst)
+{	
+	int i;
+
+	if( notfirst)
+		fprintf(fd,"},\n{");
+	fprintf(fd,"\"user\":\"%s\",\n",ev->user?ev->user:"monetdb");
+	fprintf(fd,"\"clk\":%"PRId64",\n",ev->usec);
+	fprintf(fd,"\"ctime\":\"%s\",\n",ev->time);
+	fprintf(fd,"\"thread\":%d,\n",ev->thread);
+	fprintf(fd,"\"function\":\"%s\",\n",ev->function);
+	fprintf(fd,"\"pc\":%d,\n",ev->pc);
+	fprintf(fd,"\"tag\":%d,\n",ev->tag);
+	switch(ev->state){
+	case MDB_START:
+		fprintf(fd,"\"state\":\"start\",\n");
+		break;
+	case MDB_DONE:
+		fprintf(fd,"\"state\":\"done\",\n");
+		break;
+	case MDB_PING:
+		fprintf(fd,"\"state\":\"ping\",\n");
+		break;
+	case MDB_WAIT:
+		fprintf(fd,"\"state\":\"wait\",\n");
+		break;
+	case MDB_SYSTEM:
+		fprintf(fd,"\"state\":\"system\",\n");
+		break;
+	}
+	fprintf(fd,"\"usec\":%"PRId64",\n",ev->ticks);
+	fprintf(fd,"\"rss\":%"PRId64",\n",ev->rss);
+	fprintf(fd,"\"size\":%"PRId64",\n",ev->size);
+	if( strstr(ev->stmt," ]"))
+		*strstr(ev->stmt," ]") = 0;
+	fprintf(fd,"\"stmt\":\"%s\",\n",ev->stmt);
+	fprintf(fd,"\"short\":\"%s\",\n",ev->beauty?ev->beauty:ev->stmt);
+	fprintf(fd,"\"prereq\":[]");
+	if(malretc > 0){
+		fprintf(fd,",\n\"ret\":[");
+	} 
+	for(i=0; i<malretc; i++){
+		if(i== malretc)
+			fprintf(fd,"],\n\"arg\":[");
+		else
+			if( i) fprintf(fd,",\n");
+		fprintf(fd,"{\"index\":%d,\"name\":\"%s\",\"type\":\"%s\", \"value\":\"%s\",\"eol\":%d}",	i, "","","",i);
+	}
+	if(malretc > 0)
+		fprintf(fd,"],\n");
+	else fprintf(fd,"\n");
+}

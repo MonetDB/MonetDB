@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -28,7 +28,7 @@
 	   if (ATOMextern(t)) {\
 	      *(ptr*) res = (ptr) ATOMnil(t);\
 		  if ( *(ptr *) res == NULL)\
-			throw(MAL,"txtsim", MAL_MALLOC_FAIL);\
+			throw(MAL,"txtsim", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
 	   } else {\
 	      memcpy(res, ATOMnilptr(t), ATOMsize(t));\
  	   }\
@@ -121,7 +121,7 @@ levenshtein_impl(int *result, str *S, str *T, int *insdel_cost, int *replace_cos
 	sz = (n + 1) * (m + 1) * sizeof(int);
 	d = (int *) GDKmalloc(sz);
 	if ( d == NULL)
-		throw(MAL,"levenshtein", MAL_MALLOC_FAIL);
+		throw(MAL,"levenshtein", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* Step 2 */
 	for (i = 0; i <= n; i++) {
@@ -228,7 +228,7 @@ soundex_code(char *Name, char *Key)
 
 	/* keep first letter */
 	Key[0] = *Name;
-	if (!isupper((int) (Key[0])))
+	if (!isupper((unsigned char) (Key[0])))
 		Key[0] = toupper(Key[0]);
 
 	LastLetter = *Name;
@@ -239,7 +239,7 @@ soundex_code(char *Name, char *Key)
 	/* scan rest of string */
 	for (Index = 1; (Index <SoundexLen) &&*Name; Name++) {
 		/* use only letters */
-		if (isalpha((int) (*Name))) {
+		if (isalpha((unsigned char) (*Name))) {
 			/* ignore duplicate successive chars */
 			if (LastLetter != *Name) {
 				/* new LastLetter */
@@ -263,7 +263,7 @@ soundex_impl(str *res, str *Name)
 
 	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
 	if( *res == NULL)
-		throw(MAL,"soundex", MAL_MALLOC_FAIL);
+		throw(MAL,"soundex", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
 	soundex_code(*Name, *res);
@@ -312,7 +312,7 @@ CMDqgramnormalize(str *res, str *Input)
 	RETURN_NIL_IF(strNil(input), TYPE_str);
 	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
-		throw(MAL, "txtsim.qgramnormalize", MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; input[i]; i++) {
 		c = toupper(input[i]);
@@ -887,6 +887,7 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	int *ibuf;
 	int *pbuf;
 	int *lbuf;
+	str msg = MAL_SUCCEED;
 
 	qgram = BATdescriptor(*qid);
 	id = BATdescriptor(*bid);
@@ -901,21 +902,28 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 			BBPunfix(pos->batCacheid);
 		if (len)
 			BBPunfix(len->batCacheid);
-		throw(MAL, "txtsim.qgramselfjoin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (qgram->ttype != TYPE_oid)
-		throw(MAL, "tstsim.qgramselfjoin",
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": tail of BAT qgram must be oid");
-	if (id->ttype != TYPE_int)
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (id->ttype != TYPE_int)
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": tail of BAT id must be int");
-	if (pos->ttype != TYPE_int)
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (pos->ttype != TYPE_int)
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": tail of BAT pos must be int");
-	if (len->ttype != TYPE_int)
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (len->ttype != TYPE_int)
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": tail of BAT len must be int");
+	if (msg) {
+		BBPunfix(qgram->batCacheid);
+		BBPunfix(id->batCacheid);
+		BBPunfix(pos->batCacheid);
+		BBPunfix(len->batCacheid);
+		return msg;
+	}
 
 	n = BATcount(qgram);
 	qbuf = (oid *) Tloc(qgram, 0);
@@ -926,29 +934,36 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	/* if (BATcount(qgram)>1 && !BATtordered(qgram)) throw(MAL, "tstsim.qgramselfjoin", SEMANTIC_TYPE_MISMATCH); */
 
 	if (!ALIGNsynced(qgram, id))
-		throw(MAL, "tstsim.qgramselfjoin",
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram and id are not synced");
 
-	if (!ALIGNsynced(qgram, pos))
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (!ALIGNsynced(qgram, pos))
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram and pos are not synced");
-	if (!ALIGNsynced(qgram, len))
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (!ALIGNsynced(qgram, len))
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram and len are not synced");
 
-	if (Tsize(qgram) != ATOMsize(qgram->ttype))
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (Tsize(qgram) != ATOMsize(qgram->ttype))
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": qgram is not a true void bat");
-	if (Tsize(id) != ATOMsize(id->ttype))
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (Tsize(id) != ATOMsize(id->ttype))
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": id is not a true void bat");
 
-	if (Tsize(pos) != ATOMsize(pos->ttype))
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (Tsize(pos) != ATOMsize(pos->ttype))
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": pos is not a true void bat");
-	if (Tsize(len) != ATOMsize(len->ttype))
-		throw(MAL, "tstsim.qgramselfjoin",
+	else if (Tsize(len) != ATOMsize(len->ttype))
+		msg = createException(MAL, "tstsim.qgramselfjoin",
 			  SEMANTIC_TYPE_MISMATCH ": len is not a true void bat");
+	if (msg) {
+		BBPunfix(qgram->batCacheid);
+		BBPunfix(id->batCacheid);
+		BBPunfix(pos->batCacheid);
+		BBPunfix(len->batCacheid);
+		return msg;
+	}
 
 	bn = COLnew(0, TYPE_int, n, TRANSIENT);
 	bn2 = COLnew(0, TYPE_int, n, TRANSIENT);
@@ -959,21 +974,21 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 		BBPunfix(id->batCacheid);
 		BBPunfix(pos->batCacheid);
 		BBPunfix(len->batCacheid);
-		throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < n - 1; i++) {
 		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MYMIN(lbuf[i], lbuf[j])))); j++) {
 			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MYMIN(lbuf[i], lbuf[j]))) {
-				if (BUNappend(bn, ibuf + i, FALSE) != GDK_SUCCEED ||
-					BUNappend(bn2, ibuf + j, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(bn, ibuf + i, false) != GDK_SUCCEED ||
+					BUNappend(bn2, ibuf + j, false) != GDK_SUCCEED) {
 					BBPunfix(qgram->batCacheid);
 					BBPunfix(id->batCacheid);
 					BBPunfix(pos->batCacheid);
 					BBPunfix(len->batCacheid);
 					BBPreclaim(bn);
 					BBPreclaim(bn2);
-					throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
+					throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
 			}
 		}
@@ -1024,24 +1039,24 @@ CMDstr2qgrams(bat *ret, str *val)
 	char qgram[4 * 6 + 1];		/* 4 UTF-8 code points plus NULL byte */
 
 	if (s == NULL)
-		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strcpy(s, "##");
 	strcpy(s + 2, *val);
 	strcpy(s + len - 3, "$$");
 	bn = COLnew(0, TYPE_str, (BUN) strlen(*val), TRANSIENT);
 	if (bn == NULL) {
 		GDKfree(s);
-		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
+		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	i = 0;
 	while (s[i]) {
 		if (utf8strncpy(qgram, sizeof(qgram), s + i, 4) < 4)
 			break;
-		if (BUNappend(bn, qgram, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(bn, qgram, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			GDKfree(s);
-			throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
+			throw(MAL, "txtsim.str2qgram", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		if ((s[i++] & 0xC0) == 0xC0) {
 			while ((s[i] & 0xC0) == 0x80)

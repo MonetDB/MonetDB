@@ -267,6 +267,19 @@ Ready.
 [ 2001-09-22 18:19:20.00,	22	]
 [ 1997-02-11 01:32:01.00,	11	]
 [ NULL,	NULL	]
+#SELECT d1, extract(week from d1) FROM TIMESTAMP_TBL;
+% sys.timestamp_tbl,	sys.L3 # table_name
+% d1,	L3 # name
+% timestamp,	int # type
+% 22,	2 # length
+[ 1997-01-02 00:00:00.00,	1	]
+[ 1997-01-02 03:04:05.00,	1	]
+[ 1997-02-11 01:32:01.00,	7	]
+[ 1997-02-11 01:32:01.00,	7	]
+[ 1997-06-11 00:32:01.00,	24	]
+[ 2001-09-22 18:19:20.00,	38	]
+[ 1997-02-11 01:32:01.00,	7	]
+[ NULL,	NULL	]
 #SELECT d1, extract(month from d1) FROM TIMESTAMP_TBL;
 % sys.timestamp_tbl,	sys.L3 # table_name
 % d1,	L3 # name
@@ -279,6 +292,19 @@ Ready.
 [ 1997-06-11 00:32:01.00,	6	]
 [ 2001-09-22 18:19:20.00,	9	]
 [ 1997-02-11 01:32:01.00,	2	]
+[ NULL,	NULL	]
+#SELECT d1, extract(quarter from d1) FROM TIMESTAMP_TBL;
+% sys.timestamp_tbl,	sys.L3 # table_name
+% d1,	L3 # name
+% timestamp,	int # type
+% 22,	1 # length
+[ 1997-01-02 00:00:00.00,	1	]
+[ 1997-01-02 03:04:05.00,	1	]
+[ 1997-02-11 01:32:01.00,	1	]
+[ 1997-02-11 01:32:01.00,	1	]
+[ 1997-06-11 00:32:01.00,	2	]
+[ 2001-09-22 18:19:20.00,	3	]
+[ 1997-02-11 01:32:01.00,	1	]
 [ NULL,	NULL	]
 #SELECT d1, extract(year from d1) FROM TIMESTAMP_TBL;
 % sys.timestamp_tbl,	sys.L3 # table_name

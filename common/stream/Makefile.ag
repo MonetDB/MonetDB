@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 ## Process this file with automake to produce Makefile.in
 
@@ -13,21 +13,19 @@ INCLUDES = $(zlib_CFLAGS) \
 		   $(snappy_CFLAGS) \
    		   $(lz4_CFLAGS) \
 		   $(liblzma_CFLAGS) \
-		   $(openssl_CFLAGS) \
 		   $(curl_CFLAGS)
 
 lib_stream  =  {
 	SOURCES = stream.c stream.h stream_socket.h
 	VERSION = $(STREAM_VERSION)
-	LIBS = $(SOCKET_LIBS) \
-		   $(zlib_LIBS) \
-		   $(BZ_LIBS) \
-		   $(snappy_LIBS) \
-   		   $(lz4_LIBS) \
-		   $(liblzma_LIBS) \
-		   $(openssl_LIBS) \
-		   $(curl_LIBS) \
-		   $(LTLIBICONV)
+	LIBS = WIN32?$(SOCKET_LIBS) \
+	       WIN32?$(zlib_LIBS) \
+	       WIN32?$(BZ_LIBS) \
+	       WIN32?$(snappy_LIBS) \
+   	       WIN32?$(lz4_LIBS) \
+	       WIN32?$(liblzma_LIBS) \
+	       WIN32?$(curl_LIBS) \
+	       WIN32?$(LTLIBICONV)
 }
 
 headers_common = {

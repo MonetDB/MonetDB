@@ -1,0 +1,94 @@
+stdout of test 'capi03` in directory 'sql/backends/monet5/UDF/capi` itself:
+
+
+# 17:24:54 >  
+# 17:24:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35915" "--set" "mapi_usock=/var/tmp/mtest-2836/.s.monetdb.35915" "--set" "monet_prompt=" "--forcemito" "--dbpath=NONE/var/MonetDB/mTests_sql_backends_monet5_UDF_capi"
+# 17:24:54 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_UDF_capi', using 4 threads
+# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-21.eduroam.cwi.nl:35915/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2836/.s.monetdb.35915
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 17:24:54 >  
+# 17:24:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2836" "--port=35915"
+# 17:24:54 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION capi03() RETURNS TABLE(i INTEGER, j INTEGER) LANGUAGE C {
+#	i->initialize(i, 10);
+#	j->initialize(j, 20);
+#	for(size_t index = 0; index < i->count; index++) {
+#		i->data[index] = 0;
+#	}
+#	for(size_t index = 0; index < j->count; index++) {
+#		j->data[index] = 1;
+#	}
+#};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION capi03(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+#	
+#};
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (4), (5);
+[ 5	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION capi03(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+#	return "Something went wrong!";
+#};
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (4), (5);
+[ 5	]
+#ROLLBACK;
+
+# 17:24:55 >  
+# 17:24:55 >  "Done."
+# 17:24:55 >  
+

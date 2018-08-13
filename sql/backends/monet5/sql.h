@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -15,7 +15,7 @@
 #ifndef _SQL_H
 #define _SQL_H
 
-#include <sql_mem.h>
+#include "sql_mem.h"
 
 #ifdef WIN32
 #ifndef LIBSQL
@@ -29,20 +29,20 @@
 
 #include "mal_backend.h"
 #include "sql_mvc.h"
-#include <sql_backend.h>
-#include <mal_session.h>
+#include "sql_backend.h"
+#include "mal_session.h"
 
-#include <mal_function.h>
-#include <mal_stack.h>
-#include <mal_interpreter.h>
+#include "mal_function.h"
+#include "mal_stack.h"
+#include "mal_interpreter.h"
 
-#include <tablet.h>
-#include <streams.h>
-#include <mtime.h>
+#include "tablet.h"
+#include "streams.h"
+#include "mtime.h"
 #include <math.h>
-#include <blob.h>
-#include <mkey.h>
-#include <str.h>
+#include "blob.h"
+#include "mkey.h"
+#include "str.h"
 #include "sql_privileges.h"
 #include "sql_decimal.h"
 #include "sql_string.h"
@@ -51,8 +51,8 @@
 #include "sql_statement.h"
 #include "querylog.h"
 
-#include <bat/bat_storage.h>
-#include <bat/bat_utils.h>
+#include "bat/bat_storage.h"
+#include "bat/bat_utils.h"
 
 extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
@@ -67,6 +67,7 @@ sql5_export str SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 sql5_export str SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+sql5_export str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins);
 
@@ -87,17 +88,12 @@ sql5_export str BATleftproject(bat *result, const bat *col, const bat *l, const 
 
 sql5_export str mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-sql5_export str UPGdrop_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -135,6 +131,7 @@ sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -149,6 +146,7 @@ sql5_export str BATSQLidentity(bat *rid, const bat *bid);
 sql5_export str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp);
 sql5_export str create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
+sql5_export str append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 
 sql5_export str bte_dec_round_wrap(bte *res, const bte *v, const bte *r);
 sql5_export str bte_bat_dec_round_wrap(bat *res, const bat *v, const bte *r);
@@ -297,7 +295,6 @@ sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 
 sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start);
-sql5_export str second_interval_daytime(lng *res, const daytime *s, const int *ek, const int *sk);
 sql5_export str second_interval_2_daytime(daytime *res, const lng *s, const int *d);
 sql5_export str timestamp_2_daytime(daytime *res, const timestamp *v, const int *d);
 sql5_export str date_2_timestamp(timestamp *res, const date *v, const int *d);
@@ -316,6 +313,6 @@ sql5_export str BATSTRstrings(bat *res, const bat *src);
 sql5_export str SQLflush_log(void *ret);
 
 sql5_export str SQLexist(bit *res, bat *id);
-sql5_export str SQLexist_val(bit *res, void *val);
+sql5_export str SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_H */

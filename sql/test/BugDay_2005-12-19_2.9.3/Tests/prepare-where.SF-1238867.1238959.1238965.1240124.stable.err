@@ -13,9 +13,11 @@ stderr of test 'prepare-where.SF-1238867.1238959.1238965.1240124` in directory '
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = prepare select * from env() as env where ? = ?;
 ERROR = !Cannot have a parameter (?) on both sides of an expression
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = prepare select ? from env() as env;
 ERROR = !SELECT: subquery result missing
+CODE  = 42000
 
 # 13:00:07 >  
 # 13:00:07 >  Done.

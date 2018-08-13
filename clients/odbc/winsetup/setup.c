@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
@@ -13,8 +13,6 @@
 
 #include "monetdb_config.h"
 #include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
 #define ALREADY_HAVE_WINDOWS_TYPE 1
@@ -194,7 +192,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	char *dsn = NULL;
 	BOOL rc;
 
-	ODBCLOG("ConfigDSN %d %s %s 0x%I64x\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (unsigned __int64) (uintptr_t) &data);
+	ODBCLOG("ConfigDSN %d %s %s 0x%" PRIxPTR "\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (uintptr_t) &data);
 
 	if (strcmp(driver, DriverName) != 0) {
 		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,

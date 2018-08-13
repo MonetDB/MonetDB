@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /**
@@ -45,18 +45,15 @@
  */
 
 #include "monetdb_config.h"
-#include <msabaoth.h>
-#include <mutils.h> /* MT_lockf */
-#include <mcrypt.h> /* mcrypt_BackendSum */
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/glob.h>
-#include <utils/database.h>
-#include <utils/control.h>
+#include "msabaoth.h"
+#include "mutils.h" /* MT_lockf */
+#include "mcrypt.h" /* mcrypt_BackendSum */
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/glob.h"
+#include "utils/database.h"
+#include "utils/control.h"
 
-#include <stdlib.h> /* exit, getenv, rand, srand */
-#include <stdarg.h>	/* variadic stuff */
-#include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <sys/stat.h> /* stat */
 #include <sys/wait.h> /* wait */
@@ -67,7 +64,6 @@
 #include <fcntl.h>
 #include <unistd.h> /* unlink, isatty */
 #include <string.h> /* strerror */
-#include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <time.h>
 
@@ -80,6 +76,13 @@
 #include "argvcmds.h"
 #include "multiplex-funnel.h"
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC		0
+#endif
+
+#ifndef HAVE_PIPE2
+#define pipe2(pipefd, flags)	pipe(pipefd)
+#endif
 
 /* private structs */
 
@@ -146,7 +149,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int res
 		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
 		while ((p = strchr(q, '\n')) != NULL) {
 			if (writeident == 1)
-				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+				fprintf(stream, "%s %s %s[%lld]: ",
 						mytime, type, dbname, pid);
 			*p = '\0';
 			fprintf(stream, "%s\n", q);
@@ -155,7 +158,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int res
 		}
 		if ((int)(q - buf) < len) {
 			if (writeident == 1)
-				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+				fprintf(stream, "%s %s %s[%lld]: ",
 						mytime, type, dbname, pid);
 			writeident = 0;
 			fprintf(stream, "%s\n", q);
@@ -248,12 +251,10 @@ newErr(const char *fmt, ...)
 	va_list ap;
 	char message[4096];
 	char *ret;
-	int len;
 
 	va_start(ap, fmt);
 
-	len = vsnprintf(message, 4095, fmt, ap);
-	message[len] = '\0';
+	(void) vsnprintf(message, sizeof(message), fmt, ap);
 
 	va_end(ap);
 
@@ -323,6 +324,7 @@ main(int argc, char *argv[])
 	};
 	confkeyval *kv;
 	int retfd = -1;
+	int dup_err;
 
 	/* seed the randomiser for when we create a database, send responses
 	 * to HELO, etc */
@@ -334,13 +336,15 @@ main(int argc, char *argv[])
 	 * hardcoded bin-dir */
 	_mero_mserver = get_bin_path();
 	if (_mero_mserver != NULL) {
-		/* replace the trailing monetdbd by mserver5, fits nicely since
-		 * they happen to be of same length */
-		char *s = strrchr(_mero_mserver, '/');
-		if (s != NULL && strcmp(s + 1, "monetdbd") == 0) {
-			s++;
-			*s++ = 'm'; *s++ = 's'; *s++ = 'e'; *s++ = 'r';
-			*s++ = 'v'; *s++ = 'e'; *s++ = 'r'; *s++ = '5';
+		/* Find where the string monetdbd actually starts */
+		char *s = strstr(_mero_mserver, "monetdbd");
+		if (s != NULL) {
+			/* Replace the 8 following characters with the characters mserver5.
+			 * This should work even if the executables have prefixes or
+			 * suffixes */
+			int i;
+			for (i = 0; i < 8; i++)
+				s[i] = "mserver5"[i];
 			if (stat(_mero_mserver, &sb) == -1)
 				_mero_mserver = NULL;
 		}
@@ -355,6 +359,10 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "embedr");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedpy");
+	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "embedpy3");
+	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "embedc");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
@@ -449,7 +457,7 @@ main(int argc, char *argv[])
 		/* Fork into the background immediately.  By doing this, our child
 		 * can simply do everything it needs to do itself.  Via a pipe it
 		 * will tell us if it is happy or not. */
-		if (pipe(pfd) == -1) {
+		if (pipe2(pfd, O_CLOEXEC) == -1) {
 			Mfprintf(stderr, "unable to create pipe: %s\n", strerror(errno));
 			return(1);
 		}
@@ -465,12 +473,22 @@ main(int argc, char *argv[])
 				if (setsid() < 0)
 					Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
 							"continuing anyway\n");
-				retfd = open("/dev/null", O_RDONLY);
-				dup2(retfd, 0);
+				if((retfd = open("/dev/null", O_RDONLY | O_CLOEXEC)) < 0) {
+					Mfprintf(stderr, "unable to dup stdin\n");
+					return(1);
+				}
+				dup_err = dup2(retfd, 0);
 				close(retfd);
 				close(pfd[0]); /* close unused read end */
 				retfd = pfd[1]; /* store the write end */
-			break;
+				if(dup_err == -1) {
+					Mfprintf(stderr, "unable to dup stdin\n");
+					return(1);
+				}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+				(void) fcntl(retfd, F_SETFD, FD_CLOEXEC);
+#endif
+				break;
 			default:
 				/* the parent, we want it to die, after we know the child
 				 * is having a good time */
@@ -636,10 +654,10 @@ main(int argc, char *argv[])
 	snprintf(mapi_usock, sizeof(mapi_usock), "%s/" MERO_SOCK "%d",
 			p, port);
 
-	if ((unlink(control_usock) == -1 && errno != ENOENT) ||
-		(unlink(mapi_usock) == -1 && errno != ENOENT)) {
-		/* cannot unlink socket files */
-		Mfprintf(stderr, "cannot unlink socket files\n");
+	if ((remove(control_usock) != 0 && errno != ENOENT) ||
+		(remove(mapi_usock) != 0 && errno != ENOENT)) {
+		/* cannot remove socket files */
+		Mfprintf(stderr, "cannot remove socket files\n");
 		MERO_EXIT_CLEAN(1);
 	}
 
@@ -652,40 +670,77 @@ main(int argc, char *argv[])
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
 	/* write to the given file */
-	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT,
+	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC,
 			S_IRUSR | S_IWUSR);
 	if (_mero_topdp->out == -1) {
 		Mfprintf(stderr, "unable to open '%s': %s\n",
 				p, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
+#if O_CLOEXEC == 0
+	(void) fcntl(_mero_topdp->out, F_SETFD, FD_CLOEXEC);
+#endif
 	_mero_topdp->err = _mero_topdp->out;
 
-	_mero_logfile = fdopen(_mero_topdp->out, "a");
+	if(!(_mero_logfile = fdopen(_mero_topdp->out, "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
 
 	d = _mero_topdp->next = &dpmero;
 
 	/* redirect stdout */
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+#endif
 	d->out = pfd[0];
-	dup2(pfd[1], 1);
+	dup_err = dup2(pfd[1], 1);
 	close(pfd[1]);
+	if(dup_err == -1) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
 
 	/* redirect stderr */
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+#endif
 	/* before it is too late, save original stderr */
-	oerr = fdopen(dup(2), "w");
+#ifdef F_DUPFD_CLOEXEC
+	if ((ret = fcntl(2, F_DUPFD_CLOEXEC, 3)) < 0) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
+#else
+	if ((ret = dup(2)) < 0) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
+	(void) fcntl(ret, F_SETFD, FD_CLOEXEC);
+#endif
+	oerr = fdopen(ret, "w");
+	if (oerr == NULL) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
 	d->err = pfd[0];
-	dup2(pfd[1], 2);
+	dup_err = dup2(pfd[1], 2);
 	close(pfd[1]);
+	if(dup_err == -1) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
 
 	d->pid = getpid();
 	d->type = MERO;
@@ -694,20 +749,36 @@ main(int argc, char *argv[])
 
 	/* separate entry for the neighbour discovery service */
 	d = d->next = &dpdisc;
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	d->out = pfd[0];
-	_mero_discout = fdopen(pfd[1], "a");
-	if (pipe(pfd) == -1) {
+	if(!(_mero_discout = fdopen(pfd[1], "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	d->err = pfd[0];
-	_mero_discerr = fdopen(pfd[1], "a");
+	if(!(_mero_discerr = fdopen(pfd[1], "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
 	d->pid = getpid();
 	d->type = MERO;
 	d->dbname = "discovery";
@@ -716,20 +787,36 @@ main(int argc, char *argv[])
 
 	/* separate entry for the control runner */
 	d = d->next = &dpcont;
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	d->out = pfd[0];
-	_mero_ctlout = fdopen(pfd[1], "a");
-	if (pipe(pfd) == -1) {
+	if(!(_mero_ctlout = fdopen(pfd[1], "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	d->err = pfd[0];
-	_mero_ctlerr = fdopen(pfd[1], "a");
+	if(!(_mero_ctlerr = fdopen(pfd[1], "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
 	d->pid = getpid();
 	d->type = MERO;
 	d->dbname = "control";
@@ -742,43 +829,41 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = handler;
-	if (
-			sigaction(SIGINT, &sa, NULL) == -1 ||
-			sigaction(SIGQUIT, &sa, NULL) == -1 ||
-			sigaction(SIGTERM, &sa, NULL) == -1)
-	{
+	if (sigaction(SIGINT, &sa, NULL) == -1 ||
+		sigaction(SIGQUIT, &sa, NULL) == -1 ||
+		sigaction(SIGTERM, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
+				 argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = huphandler;
 	if (sigaction(SIGHUP, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
+				 argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = segvhandler;
 	if (sigaction(SIGSEGV, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
+				 argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
+				 argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -811,7 +896,11 @@ main(int argc, char *argv[])
 		pthread_t dtid = 0;
 
 		if (discovery == 1) {
-			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
+			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
+#ifdef SOCK_CLOEXEC
+										 | SOCK_CLOEXEC
+#endif
+										 , 0);
 			ret = 1;
 			if (_mero_broadcastsock == -1 ||
 				setsockopt(_mero_broadcastsock,
@@ -822,6 +911,9 @@ main(int argc, char *argv[])
 				closesocket(discsock);
 				discsock = -1;
 			}
+#ifndef SOCK_CLOEXEC
+			(void) fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
+#endif
 
 			_mero_broadcastaddr.sin_family = AF_INET;
 			_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
@@ -874,11 +966,11 @@ main(int argc, char *argv[])
 	}
 
 	/* control channel is already closed at this point */
-	if (unsock != -1 && unlink(control_usock) == -1)
-		Mfprintf(stderr, "unable to unlink control socket '%s': %s\n",
+	if (unsock != -1 && remove(control_usock) != 0)
+		Mfprintf(stderr, "unable to remove control socket '%s': %s\n",
 				control_usock, strerror(errno));
-	if (socku != -1 && unlink(mapi_usock) == -1)
-		Mfprintf(stderr, "unable to unlink mapi socket '%s': %s\n",
+	if (socku != -1 && remove(mapi_usock) != 0)
+		Mfprintf(stderr, "unable to remove mapi socket '%s': %s\n",
 				mapi_usock, strerror(errno));
 
 	if (e != NO_ERR) {
@@ -951,7 +1043,7 @@ shutdown:
 
 	/* remove files that suggest our existence */
 	if (pidfilename != NULL) {
-		unlink(pidfilename);
+		remove(pidfilename);
 	}
 
 	/* mostly for valgrind... */

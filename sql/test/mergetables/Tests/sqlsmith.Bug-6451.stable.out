@@ -1,0 +1,57 @@
+stdout of test 'sqlsmith.Bug-6451` in directory 'sql/test/mergetables` itself:
+
+
+# 12:30:55 >  
+# 12:30:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36313" "--set" "mapi_usock=/var/tmp/mtest-26380/.s.monetdb.36313" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 12:30:55 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36313/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26380/.s.monetdb.36313
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:30:55 >  
+# 12:30:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26380" "--port=36313"
+# 12:30:55 >  
+
+#select  
+#  ref_2.y as c0, 
+#  cast(coalesce(ref_2.z,
+#    ref_2.z) as clob) as c1, 
+#  ref_2.z as c2, 
+#  case when ref_2.y is NULL then subq_0.c0 else subq_0.c0 end
+#     as c3, 
+#  ref_2.y as c4, 
+#  cast(coalesce(subq_0.c0,
+#    ref_2.z) as clob) as c5, 
+#  ref_2.x as c6
+#from 
+#  sys.r2 as ref_2,
+#  lateral (select  
+#        ref_2.z as c0
+#      from 
+#        sys.netcdf_vardim as ref_3
+#      where ref_3.dim_id is NULL) as subq_0
+#where EXISTS (
+#  select  
+#      case when false then ref_9.z else ref_9.z end
+#         as c0, 
+% sys.L62,	sys.L65,	sys.L67,	sys.L71,	sys.L73,	sys.L76,	sys.L100 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6 # name
+% int,	clob,	clob,	clob,	int,	clob,	int # type
+% 1,	0,	0,	0,	1,	0,	1 # length
+
+# 12:30:56 >  
+# 12:30:56 >  "Done."
+# 12:30:56 >  
+

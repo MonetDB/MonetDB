@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* This macro initializes the variables start, end, cnt, cand, and
@@ -11,9 +11,8 @@
  * and s (the candidate list).  Start and end are the start and end
  * BUNs of b that need to be considered.  They are relative to the
  * start of the heap.  Cand and candend point into the candidate list,
- * if present.  Note that if the tail of the candidate list is dense,
- * cand and candend are set to NULL and start and end are adjusted
- * instead. */
+ * if present.  Note that if the candidate list is dense, cand and
+ * candend are set to NULL and start and end are adjusted instead. */
 #define CANDINIT(b, s, start, end, cnt, cand, candend)			\
 	do {								\
 		start = 0;						\

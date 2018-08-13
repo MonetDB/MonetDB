@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -96,6 +96,7 @@ MNDBDescribeCol(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 			*DecimalDigitsPtr = 0;
 			break;
 		case SQL_TYPE_TIME:
@@ -132,12 +133,12 @@ SQLDescribeCol(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeCol " PTRFMT " %u " PTRFMT " %d " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber,
-		PTRFMTCAST ColumnName, (int) BufferLength,
-		PTRFMTCAST NameLengthPtr, PTRFMTCAST DataTypePtr,
-		PTRFMTCAST ColumnSizePtr, PTRFMTCAST DecimalDigitsPtr,
-		PTRFMTCAST NullablePtr);
+	ODBCLOG("SQLDescribeCol %p %u %p %d %p %p %p %p %p\n",
+		StatementHandle, (unsigned int) ColumnNumber,
+		ColumnName, (int) BufferLength,
+		NameLengthPtr, DataTypePtr,
+		ColumnSizePtr, DecimalDigitsPtr,
+		NullablePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -195,12 +196,12 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeColW " PTRFMT " %u " PTRFMT " %d " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber,
-		PTRFMTCAST ColumnName, (int) BufferLength,
-		PTRFMTCAST NameLengthPtr, PTRFMTCAST DataTypePtr,
-		PTRFMTCAST ColumnSizePtr, PTRFMTCAST DecimalDigitsPtr,
-		PTRFMTCAST NullablePtr);
+	ODBCLOG("SQLDescribeColW %p %u %p %d %p %p %p %p %p\n",
+		StatementHandle, (unsigned int) ColumnNumber,
+		ColumnName, (int) BufferLength,
+		NameLengthPtr, DataTypePtr,
+		ColumnSizePtr, DecimalDigitsPtr,
+		NullablePtr);
 #endif
 
 	if (!isValidStmt(stmt))

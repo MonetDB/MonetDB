@@ -29,26 +29,26 @@ Ready.
 #INSERT INTO t1(e,c,b,d,a) VALUES(103,102,100,101,104);
 [ 1	]
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L7 # table_name
+% L7 # name
 % bigint # type
 % 4 # length
 [ 1000	]
 #SELECT abs(b-c) FROM t1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT abs(b-c), CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END FROM t1;
-% sys.L1,	sys.L4 # table_name
-% L1,	L4 # name
+% sys.L2,	sys.L11 # table_name
+% L2,	L11 # name
 % bigint,	bigint # type
 % 1,	4 # length
 [ 2,	1000	]
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, abs(b-c) FROM t1;
-% sys.L3,	sys.L4 # table_name
-% L3,	L4 # name
+% sys.L7,	sys.L11 # table_name
+% L7,	L11 # name
 % bigint,	bigint # type
 % 4,	1 # length
 [ 1000,	2	]

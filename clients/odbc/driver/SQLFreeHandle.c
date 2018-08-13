@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -185,9 +185,9 @@ SQLFreeHandle(SQLSMALLINT HandleType,
 	      SQLHANDLE Handle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeHandle %s " PTRFMT "\n",
+	ODBCLOG("SQLFreeHandle %s %p\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle);
+		Handle);
 #endif
 
 	return MNDBFreeHandle(HandleType, Handle);

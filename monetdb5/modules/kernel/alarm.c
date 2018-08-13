@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -96,7 +96,8 @@ ALARMprelude(void *ret)
 {
 	(void) ret;
 #ifdef SIGALRM
-	(void) signal(SIGALRM, (void (*)()) CLKsignal);
+	if(signal(SIGALRM, (void (*)()) CLKsignal) == SIG_ERR)
+		throw(MAL, "alarm.prelude", SQLSTATE(HY001) "Signal call failed");
 #endif
 	return MAL_SUCCEED;
 }
@@ -113,7 +114,8 @@ ALARMepilogue(void *ret)
 #undef  SIG_IGN			/*((__sighandler_t)1 ) */
 #define SIG_IGN   ((__sighandler_t)1L)
 #endif
-	(void) signal(SIGALRM, SIG_IGN);
+	if(signal(SIGALRM, SIG_IGN) == SIG_ERR)
+		throw(MAL, "alarm.epilogue", SQLSTATE(HY001) "Signal call failed");
 #endif
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action)
@@ -192,6 +194,8 @@ ALARMctime(str *res)
 
 	base[24] = 0;				/* squash final newline */
 	*res = GDKstrdup(base);
+	if (*res == NULL)
+		throw(MAL, "alarm.ctime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

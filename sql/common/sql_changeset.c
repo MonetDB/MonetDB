@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -40,6 +40,25 @@ cs_add(changeset * cs, void *elm, int flag)
 	list_append(cs->set, elm);
 	if (flag == TR_NEW && !cs->nelm)
 		cs->nelm = cs->set->t;
+}
+
+void *
+cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp)
+{
+	return list_traverse_with_validate(cs->set, elm, cmp);
+}
+
+void*
+cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp)
+{
+	void* res = NULL;
+	if (!cs->set)
+		cs->set = list_new(cs->sa, cs->destroy);
+	if((res = list_append_with_validate(cs->set, elm, cmp)) != NULL)
+		return res;
+	if (flag == TR_NEW && !cs->nelm)
+		cs->nelm = cs->set->t;
+	return res;
 }
 
 void

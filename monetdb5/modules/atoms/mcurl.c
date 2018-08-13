@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -17,8 +17,6 @@
 #include "mal.h"
 #include "mal_exception.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 
@@ -35,13 +33,17 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
 	size_t realsize = size * nmemb;
 	struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+	char *nmem;
 
-	mem->memory = realloc(mem->memory, mem->size + realsize + 1);
-	if(mem->memory == NULL) {
+	nmem = realloc(mem->memory, mem->size + realsize + 1);
+	if(nmem == NULL) {
 		/* out of memory! */
-		printf("not enough memory (realloc returned NULL)\n");
+		free(mem->memory);
+		mem->memory = NULL;
+		fprintf(stderr, "mcurl module: not enough memory (realloc returned NULL)\n");
 		return 0;
 	}
+	mem->memory = nmem;
 
 	memcpy(&(mem->memory[mem->size]), contents, realsize);
 	mem->size += realsize;
@@ -62,6 +64,8 @@ handle_get_request(str *retval, str *url)
 	struct MemoryStruct chunk;
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	if (chunk.memory == NULL)
+		throw(MAL, "mcurl.getrequest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -102,7 +106,7 @@ handle_get_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf(SZFMT " bytes retrieved\n", chunk.size);
+		//printf("%zu bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);
@@ -128,6 +132,8 @@ handle_put_request(str *retval, str *url)
 	struct MemoryStruct chunk;
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	if (chunk.memory == NULL)
+		throw(MAL, "mcurl.putrequest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -153,7 +159,7 @@ handle_put_request(str *retval, str *url)
 
 	/* check for errors */
 	if(res != CURLE_OK) {
-		msg = createException(MAL, "mcurl.deleterequest",
+		msg = createException(MAL, "mcurl.putrequest",
 							  "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 	} else {
 		/*
@@ -168,7 +174,7 @@ handle_put_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf(SZFMT " bytes retrieved\n", chunk.size);
+		//printf("%zu bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);
@@ -194,6 +200,8 @@ handle_post_request(str *retval, str *url)
 	struct MemoryStruct chunk;
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	if (chunk.memory == NULL)
+		throw(MAL, "mcurl.postrequest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -219,7 +227,7 @@ handle_post_request(str *retval, str *url)
 
 	/* check for errors */
 	if(res != CURLE_OK) {
-		msg = createException(MAL, "mcurl.deleterequest",
+		msg = createException(MAL, "mcurl.postrequest",
 							  "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 	} else {
 		/*
@@ -234,7 +242,7 @@ handle_post_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf(SZFMT " bytes retrieved\n", chunk.size);
+		//printf("%zu bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);
@@ -261,6 +269,8 @@ handle_delete_request(str *retval, str *url)
 	struct MemoryStruct chunk;
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	if (chunk.memory == NULL)
+		throw(MAL, "mcurl.deleterequest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -301,7 +311,7 @@ handle_delete_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf(SZFMT " bytes retrieved\n", chunk.size);
+		//printf("%zu bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);

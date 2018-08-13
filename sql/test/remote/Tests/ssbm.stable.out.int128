@@ -8,6 +8,737 @@ Ready.
 
 12036 rows in remote table
 60175 rows in mergetable
+356
+356
+# Running Q 01
+
+# 22:13:42 >  
+# 22:13:42 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/01.sql"
+# 22:13:42 >  
+
+#select sum(lo_extendedprice*lo_discount) as revenue
+#	from lineorder, dwdate
+#	where lo_orderdate = d_datekey
+#		and d_year = 1993
+#		and lo_discount between 1 and 3
+#		and lo_quantity < 25;
+% .L4 # table_name
+% revenue # name
+% hugeint # type
+% 10 # length
+[ 4199635969	]
+# Running Q 02
+
+# 22:13:42 >  
+# 22:13:42 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/02.sql"
+# 22:13:42 >  
+
+#select sum(lo_extendedprice*lo_discount) as revenue
+#	from lineorder, dwdate
+#	where lo_orderdate = d_datekey
+#		and d_yearmonthnum = 199401
+#		and lo_discount between 4 and 6
+#		and lo_quantity between 26 and 35;
+% .L4 # table_name
+% revenue # name
+% hugeint # type
+% 9 # length
+[ 927530712	]
+# Running Q 03
+
+# 22:13:42 >  
+# 22:13:42 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/03.sql"
+# 22:13:42 >  
+
+#select sum(lo_extendedprice*lo_discount) as revenue
+#	from lineorder, dwdate
+#	where lo_orderdate = d_datekey
+#		and d_weeknuminyear = 6 and d_year = 1994
+#		and lo_discount between 5 and 7
+#		and lo_quantity between 36 and 40;
+% .L4 # table_name
+% revenue # name
+% hugeint # type
+% 9 # length
+[ 213477639	]
+# Running Q 04
+
+# 22:13:42 >  
+# 22:13:42 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/04.sql"
+# 22:13:42 >  
+
+#select sum(lo_revenue), d_year, p_brand1
+#	from lineorder, dwdate, part, supplier
+#	where lo_orderdate = d_datekey
+#		and lo_partkey = p_partkey
+#		and lo_suppkey = s_suppkey
+#		and p_category = 'MFGR#12' -- OK to add p_mfgr = ’MFGR#1’
+#		and s_region = 'AMERICA'
+#	group by d_year, p_brand1
+#	order by d_year, p_brand1;
+% .L3,	.dwdate,	.part # table_name
+% L2,	d_year,	p_brand1 # name
+% hugeint,	int,	clob # type
+% 8,	4,	9 # length
+[ 35741623,	1992,	"MFGR#1211"	]
+[ 13582129,	1992,	"MFGR#1212"	]
+[ 2420150,	1992,	"MFGR#1217"	]
+[ 7015912,	1992,	"MFGR#1219"	]
+[ 2641607,	1992,	"MFGR#122"	]
+[ 2563912,	1992,	"MFGR#1221"	]
+[ 6003315,	1992,	"MFGR#1223"	]
+[ 8704784,	1992,	"MFGR#1224"	]
+[ 13700463,	1992,	"MFGR#1225"	]
+[ 12610793,	1992,	"MFGR#1226"	]
+[ 5995739,	1992,	"MFGR#1228"	]
+[ 7552882,	1992,	"MFGR#1230"	]
+[ 13184783,	1992,	"MFGR#1232"	]
+[ 3231894,	1992,	"MFGR#1240"	]
+[ 7214844,	1992,	"MFGR#125"	]
+[ 35054814,	1992,	"MFGR#127"	]
+[ 15102503,	1992,	"MFGR#128"	]
+[ 7639101,	1992,	"MFGR#129"	]
+[ 3339630,	1993,	"MFGR#121"	]
+[ 11514911,	1993,	"MFGR#1211"	]
+[ 4294668,	1993,	"MFGR#1212"	]
+[ 8122643,	1993,	"MFGR#1213"	]
+[ 3678145,	1993,	"MFGR#1214"	]
+[ 7325684,	1993,	"MFGR#1217"	]
+[ 16038869,	1993,	"MFGR#1218"	]
+[ 26560659,	1993,	"MFGR#1219"	]
+[ 5551142,	1993,	"MFGR#1220"	]
+[ 3484096,	1993,	"MFGR#1222"	]
+[ 21747351,	1993,	"MFGR#1223"	]
+[ 5762459,	1993,	"MFGR#1224"	]
+[ 10279155,	1993,	"MFGR#1225"	]
+[ 9952878,	1993,	"MFGR#1226"	]
+[ 6572535,	1993,	"MFGR#1228"	]
+[ 10193031,	1993,	"MFGR#1230"	]
+[ 12137253,	1993,	"MFGR#1233"	]
+[ 6960104,	1993,	"MFGR#1236"	]
+[ 10329821,	1993,	"MFGR#1239"	]
+[ 4258048,	1993,	"MFGR#1240"	]
+[ 1382981,	1993,	"MFGR#125"	]
+[ 2821764,	1993,	"MFGR#126"	]
+[ 14693311,	1993,	"MFGR#127"	]
+[ 1799648,	1993,	"MFGR#128"	]
+[ 5071393,	1993,	"MFGR#129"	]
+[ 18995020,	1994,	"MFGR#121"	]
+[ 4586682,	1994,	"MFGR#1211"	]
+[ 19530708,	1994,	"MFGR#1212"	]
+[ 1728488,	1994,	"MFGR#1213"	]
+[ 13010765,	1994,	"MFGR#1218"	]
+[ 10997176,	1994,	"MFGR#1219"	]
+[ 4554495,	1994,	"MFGR#122"	]
+[ 8557774,	1994,	"MFGR#1220"	]
+[ 5584069,	1994,	"MFGR#1222"	]
+[ 10104525,	1994,	"MFGR#1223"	]
+[ 4775592,	1994,	"MFGR#1224"	]
+[ 10713992,	1994,	"MFGR#1225"	]
+[ 3750100,	1994,	"MFGR#1226"	]
+[ 1794201,	1994,	"MFGR#123"	]
+[ 5980941,	1994,	"MFGR#1232"	]
+[ 7859272,	1994,	"MFGR#1233"	]
+[ 3550796,	1994,	"MFGR#1236"	]
+[ 2106877,	1994,	"MFGR#1238"	]
+[ 14223208,	1994,	"MFGR#1239"	]
+[ 4027318,	1994,	"MFGR#1240"	]
+[ 17777153,	1994,	"MFGR#125"	]
+[ 4869251,	1994,	"MFGR#126"	]
+[ 15392246,	1994,	"MFGR#127"	]
+[ 900044,	1994,	"MFGR#128"	]
+[ 5656126,	1994,	"MFGR#129"	]
+[ 1097742,	1995,	"MFGR#1211"	]
+[ 2707025,	1995,	"MFGR#1213"	]
+[ 4200351,	1995,	"MFGR#1214"	]
+[ 2509211,	1995,	"MFGR#1217"	]
+[ 5595420,	1995,	"MFGR#1218"	]
+[ 9841612,	1995,	"MFGR#1219"	]
+[ 4624540,	1995,	"MFGR#1220"	]
+[ 19279359,	1995,	"MFGR#1222"	]
+[ 5452000,	1995,	"MFGR#1223"	]
+[ 18723136,	1995,	"MFGR#1224"	]
+[ 14590136,	1995,	"MFGR#1225"	]
+[ 8338345,	1995,	"MFGR#1226"	]
+[ 8260673,	1995,	"MFGR#1228"	]
+[ 97819,	1995,	"MFGR#1230"	]
+[ 6377178,	1995,	"MFGR#1232"	]
+[ 14117772,	1995,	"MFGR#1233"	]
+[ 22661695,	1995,	"MFGR#1236"	]
+[ 5142893,	1995,	"MFGR#1239"	]
+[ 17227363,	1995,	"MFGR#1240"	]
+[ 7873139,	1995,	"MFGR#125"	]
+[ 14385634,	1995,	"MFGR#128"	]
+[ 4383708,	1995,	"MFGR#129"	]
+[ 12158316,	1996,	"MFGR#121"	]
+[ 13534131,	1996,	"MFGR#1211"	]
+[ 27850979,	1996,	"MFGR#1212"	]
+[ 784827,	1996,	"MFGR#1218"	]
+[ 1069800,	1996,	"MFGR#122"	]
+[ 4348542,	1996,	"MFGR#1221"	]
+[ 8295332,	1996,	"MFGR#1222"	]
+[ 11183976,	1996,	"MFGR#1224"	]
+[ 19971623,	1996,	"MFGR#1225"	]
+[ 10005626,	1996,	"MFGR#1232"	]
+[ 5135891,	1996,	"MFGR#1236"	]
+[ 4613081,	1996,	"MFGR#1239"	]
+[ 16358592,	1996,	"MFGR#1240"	]
+[ 18374286,	1996,	"MFGR#125"	]
+[ 4288542,	1996,	"MFGR#126"	]
+[ 32750117,	1996,	"MFGR#127"	]
+[ 128577,	1996,	"MFGR#128"	]
+[ 6040770,	1996,	"MFGR#129"	]
+[ 4313787,	1997,	"MFGR#121"	]
+[ 15464411,	1997,	"MFGR#1211"	]
+[ 17725171,	1997,	"MFGR#1212"	]
+[ 2137125,	1997,	"MFGR#1213"	]
+[ 4188998,	1997,	"MFGR#1214"	]
+[ 4172057,	1997,	"MFGR#1217"	]
+[ 15556327,	1997,	"MFGR#1219"	]
+[ 5953230,	1997,	"MFGR#122"	]
+[ 10529427,	1997,	"MFGR#1220"	]
+[ 9097752,	1997,	"MFGR#1221"	]
+[ 8668003,	1997,	"MFGR#1222"	]
+[ 18232285,	1997,	"MFGR#1223"	]
+[ 13859956,	1997,	"MFGR#1224"	]
+[ 2793729,	1997,	"MFGR#1225"	]
+[ 19174753,	1997,	"MFGR#1226"	]
+[ 5128426,	1997,	"MFGR#123"	]
+[ 4304076,	1997,	"MFGR#1230"	]
+[ 8866362,	1997,	"MFGR#1232"	]
+[ 5328122,	1997,	"MFGR#1233"	]
+[ 13735907,	1997,	"MFGR#1236"	]
+[ 10755017,	1997,	"MFGR#1240"	]
+[ 327046,	1997,	"MFGR#125"	]
+[ 13218597,	1997,	"MFGR#127"	]
+[ 10434877,	1997,	"MFGR#128"	]
+[ 8052920,	1997,	"MFGR#129"	]
+[ 10864281,	1998,	"MFGR#121"	]
+[ 2140471,	1998,	"MFGR#1211"	]
+[ 15949227,	1998,	"MFGR#1212"	]
+[ 9091580,	1998,	"MFGR#1217"	]
+[ 7834997,	1998,	"MFGR#1219"	]
+[ 2319634,	1998,	"MFGR#1220"	]
+[ 19485508,	1998,	"MFGR#1222"	]
+[ 1919741,	1998,	"MFGR#1223"	]
+[ 7617265,	1998,	"MFGR#1224"	]
+[ 4074189,	1998,	"MFGR#1225"	]
+[ 7341274,	1998,	"MFGR#123"	]
+[ 2607543,	1998,	"MFGR#1230"	]
+[ 13307853,	1998,	"MFGR#1232"	]
+[ 5316438,	1998,	"MFGR#1233"	]
+[ 1879252,	1998,	"MFGR#1236"	]
+[ 2738610,	1998,	"MFGR#1238"	]
+[ 733435,	1998,	"MFGR#1239"	]
+[ 5151646,	1998,	"MFGR#1240"	]
+[ 3651938,	1998,	"MFGR#126"	]
+[ 8693908,	1998,	"MFGR#127"	]
+[ 2768015,	1998,	"MFGR#128"	]
+[ 11569138,	1998,	"MFGR#129"	]
+# Running Q 05
+
+# 22:13:42 >  
+# 22:13:42 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/05.sql"
+# 22:13:42 >  
+
+#select sum(lo_revenue), d_year, p_brand1
+#	from lineorder, dwdate, part, supplier
+#	where lo_orderdate = d_datekey
+#		and lo_partkey = p_partkey
+#		and lo_suppkey = s_suppkey
+#		-- OK to add p_mfgr=’MFGR#2’
+#		-- OK to add p_category=’MFGR#22’
+#		and p_brand1 between 'MFGR#2221' and 'MFGR#2228'
+#		and s_region = 'ASIA'
+#	group by d_year, p_brand1
+#	order by d_year, p_brand1;
+% .L3,	.dwdate,	.part # table_name
+% L2,	d_year,	p_brand1 # name
+% hugeint,	int,	clob # type
+% 8,	4,	9 # length
+[ 10306232,	1992,	"MFGR#2221"	]
+[ 7096296,	1992,	"MFGR#2222"	]
+[ 13538169,	1992,	"MFGR#2224"	]
+[ 588657,	1992,	"MFGR#2225"	]
+[ 2064857,	1992,	"MFGR#2226"	]
+[ 19175615,	1992,	"MFGR#2227"	]
+[ 5597060,	1993,	"MFGR#2221"	]
+[ 1012379,	1993,	"MFGR#2222"	]
+[ 13096133,	1993,	"MFGR#2223"	]
+[ 8200828,	1993,	"MFGR#2224"	]
+[ 880669,	1993,	"MFGR#2225"	]
+[ 6530070,	1993,	"MFGR#2226"	]
+[ 8174486,	1993,	"MFGR#2227"	]
+[ 20407818,	1994,	"MFGR#2221"	]
+[ 288819,	1994,	"MFGR#2222"	]
+[ 6642402,	1994,	"MFGR#2223"	]
+[ 13970991,	1994,	"MFGR#2224"	]
+[ 11207503,	1994,	"MFGR#2226"	]
+[ 14038987,	1994,	"MFGR#2227"	]
+[ 9206253,	1995,	"MFGR#2222"	]
+[ 10583880,	1995,	"MFGR#2223"	]
+[ 4168114,	1995,	"MFGR#2224"	]
+[ 4480694,	1995,	"MFGR#2226"	]
+[ 5318366,	1995,	"MFGR#2227"	]
+[ 7037757,	1996,	"MFGR#2221"	]
+[ 4626343,	1996,	"MFGR#2222"	]
+[ 6680802,	1996,	"MFGR#2223"	]
+[ 7899650,	1996,	"MFGR#2224"	]
+[ 3943542,	1996,	"MFGR#2225"	]
+[ 8618649,	1996,	"MFGR#2226"	]
+[ 21285135,	1996,	"MFGR#2227"	]
+[ 14925990,	1997,	"MFGR#2221"	]
+[ 9139251,	1997,	"MFGR#2222"	]
+[ 307521,	1997,	"MFGR#2223"	]
+[ 8791563,	1997,	"MFGR#2224"	]
+[ 5652967,	1997,	"MFGR#2225"	]
+[ 10920254,	1997,	"MFGR#2226"	]
+[ 3463448,	1997,	"MFGR#2227"	]
+[ 3697632,	1998,	"MFGR#2221"	]
+[ 17884495,	1998,	"MFGR#2222"	]
+[ 6450682,	1998,	"MFGR#2223"	]
+[ 8158474,	1998,	"MFGR#2224"	]
+[ 4449696,	1998,	"MFGR#2225"	]
+[ 5931644,	1998,	"MFGR#2226"	]
+[ 18442636,	1998,	"MFGR#2227"	]
+# Running Q 06
+
+# 22:13:43 >  
+# 22:13:43 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/06.sql"
+# 22:13:43 >  
+
+#select sum(lo_revenue), d_year, p_brand1
+#	from lineorder, dwdate, part, supplier
+#	where lo_orderdate = d_datekey
+#		and lo_partkey = p_partkey
+#		and lo_suppkey = s_suppkey
+#		-- OK to add p_mfgr=’MFGR#2’
+#		-- OK to add p_category=’MFGR#22’
+#		and p_brand1 = 'MFGR#2221'
+#		and s_region = 'EUROPE'
+#	group by d_year, p_brand1
+#	order by d_year, p_brand1;
+% .L3,	.dwdate,	.part # table_name
+% L2,	d_year,	p_brand1 # name
+% hugeint,	int,	clob # type
+% 8,	4,	9 # length
+[ 2535744,	1992,	"MFGR#2221"	]
+[ 5646414,	1993,	"MFGR#2221"	]
+[ 9516564,	1994,	"MFGR#2221"	]
+[ 11180484,	1995,	"MFGR#2221"	]
+[ 6838192,	1996,	"MFGR#2221"	]
+[ 4605666,	1997,	"MFGR#2221"	]
+[ 9102972,	1998,	"MFGR#2221"	]
+# Running Q 07
+
+# 22:13:43 >  
+# 22:13:43 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/07.sql"
+# 22:13:43 >  
+
+#select c_nation, s_nation, d_year, sum(lo_revenue) as revenue
+#	from customer, lineorder, supplier, dwdate
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_orderdate = d_datekey
+#		and c_region = 'ASIA'
+#		and s_region = 'ASIA'
+#		and d_year >= 1992 and d_year <= 1997
+#	group by c_nation, s_nation, d_year
+#	order by d_year asc, revenue desc;
+% .customer,	.supplier,	.dwdate,	.L6 # table_name
+% c_nation,	s_nation,	d_year,	revenue # name
+% clob,	clob,	int,	hugeint # type
+% 9,	9,	4,	9 # length
+[ "INDONESIA",	"VIETNAM",	1992,	172784923	]
+[ "INDONESIA",	"INDIA",	1992,	121272321	]
+[ "VIETNAM",	"VIETNAM",	1992,	116846322	]
+[ "CHINA",	"VIETNAM",	1992,	105383218	]
+[ "INDONESIA",	"INDONESIA",	1992,	96566652	]
+[ "INDONESIA",	"CHINA",	1992,	92251585	]
+[ "CHINA",	"INDIA",	1992,	83126967	]
+[ "VIETNAM",	"INDIA",	1992,	79112303	]
+[ "CHINA",	"CHINA",	1992,	72681328	]
+[ "VIETNAM",	"CHINA",	1992,	71505221	]
+[ "INDONESIA",	"JAPAN",	1992,	68661048	]
+[ "CHINA",	"INDONESIA",	1992,	67197002	]
+[ "INDIA",	"CHINA",	1992,	65583175	]
+[ "CHINA",	"JAPAN",	1992,	62226114	]
+[ "VIETNAM",	"JAPAN",	1992,	61894943	]
+[ "INDIA",	"VIETNAM",	1992,	59819419	]
+[ "JAPAN",	"INDIA",	1992,	56751348	]
+[ "INDIA",	"INDONESIA",	1992,	55637439	]
+[ "INDIA",	"JAPAN",	1992,	49558176	]
+[ "INDIA",	"INDIA",	1992,	48849419	]
+[ "VIETNAM",	"INDONESIA",	1992,	47838667	]
+[ "JAPAN",	"VIETNAM",	1992,	44269137	]
+[ "JAPAN",	"CHINA",	1992,	42183228	]
+[ "JAPAN",	"INDONESIA",	1992,	28041654	]
+[ "JAPAN",	"JAPAN",	1992,	26509605	]
+[ "INDONESIA",	"CHINA",	1993,	182426844	]
+[ "INDONESIA",	"VIETNAM",	1993,	136511542	]
+[ "INDONESIA",	"INDONESIA",	1993,	133046814	]
+[ "CHINA",	"VIETNAM",	1993,	132740933	]
+[ "CHINA",	"INDONESIA",	1993,	130804709	]
+[ "INDONESIA",	"INDIA",	1993,	103329006	]
+[ "VIETNAM",	"INDIA",	1993,	100433752	]
+[ "JAPAN",	"CHINA",	1993,	100244771	]
+[ "CHINA",	"CHINA",	1993,	93076520	]
+[ "VIETNAM",	"INDONESIA",	1993,	86075637	]
+[ "VIETNAM",	"VIETNAM",	1993,	83636193	]
+[ "VIETNAM",	"CHINA",	1993,	79839586	]
+[ "CHINA",	"INDIA",	1993,	75476522	]
+[ "INDIA",	"CHINA",	1993,	73358891	]
+[ "CHINA",	"JAPAN",	1993,	72859116	]
+[ "INDIA",	"INDIA",	1993,	62417109	]
+[ "JAPAN",	"INDIA",	1993,	51402586	]
+[ "INDONESIA",	"JAPAN",	1993,	49099054	]
+[ "JAPAN",	"JAPAN",	1993,	48470872	]
+[ "VIETNAM",	"JAPAN",	1993,	47136044	]
+[ "JAPAN",	"INDONESIA",	1993,	46575202	]
+[ "JAPAN",	"VIETNAM",	1993,	41104620	]
+[ "INDIA",	"VIETNAM",	1993,	39181293	]
+[ "INDIA",	"INDONESIA",	1993,	36383474	]
+[ "INDIA",	"JAPAN",	1993,	25046025	]
+[ "INDONESIA",	"CHINA",	1994,	149657390	]
+[ "INDONESIA",	"INDONESIA",	1994,	139096654	]
+[ "VIETNAM",	"CHINA",	1994,	128092591	]
+[ "INDONESIA",	"INDIA",	1994,	125691779	]
+[ "CHINA",	"CHINA",	1994,	117704661	]
+[ "INDONESIA",	"VIETNAM",	1994,	110447941	]
+[ "VIETNAM",	"VIETNAM",	1994,	104634280	]
+[ "INDONESIA",	"JAPAN",	1994,	94202309	]
+[ "INDIA",	"INDIA",	1994,	87559304	]
+[ "CHINA",	"VIETNAM",	1994,	79257773	]
+[ "INDIA",	"VIETNAM",	1994,	74763775	]
+[ "CHINA",	"JAPAN",	1994,	74223281	]
+[ "CHINA",	"INDIA",	1994,	73710746	]
+[ "JAPAN",	"INDIA",	1994,	73084308	]
+[ "CHINA",	"INDONESIA",	1994,	71058355	]
+[ "JAPAN",	"CHINA",	1994,	66486212	]
+[ "VIETNAM",	"INDIA",	1994,	65195504	]
+[ "INDIA",	"JAPAN",	1994,	61964866	]
+[ "INDIA",	"CHINA",	1994,	54001697	]
+[ "JAPAN",	"VIETNAM",	1994,	52353726	]
+[ "JAPAN",	"JAPAN",	1994,	49841356	]
+[ "INDIA",	"INDONESIA",	1994,	48115599	]
+[ "VIETNAM",	"JAPAN",	1994,	44189643	]
+[ "VIETNAM",	"INDONESIA",	1994,	36735867	]
+[ "JAPAN",	"INDONESIA",	1994,	35787387	]
+[ "INDONESIA",	"VIETNAM",	1995,	124703211	]
+[ "INDONESIA",	"CHINA",	1995,	117855042	]
+[ "INDONESIA",	"INDIA",	1995,	109188170	]
+[ "INDONESIA",	"JAPAN",	1995,	108783269	]
+[ "INDIA",	"CHINA",	1995,	97134968	]
+[ "CHINA",	"CHINA",	1995,	93816347	]
+[ "INDONESIA",	"INDONESIA",	1995,	93576365	]
+[ "INDIA",	"INDIA",	1995,	91123995	]
+[ "CHINA",	"VIETNAM",	1995,	90475804	]
+[ "INDIA",	"INDONESIA",	1995,	69534495	]
+[ "VIETNAM",	"JAPAN",	1995,	68797666	]
+[ "VIETNAM",	"VIETNAM",	1995,	66580589	]
+[ "CHINA",	"JAPAN",	1995,	66302585	]
+[ "VIETNAM",	"INDIA",	1995,	62102121	]
+[ "JAPAN",	"CHINA",	1995,	61193429	]
+[ "JAPAN",	"VIETNAM",	1995,	58603113	]
+[ "CHINA",	"INDONESIA",	1995,	58187663	]
+[ "JAPAN",	"INDONESIA",	1995,	49743113	]
+[ "JAPAN",	"JAPAN",	1995,	44550237	]
+[ "VIETNAM",	"CHINA",	1995,	41392680	]
+[ "JAPAN",	"INDIA",	1995,	41310627	]
+[ "INDIA",	"JAPAN",	1995,	39744126	]
+[ "VIETNAM",	"INDONESIA",	1995,	36856824	]
+[ "INDIA",	"VIETNAM",	1995,	26912726	]
+[ "CHINA",	"INDIA",	1995,	26410808	]
+[ "INDONESIA",	"CHINA",	1996,	170564179	]
+[ "INDONESIA",	"VIETNAM",	1996,	132832962	]
+[ "INDIA",	"CHINA",	1996,	125561517	]
+[ "CHINA",	"CHINA",	1996,	125063673	]
+[ "INDONESIA",	"INDIA",	1996,	113425624	]
+[ "CHINA",	"VIETNAM",	1996,	107966382	]
+[ "CHINA",	"INDONESIA",	1996,	90778317	]
+[ "CHINA",	"INDIA",	1996,	90587354	]
+[ "INDONESIA",	"JAPAN",	1996,	83945841	]
+[ "JAPAN",	"INDIA",	1996,	79834486	]
+[ "VIETNAM",	"INDIA",	1996,	76217556	]
+[ "INDONESIA",	"INDONESIA",	1996,	75239402	]
+[ "JAPAN",	"CHINA",	1996,	70068123	]
+[ "VIETNAM",	"CHINA",	1996,	68126043	]
+[ "VIETNAM",	"VIETNAM",	1996,	62083854	]
+[ "INDIA",	"VIETNAM",	1996,	59632099	]
+[ "JAPAN",	"VIETNAM",	1996,	57798460	]
+[ "JAPAN",	"INDONESIA",	1996,	56821991	]
+[ "CHINA",	"JAPAN",	1996,	55813462	]
+[ "VIETNAM",	"INDONESIA",	1996,	47757057	]
+[ "JAPAN",	"JAPAN",	1996,	47539552	]
+[ "VIETNAM",	"JAPAN",	1996,	46963772	]
+[ "INDIA",	"INDIA",	1996,	45565344	]
+[ "INDIA",	"JAPAN",	1996,	43954767	]
+[ "INDIA",	"INDONESIA",	1996,	38874394	]
+[ "INDONESIA",	"VIETNAM",	1997,	135976970	]
+[ "INDONESIA",	"CHINA",	1997,	132991130	]
+[ "VIETNAM",	"VIETNAM",	1997,	121862533	]
+[ "INDONESIA",	"JAPAN",	1997,	104037763	]
+[ "CHINA",	"INDIA",	1997,	94813262	]
+[ "CHINA",	"CHINA",	1997,	91303155	]
+[ "INDONESIA",	"INDONESIA",	1997,	90786987	]
+[ "CHINA",	"VIETNAM",	1997,	83798439	]
+[ "INDONESIA",	"INDIA",	1997,	79939537	]
+[ "JAPAN",	"CHINA",	1997,	77980070	]
+[ "VIETNAM",	"INDONESIA",	1997,	70148929	]
+[ "INDIA",	"INDONESIA",	1997,	65059235	]
+[ "CHINA",	"INDONESIA",	1997,	60725848	]
+[ "JAPAN",	"VIETNAM",	1997,	59928838	]
+[ "JAPAN",	"INDONESIA",	1997,	58928479	]
+[ "CHINA",	"JAPAN",	1997,	56743739	]
+[ "INDIA",	"VIETNAM",	1997,	53785095	]
+[ "INDIA",	"INDIA",	1997,	51362167	]
+[ "VIETNAM",	"CHINA",	1997,	51118956	]
+[ "INDIA",	"CHINA",	1997,	46625339	]
+[ "VIETNAM",	"JAPAN",	1997,	37131543	]
+[ "VIETNAM",	"INDIA",	1997,	36662875	]
+[ "JAPAN",	"INDIA",	1997,	33111440	]
+[ "JAPAN",	"JAPAN",	1997,	26883620	]
+[ "INDIA",	"JAPAN",	1997,	15498069	]
+# Running Q 08
+
+# 22:13:43 >  
+# 22:13:43 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/08.sql"
+# 22:13:43 >  
+
+#select c_city, s_city, d_year, sum(lo_revenue) as revenue
+#	from customer, lineorder, supplier, dwdate
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_orderdate = d_datekey
+#		and c_nation = 'UNITED STATES'
+#		and s_nation = 'UNITED STATES'
+#		and d_year >= 1992 and d_year <= 1997
+#	group by c_city, s_city, d_year
+#	order by d_year asc, revenue desc;
+% .customer,	.supplier,	.dwdate,	.L6 # table_name
+% c_city,	s_city,	d_year,	revenue # name
+% clob,	clob,	int,	hugeint # type
+% 0,	0,	1,	1 # length
+# Running Q 09
+
+# 22:13:44 >  
+# 22:13:44 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/09.sql"
+# 22:13:44 >  
+
+#select c_city, s_city, d_year, sum(lo_revenue) as revenue
+#	from customer, lineorder, supplier, dwdate
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_orderdate = d_datekey
+#		and c_nation = 'UNITED KINGDOM'
+#		and (c_city='UNITED KI1' or c_city='UNITED KI5')
+#		and (s_city='UNITED KI1' or s_city='UNITED KI5')
+#		and s_nation = 'UNITED KINGDOM'
+#		and d_year >= 1992 and d_year <= 1997
+#	group by c_city, s_city, d_year
+#	order by d_year asc, revenue desc;
+% .customer,	.supplier,	.dwdate,	.L6 # table_name
+% c_city,	s_city,	d_year,	revenue # name
+% clob,	clob,	int,	hugeint # type
+% 0,	0,	1,	1 # length
+# Running Q 10
+
+# 22:13:44 >  
+# 22:13:44 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/10.sql"
+# 22:13:44 >  
+
+#select c_city, s_city, d_year, sum(lo_revenue) as revenue
+#	from customer, lineorder, supplier, dwdate
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_orderdate = d_datekey
+#		and c_nation = 'UNITED KINGDOM'
+#		and (c_city='UNITED KI1' or c_city='UNITED KI5')
+#		and (s_city='UNITED KI1' or s_city='UNITED KI5')
+#		and s_nation = 'UNITED KINGDOM'
+#		and d_yearmonth = 'Dec1997'
+#	group by c_city, s_city, d_year
+#	order by d_year asc, revenue desc;
+% .customer,	.supplier,	.dwdate,	.L6 # table_name
+% c_city,	s_city,	d_year,	revenue # name
+% clob,	clob,	int,	hugeint # type
+% 0,	0,	1,	1 # length
+# Running Q 11
+
+# 22:13:44 >  
+# 22:13:44 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/11.sql"
+# 22:13:44 >  
+
+#select d_year, c_nation, sum(lo_revenue-lo_supplycost) as profit1
+#	from dwdate, customer, supplier, part, lineorder
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_partkey = p_partkey
+#		and lo_orderdate = d_datekey
+#		and c_region = 'AMERICA'
+#		and s_region = 'AMERICA'
+#		and (p_mfgr = 'MFGR#1' or p_mfgr = 'MFGR#2')
+#	group by d_year, c_nation
+#	order by d_year, c_nation;
+% .dwdate,	.customer,	.L5 # table_name
+% d_year,	c_nation,	profit1 # name
+% int,	clob,	bigint # type
+% 4,	9,	9 # length
+[ 1992,	"ARGENTINA",	60236596	]
+[ 1992,	"BRAZIL",	50116740	]
+[ 1992,	"CANADA",	158594332	]
+[ 1992,	"PERU",	122782525	]
+[ 1993,	"ARGENTINA",	101488494	]
+[ 1993,	"BRAZIL",	18300780	]
+[ 1993,	"CANADA",	220466287	]
+[ 1993,	"PERU",	138221761	]
+[ 1994,	"ARGENTINA",	96762374	]
+[ 1994,	"BRAZIL",	41192541	]
+[ 1994,	"CANADA",	142838983	]
+[ 1994,	"PERU",	81585186	]
+[ 1995,	"ARGENTINA",	77733294	]
+[ 1995,	"BRAZIL",	48321419	]
+[ 1995,	"CANADA",	132723304	]
+[ 1995,	"PERU",	120699540	]
+[ 1996,	"ARGENTINA",	77775674	]
+[ 1996,	"BRAZIL",	30868579	]
+[ 1996,	"CANADA",	227015896	]
+[ 1996,	"PERU",	82556019	]
+[ 1997,	"ARGENTINA",	70072123	]
+[ 1997,	"BRAZIL",	33222386	]
+[ 1997,	"CANADA",	118280072	]
+[ 1997,	"PERU",	68393464	]
+[ 1998,	"ARGENTINA",	29902049	]
+[ 1998,	"BRAZIL",	17035775	]
+[ 1998,	"CANADA",	93061401	]
+[ 1998,	"PERU",	41688725	]
+# Running Q 12
+
+# 22:13:45 >  
+# 22:13:45 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/12.sql"
+# 22:13:45 >  
+
+#select d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1
+#	from dwdate, customer, supplier, part, lineorder
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_partkey = p_partkey
+#		and lo_orderdate = d_datekey
+#		and c_region = 'AMERICA'
+#		and s_region = 'AMERICA'
+#		and (d_year = 1997 or d_year = 1998)
+#		and (p_mfgr = 'MFGR#1' or p_mfgr = 'MFGR#2')
+#	group by d_year, s_nation, p_category
+#	order by d_year, s_nation, p_category;
+% .dwdate,	.supplier,	.part,	.L6 # table_name
+% d_year,	s_nation,	p_category,	profit1 # name
+% int,	clob,	clob,	bigint # type
+% 4,	13,	7,	8 # length
+[ 1997,	"ARGENTINA",	"MFGR#11",	6011959	]
+[ 1997,	"ARGENTINA",	"MFGR#12",	10930453	]
+[ 1997,	"ARGENTINA",	"MFGR#13",	7326904	]
+[ 1997,	"ARGENTINA",	"MFGR#15",	9178983	]
+[ 1997,	"ARGENTINA",	"MFGR#22",	4054952	]
+[ 1997,	"ARGENTINA",	"MFGR#23",	446826	]
+[ 1997,	"ARGENTINA",	"MFGR#24",	5812266	]
+[ 1997,	"ARGENTINA",	"MFGR#25",	3775371	]
+[ 1997,	"BRAZIL",	"MFGR#11",	14560154	]
+[ 1997,	"BRAZIL",	"MFGR#13",	4608821	]
+[ 1997,	"BRAZIL",	"MFGR#15",	6905625	]
+[ 1997,	"BRAZIL",	"MFGR#21",	3245284	]
+[ 1997,	"BRAZIL",	"MFGR#22",	7989912	]
+[ 1997,	"BRAZIL",	"MFGR#23",	2350639	]
+[ 1997,	"BRAZIL",	"MFGR#24",	5426027	]
+[ 1997,	"BRAZIL",	"MFGR#25",	8673663	]
+[ 1997,	"CANADA",	"MFGR#12",	2235973	]
+[ 1997,	"CANADA",	"MFGR#13",	11852524	]
+[ 1997,	"CANADA",	"MFGR#14",	3537619	]
+[ 1997,	"CANADA",	"MFGR#15",	19768006	]
+[ 1997,	"CANADA",	"MFGR#21",	529875	]
+[ 1997,	"CANADA",	"MFGR#22",	5832162	]
+[ 1997,	"CANADA",	"MFGR#23",	4225150	]
+[ 1997,	"CANADA",	"MFGR#24",	1169920	]
+[ 1997,	"PERU",	"MFGR#11",	13469329	]
+[ 1997,	"PERU",	"MFGR#12",	9877074	]
+[ 1997,	"PERU",	"MFGR#13",	2144336	]
+[ 1997,	"PERU",	"MFGR#14",	7772794	]
+[ 1997,	"PERU",	"MFGR#15",	2684121	]
+[ 1997,	"PERU",	"MFGR#21",	8676879	]
+[ 1997,	"PERU",	"MFGR#22",	4211661	]
+[ 1997,	"PERU",	"MFGR#23",	5841679	]
+[ 1997,	"PERU",	"MFGR#24",	4164126	]
+[ 1997,	"PERU",	"MFGR#25",	1726140	]
+[ 1997,	"UNITED STATES",	"MFGR#11",	13695414	]
+[ 1997,	"UNITED STATES",	"MFGR#12",	1570892	]
+[ 1997,	"UNITED STATES",	"MFGR#13",	7934509	]
+[ 1997,	"UNITED STATES",	"MFGR#14",	10506122	]
+[ 1997,	"UNITED STATES",	"MFGR#15",	13962239	]
+[ 1997,	"UNITED STATES",	"MFGR#21",	11608519	]
+[ 1997,	"UNITED STATES",	"MFGR#22",	1580597	]
+[ 1997,	"UNITED STATES",	"MFGR#23",	12019786	]
+[ 1997,	"UNITED STATES",	"MFGR#24",	2306608	]
+[ 1997,	"UNITED STATES",	"MFGR#25",	3766152	]
+[ 1998,	"ARGENTINA",	"MFGR#11",	6899027	]
+[ 1998,	"ARGENTINA",	"MFGR#15",	370411	]
+[ 1998,	"ARGENTINA",	"MFGR#23",	3551367	]
+[ 1998,	"ARGENTINA",	"MFGR#24",	4336186	]
+[ 1998,	"ARGENTINA",	"MFGR#25",	1685570	]
+[ 1998,	"BRAZIL",	"MFGR#11",	5658181	]
+[ 1998,	"BRAZIL",	"MFGR#22",	6949723	]
+[ 1998,	"BRAZIL",	"MFGR#23",	4321193	]
+[ 1998,	"BRAZIL",	"MFGR#25",	467968	]
+[ 1998,	"CANADA",	"MFGR#11",	2364615	]
+[ 1998,	"CANADA",	"MFGR#12",	4435133	]
+[ 1998,	"CANADA",	"MFGR#14",	9800212	]
+[ 1998,	"CANADA",	"MFGR#21",	2472544	]
+[ 1998,	"CANADA",	"MFGR#23",	3513299	]
+[ 1998,	"CANADA",	"MFGR#25",	5291352	]
+[ 1998,	"PERU",	"MFGR#12",	11097433	]
+[ 1998,	"PERU",	"MFGR#13",	4421179	]
+[ 1998,	"PERU",	"MFGR#15",	5199023	]
+[ 1998,	"PERU",	"MFGR#21",	16677298	]
+[ 1998,	"PERU",	"MFGR#22",	1765905	]
+[ 1998,	"PERU",	"MFGR#23",	4453957	]
+[ 1998,	"PERU",	"MFGR#24",	9196951	]
+[ 1998,	"PERU",	"MFGR#25",	8748774	]
+[ 1998,	"UNITED STATES",	"MFGR#11",	3987678	]
+[ 1998,	"UNITED STATES",	"MFGR#12",	6531198	]
+[ 1998,	"UNITED STATES",	"MFGR#14",	2347354	]
+[ 1998,	"UNITED STATES",	"MFGR#15",	5297506	]
+[ 1998,	"UNITED STATES",	"MFGR#21",	2829259	]
+[ 1998,	"UNITED STATES",	"MFGR#22",	13322385	]
+[ 1998,	"UNITED STATES",	"MFGR#23",	11917571	]
+[ 1998,	"UNITED STATES",	"MFGR#24",	8482069	]
+[ 1998,	"UNITED STATES",	"MFGR#25",	3295629	]
+# Running Q 13
+
+# 22:13:45 >  
+# 22:13:45 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --port=37905 --database=master --host=localhost < "/home/niels/data/malparsing/sql/benchmarks/ssbm/Tests/13.sql"
+# 22:13:45 >  
+
+#select d_year, s_city, p_brand1, sum(lo_revenue-lo_supplycost) as profit1
+#	from dwdate, customer, supplier, part, lineorder
+#	where lo_custkey = c_custkey
+#		and lo_suppkey = s_suppkey
+#		and lo_partkey = p_partkey
+#		and lo_orderdate = d_datekey
+#		and c_region = 'AMERICA'
+#		and s_nation = 'UNITED STATES'
+#		and (d_year = 1997 or d_year = 1998)
+#		and p_category = 'MFGR#14'
+#	group by d_year, s_city, p_brand1
+#	order by d_year, s_city, p_brand1;
+% .dwdate,	.supplier,	.part,	.L6 # table_name
+% d_year,	s_city,	p_brand1,	profit1 # name
+% int,	clob,	clob,	bigint # type
+% 4,	10,	9,	7 # length
+[ 1997,	"UNITED ST2",	"MFGR#1433",	2636841	]
+[ 1997,	"UNITED ST6",	"MFGR#1415",	5022945	]
+[ 1997,	"UNITED ST7",	"MFGR#1415",	2846336	]
+[ 1998,	"UNITED ST0",	"MFGR#1418",	1457152	]
+[ 1998,	"UNITED ST2",	"MFGR#1414",	442555	]
+[ 1998,	"UNITED ST7",	"MFGR#142",	306182	]
+[ 1998,	"UNITED ST9",	"MFGR#1433",	141465	]
 
 # 02:22:55 >  
 # 02:22:55 >  "Done."

@@ -32,14 +32,17 @@ stderr of test 'large-number-operation-strange-results.Bug-2929` in directory 's
 MAPI  = monetdb@niels:34633
 QUERY = select 10000000 * 100000 * 11.51 + 51.097 * 100000;
 ERROR = !overflow in calculation 115100000000000000*100.
+CODE  = 22003
 MAPI  = monetdb@niels:34633
 QUERY = select          convert(1000000000000000000 , decimal(20)) * 100000000000000 * 11.51                +          51.097 * 100000000000000;
-ERROR = !decimal of 20 digits are not supported in: "select          convert(1000000000000000000 , decimal(20)"
+ERROR = !Decimal of 20 digits are not supported in: "select          convert(1000000000000000000 , decimal(20)"
         !syntax error, unexpected ')' in: ")"
+CODE  = 22003
 MAPI  = monetdb@niels:34633
 QUERY = select convert (convert(1000000000000000000 , decimal(20)) * 100000000000000 * 11.51 , decimal(35)) + convert (51.097 * 100000000000000 , decimal(35));
-ERROR = !decimal of 20 digits are not supported in: "select convert (convert(1000000000000000000 , decimal(20)"
+ERROR = !Decimal of 20 digits are not supported in: "select convert (convert(1000000000000000000 , decimal(20)"
         !syntax error, unexpected ')' in: ")"
+CODE  = 22003
 
 
 # 14:36:23 >  
