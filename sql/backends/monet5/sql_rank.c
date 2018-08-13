@@ -35,11 +35,11 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int (*cmp)(const void *, const void *);
 		BATiter it;
 		ptr v;
-			
+
 		if (!b)
-			throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = (int)BATcount(b);
-		voidresultBAT(r, TYPE_bit, cnt, b, "Cannot create bat");
+		voidresultBAT(r, TYPE_bit, cnt, b, "sql.diff");
 		rp = (bit*)Tloc(r, 0);
 		if (pci->argc > 2) {
 			c = b;
@@ -47,7 +47,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b = BATdescriptor(*bid);
 			if (!b) {
 				BBPunfix(c->batCacheid);
-				throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
+				throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 
 			cmp = ATOMcompare(b->ttype);
@@ -64,8 +64,8 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			BBPunfix(c->batCacheid);
 		} else {
-	       		cmp = ATOMcompare(b->ttype);
-	       		it = bat_iterator(b);
+			cmp = ATOMcompare(b->ttype);
+			it = bat_iterator(b);
 			v = BUNtail(it, 0);
 
 			for(i=0; i<cnt; i++, rp++) {
@@ -105,7 +105,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!b)
 			throw(SQL, "sql.row_number", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = (int)BATcount(b);
-	 	voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
+	 	voidresultBAT(r, TYPE_int, cnt, b, "sql.row_number");
 		rp = (int*)Tloc(r, 0);
 		if (isaBatType(getArgType(mb, pci, 2))) { 
 			/* order info not used */
@@ -154,7 +154,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!b)
 			throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = (int)BATcount(b);
-		voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
+		voidresultBAT(r, TYPE_int, cnt, b, "sql.rank");
 		rp = (int*)Tloc(r, 0);
 		if (isaBatType(getArgType(mb, pci, 2))) { 
 			if (isaBatType(getArgType(mb, pci, 3))) { 
@@ -227,7 +227,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc != 4 || 
 		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
-		throw(SQL, "sql.rank", SQLSTATE(42000) "dense_rank(:any_1,:bit,:bit)");
+		throw(SQL, "sql.dense_rank", SQLSTATE(42000) "dense_rank(:any_1,:bit,:bit)");
 	}
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -239,7 +239,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!b)
 			throw(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = (int)BATcount(b);
-		voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
+		voidresultBAT(r, TYPE_int, cnt, b, "sql.dense_rank");
 		rp = (int*)Tloc(r, 0);
 		if (isaBatType(getArgType(mb, pci, 2))) { 
 			if (isaBatType(getArgType(mb, pci, 3))) { 
@@ -307,7 +307,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o,  Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str mod, const str err) 
+SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str mod, const str err)
 {
 	*r = *b = *p = *o = NULL;
 
@@ -320,11 +320,11 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o,  Client cntxt, MalBlkPtr m
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		*b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 		if (!*b)
-			throw(SQL, mod, "Cannot access descriptor");
+			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	if (b) {
 		size_t cnt = BATcount(*b);
-		voidresultBAT((*r), (*b)->ttype, cnt, (*b), "Cannot create bat");
+		voidresultBAT((*r), (*b)->ttype, cnt, (*b), mod);
 		if (!*r) 
 			if (*b) BBPunfix((*b)->batCacheid);
 	}
@@ -333,7 +333,7 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o,  Client cntxt, MalBlkPtr m
 		if (!*p) {
 			if (*b) BBPunfix((*b)->batCacheid);
 			if (*r) BBPunfix((*r)->batCacheid);
-			throw(SQL, mod, "Cannot access descriptor");
+			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 	}
 	if (isaBatType(getArgType(mb, pci, 3))) { 
@@ -342,18 +342,18 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o,  Client cntxt, MalBlkPtr m
 			if (*b) BBPunfix((*b)->batCacheid);
 			if (*r) BBPunfix((*r)->batCacheid);
 			if (*p) BBPunfix((*p)->batCacheid);
-			throw(SQL, mod, "Cannot access descriptor");
+			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 	}
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 str 
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r, *b, *p, *o;
-	str res = SQLanalytics_args( &r, &b, &p, &o, cntxt, mb, stk, pci, "sql.min", "min(:any_1,:bit,:bit)");
-	int tpe = getArgType(mb, pci, 1); 
+	str msg = SQLanalytics_args( &r, &b, &p, &o, cntxt, mb, stk, pci, "sql.min", "min(:any_1,:bit,:bit)");
+	int tpe = getArgType(mb, pci, 1);
 	int unit = *getArgReference_int(stk, pci, 4);
 	int start = *getArgReference_int(stk, pci, 5);
 	int end = *getArgReference_int(stk, pci, 6);
@@ -366,8 +366,8 @@ SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
-	if (res)
-		return res;
+	if (msg)
+		return msg;
 
 	/*
 	switch(ATOMstorage(tpe)) {
@@ -388,34 +388,32 @@ SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* FOR NOW only int input type !! */
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		int i, j, cnt, *rp, *rb, *bp, curval;
+		int i, j, cnt;
+		int *rp, *rb, *bp, curval;
 		bit *np, *no;
-			
+
 		cnt = (int)BATcount(b);
 		rb = rp = (int*)Tloc(r, 0);
 		bp = (int*)Tloc(b, 0);
 		curval = *bp;
 		if (p) {
 			if (o) {
-			        np = (bit*)Tloc(p, 0);
-			        no = (bit*)Tloc(o, 0);
-				for(i=1,j=1; i<=cnt; i++, np++, no++, rp++, bp++) {
+				np = (bit*)Tloc(p, 0);
+				no = (bit*)Tloc(o, 0);
+				for(i=1; i<=cnt; i++, np++, no++, rp++, bp++) {
 					if (*np) {
-						j=1;
 						for (;rb < rp; rb++)
 							*rb = curval;
 						curval = *bp;
-					} else if (*no)
-						j++;
+					}
 					curval = MIN(*bp,curval);
 				}
 				for (;rb < rp; rb++)
 					*rb = curval;
 			} else { /* single value, ie no ordering */
-			        np = (bit*)Tloc(p, 0);
-				for(i=1,j=1; i<=cnt; i++, np++, rp++, bp++) {
+				np = (bit*)Tloc(p, 0);
+				for(i=1; i<=cnt; i++, np++, rp++, bp++) {
 					if (*np) {
-						j=1;
 						for (;rb < rp; rb++)
 							*rb = curval;
 						curval = *bp;

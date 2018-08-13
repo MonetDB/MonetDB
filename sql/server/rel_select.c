@@ -4446,7 +4446,7 @@ rel_frame(mvc *sql, symbol *frame, list *exps)
  * a = project( table ) [ x, y, z, w, v ], [ x, y]
  * b = project( table ) [ x, y, z, w, v ], [ y, x]
  *
- * project with order dependend operators, ie combined prev/current value 
+ * project with order dependent operators, ie combined prev/current value
  * aa = project (a) [ x, y, r = rank_op(diff(x) (marks a new partition), rediff(diff(x), y) (marks diff value with in partition)), z, w, v ]
  * project(aa) [ aa.x, aa.y, aa.r ] -- only keep current output list 
  * bb = project (b) [ x, y, a = aggr_op(z, diff(y), rediff(diff(y), x)), z, w, v ]
@@ -4467,7 +4467,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args, *types;
 	sql_schema *s = sql->session->schema;
 	int distinct = 0, project_added = 0, aggr = 0;
-	
+
 	if (window_function->token == SQL_RANK) {
 		aname = qname_fname(window_function->data.lval);
 		sname = qname_schema(window_function->data.lval);
@@ -4515,7 +4515,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		obe = rel_order_by(sql, &p, window_specification->h->next->data.sym, f);
 		if (!obe)
 			return NULL;
-		/* conditionaly? */
+		/* conditionally? */
 		g = p->l;
 		if (g->op == op_groupby) {
 			list_merge(p->exps, obe, (fdup)NULL);
@@ -4526,6 +4526,11 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			list_merge(p->r, obe, (fdup)NULL);
 		} else {
 			p->r = obe;
+		}
+	} else if(aggr && p->r) { //set ascending order by default for aggregations
+		for(node *nn = ((list*)p->r)->h ; nn ; nn = nn->next) {
+			sql_exp *en = nn->data;
+			set_direction(en, 1);
 		}
 	}
 	/* Frame */
