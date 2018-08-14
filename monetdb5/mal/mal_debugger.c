@@ -427,7 +427,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 retryRead:
 			msg = (char *) (*cntxt->phase[MAL_SCENARIO_READER])(cntxt);
 			if (msg != MAL_SUCCEED || cntxt->mode == FINISHCLIENT){
-				GDKfree(msg);
+				freeException(msg);
 				break;
 			}
 			/* SQL patch, it should only react to Smessages, Xclose requests to be ignored */

@@ -314,7 +314,7 @@ WLRprocess(void *arg)
 						} else
 						if((msg = mvc_commit(sql, 0, 0, false)) != MAL_SUCCEED) {
 							mnstr_printf(GDKerr,"#wlr.process transaction commit failed: %s\n", msg);
-							GDKfree(msg);
+							freeException(msg);
 						}
 					}
 				} else {
@@ -343,7 +343,7 @@ WLRprocess(void *arg)
 		wlr_batches++;
 		if((msg = WLRsetConfig()) != MAL_SUCCEED) {
 			mnstr_printf(GDKerr,"%s\n",msg);
-			GDKfree(msg);
+			freeException(msg);
 		}
 		// stop when we are about to read beyond the limited transaction (timestamp)
 		if( (wlr_limit != -1 || (wlr_timelimit[0] && wlr_read[0] && strncmp(wlr_read,wlr_timelimit,26)>= 0) )  && wlr_limit <= wlr_tag) {
@@ -380,7 +380,7 @@ WLRprocessScheduler(void *arg)
 
 	if((msg = WLRgetConfig()) != MAL_SUCCEED) {
 		mnstr_printf(GDKerr,"%s\n",msg);
-		GDKfree(msg);
+		freeException(msg);
 	}
 	wlr_state = WLR_RUN;
 	while(!GDKexiting() && wlr_state == WLR_RUN){
@@ -404,7 +404,7 @@ WLRprocessScheduler(void *arg)
 		if( wlr_master[0] && wlr_state != WLR_PAUSE){
 			if((msg = WLRgetMaster()) != MAL_SUCCEED) {
 				mnstr_printf(GDKerr,"%s\n",msg);
-				GDKfree(msg);
+				freeException(msg);
 			}
 			if( wlrprocessrunning == 0 && 
 				( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||

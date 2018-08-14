@@ -618,11 +618,15 @@ handle_error(mvc *m, int pstatus, str msg)
 	}
 	if( new && msg){
 		newmsg = GDKzalloc( strlen(msg) + strlen(new) + 64);
-		strcpy(newmsg, msg);
-		/* strcat(newmsg,"!"); */
-		strcat(newmsg,new);
-		GDKfree(new);
-		GDKfree(msg);
+		if (newmsg == NULL) {
+			newmsg = createException(SQL, "sql.execute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		} else {
+			strcpy(newmsg, msg);
+			/* strcat(newmsg,"!"); */
+			strcat(newmsg,new);
+		}
+		freeException(new);
+		freeException(msg);
 	} else
 	if( msg)
 		newmsg = msg;
@@ -1310,7 +1314,7 @@ SQLparser(Client c)
 			} else if(msg) {
 				str newmsg;
 				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
-				GDKfree(msg);
+				freeException(msg);
 				msg = newmsg;
 			}
 		}
@@ -1358,7 +1362,7 @@ SQLcallback(Client c, str msg){
 			strncpy(newerr, msg, s - msg);
 			newerr[s-msg] = 0;
 			snprintf(newerr + (s-msg), 1024 -(s-msg), SQLSTATE(HY020) "%s",s);
-			GDKfree(msg);
+			freeException(msg);
 			msg = GDKstrdup(newerr);
 		}
 	}

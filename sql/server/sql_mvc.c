@@ -206,7 +206,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 
 		if ((msg = mvc_commit(m, 0, NULL, false)) != MAL_SUCCEED) {
 			fprintf(stderr, "!mvc_init: unable to commit system tables: %s\n", (msg + 6));
-			GDKfree(msg);
+			freeException(msg);
 			return -1;
 		}
 

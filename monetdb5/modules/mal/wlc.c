@@ -289,7 +289,7 @@ WLCreset(void)
 	wlc_write[0] =0;
 	MT_lock_unset(&wlc_lock);
 	if(msg) //TODO we have to return a possible error message somehow
-		GDKfree(msg);
+		freeException(msg);
 }
 
 /*
