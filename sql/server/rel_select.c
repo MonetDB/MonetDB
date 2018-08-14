@@ -4435,6 +4435,22 @@ rel_frame(mvc *sql, symbol *frame, list *exps)
 	return exps;
 }
 
+static int
+check_duplicated_expression(void *data, void *key)
+{
+	sql_exp* e1 = (sql_exp*)data;
+	sql_exp* e2 = (sql_exp*)key;
+	if(e1->name && !e2->name)
+		return 0;
+	if(!e1->name && e2->name)
+		return 0;
+	if(e1->rname && !e2->rname)
+		return 0;
+	if(!e1->rname && e2->rname)
+		return 0;
+	return !(strcmp(e1->name, e2->name) == 0 && strcmp(e1->rname, e2->rname) == 0);
+}
+
 /* window functions */
 
 /*
@@ -4522,11 +4538,13 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			p->exps = list_distinct(p->exps, (fcmp)exp_equal, (fdup)NULL);
 		}
 		if (p->r) {
-			p->r = list_merge(sa_list(sql->sa), p->r, (fdup)NULL);
-			list_merge(p->r, obe, (fdup)NULL);
-		} else {
-			p->r = obe;
+			for(node *nn = ((list*)p->r)->h ; nn ; nn = nn->next) {
+				sql_exp *en = nn->data;
+				if(!list_find(obe, en, (fcmp)&check_duplicated_expression))
+					append(obe, en);
+			}
 		}
+		p->r = obe;
 	} else if(aggr && p->r) { //set ascending order by default for aggregations
 		for(node *nn = ((list*)p->r)->h ; nn ; nn = nn->next) {
 			sql_exp *en = nn->data;
@@ -4536,7 +4554,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	/* Frame */
 	if (window_specification->h->next->next->data.sym) {
 		if (!aggr)
-			return sql_error(sql, 02, "OVER: frame extend only possible with aggregation");
+			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation");
 		fbe = new_exp_list(sql->sa);
 		fbe = rel_frame(sql, window_specification->h->next->next->data.sym, fbe);
 		if (!fbe)
@@ -4566,7 +4584,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		for( n = gbe->h; n; n = n->next)  {
 			sql_subfunc *df;
 			sql_exp *e = n->data;
-		       
+
 			args = sa_list(sql->sa);
 			if (pe) { 
 				df = bind_func(sql, s, "diff", bt, exp_subtype(e), F_ANALYTIC);
@@ -4589,7 +4607,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		for( n = obe->h; n; n = n->next)  {
 			sql_exp *e = n->data;
 			sql_subfunc *df;
-		       
+
 			args = sa_list(sql->sa);
 			if (oe) { 
 				df = bind_func(sql, s, "diff", bt, exp_subtype(e), F_ANALYTIC);

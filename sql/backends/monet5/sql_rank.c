@@ -101,7 +101,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *r;
 		int i, j, cnt, *rp;
 		bit *np;
-			
+
 		if (!b)
 			throw(SQL, "sql.row_number", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = (int)BATcount(b);
@@ -150,7 +150,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
 		int i, j, k, cnt, *rp;
 		bit *np, *no;
-			
+
 		if (!b)
 			throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = (int)BATcount(b);
@@ -166,8 +166,8 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (o) BBPunfix(o->batCacheid);
 					throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
-			        np = (bit*)Tloc(p, 0);
-			        no = (bit*)Tloc(o, 0);
+				np = (bit*)Tloc(p, 0);
+				no = (bit*)Tloc(o, 0);
 				for(i=1,j=1,k=1; i<=cnt; i++, k++, np++, no++, rp++) {
 					if (*np)
 						j=k=1;
@@ -183,7 +183,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
-			        np = (bit*)Tloc(p, 0);
+				np = (bit*)Tloc(p, 0);
 				for(i=1,j=1,k=1; i<=cnt; i++, k++, np++, rp++) {
 					if (*np)
 						j=k=1;
@@ -198,7 +198,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
-			        no = (bit*)Tloc(o, 0);
+				no = (bit*)Tloc(o, 0);
 				for(i=1,j=1,k=1; i<=cnt; i++, k++, no++, rp++) {
 					if (*no)
 						j=k;
@@ -235,7 +235,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
 		int i, j, cnt, *rp;
 		bit *np, *no;
-			
+
 		if (!b)
 			throw(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = (int)BATcount(b);
@@ -251,8 +251,8 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (o) BBPunfix(o->batCacheid);
 					throw(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
-			        np = (bit*)Tloc(p, 0);
-			        no = (bit*)Tloc(o, 0);
+				np = (bit*)Tloc(p, 0);
+				no = (bit*)Tloc(o, 0);
 				for(i=1,j=1; i<=cnt; i++, np++, no++, rp++) {
 					if (*np)
 						j=1;
@@ -268,7 +268,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
-			        np = (bit*)Tloc(p, 0);
+				np = (bit*)Tloc(p, 0);
 				for(i=1,j=1; i<=cnt; i++, np++, rp++) {
 					if (*np)
 						j=1;
@@ -283,7 +283,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
-			        no = (bit*)Tloc(o, 0);
+				no = (bit*)Tloc(o, 0);
 				for(i=1,j=1; i<=cnt; i++, no++, rp++) {
 					if (*no)
 						j++;
@@ -307,7 +307,8 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str mod, const str err)
+SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+				  const str mod, const str err)
 {
 	*r = *b = *p = *o = NULL;
 
@@ -348,105 +349,130 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb
 	return MAL_SUCCEED;
 }
 
-str 
-SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args( &r, &b, &p, &o, cntxt, mb, stk, pci, "sql.min", "min(:any_1,:bit,:bit)");
-	int tpe = getArgType(mb, pci, 1);
-	int unit = *getArgReference_int(stk, pci, 4);
-	int start = *getArgReference_int(stk, pci, 5);
-	int end = *getArgReference_int(stk, pci, 6);
-	int excl = *getArgReference_int(stk, pci, 7);
+#define ANALYTICAL_IMP(TPE, OP)                             \
+	TPE *rp, *rb, *bp, curval;                              \
+	rb = rp = (TPE*)Tloc(r, 0);                             \
+	bp = (TPE*)Tloc(b, 0);                                  \
+	curval = *bp;                                           \
+	if (p) {                                                \
+		if (o) {                                            \
+			np = (bit*)Tloc(p, 0);                          \
+			no = (bit*)Tloc(o, 0);                          \
+			for(i=1; i<=cnt; i++, np++, no++, rp++, bp++) { \
+				if (*np) {                                  \
+					for (;rb < rp; rb++)                    \
+						*rb = curval;                       \
+					curval = *bp;                           \
+				}                                           \
+				curval = OP(*bp, curval);                   \
+			}                                               \
+			for (;rb < rp; rb++)                            \
+				*rb = curval;                               \
+			} else { /* single value, ie no ordering */     \
+				np = (bit*)Tloc(p, 0);                      \
+				for(i=1; i<=cnt; i++, np++, rp++, bp++) {   \
+					if (*np) {                              \
+						for (;rb < rp; rb++)                \
+							*rb = curval;                   \
+						curval = *bp;                       \
+					}                                       \
+					curval = OP(*bp, curval);               \
+				}                                           \
+				for (;rb < rp; rb++)                        \
+					*rb = curval;                           \
+			}                                               \
+	} else if (o) { /* single value, ie no partitions */    \
+		no = (bit*)Tloc(o, 0);                              \
+		for(i=1,j=1; i<=cnt; i++, no++, rp++, bp++) {       \
+			if (*no)                                        \
+				j++;                                        \
+			*rp = j;                                        \
+			curval = OP(*bp, curval);                       \
+		}                                                   \
+		for (;rb < rp; rb++)                                \
+		*rb = curval;                                       \
+	} else { /* single value, ie no ordering */             \
+		for(i=1; i<=cnt; i++, rp++, bp++)                   \
+		*rp = *bp;                                          \
+	}
 
-	if (unit != 0 || excl != 0)
-		throw(SQL, "sql.min", "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
-	(void)start;
-	(void)end;
-
-	if (isaBatType(tpe))
-		tpe = getBatType(tpe);
-	if (msg)
-		return msg;
-
-	/*
-	switch(ATOMstorage(tpe)) {
-	case TYPE_bte:
-	case TYPE_sht:
-	case TYPE_int:
-	case TYPE_lng:
 #ifdef HAVE_HUGE
-	case TYPE_hge:
+#define ANALYTICAL_IMP_HUGE(IMP) \
+	case TYPE_hge: {             \
+		ANALYTICAL_IMP(hge, IMP) \
+	} break;
+#else
+#define ANALYTICAL_IMP_HUGE(IMP)
 #endif
-	case TYPE_flt:
-	case TYPE_dbl:
-	default:
-		throw(SQL, "sql.min", "min(:any_1,:bit,:bit)");
-	}
-	*/
 
-	/* FOR NOW only int input type !! */
-	if (b) {
-		bat *res = getArgReference_bat(stk, pci, 0);
-		int i, j, cnt;
-		int *rp, *rb, *bp, curval;
-		bit *np, *no;
-
-		cnt = (int)BATcount(b);
-		rb = rp = (int*)Tloc(r, 0);
-		bp = (int*)Tloc(b, 0);
-		curval = *bp;
-		if (p) {
-			if (o) {
-				np = (bit*)Tloc(p, 0);
-				no = (bit*)Tloc(o, 0);
-				for(i=1; i<=cnt; i++, np++, no++, rp++, bp++) {
-					if (*np) {
-						for (;rb < rp; rb++)
-							*rb = curval;
-						curval = *bp;
-					}
-					curval = MIN(*bp,curval);
-				}
-				for (;rb < rp; rb++)
-					*rb = curval;
-			} else { /* single value, ie no ordering */
-				np = (bit*)Tloc(p, 0);
-				for(i=1; i<=cnt; i++, np++, rp++, bp++) {
-					if (*np) {
-						for (;rb < rp; rb++)
-							*rb = curval;
-						curval = *bp;
-					}
-					curval = MIN(*bp,curval);
-				}
-				for (;rb < rp; rb++)
-					*rb = curval;
-			}
-		} else if (o) { /* single value, ie no partitions */
-			no = (bit*)Tloc(o, 0);
-			for(i=1,j=1; i<=cnt; i++, no++, rp++, bp++) {
-				if (*no)
-					j++;
-				*rp = j;
-				curval = MIN(*bp,curval);
-			}
-			for (;rb < rp; rb++)
-				*rb = curval;
-		} else { /* single value, ie no ordering */
-			for(i=1; i<=cnt; i++, rp++, bp++) 
-				*rp = *bp;
-		}
-		BATsetcount(r, cnt);
-		BBPunfix(b->batCacheid);
-		if (p) BBPunfix(p->batCacheid);
-		if (o) BBPunfix(o->batCacheid);
-		BBPkeepref(*res = r->batCacheid);
-	} else {
-		ptr *res = getArgReference(stk, pci, 0);
-		ptr *in = getArgReference(stk, pci, 1);
-
-		*res = *in;
-	}
-	return MAL_SUCCEED;
+#define ANALYTICAL_LIMIT(OP, IMP, OPSTR, ERR)                                     \
+str                                                                               \
+SQL##OP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)                  \
+{                                                                                 \
+	BAT *r, *b, *p, *o;                                                           \
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, OPSTR, ERR); \
+	int tpe = getArgType(mb, pci, 1);                                             \
+	int unit = *getArgReference_int(stk, pci, 4);                                 \
+	int start = *getArgReference_int(stk, pci, 5);                                \
+	int end = *getArgReference_int(stk, pci, 6);                                  \
+	int excl = *getArgReference_int(stk, pci, 7);                                 \
+                                                                                  \
+	if (unit != 0 || excl != 0)                                                   \
+		throw(SQL, OPSTR, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)"); \
+	(void)start;                                                                  \
+	(void)end;                                                                    \
+                                                                                  \
+	if (msg)                                                                      \
+		return msg;                                                               \
+	if (isaBatType(tpe))                                                          \
+		tpe = getBatType(tpe);                                                    \
+                                                                                  \
+	if (b) {                                                                      \
+		bat *res = getArgReference_bat(stk, pci, 0);                              \
+		int i, j, cnt = (int) BATcount(b);                                        \
+		bit *np, *no;                                                             \
+		switch(ATOMstorage(tpe)) {                                                \
+			case TYPE_bit: {                                                      \
+				ANALYTICAL_IMP(bit, IMP)                                          \
+			} break;                                                              \
+			case TYPE_bte: {                                                      \
+				ANALYTICAL_IMP(bte, IMP)                                          \
+			} break;                                                              \
+			case TYPE_sht: {                                                      \
+				ANALYTICAL_IMP(sht, IMP)                                          \
+			} break;                                                              \
+			case TYPE_int: {                                                      \
+				ANALYTICAL_IMP(int, IMP)                                          \
+			} break;                                                              \
+			case TYPE_lng: {                                                      \
+				ANALYTICAL_IMP(lng, IMP)                                          \
+			} break;                                                              \
+			ANALYTICAL_IMP_HUGE(IMP)                                              \
+			case TYPE_flt: {                                                      \
+				ANALYTICAL_IMP(flt, IMP)                                          \
+			} break;                                                              \
+			case TYPE_dbl: {                                                      \
+				ANALYTICAL_IMP(dbl, IMP)                                          \
+			} break;                                                              \
+			default:                                                              \
+				throw(SQL, OPSTR, "%s", ERR);                                     \
+		}                                                                         \
+		BATsetcount(r, cnt);                                                      \
+		BBPunfix(b->batCacheid);                                                  \
+		if (p) BBPunfix(p->batCacheid);                                           \
+		if (o) BBPunfix(o->batCacheid);                                           \
+		BBPkeepref(*res = r->batCacheid);                                         \
+	} else {                                                                      \
+		ptr *res = getArgReference(stk, pci, 0);                                  \
+		ptr *in = getArgReference(stk, pci, 1);                                   \
+		*res = *in;                                                               \
+	}                                                                             \
+	return MAL_SUCCEED;                                                           \
 }
+
+ANALYTICAL_LIMIT(min, MIN, "sql.min", SQLSTATE(42000) "min(:any_1,:bit,:bit)")
+ANALYTICAL_LIMIT(max, MAX, "sql.max", SQLSTATE(42000) "max(:any_1,:bit,:bit)")
+
+#undef ANALYTICAL_LIMIT
+#undef ANALYTICAL_IMP_HUGE
+#undef ANALYTICAL_IMP

@@ -55,6 +55,14 @@ pattern batsql.min(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:
 address SQLmin
 comment "return the minimum of groups";
 
+pattern sql.max(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :any_1
+address SQLmax
+comment "return the maximum of groups";
+
+pattern batsql.max(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLmax
+comment "return the maximum of groups";
+
 command aggr.exist(b:bat[:any_2], h:any_1):bit 
 address ALGexist;
 
