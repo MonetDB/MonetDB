@@ -1379,6 +1379,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		switch (cmptype) {
 		case cmp_equal:
+		case cmp_equal_nil:
 			op = "=";
 			break;
 		case cmp_notequal:
@@ -1418,35 +1419,47 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
-		q = newStmt(mb, algebraRef, thetaselectRef);
-		q = pushArgument(mb, q, l);
-		if (sub)
-			q = pushArgument(mb, q, sub->nr);
-		q = pushArgument(mb, q, r);
-		switch (cmptype) {
-		case cmp_equal:
-			q = pushStr(mb, q, anti?"!=":"==");
-			break;
-		case cmp_notequal:
-			q = pushStr(mb, q, anti?"==":"!=");
-			break;
-		case cmp_lt:
-			q = pushStr(mb, q, anti?">=":"<");
-			break;
-		case cmp_lte:
-			q = pushStr(mb, q, anti?">":"<=");
-			break;
-		case cmp_gt:
-			q = pushStr(mb, q, anti?"<=":">");
-			break;
-		case cmp_gte:
-			q = pushStr(mb, q, anti?"<":">=");
-			break;
-		default:
-			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
-			if (q)
-				freeInstruction(q);
-			q = NULL;
+		if (cmptype == cmp_equal_nil) {
+			q = newStmt(mb, algebraRef, selectRef);
+			q = pushArgument(mb, q, l);
+			if (sub)
+				q = pushArgument(mb, q, sub->nr);
+			q = pushArgument(mb, q, r);
+			q = pushArgument(mb, q, r);
+			q = pushBit(mb, q, TRUE);
+			q = pushBit(mb, q, TRUE);
+			q = pushBit(mb, q, anti);
+		} else {
+			q = newStmt(mb, algebraRef, thetaselectRef);
+			q = pushArgument(mb, q, l);
+			if (sub)
+				q = pushArgument(mb, q, sub->nr);
+			q = pushArgument(mb, q, r);
+			switch (cmptype) {
+			case cmp_equal:
+				q = pushStr(mb, q, anti?"!=":"==");
+				break;
+			case cmp_notequal:
+				q = pushStr(mb, q, anti?"==":"!=");
+				break;
+			case cmp_lt:
+				q = pushStr(mb, q, anti?">=":"<");
+				break;
+			case cmp_lte:
+				q = pushStr(mb, q, anti?">":"<=");
+				break;
+			case cmp_gt:
+				q = pushStr(mb, q, anti?"<=":">");
+				break;
+			case cmp_gte:
+				q = pushStr(mb, q, anti?"<":">=");
+				break;
+			default:
+				showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
+				if (q)
+					freeInstruction(q);
+				q = NULL;
+			}
 		}
 		if (q == NULL)
 			return NULL;
