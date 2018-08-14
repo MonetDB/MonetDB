@@ -404,7 +404,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				 * /usr/share/unicode/emoji/emoji-data.txt
 				 * and code points marked either F or
 				 * W in EastAsianWidth.txt; this list
-				 * is up-to-date with Unicode 9.0 */
+				 * is up-to-date with Unicode 11.0 */
 				if ((0x1100 <= c && c <= 0x115F) ||
 				    (0x231A <= c && c <= 0x231B) ||
 				    (0x2329 <= c && c <= 0x232A) ||
@@ -447,7 +447,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    (0x3000 <= c && c <= 0x303E) ||
 				    (0x3041 <= c && c <= 0x3096) ||
 				    (0x3099 <= c && c <= 0x30FF) ||
-				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3105 <= c && c <= 0x312F) ||
 				    (0x3131 <= c && c <= 0x318E) ||
 				    (0x3190 <= c && c <= 0x31BA) ||
 				    (0x31C0 <= c && c <= 0x31E3) ||
@@ -466,19 +466,20 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    (0xFE68 <= c && c <= 0xFE6B) ||
 				    (0xFF01 <= c && c <= 0xFF60) ||
 				    (0xFFE0 <= c && c <= 0xFFE6) ||
-				    c == 0x16FE0 ||
-				    (0x17000 <= c && c <= 0x187EC) ||
+				    (0x16FE0 <= c && c <= 0x16FE1) ||
+				    (0x17000 <= c && c <= 0x187F1) ||
 				    (0x18800 <= c && c <= 0x18AF2) ||
-				    (0x1B000 <= c && c <= 0x1B001) ||
+				    (0x1B000 <= c && c <= 0x1B11E) ||
+				    (0x1B170 <= c && c <= 0x1B2FB) ||
 				    c == 0x1F004 ||
 				    c == 0x1F0CF ||
 				    c == 0x1F18E ||
 				    (0x1F191 <= c && c <= 0x1F19A) ||
-				    /* removed 0x1F1E6..0x1F1FF */
 				    (0x1F200 <= c && c <= 0x1F202) ||
 				    (0x1F210 <= c && c <= 0x1F23B) ||
 				    (0x1F240 <= c && c <= 0x1F248) ||
 				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x1F260 <= c && c <= 0x1F265) ||
 				    (0x1F300 <= c && c <= 0x1F320) ||
 				    (0x1F32D <= c && c <= 0x1F335) ||
 				    (0x1F337 <= c && c <= 0x1F37C) ||
@@ -501,15 +502,15 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    c == 0x1F6CC ||
 				    (0x1F6D0 <= c && c <= 0x1F6D2) ||
 				    (0x1F6EB <= c && c <= 0x1F6EC) ||
-				    (0x1F6F4 <= c && c <= 0x1F6F6) ||
-				    (0x1F910 <= c && c <= 0x1F91E) ||
-				    (0x1F920 <= c && c <= 0x1F927) ||
-				    c == 0x1F930 ||
-				    (0x1F933 <= c && c <= 0x1F93E) ||
-				    (0x1F940 <= c && c <= 0x1F94B) ||
-				    (0x1F950 <= c && c <= 0x1F95E) ||
-				    (0x1F980 <= c && c <= 0x1F991) ||
-				    c == 0x1F9C0 ||
+				    (0x1F6F4 <= c && c <= 0x1F6F9) ||
+				    (0x1F910 <= c && c <= 0x1F93E) ||
+				    (0x1F940 <= c && c <= 0x1F970) ||
+				    (0x1F973 <= c && c <= 0x1F976) ||
+				    c == 0x1F97A ||
+				    (0x1F97C <= c && c <= 0x1F9A2) ||
+				    (0x1F9B0 <= c && c <= 0x1F9B9) ||
+				    (0x1F9C0 <= c && c <= 0x1F9C2) ||
+				    (0x1F9D0 <= c && c <= 0x1F9FF) ||
 				    (0x20000 <= c && c <= 0x2FFFD) ||
 				    (0x30000 <= c && c <= 0x3FFFD))
 					len++;

@@ -51,13 +51,13 @@ malBootstrap(void)
 		mal_exit();
 	}
 	if ( (msg = defaultScenario(c)) ) {
-		GDKfree(msg);
-		fprintf(stderr,"#malBootstrap:Failed to initialise default scenario");
+		fprintf(stderr,"#malBootstrap:Failed to initialise default scenario: %s", msg);
+		freeException(msg);
 		mal_exit();
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
-		GDKfree(msg);
-		fprintf(stderr,"#malBootstrap:Failed to initialise client");
+		fprintf(stderr,"#malBootstrap:Failed to initialise client: %s", msg);
+		freeException(msg);
 		mal_exit();
 	}
 	if( MCinitClientThread(c) < 0){
