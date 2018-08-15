@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_analytic.h"
+#include "gdk_calc_private.h"
 
 #define ANALYTICAL_LIMIT_IMP(TPE, OP)                        \
 	do {                                                     \
@@ -242,20 +243,20 @@ ANALYTICAL_LIMIT(max, MAX, <)
 #define ANALYTICAL_SUM_IMP(TPE1, TPE2)                              \
 	do {                                                            \
 		TPE1 *bp;                                                   \
-		TPE2 *rp, *rb, curval;                                      \
+		TPE2 *rp, *rb, curval = TPE2##_nil;                         \
 		bp = (TPE1*)Tloc(b, 0);                                     \
 		rb = rp = (TPE2*)Tloc(r, 0);                                \
-		curval = TPE2##_nil;                                        \
 		if (p) {                                                    \
 			if (o) {                                                \
 				np = (bit*)Tloc(p, 0);                              \
 				for(i=0; i<cnt; i++, np++, rp++, bp++) {            \
 					if (*np) {                                      \
-						if(is_##TPE2##_nil(curval))                 \
-							has_nils = true;                        \
 						for (;rb < rp; rb++)                        \
 							*rb = curval;                           \
-						curval = TPE2##_nil;                        \
+						if(is_##TPE2##_nil(curval))                 \
+							has_nils = true;                        \
+						else                                        \
+							curval = TPE2##_nil;                    \
 					}                                               \
 					if (!is_##TPE1##_nil(*bp)) {                    \
 						if(is_##TPE2##_nil(curval))                 \
@@ -275,11 +276,12 @@ ANALYTICAL_LIMIT(max, MAX, <)
 				np = (bit*)Tloc(p, 0);                              \
 				for(i=0; i<cnt; i++, np++, rp++, bp++) {            \
 					if (*np) {                                      \
-						if(is_##TPE2##_nil(curval))                 \
-							has_nils = true;                        \
 						for (;rb < rp; rb++)                        \
 							*rb = curval;                           \
-						curval = TPE2##_nil;                        \
+						if(is_##TPE2##_nil(curval))                 \
+							has_nils = true;                        \
+						else                                        \
+							curval = TPE2##_nil;                    \
 					}                                               \
 					if (!is_##TPE1##_nil(*bp)) {                    \
 						if(is_##TPE2##_nil(curval))                 \
@@ -308,24 +310,98 @@ ANALYTICAL_LIMIT(max, MAX, <)
 									   goto calc_overflow);         \
 				}                                                   \
 			}                                                       \
-			if(is_##TPE2##_nil(curval))                             \
-				has_nils = true;                                    \
 			for(;rb < rp; rb++)                                     \
 				*rb = curval;                                       \
-		} else { /* single value, ie no ordering */                 \
-			if(is_##TPE1##_nil(*bp))                                \
+			if(is_##TPE2##_nil(curval))                             \
 				has_nils = true;                                    \
+		} else { /* single value, ie no ordering */                 \
 			for(i=0; i<cnt; i++, rp++, bp++)                        \
 				*rp = *bp;                                          \
+			if(is_##TPE1##_nil(*bp))                                \
+				has_nils = true;                                    \
 		}                                                           \
 		goto finish;                                                \
+	} while(0);
+
+#define ANALYTICAL_SUM_FP_IMP(TPE1, TPE2)                              \
+	do {                                                               \
+		TPE1 *bp, *bprev;                                              \
+		TPE2 *rp, *rb, curval = TPE2##_nil;                            \
+		bp = bprev = (TPE1*)Tloc(b, 0);                                \
+		rb = rp = (TPE2*)Tloc(r, 0);                                   \
+		if (p) {                                                       \
+			if (o) {                                                   \
+				np = (bit*)Tloc(p, 0);                                 \
+				for(i=0,j=0; i<cnt; i++, np++, rp++, bp++) {           \
+					if (*np) {                                         \
+						dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1, \
+							   TYPE_##TPE2, NULL, NULL, NULL, 0, 0,    \
+							   true, false, true, "GDKanalyticalsum"); \
+						curval = *rb;                                  \
+						bprev = bp;                                    \
+						j = i;                                         \
+						for (;rb < rp; rb++)                           \
+							*rb = curval;                              \
+						if(is_##TPE2##_nil(curval))                    \
+							has_nils = true;                           \
+					}                                                  \
+				}                                                      \
+				dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1,         \
+					   TYPE_##TPE2, NULL, NULL, NULL, 0, 0,            \
+					   true, false, true, "GDKanalyticalsum");         \
+				curval = *rb;                                          \
+				if(is_##TPE2##_nil(curval))                            \
+					has_nils = true;                                   \
+				for (;rb < rp; rb++)                                   \
+					*rb = curval;                                      \
+			} else { /* single value, ie no ordering */                \
+				np = (bit*)Tloc(p, 0);                                 \
+				for(i=0,j=0; i<cnt; i++, np++, rp++, bp++) {           \
+					if (*np) {                                         \
+						dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1, \
+							   TYPE_##TPE2, NULL, NULL, NULL, 0, 0,    \
+							   true, false, true, "GDKanalyticalsum"); \
+						curval = *rb;                                  \
+						bprev = bp;                                    \
+						j = i;                                         \
+						for (;rb < rp; rb++)                           \
+							*rb = curval;                              \
+						if(is_##TPE2##_nil(curval))                    \
+							has_nils = true;                           \
+					}                                                  \
+				}                                                      \
+				dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1,         \
+					   TYPE_##TPE2, NULL, NULL, NULL, 0, 0,            \
+					   true, false, true, "GDKanalyticalsum");         \
+				curval = *rb;                                          \
+				if(is_##TPE2##_nil(curval))                            \
+					has_nils = true;                                   \
+				for (;rb < rp; rb++)                                   \
+					*rb = curval;                                      \
+			}                                                          \
+		} else if (o) { /* single value, ie no partitions */           \
+			dofsum(bp, 0, 0, cnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2,     \
+				   NULL, NULL, NULL, 0, 0, true, false, true,          \
+				   "GDKanalyticalsum");                                \
+			curval = *rb;                                              \
+			for(i=0; i<cnt; i++, rb++)                                 \
+				*rb = curval;                                          \
+			if(is_##TPE2##_nil(curval))                                \
+				has_nils = true;                                       \
+		} else { /* single value, ie no ordering */                    \
+			for(i=0; i<cnt; i++, rp++, bp++)                           \
+				*rp = *bp;                                             \
+			if(is_##TPE1##_nil(*bp))                                   \
+				has_nils = true;                                       \
+		}                                                              \
+		goto finish;                                                   \
 	} while(0);
 
 gdk_return
 GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
 {
 	bool has_nils = false;
-	BUN i, cnt = BATcount(b);
+	BUN i, j, cnt = BATcount(b);
 	bit *np;
 
 	switch (tp2) {
@@ -411,18 +487,29 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
 			break;
 		}
 #endif
-		case TYPE_flt:
-			if (tp1 != TYPE_flt) {
-				goto nosupport;
-				break;
+		case TYPE_flt: {
+			switch (tp1) {
+				case TYPE_flt:
+					ANALYTICAL_SUM_FP_IMP(flt, flt);
+					break;
+				default:
+					goto nosupport;
+					break;
 			}
-			/* fall through */
-		case TYPE_dbl:
-			if (tp1 != TYPE_flt && tp1 != TYPE_dbl) {
-				goto nosupport;
-				break;
+		}
+		case TYPE_dbl: {
+			switch (tp1) {
+				case TYPE_flt:
+					ANALYTICAL_SUM_FP_IMP(flt, dbl);
+					break;
+				case TYPE_dbl:
+					ANALYTICAL_SUM_FP_IMP(dbl, dbl);
+					break;
+				default:
+					goto nosupport;
+					break;
 			}
-			goto nosupport;
+		}
 		default:
 			goto nosupport;
 	}
@@ -438,4 +525,5 @@ finish:
 }
 
 #undef ANALYTICAL_SUM_IMP
+#undef ANALYTICAL_SUM_FP_IMP
 #undef ANALYTICAL_ADD_WITH_CHECK

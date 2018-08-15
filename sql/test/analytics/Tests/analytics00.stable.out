@@ -543,6 +543,69 @@ Ready.
 [ "stress"	]
 [ "stress"	]
 [ "stress"	]
+#create table debugme (aa real, bb int);
+#insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
+[ 10	]
+#select sum(aa) over (partition by bb) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
+[ 9	]
+[ 9	]
+[ 9	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 26	]
+[ 26	]
+[ 26	]
+[ NULL	]
+#select sum(aa) over (partition by bb order by bb asc) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
+[ 9	]
+[ 9	]
+[ 9	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 26	]
+[ 26	]
+[ 26	]
+[ NULL	]
+#select sum(aa) over (partition by bb order by bb desc) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
+[ NULL	]
+[ 26	]
+[ 26	]
+[ 26	]
+[ 11	]
+[ 11	]
+[ 11	]
+[ 9	]
+[ 9	]
+[ 9	]
+#select sum(aa) over (order by bb desc) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
 #rollback;
 
 # 11:15:55 >  

@@ -44,4 +44,13 @@ select max(aa) over (partition by bb) from stressme;
 select max(aa) over (partition by bb order by bb asc) from stressme;
 select max(aa) over (partition by bb order by bb desc) from stressme;
 select max(aa) over (order by bb desc) from stressme;
+
+create table debugme (aa real, bb int);
+insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
+
+select sum(aa) over (partition by bb) from debugme;
+select sum(aa) over (partition by bb order by bb asc) from debugme;
+select sum(aa) over (partition by bb order by bb desc) from debugme;
+select sum(aa) over (order by bb desc) from debugme;
+
 rollback;
