@@ -374,6 +374,7 @@ CONDITIONALS = {
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
+    'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
     'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",

@@ -16,9 +16,6 @@ stdout of test 'multi-column-hash-wrongly-NIL.Bug-6638` in directory 'sql/test/B
 # Listening for connection requests on mapi:monetdb://earth.da.cwi.nl:34059/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9105/.s.monetdb.34059
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -60,6 +57,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 16:21:04 >  
 # 16:21:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9105" "--port=34059"
@@ -110,7 +110,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.r2,	sys.s2 # table_name
 % a,	b,	x,	y # name
 % bigint,	bigint,	bigint,	bigint # type
-% 20,	13,	2,	3 # length
+% 20,	20,	2,	3 # length
 [ 11,	21,	1,	-1	]
 [ 12,	22,	2,	-2	]
 [ 13,	23,	3,	-3	]
@@ -128,7 +128,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.s2,	sys.r2 # table_name
 % a,	b,	y,	x # name
 % bigint,	bigint,	bigint,	bigint # type
-% 20,	13,	3,	2 # length
+% 20,	20,	3,	2 # length
 [ 11,	21,	-1,	1	]
 [ 12,	22,	-2,	2	]
 [ 13,	23,	-3,	3	]
@@ -178,7 +178,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.r3,	sys.s3 # table_name
 % a,	b,	c,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint # type
-% 15,	10,	15,	1,	2 # length
+% 15,	15,	15,	1,	2 # length
 [ 11,	21,	31,	1,	-1	]
 [ 12,	22,	32,	2,	-2	]
 [ 13,	23,	33,	3,	-3	]
@@ -192,7 +192,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.s3,	sys.r3 # table_name
 % a,	b,	c,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint # type
-% 15,	10,	15,	2,	1 # length
+% 15,	15,	15,	2,	1 # length
 [ 11,	21,	31,	-1,	1	]
 [ 12,	22,	32,	-2,	2	]
 [ 13,	23,	33,	-3,	3	]
@@ -242,11 +242,11 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r4,	sys.s4 # table_name
 % a,	b,	c,	d,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 16,	16,	8,	16,	2,	3 # length
+% 16,	16,	16,	16,	2,	3 # length
 [ 11,	21,	31,	41,	1,	-1	]
 [ 12,	22,	32,	42,	2,	-2	]
 [ 13,	23,	33,	43,	3,	-3	]
-[16777216,	0,	0,	0,	4,	-4	]
+[ 16777216,	0,	0,	0,	4,	-4	]
 [ 0,	16777216,	0,	0,	5,	-5	]
 [ 0,	0,	16777216,	0,	6,	-6	]
 [ 0,	0,	0,	16777216,	7,	-7	]
@@ -258,11 +258,11 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s4,	sys.r4 # table_name
 % a,	b,	c,	d,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 16,	16,	8,	16,	3,	2 # length
+% 16,	16,	16,	16,	3,	2 # length
 [ 11,	21,	31,	41,	-1,	1	]
 [ 12,	22,	32,	42,	-2,	2	]
 [ 13,	23,	33,	43,	-3,	3	]
-[16777216,	0,	0,	0,	-4,	4	]
+[ 16777216,	0,	0,	0,	-4,	4	]
 [ 0,	16777216,	0,	0,	-5,	5	]
 [ 0,	0,	16777216,	0,	-6,	6	]
 [ 0,	0,	0,	16777216,	-7,	7	]
@@ -314,7 +314,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r5,	sys.s5 # table_name
 % a,	b,	c,	d,	e,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 16,	16,	16,	6,	16,	2,	3 # length
+% 16,	16,	16,	16,	16,	2,	3 # length
 [ 11,	21,	31,	41,	51,	1,	-1	]
 [ 12,	22,	32,	42,	52,	2,	-2	]
 [ 13,	23,	33,	43,	53,	3,	-3	]
@@ -332,7 +332,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s5,	sys.r5 # table_name
 % a,	b,	c,	d,	e,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 16,	16,	16,	6,	16,	3,	2 # length
+% 16,	16,	16,	16,	16,	3,	2 # length
 [ 11,	21,	31,	41,	51,	-1,	1	]
 [ 12,	22,	32,	42,	52,	-2,	2	]
 [ 13,	23,	33,	43,	53,	-3,	3	]
@@ -394,7 +394,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r6,	sys.s6 # table_name
 % a,	b,	c,	d,	e,	f,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 16,	16,	16,	16,	4,	16,	2,	3 # length
+% 16,	16,	16,	16,	16,	16,	2,	3 # length
 [ 11,	21,	31,	41,	51,	61,	1,	-1	]
 [ 12,	22,	32,	42,	52,	62,	2,	-2	]
 [ 13,	23,	33,	43,	53,	63,	3,	-3	]
@@ -414,7 +414,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s6,	sys.r6 # table_name
 % a,	b,	c,	d,	e,	f,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 16,	16,	16,	16,	4,	16,	3,	2 # length
+% 16,	16,	16,	16,	16,	16,	3,	2 # length
 [ 11,	21,	31,	41,	51,	61,	-1,	1	]
 [ 12,	22,	32,	42,	52,	62,	-2,	2	]
 [ 13,	23,	33,	43,	53,	63,	-3,	3	]
@@ -482,7 +482,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r7,	sys.s7 # table_name
 % a,	b,	c,	d,	e,	f,	g,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 17,	17,	17,	17,	17,	5,	17,	2,	3 # length
+% 17,	17,	17,	17,	17,	17,	17,	2,	3 # length
 [ 11,	21,	31,	41,	51,	61,	71,	1,	-1	]
 [ 12,	22,	32,	42,	52,	62,	72,	2,	-2	]
 [ 13,	23,	33,	43,	53,	63,	73,	3,	-3	]
@@ -504,7 +504,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s7,	sys.r7 # table_name
 % a,	b,	c,	d,	e,	f,	g,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 17,	17,	17,	17,	17,	5,	17,	3,	2 # length
+% 17,	17,	17,	17,	17,	17,	17,	3,	2 # length
 [ 11,	21,	31,	41,	51,	61,	71,	-1,	1	]
 [ 12,	22,	32,	42,	52,	62,	72,	-2,	2	]
 [ 13,	23,	33,	43,	53,	63,	73,	-3,	3	]
@@ -578,7 +578,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r8,	sys.s8 # table_name
 % a,	b,	c,	d,	e,	f,	g,	h,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 17,	17,	17,	17,	17,	17,	3,	17,	2,	3 # length
+% 17,	17,	17,	17,	17,	17,	17,	17,	2,	3 # length
 [ 11,	21,	31,	41,	51,	61,	71,	81,	1,	-1	]
 [ 12,	22,	32,	42,	52,	62,	72,	82,	2,	-2	]
 [ 13,	23,	33,	43,	53,	63,	73,	83,	3,	-3	]
@@ -602,7 +602,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s8,	sys.r8 # table_name
 % a,	b,	c,	d,	e,	f,	g,	h,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 17,	17,	17,	17,	17,	17,	3,	17,	3,	2 # length
+% 17,	17,	17,	17,	17,	17,	17,	17,	3,	2 # length
 [ 11,	21,	31,	41,	51,	61,	71,	81,	-1,	1	]
 [ 12,	22,	32,	42,	52,	62,	72,	82,	-2,	2	]
 [ 13,	23,	33,	43,	53,	63,	73,	83,	-3,	3	]
@@ -682,7 +682,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.r9,	sys.s9 # table_name
 % a,	b,	c,	d,	e,	f,	g,	h,	i,	x,	y # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 17,	17,	17,	17,	17,	17,	17,	3,	17,	2,	3 # length
+% 17,	17,	17,	17,	17,	17,	17,	17,	17,	2,	3 # length
 [ 11,	21,	31,	41,	51,	61,	71,	81,	91,	1,	-1	]
 [ 12,	22,	32,	42,	52,	62,	72,	82,	92,	2,	-2	]
 [ 13,	23,	33,	43,	53,	63,	73,	83,	93,	3,	-3	]
@@ -708,7 +708,7 @@ Ready.
 % sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.L1,	sys.s9,	sys.r9 # table_name
 % a,	b,	c,	d,	e,	f,	g,	h,	i,	y,	x # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 17,	17,	17,	17,	17,	17,	17,	3,	17,	3,	2 # length
+% 17,	17,	17,	17,	17,	17,	17,	17,	17,	3,	2 # length
 [ 11,	21,	31,	41,	51,	61,	71,	81,	91,	-1,	1	]
 [ 12,	22,	32,	42,	52,	62,	72,	82,	92,	-2,	2	]
 [ 13,	23,	33,	43,	53,	63,	73,	83,	93,	-3,	3	]
