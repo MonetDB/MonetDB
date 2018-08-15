@@ -12,6 +12,11 @@ select max(aa) over (partition by bb order by bb asc) from analytics;
 select max(aa) over (partition by bb order by bb desc) from analytics;
 select max(aa) over (order by bb desc) from analytics;
 
+select sum(aa) over (partition by bb) from analytics;
+select sum(aa) over (partition by bb order by bb asc) from analytics;
+select sum(aa) over (partition by bb order by bb desc) from analytics;
+select sum(aa) over (order by bb desc) from analytics;
+
 select min(cc) over (partition by bb) from analytics;
 select min(cc) over (partition by bb order by bb asc) from analytics;
 select min(cc) over (partition by bb order by bb desc) from analytics;
@@ -21,6 +26,11 @@ select max(cc) over (partition by bb) from analytics;
 select max(cc) over (partition by bb order by bb asc) from analytics;
 select max(cc) over (partition by bb order by bb desc) from analytics;
 select max(cc) over (order by bb desc) from analytics;
+
+select sum(cc) over (partition by bb) from analytics;
+select sum(cc) over (partition by bb order by bb asc) from analytics;
+select sum(cc) over (partition by bb order by bb desc) from analytics;
+select sum(cc) over (order by bb desc) from analytics;
 
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);

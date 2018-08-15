@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "sql_rank.h"
+#include "gdk_analytic.h"
 
 #define voidresultBAT(r,tpe,cnt,b,err)				\
 	do {							\
@@ -349,255 +350,97 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb
 	return MAL_SUCCEED;
 }
 
-#define ANALYTICAL_IMP(TPE, OP)                                \
-	do {                                                       \
-		TPE *rp, *rb, *bp, curval;                             \
-		rb = rp = (TPE*)Tloc(r, 0);                            \
-		bp = (TPE*)Tloc(b, 0);                                 \
-		curval = *bp;                                          \
-		if (p) {                                               \
-			if (o) {                                           \
-				np = (bit*)Tloc(p, 0);                         \
-				for(i=0; i<cnt; i++, np++, rp++, bp++) {       \
-					if (*np) {                                 \
-						if(is_##TPE##_nil(curval))             \
-							has_nils = true;                   \
-						for (;rb < rp; rb++)                   \
-							*rb = curval;                      \
-						curval = *bp;                          \
-					}                                          \
-					if(!is_##TPE##_nil(*bp)) {                 \
-						if(is_##TPE##_nil(curval))             \
-							curval = *bp;                      \
-						else                                   \
-							curval = OP(*bp, curval);          \
-					}                                          \
-				}                                              \
-				if(is_##TPE##_nil(curval))                     \
-					has_nils = true;                           \
-				for (;rb < rp; rb++)                           \
-					*rb = curval;                              \
-			} else { /* single value, ie no ordering */        \
-				np = (bit*)Tloc(p, 0);                         \
-				for(i=0; i<cnt; i++, np++, rp++, bp++) {       \
-					if (*np) {                                 \
-						if(is_##TPE##_nil(curval))             \
-							has_nils = true;                   \
-						for (;rb < rp; rb++)                   \
-							*rb = curval;                      \
-						curval = *bp;                          \
-					}                                          \
-					if(!is_##TPE##_nil(*bp)) {                 \
-						if(is_##TPE##_nil(curval))             \
-							curval = *bp;                      \
-						else                                   \
-							curval = OP(*bp, curval);          \
-					}                                          \
-				}                                              \
-				if(is_##TPE##_nil(curval))                     \
-					has_nils = true;                           \
-				for (;rb < rp; rb++)                           \
-					*rb = curval;                              \
-			}                                                  \
-		} else if (o) { /* single value, ie no partitions */   \
-			for(i=0; i<cnt; i++, rp++, bp++) {                 \
-				if(!is_##TPE##_nil(*bp)) {                     \
-					if(is_##TPE##_nil(curval))                 \
-						curval = *bp;                          \
-					else                                       \
-						curval = OP(*bp, curval);              \
-				}                                              \
-			}                                                  \
-			if(is_##TPE##_nil(curval))                         \
-				has_nils = true;                               \
-			for(;rb < rp; rb++)                                \
-				*rb = curval;                                  \
-		} else { /* single value, ie no ordering */            \
-			if(is_##TPE##_nil(*bp))                            \
-				has_nils = true;                               \
-			for(i=0; i<cnt; i++, rp++, bp++)                   \
-				*rp = *bp;                                     \
-		}                                                      \
-	} while(0);
-
-#ifdef HAVE_HUGE
-#define ANALYTICAL_IMP_HUGE(IMP) \
-	case TYPE_hge:               \
-		ANALYTICAL_IMP(hge, IMP) \
-	break;
-#else
-#define ANALYTICAL_IMP_HUGE(IMP)
-#endif
-
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
-#define ANALYTICAL_LIMIT(OP, IMP, SIGN_OP, OPSTR, ERR)                                                      \
-str                                                                                                         \
-SQL##OP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)                                            \
-{                                                                                                           \
-	BAT *r, *b, *p, *o;                                                                                     \
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, OPSTR, ERR);                           \
-	int tpe = getArgType(mb, pci, 1);                                                                       \
-	int unit = *getArgReference_int(stk, pci, 4);                                                           \
-	int start = *getArgReference_int(stk, pci, 5);                                                          \
-	int end = *getArgReference_int(stk, pci, 6);                                                            \
-	int excl = *getArgReference_int(stk, pci, 7);                                                           \
-	int (*atomcmp)(const void *, const void *);                                                             \
-	const void *nil;                                                                                        \
-	bool has_nils = false;                                                                                  \
-                                                                                                            \
-	if (unit != 0 || excl != 0)                                                                             \
-		throw(SQL, OPSTR, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)"); \
-	(void)start;                                                                                            \
-	(void)end;                                                                                              \
-                                                                                                            \
-	if (msg)                                                                                                \
-		return msg;                                                                                         \
-	if (isaBatType(tpe))                                                                                    \
-		tpe = getBatType(tpe);                                                                              \
-                                                                                                            \
-	if (b) {                                                                                                \
-		bat *res = getArgReference_bat(stk, pci, 0);                                                        \
-		BUN i, j, cnt = BATcount(b);                                                                        \
-		bit *np;                                                                                            \
-		switch(ATOMstorage(tpe)) {                                                                          \
-			case TYPE_bit:                                                                                  \
-				ANALYTICAL_IMP(bit, IMP)                                                                    \
-				break;                                                                                      \
-			case TYPE_bte:                                                                                  \
-				ANALYTICAL_IMP(bte, IMP)                                                                    \
-				break;                                                                                      \
-			case TYPE_sht:                                                                                  \
-				ANALYTICAL_IMP(sht, IMP)                                                                    \
-				break;                                                                                      \
-			case TYPE_int:                                                                                  \
-				ANALYTICAL_IMP(int, IMP)                                                                    \
-				break;                                                                                      \
-			case TYPE_lng:                                                                                  \
-				ANALYTICAL_IMP(lng, IMP)                                                                    \
-				break;                                                                                      \
-			ANALYTICAL_IMP_HUGE(IMP)                                                                        \
-			case TYPE_flt:                                                                                  \
-				ANALYTICAL_IMP(flt, IMP)                                                                    \
-				break;                                                                                      \
-			case TYPE_dbl:                                                                                  \
-				ANALYTICAL_IMP(dbl, IMP)                                                                    \
-				break;                                                                                      \
-			default: {                                                                                      \
-				BATiter bpi = bat_iterator(b);                                                              \
-				void *curval = BUNtail(bpi, 0);                                                             \
-				nil = ATOMnilptr(tpe);                                                                      \
-				atomcmp = ATOMcompare(tpe);                                                                 \
-				if (p) {                                                                                    \
-					if (o) {                                                                                \
-						np = (bit*)Tloc(p, 0);                                                              \
-						for(i=0,j=0; i<cnt; i++, np++) {                                                    \
-							if (*np) {                                                                      \
-								if((*atomcmp)(curval, nil) == 0)                                            \
-									has_nils = true;                                                        \
-								for (;j < i; j++) {                                                         \
-									if (BUNappend(r, curval, false) != GDK_SUCCEED) {                       \
-										msg = createException(SQL, OPSTR, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
-										goto finish;                                                        \
-									}                                                                       \
-								}                                                                           \
-								curval = BUNtail(bpi, i);                                                   \
-							}                                                                               \
-							void *next = BUNtail(bpi, i);                                                   \
-							if((*atomcmp)(next, nil) != 0) {                                                \
-								if((*atomcmp)(curval, nil) == 0)                                            \
-									curval = next;                                                          \
-								else                                                                        \
-									curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next;               \
-							}                                                                               \
-						}                                                                                   \
-						if((*atomcmp)(curval, nil) == 0)                                                    \
-							has_nils = true;                                                                \
-						for (;j < i; j++) {                                                                 \
-							if (BUNappend(r, curval, false) != GDK_SUCCEED) {                               \
-								msg = createException(SQL, OPSTR, SQLSTATE(HY001) MAL_MALLOC_FAIL);         \
-								goto finish;                                                                \
-							}                                                                               \
-						}                                                                                   \
-					} else { /* single value, ie no ordering */                                             \
-						np = (bit*)Tloc(p, 0);                                                              \
-						for(i=0,j=0; i<cnt; i++, np++) {                                                    \
-							if (*np) {                                                                      \
-								if((*atomcmp)(curval, nil) == 0)                                            \
-									has_nils = true;                                                        \
-								for (;j < i; j++) {                                                         \
-									if (BUNappend(r, curval, false) != GDK_SUCCEED) {                       \
-										msg = createException(SQL, OPSTR, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
-										goto finish;                                                        \
-									}                                                                       \
-								}                                                                           \
-								curval = BUNtail(bpi, i);                                                   \
-							}                                                                               \
-							void *next = BUNtail(bpi, i);                                                   \
-							if((*atomcmp)(next, nil) != 0) {                                                \
-								if((*atomcmp)(curval, nil) == 0)                                            \
-									curval = next;                                                          \
-								else                                                                        \
-									curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next;               \
-							}                                                                               \
-						}                                                                                   \
-						if((*atomcmp)(curval, nil) == 0)                                                    \
-							has_nils = true;                                                                \
-						for (;j < i; j++) {                                                                 \
-							if (BUNappend(r, curval, false) != GDK_SUCCEED) {                               \
-								msg = createException(SQL, OPSTR, SQLSTATE(HY001) MAL_MALLOC_FAIL);         \
-								goto finish;                                                                \
-							}                                                                               \
-						}                                                                                   \
-					}                                                                                       \
-				} else if (o) { /* single value, ie no partitions */                                        \
-					for(i=0; i<cnt; i++) {                                                                  \
-						void *next = BUNtail(bpi, i);                                                       \
-							if((*atomcmp)(next, nil) != 0) {                                                \
-								if((*atomcmp)(curval, nil) == 0)                                            \
-									curval = next;                                                          \
-								else                                                                        \
-									curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next;               \
-							}                                                                               \
-					}                                                                                       \
-					if((*atomcmp)(curval, nil) == 0)                                                        \
-						has_nils = true;                                                                    \
-					for (j=0; j < i; j++) {                                                                 \
-						if (BUNappend(r, curval, false) != GDK_SUCCEED) {                                   \
-							msg = createException(SQL, OPSTR, SQLSTATE(HY001) MAL_MALLOC_FAIL);             \
-							goto finish;                                                                    \
-						}                                                                                   \
-					}                                                                                       \
-				} else { /* single value, ie no ordering */                                                 \
-					if((*atomcmp)(curval, nil) == 0)                                                        \
-						has_nils = true;                                                                    \
-					for(i=0; i<cnt; i++)                                                                    \
-						if (BUNappend(r, curval, false) != GDK_SUCCEED) {                                   \
-							msg = createException(SQL, OPSTR, SQLSTATE(HY001) MAL_MALLOC_FAIL);             \
-							goto finish;                                                                    \
-						}                                                                                   \
-				}                                                                                           \
-			}                                                                                               \
-		}                                                                                                   \
-		BATsetcount(r, cnt);                                                                                \
-finish:                                                                                                     \
-		BBPunfix(b->batCacheid);                                                                            \
-		if (p) BBPunfix(p->batCacheid);                                                                     \
-		if (o) BBPunfix(o->batCacheid);                                                                     \
-		r->tnonil = !has_nils;                                                                              \
-		r->tnil = has_nils;                                                                                 \
-		if (msg == MAL_SUCCEED)                                                                             \
-			BBPkeepref(*res = r->batCacheid);                                                               \
-	} else {                                                                                                \
-		ptr *res = getArgReference(stk, pci, 0);                                                            \
-		ptr *in = getArgReference(stk, pci, 1);                                                             \
-		*res = *in;                                                                                         \
-	}                                                                                                       \
-	return msg;                                                                                             \
+static str
+SQLanalytical_limit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
+					gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
+{
+	BAT *r, *b, *p, *o;
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, op, err);
+	int tpe = getArgType(mb, pci, 1);
+	int unit = *getArgReference_int(stk, pci, 4);
+	int start = *getArgReference_int(stk, pci, 5);
+	int end = *getArgReference_int(stk, pci, 6);
+	int excl = *getArgReference_int(stk, pci, 7);
+	gdk_return gdk_res;
+
+	if (unit != 0 || excl != 0)
+		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	(void)start;
+	(void)end;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = func(r, b, p, o, tpe);
+		BBPunfix(b->batCacheid);
+		if (p) BBPunfix(p->batCacheid);
+		if (o) BBPunfix(o->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			return createException(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else {
+		ptr *res = getArgReference(stk, pci, 0);
+		ptr *in = getArgReference(stk, pci, 1);
+		*res = *in;
+	}
+	return msg;
 }
 
-ANALYTICAL_LIMIT(min, MIN, >, "sql.min", SQLSTATE(42000) "min(:any_1,:bit,:bit)")
-ANALYTICAL_LIMIT(max, MAX, <, "sql.max", SQLSTATE(42000) "max(:any_1,:bit,:bit)")
+str
+SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return SQLanalytical_limit(cntxt, mb, stk, pci, "sql.min", SQLSTATE(42000) "min(:any_1,:bit,:bit)", GDKanalyticalmin);
+}
 
-#undef ANALYTICAL_LIMIT
-#undef ANALYTICAL_IMP_HUGE
-#undef ANALYTICAL_IMP
+str
+SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+    return SQLanalytical_limit(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:bit,:bit)", GDKanalyticalmax);
+}
+
+str
+SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r, *b, *p, *o;
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, "sql.sum", "sum(:any_1,:bit,:bit)");
+	int tp1 = getArgType(mb, pci, 1), tp2;
+	int unit = *getArgReference_int(stk, pci, 4);
+	int start = *getArgReference_int(stk, pci, 5);
+	int end = *getArgReference_int(stk, pci, 6);
+	int excl = *getArgReference_int(stk, pci, 7);
+	gdk_return gdk_res;
+
+	if (unit != 0 || excl != 0)
+		throw(SQL, "sql.sum", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	(void) start;
+	(void) end;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tp1))
+		tp1 = getBatType(tp1);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		tp2 = getBatType(r->T.type);
+
+		gdk_res = GDKanalyticalsum(r, b, p, o, tp1, tp2);
+		BBPunfix(b->batCacheid);
+		if (p) BBPunfix(p->batCacheid);
+		if (o) BBPunfix(o->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+	} else {
+		ptr *res = getArgReference(stk, pci, 0);
+		ptr *in = getArgReference(stk, pci, 1);
+		*res = *in;
+	}
+	return msg;
+}

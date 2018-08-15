@@ -34,6 +34,7 @@ lib_gdk = {
 		gdk_unique.c \
 		gdk_interprocess.c gdk_interprocess.h \
 		gdk_firstn.c \
+		gdk_analytic.c gdk_analytic.h \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
 		../common/utils/libmutils \
@@ -52,6 +53,7 @@ headers_h = {
 	HEADERS = h
 	SOURCES = \
 		gdk.h \
+		gdk_analytic.h \
 		gdk_atomic.h \
 		gdk_atoms.h \
 		gdk_bbp.h \
