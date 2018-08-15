@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Aug 15 2018 Sjoerd Mullender <sjoerd@acm.org>
+- A whole bunch of functions now take a bool argument instead of an
+  int argument.  Some functions now return a bool instead of an int.
+  In all these cases, the int was used as a Boolean value.
+

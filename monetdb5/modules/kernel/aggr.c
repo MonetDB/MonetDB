@@ -15,10 +15,10 @@
  */
 static str
 AGGRgrouped(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const bat *eid, const bat *sid,
-			int skip_nils, int abort_on_error, int tp,
-			BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, int, int),
-			gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, int, int),
-			BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int, double, int, int),
+			bool skip_nils, bool abort_on_error, int tp,
+			BAT *(*grpfunc1)(BAT *, BAT *, BAT *, BAT *, int, bool, bool),
+			gdk_return (*grpfunc2)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *, int, bool, bool),
+			BAT *(*quantilefunc)(BAT *, BAT *, BAT *, BAT *, int, double, bool, bool),
 			const bat *quantile,
 			const char *malfunc)
 {
@@ -870,8 +870,8 @@ AGGRsubquantilecand(bat *retval, const bat *bid, const bat *quantile, const bat 
 }
 
 static str
-AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *eid, const bat *sid, int skip_nils,
-					 int abort_on_error, BAT *(*str_func)(BAT *, BAT *, BAT *, BAT *, int, int, const str),
+AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *eid, const bat *sid, bool skip_nils,
+					 bool abort_on_error, BAT *(*str_func)(BAT *, BAT *, BAT *, BAT *, bool, bool, const str),
 					 const str separator, const char *malfunc)
 {
 	BAT *b, *g, *e, *s, *bn = NULL;

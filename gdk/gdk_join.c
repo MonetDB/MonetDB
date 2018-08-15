@@ -3693,7 +3693,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		return fetchjoin(r1, r2, l, r);
 	phash = sr == NULL &&
 		VIEWtparent(r) != 0 &&
-		BATcount(BBPquickdesc(VIEWtparent(r), 0)) == BATcount(r);
+		BATcount(BBPquickdesc(VIEWtparent(r), false)) == BATcount(r);
 	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, nil_on_miss, semi,
 			only_misses, maxsize, t0, false, phash, "leftjoin");
 }

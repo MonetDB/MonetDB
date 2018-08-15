@@ -552,8 +552,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	struct sockaddr_in server;
 	SOCKET sock = INVALID_SOCKET;
 	SOCKET *psock;
-	char accept_any = 0;
-	char autosense = 0;
+	bool accept_any = false;
+	bool autosense = false;
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
 	SOCKET usock = INVALID_SOCKET;

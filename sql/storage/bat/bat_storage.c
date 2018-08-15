@@ -650,7 +650,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 	int id = i->batCacheid;
 	BAT *b;
 #ifndef NDEBUG
-	BAT *c = BBPquickdesc(bat->bid, 0);
+	BAT *c = BBPquickdesc(bat->bid, false);
 #endif
 
 	if (!BATcount(i))
@@ -709,7 +709,7 @@ delta_append_val( sql_delta *bat, void *i )
 {
 	BAT *b = temp_descriptor(bat->ibid);
 #ifndef NDEBUG
-	BAT *c = BBPquickdesc(bat->bid, 0);
+	BAT *c = BBPquickdesc(bat->bid, false);
 #endif
 	if(b == NULL)
 		return LOG_ERR;
@@ -1955,7 +1955,7 @@ empty_col(sql_column *c)
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
 	bat->ibase = 0;
-	bat->cnt = BATcount(BBPquickdesc(bat->bid, 0));
+	bat->cnt = BATcount(BBPquickdesc(bat->bid, false));
 	bat->ucnt = 0;
 
 	if (bat->ibid == BID_NIL)
@@ -2006,7 +2006,7 @@ empty_idx(sql_idx *i)
 	bat->bid = bat->ibid;
 	bat->ibid = e_bat(type);
 	bat->ibase = 0;
-	bat->cnt = BATcount(BBPquickdesc(bat->bid, 0));
+	bat->cnt = BATcount(BBPquickdesc(bat->bid, false));
 	bat->ucnt = 0;
 
 	if (bat->ibid == BID_NIL)

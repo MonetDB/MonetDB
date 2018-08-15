@@ -50,7 +50,7 @@
 #endif
 
 #ifdef HAVE_CONSOLE
-static int monet_daemon;
+static bool monet_daemon;
 #endif
 
 /* NEEDED? */
@@ -204,9 +204,9 @@ monet_init(opt *set, int setlen)
 		return 0;
 
 #ifdef HAVE_CONSOLE
-	monet_daemon = 0;
+	monet_daemon = false;
 	if (GDKgetenv_isyes("monet_daemon")) {
-		monet_daemon = 1;
+		monet_daemon = true;
 #ifdef HAVE_SETSID
 		setsid();
 #endif

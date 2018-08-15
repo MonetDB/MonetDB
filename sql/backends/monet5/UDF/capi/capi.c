@@ -440,10 +440,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	sigset_t signal_set;
 
 #ifdef NDEBUG
-	int debug_build =
+	bool debug_build =
 		GDKgetenv_istrue(debug_flag) || GDKgetenv_isyes(debug_flag);
 #else
-	int debug_build = true;
+	bool debug_build = true;
 #endif
 	char* extra_cflags = NULL;
 	char* extra_ldflags = NULL;

@@ -2837,7 +2837,7 @@ BBPfree(BAT *b, const char *calledFrom)
  * parametrized.
  */
 static bool
-complexatom(int t, int delaccess)
+complexatom(int t, bool delaccess)
 {
 	if (t >= 0 && (BATatoms[t].atomFix || (delaccess && BATatoms[t].atomDel))) {
 		return true;
@@ -2846,7 +2846,7 @@ complexatom(int t, int delaccess)
 }
 
 BAT *
-BBPquickdesc(bat bid, int delaccess)
+BBPquickdesc(bat bid, bool delaccess)
 {
 	BAT *b;
 
@@ -2886,7 +2886,7 @@ dirty_bat(bat *i, bool subcommit)
 			    (subcommit || BATdirty(b)))
 				return b;	/* the bat is loaded, persistent and dirty */
 		} else if (BBP_status(*i) & BBPSWAPPED) {
-			b = (BAT *) BBPquickdesc(*i, TRUE);
+			b = (BAT *) BBPquickdesc(*i, true);
 			if (b && (subcommit || b->batDirtydesc))
 				return b;	/* only the desc is loaded & dirty */
 		}

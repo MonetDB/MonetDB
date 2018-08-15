@@ -762,7 +762,7 @@ dosum(const void *restrict values, bool nonil, oid seqb, BUN start, BUN end,
 
 /* calculate group sums with optional candidates list */
 BAT *
-BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -828,7 +828,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 }
 
 gdk_return
-BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty)
+BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1361,7 +1361,7 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 
 /* calculate group products with optional candidates list */
 BAT *
-BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -1427,7 +1427,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 }
 
 gdk_return
-BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty)
+BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1632,7 +1632,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 
 /* calculate group averages with optional candidates list */
 gdk_return
-BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -2003,7 +2003,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 
 /* calculate group counts with optional candidates list */
 BAT *
-BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -2147,7 +2147,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 /* calculate group sizes (number of TRUE values) with optional
  * candidates list */
 BAT *
-BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -2655,7 +2655,7 @@ BATminmax(BAT *b, void *aggr,
 
 BAT *
 BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    int skip_nils, int abort_on_error)
+	    bool skip_nils, bool abort_on_error)
 {
 	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
 			      do_groupmin, "BATgroupmin");
@@ -2669,7 +2669,7 @@ BATmin(BAT *b, void *aggr)
 
 BAT *
 BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    int skip_nils, int abort_on_error)
+	    bool skip_nils, bool abort_on_error)
 {
 	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
 			      do_groupmax, "BATgroupmax");
@@ -2687,7 +2687,7 @@ BATmax(BAT *b, void *aggr)
 
 BAT *
 BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	       int skip_nils, int abort_on_error)
+	       bool skip_nils, bool abort_on_error)
 {
 	return BATgroupquantile(b,g,e,s,tp,0.5,skip_nils,abort_on_error);
 }
@@ -2701,7 +2701,7 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
-		 int skip_nils, int abort_on_error)
+		 bool skip_nils, bool abort_on_error)
 {
 	bool freeb = false, freeg = false;
 	oid min, max;
@@ -3223,7 +3223,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		     int skip_nils, int abort_on_error)
+		     bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, false,
@@ -3232,7 +3232,7 @@ BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			 int skip_nils, int abort_on_error)
+			 bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, false,
@@ -3241,7 +3241,7 @@ BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		     int skip_nils, int abort_on_error)
+		     bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, true,
@@ -3250,7 +3250,7 @@ BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			 int skip_nils, int abort_on_error)
+			 bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, true,
@@ -3262,7 +3262,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 static gdk_return
 concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN end, BUN ngrp, const oid *restrict cand,
-			   const oid *candend, const oid *restrict gids, oid min, oid max, int skip_nils, const str separator,
+			   const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils, const str separator,
 			   const char *func, BUN *has_nils)
 {
 	oid gid;
@@ -3589,7 +3589,7 @@ finish:
 }
 
 gdk_return
-BATstr_group_concat(ValPtr res, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty, const str separator)
+BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, const str separator)
 {
 	oid min, max;
 	BUN ngrp, start, end;
@@ -3619,7 +3619,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, int skip_nils, int abort_on_erro
 }
 
 BAT *
-BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils, int abort_on_error, const str separator)
+BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool abort_on_error, const str separator)
 {
 	const oid *restrict gids;
 	BAT *bn = NULL;

@@ -65,8 +65,8 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 }
 
 static str
-CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, int abort_on_error,
-			 BAT *(*batfunc)(BAT *, BAT *, int), const char *malfunc)
+CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, bool abort_on_error,
+			 BAT *(*batfunc)(BAT *, BAT *, bool), const char *malfunc)
 {
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
@@ -157,7 +157,7 @@ CMDbatINCR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatUNARY1(stk, pci, 1, BATcalcincr, "batcalc.incr");
+	return CMDbatUNARY1(stk, pci, true, BATcalcincr, "batcalc.incr");
 }
 
 mal_export str CMDbatDECR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -168,7 +168,7 @@ CMDbatDECR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatUNARY1(stk, pci, 1, BATcalcdecr, "batcalc.decr");
+	return CMDbatUNARY1(stk, pci, true, BATcalcdecr, "batcalc.decr");
 }
 
 mal_export str CMDbatNEG(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -290,11 +290,11 @@ calcmodtype(int tp1, int tp2)
 
 static str
 CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int, int),
-			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int, int),
-			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int, int),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int, bool),
+			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int, bool),
+			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int, bool),
 			  int (*typefunc)(int, int),
-			  int abort_on_error, const char *malfunc)
+			  bool abort_on_error, const char *malfunc)
 {
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
@@ -366,10 +366,10 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 static str
 CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int),
-			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, int),
-			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, int),
-			  int abort_on_error,
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, bool),
+			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, bool),
+			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, bool),
+			  bool abort_on_error,
 			  const char *malfunc)
 {
 	bat *bid;
@@ -997,7 +997,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, int abort_on_error)
+CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 {
 	bat *bid;
 	BAT *b, *bn, *s = NULL;
