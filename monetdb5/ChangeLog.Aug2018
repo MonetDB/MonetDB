@@ -1,7 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Fri May 25 2018 Sjoerd Mullender <sjoerd@acm.org>
-- The lsst module was moved to a separate repository
-  (https://dev.monetdb.org/hg/MonetDB-lsst/).
-

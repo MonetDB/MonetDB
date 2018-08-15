@@ -132,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Mar2018-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Aug2018/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1032,6 +1032,171 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Aug 15 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- Rebuilt.
+- BZ#4020: Importing timestamp with zone from copy into
+- BZ#6564: Changes to the Remote Table definition
+- BZ#6575: Sqlitelogictest crash on groupby query with coalesce call
+- BZ#6579: Sqlitelogic test infinite loop while compiling SQL query
+- BZ#6586: Sqlitelogictest crash on complex aggregation query
+- BZ#6593: Poor performance with like operator and escape clause
+- BZ#6596: Multicolumn aggregation very slow after ANALYZE when persistent
+  hashes are enabled
+- BZ#6605: Sqlitelogictest set queries with wrong results
+- BZ#6610: Sqlitelogictest algebra.rangejoin undefined
+- BZ#6611: Cannot compile with GCC 8.1 and --enable-debug=no
+- BZ#6612: Implement BLOB handling in python UDFs
+- BZ#6614: JDBC 2.35/2.36 throws NullPointerException on getObject(int i)
+  on Timestamp column
+- BZ#6615: JDBC 2.35 returns "false" for Boolean NULL
+- BZ#6616: JDBC 2.35 returns minint (-2147483648) for int NULL
+- BZ#6618: dependency column on sequence violated by DROP SEQUENCE
+- BZ#6621: SELECT FROM REMOTE TABLE WHERE <> returns wrong results
+- BZ#6624: "Cannot use non GROUP BY column in query results without an
+  aggregate function" when using aggregate function in both HAVING and
+  ORDER BY clauses.
+- BZ#6625: OR in subselect causes the server to crash with segmentation
+  fault
+- BZ#6627: stddev_pop inconsistent behaviour
+- BZ#6628: User cannot insert into own local temporary table
+- BZ#6629: CREATE TABLE IF NOT EXISTS returns 42000!
+- BZ#6630: Sqlitelogictest cast NULL to integer failing
+- BZ#6632: Dataflow causes crash when THRnew fails
+- BZ#6633: ILIKE clauses don't work on certain characters
+- BZ#6635: monetdbd exits due to "Too many open files" error
+- BZ#6637: Within a transaction, d after an error causes mclient to exit
+- BZ#6638: (sequences of) mkey.bulk_rotate_xor_hash() can generate NIL
+  from non-NIL making multi-col joins return wrong results
+
+* Thu Aug  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.31.1-20180815
+- clients: ODBC SQLGetInfo now returns a positive numeric value for InfoTypes:
+  SQL_MAX_COLUMN_NAME_LEN, SQL_MAX_DRIVER_CONNECTIONS,
+  SQL_MAX_IDENTIFIER_LEN, SQL_MAX_PROCEDURE_NAME_LEN,
+  SQL_MAX_SCHEMA_NAME_LEN, SQL_MAX_TABLE_NAME_LEN and
+  SQL_MAX_USER_NAME_LEN.
+
+* Mon Jul 30 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: Hash indexes are now persistent across server restarts.
+- gdk: The macros bunfastapp and tfastins and variants no longer set the dirty
+  flag of the heap they write to.  This now needs to be done separately
+  (and preferably outside of the inner loop).
+
+* Fri Jul 27 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: Removed batDirty flag from BAT record.  Its function is completely
+  superseded by batDirtydesc and the dirty flags on the various heaps.
+
+* Tue Jul 24 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- clients: ODBC: Implemented SQL_ATTR_QUERY_TIMEOUT parameter in SQLSetStmtAttr.
+
+* Tue Jul 24 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: Removed "masksize" argument of function BAThash.
+
+* Thu Jun  7 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.31.1-20180815
+- sql: Removed deprecated table producing system functions:
+  sys.dependencies_columns_on_functions()
+  sys.dependencies_columns_on_indexes()
+  sys.dependencies_columns_on_keys()
+  sys.dependencies_columns_on_triggers()
+  sys.dependencies_columns_on_views()
+  sys.dependencies_functions_on_functions()
+  sys.dependencies_functions_on_triggers()
+  sys.dependencies_keys_on_foreignkeys()
+  sys.dependencies_owners_on_schemas()
+  sys.dependencies_schemas_on_users()
+  sys.dependencies_tables_on_foreignkeys()
+  sys.dependencies_tables_on_functions()
+  sys.dependencies_tables_on_indexes()
+  sys.dependencies_tables_on_triggers()
+  sys.dependencies_tables_on_views()
+  sys.dependencies_views_on_functions()
+  sys.dependencies_views_on_triggers()
+  They are replaced by new system dependency_* views:
+  sys.dependency_args_on_types
+  sys.dependency_columns_on_functions
+  sys.dependency_columns_on_indexes
+  sys.dependency_columns_on_keys
+  sys.dependency_columns_on_procedures
+  sys.dependency_columns_on_triggers
+  sys.dependency_columns_on_types
+  sys.dependency_columns_on_views
+  sys.dependency_functions_on_functions
+  sys.dependency_functions_on_procedures
+  sys.dependency_functions_on_triggers
+  sys.dependency_functions_on_types
+  sys.dependency_functions_on_views
+  sys.dependency_keys_on_foreignkeys
+  sys.dependency_owners_on_schemas
+  sys.dependency_schemas_on_users
+  sys.dependency_tables_on_foreignkeys
+  sys.dependency_tables_on_functions
+  sys.dependency_tables_on_indexes
+  sys.dependency_tables_on_procedures
+  sys.dependency_tables_on_triggers
+  sys.dependency_tables_on_views
+  sys.dependency_views_on_functions
+  sys.dependency_views_on_procedures
+  sys.dependency_views_on_views
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: A whole bunch of functions that took an int argument that was used as a
+  Boolean (true/false) value now take a value of type bool.  The functions
+  BATkeyed, BATordered and BATordered_rev now return a bool instead of
+  an int.
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- monetdb5: The lsst module was moved to a separate repository
+  (https://dev.monetdb.org/hg/MonetDB-lsst/).
+
+* Thu May 31 2018 Ying Zhang <y.zhang@cwi.nl> - 11.31.1-20180815
+- clients: Added a '-f rowcount' option in mclient to repress printing the actual
+  data of a resultset, but only print the number of returned tuples
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- buildtools: On Windows, the separate MonetDB5-Geom installer has been incorporated
+  into the main MonetDB5-SQL installer and is therefore no longer
+  available as a separate download.
+
+* Thu May 31 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.31.1-20180815
+- merovingian: Changed the monetdb profilerstart command to be more robust.  If the
+  server or stethoscope crashed before, the pid file is still there,
+  so the next time we try to start stethoscope, it will fail.  Now the
+  profilerstart command will check if a stethoscope process with the
+  recorded pid is running. If not, we start stethoscope, assuming that
+  something went wrong before.
+- merovingian: Changed the monetdb stop command to try to stop stethoscope before
+  stoping the server. The error conditions that can arrise from attempting
+  to stop stethoscope are:
+  - The database is not running.
+  - The profilerlogpath is not set.
+  - The profiler.pid file does not exist or is inaccessible.
+  - The contents of the profiler.pid are not valid.
+  - Shutdown of stethoscope did not succeed.
+  - Removing the profiler.pid file failed.
+  In all the cases, the attempt to stop the server can continue normally,
+  so we actually ignore any errors that rise from the attempt to stop
+  stethoscope.
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- testing: Removed helper programs Mtimeout and MkillUsers: they have long been
+  superseded by timeout handling by Mtest.py itself.
+
+* Thu May 31 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
+- gdk: Removed the tdense property: it's function is completely replaced by
+  whether or not tseqbase is equal to oid_nil.
+
+* Thu May 31 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.31.1-20180815
+- sql: Implemented group_concat(X,Y) aggregate function which also
+  concatenates a column of strings X, but using a supplied string Y as
+  the separator. This function is also a SQL extension.
+
+* Thu May 31 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.31.1-20180815
+- sql: Implemented group_concat(X) aggregate function which concatenates a
+  column of strings using a comma as a separator. This function is not
+  featured in the SQL standard.
+
+* Thu May 31 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.31.1-20180815
+- stream: Added support for lz4 compressed files in the stream library
+
 * Thu May 31 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.7-20180531
 - Rebuilt.
 
