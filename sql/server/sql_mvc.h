@@ -160,9 +160,9 @@ extern void mvc_cancel_session(mvc *m);
 #define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
 
 extern int mvc_trans(mvc *c);
-extern int mvc_commit(mvc *c, int chain, const char *name);
-extern int mvc_rollback(mvc *c, int chain, const char *name);
-extern int mvc_release(mvc *c, const char *name);
+extern str mvc_commit(mvc *c, int chain, const char *name, bool enabling_auto_commit);
+extern str mvc_rollback(mvc *c, int chain, const char *name, bool disabling_auto_commit);
+extern str mvc_release(mvc *c, const char *name);
 
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);

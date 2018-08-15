@@ -336,7 +336,7 @@ SQLprepareClient(Client c, int login)
 str
 SQLresetClient(Client c)
 {
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, other = MAL_SUCCEED;
 
 	if (c->sqlcontext == NULL)
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
@@ -346,12 +346,11 @@ SQLresetClient(Client c)
 
 		assert(m->session);
 		if (m->session->auto_commit && m->session->active) {
-			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0)
-				msg = handle_error(m, 0, 0);
+			if (mvc_status(m) >= 0)
+				msg = mvc_commit(m, 0, NULL, false);
 		}
-		if (m->session->active) {
-			mvc_rollback(m, 0, NULL);
-		}
+		if (m->session->active)
+			other = mvc_rollback(m, 0, NULL, false);
 
 		res_tables_destroy(m->results);
 		m->results = NULL;
@@ -363,6 +362,10 @@ SQLresetClient(Client c)
 		c->sqlcontext = NULL;
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
+	if(other && !msg)
+		msg = other;
+	else if(other && msg)
+		GDKfree(other);
 	return msg;
 }
 
@@ -615,11 +618,15 @@ handle_error(mvc *m, int pstatus, str msg)
 	}
 	if( new && msg){
 		newmsg = GDKzalloc( strlen(msg) + strlen(new) + 64);
-		strcpy(newmsg, msg);
-		/* strcat(newmsg,"!"); */
-		strcat(newmsg,new);
-		GDKfree(new);
-		GDKfree(msg);
+		if (newmsg == NULL) {
+			newmsg = createException(SQL, "sql.execute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		} else {
+			strcpy(newmsg, msg);
+			/* strcat(newmsg,"!"); */
+			strcat(newmsg,new);
+		}
+		freeException(new);
+		freeException(msg);
 	} else
 	if( msg)
 		newmsg = msg;
@@ -636,10 +643,9 @@ SQLautocommit(mvc *m)
 
 	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
-			mvc_rollback(m, 0, NULL);
-		} else if (mvc_commit(m, 0, NULL) < 0) {
-			msg = handle_error(m, 0, 0);
-			m->errstr[0] = 0;
+			msg = mvc_rollback(m, 0, NULL, false);
+		} else {
+			msg = mvc_commit(m, 0, NULL, false);
 		}
 	}
 	return msg;
@@ -1095,11 +1101,10 @@ SQLparser(Client c)
 			m->session->auto_commit = (v) != 0;
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
-				if (commit && mvc_commit(m, 0, NULL) < 0) {
-					msg = createException(SQL, "COMMIT", SQLSTATE(42000) "Commit failed while enabling auto_commit");
-				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
+				if (commit) {
+					msg = mvc_commit(m, 0, NULL, true);
+				} else if (!commit && (msg = mvc_rollback(m, 0, NULL, true)) != MAL_SUCCEED) {
 					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
-					msg = createException(SQL, "COMMIT", SQLSTATE(42000) "rollback failed while " "disabling auto_commit");
 				}
 			}
 			in->pos = in->len;	/* HACK: should use parsed length */
@@ -1309,7 +1314,7 @@ SQLparser(Client c)
 			} else if(msg) {
 				str newmsg;
 				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
-				GDKfree(msg);
+				freeException(msg);
 				msg = newmsg;
 			}
 		}
@@ -1357,7 +1362,7 @@ SQLcallback(Client c, str msg){
 			strncpy(newerr, msg, s - msg);
 			newerr[s-msg] = 0;
 			snprintf(newerr + (s-msg), 1024 -(s-msg), SQLSTATE(HY020) "%s",s);
-			GDKfree(msg);
+			freeException(msg);
 			msg = GDKstrdup(newerr);
 		}
 	}
