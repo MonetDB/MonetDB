@@ -882,7 +882,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 			dbl avg;
 			BUN cnt;
 
-			if (BATcalcavg(b, s, &avg, &cnt) != GDK_SUCCEED)
+			if (BATcalcavg(b, s, &avg, &cnt, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			if (cnt == 0) {
 				avg = nil_if_empty ? dbl_nil : 0;
@@ -1632,7 +1632,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 
 /* calculate group averages with optional candidates list */
 gdk_return
-BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
+BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error, int scale)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -1786,6 +1786,13 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		cn->tnonil = true;
 		*cntsp = cn;
 	}
+	if (scale != 0) {
+		dbl fac = pow(10.0, (double) scale);
+		for (i = 0; i < ngrp; i++) {
+			if (!is_dbl_nil(dbls[i]))
+				dbls[i] *= fac;
+		}
+	}
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -1919,7 +1926,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	} while (0)
 
 gdk_return
-BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
+BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 {
 	BUN n = 0, r = 0, i = 0;
 #ifdef HAVE_HGE
@@ -1967,6 +1974,8 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
+	if (scale != 0 && !is_dbl_nil(*avg))
+		*avg *= pow(10.0, (double) scale);
 	if (vals)
 		*vals = n;
 	return GDK_SUCCEED;

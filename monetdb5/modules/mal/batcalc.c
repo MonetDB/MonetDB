@@ -970,6 +970,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid;
 	BAT *b, *s = NULL;
 	gdk_return ret;
+	int scale = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -977,14 +978,20 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, pci->retc + 0);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (pci->argc == pci->retc + 2) {
+	if ((pci->argc == pci->retc + 2 &&
+		 stk->stk[pci->argv[pci->retc + 1]].vtype == TYPE_bat) ||
+		pci->argc == pci->retc + 3) {
 		bat *sid = getArgReference_bat(stk, pci, pci->retc + 1);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
-	ret = BATcalcavg(b, s, &avg, &vals);
+	if (pci->argc >= pci->retc + 2 &&
+		stk->stk[pci->argv[pci->argc - 1]].vtype == TYPE_int) {
+		scale = *getArgReference_int(stk, pci, pci->argc - 1);
+	}
+	ret = BATcalcavg(b, s, &avg, &vals, scale);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
