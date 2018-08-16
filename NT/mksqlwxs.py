@@ -14,7 +14,7 @@ upgradecode = {
 # the Geom upgrade codes that we are replacing
 geomupgradecode = {
     'x64': '{8E6CDFDE-39B9-43D9-97B3-2440C012845C}',
-    'x86': '{C1F69378-3F5C-4120-8224-32F07D3458F3}'
+    'x86': '{92C89C36-0E86-45E1-B3D8-0D6C91108F30}'
 }
 
 def comp(features, id, depth, files, name=None, args=None, sid=None, vital=None):
