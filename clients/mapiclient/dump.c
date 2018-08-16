@@ -47,14 +47,14 @@ get_with_comments_as_clause(Mapi mid)
 			"SELECT language_id, language_name, language_keyword "
 			"FROM sys.function_languages, (VALUES "
 				"(3, 'R'), "
-				"(4, 'C', 'C'), "
+				"(4, 'C'), "
 				"(6, 'PYTHON'), "
 				"(7, 'PYTHON_MAP'), "
 				"(8, 'PYTHON2'), "
 				"(9, 'PYTHON2_MAP'), "
 				"(10, 'PYTHON3'), "
 				"(11, 'PYTHON3_MAP'), "
-				"(12, 'C++', 'CPP')) AS (id, language_keyword) "
+				"(12, 'CPP')) AS (id, language_keyword) "
 			"WHERE id = language_id"
 		     ")";
 
@@ -2109,7 +2109,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
-			"UNION "
+			"UNION ALL "
 			"SELECT s.name AS sname, " /* functions */
 			       "f.name AS name, "
 			       "f.id AS id, "
@@ -2120,7 +2120,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			     "sys.functions f "
 			"WHERE s.id = f.schema_id "
 			"AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
-			"UNION "
+			"UNION ALL "
 			"SELECT s.name AS sname, " /* triggers */
 			       "tr.name AS name, "
 			       "tr.id AS id, "
