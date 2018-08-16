@@ -85,7 +85,7 @@ enum formatters {
 	NOformatter,
 	RAWformatter,		// as the data is received
 	TABLEformatter,		// render as a bordered table
-	CSVformatter,		// render as a comma separate file
+	CSVformatter,		// render as a comma or tab separated values list
 	XMLformatter,		// render as a valid XML document
 	TESTformatter,		// for testing, escape characters
 	TRASHformatter,		// remove the result set
@@ -2201,7 +2201,7 @@ showCommands(void)
 	}
 	mnstr_printf(toConsole, "\\e       - echo the query in sql formatting mode\n");
 	mnstr_printf(toConsole, "\\t       - set the timer {none,clock,performance} (none is default)\n");
-	mnstr_printf(toConsole, "\\f       - format using a built-in renderer {csv,tab,raw,sql,xml,trash,rowcount}\n");
+	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded,sam}\n");
 	mnstr_printf(toConsole, "\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#      - set maximum rows per page (-1=raw)\n");
 	mnstr_printf(toConsole, "\\L file  - save client/server interaction\n");
@@ -2858,6 +2858,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							break;
 						case EXPANDEDformatter:
 							mnstr_printf(toConsole, "expanded\n");
+							break;
+						case SAMformatter:
+							mnstr_printf(toConsole, "sam\n");
 							break;
 						default:
 							mnstr_printf(toConsole, "none\n");
