@@ -2796,7 +2796,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 					int h;
 					char *nl;
 
-					if (strcmp(line,"\\history") == 0) {
+					if (strcmp(line,"\\history\n") == 0) {
 						for (h = 0; h < history_length; h++) {
 							nl = history_get(h) ? history_get(h)->line : 0;
 							if (nl)
