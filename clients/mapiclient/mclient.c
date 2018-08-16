@@ -2183,7 +2183,7 @@ showCommands(void)
 	/* shared control options */
 	mnstr_printf(toConsole, "\\?       - show this message\n");
 	if (mode == MAL)
-		mnstr_printf(toConsole, "?pat  - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
+		mnstr_printf(toConsole, "?pat     - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
 	mnstr_printf(toConsole, "\\<file   - read input from file\n");
 	mnstr_printf(toConsole, "\\>file   - save response in file, or stdout if no file is given\n");
 #ifdef HAVE_POPEN
@@ -2192,21 +2192,21 @@ showCommands(void)
 #ifdef HAVE_LIBREADLINE
 	mnstr_printf(toConsole, "\\history - show the readline history\n");
 #endif
-	mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
 	if (mode == SQL) {
-		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
+		mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
+		mnstr_printf(toConsole, "\\D table - dumps the table, or the complete database if none given.\n");
 		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
-		mnstr_printf(toConsole, "\\A      - enable auto commit\n");
-		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
+		mnstr_printf(toConsole, "\\A       - enable auto commit\n");
+		mnstr_printf(toConsole, "\\a       - disable auto commit\n");
 	}
-	mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
-	mnstr_printf(toConsole, "\\t      - set the timer {none,clock,performance} (none is default)\n");
-	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml,trash,rowcount}\n");
-	mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
-	mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
-	mnstr_printf(toConsole, "\\L file - save client/server interaction\n");
-	mnstr_printf(toConsole, "\\X      - trace mclient code\n");
-	mnstr_printf(toConsole, "\\q      - terminate session\n");
+	mnstr_printf(toConsole, "\\e       - echo the query in sql formatting mode\n");
+	mnstr_printf(toConsole, "\\t       - set the timer {none,clock,performance} (none is default)\n");
+	mnstr_printf(toConsole, "\\f       - format using a built-in renderer {csv,tab,raw,sql,xml,trash,rowcount}\n");
+	mnstr_printf(toConsole, "\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
+	mnstr_printf(toConsole, "\\r#      - set maximum rows per page (-1=raw)\n");
+	mnstr_printf(toConsole, "\\L file  - save client/server interaction\n");
+	mnstr_printf(toConsole, "\\X       - trace mclient code\n");
+	mnstr_printf(toConsole, "\\q       - terminate session\n");
 }
 
 #define MD_TABLE    1
