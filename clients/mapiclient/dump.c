@@ -47,14 +47,14 @@ get_with_comments_as_clause(Mapi mid)
 			"SELECT language_id, language_name, language_keyword "
 			"FROM sys.function_languages, (VALUES "
 				"(3, 'R'), "
-				"(4, 'C', 'C'), "
+				"(4, 'C'), "
 				"(6, 'PYTHON'), "
 				"(7, 'PYTHON_MAP'), "
 				"(8, 'PYTHON2'), "
 				"(9, 'PYTHON2_MAP'), "
 				"(10, 'PYTHON3'), "
 				"(11, 'PYTHON3_MAP'), "
-				"(12, 'C++', 'CPP')) AS (id, language_keyword) "
+				"(12, 'CPP')) AS (id, language_keyword) "
 			"WHERE id = language_id"
 		     ")";
 
