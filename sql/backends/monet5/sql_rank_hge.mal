@@ -12,7 +12,7 @@ pattern sql.sum(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:bte], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:hge]
+pattern batsql.sum(b:bat[:bte], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 
@@ -20,7 +20,7 @@ pattern sql.sum(b:sht, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:sht], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:hge]
+pattern batsql.sum(b:bat[:sht], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 
@@ -28,7 +28,7 @@ pattern sql.sum(b:int, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:int], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:hge]
+pattern batsql.sum(b:bat[:int], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 
@@ -36,7 +36,7 @@ pattern sql.sum(b:lng, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:lng], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:hge]
+pattern batsql.sum(b:bat[:lng], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 

@@ -21,7 +21,7 @@ pattern sql.sum(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:${tp1#*:}], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
+pattern batsql.sum(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
 address SQLsum
 comment "return the sum of groups";
 

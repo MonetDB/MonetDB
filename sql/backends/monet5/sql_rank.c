@@ -352,7 +352,7 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb
 
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
 static str
-SQLanalytical_limit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
+SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
 					gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
 	BAT *r, *b, *p, *o;
@@ -396,13 +396,55 @@ SQLanalytical_limit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, con
 str
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_limit(cntxt, mb, stk, pci, "sql.min", SQLSTATE(42000) "min(:any_1,:bit,:bit)", GDKanalyticalmin);
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.min", SQLSTATE(42000) "min(:any_1,:bit,:bit)", GDKanalyticalmin);
 }
 
 str
 SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    return SQLanalytical_limit(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:bit,:bit)", GDKanalyticalmax);
+    return SQLanalytical_func(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:bit,:bit)", GDKanalyticalmax);
+}
+
+str
+SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r, *b, *p, *o;
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, "sql.count", SQLSTATE(42000) "count(:any_1,:bit,:bit)");
+	int tpe = getArgType(mb, pci, 1);
+	int unit = *getArgReference_int(stk, pci, 4);
+	int start = *getArgReference_int(stk, pci, 5);
+	int end = *getArgReference_int(stk, pci, 6);
+	int excl = *getArgReference_int(stk, pci, 7);
+	bit ignore_nils = 1;
+	gdk_return gdk_res;
+
+	if (unit != 0 || excl != 0)
+		throw(SQL, "sql.count", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	(void)start;
+	(void)end;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = GDKanalyticalcount(r, b, p, o, &ignore_nils, tpe);
+		BBPunfix(b->batCacheid);
+		if (p) BBPunfix(p->batCacheid);
+		if (o) BBPunfix(o->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			return createException(SQL, "sql.count", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else {
+		ptr *res = getArgReference(stk, pci, 0);
+		ptr *in = getArgReference(stk, pci, 1);
+		*res = *in;
+	}
+	return msg;
 }
 
 str

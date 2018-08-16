@@ -13,14 +13,15 @@
 
 #define ANALYTICAL_LIMIT_IMP(TPE, OP)                        \
 	do {                                                     \
-		TPE *rp, *rb, *bp, curval;                           \
+		TPE *rp, *rb, *restrict bp, *end, curval;            \
 		rb = rp = (TPE*)Tloc(r, 0);                          \
 		bp = (TPE*)Tloc(b, 0);                               \
 		curval = *bp;                                        \
+		end = rp + cnt;                                      \
 		if (p) {                                             \
 			if (o) {                                         \
 				np = (bit*)Tloc(p, 0);                       \
-				for(i=0; i<cnt; i++, np++, rp++, bp++) {     \
+				for(; rp<end; np++, rp++, bp++) {            \
 					if (*np) {                               \
 						if(is_##TPE##_nil(curval))           \
 							has_nils = true;                 \
@@ -41,7 +42,7 @@
 					*rb = curval;                            \
 			} else { /* single value, ie no ordering */      \
 				np = (bit*)Tloc(p, 0);                       \
-				for(i=0; i<cnt; i++, np++, rp++, bp++) {     \
+				for(; rp<end; np++, rp++, bp++) {            \
 					if (*np) {                               \
 						if(is_##TPE##_nil(curval))           \
 							has_nils = true;                 \
@@ -62,7 +63,7 @@
 					*rb = curval;                            \
 			}                                                \
 		} else if (o) { /* single value, ie no partitions */ \
-			for(i=0; i<cnt; i++, rp++, bp++) {               \
+			for(; rp<end; rp++, bp++) {                      \
 				if(!is_##TPE##_nil(*bp)) {                   \
 					if(is_##TPE##_nil(curval))               \
 						curval = *bp;                        \
@@ -77,7 +78,7 @@
 		} else { /* single value, ie no ordering */          \
 			if(is_##TPE##_nil(*bp))                          \
 				has_nils = true;                             \
-			for(i=0; i<cnt; i++, rp++, bp++)                 \
+			for(; rp<end; rp++, bp++)                        \
 				*rp = *bp;                                   \
 		}                                                    \
 	} while(0);
@@ -99,7 +100,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)                      
 	const void *nil;                                                                        \
 	bool has_nils = false;                                                                  \
 	BUN i, j, cnt = BATcount(b);                                                            \
-	bit *np;                                                                                \
+	bit *restrict np;                                                                       \
 	gdk_return gdk_res = GDK_SUCCEED;                                                       \
                                                                                             \
 	switch(ATOMstorage(tpe)) {                                                              \
@@ -127,7 +128,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)                      
 			break;                                                                          \
 		default: {                                                                          \
 			BATiter bpi = bat_iterator(b);                                                  \
-			void *curval = BUNtail(bpi, 0);                                                 \
+			void *restrict curval = BUNtail(bpi, 0);                                        \
 			nil = ATOMnilptr(tpe);                                                          \
 			atomcmp = ATOMcompare(tpe);                                                     \
 			if (p) {                                                                        \
@@ -223,6 +224,196 @@ ANALYTICAL_LIMIT(max, MAX, <)
 #undef ANALYTICAL_LIMIT_IMP_HUGE
 #undef ANALYTICAL_LIMIT_IMP
 
+#define ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(TPE) \
+	do {                                              \
+		TPE *restrict bp = (TPE*)Tloc(b, 0);          \
+		lng *rp, *rb, *end, curval = 0;               \
+		rb = rp = (lng*)Tloc(r, 0);                   \
+		end = rp + cnt;                               \
+		if (p) {                                      \
+			np = (bit*)Tloc(p, 0);                    \
+			for(; rp<end; np++, rp++, bp++) {         \
+				if (*np) {                            \
+					for (;rb < rp; rb++)              \
+						*rb = curval;                 \
+					curval = 0;                       \
+				}                                     \
+				curval += !is_##TPE##_nil(*bp);       \
+			}                                         \
+			for (;rb < rp; rb++)                      \
+				*rb = curval;                         \
+		} else { /* single value, ie no partitions */ \
+			for(; rp<end; rp++, bp++)                 \
+				curval += !is_##TPE##_nil(*bp);       \
+			for(;rb < rp; rb++)                       \
+				*rb = curval;                         \
+		}                                             \
+	} while(0);
+
+#define ANALYTICAL_COUNT_WITH_NIL_STR_IMP(TPE_CAST, OFFSET)               \
+	do {                                                                  \
+		const void *restrict bp = Tloc(b, 0);                             \
+		lng *rp, *rb, curval = 0;                                         \
+		rb = rp = (lng*)Tloc(r, 0);                                       \
+		if (p) {                                                          \
+			np = (bit*)Tloc(p, 0);                                        \
+			for(i = 0; i < cnt; i++, np++, rp++) {                        \
+				if (*np) {                                                \
+					for (;rb < rp; rb++)                                  \
+						*rb = curval;                                     \
+					curval = 0;                                           \
+				}                                                         \
+				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
+			}                                                             \
+			for (;rb < rp; rb++)                                          \
+				*rb = curval;                                             \
+		} else { /* single value, ie no partitions */                     \
+			for(i = 0; i < cnt; i++)                                      \
+				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
+			rp += cnt;                                                    \
+			for(;rb < rp; rb++)                                           \
+				*rb = curval;                                             \
+		}                                                                 \
+	} while(0);
+
+gdk_return
+GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe)
+{
+	BUN i, cnt = BATcount(b);
+	gdk_return gdk_res = GDK_SUCCEED;
+	(void) o;
+
+	if(*ignore_nils || b->T.nonil) {
+		bit *np, *pnp;
+		lng *rp, *rb, curval = 0;
+		rb = rp = (lng*)Tloc(r, 0);
+		if (p) {
+			np = pnp = (bit*)Tloc(p, 0);
+			bit* end = np + cnt;
+			for(; np < end; np++, rp++) {
+				if (*np) {
+					curval = np - pnp;
+					pnp = np;
+					for (;rb < rp; rb++)
+						*rb = curval;
+				}
+			}
+			curval = np - pnp;
+			for (;rb < rp; rb++)
+				*rb = curval;
+		} else { /* single value */
+			lng* end = rp + cnt;
+			for(; rp < end; rp++)
+				*rp = cnt;
+		}
+	} else {
+		bit *restrict np;
+		switch (tpe) {
+			case TYPE_bit:
+				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(bit)
+				break;
+			case TYPE_bte:
+				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(bte)
+				break;
+			case TYPE_sht:
+				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(sht)
+				break;
+			case TYPE_int:
+				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(int)
+				break;
+			case TYPE_lng:
+				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(lng)
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(hge)
+				break;
+#endif
+			case TYPE_flt:
+				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(flt)
+				break;
+			case TYPE_dbl:
+				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(dbl)
+				break;
+			case TYPE_str: {
+				const char *restrict base = b->tvheap->base;
+				switch (b->twidth) {
+					case 1:
+						ANALYTICAL_COUNT_WITH_NIL_STR_IMP(const unsigned char *, [i] + GDK_VAROFFSET)
+						break;
+					case 2:
+						ANALYTICAL_COUNT_WITH_NIL_STR_IMP(const unsigned short *, [i] + GDK_VAROFFSET)
+						break;
+#if SIZEOF_VAR_T != SIZEOF_INT
+					case 4:
+						ANALYTICAL_COUNT_WITH_NIL_STR_IMP(const unsigned int *, [i])
+						break;
+#endif
+					default:
+						ANALYTICAL_COUNT_WITH_NIL_STR_IMP(const var_t *, [i])
+						break;
+				}
+				break;
+			}
+			default: {
+				const void *restrict nil = ATOMnilptr(tpe);
+				int (*cmp)(const void *, const void *) = ATOMcompare(tpe);
+				lng *rp, *rb, curval = 0;
+				rb = rp = (lng*)Tloc(r, 0);
+				if (b->tvarsized) {
+					const char *restrict base = b->tvheap->base;
+					const void *restrict bp = Tloc(b, 0);
+					if (p) {
+						np = (bit*)Tloc(p, 0);
+						for(i = 0; i < cnt; i++, np++, rp++) {
+							if (*np) {
+								for (;rb < rp; rb++)
+									*rb = curval;
+								curval = 0;
+							}
+							curval += (*cmp)(nil, base + ((const var_t *) bp)[i]) != 0;
+						}
+						for (;rb < rp; rb++)
+							*rb = curval;
+					} else { /* single value, ie no partitions */
+						for(i = 0; i < cnt; i++)
+							curval += (*cmp)(nil, base + ((const var_t *) bp)[i]) != 0;
+						rp += cnt;
+						for(;rb < rp; rb++)
+							*rb = curval;
+					}
+				} else {
+					if (p) {
+						np = (bit*)Tloc(p, 0);
+						for(i = 0; i < cnt; i++, np++, rp++) {
+							if (*np) {
+								for (;rb < rp; rb++)
+									*rb = curval;
+								curval = 0;
+							}
+							curval += (*cmp)(Tloc(b, i), nil) != 0;
+						}
+						for (;rb < rp; rb++)
+							*rb = curval;
+					} else { /* single value, ie no partitions */
+						for(i = 0; i < cnt; i++)
+							curval += (*cmp)(Tloc(b, i), nil) != 0;
+						rp += cnt;
+						for(;rb < rp; rb++)
+							*rb = curval;
+					}
+				}
+			}
+		}
+	}
+	BATsetcount(r, cnt);
+	r->tnonil = true;
+	r->tnil = false;
+	return gdk_res;
+}
+
+#undef ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP
+
 #define ANALYTICAL_ADD_WITH_CHECK(lft, rgt, TPE2, dst, max, on_overflow) \
 	do {								\
 		if ((rgt) < 1) {					\
@@ -242,14 +433,14 @@ ANALYTICAL_LIMIT(max, MAX, <)
 
 #define ANALYTICAL_SUM_IMP(TPE1, TPE2)                              \
 	do {                                                            \
-		TPE1 *bp;                                                   \
-		TPE2 *rp, *rb, curval = TPE2##_nil;                         \
-		bp = (TPE1*)Tloc(b, 0);                                     \
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);                      \
+		TPE2 *rp, *rb, *end, curval = TPE2##_nil;                   \
 		rb = rp = (TPE2*)Tloc(r, 0);                                \
+		end = rp + cnt;                                             \
 		if (p) {                                                    \
 			if (o) {                                                \
 				np = (bit*)Tloc(p, 0);                              \
-				for(i=0; i<cnt; i++, np++, rp++, bp++) {            \
+				for(; rp<end; np++, rp++, bp++) {                   \
 					if (*np) {                                      \
 						for (;rb < rp; rb++)                        \
 							*rb = curval;                           \
@@ -274,7 +465,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 					*rb = curval;                                   \
 			} else { /* single value, ie no ordering */             \
 				np = (bit*)Tloc(p, 0);                              \
-				for(i=0; i<cnt; i++, np++, rp++, bp++) {            \
+				for(; rp<end; np++, rp++, bp++) {                   \
 					if (*np) {                                      \
 						for (;rb < rp; rb++)                        \
 							*rb = curval;                           \
@@ -299,7 +490,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 					*rb = curval;                                   \
 			}                                                       \
 		} else if (o) { /* single value, ie no partitions */        \
-			for(i=0; i<cnt; i++, rp++, bp++) {                      \
+			for(; rp<end; rp++, bp++) {                             \
 				if(!is_##TPE1##_nil(*bp)) {                         \
 					if(is_##TPE2##_nil(curval))                     \
 						curval = (TPE2) *bp;                        \
@@ -315,7 +506,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 			if(is_##TPE2##_nil(curval))                             \
 				has_nils = true;                                    \
 		} else { /* single value, ie no ordering */                 \
-			for(i=0; i<cnt; i++, rp++, bp++)                        \
+			for(; rp<end; rp++, bp++)                               \
 				*rp = *bp;                                          \
 			if(is_##TPE1##_nil(*bp))                                \
 				has_nils = true;                                    \
@@ -334,9 +525,11 @@ ANALYTICAL_LIMIT(max, MAX, <)
 				np = (bit*)Tloc(p, 0);                                 \
 				for(i=0,j=0; i<cnt; i++, np++, rp++, bp++) {           \
 					if (*np) {                                         \
-						dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1, \
-							   TYPE_##TPE2, NULL, NULL, NULL, 0, 0,    \
-							   true, false, true, "GDKanalyticalsum"); \
+						if(dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1, TYPE_##TPE2, \
+								  NULL, NULL, NULL, 0, 0, true, false, true,           \
+								  "GDKanalyticalsum") == BUN_NONE) {                   \
+							goto bailout;                              \
+						}                                              \
 						curval = *rb;                                  \
 						bprev = bp;                                    \
 						j = i;                                         \
@@ -346,9 +539,11 @@ ANALYTICAL_LIMIT(max, MAX, <)
 							has_nils = true;                           \
 					}                                                  \
 				}                                                      \
-				dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1,         \
-					   TYPE_##TPE2, NULL, NULL, NULL, 0, 0,            \
-					   true, false, true, "GDKanalyticalsum");         \
+				if(dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1,      \
+						  TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true,   \
+						  false, true, "GDKanalyticalsum") == BUN_NONE) { \
+					goto bailout;                                      \
+				}                                                      \
 				curval = *rb;                                          \
 				if(is_##TPE2##_nil(curval))                            \
 					has_nils = true;                                   \
@@ -358,9 +553,11 @@ ANALYTICAL_LIMIT(max, MAX, <)
 				np = (bit*)Tloc(p, 0);                                 \
 				for(i=0,j=0; i<cnt; i++, np++, rp++, bp++) {           \
 					if (*np) {                                         \
-						dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1, \
-							   TYPE_##TPE2, NULL, NULL, NULL, 0, 0,    \
-							   true, false, true, "GDKanalyticalsum"); \
+						if(dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1, TYPE_##TPE2, \
+								  NULL, NULL, NULL, 0, 0, true, false,                 \
+								  true, "GDKanalyticalsum") == BUN_NONE) {             \
+							goto bailout;                              \
+						}                                              \
 						curval = *rb;                                  \
 						bprev = bp;                                    \
 						j = i;                                         \
@@ -370,9 +567,11 @@ ANALYTICAL_LIMIT(max, MAX, <)
 							has_nils = true;                           \
 					}                                                  \
 				}                                                      \
-				dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1,         \
-					   TYPE_##TPE2, NULL, NULL, NULL, 0, 0,            \
-					   true, false, true, "GDKanalyticalsum");         \
+				if(dofsum(bprev, 0, 0, i - j, rb, 1, TYPE_##TPE1,      \
+						  TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true,   \
+						  false, true, "GDKanalyticalsum") == BUN_NONE) { \
+					goto bailout;                                      \
+				}                                                      \
 				curval = *rb;                                          \
 				if(is_##TPE2##_nil(curval))                            \
 					has_nils = true;                                   \
@@ -380,9 +579,11 @@ ANALYTICAL_LIMIT(max, MAX, <)
 					*rb = curval;                                      \
 			}                                                          \
 		} else if (o) { /* single value, ie no partitions */           \
-			dofsum(bp, 0, 0, cnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2,     \
+			if(dofsum(bp, 0, 0, cnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2,  \
 				   NULL, NULL, NULL, 0, 0, true, false, true,          \
-				   "GDKanalyticalsum");                                \
+				   "GDKanalyticalsum") == BUN_NONE) {                  \
+				goto bailout;                                          \
+			}                                                          \
 			curval = *rb;                                              \
 			for(i=0; i<cnt; i++, rb++)                                 \
 				*rb = curval;                                          \
@@ -402,7 +603,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
 {
 	bool has_nils = false;
 	BUN i, j, cnt = BATcount(b);
-	bit *np;
+	bit *restrict np;
 
 	switch (tp2) {
 		case TYPE_bte: {
@@ -513,6 +714,8 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
 		default:
 			goto nosupport;
 	}
+bailout:
+	GDKerror("error while calculating floating-point sum\n");
 nosupport:
 	GDKerror("sum: type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
 calc_overflow:

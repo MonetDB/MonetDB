@@ -1574,12 +1574,11 @@ sqltypeinit( sql_allocator *sa)
 	//sql_create_analytic(sa, "first_value", "sql", "first_value", ANY, BIT, BIT, ANY, SCALE_NONE);
 	//sql_create_analytic(sa, "last_value", "sql", "last_value", ANY, BIT, BIT, ANY, SCALE_NONE);
 	//sql_create_analytic(sa, "avg", "sql", "avg", ANY, BIT, BIT, ANY, SCALE_NONE);
-	//sql_create_analytic(sa, "count", "sql", "count", ANY, BIT, BIT, ANY, SCALE_NONE);
+	sql_create_analytic(sa, "count", "sql", "count", ANY, BIT, BIT, LNG, SCALE_NONE);
 	sql_create_analytic(sa, "min", "sql", "min", ANY, BIT, BIT, ANY, SCALE_NONE);
 	sql_create_analytic(sa, "max", "sql", "max", ANY, BIT, BIT, ANY, SCALE_NONE);
-	sql_create_analytic(sa, "sum", "sql", "sum", ANY, BIT, BIT, ANY, SCALE_NONE);
 
-	/* //analytical sum for numerical and decimals
+	//analytical sum for numerical and decimals
 	sql_create_analytic(sa, "sum", "sql", "sum", BTE, BIT, BIT, LargestINT, SCALE_NONE);
 	sql_create_analytic(sa, "sum", "sql", "sum", SHT, BIT, BIT, LargestINT, SCALE_NONE);
 	sql_create_analytic(sa, "sum", "sql", "sum", INT, BIT, BIT, LargestINT, SCALE_NONE);
@@ -1588,7 +1587,6 @@ sqltypeinit( sql_allocator *sa)
 	if (have_hge)
 		sql_create_analytic(sa, "sum", "sql", "sum", HGE, BIT, BIT, LargestINT, SCALE_NONE);
 #endif
-	sql_create_analytic(sa, "sum", "sql", "sum", LNG, BIT, BIT, LNG, SCALE_NONE);
 
 	t = decimals; // BTE
 	sql_create_analytic(sa, "sum", "sql", "sum", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
@@ -1607,7 +1605,7 @@ sqltypeinit( sql_allocator *sa)
 	for (t = floats; t < dates; t++) {
 		sql_create_analytic(sa, "sum", "sql", "sum", *t, BIT, BIT, *t, SCALE_NONE);
 		//sql_create_analytic(sa, "prod", "sql", "prod", *t, BIT, BIT, *t, SCALE_NONE); maybe adding a prod analytic function
-	}*/
+	}
 	sql_create_analytic(sa, "sum", "sql", "sum", MONINT, BIT, BIT, MONINT, SCALE_NONE);
 	sql_create_analytic(sa, "sum", "sql", "sum", SECINT, BIT, BIT, SECINT, SCALE_NONE);
 
