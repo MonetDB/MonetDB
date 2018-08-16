@@ -977,7 +977,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, pci->retc + 0);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (pci->retc == pci->retc + 2) {
+	if (pci->argc == pci->retc + 2) {
 		bat *sid = getArgReference_bat(stk, pci, pci->retc + 1);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
 			BBPunfix(b->batCacheid);
