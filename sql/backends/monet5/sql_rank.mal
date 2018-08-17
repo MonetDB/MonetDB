@@ -64,116 +64,76 @@ pattern batsql.max(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:
 address SQLmax
 comment "return the maximum of groups";
 
-pattern sql.count(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+pattern sql.count(p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
 address SQLcount
+comment "return count of groups";
+
+pattern batsql.count(p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
+address SQLcount
+comment "return count of groups";
+
+pattern sql.count(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+address SQLcount_no_nil
 comment "return count of groups";
 
 pattern batsql.count(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:lng]
-address SQLcount
+address SQLcount_no_nil
 comment "return count of groups";
 
-pattern sql.sum(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :bte
-address SQLsum
-comment "return the sum of groups";
-
-pattern batsql.sum(b:bat[:bte], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:bte]
-address SQLsum
-comment "return the sum of groups";
-
-pattern sql.sum(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :sht
-address SQLsum
-comment "return the sum of groups";
-
-pattern batsql.sum(b:bat[:bte], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:sht]
-address SQLsum
-comment "return the sum of groups";
-
-pattern sql.sum(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :int
-address SQLsum
-comment "return the sum of groups";
-
-pattern batsql.sum(b:bat[:bte], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:int]
-address SQLsum
-comment "return the sum of groups";
-
 pattern sql.sum(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:bte], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
-address SQLsum
-comment "return the sum of groups";
-
-pattern sql.sum(b:sht, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :sht
-address SQLsum
-comment "return the sum of groups";
-
-pattern batsql.sum(b:bat[:sht], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:sht]
-address SQLsum
-comment "return the sum of groups";
-
-pattern sql.sum(b:sht, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :int
-address SQLsum
-comment "return the sum of groups";
-
-pattern batsql.sum(b:bat[:sht], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:int]
-address SQLsum
+address SQLvectorsum_lng
 comment "return the sum of groups";
 
 pattern sql.sum(b:sht, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:sht], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
-address SQLsum
-comment "return the sum of groups";
-
-pattern sql.sum(b:int, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :int
-address SQLsum
-comment "return the sum of groups";
-
-pattern batsql.sum(b:bat[:int], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:int]
-address SQLsum
+address SQLvectorsum_lng
 comment "return the sum of groups";
 
 pattern sql.sum(b:int, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:int], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
-address SQLsum
+address SQLvectorsum_lng
 comment "return the sum of groups";
 
 pattern sql.sum(b:lng, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:lng], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
-address SQLsum
+address SQLvectorsum_lng
 comment "return the sum of groups";
 
 pattern sql.sum(b:flt, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :flt
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:flt], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:flt]
-address SQLsum
+address SQLvectorsum_flt
 comment "return the sum of groups";
 
 pattern sql.sum(b:flt, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:flt], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
-address SQLsum
+address SQLvectorsum_dbl
 comment "return the sum of groups";
 
 pattern sql.sum(b:dbl, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:dbl], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
-address SQLsum
+address SQLvectorsum_dbl
 comment "return the sum of groups";
 
 command aggr.exist(b:bat[:any_2], h:any_1):bit

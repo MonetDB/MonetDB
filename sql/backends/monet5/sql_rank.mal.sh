@@ -70,26 +70,34 @@ pattern batsql.max(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:
 address SQLmax
 comment "return the maximum of groups";
 
-pattern sql.count(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+pattern sql.count(p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
 address SQLcount
 comment "return count of groups";
 
-pattern batsql.count(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:lng]
+pattern batsql.count(p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
 address SQLcount
+comment "return count of groups";
+
+pattern sql.count(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+address SQLcount_no_nil
+comment "return count of groups";
+
+pattern batsql.count(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:lng]
+address SQLcount_no_nil
 comment "return count of groups";
 
 EOF
 
 for tp1 in 1:bte 2:sht 4:int 8:lng; do
-    for tp2 in 1:bte 2:sht 4:int 8:lng; do
+    for tp2 in 8:lng; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
 pattern sql.sum(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${tp2#*:}
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
-address SQLsum
+address SQLvectorsum_${tp2#*:}
 comment "return the sum of groups";
 
 EOF
@@ -102,11 +110,11 @@ for tp1 in 4:flt 8:dbl; do
 	if [ ${tp1%:*} -le ${tp2%:*} ]; then
 	    cat <<EOF
 pattern sql.sum(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${tp2#*:}
-address SQLsum
+address SQLscalarsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
-address SQLsum
+address SQLvectorsum_${tp2#*:}
 comment "return the sum of groups";
 
 EOF

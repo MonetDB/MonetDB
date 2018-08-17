@@ -309,13 +309,13 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				  const str mod, const str err)
+				  int rtype, const str mod, const str err)
 {
 	*r = *b = *p = *o = NULL;
 
 	(void)cntxt;
-	if (pci->argc != 8 || 
-		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
+	if (pci->argc != 8 ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
 		throw(SQL, mod, "%s", err);
 	}
@@ -326,9 +326,9 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb
 	}
 	if (b) {
 		size_t cnt = BATcount(*b);
-		voidresultBAT((*r), (*b)->ttype, cnt, (*b), mod);
-		if (!*r) 
-			if (*b) BBPunfix((*b)->batCacheid);
+		voidresultBAT((*r), rtype ? rtype : (*b)->ttype, cnt, (*b), mod);
+		if (!*r && *b)
+			BBPunfix((*b)->batCacheid);
 	}
 	if (isaBatType(getArgType(mb, pci, 2))) {
 		*p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
@@ -338,7 +338,7 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 	}
-	if (isaBatType(getArgType(mb, pci, 3))) { 
+	if (isaBatType(getArgType(mb, pci, 3))) {
 		*o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 		if (!*o) {
 			if (*b) BBPunfix((*b)->batCacheid);
@@ -356,7 +356,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 					gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
 	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, op, err);
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, 0, op, err);
 	int tpe = getArgType(mb, pci, 1);
 	int unit = *getArgReference_int(stk, pci, 4);
 	int start = *getArgReference_int(stk, pci, 5);
@@ -402,24 +402,88 @@ SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    return SQLanalytical_func(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:bit,:bit)", GDKanalyticalmax);
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:bit,:bit)", GDKanalyticalmax);
 }
 
 str
 SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	BAT *r = NULL, *p = NULL, *o = NULL, *cr;
+	str msg = MAL_SUCCEED;
+	int tpe, unit, start, end, excl;
+	bit ignore_nils = 0;
+	gdk_return gdk_res;
+
+	(void)start;
+	(void)end;
+	(void)cntxt;
+	if (pci->argc != 7 || (getArgType(mb, pci, 1) != TYPE_bit && getBatType(getArgType(mb, pci, 1)) != TYPE_bit) ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit)){
+		throw(SQL, "sql.count", "%s", "count(:any_1,:bit,:bit)");
+	}
+
+	tpe = getArgType(mb, pci, 1);
+	unit = *getArgReference_int(stk, pci, 3);
+	//start = *getArgReference_int(stk, pci, 4);
+	//end = *getArgReference_int(stk, pci, 5);
+	excl = *getArgReference_int(stk, pci, 6);
+	if (unit != 0 || excl != 0)
+		throw(SQL, "sql.count", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		p = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+		if (!p)
+			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if (isaBatType(getArgType(mb, pci, 2))) {
+		o = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+		if (!o) {
+			BBPunfix(p->batCacheid);
+			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+	}
+	cr = o?o:p?p:NULL;
+	if (cr) {
+		voidresultBAT(r, TYPE_lng, BATcount(cr), cr, "sql.count");
+	}
+
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (cr) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = GDKanalyticalcount(r, NULL, p, o, &ignore_nils, tpe);
+		if (p) BBPunfix(p->batCacheid);
+		if (o) BBPunfix(o->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			return createException(SQL, "sql.count", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else {
+		ptr *res = getArgReference(stk, pci, 0);
+		ptr *in = getArgReference(stk, pci, 1);
+		*res = *in;
+	}
+	return msg;
+}
+
+str
+SQLcount_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, "sql.count", SQLSTATE(42000) "count(:any_1,:bit,:bit)");
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, TYPE_lng, "sql.count_no_nil",
+								SQLSTATE(42000) "count_no_nil(:any_1,:bit,:bit)");
 	int tpe = getArgType(mb, pci, 1);
 	int unit = *getArgReference_int(stk, pci, 4);
 	int start = *getArgReference_int(stk, pci, 5);
 	int end = *getArgReference_int(stk, pci, 6);
 	int excl = *getArgReference_int(stk, pci, 7);
-	bit ignore_nils = 1;
 	gdk_return gdk_res;
+	bit ignore_nils = 1;
 
 	if (unit != 0 || excl != 0)
-		throw(SQL, "sql.count", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+		throw(SQL, "sql.count_no_nil", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
 	(void)start;
 	(void)end;
 
@@ -438,7 +502,7 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			return createException(SQL, "sql.count", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return createException(SQL, "sql.count_no_nil", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
@@ -447,11 +511,11 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
-SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_analytical_sum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tpe)
 {
 	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, "sql.sum", "sum(:any_1,:bit,:bit)");
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, tpe, "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)");
 	int tp1 = getArgType(mb, pci, 1), tp2;
 	int unit = *getArgReference_int(stk, pci, 4);
 	int start = *getArgReference_int(stk, pci, 5);
@@ -486,3 +550,26 @@ SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return msg;
 }
+
+str
+SQLscalarsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	ValPtr ret = &stk->stk[getArg(pci, 0)];
+	return do_analytical_sum(cntxt, mb, stk, pci, ret->vtype);
+}
+
+#define SQLVECTORSUM(TPE)                                                   \
+str                                                                         \
+SQLvectorsum_##TPE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
+{                                                                           \
+	return do_analytical_sum(cntxt, mb, stk, pci, TYPE_##TPE);              \
+}
+
+SQLVECTORSUM(lng)
+#ifdef HAVE_HGE
+SQLVECTORSUM(hge)
+#endif
+SQLVECTORSUM(flt)
+SQLVECTORSUM(dbl)
+
+#undef SQLVECTORSUM
