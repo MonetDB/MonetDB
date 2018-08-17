@@ -476,13 +476,12 @@ static void *
 thread_starter(void *arg)
 {
 	struct posthread *p = (struct posthread *) arg;
-	pthread_t tid = p->tid;
 
 	(*p->func)(p->arg);
 	pthread_mutex_lock(&posthread_lock);
 	/* *p may have been freed by join_threads, so try to find it
          * again before using it */
-	if ((p = find_posthread_locked(tid)) != NULL)
+	if ((p = find_posthread_locked(pthread_self())) != NULL)
 		p->exited = 1;
 	pthread_mutex_unlock(&posthread_lock);
 	return NULL;
