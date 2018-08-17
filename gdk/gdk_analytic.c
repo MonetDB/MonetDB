@@ -76,10 +76,11 @@
 			for(;rb < rp; rb++)                              \
 				*rb = curval;                                \
 		} else { /* single value, ie no ordering */          \
-			if(is_##TPE##_nil(*bp))                          \
-				has_nils = true;                             \
-			for(; rp<end; rp++, bp++)                        \
+			for(; rp<end; rp++, bp++) {                      \
+				if(is_##TPE##_nil(*bp))                      \
+					has_nils = true;                         \
 				*rp = *bp;                                   \
+			}                                                \
 		}                                                    \
 	} while(0);
 
@@ -202,11 +203,13 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)                      
 						goto finish;                                                        \
 				}                                                                           \
 			} else { /* single value, ie no ordering */                                     \
-				if((*atomcmp)(curval, nil) == 0)                                            \
-					has_nils = true;                                                        \
-				for(i=0; i<cnt; i++)                                                        \
-					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)             \
+				for(i=0; i<cnt; i++) {                                                      \
+					void *next = BUNtail(bpi, i);                                           \
+					if((*atomcmp)(next, nil) == 0)                                          \
+						has_nils = true;                                                    \
+					if ((gdk_res = BUNappend(r, next, false)) != GDK_SUCCEED)               \
 						goto finish;                                                        \
+				}                                                                           \
 			}                                                                               \
 		}                                                                                   \
 	}                                                                                       \
@@ -491,10 +494,14 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 			if(is_##TPE2##_nil(curval))                             \
 				has_nils = true;                                    \
 		} else { /* single value, ie no ordering */                 \
-			for(; rp<end; rp++, bp++)                               \
-				*rp = *bp;                                          \
-			if(is_##TPE1##_nil(*bp))                                \
-				has_nils = true;                                    \
+			for(; rp<end; rp++, bp++) {                             \
+				if(is_##TPE1##_nil(*bp)) {                          \
+					*rp = TPE2##_nil;                               \
+					has_nils = true;                                \
+				} else {                                            \
+					*rp = (TPE2) *bp;                               \
+				}                                                   \
+			}                                                       \
 		}                                                           \
 		goto finish;                                                \
 	} while(0);
@@ -564,21 +571,27 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 					*rb = curval;                                      \
 			}                                                          \
 		} else if (o) { /* single value, ie no partitions */           \
+			TPE2 *end = rb + cnt;                                      \
 			if(dofsum(bp, 0, 0, cnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2,  \
 					  NULL, NULL, NULL, 0, 0, true, false, true,       \
 					  "GDKanalyticalsum") == BUN_NONE) {               \
 				goto bailout;                                          \
 			}                                                          \
 			curval = *rb;                                              \
-			for(i=0; i<cnt; i++, rb++)                                 \
+			for(; rb<end; rb++)                                        \
 				*rb = curval;                                          \
 			if(is_##TPE2##_nil(curval))                                \
 				has_nils = true;                                       \
 		} else { /* single value, ie no ordering */                    \
-			for(i=0; i<cnt; i++, rp++, bp++)                           \
-				*rp = *bp;                                             \
-			if(is_##TPE1##_nil(*bp))                                   \
-				has_nils = true;                                       \
+			TPE2 *end = rp + cnt;                                      \
+			for(; rp<end; rp++, bp++) {                                \
+				if(is_##TPE1##_nil(*bp)) {                             \
+					*rp = TPE2##_nil;                                  \
+					has_nils = true;                                   \
+				} else {                                               \
+					*rp = (TPE2) *bp;                                  \
+				}                                                      \
+			}                                                          \
 		}                                                              \
 		goto finish;                                                   \
 	} while(0);
@@ -791,10 +804,14 @@ finish:
 			if(is_##TPE2##_nil(curval))                             \
 				has_nils = true;                                    \
 		} else { /* single value, ie no ordering */                 \
-			for(; rp<end; rp++, bp++)                               \
-				*rp = *bp;                                          \
-			if(is_##TPE1##_nil(*bp))                                \
-				has_nils = true;                                    \
+			for(; rp<end; rp++, bp++)  {                            \
+				if(is_##TPE1##_nil(*bp)) {                          \
+					*rp = TPE2##_nil;                               \
+					has_nils = true;                                \
+				} else {                                            \
+					*rp = (TPE2) *bp;                               \
+				}                                                   \
+			}                                                       \
 		}                                                           \
 		goto finish;                                                \
 	} while(0);
@@ -871,10 +888,14 @@ finish:
 			if(is_##TPE2##_nil(curval))                             \
 				has_nils = true;                                    \
 		} else { /* single value, ie no ordering */                 \
-			for(; rp<end; rp++, bp++)                               \
-				*rp = *bp;                                          \
-			if(is_##TPE1##_nil(*bp))                                \
-				has_nils = true;                                    \
+			for(; rp<end; rp++, bp++)  {                            \
+				if(is_##TPE1##_nil(*bp)) {                          \
+					*rp = TPE2##_nil;                               \
+					has_nils = true;                                \
+				} else {                                            \
+					*rp = (TPE2) *bp;                               \
+				}                                                   \
+			}                                                       \
 		}                                                           \
 		goto finish;                                                \
 	} while(0);
@@ -957,10 +978,14 @@ finish:
 			if(is_##TPE2##_nil(curval))                             \
 				has_nils = true;                                    \
 		} else { /* single value, ie no ordering */                 \
-			for(; rp<end; rp++, bp++)                               \
-				*rp = *bp;                                          \
-			if(is_##TPE1##_nil(*bp))                                \
-				has_nils = true;                                    \
+			for(; rp<end; rp++, bp++) {                             \
+				if(is_##TPE1##_nil(*bp)) {                          \
+					*rp = TPE2##_nil;                               \
+					has_nils = true;                                \
+				} else {                                            \
+					*rp = (TPE2) *bp;                               \
+				}                                                   \
+			}                                                       \
 		}                                                           \
 		goto finish;                                                \
 	} while(0);

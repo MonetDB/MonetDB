@@ -713,6 +713,81 @@ Ready.
 [ 10	]
 [ 10	]
 [ 10	]
+#select min(aa) over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 15	]
+[ 3	]
+[ 2	]
+[ 5	]
+[ NULL	]
+[ 3	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ NULL	]
+#select max(aa) over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 15	]
+[ 3	]
+[ 2	]
+[ 5	]
+[ NULL	]
+[ 3	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ NULL	]
+#select cast(sum(aa) over () as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 2 # length
+[ 15	]
+[ 3	]
+[ 2	]
+[ 5	]
+[ NULL	]
+[ 3	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ NULL	]
+#select cast(prod(aa) over () as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 2 # length
+[ 15	]
+[ 3	]
+[ 2	]
+[ 5	]
+[ NULL	]
+[ 3	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ NULL	]
+#select count(aa) over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 8	]
+[ 8	]
+[ 8	]
+[ 8	]
+[ 8	]
+[ 8	]
+[ 8	]
+[ 8	]
+[ 8	]
+[ 8	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]
