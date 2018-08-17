@@ -512,10 +512,11 @@ SQLcount_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_analytical_sum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tpe)
+do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int), int tpe, const str op, const str err)
 {
 	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, tpe, "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)");
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, tpe, op, err);
 	int tp1 = getArgType(mb, pci, 1), tp2;
 	int unit = *getArgReference_int(stk, pci, 4);
 	int start = *getArgReference_int(stk, pci, 5);
@@ -524,7 +525,7 @@ do_analytical_sum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int t
 	gdk_return gdk_res;
 
 	if (unit != 0 || excl != 0)
-		throw(SQL, "sql.sum", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
 	(void) start;
 	(void) end;
 
@@ -537,7 +538,7 @@ do_analytical_sum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int t
 		bat *res = getArgReference_bat(stk, pci, 0);
 		tp2 = getBatType(r->T.type);
 
-		gdk_res = GDKanalyticalsum(r, b, p, o, tp1, tp2);
+		gdk_res = func(r, b, p, o, tp1, tp2);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
@@ -555,14 +556,16 @@ str
 SQLscalarsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	return do_analytical_sum(cntxt, mb, stk, pci, ret->vtype);
+	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalsum, ret->vtype,
+								 "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)");
 }
 
-#define SQLVECTORSUM(TPE)                                                   \
-str                                                                         \
-SQLvectorsum_##TPE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
-{                                                                           \
-	return do_analytical_sum(cntxt, mb, stk, pci, TYPE_##TPE);              \
+#define SQLVECTORSUM(TPE)                                                             \
+str                                                                                   \
+SQLvectorsum_##TPE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)           \
+{                                                                                     \
+	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalsum, TYPE_##TPE,   \
+								 "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)"); \
 }
 
 SQLVECTORSUM(lng)
@@ -573,3 +576,28 @@ SQLVECTORSUM(flt)
 SQLVECTORSUM(dbl)
 
 #undef SQLVECTORSUM
+
+str
+SQLscalarprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	ValPtr ret = &stk->stk[getArg(pci, 0)];
+	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalprod, ret->vtype,
+								 "sql.prod", SQLSTATE(42000) "prod(:any_1,:bit,:bit)");
+}
+
+#define SQLVECTORPROD(TPE)                                                              \
+str                                                                                     \
+SQLvectorprod_##TPE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)            \
+{                                                                                       \
+	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalprod, TYPE_##TPE,    \
+								 "sql.prod", SQLSTATE(42000) "prod(:any_1,:bit,:bit)"); \
+}
+
+SQLVECTORPROD(lng)
+SQLVECTORPROD(flt)
+SQLVECTORPROD(dbl)
+#ifdef HAVE_HGE
+SQLVECTORPROD(hge)
+#endif
+
+#undef SQLVECTORPROD

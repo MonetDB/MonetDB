@@ -416,23 +416,6 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 
 #undef ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP
 
-#define ANALYTICAL_ADD_WITH_CHECK(lft, rgt, TPE2, dst, max, on_overflow) \
-	do {								\
-		if ((rgt) < 1) {					\
-			if (-(max) - (rgt) > (lft)) {			\
-				on_overflow;			\
-			} else {					\
-				(dst) = (TPE2) (lft) + (rgt);		\
-			}						\
-		} else {						\
-			if ((max) - (rgt) < (lft)) {			\
-				on_overflow;			\
-			} else {					\
-				(dst) = (TPE2) (lft) + (rgt);		\
-			}						\
-		}							\
-	} while (0);
-
 #define ANALYTICAL_SUM_IMP(TPE1, TPE2)                              \
 	do {                                                            \
 		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);                      \
@@ -455,10 +438,10 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 						if(is_##TPE2##_nil(curval))                 \
 							curval = (TPE2) *bp;                    \
 						else                                        \
-							ANALYTICAL_ADD_WITH_CHECK(*bp, curval,  \
-										   TPE2, curval,            \
-										   GDK_##TPE2##_max,        \
-										   goto calc_overflow);     \
+							ADD_WITH_CHECK(TPE1, *bp, TPE2, curval, \
+											TPE2, curval,           \
+											GDK_##TPE2##_max,       \
+											goto calc_overflow);    \
 					}                                               \
 				}                                                   \
 				if(is_##TPE2##_nil(curval))                         \
@@ -480,10 +463,10 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 						if(is_##TPE2##_nil(curval))                 \
 							curval = (TPE2) *bp;                    \
 						else                                        \
-							ANALYTICAL_ADD_WITH_CHECK(*bp, curval,  \
-										   TPE2, curval,            \
-										   GDK_##TPE2##_max,        \
-										   goto calc_overflow);     \
+							ADD_WITH_CHECK(TPE1, *bp, TPE2, curval, \
+											TPE2, curval,           \
+											GDK_##TPE2##_max,       \
+											goto calc_overflow);    \
 					}                                               \
 				}                                                   \
 				if(is_##TPE2##_nil(curval))                         \
@@ -497,10 +480,10 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 					if(is_##TPE2##_nil(curval))                     \
 						curval = (TPE2) *bp;                        \
 					else                                            \
-						ANALYTICAL_ADD_WITH_CHECK(*bp, curval,      \
-									   TPE2, curval,                \
-									   GDK_##TPE2##_max,            \
-									   goto calc_overflow);         \
+						ADD_WITH_CHECK(TPE1, *bp, TPE2, curval,     \
+										TPE2, curval,               \
+										GDK_##TPE2##_max,           \
+										goto calc_overflow);        \
 				}                                                   \
 			}                                                       \
 			for(;rb < rp; rb++)                                     \
@@ -582,8 +565,8 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 			}                                                          \
 		} else if (o) { /* single value, ie no partitions */           \
 			if(dofsum(bp, 0, 0, cnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2,  \
-				   NULL, NULL, NULL, 0, 0, true, false, true,          \
-				   "GDKanalyticalsum") == BUN_NONE) {                  \
+					  NULL, NULL, NULL, 0, 0, true, false, true,       \
+					  "GDKanalyticalsum") == BUN_NONE) {               \
 				goto bailout;                                          \
 			}                                                          \
 			curval = *rb;                                              \
@@ -604,8 +587,9 @@ gdk_return
 GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
 {
 	bool has_nils = false;
-	BUN i, j, cnt = BATcount(b);
+	BUN i, j, cnt = BATcount(b), nils = 0;
 	bit *restrict np;
+	int abort_on_error = 1;
 
 	switch (tp2) {
 		case TYPE_bte: {
@@ -731,4 +715,405 @@ finish:
 
 #undef ANALYTICAL_SUM_IMP
 #undef ANALYTICAL_SUM_FP_IMP
-#undef ANALYTICAL_ADD_WITH_CHECK
+
+#define ANALYTICAL_PROD_IMP_NORMAL(TPE1, TPE2, TPE3)                \
+	do {                                                            \
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);                      \
+		TPE2 *rp, *rb, *end, curval = TPE2##_nil;                   \
+		rb = rp = (TPE2*)Tloc(r, 0);                                \
+		end = rp + cnt;                                             \
+		if (p) {                                                    \
+			if (o) {                                                \
+				np = (bit*)Tloc(p, 0);                              \
+				for(; rp<end; np++, rp++, bp++) {                   \
+					if (*np) {                                      \
+						for (;rb < rp; rb++)                        \
+							*rb = curval;                           \
+						if(is_##TPE2##_nil(curval))                 \
+							has_nils = true;                        \
+						else                                        \
+							curval = TPE2##_nil;                    \
+					}                                               \
+					if (!is_##TPE1##_nil(*bp)) {                    \
+						if(is_##TPE2##_nil(curval))                 \
+							curval = (TPE2) *bp;                    \
+						else                                        \
+							MUL4_WITH_CHECK(TPE1, *bp, TPE2, curval,\
+											TPE2, curval,           \
+											GDK_##TPE2##_max, TPE3, \
+											goto calc_overflow);    \
+					}                                               \
+				}                                                   \
+				if(is_##TPE2##_nil(curval))                         \
+					has_nils = true;                                \
+				for (;rb < rp; rb++)                                \
+					*rb = curval;                                   \
+			} else { /* single value, ie no ordering */             \
+				np = (bit*)Tloc(p, 0);                              \
+				for(; rp<end; np++, rp++, bp++) {                   \
+					if (*np) {                                      \
+						for (;rb < rp; rb++)                        \
+							*rb = curval;                           \
+						if(is_##TPE2##_nil(curval))                 \
+							has_nils = true;                        \
+						else                                        \
+							curval = TPE2##_nil;                    \
+					}                                               \
+					if (!is_##TPE1##_nil(*bp)) {                    \
+						if(is_##TPE2##_nil(curval))                 \
+							curval = (TPE2) *bp;                    \
+						else                                        \
+							MUL4_WITH_CHECK(TPE1, *bp, TPE2, curval,\
+											TPE2, curval,           \
+											GDK_##TPE2##_max, TPE3, \
+											goto calc_overflow);    \
+					}                                               \
+				}                                                   \
+				if(is_##TPE2##_nil(curval))                         \
+					has_nils = true;                                \
+				for (;rb < rp; rb++)                                \
+					*rb = curval;                                   \
+			}                                                       \
+		} else if (o) { /* single value, ie no partitions */        \
+			for(; rp<end; rp++, bp++) {                             \
+				if(!is_##TPE1##_nil(*bp)) {                         \
+					if(is_##TPE2##_nil(curval))                     \
+						curval = (TPE2) *bp;                        \
+					else                                            \
+						MUL4_WITH_CHECK(TPE1, *bp, TPE2, curval,    \
+										TPE2, curval,               \
+										GDK_##TPE2##_max, TPE3,     \
+										goto calc_overflow);        \
+				}                                                   \
+			}                                                       \
+			for(;rb < rp; rb++)                                     \
+				*rb = curval;                                       \
+			if(is_##TPE2##_nil(curval))                             \
+				has_nils = true;                                    \
+		} else { /* single value, ie no ordering */                 \
+			for(; rp<end; rp++, bp++)                               \
+				*rp = *bp;                                          \
+			if(is_##TPE1##_nil(*bp))                                \
+				has_nils = true;                                    \
+		}                                                           \
+		goto finish;                                                \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_LIMIT(TPE1, TPE2, REAL_IMP)             \
+	do {                                                            \
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);                      \
+		TPE2 *rp, *rb, *end, curval = TPE2##_nil;                   \
+		rb = rp = (TPE2*)Tloc(r, 0);                                \
+		end = rp + cnt;                                             \
+		if (p) {                                                    \
+			if (o) {                                                \
+				np = (bit*)Tloc(p, 0);                              \
+				for(; rp<end; np++, rp++, bp++) {                   \
+					if (*np) {                                      \
+						for (;rb < rp; rb++)                        \
+							*rb = curval;                           \
+						if(is_##TPE2##_nil(curval))                 \
+							has_nils = true;                        \
+						else                                        \
+							curval = TPE2##_nil;                    \
+					}                                               \
+					if (!is_##TPE1##_nil(*bp)) {                    \
+						if(is_##TPE2##_nil(curval))                 \
+							curval = (TPE2) *bp;                    \
+						else                                        \
+							REAL_IMP(TPE1, *bp, TPE2, curval,       \
+									 curval, GDK_##TPE2##_max,      \
+									 goto calc_overflow);           \
+					}                                               \
+				}                                                   \
+				if(is_##TPE2##_nil(curval))                         \
+					has_nils = true;                                \
+				for (;rb < rp; rb++)                                \
+					*rb = curval;                                   \
+			} else { /* single value, ie no ordering */             \
+				np = (bit*)Tloc(p, 0);                              \
+				for(; rp<end; np++, rp++, bp++) {                   \
+					if (*np) {                                      \
+						for (;rb < rp; rb++)                        \
+							*rb = curval;                           \
+						if(is_##TPE2##_nil(curval))                 \
+							has_nils = true;                        \
+						else                                        \
+							curval = TPE2##_nil;                    \
+					}                                               \
+					if (!is_##TPE1##_nil(*bp)) {                    \
+						if(is_##TPE2##_nil(curval))                 \
+							curval = (TPE2) *bp;                    \
+						else                                        \
+							REAL_IMP(TPE1, *bp, TPE2, curval,       \
+									 curval, GDK_##TPE2##_max,      \
+									 goto calc_overflow);           \
+					}                                               \
+				}                                                   \
+				if(is_##TPE2##_nil(curval))                         \
+					has_nils = true;                                \
+				for (;rb < rp; rb++)                                \
+					*rb = curval;                                   \
+			}                                                       \
+		} else if (o) { /* single value, ie no partitions */        \
+			for(; rp<end; rp++, bp++) {                             \
+				if(!is_##TPE1##_nil(*bp)) {                         \
+					if(is_##TPE2##_nil(curval))                     \
+						curval = (TPE2) *bp;                        \
+					else                                            \
+						REAL_IMP(TPE1, *bp, TPE2, curval,           \
+								 curval, GDK_##TPE2##_max,          \
+								 goto calc_overflow);               \
+				}                                                   \
+			}                                                       \
+			for(;rb < rp; rb++)                                     \
+				*rb = curval;                                       \
+			if(is_##TPE2##_nil(curval))                             \
+				has_nils = true;                                    \
+		} else { /* single value, ie no ordering */                 \
+			for(; rp<end; rp++, bp++)                               \
+				*rp = *bp;                                          \
+			if(is_##TPE1##_nil(*bp))                                \
+				has_nils = true;                                    \
+		}                                                           \
+		goto finish;                                                \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2)                                            \
+	do {                                                                                   \
+		if (ABSOLUTE(curval) > 1 && GDK_##TPE2##_max / ABSOLUTE(*bp) < ABSOLUTE(curval)) { \
+			if (abort_on_error)                                                            \
+				goto calc_overflow;                                                        \
+			curval = TPE2##_nil;                                                           \
+			nils++;                                                                        \
+		} else {                                                                           \
+			curval *= *bp;                                                                 \
+		}                                                                                  \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_FP(TPE1, TPE2)                          \
+	do {                                                            \
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);                      \
+		TPE2 *rp, *rb, *end, curval = TPE2##_nil;                   \
+		rb = rp = (TPE2*)Tloc(r, 0);                                \
+		end = rp + cnt;                                             \
+		if (p) {                                                    \
+			if (o) {                                                \
+				np = (bit*)Tloc(p, 0);                              \
+				for(; rp<end; np++, rp++, bp++) {                   \
+					if (*np) {                                      \
+						for (;rb < rp; rb++)                        \
+							*rb = curval;                           \
+						if(is_##TPE2##_nil(curval))                 \
+							has_nils = true;                        \
+						else                                        \
+							curval = TPE2##_nil;                    \
+					}                                               \
+					if (!is_##TPE1##_nil(*bp)) {                    \
+						if(is_##TPE2##_nil(curval))                 \
+							curval = (TPE2) *bp;                    \
+						else                                        \
+							ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
+					}                                               \
+				}                                                   \
+				if(is_##TPE2##_nil(curval))                         \
+					has_nils = true;                                \
+				for (;rb < rp; rb++)                                \
+					*rb = curval;                                   \
+			} else { /* single value, ie no ordering */             \
+				np = (bit*)Tloc(p, 0);                              \
+				for(; rp<end; np++, rp++, bp++) {                   \
+					if (*np) {                                      \
+						for (;rb < rp; rb++)                        \
+							*rb = curval;                           \
+						if(is_##TPE2##_nil(curval))                 \
+							has_nils = true;                        \
+						else                                        \
+							curval = TPE2##_nil;                    \
+					}                                               \
+					if (!is_##TPE1##_nil(*bp)) {                    \
+						if(is_##TPE2##_nil(curval))                 \
+							curval = (TPE2) *bp;                    \
+						else                                        \
+							ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
+					}                                               \
+				}                                                   \
+				if(is_##TPE2##_nil(curval))                         \
+					has_nils = true;                                \
+				for (;rb < rp; rb++)                                \
+					*rb = curval;                                   \
+			}                                                       \
+		} else if (o) { /* single value, ie no partitions */        \
+			for(; rp<end; rp++, bp++) {                             \
+				if(!is_##TPE1##_nil(*bp)) {                         \
+					if(is_##TPE2##_nil(curval))                     \
+						curval = (TPE2) *bp;                        \
+					else                                            \
+						ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2)     \
+				}                                                   \
+			}                                                       \
+			for(;rb < rp; rb++)                                     \
+				*rb = curval;                                       \
+			if(is_##TPE2##_nil(curval))                             \
+				has_nils = true;                                    \
+		} else { /* single value, ie no ordering */                 \
+			for(; rp<end; rp++, bp++)                               \
+				*rp = *bp;                                          \
+			if(is_##TPE1##_nil(*bp))                                \
+				has_nils = true;                                    \
+		}                                                           \
+		goto finish;                                                \
+	} while(0);
+
+gdk_return
+GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
+{
+	bool has_nils = false;
+	BUN cnt = BATcount(b), nils = 0;
+	bit *restrict np;
+	int abort_on_error = 1;
+
+	switch (tp2) {
+		case TYPE_bte: {
+			switch (tp1) {
+				case TYPE_bte:
+					ANALYTICAL_PROD_IMP_NORMAL(bte, bte, sht);
+					break;
+				default:
+					goto nosupport;
+			}
+			break;
+		}
+		case TYPE_sht: {
+			switch (tp1) {
+				case TYPE_bte:
+					ANALYTICAL_PROD_IMP_NORMAL(bte, sht, int);
+					break;
+				case TYPE_sht:
+					ANALYTICAL_PROD_IMP_NORMAL(sht, sht, int);
+					break;
+				default:
+					goto nosupport;
+			}
+			break;
+		}
+		case TYPE_int: {
+			switch (tp1) {
+				case TYPE_bte:
+					ANALYTICAL_PROD_IMP_NORMAL(bte, int, lng);
+					break;
+				case TYPE_sht:
+					ANALYTICAL_PROD_IMP_NORMAL(sht, int, lng);
+					break;
+				case TYPE_int:
+					ANALYTICAL_PROD_IMP_NORMAL(int, int, lng);
+					break;
+				default:
+					goto nosupport;
+			}
+			break;
+		}
+#ifdef HAVE_HGE
+		case TYPE_lng: {
+			switch (tp1) {
+				case TYPE_bte:
+					ANALYTICAL_PROD_IMP_NORMAL(bte, lng, hge);
+					break;
+				case TYPE_sht:
+					ANALYTICAL_PROD_IMP_NORMAL(sht, lng, hge);
+					break;
+				case TYPE_int:
+					ANALYTICAL_PROD_IMP_NORMAL(int, lng, hge);
+					break;
+				case TYPE_lng:
+					ANALYTICAL_PROD_IMP_NORMAL(lng, lng, hge);
+					break;
+				default:
+					goto nosupport;
+			}
+			break;
+		}
+		case TYPE_hge: {
+			switch (tp1) {
+				case TYPE_bte:
+					ANALYTICAL_PROD_IMP_LIMIT(bte, hge, HGEMUL_CHECK);
+					break;
+				case TYPE_sht:
+					ANALYTICAL_PROD_IMP_LIMIT(sht, hge, HGEMUL_CHECK);
+					break;
+				case TYPE_int:
+					ANALYTICAL_PROD_IMP_LIMIT(int, hge, HGEMUL_CHECK);
+					break;
+				case TYPE_lng:
+					ANALYTICAL_PROD_IMP_LIMIT(lng, hge, HGEMUL_CHECK);
+					break;
+				case TYPE_hge:
+					ANALYTICAL_PROD_IMP_LIMIT(hge, hge, HGEMUL_CHECK);
+					break;
+				default:
+					goto nosupport;
+			}
+			break;
+		}
+#else
+		case TYPE_lng: {
+			switch (tp1) {
+				case TYPE_bte:
+					ANALYTICAL_PROD_IMP_LIMIT(bte, lng, LNGMUL_CHECK);
+					break;
+				case TYPE_sht:
+					ANALYTICAL_PROD_IMP_LIMIT(sht, lng, LNGMUL_CHECK);
+					break;
+				case TYPE_int:
+					ANALYTICAL_PROD_IMP_LIMIT(int, lng, LNGMUL_CHECK);
+					break;
+				case TYPE_lng:
+					ANALYTICAL_PROD_IMP_LIMIT(lng, lng, LNGMUL_CHECK);
+					break;
+				default:
+					goto nosupport;
+			}
+			break;
+		}
+#endif
+		case TYPE_flt: {
+			switch (tp1) {
+				case TYPE_flt:
+					ANALYTICAL_PROD_IMP_FP(flt, flt);
+					break;
+				default:
+					goto nosupport;
+					break;
+			}
+		}
+		case TYPE_dbl: {
+			switch (tp1) {
+				case TYPE_flt:
+					ANALYTICAL_PROD_IMP_FP(flt, dbl);
+					break;
+				case TYPE_dbl:
+					ANALYTICAL_PROD_IMP_FP(dbl, dbl);
+					break;
+				default:
+					goto nosupport;
+					break;
+			}
+		}
+		default:
+			goto nosupport;
+	}
+nosupport:
+	GDKerror("prod: type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+calc_overflow:
+	GDKerror("22003!overflow in calculation.\n");
+finish:
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return GDK_SUCCEED;
+}
+
+#undef ANALYTICAL_PROD_IMP_NORMAL
+#undef ANALYTICAL_PROD_IMP_LIMIT
+#undef ANALYTICAL_PROD_IMP_FP
+#undef ANALYTICAL_PROD_IMP_FP_REAL

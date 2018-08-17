@@ -32,4 +32,17 @@ SQLVECTORSUM(hge)
 
 #undef SQLVECTORSUM
 
+sql5_export str SQLscalarprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#define SQLVECTORPROD(TPE) sql_export str SQLvectorprod_##TPE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+SQLVECTORPROD(lng)
+SQLVECTORPROD(flt)
+SQLVECTORPROD(dbl)
+#ifdef HAVE_HGE
+SQLVECTORPROD(hge)
+#endif
+
+#undef SQLVECTORPROD
+
 #endif /* _SQL_RANK_H */

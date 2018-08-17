@@ -1603,9 +1603,35 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "sum", "sql", "sum", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
 	}
 #endif
+
+	//analytical product for numerical and decimals
+	sql_create_analytic(sa, "prod", "sql", "prod", BTE, BIT, BIT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", SHT, BIT, BIT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", INT, BIT, BIT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", LNG, BIT, BIT, LargestINT, SCALE_NONE);
+#ifdef HAVE_HGE
+	if (have_hge)
+		sql_create_analytic(sa, "prod", "sql", "prod", HGE, BIT, BIT, LargestINT, SCALE_NONE);
+#endif
+
+	t = decimals; // BTE
+	sql_create_analytic(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	t++; // SHT
+	sql_create_analytic(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	t++; // INT
+	sql_create_analytic(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	t++; // LNG
+	sql_create_analytic(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+#ifdef HAVE_HGE
+	if (have_hge) {
+		t++; // HGE
+		sql_create_analytic(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	}
+#endif
+
 	for (t = floats; t < dates; t++) {
 		sql_create_analytic(sa, "sum", "sql", "sum", *t, BIT, BIT, *t, SCALE_NONE);
-		//sql_create_analytic(sa, "prod", "sql", "prod", *t, BIT, BIT, *t, SCALE_NONE); maybe adding a prod analytic function
+		sql_create_analytic(sa, "prod", "sql", "prod", *t, BIT, BIT, *t, SCALE_NONE);
 	}
 	sql_create_analytic(sa, "sum", "sql", "sum", MONINT, BIT, BIT, MONINT, SCALE_NONE);
 	sql_create_analytic(sa, "sum", "sql", "sum", SECINT, BIT, BIT, SECINT, SCALE_NONE);

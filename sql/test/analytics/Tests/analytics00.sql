@@ -17,6 +17,11 @@ select cast(sum(aa) over (partition by bb order by bb asc) as bigint) from analy
 select cast(sum(aa) over (partition by bb order by bb desc) as bigint) from analytics;
 select cast(sum(aa) over (order by bb desc) as bigint) from analytics;
 
+select cast(prod(aa) over (partition by bb) as bigint) from analytics;
+select cast(prod(aa) over (partition by bb order by bb asc) as bigint) from analytics;
+select cast(prod(aa) over (partition by bb order by bb desc) as bigint) from analytics;
+select cast(prod(aa) over (order by bb desc) as bigint) from analytics;
+
 select count(aa) over (partition by bb) from analytics;
 select count(aa) over (partition by bb order by bb asc) from analytics;
 select count(aa) over (partition by bb order by bb desc) from analytics;
@@ -36,6 +41,10 @@ select cast(sum(cc) over (partition by bb) as bigint) from analytics;
 select cast(sum(cc) over (partition by bb order by bb asc) as bigint) from analytics;
 select cast(sum(cc) over (partition by bb order by bb desc) as bigint) from analytics;
 select cast(sum(cc) over (order by bb desc) as bigint) from analytics;
+
+select cast(prod(cc) over (partition by bb) as bigint) from analytics;
+select cast(prod(cc) over (partition by bb order by bb asc) as bigint) from analytics;
+select cast(prod(cc) over (partition by bb order by bb desc) as bigint) from analytics;
 
 select count(cc) over (partition by bb) from analytics;
 select count(cc) over (partition by bb order by bb asc) from analytics;
@@ -67,5 +76,10 @@ select sum(aa) over (partition by bb) from debugme;
 select sum(aa) over (partition by bb order by bb asc) from debugme;
 select sum(aa) over (partition by bb order by bb desc) from debugme;
 select sum(aa) over (order by bb desc) from debugme;
+
+select prod(aa) over (partition by bb) from debugme;
+select prod(aa) over (partition by bb order by bb asc) from debugme;
+select prod(aa) over (partition by bb order by bb desc) from debugme;
+select prod(aa) over (order by bb desc) from debugme;
 
 rollback;

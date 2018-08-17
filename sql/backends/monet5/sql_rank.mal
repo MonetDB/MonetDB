@@ -88,6 +88,14 @@ pattern batsql.sum(b:bat[:bte], p:any_1, o:any_2, unit:int, s:int, e:int, exl:in
 address SQLvectorsum_lng
 comment "return the sum of groups";
 
+pattern sql.prod(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:bte], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
+address SQLvectorprod_lng
+comment "return the product of groups";
+
 pattern sql.sum(b:sht, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
 address SQLscalarsum
 comment "return the sum of groups";
@@ -95,6 +103,14 @@ comment "return the sum of groups";
 pattern batsql.sum(b:bat[:sht], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
 address SQLvectorsum_lng
 comment "return the sum of groups";
+
+pattern sql.prod(b:sht, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:sht], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
+address SQLvectorprod_lng
+comment "return the product of groups";
 
 pattern sql.sum(b:int, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
 address SQLscalarsum
@@ -104,6 +120,14 @@ pattern batsql.sum(b:bat[:int], p:any_1, o:any_2, unit:int, s:int, e:int, exl:in
 address SQLvectorsum_lng
 comment "return the sum of groups";
 
+pattern sql.prod(b:int, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:int], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
+address SQLvectorprod_lng
+comment "return the product of groups";
+
 pattern sql.sum(b:lng, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
 address SQLscalarsum
 comment "return the sum of groups";
@@ -111,6 +135,14 @@ comment "return the sum of groups";
 pattern batsql.sum(b:bat[:lng], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
 address SQLvectorsum_lng
 comment "return the sum of groups";
+
+pattern sql.prod(b:lng, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:lng], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
+address SQLvectorprod_lng
+comment "return the product of groups";
 
 pattern sql.sum(b:flt, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :flt
 address SQLscalarsum
@@ -120,6 +152,14 @@ pattern batsql.sum(b:bat[:flt], p:any_1, o:any_2, unit:int, s:int, e:int, exl:in
 address SQLvectorsum_flt
 comment "return the sum of groups";
 
+pattern sql.prod(b:flt, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :flt
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:flt], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:flt]
+address SQLvectorprod_flt
+comment "return the product of groups";
+
 pattern sql.sum(b:flt, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
 address SQLscalarsum
 comment "return the sum of groups";
@@ -128,6 +168,14 @@ pattern batsql.sum(b:bat[:flt], p:any_1, o:any_2, unit:int, s:int, e:int, exl:in
 address SQLvectorsum_dbl
 comment "return the sum of groups";
 
+pattern sql.prod(b:flt, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:flt], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLvectorprod_dbl
+comment "return the product of groups";
+
 pattern sql.sum(b:dbl, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
 address SQLscalarsum
 comment "return the sum of groups";
@@ -135,6 +183,14 @@ comment "return the sum of groups";
 pattern batsql.sum(b:bat[:dbl], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
 address SQLvectorsum_dbl
 comment "return the sum of groups";
+
+pattern sql.prod(b:dbl, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:dbl], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLvectorprod_dbl
+comment "return the product of groups";
 
 command aggr.exist(b:bat[:any_2], h:any_1):bit
 address ALGexist;

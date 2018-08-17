@@ -100,6 +100,14 @@ pattern batsql.sum(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, 
 address SQLvectorsum_${tp2#*:}
 comment "return the sum of groups";
 
+pattern sql.prod(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${tp2#*:}
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
+address SQLvectorprod_${tp2#*:}
+comment "return the product of groups";
+
 EOF
 	fi
     done
@@ -116,6 +124,14 @@ comment "return the sum of groups";
 pattern batsql.sum(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
 address SQLvectorsum_${tp2#*:}
 comment "return the sum of groups";
+
+pattern sql.prod(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${tp2#*:}
+address SQLscalarprod
+comment "return the product of groups";
+
+pattern batsql.prod(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
+address SQLvectorprod_${tp2#*:}
+comment "return the product of groups";
 
 EOF
 	fi
