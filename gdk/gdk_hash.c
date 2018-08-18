@@ -574,7 +574,7 @@ BAThash(BAT *b)
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			if (MT_create_thread(&tid, BAThashsync, b,
-					     MT_THR_DETACHED) < 0) {
+					     MT_THR_REALLY_DETACHED) < 0) {
 				/* couldn't start thread: clean up */
 				BBPunfix(b->batCacheid);
 			}

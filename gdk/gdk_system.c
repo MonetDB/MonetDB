@@ -267,7 +267,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	w->func = f;
 	w->arg = arg;
 	w->flags = 0;
-	if (d == MT_THR_DETACHED)
+	if (d == MT_THR_DETACHED || d == MT_THR_REALLY_DETACHED)
 		w->flags |= DETACHED;
 	EnterCriticalSection(&winthread_cs);
 	w->next = winthreads;
@@ -476,13 +476,12 @@ static void *
 thread_starter(void *arg)
 {
 	struct posthread *p = (struct posthread *) arg;
-	pthread_t tid = p->tid;
 
 	(*p->func)(p->arg);
 	pthread_mutex_lock(&posthread_lock);
 	/* *p may have been freed by join_threads, so try to find it
          * again before using it */
-	if ((p = find_posthread_locked(tid)) != NULL)
+	if ((p = find_posthread_locked(pthread_self())) != NULL)
 		p->exited = 1;
 	pthread_mutex_unlock(&posthread_lock);
 	return NULL;
@@ -584,7 +583,10 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	p->func = f;
 	p->arg = arg;
 	p->exited = 0;
-	if (d == MT_THR_DETACHED) {
+	if (d == MT_THR_REALLY_DETACHED) {
+		pf = thread_starter_simple;
+		newtp = &newt;
+	} else if (d == MT_THR_DETACHED) {
 		pf = thread_starter;
 		newtp = &p->tid;
 	} else {
@@ -599,7 +601,9 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 #else
 		*t = (MT_Id) (((size_t) *newtp) + 1);	/* use pthread-id + 1 */
 #endif
-		if (d == MT_THR_DETACHED) {
+		if (d == MT_THR_REALLY_DETACHED) {
+			pthread_detach(newt);
+		} else if (d == MT_THR_DETACHED) {
 			pthread_mutex_lock(&posthread_lock);
 			p->next = posthreads;
 			posthreads = p;
