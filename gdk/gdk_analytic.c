@@ -11,6 +11,96 @@
 #include "gdk_analytic.h"
 #include "gdk_calc_private.h"
 
+#define ANALYTICAL_DIFF_IMP(TPE)              \
+	do {                                      \
+		TPE *bp = (TPE*)Tloc(b, 0);           \
+		TPE prev = *bp, *end = bp + cnt;      \
+		if(rp) {                              \
+			for(; bp<end; bp++, rb++, rp++) { \
+				*rb = *rp;                    \
+				if (*bp != prev) {            \
+					*rb = TRUE;               \
+					prev = *bp;               \
+				}                             \
+			}                                 \
+		} else {                              \
+			for(; bp<end; bp++, rb++) {       \
+				*rb = FALSE;                  \
+				if (*bp != prev) {            \
+					*rb = TRUE;               \
+					prev = *bp;               \
+				}                             \
+			}                                 \
+		}                                     \
+	} while(0);
+
+gdk_return
+GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
+{
+	BUN i, cnt = BATcount(b);
+	bit *rb = (bit*)Tloc(r, 0), *rp = c ? (bit*)Tloc(c, 0) : NULL;
+	int (*atomcmp)(const void *, const void *);
+
+	switch(ATOMstorage(tpe)) {
+		case TYPE_bit:
+			ANALYTICAL_DIFF_IMP(bit)
+			break;
+		case TYPE_bte:
+			ANALYTICAL_DIFF_IMP(bte)
+			break;
+		case TYPE_sht:
+			ANALYTICAL_DIFF_IMP(sht)
+			break;
+		case TYPE_int:
+			ANALYTICAL_DIFF_IMP(int)
+			break;
+		case TYPE_lng:
+			ANALYTICAL_DIFF_IMP(lng)
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			ANALYTICAL_DIFF_IMP(hge)
+			break;
+#endif
+		case TYPE_flt:
+			ANALYTICAL_DIFF_IMP(flt)
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_DIFF_IMP(dbl)
+			break;
+		default: {
+			BATiter it = bat_iterator(b);
+			ptr v = BUNtail(it, 0), next;
+			atomcmp = ATOMcompare(tpe);
+			if(rp) {
+				for (i = 0; i < cnt; i++, rp++) {
+					*rb = *rp;
+					next = BUNtail(it, i);
+					if (atomcmp(v, next) != 0) {
+						*rb = TRUE;
+						v = next;
+					}
+				}
+			} else {
+				for(i=0; i<cnt; i++, rp++) {
+					*rb = FALSE;
+					next = BUNtail(it, i);
+					if (atomcmp(v, next) != 0) {
+						*rb = TRUE;
+						v = next;
+					}
+				}
+			}
+		}
+	}
+	BATsetcount(r, cnt);
+	r->tnonil = true;
+	r->tnil = false;
+	return GDK_SUCCEED;
+}
+
+#undef ANALYTICAL_DIFF_IMP
+
 #define ANALYTICAL_LIMIT_IMP(TPE, OP)                        \
 	do {                                                     \
 		TPE *rp, *rb, *restrict bp, *end, curval;            \

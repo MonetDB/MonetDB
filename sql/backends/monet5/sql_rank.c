@@ -29,19 +29,12 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		bat *bid = getArgReference_bat(stk, pci, 1);
-		BAT *b = BATdescriptor(*bid), *c;
-		BAT *r;
-		bit *bp, *rp;
-		int i, cnt;
-		int (*cmp)(const void *, const void *);
-		BATiter it;
-		ptr v;
+		BAT *b = BATdescriptor(*bid), *c, *r;
+		gdk_return gdk_code;
 
 		if (!b)
 			throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
-		cnt = (int)BATcount(b);
-		voidresultBAT(r, TYPE_bit, cnt, b, "sql.diff");
-		rp = (bit*)Tloc(r, 0);
+		voidresultBAT(r, TYPE_bit, (int)BATcount(b), b, "sql.diff");
 		if (pci->argc > 2) {
 			c = b;
 			bid = getArgReference_bat(stk, pci, 2);
@@ -50,36 +43,16 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(c->batCacheid);
 				throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
 			}
-
-			cmp = ATOMcompare(b->ttype);
-			it = bat_iterator(b);
-			v = BUNtail(it, 0);
-			bp = (bit*)Tloc(c, 0);
-
-			for(i=0; i<cnt; i++, bp++, rp++) {
-				*rp = *bp;
-				if (cmp(v, BUNtail(it,i)) != 0) { 
-					*rp = TRUE;
-					v = BUNtail(it, i);
-				}
-			}
+			gdk_code = GDKanalyticaldiff(r, b, c, b->ttype);
 			BBPunfix(c->batCacheid);
 		} else {
-			cmp = ATOMcompare(b->ttype);
-			it = bat_iterator(b);
-			v = BUNtail(it, 0);
-
-			for(i=0; i<cnt; i++, rp++) {
-				*rp = FALSE;
-				if (cmp(v, BUNtail(it,i)) != 0) { 
-					*rp = TRUE;
-					v = BUNtail(it, i);
-				}
-			}
+			gdk_code = GDKanalyticaldiff(r, b, NULL, b->ttype);
 		}
-		BATsetcount(r, cnt);
 		BBPunfix(b->batCacheid);
-		BBPkeepref(*res = r->batCacheid);
+		if(gdk_code == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.diff", SQLSTATE(HY001) "Unknown GDK error");
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 
