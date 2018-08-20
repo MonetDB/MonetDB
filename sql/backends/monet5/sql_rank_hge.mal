@@ -88,3 +88,11 @@ pattern batsql.prod(b:bat[:hge], p:any_1, o:any_2, unit:int, s:int, e:int, exl:i
 address SQLvectorprod_hge
 comment "return the product of groups";
 
+pattern sql.avg(b:hge, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLavg
+comment "return the average of groups";
+
+pattern batsql.avg(b:bat[:hge], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLavg
+comment "return the average of groups";
+

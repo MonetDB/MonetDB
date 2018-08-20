@@ -192,6 +192,54 @@ pattern batsql.prod(b:bat[:dbl], p:any_1, o:any_2, unit:int, s:int, e:int, exl:i
 address SQLvectorprod_dbl
 comment "return the product of groups";
 
+pattern sql.avg(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLavg
+comment "return the average of groups";
+
+pattern batsql.avg(b:bat[:bte], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLavg
+comment "return the average of groups";
+
+pattern sql.avg(b:sht, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLavg
+comment "return the average of groups";
+
+pattern batsql.avg(b:bat[:sht], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLavg
+comment "return the average of groups";
+
+pattern sql.avg(b:int, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLavg
+comment "return the average of groups";
+
+pattern batsql.avg(b:bat[:int], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLavg
+comment "return the average of groups";
+
+pattern sql.avg(b:lng, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLavg
+comment "return the average of groups";
+
+pattern batsql.avg(b:bat[:lng], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLavg
+comment "return the average of groups";
+
+pattern sql.avg(b:flt, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLavg
+comment "return the average of groups";
+
+pattern batsql.avg(b:bat[:flt], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLavg
+comment "return the average of groups";
+
+pattern sql.avg(b:dbl, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLavg
+comment "return the average of groups";
+
+pattern batsql.avg(b:bat[:dbl], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLavg
+comment "return the average of groups";
+
 command aggr.exist(b:bat[:any_2], h:any_1):bit
 address ALGexist;
 

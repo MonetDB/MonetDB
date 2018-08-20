@@ -45,4 +45,6 @@ SQLVECTORPROD(hge)
 
 #undef SQLVECTORPROD
 
+sql5_export str SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 #endif /* _SQL_RANK_H */

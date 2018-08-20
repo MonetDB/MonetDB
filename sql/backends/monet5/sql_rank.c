@@ -601,3 +601,45 @@ SQLVECTORPROD(hge)
 #endif
 
 #undef SQLVECTORPROD
+
+str
+SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *r, *b, *p, *o;
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
+								SQLSTATE(42000) "avg(:any_1,:bit,:bit)");
+	int tpe = getArgType(mb, pci, 1);
+	int unit = *getArgReference_int(stk, pci, 4);
+	int start = *getArgReference_int(stk, pci, 5);
+	int end = *getArgReference_int(stk, pci, 6);
+	int excl = *getArgReference_int(stk, pci, 7);
+	gdk_return gdk_res;
+
+	if (unit != 0 || excl != 0)
+		throw(SQL, "sql.avg", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	(void)start;
+	(void)end;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = GDKanalyticalavg(r, b, p, o, tpe);
+		BBPunfix(b->batCacheid);
+		if (p) BBPunfix(p->batCacheid);
+		if (o) BBPunfix(o->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			return createException(SQL, "sql.avg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else {
+		ptr *res = getArgReference(stk, pci, 0);
+		ptr *in = getArgReference(stk, pci, 1);
+		*res = *in;
+	}
+	return msg;
+}

@@ -251,6 +251,66 @@
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
 #endif	/* HAVE_HGE */
 
+#define AVERAGE_ITER(TYPE, x, a, r, n)					\
+	do {								\
+		TYPE an, xn, z1;					\
+		BUN z2;							\
+		(n)++;							\
+		/* calculate z1 = (x - a) / n, rounded down (towards */	\
+		/* negative infinity), and calculate z2 = remainder */	\
+		/* of the division (i.e. 0 <= z2 < n); do this */	\
+		/* without causing overflow */				\
+		an = (TYPE) ((a) / (SBUN) (n));				\
+		xn = (TYPE) ((x) / (SBUN) (n));				\
+		/* z1 will be (x - a) / n rounded towards -INF */	\
+		z1 = xn - an;						\
+		xn = (x) - (TYPE) (xn * (SBUN) (n));			\
+		an = (a) - (TYPE) (an * (SBUN) (n));			\
+		/* z2 will be remainder of above division */		\
+		if (xn >= an) {						\
+			z2 = (BUN) (xn - an);				\
+			/* loop invariant: */				\
+			/* (x - a) - z1 * n == z2 */			\
+			while (z2 >= (BUN) (n)) {			\
+				z2 -= (BUN) (n);			\
+				z1++;					\
+			}						\
+		} else {						\
+			z2 = (BUN) (an - xn);				\
+			/* loop invariant (until we break): */		\
+			/* (x - a) - z1 * n == -z2 */			\
+			for (;;) {					\
+				z1--;					\
+				if (z2 < (BUN) (n)) {			\
+					/* proper remainder */		\
+					z2 = (BUN) ((n) - z2);		\
+					break;				\
+				}					\
+				z2 -= (BUN) (n);			\
+			}						\
+		}							\
+		(a) += z1;						\
+		(r) += z2;						\
+		if ((r) >= (BUN) (n)) {					\
+			(r) -= (BUN) (n);				\
+			(a)++;						\
+		}							\
+	} while (0)
+
+#define AVERAGE_ITER_FLOAT(TYPE, x, a, n)				\
+	do {								\
+		(n)++;							\
+		if (((a) > 0) == ((x) > 0)) {				\
+			/* same sign */					\
+			(a) += ((x) - (a)) / (SBUN) (n);		\
+		} else {						\
+			/* no overflow at the cost of an */		\
+			/* extra division and slight loss of */		\
+			/* precision */					\
+			(a) = (a) - (a) / (SBUN) (n) + (x) / (SBUN) (n); \
+		}							\
+	} while (0)
+
 BUN
 dofsum(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict results, BUN ngrp, int tp1, int tp2,
 	   const oid *restrict cand, const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils,

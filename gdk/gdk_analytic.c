@@ -715,10 +715,13 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
 	}
 bailout:
 	GDKerror("error while calculating floating-point sum\n");
+	return GDK_FAIL;
 nosupport:
 	GDKerror("sum: type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	return GDK_FAIL;
 calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
+	return GDK_FAIL;
 finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
@@ -1129,8 +1132,10 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
 	}
 nosupport:
 	GDKerror("prod: type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	return GDK_FAIL;
 calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
+	return GDK_FAIL;
 finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
@@ -1142,3 +1147,219 @@ finish:
 #undef ANALYTICAL_PROD_IMP_LIMIT
 #undef ANALYTICAL_PROD_IMP_FP
 #undef ANALYTICAL_PROD_IMP_FP_REAL
+
+#define ANALYTICAL_AVERAGE_TYPE_LNG_HGE(TPE,lng_hge)                \
+	do {                                                            \
+		BUN rr;                                                     \
+		TPE *restrict bp = (TPE*)Tloc(b, 0), a;                     \
+		dbl *rp, *rb, *end;                                         \
+		rb = rp = (dbl*)Tloc(r, 0);                                 \
+		end = rp + cnt;                                             \
+		if (p) {                                                    \
+			np = (bit*)Tloc(p, 0);                                  \
+			for(; rp<end; np++, rp++, bp++) {                       \
+				if (*np) {                                          \
+					curval = n > 0 ? (dbl) sum / n : dbl_nil;       \
+					has_nils = has_nils || (n == 0);                \
+back_up##TPE:                                                       \
+					for (;rb < rp; rb++)                            \
+						*rb = curval;                               \
+					n = 0;                                          \
+					sum = 0;                                        \
+				}                                                   \
+				if (!is_##TPE##_nil(*bp)) {                         \
+					ADD_WITH_CHECK(TPE, *bp, lng_hge, sum,          \
+								   lng_hge, sum,                    \
+								   GDK_##lng_hge##_max,             \
+								   goto avg_overflow##TPE);         \
+				/* don't count value until after overflow check */  \
+					n++;                                            \
+				}                                                   \
+				if(0) {                                             \
+avg_overflow##TPE:                                                  \
+					assert(n > 0);                                  \
+					if (sum >= 0) {                                 \
+						a = (TPE) (sum / (lng_hge) n);              \
+						rr = (BUN) (sum % (SBUN) n);                \
+					} else {                                        \
+						sum = -sum;                                 \
+						a = - (TPE) (sum / (lng_hge) n);            \
+						rr = (BUN) (sum % (SBUN) n);                \
+						if (r) {                                    \
+							a--;                                    \
+							rr = n - rr;                            \
+						}                                           \
+					}                                               \
+					for(; rp<end; np++, rp++, bp++) {               \
+						if (*np) {                                  \
+							curval = a + (dbl) rr / n;              \
+							goto back_up##TPE;                      \
+						}                                           \
+						if (is_##TPE##_nil(*bp))                    \
+							continue;                               \
+						AVERAGE_ITER(TPE, *bp, a, rr, n);           \
+					}                                               \
+					curval = a + (dbl) rr / n;                      \
+					goto calc_done##TPE;                            \
+				}                                                   \
+			}                                                       \
+			curval = n > 0 ? (dbl) sum / n : dbl_nil;               \
+			has_nils = has_nils || (n == 0);                        \
+calc_done##TPE:                                                     \
+			for (;rb < rp; rb++)                                    \
+				*rb = curval;                                       \
+		} else if (o) { /* single value, ie no partitions */        \
+			for(; rp<end; rp++, bp++) {                             \
+				if (!is_##TPE##_nil(*bp)) {                         \
+					ADD_WITH_CHECK(TPE, *bp, lng_hge, sum, lng_hge, \
+								   sum, GDK_##lng_hge##_max,        \
+								   goto single_overflow##TPE);      \
+				/* don't count value until after overflow check */  \
+					n++;                                            \
+				}                                                   \
+			}                                                       \
+			if(0) {                                                 \
+single_overflow##TPE:                                               \
+				assert(n > 0);                                      \
+				if (sum >= 0) {                                     \
+					a = (TPE) (sum / (lng_hge) n);                  \
+					rr = (BUN) (sum % (SBUN) n);                    \
+				} else {                                            \
+					sum = -sum;                                     \
+					a = - (TPE) (sum / (lng_hge) n);                \
+					rr = (BUN) (sum % (SBUN) n);                    \
+					if (r) {                                        \
+						a--;                                        \
+						rr = n - rr;                                \
+					}                                               \
+				}                                                   \
+				for(; rp<end; rp++, bp++) {                         \
+					if (is_##TPE##_nil(*bp))                        \
+						continue;                                   \
+					AVERAGE_ITER(TPE, *bp, a, rr, n);               \
+				}                                                   \
+				curval = a + (dbl) rr / n;                          \
+				goto single_calc_done##TPE;                         \
+			}                                                       \
+			curval = n > 0 ? (dbl) sum / n : dbl_nil;               \
+			has_nils = (n == 0);                                    \
+single_calc_done##TPE:                                              \
+			for (;rb < rp; rb++)                                    \
+				*rb = curval;                                       \
+		} else { /* single value, ie no ordering */                 \
+			for(; rp<end; rp++, bp++) {                             \
+				if(is_##TPE##_nil(*bp)) {                           \
+					*rp = dbl_nil;                                  \
+					has_nils = true;                                \
+				} else {                                            \
+					*rp = (dbl) *bp;                                \
+				}                                                   \
+			}                                                       \
+		}                                                           \
+		goto finish;                                                \
+	} while(0);
+
+#ifdef HAVE_HGE
+#define ANALYTICAL_AVERAGE_TYPE(TYPE) ANALYTICAL_AVERAGE_TYPE_LNG_HGE(TYPE,hge)
+#else
+#define ANALYTICAL_AVERAGE_TYPE(TYPE) ANALYTICAL_AVERAGE_TYPE_LNG_HGE(TYPE,lng)
+#endif
+
+#define ANALYTICAL_AVERAGE_FLOAT_TYPE(TPE)                   \
+	do {                                                     \
+		TPE *restrict bp = (TPE*)Tloc(b, 0);                 \
+		dbl *rp, *rb, *end, a = 0;                           \
+		rb = rp = (dbl*)Tloc(r, 0);                          \
+		end = rp + cnt;                                      \
+		if (p) {                                             \
+			np = (bit*)Tloc(p, 0);                           \
+			for(; rp<end; np++, rp++, bp++) {                \
+				if (*np) {                                   \
+					curval = n > 0 ? a : dbl_nil;            \
+					has_nils = has_nils || (n == 0);         \
+					for (;rb < rp; rb++)                     \
+						*rb = curval;                        \
+					n = 0;                                   \
+					a = 0;                                   \
+				}                                            \
+				if (!is_##TPE##_nil(*bp))                    \
+					AVERAGE_ITER_FLOAT(TPE, *bp, a, n);      \
+			}                                                \
+			curval = n > 0 ? a : dbl_nil;                    \
+			has_nils = has_nils || (n == 0);                 \
+			for (;rb < rp; rb++)                             \
+				*rb = curval;                                \
+		} else if (o) { /* single value, ie no partitions */ \
+			for(; rp<end; rp++, bp++) {                      \
+				if (!is_##TPE##_nil(*bp))                    \
+					AVERAGE_ITER_FLOAT(TPE, *bp, a, n);      \
+			}                                                \
+			curval = n > 0 ? a : dbl_nil;                    \
+			has_nils = (n == 0);                             \
+			for (;rb < rp; rb++)                             \
+				*rb = curval;                                \
+		} else { /* single value, ie no ordering */          \
+			for(; rp<end; rp++, bp++) {                      \
+				if(is_##TPE##_nil(*bp)) {                    \
+					*rp = dbl_nil;                           \
+					has_nils = true;                         \
+				} else {                                     \
+					*rp = (dbl) *bp;                         \
+				}                                            \
+			}                                                \
+		}                                                    \
+		goto finish;                                         \
+	} while(0);
+
+gdk_return
+GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
+{
+	bool has_nils = false;
+	BUN cnt = BATcount(b), nils = 0, n = 0;
+	bit *restrict np;
+	bool abort_on_error = true;
+	dbl curval;
+#ifdef HAVE_HGE
+	hge sum = 0;
+#else
+	lng sum = 0;
+#endif
+
+	switch (tpe) {
+		case TYPE_bte:
+			ANALYTICAL_AVERAGE_TYPE(bte);
+			break;
+		case TYPE_sht:
+			ANALYTICAL_AVERAGE_TYPE(sht);
+			break;
+		case TYPE_int:
+			ANALYTICAL_AVERAGE_TYPE(int);
+			break;
+		case TYPE_lng:
+			ANALYTICAL_AVERAGE_TYPE(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			ANALYTICAL_AVERAGE_TYPE(hge);
+			break;
+#endif
+		case TYPE_flt:
+			ANALYTICAL_AVERAGE_FLOAT_TYPE(flt);
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_AVERAGE_FLOAT_TYPE(dbl);
+			break;
+		default:
+			GDKerror("GDKanalyticalavg: average of type %s unsupported.\n", ATOMname(tpe));
+			return GDK_FAIL;
+	}
+finish:
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return GDK_SUCCEED;
+}
+
+#undef ANALYTICAL_AVERAGE_TYPE
+#undef ANALYTICAL_AVERAGE_TYPE_LNG_HGE
+#undef ANALYTICAL_AVERAGE_FLOAT_TYPE

@@ -138,6 +138,19 @@ EOF
     done
 done
 
+for tp1 in 1:bte 2:sht 4:int 8:lng 4:flt 8:dbl; do
+	cat <<EOF
+pattern sql.avg(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :dbl
+address SQLavg
+comment "return the average of groups";
+
+pattern batsql.avg(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:dbl]
+address SQLavg
+comment "return the average of groups";
+
+EOF
+done
+
 cat <<EOF
 command aggr.exist(b:bat[:any_2], h:any_1):bit
 address ALGexist;

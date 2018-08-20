@@ -22,6 +22,11 @@ select cast(prod(aa) over (partition by bb order by bb asc) as bigint) from anal
 select cast(prod(aa) over (partition by bb order by bb desc) as bigint) from analytics;
 select cast(prod(aa) over (order by bb desc) as bigint) from analytics;
 
+select avg(aa) over (partition by bb) from analytics;
+select avg(aa) over (partition by bb order by bb asc) from analytics;
+select avg(aa) over (partition by bb order by bb desc) from analytics;
+select avg(aa) over (order by bb desc) from analytics;
+
 select count(aa) over (partition by bb) from analytics;
 select count(aa) over (partition by bb order by bb asc) from analytics;
 select count(aa) over (partition by bb order by bb desc) from analytics;
@@ -46,6 +51,11 @@ select cast(prod(cc) over (partition by bb) as bigint) from analytics;
 select cast(prod(cc) over (partition by bb order by bb asc) as bigint) from analytics;
 select cast(prod(cc) over (partition by bb order by bb desc) as bigint) from analytics;
 
+select avg(cc) over (partition by bb) from analytics;
+select avg(cc) over (partition by bb order by bb asc) from analytics;
+select avg(cc) over (partition by bb order by bb desc) from analytics;
+select avg(cc) over (order by bb desc) from analytics;
+
 select count(cc) over (partition by bb) from analytics;
 select count(cc) over (partition by bb order by bb asc) from analytics;
 select count(cc) over (partition by bb order by bb desc) from analytics;
@@ -60,6 +70,7 @@ select min(aa) over () from analytics;
 select max(aa) over () from analytics;
 select cast(sum(aa) over () as bigint) from analytics;
 select cast(prod(aa) over () as bigint) from analytics;
+select avg(aa) over () from analytics;
 select count(aa) over () from analytics;
 --select count(*) over () from analytics; FIXME
 
@@ -76,6 +87,16 @@ select max(aa) over (partition by bb order by bb asc) from stressme;
 select max(aa) over (partition by bb order by bb desc) from stressme;
 select max(aa) over (order by bb desc) from stressme;
 
+select count(aa) over (partition by bb) from stressme;
+select count(aa) over (partition by bb order by bb asc) from stressme;
+select count(aa) over (partition by bb order by bb desc) from stressme;
+select count(aa) over (order by bb desc) from stressme;
+
+select count(*) over (partition by bb) from stressme;
+select count(*) over (partition by bb order by bb asc) from stressme;
+select count(*) over (partition by bb order by bb desc) from stressme;
+select count(*) over (order by bb desc) from stressme;
+
 create table debugme (aa real, bb int);
 insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
 
@@ -88,5 +109,10 @@ select prod(aa) over (partition by bb) from debugme;
 select prod(aa) over (partition by bb order by bb asc) from debugme;
 select prod(aa) over (partition by bb order by bb desc) from debugme;
 select prod(aa) over (order by bb desc) from debugme;
+
+select avg(aa) over (partition by bb) from debugme;
+select avg(aa) over (partition by bb order by bb asc) from debugme;
+select avg(aa) over (partition by bb order by bb desc) from debugme;
+select avg(aa) over (order by bb desc) from debugme;
 
 rollback;

@@ -1573,7 +1573,6 @@ sqltypeinit( sql_allocator *sa)
 	//sql_create_analytic(sa, "lead", "sql", "lead", ANY, BIT, BIT, ANY, SCALE_NONE);
 	//sql_create_analytic(sa, "first_value", "sql", "first_value", ANY, BIT, BIT, ANY, SCALE_NONE);
 	//sql_create_analytic(sa, "last_value", "sql", "last_value", ANY, BIT, BIT, ANY, SCALE_NONE);
-	//sql_create_analytic(sa, "avg", "sql", "avg", ANY, BIT, BIT, ANY, SCALE_NONE);
 	sql_create_analytic(sa, "count", "sql", "count", BIT, BIT, NULL, LNG, SCALE_NONE);
 	sql_create_analytic(sa, "count", "sql", "count", ANY, BIT, BIT, LNG, SCALE_NONE);
 	sql_create_analytic(sa, "min", "sql", "min", ANY, BIT, BIT, ANY, SCALE_NONE);
@@ -1635,6 +1634,18 @@ sqltypeinit( sql_allocator *sa)
 	}
 	sql_create_analytic(sa, "sum", "sql", "sum", MONINT, BIT, BIT, MONINT, SCALE_NONE);
 	sql_create_analytic(sa, "sum", "sql", "sum", SECINT, BIT, BIT, SECINT, SCALE_NONE);
+
+	//analytical average for numerical types
+	sql_create_analytic(sa, "avg", "sql", "avg", BTE, BIT, BIT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", SHT, BIT, BIT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", INT, BIT, BIT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", LNG, BIT, BIT, DBL, SCALE_NONE);
+#ifdef HAVE_HGE
+	if (have_hge)
+		sql_create_analytic(sa, "avg", "sql", "avg", HGE, BIT, BIT, DBL, SCALE_NONE);
+#endif
+	sql_create_analytic(sa, "avg", "sql", "avg", FLT, BIT, BIT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", DBL, BIT, BIT, DBL, SCALE_NONE);
 
 	sql_create_func(sa, "and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);
