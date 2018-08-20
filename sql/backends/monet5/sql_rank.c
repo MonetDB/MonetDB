@@ -73,7 +73,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *r;
-		int i, j, cnt, *rp;
+		int j, cnt, *rp, *end;
 		bit *np;
 
 		if (!b)
@@ -89,15 +89,16 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.row_number", SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 			np = (bit*)Tloc(p, 0);
-			for(i=1,j=1; i<=cnt; i++, j++, np++, rp++) {
+			end = rp + cnt;
+			for(j=1; rp<end; j++, np++, rp++) {
 				if (*np)
 					j=1;
 				*rp = j;
 			}
 			BBPunfix(p->batCacheid);
 		} else { /* single value, ie no partitions, order info not used */
-			for(i=1; i<=cnt; i++, rp++) 
-				*rp = i;
+			for(j=1; j<=cnt; j++, rp++)
+				*rp = j;
 		}
 		BATsetcount(r, cnt);
 		BBPunfix(b->batCacheid);
@@ -122,7 +123,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
-		int i, j, k, cnt, *rp;
+		int j, k, cnt, *rp, *end;
 		bit *np, *no;
 
 		if (!b)
@@ -130,6 +131,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_int, cnt, b, "sql.rank");
 		rp = (int*)Tloc(r, 0);
+		end = rp + cnt;
 		if (isaBatType(getArgType(mb, pci, 2))) { 
 			if (isaBatType(getArgType(mb, pci, 3))) { 
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
@@ -142,7 +144,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				np = (bit*)Tloc(p, 0);
 				no = (bit*)Tloc(o, 0);
-				for(i=1,j=1,k=1; i<=cnt; i++, k++, np++, no++, rp++) {
+				for(j=1,k=1; rp<end; k++, np++, no++, rp++) {
 					if (*np)
 						j=k=1;
 					if (*no)
@@ -158,7 +160,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
 				np = (bit*)Tloc(p, 0);
-				for(i=1,j=1,k=1; i<=cnt; i++, k++, np++, rp++) {
+				for(j=1,k=1; rp<end; k++, np++, rp++) {
 					if (*np)
 						j=k=1;
 					*rp = j;
@@ -173,15 +175,15 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
 				no = (bit*)Tloc(o, 0);
-				for(i=1,j=1,k=1; i<=cnt; i++, k++, no++, rp++) {
+				for(j=1,k=1; rp<end; k++, no++, rp++) {
 					if (*no)
 						j=k;
 					*rp = j;
 				}
 				BBPunfix(o->batCacheid);
 			} else { /* single value, ie no ordering */
-				for(i=1; i<=cnt; i++, rp++) 
-					*rp = i;
+				for(j=1; j<=cnt; j++, rp++)
+					*rp = j;
 			}
 		}
 		BATsetcount(r, cnt);
@@ -207,7 +209,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
-		int i, j, cnt, *rp;
+		int j, cnt, *rp, *end;
 		bit *np, *no;
 
 		if (!b)
@@ -215,6 +217,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_int, cnt, b, "sql.dense_rank");
 		rp = (int*)Tloc(r, 0);
+		end = rp + cnt;
 		if (isaBatType(getArgType(mb, pci, 2))) { 
 			if (isaBatType(getArgType(mb, pci, 3))) { 
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
@@ -227,7 +230,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				np = (bit*)Tloc(p, 0);
 				no = (bit*)Tloc(o, 0);
-				for(i=1,j=1; i<=cnt; i++, np++, no++, rp++) {
+				for(j=1; rp<end; np++, no++, rp++) {
 					if (*np)
 						j=1;
 					else if (*no)
@@ -243,7 +246,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
 				np = (bit*)Tloc(p, 0);
-				for(i=1,j=1; i<=cnt; i++, np++, rp++) {
+				for(j=1; rp<end; np++, rp++) {
 					if (*np)
 						j=1;
 					*rp = j;
@@ -258,15 +261,15 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
 				}
 				no = (bit*)Tloc(o, 0);
-				for(i=1,j=1; i<=cnt; i++, no++, rp++) {
+				for(j=1; rp<end; no++, rp++) {
 					if (*no)
 						j++;
 					*rp = j;
 				}
 				BBPunfix(o->batCacheid);
 			} else { /* single value, ie no ordering */
-				for(i=1; i<=cnt; i++, rp++) 
-					*rp = i;
+				for(j=1; j<=cnt; j++, rp++)
+					*rp = j;
 			}
 		}
 		BATsetcount(r, cnt);
