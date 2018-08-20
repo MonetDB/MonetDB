@@ -48,6 +48,14 @@ pattern batsql.dense_rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:int]
 address SQLdense_rank
 comment "return the densely ranked groups";
 
+pattern sql.percent_rank(b:any_1, p:bit, o:bit) :dbl
+address SQLpercent_rank
+comment "return the percentage into the total number of groups for each row";
+
+pattern batsql.percent_rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:dbl]
+address SQLpercent_rank
+comment "return the percentage into the total number of groups for each row";
+
 pattern sql.min(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :any_1
 address SQLmin
 comment "return the minimum of groups";

@@ -73,7 +73,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 			ptr v = BUNtail(it, 0), next;
 			atomcmp = ATOMcompare(tpe);
 			if(rp) {
-				for (i = 0; i < cnt; i++, rp++) {
+				for (i=0; i<cnt; i++, rp++) {
 					*rb = *rp;
 					next = BUNtail(it, i);
 					if (atomcmp(v, next) != 0) {

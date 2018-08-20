@@ -280,6 +280,94 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str
+SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	if (pci->argc != 4 ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
+		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
+		throw(SQL, "sql.percent_rank", SQLSTATE(42000) "percent_rank(:any_1,:bit,:bit)");
+	}
+	(void)cntxt;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *o, *r;
+		int j, k, cnt;
+		dbl *rp, *end, cnt_cast;
+		bit *np, *no;
+
+		if (!b)
+			throw(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+		cnt = (int)BATcount(b);
+		cnt_cast = (dbl) (cnt - 1);
+		voidresultBAT(r, TYPE_dbl, cnt, b, "sql.percent_rank");
+		rp = (dbl*)Tloc(r, 0);
+		end = rp + cnt;
+		if (isaBatType(getArgType(mb, pci, 2))) {
+			if (isaBatType(getArgType(mb, pci, 3))) {
+				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+				if (!p || !o) {
+					BBPunfix(b->batCacheid);
+					if (p) BBPunfix(p->batCacheid);
+					if (o) BBPunfix(o->batCacheid);
+					throw(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+				}
+				np = (bit*)Tloc(p, 0);
+				no = (bit*)Tloc(o, 0);
+				for(j=0,k=0; rp<end; k++, np++, no++, rp++) {
+					if (*np)
+						j=k=0;
+					if (*no)
+						j=k;
+					*rp = j / cnt_cast;
+				}
+				BBPunfix(p->batCacheid);
+				BBPunfix(o->batCacheid);
+			} else { /* single value, ie no ordering */
+				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+				if (!p) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+				}
+				np = (bit*)Tloc(p, 0);
+				for(j=0; rp<end; np++, rp++) {
+					if (*np)
+						j=0;
+					*rp = j / cnt_cast;
+				}
+				BBPunfix(p->batCacheid);
+			}
+		} else { /* single value, ie no partitions */
+			if (isaBatType(getArgType(mb, pci, 3))) {
+				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+				if (!o) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+				}
+				no = (bit*)Tloc(o, 0);
+				for(j=0,k=0; rp<end; k++, no++, rp++) {
+					if (*no)
+						j=k;
+					*rp = j / cnt_cast;
+				}
+				BBPunfix(o->batCacheid);
+			} else { /* single value, ie no ordering - the outcome will always be 0 */
+				for(; rp<end; rp++)
+					*rp = 0;
+			}
+		}
+		BATsetcount(r, cnt);
+		BBPunfix(b->batCacheid);
+		BBPkeepref(*res = r->batCacheid);
+	} else {
+		int *res = getArgReference_int(stk, pci, 0);
+
+		*res = 1;
+	}
+	return MAL_SUCCEED;
+}
+
 static str
 SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				  int rtype, const str mod, const str err)
