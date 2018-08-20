@@ -1814,7 +1814,7 @@ BBPdump(void)
 				}
 			}
 		}
-		if (b->thash && b->thash != (Hash *) -1) {
+		if (b->thash && b->thash != (Hash *) 1) {
 			fprintf(stderr,
 				" Thash=[%zu,%zu]",
 				HEAPmemsize(&b->thash->heap),
@@ -2394,12 +2394,6 @@ incref(bat i, bool logical, bool lock)
 		if (tp) {
 			assert(pb != NULL);
 			b->theap.base = pb->theap.base + (size_t) b->theap.base;
-			/* if we shared the hash before, share it
-			 * again note that if the parent's hash is
-			 * destroyed, we also don't have a hash
-			 * anymore */
-			if (b->thash == (Hash *) -1)
-				b->thash = pb->thash;
 		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING, "BBPfix");
@@ -2494,12 +2488,6 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			if (b && refs == 0) {
 				if ((tp = b->theap.parentid) != 0)
 					b->theap.base = (char *) (b->theap.base - BBP_cache(tp)->theap.base);
-				/* if a view shared the hash with its
-				 * parent, indicate this, but only if
-				 * view isn't getting destroyed */
-				if (tp && b->thash &&
-				    b->thash == BBP_cache(tp)->thash)
-					b->thash = (Hash *) -1;
 				tvp = VIEWvtparent(b);
 			}
 		}

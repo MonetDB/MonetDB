@@ -649,7 +649,7 @@ HASHdestroy(BAT *b)
 			if (p)
 				hp = BBP_cache(p);
 
-			if ((!hp || hs != hp->thash) && hs != (Hash *) -1) {
+			if (!hp || hs != hp->thash) {
 				ALGODEBUG if (*(size_t *) hs->heap.base & (1 << 24))
 					fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
 				HEAPfree(&hs->heap, true);
@@ -662,35 +662,14 @@ HASHdestroy(BAT *b)
 void
 HASHfree(BAT *b)
 {
-	int err = 0;
 	if (b) {
 		MT_lock_set(&GDKhashLock(b->batCacheid));
-		if (b->thash && b->thash != (Hash *) -1) {
-			if (b->thash != (Hash *) 1) {
-				if (b->thash->heap.storage == STORE_MEM &&
-				    b->thash->heap.dirty) {
-					if (GDKsave(b->thash->heap.farmid,
-						    b->thash->heap.filename,
-						    NULL,
-						    b->thash->heap.base,
-						    b->thash->heap.free,
-						    STORE_MEM,
-						    false) != GDK_SUCCEED) {
-						/* if saving failed, remove */
-						GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
-							  BATDIR,
-							  BBP_physical(b->batCacheid),
-							  "thash");
-						err = 1;
-					}
-					b->thash->heap.dirty = FALSE;
-				}
-				HEAPfree(&b->thash->heap, false);
-				GDKfree(b->thash);
-				b->thash = err ? NULL : (Hash *) 1;
-			}
-		} else {
-			b->thash = NULL;
+		if (b->thash && b->thash != (Hash *) 1) {
+			bool dirty = b->thash->heap.dirty;
+
+			HEAPfree(&b->thash->heap, dirty);
+			GDKfree(b->thash);
+			b->thash = dirty ? NULL : (Hash *) 1;
 		}
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
 	}
