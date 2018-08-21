@@ -2686,7 +2686,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 #define GDK_MIN_VALUE 3
 #define GDK_MAX_VALUE 4
 
-gdk_export void PROPdestroy(PROPrec *p);
+gdk_export void PROPdestroy(BAT *b);
 gdk_export PROPrec *BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, const void *v);
 gdk_export void BATrmprop(BAT *b, int idx);

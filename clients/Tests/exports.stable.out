@@ -306,7 +306,7 @@ ssize_t OIDtoStr(str *dst, size_t *len, const oid *src);
 BUN ORDERfnd(BAT *b, const void *v);
 BUN ORDERfndfirst(BAT *b, const void *v);
 BUN ORDERfndlast(BAT *b, const void *v);
-void PROPdestroy(PROPrec *p);
+void PROPdestroy(BAT *b);
 BUN SORTfnd(BAT *b, const void *v);
 BUN SORTfndfirst(BAT *b, const void *v);
 BUN SORTfndlast(BAT *b, const void *v);

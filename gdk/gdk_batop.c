@@ -600,8 +600,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	if (b->thash == (Hash *) 1 || BATcount(b) == 0 ||
 	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
@@ -877,8 +876,7 @@ BATdel(BAT *b, BAT *d)
 	/* not sure about these anymore */
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 
 	return GDK_SUCCEED;
 }
@@ -1851,10 +1849,12 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
  */
 
 void
-PROPdestroy(PROPrec *p)
+PROPdestroy(BAT *b)
 {
+	PROPrec *p = b->tprops;
 	PROPrec *n;
 
+	b->tprops = NULL;
 	while (p) {
 		n = p->next;
 		VALclear(&p->v);

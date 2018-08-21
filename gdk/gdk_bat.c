@@ -499,8 +499,7 @@ BATclear(BAT *b, bool force)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	if (force && BATatoms[b->ttype].atomDel == NULL) {
@@ -563,8 +562,7 @@ BATfree(BAT *b)
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);
@@ -587,7 +585,7 @@ BATdestroy(BAT *b)
 	b->tident = BATstring_t;
 	if (b->tvheap)
 		GDKfree(b->tvheap);
-	PROPdestroy(b->tprops);
+	PROPdestroy(b);
 	GDKfree(b);
 }
 
@@ -1051,8 +1049,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	if (b->thash == (Hash *) 1 ||
 	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
@@ -1119,8 +1116,7 @@ BUNdelete(BAT *b, oid o)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -1163,8 +1159,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		b->tnil = false;
 	}
 	HASHdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	if (b->tvarsized && b->ttype) {

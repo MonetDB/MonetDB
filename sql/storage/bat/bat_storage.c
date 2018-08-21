@@ -2120,15 +2120,6 @@ clear_del(sql_trans *tr, sql_table *t)
 	return clear_dbat(tr, t->data);
 }
 
-static void
-BATcleanProps( BAT *b )
-{
-	if (b->tprops) {
-		PROPdestroy(b->tprops);
-		b->tprops = NULL;
-	}
-}
-
 static int 
 gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 {
@@ -2156,7 +2147,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 			return LOG_ERR;
 		}
 		cbat->cnt = cbat->ibase = BATcount(cur);
-		BATcleanProps(cur);
+		PROPdestroy(cur);
 		temp_destroy(cbat->ibid);
 		cbat->ibid = e_bat(cur->ttype);
 		if(cbat->ibid == BID_NIL)
@@ -2441,7 +2432,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 				bat_destroy(ins);
 				return LOG_ERR;
 			}
-			BATcleanProps(cur);
+			PROPdestroy(cur);
 			temp_destroy(cbat->bid);
 			temp_destroy(cbat->ibid);
 			cbat->bid = cbat->ibid = 0;
@@ -2547,7 +2538,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 				bat_destroy(ins);
 				return LOG_ERR;
 			}
-			BATcleanProps(cur);
+			PROPdestroy(cur);
 			if (cur->batPersistence == PERSISTENT)
 				BATmsync(cur);
 		}
