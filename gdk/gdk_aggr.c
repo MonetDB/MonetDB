@@ -88,6 +88,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 
 		prop = BATgetprop(g, GDK_MAX_VALUE);
 		if (prop) {
+			assert(prop->v.vtype == TYPE_oid);
 			min = 0; /* just assume it starts at 0 */
 			max = prop->v.val.oval;
 		} else {
@@ -2606,25 +2607,68 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	return bn;
 }
 
-static void *
-BATminmax(BAT *b, void *aggr,
-	  BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
-			oid, oid, BUN, BUN, const oid *restrict,
-			const oid *, BUN, bool, bool))
+BAT *
+BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+	    bool skip_nils, bool abort_on_error)
 {
-	oid pos;
+	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
+			      do_groupmin, "BATgroupmin");
+}
+
+void *
+BATmin(BAT *b, void *aggr)
+{
+	PROPrec *prop;
 	const void *res;
 	size_t s;
-	BATiter bi;
 
-	if ((VIEWtparent(b) == 0 ||
-	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
-	    BATcheckimprints(b)) {
-		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
-		int i;
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATmin: non-linear type");
+		return NULL;
+	}
+	if (BATcount(b) == 0) {
+		res = ATOMnilptr(b->ttype);
+	} else if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+		res = VALptr(&prop->v);
+	} else {
+		oid pos;
+		BATiter bi;
+		BAT *pb = NULL;
 
-		pos = oid_nil;
-		if (minmax == do_groupmin) {
+		if (BATcheckorderidx(b) ||
+		    (VIEWtparent(b) &&
+		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     pb->theap.base == b->theap.base &&
+		     BATcount(pb) == BATcount(b) &&
+		     pb->hseqbase == b->hseqbase &&
+		     BATcheckorderidx(pb))) {
+			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+			BUN r;
+			if (!b->tnonil) {
+				r = binsearch(ords, 0, b->ttype, Tloc(b, 0),
+					      b->tvheap ? b->tvheap->base : NULL,
+					      b->twidth, 0, BATcount(b),
+					      ATOMnilptr(b->ttype), 1, 1);
+				if (r == 0) {
+					b->tnonil = true;
+					b->batDirtydesc = true;
+				}
+			} else {
+				r = 0;
+			}
+			if (r == BATcount(b)) {
+				/* no non-nil values */
+				pos = oid_nil;
+			} else {
+				pos = ords[r];
+			}
+		} else if ((VIEWtparent(b) == 0 ||
+			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			   BATcheckimprints(b)) {
+			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+			int i;
+
+			pos = oid_nil;
 			/* find first non-empty bin */
 			for (i = 0; i < imprints->bits; i++) {
 				if (imprints->stats[i + 128]) {
@@ -2633,23 +2677,18 @@ BATminmax(BAT *b, void *aggr,
 				}
 			}
 		} else {
-			/* find last non-empty bin */
-			for (i = imprints->bits - 1; i >= 0; i--) {
-				if (imprints->stats[i + 128]) {
-					pos = imprints->stats[i + 64] + b->hseqbase;
-					break;
-				}
-			}
+			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, 0,
+					   BATcount(b), NULL, NULL, BATcount(b),
+					   true, false);
 		}
-	} else {
-		(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b),
-				 NULL, NULL, BATcount(b), true, false);
-	}
-	if (is_oid_nil(pos)) {
-		res = ATOMnilptr(b->ttype);
-	} else {
-		bi = bat_iterator(b);
-		res = BUNtail(bi, pos - b->hseqbase);
+		if (is_oid_nil(pos)) {
+			res = ATOMnilptr(b->ttype);
+		} else {
+			bi = bat_iterator(b);
+			res = BUNtail(bi, pos - b->hseqbase);
+			if (b->tnonil)
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
+		}
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(b->ttype, res);
@@ -2663,20 +2702,6 @@ BATminmax(BAT *b, void *aggr,
 }
 
 BAT *
-BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    bool skip_nils, bool abort_on_error)
-{
-	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
-			      do_groupmin, "BATgroupmin");
-}
-
-void *
-BATmin(BAT *b, void *aggr)
-{
-	return BATminmax(b, aggr, do_groupmin);
-}
-
-BAT *
 BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	    bool skip_nils, bool abort_on_error)
 {
@@ -2687,7 +2712,70 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 void *
 BATmax(BAT *b, void *aggr)
 {
-	return BATminmax(b, aggr, do_groupmax);
+	PROPrec *prop;
+	const void *res;
+	size_t s;
+
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATmax: non-linear type");
+		return NULL;
+	}
+	if (BATcount(b) == 0) {
+		res = ATOMnilptr(b->ttype);
+	} else if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+		res = VALptr(&prop->v);
+	} else {
+		oid pos;
+		BATiter bi;
+		BAT *pb = NULL;
+
+		if (BATcheckorderidx(b) ||
+		    (VIEWtparent(b) &&
+		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     pb->theap.base == b->theap.base &&
+		     BATcount(pb) == BATcount(b) &&
+		     pb->hseqbase == b->hseqbase &&
+		     BATcheckorderidx(pb))) {
+			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+
+			pos = ords[BATcount(b) - 1];
+		} else if ((VIEWtparent(b) == 0 ||
+			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			   BATcheckimprints(b)) {
+			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+			int i;
+
+			pos = oid_nil;
+			/* find last non-empty bin */
+			for (i = imprints->bits - 1; i >= 0; i--) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i + 64] + b->hseqbase;
+					break;
+				}
+			}
+		} else {
+			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, 0,
+					   BATcount(b), NULL, NULL, BATcount(b),
+					   true, false);
+		}
+		if (is_oid_nil(pos)) {
+			res = ATOMnilptr(b->ttype);
+		} else {
+			bi = bat_iterator(b);
+			res = BUNtail(bi, pos - b->hseqbase);
+			if (b->tnonil)
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, res);
+		}
+	}
+	if (aggr == NULL) {
+		s = ATOMlen(b->ttype, res);
+		aggr = GDKmalloc(s);
+	} else {
+		s = ATOMsize(ATOMtype(b->ttype));
+	}
+	if (aggr != NULL)	/* else: malloc error */
+		memcpy(aggr, res, s);
+	return aggr;
 }
 
 
