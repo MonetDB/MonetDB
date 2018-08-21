@@ -123,10 +123,7 @@ VIEWcreate(oid seq, BAT *b)
 		bn->theap.parentid = tp;
 	BATinit_idents(bn);
 	bn->batRestricted = BAT_READ;
-	if (!tp || isVIEW(b))
-		bn->thash = NULL;
-	else
-		bn->thash = b->thash;
+	bn->thash = NULL;
 	/* imprints are shared, but the check is dynamic */
 	bn->timprints = NULL;
 	/* Order OID index */
@@ -240,10 +237,6 @@ VIEWunlink(BAT *b)
 		/* unlink properties shared with parent */
 		if (tpb && b->tprops && b->tprops == tpb->tprops)
 			b->tprops = NULL;
-
-		/* unlink hash accelerators shared with parent */
-		if (tpb && b->thash && b->thash == tpb->thash)
-			b->thash = NULL;
 
 		/* unlink imprints shared with parent */
 		if (tpb && b->timprints && b->timprints == tpb->timprints)
@@ -405,9 +398,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	} else {
 		view->tnokey[0] = view->tnokey[1] = 0;
 	}
-	/* slices are unequal to their parents; cannot use accs */
-	if (b->thash == view->thash)
-		view->thash = NULL;
 }
 
 /*

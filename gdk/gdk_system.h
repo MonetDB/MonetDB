@@ -107,7 +107,7 @@ gdk_export int GDKdebug;
  */
 typedef size_t MT_Id;		/* thread number. will not be zero */
 
-enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED, MT_THR_REALLY_DETACHED };
+enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d);
