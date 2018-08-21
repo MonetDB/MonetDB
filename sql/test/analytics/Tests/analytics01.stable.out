@@ -218,6 +218,186 @@ Ready.
 [ 0.7777777778	]
 [ 0.7777777778	]
 [ 0.7777777778	]
+#select cume_dist() over (partition by aa) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0.1	]
+[ 0.2	]
+[ 0.3	]
+[ 0.4	]
+[ 0.5	]
+[ 0.7	]
+[ 0.7	]
+[ 0.8	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (partition by aa order by aa asc) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0.2	]
+[ 0.2	]
+[ 0.3	]
+[ 0.5	]
+[ 0.5	]
+[ 0.6	]
+[ 0.7	]
+[ 0.8	]
+[ 0.9	]
+[ 1	]
+#select cume_dist() over (partition by aa order by aa desc) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0.1	]
+[ 0.2	]
+[ 0.3	]
+[ 0.4	]
+[ 0.5	]
+[ 0.7	]
+[ 0.7	]
+[ 0.8	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (order by aa) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (order by aa desc) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (partition by bb) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0.1	]
+[ 0.4	]
+[ 0.4	]
+[ 0.4	]
+[ 0.7	]
+[ 0.7	]
+[ 0.7	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (partition by bb order by bb asc) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0.3	]
+[ 0.3	]
+[ 0.3	]
+[ 0.6	]
+[ 0.6	]
+[ 0.6	]
+[ 0.9	]
+[ 0.9	]
+[ 0.9	]
+[ 1	]
+#select cume_dist() over (partition by bb order by bb desc) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0.1	]
+[ 0.4	]
+[ 0.4	]
+[ 0.4	]
+[ 0.7	]
+[ 0.7	]
+[ 0.7	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (order by bb) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select cume_dist() over (order by bb desc) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select percent_rank() over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+#select cume_dist() over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #rollback;
 
 # 17:00:05 >  

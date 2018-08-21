@@ -1567,8 +1567,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "dense_rank", "sql", "dense_rank", ANY, BIT, BIT, INT, SCALE_NONE);
 	sql_create_analytic(sa, "row_number", "sql", "row_number", ANY, BIT, BIT, INT, SCALE_NONE);
 	sql_create_analytic(sa, "percent_rank", "sql", "percent_rank", ANY, BIT, BIT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "cume_dist", "sql", "cume_dist", ANY, BIT, BIT, DBL, SCALE_NONE);
 
-	//sql_create_analytic(sa, "cume_dist", "sql", "cume_dist", ANY, BIT, BIT, ANY, SCALE_NONE);
 	//sql_create_analytic(sa, "ntile", "sql", "ntile", ANY, BIT, BIT, ANY, SCALE_NONE);
 	//sql_create_analytic(sa, "lag", "sql", "lag", ANY, BIT, BIT, ANY, SCALE_NONE);
 	//sql_create_analytic(sa, "lead", "sql", "lead", ANY, BIT, BIT, ANY, SCALE_NONE);

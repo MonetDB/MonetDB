@@ -14,4 +14,19 @@ select percent_rank() over (partition by bb order by bb desc) from analytics;
 select percent_rank() over (order by bb) from analytics;
 select percent_rank() over (order by bb desc) from analytics;
 
+select cume_dist() over (partition by aa) from analytics;
+select cume_dist() over (partition by aa order by aa asc) from analytics;
+select cume_dist() over (partition by aa order by aa desc) from analytics;
+select cume_dist() over (order by aa) from analytics;
+select cume_dist() over (order by aa desc) from analytics;
+
+select cume_dist() over (partition by bb) from analytics;
+select cume_dist() over (partition by bb order by bb asc) from analytics;
+select cume_dist() over (partition by bb order by bb desc) from analytics;
+select cume_dist() over (order by bb) from analytics;
+select cume_dist() over (order by bb desc) from analytics;
+
+select percent_rank() over () from analytics;
+select cume_dist() over () from analytics;
+
 rollback;

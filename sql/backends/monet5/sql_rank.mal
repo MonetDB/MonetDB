@@ -56,6 +56,14 @@ pattern batsql.percent_rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:dbl]
 address SQLpercent_rank
 comment "return the percentage into the total number of groups for each row";
 
+pattern sql.cume_dist(b:any_1, p:bit, o:bit) :dbl
+address SQLcume_dist
+comment "return the accumulated distribution of the number of rows per group to the total number of partition rows";
+
+pattern batsql.cume_dist(b:bat[:any_1], p:any_2, o:any_3) :bat[:dbl]
+address SQLcume_dist
+comment "return the accumulated distribution of the number of rows per group to the total number of partition rows";
+
 pattern sql.min(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :any_1
 address SQLmin
 comment "return the minimum of groups";

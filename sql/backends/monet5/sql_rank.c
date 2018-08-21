@@ -371,6 +371,77 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str
+SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	if (pci->argc != 4 ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
+		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
+		throw(SQL, "sql.cume_dist", SQLSTATE(42000) "cume_dist(:any_1,:bit,:bit)");
+	}
+	(void)cntxt;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p, *r;
+		int j, cnt;
+		dbl *rb, *rp, *end, cnt_cast;
+		bit *np;
+
+		if (!b)
+			throw(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
+		cnt = (int)BATcount(b);
+		cnt_cast = (dbl) cnt;
+		voidresultBAT(r, TYPE_dbl, cnt, b, "sql.cume_dist");
+		rb = rp = (dbl*)Tloc(r, 0);
+		end = rp + cnt;
+		if (isaBatType(getArgType(mb, pci, 2))) {
+			if (isaBatType(getArgType(mb, pci, 3))) {
+				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+				if (!p) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+				}
+				np = (bit*)Tloc(p, 0);
+				for(j=0; rp<end; j++, np++, rp++) {
+					if (*np) {
+						for(; rb<rp; rb++)
+							*rb = j / cnt_cast;
+					}
+				}
+				for(; rb<rp; rb++)
+					*rb = 1;
+			} else { /* single value, ie no ordering */
+				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+				if (!p) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+				}
+				np = (bit*)Tloc(p, 0);
+				for(j=0; rp<end; j++, np++, rp++) {
+					if (*np) {
+						for(; rb<rp; rb++)
+							*rb = j / cnt_cast;
+					}
+				}
+				for(; rb<rp; rb++)
+					*rb = 1;
+				BBPunfix(p->batCacheid);
+			}
+		} else {
+			for(; rp<end; rp++)
+				*rp = 1;
+		}
+		BATsetcount(r, cnt);
+		BBPunfix(b->batCacheid);
+		BBPkeepref(*res = r->batCacheid);
+	} else {
+		int *res = getArgReference_int(stk, pci, 0);
+
+		*res = 1;
+	}
+	return MAL_SUCCEED;
+}
+
 static str
 SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				  int rtype, const str mod, const str err)
