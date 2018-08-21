@@ -256,26 +256,34 @@ BAThashsync(void *arg)
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->thash != NULL) {
 		Heap *hp = &b->thash->heap;
-		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED &&
-		    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
-			((size_t *) hp->base)[0] |= 1 << 24;
-			if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
-				failed = ""; /* not failed */
-				if (!(GDKdebug & NOSYNCMASK)) {
+		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
+			if (hp->storage == STORE_MEM) {
+				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
+					((size_t *) hp->base)[0] |= (size_t) 1 << 24;
+					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
+						failed = ""; /* not failed */
+						if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
-					_commit(fd);
+							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-					fdatasync(fd);
+							fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-					fsync(fd);
+							fsync(fd);
 #endif
+						}
+					} else {
+						perror("write hash");
+					}
+					close(fd);
 				}
 			} else {
-				perror("write hash");
+				((size_t *) hp->base)[0] |= (size_t) 1 << 24;
+				if (!(GDKdebug & NOSYNCMASK) &&
+				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0)
+					((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
 			}
-			close(fd);
+			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 		}
-		ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 	}
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	BBPunfix(b->batCacheid);
