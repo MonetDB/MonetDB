@@ -1032,6 +1032,9 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Aug 21 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.3-20180821
+- Rebuilt.
+
 * Wed Aug 15 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.1-20180815
 - Rebuilt.
 - BZ#4020: Importing timestamp with zone from copy into
