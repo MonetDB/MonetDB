@@ -1857,8 +1857,7 @@ PROPdestroy(PROPrec *p)
 
 	while (p) {
 		n = p->next;
-		if (p->v.vtype == TYPE_str)
-			GDKfree(p->v.val.sval);
+		VALclear(&p->v);
 		GDKfree(p);
 		p = n;
 	}
@@ -1878,22 +1877,47 @@ BATgetprop(BAT *b, int idx)
 }
 
 void
-BATsetprop(BAT *b, int idx, int type, void *v)
+BATsetprop(BAT *b, int idx, int type, const void *v)
 {
-	ValRecord vr;
 	PROPrec *p = BATgetprop(b, idx);
 
-	if (p == NULL &&
-	    (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
+	if (p == NULL) {
+		if ((p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) == NULL) {
+			/* properties are hints, so if we can't create
+			 * one we ignore the error */
+			return;
+		}
 		p->id = idx;
 		p->next = b->tprops;
 		p->v.vtype = 0;
 		b->tprops = p;
+	} else {
+		VALclear(&p->v);
 	}
-	if (p) {
-		VALset(&vr, type, v);
-		VALcopy(&p->v, &vr);
-		b->batDirtydesc = true;
+	if (VALinit(&p->v, type, v) == NULL) {
+		/* failed to initialize, so remove property */
+		BATrmprop(b, idx);
+	}
+	b->batDirtydesc = true;
+}
+
+void
+BATrmprop(BAT *b, int idx)
+{
+	PROPrec *prop = b->tprops, *prev = NULL;
+
+	while (prop) {
+		if (prop->id == idx) {
+			if (prev)
+				prev->next = prop->next;
+			else
+				b->tprops = prop->next;
+			VALclear(&prop->v);
+			GDKfree(prop);
+			return;
+		}
+		prev = prop;
+		prop = prop->next;
 	}
 }
 

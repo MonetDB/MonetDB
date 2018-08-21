@@ -563,8 +563,7 @@ BATfree(BAT *b)
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	if (b->tprops)
-		PROPdestroy(b->tprops);
+	PROPdestroy(b->tprops);
 	b->tprops = NULL;
 	HASHfree(b);
 	IMPSfree(b);
@@ -588,8 +587,7 @@ BATdestroy(BAT *b)
 	b->tident = BATstring_t;
 	if (b->tvheap)
 		GDKfree(b->tvheap);
-	if (b->tprops)
-		PROPdestroy(b->tprops);
+	PROPdestroy(b->tprops);
 	GDKfree(b);
 }
 
