@@ -49,7 +49,7 @@ bin_monetdbd = {
 		   ../../../gdk/libbat \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \
-		   $(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) \
+		   $(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) \
 		   $(MATH_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PSAPILIB) $(KVM_LIBS) \
 		   $(pcre_LIBS) $(libxml2_LIBS)
 }

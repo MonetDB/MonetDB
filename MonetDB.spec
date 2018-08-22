@@ -144,9 +144,9 @@ BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
 %endif
 BuildRequires: bison
-BuildRequires: bzip2-devel
+BuildRequires: pkgconfig(bzip2)
 %if %{?with_fits:1}%{!?with_fits:0}
-BuildRequires: cfitsio-devel
+BuildRequires: pkgconfig(cfitsio)
 %endif
 BuildRequires: gcc
 %if %{?with_geos:1}%{!?with_geos:0}
@@ -154,25 +154,25 @@ BuildRequires: geos-devel >= 3.4.0
 %endif
 %if %{?with_lidar:1}%{!?with_lidar:0}
 BuildRequires: liblas-devel >= 1.8.0
-BuildRequires: gdal-devel
-BuildRequires: libgeotiff-devel
-# Fedora 22 liblas-devel does not depend on liblas:
-BuildRequires: liblas >= 1.8.0
+BuildRequires: pkgconfig(gdal)
 %endif
-BuildRequires: libatomic_ops-devel
-BuildRequires: libcurl-devel
-BuildRequires: xz-devel
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
+BuildRequires: pkgconfig(atomic_ops)
+%endif
+BuildRequires: pkgconfig(libcurl)
+BuildRequires: pkgconfig(liblzma)
 # BuildRequires: libmicrohttpd-devel
 BuildRequires: libuuid-devel
-BuildRequires: libxml2-devel
-BuildRequires: openssl-devel
+BuildRequires: pkgconfig(libxml-2.0)
+BuildRequires: pkgconfig(openssl)
 %if %{?with_pcre:1}%{!?with_pcre:0}
-BuildRequires: pcre-devel >= 4.5
+BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
-BuildRequires: zlib-devel
+BuildRequires: pkgconfig(zlib)
 %if %{?with_samtools:1}%{!?with_samtools:0}
 BuildRequires: samtools-devel
 %endif
