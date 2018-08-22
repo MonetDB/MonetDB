@@ -3020,8 +3020,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 	char aggrF[64];
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
-	int complex_aggr = 0;
-	int abort_on_error, *stmt_nr = NULL;
+	bool complex_aggr = false;
+	bool abort_on_error;
+	int *stmt_nr = NULL;
 
 	if (op1->nr < 0)
 		return NULL;
@@ -3032,7 +3033,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 
 	if (strcmp(aggrfunc, "avg") == 0 || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
-		complex_aggr = 1;
+		complex_aggr = true;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
 	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0;
 

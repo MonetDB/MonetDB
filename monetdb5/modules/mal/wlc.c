@@ -715,7 +715,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) mb;
-	b= BBPquickdesc(bid, FALSE);
+	b= BBPquickdesc(bid, false);
 	if( BATcount(b) == 0)
 		return MAL_SUCCEED;
 	WLCstart(p, WLC_UPDATE, msg, "wlr.delete");

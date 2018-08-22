@@ -88,6 +88,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 
 		prop = BATgetprop(g, GDK_MAX_VALUE);
 		if (prop) {
+			assert(prop->v.vtype == TYPE_oid);
 			min = 0; /* just assume it starts at 0 */
 			max = prop->v.val.oval;
 		} else {
@@ -762,7 +763,7 @@ dosum(const void *restrict values, bool nonil, oid seqb, BUN start, BUN end,
 
 /* calculate group sums with optional candidates list */
 BAT *
-BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -828,7 +829,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 }
 
 gdk_return
-BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty)
+BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
 {
 	oid min, max;
 	BUN ngrp;
@@ -882,7 +883,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 			dbl avg;
 			BUN cnt;
 
-			if (BATcalcavg(b, s, &avg, &cnt) != GDK_SUCCEED)
+			if (BATcalcavg(b, s, &avg, &cnt, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			if (cnt == 0) {
 				avg = nil_if_empty ? dbl_nil : 0;
@@ -1361,7 +1362,7 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 
 /* calculate group products with optional candidates list */
 BAT *
-BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -1427,7 +1428,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 }
 
 gdk_return
-BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty)
+BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1572,7 +1573,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 
 /* calculate group averages with optional candidates list */
 gdk_return
-BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error, int scale)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -1726,6 +1727,13 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		cn->tnonil = true;
 		*cntsp = cn;
 	}
+	if (scale != 0) {
+		dbl fac = pow(10.0, (double) scale);
+		for (i = 0; i < ngrp; i++) {
+			if (!is_dbl_nil(dbls[i]))
+				dbls[i] *= fac;
+		}
+	}
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -1859,7 +1867,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	} while (0)
 
 gdk_return
-BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
+BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 {
 	BUN n = 0, r = 0, i = 0;
 #ifdef HAVE_HGE
@@ -1907,6 +1915,8 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
+	if (scale != 0 && !is_dbl_nil(*avg))
+		*avg *= pow(10.0, (double) scale);
 	if (vals)
 		*vals = n;
 	return GDK_SUCCEED;
@@ -1943,7 +1953,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 
 /* calculate group counts with optional candidates list */
 BAT *
-BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -2087,7 +2097,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 /* calculate group sizes (number of TRUE values) with optional
  * candidates list */
 BAT *
-BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -2537,25 +2547,68 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	return bn;
 }
 
-static void *
-BATminmax(BAT *b, void *aggr,
-	  BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
-			oid, oid, BUN, BUN, const oid *restrict,
-			const oid *, BUN, bool, bool))
+BAT *
+BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+	    bool skip_nils, bool abort_on_error)
 {
-	oid pos;
+	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
+			      do_groupmin, "BATgroupmin");
+}
+
+void *
+BATmin(BAT *b, void *aggr)
+{
+	PROPrec *prop;
 	const void *res;
 	size_t s;
-	BATiter bi;
 
-	if ((VIEWtparent(b) == 0 ||
-	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
-	    BATcheckimprints(b)) {
-		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
-		int i;
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATmin: non-linear type");
+		return NULL;
+	}
+	if (BATcount(b) == 0) {
+		res = ATOMnilptr(b->ttype);
+	} else if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+		res = VALptr(&prop->v);
+	} else {
+		oid pos;
+		BATiter bi;
+		BAT *pb = NULL;
 
-		pos = oid_nil;
-		if (minmax == do_groupmin) {
+		if (BATcheckorderidx(b) ||
+		    (VIEWtparent(b) &&
+		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     pb->theap.base == b->theap.base &&
+		     BATcount(pb) == BATcount(b) &&
+		     pb->hseqbase == b->hseqbase &&
+		     BATcheckorderidx(pb))) {
+			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+			BUN r;
+			if (!b->tnonil) {
+				r = binsearch(ords, 0, b->ttype, Tloc(b, 0),
+					      b->tvheap ? b->tvheap->base : NULL,
+					      b->twidth, 0, BATcount(b),
+					      ATOMnilptr(b->ttype), 1, 1);
+				if (r == 0) {
+					b->tnonil = true;
+					b->batDirtydesc = true;
+				}
+			} else {
+				r = 0;
+			}
+			if (r == BATcount(b)) {
+				/* no non-nil values */
+				pos = oid_nil;
+			} else {
+				pos = ords[r];
+			}
+		} else if ((VIEWtparent(b) == 0 ||
+			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			   BATcheckimprints(b)) {
+			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+			int i;
+
+			pos = oid_nil;
 			/* find first non-empty bin */
 			for (i = 0; i < imprints->bits; i++) {
 				if (imprints->stats[i + 128]) {
@@ -2564,23 +2617,18 @@ BATminmax(BAT *b, void *aggr,
 				}
 			}
 		} else {
-			/* find last non-empty bin */
-			for (i = imprints->bits - 1; i >= 0; i--) {
-				if (imprints->stats[i + 128]) {
-					pos = imprints->stats[i + 64] + b->hseqbase;
-					break;
-				}
-			}
+			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, 0,
+					   BATcount(b), NULL, NULL, BATcount(b),
+					   true, false);
 		}
-	} else {
-		(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b),
-				 NULL, NULL, BATcount(b), true, false);
-	}
-	if (is_oid_nil(pos)) {
-		res = ATOMnilptr(b->ttype);
-	} else {
-		bi = bat_iterator(b);
-		res = BUNtail(bi, pos - b->hseqbase);
+		if (is_oid_nil(pos)) {
+			res = ATOMnilptr(b->ttype);
+		} else {
+			bi = bat_iterator(b);
+			res = BUNtail(bi, pos - b->hseqbase);
+			if (b->tnonil)
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
+		}
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(b->ttype, res);
@@ -2594,22 +2642,8 @@ BATminmax(BAT *b, void *aggr,
 }
 
 BAT *
-BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    int skip_nils, int abort_on_error)
-{
-	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
-			      do_groupmin, "BATgroupmin");
-}
-
-void *
-BATmin(BAT *b, void *aggr)
-{
-	return BATminmax(b, aggr, do_groupmin);
-}
-
-BAT *
 BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    int skip_nils, int abort_on_error)
+	    bool skip_nils, bool abort_on_error)
 {
 	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
 			      do_groupmax, "BATgroupmax");
@@ -2618,7 +2652,70 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 void *
 BATmax(BAT *b, void *aggr)
 {
-	return BATminmax(b, aggr, do_groupmax);
+	PROPrec *prop;
+	const void *res;
+	size_t s;
+
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATmax: non-linear type");
+		return NULL;
+	}
+	if (BATcount(b) == 0) {
+		res = ATOMnilptr(b->ttype);
+	} else if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+		res = VALptr(&prop->v);
+	} else {
+		oid pos;
+		BATiter bi;
+		BAT *pb = NULL;
+
+		if (BATcheckorderidx(b) ||
+		    (VIEWtparent(b) &&
+		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     pb->theap.base == b->theap.base &&
+		     BATcount(pb) == BATcount(b) &&
+		     pb->hseqbase == b->hseqbase &&
+		     BATcheckorderidx(pb))) {
+			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+
+			pos = ords[BATcount(b) - 1];
+		} else if ((VIEWtparent(b) == 0 ||
+			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			   BATcheckimprints(b)) {
+			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+			int i;
+
+			pos = oid_nil;
+			/* find last non-empty bin */
+			for (i = imprints->bits - 1; i >= 0; i--) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i + 64] + b->hseqbase;
+					break;
+				}
+			}
+		} else {
+			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, 0,
+					   BATcount(b), NULL, NULL, BATcount(b),
+					   true, false);
+		}
+		if (is_oid_nil(pos)) {
+			res = ATOMnilptr(b->ttype);
+		} else {
+			bi = bat_iterator(b);
+			res = BUNtail(bi, pos - b->hseqbase);
+			if (b->tnonil)
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, res);
+		}
+	}
+	if (aggr == NULL) {
+		s = ATOMlen(b->ttype, res);
+		aggr = GDKmalloc(s);
+	} else {
+		s = ATOMsize(ATOMtype(b->ttype));
+	}
+	if (aggr != NULL)	/* else: malloc error */
+		memcpy(aggr, res, s);
+	return aggr;
 }
 
 
@@ -2627,7 +2724,7 @@ BATmax(BAT *b, void *aggr)
 
 BAT *
 BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	       int skip_nils, int abort_on_error)
+	       bool skip_nils, bool abort_on_error)
 {
 	return BATgroupquantile(b,g,e,s,tp,0.5,skip_nils,abort_on_error);
 }
@@ -2641,7 +2738,7 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
-		 int skip_nils, int abort_on_error)
+		 bool skip_nils, bool abort_on_error)
 {
 	bool freeb = false, freeg = false;
 	oid min, max;
@@ -3163,7 +3260,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		     int skip_nils, int abort_on_error)
+		     bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, false,
@@ -3172,7 +3269,7 @@ BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			 int skip_nils, int abort_on_error)
+			 bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, false,
@@ -3181,7 +3278,7 @@ BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		     int skip_nils, int abort_on_error)
+		     bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, true,
@@ -3190,7 +3287,7 @@ BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			 int skip_nils, int abort_on_error)
+			 bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, true,
@@ -3202,7 +3299,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 static gdk_return
 concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN end, BUN ngrp, const oid *restrict cand,
-			   const oid *candend, const oid *restrict gids, oid min, oid max, int skip_nils, const str separator,
+			   const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils, const str separator,
 			   const char *func, BUN *has_nils)
 {
 	oid gid;
@@ -3529,7 +3626,7 @@ finish:
 }
 
 gdk_return
-BATstr_group_concat(ValPtr res, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty, const str separator)
+BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, const str separator)
 {
 	oid min, max;
 	BUN ngrp, start, end;
@@ -3559,7 +3656,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, int skip_nils, int abort_on_erro
 }
 
 BAT *
-BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils, int abort_on_error, const str separator)
+BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool abort_on_error, const str separator)
 {
 	const oid *restrict gids;
 	BAT *bn = NULL;

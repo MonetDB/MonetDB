@@ -375,8 +375,8 @@ static str
 SQLinit(Client c)
 {
 	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
-	int readonly = GDKgetenv_isyes("gdk_readonly");
-	int single_user = GDKgetenv_isyes("gdk_single_user");
+	bool readonly = GDKgetenv_isyes("gdk_readonly");
+	bool single_user = GDKgetenv_isyes("gdk_single_user");
 	const char *gmt = "GMT";
 	tzone tz;
 	static int maybeupgrade = 1;

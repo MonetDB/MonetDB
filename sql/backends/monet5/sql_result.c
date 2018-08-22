@@ -2193,7 +2193,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, FALSE);
+			order = BBPquickdesc(t->order, false);
 			if (!order)
 				return -1;
 
@@ -2367,7 +2367,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, FALSE);
+			order = BBPquickdesc(t->order, false);
 			if (!order)
 				return -1;
 

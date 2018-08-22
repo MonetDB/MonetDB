@@ -273,36 +273,49 @@ BATimpsync(void *arg)
 	Imprints *imprints;
 	int fd;
 	lng t0 = 0;
+	const char *failed = " failed";
 
 	ALGODEBUG t0 = GDKusec();
 
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	if ((imprints = b->timprints) != NULL) {
-		if (HEAPsave(&imprints->imprints, BBP_physical(b->batCacheid),
-			     "timprints") == GDK_SUCCEED &&
-		    (fd = GDKfdlocate(imprints->imprints.farmid,
-				      BBP_physical(b->batCacheid), "rb+",
-				      "timprints")) >= 0) {
-			/* add version number */
-			((size_t *) imprints->imprints.base)[0] |= (size_t) IMPRINTS_VERSION << 8;
-			/* sync-on-disk checked bit */
-			((size_t *) imprints->imprints.base)[0] |= (size_t) 1 << 16;
-			if (write(fd, imprints->imprints.base, sizeof(size_t)) < 0)
-				perror("write imprints");
-			if (!(GDKdebug & NOSYNCMASK)) {
+		Heap *hp = &imprints->imprints;
+		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
+			if (hp->storage == STORE_MEM) {
+				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
+					/* add version number */
+					((size_t *) hp->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
+					/* sync-on-disk checked bit */
+					((size_t *) hp->base)[0] |= (size_t) 1 << 16;
+					if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
+						failed = ""; /* not failed */
+						if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
-				_commit(fd);
+							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-				fdatasync(fd);
+							fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-				fsync(fd);
+							fsync(fd);
 #endif
+						}
+					} else {
+						perror("write hash");
+					}
+					close(fd);
+				}
+			} else {
+				/* add version number */
+				((size_t *) hp->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
+				/* sync-on-disk checked bit */
+				((size_t *) hp->base)[0] |= (size_t) 1 << 16;
+				if (!(GDKdebug & NOSYNCMASK) &&
+				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0)
+					((size_t *) hp->base)[0] &= ~((size_t) IMPRINTS_VERSION << 8);
 			}
-			close(fd);
 			ALGODEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
 					  "imprints persisted "
-					  "(" LLFMT " usec)\n", ALGOBATPAR(b),
-					  GDKusec() - t0);
+					  "(" LLFMT " usec)%s\n", ALGOBATPAR(b),
+					  GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));

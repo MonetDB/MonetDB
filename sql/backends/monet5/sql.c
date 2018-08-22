@@ -1465,9 +1465,9 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 {
 	BAT *c, *u_id, *u_val, *i = NULL, *res;
 
-	if ((u_id = BBPquickdesc(*uid, 0)) == NULL)
+	if ((u_id = BBPquickdesc(*uid, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(*ins, 0)) == NULL)
+	if (ins && (i = BBPquickdesc(*ins, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -1476,7 +1476,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(*col, 0)) == NULL)
+	if ((c = BBPquickdesc(*col, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */
@@ -1537,9 +1537,9 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 	BAT *c, *cminu = NULL, *u_id, *u_val, *u, *i = NULL, *res;
 	gdk_return ret;
 
-	if ((u_id = BBPquickdesc(*uid, 0)) == NULL)
+	if ((u_id = BBPquickdesc(*uid, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(*ins, 0)) == NULL)
+	if (ins && (i = BBPquickdesc(*ins, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -1548,7 +1548,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(*col, 0)) == NULL)
+	if ((c = BBPquickdesc(*col, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */

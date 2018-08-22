@@ -187,7 +187,7 @@ struct stream {
 	short type;		/* ascii/binary */
 	char *name;
 	unsigned int timeout;	/* timeout in ms */
-	int (*timeout_func)(void); /* callback function: NULL/true -> return */
+	bool (*timeout_func)(void); /* callback function: NULL/true -> return */
 	union {
 		void *p;
 		int i;
@@ -450,7 +450,7 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 }
 
 void
-mnstr_settimeout(stream *s, unsigned int ms, int (*func)(void))
+mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void))
 {
 	if (s) {
 		s->timeout = ms;

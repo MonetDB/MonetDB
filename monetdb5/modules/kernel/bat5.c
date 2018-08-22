@@ -440,7 +440,7 @@ BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
 	if (BBPcheck(*bid, "bat.getCapacity")) {
-		BAT *b = BBPquickdesc(*bid, 0);
+		BAT *b = BBPquickdesc(*bid, false);
 
 		if (b != NULL)
 			*res = (lng) BATcapacity(b);
@@ -454,7 +454,7 @@ BKCgetColumnType(str *res, const bat *bid)
 	const char *ret = str_nil;
 
 	if (BBPcheck(*bid, "bat.getColumnType")) {
-		BAT *b = BBPquickdesc(*bid, 0);
+		BAT *b = BBPquickdesc(*bid, false);
 
 		if (b) {
 			ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);

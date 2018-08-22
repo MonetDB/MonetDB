@@ -104,7 +104,7 @@ GDKgetenv(const char *name)
 	return NULL;
 }
 
-int
+bool
 GDKgetenv_istext(const char *name, const char* text)
 {
 	char *val = GDKgetenv(name);
@@ -115,13 +115,13 @@ GDKgetenv_istext(const char *name, const char* text)
 	return 0;
 }
 
-int
+bool
 GDKgetenv_isyes(const char *name)
 {
 	return GDKgetenv_istext(name, "yes");
 }
 
-int
+bool
 GDKgetenv_istrue(const char *name)
 {
 	return GDKgetenv_istext(name, "true");
@@ -432,7 +432,7 @@ static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
 #endif
 #endif
 
-int
+bool
 GDKinit(opt *set, int setlen)
 {
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
@@ -649,10 +649,10 @@ int GDKnr_threads = 0;
 static int GDKnrofthreads;
 static ThreadRec GDKthreads[THREADS];
 
-int
+bool
 GDKexiting(void)
 {
-	int stopped;
+	bool stopped;
 #ifdef ATOMIC_LOCK
 	pthread_mutex_lock(&GDKstoppedLock.lock);
 #endif

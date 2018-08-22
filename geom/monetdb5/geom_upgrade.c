@@ -4495,9 +4495,7 @@ geom_sql_upgrade(int olddb)
 			"GRANT EXECUTE ON FUNCTION Contains(Geometry, double, double) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name in ("
+			"update sys.functions set system = true where name in ("
 			"'contains', 'geometrytype', 'getproj4', 'get_type', "
 			"'has_m', 'has_z', 'internaltransform', 'left_shift', "
 			"'mbr', 'mbr_above', 'mbr_below', 'mbr_contained', "
@@ -4545,7 +4543,7 @@ geom_sql_upgrade(int olddb)
 			"'st_within', 'st_wkbtosql', 'st_wkttosql', 'st_x', "
 			"'st_xmax', 'st_xmax', 'st_xmin', 'st_xmin', 'st_y', "
 			"'st_ymax', 'st_ymax', 'st_ymin', 'st_ymin', 'st_z') "
-			"and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+			"and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update _tables set system = true where name in ('geometry_columns', 'spatial_ref_sys') and schema_id = (select id from schemas where name = 'sys');\n");
 

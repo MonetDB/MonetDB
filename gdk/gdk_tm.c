@@ -58,7 +58,7 @@ prelude(int cnt, bat *subcommit)
 			BAT *b = BBP_cache(bid);
 
 			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
-				b = BBPquickdesc(bid, TRUE);
+				b = BBPquickdesc(bid, true);
 				if (b == NULL)
 					return GDK_FAIL;
 			}
@@ -106,7 +106,7 @@ epilogue(int cnt, bat *subcommit)
 			}
 		}
 		if ((BBP_status(bid) & BBPDELETED) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
-			BAT *b = BBPquickdesc(bid, TRUE);
+			BAT *b = BBPquickdesc(bid, true);
 
 			/* the unloaded ones are deleted without
 			 * loading deleted disk images */
@@ -257,7 +257,7 @@ TMabort(void)
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & BBPNEW) {
-			BAT *b = BBPquickdesc(i, FALSE);
+			BAT *b = BBPquickdesc(i, false);
 
 			if (b) {
 				if (b->batPersistence == PERSISTENT)
@@ -269,7 +269,7 @@ TMabort(void)
 	}
 	for (i = 1; i < getBBPsize(); i++) {
 		if (BBP_status(i) & (BBPPERSISTENT | BBPDELETED | BBPSWAPPED)) {
-			BAT *b = BBPquickdesc(i, TRUE);
+			BAT *b = BBPquickdesc(i, true);
 
 			if (b == NULL)
 				continue;

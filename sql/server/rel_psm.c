@@ -1496,7 +1496,10 @@ rel_psm(mvc *sql, symbol *s)
 	    dlist *qname = l->h->data.lval;
 	    symbol *sym = l->h->next->data.sym;
 
-	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, create_table_from_loader(sql, qname, sym)));
+	    ret = create_table_from_loader(sql, qname, sym);
+	    if (ret == NULL)
+		    return NULL;
+	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, ret));
 	    sql->type = Q_SCHEMA;
 	}	break;
 	case SQL_CREATE_TRIGGER:
