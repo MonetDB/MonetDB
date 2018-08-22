@@ -4478,31 +4478,26 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	char *aname = NULL;
 	char *sname = NULL;
 	sql_subfunc *wf = NULL;
-	sql_exp *e = NULL, *pe = NULL, *oe = NULL;
+	sql_exp *e1 = NULL, *e2 = NULL, *pe = NULL, *oe = NULL, *call = NULL;
 	sql_rel *r = *rel, *p;
 	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args, *types;
 	sql_schema *s = sql->session->schema;
-	int distinct = 0, project_added = 0, aggr = 0;
+	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK);
+	dnode *dn = window_function->data.lval->h;
 
-	if (window_function->token == SQL_RANK) {
-		aname = qname_fname(window_function->data.lval);
-		sname = qname_schema(window_function->data.lval);
-	} else { /* window aggr function */
-		dnode *n = window_function->data.lval->h;
-		aname = qname_fname(n->data.lval);
-		sname = qname_schema(n->data.lval);
-		aggr = 1;
-	}
+	aname = qname_fname(dn->data.lval);
+	sname = qname_schema(dn->data.lval);
+
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 
 	if (f == sql_where) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		e = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
+		e1 = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
 			      uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
 			GDKfree(uaname);
-		return e;
+		return e1;
 	}
 
 	/* window operations are only allowed in the projection */
@@ -4562,17 +4557,23 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	if (window_function->token == SQL_RANK) {
-		e = p->exps->h->data;
-		e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+		e1 = p->exps->h->data;
+		e1 = exp_column(sql->sa, exp_relname(e1), exp_name(e1), exp_subtype(e1), exp_card(e1), has_nil(e1), is_intern(e1));
+		if(dn->next && dn->next->data.sym) {
+			int is_last = 0;
+			exp_kind ek = {type_value, card_value, FALSE};
+
+			e2 = rel_value_exp2(sql, &p, dn->next->data.sym, f, ek, &is_last);
+		}
 	} else {
-		dnode *n = window_function->data.lval->h->next;
+		dnode *n = dn->next;
 
 		if (n) {
 			int is_last = 0;
 			exp_kind ek = {type_value, card_column, FALSE};
 
 			distinct = n->data.i_val;
-			e = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
+			e1 = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
 		}
 	}
 	(void)distinct;
@@ -4627,16 +4628,20 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (!pe || !oe)
 		return NULL;
 	types = sa_list(sql->sa);
-	if(e)
-		append(types, exp_subtype(e));
+	if(e1)
+		append(types, exp_subtype(e1));
+	if(e2)
+		append(types, exp_subtype(e2));
 	append(types, exp_subtype(pe));
 	append(types, exp_subtype(oe));
 	wf = bind_func_(sql, s, aname, types, F_ANALYTIC);
 	if (!wf)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", aname );
 	args = sa_list(sql->sa);
-	if(e)
-		append(args, e);
+	if(e1)
+		append(args, e1);
+	if(e2)
+		append(args, e2);
 	append(args, pe);
 	append(args, oe);
 	if (fbe) {
@@ -4650,16 +4655,16 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		append(args, exp_atom_int(sql->sa, -1)); /*end */
 		append(args, exp_atom_int(sql->sa, 0)); /*exclude */
 	}
-	e = exp_op(sql->sa, args, wf);
+	call = exp_op(sql->sa, args, wf);
 
 	r->l = p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
-	append(p->exps, e);
-	e = rel_lastexp(sql, p);
+	append(p->exps, call);
+	call = rel_lastexp(sql, p);
 	if (project_added) {
-		append(r->exps, e);
-		e = rel_lastexp(sql, r);
+		append(r->exps, call);
+		call = rel_lastexp(sql, r);
 	}
-	return e;
+	return call;
 }
 
 sql_exp *

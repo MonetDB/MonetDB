@@ -8,6 +8,14 @@
 
 module sql;
 
+pattern sql.ntile(b:bat[:any_1], n:hge, p:any_2, o:any_3) :hge
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern batsql.ntile(b:bat[:any_1], n:hge, p:any_2, o:any_3) :bat[:hge]
+address SQLntile
+comment "return the groups divided as equally as possible";
+
 pattern sql.sum(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :hge
 address SQLscalarsum
 comment "return the sum of groups";

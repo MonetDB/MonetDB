@@ -17,6 +17,7 @@
 #include "gdk.h"
 
 gdk_export gdk_return GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe);
+gdk_export gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, ptr ntile);
 gdk_export gdk_return GDKanalyticalmin(BAT *r, BAT *b, BAT *p, BAT *o, int tpe);
 gdk_export gdk_return GDKanalyticalmax(BAT *r, BAT *b, BAT *p, BAT *o, int tpe);
 gdk_export gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe);

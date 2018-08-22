@@ -96,6 +96,38 @@ pattern batsql.count(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, ex
 address SQLcount_no_nil
 comment "return count of groups";
 
+pattern sql.ntile(b:bat[:any_1], n:bte, p:any_2, o:any_3) :bte
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern batsql.ntile(b:bat[:any_1], n:bte, p:any_2, o:any_3) :bat[:bte]
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern sql.ntile(b:bat[:any_1], n:sht, p:any_2, o:any_3) :sht
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern batsql.ntile(b:bat[:any_1], n:sht, p:any_2, o:any_3) :bat[:sht]
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern sql.ntile(b:bat[:any_1], n:int, p:any_2, o:any_3) :int
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern batsql.ntile(b:bat[:any_1], n:int, p:any_2, o:any_3) :bat[:int]
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern sql.ntile(b:bat[:any_1], n:lng, p:any_2, o:any_3) :lng
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern batsql.ntile(b:bat[:any_1], n:lng, p:any_2, o:any_3) :bat[:lng]
+address SQLntile
+comment "return the groups divided as equally as possible";
+
 pattern sql.sum(b:bte, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
 address SQLscalarsum
 comment "return the sum of groups";

@@ -530,7 +530,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
+	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
 	USING 
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -4155,7 +4155,16 @@ window_function:
   ;
 
 window_function_type:
-	qrank '(' ')' 	{ $$ = _symbol_create_list( SQL_RANK, $1 ); }
+   qrank '(' ')'
+	{ dlist *l = L();
+	  append_list(l, $1);
+	  append_symbol(l, NULL);
+	  $$ = _symbol_create_list( SQL_RANK, l ); }
+ | qrank '(' case_scalar_exp ')'
+	{ dlist *l = L();
+	  append_list(l, $1);
+	  append_symbol(l, $3);
+	  $$ = _symbol_create_list( SQL_RANK, l ); }
   |	aggr_ref
   ;
 

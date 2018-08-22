@@ -105,6 +105,19 @@ comment "return count of groups";
 EOF
 
 for tp1 in 1:bte 2:sht 4:int 8:lng; do
+	cat <<EOF
+pattern sql.ntile(b:bat[:any_1], n:${tp1#*:}, p:any_2, o:any_3) :${tp1#*:}
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern batsql.ntile(b:bat[:any_1], n:${tp1#*:}, p:any_2, o:any_3) :bat[:${tp1#*:}]
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+EOF
+done
+
+for tp1 in 1:bte 2:sht 4:int 8:lng; do
     for tp2 in 8:lng; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF

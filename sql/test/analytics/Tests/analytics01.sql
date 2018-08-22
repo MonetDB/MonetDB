@@ -26,7 +26,30 @@ select cume_dist() over (partition by bb order by bb desc) from analytics;
 select cume_dist() over (order by bb) from analytics;
 select cume_dist() over (order by bb desc) from analytics;
 
+select ntile(1) over (partition by aa) from analytics;
+select ntile(1) over (partition by aa order by aa asc) from analytics;
+select ntile(1) over (partition by aa order by aa desc) from analytics;
+select ntile(1) over (order by aa) from analytics;
+select ntile(1) over (order by aa desc) from analytics;
+
+select ntile(3) over (partition by bb) from analytics;
+select ntile(3) over (partition by bb order by bb asc) from analytics;
+select ntile(3) over (partition by bb order by bb desc) from analytics;
+select ntile(3) over (order by bb) from analytics;
+select ntile(3) over (order by bb desc) from analytics;
+
+select ntile(10) over (partition by aa) from analytics;
+select ntile(10) over (partition by aa order by aa asc) from analytics;
+select ntile(10) over (partition by aa order by aa desc) from analytics;
+select ntile(10) over (order by aa) from analytics;
+select ntile(10) over (order by aa desc) from analytics;
+
 select percent_rank() over () from analytics;
 select cume_dist() over () from analytics;
+select ntile(1) over () from analytics;
+select ntile(2) over () from analytics;
+select ntile(5) over () from analytics;
+select ntile(11) over () from analytics;
+select ntile(100) over () from analytics;
 
 rollback;

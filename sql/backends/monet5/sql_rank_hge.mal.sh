@@ -13,6 +13,17 @@ module sql;
 
 EOF
 
+	cat <<EOF
+pattern sql.ntile(b:bat[:any_1], n:hge, p:any_2, o:any_3) :hge
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern batsql.ntile(b:bat[:any_1], n:hge, p:any_2, o:any_3) :bat[:hge]
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+EOF
+
 for tp1 in 1:bte 2:sht 4:int 8:lng 16:hge; do
     for tp2 in 16:hge; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
