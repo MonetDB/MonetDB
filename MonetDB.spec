@@ -875,8 +875,8 @@ developer, but if you do want to test, this is the package you need.
 %package selinux
 Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
-%if "%{_selinux_policy_version}" != ""
-Requires:       selinux-policy >= %{_selinux_policy_version}
+%if "%{?_selinux_policy_version}" != ""
+Requires:       selinux-policy >= %{?_selinux_policy_version}
 %endif
 Requires:       %{name}-SQL-server5 = %{version}-%{release}
 Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
