@@ -122,19 +122,19 @@ for tp1 in 1:bte 2:sht 4:int 8:lng; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
 pattern sql.sum(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${tp2#*:}
-address SQLscalarsum
+address SQLsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
-address SQLvectorsum_${tp2#*:}
+address SQLsum
 comment "return the sum of groups";
 
 pattern sql.prod(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${tp2#*:}
-address SQLscalarprod
+address SQLprod
 comment "return the product of groups";
 
 pattern batsql.prod(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
-address SQLvectorprod_${tp2#*:}
+address SQLprod
 comment "return the product of groups";
 
 EOF
@@ -147,19 +147,19 @@ for tp1 in 4:flt 8:dbl; do
 	if [ ${tp1%:*} -le ${tp2%:*} ]; then
 	    cat <<EOF
 pattern sql.sum(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${tp2#*:}
-address SQLscalarsum
+address SQLsum
 comment "return the sum of groups";
 
 pattern batsql.sum(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
-address SQLvectorsum_${tp2#*:}
+address SQLsum
 comment "return the sum of groups";
 
 pattern sql.prod(b:${tp1#*:}, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :${tp2#*:}
-address SQLscalarprod
+address SQLprod
 comment "return the product of groups";
 
 pattern batsql.prod(b:bat[:${tp1#*:}], p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:${tp2#*:}]
-address SQLvectorprod_${tp2#*:}
+address SQLprod
 comment "return the product of groups";
 
 EOF

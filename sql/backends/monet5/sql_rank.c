@@ -737,10 +737,9 @@ SQLcount_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int), int tpe, const str op, const str err)
+					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int), const str op, const str err)
 {
-	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, tpe, op, err);
+	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
 	int tp1 = getArgType(mb, pci, 1), tp2;
 	int unit = *getArgReference_int(stk, pci, 4);
 	int start = *getArgReference_int(stk, pci, 5);
@@ -748,19 +747,73 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int excl = *getArgReference_int(stk, pci, 7);
 	gdk_return gdk_res;
 
+	(void) cntxt;
+	if (pci->argc != 8 ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
+		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)) {
+		throw(SQL, op, "%s", err);
+	}
+	if (isaBatType(tp1))
+		tp1 = getBatType(tp1);
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+		if (!b)
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	switch (tp1) {
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+#ifdef HAVE_HGE
+			tp2 = TYPE_hge;
+#else
+			tp2 = TYPE_lng;
+#endif
+			break;
+		case TYPE_flt:
+			tp2 = TYPE_flt;
+			break;
+		case TYPE_dbl:
+			tp2 = TYPE_dbl;
+			break;
+		default: {
+			if(b) BBPunfix(b->batCacheid);
+			throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+		}
+	}
+	if (b) {
+		BUN cnt = BATcount(b);
+		voidresultBAT(r, tp2, cnt, b, op);
+	}
+	if (isaBatType(getArgType(mb, pci, 2))) {
+		p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+		if (!p) {
+			if (b) BBPunfix(b->batCacheid);
+			if (r) BBPunfix(r->batCacheid);
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+	}
+	if (isaBatType(getArgType(mb, pci, 3))) {
+		o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (!o) {
+			if (b) BBPunfix(b->batCacheid);
+			if (r) BBPunfix(r->batCacheid);
+			if (p) BBPunfix(p->batCacheid);
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+	}
+
 	if (unit != 0 || excl != 0)
 		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
 	(void) start;
 	(void) end;
 
-	if (msg)
-		return msg;
-	if (isaBatType(tp1))
-		tp1 = getBatType(tp1);
-
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		tp2 = getBatType(r->T.type);
 
 		gdk_res = func(r, b, p, o, tp1, tp2);
 		BBPunfix(b->batCacheid);
@@ -773,58 +826,20 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		ptr *in = getArgReference(stk, pci, 1);
 		*res = *in;
 	}
-	return msg;
+	return MAL_SUCCEED;
 }
 
 str
-SQLscalarsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalsum, ret->vtype,
-								 "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)");
+	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalsum, "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)");
 }
-
-#define SQLVECTORSUM(TPE)                                                             \
-str                                                                                   \
-SQLvectorsum_##TPE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)           \
-{                                                                                     \
-	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalsum, TYPE_##TPE,   \
-								 "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)"); \
-}
-
-SQLVECTORSUM(lng)
-#ifdef HAVE_HGE
-SQLVECTORSUM(hge)
-#endif
-SQLVECTORSUM(flt)
-SQLVECTORSUM(dbl)
-
-#undef SQLVECTORSUM
 
 str
-SQLscalarprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalprod, ret->vtype,
-								 "sql.prod", SQLSTATE(42000) "prod(:any_1,:bit,:bit)");
+	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalprod, "sql.prod", SQLSTATE(42000) "prod(:any_1,:bit,:bit)");
 }
-
-#define SQLVECTORPROD(TPE)                                                              \
-str                                                                                     \
-SQLvectorprod_##TPE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)            \
-{                                                                                       \
-	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalprod, TYPE_##TPE,    \
-								 "sql.prod", SQLSTATE(42000) "prod(:any_1,:bit,:bit)"); \
-}
-
-SQLVECTORPROD(lng)
-SQLVECTORPROD(flt)
-SQLVECTORPROD(dbl)
-#ifdef HAVE_HGE
-SQLVECTORPROD(hge)
-#endif
-
-#undef SQLVECTORPROD
 
 str
 SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
