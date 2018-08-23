@@ -205,6 +205,231 @@ finish:
 #undef ANALYTICAL_NTILE_IMP
 #undef NTILE_CALC
 
+#define ANALYTICAL_FIRST_IMP(TPE)                 \
+	do {                                          \
+		TPE *rp, *rb, *restrict bp, *end, curval; \
+		rb = rp = (TPE*)Tloc(r, 0);               \
+		bp = (TPE*)Tloc(b, 0);                    \
+		curval = *bp;                             \
+		end = rp + cnt;                           \
+		if (p) {                                  \
+			np = (bit*)Tloc(p, 0);                \
+			for(; rp<end; np++, rp++, bp++) {     \
+				if (*np) {                        \
+					if(is_##TPE##_nil(curval))    \
+						has_nils = true;          \
+					for (;rb < rp; rb++)          \
+						*rb = curval;             \
+					curval = *bp;                 \
+				}                                 \
+			}                                     \
+			if(is_##TPE##_nil(curval))            \
+				has_nils = true;                  \
+			for (;rb < rp; rb++)                  \
+				*rb = curval;                     \
+		} else {                                  \
+			if(is_##TPE##_nil(curval))            \
+				has_nils = true;                  \
+			for(; rp<end; rp++)                   \
+				*rp = curval;                     \
+		}                                         \
+	} while(0);
+
+gdk_return
+GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
+{
+	int (*atomcmp)(const void *, const void *);
+	const void *nil;
+	bool has_nils = false;
+	BUN i, j, cnt = BATcount(b);
+	bit *restrict np;
+	gdk_return gdk_res = GDK_SUCCEED;
+
+	(void)o;
+	switch(ATOMstorage(tpe)) {
+		case TYPE_bit:
+			ANALYTICAL_FIRST_IMP(bit)
+			break;
+		case TYPE_bte:
+			ANALYTICAL_FIRST_IMP(bte)
+			break;
+		case TYPE_sht:
+			ANALYTICAL_FIRST_IMP(sht)
+			break;
+		case TYPE_int:
+			ANALYTICAL_FIRST_IMP(int)
+			break;
+		case TYPE_lng:
+			ANALYTICAL_FIRST_IMP(lng)
+			break;
+#ifdef HAVE_HUGE
+		case TYPE_hge:
+			ANALYTICAL_FIRST_IMP(hge)
+			break;
+#endif
+		case TYPE_flt:
+			ANALYTICAL_FIRST_IMP(flt)
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_FIRST_IMP(dbl)
+			break;
+		default: {
+			BATiter bpi = bat_iterator(b);
+			void *restrict curval = BUNtail(bpi, 0);
+			nil = ATOMnilptr(tpe);
+			atomcmp = ATOMcompare(tpe);
+			if (p) {
+				np = (bit*)Tloc(p, 0);
+				for(i=0,j=0; i<cnt; i++, np++) {
+					if (*np) {
+						if((*atomcmp)(curval, nil) == 0)
+							has_nils = true;
+						for (;j < i; j++) {
+							if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+								goto finish;
+						}
+						curval = BUNtail(bpi, i);
+					}
+				}
+				if((*atomcmp)(curval, nil) == 0)
+					has_nils = true;
+				for (;j < i; j++) {
+					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+					   goto finish;
+				}
+			} else { /* single value, ie no ordering */
+				if((*atomcmp)(curval, nil) == 0)
+					has_nils = true;
+				for(i=0; i<cnt; i++) {
+					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+						goto finish;
+				}
+			}
+		}
+	}
+finish:
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return gdk_res;
+}
+
+#undef ANALYTICAL_FIRST_IMP
+
+#define ANALYTICAL_LAST_IMP(TPE)                  \
+	do {                                          \
+		TPE *rp, *rb, *restrict bp, *end, curval; \
+		rb = rp = (TPE*)Tloc(r, 0);               \
+		bp = (TPE*)Tloc(b, 0);                    \
+		end = rp + cnt;                           \
+		if (p) {                                  \
+			np = (bit*)Tloc(p, 0);                \
+			for(; rp<end; np++, rp++, bp++) {     \
+				if (*np) {                        \
+					curval = *(bp - 1);           \
+					if(is_##TPE##_nil(curval))    \
+						has_nils = true;          \
+					for (;rb < rp; rb++)          \
+						*rb = curval;             \
+				}                                 \
+			}                                     \
+			curval = *(bp - 1);                   \
+			if(is_##TPE##_nil(curval))            \
+				has_nils = true;                  \
+			for (;rb < rp; rb++)                  \
+				*rb = curval;                     \
+		} else {                                  \
+			curval = *(bp + cnt - 1);             \
+			if(is_##TPE##_nil(curval))            \
+				has_nils = true;                  \
+			for(; rp<end; rp++)                   \
+				*rp = curval;                     \
+		}                                         \
+	} while(0);
+
+gdk_return
+GDKanalyticallast(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
+{
+	int (*atomcmp)(const void *, const void *);
+	const void *nil;
+	bool has_nils = false;
+	BUN i, j, cnt = BATcount(b);
+	bit *restrict np;
+	gdk_return gdk_res = GDK_SUCCEED;
+
+	(void)o;
+	switch(ATOMstorage(tpe)) {
+		case TYPE_bit:
+			ANALYTICAL_LAST_IMP(bit)
+			break;
+		case TYPE_bte:
+			ANALYTICAL_LAST_IMP(bte)
+			break;
+		case TYPE_sht:
+			ANALYTICAL_LAST_IMP(sht)
+			break;
+		case TYPE_int:
+			ANALYTICAL_LAST_IMP(int)
+			break;
+		case TYPE_lng:
+			ANALYTICAL_LAST_IMP(lng)
+			break;
+#ifdef HAVE_HUGE
+		case TYPE_hge:
+			ANALYTICAL_LAST_IMP(hge)
+			break;
+#endif
+		case TYPE_flt:
+			ANALYTICAL_LAST_IMP(flt)
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_LAST_IMP(dbl)
+			break;
+		default: {
+			BATiter bpi = bat_iterator(b);
+			void *restrict curval;
+			nil = ATOMnilptr(tpe);
+			atomcmp = ATOMcompare(tpe);
+			if (p) {
+				np = (bit*)Tloc(p, 0);
+				for(i=0,j=0; i<cnt; i++, np++) {
+					if (*np) {
+						curval = BUNtail(bpi, i - 1);
+						if((*atomcmp)(curval, nil) == 0)
+							has_nils = true;
+						for (;j < i; j++) {
+							if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+								goto finish;
+						}
+					}
+				}
+				curval = BUNtail(bpi, cnt - 1);
+				if((*atomcmp)(curval, nil) == 0)
+					has_nils = true;
+				for (;j < i; j++) {
+					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+						goto finish;
+				}
+			} else { /* single value, ie no ordering */
+				curval = BUNtail(bpi, cnt - 1);
+				if((*atomcmp)(curval, nil) == 0)
+					has_nils = true;
+				for(i=0; i<cnt; i++) {
+					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+						goto finish;
+				}
+			}
+		}
+	}
+finish:
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return gdk_res;
+}
+
+#undef ANALYTICAL_LAST_IMP
+
 #define ANALYTICAL_LIMIT_IMP(TPE, OP)                        \
 	do {                                                     \
 		TPE *rp, *rb, *restrict bp, *end, curval;            \

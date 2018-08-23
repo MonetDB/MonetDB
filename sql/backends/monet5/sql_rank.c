@@ -620,6 +620,18 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 }
 
 str
+SQLfirst_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.first_value", SQLSTATE(42000) "first_value(:any_1,:bit,:bit)", GDKanalyticalfirst);
+}
+
+str
+SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:bit,:bit)", GDKanalyticallast);
+}
+
+str
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.min", SQLSTATE(42000) "min(:any_1,:bit,:bit)", GDKanalyticalmin);

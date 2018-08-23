@@ -115,6 +115,9 @@ scanner_init_keywords(void)
 	failed += keywords_insert("NTILE", RANK);
 	failed += keywords_insert("LAG", RANK);
 	failed += keywords_insert("LEAD", RANK);
+	failed += keywords_insert("FIRST_VALUE", AGGR);
+	failed += keywords_insert("LAST_VALUE", AGGR);
+	//failed += keywords_insert("NTH_VALUE", AGGR);
 
 	failed += keywords_insert("BEST", BEST);
 	failed += keywords_insert("EFFORT", EFFORT);
