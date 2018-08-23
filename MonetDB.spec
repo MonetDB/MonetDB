@@ -143,12 +143,16 @@ BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
 %endif
+BuildRequires: gcc
 BuildRequires: bison
+%if %{?rhel:1}%{!?rhel:0}
+BuildRequires: bzip2-devel
+%else
 BuildRequires: pkgconfig(bzip2)
+%endif
 %if %{?with_fits:1}%{!?with_fits:0}
 BuildRequires: pkgconfig(cfitsio)
 %endif
-BuildRequires: gcc
 %if %{?with_geos:1}%{!?with_geos:0}
 BuildRequires: geos-devel >= 3.4.0
 %endif

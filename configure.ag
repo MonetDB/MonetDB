@@ -1387,36 +1387,18 @@ AM_CONDITIONAL([HAVE_LIBBZ2], [test x"$have_libbz2" != xno])
 dnl  check for snappy (de)compression library
 org_have_snappy=auto
 have_snappy=$org_have_snappy
-snappy_CFLAGS=""
-snappy_LIBS="-lsnappy"
 AC_ARG_WITH([snappy],
-	[AS_HELP_STRING([--with-snappy=DIR],
-		[snappy library is installed in DIR])],
+	[AS_HELP_STRING([--with-snappy],
+		[include snappy support (default=auto)])],
 	[have_snappy="$withval"])
 
-AS_CASE(["$have_snappy"],
-	[yes|no|auto], [],
-	[
-		snappy_CFLAGS="-I$withval/include"
-		snappy_LIBS="-L$withval/lib -lsnappy"])
-
 AS_VAR_IF([have_snappy], [no], [], [
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $snappy_CFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	LDFLAGS="$LDFLAGS $snappy_LDFLAGS"
-	AC_CHECK_HEADER([snappy-c.h],
-		[AC_CHECK_LIB([snappy], [snappy_max_compressed_length],
-			[AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])],
-			[AS_VAR_IF([have_snappy], [auto], [], [AC_MSG_ERROR([-lsnappy library not found])])
-			 have_snappy=no; why_not_snappy="(snappy library not found)"])],
-		[AS_VAR_IF([have_snappy], [auto], [], [AC_MSG_ERROR([snappy-c.h header not found])])
-			 have_snappy=no; why_not_snappy="(snappy-c.h header not found)"])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"])
-AS_VAR_IF([have_snappy], [no], [snappy_CFLAGS=""; snappy_LIBS=""])
-AC_SUBST([snappy_CFLAGS])
-AC_SUBST([snappy_LIBS])
+	PKG_CHECK_MODULES([snappy], [snappy],
+		[have_snappy=yes],
+		[have_snappy=no; why_not_snappy="(snappy library not found)"])
+	AS_VAR_IF([have_snappy], [yes], [
+		AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])
+		AC_SUBST([PKG_SNAPPY], [snappy])])])
 AM_CONDITIONAL([HAVE_LIBSNAPPY], [test x$have_snappy != xno])
 
 
@@ -1424,8 +1406,8 @@ dnl  check for lz4 (de)compression library
 org_have_lz4=auto
 have_lz4=$org_have_lz4
 AC_ARG_WITH([lz4],
-	[AS_HELP_STRING([--with-lz4=DIR],
-		[lz4 library is installed in DIR])],
+	[AS_HELP_STRING([--with-lz4],
+		[include lz4 library support (default=auto)])],
 	[have_lz4="$withval"])
 
 AS_VAR_IF([have_lz4], [no], [], [
@@ -1791,7 +1773,8 @@ AC_ARG_WITH([libxml2],
 AS_VAR_IF([have_libxml2], [no], [], [
 	PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2=yes], [have_libxml2=no; why_not_libxml2="(libxml2 not found)"])
 	AS_VAR_IF([have_libxml2], [yes], [
-		AC_DEFINE([HAVE_LIBXML], 1, [Define if you have the xml library])])])
+		AC_DEFINE([HAVE_LIBXML], 1, [Define if you have the xml library])
+		AC_SUBST([PKG_LIBXML2], [libxml-2.0])])])
 AM_CONDITIONAL([HAVE_LIBXML], [test x"$have_libxml2" != xno])
 
 
@@ -1809,13 +1792,11 @@ AS_VAR_IF([have_curl], [no], [], [
 AM_CONDITIONAL([HAVE_CURL], [test x"$have_curl" != xno])
 
 
-PKG_CHECK_MODULES([zlib], [zlib], [have_zlib=yes], [have_zlib=no; why_not_zlib="(zlib not found)"])
-AS_CASE([$have_zlib],
-	[no],
-		[# Solaris doesn't provide zlib.pc, but zlib may well be present
-		 AC_CHECK_LIB([z], [gzopen], [have_zlib=yes zlib_LIBS="-lz" zlib_CFLAGS= ])],
-	[yes],
-		[AC_SUBST([PKG_ZLIB], [zlib])])
+PKG_CHECK_MODULES([zlib], [zlib],
+	[AC_SUBST([PKG_ZLIB], [zlib])
+	 have_zlib=yes],
+	[# Solaris doesn't provide zlib.pc, but zlib may well be present
+	 AC_CHECK_LIB([z], [gzopen], [have_zlib=yes zlib_LIBS="-lz" zlib_CFLAGS=])])
 AS_VAR_IF([have_zlib], [yes], [
 	AC_DEFINE([HAVE_LIBZ], 1, [Define if you have the z library])])
 AM_CONDITIONAL([HAVE_LIBZ], [test x"$have_zlib" != xno])
@@ -2098,38 +2079,19 @@ AS_VAR_IF([enable_odbc], [no],
 AM_CONDITIONAL([HAVE_ODBC], [test x$have_unixodbc != xno])
 
 # proj only used in geom module
-org_have_proj="auto"
+org_have_proj=auto
 have_proj=$org_have_proj
-PROJ_INCS=''
-PROJ_LIBS=''
 AC_ARG_WITH([proj],
-	[AS_HELP_STRING([--with-proj=DIR],
-		[proj library is installed in DIR])],
+	[AS_HELP_STRING([--with-proj],
+		[include proj support (default=auto)])],
 	[have_proj="$withval"])
 AS_VAR_IF([have_proj], [no], [], [
-	AS_CASE([$have_proj],
-	[auto|yes], [],
-	[
-		PROJ_INCS="-I$have_proj/include"
-		PROJ_LIBS="-L$have_proj/lib -lproj"])
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	CPPFLAGS="$CPPFLAGS $PROJ_INCS"
-	LDFLAGS="$LDFLAGS $PROJ_LIBS"
-	AC_CHECK_HEADER([proj_api.h],
-		AC_CHECK_LIB([proj], [pj_init_plus],
-			[AC_DEFINE([HAVE_PROJ], 1, [Define if the proj library exists])],
-			[AS_VAR_IF([have_proj], [auto], [], [AC_MSG_ERROR([-lproj library not found])])
-			have_proj=no; why_not_proj="(proj library not found)" ], ),
-		[AS_VAR_IF([have_proj], [auto], [], [AC_MSG_ERROR([proj_api.h header not found])])
-		have_proj=no; why_not_proj="(proj_api.h header not found)" ])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"
-	AS_IF([test "x$have_proj" = "xyes" -o "x$have_proj" = "xauto"], [
-	    PROJ_INCS=
-	    PROJ_LIBS="-lproj"])])
-AC_SUBST([PROJ_INCS])
-AC_SUBST([PROJ_LIBS])
+	PKG_CHECK_MODULES([proj], [proj],
+		[AC_DEFINE([HAVE_PROJ], 1, [Define if the proj library exists])
+		 have_proj=yes],
+		[AS_VAR_IF([have_proj], [auto], [],
+			[AC_MSG_ERROR([-lproj library not found])])
+			 have_proj=no; why_not_proj="(proj library not found)"])])
 AM_CONDITIONAL([HAVE_PROJ], [test x"$have_proj" != xno])
 
 
@@ -2259,9 +2221,9 @@ AC_SUBST([GEOS_LIBS])
 org_have_gdal="auto"
 have_gdal=$org_have_gdal
 AC_ARG_WITH([gdal],
-	[AS_HELP_STRING([--with-gdal=DIR],
-		[gdal library is installed in DIR])],
-		[have_gdal="$withval"], [have_gdal="auto"])
+	[AS_HELP_STRING([--with-gdal],
+		[include gdal support (default=auto)])],
+	[have_gdal=$withval])
 
 AS_VAR_IF([enable_geom], [no],
 	[AS_CASE([$have_gdal],
@@ -2276,60 +2238,9 @@ AS_VAR_IF([enable_geom], [no],
 			 AS_VAR_IF([why_not_shp], [],
 				[why_not_shp="(ESRI Shapefile vault requires the geom module)"])],
 		[AC_MSG_ERROR([geom module required for shp])])],
-	[# first autoconf for distributions that added a .pc file themselves (Fedora)
-	 AS_VAR_IF([have_gdal], [no], [], [
-		AS_CASE([$have_gdal],
-		[auto|yes], [
-			PKG_CHECK_MODULES([GDAL], [gdal], [have_gdal="pkgconf"], [have_gdal="$have_gdal"])],
-		[
-			GDAL_CFLAGS="-I$have_gdal/include"
-			GDAL_LIBS="-L$have_gdal/lib"])])
-	 # try to detect it manually like upstream provides it
-	 AS_VAR_IF([have_gdal], [no],
-		[],
-		[AS_VAR_IF([have_gdal], [pkgconf],
-			[have_gdal=yes],
-			[save_CPPFLAGS="$CPPFLAGS"
-			 save_LDFLAGS="$LDFLAGS"
-			 save_LIBS="$LIBS"
-			 CPPFLAGS="$CPPFLAGS $GDAL_CFLAGS"
-			 LDFLAGS="$LDFLAGS $GDAL_LIBS"
-			 LIBS=""
-			 found_gdal_h=yes
-			 AC_CHECK_HEADER([gdal.h], [],
-				[AC_CHECK_HEADER([gdal/gdal.h],
-					[AS_VAR_IF([GDAL_CFLAGS], [],
-						[GDAL_CFLAGS="-I/usr/include/gdal"],
-						[GDAL_CFLAGS="$GDAL_CFLAGS/gdal"])
-					 CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
-					[found_gdal_h=no])])
-			 AS_VAR_IF([found_gdal_h], [yes],
-				[AC_CHECK_LIB([gdal], [GDALAllRegister],
-					[AC_DEFINE([HAVE_GDAL], 1, [Define if you have the gdal library])
-						have_gdal=yes
-						LIBS="$LIBS -lgdal"],
-					[AS_VAR_IF([have_gdal], [auto],
-						[],
-						[AC_MSG_ERROR([-lgdal library not found])])
-					 have_gdal=no
-					 why_not_gdal="(gdal library not found)"],
-					[$MATH_LIBS])],
-				[AS_VAR_IF([have_gdal], [auto],
-					[],
-					[AC_MSG_ERROR([gdal.h header not found])])
-				 have_gdal=no
-				 why_not_gdal="(gdal.h header not found)"])
-			 GDAL_LIBS="$GDAL_LIBS $LIBS"
-			 LDFLAGS="$save_LDFLAGS"
-			 CPPFLAGS="$save_CPPFLAGS"
-			 LIBS="$save_LIBS"
-			 AS_VAR_IF([have_gdal], [yes],
-				[],
-				[GDAL_CFLAGS=""
-				 GDAL_LIBS=""])])])
-
-	 AC_SUBST([gdal_CFLAGS], [$GDAL_CFLAGS])
-	 AC_SUBST([gdal_LIBS], [$GDAL_LIBS])
+	[AS_VAR_IF([have_gdal], [no], [], [
+	 	PKG_CHECK_MODULES([GDAL], [gdal], [have_gdal=yes],
+			[have_gdal=no; why_not_gdal="(gdal library not found)"])])
 
 	 # if shp is enabled and gdal was not found abort
 	 AS_VAR_IF([have_gdal], [no], [
