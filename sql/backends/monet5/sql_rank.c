@@ -698,9 +698,14 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			return createException(SQL, "sql.count", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
-		ptr *res = getArgReference(stk, pci, 0);
+		lng *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
-		*res = *in;
+		int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+		const void *nil = ATOMnilptr(tpe);
+		if(atomcmp(in, nil) == 0 && *ignore_nils)
+			*res = 0;
+		else
+			*res = 1;
 	}
 	return MAL_SUCCEED;
 }
@@ -712,6 +717,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
 	int tp1, tp2, unit, start, end, excl;
 	gdk_return gdk_res;
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
 	if (pci->argc != 8 ||
@@ -739,8 +745,6 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		case TYPE_lng:
 #ifdef HAVE_HGE
 		case TYPE_hge:
-#endif
-#ifdef HAVE_HGE
 			tp2 = TYPE_hge;
 #else
 			tp2 = TYPE_lng;
@@ -793,12 +797,60 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (o) BBPunfix(o->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
+		else
+			return createException(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
-		*res = *in;
+		int scale = 0;
+
+		switch (tp1) {
+#ifdef HAVE_HGE
+			case TYPE_bte:
+				msg = bte_dec2_hge((hge*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_hge((hge*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_hge((hge*)res, &scale, (int*)in);
+				break;
+			case TYPE_lng:
+				msg = lng_dec2_hge((hge*)res, &scale, (lng*)in);
+				break;
+			case TYPE_hge:
+				*res = *in;
+				break;
+#else
+			case TYPE_bte:
+				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_lng((lng*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
+				break;
+			case TYPE_lng:
+				*res = *in;
+				break;
+#endif
+			case TYPE_flt: {
+				flt fp = *((flt*)in);
+				dbl *db = (dbl*)res;
+				if(is_flt_nil(fp))
+					*db = dbl_nil;
+				else
+					*db = (dbl) fp;
+			} break;
+			case TYPE_dbl:
+				*res = *in;
+				break;
+			default:
+				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+		}
 	}
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -850,7 +902,40 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
-		*res = *in;
+		int scale = 0;
+
+		switch (tpe) {
+			case TYPE_bte:
+				msg = bte_dec2_dbl((dbl*)res, &scale, (bte*)in);
+				break;
+			case TYPE_sht:
+				msg = sht_dec2_dbl((dbl*)res, &scale, (sht*)in);
+				break;
+			case TYPE_int:
+				msg = int_dec2_dbl((dbl*)res, &scale, (int*)in);
+				break;
+			case TYPE_lng:
+				msg = lng_dec2_dbl((dbl*)res, &scale, (lng*)in);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				msg = hge_dec2_dbl((dbl*)res, &scale, (hge*)in);
+				break;
+#endif
+			case TYPE_flt: {
+				flt fp = *((flt*)in);
+				dbl *db = (dbl*)res;
+				if(is_flt_nil(fp))
+					*db = dbl_nil;
+				else
+					*db = (dbl) fp;
+			} break;
+			case TYPE_dbl:
+				*res = *in;
+				break;
+			default:
+				throw(SQL, "sql.avg", SQLSTATE(42000) "average not available for %s", ATOMname(tpe));
+		}
 	}
 	return msg;
 }
