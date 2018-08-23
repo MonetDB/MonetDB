@@ -22,5 +22,5 @@ bin_monetdb = {
 		   ../../../common/stream/libstream \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \
-		   $(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV)
+		   $(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV)
 }

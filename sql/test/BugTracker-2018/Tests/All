@@ -79,3 +79,5 @@ create_table_if_not_exists_returns_42000.Bug-6629
 sqlitelogictest-cast-null-add.Bug-6630
 ilike-foreign-characters.Bug-6633
 multi-column-hash-wrongly-NIL.Bug-6638
+comment-on-table-is-null.Bug-6639
+crash-after-call-non-existing-loader
