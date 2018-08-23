@@ -819,7 +819,7 @@ Ready.
 [ 3	]
 [ 3	]
 #select count(*) over (order by bb desc) from analytics;
-% .L4 # table_name
+% sys.L4 # table_name
 % L4 # name
 % bigint # type
 % 2 # length
@@ -923,6 +923,21 @@ Ready.
 [ 8	]
 [ 8	]
 [ 8	]
+#select count(*) over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 2 # length
+[ 10	]
+[ 10	]
+[ 10	]
+[ 10	]
+[ 10	]
+[ 10	]
+[ 10	]
+[ 10	]
+[ 10	]
+[ 10	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]
@@ -1137,7 +1152,7 @@ Ready.
 [ 3	]
 [ 3	]
 #select count(*) over (order by bb desc) from stressme;
-% .L4 # table_name
+% sys.L4 # table_name
 % L4 # name
 % bigint # type
 % 1 # length

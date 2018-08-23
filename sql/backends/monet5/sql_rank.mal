@@ -80,20 +80,12 @@ pattern batsql.max(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:
 address SQLmax
 comment "return the maximum of groups";
 
-pattern sql.count(p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
+pattern sql.count(b:any_1, ignils:bit, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
 address SQLcount
 comment "return count of groups";
 
-pattern batsql.count(p:any_1, o:any_2, unit:int, s:int, e:int, exl:int) :bat[:lng]
+pattern batsql.count(b:bat[:any_1], ignils:bit, p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:lng]
 address SQLcount
-comment "return count of groups";
-
-pattern sql.count(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
-address SQLcount_no_nil
-comment "return count of groups";
-
-pattern batsql.count(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:lng]
-address SQLcount_no_nil
 comment "return count of groups";
 
 pattern sql.ntile(b:bat[:any_1], n:bte, p:any_2, o:any_3) :bte

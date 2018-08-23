@@ -634,50 +634,63 @@ SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *r = NULL, *p = NULL, *o = NULL, *cr;
-	str msg = MAL_SUCCEED;
-	int tpe, unit, excl;
-	bit ignore_nils = 0;
+	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
+	int tpe, unit, start, end, excl;
+	bit *ignore_nils;
 	gdk_return gdk_res;
 
-	(void)cntxt;
-	if (pci->argc != 7 || (getArgType(mb, pci, 1) != TYPE_bit && getBatType(getArgType(mb, pci, 1)) != TYPE_bit) ||
-		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit)){
-		throw(SQL, "sql.count", "%s", "count(:any_1,:bit,:bit)");
+	(void) cntxt;
+	if (pci->argc != 9 || getArgType(mb, pci, 2) != TYPE_bit ||
+		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
+		(getArgType(mb, pci, 4) != TYPE_bit && getBatType(getArgType(mb, pci, 4)) != TYPE_bit)) {
+		throw(SQL, "sql.count", "%s", "count(:any_1,:bit,:bit,:bit)");
 	}
-
 	tpe = getArgType(mb, pci, 1);
-	unit = *getArgReference_int(stk, pci, 3);
-	//start = *getArgReference_int(stk, pci, 4);
-	//end = *getArgReference_int(stk, pci, 5);
-	excl = *getArgReference_int(stk, pci, 6);
-	if (unit != 0 || excl != 0)
-		throw(SQL, "sql.count", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
-
-	if (isaBatType(getArgType(mb, pci, 1))) {
-		p = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-		if (!p)
-			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
-	}
-	if (isaBatType(getArgType(mb, pci, 2))) {
-		o = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-		if (!o) {
-			BBPunfix(p->batCacheid);
-			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
-		}
-	}
-	cr = o?o:p?p:NULL;
-	if (cr) {
-		voidresultBAT(r, TYPE_lng, BATcount(cr), cr, "sql.count");
-	}
+	ignore_nils = getArgReference_bit(stk, pci, 2);
+	unit = *getArgReference_int(stk, pci, 5);
+	start = *getArgReference_int(stk, pci, 6);
+	end = *getArgReference_int(stk, pci, 7);
+	excl = *getArgReference_int(stk, pci, 8);
 
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+		if (!b)
+			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if (b) {
+		BUN cnt = BATcount(b);
+		voidresultBAT(r, TYPE_lng, cnt, b, "sql.count");
+	}
+	if (isaBatType(getArgType(mb, pci, 3))) {
+		p = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (!p) {
+			if (b) BBPunfix(b->batCacheid);
+			if (r) BBPunfix(r->batCacheid);
+			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+	}
+	if (isaBatType(getArgType(mb, pci, 4))) {
+		o = BATdescriptor(*getArgReference_bat(stk, pci, 4));
+		if (!o) {
+			if (b) BBPunfix(b->batCacheid);
+			if (r) BBPunfix(r->batCacheid);
+			if (p) BBPunfix(p->batCacheid);
+			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+	}
 
-	if (cr) {
+	if (unit != 0 || excl != 0)
+		throw(SQL, "sql.count", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	(void)start;
+	(void)end;
+
+	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalcount(r, NULL, p, o, &ignore_nils, tpe);
+		gdk_res = GDKanalyticalcount(r, b, p, o, ignore_nils, tpe);
+		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
@@ -689,50 +702,7 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ptr *in = getArgReference(stk, pci, 1);
 		*res = *in;
 	}
-	return msg;
-}
-
-str
-SQLcount_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, TYPE_lng, "sql.count_no_nil",
-								SQLSTATE(42000) "count_no_nil(:any_1,:bit,:bit)");
-	int tpe = getArgType(mb, pci, 1);
-	int unit = *getArgReference_int(stk, pci, 4);
-	int start = *getArgReference_int(stk, pci, 5);
-	int end = *getArgReference_int(stk, pci, 6);
-	int excl = *getArgReference_int(stk, pci, 7);
-	gdk_return gdk_res;
-	bit ignore_nils = 1;
-
-	if (unit != 0 || excl != 0)
-		throw(SQL, "sql.count_no_nil", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
-	(void)start;
-	(void)end;
-
-	if (msg)
-		return msg;
-	if (isaBatType(tpe))
-		tpe = getBatType(tpe);
-
-	if (b) {
-		bat *res = getArgReference_bat(stk, pci, 0);
-
-		gdk_res = GDKanalyticalcount(r, b, p, o, &ignore_nils, tpe);
-		BBPunfix(b->batCacheid);
-		if (p) BBPunfix(p->batCacheid);
-		if (o) BBPunfix(o->batCacheid);
-		if (gdk_res == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			return createException(SQL, "sql.count_no_nil", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	} else {
-		ptr *res = getArgReference(stk, pci, 0);
-		ptr *in = getArgReference(stk, pci, 1);
-		*res = *in;
-	}
-	return msg;
+	return MAL_SUCCEED;
 }
 
 static str
@@ -740,11 +710,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int), const str op, const str err)
 {
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
-	int tp1 = getArgType(mb, pci, 1), tp2;
-	int unit = *getArgReference_int(stk, pci, 4);
-	int start = *getArgReference_int(stk, pci, 5);
-	int end = *getArgReference_int(stk, pci, 6);
-	int excl = *getArgReference_int(stk, pci, 7);
+	int tp1, tp2, unit, start, end, excl;
 	gdk_return gdk_res;
 
 	(void) cntxt;
@@ -753,6 +719,12 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)) {
 		throw(SQL, op, "%s", err);
 	}
+	tp1 = getArgType(mb, pci, 1);
+	unit = *getArgReference_int(stk, pci, 4);
+	start = *getArgReference_int(stk, pci, 5);
+	end = *getArgReference_int(stk, pci, 6);
+	excl = *getArgReference_int(stk, pci, 7);
+
 	if (isaBatType(tp1))
 		tp1 = getBatType(tp1);
 	if (isaBatType(getArgType(mb, pci, 1))) {

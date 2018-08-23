@@ -72,7 +72,7 @@ select cast(sum(aa) over () as bigint) from analytics;
 select cast(prod(aa) over () as bigint) from analytics;
 select avg(aa) over () from analytics;
 select count(aa) over () from analytics;
---select count(*) over () from analytics; FIXME
+select count(*) over () from analytics;
 
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);

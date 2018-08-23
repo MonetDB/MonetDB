@@ -425,13 +425,11 @@ ANALYTICAL_LIMIT(max, MAX, <)
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe)
 {
-	BUN i, cnt;
+	BUN i, cnt = BATcount(b);
 	gdk_return gdk_res = GDK_SUCCEED;
 
-	assert(b || p || o);
-	cnt = BATcount(b?b:p?p:o);
-
-	if(!*ignore_nils || !b || b->T.nonil) {
+	(void) o;
+	if(!*ignore_nils || b->T.nonil) {
 		bit *np, *pnp;
 		lng *rp, *rb, curval = 0;
 		rb = rp = (lng*)Tloc(r, 0);

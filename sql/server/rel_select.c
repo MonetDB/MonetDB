@@ -4569,11 +4569,19 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		dnode *n = dn->next;
 
 		if (n) {
-			int is_last = 0;
-			exp_kind ek = {type_value, card_column, FALSE};
+			if (!n->next->data.sym) { /* count(*) */
+				e1 = p->exps->h->data;
+				e1 = exp_column(sql->sa, exp_relname(e1), exp_name(e1), exp_subtype(e1), exp_card(e1), has_nil(e1), is_intern(e1));
+				e2 = exp_atom_bool(sql->sa, 0);
+			} else {
+				int is_last = 0;
+				exp_kind ek = {type_value, card_column, FALSE};
 
-			distinct = n->data.i_val;
-			e1 = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
+				distinct = n->data.i_val;
+				e1 = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
+				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0)
+					e2 = exp_atom_bool(sql->sa, 1);
+			}
 		}
 	}
 	(void)distinct;

@@ -1586,8 +1586,7 @@ sqltypeinit( sql_allocator *sa)
 	//sql_create_analytic(sa, "last_value", "sql", "last_value", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);
 	//sql_create_analytic(sa, "nth_value", "sql", "nth_value", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);
 
-	sql_create_analytic(sa, "count", "sql", "count", BIT, NULL, BIT, NULL, LNG, SCALE_NONE);
-	sql_create_analytic(sa, "count", "sql", "count", ANY, NULL, BIT, BIT, LNG, SCALE_NONE);
+	sql_create_analytic(sa, "count", "sql", "count", ANY, BIT, BIT, BIT, LNG, SCALE_NONE);
 	sql_create_analytic(sa, "min", "sql", "min", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);
 	sql_create_analytic(sa, "max", "sql", "max", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);
 
