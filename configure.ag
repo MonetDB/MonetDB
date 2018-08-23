@@ -32,6 +32,12 @@ dnl     than the second version is executed.
 dnl  AS_VAR_IF(var, word, eq-body, ne-body)
 dnl     If $var is equal to word, execute eq-body, else execute ne-body.
 
+dnl  AS_VAR_COPY(dest, src)
+dnl     Copy the contents of the polymorphic shell variable SRC to the
+dnl     polymorphic shell variable DEST.  (Polymorphic shell variable
+dnl     here means that they can cotains references to other shell
+dnl     variables).
+
 dnl  @%:@
 dnl     This is a quadrigraph for #.  We use this in C preprocessor
 dnl     code that we inline in the script so that it doesn't get
@@ -45,7 +51,7 @@ dnl  Also note that comments that start with # are copied to the
 dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
-AC_PREREQ([2.63])
+AC_PREREQ([2.63b])
 AC_INIT([MonetDB], [11.31.4], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
