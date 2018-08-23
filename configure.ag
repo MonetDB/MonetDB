@@ -806,33 +806,15 @@ AC_LIBTOOL_SETUP
 AC_PROG_LIBTOOL
 AM_PROG_LIBTOOL
 
-READLINK='readlink -f'
-AC_MSG_CHECKING([for $READLINK])
-AS_IF([$READLINK /tmp >/dev/null 2>&1],
-	[],
-	[READLINK=echo])
-AC_MSG_RESULT([$READLINK])
-AC_SUBST([READLINK])
-
 translatepath=echo
-anttranslatepath=$READLINK
 
 # --with-translatepath
 AC_ARG_WITH([translatepath],
 	[AS_HELP_STRING([--with-translatepath=PROG],
 		[program to translate paths from configure-time format to execute-time format.  Take care that this program can be given paths like ${prefix}/etc which should be translated carefully.])],
-	[translatepath="$withval"
-	 anttranslatepath="$withval"],
+	[translatepath="$withval"],
 	[AS_VAR_IF([cross_compiling], [yes],
 		[AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])])])
-AC_SUBST([translatepath])
-
-# --with-anttranslatepath
-AC_ARG_WITH([anttranslatepath],
-	[AS_HELP_STRING([--with-anttranslatepath=PROG],
-		[program to translate paths from configure-time format to a format that can be given to the ant program (default: 'readlink -f' or value for --with-translatepath)])],
-	[anttranslatepath="$withval"])
-AC_SUBST([anttranslatepath])
 
 # check whether no (explictly chosen) mutual exclusive combinations
 # were made, compatability matrix:
@@ -1122,7 +1104,7 @@ AS_VAR_IF([have_python2], [no],
 		[],
 		[AC_PATH_PROG([PYTHON2], [$PYTHON2], [no], [$PATH])
 		 AS_VAR_IF([PYTHON2], [no],
-			[AS_IF([( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = x2],
+			[AS_IF([test '(' "x$have_python2" = xyes -o "x$have_python2" = xauto ')' -a "x$PYTHON_MAJ" = x2],
 				[PYTHON2="$PYTHON"
 				 have_python2=yes],
 				[AS_VAR_IF([have_python2], [auto],
@@ -1186,7 +1168,7 @@ AS_VAR_IF([have_python3], [no],
 		[],
 		[AC_PATH_PROG([PYTHON3], [$PYTHON3], [no], [$PATH])
 		 AS_VAR_IF([PYTHON3], [no],
-		 	[AS_IF([( test "x$have_python3" = xyes || test "x$have_python3" = xauto ) && test "x$PYTHON_MAJ" = x3],
+		 	[AS_IF([test '(' "x$have_python3" = xyes -o "x$have_python3" = xauto ')' -a "x$PYTHON_MAJ" = x3],
 				[PYTHON3="$PYTHON"
 				 have_python3=yes],
 				[AS_VAR_IF([have_python3], [auto],
@@ -1882,7 +1864,7 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 		AC_CHECK_HEADER([numpy/numpyconfig.h],
 			[NUMPYHEADERS=True],
 			[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
-		AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
+		AS_IF([test "x$NUMPYVER" = x -o "x$NUMPYVER" = xFalse],
 			[AS_VAR_IF([enable_pyintegration], [yes],
 				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])],
 				[have_libpy=no
@@ -1958,7 +1940,7 @@ AS_VAR_IF([enable_py3integration], [no], [],
 			[numpy/numpyconfig.h], 
 			[NUMPYHEADERS=True],
 			[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
-		AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
+		AS_IF([test "x$NUMPYVER" = x -o "x$NUMPYVER" = xFalse],
 			[AS_VAR_IF([enable_py3integration], [yes],
 				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python3 integration support])],
 				[have_libpy3=no

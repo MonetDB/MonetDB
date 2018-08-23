@@ -2,29 +2,29 @@
 %define version 11.31.4
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
-# groups of related archs
-%define all_x86 i386 i586 i686
+# Use %bcond_with to add a --with option; i.e., "without" is default.
+# Use %bcond_without to add a --without option; i.e., "with" is default.
+# The --with OPTION and --without OPTION arguments can be passed on
+# the commandline of both rpmbuild and mock.
 
-%ifarch %{all_x86}
-%define bits 32
-%else
-%define bits 64
-%define with_int128 1
+# On 64 bit architectures we build "hugeint" packages.
+%if "%{?_lib}" == "lib64"
+%bcond_without hugeint
 %endif
 
 %define release %{buildno}%{?dist}
 
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
-# for Enterprise Linux (EPEL) repository is available, you can define
-# the _with_epel macro.  When using mock to build the RPMs, this can
-# be done using the --with=epel option to mock.
+# for Enterprise Linux (EPEL) repository is available, you can enable
+# its use by providing rpmbuild or mock with the "--with epel" option.
 # If the EPEL repository is availabe, or if building for Fedora, all
 # optional sub packages can be built.  We indicate that here by
 # setting the macro fedpkgs to 1.  If the EPEL repository is not
 # available and we are not building for Fedora, we set fedpkgs to 0.
 %if %{?rhel:1}%{!?rhel:0}
 # RedHat Enterprise Linux (or CentOS or Scientific Linux)
-%if %{?_with_epel:1}%{!?_with_epel:0}
+%bcond_with epel
+%if %{with epel}
 # EPEL is enabled through the command line
 %define fedpkgs 1
 %else
@@ -45,7 +45,7 @@
 # up-to-date version of RHEL.
 %if %{fedpkgs}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%define with_geos 1
+%bcond_without geos
 %endif
 %endif
 
@@ -55,73 +55,50 @@
 # available if EPEL is enabled, and then only on version 7.
 %if %{fedpkgs}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# If the _without_lidar macro is not set, the MonetDB-lidar RPM will
-# be created.  The macro can be set when using mock by passing it the
-# flag --without=lidar.
-%if %{?_without_lidar:0}%{!?_without_lidar:1}
-%define with_lidar 1
-%endif
+# By default create the MonetDB-lidar package on Fedora and RHEL 7
+%bcond_without lidar
 %endif
 %endif
 
 %if %{?rhel:0}%{!?rhel:1}
-# If the _without_samtools macro is not set, the MonetDB-bam-MonetDB5
-# RPM will be created.  The macro can be set when using mock by
-# passing it the flag --without=samtools.
+# By default create the MonetDB-bam-MonetDB5 package.
 # Note that the samtools-devel RPM is not available on RedHat
 # Enterprise Linux and derivatives, even with EPEL availabe.
 # (Actually, at the moment of writing, samtools-devel is available in
 # EPEL for RHEL 6, but not for RHEL 7.  We don't make the distinction
 # here and just not build the MonetDB-bam-MonetDB5 RPM.)
-%if %{?_without_samtools:0}%{!?_without_samtools:1}
-%define with_samtools 1
-%endif
+%bcond_without samtools
 %endif
 
-# If the _without_pcre macro is not set, the PCRE library is used for
-# the implementation of the SQL LIKE and ILIKE operators.  Otherwise
-# the POSIX regex functions are used.  The macro can be set when using
-# mock by passing it the flag --without=pcre.
-%if %{?_without_pcre:0}%{!?_without_pcre:1}
-%define with_pcre 1
-%endif
+# By default use PCRE for the implementation of the SQL LIKE and ILIKE
+# operators.  Otherwise the POSIX regex functions are used.
+%bcond_without pcre
 
 %if %{fedpkgs}
-# If the _without_rintegration macro is not set, the MonetDB-R RPM
-# will be created.  The macro can be set when using mock by passing it
-# the flag --without=rintegration.
-%if %{?_without_rintegration:0}%{!?_without_rintegration:1}
-%define with_rintegration 1
-%endif
+# By default, create teh MonetDB-R package.
+%bcond_without rintegration
 %endif
 
-# If the _without_pyintegration macro is not set, the MonetDB-python2
-# RPM will be created.  The macro can be set when using mock by
-# passing it the flag --without=pyintegration.
+# On Fedora and RHEL 7, create the MonetDB-python2 package.
 # On RHEL 6, numpy is too old.
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%if %{?_without_pyintegration:0}%{!?_without_pyintegration:1}
-%define with_pyintegration 1
-%endif
+%bcond_without pyintegration
 %endif
 
 %if %{fedpkgs}
-# If the _with_fits macro is set, the MonetDB-cfitsio RPM will be
-# created.  The macro can be set when using mock by passing it the
-# flag --with=fits.
-%if %{?_with_fits:1}%{!?_with_fits:0}
-%define with_fits 1
-%endif
+# By default, do not create the MonetDB-cfitsio package.
+%bcond_with fits
 %endif
 
 %{!?__python2: %global __python2 %__python}
 %{!?python2_sitelib: %global python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
-%if 0%{?fedora}
-%bcond_without python3
-%else
-%bcond_with python3
-%endif
+# python3 option not currently used
+# %if 0%{?fedora}
+# %bcond_without python3
+# %else
+# %bcond_with python3
+# %endif
 
 Name: %{name}
 Version: %{version}
@@ -150,13 +127,13 @@ BuildRequires: bzip2-devel
 %else
 BuildRequires: pkgconfig(bzip2)
 %endif
-%if %{?with_fits:1}%{!?with_fits:0}
+%if %{with fits}
 BuildRequires: pkgconfig(cfitsio)
 %endif
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 BuildRequires: geos-devel >= 3.4.0
 %endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 BuildRequires: liblas-devel >= 1.8.0
 BuildRequires: pkgconfig(gdal)
 %endif
@@ -170,17 +147,17 @@ BuildRequires: pkgconfig(liblzma)
 BuildRequires: libuuid-devel
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(openssl)
-%if %{?with_pcre:1}%{!?with_pcre:0}
+%if %{with pcre}
 BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
 BuildRequires: readline-devel
 BuildRequires: unixODBC-devel
 # BuildRequires: uriparser-devel
 BuildRequires: pkgconfig(zlib)
-%if %{?with_samtools:1}%{!?with_samtools:0}
+%if %{with samtools}
 BuildRequires: samtools-devel
 %endif
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%if %{with pyintegration}
 BuildRequires: python-devel
 %if %{?rhel:1}%{!?rhel:0}
 # RedHat Enterprise Linux calls it simply numpy
@@ -194,7 +171,7 @@ BuildRequires: numpy
 %endif
 %endif
 %endif
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%if %{with rintegration}
 BuildRequires: R-core-devel
 %endif
 
@@ -443,7 +420,7 @@ developer.
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
 
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 %package geom-MonetDB5
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
@@ -468,7 +445,7 @@ extensions for %{name}-SQL-server5.
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 %package lidar
 Summary: MonetDB5 SQL support for working with LiDAR data
 Group: Applications/Databases
@@ -490,7 +467,7 @@ This package contains support for reading and writing LiDAR data.
 %{_libdir}/monetdb5/lib_lidar.so
 %endif
 
-%if %{?with_samtools:1}%{!?with_samtools:0}
+%if %{with samtools}
 %package bam-MonetDB5
 Summary: MonetDB5 SQL interface to the bam library
 Group: Applications/Databases
@@ -513,7 +490,7 @@ version of Sequence Alignment/Map) data.
 %{_libdir}/monetdb5/lib_bam.so
 %endif
 
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%if %{with rintegration}
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
 Group: Applications/Databases
@@ -539,7 +516,7 @@ install it.
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%if %{with pyintegration}
 %package python2
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
@@ -565,7 +542,7 @@ install it.
 %{_libdir}/monetdb5/lib_pyapi.so
 %endif
 
-%if %{?with_fits:1}%{!?with_fits:0}
+%if %{with fits}
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
 Group: Applications/Databases
@@ -595,7 +572,7 @@ Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-%if %{bits} == 64
+%if %{with hugeint}
 Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
@@ -641,44 +618,44 @@ fi
 %{_libdir}/libmonetdb5.so.*
 %dir %{_libdir}/monetdb5
 %dir %{_libdir}/monetdb5/autoload
-%if %{?with_fits:1}%{!?with_fits:0}
+%if %{with fits}
 %exclude %{_libdir}/monetdb5/fits.mal
 %exclude %{_libdir}/monetdb5/autoload/*_fits.mal
 %exclude %{_libdir}/monetdb5/createdb/*_fits.sql
 %endif
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 %exclude %{_libdir}/monetdb5/geom.mal
 %endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%if %{with pyintegration}
 %exclude %{_libdir}/monetdb5/pyapi.mal
 %endif
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%if %{with rintegration}
 %exclude %{_libdir}/monetdb5/rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/sql*.mal
-%if %{bits} == 64
+%if %{with hugeint}
 %exclude %{_libdir}/monetdb5/*_hge.mal
 %exclude %{_libdir}/monetdb5/autoload/*_hge.mal
 %endif
 %{_libdir}/monetdb5/*.mal
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 %exclude %{_libdir}/monetdb5/autoload/*_geom.mal
 %endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
+%if %{with pyintegration}
 %exclude %{_libdir}/monetdb5/autoload/*_pyapi.mal
 %endif
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
+%if %{with rintegration}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
 %endif
 %exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
 %{_libdir}/monetdb5/autoload/*.mal
-%if %{?with_samtools:1}%{!?with_samtools:0}
+%if %{with samtools}
 %exclude %{_libdir}/monetdb5/bam.mal
 %exclude %{_libdir}/monetdb5/autoload/*_bam.mal
 %endif
@@ -692,7 +669,7 @@ fi
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
 
-%if %{bits} == 64
+%if %{with hugeint}
 %package -n MonetDB5-server-hugeint
 Summary: MonetDB - 128-bit integer support for MonetDB5-server
 Group: Applications/Databases
@@ -745,7 +722,7 @@ Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: %{_bindir}/systemd-tmpfiles
 %endif
 %if (0%{?fedora} >= 22)
-%if %{bits} == 64
+%if %{with hugeint}
 Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
@@ -786,18 +763,18 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
-%if %{?with_geos:1}%{!?with_geos:0}
+%if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
 %endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
+%if %{with lidar}
 %exclude %{_libdir}/monetdb5/createdb/*_lidar.sql
 %endif
-%if %{?with_samtools:1}%{!?with_samtools:0}
+%if %{with samtools}
 %exclude %{_libdir}/monetdb5/createdb/*_bam.sql
 %endif
 %{_libdir}/monetdb5/createdb/*.sql
 %{_libdir}/monetdb5/sql*.mal
-%if %{bits} == 64
+%if %{with hugeint}
 %exclude %{_libdir}/monetdb5/createdb/*_hge.sql
 %exclude %{_libdir}/monetdb5/sql*_hge.mal
 %endif
@@ -807,7 +784,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
 
-%if %{bits} == 64
+%if %{with hugeint}
 %package SQL-server5-hugeint
 Summary: MonetDB5 128 bit integer (hugeint) support for SQL
 Group: Applications/Databases
@@ -955,17 +932,20 @@ fi
 	--enable-fits=%{?with_fits:yes}%{!?with_fits:no} \
 	--enable-gdk=yes \
 	--enable-geom=%{?with_geos:yes}%{!?with_geos:no} \
-	--enable-int128=%{?with_int128:yes}%{!?with_int128:no} \
+	--enable-int128=%{?with_hugeint:yes}%{!?with_hugeint:no} \
 	--enable-lidar=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--enable-mapi=yes \
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=no \
+	--enable-py3integration=no \
 	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
+	--enable-sanitizer=no \
 	--enable-shp=no \
 	--enable-sql=yes \
+	--enable-static-analysis=no \
 	--enable-strict=no \
 	--enable-testing=yes \
 	--with-bz2=yes \
@@ -974,15 +954,17 @@ fi
 	--with-geos=%{?with_geos:yes}%{!?with_geos:no} \
 	--with-liblas=%{?with_lidar:yes}%{!?with_lidar:no} \
 	--with-libxml2=yes \
+	--with-lz4=no \
 	--with-lzma=yes \
 	--with-openssl=yes \
-	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
 	--with-python3=no \
 	--with-readline=yes \
+	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
+	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
 	--with-valgrind=no \
@@ -1018,8 +1000,6 @@ mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
 # .la files
 rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
-# internal development stuff
-rm -f %{buildroot}%{_bindir}/Maddlog
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 for selinuxvariant in %{selinux_variants}
