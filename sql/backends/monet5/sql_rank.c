@@ -476,28 +476,37 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		gdk_code = GDKanalyticalntile(r, b, p, o, TYPE_##TPE, ntile);                       \
 	} while(0);
 
+#define NTILE_VALUE_SINGLE_IMP(TPE)                                                     \
+	do {                                                                                \
+		TPE val = *(TPE*) ntile, *rres = (TPE*) res;                                    \
+		if(!is_##TPE##_nil(val) && val < 1)                                             \
+			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero"); \
+		*rres = (is_##TPE##_nil(val) || val > 1) ? TPE##_nil : *(TPE*) in;              \
+	} while(0);
+
 str
 SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int tp1, tp2;
+
 	(void)cntxt;
 	if (pci->argc != 5 || (getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
 		(getArgType(mb, pci, 4) != TYPE_bit && getBatType(getArgType(mb, pci, 4)) != TYPE_bit)) {
 		throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile(:any_1,:number,:bit,:bit)");
 	}
-	if (isaBatType(getArgType(mb, pci, 1))) {
+	tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2);
+	if (isaBatType(tp2))
+		throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile first argument must a single atom");
+
+	if (isaBatType(tp1)) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
-		int tp2 = getArgType(mb, pci, 2);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *o = NULL, *r;
 		if (!b)
 			throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
 		gdk_return gdk_code;
 
-		if (isaBatType(tp2)) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile second argument must a single atom");
-		}
 		switch (tp2) {
 			case TYPE_bte:
 				NTILE_IMP(bte)
@@ -529,14 +538,37 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.ntile", SQLSTATE(HY001) "Unknown GDK error");
 	} else {
-		int *res = getArgReference_int(stk, pci, 0);
+		ptr res = getArgReference_ptr(stk, pci, 0);
+		ptr in = getArgReference_ptr(stk, pci, 1);
+		ptr ntile = getArgReference_ptr(stk, pci, 2);
 
-		*res = 1;
+		switch (tp2) {
+			case TYPE_bte:
+				NTILE_VALUE_SINGLE_IMP(bte)
+				break;
+			case TYPE_sht:
+				NTILE_VALUE_SINGLE_IMP(sht)
+				break;
+			case TYPE_int:
+				NTILE_VALUE_SINGLE_IMP(int)
+				break;
+			case TYPE_lng:
+				NTILE_VALUE_SINGLE_IMP(lng)
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				NTILE_VALUE_SINGLE_IMP(hge)
+				break;
+#endif
+			default:
+				throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile not available for %s", ATOMname(tp2));
+		}
 	}
 	return MAL_SUCCEED;
 }
 
 #undef NTILE_IMP
+#undef NTILE_VALUE_SINGLE_IMP
 
 static str
 SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
@@ -664,17 +696,30 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		gdk_code = GDKanalyticalnthvalue(r, b, p, o, cast_value, tp1);                          \
 	} while(0);
 
+#define NTH_VALUE_SINGLE_IMP(TPE)                                                               \
+	do {                                                                                        \
+		TPE val = *(TPE*) nth, *rres = (TPE*) res;                                              \
+		if(!is_##TPE##_nil(val) && val < 1)                                                     \
+			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
+		*rres = (is_##TPE##_nil(val) || val > 1) ? TPE##_nil : *(TPE*) in;                      \
+	} while(0);
+
 str
 SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int tp1, tp2;
+
 	(void)cntxt;
 	if (pci->argc != 9 || (getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
 		(getArgType(mb, pci, 4) != TYPE_bit && getBatType(getArgType(mb, pci, 4)) != TYPE_bit)) {
 		throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value(:any_1,:number,:bit,:bit)");
 	}
-	if (isaBatType(getArgType(mb, pci, 1))) {
+	tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2);
+	if (isaBatType(tp2))
+		throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value second argument must a single atom");
+
+	if (isaBatType(tp1)) {
 		BUN cnt;
-		int tp1 = getBatType(getArgType(mb, pci, 1)), tp2 = getArgType(mb, pci, 2);
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *o = NULL, *r;
 		if (!b)
@@ -682,11 +727,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = BATcount(b);
 		gdk_return gdk_code;
 
-		if (isaBatType(tp2)) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value first argument must a single atom");
-		}
-
+		tp1 = getBatType(tp1);
 		switch (tp2) {
 			case TYPE_bte:
 				NTH_VALUE_IMP(bte)
@@ -718,14 +759,37 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.nth_value", SQLSTATE(HY001) "Unknown GDK error");
 	} else {
-		int *res = getArgReference_int(stk, pci, 0);
+		ptr res = getArgReference_ptr(stk, pci, 0);
+		ptr in = getArgReference_ptr(stk, pci, 1);
+		ptr nth = getArgReference_ptr(stk, pci, 2);
 
-		*res = 1;
+		switch (tp2) {
+			case TYPE_bte:
+				NTH_VALUE_SINGLE_IMP(bte)
+				break;
+			case TYPE_sht:
+				NTH_VALUE_SINGLE_IMP(sht)
+				break;
+			case TYPE_int:
+				NTH_VALUE_SINGLE_IMP(int)
+				break;
+			case TYPE_lng:
+				NTH_VALUE_SINGLE_IMP(lng)
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				NTH_VALUE_SINGLE_IMP(hge)
+				break;
+#endif
+			default:
+				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value not available for %s", ATOMname(tp2));
+		}
 	}
 	return MAL_SUCCEED;
 }
 
 #undef NTH_VALUE_IMP
+#undef NTH_VALUE_SINGLE_IMP
 
 str
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
