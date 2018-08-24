@@ -24,6 +24,7 @@ pattern batsql.diff(p:bat[:bit], b:bat[:any_1]) :bat[:bit]
 address SQLdiff
 comment "return true if cur != prev row";
 
+
 pattern sql.row_number(b:any_1, p:bit, o:bit) :int
 address SQLrow_number
 comment "return the row_numer-ed groups";
@@ -31,6 +32,7 @@ comment "return the row_numer-ed groups";
 pattern batsql.row_number(b:bat[:any_1], p:any_2, o:any_3) :bat[:int]
 address SQLrow_number
 comment "return the row_numer-ed groups";
+
 
 pattern sql.rank(b:any_1, p:bit, o:bit) :int
 address SQLrank
@@ -40,6 +42,7 @@ pattern batsql.rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:int]
 address SQLrank
 comment "return the ranked groups";
 
+
 pattern sql.dense_rank(b:any_1, p:bit, o:bit) :int
 address SQLdense_rank
 comment "return the densely ranked groups";
@@ -47,6 +50,7 @@ comment "return the densely ranked groups";
 pattern batsql.dense_rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:int]
 address SQLdense_rank
 comment "return the densely ranked groups";
+
 
 pattern sql.percent_rank(b:any_1, p:bit, o:bit) :dbl
 address SQLpercent_rank
@@ -56,6 +60,7 @@ pattern batsql.percent_rank(b:bat[:any_1], p:any_2, o:any_3) :bat[:dbl]
 address SQLpercent_rank
 comment "return the percentage into the total number of groups for each row";
 
+
 pattern sql.cume_dist(b:any_1, p:bit, o:bit) :dbl
 address SQLcume_dist
 comment "return the accumulated distribution of the number of rows per group to the total number of partition rows";
@@ -63,6 +68,7 @@ comment "return the accumulated distribution of the number of rows per group to 
 pattern batsql.cume_dist(b:bat[:any_1], p:any_2, o:any_3) :bat[:dbl]
 address SQLcume_dist
 comment "return the accumulated distribution of the number of rows per group to the total number of partition rows";
+
 
 pattern sql.first_value(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :any_1
 address SQLfirst_value
@@ -72,6 +78,7 @@ pattern batsql.first_value(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:i
 address SQLfirst_value
 comment "return the first value of groups";
 
+
 pattern sql.last_value(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :any_1
 address SQLlast_value
 comment "return the last value of groups";
@@ -79,6 +86,7 @@ comment "return the last value of groups";
 pattern batsql.last_value(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlast_value
 comment "return the last value of groups";
+
 
 pattern sql.min(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :any_1
 address SQLmin
@@ -88,6 +96,7 @@ pattern batsql.min(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:
 address SQLmin
 comment "return the minimum of groups";
 
+
 pattern sql.max(b:any_1, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :any_1
 address SQLmax
 comment "return the maximum of groups";
@@ -95,6 +104,7 @@ comment "return the maximum of groups";
 pattern batsql.max(b:bat[:any_1], p:any_2, o:any_3, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLmax
 comment "return the maximum of groups";
+
 
 pattern sql.count(b:any_1, ignils:bit, p:bit, o:bit, unit:int, s:int, e:int, excl:int) :lng
 address SQLcount
@@ -104,7 +114,126 @@ pattern batsql.count(b:bat[:any_1], ignils:bit, p:any_2, o:any_3, unit:int, s:in
 address SQLcount
 comment "return count of groups";
 
-pattern sql.ntile(b:bat[:any_1], n:any_2, p:any_3, o:any_4) :any_2
+
+pattern sql.lag(b:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous row in the partition or NULL if non existent";
+
+pattern batsql.lag(b:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous row in the partition or NULL if non existent";
+
+
+pattern sql.lag(b:any_1, lag:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+
+pattern batsql.lag(b:bat[:any_1], lag:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+
+pattern sql.lag(b:any_1, lag:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+
+pattern batsql.lag(b:bat[:any_1], lag:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+
+
+pattern sql.lag(b:any_1, lag:any_2, def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+
+pattern batsql.lag(b:bat[:any_1], lag:any_2, def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+
+pattern sql.lag(b:any_1, lag:bat[:any_2], def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+
+pattern batsql.lag(b:bat[:any_1], lag:bat[:any_2], def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+
+pattern sql.lag(b:any_1, lag:any_2, def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+
+pattern batsql.lag(b:bat[:any_1], lag:any_2, def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+
+pattern sql.lag(b:any_1, lag:bat[:any_2], def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+
+pattern batsql.lag(b:bat[:any_1], lag:bat[:any_2], def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+
+
+pattern sql.lag(b:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous row in the partition or NULL if non existent";
+
+pattern batsql.lag(b:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous row in the partition or NULL if non existent";
+
+
+pattern sql.lag(b:any_1, lag:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+
+pattern batsql.lag(b:bat[:any_1], lag:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+
+pattern sql.lag(b:any_1, lag:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+
+pattern batsql.lag(b:bat[:any_1], lag:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlag
+comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+
+
+pattern sql.lead(b:any_1, lead:any_2, def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlead
+comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+
+pattern batsql.lead(b:bat[:any_1], lead:any_2, def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlead
+comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+
+pattern sql.lead(b:any_1, lead:bat[:any_2], def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlead
+comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+
+pattern batsql.lead(b:bat[:any_1], lead:bat[:any_2], def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlead
+comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+
+pattern sql.lead(b:any_1, lead:any_2, def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlead
+comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+
+pattern batsql.lead(b:bat[:any_1], lead:any_2, def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlead
+comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+
+pattern sql.lead(b:any_1, lead:bat[:any_2], def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLlead
+comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+
+pattern batsql.lead(b:bat[:any_1], lead:bat[:any_2], def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLlead
+comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+
+
+pattern sql.ntile(b:any_1, n:any_2, p:any_3, o:any_4) :any_2
 address SQLntile
 comment "return the groups divided as equally as possible";
 
@@ -112,7 +241,7 @@ pattern batsql.ntile(b:bat[:any_1], n:any_2, p:any_3, o:any_4) :bat[:any_2]
 address SQLntile
 comment "return the groups divided as equally as possible";
 
-pattern sql.ntile(b:bat[:any_1], n:bat[:any_2], p:any_3, o:any_4) :any_2
+pattern sql.ntile(b:any_1, n:bat[:any_2], p:any_3, o:any_4) :any_2
 address SQLntile
 comment "return the groups divided as equally as possible";
 
@@ -120,7 +249,8 @@ pattern batsql.ntile(b:bat[:any_1], n:bat[:any_2], p:any_3, o:any_4) :bat[:any_2
 address SQLntile
 comment "return the groups divided as equally as possible";
 
-pattern sql.nth_value(b:bat[:any_1], n:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+
+pattern sql.nth_value(b:any_1, n:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLnth_value
 comment "return the nth value of each group";
 
@@ -128,7 +258,7 @@ pattern batsql.nth_value(b:bat[:any_1], n:any_2, p:any_3, o:any_4, unit:int, s:i
 address SQLnth_value
 comment "return the nth value of each group";
 
-pattern sql.nth_value(b:bat[:any_1], n:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.nth_value(b:any_1, n:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLnth_value
 comment "return the nth value of each group";
 

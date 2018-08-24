@@ -162,12 +162,14 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 	} while(0);
 
 gdk_return
-GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, ptr ntile)
+GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, const void* restrict ntile)
 {
 	BUN cnt = BATcount(b);
 	bit *np, *pnp;
 	bool has_nils = false;
 	gdk_return gdk_res = GDK_SUCCEED;
+
+	assert(ntile);
 
 	switch (tpe) {
 		case TYPE_bte:
@@ -496,6 +498,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, lng nth, int tpe)
 	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
+	assert(is_lng_nil(nth) || nth >= 0);
 	(void) o;
 	switch (tpe) {
 		case TYPE_bte:
@@ -583,6 +586,142 @@ finish:
 }
 
 #undef ANALYTICAL_NTHVALUE_IMP
+
+#define ANALYTICAL_LAG_IMP(TPE)                                  \
+	do {                                                         \
+		TPE *rp, *rb, *bp, *end, def = *((TPE *) default_value); \
+		bp = (TPE*)Tloc(b, 0);                                   \
+		rb = rp = (TPE*)Tloc(r, 0);                              \
+		if(is_lng_nil(lag)) {                                    \
+			has_nils = true;                                     \
+			end = rb + cnt;                                      \
+			for(; rb<end; rb++)                                  \
+				*rb = TPE##_nil;                                 \
+		} else if(p) {                                           \
+			end = rp + cnt;                                      \
+			np = (bit*)Tloc(p, 0);                               \
+			for(; rp<end; np++, rp++) {                          \
+				if (*np) {                                       \
+					bp += (rp - rb);                             \
+					if(lag > 0) {                                \
+						for(; i<lag && rb<rp; i++, rb++)         \
+							*rb = def;                           \
+						if(is_##TPE##_nil(def))                  \
+							has_nils = true;                     \
+					}                                            \
+					bp += i;                                     \
+					for(;rb<rp; rb++, bp++) {                    \
+						*rb = *bp;                               \
+						if(is_##TPE##_nil(*rb))                  \
+							has_nils = true;                     \
+					}                                            \
+					i = 0;                                       \
+				}                                                \
+			}                                                    \
+			bp += (rp - rb);                                     \
+			if(lag > 0) {                                        \
+				for(; i<lag && rb<end; i++, rb++)                \
+					*rb = def;                                   \
+				if(is_##TPE##_nil(def))                          \
+					has_nils = true;                             \
+			}                                                    \
+			bp += i;                                             \
+			for(;rb<end; rb++, bp++) {                           \
+				*rb = *bp;                                       \
+				if(is_##TPE##_nil(*rb))                          \
+					has_nils = true;                             \
+			}                                                    \
+		} else {                                                 \
+			end = rb + cnt;                                      \
+			if(lag > 0) {                                        \
+				for(; i<lag && rb<end; i++, rb++)                \
+					*rb = def;                                   \
+				if(is_##TPE##_nil(def))                          \
+					has_nils = true;                             \
+			}                                                    \
+			bp += i;                                             \
+			for(;rb<end; rb++, bp++) {                           \
+				*rb = *bp;                                       \
+				if(is_##TPE##_nil(*rb))                          \
+					has_nils = true;                             \
+			}                                                    \
+		}                                                        \
+		goto finish;                                             \
+	} while(0);
+
+gdk_return
+GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, lng lag, const void* restrict default_value, int tpe)
+{
+	/*int (*atomcmp)(const void *, const void *);
+	const void *nil;*/
+	BUN cnt = BATcount(b);
+	lng i = 0;
+	bit *np;
+	gdk_return gdk_res = GDK_SUCCEED;
+	bool has_nils = false;
+
+	assert(default_value);
+	assert(is_lng_nil(lag) || lag >= 0);
+
+	(void) o;
+	switch (tpe) {
+		case TYPE_bte:
+			ANALYTICAL_LAG_IMP(bte)
+			break;
+		case TYPE_sht:
+			ANALYTICAL_LAG_IMP(sht)
+			break;
+		case TYPE_int:
+			ANALYTICAL_LAG_IMP(int)
+			break;
+		case TYPE_lng:
+			ANALYTICAL_LAG_IMP(lng)
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			ANALYTICAL_LAG_IMP(hge)
+			break;
+#endif
+		case TYPE_flt:
+			ANALYTICAL_LAG_IMP(flt)
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_LAG_IMP(dbl)
+			break;
+		default: {
+		}
+	}
+finish:
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return gdk_res;
+}
+
+#undef ANALYTICAL_LAG_IMP
+
+gdk_return
+GDKanalyticallead(BAT *r, BAT *b, BAT *p, BAT *o, lng lead, const void* restrict default_value, int tpe)
+{
+	//int (*atomcmp)(const void *, const void *);
+	//const void *nil;
+	BUN /*i, j,*/ cnt = BATcount(b);
+	//bit *np;
+	gdk_return gdk_res = GDK_SUCCEED;
+	bool has_nils = false;
+
+	assert(default_value);
+	assert(is_lng_nil(lead) || lead <= 0);
+
+	(void) o;
+	(void) p;
+	(void) tpe;
+//finish:
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return gdk_res;
+}
 
 #define ANALYTICAL_LIMIT_IMP(TPE, OP)                        \
 	do {                                                     \
@@ -807,6 +946,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	BUN i, cnt = BATcount(b);
 	gdk_return gdk_res = GDK_SUCCEED;
 
+	assert(ignore_nils);
 	(void) o;
 	if(!*ignore_nils || b->T.nonil) {
 		bit *np, *pnp;

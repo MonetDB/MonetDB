@@ -52,7 +52,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.diff", SQLSTATE(HY001) "Unknown GDK error");
+			throw(SQL, "sql.diff", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 
@@ -536,7 +536,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.ntile", SQLSTATE(HY001) "Unknown GDK error");
+			throw(SQL, "sql.ntile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		ptr res = getArgReference_ptr(stk, pci, 0);
 		ptr in = getArgReference_ptr(stk, pci, 1);
@@ -757,7 +757,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.nth_value", SQLSTATE(HY001) "Unknown GDK error");
+			throw(SQL, "sql.nth_value", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		ptr res = getArgReference_ptr(stk, pci, 0);
 		ptr in = getArgReference_ptr(stk, pci, 1);
@@ -790,6 +790,134 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #undef NTH_VALUE_IMP
 #undef NTH_VALUE_SINGLE_IMP
+
+#define CHECK_L_VALUE(TPE)                                                                             \
+	do {                                                                                               \
+		TPE rval = *getArgReference_##TPE(stk, pci, 2);                                                \
+		l_value = is_##TPE##_nil(rval) ? lng_nil : (rval > 0 ? default_l * (TPE)rval : m * (TPE)rval); \
+	} while(0);
+
+static str /* the variable m is used to fix the multiplier */
+do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str desc,
+			gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, lng, const void* restrict, int), lng default_l, lng m)
+{
+	int tp1, tp2, tp3, base = 2;
+	lng l_value = default_l;
+	const void *restrict default_value;
+	size_t default_value_size = 0;
+
+	(void)cntxt;
+	if (pci->argc < 8 || pci->argc > 10)
+		throw(SQL, op, SQLSTATE(42000) "%s called with invalid number of arguments", desc);
+
+	tp1 = getArgType(mb, pci, 1);
+
+	if (pci->argc > 8) { //contains (lag or lead) value;
+		tp2 = getArgType(mb, pci, 2);
+		if (isaBatType(tp2))
+			throw(SQL, op, SQLSTATE(42000) "%s second argument must a single atom", desc);
+		switch (tp2) {
+			case TYPE_bte:
+				CHECK_L_VALUE(bte)
+				break;
+			case TYPE_sht:
+				CHECK_L_VALUE(sht)
+				break;
+			case TYPE_int:
+				CHECK_L_VALUE(int)
+				break;
+			case TYPE_lng:
+				CHECK_L_VALUE(lng)
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				CHECK_L_VALUE(hge)
+				break;
+#endif
+			default:
+				throw(SQL, "sql.lag", SQLSTATE(42000) "%s value not available for %s", desc, ATOMname(tp2));
+		}
+		base = 3;
+	}
+
+	if (pci->argc > 9) { //contains default value;
+		ValRecord *vin = &(stk)->stk[(pci)->argv[3]];
+		tp3 = getArgType(mb, pci, 3);
+		if (isaBatType(tp3))
+			throw(SQL, op, SQLSTATE(42000) "%s third argument must a single atom", desc);
+		default_value = vin->val.pval;
+		default_value_size = vin->len;
+		base = 4;
+	} else {
+		int tpe = tp1;
+		if (isaBatType(tpe))
+			tpe = getBatType(tp1);
+		default_value = ATOMnilptr(tpe);
+		default_value_size = ATOMlen(tpe, default_value);
+	}
+
+	assert(default_value); //default value must be set
+
+	if (isaBatType(tp1)) {
+		BUN cnt;
+		bat *res = getArgReference_bat(stk, pci, 0);
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *o = NULL, *r;
+		if (!b)
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+		cnt = BATcount(b);
+		gdk_return gdk_code;
+
+		tp1 = getBatType(tp1);
+		voidresultBAT(r, tp1, cnt, b, "sql.lag");
+		if (isaBatType(getArgType(mb, pci, base + 1))) {
+			p = BATdescriptor(*getArgReference_bat(stk, pci, base + 1));
+			if (!p) {
+				BBPunfix(b->batCacheid);
+				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
+		if (isaBatType(getArgType(mb, pci, base + 2))) {
+			o = BATdescriptor(*getArgReference_bat(stk, pci, base + 2));
+			if (!o) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(p->batCacheid);
+				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
+
+		gdk_code = func(r, b, p, o, l_value, default_value, tp1);
+
+		BATsetcount(r, cnt);
+		BBPunfix(b->batCacheid);
+		if(gdk_code == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else {
+		ptr res = getArgReference_ptr(stk, pci, 0);
+		ValRecord *vin = &(stk)->stk[(pci)->argv[1]];
+		if(l_value == 0) {
+			memcpy(res, vin->val.pval, vin->len);
+		} else {
+			memcpy(res, default_value, default_value_size);
+		}
+	}
+	return MAL_SUCCEED;
+}
+
+#undef CHECK_L_VALUE
+
+str
+SQLlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_lead_lag(cntxt, mb, stk, pci, "sql.lag", "lag", GDKanalyticallag, 1, -1);
+}
+
+str
+SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_lead_lag(cntxt, mb, stk, pci, "sql.lead", "lead", GDKanalyticallead, -1, 1);
+}
 
 str
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

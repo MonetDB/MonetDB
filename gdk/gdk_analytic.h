@@ -17,13 +17,15 @@
 #include "gdk.h"
 
 gdk_export gdk_return GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe);
-gdk_export gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, ptr ntile);
+gdk_export gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, const void* restrict ntile);
 gdk_export gdk_return GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, BAT *o, int tpe);
 gdk_export gdk_return GDKanalyticallast(BAT *r, BAT *b, BAT *p, BAT *o, int tpe);
 gdk_export gdk_return GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, lng nth, int tpe);
+gdk_export gdk_return GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, lng lag, const void* restrict default_value, int tpe);
+gdk_export gdk_return GDKanalyticallead(BAT *r, BAT *b, BAT *p, BAT *o, lng lead, const void* restrict default_value, int tpe);
 gdk_export gdk_return GDKanalyticalmin(BAT *r, BAT *b, BAT *p, BAT *o, int tpe);
 gdk_export gdk_return GDKanalyticalmax(BAT *r, BAT *b, BAT *p, BAT *o, int tpe);
-gdk_export gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe);
+gdk_export gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit* restrict ignore_nils, int tpe);
 gdk_export gdk_return GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2);
 gdk_export gdk_return GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2);
 gdk_export gdk_return GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, int tpe);
