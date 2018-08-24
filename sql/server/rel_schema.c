@@ -2336,6 +2336,7 @@ rel_schemas(mvc *sql, symbol *s)
 			   l->h->next->data.i_val, 	/* drop_action */
 			   l->h->next->next->data.i_val); /* if exists */
 	} 	break;
+	case SQL_DECLARE_TABLE:
 	case SQL_CREATE_TABLE:
 	{
 		dlist *l = s->data.lval;
