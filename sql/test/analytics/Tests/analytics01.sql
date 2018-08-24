@@ -56,6 +56,12 @@ select first_value(aa) over (partition by bb order by bb desc) from analytics;
 select first_value(aa) over (order by bb) from analytics;
 select first_value(aa) over (order by bb desc) from analytics;
 
+select nth_value(aa, 1) over (partition by bb) from analytics;
+select nth_value(aa, 1) over (partition by bb order by bb asc) from analytics;
+select nth_value(aa, 1) over (partition by bb order by bb desc) from analytics;
+select nth_value(aa, 1) over (order by bb) from analytics;
+select nth_value(aa, 1) over (order by bb desc) from analytics;
+
 select last_value(bb) over (partition by aa) from analytics;
 select last_value(bb) over (partition by aa order by aa asc) from analytics;
 select last_value(bb) over (partition by aa order by aa desc) from analytics;
@@ -67,6 +73,12 @@ select last_value(bb) over (partition by bb order by bb asc) from analytics;
 select last_value(bb) over (partition by bb order by bb desc) from analytics;
 select last_value(bb) over (order by bb) from analytics;
 select last_value(bb) over (order by bb desc) from analytics;
+
+select nth_value(bb, 3) over (partition by bb) from analytics;
+select nth_value(bb, 3) over (partition by bb order by bb asc) from analytics;
+select nth_value(bb, 3) over (partition by bb order by bb desc) from analytics;
+select nth_value(bb, 3) over (order by bb) from analytics;
+select nth_value(bb, 3) over (order by bb desc) from analytics;
 
 select percent_rank() over () from analytics;
 select cume_dist() over () from analytics;
@@ -80,6 +92,9 @@ select first_value(aa) over () from analytics;
 select first_value(bb) over () from analytics;
 select last_value(aa) over () from analytics;
 select last_value(bb) over () from analytics;
+select nth_value(aa, 2) over () from analytics;
+select nth_value(bb, 1) over () from analytics;
+select nth_value(bb, 1000) over () from analytics;
 
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
@@ -95,5 +110,17 @@ select last_value(aa) over (partition by bb order by bb asc) from stressme;
 select last_value(aa) over (partition by bb order by bb desc) from stressme;
 select last_value(aa) over (order by bb) from stressme;
 select last_value(aa) over (order by bb desc) from stressme;
+
+select nth_value(aa, 1) over (partition by bb) from stressme;
+select nth_value(aa, 1) over (partition by bb order by bb asc) from stressme;
+select nth_value(aa, 1) over (partition by bb order by bb desc) from stressme;
+select nth_value(aa, 1) over (order by bb) from stressme;
+select nth_value(aa, 1) over (order by bb desc) from stressme;
+
+select nth_value(aa, 5) over (partition by bb) from stressme;
+select nth_value(aa, 5) over (partition by bb order by bb asc) from stressme;
+select nth_value(aa, 5) over (partition by bb order by bb desc) from stressme;
+select nth_value(aa, 5) over (order by bb) from stressme;
+select nth_value(aa, 5) over (order by bb desc) from stressme;
 
 rollback;

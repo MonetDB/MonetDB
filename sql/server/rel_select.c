@@ -4482,7 +4482,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	sql_rel *r = *rel, *p;
 	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args, *types;
 	sql_schema *s = sql->session->schema;
-	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK);
+	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last;
 	dnode *dn = window_function->data.lval->h;
 
 	aname = qname_fname(dn->data.lval);
@@ -4560,7 +4560,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		e1 = p->exps->h->data;
 		e1 = exp_column(sql->sa, exp_relname(e1), exp_name(e1), exp_subtype(e1), exp_card(e1), has_nil(e1), is_intern(e1));
 		if(dn->next && dn->next->data.sym) {
-			int is_last = 0;
+			is_last = 0;
 			exp_kind ek = {type_value, card_value, FALSE};
 
 			e2 = rel_value_exp2(sql, &p, dn->next->data.sym, f, ek, &is_last);
@@ -4574,13 +4574,20 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				e1 = exp_column(sql->sa, exp_relname(e1), exp_name(e1), exp_subtype(e1), exp_card(e1), has_nil(e1), is_intern(e1));
 				e2 = exp_atom_bool(sql->sa, 0);
 			} else {
-				int is_last = 0;
-				exp_kind ek = {type_value, card_column, FALSE};
+				is_last = 0;
+				exp_kind ek1 = {type_value, card_column, FALSE};
 
 				distinct = n->data.i_val;
-				e1 = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
-				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0)
+				e1 = rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last);
+				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
 					e2 = exp_atom_bool(sql->sa, 1);
+				} else if(n->next->next) {
+					is_last = 0;
+					exp_kind ek2 = {type_value, card_column, FALSE};
+
+					distinct = n->next->data.i_val;
+					e2 = rel_value_exp2(sql, &p, n->next->next->data.sym, f, ek2, &is_last);
+				}
 			}
 		}
 	}

@@ -110,20 +110,39 @@ pattern batsql.count(b:bat[:any_1], ignils:bit, p:any_2, o:any_3, unit:int, s:in
 address SQLcount
 comment "return count of groups";
 
-EOF
-
-for tp1 in 1:bte 2:sht 4:int 8:lng; do
-	cat <<EOF
-pattern sql.ntile(b:bat[:any_1], n:${tp1#*:}, p:any_2, o:any_3) :${tp1#*:}
+pattern sql.ntile(b:bat[:any_1], n:any_2, p:any_3, o:any_4) :any_2
 address SQLntile
 comment "return the groups divided as equally as possible";
 
-pattern batsql.ntile(b:bat[:any_1], n:${tp1#*:}, p:any_2, o:any_3) :bat[:${tp1#*:}]
+pattern batsql.ntile(b:bat[:any_1], n:any_2, p:any_3, o:any_4) :bat[:any_2]
 address SQLntile
 comment "return the groups divided as equally as possible";
 
+pattern sql.ntile(b:bat[:any_1], n:bat[:any_2], p:any_3, o:any_4) :any_2
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern batsql.ntile(b:bat[:any_1], n:bat[:any_2], p:any_3, o:any_4) :bat[:any_2]
+address SQLntile
+comment "return the groups divided as equally as possible";
+
+pattern sql.nth_value(b:bat[:any_1], n:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLnth_value
+comment "return the nth value of each group";
+
+pattern batsql.nth_value(b:bat[:any_1], n:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLnth_value
+comment "return the nth value of each group";
+
+pattern sql.nth_value(b:bat[:any_1], n:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+address SQLnth_value
+comment "return the nth value of each group";
+
+pattern batsql.nth_value(b:bat[:any_1], n:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+address SQLnth_value
+comment "return the nth value of each group";
+
 EOF
-done
 
 for tp1 in 1:bte 2:sht 4:int 8:lng; do
     for tp2 in 8:lng; do

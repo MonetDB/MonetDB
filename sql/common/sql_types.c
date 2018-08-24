@@ -1584,7 +1584,15 @@ sqltypeinit( sql_allocator *sa)
 	//sql_create_analytic(sa, "lead", "sql", "lead", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);
 	sql_create_analytic(sa, "first_value", "sql", "first_value", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);
 	sql_create_analytic(sa, "last_value", "sql", "last_value", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);
-	//sql_create_analytic(sa, "nth_value", "sql", "nth_value", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);
+
+	sql_create_analytic(sa, "nth_value", "sql", "nth_value", ANY, BTE, BIT, BIT, ANY, SCALE_NONE);
+	sql_create_analytic(sa, "nth_value", "sql", "nth_value", ANY, SHT, BIT, BIT, ANY, SCALE_NONE);
+	sql_create_analytic(sa, "nth_value", "sql", "nth_value", ANY, INT, BIT, BIT, ANY, SCALE_NONE);
+	sql_create_analytic(sa, "nth_value", "sql", "nth_value", ANY, LNG, BIT, BIT, ANY, SCALE_NONE);
+#ifdef HAVE_HGE
+	if (have_hge)
+		sql_create_analytic(sa, "nth_value", "sql", "nth_value", ANY, HGE, BIT, BIT, ANY, SCALE_NONE);
+#endif
 
 	sql_create_analytic(sa, "count", "sql", "count", ANY, BIT, BIT, BIT, LNG, SCALE_NONE);
 	sql_create_analytic(sa, "min", "sql", "min", ANY, NULL, BIT, BIT, ANY, SCALE_NONE);

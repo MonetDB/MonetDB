@@ -453,7 +453,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define NTILE_IMP(TPE)                                                                      \
 	do {                                                                                    \
 		TPE *ntile = getArgReference_##TPE(stk, pci, 2);                                    \
-		if(*ntile < 1) {                                                                    \
+		if(!is_##TPE##_nil(*ntile) && *ntile < 1) {                                         \
 			BBPunfix(b->batCacheid);                                                        \
 			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero");     \
 		}                                                                                   \
@@ -487,13 +487,18 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
+		int tp2 = getArgType(mb, pci, 2);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *o = NULL, *r;
 		if (!b)
 			throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
 		gdk_return gdk_code;
 
-		switch (getArgType(mb, pci, 2)) {
+		if (isaBatType(tp2)) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile second argument must a single atom");
+		}
+		switch (tp2) {
 			case TYPE_bte:
 				NTILE_IMP(bte)
 				break;
@@ -513,7 +518,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			default: {
 				BBPunfix(b->batCacheid);
-				throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile not available for %s", ATOMname(getArgType(mb, pci, 2)));
+				throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile not available for %s", ATOMname(tp2));
 			}
 		}
 
@@ -630,6 +635,97 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:bit,:bit)", GDKanalyticallast);
 }
+
+#define NTH_VALUE_IMP(TPE)                                                                      \
+	do {                                                                                        \
+		TPE *nthvalue = getArgReference_##TPE(stk, pci, 2);                                     \
+		lng cast_value;                                                                         \
+		if(!is_##TPE##_nil(*nthvalue) && *nthvalue < 1) {                                       \
+			BBPunfix(b->batCacheid);                                                            \
+			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
+		}                                                                                       \
+		voidresultBAT(r, tp1, cnt, b, "sql.nth_value");                                         \
+		if (isaBatType(getArgType(mb, pci, 3))) {                                               \
+			p = BATdescriptor(*getArgReference_bat(stk, pci, 3));                               \
+			if (!p) {                                                                           \
+				BBPunfix(b->batCacheid);                                                        \
+				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor"); \
+			}                                                                                   \
+		}                                                                                       \
+		if (isaBatType(getArgType(mb, pci, 4))) {                                               \
+			o = BATdescriptor(*getArgReference_bat(stk, pci, 4));                               \
+			if (!o) {                                                                           \
+				BBPunfix(b->batCacheid);                                                        \
+				BBPunfix(p->batCacheid);                                                        \
+				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor"); \
+			}                                                                                   \
+		}                                                                                       \
+		cast_value = is_##TPE##_nil(*nthvalue) ? lng_nil : (lng)(((TPE)*nthvalue) - 1);         \
+		gdk_code = GDKanalyticalnthvalue(r, b, p, o, cast_value, tp1);                          \
+	} while(0);
+
+str
+SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	if (pci->argc != 9 || (getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
+		(getArgType(mb, pci, 4) != TYPE_bit && getBatType(getArgType(mb, pci, 4)) != TYPE_bit)) {
+		throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value(:any_1,:number,:bit,:bit)");
+	}
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		BUN cnt;
+		int tp1 = getBatType(getArgType(mb, pci, 1)), tp2 = getArgType(mb, pci, 2);
+		bat *res = getArgReference_bat(stk, pci, 0);
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *o = NULL, *r;
+		if (!b)
+			throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+		cnt = BATcount(b);
+		gdk_return gdk_code;
+
+		if (isaBatType(tp2)) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value first argument must a single atom");
+		}
+
+		switch (tp2) {
+			case TYPE_bte:
+				NTH_VALUE_IMP(bte)
+				break;
+			case TYPE_sht:
+				NTH_VALUE_IMP(sht)
+				break;
+			case TYPE_int:
+				NTH_VALUE_IMP(int)
+				break;
+			case TYPE_lng:
+				NTH_VALUE_IMP(lng)
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				NTH_VALUE_IMP(hge)
+				break;
+#endif
+			default: {
+				BBPunfix(b->batCacheid);
+				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value not available for %s", ATOMname(tp2));
+			}
+		}
+
+		BATsetcount(r, cnt);
+		BBPunfix(b->batCacheid);
+		if(gdk_code == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			throw(SQL, "sql.nth_value", SQLSTATE(HY001) "Unknown GDK error");
+	} else {
+		int *res = getArgReference_int(stk, pci, 0);
+
+		*res = 1;
+	}
+	return MAL_SUCCEED;
+}
+
+#undef NTH_VALUE_IMP
 
 str
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
