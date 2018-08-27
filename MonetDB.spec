@@ -591,18 +591,6 @@ getent passwd monetdb >/dev/null || \
 	-c "MonetDB Server" monetdb
 exit 0
 
-%post -n MonetDB5-server
-# move database from old location to new location
-if [ -d %{_localstatedir}/MonetDB5/dbfarm -a ! %{_localstatedir}/MonetDB5/dbfarm -ef %{_localstatedir}/monetdb5/dbfarm ]; then
-	# old database exists and is different from new
-	if [ $(find %{_localstatedir}/monetdb5 -print | wc -l) -le 2 ]; then
-		# new database is still empty
-		rmdir %{_localstatedir}/monetdb5/dbfarm
-		rmdir %{_localstatedir}/monetdb5
-		mv %{_localstatedir}/MonetDB5 %{_localstatedir}/monetdb5
-	fi
-fi
-
 %files -n MonetDB5-server
 %defattr(-,root,root)
 %attr(750,monetdb,monetdb) %dir %{_localstatedir}/MonetDB
