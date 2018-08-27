@@ -1532,7 +1532,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!id_col || !remark_col)
 		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
 	rid = table_funcs.column_find_row(tx, id_col, &objid, NULL);
-	if (remark != NULL && *remark) {
+	if (remark != NULL && *remark && strcmp(remark, str_nil) != 0) {
 		if (!is_oid_nil(rid)) {
 			// have new remark and found old one, so update field
 			/* UPDATE sys.comments SET remark = %s WHERE id = %d */

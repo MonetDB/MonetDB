@@ -1,3 +1,6 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Mon Aug 27 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Added a "logrotate" configuration file.  See /etc/logrotate.d/monetdbd.
+
