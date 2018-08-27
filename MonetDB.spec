@@ -1,5 +1,5 @@
-%define name MonetDB
-%define version 11.31.4
+%global name MonetDB
+%global version 11.31.4
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -12,7 +12,7 @@
 %bcond_without hugeint
 %endif
 
-%define release %{buildno}%{?dist}
+%global release %{buildno}%{?dist}
 
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
 # for Enterprise Linux (EPEL) repository is available, you can enable
@@ -26,14 +26,14 @@
 %bcond_with epel
 %if %{with epel}
 # EPEL is enabled through the command line
-%define fedpkgs 1
+%global fedpkgs 1
 %else
 # EPEL is not enabled
-%define fedpkgs 0
+%global fedpkgs 0
 %endif
 %else
 # Not RHEL (so presumably Fedora)
-%define fedpkgs 1
+%global fedpkgs 1
 %endif
 
 # On Fedora, the geos library is available, and so we can require it
