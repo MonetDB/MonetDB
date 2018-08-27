@@ -1,5 +1,5 @@
-%define name MonetDB
-%define version 11.32.0
+%global name MonetDB
+%global version 11.32.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -12,12 +12,12 @@
 %bcond_without hugeint
 %endif
 
-%define release %{buildno}%{?dist}
+%global release %{buildno}%{?dist}
 
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
 # for Enterprise Linux (EPEL) repository is available, you can enable
 # its use by providing rpmbuild or mock with the "--with epel" option.
-# If the EPEL repository is availabe, or if building for Fedora, all
+# If the EPEL repository is availabe, or if building for Fedora, most
 # optional sub packages can be built.  We indicate that here by
 # setting the macro fedpkgs to 1.  If the EPEL repository is not
 # available and we are not building for Fedora, we set fedpkgs to 0.
@@ -26,14 +26,14 @@
 %bcond_with epel
 %if %{with epel}
 # EPEL is enabled through the command line
-%define fedpkgs 1
+%global fedpkgs 1
 %else
 # EPEL is not enabled
-%define fedpkgs 0
+%global fedpkgs 0
 %endif
 %else
 # Not RHEL (so presumably Fedora)
-%define fedpkgs 1
+%global fedpkgs 1
 %endif
 
 # On Fedora, the geos library is available, and so we can require it
@@ -45,6 +45,7 @@
 # up-to-date version of RHEL.
 %if %{fedpkgs}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# By default create the MonetDB-geom-MonetDB5 package on Fedora and RHEL 7
 %bcond_without geos
 %endif
 %endif
@@ -75,7 +76,7 @@
 %bcond_without pcre
 
 %if %{fedpkgs}
-# By default, create teh MonetDB-R package.
+# By default, create the MonetDB-R package.
 %bcond_without rintegration
 %endif
 
@@ -92,13 +93,6 @@
 
 %{!?__python2: %global __python2 %__python}
 %{!?python2_sitelib: %global python2_sitelib %(%{__python2} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-
-# python3 option not currently used
-# %if 0%{?fedora}
-# %bcond_without python3
-# %else
-# %bcond_with python3
-# %endif
 
 Name: %{name}
 Version: %{version}
@@ -425,8 +419,6 @@ developer.
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-Obsoletes: %{name}-geom
-Obsoletes: %{name}-geom-devel
 
 %description geom-MonetDB5
 MonetDB is a database management system that is developed from a
@@ -593,21 +585,9 @@ to use the SQL frontend, you also need %{name}-SQL-server5.
 %pre -n MonetDB5-server
 getent group monetdb >/dev/null || groupadd -r monetdb
 getent passwd monetdb >/dev/null || \
-useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
-    -c "MonetDB Server" monetdb
+    useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
+	-c "MonetDB Server" monetdb
 exit 0
-
-%post -n MonetDB5-server
-# move database from old location to new location
-if [ -d %{_localstatedir}/MonetDB5/dbfarm -a ! %{_localstatedir}/MonetDB5/dbfarm -ef %{_localstatedir}/monetdb5/dbfarm ]; then
-	# old database exists and is different from new
-	if [ $(find %{_localstatedir}/monetdb5 -print | wc -l) -le 2 ]; then
-		# new database is still empty
-		rmdir %{_localstatedir}/monetdb5/dbfarm
-		rmdir %{_localstatedir}/monetdb5
-		mv %{_localstatedir}/MonetDB5 %{_localstatedir}/monetdb5
-	fi
-fi
 
 %files -n MonetDB5-server
 %defattr(-,root,root)
@@ -751,6 +731,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_unitdir}/monetdbd.service
+%config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %else
 # RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
@@ -970,7 +951,7 @@ fi
 	--with-valgrind=no \
 	%{?comp_cc:CC="%{comp_cc}"}
 
-make %{?_smp_mflags}
+%make_build
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
