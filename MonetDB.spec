@@ -965,7 +965,7 @@ fi
 	--with-valgrind=no \
 	%{?comp_cc:CC="%{comp_cc}"}
 
-make %{?_smp_mflags}
+%make_build
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
