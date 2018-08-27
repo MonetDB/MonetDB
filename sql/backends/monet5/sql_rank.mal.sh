@@ -130,54 +130,54 @@ address SQLlag
 comment "return the value in the previous row in the partition or NULL if non existent";
 
 
-pattern sql.lag(b:any_1, lag:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lag(b:any_1, l:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
-pattern batsql.lag(b:bat[:any_1], lag:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lag(b:bat[:any_1], l:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
-pattern sql.lag(b:any_1, lag:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lag(b:any_1, l:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
-pattern batsql.lag(b:bat[:any_1], lag:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lag(b:bat[:any_1], l:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
 
-pattern sql.lag(b:any_1, lag:any_2, def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lag(b:any_1, l:any_2, d:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern batsql.lag(b:bat[:any_1], lag:any_2, def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lag(b:bat[:any_1], l:any_2, d:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, lag:bat[:any_2], def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lag(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern batsql.lag(b:bat[:any_1], lag:bat[:any_2], def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lag(b:bat[:any_1], l:bat[:any_2], d:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, lag:any_2, def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lag(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern batsql.lag(b:bat[:any_1], lag:any_2, def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lag(b:bat[:any_1], l:any_2, d:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lag(b:any_1, lag:bat[:any_2], def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lag(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
-pattern batsql.lag(b:bat[:any_1], lag:bat[:any_2], def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lag(b:bat[:any_1], l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or 'def' if non existent";
+comment "return the value in the previous 'l' row in the partition or 'd' if non existent";
 
 
 pattern sql.lag(b:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
@@ -189,54 +189,54 @@ address SQLlag
 comment "return the value in the previous row in the partition or NULL if non existent";
 
 
-pattern sql.lag(b:any_1, lag:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lag(b:any_1, l:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
-pattern batsql.lag(b:bat[:any_1], lag:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lag(b:bat[:any_1], l:any_2, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
-pattern sql.lag(b:any_1, lag:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lag(b:any_1, l:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
-pattern batsql.lag(b:bat[:any_1], lag:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lag(b:bat[:any_1], l:bat[:any_2], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlag
-comment "return the value in the previous 'lag' row in the partition or NULL if non existent";
+comment "return the value in the previous 'l' row in the partition or NULL if non existent";
 
 
-pattern sql.lead(b:any_1, lead:any_2, def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lead(b:any_1, l:any_2, d:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlead
-comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern batsql.lead(b:bat[:any_1], lead:any_2, def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lead(b:bat[:any_1], l:any_2, d:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlead
-comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, lead:bat[:any_2], def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lead(b:any_1, l:bat[:any_2], d:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlead
-comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern batsql.lead(b:bat[:any_1], lead:bat[:any_2], def:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lead(b:bat[:any_1], l:bat[:any_2], d:any_1, p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlead
-comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, lead:any_2, def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lead(b:any_1, l:any_2, d:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlead
-comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern batsql.lead(b:bat[:any_1], lead:any_2, def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lead(b:bat[:any_1], l:any_2, d:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlead
-comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern sql.lead(b:any_1, lead:bat[:any_2], def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
+pattern sql.lead(b:any_1, l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :any_1
 address SQLlead
-comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
-pattern batsql.lead(b:bat[:any_1], lead:bat[:any_2], def:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
+pattern batsql.lead(b:bat[:any_1], l:bat[:any_2], d:bat[:any_1], p:any_3, o:any_4, unit:int, s:int, e:int, exl:int) :bat[:any_1]
 address SQLlead
-comment "return the value in the next 'lead' row in the partition or 'def' if non existent";
+comment "return the value in the next 'l' row in the partition or 'd' if non existent";
 
 
 pattern sql.ntile(b:any_1, n:any_2, p:any_3, o:any_4) :any_2

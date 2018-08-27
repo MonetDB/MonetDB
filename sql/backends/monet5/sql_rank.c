@@ -835,7 +835,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 				break;
 #endif
 			default:
-				throw(SQL, "sql.lag", SQLSTATE(42000) "%s value not available for %s", desc, ATOMname(tp2));
+				throw(SQL, op, SQLSTATE(42000) "%s value not available for %s", desc, ATOMname(tp2));
 		}
 		base = 3;
 	}
@@ -868,16 +868,16 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 		gdk_return gdk_code;
 
 		tp1 = getBatType(tp1);
-		voidresultBAT(r, tp1, cnt, b, "sql.lag");
-		if (isaBatType(getArgType(mb, pci, base + 1))) {
-			p = BATdescriptor(*getArgReference_bat(stk, pci, base + 1));
+		voidresultBAT(r, tp1, cnt, b, op);
+		if (isaBatType(getArgType(mb, pci, base))) {
+			p = BATdescriptor(*getArgReference_bat(stk, pci, base));
 			if (!p) {
 				BBPunfix(b->batCacheid);
 				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 		}
-		if (isaBatType(getArgType(mb, pci, base + 2))) {
-			o = BATdescriptor(*getArgReference_bat(stk, pci, base + 2));
+		if (isaBatType(getArgType(mb, pci, base + 1))) {
+			o = BATdescriptor(*getArgReference_bat(stk, pci, base + 1));
 			if (!o) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(p->batCacheid);
