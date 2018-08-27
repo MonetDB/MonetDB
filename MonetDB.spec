@@ -17,7 +17,7 @@
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
 # for Enterprise Linux (EPEL) repository is available, you can enable
 # its use by providing rpmbuild or mock with the "--with epel" option.
-# If the EPEL repository is availabe, or if building for Fedora, all
+# If the EPEL repository is availabe, or if building for Fedora, most
 # optional sub packages can be built.  We indicate that here by
 # setting the macro fedpkgs to 1.  If the EPEL repository is not
 # available and we are not building for Fedora, we set fedpkgs to 0.
@@ -45,6 +45,7 @@
 # up-to-date version of RHEL.
 %if %{fedpkgs}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# By default create the MonetDB-geom-MonetDB5 package on Fedora and RHEL 7
 %bcond_without geos
 %endif
 %endif
@@ -75,7 +76,7 @@
 %bcond_without pcre
 
 %if %{fedpkgs}
-# By default, create teh MonetDB-R package.
+# By default, create the MonetDB-R package.
 %bcond_without rintegration
 %endif
 
