@@ -419,8 +419,6 @@ developer.
 Summary: MonetDB5 SQL GIS support module
 Group: Applications/Databases
 Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
-Obsoletes: %{name}-geom
-Obsoletes: %{name}-geom-devel
 
 %description geom-MonetDB5
 MonetDB is a database management system that is developed from a
