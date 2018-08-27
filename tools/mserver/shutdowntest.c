@@ -132,6 +132,7 @@ static str monetdb_initialize(void) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
+	GDKdebug |= NOSYNCMASK;
 
 	if (GDKsetenv("mapi_disable", "true") != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKsetenv failed");
