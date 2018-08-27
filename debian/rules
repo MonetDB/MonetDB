@@ -28,10 +28,13 @@ override_dh_auto_configure:
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=yes \
+	--enable-py3integration=no \
 	--enable-pyintegration=yes \
 	--enable-rintegration=yes \
+	--enable-sanitizer=no \
 	--enable-shp=no \
 	--enable-sql=yes \
+	--enable-static-analysis=no \
 	--enable-strict=no \
 	--enable-testing=yes \
 	--with-bz2=yes \
@@ -40,6 +43,7 @@ override_dh_auto_configure:
 	--with-geos=yes \
 	--with-liblas=yes \
 	--with-libxml2=yes \
+	--with-lz4=no \
 	--with-lzma=yes \
 	--with-openssl=yes \
 	--with-proj=no \
@@ -49,6 +53,7 @@ override_dh_auto_configure:
 	--with-readline=yes \
 	--with-regex=PCRE \
 	--with-samtools=yes \
+	--with-snappy=no \
 	--with-unixodbc=yes \
 	--with-uuid=yes \
 	--with-valgrind=no \
