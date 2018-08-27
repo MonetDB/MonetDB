@@ -752,6 +752,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_unitdir}/monetdbd.service
+%config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %else
 # RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
