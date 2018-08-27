@@ -587,8 +587,8 @@ to use the SQL frontend, you also need %{name}-SQL-server5.
 %pre -n MonetDB5-server
 getent group monetdb >/dev/null || groupadd -r monetdb
 getent passwd monetdb >/dev/null || \
-useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
-    -c "MonetDB Server" monetdb
+    useradd -r -g monetdb -d %{_localstatedir}/MonetDB -s /sbin/nologin \
+	-c "MonetDB Server" monetdb
 exit 0
 
 %post -n MonetDB5-server
