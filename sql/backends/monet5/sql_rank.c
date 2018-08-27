@@ -671,7 +671,7 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define NTH_VALUE_IMP(TPE)                                                                      \
 	do {                                                                                        \
 		TPE *nthvalue = getArgReference_##TPE(stk, pci, 2);                                     \
-		lng cast_value;                                                                         \
+		BUN cast_value;                                                                         \
 		if(!is_##TPE##_nil(*nthvalue) && *nthvalue < 1) {                                       \
 			BBPunfix(b->batCacheid);                                                            \
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
@@ -692,7 +692,7 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor"); \
 			}                                                                                   \
 		}                                                                                       \
-		cast_value = is_##TPE##_nil(*nthvalue) ? lng_nil : (lng)(((TPE)*nthvalue) - 1);         \
+		cast_value = is_##TPE##_nil(*nthvalue) ? BUN_NONE : (BUN)(((TPE)*nthvalue) - 1);        \
 		gdk_code = GDKanalyticalnthvalue(r, b, p, o, cast_value, tp1);                          \
 	} while(0);
 
@@ -791,18 +791,18 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef NTH_VALUE_IMP
 #undef NTH_VALUE_SINGLE_IMP
 
-#define CHECK_L_VALUE(TPE)                                                                             \
-	do {                                                                                               \
-		TPE rval = *getArgReference_##TPE(stk, pci, 2);                                                \
-		l_value = is_##TPE##_nil(rval) ? lng_nil : (rval > 0 ? default_l * (TPE)rval : m * (TPE)rval); \
+#define CHECK_L_VALUE(TPE)                                                                     \
+	do {                                                                                       \
+		TPE rval = *getArgReference_##TPE(stk, pci, 2);                                        \
+		l_value = is_##TPE##_nil(rval) ? BUN_NONE : (rval > 0 ? (BUN)rval : (BUN)(-1 * rval)); \
 	} while(0);
 
 static str /* the variable m is used to fix the multiplier */
 do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str desc,
-			gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, lng, const void* restrict, int), lng default_l, lng m)
+			gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BUN, const void* restrict, int))
 {
 	int tp1, tp2, tp3, base = 2;
-	lng l_value = default_l;
+	BUN l_value = 1;
 	const void *restrict default_value;
 	size_t default_value_size = 0;
 
@@ -910,13 +910,13 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 str
 SQLlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_lead_lag(cntxt, mb, stk, pci, "sql.lag", "lag", GDKanalyticallag, 1, -1);
+	return do_lead_lag(cntxt, mb, stk, pci, "sql.lag", "lag", GDKanalyticallag);
 }
 
 str
 SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_lead_lag(cntxt, mb, stk, pci, "sql.lead", "lead", GDKanalyticallead, -1, 1);
+	return do_lead_lag(cntxt, mb, stk, pci, "sql.lead", "lead", GDKanalyticallead);
 }
 
 str

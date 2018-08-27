@@ -73,7 +73,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 			ptr v = BUNtail(it, 0), next;
 			atomcmp = ATOMcompare(tpe);
 			if(rp) {
-				for (i=0; i<cnt; i++, rp++) {
+				for (i=0; i<cnt; i++, rb++, rp++) {
 					*rb = *rp;
 					next = BUNtail(it, i);
 					if (atomcmp(v, next) != 0) {
@@ -82,7 +82,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 					}
 				}
 			} else {
-				for(i=0; i<cnt; i++, rp++) {
+				for(i=0; i<cnt; i++, rb++) {
 					*rb = FALSE;
 					next = BUNtail(it, i);
 					if (atomcmp(v, next) != 0) {
@@ -444,7 +444,7 @@ finish:
 		pbp = bp = (TPE*)Tloc(b, 0);              \
 		rb = rp = (TPE*)Tloc(r, 0);               \
 		end = rp + cnt;                           \
-		if(is_lng_nil(nth)) {                     \
+		if(nth == BUN_NONE) {                     \
 			has_nils = true;                      \
 			for(; rp<end; rp++)                   \
 				*rp = TPE##_nil;                  \
@@ -452,7 +452,7 @@ finish:
 			np = (bit*)Tloc(p, 0);                \
 			for(; rp<end; np++, rp++, bp++) {     \
 				if (*np) {                        \
-					if(nth > (TPE) (bp - pbp)) {  \
+					if(nth > (BUN) (bp - pbp)) {  \
 						curval = TPE##_nil;       \
 					} else {                      \
 						curval = *(pbp + nth);    \
@@ -464,7 +464,7 @@ finish:
 					pbp = bp;                     \
 				}                                 \
 			}                                     \
-			if(nth > (TPE) (bp - pbp)) {          \
+			if(nth > (BUN) (bp - pbp)) {          \
 				curval = TPE##_nil;               \
 			} else {                              \
 				curval = *(pbp + nth);            \
@@ -475,7 +475,7 @@ finish:
 				*rb = curval;                     \
 		} else {                                  \
 			TPE* end = rp + cnt;                  \
-			if(nth > (TPE) cnt) {                 \
+			if(nth > cnt) {                       \
 				curval = TPE##_nil;               \
 			} else {                              \
 				curval = *(bp + nth);             \
@@ -489,7 +489,7 @@ finish:
 	} while(0);
 
 gdk_return
-GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, lng nth, int tpe)
+GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, BUN nth, int tpe)
 {
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
@@ -498,7 +498,6 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, lng nth, int tpe)
 	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
-	assert(is_lng_nil(nth) || nth >= 0);
 	(void) o;
 	switch (tpe) {
 		case TYPE_bte:
@@ -529,7 +528,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, lng nth, int tpe)
 			const void *restrict curval;
 			nil = ATOMnilptr(tpe);
 			atomcmp = ATOMcompare(tpe);
-			if(is_lng_nil(nth)) {
+			if(nth == BUN_NONE) {
 				has_nils = true;
 				for(i=0; i<cnt; i++) {
 					if ((gdk_res = BUNappend(r, nil, false)) != GDK_SUCCEED)
@@ -539,7 +538,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, lng nth, int tpe)
 				np = (bit*)Tloc(p, 0);
 				for(i=0,j=0; i<cnt; i++, np++) {
 					if (*np) {
-						if(nth > (lng)(i - j)) {
+						if(nth > (i - j)) {
 							curval = nil;
 						} else {
 							curval = BUNtail(bpi, nth);
@@ -552,7 +551,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, lng nth, int tpe)
 						}
 					}
 				}
-				if(nth > (lng)(i - j)) {
+				if(nth > (i - j)) {
 					curval = nil;
 				} else {
 					curval = BUNtail(bpi, nth);
@@ -564,7 +563,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, lng nth, int tpe)
 						goto finish;
 				}
 			} else { /* single value, ie no ordering */
-				if(nth > (lng)cnt) {
+				if(nth > cnt) {
 					curval = nil;
 				} else {
 					curval = BUNtail(bpi, nth);
@@ -593,16 +592,16 @@ finish:
 			def = *((TPE *) default_value), next;       \
 		bp = (TPE*)Tloc(b, 0);                          \
 		rb = rp = (TPE*)Tloc(r, 0);                     \
-		if(is_lng_nil(lag)) {                           \
+		end = rb + cnt;                                 \
+		if(lag == BUN_NONE) {                           \
 			has_nils = true;                            \
-			end = rb + cnt;                             \
 			for(; rb<end; rb++)                         \
 				*rb = TPE##_nil;                        \
 		} else if(p) {                                  \
-			end = rp + cnt;                             \
 			np = (bit*)Tloc(p, 0);                      \
 			for(; rp<end; np++, rp++) {                 \
 				if (*np) {                              \
+					l = (rp - rb);                      \
 					for(i=0; i<lag && rb<rp; i++, rb++) \
 						*rb = def;                      \
 					if(lag > 0 && is_##TPE##_nil(def))  \
@@ -613,7 +612,7 @@ finish:
 						if(is_##TPE##_nil(next))        \
 							has_nils = true;            \
 					}                                   \
-					bp += lag;                          \
+					bp += (lag < l) ? lag : 0;          \
 				}                                       \
 			}                                           \
 			for(i=0; i<lag && rb<end; i++, rb++)        \
@@ -627,7 +626,6 @@ finish:
 					has_nils = true;                    \
 			}                                           \
 		} else {                                        \
-			end = rb + cnt;                             \
 			for(i=0; i<lag && rb<end; i++, rb++)        \
 				*rb = def;                              \
 			if(lag > 0 && is_##TPE##_nil(def))          \
@@ -643,18 +641,16 @@ finish:
 	} while(0);
 
 gdk_return
-GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, lng lag, const void* restrict default_value, int tpe)
+GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, BUN lag, const void* restrict default_value, int tpe)
 {
 	int (*atomcmp)(const void *, const void *);
 	const void *restrict nil;
-	lng i = 0;
-	BUN j = 0, k = 0, l, cnt = BATcount(b);
+	BUN i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b);
 	bit *restrict np;
 	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
 	assert(default_value);
-	assert(is_lng_nil(lag) || lag >= 0);
 
 	(void) o;
 	switch (tpe) {
@@ -686,7 +682,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, lng lag, const void* restrict d
 			const void *restrict curval;
 			nil = ATOMnilptr(tpe);
 			atomcmp = ATOMcompare(tpe);
-			if(is_lng_nil(lag)) {
+			if(lag == BUN_NONE) {
 				has_nils = true;
 				for (j=0;j < cnt; j++) {
 					if ((gdk_res = BUNappend(r, nil, false)) != GDK_SUCCEED)
@@ -702,7 +698,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, lng lag, const void* restrict d
 						}
 						if(lag > 0 && (*atomcmp)(default_value, nil) == 0)
 							has_nils = true;
-						for(l=0; k<j; k++, l++) {
+						for(l=k-lag; k<j; k++, l++) {
 							curval = BUNtail(bpi, l);
 							if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
 								goto finish;
@@ -717,7 +713,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, lng lag, const void* restrict d
 				}
 				if(lag > 0 && (*atomcmp)(default_value, nil) == 0)
 					has_nils = true;
-				for(l=0; k<cnt; k++, l++) {
+				for(l=k-lag; k<cnt; k++, l++) {
 					curval = BUNtail(bpi, l);
 					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
 						goto finish;
@@ -725,8 +721,7 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, lng lag, const void* restrict d
 						has_nils = true;
 				}
 			} else {
-				lng lcnt = (lng) cnt;
-				for(i=0; i<lag && i<lcnt; i++) {
+				for(i=0; i<lag && i<cnt; i++) {
 					if ((gdk_res = BUNappend(r, default_value, false)) != GDK_SUCCEED)
 						goto finish;
 				}
@@ -751,28 +746,194 @@ finish:
 
 #undef ANALYTICAL_LAG_IMP
 
+#define ANALYTICAL_LEAD_IMP(TPE)                         \
+	do {                                                 \
+		TPE *rp, *rb, *bp, *end,                         \
+			def = *((TPE *) default_value), next;        \
+		bp = (TPE*)Tloc(b, 0);                           \
+		rb = rp = (TPE*)Tloc(r, 0);                      \
+		end = rb + cnt;                                  \
+		if(lead == BUN_NONE) {                           \
+			has_nils = true;                             \
+			for(; rb<end; rb++)                          \
+				*rb = TPE##_nil;                         \
+		} else if(p) {                                   \
+			np = (bit*)Tloc(p, 0);                       \
+			for(; rp<end; np++, rp++) {                  \
+				if (*np) {                               \
+					k = (rp - rb);                       \
+					if(lead < k) {                       \
+						bp += lead;                      \
+						l = k - lead;                    \
+						for(i=0; i<l; i++, rb++, bp++) { \
+							next = *bp;                  \
+							*rb = next;                  \
+							if(is_##TPE##_nil(next))     \
+								has_nils = true;         \
+						}                                \
+					} else {                             \
+						bp += k;                         \
+					}                                    \
+					for(;rb<rp; rb++)                    \
+						*rb = def;                       \
+					if(lead > 0 && is_##TPE##_nil(def))  \
+						has_nils = true;                 \
+				}                                        \
+			}                                            \
+			k = (rp - rb);                               \
+			if(lead < k) {                               \
+				bp += lead;                              \
+				l = k - lead;                            \
+				for(i=0; i<l; i++, rb++, bp++) {         \
+					next = *bp;                          \
+					*rb = next;                          \
+					if(is_##TPE##_nil(next))             \
+						has_nils = true;                 \
+				}                                        \
+			}                                            \
+			for(;rb<end; rb++)                           \
+				*rb = def;                               \
+			if(lead > 0 && is_##TPE##_nil(def))          \
+				has_nils = true;                         \
+		} else {                                         \
+			if(lead < cnt) {                             \
+				bp += lead;                              \
+				l = cnt - lead;                          \
+				for(i=0; i<l; i++, rb++, bp++) {         \
+					next = *bp;                          \
+					*rb = next;                          \
+					if(is_##TPE##_nil(next))             \
+						has_nils = true;                 \
+				}                                        \
+			}                                            \
+			for(;rb<end; rb++, bp++)                     \
+				*rb = def;                               \
+			if(lead > 0 && is_##TPE##_nil(def))          \
+				has_nils = true;                         \
+		}                                                \
+		goto finish;                                     \
+	} while(0);
+
 gdk_return
-GDKanalyticallead(BAT *r, BAT *b, BAT *p, BAT *o, lng lead, const void* restrict default_value, int tpe)
+GDKanalyticallead(BAT *r, BAT *b, BAT *p, BAT *o, BUN lead, const void* restrict default_value, int tpe)
 {
-	//int (*atomcmp)(const void *, const void *);
-	//const void* restrict nil;
-	BUN /*i, j,*/ cnt = BATcount(b);
-	//bit *restrict np;
+	int (*atomcmp)(const void *, const void *);
+	const void* restrict nil;
+	BUN i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b);
+	bit *restrict np;
 	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
 	assert(default_value);
-	assert(is_lng_nil(lead) || lead <= 0);
 
 	(void) o;
-	(void) p;
-	(void) tpe;
-//finish:
+	switch (tpe) {
+		case TYPE_bte:
+			ANALYTICAL_LEAD_IMP(bte)
+			break;
+		case TYPE_sht:
+			ANALYTICAL_LEAD_IMP(sht)
+			break;
+		case TYPE_int:
+			ANALYTICAL_LEAD_IMP(int)
+			break;
+		case TYPE_lng:
+			ANALYTICAL_LEAD_IMP(lng)
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			ANALYTICAL_LEAD_IMP(hge)
+			break;
+#endif
+		case TYPE_flt:
+			ANALYTICAL_LEAD_IMP(flt)
+			break;
+		case TYPE_dbl:
+			ANALYTICAL_LEAD_IMP(dbl)
+			break;
+		default: {
+			BUN m = 0, n = 0;
+			BATiter bpi = bat_iterator(b);
+			const void *restrict curval;
+			nil = ATOMnilptr(tpe);
+			atomcmp = ATOMcompare(tpe);
+			if(lead == BUN_NONE) {
+				has_nils = true;
+				for (j=0;j < cnt; j++) {
+					if ((gdk_res = BUNappend(r, nil, false)) != GDK_SUCCEED)
+						goto finish;
+				}
+			} else if(p) {
+				np = (bit*)Tloc(p, 0);
+				for(j=0,k=0; j<cnt; j++, np++) {
+					if (*np) {
+						l = (j - k);
+						if(lead < l) {
+							m = l - lead;
+							for(i=0,n=k+lead; i<m; i++, n++) {
+								curval = BUNtail(bpi, n);
+								if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+									goto finish;
+								if((*atomcmp)(curval, nil) == 0)
+									has_nils = true;
+							}
+							k += i;
+						}
+						for(; k<j; k++) {
+							if ((gdk_res = BUNappend(r, default_value, false)) != GDK_SUCCEED)
+								goto finish;
+						}
+						if(lead > 0 && (*atomcmp)(default_value, nil) == 0)
+							has_nils = true;
+					}
+				}
+				l = (j - k);
+				if(lead < l) {
+					m = l - lead;
+					for(i=0,n=k+lead; i<m; i++, n++) {
+						curval = BUNtail(bpi, n);
+						if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+							goto finish;
+						if((*atomcmp)(curval, nil) == 0)
+							has_nils = true;
+					}
+					k += i;
+				}
+				for(; k<j; k++) {
+					if ((gdk_res = BUNappend(r, default_value, false)) != GDK_SUCCEED)
+						goto finish;
+				}
+				if(lead > 0 && (*atomcmp)(default_value, nil) == 0)
+					has_nils = true;
+			} else {
+				if(lead < cnt) {
+					m = cnt - lead;
+					for(i=0,n=lead; i<m; i++, n++) {
+						curval = BUNtail(bpi, n);
+						if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)
+							goto finish;
+						if((*atomcmp)(curval, nil) == 0)
+							has_nils = true;
+					}
+					k += i;
+				}
+				for(; k<cnt; k++) {
+					if ((gdk_res = BUNappend(r, default_value, false)) != GDK_SUCCEED)
+						goto finish;
+				}
+				if(lead > 0 && (*atomcmp)(default_value, nil) == 0)
+					has_nils = true;
+			}
+		}
+	}
+finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return gdk_res;
 }
+
+#undef ANALYTICAL_LEAD_IMP
 
 #define ANALYTICAL_LIMIT_IMP(TPE, OP)                        \
 	do {                                                     \
