@@ -2,8 +2,8 @@
 %define version 11.31.4
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
-# Use %bcond_with to add a --with option; i.e., "without" is default.
-# Use %bcond_without to add a --without option; i.e., "with" is default.
+# Use bcond_with to add a --with option; i.e., "without" is default.
+# Use bcond_without to add a --without option; i.e., "with" is default.
 # The --with OPTION and --without OPTION arguments can be passed on
 # the commandline of both rpmbuild and mock.
 
