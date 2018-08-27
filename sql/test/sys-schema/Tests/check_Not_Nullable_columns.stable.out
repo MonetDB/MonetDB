@@ -1,0 +1,586 @@
+stdout of test 'check_Not_Nullable_columns` in directory 'sql/test/sys-schema` itself:
+
+
+# 18:07:02 >  
+# 18:07:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34464" "--set" "mapi_usock=/var/tmp/mtest-25731/.s.monetdb.34464" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_sys-schema" "--set" "embedded_c=true"
+# 18:07:02 >  
+
+# MonetDB 5 server v11.31.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_sys-schema', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.306 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:34464/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25731/.s.monetdb.34464
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:07:03 >  
+# 18:07:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25731" "--port=34464"
+# 18:07:03 >  
+
+#SELECT "id", * FROM "sys"."comments" WHERE "id" IS NULL;
+% sys.comments,	sys.comments,	sys.comments # table_name
+% id,	id,	remark # name
+% int,	int,	varchar # type
+% 1,	1,	0 # length
+#SELECT "remark", * FROM "sys"."comments" WHERE "remark" IS NULL;
+% sys.comments,	sys.comments,	sys.comments # table_name
+% remark,	id,	remark # name
+% varchar,	int,	varchar # type
+% 0,	1,	0 # length
+#SELECT "dependency_type_id", * FROM "sys"."dependency_types" WHERE "dependency_type_id" IS NULL;
+% sys.dependency_types,	sys.dependency_types,	sys.dependency_types # table_name
+% dependency_type_id,	dependency_type_id,	dependency_type_name # name
+% smallint,	smallint,	varchar # type
+% 1,	1,	0 # length
+#SELECT "dependency_type_name", * FROM "sys"."dependency_types" WHERE "dependency_type_name" IS NULL;
+% sys.dependency_types,	sys.dependency_types,	sys.dependency_types # table_name
+% dependency_type_name,	dependency_type_id,	dependency_type_name # name
+% varchar,	smallint,	varchar # type
+% 0,	1,	0 # length
+#SELECT "language_id", * FROM "sys"."function_languages" WHERE "language_id" IS NULL;
+% sys.function_languages,	sys.function_languages,	sys.function_languages,	sys.function_languages # table_name
+% language_id,	language_id,	language_name,	language_keyword # name
+% smallint,	smallint,	varchar,	varchar # type
+% 1,	1,	0,	0 # length
+#SELECT "language_name", * FROM "sys"."function_languages" WHERE "language_name" IS NULL;
+% sys.function_languages,	sys.function_languages,	sys.function_languages,	sys.function_languages # table_name
+% language_name,	language_id,	language_name,	language_keyword # name
+% varchar,	smallint,	varchar,	varchar # type
+% 0,	1,	0,	0 # length
+#SELECT "function_type_id", * FROM "sys"."function_types" WHERE "function_type_id" IS NULL;
+% sys.function_types,	sys.function_types,	sys.function_types,	sys.function_types # table_name
+% function_type_id,	function_type_id,	function_type_name,	function_type_keyword # name
+% smallint,	smallint,	varchar,	varchar # type
+% 1,	1,	0,	0 # length
+#SELECT "function_type_name", * FROM "sys"."function_types" WHERE "function_type_name" IS NULL;
+% sys.function_types,	sys.function_types,	sys.function_types,	sys.function_types # table_name
+% function_type_name,	function_type_id,	function_type_name,	function_type_keyword # name
+% varchar,	smallint,	varchar,	varchar # type
+% 0,	1,	0,	0 # length
+#SELECT "function_type_keyword", * FROM "sys"."function_types" WHERE "function_type_keyword" IS NULL;
+% sys.function_types,	sys.function_types,	sys.function_types,	sys.function_types # table_name
+% function_type_keyword,	function_type_id,	function_type_name,	function_type_keyword # name
+% varchar,	smallint,	varchar,	varchar # type
+% 0,	1,	0,	0 # length
+#SELECT "index_type_id", * FROM "sys"."index_types" WHERE "index_type_id" IS NULL;
+% sys.index_types,	sys.index_types,	sys.index_types # table_name
+% index_type_id,	index_type_id,	index_type_name # name
+% smallint,	smallint,	varchar # type
+% 1,	1,	0 # length
+#SELECT "index_type_name", * FROM "sys"."index_types" WHERE "index_type_name" IS NULL;
+% sys.index_types,	sys.index_types,	sys.index_types # table_name
+% index_type_name,	index_type_id,	index_type_name # name
+% varchar,	smallint,	varchar # type
+% 0,	1,	0 # length
+#SELECT "key_type_id", * FROM "sys"."key_types" WHERE "key_type_id" IS NULL;
+% sys.key_types,	sys.key_types,	sys.key_types # table_name
+% key_type_id,	key_type_id,	key_type_name # name
+% smallint,	smallint,	varchar # type
+% 1,	1,	0 # length
+#SELECT "key_type_name", * FROM "sys"."key_types" WHERE "key_type_name" IS NULL;
+% sys.key_types,	sys.key_types,	sys.key_types # table_name
+% key_type_name,	key_type_id,	key_type_name # name
+% varchar,	smallint,	varchar # type
+% 0,	1,	0 # length
+#SELECT "keyword", * FROM "sys"."keywords" WHERE "keyword" IS NULL;
+% sys.keywords,	sys.keywords # table_name
+% keyword,	keyword # name
+% varchar,	varchar # type
+% 0,	0 # length
+#SELECT "privilege_code_id", * FROM "sys"."privilege_codes" WHERE "privilege_code_id" IS NULL;
+% sys.privilege_codes,	sys.privilege_codes,	sys.privilege_codes # table_name
+% privilege_code_id,	privilege_code_id,	privilege_code_name # name
+% int,	int,	varchar # type
+% 1,	1,	0 # length
+#SELECT "privilege_code_name", * FROM "sys"."privilege_codes" WHERE "privilege_code_name" IS NULL;
+% sys.privilege_codes,	sys.privilege_codes,	sys.privilege_codes # table_name
+% privilege_code_name,	privilege_code_id,	privilege_code_name # name
+% varchar,	int,	varchar # type
+% 0,	1,	0 # length
+#SELECT "function_id", * FROM "sys"."systemfunctions" WHERE "function_id" IS NULL;
+% sys.systemfunctions,	sys.systemfunctions # table_name
+% function_id,	function_id # name
+% int,	int # type
+% 1,	1 # length
+#SELECT "table_type_id", * FROM "sys"."table_types" WHERE "table_type_id" IS NULL;
+% sys.table_types,	sys.table_types,	sys.table_types # table_name
+% table_type_id,	table_type_id,	table_type_name # name
+% smallint,	smallint,	varchar # type
+% 1,	1,	0 # length
+#SELECT "table_type_name", * FROM "sys"."table_types" WHERE "table_type_name" IS NULL;
+% sys.table_types,	sys.table_types,	sys.table_types # table_name
+% table_type_name,	table_type_id,	table_type_name # name
+% varchar,	smallint,	varchar # type
+% 0,	1,	0 # length
+#SELECT "id", * FROM "sys"."_columns" WHERE "id" IS NULL;
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#SELECT "name", * FROM "sys"."_columns" WHERE "name" IS NULL;
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% name,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% varchar,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 0,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#SELECT "type", * FROM "sys"."_columns" WHERE "type" IS NULL;
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% type,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% varchar,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 0,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#SELECT "type_digits", * FROM "sys"."_columns" WHERE "type_digits" IS NULL;
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% type_digits,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#SELECT "type_scale", * FROM "sys"."_columns" WHERE "type_scale" IS NULL;
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% type_scale,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#SELECT "table_id", * FROM "sys"."_columns" WHERE "table_id" IS NULL;
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% table_id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#SELECT "null", * FROM "sys"."_columns" WHERE "null" IS NULL;
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% null,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% boolean,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 5,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#SELECT "number", * FROM "sys"."_columns" WHERE "number" IS NULL;
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% number,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#SELECT "id", * FROM "sys"."_tables" WHERE "id" IS NULL;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
+% int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 1,	1,	0,	1,	0,	1,	5,	1,	1 # length
+#SELECT "name", * FROM "sys"."_tables" WHERE "name" IS NULL;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% name,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
+% varchar,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 0,	1,	0,	1,	0,	1,	5,	1,	1 # length
+#SELECT "schema_id", * FROM "sys"."_tables" WHERE "schema_id" IS NULL;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% schema_id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
+% int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 1,	1,	0,	1,	0,	1,	5,	1,	1 # length
+#SELECT "type", * FROM "sys"."_tables" WHERE "type" IS NULL;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% type,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
+% smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 1,	1,	0,	1,	0,	1,	5,	1,	1 # length
+#SELECT "system", * FROM "sys"."_tables" WHERE "system" IS NULL;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% system,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
+% boolean,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 5,	1,	0,	1,	0,	1,	5,	1,	1 # length
+#SELECT "commit_action", * FROM "sys"."_tables" WHERE "commit_action" IS NULL;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% commit_action,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
+% smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 1,	1,	0,	1,	0,	1,	5,	1,	1 # length
+#SELECT "access", * FROM "sys"."_tables" WHERE "access" IS NULL;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% access,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
+% smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
+% 1,	1,	0,	1,	0,	1,	5,	1,	1 # length
+#SELECT "id", * FROM "sys"."args" WHERE "id" IS NULL;
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% id,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 1,	1,	1,	0,	0,	1,	1,	1,	1 # length
+#SELECT "func_id", * FROM "sys"."args" WHERE "func_id" IS NULL;
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% func_id,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 1,	1,	1,	0,	0,	1,	1,	1,	1 # length
+#SELECT "name", * FROM "sys"."args" WHERE "name" IS NULL;
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% name,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% varchar,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 0,	1,	1,	0,	0,	1,	1,	1,	1 # length
+#SELECT "type", * FROM "sys"."args" WHERE "type" IS NULL;
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% type,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% varchar,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 0,	1,	1,	0,	0,	1,	1,	1,	1 # length
+#SELECT "type_digits", * FROM "sys"."args" WHERE "type_digits" IS NULL;
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% type_digits,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 1,	1,	1,	0,	0,	1,	1,	1,	1 # length
+#SELECT "type_scale", * FROM "sys"."args" WHERE "type_scale" IS NULL;
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% type_scale,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 1,	1,	1,	0,	0,	1,	1,	1,	1 # length
+#SELECT "inout", * FROM "sys"."args" WHERE "inout" IS NULL;
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% inout,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% tinyint,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 1,	1,	1,	0,	0,	1,	1,	1,	1 # length
+#SELECT "number", * FROM "sys"."args" WHERE "number" IS NULL;
+% sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% number,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
+% int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
+% 1,	1,	1,	0,	0,	1,	1,	1,	1 # length
+#SELECT "id", * FROM "sys"."auths" WHERE "id" IS NULL;
+% sys.auths,	sys.auths,	sys.auths,	sys.auths # table_name
+% id,	id,	name,	grantor # name
+% int,	int,	varchar,	int # type
+% 1,	1,	0,	1 # length
+#SELECT "name", * FROM "sys"."auths" WHERE "name" IS NULL;
+% sys.auths,	sys.auths,	sys.auths,	sys.auths # table_name
+% name,	id,	name,	grantor # name
+% varchar,	int,	varchar,	int # type
+% 0,	1,	0,	1 # length
+#SELECT "grantor", * FROM "sys"."auths" WHERE "grantor" IS NULL;
+% sys.auths,	sys.auths,	sys.auths,	sys.auths # table_name
+% grantor,	id,	name,	grantor # name
+% int,	int,	varchar,	int # type
+% 1,	1,	0,	1 # length
+#SELECT "name", * FROM "sys"."db_user_info" WHERE "name" IS NULL;
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% name,	name,	fullname,	default_schema # name
+% varchar,	varchar,	varchar,	int # type
+% 0,	0,	0,	1 # length
+#SELECT "fullname", * FROM "sys"."db_user_info" WHERE "fullname" IS NULL;
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% fullname,	name,	fullname,	default_schema # name
+% varchar,	varchar,	varchar,	int # type
+% 0,	0,	0,	1 # length
+#SELECT "default_schema", * FROM "sys"."db_user_info" WHERE "default_schema" IS NULL;
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% default_schema,	name,	fullname,	default_schema # name
+% int,	varchar,	varchar,	int # type
+% 1,	0,	0,	1 # length
+#SELECT "id", * FROM "sys"."dependencies" WHERE "id" IS NULL;
+% sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% id,	id,	depend_id,	depend_type # name
+% int,	int,	int,	smallint # type
+% 1,	1,	1,	1 # length
+#SELECT "depend_id", * FROM "sys"."dependencies" WHERE "depend_id" IS NULL;
+% sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% depend_id,	id,	depend_id,	depend_type # name
+% int,	int,	int,	smallint # type
+% 1,	1,	1,	1 # length
+#SELECT "depend_type", * FROM "sys"."dependencies" WHERE "depend_type" IS NULL;
+% sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% depend_type,	id,	depend_id,	depend_type # name
+% smallint,	int,	int,	smallint # type
+% 1,	1,	1,	1 # length
+#SELECT "id", * FROM "sys"."functions" WHERE "id" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "name", * FROM "sys"."functions" WHERE "name" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% name,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "func", * FROM "sys"."functions" WHERE "func" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% func,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "mod", * FROM "sys"."functions" WHERE "mod" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% mod,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "language", * FROM "sys"."functions" WHERE "language" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% language,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "type", * FROM "sys"."functions" WHERE "type" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% type,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "side_effect", * FROM "sys"."functions" WHERE "side_effect" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% side_effect,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "varres", * FROM "sys"."functions" WHERE "varres" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% varres,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "vararg", * FROM "sys"."functions" WHERE "vararg" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% vararg,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "schema_id", * FROM "sys"."functions" WHERE "schema_id" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+#SELECT "id", * FROM "sys"."idxs" WHERE "id" IS NULL;
+% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% id,	id,	table_id,	type,	name # name
+% int,	int,	int,	int,	varchar # type
+% 1,	1,	1,	1,	0 # length
+#SELECT "table_id", * FROM "sys"."idxs" WHERE "table_id" IS NULL;
+% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% table_id,	id,	table_id,	type,	name # name
+% int,	int,	int,	int,	varchar # type
+% 1,	1,	1,	1,	0 # length
+#SELECT "type", * FROM "sys"."idxs" WHERE "type" IS NULL;
+% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% type,	id,	table_id,	type,	name # name
+% int,	int,	int,	int,	varchar # type
+% 1,	1,	1,	1,	0 # length
+#SELECT "name", * FROM "sys"."idxs" WHERE "name" IS NULL;
+% sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% name,	id,	table_id,	type,	name # name
+% varchar,	int,	int,	int,	varchar # type
+% 0,	1,	1,	1,	0 # length
+#SELECT "id", * FROM "sys"."keys" WHERE "id" IS NULL;
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% id,	id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	1,	0,	1,	1 # length
+#SELECT "table_id", * FROM "sys"."keys" WHERE "table_id" IS NULL;
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% table_id,	id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	1,	0,	1,	1 # length
+#SELECT "type", * FROM "sys"."keys" WHERE "type" IS NULL;
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% type,	id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	1,	0,	1,	1 # length
+#SELECT "name", * FROM "sys"."keys" WHERE "name" IS NULL;
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% name,	id,	table_id,	type,	name,	rkey,	action # name
+% varchar,	int,	int,	int,	varchar,	int,	int # type
+% 0,	1,	1,	1,	0,	1,	1 # length
+#SELECT "rkey", * FROM "sys"."keys" WHERE "rkey" IS NULL;
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% rkey,	id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	1,	0,	1,	1 # length
+#SELECT "action", * FROM "sys"."keys" WHERE "action" IS NULL;
+% sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% action,	id,	table_id,	type,	name,	rkey,	action # name
+% int,	int,	int,	int,	varchar,	int,	int # type
+% 1,	1,	1,	1,	0,	1,	1 # length
+#SELECT "id", * FROM "sys"."objects" WHERE "id" IS NULL;
+% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% id,	id,	name,	nr # name
+% int,	int,	varchar,	int # type
+% 1,	1,	0,	1 # length
+#SELECT "name", * FROM "sys"."objects" WHERE "name" IS NULL;
+% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% name,	id,	name,	nr # name
+% varchar,	int,	varchar,	int # type
+% 0,	1,	0,	1 # length
+#SELECT "nr", * FROM "sys"."objects" WHERE "nr" IS NULL;
+% sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% nr,	id,	name,	nr # name
+% int,	int,	varchar,	int # type
+% 1,	1,	0,	1 # length
+#SELECT "obj_id", * FROM "sys"."privileges" WHERE "obj_id" IS NULL;
+% sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% obj_id,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
+#SELECT "auth_id", * FROM "sys"."privileges" WHERE "auth_id" IS NULL;
+% sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% auth_id,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
+#SELECT "privileges", * FROM "sys"."privileges" WHERE "privileges" IS NULL;
+% sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% privileges,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
+#SELECT "grantor", * FROM "sys"."privileges" WHERE "grantor" IS NULL;
+% sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% grantor,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
+#SELECT "grantable", * FROM "sys"."privileges" WHERE "grantable" IS NULL;
+% sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% grantable,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
+#SELECT "id", * FROM "sys"."schemas" WHERE "id" IS NULL;
+% sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% id,	id,	name,	authorization,	owner,	system # name
+% int,	int,	varchar,	int,	int,	boolean # type
+% 1,	1,	0,	1,	1,	5 # length
+#SELECT "name", * FROM "sys"."schemas" WHERE "name" IS NULL;
+% sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% name,	id,	name,	authorization,	owner,	system # name
+% varchar,	int,	varchar,	int,	int,	boolean # type
+% 0,	1,	0,	1,	1,	5 # length
+#SELECT "authorization", * FROM "sys"."schemas" WHERE "authorization" IS NULL;
+% sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% authorization,	id,	name,	authorization,	owner,	system # name
+% int,	int,	varchar,	int,	int,	boolean # type
+% 1,	1,	0,	1,	1,	5 # length
+#SELECT "owner", * FROM "sys"."schemas" WHERE "owner" IS NULL;
+% sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% owner,	id,	name,	authorization,	owner,	system # name
+% int,	int,	varchar,	int,	int,	boolean # type
+% 1,	1,	0,	1,	1,	5 # length
+#SELECT "system", * FROM "sys"."schemas" WHERE "system" IS NULL;
+% sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% system,	id,	name,	authorization,	owner,	system # name
+% boolean,	int,	varchar,	int,	int,	boolean # type
+% 5,	1,	0,	1,	1,	5 # length
+#SELECT "column_id", * FROM "sys"."statistics" WHERE "column_id" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% column_id,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% int,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "type", * FROM "sys"."statistics" WHERE "type" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "width", * FROM "sys"."statistics" WHERE "width" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% width,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% int,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "stamp", * FROM "sys"."statistics" WHERE "stamp" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% stamp,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% timestamp,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 26,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "sample", * FROM "sys"."statistics" WHERE "sample" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% sample,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "count", * FROM "sys"."statistics" WHERE "count" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% count,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "unique", * FROM "sys"."statistics" WHERE "unique" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% unique,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "nils", * FROM "sys"."statistics" WHERE "nils" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% nils,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "minval", * FROM "sys"."statistics" WHERE "minval" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% minval,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "maxval", * FROM "sys"."statistics" WHERE "maxval" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% maxval,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "sorted", * FROM "sys"."statistics" WHERE "sorted" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% sorted,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% boolean,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 5,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "revsorted", * FROM "sys"."statistics" WHERE "revsorted" IS NULL;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% revsorted,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% boolean,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 5,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "id", * FROM "sys"."triggers" WHERE "id" IS NULL;
+% sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% id,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
+% int,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
+% 1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
+#SELECT "name", * FROM "sys"."triggers" WHERE "name" IS NULL;
+% sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% name,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
+% varchar,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
+% 0,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
+#SELECT "table_id", * FROM "sys"."triggers" WHERE "table_id" IS NULL;
+% sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% table_id,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
+% int,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
+% 1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
+#SELECT "time", * FROM "sys"."triggers" WHERE "time" IS NULL;
+% sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% time,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
+% smallint,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
+% 1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
+#SELECT "orientation", * FROM "sys"."triggers" WHERE "orientation" IS NULL;
+% sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% orientation,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
+% smallint,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
+% 1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
+#SELECT "event", * FROM "sys"."triggers" WHERE "event" IS NULL;
+% sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% event,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
+% smallint,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
+% 1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
+#SELECT "statement", * FROM "sys"."triggers" WHERE "statement" IS NULL;
+% sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% statement,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
+% varchar,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
+% 0,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
+#SELECT "id", * FROM "sys"."types" WHERE "id" IS NULL;
+% sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 1,	1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT "systemname", * FROM "sys"."types" WHERE "systemname" IS NULL;
+% sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% systemname,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% varchar,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 0,	1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT "sqlname", * FROM "sys"."types" WHERE "sqlname" IS NULL;
+% sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% sqlname,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% varchar,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 0,	1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT "digits", * FROM "sys"."types" WHERE "digits" IS NULL;
+% sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% digits,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 1,	1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT "scale", * FROM "sys"."types" WHERE "scale" IS NULL;
+% sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% scale,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 1,	1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT "radix", * FROM "sys"."types" WHERE "radix" IS NULL;
+% sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% radix,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 1,	1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT "eclass", * FROM "sys"."types" WHERE "eclass" IS NULL;
+% sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% eclass,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 1,	1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT "schema_id", * FROM "sys"."types" WHERE "schema_id" IS NULL;
+% sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
+% 1,	1,	0,	0,	1,	1,	1,	1,	1 # length
+
+# 18:07:03 >  
+# 18:07:03 >  "Done."
+# 18:07:03 >  
+

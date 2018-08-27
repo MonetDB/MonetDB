@@ -158,8 +158,8 @@ static struct PIPELINES {
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.projectionpath();"
-	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
+	 "optimizer.reorder();"
 //	 "optimizer.reduce();" deprecated
 	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
@@ -200,8 +200,8 @@ static struct PIPELINES {
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.projectionpath();"
-	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
+	 "optimizer.reorder();"
 //	 "optimizer.reduce();" deprecated
 	 "optimizer.matpack();"
 	 "optimizer.querylog();"

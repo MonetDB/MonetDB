@@ -283,7 +283,7 @@ minimal_pipe=inline,remap,deadcode,multiplex,generator,profiler,candidates,garba
 The default pipeline contains the mitosis-mergetable-reorder
 optimizers, aimed at large tables and improved access locality.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-default_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mitosis,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,garbageCollector
+default_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mitosis,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 .TP
 .B no_mitosis_pipe
 The no_mitosis pipeline is identical to the default pipeline, except
@@ -292,7 +292,7 @@ It is used mainly to make some tests work deterministically, and to
 check/debug whether "unexpected" problems are related to mitosis
 (and/or mergetable).
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-no_mitosis_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,reorder,deadcode,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,garbageCollector
+no_mitosis_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 .TP
 .B sequential_pipe
 The sequential pipeline is identical to the default pipeline, except
@@ -300,7 +300,7 @@ that optimizers mitosis & dataflow are omitted.
 It is use mainly to make some tests work deterministically, i.e.,
 avoid ambigious output, by avoiding parallelism.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-sequential_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,reorder,deadcode,matpack,querylog,multiplex,generator,profiler,candidates,garbageCollector
+sequential_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,querylog,multiplex,generator,profiler,candidates,postfix,deadcode,wlc,garbageCollector
 .SH CONFIG FILE FORMAT
 The configuration file readable by
 .I mserver5
