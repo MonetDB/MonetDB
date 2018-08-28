@@ -113,11 +113,11 @@ scanner_init_keywords(void)
 	failed += keywords_insert("CUME_DIST", RANK);
 	failed += keywords_insert("ROW_NUMBER", RANK);
 	failed += keywords_insert("NTILE", RANK);
-	failed += keywords_insert("LAG", AGGR);
-	failed += keywords_insert("LEAD", AGGR);
-	failed += keywords_insert("FIRST_VALUE", AGGR);
-	failed += keywords_insert("LAST_VALUE", AGGR);
-	failed += keywords_insert("NTH_VALUE", AGGR2);
+	failed += keywords_insert("LAG", RANK);
+	failed += keywords_insert("LEAD", RANK);
+	failed += keywords_insert("FIRST_VALUE", RANK);
+	failed += keywords_insert("LAST_VALUE", RANK);
+	failed += keywords_insert("NTH_VALUE", RANK);
 
 	failed += keywords_insert("BEST", BEST);
 	failed += keywords_insert("EFFORT", EFFORT);

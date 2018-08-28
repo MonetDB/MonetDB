@@ -4155,15 +4155,15 @@ window_function:
   ;
 
 window_function_type:
-   qrank '(' ')'
+	qrank '(' ')'
 	{ dlist *l = L();
 	  append_list(l, $1);
-	  append_symbol(l, NULL);
+	  append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_RANK, l ); }
- | qrank '(' case_scalar_exp ')'
+  | qrank '(' scalar_exp_list ')'
 	{ dlist *l = L();
 	  append_list(l, $1);
-	  append_symbol(l, $3);
+	  append_list(l, $3);
 	  $$ = _symbol_create_list( SQL_RANK, l ); }
   |	aggr_ref
   ;

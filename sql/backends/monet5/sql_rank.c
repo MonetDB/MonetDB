@@ -613,27 +613,47 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb
 	return MAL_SUCCEED;
 }
 
-/* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
 static str
-SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-					gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
+do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
+			   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
-	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, 0, op, err);
-	int tpe = getArgType(mb, pci, 1);
-	int unit = *getArgReference_int(stk, pci, 4);
-	int start = *getArgReference_int(stk, pci, 5);
-	int end = *getArgReference_int(stk, pci, 6);
-	int excl = *getArgReference_int(stk, pci, 7);
+	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
+	int tpe;
 	gdk_return gdk_res;
 
-	if (unit != 0 || excl != 0)
-		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
-	(void)start;
-	(void)end;
+	(void) cntxt;
+	if (pci->argc != 4 ||
+		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
+		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
+		throw(SQL, op, "%s", err);
+	}
+	tpe = getArgType(mb, pci, 1);
+	if (isaBatType(tpe)) {
+		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+		if (!b)
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if (b) {
+		voidresultBAT(r, b->ttype, BATcount(b), b, op);
+	}
+	if (isaBatType(getArgType(mb, pci, 2))) {
+		p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+		if (!p) {
+			if (b) BBPunfix(b->batCacheid);
+			if (r) BBPunfix(r->batCacheid);
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+	}
+	if (isaBatType(getArgType(mb, pci, 3))) {
+		o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (!o) {
+			if (b) BBPunfix(b->batCacheid);
+			if (r) BBPunfix(r->batCacheid);
+			if (p) BBPunfix(p->batCacheid);
+			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+		}
+	}
 
-	if (msg)
-		return msg;
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
 
@@ -653,19 +673,19 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 		ptr *in = getArgReference(stk, pci, 1);
 		*res = *in;
 	}
-	return msg;
+	return MAL_SUCCEED;
 }
 
 str
 SQLfirst_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.first_value", SQLSTATE(42000) "first_value(:any_1,:bit,:bit)", GDKanalyticalfirst);
+	return do_limit_value(cntxt, mb, stk, pci, "sql.first_value", SQLSTATE(42000) "first_value(:any_1,:bit,:bit)", GDKanalyticalfirst);
 }
 
 str
 SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:bit,:bit)", GDKanalyticallast);
+	return do_limit_value(cntxt, mb, stk, pci, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:bit,:bit)", GDKanalyticallast);
 }
 
 #define NTH_VALUE_IMP(TPE)                                                                      \
@@ -710,7 +730,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int tp1, tp2;
 
 	(void)cntxt;
-	if (pci->argc != 9 || (getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
+	if (pci->argc != 5 || (getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
 		(getArgType(mb, pci, 4) != TYPE_bit && getBatType(getArgType(mb, pci, 4)) != TYPE_bit)) {
 		throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value(:any_1,:number,:bit,:bit)");
 	}
@@ -807,12 +827,12 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 	size_t default_value_size = 0;
 
 	(void)cntxt;
-	if (pci->argc < 8 || pci->argc > 10)
+	if (pci->argc < 4 || pci->argc > 6)
 		throw(SQL, op, SQLSTATE(42000) "%s called with invalid number of arguments", desc);
 
 	tp1 = getArgType(mb, pci, 1);
 
-	if (pci->argc > 8) { //contains (lag or lead) value;
+	if (pci->argc > 4) { //contains (lag or lead) value;
 		tp2 = getArgType(mb, pci, 2);
 		if (isaBatType(tp2))
 			throw(SQL, op, SQLSTATE(42000) "%s second argument must a single atom", desc);
@@ -840,7 +860,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 		base = 3;
 	}
 
-	if (pci->argc > 9) { //contains default value;
+	if (pci->argc > 5) { //contains default value;
 		ValRecord *vin = &(stk)->stk[(pci)->argv[3]];
 		tp3 = getArgType(mb, pci, 3);
 		if (isaBatType(tp3))
@@ -917,6 +937,49 @@ str
 SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_lead_lag(cntxt, mb, stk, pci, "sql.lead", "lead", GDKanalyticallead);
+}
+
+/* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
+static str
+SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
+				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
+{
+	BAT *r, *b, *p, *o;
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, 0, op, err);
+	int tpe = getArgType(mb, pci, 1);
+	int unit = *getArgReference_int(stk, pci, 4);
+	int start = *getArgReference_int(stk, pci, 5);
+	int end = *getArgReference_int(stk, pci, 6);
+	int excl = *getArgReference_int(stk, pci, 7);
+	gdk_return gdk_res;
+
+	if (unit != 0 || excl != 0)
+		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	(void)start;
+	(void)end;
+
+	if (msg)
+		return msg;
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+
+	if (b) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+
+		gdk_res = func(r, b, p, o, tpe);
+		BBPunfix(b->batCacheid);
+		if (p) BBPunfix(p->batCacheid);
+		if (o) BBPunfix(o->batCacheid);
+		if (gdk_res == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			return createException(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else {
+		ptr *res = getArgReference(stk, pci, 0);
+		ptr *in = getArgReference(stk, pci, 1);
+		*res = *in;
+	}
+	return msg;
 }
 
 str

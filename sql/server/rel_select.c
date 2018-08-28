@@ -4478,9 +4478,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	char *aname = NULL;
 	char *sname = NULL;
 	sql_subfunc *wf = NULL;
-	sql_exp *e1 = NULL, *e2 = NULL, *pe = NULL, *oe = NULL, *call = NULL;
+	sql_exp *e = NULL, *pe = NULL, *oe = NULL, *call = NULL;
 	sql_rel *r = *rel, *p;
-	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args, *types;
+	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last;
 	dnode *dn = window_function->data.lval->h;
@@ -4493,11 +4493,11 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	if (f == sql_where) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		e1 = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
+		call = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
 			      uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
 			GDKfree(uaname);
-		return e1;
+		return call;
 	}
 
 	/* window operations are only allowed in the projection */
@@ -4540,7 +4540,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			}
 		}
 		p->r = obe;
-	} else if(aggr && p->r) { //set ascending order by default for aggregations
+	} else if(p->r) { //set ascending order by default for both rank and aggregation calls
 		for(node *nn = ((list*)p->r)->h ; nn ; nn = nn->next) {
 			sql_exp *en = nn->data;
 			set_direction(en, 1);
@@ -4556,38 +4556,42 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			return NULL;
 	}
 
-	if (window_function->token == SQL_RANK) {
-		e1 = p->exps->h->data;
-		e1 = exp_column(sql->sa, exp_relname(e1), exp_name(e1), exp_subtype(e1), exp_card(e1), has_nil(e1), is_intern(e1));
-		if(dn->next && dn->next->data.sym) {
-			is_last = 0;
-			exp_kind ek = {type_value, card_value, FALSE};
+	fargs = sa_list(sql->sa);
+	if (!aggr) { //rank function call
+		dlist* dnn = window_function->data.lval->h->next->data.lval;
 
-			e2 = rel_value_exp2(sql, &p, dn->next->data.sym, f, ek, &is_last);
+		if(!dnn || (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0)) {
+			e = p->exps->h->data;
+			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+			append(fargs, e);
 		}
-	} else {
+		if(dnn) {
+			for(dnode *nn = dnn->h ; nn ; nn = nn->next) {
+				is_last = 0;
+				exp_kind ek = {type_value, card_column, FALSE};
+				append(fargs, rel_value_exp2(sql, &p, nn->data.sym, f, ek, &is_last));
+			}
+		}
+	} else { //aggregation function call
 		dnode *n = dn->next;
 
 		if (n) {
 			if (!n->next->data.sym) { /* count(*) */
-				e1 = p->exps->h->data;
-				e1 = exp_column(sql->sa, exp_relname(e1), exp_name(e1), exp_subtype(e1), exp_card(e1), has_nil(e1), is_intern(e1));
-				e2 = exp_atom_bool(sql->sa, 0);
+				e = p->exps->h->data;
+				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+				append(fargs, e);
+				append(fargs, exp_atom_bool(sql->sa, 0));
 			} else {
 				is_last = 0;
 				exp_kind ek1 = {type_value, card_column, FALSE};
 
 				distinct = n->data.i_val;
-				e1 = rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last);
-				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
-					e2 = exp_atom_bool(sql->sa, 1);
-				} else if(n->next->next) {
-					is_last = 0;
-					exp_kind ek2 = {type_value, card_column, FALSE};
-
-					distinct = n->next->data.i_val;
-					e2 = rel_value_exp2(sql, &p, n->next->next->data.sym, f, ek2, &is_last);
-				}
+				/*
+				 * all aggregations implemented in a window have 1 and only 1 argument only, so for now no further
+				 */
+				append(fargs, rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last));
+				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0)
+					append(fargs, exp_atom_bool(sql->sa, 1));
 			}
 		}
 	}
@@ -4643,20 +4647,16 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (!pe || !oe)
 		return NULL;
 	types = sa_list(sql->sa);
-	if(e1)
-		append(types, exp_subtype(e1));
-	if(e2)
-		append(types, exp_subtype(e2));
+	for(node *nn = fargs->h ; nn ; nn = nn->next)
+		append(types, exp_subtype((sql_exp*) nn->data));
 	append(types, exp_subtype(pe));
 	append(types, exp_subtype(oe));
 	wf = bind_func_(sql, s, aname, types, F_ANALYTIC);
 	if (!wf)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", aname );
 	args = sa_list(sql->sa);
-	if(e1)
-		append(args, e1);
-	if(e2)
-		append(args, e2);
+	for(node *nn = fargs->h ; nn ; nn = nn->next)
+		append(args, (sql_exp*) nn->data);
 	append(args, pe);
 	append(args, oe);
 	if (fbe) {

@@ -103,12 +103,12 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 
 #define NTILE_CALC(TPE)               \
 	do {                              \
-		if((BUN)val >= cnt) {         \
+		if((BUN)val >= ncnt) {        \
 			i = 1;                    \
 			for(; rb<rp; i++, rb++)   \
 				*rb = i;              \
-		} else if(cnt % val == 0) {   \
-			buckets = cnt / val;      \
+		} else if(ncnt % val == 0) {  \
+			buckets = ncnt / val;     \
 			for(; rb<rp; i++, rb++) { \
 				if(i == buckets) {    \
 					j++;              \
@@ -117,7 +117,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 				*rb = j;              \
 			}                         \
 		} else {                      \
-			buckets = cnt / val;      \
+			buckets = ncnt / val;     \
 			for(; rb<rp; i++, rb++) { \
 				*rb = j;              \
 				if(i == buckets) {    \
@@ -145,14 +145,14 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 				if (*np) {                   \
 					i = 0;                   \
 					j = 1;                   \
-					cnt = np - pnp;          \
+					ncnt = np - pnp;         \
 					pnp = np;                \
 					NTILE_CALC(TPE)          \
 				}                            \
 			}                                \
 			i = 0;                           \
 			j = 1;                           \
-			cnt = np - pnp;                  \
+			ncnt = np - pnp;                 \
 			NTILE_CALC(TPE)                  \
 		} else {                             \
 			rp = rb + cnt;                   \
@@ -164,13 +164,14 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 gdk_return
 GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, const void* restrict ntile)
 {
-	BUN cnt = BATcount(b);
+	BUN cnt = BATcount(b), ncnt = cnt;
 	bit *np, *pnp;
 	bool has_nils = false;
 	gdk_return gdk_res = GDK_SUCCEED;
 
 	assert(ntile);
 
+	(void) o;
 	switch (tpe) {
 		case TYPE_bte:
 			ANALYTICAL_NTILE_IMP(bte)
@@ -200,13 +201,6 @@ finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	if(o) {
-		r->tsorted = o->tsorted;
-		r->trevsorted = o->trevsorted;
-	} else if(!p) {
-		r->tsorted = true;
-		r->trevsorted = false;
-	}
 	return gdk_res;
 }
 
