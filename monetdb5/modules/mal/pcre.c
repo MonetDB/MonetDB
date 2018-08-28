@@ -104,7 +104,7 @@ my_mbrtowc(wchar_t *dst, const char *src, size_t len)
 		return (size_t) -1;
 	if ((src[0] & 0x80) == 0) {
 		*dst = src[0];
-		return 1;
+		return src[0] != 0;
 	}
 	if (len == 1)
 		return (size_t) -1;
