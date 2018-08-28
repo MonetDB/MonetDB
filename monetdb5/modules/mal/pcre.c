@@ -85,6 +85,7 @@ mal_export str ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, cons
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {
 	char *k;
+	wchar_t *w;
 	bool search;
 	ptrdiff_t len;
 	struct RE *n;
@@ -163,32 +164,27 @@ my_mbsrtowcs(wchar_t *dst, const char **src, size_t len)
 #endif
 
 static int
-mystrncasecmp(const char *s1, const char *s2, size_t n1)
+mywstrncasecmp(const char *s1, const wchar_t *s2, size_t n2)
 {
-	wchar_t c1, c2;
-	size_t n2 = n1;
+	wchar_t c1;
 
 #ifndef _MSC_VER
-	mbstate_t ps1, ps2;
+	mbstate_t ps1;
 	memset(&ps1, 0, sizeof(ps1));
-	memset(&ps2, 0, sizeof(ps2));
 #endif
-	while (n1 > 0 && n2 > 0) {
-		size_t nn1 = mbrtowc(&c1, s1, n1, &ps1);
-		size_t nn2 = mbrtowc(&c2, s2, n2, &ps2);
+	while (n2 > 0) {
+		size_t nn1 = mbrtowc(&c1, s1, 1000, &ps1);
 		if (nn1 == 0)
-			return -(nn2 != 0);
-		if (nn2 == 0)
+			return -(*s2 != 0);
+		if (*s2 == 0)
 			return 1;
-		if (nn1 == (size_t) -1 || nn1 == (size_t) -2 ||
-			nn2 == (size_t) -1 || nn2 == (size_t) -2)
+		if (nn1 == (size_t) -1 || nn1 == (size_t) -2)
 			return 0;	 /* actually an error that shouldn't happen */
-		if (towlower((wint_t) c1) != towlower((wint_t) c2))
-			return towlower((wint_t) c1) - towlower((wint_t) c2);
-		n1 -= nn1;
+		if (towlower((wint_t) c1) != towlower((wint_t) *s2))
+			return towlower((wint_t) c1) - towlower((wint_t) *s2);
 		s1 += nn1;
-		n2 -= nn2;
-		s2 += nn2;
+		n2--;
+		s2++;
 	}
 	return 0;
 }
@@ -251,53 +247,47 @@ mywstrcasecmp(const char *s1, const wchar_t *s2)
 }
 
 static const char *
-mystrcasestr(const char *haystack, const char *needle)
+mywstrcasestr(const char *haystack, const wchar_t *wneedle)
 {
-	size_t nlen = strlen(needle);
+	size_t nlen = wcslen(wneedle);
 
-#ifndef _MSC_VER
-	mbstate_t ps;
-	memset(&ps, 0, sizeof(ps));
-#endif
 	if (nlen == 0)
 		return haystack;
-	wchar_t *wneedle = GDKmalloc((nlen + 1) * sizeof(wchar_t));
-	const char *n = needle;
-	if (wneedle == NULL || (nlen = mbsrtowcs(wneedle, &needle, nlen + 1, &ps)) == (size_t) -1) {
-		needle = n;				/* start over */
-		GDKfree(wneedle);
-		nlen = strlen(needle);
-		/* fallback code */
-		for (size_t hlen = strlen(haystack); nlen <= hlen; hlen--) {
-			if (mystrncasecmp(haystack, needle, nlen) == 0)
-				return haystack;
-			while ((*++haystack & 0xC0) == 0x80)
-				hlen--;
-		}
-		return NULL;
-	}
-	for (wchar_t *w = wneedle; *w; w++)
-		*w = (wchar_t) towlower((wint_t) *w);
-	for (size_t hlen = strlen(haystack); *haystack; hlen--) {
+
+	size_t hlen = strlen(haystack);
+#ifndef _MSC_VER
+	mbstate_t ps, pss;
+	memset(&ps, 0, sizeof(ps));
+	pss = ps;
+#endif
+
+	while (*haystack) {
 		size_t i;
-		for (i = 0; i < nlen; i++) {
+		size_t h;
+		size_t step = 0;
+		for (i = h = 0; i < nlen; i++) {
 			wchar_t c;
-			size_t j = mbrtowc(&c, haystack, hlen, &ps);
-			if (j == 0) {
-				GDKfree(wneedle);
+			size_t j = mbrtowc(&c, haystack + h, hlen - h, &ps);
+			if (j == 0)
 				return NULL;
+			if (i == 0) {
+				step = j;
+#ifndef _MSC_VER
+				pss = ps;
+#endif
 			}
-			if (towlower((wint_t) c) != (wint_t) wneedle[i])
+			if (towlower((wint_t) c) != towlower((wint_t) wneedle[i]))
 				break;
+			h += j;
 		}
-		if (i == nlen) {
-			GDKfree(wneedle);
+		if (i == nlen)
 			return haystack;
-		}
-		while ((*++haystack & 0xC0) == 0x80)
-			hlen--;
+#ifndef _MSC_VER
+		ps = pss;
+#endif
+		haystack += step;
+		hlen -= step;
 	}
-	GDKfree(wneedle);
 	return NULL;
 }
 
@@ -336,7 +326,7 @@ re_match_ignore(const char *s, RE *pattern)
 
 	for (r = pattern; r; r = r->n) {
 		if (!*s ||
-			(r->search ? (s = mystrcasestr(s, r->k)) == NULL : mystrncasecmp(s, r->k, r->len) != 0))
+			(r->search ? (s = mywstrcasestr(s, r->w)) == NULL : mywstrncasecmp(s, r->w, r->len) != 0))
 			return false;
 		s += r->len;
 	}
@@ -362,6 +352,7 @@ re_destroy(RE *p)
 {
 	if (p) {
 		GDKfree(p->k);
+		GDKfree(p->w);
 		do {
 			RE *n = p->n;
 
@@ -371,42 +362,77 @@ re_destroy(RE *p)
 	}
 }
 
-/* Create a linked list of RE structures.  The k field in the first
- * structure is allocated, whereas the k field in all subsequent
- * structures point into the allocated buffer of the first. */
+/* Create a linked list of RE structures.  Depending on the caseignore
+ * flag, the w (if true) or the k (if false) field is used.  These
+ * fields in the first structure are allocated, whereas in all
+ * subsequent structures the fields point into the allocated buffer of
+ * the first. */
 static RE *
-re_create(const char *pat, int nr)
+re_create(const char *pat, int nr, bool caseignore)
 {
 	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
-	char *p, *q;
 
 	if (r == NULL)
 		return NULL;
 	r->n = NULL;
 	r->search = 0;
 	r->k = NULL;
+	r->w = NULL;
 
 	if (*pat == '%') {
 		pat++; /* skip % */
 		r->search = true;
 	}
-	if ((p = GDKstrdup(pat)) == NULL) {
-		GDKfree(r);
-		return NULL;
-	}
-	while ((q = strchr(p, '%')) != NULL) {
-		*q = 0;
-		n->k = p;
-		n->len = q - p;
-		if (--nr > 0) {
-			n = n->n = (RE*)GDKmalloc(sizeof(RE));
-			if (n == NULL)
-				goto bailout;
-			n->search = true;
-			n->n = NULL;
-			n->k = NULL;
+	if (caseignore) {
+		size_t patlen = strlen(pat);
+		wchar_t *wp = GDKmalloc(sizeof(wchar_t) * (patlen + 1));
+		wchar_t *wq;
+#ifndef _MSC_VER
+		mbstate_t ps;
+		memset(&ps, 0, sizeof(ps));
+#endif
+		if (wp == NULL) {
+			GDKfree(r);
+			return NULL;
 		}
-		p = q + 1;
+		mbsrtowcs(wp, &pat, patlen + 1, &ps);
+		r->w = wp;
+		while ((wq = wcschr(wp, L'%')) != NULL) {
+			*wq = 0;
+			n->w = wp;
+			n->len = wq - wp;
+			if (--nr > 0) {
+				n = n->n = (RE*)GDKmalloc(sizeof(RE));
+				if (n == NULL)
+					goto bailout;
+				n->search = true;
+				n->n = NULL;
+				n->k = NULL;
+				n->w = NULL;
+			}
+			wp = wq + 1;
+		}
+	} else {
+		char *p, *q;
+		if ((p = GDKstrdup(pat)) == NULL) {
+			GDKfree(r);
+			return NULL;
+		}
+		while ((q = strchr(p, '%')) != NULL) {
+			*q = 0;
+			n->k = p;
+			n->len = q - p;
+			if (--nr > 0) {
+				n = n->n = (RE*)GDKmalloc(sizeof(RE));
+				if (n == NULL)
+					goto bailout;
+				n->search = true;
+				n->n = NULL;
+				n->k = NULL;
+				n->w = NULL;
+			}
+			p = q + 1;
+		}
 	}
 	return r;
   bailout:
@@ -616,7 +642,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 
 	if (!use_strcmp) {
 		nr = re_simple(pat);
-		re = re_create(pat, nr);
+		re = re_create(pat, nr, caseignore);
 		if (!re)
 			throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -2012,7 +2038,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (strcmp(vr, str_nil) == 0)
 			continue;
 		if (*esc == 0 && (nr = re_simple(vr)) > 0) {
-			re = re_create(vr, nr);
+			re = re_create(vr, nr, caseignore);
 			if (re == NULL) {
 				msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
