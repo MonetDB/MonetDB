@@ -731,7 +731,6 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_unitdir}/monetdbd.service
-%config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %else
 # RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
@@ -740,6 +739,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
+%config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
