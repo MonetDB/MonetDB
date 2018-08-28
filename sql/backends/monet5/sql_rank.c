@@ -571,8 +571,8 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef NTILE_VALUE_SINGLE_IMP
 
 static str
-SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				  int rtype, const str mod, const str err)
+SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, bit *force_order, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+				  InstrPtr pci, int rtype, const str mod, const str err)
 {
 	*r = *b = *p = *o = NULL;
 
@@ -609,6 +609,8 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb
 			if (*p) BBPunfix((*p)->batCacheid);
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
+	} else {
+		*force_order = *getArgReference_bit(stk, pci, 3);
 	}
 	return MAL_SUCCEED;
 }
@@ -942,10 +944,11 @@ SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
 static str
 SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
+				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int))
 {
 	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, 0, op, err);
+	bit force_order = 0;
+	str msg = SQLanalytics_args(&r, &b, &p, &o, &force_order, cntxt, mb, stk, pci, 0, op, err);
 	int tpe = getArgType(mb, pci, 1);
 	int unit = *getArgReference_int(stk, pci, 4);
 	int start = *getArgReference_int(stk, pci, 5);
@@ -966,7 +969,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, tpe);
+		gdk_res = func(r, b, p, o, force_order, tpe);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
@@ -1075,10 +1078,11 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int), const str op, const str err)
+					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int, int), const str op, const str err)
 {
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
 	int tp1, tp2, unit, start, end, excl;
+	bit force_order = 0;
 	gdk_return gdk_res;
 	str msg = MAL_SUCCEED;
 
@@ -1094,9 +1098,8 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	end = *getArgReference_int(stk, pci, 6);
 	excl = *getArgReference_int(stk, pci, 7);
 
-	if (isaBatType(tp1))
+	if (isaBatType(tp1)) {
 		tp1 = getBatType(tp1);
-	if (isaBatType(getArgType(mb, pci, 1))) {
 		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 		if (!b)
 			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
@@ -1125,8 +1128,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 	}
 	if (b) {
-		BUN cnt = BATcount(b);
-		voidresultBAT(r, tp2, cnt, b, op);
+		voidresultBAT(r, tp2, BATcount(b), b, op);
 	}
 	if (isaBatType(getArgType(mb, pci, 2))) {
 		p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
@@ -1144,6 +1146,8 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			if (p) BBPunfix(p->batCacheid);
 			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
+	} else {
+		force_order = *getArgReference_bit(stk, pci, 3);
 	}
 
 	if (unit != 0 || excl != 0)
@@ -1154,7 +1158,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, tp1, tp2);
+		gdk_res = func(r, b, p, o, force_order, tp1, tp2);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
@@ -1232,7 +1236,8 @@ str
 SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
+	bit force_order = 0;
+	str msg = SQLanalytics_args(&r, &b, &p, &o, &force_order, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
 								SQLSTATE(42000) "avg(:any_1,:bit,:bit)");
 	int tpe = getArgType(mb, pci, 1);
 	int unit = *getArgReference_int(stk, pci, 4);
@@ -1254,7 +1259,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalavg(r, b, p, o, tpe);
+		gdk_res = GDKanalyticalavg(r, b, p, o, force_order, tpe);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);

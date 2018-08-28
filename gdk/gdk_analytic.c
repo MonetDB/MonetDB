@@ -957,7 +957,7 @@ finish:
 				has_nils = true;                             \
 			for (;rb < rp; rb++)                             \
 				*rb = curval;                                \
-		} else if (o) { /* single value, ie no partitions */ \
+		} else if (o || force_order) {                       \
 			for(; rp<end; rp++, bp++) {                      \
 				if(!is_##TPE##_nil(*bp)) {                   \
 					if(is_##TPE##_nil(curval))               \
@@ -990,7 +990,7 @@ finish:
 
 #define ANALYTICAL_LIMIT(OP, IMP, SIGN_OP)                                                \
 gdk_return                                                                                \
-GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)                                \
+GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe)               \
 {                                                                                         \
 	int (*atomcmp)(const void *, const void *);                                           \
 	const void* restrict nil;                                                             \
@@ -1053,7 +1053,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)                      
 					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)           \
 					   goto finish;                                                       \
 				}                                                                         \
-			} else if (o) { /* single value, ie no partitions */                          \
+			} else if (o || force_order) {                                                \
 				for(i=0; i<cnt; i++) {                                                    \
 					void *next = BUNtail(bpi, i);                                         \
 						if((*atomcmp)(next, nil) != 0) {                                  \
@@ -1316,7 +1316,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 				has_nils = true;                                \
 			for (;rb < rp; rb++)                                \
 				*rb = curval;                                   \
-		} else if (o) { /* single value, ie no partitions */    \
+		} else if (o || force_order) {                          \
 			for(; rp<end; rp++, bp++) {                         \
 				if(!is_##TPE1##_nil(*bp)) {                     \
 					if(is_##TPE2##_nil(curval))                 \
@@ -1379,7 +1379,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 				has_nils = true;                                      \
 			for (;rb < rp; rb++)                                      \
 				*rb = curval;                                         \
-		} else if (o) { /* single value, ie no partitions */          \
+		} else if (o || force_order) {                                \
 			TPE2 *end = rb + cnt;                                     \
 			if(dofsum(bp, 0, 0, cnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2, \
 					  NULL, NULL, NULL, 0, 0, true, false, true,      \
@@ -1406,7 +1406,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	} while(0);
 
 gdk_return
-GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
+GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2)
 {
 	bool has_nils = false;
 	BUN i, j, cnt = BATcount(b), nils = 0;
@@ -1572,7 +1572,7 @@ finish:
 				has_nils = true;                                 \
 			for (;rb < rp; rb++)                                 \
 				*rb = curval;                                    \
-		} else if (o) { /* single value, ie no partitions */     \
+		} else if (o || force_order) {                           \
 			for(; rp<end; rp++, bp++) {                          \
 				if(!is_##TPE1##_nil(*bp)) {                      \
 					if(is_##TPE2##_nil(curval))                  \
@@ -1631,7 +1631,7 @@ finish:
 				has_nils = true;                             \
 			for (;rb < rp; rb++)                             \
 				*rb = curval;                                \
-		} else if (o) { /* single value, ie no partitions */ \
+		} else if (o || force_order) {                       \
 			for(; rp<end; rp++, bp++) {                      \
 				if(!is_##TPE1##_nil(*bp)) {                  \
 					if(is_##TPE2##_nil(curval))              \
@@ -1699,7 +1699,7 @@ finish:
 				has_nils = true;                                \
 			for (;rb < rp; rb++)                                \
 				*rb = curval;                                   \
-		} else if (o) { /* single value, ie no partitions */    \
+		} else if (o || force_order) {                          \
 			for(; rp<end; rp++, bp++) {                         \
 				if(!is_##TPE1##_nil(*bp)) {                     \
 					if(is_##TPE2##_nil(curval))                 \
@@ -1726,7 +1726,7 @@ finish:
 	} while(0);
 
 gdk_return
-GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2)
+GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2)
 {
 	bool has_nils = false;
 	BUN cnt = BATcount(b), nils = 0;
@@ -1940,7 +1940,7 @@ avg_overflow##TPE:                                                  \
 calc_done##TPE:                                                     \
 			for (;rb < rp; rb++)                                    \
 				*rb = curval;                                       \
-		} else if (o) { /* single value, ie no partitions */        \
+		} else if (o || force_order) {                              \
 			for(; rp<end; rp++, bp++) {                             \
 				if (!is_##TPE##_nil(*bp)) {                         \
 					ADD_WITH_CHECK(TPE, *bp, lng_hge, sum, lng_hge, \
@@ -2021,7 +2021,7 @@ single_calc_done##TPE:                                              \
 			has_nils = has_nils || (n == 0);                 \
 			for (;rb < rp; rb++)                             \
 				*rb = curval;                                \
-		} else if (o) { /* single value, ie no partitions */ \
+		} else if (o || force_order) {                       \
 			for(; rp<end; rp++, bp++) {                      \
 				if (!is_##TPE##_nil(*bp))                    \
 					AVERAGE_ITER_FLOAT(TPE, *bp, a, n);      \
@@ -2044,7 +2044,7 @@ single_calc_done##TPE:                                              \
 	} while(0);
 
 gdk_return
-GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
+GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe)
 {
 	bool has_nils = false;
 	BUN cnt = BATcount(b), nils = 0, n = 0;
