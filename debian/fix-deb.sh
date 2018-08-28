@@ -39,6 +39,7 @@ wheezy | trusty)
     # fix control file because these systems don't have liblas and a
     # too old version of libgeos
     sed -i -e 's/, libgeos-dev[^,]*//;s/, liblas-c-dev[^,]*//' \
+	-e 's/libcfitsio-dev/libcfitsio3-dev/' \
 	-e '/^Package:.*lidar/,/^$/d' \
 	-e '/^Package:.*geom/,/^$/d' debian/control
     rm debian/libmonetdb5-server-lidar.install debian/libmonetdb5-server-geom.install
