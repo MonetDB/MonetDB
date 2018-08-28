@@ -73,6 +73,7 @@ select cast(prod(aa) over () as bigint) from analytics;
 select avg(aa) over () from analytics;
 select count(aa) over () from analytics;
 select count(*) over () from analytics;
+--select count(*) over (); FIXME this crashes :(
 
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
@@ -96,6 +97,40 @@ select count(*) over (partition by bb) from stressme;
 select count(*) over (partition by bb order by bb asc) from stressme;
 select count(*) over (partition by bb order by bb desc) from stressme;
 select count(*) over (order by bb desc) from stressme;
+
+select min(bb) over (partition by aa) from stressme;
+select min(bb) over (partition by aa order by aa asc) from stressme;
+select min(bb) over (partition by aa order by aa desc) from stressme;
+select min(bb) over (order by aa desc) from stressme;
+
+select max(bb) over (partition by aa) from stressme;
+select max(bb) over (partition by aa order by aa asc) from stressme;
+select max(bb) over (partition by aa order by aa desc) from stressme;
+select max(bb) over (order by aa desc) from stressme;
+
+select cast(sum(bb) over (partition by aa) as bigint) from analytics;
+select cast(sum(bb) over (partition by aa order by aa asc) as bigint) from analytics;
+select cast(sum(bb) over (partition by aa order by aa desc) as bigint) from analytics;
+select cast(sum(bb) over (order by aa desc) as bigint) from analytics;
+
+select cast(prod(bb) over (partition by aa) as bigint) from analytics;
+select cast(prod(bb) over (partition by aa order by aa asc) as bigint) from analytics;
+select cast(prod(bb) over (partition by aa order by aa desc) as bigint) from analytics;
+
+select avg(bb) over (partition by aa) from analytics;
+select avg(bb) over (partition by aa order by aa asc) from analytics;
+select avg(bb) over (partition by aa order by aa desc) from analytics;
+select avg(bb) over (order by aa desc) from analytics;
+
+select count(bb) over (partition by aa) from stressme;
+select count(bb) over (partition by aa order by aa asc) from stressme;
+select count(bb) over (partition by aa order by aa desc) from stressme;
+select count(bb) over (order by aa desc) from stressme;
+
+select count(*) over (partition by aa) from stressme;
+select count(*) over (partition by aa order by aa asc) from stressme;
+select count(*) over (partition by aa order by aa desc) from stressme;
+select count(*) over (order by aa desc) from stressme;
 
 create table debugme (aa real, bb int);
 insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
