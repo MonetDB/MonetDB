@@ -19,7 +19,7 @@ override_dh_auto_configure:
 	--enable-developer=no \
 	--enable-embedded=no \
 	--enable-embedded-r=no \
-	--enable-fits=no \
+	--enable-fits=yes \
 	--enable-gdk=yes \
 	--enable-geom=yes \
 	--enable-lidar=yes \
