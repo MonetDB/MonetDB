@@ -87,8 +87,8 @@
 %endif
 
 %if %{fedpkgs}
-# By default, do not create the MonetDB-cfitsio package.
-%bcond_with fits
+# By default, create the MonetDB-cfitsio package.
+%bcond_without fits
 %endif
 
 %{!?__python2: %global __python2 %__python}
