@@ -1,7 +1,3 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Tue Aug 28 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Build the MonetDB-cfitsio RPM and libmonetdb5-server-cfitsio
-  Debian/Ubuntu package.
-
