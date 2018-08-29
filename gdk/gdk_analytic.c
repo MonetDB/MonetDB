@@ -140,19 +140,21 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 				*rp = TPE##_nil;             \
 		} else if(p) {                       \
 			pnp = np = (bit*)Tloc(p, 0);     \
-			TPE *end = rp + cnt;             \
-			for(; rp<end; np++, rp++) {      \
+			end = np + cnt;                  \
+			for(; np<end; np++) {            \
 				if (*np) {                   \
 					i = 0;                   \
 					j = 1;                   \
 					ncnt = np - pnp;         \
-					pnp = np;                \
+					rp += ncnt;              \
 					NTILE_CALC(TPE)          \
+					pnp = np;                \
 				}                            \
 			}                                \
 			i = 0;                           \
 			j = 1;                           \
 			ncnt = np - pnp;                 \
+			rp += ncnt;                      \
 			NTILE_CALC(TPE)                  \
 		} else {                             \
 			rp = rb + cnt;                   \
@@ -165,7 +167,7 @@ gdk_return
 GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, const void* restrict ntile)
 {
 	BUN cnt = BATcount(b), ncnt = cnt;
-	bit *np, *pnp;
+	bit *np, *pnp, *end;
 	bool has_nils = false;
 	gdk_return gdk_res = GDK_SUCCEED;
 
@@ -209,30 +211,38 @@ finish:
 
 #define ANALYTICAL_FIRST_IMP(TPE)                 \
 	do {                                          \
-		TPE *rp, *rb, *restrict bp, *end, curval; \
+		TPE *rp, *rb, *restrict bp, curval;       \
 		rb = rp = (TPE*)Tloc(r, 0);               \
 		bp = (TPE*)Tloc(b, 0);                    \
 		curval = *bp;                             \
-		end = rp + cnt;                           \
 		if (p) {                                  \
-			np = (bit*)Tloc(p, 0);                \
-			for(; rp<end; np++, rp++, bp++) {     \
+			pnp = np = (bit*)Tloc(p, 0);          \
+			end = np + cnt;                       \
+			for(; np<end; np++) {                 \
 				if (*np) {                        \
+					ncnt = (np - pnp);            \
+					rp += ncnt;                   \
+					bp += ncnt;                   \
 					if(is_##TPE##_nil(curval))    \
 						has_nils = true;          \
 					for (;rb < rp; rb++)          \
 						*rb = curval;             \
 					curval = *bp;                 \
+					pnp = np;                     \
 				}                                 \
 			}                                     \
+			ncnt = (np - pnp);                    \
+			rp += ncnt;                           \
+			bp += ncnt;                           \
 			if(is_##TPE##_nil(curval))            \
 				has_nils = true;                  \
 			for (;rb < rp; rb++)                  \
 				*rb = curval;                     \
 		} else {                                  \
+			TPE *rend = rp + cnt;                 \
 			if(is_##TPE##_nil(curval))            \
 				has_nils = true;                  \
-			for(; rp<end; rp++)                   \
+			for(; rp<rend; rp++)                  \
 				*rp = curval;                     \
 		}                                         \
 	} while(0);
@@ -243,8 +253,8 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
 	bool has_nils = false;
-	BUN i, j, cnt = BATcount(b);
-	bit *restrict np;
+	BUN i, j, ncnt, cnt = BATcount(b);
+	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 
 	(void)o;
@@ -320,31 +330,39 @@ finish:
 
 #define ANALYTICAL_LAST_IMP(TPE)                  \
 	do {                                          \
-		TPE *rp, *rb, *restrict bp, *end, curval; \
+		TPE *rp, *rb, *restrict bp, curval;       \
 		rb = rp = (TPE*)Tloc(r, 0);               \
 		bp = (TPE*)Tloc(b, 0);                    \
-		end = rp + cnt;                           \
 		if (p) {                                  \
-			np = (bit*)Tloc(p, 0);                \
-			for(; rp<end; np++, rp++, bp++) {     \
+			pnp = np = (bit*)Tloc(p, 0);          \
+			end = np + cnt;                       \
+			for(; np<end; np++) {                 \
 				if (*np) {                        \
+					ncnt = (np - pnp);            \
+					rp += ncnt;                   \
+					bp += ncnt;                   \
 					curval = *(bp - 1);           \
 					if(is_##TPE##_nil(curval))    \
 						has_nils = true;          \
 					for (;rb < rp; rb++)          \
 						*rb = curval;             \
+					pnp = np;                     \
 				}                                 \
 			}                                     \
+			ncnt = (np - pnp);                    \
+			rp += ncnt;                           \
+			bp += ncnt;                           \
 			curval = *(bp - 1);                   \
 			if(is_##TPE##_nil(curval))            \
 				has_nils = true;                  \
 			for (;rb < rp; rb++)                  \
 				*rb = curval;                     \
 		} else {                                  \
+			TPE *rend = rp + cnt;                 \
 			curval = *(bp + cnt - 1);             \
 			if(is_##TPE##_nil(curval))            \
 				has_nils = true;                  \
-			for(; rp<end; rp++)                   \
+			for(; rp<rend; rp++)                  \
 				*rp = curval;                     \
 		}                                         \
 	} while(0);
@@ -355,8 +373,8 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
 	bool has_nils = false;
-	BUN i, j, cnt = BATcount(b);
-	bit *restrict np;
+	BUN i, j, ncnt, cnt = BATcount(b);
+	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 
 	(void)o;
@@ -434,18 +452,22 @@ finish:
 
 #define ANALYTICAL_NTHVALUE_IMP(TPE)              \
 	do {                                          \
-		TPE *rp, *rb, *pbp, *bp, *end, curval;    \
+		TPE *rp, *rb, *pbp, *bp, curval;          \
 		pbp = bp = (TPE*)Tloc(b, 0);              \
 		rb = rp = (TPE*)Tloc(r, 0);               \
-		end = rp + cnt;                           \
 		if(nth == BUN_NONE) {                     \
+			TPE* rend = rp + cnt;                 \
 			has_nils = true;                      \
-			for(; rp<end; rp++)                   \
+			for(; rp<rend; rp++)                  \
 				*rp = TPE##_nil;                  \
 		} else if(p) {                            \
-			np = (bit*)Tloc(p, 0);                \
-			for(; rp<end; np++, rp++, bp++) {     \
+			pnp = np = (bit*)Tloc(p, 0);          \
+			end = np + cnt;                       \
+			for(; np<end; np++) {                 \
 				if (*np) {                        \
+					ncnt = (np - pnp);            \
+					rp += ncnt;                   \
+					bp += ncnt;                   \
 					if(nth > (BUN) (bp - pbp)) {  \
 						curval = TPE##_nil;       \
 					} else {                      \
@@ -456,8 +478,12 @@ finish:
 					for(; rb<rp; rb++)            \
 						*rb = curval;             \
 					pbp = bp;                     \
+					pnp = np;                     \
 				}                                 \
 			}                                     \
+			ncnt = (np - pnp);                    \
+			rp += ncnt;                           \
+			bp += ncnt;                           \
 			if(nth > (BUN) (bp - pbp)) {          \
 				curval = TPE##_nil;               \
 			} else {                              \
@@ -468,7 +494,7 @@ finish:
 			for(; rb<rp; rb++)                    \
 				*rb = curval;                     \
 		} else {                                  \
-			TPE* end = rp + cnt;                  \
+			TPE* rend = rp + cnt;                 \
 			if(nth > cnt) {                       \
 				curval = TPE##_nil;               \
 			} else {                              \
@@ -476,7 +502,7 @@ finish:
 			}                                     \
 			if(is_##TPE##_nil(curval))            \
 				has_nils = true;                  \
-			for(; rp<end; rp++)                   \
+			for(; rp<rend; rp++)                  \
 				*rp = curval;                     \
 		}                                         \
 		goto finish;                              \
@@ -487,8 +513,8 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, BUN nth, int tpe)
 {
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
-	BUN i, j, cnt = BATcount(b);
-	bit *np;
+	BUN i, j, ncnt, cnt = BATcount(b);
+	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
@@ -582,20 +608,22 @@ finish:
 
 #define ANALYTICAL_LAG_IMP(TPE)                         \
 	do {                                                \
-		TPE *rp, *rb, *bp, *end,                        \
+		TPE *rp, *rb, *bp, *rend,                       \
 			def = *((TPE *) default_value), next;       \
 		bp = (TPE*)Tloc(b, 0);                          \
 		rb = rp = (TPE*)Tloc(r, 0);                     \
-		end = rb + cnt;                                 \
+		rend = rb + cnt;                                \
 		if(lag == BUN_NONE) {                           \
 			has_nils = true;                            \
-			for(; rb<end; rb++)                         \
+			for(; rb<rend; rb++)                        \
 				*rb = TPE##_nil;                        \
 		} else if(p) {                                  \
-			np = (bit*)Tloc(p, 0);                      \
-			for(; rp<end; np++, rp++) {                 \
+			pnp = np = (bit*)Tloc(p, 0);                \
+			end = np + cnt;                             \
+			for(; np<end; np++) {                       \
 				if (*np) {                              \
-					l = (rp - rb);                      \
+					ncnt = (np - pnp);                  \
+					rp += ncnt;                         \
 					for(i=0; i<lag && rb<rp; i++, rb++) \
 						*rb = def;                      \
 					if(lag > 0 && is_##TPE##_nil(def))  \
@@ -606,25 +634,26 @@ finish:
 						if(is_##TPE##_nil(next))        \
 							has_nils = true;            \
 					}                                   \
-					bp += (lag < l) ? lag : 0;          \
+					bp += (lag < ncnt) ? lag : 0;       \
+					pnp = np;                           \
 				}                                       \
 			}                                           \
-			for(i=0; i<lag && rb<end; i++, rb++)        \
+			for(i=0; i<lag && rb<rend; i++, rb++)       \
 				*rb = def;                              \
 			if(lag > 0 && is_##TPE##_nil(def))          \
 				has_nils = true;                        \
-			for(;rb<end; rb++, bp++) {                  \
+			for(;rb<rend; rb++, bp++) {                 \
 				next = *bp;                             \
 				*rb = next;                             \
 				if(is_##TPE##_nil(next))                \
 					has_nils = true;                    \
 			}                                           \
 		} else {                                        \
-			for(i=0; i<lag && rb<end; i++, rb++)        \
+			for(i=0; i<lag && rb<rend; i++, rb++)       \
 				*rb = def;                              \
 			if(lag > 0 && is_##TPE##_nil(def))          \
 				has_nils = true;                        \
-			for(;rb<end; rb++, bp++) {                  \
+			for(;rb<rend; rb++, bp++) {                 \
 				next = *bp;                             \
 				*rb = next;                             \
 				if(is_##TPE##_nil(next))                \
@@ -639,8 +668,8 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, BUN lag, const void* restrict d
 {
 	int (*atomcmp)(const void *, const void *);
 	const void *restrict nil;
-	BUN i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b);
-	bit *restrict np;
+	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
+	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
@@ -742,23 +771,25 @@ finish:
 
 #define ANALYTICAL_LEAD_IMP(TPE)                         \
 	do {                                                 \
-		TPE *rp, *rb, *bp, *end,                         \
+		TPE *rp, *rb, *bp, *rend,                        \
 			def = *((TPE *) default_value), next;        \
 		bp = (TPE*)Tloc(b, 0);                           \
 		rb = rp = (TPE*)Tloc(r, 0);                      \
-		end = rb + cnt;                                  \
+		rend = rb + cnt;                                 \
 		if(lead == BUN_NONE) {                           \
 			has_nils = true;                             \
-			for(; rb<end; rb++)                          \
+			for(; rb<rend; rb++)                         \
 				*rb = TPE##_nil;                         \
 		} else if(p) {                                   \
-			np = (bit*)Tloc(p, 0);                       \
-			for(; rp<end; np++, rp++) {                  \
+			pnp = np = (bit*)Tloc(p, 0);                 \
+			end = np + cnt;                              \
+			for(; np<end; np++) {                        \
 				if (*np) {                               \
-					k = (rp - rb);                       \
-					if(lead < k) {                       \
+					ncnt = (np - pnp);                   \
+					rp += ncnt;                          \
+					if(lead < ncnt) {                    \
 						bp += lead;                      \
-						l = k - lead;                    \
+						l = ncnt - lead;                 \
 						for(i=0; i<l; i++, rb++, bp++) { \
 							next = *bp;                  \
 							*rb = next;                  \
@@ -766,18 +797,19 @@ finish:
 								has_nils = true;         \
 						}                                \
 					} else {                             \
-						bp += k;                         \
+						bp += ncnt;                      \
 					}                                    \
 					for(;rb<rp; rb++)                    \
 						*rb = def;                       \
 					if(lead > 0 && is_##TPE##_nil(def))  \
 						has_nils = true;                 \
+					pnp = np;                            \
 				}                                        \
 			}                                            \
-			k = (rp - rb);                               \
-			if(lead < k) {                               \
+			ncnt = (np - pnp);                           \
+			if(lead < ncnt) {                            \
 				bp += lead;                              \
-				l = k - lead;                            \
+				l = ncnt - lead;                         \
 				for(i=0; i<l; i++, rb++, bp++) {         \
 					next = *bp;                          \
 					*rb = next;                          \
@@ -785,7 +817,7 @@ finish:
 						has_nils = true;                 \
 				}                                        \
 			}                                            \
-			for(;rb<end; rb++)                           \
+			for(;rb<rend; rb++)                          \
 				*rb = def;                               \
 			if(lead > 0 && is_##TPE##_nil(def))          \
 				has_nils = true;                         \
@@ -800,7 +832,7 @@ finish:
 						has_nils = true;                 \
 				}                                        \
 			}                                            \
-			for(;rb<end; rb++, bp++)                     \
+			for(;rb<rend; rb++)                          \
 				*rb = def;                               \
 			if(lead > 0 && is_##TPE##_nil(def))          \
 				has_nils = true;                         \
@@ -813,8 +845,8 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BAT *o, BUN lead, const void* restrict
 {
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
-	BUN i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b);
-	bit *restrict np;
+	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
+	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
@@ -931,20 +963,24 @@ finish:
 
 #define ANALYTICAL_LIMIT_IMP(TPE, OP)                        \
 	do {                                                     \
-		TPE *rp, *rb, *restrict bp, *end, curval;            \
+		TPE *rp, *rb, *restrict bp, *rend, curval;           \
 		rb = rp = (TPE*)Tloc(r, 0);                          \
 		bp = (TPE*)Tloc(b, 0);                               \
 		curval = *bp;                                        \
-		end = rp + cnt;                                      \
+		rend = rp + cnt;                                     \
 		if (p) {                                             \
-			np = (bit*)Tloc(p, 0);                           \
-			for(; rp<end; np++, rp++, bp++) {                \
+			pnp = np = (bit*)Tloc(p, 0);                     \
+			end = np + cnt;                                  \
+			for(; np<end; np++, bp++) {                      \
 				if (*np) {                                   \
+					ncnt = (np - pnp);                       \
+					rp += ncnt;                              \
 					if(is_##TPE##_nil(curval))               \
 						has_nils = true;                     \
 					for (;rb < rp; rb++)                     \
 						*rb = curval;                        \
 					curval = *bp;                            \
+					pnp = np;                                \
 				}                                            \
 				if(!is_##TPE##_nil(*bp)) {                   \
 					if(is_##TPE##_nil(curval))               \
@@ -953,12 +989,15 @@ finish:
 						curval = OP(*bp, curval);            \
 				}                                            \
 			}                                                \
+			ncnt = (np - pnp);                               \
+			rp += ncnt;                                      \
 			if(is_##TPE##_nil(curval))                       \
 				has_nils = true;                             \
 			for (;rb < rp; rb++)                             \
 				*rb = curval;                                \
 		} else if (o || force_order) {                       \
-			for(; rp<end; rp++, bp++) {                      \
+			TPE *bend = bp + cnt;                            \
+			for(; bp<bend; bp++) {                           \
 				if(!is_##TPE##_nil(*bp)) {                   \
 					if(is_##TPE##_nil(curval))               \
 						curval = *bp;                        \
@@ -968,10 +1007,10 @@ finish:
 			}                                                \
 			if(is_##TPE##_nil(curval))                       \
 				has_nils = true;                             \
-			for(;rb < rp; rb++)                              \
+			for(;rb<rend; rb++)                              \
 				*rb = curval;                                \
 		} else { /* single value, ie no ordering */          \
-			for(; rp<end; rp++, bp++) {                      \
+			for(; rp<rend; rp++, bp++) {                     \
 				if(is_##TPE##_nil(*bp))                      \
 					has_nils = true;                         \
 				*rp = *bp;                                   \
@@ -995,8 +1034,8 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe)     
 	int (*atomcmp)(const void *, const void *);                                           \
 	const void* restrict nil;                                                             \
 	bool has_nils = false;                                                                \
-	BUN i, j, cnt = BATcount(b);                                                          \
-	bit *restrict np;                                                                     \
+	BUN i, j, ncnt, cnt = BATcount(b);                                                    \
+	bit *np, *pnp, *end;                                                                  \
 	gdk_return gdk_res = GDK_SUCCEED;                                                     \
                                                                                           \
 	switch(ATOMstorage(tpe)) {                                                            \
@@ -1094,30 +1133,41 @@ ANALYTICAL_LIMIT(max, MAX, <)
 #undef ANALYTICAL_LIMIT_IMP_HUGE
 #undef ANALYTICAL_LIMIT_IMP
 
-#define ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(TPE) \
-	do {                                              \
-		TPE *restrict bp = (TPE*)Tloc(b, 0);          \
-		lng *rp, *rb, *end, curval = 0;               \
-		rb = rp = (lng*)Tloc(r, 0);                   \
-		end = rp + cnt;                               \
-		if (p) {                                      \
-			np = (bit*)Tloc(p, 0);                    \
-			for(; rp<end; np++, rp++, bp++) {         \
-				if (*np) {                            \
-					for (;rb < rp; rb++)              \
-						*rb = curval;                 \
-					curval = 0;                       \
-				}                                     \
-				curval += !is_##TPE##_nil(*bp);       \
-			}                                         \
-			for (;rb < rp; rb++)                      \
-				*rb = curval;                         \
-		} else { /* single value, ie no partitions */ \
-			for(; rp<end; rp++, bp++)                 \
-				curval += !is_##TPE##_nil(*bp);       \
-			for(;rb < rp; rb++)                       \
-				*rb = curval;                         \
-		}                                             \
+#define ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(TPE)    \
+	do {                                                 \
+		TPE *pnb, *bp = (TPE*)Tloc(b, 0);                \
+		lng *rp, *rb, *rend, curval = 0;                 \
+		rb = rp = (lng*)Tloc(r, 0);                      \
+		rend = rp + cnt;                                 \
+		pnb = bp;                                        \
+		if (p) {                                         \
+			pnp = np = (bit*)Tloc(p, 0);                 \
+			end = np + cnt;                              \
+			for(; np<end; np++) {                        \
+				if (*np) {                               \
+					BUN ncnt = np - pnp;                 \
+					bp += ncnt;                          \
+					for (;pnb < bp; pnb++)               \
+						curval += !is_##TPE##_nil(*pnb); \
+					rp += ncnt;                          \
+					for (;rb < rp; rb++)                 \
+						*rb = curval;                    \
+					curval = 0;                          \
+					pnp = np;                            \
+					pnb = bp;                            \
+				}                                        \
+			}                                            \
+			bp += (np - pnp);                            \
+			for (;pnb < bp; pnb++)                       \
+				curval += !is_##TPE##_nil(*pnb);         \
+			for (;rb < rend; rb++)                       \
+				*rb = curval;                            \
+		} else { /* single value, ie no partitions */    \
+			for(; rp<rend; rp++, bp++)                   \
+				curval += !is_##TPE##_nil(*bp);          \
+			for(;rb < rp; rb++)                          \
+				*rb = curval;                            \
+		}                                                \
 	} while(0);
 
 #define ANALYTICAL_COUNT_WITH_NIL_STR_IMP(TPE_CAST, OFFSET)               \
@@ -1126,15 +1176,19 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		lng *rp, *rb, curval = 0;                                         \
 		rb = rp = (lng*)Tloc(r, 0);                                       \
 		if (p) {                                                          \
-			np = (bit*)Tloc(p, 0);                                        \
-			for(i = 0; i < cnt; i++, np++, rp++) {                        \
+			pnp = np = (bit*)Tloc(p, 0);                                  \
+			end = np + cnt;                                               \
+			for(i = 0; i < cnt; i++, np++) {                              \
 				if (*np) {                                                \
+					rp += (np - pnp);                                     \
 					for (;rb < rp; rb++)                                  \
 						*rb = curval;                                     \
 					curval = 0;                                           \
+					pnp = np;                                             \
 				}                                                         \
 				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
 			}                                                             \
+			rp += (np - pnp);                                             \
 			for (;rb < rp; rb++)                                          \
 				*rb = curval;                                             \
 		} else { /* single value, ie no partitions */                     \
@@ -1150,35 +1204,36 @@ gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe)
 {
 	BUN i, cnt = BATcount(b);
+	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 
 	assert(ignore_nils);
 	(void) o;
 	if(!*ignore_nils || b->T.nonil) {
-		bit *np, *pnp;
 		lng *rp, *rb, curval = 0;
 		rb = rp = (lng*)Tloc(r, 0);
 		if (p) {
 			np = pnp = (bit*)Tloc(p, 0);
-			bit* end = np + cnt;
-			for(; np < end; np++, rp++) {
+			end = np + cnt;
+			for(; np < end; np++) {
 				if (*np) {
 					curval = np - pnp;
-					pnp = np;
+					rp += curval;
 					for (;rb < rp; rb++)
 						*rb = curval;
+					pnp = np;
 				}
 			}
 			curval = np - pnp;
+			rp += curval;
 			for (;rb < rp; rb++)
 				*rb = curval;
 		} else { /* single value */
-			lng* end = rp + cnt;
-			for(; rp < end; rp++)
+			lng* lend = rp + cnt;
+			for(; rp < lend; rp++)
 				*rp = cnt;
 		}
 	} else {
-		bit *restrict np;
 		switch (tpe) {
 			case TYPE_bit:
 				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(bit)
@@ -1235,12 +1290,14 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 					const char *restrict base = b->tvheap->base;
 					const void *restrict bp = Tloc(b, 0);
 					if (p) {
-						np = (bit*)Tloc(p, 0);
-						for(i = 0; i < cnt; i++, np++, rp++) {
+						pnp = np = (bit*)Tloc(p, 0);
+						for(i = 0; i < cnt; i++, np++) {
 							if (*np) {
+								rp += (np - pnp);
 								for (;rb < rp; rb++)
 									*rb = curval;
 								curval = 0;
+								pnp = np;
 							}
 							curval += (*cmp)(nil, base + ((const var_t *) bp)[i]) != 0;
 						}
@@ -1255,12 +1312,14 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 					}
 				} else {
 					if (p) {
-						np = (bit*)Tloc(p, 0);
-						for(i = 0; i < cnt; i++, np++, rp++) {
+						pnp = np = (bit*)Tloc(p, 0);
+						for(i = 0; i < cnt; i++, np++) {
 							if (*np) {
+								rp += (np - pnp);
 								for (;rb < rp; rb++)
 									*rb = curval;
 								curval = 0;
+								pnp = np;
 							}
 							curval += (*cmp)(Tloc(b, i), nil) != 0;
 						}
