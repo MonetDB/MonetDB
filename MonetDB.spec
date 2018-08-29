@@ -83,7 +83,7 @@
 # On Fedora and RHEL 7, create the MonetDB-python2 package.
 # On RHEL 6, numpy is too old.
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%bcond_without pyintegration
+%bcond_without py2integration
 %endif
 
 %if %{fedpkgs}
@@ -151,7 +151,7 @@ BuildRequires: pkgconfig(zlib)
 %if %{with samtools}
 BuildRequires: samtools-devel
 %endif
-%if %{with pyintegration}
+%if %{with py2integration}
 BuildRequires: python-devel
 %if %{?rhel:1}%{!?rhel:0}
 # RedHat Enterprise Linux calls it simply numpy
@@ -508,7 +508,7 @@ install it.
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
-%if %{with pyintegration}
+%if %{with py2integration}
 %package python2
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
@@ -609,7 +609,7 @@ exit 0
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
-%if %{with pyintegration}
+%if %{with py2integration}
 %exclude %{_libdir}/monetdb5/pyapi.mal
 %endif
 %if %{with rintegration}
@@ -627,7 +627,7 @@ exit 0
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
-%if %{with pyintegration}
+%if %{with py2integration}
 %exclude %{_libdir}/monetdb5/autoload/*_pyapi.mal
 %endif
 %if %{with rintegration}
@@ -920,8 +920,8 @@ fi
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=no \
+	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
 	--enable-py3integration=no \
-	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-sanitizer=no \
 	--enable-shp=no \

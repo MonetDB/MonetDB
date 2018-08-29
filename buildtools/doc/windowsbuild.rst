@@ -183,7 +183,7 @@ compiler uses to determine which files to compile.  Python can be
 downloaded from http://www.python.org/.  Just download and install the
 Windows binary distribution.
 
-.. Say something about pyintegration.
+.. Say something about py2integration.
 
 Note that you can use either or both Python2 and Python3, and on 64
 bit architectures, either the 32 bit or 64 bit version of Python.  All

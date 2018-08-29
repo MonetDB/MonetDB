@@ -28,8 +28,8 @@ override_dh_auto_configure:
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=yes \
+	--enable-py2integration=yes \
 	--enable-py3integration=no \
-	--enable-pyintegration=yes \
 	--enable-rintegration=yes \
 	--enable-sanitizer=no \
 	--enable-shp=no \
