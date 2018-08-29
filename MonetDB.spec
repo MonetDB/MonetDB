@@ -997,6 +997,9 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.7-20180829
+- Rebuilt.
+
 * Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
 - Rebuilt.
 - BZ#6506: Improper performance counters
