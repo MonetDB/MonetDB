@@ -35,8 +35,8 @@ case $# in
 esac
 
 case $SUITE in
-wheezy | trusty)
-    # fix control file because these systems don't have liblas and a
+trusty)
+    # fix control file because this system doesn't have liblas and a
     # too old version of libgeos
     sed -i -e 's/, libgeos-dev[^,]*//;s/, liblas-c-dev[^,]*//' \
 	-e 's/libcfitsio-dev/libcfitsio3-dev/' \
@@ -48,7 +48,7 @@ wheezy | trusty)
 esac
 
 case $SUITE in
-wheezy | jessie | trusty | wily)
+jessie | trusty)
     # Xenial Xerus (and presumably newer releases) uses php-cli,
     # all others still have php5-cli and don't have php*-sockets
     sed -i 's/php-cli/php5-cli/;s/, *php-sockets//' debian/control
@@ -56,13 +56,6 @@ wheezy | jessie | trusty | wily)
 esac
 
 case $SUITE in
-wheezy)
-    # numpy is too old
-    sed -i -e 's/, python-dev[^,]*//;s/, python-numpy[^,]*//' \
-	-e '/^Package:.*monetdb-python2/,/^$/d' debian/control
-    sed -i '/py2integration=yes/s/yes/no/' debian/rules
-    rm debian/monetdb-python2.install
-    ;;
 trusty)
     # the trusty linker produces unresolved references to openSSL functions
     sed -i '/openssl_LIBS/s/WIN32?//' clients/mapilib/Makefile.ag
