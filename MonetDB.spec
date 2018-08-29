@@ -997,6 +997,20 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- Rebuilt.
+- BZ#6506: Improper performance counters
+- BZ#6606: Misleading parameter name in generate_series function
+- BZ#6639: COMMENT ON TABLE abc IS NULL invalidly sets the remark column
+  to null where remark column is defined as NOT NULLable
+
+* Tue Aug 28 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- buildtools: Build the MonetDB-cfitsio RPM and libmonetdb5-server-cfitsio
+  Debian/Ubuntu package.
+
+* Mon Aug 27 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- merovingian: Added a "logrotate" configuration file.  See /etc/logrotate.d/monetdbd.
+
 * Tue Aug 21 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.3-20180821
 - Rebuilt.
 
