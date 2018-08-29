@@ -62,3 +62,15 @@ trusty)
     sed -i '/^libmapi_la_LIBADD/s/$/ $(openssl_LIBS)/' clients/mapilib/Makefile.am clients/mapilib/Makefile.in
     ;;
 esac
+
+case $SUITE in
+jessie | trusty)
+    # The Python 3 version is too old for py3integration.
+    sed -i '/^Package: monetdb-python3/,/^$/d' debian/control
+    # There is a separate line for the Python3 dependencies: delete it
+    sed -i '/python3/d' debian/control
+    rm debian/monetdb-python3.install
+    sed -i -e 's/py3integration=yes/py3integration=no/' \
+	-e 's/python3=yes/python3=no/' debian/rules
+;;
+esac

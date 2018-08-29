@@ -29,7 +29,7 @@ override_dh_auto_configure:
 	--enable-odbc=yes \
 	--enable-optimize=yes \
 	--enable-py2integration=yes \
-	--enable-py3integration=no \
+	--enable-py3integration=yes \
 	--enable-rintegration=yes \
 	--enable-sanitizer=no \
 	--enable-shp=no \
@@ -49,7 +49,7 @@ override_dh_auto_configure:
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
-	--with-python3=no \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=PCRE \
 	--with-samtools=yes \
