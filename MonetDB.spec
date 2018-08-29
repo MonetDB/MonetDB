@@ -83,12 +83,17 @@
 # On Fedora and RHEL 7, create the MonetDB-python2 package.
 # On RHEL 6, numpy is too old.
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%bcond_without pyintegration
+%bcond_without py2integration
+%endif
+%if %{?rhel:0}%{!?rhel:1}
+# On RHEL 6, Python 3 is too old, and on RHEL 7, the default Python 3
+# is too old (in both cases 3.4).
+%bcond_without py3integration
 %endif
 
 %if %{fedpkgs}
-# By default, do not create the MonetDB-cfitsio package.
-%bcond_with fits
+# By default, create the MonetDB-cfitsio package.
+%bcond_without fits
 %endif
 
 %{!?__python2: %global __python2 %__python}
@@ -151,7 +156,7 @@ BuildRequires: pkgconfig(zlib)
 %if %{with samtools}
 BuildRequires: samtools-devel
 %endif
-%if %{with pyintegration}
+%if %{with py2integration}
 BuildRequires: python-devel
 %if %{?rhel:1}%{!?rhel:0}
 # RedHat Enterprise Linux calls it simply numpy
@@ -164,6 +169,10 @@ BuildRequires: python2-numpy
 BuildRequires: numpy
 %endif
 %endif
+%endif
+%if %{with py3integration}
+BuildRequires: python3-devel >= 3.5
+BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
 BuildRequires: R-core-devel
@@ -508,7 +517,7 @@ install it.
 %{_libdir}/monetdb5/lib_rapi.so
 %endif
 
-%if %{with pyintegration}
+%if %{with py2integration}
 %package python2
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
@@ -532,6 +541,32 @@ install it.
 %{_libdir}/monetdb5/pyapi.*
 %{_libdir}/monetdb5/autoload/*_pyapi.mal
 %{_libdir}/monetdb5/lib_pyapi.so
+%endif
+
+%if %{with py3integration}
+%package python3
+Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
+Group: Applications/Databases
+Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+
+%description python3
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the interface to use the Python language from
+within SQL queries.  This package is for Python 3.
+
+NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
+know how this package affects the security of your system, do not
+install it.
+
+%files python3
+%defattr(-,root,root)
+%{_libdir}/monetdb5/pyapi3.*
+%{_libdir}/monetdb5/autoload/*_pyapi3.mal
+%{_libdir}/monetdb5/lib_pyapi3.so
 %endif
 
 %if %{with fits}
@@ -609,8 +644,11 @@ exit 0
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/lidar.mal
 %endif
-%if %{with pyintegration}
+%if %{with py2integration}
 %exclude %{_libdir}/monetdb5/pyapi.mal
+%endif
+%if %{with py3integration}
+%exclude %{_libdir}/monetdb5/pyapi3.mal
 %endif
 %if %{with rintegration}
 %exclude %{_libdir}/monetdb5/rapi.mal
@@ -627,8 +665,11 @@ exit 0
 %if %{with lidar}
 %exclude %{_libdir}/monetdb5/autoload/*_lidar.mal
 %endif
-%if %{with pyintegration}
+%if %{with py2integration}
 %exclude %{_libdir}/monetdb5/autoload/*_pyapi.mal
+%endif
+%if %{with py3integration}
+%exclude %{_libdir}/monetdb5/autoload/*_pyapi3.mal
 %endif
 %if %{with rintegration}
 %exclude %{_libdir}/monetdb5/autoload/*_rapi.mal
@@ -731,7 +772,6 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %{_unitdir}/monetdbd.service
-%config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %else
 # RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
@@ -740,6 +780,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
+%config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
@@ -920,8 +961,8 @@ fi
 	--enable-netcdf=no \
 	--enable-odbc=yes \
 	--enable-optimize=no \
-	--enable-py3integration=no \
-	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
+	--enable-py2integration=%{?with_py2integration:yes}%{!?with_py2integration:no} \
+	--enable-py3integration=%{?with_py3integration:yes}%{!?with_py3integration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
 	--enable-sanitizer=no \
 	--enable-shp=no \
@@ -941,7 +982,7 @@ fi
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
-	--with-python3=no \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
@@ -997,6 +1038,23 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.7-20180829
+- Rebuilt.
+
+* Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- Rebuilt.
+- BZ#6506: Improper performance counters
+- BZ#6606: Misleading parameter name in generate_series function
+- BZ#6639: COMMENT ON TABLE abc IS NULL invalidly sets the remark column
+  to null where remark column is defined as NOT NULLable
+
+* Tue Aug 28 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- buildtools: Build the MonetDB-cfitsio RPM and libmonetdb5-server-cfitsio
+  Debian/Ubuntu package.
+
+* Mon Aug 27 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.5-20180829
+- merovingian: Added a "logrotate" configuration file.  See /etc/logrotate.d/monetdbd.
+
 * Tue Aug 21 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.3-20180821
 - Rebuilt.
 

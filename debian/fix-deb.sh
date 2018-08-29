@@ -35,10 +35,11 @@ case $# in
 esac
 
 case $SUITE in
-wheezy | trusty)
-    # fix control file because these systems don't have liblas and a
+trusty)
+    # fix control file because this system doesn't have liblas and a
     # too old version of libgeos
     sed -i -e 's/, libgeos-dev[^,]*//;s/, liblas-c-dev[^,]*//' \
+	-e 's/libcfitsio-dev/libcfitsio3-dev/' \
 	-e '/^Package:.*lidar/,/^$/d' \
 	-e '/^Package:.*geom/,/^$/d' debian/control
     rm debian/libmonetdb5-server-lidar.install debian/libmonetdb5-server-geom.install
@@ -47,7 +48,7 @@ wheezy | trusty)
 esac
 
 case $SUITE in
-wheezy | jessie | trusty | wily)
+jessie | trusty)
     # Xenial Xerus (and presumably newer releases) uses php-cli,
     # all others still have php5-cli and don't have php*-sockets
     sed -i 's/php-cli/php5-cli/;s/, *php-sockets//' debian/control
@@ -55,16 +56,21 @@ wheezy | jessie | trusty | wily)
 esac
 
 case $SUITE in
-wheezy)
-    # numpy is too old
-    sed -i -e 's/, python-dev[^,]*//;s/, python-numpy[^,]*//' \
-	-e '/^Package:.*monetdb-python2/,/^$/d' debian/control
-    sed -i '/pyintegration=yes/s/yes/no/' debian/rules
-    rm debian/monetdb-python2.install
-    ;;
 trusty)
     # the trusty linker produces unresolved references to openSSL functions
     sed -i '/openssl_LIBS/s/WIN32?//' clients/mapilib/Makefile.ag
     sed -i '/^libmapi_la_LIBADD/s/$/ $(openssl_LIBS)/' clients/mapilib/Makefile.am clients/mapilib/Makefile.in
     ;;
+esac
+
+case $SUITE in
+jessie | trusty)
+    # The Python 3 version is too old for py3integration.
+    sed -i '/^Package: monetdb-python3/,/^$/d' debian/control
+    # There is a separate line for the Python3 dependencies: delete it
+    sed -i '/python3/d' debian/control
+    rm debian/monetdb-python3.install
+    sed -i -e 's/py3integration=yes/py3integration=no/' \
+	-e 's/python3=yes/python3=no/' debian/rules
+;;
 esac

@@ -8,8 +8,11 @@ Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libpcre3-dev, libreadline-dev, liblzma-dev,
- libssl-dev, libxml2-dev, pkg-config, python, python-dev, python-numpy,
- unixodbc-dev, uuid-dev, zlib1g-dev, liblas-c-dev (>= 1.8.0), r-base
+ libssl-dev, libxml2-dev, pkg-config,
+ python, python-dev, python-numpy,
+ python3, python3-dev, python3-numpy,
+ unixodbc-dev, uuid-dev, zlib1g-dev, liblas-c-dev (>= 1.8.0), r-base,
+ libcfitsio-dev
 Standards-Version: 3.8.0
 X-Python-Version: >= 2.6
 
@@ -176,6 +179,20 @@ Description: MonetDB5 SQL GIS support module
  .
  This package contains support for reading and writing LiDAR data.
 
+Package: libmonetdb5-server-cfitsio
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ monetdb5-sql (= ${source:Version})
+Description: MonetDB5 SQL GIS support module
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL frontend.
+ .
+ This package contains a module for accessing data in the FITS file
+ format.
+
 Package: libmonetdb5-server-bam
 Section: libs
 Architecture: any
@@ -271,6 +288,23 @@ Description: Integration of MonetDB and Python, allowing use of Python from with
  .
  This package contains the interface to use the Python language from
  within SQL queries.  This package is for Python 2.
+ .
+ NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
+ know how this package affects the security of your system, do not
+ install it.
+
+Package: monetdb-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ monetdb5-sql (= ${source:Version})
+Description: Integration of MonetDB and Python, allowing use of Python from within SQL
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL frontend.
+ .
+ This package contains the interface to use the Python language from
+ within SQL queries.  This package is for Python 3.
  .
  NOTE: INSTALLING THIS PACKAGE OPENS UP SECURITY ISSUES.  If you don't
  know how this package affects the security of your system, do not
