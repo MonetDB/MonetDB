@@ -764,6 +764,29 @@ func_cmp(sql_allocator *sa, sql_func *f, const char *name, int nrargs)
 }
 
 sql_subfunc *
+sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type)
+{
+	if (s && s->funcs.set)
+		for (node *n=s->funcs.set->h; n; n = n->next) {
+			sql_func *f = n->data;
+
+			if ((f->type != type || !f->res || list_length(f->ops) != nrargs))
+				continue;
+			if (strcmp(f->base.name, name) == 0)
+				return sql_dup_subfunc(sa, f, NULL, NULL);
+		}
+	for (node *n=funcs->h; n; n = n->next) {
+		sql_func *f = n->data;
+
+		if ((f->type != type || !f->res || list_length(f->ops) != nrargs))
+			continue;
+		if (strcmp(f->base.name, name) == 0)
+			return sql_dup_subfunc(sa, f, NULL, NULL);
+	}
+	return NULL;
+}
+
+sql_subfunc *
 sql_find_func(sql_allocator *sa, sql_schema *s, const char *sqlfname, int nrargs, int type, sql_subfunc *prev)
 {
 	sql_subfunc *fres;

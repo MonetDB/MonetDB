@@ -3649,7 +3649,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 				}
 				if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
 					exps = nexps;
-				}
+			}
 		} else {
 			sql_exp *l = exps->h->data, *ol = l;
 			sql_exp *r = exps->h->next->data, *or = r;
@@ -4559,8 +4559,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	fargs = sa_list(sql->sa);
 	if (!aggr) { //rank function call
 		dlist* dnn = window_function->data.lval->h->next->data.lval;
+		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0),
+			 is_nth_value = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "nth_value") == 0);
 
-		if(!dnn || (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0)) {
+		if(!dnn || is_ntile) {
 			e = p->exps->h->data;
 			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 			append(fargs, e);
@@ -4569,7 +4571,31 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			for(dnode *nn = dnn->h ; nn ; nn = nn->next) {
 				is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
-				append(fargs, rel_value_exp2(sql, &p, nn->data.sym, f, ek, &is_last));
+				e = rel_value_exp2(sql, &p, nn->data.sym, f, ek, &is_last);
+
+				if(is_ntile) { /* ntile only has one argument and in null case this cast should be done */
+					sql_subtype *empty = sql_bind_localtype("void");
+					if(subtype_cmp(&(e->tpe), empty) == 0) {
+						sql_subtype *to = sql_bind_localtype("bte");
+						e = exp_convert(sql->sa, e, empty, to);
+					}
+				} else if(is_nth_value && dnn->h && nn == dnn->h->next) { /* corner case for nth_value */
+					sql_subtype *empty = sql_bind_localtype("void");
+					if(subtype_cmp(&(e->tpe), empty) == 0) {
+						sql_exp *ep = p->exps->h->data;
+						e = exp_convert(sql->sa, e, empty, &(ep->tpe));
+					}
+				}
+				append(fargs, e);
+			}
+			if(is_nth_value && fargs->h) { /* another corner case for nth_value */
+				/* TODO this triggers a warning for a bulk execution in the MAL layer that I cannot fix */
+				sql_subtype *empty = sql_bind_localtype("void");
+				e = fargs->h->data;
+				if(subtype_cmp(&(e->tpe), empty) == 0) {
+					sql_exp *ep = p->exps->h->data;
+					fargs->h->data = exp_convert(sql->sa, e, empty, &(ep->tpe));
+				}
 			}
 		}
 	} else { //aggregation function call
@@ -4593,9 +4619,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				distinct = n->data.i_val;
 				/*
 				 * all aggregations implemented in a window have 1 and only 1 argument only, so for now no further
-				 * checking is needed
+				 * symbol compilation is required
 				 */
-				append(fargs, rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last));
+				e = rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last);
+				append(fargs, e);
 				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0)
 					append(fargs, exp_atom_bool(sql->sa, 1)); //ignore nills
 			}
@@ -4655,19 +4682,39 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	if (!pe || !oe)
 		return NULL;
-	types = sa_list(sql->sa);
-	for(node *nn = fargs->h ; nn ; nn = nn->next)
-		append(types, exp_subtype((sql_exp*) nn->data));
-	append(types, exp_subtype(pe));
-	append(types, exp_subtype(oe));
+
+	append(fargs, pe);
+	append(fargs, oe);
+	types = exp_types(sql->sa, fargs);
 	wf = bind_func_(sql, s, aname, types, F_ANALYTIC);
-	if (!wf)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", aname );
+	if (!wf) {
+		wf = sql_find_func_by_name(sql->sa, NULL, aname, list_length(types), F_ANALYTIC);
+		if (wf) {
+			node *op = wf->func->ops->h;
+			list *nexps = sa_list(sql->sa);
+
+			for (n = fargs->h ; wf && op && n; op = op->next, n = n->next ) {
+				sql_arg *arg = op->data;
+				e = n->data;
+
+				e = rel_check_type(sql, &arg->type, e, type_equal);
+				if (!e) {
+					wf = NULL;
+					break;
+				}
+				list_append(nexps, e);
+			}
+			if (wf && list_length(nexps))
+				fargs = nexps;
+			else
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", aname );
+		} else {
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", aname );
+		}
+	}
 	args = sa_list(sql->sa);
 	for(node *nn = fargs->h ; nn ; nn = nn->next)
 		append(args, (sql_exp*) nn->data);
-	append(args, pe);
-	append(args, oe);
 	if (fbe) {
 		append(args, list_fetch(fbe, 0)); /*units */
 		append(args, list_fetch(fbe, 1)); /*start */

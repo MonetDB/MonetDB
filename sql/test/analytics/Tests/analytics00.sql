@@ -75,6 +75,13 @@ select count(aa) over () from analytics;
 select count(*) over () from analytics;
 select count(*) over ();
 
+select min(null) over () from analytics;
+select max(null) over () from analytics;
+select cast(sum(null) over () as bigint) from analytics;
+select cast(prod(null) over () as bigint) from analytics;
+select avg(null) over () from analytics;
+select count(null) over () from analytics;
+
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 

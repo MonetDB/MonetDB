@@ -944,6 +944,96 @@ Ready.
 % bigint # type
 % 1 # length
 [ 1	]
+#select min(null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select max(null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select cast(sum(null) over () as bigint) from analytics;
+% .L5 # table_name
+% L5 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select cast(prod(null) over () as bigint) from analytics;
+% .L5 # table_name
+% L5 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select avg(null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select count(null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
+[ 0	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]

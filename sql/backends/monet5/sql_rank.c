@@ -720,10 +720,11 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define NTH_VALUE_SINGLE_IMP(TPE)                                                               \
 	do {                                                                                        \
-		TPE val = *(TPE*) nth, *rres = (TPE*) res;                                              \
-		if(!is_##TPE##_nil(val) && val < 1)                                                     \
+		TPE val = *(TPE*) VALget(nth), *toset;                                                  \
+		if(!VALisnil(nth) && val < 1)                                                           \
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
-		*rres = (is_##TPE##_nil(val) || val > 1) ? TPE##_nil : *(TPE*) in;                      \
+		toset = (VALisnil(nth) || val > 1) ? (TPE*) ATOMnilptr(tp1) : (TPE*) in;                \
+		VALset(res, tp1, toset);                                                                \
 	} while(0);
 
 str
@@ -781,9 +782,9 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.nth_value", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
-		ptr res = getArgReference_ptr(stk, pci, 0);
-		ptr in = getArgReference_ptr(stk, pci, 1);
-		ptr nth = getArgReference_ptr(stk, pci, 2);
+		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
+		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
+		ValRecord *nth = &(stk)->stk[(pci)->argv[2]];
 
 		switch (tp2) {
 			case TYPE_bte:
@@ -826,7 +827,6 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 	int tp1, tp2, tp3, base = 2;
 	BUN l_value = 1;
 	const void *restrict default_value;
-	size_t default_value_size = 0;
 
 	(void)cntxt;
 	if (pci->argc < 4 || pci->argc > 6)
@@ -867,15 +867,13 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 		tp3 = getArgType(mb, pci, 3);
 		if (isaBatType(tp3))
 			throw(SQL, op, SQLSTATE(42000) "%s third argument must a single atom", desc);
-		default_value = vin->val.pval;
-		default_value_size = vin->len;
+		default_value = VALget(vin);
 		base = 4;
 	} else {
 		int tpe = tp1;
 		if (isaBatType(tpe))
 			tpe = getBatType(tp1);
 		default_value = ATOMnilptr(tpe);
-		default_value_size = ATOMlen(tpe, default_value);
 	}
 
 	assert(default_value); //default value must be set
@@ -916,12 +914,13 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 		else
 			throw(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
-		ptr res = getArgReference_ptr(stk, pci, 0);
+		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *vin = &(stk)->stk[(pci)->argv[1]];
 		if(l_value == 0) {
-			memcpy(res, vin->val.pval, vin->len);
+			if(!VALcopy(res, vin))
+				throw(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else {
-			memcpy(res, default_value, default_value_size);
+			VALset(res, tp1, (ptr) default_value);
 		}
 	}
 	return MAL_SUCCEED;

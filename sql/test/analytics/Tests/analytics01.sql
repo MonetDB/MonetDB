@@ -112,6 +112,21 @@ select lead(bb) over () from analytics;
 select lag(aa) over () from analytics;
 select lead(bb) over () from analytics;
 
+select ntile(null) over () from analytics;
+select first_value(null) over () from analytics;
+select last_value(null) over () from analytics;
+select nth_value(null, aa) over () from analytics;
+select nth_value(null, 1) over () from analytics;
+select nth_value(aa, null) over () from analytics;
+select nth_value(1, null) over () from analytics;
+select nth_value(null, null) over () from analytics;
+select lag(null) over () from analytics;
+select lag(null, null) over () from analytics;
+select lag(null, null, null) over () from analytics;
+select lead(null) over () from analytics;
+select lead(null, null) over () from analytics;
+select lead(null, null, null) over () from analytics;
+
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 

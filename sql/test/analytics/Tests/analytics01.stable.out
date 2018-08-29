@@ -1423,6 +1423,216 @@ Ready.
 [ 2	]
 [ 4	]
 [ NULL	]
+#select ntile(null) over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select first_value(null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select last_value(null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select nth_value(null, aa) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select nth_value(null, 1) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select nth_value(aa, null) over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select nth_value(1, null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select nth_value(null, null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select lag(null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select lag(null, null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select lag(null, null, null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select lead(null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select lead(null, null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#select lead(null, null, null) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% char # type
+% 0 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]
