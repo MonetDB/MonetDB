@@ -4588,15 +4588,6 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				}
 				append(fargs, e);
 			}
-			if(is_nth_value && fargs->h) { /* another corner case for nth_value */
-				/* TODO this triggers a warning for a bulk execution in the MAL layer that I cannot fix */
-				sql_subtype *empty = sql_bind_localtype("void");
-				e = fargs->h->data;
-				if(subtype_cmp(&(e->tpe), empty) == 0) {
-					sql_exp *ep = p->exps->h->data;
-					fargs->h->data = exp_convert(sql->sa, e, empty, &(ep->tpe));
-				}
-			}
 		}
 	} else { //aggregation function call
 		dnode *n = dn->next;
@@ -4623,8 +4614,14 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				 */
 				e = rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last);
 				append(fargs, e);
-				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0)
+				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
+					sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
+					sql_exp* eo = fargs->h->data;
+					//corner case, if the argument is null convert it into something countable such as bte
+					if(subtype_cmp(&(eo->tpe), empty) == 0)
+						fargs->h->data = exp_convert(sql->sa, eo, empty, bte);
 					append(fargs, exp_atom_bool(sql->sa, 1)); //ignore nills
+				}
 			}
 		}
 	}

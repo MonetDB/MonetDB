@@ -1468,26 +1468,11 @@ Ready.
 [ NULL	]
 [ NULL	]
 [ NULL	]
-#select nth_value(null, aa) over () from analytics;
-% .L4 # table_name
-% L4 # name
-% int # type
-% 1 # length
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
-[ NULL	]
 #select nth_value(null, 1) over () from analytics;
 % .L4 # table_name
 % L4 # name
-% int # type
-% 1 # length
+% char # type
+% 0 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
@@ -1531,8 +1516,8 @@ Ready.
 #select nth_value(null, null) over () from analytics;
 % .L4 # table_name
 % L4 # name
-% int # type
-% 1 # length
+% char # type
+% 0 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]

@@ -28,6 +28,26 @@ stderr of test 'analytics01` in directory 'sql/test/analytics` itself:
 # 16:22:53 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23680" "--port=30581"
 # 16:22:53 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-712/.s.monetdb.36075
+QUERY = select nth_value(null, aa) over () from analytics; --error
+ERROR = !nth_value second argument must a single atom
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1980/.s.monetdb.31134
+QUERY = select lag(null, aa) over () from analytics; --error
+ERROR = !lag second argument must a single atom
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1980/.s.monetdb.31134
+QUERY = select lag(null, null, aa) over () from analytics; --error
+ERROR = !types int(32,0) and any(0,0) are not equal for column 'aa'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1980/.s.monetdb.31134
+QUERY = select lead(null, aa) over () from analytics; --error
+ERROR = !lead second argument must a single atom
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1980/.s.monetdb.31134
+QUERY = select lead(null, null, aa) over () from analytics; --error
+ERROR = !types int(32,0) and any(0,0) are not equal for column 'aa'
+CODE  = 42000
 
 # 16:22:53 >  
 # 16:22:53 >  "Done."
