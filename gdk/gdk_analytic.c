@@ -2074,71 +2074,116 @@ finish:
 
 #define ANALYTICAL_AVERAGE_TYPE_LNG_HGE(TPE,lng_hge)                \
 	do {                                                            \
-		BUN rr;                                                     \
-		TPE *restrict bp = (TPE*)Tloc(b, 0), a;                     \
-		dbl *rp, *rb, *end;                                         \
+		TPE *pbp, *bp, a, v;                                        \
+		dbl *rp, *rb;                                               \
+		pbp = bp = (TPE*)Tloc(b, 0);                                \
 		rb = rp = (dbl*)Tloc(r, 0);                                 \
-		end = rp + cnt;                                             \
 		if (p) {                                                    \
-			np = (bit*)Tloc(p, 0);                                  \
-			for(; rp<end; np++, rp++, bp++) {                       \
+			pnp = np = (bit*)Tloc(p, 0);                            \
+			end = np + cnt;                                         \
+			for(; np<end; np++) {                                   \
 				if (*np) {                                          \
+					ncnt = np - pnp;                                \
+					bp += ncnt;                                     \
+					rp += ncnt;                                     \
+					for(; pbp<bp; pbp++) {                          \
+						v = *pbp;                                   \
+						if (!is_##TPE##_nil(v)) {                   \
+							ADD_WITH_CHECK(TPE, v, lng_hge, sum,    \
+										   lng_hge, sum,            \
+										   GDK_##lng_hge##_max,     \
+										   goto avg_overflow##TPE); \
+							/* count only when no overflow occurs */\
+							n++;                                    \
+						}                                           \
+					}                                               \
+					if(0) {                                         \
+avg_overflow##TPE:                                                  \
+						assert(n > 0);                              \
+						if (sum >= 0) {                             \
+							a = (TPE) (sum / (lng_hge) n);          \
+							rr = (BUN) (sum % (SBUN) n);            \
+						} else {                                    \
+							sum = -sum;                             \
+							a = - (TPE) (sum / (lng_hge) n);        \
+							rr = (BUN) (sum % (SBUN) n);            \
+							if (r) {                                \
+								a--;                                \
+								rr = n - rr;                        \
+							}                                       \
+						}                                           \
+						for(; pbp<bp; pbp++) {                      \
+							v = *pbp;                               \
+							if (is_##TPE##_nil(v))                  \
+								continue;                           \
+							AVERAGE_ITER(TPE, v, a, rr, n);         \
+						}                                           \
+						curval = a + (dbl) rr / n;                  \
+						goto calc_done##TPE;                        \
+					}                                               \
 					curval = n > 0 ? (dbl) sum / n : dbl_nil;       \
+calc_done##TPE:                                                     \
 					has_nils = has_nils || (n == 0);                \
-back_up##TPE:                                                       \
 					for (;rb < rp; rb++)                            \
 						*rb = curval;                               \
 					n = 0;                                          \
 					sum = 0;                                        \
-				}                                                   \
-				if (!is_##TPE##_nil(*bp)) {                         \
-					ADD_WITH_CHECK(TPE, *bp, lng_hge, sum,          \
-								   lng_hge, sum,                    \
-								   GDK_##lng_hge##_max,             \
-								   goto avg_overflow##TPE);         \
-				/* don't count value until after overflow check */  \
-					n++;                                            \
-				}                                                   \
-				if(0) {                                             \
-avg_overflow##TPE:                                                  \
-					assert(n > 0);                                  \
-					if (sum >= 0) {                                 \
-						a = (TPE) (sum / (lng_hge) n);              \
-						rr = (BUN) (sum % (SBUN) n);                \
-					} else {                                        \
-						sum = -sum;                                 \
-						a = - (TPE) (sum / (lng_hge) n);            \
-						rr = (BUN) (sum % (SBUN) n);                \
-						if (r) {                                    \
-							a--;                                    \
-							rr = n - rr;                            \
-						}                                           \
-					}                                               \
-					for(; rp<end; np++, rp++, bp++) {               \
-						if (*np) {                                  \
-							curval = a + (dbl) rr / n;              \
-							goto back_up##TPE;                      \
-						}                                           \
-						if (is_##TPE##_nil(*bp))                    \
-							continue;                               \
-						AVERAGE_ITER(TPE, *bp, a, rr, n);           \
-					}                                               \
-					curval = a + (dbl) rr / n;                      \
-					goto calc_done##TPE;                            \
+					pnp = np;                                       \
+					pbp = bp;                                       \
 				}                                                   \
 			}                                                       \
+			ncnt = np - pnp;                                        \
+			bp += ncnt;                                             \
+			rp += ncnt;                                             \
+			for(; pbp<bp; pbp++) {                                  \
+				v = *pbp;                                           \
+				if (!is_##TPE##_nil(v)) {                           \
+					ADD_WITH_CHECK(TPE, v, lng_hge, sum,            \
+								   lng_hge, sum,                    \
+								   GDK_##lng_hge##_max,             \
+								   goto last_avg_overflow##TPE);    \
+					/* count only when no overflow occurs */        \
+					n++;                                            \
+				}                                                   \
+			}                                                       \
+			if(0) {                                                 \
+last_avg_overflow##TPE:                                             \
+				assert(n > 0);                                      \
+				if (sum >= 0) {                                     \
+					a = (TPE) (sum / (lng_hge) n);                  \
+					rr = (BUN) (sum % (SBUN) n);                    \
+				} else {                                            \
+					sum = -sum;                                     \
+					a = - (TPE) (sum / (lng_hge) n);                \
+					rr = (BUN) (sum % (SBUN) n);                    \
+					if (r) {                                        \
+						a--;                                        \
+						rr = n - rr;                                \
+					}                                               \
+				}                                                   \
+				for(; pbp<bp; pbp++) {                              \
+					v = *pbp;                                       \
+					if (is_##TPE##_nil(v))                          \
+						continue;                                   \
+					AVERAGE_ITER(TPE, v, a, rr, n);                 \
+				}                                                   \
+				curval = a + (dbl) rr / n;                          \
+				goto last_calc_done##TPE;                           \
+			}                                                       \
 			curval = n > 0 ? (dbl) sum / n : dbl_nil;               \
+last_calc_done##TPE:                                                \
 			has_nils = has_nils || (n == 0);                        \
-calc_done##TPE:                                                     \
 			for (;rb < rp; rb++)                                    \
 				*rb = curval;                                       \
 		} else if (o || force_order) {                              \
-			for(; rp<end; rp++, bp++) {                             \
-				if (!is_##TPE##_nil(*bp)) {                         \
-					ADD_WITH_CHECK(TPE, *bp, lng_hge, sum, lng_hge, \
+		    TPE *bend = bp + cnt;                                   \
+			for(; bp<bend; bp++) {                                  \
+				v = *bp;                                            \
+				if (!is_##TPE##_nil(v)) {                           \
+					ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge,   \
 								   sum, GDK_##lng_hge##_max,        \
 								   goto single_overflow##TPE);      \
-				/* don't count value until after overflow check */  \
+					/* count only when no overflow occurs */        \
 					n++;                                            \
 				}                                                   \
 			}                                                       \
@@ -2157,10 +2202,11 @@ single_overflow##TPE:                                               \
 						rr = n - rr;                                \
 					}                                               \
 				}                                                   \
-				for(; rp<end; rp++, bp++) {                         \
-					if (is_##TPE##_nil(*bp))                        \
+				for(; bp<bend; bp++) {                              \
+					v = *bp;                                        \
+					if (is_##TPE##_nil(v))                          \
 						continue;                                   \
-					AVERAGE_ITER(TPE, *bp, a, rr, n);               \
+					AVERAGE_ITER(TPE, v, a, rr, n);                 \
 				}                                                   \
 				curval = a + (dbl) rr / n;                          \
 				goto single_calc_done##TPE;                         \
@@ -2168,15 +2214,18 @@ single_overflow##TPE:                                               \
 			curval = n > 0 ? (dbl) sum / n : dbl_nil;               \
 			has_nils = (n == 0);                                    \
 single_calc_done##TPE:                                              \
+			rp += cnt;                                              \
 			for (;rb < rp; rb++)                                    \
 				*rb = curval;                                       \
 		} else { /* single value, ie no ordering */                 \
-			for(; rp<end; rp++, bp++) {                             \
-				if(is_##TPE##_nil(*bp)) {                           \
+			dbl* rend = rp + cnt;                                   \
+			for(; rp<rend; rp++, bp++) {                            \
+				v = *bp;                                            \
+				if(is_##TPE##_nil(v)) {                             \
 					*rp = dbl_nil;                                  \
 					has_nils = true;                                \
 				} else {                                            \
-					*rp = (dbl) *bp;                                \
+					*rp = (dbl) v;                                  \
 				}                                                   \
 			}                                                       \
 		}                                                           \
@@ -2260,7 +2309,7 @@ gdk_return
 GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe)
 {
 	bool has_nils = false;
-	BUN ncnt, cnt = BATcount(b), nils = 0, n = 0;
+	BUN ncnt, cnt = BATcount(b), nils = 0, n = 0, rr;
 	bit *np, *pnp, *end;
 	bool abort_on_error = true;
 	dbl curval;

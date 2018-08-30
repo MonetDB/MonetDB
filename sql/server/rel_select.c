@@ -4565,6 +4565,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if(!dnn || is_ntile) {
 			e = p->exps->h->data;
 			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+			if(!e)
+				return NULL;
 			append(fargs, e);
 		}
 		if(dnn) {
@@ -4572,6 +4574,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
 				e = rel_value_exp2(sql, &p, nn->data.sym, f, ek, &is_last);
+				if(!e)
+					return NULL;
 
 				if(is_ntile) { /* ntile only has one argument and in null case this cast should be done */
 					sql_subtype *empty = sql_bind_localtype("void");
@@ -4600,6 +4604,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				} else {
 					e = p->exps->h->data;
 					e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+					if(!e)
+						return NULL;
 				}
 				append(fargs, e);
 				append(fargs, exp_atom_bool(sql->sa, 0)); //don't ignore nills
@@ -4613,6 +4619,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				 * symbol compilation is required
 				 */
 				e = rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last);
+				if(!e)
+					return NULL;
 				append(fargs, e);
 				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
 					sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");

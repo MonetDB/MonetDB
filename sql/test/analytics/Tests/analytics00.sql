@@ -172,4 +172,8 @@ select avg(aa) over (partition by bb order by bb asc) from debugme;
 select avg(aa) over (partition by bb order by bb desc) from debugme;
 select avg(aa) over (order by bb desc) from debugme;
 
+create table overflowme (a int); --we test on 32-bit machines up so this should be safe to test an overflow
+insert into overflowme values (2147483644), (2147483645), (2147483646);
+select avg(a) over () from overflowme;
+
 rollback;
