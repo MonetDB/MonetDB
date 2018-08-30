@@ -1449,7 +1449,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		int has_formats = 0;
 		dnode *n;
 
-		nt = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1);
+		nt = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0);
 		for (n = headers->h; n; n = n->next) {
 			dnode *dn = n->data.lval->h;
 			char *cname = dn->data.sval;

@@ -823,17 +823,17 @@ sql_create_privileges(mvc *m, sql_schema *s)
 
 	backend_create_privileges(m, s);
 
-	t = mvc_create_table(m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(m, t, "login_id", "int", 32);
 	mvc_create_column_(m, t, "role_id", "int", 32);
 
 	/* all roles and users are in the auths table */
-	t = mvc_create_table(m, s, "auths", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "auths", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(m, t, "id", "int", 32);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "grantor", "int", 32);
 
-	t = mvc_create_table(m, s, "privileges", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "privileges", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(m, t, "obj_id", "int", 32);
 	mvc_create_column_(m, t, "auth_id", "int", 32);
 	mvc_create_column_(m, t, "privileges", "int", 32);

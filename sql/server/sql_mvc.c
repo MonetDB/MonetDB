@@ -34,7 +34,7 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_column *c;
 	sql_key *k;
 
-	t = mvc_create_table(m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	c = mvc_create_column_(m, t, "id", "int", 32);
 	k = sql_trans_create_ukey(m->session->tr, t, "comments_id_pkey", pkey);
 	k = sql_trans_create_kc(m->session->tr, k, c);
@@ -1262,20 +1262,20 @@ mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 
 
 sql_table *
-mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz)
+mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties)
 {
 	sql_table *t = NULL;
 	char *err = NULL;
 	int check = 0;
 
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
+		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action, (int)properties);
 
 	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
-		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action);
+		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action, properties);
 		t->s = s;
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, properties);
 		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, m->session->tr->sa, t, 1))) {
 			(void) sql_error(m, 02, "%s", err);
 			return NULL;
@@ -1301,11 +1301,11 @@ mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const 
 		fprintf(stderr, "#mvc_create_view %s %s %s\n", s->base.name, name, sql);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0);
+		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0, 0);
 		t->s = s;
 		t->query = sa_strdup(m->sa, sql);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
 	}
 	return t;
 }
@@ -1319,11 +1319,11 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 		fprintf(stderr, "#mvc_create_remote %s %s %s\n", s->base.name, name, loc);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0);
+		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0, 0);
 		t->s = s;
 		t->query = sa_strdup(m->sa, loc);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
 	}
 	return t;
 }

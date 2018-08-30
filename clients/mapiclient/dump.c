@@ -1036,7 +1036,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		}
 		/* the table is a real table */
 		mnstr_printf(toConsole, "CREATE %sTABLE \"%s\".\"%s\" ",
-			    (type == 3 || type == 12 || type == 13 || type == 14 || type == 15) ? "MERGE " :
+			    type == 3 ? "MERGE " :
 			    type == 4 ? "STREAM " :
 			    type == 5 ? "REMOTE " :
 			    type == 6 ? "REPLICA " :
@@ -1061,29 +1061,40 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			mnstr_printf(toConsole, " ON '%s' WITH USER '%s' ENCRYPTED PASSWORD '%s'", view, rt_user, rt_hash);
 			mapi_close_handle(hdl);
 			hdl = NULL;
-		} else if(type >= 12 && type <= 15) { /* partitioned table */
-			const char *phow = (type == 12 || type == 14) ? "VALUES" : "RANGE";
-			const char *pusing = (type == 12 || type == 13) ? "ON" : "USING";
-			const char *expr = NULL;
+		} else if(type == 3) { /* A merge table might be partitioned */
+			int properties = 0;
 
-			if(type == 12 || type == 13) { /* by column */
-				snprintf(query, maxquerylen,
-						 "SELECT c.name FROM schemas s, tables t, columns c, table_partitions tp "
-						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = c.table_id "
-						 "AND c.id = tp.column_id", schema, tname);
-			} else { /* by expression */
-				snprintf(query, maxquerylen,
-						 "SELECT tp.expression FROM schemas s, tables t, table_partitions tp "
-						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = tp.table_id",
-						 schema, tname);
-			}
+			snprintf(query, maxquerylen, "SELECT tp.type FROM table_partitions tp WHERE tp.table_id = '%d'", table_id);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
 			while(mapi_fetch_row(hdl) != 0)
-				expr = mapi_fetch_field(hdl, 0);
-			mnstr_printf(toConsole, " PARTITION BY %s %s (%s)", phow, pusing, expr);
+				properties = atoi(mapi_fetch_field(hdl, 0));
 			mapi_close_handle(hdl);
-			hdl = NULL;
+
+			if(properties) {
+				bool list = (properties & 2) == 2, column = (properties & 4) == 4;
+				const char *phow = list ? "VALUES" : "RANGE";
+				const char *pusing = column ? "ON" : "USING";
+				const char *expr = NULL;
+
+				if(column) { /* by column */
+					snprintf(query, maxquerylen,
+							 "SELECT c.name FROM schemas s, tables t, columns c, table_partitions tp "
+							 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = c.table_id "
+							 "AND c.id = tp.column_id", schema, tname);
+				} else { /* by expression */
+					snprintf(query, maxquerylen,
+							 "SELECT tp.expression FROM schemas s, tables t, table_partitions tp "
+							 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = tp.table_id",
+							 schema, tname);
+				}
+				if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+					goto bailout;
+				while(mapi_fetch_row(hdl) != 0)
+					expr = mapi_fetch_field(hdl, 0);
+				mnstr_printf(toConsole, " PARTITION BY %s %s (%s)", phow, pusing, expr);
+				mapi_close_handle(hdl);
+			}
 		}
 		mnstr_printf(toConsole, ";\n");
 		comment_on(toConsole, "TABLE", schema, tname, NULL, remark);
@@ -2040,7 +2051,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "t.type AS type "
 			"FROM sys.schemas s, "
 			      "sys._tables t "
-			"WHERE t.type IN (0, 3, 4, 5, 6, 12, 13, 14, 15) AND "
+			"WHERE t.type IN (0, 3, 4, 5, 6) AND "
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
@@ -2092,7 +2103,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "t.type AS type "
 			"FROM sys.schemas s, "
 			      "sys._tables t "
-			"WHERE t.type IN (0, 3, 4, 5, 6, 12, 13, 14, 15) AND "
+			"WHERE t.type IN (0, 3, 4, 5, 6) AND "
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
@@ -2134,10 +2145,14 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			      "t.id = tr.table_id AND t.system = FALSE"
 		") "
 		"SELECT id, sname, name, query, remark, type FROM vft ORDER BY id";
-	const char *mergetables = "SELECT t1.type, s1.name, t1.name, s2.name, t2.name FROM sys.schemas s1, sys._tables t1, "
-							  "sys.dependencies d, sys.schemas s2, sys._tables t2 WHERE t1.type IN (3, 12, 13, 14, 15) "
-							  "AND t1.schema_id = s1.id AND s1.name <> 'tmp' AND t1.system = FALSE "
-							  "AND t1.id = d.depend_id AND d.id = t2.id AND t2.schema_id = s2.id ORDER BY t1.id, t2.id";
+	const char *mergetables = "SELECT subq.s1name, subq.t1name, subq.s2name, subq.t2name, "
+							  "table_partitions.type FROM (SELECT t1.id, t1.type, s1.name AS s1name, "
+							  "t1.name AS t1name, s2.name AS s2name, t2.name AS t2name FROM sys.schemas s1, "
+							  "sys._tables t1, sys.dependencies d, sys.schemas s2, sys._tables t2 "
+							  "WHERE t1.type IN (3, 6) AND t1.schema_id = s1.id AND s1.name <> 'tmp' "
+							  "AND t1.system = FALSE AND t1.id = d.depend_id AND d.id = t2.id AND t2.schema_id = s2.id "
+							  "ORDER BY t1.id, t2.id) subq "
+							  "LEFT OUTER JOIN sys.table_partitions ON subq.id = table_partitions.table_id;";
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
@@ -2349,8 +2364,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 				     curschema);
 		}
 		if(type) { /* table */
-			int ptype = atoi(type),
-				dont_describe = (ptype == 3 || ptype == 5 || ptype == 12 || ptype == 13 || ptype == 14 || ptype == 15);
+			int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
 			schema = strdup(schema);
 			name = strdup(name);
 			rc = dump_table(mid, schema, name, toConsole, dont_describe ? 1 : describe, describe, useInserts, true);
@@ -2376,11 +2390,12 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	while (rc == 0 &&
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
-		int type1 = atoi(mapi_fetch_field(hdl, 0));
-		const char *schema1 = mapi_fetch_field(hdl, 1);
-		const char *tname1 = mapi_fetch_field(hdl, 2);
-		const char *schema2 = mapi_fetch_field(hdl, 3);
-		const char *tname2 = mapi_fetch_field(hdl, 4);
+		const char *schema1 = mapi_fetch_field(hdl, 0);
+		const char *tname1 = mapi_fetch_field(hdl, 1);
+		const char *schema2 = mapi_fetch_field(hdl, 2);
+		const char *tname2 = mapi_fetch_field(hdl, 3);
+		const char *prop = mapi_fetch_field(hdl, 4);
+		int properties = prop ? atoi(prop) : 0;
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -2398,11 +2413,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 				     curschema);
 		}
 		mnstr_printf(toConsole, "ALTER TABLE \"%s\".\"%s\" ADD TABLE \"%s\"", schema1, tname1, tname2);
-		if(type1 != 3) {
+		if(properties) {
 			MapiHdl shdl = NULL;
 
 			mnstr_printf(toConsole, " AS PARTITION");
-			if(type1 == 12 || type1 == 14) { /* by values */
+			if((properties & 2) == 2) { /* by values */
 				int i = 0, first = 1, found_nil = 0;
 				snprintf(query, query_size,
 						 "SELECT vp.value FROM schemas s, tables t, value_partitions vp "

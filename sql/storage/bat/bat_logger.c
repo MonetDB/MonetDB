@@ -692,7 +692,24 @@ bl_postversion(void *lg)
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
+		int eight = 8;
+		if (tabins(lg, false, TYPE_bte,
+			   N("sys", "table_partitions", "type"),
+			   "sys", "_columns",
+			   "id", &id,
+			   "name", "type",
+			   "type", "tinyint",
+			   "type_digits", &eight,
+			   "type_scale", &zero,
+			   "table_id", &tid,
+			   "default", bte_nil,
+			   "null", &t,
+			   "number", &col,
+			   "storage", bte_nil,
+			   NULL) != GDK_SUCCEED)
+			return GDK_FAIL;
 		id++;
+		col++;
 		int pub = ROLE_PUBLIC;
 		int priv = PRIV_SELECT;
 		if (tabins(lg, true, -1, NULL, "sys", "privileges",

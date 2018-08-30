@@ -210,14 +210,14 @@ LIDARinitCatalog(mvc *m)
 
 	lidar_fl = mvc_bind_table(m, sch, "lidar_files");
 	if (lidar_fl == NULL) {
-		lidar_fl = mvc_create_table(m, sch, "lidar_files", tt_table, 0, SQL_PERSIST, 0, 2);
+		lidar_fl = mvc_create_table(m, sch, "lidar_files", tt_table, 0, SQL_PERSIST, 0, 2, 0);
 		mvc_create_column_(m, lidar_fl, "id", "int", 32);
 		mvc_create_column_(m, lidar_fl, "name", "varchar", 255);
 	}
 	
 	lidar_tbl = mvc_bind_table(m, sch, "lidar_tables");
 	if (lidar_tbl == NULL) {
-		lidar_tbl = mvc_create_table(m, sch, "lidar_tables", tt_table, 0, SQL_PERSIST, 0, 21);
+		lidar_tbl = mvc_create_table(m, sch, "lidar_tables", tt_table, 0, SQL_PERSIST, 0, 21, 0);
 		mvc_create_column_(m, lidar_tbl, "id", "int", 32);
 		mvc_create_column_(m, lidar_tbl, "file_id", "int", 32);
 		mvc_create_column_(m, lidar_tbl, "name", "varchar", 255);
@@ -243,7 +243,7 @@ LIDARinitCatalog(mvc *m)
 
 	lidar_col = mvc_bind_table(m, sch, "lidar_columns");
 	if (lidar_col == NULL) {
-		lidar_col = mvc_create_table(m, sch, "lidar_columns", tt_table, 0, SQL_PERSIST, 0, 15);
+		lidar_col = mvc_create_table(m, sch, "lidar_columns", tt_table, 0, SQL_PERSIST, 0, 15, 0);
 		mvc_create_column_(m, lidar_col, "id", "int", 32);
 		mvc_create_column_(m, lidar_col, "file_id", "int", 32);
 		mvc_create_column_(m, lidar_col, "table_id", "int", 32);
@@ -831,7 +831,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create an SQL table to hold the LIDAR table */
 	cnum = 3;//x, y, z. TODO: Add all available columnt
-	tbl = mvc_create_table(m, sch, tname_low, tt_table, 0, SQL_PERSIST, 0, cnum);
+	tbl = mvc_create_table(m, sch, tname_low, tt_table, 0, SQL_PERSIST, 0, cnum, 0);
 	mvc_create_column_(m, tbl, "x", "double", 64);
 	mvc_create_column_(m, tbl, "y", "double", 64);
 	mvc_create_column_(m, tbl, "z", "double", 64);

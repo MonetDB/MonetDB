@@ -209,7 +209,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	list *res, *ops;
 
 	/* create the authorisation related tables */
-	t = mvc_create_table(m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);

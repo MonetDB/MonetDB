@@ -923,7 +923,7 @@ sql_update_mar2018(Client c, mvc *sql)
 		throw(SQL, "sql_update_mar2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 
-	t = mvc_create_table(sql, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(sql, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	sql_column *col = mvc_create_column_(sql, t, "id", "int", 32);
 	sql_key *k = sql_trans_create_ukey(sql->session->tr, t, "comments_id_pkey", pkey);
 	k = sql_trans_create_kc(sql->session->tr, k, col);
@@ -1748,34 +1748,6 @@ sql_update_default(Client c, mvc *sql)
 	s = mvc_bind_schema(sql, "sys");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
-
-	/* 51_sys_schema_extensions.sql */
-	t = mvc_bind_table(sql, s, "table_types");
-	t->system = 0;
-	pos += snprintf(buf + pos, bufsize - pos,
-			"alter table sys.table_types set read write;\n"
-			"drop table sys.table_types;\n"
-			"create table sys.table_types ("
-			"table_type_id SMALLINT NOT NULL PRIMARY KEY,\n"
-			"table_type_name VARCHAR(50) NOT NULL UNIQUE);\n"
-			"insert into sys.table_types values"
-			" (0, 'TABLE'),"
-			" (1, 'VIEW'),"
-			" (3, 'MERGE TABLE'),"
-			" (4, 'STREAM TABLE'),"
-			" (5, 'REMOTE TABLE'),"
-			" (6, 'REPLICA TABLE'),"
-			" (10, 'SYSTEM TABLE'),"
-			" (11, 'SYSTEM VIEW'),"
-			" (12, 'MERGE TABLE PARTITION BY VALUES ON COLUMN'),"
-			" (13, 'MERGE TABLE PARTITION BY RANGE ON COLUMN'),"
-			" (14, 'MERGE TABLE PARTITION BY VALUES USING EXPRESSION'),"
-			" (15, 'MERGE TABLE PARTITION BY RANGE USING EXPRESSION'),"
-			" (20, 'GLOBAL TEMPORARY TABLE'),"
-			" (30, 'LOCAL TEMPORARY TABLE');\n"
-			"grant select on sys.table_types to public;\n"
-			"alter table sys.table_types set read only;\n"
-			"update sys._tables set system = true where name = 'table_types' and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	/* 99_system.sql */
 	t = mvc_bind_table(sql, s, "systemfunctions");
