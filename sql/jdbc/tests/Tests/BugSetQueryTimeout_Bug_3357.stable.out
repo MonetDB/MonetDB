@@ -73,7 +73,9 @@ Ready.
 
 QueryTimeout = 0
 QueryTimeout = 123
+QueryTimeout = 123
 QueryTimeout = 2134567890
+QueryTimeout = 0
 QueryTimeout = 0
 setQueryTimeout(timeout_value) throws: java.sql.SQLException: Illegal timeout value: -1
 
