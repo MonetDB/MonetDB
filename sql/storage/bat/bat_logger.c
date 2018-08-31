@@ -704,10 +704,10 @@ bl_postversion(void *lg)
 			   "type_digits", &eight,
 			   "type_scale", &zero,
 			   "table_id", &tid,
-			   "default", bte_nil,
+			   "default", str_nil,
 			   "null", &t,
 			   "number", &col,
-			   "storage", bte_nil,
+			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		id++;

@@ -780,7 +780,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	rs = table_funcs.rids_select(tr, partitions_table_id, &t->base.id, &t->base.id, NULL);
 	if((rid = table_funcs.rids_next(rs)) != oid_nil) {
 		v = table_funcs.column_find_value(tr, find_sql_column(partitions, "type"), rid);
-		t->properties |= *(bit*)v;
+		t->properties |= *(bte*)v;
 		_DELETE(v);
 
 		if(isPartitionedByColumnTable(t)) {
@@ -1473,7 +1473,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 }
 
 static sql_table *
-create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, bit system, int persistence, int commit_action, bit properties)
+create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, bit system, int persistence, int commit_action, bte properties)
 {
 	sql_table *t = SA_ZNEW(sa, sql_table);
 
@@ -1504,7 +1504,7 @@ create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, 
 }
 
 sql_table *
-create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties)
+create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bte properties)
 {
 	return create_sql_table_with_id(sa, next_oid(), name, type, system, persistence, commit_action, properties);
 }
@@ -5049,7 +5049,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 }
 
 sql_table *
-sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit properties)
+sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bte properties)
 {
 	sql_table *t = create_sql_table(tr->sa, name, tt, system, persistence, commit_action, properties);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");

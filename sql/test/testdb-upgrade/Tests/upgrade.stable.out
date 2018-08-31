@@ -35,14 +35,6 @@ commit;
 
 Running database upgrade commands:
 set schema sys;
-alter table sys.table_types set read write;
-drop table sys.table_types;
-create table sys.table_types (table_type_id SMALLINT NOT NULL PRIMARY KEY,
-table_type_name VARCHAR(50) NOT NULL UNIQUE);
-insert into sys.table_types values (0, 'TABLE'), (1, 'VIEW'), (3, 'MERGE TABLE'), (4, 'STREAM TABLE'), (5, 'REMOTE TABLE'), (6, 'REPLICA TABLE'), (10, 'SYSTEM TABLE'), (11, 'SYSTEM VIEW'), (12, 'MERGE TABLE PARTITION BY VALUES ON COLUMN'), (13, 'MERGE TABLE PARTITION BY RANGE ON COLUMN'), (14, 'MERGE TABLE PARTITION BY VALUES USING EXPRESSION'), (15, 'MERGE TABLE PARTITION BY RANGE USING EXPRESSION'), (20, 'GLOBAL TEMPORARY TABLE'), (30, 'LOCAL TEMPORARY TABLE');
-grant select on sys.table_types to public;
-alter table sys.table_types set read only;
-update sys._tables set system = true where name = 'table_types' and schema_id = (select id from sys.schemas where name = 'sys');
 drop table sys.systemfunctions;
 create view sys.systemfunctions as select id as function_id from sys.functions where system;
 grant select on sys.systemfunctions to public;
