@@ -805,7 +805,7 @@ The contents of the file referred to with the ``MAKE_INCLUDEFILE``
 parameter may contain something like::
 
  bits=32
-  LIBPCRE=C:\Program Files\PCRE
+ LIBPCRE=C:\Program Files\PCRE
  LIBICONV=C:\Libraries\iconv-1.11.win32
  LIBZLIB=C:\Libraries\zlib-1.2.8.win32
  LIBXML2=C:\Libraries\libxml2-2.9.2.win32
