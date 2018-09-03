@@ -1150,207 +1150,365 @@ ANALYTICAL_LIMIT(max, MAX, <)
 #undef ANALYTICAL_LIMIT_IMP_HUGE
 #undef ANALYTICAL_LIMIT_IMP
 
-#define ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(TPE)    \
+#define ANALYTICAL_COUNT_IGNORE_NILS_NO_OVERLAP \
+	do {                                        \
+		rp += curval;                           \
+		for (;rb < rp; rb++)                    \
+			*rb = curval;                       \
+	} while(0);
+
+#define ANALYTICAL_COUNT_IGNORE_NILS_OVERLAP        \
+	do {                                            \
+		lng *rs = rb, *fs, *fe;                     \
+		rp += curval;                               \
+		for(; rb<rp;rb++) {                         \
+			fs = (rb-start > rs) ? rb - start : rs; \
+			fe = (rb+end < rp) ? rb + end + 1 : rp; \
+			*rb = (fe - fs);                        \
+		}                                           \
+	} while(0);
+
+#define ANALYTICAL_COUNT_IGNORE_NILS_IMP(IMP) \
+	do {                                      \
+		lng *rp, *rb, curval = 0;             \
+		rb = rp = (lng*)Tloc(r, 0);           \
+		if (p) {                              \
+			np = pnp = (bit*)Tloc(p, 0);      \
+			nend = np + cnt;                  \
+			for(; np < nend; np++) {          \
+				if (*np) {                    \
+					curval = np - pnp;        \
+					IMP                       \
+					pnp = np;                 \
+				}                             \
+			}                                 \
+			curval = np - pnp;                \
+			IMP                               \
+		} else {                              \
+			curval = cnt;                     \
+			IMP                               \
+		}                                     \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP(TPE) \
+	do {                                                   \
+		for (;pbp < bp; pbp++)                             \
+			curval += !is_##TPE##_nil(*pbp);               \
+		for (;rb < rp; rb++)                               \
+			*rb = curval;                                  \
+		curval = 0;                                        \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP(TPE) \
+	do {                                                \
+		TPE *bs, *bl, *be;                              \
+		bl = pbp;                                       \
+		for(; pbp<bp;pbp++) {                           \
+			bs = (pbp-start > bl) ? pbp - start : bl;   \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp;   \
+			for(; bs<be; bs++)                          \
+				curval += !is_##TPE##_nil(*bs);         \
+			*rb = curval;                               \
+			rb++;                                       \
+			curval = 0;                                 \
+		}                                               \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(TPE, IMP) \
 	do {                                                 \
-		TPE *pnb, *bp = (TPE*)Tloc(b, 0);                \
-		lng *rp, *rb, *rend, curval = 0;                 \
+		TPE *pbp, *bp = (TPE*)Tloc(b, 0);                \
+		lng *rp, *rb, curval = 0;                        \
 		rb = rp = (lng*)Tloc(r, 0);                      \
-		rend = rp + cnt;                                 \
-		pnb = bp;                                        \
+		pbp = bp;                                        \
 		if (p) {                                         \
 			pnp = np = (bit*)Tloc(p, 0);                 \
-			end = np + cnt;                              \
-			for(; np<end; np++) {                        \
+			nend = np + cnt;                             \
+			for(; np<nend; np++) {                       \
 				if (*np) {                               \
-					BUN ncnt = np - pnp;                 \
+					ncnt = np - pnp;                     \
 					bp += ncnt;                          \
-					for (;pnb < bp; pnb++)               \
-						curval += !is_##TPE##_nil(*pnb); \
 					rp += ncnt;                          \
-					for (;rb < rp; rb++)                 \
-						*rb = curval;                    \
-					curval = 0;                          \
+					IMP(TPE)                             \
 					pnp = np;                            \
-					pnb = bp;                            \
+					pbp = bp;                            \
 				}                                        \
 			}                                            \
-			bp += (np - pnp);                            \
-			for (;pnb < bp; pnb++)                       \
-				curval += !is_##TPE##_nil(*pnb);         \
-			for (;rb < rend; rb++)                       \
-				*rb = curval;                            \
-		} else { /* single value, ie no partitions */    \
-			for(; rp<rend; rp++, bp++)                   \
-				curval += !is_##TPE##_nil(*bp);          \
-			for(;rb < rp; rb++)                          \
-				*rb = curval;                            \
+			ncnt = np - pnp;                             \
+			bp += ncnt;                                  \
+			rp += ncnt;                                  \
+			IMP(TPE)                                     \
+		} else {                                         \
+			bp += cnt;                                   \
+			rp += cnt;                                   \
+			IMP(TPE)                                     \
 		}                                                \
 	} while(0);
 
-#define ANALYTICAL_COUNT_WITH_NIL_STR_IMP(TPE_CAST, OFFSET)               \
+#define ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP(TPE_CAST, OFFSET)  \
+	do {                                                              \
+		for(;j<i;j++)                                                 \
+			curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
+		for (;rb < rp; rb++)                                          \
+			*rb = curval;                                             \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP(TPE_CAST, OFFSET)         \
 	do {                                                                  \
-		const void *restrict bp = Tloc(b, 0);                             \
-		lng *rp, *rb, curval = 0;                                         \
-		rb = rp = (lng*)Tloc(r, 0);                                       \
-		if (p) {                                                          \
-			pnp = np = (bit*)Tloc(p, 0);                                  \
-			end = np + cnt;                                               \
-			for(i = 0; i < cnt; i++, np++) {                              \
-				if (*np) {                                                \
-					rp += (np - pnp);                                     \
-					for (;rb < rp; rb++)                                  \
-						*rb = curval;                                     \
-					curval = 0;                                           \
-					pnp = np;                                             \
-				}                                                         \
+		for(;k<i;k++) {                                                   \
+			j = (k-start > 0) ? k - start : 0;                            \
+			l = (k+end < i) ? k + end + 1 : i;                            \
+			for(; j<l; j++)                                               \
 				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
-			}                                                             \
-			rp += (np - pnp);                                             \
-			for (;rb < rp; rb++)                                          \
-				*rb = curval;                                             \
-		} else { /* single value, ie no partitions */                     \
-			for(i = 0; i < cnt; i++)                                      \
-				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
-			rp += cnt;                                                    \
-			for(;rb < rp; rb++)                                           \
-				*rb = curval;                                             \
+			*rb = curval;                                                 \
+			rb++;                                                         \
+			curval = 0;                                                   \
 		}                                                                 \
 	} while(0);
 
+#define ANALYTICAL_COUNT_NO_NIL_STR_IMP(TPE_CAST, OFFSET, IMP) \
+	do {                                                       \
+		const void *restrict bp = Tloc(b, 0);                  \
+		lng *rp, *rb, curval = 0;                              \
+		rb = rp = (lng*)Tloc(r, 0);                            \
+		if (p) {                                               \
+			pnp = np = (bit*)Tloc(p, 0);                       \
+			nend = np + cnt;                                   \
+			for(; np<nend; np++) {                             \
+				if (*np) {                                     \
+				    ncnt = (np - pnp);                         \
+					rp += ncnt;                                \
+					i += ncnt;                                 \
+					IMP(TPE_CAST, OFFSET)                      \
+					curval = 0;                                \
+					pnp = np;                                  \
+				}                                              \
+			}                                                  \
+			ncnt = (np - pnp);                                 \
+			rp += ncnt;                                        \
+			i += ncnt;                                         \
+			IMP(TPE_CAST, OFFSET)                              \
+		} else {                                               \
+			rp += cnt;                                         \
+			i += cnt;                                          \
+			IMP(TPE_CAST, OFFSET)                              \
+		}                                                      \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_NO_OVERLAP               \
+	do {                                                                \
+		for(; j<i; j++)                                                 \
+			curval += (*cmp)(nil, base + ((const var_t *) bp)[j]) != 0; \
+		for (;rb < rp; rb++)                                            \
+			*rb = curval;                                               \
+		curval = 0;                                                     \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_NO_OVERLAP \
+	do {                                                   \
+		for(; j<i; j++)                                    \
+			curval += (*cmp)(Tloc(b, j), nil) != 0;        \
+		for (;rb < rp; rb++)                               \
+			*rb = curval;                                  \
+		curval = 0;                                        \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_OVERLAP                      \
+	do {                                                                    \
+		for(;k<i;k++) {                                                     \
+			j = (k-start > 0) ? k - start : 0;                              \
+			l = (k+end < i) ? k + end + 1 : i;                              \
+			for(; j<l; j++)                                                 \
+				curval += (*cmp)(nil, base + ((const var_t *) bp)[j]) != 0; \
+			*rb = curval;                                                   \
+			rb++;                                                           \
+			curval = 0;                                                     \
+		}                                                                   \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_OVERLAP \
+	do {                                                \
+		for(;k<i;k++) {                                 \
+			j = (k-start > 0) ? k - start : 0;          \
+			l = (k+end < i) ? k + end + 1 : i;          \
+			for(; j<l; j++)                             \
+				curval += (*cmp)(Tloc(b, j), nil) != 0; \
+			*rb = curval;                               \
+			rb++;                                       \
+			curval = 0;                                 \
+		}                                               \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES(IMP_VARSIZED, IMP_FIXEDSIZE) \
+	do {                                                                 \
+		const void *restrict nil = ATOMnilptr(tpe);                      \
+		int (*cmp)(const void *, const void *) = ATOMcompare(tpe);       \
+		lng *rp, *rb, curval = 0;                                        \
+		rb = rp = (lng*)Tloc(r, 0);                                      \
+		if (b->tvarsized) {                                              \
+			const char *restrict base = b->tvheap->base;                 \
+			const void *restrict bp = Tloc(b, 0);                        \
+			if (p) {                                                     \
+				pnp = np = (bit*)Tloc(p, 0);                             \
+				nend = np + cnt;                                         \
+				for(; np < nend; np++) {                                 \
+					if (*np) {                                           \
+						ncnt = (np - pnp);                               \
+						rp += ncnt;                                      \
+						i += ncnt;                                       \
+						IMP_VARSIZED                                     \
+						pnp = np;                                        \
+					}                                                    \
+				}                                                        \
+				ncnt = (np - pnp);                                       \
+				rp += ncnt;                                              \
+				i += ncnt;                                               \
+				IMP_VARSIZED                                             \
+			} else {                                                     \
+				rp += cnt;                                               \
+				i += cnt;                                                \
+				IMP_VARSIZED                                             \
+			}                                                            \
+		} else {                                                         \
+			if (p) {                                                     \
+				pnp = np = (bit*)Tloc(p, 0);                             \
+				nend = np + cnt;                                         \
+				for(; np < nend; np++) {                                 \
+					if (*np) {                                           \
+						ncnt = (np - pnp);                               \
+						rp += ncnt;                                      \
+						i += ncnt;                                       \
+						IMP_FIXEDSIZE                                    \
+						pnp = np;                                        \
+					}                                                    \
+				}                                                        \
+				ncnt = (np - pnp);                                       \
+				rp += ncnt;                                              \
+				i += ncnt;                                               \
+				IMP_FIXEDSIZE                                            \
+			} else {                                                     \
+				rp += cnt;                                               \
+				i += cnt;                                                \
+				IMP_FIXEDSIZE                                            \
+			}                                                            \
+		}                                                                \
+	} while(0);
+
 gdk_return
-GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe)
+GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe, BUN start, BUN end)
 {
-	BUN i, cnt = BATcount(b);
-	bit *np, *pnp, *end;
+	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
+	bit *np, *pnp, *nend;
 	gdk_return gdk_res = GDK_SUCCEED;
 
 	assert(ignore_nils);
 	(void) o;
 	if(!*ignore_nils || b->T.nonil) {
-		lng *rp, *rb, curval = 0;
-		rb = rp = (lng*)Tloc(r, 0);
-		if (p) {
-			np = pnp = (bit*)Tloc(p, 0);
-			end = np + cnt;
-			for(; np < end; np++) {
-				if (*np) {
-					curval = np - pnp;
-					rp += curval;
-					for (;rb < rp; rb++)
-						*rb = curval;
-					pnp = np;
-				}
-			}
-			curval = np - pnp;
-			rp += curval;
-			for (;rb < rp; rb++)
-				*rb = curval;
-		} else { /* single value */
-			lng* lend = rp + cnt;
-			for(; rp < lend; rp++)
-				*rp = cnt;
+		if(start == 0 && end == 0) {
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP(ANALYTICAL_COUNT_IGNORE_NILS_NO_OVERLAP)
+		} else {
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP(ANALYTICAL_COUNT_IGNORE_NILS_OVERLAP)
 		}
-	} else {
+	} else if(start == 0 && end == 0) {
 		switch (tpe) {
 			case TYPE_bit:
-				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(bit)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bit, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
 				break;
 			case TYPE_bte:
-				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(bte)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bte, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
 				break;
 			case TYPE_sht:
-				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(sht)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(sht, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
 				break;
 			case TYPE_int:
-				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(int)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(int, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
 				break;
 			case TYPE_lng:
-				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(lng)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(lng, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(hge)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(hge, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
 				break;
 #endif
 			case TYPE_flt:
-				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(flt)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(flt, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
 				break;
 			case TYPE_dbl:
-				ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP(dbl)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(dbl, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
 				break;
 			case TYPE_str: {
 				const char *restrict base = b->tvheap->base;
 				switch (b->twidth) {
 					case 1:
-						ANALYTICAL_COUNT_WITH_NIL_STR_IMP(const unsigned char *, [i] + GDK_VAROFFSET)
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned char *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP)
 						break;
 					case 2:
-						ANALYTICAL_COUNT_WITH_NIL_STR_IMP(const unsigned short *, [i] + GDK_VAROFFSET)
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned short *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP)
 						break;
 #if SIZEOF_VAR_T != SIZEOF_INT
 					case 4:
-						ANALYTICAL_COUNT_WITH_NIL_STR_IMP(const unsigned int *, [i])
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned int *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP)
 						break;
 #endif
 					default:
-						ANALYTICAL_COUNT_WITH_NIL_STR_IMP(const var_t *, [i])
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const var_t *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP)
 						break;
 				}
 				break;
 			}
-			default: {
-				const void *restrict nil = ATOMnilptr(tpe);
-				int (*cmp)(const void *, const void *) = ATOMcompare(tpe);
-				lng *rp, *rb, curval = 0;
-				rb = rp = (lng*)Tloc(r, 0);
-				if (b->tvarsized) {
-					const char *restrict base = b->tvheap->base;
-					const void *restrict bp = Tloc(b, 0);
-					if (p) {
-						pnp = np = (bit*)Tloc(p, 0);
-						for(i = 0; i < cnt; i++, np++) {
-							if (*np) {
-								rp += (np - pnp);
-								for (;rb < rp; rb++)
-									*rb = curval;
-								curval = 0;
-								pnp = np;
-							}
-							curval += (*cmp)(nil, base + ((const var_t *) bp)[i]) != 0;
-						}
-						for (;rb < rp; rb++)
-							*rb = curval;
-					} else { /* single value, ie no partitions */
-						for(i = 0; i < cnt; i++)
-							curval += (*cmp)(nil, base + ((const var_t *) bp)[i]) != 0;
-						rp += cnt;
-						for(;rb < rp; rb++)
-							*rb = curval;
-					}
-				} else {
-					if (p) {
-						pnp = np = (bit*)Tloc(p, 0);
-						for(i = 0; i < cnt; i++, np++) {
-							if (*np) {
-								rp += (np - pnp);
-								for (;rb < rp; rb++)
-									*rb = curval;
-								curval = 0;
-								pnp = np;
-							}
-							curval += (*cmp)(Tloc(b, i), nil) != 0;
-						}
-						for (;rb < rp; rb++)
-							*rb = curval;
-					} else { /* single value, ie no partitions */
-						for(i = 0; i < cnt; i++)
-							curval += (*cmp)(Tloc(b, i), nil) != 0;
-						rp += cnt;
-						for(;rb < rp; rb++)
-							*rb = curval;
-					}
+			default:
+				ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES(ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_NO_OVERLAP, ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_NO_OVERLAP)
+		}
+	} else {
+		switch (tpe) {
+			case TYPE_bit:
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bit, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
+				break;
+			case TYPE_bte:
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bte, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
+				break;
+			case TYPE_sht:
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(sht, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
+				break;
+			case TYPE_int:
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(int, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
+				break;
+			case TYPE_lng:
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(lng, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(hge, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
+				break;
+#endif
+			case TYPE_flt:
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(flt, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
+				break;
+			case TYPE_dbl:
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(dbl, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
+				break;
+			case TYPE_str: {
+				const char *restrict base = b->tvheap->base;
+				switch (b->twidth) {
+					case 1:
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned char *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP)
+						break;
+					case 2:
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned short *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP)
+						break;
+#if SIZEOF_VAR_T != SIZEOF_INT
+					case 4:
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned int *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP)
+						break;
+#endif
+					default:
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const var_t *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP)
+						break;
 				}
+				break;
 			}
+			default:
+				ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES(ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_OVERLAP, ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_OVERLAP)
 		}
 	}
 	BATsetcount(r, cnt);
@@ -1359,7 +1517,20 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	return gdk_res;
 }
 
-#undef ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP
+#undef ANALYTICAL_COUNT_IGNORE_NILS_IMP
+#undef ANALYTICAL_COUNT_IGNORE_NILS_OVERLAP
+#undef ANALYTICAL_COUNT_IGNORE_NILS_NO_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP
+#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP
+#undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_NO_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_NO_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES
 
 #define ANALYTICAL_SUM_NO_OVERLAP(TPE1, TPE2) \
 	do {                                      \

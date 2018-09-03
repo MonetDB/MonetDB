@@ -1048,13 +1048,11 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (unit != 0 || excl != 0)
 		throw(SQL, "sql.count", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
-	(void)start;
-	(void)end;
 
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalcount(r, b, p, o, ignore_nils, tpe);
+		gdk_res = GDKanalyticalcount(r, b, p, o, ignore_nils, tpe, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);

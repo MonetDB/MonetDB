@@ -88,14 +88,260 @@ Ready.
 [ 26	]
 [ 26	]
 [ NULL	]
-#create table debugme (aa real, bb int);
-#insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
-[ 10	]
-#select cast (sum(aa) over (rows between 2 preceding and 0 following) as bigint) from debugme;
+#select cast(prod(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics;
 % sys.L5 # table_name
 % L5 # name
 % bigint # type
-% 2 # length
+% 4 # length
+[ 15	]
+[ 45	]
+[ 90	]
+[ 450	]
+[ 450	]
+[ 1350	]
+[ 360	]
+[ 720	]
+[ 2880	]
+[ 576	]
+#select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 5 # length
+[ 90	]
+[ 450	]
+[ 450	]
+[ 1350	]
+[ 5400	]
+[ 32400	]
+[ 17280	]
+[ 5760	]
+[ 2880	]
+[ 576	]
+#select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 3 # length
+[ 3	]
+[ 6	]
+[ 24	]
+[ 3	]
+[ 3	]
+[ 24	]
+[ 15	]
+[ 75	]
+[ 450	]
+[ NULL	]
+#select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 3 # length
+[ 24	]
+[ 24	]
+[ 24	]
+[ 24	]
+[ 24	]
+[ 24	]
+[ 450	]
+[ 450	]
+[ 450	]
+[ NULL	]
+#select count(*) over (rows between 5 preceding and 0 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 6	]
+[ 6	]
+[ 6	]
+[ 6	]
+#select count(*) over (rows between 5 preceding and 2 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 8	]
+[ 8	]
+[ 7	]
+[ 6	]
+#select count(*) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+#select count(*) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 1	]
+#select count(aa) over (rows between 5 preceding and 0 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 4	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ 4	]
+#select count(aa) over (rows between 5 preceding and 2 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 3	]
+[ 4	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 7	]
+[ 6	]
+[ 5	]
+[ 4	]
+#select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 0	]
+#select count(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 3	]
+[ 3	]
+[ 3	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 0	]
+#select count(bb) over (rows between 5 preceding and 0 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 6	]
+[ 6	]
+[ 6	]
+[ 6	]
+#select count(bb) over (rows between 5 preceding and 2 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 8	]
+[ 8	]
+[ 7	]
+[ 6	]
+#select count(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select count(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 1	]
+[ 2	]
+[ 2	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select count(*) over (rows between 5 preceding and 0 following);
+% .L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#create table debugme (aa real, bb int);
+#insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
+[ 10	]
+#select sum(aa) over (rows between 2 preceding and 0 following) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
 [ 15	]
 [ 18	]
 [ 20	]
@@ -106,11 +352,11 @@ Ready.
 [ 13	]
 [ 18	]
 [ 14	]
-#select cast (sum(aa) over (rows between 2 preceding and 2 following) as bigint) from debugme;
-% sys.L5 # table_name
-% L5 # name
-% bigint # type
-% 2 # length
+#select sum(aa) over (rows between 2 preceding and 2 following) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
 [ 20	]
 [ 25	]
 [ 25	]
@@ -121,11 +367,11 @@ Ready.
 [ 21	]
 [ 18	]
 [ 14	]
-#select cast (sum(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) as bigint) from debugme;
-% sys.L5 # table_name
-% L5 # name
-% bigint # type
-% 2 # length
+#select sum(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
 [ 3	]
 [ 5	]
 [ 9	]
@@ -136,11 +382,11 @@ Ready.
 [ 20	]
 [ 26	]
 [ NULL	]
-#select cast (sum(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) as bigint) from debugme;
-% sys.L5 # table_name
-% L5 # name
-% bigint # type
-% 2 # length
+#select sum(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
 [ 9	]
 [ 9	]
 [ 9	]
@@ -150,6 +396,66 @@ Ready.
 [ 26	]
 [ 26	]
 [ 26	]
+[ NULL	]
+#select prod(aa) over (rows between 2 preceding and 0 following) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
+[ 15	]
+[ 45	]
+[ 90	]
+[ 30	]
+[ 10	]
+[ 15	]
+[ 12	]
+[ 72	]
+[ 192	]
+[ 48	]
+#select prod(aa) over (rows between 2 preceding and 2 following) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
+[ 90	]
+[ 450	]
+[ 450	]
+[ 90	]
+[ 120	]
+[ 360	]
+[ 576	]
+[ 576	]
+[ 192	]
+[ 48	]
+#select prod(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
+[ 3	]
+[ 6	]
+[ 24	]
+[ 3	]
+[ 3	]
+[ 24	]
+[ 15	]
+[ 75	]
+[ 450	]
+[ NULL	]
+#select prod(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme;
+% sys.L4 # table_name
+% L4 # name
+% real # type
+% 15 # length
+[ 24	]
+[ 24	]
+[ 24	]
+[ 24	]
+[ 24	]
+[ 24	]
+[ 450	]
+[ 450	]
+[ 450	]
 [ NULL	]
 #rollback;
 

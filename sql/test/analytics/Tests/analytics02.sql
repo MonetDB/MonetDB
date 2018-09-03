@@ -13,6 +13,31 @@ select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) 
 select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
 select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
 
+select count(*) over (rows between 5 preceding and 0 following) from analytics;
+select count(*) over (rows between 5 preceding and 2 following) from analytics;
+select count(*) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
+select count(*) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select count(aa) over (rows between 5 preceding and 0 following) from analytics;
+select count(aa) over (rows between 5 preceding and 2 following) from analytics;
+select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
+select count(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select count(bb) over (rows between 5 preceding and 0 following) from analytics;
+select count(bb) over (rows between 5 preceding and 2 following) from analytics;
+select count(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics;
+select count(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics;
+
+select count(*) over (rows between 5 preceding and 0 following);
+
+create table stressme (aa varchar(64), bb int);
+insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
+
+select count(aa) over (rows between 5 preceding and 0 following) from stressme;
+select count(aa) over (rows between 5 preceding and 2 following) from stressme;
+select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
+select count(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme;
+
 create table debugme (aa real, bb int);
 insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
 
