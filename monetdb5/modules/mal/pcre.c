@@ -1516,7 +1516,7 @@ PCREquote(str *ret, const str *val)
 		if (!((*s & 0x80) != 0 ||
 		      ('a' <= *s && *s <= 'z') ||
 		      ('A' <= *s && *s <= 'Z') ||
-		      ('0' <= *s && *s <= '9')))
+		      isdigit((unsigned char) *s)))
 			*p++ = '\\';
 		*p++ = *s++;
 	}

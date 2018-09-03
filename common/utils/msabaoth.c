@@ -28,6 +28,7 @@
 #include <time.h>
 #include <string.h> /* for getting error messages */
 #include <stddef.h>
+#include <ctype.h>
 
 #include "msabaoth.h"
 #include "mutils.h"
@@ -106,7 +107,7 @@ msab_isuuid(const char *restrict s)
 		return 0;
 	/* only hexadecimals and hypens */
 	while (*s) {
-		if (!('a' <= *s && *s <= 'f') && !('0' <= *s && *s <= '9')) {
+		if (!isxdigit((unsigned char) *s)) {
 			if (*s == '-')
 				hyphens++;
 			else

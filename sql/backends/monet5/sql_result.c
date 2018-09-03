@@ -630,7 +630,7 @@ bat_max_hgelength(BAT *b)
 			s++;						\
 		}							\
 		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
-			if (!*s || *s < '0' || *s > '9')		\
+			if (!*s || !isdigit((unsigned char) *s))		\
 				return NULL;				\
 			res *= 10;					\
 			res += (*s-'0');				\
@@ -648,7 +648,7 @@ bat_max_hgelength(BAT *b)
 			if (*s != '.')					\
 				return NULL;				\
 			s++;						\
-			for (i = 0; *s && *s >= '0' && *s <= '9' && i < t->scale; i++, s++) { \
+			for (i = 0; *s && isdigit((unsigned char) *s) && i < t->scale; i++, s++) { \
 				res *= 10;				\
 				res += *s - '0';			\
 			}						\
@@ -717,7 +717,7 @@ sec_frstr(Column *c, int type, const char *s)
 		s++;
 	}
 	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
-		if (!*s || *s < '0' || *s > '9')
+		if (!*s || !isdigit((unsigned char) *s))
 			return NULL;
 		res *= 10;
 		res += (*s - '0');
@@ -732,7 +732,7 @@ sec_frstr(Column *c, int type, const char *s)
 			return NULL;
 		s++;
 		for (i = 0; *s && i < 3; i++, s++) {
-			if (*s < '0' || *s > '9')
+			if (!isdigit((unsigned char) *s))
 				return NULL;
 			res *= 10;
 			res += (*s - '0');
