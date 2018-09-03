@@ -1076,8 +1076,8 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int, int), const str op, const str err)
+do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
+					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int, int, BUN, BUN))
 {
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
 	int tp1, tp2, unit, start, end, excl;
@@ -1151,13 +1151,11 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	if (unit != 0 || excl != 0)
 		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
-	(void) start;
-	(void) end;
 
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, force_order, tp1, tp2);
+		gdk_res = func(r, b, p, o, force_order, tp1, tp2, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
@@ -1222,13 +1220,13 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 str
 SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalsum, "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)");
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)", GDKanalyticalsum);
 }
 
 str
 SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_analytical_sumprod(cntxt, mb, stk, pci, GDKanalyticalprod, "sql.prod", SQLSTATE(42000) "prod(:any_1,:bit,:bit)");
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", SQLSTATE(42000) "prod(:any_1,:bit,:bit)", GDKanalyticalprod);
 }
 
 str

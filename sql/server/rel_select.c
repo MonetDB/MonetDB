@@ -4727,8 +4727,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		append(args, list_fetch(fbe, 3)); /*exclude */
 	} else if (aggr) {
 		append(args, exp_atom_int(sql->sa, 0)); /*ROWS */
-		append(args, exp_atom_int(sql->sa, -1)); /*start */
-		append(args, exp_atom_int(sql->sa, -1)); /*end */
+		append(args, exp_atom_int(sql->sa, 0)); /*start */
+		append(args, exp_atom_int(sql->sa, 0)); /*end */
 		append(args, exp_atom_int(sql->sa, 0)); /*exclude */
 	}
 	call = exp_op(sql->sa, args, wf);

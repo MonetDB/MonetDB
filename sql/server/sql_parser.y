@@ -270,8 +270,6 @@ int yydebug=1;
 	window_frame_clause
 	window_frame_start
 	window_frame_end
-	window_frame_preceding
-	window_frame_following
 	XML_value_function
 	XML_comment
   	XML_concatenation
@@ -4198,43 +4196,34 @@ window_frame_units:
   ;
 
 window_frame_extent:
-	window_frame_start	{ $$ = append_symbol(append_symbol(L(), $1), _symbol_create_int(SQL_FRAME, -1)); }
-  |	window_frame_between	{ $$ = $1; }
+	window_frame_start   { $$ = append_symbol(append_symbol(L(), $1), _symbol_create_int(SQL_FRAME, 0)); }
+  |	window_frame_between { $$ = $1; }
   ;
 
 window_frame_start:
-	UNBOUNDED PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME, -1); }
-  |	window_frame_preceding  { $$ = $1; }
-  |	CURRENT ROW		{ $$ = _symbol_create_int(SQL_FRAME, 0); }
+	UNBOUNDED PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME, GDK_int_max); }
+  |	posint PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME, $1); }
+  |	CURRENT ROW			{ $$ = _symbol_create_int(SQL_FRAME, 0); }
   ;
 
-window_frame_preceding:
-	value_exp PRECEDING	{ $$ = $1; }
-  ;
-	
 window_frame_between:
-	BETWEEN window_frame_start AND window_frame_end
-				{ $$ = append_symbol(append_symbol(L(), $2), $4); }
+	BETWEEN window_frame_start AND window_frame_end	{ $$ = append_symbol(append_symbol(L(), $2), $4); }
   ;
 
 window_frame_end:
-	UNBOUNDED FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME, -1); }
-  | 	window_frame_following	{ $$ = $1; }
-  |	CURRENT ROW		{ $$ = _symbol_create_int(SQL_FRAME, 0); }
-  ;
-
-window_frame_following:
-	value_exp FOLLOWING	{ $$ = $1; }
+	UNBOUNDED FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME, GDK_int_max); }
+  |	posint FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME, $1); }
+  |	CURRENT ROW			{ $$ = _symbol_create_int(SQL_FRAME, 0); }
   ;
 
 window_frame_exclusion:
- 	/* empty */		{ $$ = EXCLUDE_NONE; }
- |      EXCLUDE CURRENT ROW	{ $$ = EXCLUDE_CURRENT_ROW; }
- |      EXCLUDE sqlGROUP	{ $$ = EXCLUDE_GROUP; }
- |      EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
- |      EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NONE; }
- ;
-	
+	/* empty */			{ $$ = EXCLUDE_NONE; }
+  |	EXCLUDE CURRENT ROW	{ $$ = EXCLUDE_CURRENT_ROW; }
+  |	EXCLUDE sqlGROUP	{ $$ = EXCLUDE_GROUP; }
+  |	EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
+  |	EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NONE; }
+  ;
+
 var_ref:
 	AT ident 	{ $$ = _symbol_create( SQL_NAME, $2 ); }
  ;

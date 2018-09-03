@@ -1361,276 +1361,392 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 
 #undef ANALYTICAL_COUNT_WITH_NIL_FIXED_SIZE_IMP
 
-#define ANALYTICAL_SUM_IMP(TPE1, TPE2)                          \
-	do {                                                        \
-		TPE1 *pbp, *bp, v;                                      \
-		TPE2 *rp, *rb, *rend, curval = TPE2##_nil;              \
-		pbp = bp = (TPE1*)Tloc(b, 0);                           \
-		rb = rp = (TPE2*)Tloc(r, 0);                            \
-		rend = rp + cnt;                                        \
-		if (p) {                                                \
-			pnp = np = (bit*)Tloc(p, 0);                        \
-			end = np + cnt;                                     \
-			for(; np<end; np++) {                               \
-				if (*np) {                                      \
-					ncnt = (np - pnp);                          \
-					bp += ncnt;                                 \
-					for(; pbp<bp;pbp++) {                       \
-						v = *pbp;                               \
-						if (!is_##TPE1##_nil(v)) {              \
-							if(is_##TPE2##_nil(curval))         \
-								curval = (TPE2) v;              \
-							else                                \
-								ADD_WITH_CHECK(TPE1, v, TPE2,   \
-									curval, TPE2, curval,       \
-									GDK_##TPE2##_max,           \
-									goto calc_overflow);        \
-						}                                       \
-					}                                           \
-					rp += ncnt;                                 \
-					for (;rb < rp; rb++)                        \
-						*rb = curval;                           \
-					if(is_##TPE2##_nil(curval))                 \
-						has_nils = true;                        \
-					else                                        \
-						curval = TPE2##_nil;                    \
-					pnp = np;                                   \
-					pbp = bp;                                   \
-				}                                               \
-			}                                                   \
-			ncnt = (np - pnp);                                  \
-			bp += ncnt;                                         \
-			for(; pbp<bp;pbp++) {                               \
-				v = *pbp;                                       \
-				if (!is_##TPE1##_nil(v)) {                      \
-					if(is_##TPE2##_nil(curval))                 \
-						curval = (TPE2) v;                      \
-					else                                        \
-						ADD_WITH_CHECK(TPE1, v, TPE2, curval,   \
-							TPE2, curval, GDK_##TPE2##_max,     \
-							goto calc_overflow);                \
-				}                                               \
-			}                                                   \
-			rp += ncnt;                                         \
-			if(is_##TPE2##_nil(curval))                         \
-				has_nils = true;                                \
-			for (;rb < rp; rb++)                                \
-				*rb = curval;                                   \
-		} else if (o || force_order) {                          \
-			TPE1 *bend = bp + cnt;                              \
-			rp += cnt;                                          \
-			for(; bp<bend; bp++) {                              \
-				v = *bp;                                        \
-				if(!is_##TPE1##_nil(v)) {                       \
-					if(is_##TPE2##_nil(curval))                 \
-						curval = (TPE2) v;                      \
-					else                                        \
-						ADD_WITH_CHECK(TPE1, v, TPE2, curval,   \
-										TPE2, curval,           \
-										GDK_##TPE2##_max,       \
-										goto calc_overflow);    \
-				}                                               \
-			}                                                   \
-			for(;rb < rp; rb++)                                 \
-				*rb = curval;                                   \
-			if(is_##TPE2##_nil(curval))                         \
-				has_nils = true;                                \
-		} else { /* single value, ie no ordering */             \
-			for(; rp<rend; rp++, bp++) {                        \
-				v = *bp;                                        \
-				if(is_##TPE1##_nil(v)) {                        \
-					*rp = TPE2##_nil;                           \
-					has_nils = true;                            \
-				} else {                                        \
-					*rp = (TPE2) v;                             \
-				}                                               \
-			}                                                   \
-		}                                                       \
-		goto finish;                                            \
+#define ANALYTICAL_SUM_NO_OVERLAP(TPE1, TPE2) \
+	do {                                      \
+		for(; pbp<bp; pbp++) {                \
+			v = *pbp;                         \
+			if (!is_##TPE1##_nil(v)) {        \
+				if(is_##TPE2##_nil(curval))   \
+					curval = (TPE2) v;        \
+				else                          \
+					ADD_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}                                 \
+		}                                     \
+		for (;rb < rp; rb++)                  \
+			*rb = curval;                     \
+		if(is_##TPE2##_nil(curval))           \
+			has_nils = true;                  \
+		else                                  \
+			curval = TPE2##_nil;              \
+	} while(0);                               \
+
+#define ANALYTICAL_SUM_OVERLAP(TPE1, TPE2)            \
+	do {                                              \
+		TPE1 *bs, *bl, *be;                           \
+		bl = pbp;                                     \
+		for(; pbp<bp;pbp++) {                         \
+			bs = (pbp-start > bl) ? pbp - start : bl; \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
+			for(; bs<be; bs++) {                      \
+				v = *bs;                              \
+				if (!is_##TPE1##_nil(v)) {            \
+					if(is_##TPE2##_nil(curval))       \
+						curval = (TPE2) v;            \
+					else                              \
+						ADD_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+				}                                     \
+			}                                         \
+			*rb = curval;                             \
+			rb++;                                     \
+			if(is_##TPE2##_nil(curval))               \
+				has_nils = true;                      \
+			else                                      \
+				curval = TPE2##_nil;                  \
+		}                                             \
 	} while(0);
 
-#define ANALYTICAL_SUM_FP_IMP(TPE1, TPE2)                             \
-	do {                                                              \
-		TPE1 *bp, *pbp;                                               \
-		TPE2 *rp, *rb, curval = TPE2##_nil;                           \
-		bp = pbp = (TPE1*)Tloc(b, 0);                                 \
-		rb = rp = (TPE2*)Tloc(r, 0);                                  \
-		if (p) {                                                      \
-			pnp = np = (bit*)Tloc(p, 0);                              \
-			end = np + cnt;                                           \
-			for(; np<end; np++) {                                     \
-				if (*np) {                                            \
-					ncnt = np - pnp;                                  \
-					bp += ncnt;                                       \
-					rp += ncnt;                                       \
-					if(dofsum(pbp, 0, 0, ncnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2, \
-							  NULL, NULL, NULL, 0, 0, true, false, true,        \
-							  "GDKanalyticalsum") == BUN_NONE) {                \
-						goto bailout;                                 \
-					}                                                 \
-					curval = *rb;                                     \
-					for (;rb < rp; rb++)                              \
-						*rb = curval;                                 \
-					if(is_##TPE2##_nil(curval))                       \
-						has_nils = true;                              \
-					pnp = np;                                         \
-					pbp = bp;                                         \
-				}                                                     \
-			}                                                         \
-			ncnt = np - pnp;                                          \
-			rp += ncnt;                                               \
-			if(dofsum(pbp, 0, 0, ncnt, rb, 1, TYPE_##TPE1,            \
-					  TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true,      \
-					  false, true, "GDKanalyticalsum") == BUN_NONE) { \
-				goto bailout;                                         \
-			}                                                         \
-			curval = *rb;                                             \
-			if(is_##TPE2##_nil(curval))                               \
-				has_nils = true;                                      \
-			for (;rb < rp; rb++)                                      \
-				*rb = curval;                                         \
-		} else if (o || force_order) {                                \
-			TPE2 *rend = rb + cnt;                                    \
-			if(dofsum(bp, 0, 0, cnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2, \
-					  NULL, NULL, NULL, 0, 0, true, false, true,      \
-					  "GDKanalyticalsum") == BUN_NONE) {              \
-				goto bailout;                                         \
-			}                                                         \
-			curval = *rb;                                             \
-			for(; rb<rend; rb++)                                      \
-				*rb = curval;                                         \
-			if(is_##TPE2##_nil(curval))                               \
-				has_nils = true;                                      \
-		} else { /* single value, ie no ordering */                   \
-			TPE2 *rend = rp + cnt;                                    \
-			for(; rp<rend; rp++, bp++) {                              \
-				if(is_##TPE1##_nil(*bp)) {                            \
-					*rp = TPE2##_nil;                                 \
-					has_nils = true;                                  \
-				} else {                                              \
-					*rp = (TPE2) *bp;                                 \
-				}                                                     \
-			}                                                         \
-		}                                                             \
-		goto finish;                                                  \
+#define ANALYTICAL_SUM_IMP(TPE1, TPE2, IMP)        \
+	do {                                           \
+		TPE1 *pbp, *bp, v;                         \
+		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
+		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		rb = rp = (TPE2*)Tloc(r, 0);               \
+		rend = rp + cnt;                           \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					bp += ncnt;                    \
+					rp += ncnt;                    \
+					IMP(TPE1, TPE2)                \
+					pnp = np;                      \
+					pbp = bp;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			bp += ncnt;                            \
+			rp += ncnt;                            \
+			IMP(TPE1, TPE2)                        \
+		} else if (o || force_order) {             \
+			bp += cnt;                             \
+			rp += cnt;                             \
+			IMP(TPE1, TPE2)                        \
+		} else {                                   \
+			for(; rb<rend; rb++, bp++) {           \
+				v = *bp;                           \
+				if(is_##TPE1##_nil(v)) {           \
+					*rb = TPE2##_nil;              \
+					has_nils = true;               \
+				} else {                           \
+					*rb = (TPE2) v;                \
+				}                                  \
+			}                                      \
+		}                                          \
+		goto finish;                               \
+	} while(0);
+
+#define ANALYTICAL_SUM_FP_NO_OVERLAP(TPE1, TPE2)     \
+	do {                                             \
+		if(dofsum(pbp, 0, 0, ncnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, true, \
+				  "GDKanalyticalsum") == BUN_NONE) { \
+			goto bailout;                            \
+		}                                            \
+		TPE2 curval = *rb;                           \
+		for (;rb < rp; rb++)                         \
+			*rb = curval;                            \
+		if(is_##TPE2##_nil(curval))                  \
+			has_nils = true;                         \
+	} while(0);
+
+#define ANALYTICAL_SUM_FP_OVERLAP(TPE1, TPE2)            \
+	do {                                                 \
+		TPE1 *bs, *bl, *be;                              \
+		bl = pbp;                                        \
+		for(; pbp<bp; pbp++) {                           \
+			bs = (pbp-start > bl) ? pbp - start : bl;    \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp;    \
+			if(dofsum(bs, 0, 0, (be - bs), rb, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, true, \
+					  "GDKanalyticalsum") == BUN_NONE) { \
+				goto bailout;                            \
+			}                                            \
+			if(is_##TPE2##_nil(*rb))                     \
+				has_nils = true;                         \
+			rb++;                                        \
+		}                                                \
+	} while(0);
+
+#define ANALYTICAL_SUM_FP_IMP(TPE1, TPE2, IMP) \
+	do {                                       \
+		TPE1 *bp, *pbp;                        \
+		TPE2 *rp, *rb, *rend;                  \
+		bp = pbp = (TPE1*)Tloc(b, 0);          \
+		rb = rp = (TPE2*)Tloc(r, 0);           \
+		rend = rp + cnt;                       \
+		if (p) {                               \
+			pnp = np = (bit*)Tloc(p, 0);       \
+			nend = np + cnt;                   \
+			for(; np<nend; np++) {             \
+				if (*np) {                     \
+					ncnt = np - pnp;           \
+					bp += ncnt;                \
+					rp += ncnt;                \
+					IMP(TPE1, TPE2)            \
+					pnp = np;                  \
+					pbp = bp;                  \
+				}                              \
+			}                                  \
+			ncnt = (np - pnp);                 \
+			bp += ncnt;                        \
+			rp += ncnt;                        \
+			IMP(TPE1, TPE2)                    \
+		} else if (o || force_order) {         \
+			ncnt = cnt;                        \
+			bp += ncnt;                        \
+			rp += ncnt;                        \
+			IMP(TPE1, TPE2)                    \
+		} else {                               \
+			for(; rb<rend; rb++, bp++) {       \
+				if(is_##TPE1##_nil(*bp)) {     \
+					*rb = TPE2##_nil;          \
+					has_nils = true;           \
+				} else {                       \
+					*rb = (TPE2) *bp;          \
+				}                              \
+			}                                  \
+		}                                      \
+		goto finish;                           \
 	} while(0);
 
 gdk_return
-GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2)
+GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2, BUN start, BUN end)
 {
 	bool has_nils = false;
 	BUN ncnt, cnt = BATcount(b), nils = 0;
-	bit *np, *pnp, *end;
+	bit *np, *pnp, *nend;
 	int abort_on_error = 1;
 
-	switch (tp2) {
-		case TYPE_bte: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_SUM_IMP(bte, bte);
-					break;
-				default:
-					goto nosupport;
+	if(start == 0 && end == 0) {
+		switch (tp2) {
+			case TYPE_bte: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, bte, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
-		case TYPE_sht: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_SUM_IMP(bte, sht);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_SUM_IMP(sht, sht);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_sht: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, sht, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_SUM_IMP(sht, sht, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
-		case TYPE_int: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_SUM_IMP(bte, int);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_SUM_IMP(sht, int);
-					break;
-				case TYPE_int:
-					ANALYTICAL_SUM_IMP(int, int);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_int: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, int, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_SUM_IMP(sht, int, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_SUM_IMP(int, int, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
-		case TYPE_lng: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_SUM_IMP(bte, lng);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_SUM_IMP(sht, lng);
-					break;
-				case TYPE_int:
-					ANALYTICAL_SUM_IMP(int, lng);
-					break;
-				case TYPE_lng:
-					ANALYTICAL_SUM_IMP(lng, lng);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_lng: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, lng, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_SUM_IMP(sht, lng, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_SUM_IMP(int, lng, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_SUM_IMP(lng, lng, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
 #ifdef HAVE_HGE
-		case TYPE_hge: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_SUM_IMP(bte, hge);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_SUM_IMP(sht, hge);
-					break;
-				case TYPE_int:
-					ANALYTICAL_SUM_IMP(int, hge);
-					break;
-				case TYPE_lng:
-					ANALYTICAL_SUM_IMP(lng, hge);
-					break;
-				case TYPE_hge:
-					ANALYTICAL_SUM_IMP(hge, hge);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_hge: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, hge, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_SUM_IMP(sht, hge, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_SUM_IMP(int, hge, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_SUM_IMP(lng, hge, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					case TYPE_hge:
+						ANALYTICAL_SUM_IMP(hge, hge, ANALYTICAL_SUM_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
 #endif
-		case TYPE_flt: {
-			switch (tp1) {
-				case TYPE_flt:
-					ANALYTICAL_SUM_FP_IMP(flt, flt);
-					break;
-				default:
-					goto nosupport;
-					break;
+			case TYPE_flt: {
+				switch (tp1) {
+					case TYPE_flt:
+						ANALYTICAL_SUM_FP_IMP(flt, flt, ANALYTICAL_SUM_FP_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+						break;
+				}
 			}
-		}
-		case TYPE_dbl: {
-			switch (tp1) {
-				case TYPE_flt:
-					ANALYTICAL_SUM_FP_IMP(flt, dbl);
-					break;
-				case TYPE_dbl:
-					ANALYTICAL_SUM_FP_IMP(dbl, dbl);
-					break;
-				default:
-					goto nosupport;
-					break;
+			case TYPE_dbl: {
+				switch (tp1) {
+					case TYPE_flt:
+						ANALYTICAL_SUM_FP_IMP(flt, dbl, ANALYTICAL_SUM_FP_NO_OVERLAP);
+						break;
+					case TYPE_dbl:
+						ANALYTICAL_SUM_FP_IMP(dbl, dbl, ANALYTICAL_SUM_FP_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+						break;
+				}
 			}
+			default:
+				goto nosupport;
 		}
-		default:
-			goto nosupport;
+	} else {
+		switch (tp2) {
+			case TYPE_bte: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, bte, ANALYTICAL_SUM_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+			case TYPE_sht: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, sht, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_SUM_IMP(sht, sht, ANALYTICAL_SUM_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+			case TYPE_int: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, int, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_SUM_IMP(sht, int, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_SUM_IMP(int, int, ANALYTICAL_SUM_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+			case TYPE_lng: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, lng, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_SUM_IMP(sht, lng, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_SUM_IMP(int, lng, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_SUM_IMP(lng, lng, ANALYTICAL_SUM_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+#ifdef HAVE_HGE
+			case TYPE_hge: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_SUM_IMP(bte, hge, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_SUM_IMP(sht, hge, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_SUM_IMP(int, hge, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_SUM_IMP(lng, hge, ANALYTICAL_SUM_OVERLAP);
+						break;
+					case TYPE_hge:
+						ANALYTICAL_SUM_IMP(hge, hge, ANALYTICAL_SUM_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+#endif
+			case TYPE_flt: {
+				switch (tp1) {
+					case TYPE_flt:
+						ANALYTICAL_SUM_FP_IMP(flt, flt, ANALYTICAL_SUM_FP_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+						break;
+				}
+			}
+			case TYPE_dbl: {
+				switch (tp1) {
+					case TYPE_flt:
+						ANALYTICAL_SUM_FP_IMP(flt, dbl, ANALYTICAL_SUM_FP_OVERLAP);
+						break;
+					case TYPE_dbl:
+						ANALYTICAL_SUM_FP_IMP(dbl, dbl, ANALYTICAL_SUM_FP_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+						break;
+				}
+			}
+			default:
+				goto nosupport;
+		}
 	}
 bailout:
 	GDKerror("error while calculating floating-point sum\n");
@@ -1649,7 +1765,12 @@ finish:
 }
 
 #undef ANALYTICAL_SUM_IMP
+#undef ANALYTICAL_SUM_NO_OVERLAP
+#undef ANALYTICAL_SUM_OVERLAP
+
 #undef ANALYTICAL_SUM_FP_IMP
+#undef ANALYTICAL_SUM_FP_NO_OVERLAP
+#undef ANALYTICAL_SUM_FP_OVERLAP
 
 #define ANALYTICAL_PROD_IMP_NORMAL(TPE1, TPE2, TPE3)             \
 	do {                                                         \
@@ -1659,8 +1780,8 @@ finish:
 		rb = rp = (TPE2*)Tloc(r, 0);                             \
 		if (p) {                                                 \
 			pnp = np = (bit*)Tloc(p, 0);                         \
-			end = np + cnt;                                      \
-			for(; np<end; np++) {                                \
+			nend = np + cnt;                                     \
+			for(; np<nend; np++) {                               \
 				if (*np) {                                       \
 					ncnt = np - pnp;                             \
 					bp += ncnt;                                  \
@@ -1724,14 +1845,14 @@ finish:
 			if(is_##TPE2##_nil(curval))                          \
 				has_nils = true;                                 \
 		} else { /* single value, ie no ordering */              \
-			TPE2 *rend = rp + cnt;                               \
-			for(; rp<rend; rp++, bp++)  {                        \
+			TPE2 *rend = rb + cnt;                               \
+			for(; rb<rend; rb++, bp++)  {                        \
 				v = *bp;                                         \
 				if(is_##TPE1##_nil(v)) {                         \
-					*rp = TPE2##_nil;                            \
+					*rb = TPE2##_nil;                            \
 					has_nils = true;                             \
 				} else {                                         \
-					*rp = (TPE2) v;                              \
+					*rb = (TPE2) v;                              \
 				}                                                \
 			}                                                    \
 		}                                                        \
@@ -1746,8 +1867,8 @@ finish:
 		rb = rp = (TPE2*)Tloc(r, 0);                       \
 		if (p) {                                           \
 			pnp = np = (bit*)Tloc(p, 0);                   \
-			end = np + cnt;                                \
-			for(; np<end; np++) {                          \
+			nend = np + cnt;                               \
+			for(; np<nend; np++) {                         \
 				if (*np) {                                 \
 					ncnt = np - pnp;                       \
 					bp += ncnt;                            \
@@ -1845,8 +1966,8 @@ finish:
 		rb = rp = (TPE2*)Tloc(r, 0);                            \
 		if (p) {                                                \
 			pnp = np = (bit*)Tloc(p, 0);                        \
-			end = np + cnt;                                     \
-			for(; np<end; np++) {                               \
+			nend = np + cnt;                                    \
+			for(; np<nend; np++) {                              \
 				if (*np) {                                      \
 					ncnt = np - pnp;                            \
 					bp += ncnt;                                 \
@@ -1918,13 +2039,15 @@ finish:
 	} while(0);
 
 gdk_return
-GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2)
+GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2, BUN start, BUN end)
 {
 	bool has_nils = false;
 	BUN ncnt, cnt = BATcount(b), nils = 0;
-	bit *pnp, *np, *end;
+	bit *pnp, *np, *nend;
 	int abort_on_error = 1;
 
+	(void) start;
+	(void) end;
 	switch (tp2) {
 		case TYPE_bte: {
 			switch (tp1) {
