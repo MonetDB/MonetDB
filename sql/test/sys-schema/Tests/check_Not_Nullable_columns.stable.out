@@ -280,55 +280,60 @@ Ready.
 % smallint,	int,	int,	smallint # type
 % 1,	1,	1,	1 # length
 #SELECT "id", * FROM "sys"."functions" WHERE "id" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "name", * FROM "sys"."functions" WHERE "name" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% name,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% name,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "func", * FROM "sys"."functions" WHERE "func" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% func,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% func,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "mod", * FROM "sys"."functions" WHERE "mod" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% mod,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% mod,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "language", * FROM "sys"."functions" WHERE "language" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% language,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% language,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "type", * FROM "sys"."functions" WHERE "type" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% type,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% type,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "side_effect", * FROM "sys"."functions" WHERE "side_effect" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% side_effect,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% side_effect,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "varres", * FROM "sys"."functions" WHERE "varres" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% varres,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% varres,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "vararg", * FROM "sys"."functions" WHERE "vararg" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% vararg,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% vararg,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "schema_id", * FROM "sys"."functions" WHERE "schema_id" IS NULL;
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1 # length
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
+#SELECT "system", * FROM "sys"."functions" WHERE "system" IS NULL;
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% system,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system # name
+% boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean # type
+% 5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5 # length
 #SELECT "id", * FROM "sys"."idxs" WHERE "id" IS NULL;
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	id,	table_id,	type,	name # name
