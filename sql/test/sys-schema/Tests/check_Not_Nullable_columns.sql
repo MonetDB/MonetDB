@@ -101,6 +101,7 @@ SELECT "side_effect", * FROM "sys"."functions" WHERE "side_effect" IS NULL;
 SELECT "varres", * FROM "sys"."functions" WHERE "varres" IS NULL;
 SELECT "vararg", * FROM "sys"."functions" WHERE "vararg" IS NULL;
 SELECT "schema_id", * FROM "sys"."functions" WHERE "schema_id" IS NULL;
+SELECT "system", * FROM "sys"."functions" WHERE "system" IS NULL;
 
 SELECT "id", * FROM "sys"."idxs" WHERE "id" IS NULL;
 SELECT "table_id", * FROM "sys"."idxs" WHERE "table_id" IS NULL;

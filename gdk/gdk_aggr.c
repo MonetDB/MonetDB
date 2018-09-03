@@ -3335,7 +3335,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 			} else {
 				BATloop(b,p,q) {
 					s = BUNtail(bi, p);
-					if (strcmp(s, str_nil)) {
+					if (*s != '\200') {
 						next_length = strlen(s);
 						single_length += next_length + separator_length;
 						single_oid = p;
@@ -3411,7 +3411,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					if (i >= end)
 						break;
 					s = BUNtail(bi, i);
-					if (strcmp(s, str_nil)) {
+					if (*s != '\200') {
 						next_length = strlen(s);
 						single_length += next_length + separator_length;
 						single_oid = i;
@@ -3473,7 +3473,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					gid = gids ? gids[i] - min : (oid) i;
 					if (lastoid[gid] != BUN_NONE) {
 						s = BUNtail(bi, i);
-						if (strcmp(s, str_nil)) {
+						if (*s != '\200') {
 							next_length = strlen(s);
 							lengths[gid] += next_length + separator_length;
 							lastoid[gid] = i;
@@ -3533,7 +3533,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					gid = gids ? gids[i] - min : (oid) i;
 					if (lastoid[gid] != BUN_NONE) {
 						s = BUNtail(bi, i);
-						if (strcmp(s, str_nil)) {
+						if (*s != '\200') {
 							next_length = strlen(s);
 							lengths[gid] += next_length;
 							lastoid[gid] = i;
@@ -3637,7 +3637,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_er
 	assert(separator);
 	res->vtype = TYPE_str;
 
-	if (BATcount(b) == 0 || strcmp(separator, str_nil) == 0) {
+	if (BATcount(b) == 0 || *separator == '\200') {
 		res->len = 0;
 		res->val.sval = nil_if_empty ? GDKstrdup(str_nil) : GDKstrdup("");
 		if(res->val.sval == NULL) {
@@ -3679,7 +3679,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool ab
 		return NULL;
 	}
 
-	if (BATcount(b) == 0 || ngrp == 0 || strcmp(separator, str_nil) == 0) {
+	if (BATcount(b) == 0 || ngrp == 0 || *separator == '\200') {
 		/* trivial: no strings to concat, so return bat aligned with g with nil in the tail */
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
 	}
@@ -3709,3 +3709,6 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool ab
 
 	return bn;
 }
+
+#undef IS_A_POINTER
+#undef IS_A_BAT

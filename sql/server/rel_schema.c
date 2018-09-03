@@ -192,13 +192,9 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 	int tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_STREAM)?tt_stream:
 		(temp == SQL_MERGE_TABLE)?tt_merge_table:
-		(temp == SQL_REPLICA_TABLE)?tt_replica_table:
-		(temp == SQL_MERGE_LIST_PARTITION_COL)?tt_list_partition_col:
-		(temp == SQL_MERGE_LIST_PARTITION_EXP)?tt_list_partition_exp:
-		(temp == SQL_MERGE_RANGE_PARTITION_COL)?tt_list_partition_col:
-		(temp == SQL_MERGE_RANGE_PARTITION_EXP)?tt_range_partition_exp:tt_table;
+		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
-	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
+	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, 0);
 	if (as_subquery( sql, t, sq, column_spec, "CREATE TABLE") != 0)
 
 		return NULL;
@@ -920,7 +916,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 static int
-create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_def)
+create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 {
 	char *err = NULL;
 
@@ -928,7 +924,7 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_de
 		dlist *list = partition_def->data.lval;
 		symbol *type = list->h->next->data.sym;
 		dlist *list2 = type->data.lval;
-		if(tt == tt_list_partition_col || tt == tt_range_partition_col) {
+		if(isPartitionedByColumnTable(t)) {
 			str colname = list2->h->data.sval;
 			node *n;
 			int sql_ec;
@@ -955,7 +951,7 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_de
 				}
 				return SQL_ERR;
 			}
-		} else if(tt == tt_list_partition_exp || tt == tt_range_partition_exp) {
+		} else if(isPartitionedByExpressionTable(t)) {
 			sql_subtype *empty = sql_bind_localtype("void");
 			char *query = symbol2string(sql, list2->h->data.sym, 1, &err);
 			if (!query) {
@@ -985,11 +981,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	int tt = (temp == SQL_REMOTE)?tt_remote:
 		 (temp == SQL_STREAM)?tt_stream:
 		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
-		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:
-		 (temp == SQL_MERGE_LIST_PARTITION_COL)?tt_list_partition_col:
-		 (temp == SQL_MERGE_LIST_PARTITION_EXP)?tt_list_partition_exp:
-		 (temp == SQL_MERGE_RANGE_PARTITION_COL)?tt_range_partition_col:
-		 (temp == SQL_MERGE_RANGE_PARTITION_EXP)?tt_range_partition_exp:tt_table;
+		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+	bit properties = partition_def ? (bit) partition_def->data.lval->h->next->next->data.i_val : 0;
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1046,7 +1039,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			}
 			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
-			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
+			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, properties);
 		}
 		if (!t)
 			return NULL;
@@ -1059,7 +1052,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 				return NULL;
 		}
 
-		if(create_partition_definition(sql, t, tt, partition_def) != SQL_OK)
+		if(create_partition_definition(sql, t, partition_def) != SQL_OK)
 			return NULL;
 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
@@ -1077,19 +1070,15 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		if (!sq)
 			return NULL;
 
-		if ((tt == tt_merge_table || tt == tt_list_partition_col || tt == tt_range_partition_col ||
-			 tt == tt_list_partition_exp || tt == tt_range_partition_exp || tt == tt_remote || tt == tt_replica_table) && with_data)
+		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s table 'with data'",
-							 TABLE_TYPE_DESCRIPTION(tt));
+							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
 		/* create table */
 		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
 			rel_destroy(sq);
 			return NULL;
 		}
-
-		if(create_partition_definition(sql, t, tt, partition_def) != SQL_OK)
-			return NULL;
 
 		/* insert query result into this table */
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
@@ -1485,7 +1474,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 
 				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
 					return sql_error(sql, 02, SQLSTATE(42000) "The %s table %s.%s should have at least one table associated",
-									 TABLE_TYPE_DESCRIPTION(pt->type), spt->base.name, pt->base.name);
+									 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
 
 				if(extra->token == SQL_MERGE_PARTITION) { //partition to hold null values only
 					dlist* ll = extra->data.lval;
@@ -1505,7 +1494,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 
 					if(!isRangePartitionTable(t)) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s table",
-								(t->type == tt_merge_table)?"merge":"list partition");
+										 isListPartitionTable(t)?"list partition":"merge");
 					}
 
 					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, min, max, nills, update);
@@ -1515,7 +1504,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 
 					if(!isListPartitionTable(t)) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
-								(t->type == tt_merge_table)?"merge":"range partition");
+										 isRangePartitionTable(t)?"range partition":"merge");
 					}
 
 					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, values, nills, update);

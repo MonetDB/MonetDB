@@ -300,7 +300,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	osa = sql->sa;
 	sql->sa = NULL;
 
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
+	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz, t->properties);
 
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -459,7 +459,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
-	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1))) {
+	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
 		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create table '%s'", tname);
 		goto cleanup;
 	}

@@ -44,14 +44,14 @@ FITSinitCatalog(mvc *m)
 
 	fits_fl = mvc_bind_table(m, sch, "fits_files");
 	if (fits_fl == NULL) {
-		fits_fl = mvc_create_table(m, sch, "fits_files", tt_table, 0, SQL_PERSIST, 0, 2);
+		fits_fl = mvc_create_table(m, sch, "fits_files", tt_table, 0, SQL_PERSIST, 0, 2, 0);
 		mvc_create_column_(m, fits_fl, "id", "int", 32);
 		mvc_create_column_(m, fits_fl, "name", "varchar", 80);
 	}
 
 	fits_tbl = mvc_bind_table(m, sch, "fits_tables");
 	if (fits_tbl == NULL) {
-		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 8);
+		fits_tbl = mvc_create_table(m, sch, "fits_tables", tt_table, 0, SQL_PERSIST, 0, 8, 0);
 		mvc_create_column_(m, fits_tbl, "id", "int", 32);
 		mvc_create_column_(m, fits_tbl, "name", "varchar", 80);
 		mvc_create_column_(m, fits_tbl, "columns", "int", 32);
@@ -64,7 +64,7 @@ FITSinitCatalog(mvc *m)
 
 	fits_col = mvc_bind_table(m, sch, "fits_columns");
 	if (fits_col == NULL) {
-		fits_col = mvc_create_table(m, sch, "fits_columns", tt_table, 0, SQL_PERSIST, 0, 6);
+		fits_col = mvc_create_table(m, sch, "fits_columns", tt_table, 0, SQL_PERSIST, 0, 6, 0);
 		mvc_create_column_(m, fits_col, "id", "int", 32);
 		mvc_create_column_(m, fits_col, "name", "varchar", 80);
 		mvc_create_column_(m, fits_col, "type", "varchar", 80);
@@ -75,7 +75,7 @@ FITSinitCatalog(mvc *m)
 
 	fits_tp = mvc_bind_table(m, sch, "fits_table_properties");
 	if (fits_tp == NULL) {
-		fits_tp = mvc_create_table(m, sch, "fits_table_properties", tt_table, 0, SQL_PERSIST, 0, 5);
+		fits_tp = mvc_create_table(m, sch, "fits_table_properties", tt_table, 0, SQL_PERSIST, 0, 5, 0);
 		mvc_create_column_(m, fits_tp, "table_id", "int", 32);
 		mvc_create_column_(m, fits_tp, "xtension", "varchar", 80);
 		mvc_create_column_(m, fits_tp, "bitpix", "int", 32);
@@ -946,7 +946,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/*	col = mvc_bind_column(m, fits_tbl, "columns");
 	   cnum = *(int*) table_funcs.column_find_value(m->session->tr, col, rid); */
 	fits_get_num_cols(fptr, &cnum, &status);
-	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum);
+	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum, 0);
 
 	// TODO: Check that the allocations succeeded
 	tpcode = (int *)GDKzalloc(sizeof(int) * cnum);

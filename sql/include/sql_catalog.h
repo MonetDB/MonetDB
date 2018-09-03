@@ -106,9 +106,11 @@
 #define EXCLUDE_GROUP 2		/* exclude group */
 #define EXCLUDE_TIES 3		/* exclude group but not the current row */
 
-#define PARTITION_NONE  0
-#define PARTITION_RANGE 1
-#define PARTITION_LIST  2
+/* The following macros are used in properties field of sql_table */
+#define PARTITION_RANGE       1
+#define PARTITION_LIST        2
+#define PARTITION_COLUMN      4
+#define PARTITION_EXPRESSION  8
 
 #define STORAGE_MAX_VALUE_LENGTH 2048
 
@@ -120,7 +122,6 @@
 #define dt_schema 	"%dt%"
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
-
 extern const char *TID;
 
 typedef enum temp_t { 
@@ -131,11 +132,7 @@ typedef enum temp_t {
 	SQL_MERGE_TABLE = 4,
 	SQL_STREAM = 5,
 	SQL_REMOTE = 6,
-	SQL_REPLICA_TABLE = 7,
-	SQL_MERGE_LIST_PARTITION_COL = 8,
-	SQL_MERGE_RANGE_PARTITION_COL = 9,
-	SQL_MERGE_LIST_PARTITION_EXP = 10,
-	SQL_MERGE_RANGE_PARTITION_EXP = 11
+	SQL_REPLICA_TABLE = 7
 } temp_t;
 
 typedef enum comp_type {
@@ -494,33 +491,28 @@ typedef enum table_types {
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
-	tt_replica_table = 6,	/* multiple replica of the same table */
-	/* the gap is needed because of system tables and views */
-	tt_list_partition_col = 12, /* partitioned by a list of values on a column */
-	tt_range_partition_col = 13, /* partitioned by a range of values on a column */
-	tt_list_partition_exp = 14, /* partitioned by a list of values on an expression */
-	tt_range_partition_exp = 15 /* partitioned by a range of values on an expression */
+	tt_replica_table = 6	/* multiple replica of the same table */
 } table_types;
 
-#define TABLE_TYPE_DESCRIPTION(tt)                                                                     \
-(tt == tt_table)?"TABLE":(tt == tt_view)?"VIEW":(tt == tt_merge_table)?"MERGE TABLE":                  \
-(tt == tt_stream)?"STREAM TABLE":(tt == tt_remote)?"REMOTE TABLE":                                     \
-(tt == tt_list_partition_col || tt == tt_list_partition_exp)?"LIST PARTITION TABLE":                   \
-(tt == tt_range_partition_col || tt == tt_range_partition_exp)?"RANGE PARTITION TABLE":"REPLICA TABLE"
+#define TABLE_TYPE_DESCRIPTION(tt,properties)                                                                       \
+(tt == tt_table)?"TABLE":(tt == tt_view)?"VIEW":(tt == tt_merge_table && !properties)?"MERGE TABLE":                \
+(tt == tt_stream)?"STREAM TABLE":(tt == tt_remote)?"REMOTE TABLE":                                                  \
+(tt == tt_merge_table && (properties & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
+(tt == tt_merge_table && (properties & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
 
-#define isTable(x) 	  (x->type==tt_table)
-#define isView(x)  	  (x->type==tt_view)
-#define isNonPartitionedTable(x) (x->type==tt_merge_table)
-#define isRangePartitionTable(x) (x->type==tt_range_partition_col || x->type==tt_range_partition_exp)
-#define isListPartitionTable(x)  (x->type==tt_list_partition_col || x->type==tt_list_partition_exp)
-#define isPartitionedByColumnTable(x)     (x->type==tt_range_partition_col || x->type==tt_list_partition_col)
-#define isPartitionedByExpressionTable(x) (x->type==tt_list_partition_exp || x->type==tt_range_partition_exp)
-#define isMergeTable(x)   (x->type==tt_merge_table || isListPartitionTable(x) || isRangePartitionTable(x))
-#define isStream(x)  	  (x->type==tt_stream)
-#define isRemote(x)  	  (x->type==tt_remote)
-#define isReplicaTable(x) (x->type==tt_replica_table)
-#define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)    (isTable(x) && x->p)
+#define isTable(x)                        (x->type==tt_table)
+#define isView(x)                         (x->type==tt_view)
+#define isNonPartitionedTable(x)          (x->type==tt_merge_table && !x->properties)
+#define isRangePartitionTable(x)          (x->type==tt_merge_table && (x->properties & PARTITION_RANGE) == PARTITION_RANGE)
+#define isListPartitionTable(x)           (x->type==tt_merge_table && (x->properties & PARTITION_LIST) == PARTITION_LIST)
+#define isPartitionedByColumnTable(x)     (x->type==tt_merge_table && (x->properties & PARTITION_COLUMN) == PARTITION_COLUMN)
+#define isPartitionedByExpressionTable(x) (x->type==tt_merge_table && (x->properties & PARTITION_EXPRESSION) == PARTITION_EXPRESSION)
+#define isMergeTable(x)                   (x->type==tt_merge_table)
+#define isStream(x)                       (x->type==tt_stream)
+#define isRemote(x)                       (x->type==tt_remote)
+#define isReplicaTable(x)                 (x->type==tt_replica_table)
+#define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
+#define isPartition(x)                    (isTable(x) && x->p)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
@@ -559,6 +551,7 @@ typedef struct sql_table {
 	sht type;		/* table, view, etc */
 	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
+	bte properties;		/* used for merge_tables */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
 	char *query;		/* views may require some query */
