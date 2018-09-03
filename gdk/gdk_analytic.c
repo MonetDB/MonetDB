@@ -1430,8 +1430,9 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 			rp += ncnt;                            \
 			IMP(TPE1, TPE2)                        \
 		} else if (o || force_order) {             \
-			bp += cnt;                             \
-			rp += cnt;                             \
+			ncnt = cnt;                            \
+			bp += ncnt;                            \
+			rp += ncnt;                            \
 			IMP(TPE1, TPE2)                        \
 		} else {                                   \
 			for(; rb<rend; rb++, bp++) {           \
@@ -1453,7 +1454,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 				  "GDKanalyticalsum") == BUN_NONE) { \
 			goto bailout;                            \
 		}                                            \
-		TPE2 curval = *rb;                           \
+		curval = *rb;                                \
 		for (;rb < rp; rb++)                         \
 			*rb = curval;                            \
 		if(is_##TPE2##_nil(curval))                  \
@@ -1464,6 +1465,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	do {                                                 \
 		TPE1 *bs, *bl, *be;                              \
 		bl = pbp;                                        \
+		(void) curval;                                   \
 		for(; pbp<bp; pbp++) {                           \
 			bs = (pbp-start > bl) ? pbp - start : bl;    \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;    \
@@ -1475,48 +1477,6 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 				has_nils = true;                         \
 			rb++;                                        \
 		}                                                \
-	} while(0);
-
-#define ANALYTICAL_SUM_FP_IMP(TPE1, TPE2, IMP) \
-	do {                                       \
-		TPE1 *bp, *pbp;                        \
-		TPE2 *rp, *rb, *rend;                  \
-		bp = pbp = (TPE1*)Tloc(b, 0);          \
-		rb = rp = (TPE2*)Tloc(r, 0);           \
-		rend = rp + cnt;                       \
-		if (p) {                               \
-			pnp = np = (bit*)Tloc(p, 0);       \
-			nend = np + cnt;                   \
-			for(; np<nend; np++) {             \
-				if (*np) {                     \
-					ncnt = np - pnp;           \
-					bp += ncnt;                \
-					rp += ncnt;                \
-					IMP(TPE1, TPE2)            \
-					pnp = np;                  \
-					pbp = bp;                  \
-				}                              \
-			}                                  \
-			ncnt = (np - pnp);                 \
-			bp += ncnt;                        \
-			rp += ncnt;                        \
-			IMP(TPE1, TPE2)                    \
-		} else if (o || force_order) {         \
-			ncnt = cnt;                        \
-			bp += ncnt;                        \
-			rp += ncnt;                        \
-			IMP(TPE1, TPE2)                    \
-		} else {                               \
-			for(; rb<rend; rb++, bp++) {       \
-				if(is_##TPE1##_nil(*bp)) {     \
-					*rb = TPE2##_nil;          \
-					has_nils = true;           \
-				} else {                       \
-					*rb = (TPE2) *bp;          \
-				}                              \
-			}                                  \
-		}                                      \
-		goto finish;                           \
 	} while(0);
 
 gdk_return
@@ -1614,7 +1574,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int t
 			case TYPE_flt: {
 				switch (tp1) {
 					case TYPE_flt:
-						ANALYTICAL_SUM_FP_IMP(flt, flt, ANALYTICAL_SUM_FP_NO_OVERLAP);
+						ANALYTICAL_SUM_IMP(flt, flt, ANALYTICAL_SUM_FP_NO_OVERLAP);
 						break;
 					default:
 						goto nosupport;
@@ -1624,10 +1584,10 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int t
 			case TYPE_dbl: {
 				switch (tp1) {
 					case TYPE_flt:
-						ANALYTICAL_SUM_FP_IMP(flt, dbl, ANALYTICAL_SUM_FP_NO_OVERLAP);
+						ANALYTICAL_SUM_IMP(flt, dbl, ANALYTICAL_SUM_FP_NO_OVERLAP);
 						break;
 					case TYPE_dbl:
-						ANALYTICAL_SUM_FP_IMP(dbl, dbl, ANALYTICAL_SUM_FP_NO_OVERLAP);
+						ANALYTICAL_SUM_IMP(dbl, dbl, ANALYTICAL_SUM_FP_NO_OVERLAP);
 						break;
 					default:
 						goto nosupport;
@@ -1724,7 +1684,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int t
 			case TYPE_flt: {
 				switch (tp1) {
 					case TYPE_flt:
-						ANALYTICAL_SUM_FP_IMP(flt, flt, ANALYTICAL_SUM_FP_OVERLAP);
+						ANALYTICAL_SUM_IMP(flt, flt, ANALYTICAL_SUM_FP_OVERLAP);
 						break;
 					default:
 						goto nosupport;
@@ -1734,10 +1694,10 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int t
 			case TYPE_dbl: {
 				switch (tp1) {
 					case TYPE_flt:
-						ANALYTICAL_SUM_FP_IMP(flt, dbl, ANALYTICAL_SUM_FP_OVERLAP);
+						ANALYTICAL_SUM_IMP(flt, dbl, ANALYTICAL_SUM_FP_OVERLAP);
 						break;
 					case TYPE_dbl:
-						ANALYTICAL_SUM_FP_IMP(dbl, dbl, ANALYTICAL_SUM_FP_OVERLAP);
+						ANALYTICAL_SUM_IMP(dbl, dbl, ANALYTICAL_SUM_FP_OVERLAP);
 						break;
 					default:
 						goto nosupport;
@@ -1767,183 +1727,182 @@ finish:
 #undef ANALYTICAL_SUM_IMP
 #undef ANALYTICAL_SUM_NO_OVERLAP
 #undef ANALYTICAL_SUM_OVERLAP
-
-#undef ANALYTICAL_SUM_FP_IMP
 #undef ANALYTICAL_SUM_FP_NO_OVERLAP
 #undef ANALYTICAL_SUM_FP_OVERLAP
 
-#define ANALYTICAL_PROD_IMP_NORMAL(TPE1, TPE2, TPE3)             \
-	do {                                                         \
-		TPE1 *pbp, *bp, v;                                       \
-		TPE2 *rp, *rb, curval = TPE2##_nil;                      \
-		pbp = bp = (TPE1*)Tloc(b, 0);                            \
-		rb = rp = (TPE2*)Tloc(r, 0);                             \
-		if (p) {                                                 \
-			pnp = np = (bit*)Tloc(p, 0);                         \
-			nend = np + cnt;                                     \
-			for(; np<nend; np++) {                               \
-				if (*np) {                                       \
-					ncnt = np - pnp;                             \
-					bp += ncnt;                                  \
-					rp += ncnt;                                  \
-					for(; pbp<bp; pbp++) {                       \
-						v = *pbp;                                \
-						if (!is_##TPE1##_nil(v)) {               \
-							if(is_##TPE2##_nil(curval))          \
-								curval = (TPE2) v;               \
-							else                                 \
-								MUL4_WITH_CHECK(TPE1, v, TPE2,   \
-									curval, TPE2, curval,        \
-									GDK_##TPE2##_max, TPE3,      \
-									goto calc_overflow);         \
-						}                                        \
-					}                                            \
-					for (;rb < rp; rb++)                         \
-						*rb = curval;                            \
-					if(is_##TPE2##_nil(curval))                  \
-						has_nils = true;                         \
-					else                                         \
-						curval = TPE2##_nil;                     \
-					pnp = np;                                    \
-					pbp = bp;                                    \
-				}                                                \
-			}                                                    \
-			ncnt = np - pnp;                                     \
-			bp += ncnt;                                          \
-			rp += ncnt;                                          \
-			for(; pbp<bp; pbp++) {                               \
-				v = *pbp;                                        \
-				if (!is_##TPE1##_nil(v)) {                       \
-					if(is_##TPE2##_nil(curval))                  \
-						curval = (TPE2) v;                       \
-					else                                         \
-						MUL4_WITH_CHECK(TPE1, v, TPE2, curval,   \
-							TPE2, curval, GDK_##TPE2##_max, TPE3,\
-							goto calc_overflow);                 \
-				}                                                \
-			}                                                    \
-			if(is_##TPE2##_nil(curval))                          \
-				has_nils = true;                                 \
-			for (;rb < rp; rb++)                                 \
-				*rb = curval;                                    \
-		} else if (o || force_order) {                           \
-			TPE1 *bend = bp + cnt;                               \
-			for(; bp<bend; bp++) {                               \
-				v = *bp;                                         \
-				if(!is_##TPE1##_nil(v)) {                        \
-					if(is_##TPE2##_nil(curval))                  \
-						curval = (TPE2) v;                       \
-					else                                         \
-						MUL4_WITH_CHECK(TPE1, v, TPE2, curval,   \
-							TPE2, curval, GDK_##TPE2##_max,      \
-							TPE3, goto calc_overflow);           \
-				}                                                \
-			}                                                    \
-			rp += cnt;                                           \
-			for(;rb < rp; rb++)                                  \
-				*rb = curval;                                    \
-			if(is_##TPE2##_nil(curval))                          \
-				has_nils = true;                                 \
-		} else { /* single value, ie no ordering */              \
-			TPE2 *rend = rb + cnt;                               \
-			for(; rb<rend; rb++, bp++)  {                        \
-				v = *bp;                                         \
-				if(is_##TPE1##_nil(v)) {                         \
-					*rb = TPE2##_nil;                            \
-					has_nils = true;                             \
-				} else {                                         \
-					*rb = (TPE2) v;                              \
-				}                                                \
-			}                                                    \
-		}                                                        \
-		goto finish;                                             \
+#define ANALYTICAL_PROD_IMP_NO_OVERLAP(TPE1, TPE2, TPE3) \
+	do {                                                 \
+		for(; pbp<bp; pbp++) {                           \
+			v = *pbp;                                    \
+			if (!is_##TPE1##_nil(v)) {                   \
+				if(is_##TPE2##_nil(curval))              \
+					curval = (TPE2) v;                   \
+				else                                     \
+					MUL4_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
+			}                                            \
+		}                                                \
+		for (;rb < rp; rb++)                             \
+			*rb = curval;                                \
+		if(is_##TPE2##_nil(curval))                      \
+			has_nils = true;                             \
+		else                                             \
+			curval = TPE2##_nil;                         \
+	} while (0);
+
+#define ANALYTICAL_PROD_IMP_OVERLAP(TPE1, TPE2, TPE3) \
+	do {                                              \
+		TPE1 *bs, *bl, *be;                           \
+		bl = pbp;                                     \
+		for(; pbp<bp;pbp++) {                         \
+			bs = (pbp-start > bl) ? pbp - start : bl; \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
+			for(; bs<be; bs++) {                      \
+				v = *bs;                              \
+				if (!is_##TPE1##_nil(v)) {            \
+					if(is_##TPE2##_nil(curval))       \
+						curval = (TPE2) v;            \
+					else                              \
+						MUL4_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, \
+										goto calc_overflow); \
+				}                                     \
+			}                                         \
+			*rb = curval;                             \
+			rb++;                                     \
+			if(is_##TPE2##_nil(curval))               \
+				has_nils = true;                      \
+			else                                      \
+				curval = TPE2##_nil;                  \
+		}                                             \
 	} while(0);
 
-#define ANALYTICAL_PROD_IMP_LIMIT(TPE1, TPE2, REAL_IMP)    \
-	do {                                                   \
-		TPE1 *pbp, *bp, v;                                 \
-		TPE2 *rp, *rb, curval = TPE2##_nil;                \
-		pbp = bp = (TPE1*)Tloc(b, 0);                      \
-		rb = rp = (TPE2*)Tloc(r, 0);                       \
-		if (p) {                                           \
-			pnp = np = (bit*)Tloc(p, 0);                   \
-			nend = np + cnt;                               \
-			for(; np<nend; np++) {                         \
-				if (*np) {                                 \
-					ncnt = np - pnp;                       \
-					bp += ncnt;                            \
-					rp += ncnt;                            \
-					for(; pbp<bp; pbp++) {                 \
-						v = *pbp;                          \
-						if (!is_##TPE1##_nil(v)) {         \
-							if(is_##TPE2##_nil(curval))    \
-								curval = (TPE2) v;         \
-							else                           \
-								REAL_IMP(TPE1, v, TPE2,    \
-									curval, curval,        \
-									GDK_##TPE2##_max,      \
-									goto calc_overflow);   \
-						}                                  \
-					}                                      \
-					for (;rb < rp; rb++)                   \
-						*rb = curval;                      \
-					if(is_##TPE2##_nil(curval))            \
-						has_nils = true;                   \
-					else                                   \
-						curval = TPE2##_nil;               \
-					pbp = bp;                              \
-					pnp = np;                              \
-				}                                          \
-			}                                              \
-			ncnt = np - pnp;                               \
-			bp += ncnt;                                    \
-			rp += ncnt;                                    \
-			for(; pbp<bp; pbp++) {                         \
-				v = *pbp;                                  \
-				if (!is_##TPE1##_nil(v)) {                 \
-					if(is_##TPE2##_nil(curval))            \
-						curval = (TPE2) v;                 \
-					else                                   \
-						REAL_IMP(TPE1, v, TPE2, curval,    \
-								 curval, GDK_##TPE2##_max, \
-								 goto calc_overflow);      \
-				}                                          \
-			}                                              \
-			if(is_##TPE2##_nil(curval))                    \
-				has_nils = true;                           \
-			for (;rb < rp; rb++)                           \
-				*rb = curval;                              \
-		} else if (o || force_order) {                     \
-			TPE1 *bend = bp + cnt;                         \
-			for(; bp<bend; bp++) {                         \
-				v = *bp;                                   \
-				if(!is_##TPE1##_nil(v)) {                  \
-					if(is_##TPE2##_nil(curval))            \
-						curval = (TPE2) v;                 \
-					else                                   \
-						REAL_IMP(TPE1, v, TPE2, curval,    \
-								 curval, GDK_##TPE2##_max, \
-								 goto calc_overflow);      \
-				}                                          \
-			}                                              \
-			rp += cnt;                                     \
-			for(;rb < rp; rb++)                            \
-				*rb = curval;                              \
-			if(is_##TPE2##_nil(curval))                    \
-				has_nils = true;                           \
-		} else { /* single value, ie no ordering */        \
-			TPE2 *rend = rp + cnt;                         \
-			for(; rp<rend; rp++, bp++)  {                  \
-				v = *bp;                                   \
-				if(is_##TPE1##_nil(v)) {                   \
-					*rp = TPE2##_nil;                      \
-					has_nils = true;                       \
-				} else {                                   \
-					*rp = (TPE2) v;                        \
-				}                                          \
-			}                                              \
-		}                                                  \
-		goto finish;                                       \
+#define ANALYTICAL_PROD_IMP(TPE1, TPE2, TPE3, IMP) \
+	do {                                           \
+		TPE1 *pbp, *bp, v;                         \
+		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
+		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		rb = rp = (TPE2*)Tloc(r, 0);               \
+		rend = rb + cnt;                           \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = np - pnp;               \
+					bp += ncnt;                    \
+					rp += ncnt;                    \
+					IMP(TPE1, TPE2, TPE3)          \
+					pnp = np;                      \
+					pbp = bp;                      \
+				}                                  \
+			}                                      \
+			ncnt = np - pnp;                       \
+			bp += ncnt;                            \
+			rp += ncnt;                            \
+			IMP(TPE1, TPE2, TPE3)                  \
+		} else if (o || force_order) {             \
+			ncnt = cnt;                            \
+			bp += ncnt;                            \
+			rp += ncnt;                            \
+			IMP(TPE1, TPE2, TPE3)                  \
+		} else {                                   \
+			for(; rb<rend; rb++, bp++)  {          \
+				v = *bp;                           \
+				if(is_##TPE1##_nil(v)) {           \
+					*rb = TPE2##_nil;              \
+					has_nils = true;               \
+				} else {                           \
+					*rb = (TPE2) v;                \
+				}                                  \
+			}                                      \
+		}                                          \
+		goto finish;                               \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP(TPE1, TPE2, REAL_IMP) \
+	do {                                                           \
+		for(; pbp<bp; pbp++) {                                     \
+			v = *pbp;                                              \
+			if (!is_##TPE1##_nil(v)) {                             \
+				if(is_##TPE2##_nil(curval))                        \
+					curval = (TPE2) v;                             \
+				else                                               \
+					REAL_IMP(TPE1, v, TPE2, curval, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}                                                      \
+		}                                                          \
+		for (;rb < rp; rb++)                                       \
+			*rb = curval;                                          \
+		if(is_##TPE2##_nil(curval))                                \
+			has_nils = true;                                       \
+		else                                                       \
+			curval = TPE2##_nil;                                   \
+	} while (0);
+
+#define ANALYTICAL_PROD_IMP_LIMIT_OVERLAP(TPE1, TPE2, REAL_IMP) \
+	do {                                                        \
+		TPE1 *bs, *bl, *be;                                     \
+		bl = pbp;                                               \
+		for(; pbp<bp;pbp++) {                                   \
+			bs = (pbp-start > bl) ? pbp - start : bl;           \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp;           \
+			for(; bs<be; bs++) {                                \
+				v = *bs;                                        \
+				if (!is_##TPE1##_nil(v)) {                      \
+					if(is_##TPE2##_nil(curval))                 \
+						curval = (TPE2) v;                      \
+					else                                        \
+						REAL_IMP(TPE1, v, TPE2, curval, curval, GDK_##TPE2##_max, goto calc_overflow); \
+				}                                               \
+			}                                                   \
+			*rb = curval;                                       \
+			rb++;                                               \
+			if(is_##TPE2##_nil(curval))                         \
+				has_nils = true;                                \
+			else                                                \
+				curval = TPE2##_nil;                            \
+		}                                                       \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_LIMIT(TPE1, TPE2, IMP, REAL_IMP) \
+	do {                                                     \
+		TPE1 *pbp, *bp, v;                                   \
+		TPE2 *rp, *rb, *rend, curval = TPE2##_nil;           \
+		pbp = bp = (TPE1*)Tloc(b, 0);                        \
+		rb = rp = (TPE2*)Tloc(r, 0);                         \
+		rend = rp + cnt;                                     \
+		if (p) {                                             \
+			pnp = np = (bit*)Tloc(p, 0);                     \
+			nend = np + cnt;                                 \
+			for(; np<nend; np++) {                           \
+				if (*np) {                                   \
+					ncnt = np - pnp;                         \
+					bp += ncnt;                              \
+					rp += ncnt;                              \
+					IMP(TPE1, TPE2, REAL_IMP)                \
+					pbp = bp;                                \
+					pnp = np;                                \
+				}                                            \
+			}                                                \
+			ncnt = np - pnp;                                 \
+			bp += ncnt;                                      \
+			rp += ncnt;                                      \
+			IMP(TPE1, TPE2, REAL_IMP)                        \
+		} else if (o || force_order) {                       \
+			ncnt = cnt;                                      \
+			bp += ncnt;                                      \
+			rp += ncnt;                                      \
+			IMP(TPE1, TPE2, REAL_IMP)                        \
+		} else {                                             \
+			for(; rp<rend; rp++, bp++)  {                    \
+				v = *bp;                                     \
+				if(is_##TPE1##_nil(v)) {                     \
+					*rp = TPE2##_nil;                        \
+					has_nils = true;                         \
+				} else {                                     \
+					*rp = (TPE2) v;                          \
+				}                                            \
+			}                                                \
+		}                                                    \
+		goto finish;                                         \
 	} while(0);
 
 #define ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2)                                          \
@@ -1958,44 +1917,34 @@ finish:
 		}                                                                                \
 	} while(0);
 
-#define ANALYTICAL_PROD_IMP_FP(TPE1, TPE2)                      \
+#define ANALYTICAL_PROD_IMP_FP_NO_OVERLAP(TPE1, TPE2)       \
+	do {                                                    \
+		for(; pbp<bp; pbp++) {                              \
+			v = *pbp;                                       \
+			 if (!is_##TPE1##_nil(v)) {                     \
+				if(is_##TPE2##_nil(curval))                 \
+					curval = (TPE2) v;                      \
+				else                                        \
+					ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
+			}                                               \
+		}                                                   \
+		for (;rb < rp; rb++)                                \
+			*rb = curval;                                   \
+		if(is_##TPE2##_nil(curval))                         \
+			has_nils = true;                                \
+		else                                                \
+			curval = TPE2##_nil;                            \
+	} while (0);
+
+#define ANALYTICAL_PROD_IMP_FP_OVERLAP(TPE1, TPE2)              \
 	do {                                                        \
-		TPE1 *pbp, *bp, v;                                      \
-		TPE2 *rp, *rb, curval = TPE2##_nil;                     \
-		pbp = bp = (TPE1*)Tloc(b, 0);                           \
-		rb = rp = (TPE2*)Tloc(r, 0);                            \
-		if (p) {                                                \
-			pnp = np = (bit*)Tloc(p, 0);                        \
-			nend = np + cnt;                                    \
-			for(; np<nend; np++) {                              \
-				if (*np) {                                      \
-					ncnt = np - pnp;                            \
-					bp += ncnt;                                 \
-					rp += ncnt;                                 \
-					for(; pbp<bp; pbp++) {                      \
-						v = *pbp;                               \
-						 if (!is_##TPE1##_nil(v)) {             \
-							if(is_##TPE2##_nil(curval))         \
-								curval = (TPE2) v;              \
-							else                                \
-								ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
-						}                                       \
-					}                                           \
-					for (;rb < rp; rb++)                        \
-						*rb = curval;                           \
-					if(is_##TPE2##_nil(curval))                 \
-						has_nils = true;                        \
-					else                                        \
-						curval = TPE2##_nil;                    \
-					pbp = bp;                                   \
-					pnp = np;                                   \
-				}                                               \
-			}                                                   \
-			ncnt = np - pnp;                                    \
-			bp += ncnt;                                         \
-			rp += ncnt;                                         \
-			for(; pbp<bp; pbp++) {                              \
-				v = *pbp;                                       \
+		TPE1 *bs, *bl, *be;                                     \
+		bl = pbp;                                               \
+		for(; pbp<bp;pbp++) {                                   \
+			bs = (pbp-start > bl) ? pbp - start : bl;           \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp;           \
+			for(; bs<be; bs++) {                                \
+				v = *bs;                                        \
 				if (!is_##TPE1##_nil(v)) {                      \
 					if(is_##TPE2##_nil(curval))                 \
 						curval = (TPE2) v;                      \
@@ -2003,39 +1952,56 @@ finish:
 						ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
 				}                                               \
 			}                                                   \
+			*rb = curval;                                       \
+			rb++;                                               \
 			if(is_##TPE2##_nil(curval))                         \
 				has_nils = true;                                \
-			for (;rb < rp; rb++)                                \
-				*rb = curval;                                   \
-		} else if (o || force_order) {                          \
-			TPE1 *bend = bp + cnt;                              \
-			for(; pbp<bend; pbp++) {                            \
-				v = *pbp;                                       \
-				if(!is_##TPE1##_nil(v)) {                       \
-					if(is_##TPE2##_nil(curval))                 \
-						curval = (TPE2) v;                      \
-					else                                        \
-						ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
-				}                                               \
-			}                                                   \
-			rp += cnt;                                          \
-			for(;rb < rp; rb++)                                 \
-				*rb = curval;                                   \
-			if(is_##TPE2##_nil(curval))                         \
-				has_nils = true;                                \
-		} else { /* single value, ie no ordering */             \
-			TPE2 *rend = rp + cnt;                              \
-			for(; rp<rend; rp++, bp++) {                        \
-				v = *bp;                                        \
-				if(is_##TPE1##_nil(v)) {                        \
-					*rp = TPE2##_nil;                           \
-					has_nils = true;                            \
-				} else {                                        \
-					*rp = (TPE2) v;                             \
-				}                                               \
-			}                                                   \
+			else                                                \
+				curval = TPE2##_nil;                            \
 		}                                                       \
-		goto finish;                                            \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_FP(TPE1, TPE2, IMP)    \
+	do {                                           \
+		TPE1 *pbp, *bp, v;                         \
+		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
+		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		rb = rp = (TPE2*)Tloc(r, 0);               \
+		rend = rp + cnt;                           \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = np - pnp;               \
+					bp += ncnt;                    \
+					rp += ncnt;                    \
+					IMP(TPE1, TPE2)                \
+					pbp = bp;                      \
+					pnp = np;                      \
+				}                                  \
+			}                                      \
+			ncnt = np - pnp;                       \
+			bp += ncnt;                            \
+			rp += ncnt;                            \
+			IMP(TPE1, TPE2)                        \
+		} else if (o || force_order) {             \
+			ncnt = cnt;                            \
+			bp += ncnt;                            \
+			rp += ncnt;                            \
+			IMP(TPE1, TPE2)                        \
+		} else {                                   \
+			for(; rp<rend; rp++, bp++) {           \
+				v = *bp;                           \
+				if(is_##TPE1##_nil(v)) {           \
+					*rp = TPE2##_nil;              \
+					has_nils = true;               \
+				} else {                           \
+					*rp = (TPE2) v;                \
+				}                                  \
+			}                                      \
+		}                                          \
+		goto finish;                               \
 	} while(0);
 
 gdk_return
@@ -2046,136 +2012,266 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int 
 	bit *pnp, *np, *nend;
 	int abort_on_error = 1;
 
-	(void) start;
-	(void) end;
-	switch (tp2) {
-		case TYPE_bte: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_PROD_IMP_NORMAL(bte, bte, sht);
-					break;
-				default:
-					goto nosupport;
+	if(start == 0 && end == 0) {
+		switch (tp2) {
+			case TYPE_bte: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP(bte, bte, sht, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
-		case TYPE_sht: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_PROD_IMP_NORMAL(bte, sht, int);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_PROD_IMP_NORMAL(sht, sht, int);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_sht: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP(bte, sht, int, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP(sht, sht, int, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
-		case TYPE_int: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_PROD_IMP_NORMAL(bte, int, lng);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_PROD_IMP_NORMAL(sht, int, lng);
-					break;
-				case TYPE_int:
-					ANALYTICAL_PROD_IMP_NORMAL(int, int, lng);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_int: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP(bte, int, lng, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP(sht, int, lng, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_PROD_IMP(int, int, lng, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
 #ifdef HAVE_HGE
-		case TYPE_lng: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_PROD_IMP_NORMAL(bte, lng, hge);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_PROD_IMP_NORMAL(sht, lng, hge);
-					break;
-				case TYPE_int:
-					ANALYTICAL_PROD_IMP_NORMAL(int, lng, hge);
-					break;
-				case TYPE_lng:
-					ANALYTICAL_PROD_IMP_NORMAL(lng, lng, hge);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_lng: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP(bte, lng, hge, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP(sht, lng, hge, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_PROD_IMP(int, lng, hge, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_PROD_IMP(lng, lng, hge, ANALYTICAL_PROD_IMP_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
-		case TYPE_hge: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_PROD_IMP_LIMIT(bte, hge, HGEMUL_CHECK);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_PROD_IMP_LIMIT(sht, hge, HGEMUL_CHECK);
-					break;
-				case TYPE_int:
-					ANALYTICAL_PROD_IMP_LIMIT(int, hge, HGEMUL_CHECK);
-					break;
-				case TYPE_lng:
-					ANALYTICAL_PROD_IMP_LIMIT(lng, hge, HGEMUL_CHECK);
-					break;
-				case TYPE_hge:
-					ANALYTICAL_PROD_IMP_LIMIT(hge, hge, HGEMUL_CHECK);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_hge: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP_LIMIT(bte, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP_LIMIT(sht, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
+						break;
+					case TYPE_int:
+						ANALYTICAL_PROD_IMP_LIMIT(int, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_PROD_IMP_LIMIT(lng, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
+						break;
+					case TYPE_hge:
+						ANALYTICAL_PROD_IMP_LIMIT(hge, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
 #else
-		case TYPE_lng: {
-			switch (tp1) {
-				case TYPE_bte:
-					ANALYTICAL_PROD_IMP_LIMIT(bte, lng, LNGMUL_CHECK);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_PROD_IMP_LIMIT(sht, lng, LNGMUL_CHECK);
-					break;
-				case TYPE_int:
-					ANALYTICAL_PROD_IMP_LIMIT(int, lng, LNGMUL_CHECK);
-					break;
-				case TYPE_lng:
-					ANALYTICAL_PROD_IMP_LIMIT(lng, lng, LNGMUL_CHECK);
-					break;
-				default:
-					goto nosupport;
+			case TYPE_lng: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP_LIMIT(bte, lng, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, LNGMUL_CHECK);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP_LIMIT(sht, lng, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, LNGMUL_CHECK);
+						break;
+					case TYPE_int:
+						ANALYTICAL_PROD_IMP_LIMIT(int, lng, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, LNGMUL_CHECK);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_PROD_IMP_LIMIT(lng, lng, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, LNGMUL_CHECK);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
 			}
-			break;
-		}
 #endif
-		case TYPE_flt: {
-			switch (tp1) {
-				case TYPE_flt:
-					ANALYTICAL_PROD_IMP_FP(flt, flt);
-					break;
-				default:
-					goto nosupport;
-					break;
+			case TYPE_flt: {
+				switch (tp1) {
+					case TYPE_flt:
+						ANALYTICAL_PROD_IMP_FP(flt, flt, ANALYTICAL_PROD_IMP_FP_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+						break;
+				}
 			}
-		}
-		case TYPE_dbl: {
-			switch (tp1) {
-				case TYPE_flt:
-					ANALYTICAL_PROD_IMP_FP(flt, dbl);
-					break;
-				case TYPE_dbl:
-					ANALYTICAL_PROD_IMP_FP(dbl, dbl);
-					break;
-				default:
-					goto nosupport;
-					break;
+			case TYPE_dbl: {
+				switch (tp1) {
+					case TYPE_flt:
+						ANALYTICAL_PROD_IMP_FP(flt, dbl, ANALYTICAL_PROD_IMP_FP_NO_OVERLAP);
+						break;
+					case TYPE_dbl:
+						ANALYTICAL_PROD_IMP_FP(dbl, dbl, ANALYTICAL_PROD_IMP_FP_NO_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+						break;
+				}
 			}
+			default:
+				goto nosupport;
 		}
-		default:
-			goto nosupport;
+	} else {
+		switch (tp2) {
+			case TYPE_bte: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP(bte, bte, sht, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+			case TYPE_sht: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP(bte, sht, int, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP(sht, sht, int, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+			case TYPE_int: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP(bte, int, lng, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP(sht, int, lng, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_PROD_IMP(int, int, lng, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+#ifdef HAVE_HGE
+			case TYPE_lng: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP(bte, lng, hge, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP(sht, lng, hge, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					case TYPE_int:
+						ANALYTICAL_PROD_IMP(int, lng, hge, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_PROD_IMP(lng, lng, hge, ANALYTICAL_PROD_IMP_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+			case TYPE_hge: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP_LIMIT(bte, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP_LIMIT(sht, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
+						break;
+					case TYPE_int:
+						ANALYTICAL_PROD_IMP_LIMIT(int, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_PROD_IMP_LIMIT(lng, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
+						break;
+					case TYPE_hge:
+						ANALYTICAL_PROD_IMP_LIMIT(hge, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+#else
+			case TYPE_lng: {
+				switch (tp1) {
+					case TYPE_bte:
+						ANALYTICAL_PROD_IMP_LIMIT(bte, lng, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, LNGMUL_CHECK);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_PROD_IMP_LIMIT(sht, lng, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, LNGMUL_CHECK);
+						break;
+					case TYPE_int:
+						ANALYTICAL_PROD_IMP_LIMIT(int, lng, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, LNGMUL_CHECK);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_PROD_IMP_LIMIT(lng, lng, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, LNGMUL_CHECK);
+						break;
+					default:
+						goto nosupport;
+				}
+				break;
+			}
+#endif
+			case TYPE_flt: {
+				switch (tp1) {
+					case TYPE_flt:
+						ANALYTICAL_PROD_IMP_FP(flt, flt, ANALYTICAL_PROD_IMP_FP_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+						break;
+				}
+			}
+			case TYPE_dbl: {
+				switch (tp1) {
+					case TYPE_flt:
+						ANALYTICAL_PROD_IMP_FP(flt, dbl, ANALYTICAL_PROD_IMP_FP_OVERLAP);
+						break;
+					case TYPE_dbl:
+						ANALYTICAL_PROD_IMP_FP(dbl, dbl, ANALYTICAL_PROD_IMP_FP_OVERLAP);
+						break;
+					default:
+						goto nosupport;
+						break;
+				}
+			}
+			default:
+				goto nosupport;
+		}
 	}
 nosupport:
 	GDKerror("prod: type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
@@ -2190,8 +2286,14 @@ finish:
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_PROD_IMP_NORMAL
+#undef ANALYTICAL_PROD_IMP_OVERLAP
+#undef ANALYTICAL_PROD_IMP_NO_OVERLAP
+#undef ANALYTICAL_PROD_IMP
+#undef ANALYTICAL_PROD_IMP_LIMIT_OVERLAP
+#undef ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP
 #undef ANALYTICAL_PROD_IMP_LIMIT
+#undef ANALYTICAL_PROD_IMP_FP_OVERLAP
+#undef ANALYTICAL_PROD_IMP_FP_NO_OVERLAP
 #undef ANALYTICAL_PROD_IMP_FP
 #undef ANALYTICAL_PROD_IMP_FP_REAL
 
