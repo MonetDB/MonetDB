@@ -1152,7 +1152,6 @@ ANALYTICAL_LIMIT(max, MAX, <)
 
 #define ANALYTICAL_COUNT_IGNORE_NILS_NO_OVERLAP \
 	do {                                        \
-		rp += curval;                           \
 		for (;rb < rp; rb++)                    \
 			*rb = curval;                       \
 	} while(0);
@@ -1160,7 +1159,6 @@ ANALYTICAL_LIMIT(max, MAX, <)
 #define ANALYTICAL_COUNT_IGNORE_NILS_OVERLAP        \
 	do {                                            \
 		lng *rs = rb, *fs, *fe;                     \
-		rp += curval;                               \
 		for(; rb<rp;rb++) {                         \
 			fs = (rb-start > rs) ? rb - start : rs; \
 			fe = (rb+end < rp) ? rb + end + 1 : rp; \
@@ -1178,14 +1176,17 @@ ANALYTICAL_LIMIT(max, MAX, <)
 			for(; np < nend; np++) {          \
 				if (*np) {                    \
 					curval = np - pnp;        \
+					rp += curval;             \
 					IMP                       \
 					pnp = np;                 \
 				}                             \
 			}                                 \
 			curval = np - pnp;                \
+			rp += curval;                     \
 			IMP                               \
 		} else {                              \
 			curval = cnt;                     \
+			rp += curval;                     \
 			IMP                               \
 		}                                     \
 	} while(0);
@@ -1250,12 +1251,14 @@ ANALYTICAL_LIMIT(max, MAX, <)
 			curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
 		for (;rb < rp; rb++)                                          \
 			*rb = curval;                                             \
+		curval = 0;                                                   \
 	} while(0);
 
 #define ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP(TPE_CAST, OFFSET)         \
 	do {                                                                  \
+		m = k;                                                            \
 		for(;k<i;k++) {                                                   \
-			j = (k-start > 0) ? k - start : 0;                            \
+			j = (k > m+start) ? k - start : m;                            \
 			l = (k+end < i) ? k + end + 1 : i;                            \
 			for(; j<l; j++)                                               \
 				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
@@ -1279,7 +1282,6 @@ ANALYTICAL_LIMIT(max, MAX, <)
 					rp += ncnt;                                \
 					i += ncnt;                                 \
 					IMP(TPE_CAST, OFFSET)                      \
-					curval = 0;                                \
 					pnp = np;                                  \
 				}                                              \
 			}                                                  \
@@ -1314,8 +1316,9 @@ ANALYTICAL_LIMIT(max, MAX, <)
 
 #define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_OVERLAP                      \
 	do {                                                                    \
+		m = k;                                                              \
 		for(;k<i;k++) {                                                     \
-			j = (k-start > 0) ? k - start : 0;                              \
+			j = (k > m+start) ? k - start : m;                              \
 			l = (k+end < i) ? k + end + 1 : i;                              \
 			for(; j<l; j++)                                                 \
 				curval += (*cmp)(nil, base + ((const var_t *) bp)[j]) != 0; \
@@ -1327,8 +1330,9 @@ ANALYTICAL_LIMIT(max, MAX, <)
 
 #define ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_OVERLAP \
 	do {                                                \
+		m = k;                                          \
 		for(;k<i;k++) {                                 \
-			j = (k-start > 0) ? k - start : 0;          \
+			j = (k > m+start) ? k - start : m;          \
 			l = (k+end < i) ? k + end + 1 : i;          \
 			for(; j<l; j++)                             \
 				curval += (*cmp)(Tloc(b, j), nil) != 0; \
@@ -1396,7 +1400,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe, BUN start, BUN end)
 {
-	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
+	BUN i = 0, j = 0, k = 0, l = 0, m = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *nend;
 	gdk_return gdk_res = GDK_SUCCEED;
 
