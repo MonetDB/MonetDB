@@ -961,186 +961,246 @@ finish:
 
 #undef ANALYTICAL_LEAD_IMP
 
-#define ANALYTICAL_LIMIT_IMP(TPE, OP)                        \
-	do {                                                     \
-		TPE *rp, *rb, *pbp, *bp, *rend, curval, v;           \
-		rb = rp = (TPE*)Tloc(r, 0);                          \
-		pbp = bp = (TPE*)Tloc(b, 0);                         \
-		curval = *bp;                                        \
-		rend = rp + cnt;                                     \
-		if (p) {                                             \
-			pnp = np = (bit*)Tloc(p, 0);                     \
-			end = np + cnt;                                  \
-			for(; np<end; np++) {                            \
-				if (*np) {                                   \
-					ncnt = (np - pnp);                       \
-					rp += ncnt;                              \
-					bp += ncnt;                              \
-					for(; pbp<bp; pbp++) {                   \
-						v = *pbp;                            \
-						if(!is_##TPE##_nil(v)) {             \
-							if(is_##TPE##_nil(curval))       \
-								curval = v;                  \
-							else                             \
-								curval = OP(v, curval);      \
-						}                                    \
-					}                                        \
-					if(is_##TPE##_nil(curval))               \
-						has_nils = true;                     \
-					for (;rb < rp; rb++)                     \
-						*rb = curval;                        \
-					curval = *bp;                            \
-					pnp = np;                                \
-					pbp = bp;                                \
-				}                                            \
-			}                                                \
-			ncnt = (np - pnp);                               \
-			rp += ncnt;                                      \
-			bp += ncnt;                                      \
-			for(; pbp<bp; pbp++) {                           \
-				v = *pbp;                                    \
-				if(!is_##TPE##_nil(v)) {                     \
-					if(is_##TPE##_nil(curval))               \
-						curval = v;                          \
-					else                                     \
-						curval = OP(v, curval);              \
-				}                                            \
-			}                                                \
-			if(is_##TPE##_nil(curval))                       \
-				has_nils = true;                             \
-			for (;rb < rp; rb++)                             \
-				*rb = curval;                                \
-		} else if (o || force_order) {                       \
-			TPE *bend = bp + cnt;                            \
-			for(; bp<bend; bp++) {                           \
-				v = *bp;                                     \
-				if(!is_##TPE##_nil(v)) {                     \
-					if(is_##TPE##_nil(curval))               \
-						curval = v;                          \
-					else                                     \
-						curval = OP(v, curval);              \
-				}                                            \
-			}                                                \
-			if(is_##TPE##_nil(curval))                       \
-				has_nils = true;                             \
-			for(;rb<rend; rb++)                              \
-				*rb = curval;                                \
-		} else { /* single value, ie no ordering */          \
-			for(; rp<rend; rp++, bp++) {                     \
-				v = *bp;                                     \
-				if(is_##TPE##_nil(v))                        \
-					has_nils = true;                         \
-				*rp = v;                                     \
-			}                                                \
-		}                                                    \
+#define ANALYTICAL_LIMIT_IMP_NO_OVERLAP(TPE, IMP) \
+	do {                                          \
+		curval = *pbp;                            \
+		pbp++;                                    \
+		for(; pbp<bp; pbp++) {                    \
+			v = *pbp;                             \
+			if(!is_##TPE##_nil(v)) {              \
+				if(is_##TPE##_nil(curval))        \
+					curval = v;                   \
+				else                              \
+					curval = IMP(v, curval);      \
+			}                                     \
+		}                                         \
+		for (;rb < rp; rb++)                      \
+			*rb = curval;                         \
+		if(is_##TPE##_nil(curval))                \
+			has_nils = true;                      \
+	} while(0);
+
+#define ANALYTICAL_LIMIT_IMP_OVERLAP(TPE, IMP)        \
+	do {                                              \
+		TPE *bs, *bl, *be;                            \
+		bl = pbp;                                     \
+		for(; pbp<bp;pbp++) {                         \
+			bs = (pbp > bl+start) ? pbp - start : bl; \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
+			curval = *bs;                             \
+			bs++;                                     \
+			for(; bs<be; bs++) {                      \
+				v = *bs;                              \
+				if(!is_##TPE##_nil(v)) {              \
+					if(is_##TPE##_nil(curval))        \
+						curval = v;                   \
+					else                              \
+						curval = IMP(v, curval);      \
+				}                                     \
+			}                                         \
+			*rb = curval;                             \
+			rb++;                                     \
+			if(is_##TPE##_nil(curval))                \
+				has_nils = true;                      \
+		}                                             \
+	} while(0);
+
+#define ANALYTICAL_LIMIT_IMP(TPE, IMP, REAL)       \
+	do {                                           \
+		TPE *rp, *rb, *pbp, *bp, *rend, curval, v; \
+		rb = rp = (TPE*)Tloc(r, 0);                \
+		pbp = bp = (TPE*)Tloc(b, 0);               \
+		rend = rp + cnt;                           \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					rp += ncnt;                    \
+					bp += ncnt;                    \
+					REAL(TPE, IMP)                 \
+					pnp = np;                      \
+					pbp = bp;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			rp += ncnt;                            \
+			bp += ncnt;                            \
+			REAL(TPE, IMP)                         \
+		} else if (o || force_order) {             \
+			rp += cnt;                             \
+			bp += cnt;                             \
+			REAL(TPE, IMP)                         \
+		} else {                                   \
+			for(; rp<rend; rp++, bp++) {           \
+				v = *bp;                           \
+				if(is_##TPE##_nil(v))              \
+					has_nils = true;               \
+				*rp = v;                           \
+			}                                      \
+		}                                          \
 	} while(0);
 
 #ifdef HAVE_HUGE
-#define ANALYTICAL_LIMIT_IMP_HUGE(IMP) \
-	case TYPE_hge:                     \
-		ANALYTICAL_LIMIT_IMP(hge, IMP) \
+#define ANALYTICAL_LIMIT_IMP_HUGE(IMP, REAL) \
+	case TYPE_hge:                           \
+		ANALYTICAL_LIMIT_IMP(hge, IMP, REAL) \
 	break;
 #else
-#define ANALYTICAL_LIMIT_IMP_HUGE(IMP)
+#define ANALYTICAL_LIMIT_IMP_HUGE(IMP, REAL)
 #endif
 
-#define ANALYTICAL_LIMIT(OP, IMP, SIGN_OP)                                                \
-gdk_return                                                                                \
-GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe)               \
-{                                                                                         \
-	int (*atomcmp)(const void *, const void *);                                           \
-	const void* restrict nil;                                                             \
-	bool has_nils = false;                                                                \
-	BUN i, j, ncnt, cnt = BATcount(b);                                                    \
-	bit *np, *pnp, *end;                                                                  \
-	gdk_return gdk_res = GDK_SUCCEED;                                                     \
-                                                                                          \
-	switch(ATOMstorage(tpe)) {                                                            \
-		case TYPE_bit:                                                                    \
-			ANALYTICAL_LIMIT_IMP(bit, IMP)                                                \
-			break;                                                                        \
-		case TYPE_bte:                                                                    \
-			ANALYTICAL_LIMIT_IMP(bte, IMP)                                                \
-			break;                                                                        \
-		case TYPE_sht:                                                                    \
-			ANALYTICAL_LIMIT_IMP(sht, IMP)                                                \
-			break;                                                                        \
-		case TYPE_int:                                                                    \
-			ANALYTICAL_LIMIT_IMP(int, IMP)                                                \
-			break;                                                                        \
-		case TYPE_lng:                                                                    \
-			ANALYTICAL_LIMIT_IMP(lng, IMP)                                                \
-			break;                                                                        \
-		ANALYTICAL_LIMIT_IMP_HUGE(IMP)                                                    \
-		case TYPE_flt:                                                                    \
-			ANALYTICAL_LIMIT_IMP(flt, IMP)                                                \
-			break;                                                                        \
-		case TYPE_dbl:                                                                    \
-			ANALYTICAL_LIMIT_IMP(dbl, IMP)                                                \
-			break;                                                                        \
-		default: {                                                                        \
-			BATiter bpi = bat_iterator(b);                                                \
-			void *restrict curval = BUNtail(bpi, 0);                                      \
-			nil = ATOMnilptr(tpe);                                                        \
-			atomcmp = ATOMcompare(tpe);                                                   \
-			if (p) {                                                                      \
-				np = (bit*)Tloc(p, 0);                                                    \
-				for(i=0,j=0; i<cnt; i++, np++) {                                          \
-					if (*np) {                                                            \
-						if((*atomcmp)(curval, nil) == 0)                                  \
-							has_nils = true;                                              \
-						for (;j < i; j++) {                                               \
-							if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)   \
-								goto finish;                                              \
-						}                                                                 \
-						curval = BUNtail(bpi, i);                                         \
-					}                                                                     \
-					void *next = BUNtail(bpi, i);                                         \
-					if((*atomcmp)(next, nil) != 0) {                                      \
-						if((*atomcmp)(curval, nil) == 0)                                  \
-							curval = next;                                                \
-						else                                                              \
-							curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next;     \
-					}                                                                     \
-				}                                                                         \
-				if((*atomcmp)(curval, nil) == 0)                                          \
-					has_nils = true;                                                      \
-				for (;j < i; j++) {                                                       \
-					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)           \
-					   goto finish;                                                       \
-				}                                                                         \
-			} else if (o || force_order) {                                                \
-				for(i=0; i<cnt; i++) {                                                    \
-					void *next = BUNtail(bpi, i);                                         \
-						if((*atomcmp)(next, nil) != 0) {                                  \
-							if((*atomcmp)(curval, nil) == 0)                              \
-								curval = next;                                            \
-							else                                                          \
-								curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
-						}                                                                 \
-				}                                                                         \
-				if((*atomcmp)(curval, nil) == 0)                                          \
-					has_nils = true;                                                      \
-				for (j=0; j < i; j++) {                                                   \
-					if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)           \
-						goto finish;                                                      \
-				}                                                                         \
-			} else { /* single value, ie no ordering */                                   \
-				for(i=0; i<cnt; i++) {                                                    \
-					void *next = BUNtail(bpi, i);                                         \
-					if((*atomcmp)(next, nil) == 0)                                        \
-						has_nils = true;                                                  \
-					if ((gdk_res = BUNappend(r, next, false)) != GDK_SUCCEED)             \
-						goto finish;                                                      \
-				}                                                                         \
-			}                                                                             \
-		}                                                                                 \
-	}                                                                                     \
-finish:                                                                                   \
-	BATsetcount(r, cnt);                                                                  \
-	r->tnonil = !has_nils;                                                                \
-	r->tnil = has_nils;                                                                   \
-	return gdk_res;                                                                       \
+#define ANALYTICAL_LIMIT_IMP_OTHERS_NO_OVERLAP(SIGN_OP)                       \
+	do {                                                                      \
+		l = j;                                                                \
+		curval = BUNtail(bpi, j);                                             \
+		j++;                                                                  \
+		for (;j < i; j++) {                                                   \
+			void *next = BUNtail(bpi, j);                                     \
+			if((*atomcmp)(next, nil) != 0) {                                  \
+				if((*atomcmp)(curval, nil) == 0)                              \
+					curval = next;                                            \
+				else                                                          \
+					curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
+			}                                                                 \
+		}                                                                     \
+		j = l;                                                                \
+		for (;j < i; j++) {                                                   \
+			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)       \
+				goto finish;                                                  \
+		}                                                                     \
+		if((*atomcmp)(curval, nil) == 0)                                      \
+			has_nils = true;                                                  \
+	} while(0);
+
+#define ANALYTICAL_LIMIT_IMP_OTHERS_OVERLAP(SIGN_OP)                              \
+	do {                                                                          \
+		m = k;                                                                    \
+		for(;k<i;k++) {                                                           \
+			j = (k > m+start) ? k - start : m;                                    \
+			l = (k+end < i) ? k + end + 1 : i;                                    \
+			curval = BUNtail(bpi, j);                                             \
+			j++;                                                                  \
+			for (;j < l; j++) {                                                   \
+				void *next = BUNtail(bpi, j);                                     \
+				if((*atomcmp)(next, nil) != 0) {                                  \
+					if((*atomcmp)(curval, nil) == 0)                              \
+						curval = next;                                            \
+					else                                                          \
+						curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
+				}                                                                 \
+			}                                                                     \
+			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)           \
+				goto finish;                                                      \
+			if((*atomcmp)(curval, nil) == 0)                                      \
+				has_nils = true;                                                  \
+		}                                                                         \
+	} while(0);
+
+#define ANALYTICAL_LIMIT_IMP_OTHERS(SIGN_OP, REAL)                        \
+	do {                                                                  \
+		BATiter bpi = bat_iterator(b);                                    \
+		void *restrict curval = BUNtail(bpi, 0);                          \
+		nil = ATOMnilptr(tpe);                                            \
+		atomcmp = ATOMcompare(tpe);                                       \
+		if (p) {                                                          \
+			pnp = np = (bit*)Tloc(p, 0);                                  \
+			nend = np + cnt;                                              \
+			for(; np<nend; np++) {                                        \
+				if (*np) {                                                \
+					i += (np - pnp);                                      \
+					REAL(SIGN_OP)                                         \
+					pnp = np;                                             \
+				}                                                         \
+			}                                                             \
+			i += (np - pnp);                                              \
+			REAL(SIGN_OP)                                                 \
+		} else if (o || force_order) {                                    \
+			i += cnt;                                                     \
+			REAL(SIGN_OP)                                                 \
+		} else {                                                          \
+			for(i=0; i<cnt; i++) {                                        \
+				void *next = BUNtail(bpi, i);                             \
+				if((*atomcmp)(next, nil) == 0)                            \
+					has_nils = true;                                      \
+				if ((gdk_res = BUNappend(r, next, false)) != GDK_SUCCEED) \
+					goto finish;                                          \
+			}                                                             \
+		}                                                                 \
+	} while(0);
+
+#define ANALYTICAL_LIMIT(OP, IMP, SIGN_OP)                                                   \
+gdk_return                                                                                   \
+GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, BUN start, BUN end) \
+{                                                                                            \
+	int (*atomcmp)(const void *, const void *);                                              \
+	const void* restrict nil;                                                                \
+	bool has_nils = false;                                                                   \
+	BUN i = 0, j = 0, l = 0, k = 0, m = 0, ncnt, cnt = BATcount(b);                          \
+	bit *np, *pnp, *nend;                                                                    \
+	gdk_return gdk_res = GDK_SUCCEED;                                                        \
+                                                                                             \
+	if(start == 0 && end == 0) {                                                             \
+		switch(ATOMstorage(tpe)) {                                                           \
+			case TYPE_bit:                                                                   \
+				ANALYTICAL_LIMIT_IMP(bit, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
+				break;                                                                       \
+			case TYPE_bte:                                                                   \
+				ANALYTICAL_LIMIT_IMP(bte, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
+				break;                                                                       \
+			case TYPE_sht:                                                                   \
+				ANALYTICAL_LIMIT_IMP(sht, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
+				break;                                                                       \
+			case TYPE_int:                                                                   \
+				ANALYTICAL_LIMIT_IMP(int, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
+				break;                                                                       \
+			case TYPE_lng:                                                                   \
+				ANALYTICAL_LIMIT_IMP(lng, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
+				break;                                                                       \
+			ANALYTICAL_LIMIT_IMP_HUGE(IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)                  \
+			case TYPE_flt:                                                                   \
+				ANALYTICAL_LIMIT_IMP(flt, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
+				break;                                                                       \
+			case TYPE_dbl:                                                                   \
+				ANALYTICAL_LIMIT_IMP(dbl, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
+				break;                                                                       \
+			default:                                                                         \
+				ANALYTICAL_LIMIT_IMP_OTHERS(SIGN_OP, ANALYTICAL_LIMIT_IMP_OTHERS_NO_OVERLAP) \
+		}                                                                                    \
+	} else {                                                                                 \
+		switch(ATOMstorage(tpe)) {                                                           \
+			case TYPE_bit:                                                                   \
+				ANALYTICAL_LIMIT_IMP(bit, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
+				break;                                                                       \
+			case TYPE_bte:                                                                   \
+				ANALYTICAL_LIMIT_IMP(bte, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
+				break;                                                                       \
+			case TYPE_sht:                                                                   \
+				ANALYTICAL_LIMIT_IMP(sht, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
+				break;                                                                       \
+			case TYPE_int:                                                                   \
+				ANALYTICAL_LIMIT_IMP(int, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
+				break;                                                                       \
+			case TYPE_lng:                                                                   \
+				ANALYTICAL_LIMIT_IMP(lng, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
+				break;                                                                       \
+			ANALYTICAL_LIMIT_IMP_HUGE(IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                     \
+			case TYPE_flt:                                                                   \
+				ANALYTICAL_LIMIT_IMP(flt, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
+				break;                                                                       \
+			case TYPE_dbl:                                                                   \
+				ANALYTICAL_LIMIT_IMP(dbl, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
+				break;                                                                       \
+			default:                                                                         \
+				ANALYTICAL_LIMIT_IMP_OTHERS(SIGN_OP, ANALYTICAL_LIMIT_IMP_OTHERS_OVERLAP)    \
+		}                                                                                    \
+	}                                                                                        \
+finish:                                                                                      \
+	BATsetcount(r, cnt);                                                                     \
+	r->tnonil = !has_nils;                                                                   \
+	r->tnil = has_nils;                                                                      \
+	return gdk_res;                                                                          \
 }
 
 ANALYTICAL_LIMIT(min, MIN, >)
@@ -1149,6 +1209,11 @@ ANALYTICAL_LIMIT(max, MAX, <)
 #undef ANALYTICAL_LIMIT
 #undef ANALYTICAL_LIMIT_IMP_HUGE
 #undef ANALYTICAL_LIMIT_IMP
+#undef ANALYTICAL_LIMIT_IMP_OVERLAP
+#undef ANALYTICAL_LIMIT_IMP_NO_OVERLAP
+#undef ANALYTICAL_LIMIT_IMP_OTHERS
+#undef ANALYTICAL_LIMIT_IMP_OTHERS_OVERLAP
+#undef ANALYTICAL_LIMIT_IMP_OTHERS_NO_OVERLAP
 
 #define ANALYTICAL_COUNT_IGNORE_NILS_NO_OVERLAP \
 	do {                                        \
@@ -1160,7 +1225,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 	do {                                            \
 		lng *rs = rb, *fs, *fe;                     \
 		for(; rb<rp;rb++) {                         \
-			fs = (rb-start > rs) ? rb - start : rs; \
+			fs = (rb > rs + start) ? rb - start : rs; \
 			fe = (rb+end < rp) ? rb + end + 1 : rp; \
 			*rb = (fe - fs);                        \
 		}                                           \
@@ -1205,7 +1270,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		TPE *bs, *bl, *be;                              \
 		bl = pbp;                                       \
 		for(; pbp<bp;pbp++) {                           \
-			bs = (pbp-start > bl) ? pbp - start : bl;   \
+			bs = (pbp > bl+start) ? pbp - start : bl; \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;   \
 			for(; bs<be; bs++)                          \
 				curval += !is_##TPE##_nil(*bs);         \
@@ -1560,7 +1625,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		TPE1 *bs, *bl, *be;                           \
 		bl = pbp;                                     \
 		for(; pbp<bp;pbp++) {                         \
-			bs = (pbp-start > bl) ? pbp - start : bl; \
+			bs = (pbp > bl+start) ? pbp - start : bl; \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
 			for(; bs<be; bs++) {                      \
 				v = *bs;                              \
@@ -1642,7 +1707,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		bl = pbp;                                        \
 		(void) curval;                                   \
 		for(; pbp<bp; pbp++) {                           \
-			bs = (pbp-start > bl) ? pbp - start : bl;    \
+			bs = (pbp > bl+start) ? pbp - start : bl;    \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;    \
 			if(dofsum(bs, 0, 0, (be - bs), rb, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, true, \
 					  "GDKanalyticalsum") == BUN_NONE) { \
@@ -1929,7 +1994,7 @@ finish:
 		TPE1 *bs, *bl, *be;                           \
 		bl = pbp;                                     \
 		for(; pbp<bp;pbp++) {                         \
-			bs = (pbp-start > bl) ? pbp - start : bl; \
+			bs = (pbp > bl+start) ? pbp - start : bl; \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
 			for(; bs<be; bs++) {                      \
 				v = *bs;                              \
@@ -2017,7 +2082,7 @@ finish:
 		TPE1 *bs, *bl, *be;                                     \
 		bl = pbp;                                               \
 		for(; pbp<bp;pbp++) {                                   \
-			bs = (pbp-start > bl) ? pbp - start : bl;           \
+			bs = (pbp > bl+start) ? pbp - start : bl;           \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;           \
 			for(; bs<be; bs++) {                                \
 				v = *bs;                                        \
@@ -2116,7 +2181,7 @@ finish:
 		TPE1 *bs, *bl, *be;                                     \
 		bl = pbp;                                               \
 		for(; pbp<bp;pbp++) {                                   \
-			bs = (pbp-start > bl) ? pbp - start : bl;           \
+			bs = (pbp > bl+start) ? pbp - start : bl;           \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;           \
 			for(; bs<be; bs++) {                                \
 				v = *bs;                                        \

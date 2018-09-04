@@ -13,6 +13,26 @@ select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) 
 select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
 select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
 
+select min(aa) over (rows between 5 preceding and 0 following) from analytics;
+select min(aa) over (rows between 5 preceding and 2 following) from analytics;
+select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
+select min(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select max(aa) over (rows between 5 preceding and 0 following) from analytics;
+select max(aa) over (rows between 5 preceding and 2 following) from analytics;
+select max(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
+select max(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select min(bb) over (rows between 5 preceding and 0 following) from analytics;
+select min(bb) over (rows between 5 preceding and 2 following) from analytics;
+select min(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics;
+select min(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics;
+
+select max(bb) over (rows between 5 preceding and 0 following) from analytics;
+select max(bb) over (rows between 5 preceding and 2 following) from analytics;
+select max(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics;
+select max(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics;
+
 select count(*) over (rows between 5 preceding and 0 following) from analytics;
 select count(*) over (rows between 5 preceding and 2 following) from analytics;
 select count(*) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
@@ -39,6 +59,16 @@ select count(*) over (rows between 5 preceding and 0 following);
 
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
+
+select min(aa) over (rows between 5 preceding and 0 following) from stressme;
+select min(aa) over (rows between 5 preceding and 2 following) from stressme;
+select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
+select min(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme;
+
+select max(aa) over (rows between 5 preceding and 0 following) from stressme;
+select max(aa) over (rows between 5 preceding and 2 following) from stressme;
+select max(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
+select max(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme;
 
 select count(aa) over (rows between 5 preceding and 0 following) from stressme;
 select count(aa) over (rows between 5 preceding and 2 following) from stressme;

@@ -943,7 +943,7 @@ SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
 static str
 SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int))
+				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int, BUN, BUN))
 {
 	BAT *r, *b, *p, *o;
 	bit force_order = 0;
@@ -957,8 +957,6 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 
 	if (unit != 0 || excl != 0)
 		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
-	(void)start;
-	(void)end;
 
 	if (msg)
 		return msg;
@@ -968,7 +966,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, force_order, tpe);
+		gdk_res = func(r, b, p, o, force_order, tpe, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
