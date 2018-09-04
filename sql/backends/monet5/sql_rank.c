@@ -1241,8 +1241,6 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (unit != 0 || excl != 0)
 		throw(SQL, "sql.avg", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
-	(void)start;
-	(void)end;
 
 	if (msg)
 		return msg;
@@ -1252,7 +1250,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalavg(r, b, p, o, force_order, tpe);
+		gdk_res = GDKanalyticalavg(r, b, p, o, force_order, tpe, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);

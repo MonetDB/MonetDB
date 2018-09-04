@@ -13,6 +13,11 @@ select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) 
 select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
 select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
 
+select avg(aa) over (rows between 5 preceding and 0 following) from analytics;
+select avg(aa) over (rows between 5 preceding and 2 following) from analytics;
+select avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
+select avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
 select min(aa) over (rows between 5 preceding and 0 following) from analytics;
 select min(aa) over (rows between 5 preceding and 2 following) from analytics;
 select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics;
@@ -60,6 +65,11 @@ select count(*) over (rows between 5 preceding and 0 following);
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 
+select avg(bb) over (rows between 5 preceding and 0 following) from stressme;
+select avg(bb) over (rows between 5 preceding and 2 following) from stressme;
+select avg(bb) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
+select avg(bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme;
+
 select min(aa) over (rows between 5 preceding and 0 following) from stressme;
 select min(aa) over (rows between 5 preceding and 2 following) from stressme;
 select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme;
@@ -90,5 +100,15 @@ select prod(aa) over (rows between 2 preceding and 0 following) from debugme;
 select prod(aa) over (rows between 2 preceding and 2 following) from debugme;
 select prod(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme;
 select prod(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme;
+
+select avg(aa) over (rows between 2 preceding and 0 following) from debugme;
+select avg(aa) over (rows between 2 preceding and 2 following) from debugme;
+select avg(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme;
+select avg(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme;
+
+create table overflowme (a int);
+insert into overflowme values (2147483644), (2147483645), (2147483646);
+select avg(a) over (rows between 2 preceding and 0 following) from overflowme;
+select avg(a) over (rows between 2 preceding and 2 following) from overflowme;
 
 rollback;
