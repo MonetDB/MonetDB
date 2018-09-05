@@ -87,7 +87,7 @@ static int utf8chkmsk[] = {
    ODBC fashion.
 */
 SQLCHAR *
-ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
+ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 {
 	const SQLWCHAR *s1, *e;
 	unsigned long c;
@@ -166,7 +166,7 @@ ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
    returns NULL, on error returns a string with an error message.  The
    first two arguments describe the input, the last three arguments
    describe the output, both in the normal ODBC fashion. */
-char *
+const char *
 ODBCutf82wchar(const SQLCHAR *s,
 	       SQLINTEGER length,
 	       SQLWCHAR *buf,

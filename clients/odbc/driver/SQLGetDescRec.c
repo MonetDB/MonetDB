@@ -201,7 +201,7 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle,
 			    NullablePtr);
 
 	if (SQL_SUCCEEDED(rc)) {
-		char *e = ODBCutf82wchar(name, n, Name, BufferLength, &n);
+		const char *e = ODBCutf82wchar(name, n, Name, BufferLength, &n);
 
 		if (e)
 			rc = SQL_ERROR;
