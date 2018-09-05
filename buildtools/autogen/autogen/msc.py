@@ -327,15 +327,15 @@ def msc_dep(fd, tar, deplist, msc):
         x, de = split_filename(deplist[0])
         of = b + '.' + de
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
-    if ext == "tab.c":
+    elif ext == "tab.c":
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
         of = b + '.' + de
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
-    if ext == "yy.c":
+    elif ext == "yy.c":
         fd.write(getsrc)
         fd.write('\t$(LEX) $(LFLAGS) $(AM_LFLAGS) "%s.l"\n' % b)
-    if ext in ("obj", "tab.obj", "yy.obj"):
+    elif ext in ("obj", "tab.obj", "yy.obj"):
         target, name = msc_find_target(tar, msc)
         if name[0] == '_':
             name = name[1:]
@@ -344,7 +344,7 @@ def msc_dep(fd, tar, deplist, msc):
             if dext in ("c", "cpp", "yy.c", "tab.c"):
                 fd.write('\t$(CC) /EHsc $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s "-Fo%s" -c "%s"\n' %
                          (split_filename(msc_basename(src))[0], name, t, src))
-    if ext == 'res':
+    elif ext == 'res':
         fd.write("\t$(RC) -fo%s %s\n" % (t, src))
 
 def msc_deps(fd, deps, objext, msc):
