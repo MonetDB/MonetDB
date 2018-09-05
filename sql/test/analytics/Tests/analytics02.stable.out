@@ -718,12 +718,444 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
+#select count(*) over (rows unbounded preceding);
+% .L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#select count(*) over (rows 200 preceding);
+% .L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
 #select count(*) over (rows between 5 preceding and 0 following);
 % .L4 # table_name
 % L4 # name
 % bigint # type
 % 1 # length
 [ 1	]
+#select min(aa) over (rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 15	]
+[ 3	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+#select min(aa) over (partition by bb order by bb rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 3	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 15	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select max(aa) over (rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 15	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ 15	]
+#select max(aa) over (partition by bb order by bb rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 3	]
+[ 3	]
+[ 4	]
+[ 3	]
+[ 3	]
+[ 8	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ NULL	]
+#select cast(sum(aa) over (rows unbounded preceding) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 2 # length
+[ 15	]
+[ 18	]
+[ 20	]
+[ 25	]
+[ 25	]
+[ 28	]
+[ 32	]
+[ 38	]
+[ 46	]
+[ 46	]
+#select cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 2 # length
+[ 3	]
+[ 5	]
+[ 9	]
+[ 3	]
+[ 3	]
+[ 11	]
+[ 15	]
+[ 20	]
+[ 26	]
+[ NULL	]
+#select cast(prod(aa) over (rows unbounded preceding) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 6 # length
+[ 15	]
+[ 45	]
+[ 90	]
+[ 450	]
+[ 450	]
+[ 1350	]
+[ 5400	]
+[ 32400	]
+[ 259200	]
+[ 259200	]
+#select cast(prod(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 3 # length
+[ 3	]
+[ 6	]
+[ 24	]
+[ 3	]
+[ 3	]
+[ 24	]
+[ 15	]
+[ 75	]
+[ 450	]
+[ NULL	]
+#select avg(aa) over (rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 15	]
+[ 9	]
+[ 6.666666667	]
+[ 6.25	]
+[ 6.25	]
+[ 5.6	]
+[ 5.333333333	]
+[ 5.428571429	]
+[ 5.75	]
+[ 5.75	]
+#select avg(aa) over (partition by bb order by bb rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 3	]
+[ 2.5	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5.5	]
+[ 15	]
+[ 10	]
+[ 8.666666667	]
+[ NULL	]
+#select count(*) over (rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 2 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+[ 10	]
+#select count(*) over (partition by bb order by bb rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+#select count(aa) over (rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 8	]
+#select count(aa) over (partition by bb order by bb rows unbounded preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 0	]
+#select min(aa) over (rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 15	]
+[ 3	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 4	]
+[ 6	]
+#select min(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 3	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 15	]
+[ 5	]
+[ 5	]
+[ NULL	]
+#select max(aa) over (rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 15	]
+[ 15	]
+[ 15	]
+[ 5	]
+[ 5	]
+[ 5	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ 8	]
+#select max(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 2 # length
+[ 3	]
+[ 3	]
+[ 4	]
+[ 3	]
+[ 3	]
+[ 8	]
+[ 15	]
+[ 15	]
+[ 15	]
+[ NULL	]
+#select cast(sum(aa) over (rows 2 preceding) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 2 # length
+[ 15	]
+[ 18	]
+[ 20	]
+[ 10	]
+[ 7	]
+[ 8	]
+[ 7	]
+[ 13	]
+[ 18	]
+[ 14	]
+#select cast(sum(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 2 # length
+[ 3	]
+[ 5	]
+[ 9	]
+[ 3	]
+[ 3	]
+[ 11	]
+[ 15	]
+[ 20	]
+[ 26	]
+[ NULL	]
+#select cast(prod(aa) over (rows 2 preceding) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 3 # length
+[ 15	]
+[ 45	]
+[ 90	]
+[ 30	]
+[ 10	]
+[ 15	]
+[ 12	]
+[ 72	]
+[ 192	]
+[ 48	]
+#select cast(prod(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 3 # length
+[ 3	]
+[ 6	]
+[ 24	]
+[ 3	]
+[ 3	]
+[ 24	]
+[ 15	]
+[ 75	]
+[ 450	]
+[ NULL	]
+#select avg(aa) over (rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 15	]
+[ 9	]
+[ 6.666666667	]
+[ 3.333333333	]
+[ 3.5	]
+[ 4	]
+[ 3.5	]
+[ 4.333333333	]
+[ 6	]
+[ 7	]
+#select avg(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 3	]
+[ 2.5	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 5.5	]
+[ 15	]
+[ 10	]
+[ 8.666666667	]
+[ NULL	]
+#select count(*) over (rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+[ 3	]
+#select count(*) over (partition by bb order by bb rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+#select count(aa) over (rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 3	]
+[ 3	]
+[ 2	]
+#select count(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 1	]
+[ 1	]
+[ 2	]
+[ 1	]
+[ 2	]
+[ 3	]
+[ 0	]
 #create table stressme (aa varchar(64), bb int);
 #insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 [ 9	]
