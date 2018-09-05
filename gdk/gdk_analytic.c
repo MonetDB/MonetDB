@@ -38,10 +38,10 @@ gdk_return
 GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe)
 {
 	BUN i, cnt = BATcount(b);
-	bit *rb = (bit*)Tloc(r, 0), *rp = c ? (bit*)Tloc(c, 0) : NULL;
+	bit *restrict rb = (bit*)Tloc(r, 0), *restrict rp = c ? (bit*)Tloc(c, 0) : NULL;
 	int (*atomcmp)(const void *, const void *);
 
-	switch(ATOMstorage(tpe)) {
+	switch(tpe) {
 		case TYPE_bit:
 			ANALYTICAL_DIFF_IMP(bit)
 			break;
@@ -266,8 +266,8 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
 	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 
-	(void)o;
-	switch(ATOMstorage(tpe)) {
+	(void) o;
+	switch(tpe) {
 		case TYPE_bit:
 			ANALYTICAL_FIRST_IMP(bit)
 			break;
@@ -386,8 +386,8 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
 	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 
-	(void)o;
-	switch(ATOMstorage(tpe)) {
+	(void) o;
+	switch(tpe) {
 		case TYPE_bit:
 			ANALYTICAL_LAST_IMP(bit)
 			break;
@@ -877,7 +877,7 @@ finish:
 #undef LEAD_CALC
 #undef ANALYTICAL_LEAD_OTHERS
 
-#define ANALYTICAL_LIMIT_IMP_NO_OVERLAP(TPE, IMP) \
+#define ANALYTICAL_MIN_MAX_IMP_NO_OVERLAP(TPE, IMP) \
 	do {                                          \
 		curval = *pbp;                            \
 		pbp++;                                    \
@@ -896,7 +896,7 @@ finish:
 			has_nils = true;                      \
 	} while(0);
 
-#define ANALYTICAL_LIMIT_IMP_OVERLAP(TPE, IMP)        \
+#define ANALYTICAL_MIN_MAX_IMP_ROWS(TPE, IMP)         \
 	do {                                              \
 		TPE *bs, *bl, *be;                            \
 		bl = pbp;                                     \
@@ -921,7 +921,7 @@ finish:
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_LIMIT_IMP(TPE, IMP, REAL)       \
+#define ANALYTICAL_MIN_MAX_CALC(TPE, IMP, REAL)    \
 	do {                                           \
 		TPE *rp, *rb, *pbp, *bp, *rend, curval, v; \
 		rb = rp = (TPE*)Tloc(r, 0);                \
@@ -959,15 +959,15 @@ finish:
 	} while(0);
 
 #ifdef HAVE_HUGE
-#define ANALYTICAL_LIMIT_IMP_HUGE(IMP, REAL) \
-	case TYPE_hge:                           \
-		ANALYTICAL_LIMIT_IMP(hge, IMP, REAL) \
+#define ANALYTICAL_MIN_MAX_LIMIT(IMP, REAL)     \
+	case TYPE_hge:                              \
+		ANALYTICAL_MIN_MAX_CALC(hge, IMP, REAL) \
 	break;
 #else
-#define ANALYTICAL_LIMIT_IMP_HUGE(IMP, REAL)
+#define ANALYTICAL_MIN_MAX_LIMIT(IMP, REAL)
 #endif
 
-#define ANALYTICAL_LIMIT_IMP_OTHERS_NO_OVERLAP(SIGN_OP)                       \
+#define ANALYTICAL_MIN_MAX_OTHERS_IMP_NO_OVERLAP(SIGN_OP)                     \
 	do {                                                                      \
 		l = j;                                                                \
 		curval = BUNtail(bpi, j);                                             \
@@ -990,7 +990,7 @@ finish:
 			has_nils = true;                                                  \
 	} while(0);
 
-#define ANALYTICAL_LIMIT_IMP_OTHERS_OVERLAP(SIGN_OP)                              \
+#define ANALYTICAL_MIN_MAX_OTHERS_IMP_ROWS(SIGN_OP)                               \
 	do {                                                                          \
 		m = k;                                                                    \
 		for(;k<i;k++) {                                                           \
@@ -1014,7 +1014,7 @@ finish:
 		}                                                                         \
 	} while(0);
 
-#define ANALYTICAL_LIMIT_IMP_OTHERS(SIGN_OP, REAL)                        \
+#define ANALYTICAL_MIN_MAX_OTHERS_CALC(SIGN_OP, REAL)                     \
 	do {                                                                  \
 		BATiter bpi = bat_iterator(b);                                    \
 		void *restrict curval = BUNtail(bpi, 0);                          \
@@ -1046,98 +1046,77 @@ finish:
 		}                                                                 \
 	} while(0);
 
-#define ANALYTICAL_LIMIT(OP, IMP, SIGN_OP)                                                   \
-gdk_return                                                                                   \
+#define ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, FRAME) \
+	switch(tpe) { \
+		case TYPE_bit: \
+			ANALYTICAL_MIN_MAX_CALC(bit, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			break; \
+		case TYPE_bte: \
+			ANALYTICAL_MIN_MAX_CALC(bte, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			break; \
+		case TYPE_sht: \
+			ANALYTICAL_MIN_MAX_CALC(sht, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			break; \
+		case TYPE_int: \
+			ANALYTICAL_MIN_MAX_CALC(int, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			break; \
+		case TYPE_lng: \
+			ANALYTICAL_MIN_MAX_CALC(lng, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			break; \
+		ANALYTICAL_MIN_MAX_LIMIT(IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+		case TYPE_flt: \
+			ANALYTICAL_MIN_MAX_CALC(flt, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			break; \
+		case TYPE_dbl: \
+			ANALYTICAL_MIN_MAX_CALC(dbl, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			break; \
+		default: \
+			ANALYTICAL_MIN_MAX_OTHERS_CALC(SIGN_OP, ANALYTICAL_MIN_MAX_OTHERS_IMP##FRAME) \
+	}
+
+#define ANALYTICAL_MIN_MAX(OP, IMP, SIGN_OP) \
+gdk_return \
 GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, BUN start, BUN end) \
-{                                                                                            \
-	int (*atomcmp)(const void *, const void *);                                              \
-	const void* restrict nil;                                                                \
-	bool has_nils = false;                                                                   \
-	BUN i = 0, j = 0, l = 0, k = 0, m = 0, ncnt, cnt = BATcount(b);                          \
-	bit *np, *pnp, *nend;                                                                    \
-	gdk_return gdk_res = GDK_SUCCEED;                                                        \
-                                                                                             \
-	if(start == 0 && end == 0) {                                                             \
-		switch(ATOMstorage(tpe)) {                                                           \
-			case TYPE_bit:                                                                   \
-				ANALYTICAL_LIMIT_IMP(bit, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
-				break;                                                                       \
-			case TYPE_bte:                                                                   \
-				ANALYTICAL_LIMIT_IMP(bte, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
-				break;                                                                       \
-			case TYPE_sht:                                                                   \
-				ANALYTICAL_LIMIT_IMP(sht, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
-				break;                                                                       \
-			case TYPE_int:                                                                   \
-				ANALYTICAL_LIMIT_IMP(int, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
-				break;                                                                       \
-			case TYPE_lng:                                                                   \
-				ANALYTICAL_LIMIT_IMP(lng, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
-				break;                                                                       \
-			ANALYTICAL_LIMIT_IMP_HUGE(IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)                  \
-			case TYPE_flt:                                                                   \
-				ANALYTICAL_LIMIT_IMP(flt, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
-				break;                                                                       \
-			case TYPE_dbl:                                                                   \
-				ANALYTICAL_LIMIT_IMP(dbl, IMP, ANALYTICAL_LIMIT_IMP_NO_OVERLAP)              \
-				break;                                                                       \
-			default:                                                                         \
-				ANALYTICAL_LIMIT_IMP_OTHERS(SIGN_OP, ANALYTICAL_LIMIT_IMP_OTHERS_NO_OVERLAP) \
-		}                                                                                    \
-	} else {                                                                                 \
-		switch(ATOMstorage(tpe)) {                                                           \
-			case TYPE_bit:                                                                   \
-				ANALYTICAL_LIMIT_IMP(bit, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
-				break;                                                                       \
-			case TYPE_bte:                                                                   \
-				ANALYTICAL_LIMIT_IMP(bte, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
-				break;                                                                       \
-			case TYPE_sht:                                                                   \
-				ANALYTICAL_LIMIT_IMP(sht, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
-				break;                                                                       \
-			case TYPE_int:                                                                   \
-				ANALYTICAL_LIMIT_IMP(int, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
-				break;                                                                       \
-			case TYPE_lng:                                                                   \
-				ANALYTICAL_LIMIT_IMP(lng, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
-				break;                                                                       \
-			ANALYTICAL_LIMIT_IMP_HUGE(IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                     \
-			case TYPE_flt:                                                                   \
-				ANALYTICAL_LIMIT_IMP(flt, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
-				break;                                                                       \
-			case TYPE_dbl:                                                                   \
-				ANALYTICAL_LIMIT_IMP(dbl, IMP, ANALYTICAL_LIMIT_IMP_OVERLAP)                 \
-				break;                                                                       \
-			default:                                                                         \
-				ANALYTICAL_LIMIT_IMP_OTHERS(SIGN_OP, ANALYTICAL_LIMIT_IMP_OTHERS_OVERLAP)    \
-		}                                                                                    \
-	}                                                                                        \
-finish:                                                                                      \
-	BATsetcount(r, cnt);                                                                     \
-	r->tnonil = !has_nils;                                                                   \
-	r->tnil = has_nils;                                                                      \
-	return gdk_res;                                                                          \
+{ \
+	int (*atomcmp)(const void *, const void *); \
+	const void* restrict nil; \
+	bool has_nils = false; \
+	BUN i = 0, j = 0, l = 0, k = 0, m = 0, ncnt, cnt = BATcount(b); \
+	bit *np, *pnp, *nend; \
+	gdk_return gdk_res = GDK_SUCCEED; \
+ \
+	if(start == 0 && end == 0) { \
+		ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, _NO_OVERLAP) \
+	} else { \
+		ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, _ROWS) \
+	} \
+finish: \
+	BATsetcount(r, cnt); \
+	r->tnonil = !has_nils; \
+	r->tnil = has_nils; \
+	return gdk_res; \
 }
 
-ANALYTICAL_LIMIT(min, MIN, >)
-ANALYTICAL_LIMIT(max, MAX, <)
+ANALYTICAL_MIN_MAX(min, MIN, >)
+ANALYTICAL_MIN_MAX(max, MAX, <)
 
-#undef ANALYTICAL_LIMIT
-#undef ANALYTICAL_LIMIT_IMP_HUGE
-#undef ANALYTICAL_LIMIT_IMP
-#undef ANALYTICAL_LIMIT_IMP_OVERLAP
-#undef ANALYTICAL_LIMIT_IMP_NO_OVERLAP
-#undef ANALYTICAL_LIMIT_IMP_OTHERS
-#undef ANALYTICAL_LIMIT_IMP_OTHERS_OVERLAP
-#undef ANALYTICAL_LIMIT_IMP_OTHERS_NO_OVERLAP
+#undef ANALYTICAL_MIN_MAX_CALC
+#undef ANALYTICAL_MIN_MAX_IMP_ROWS
+#undef ANALYTICAL_MIN_MAX_IMP_NO_OVERLAP
+#undef ANALYTICAL_MIN_MAX_OTHERS_CALC
+#undef ANALYTICAL_MIN_MAX_OTHERS_IMP_ROWS
+#undef ANALYTICAL_MIN_MAX_OTHERS_IMP_NO_OVERLAP
+#undef ANALYTICAL_MIN_MAX
+#undef ANALYTICAL_MIN_MAX_BRANCHES
+#undef ANALYTICAL_MIN_MAX_LIMIT
 
-#define ANALYTICAL_COUNT_IGNORE_NILS_NO_OVERLAP \
-	do {                                        \
-		for (;rb < rp; rb++)                    \
-			*rb = curval;                       \
+#define ANALYTICAL_COUNT_IGNORE_NILS_IMP_NO_OVERLAP \
+	do {                                            \
+		for (;rb < rp; rb++)                        \
+			*rb = curval;                           \
 	} while(0);
 
-#define ANALYTICAL_COUNT_IGNORE_NILS_OVERLAP        \
+#define ANALYTICAL_COUNT_IGNORE_NILS_IMP_ROWS       \
 	do {                                            \
 		lng *rs = rb, *fs, *fe;                     \
 		for(; rb<rp;rb++) {                         \
@@ -1147,32 +1126,32 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		}                                           \
 	} while(0);
 
-#define ANALYTICAL_COUNT_IGNORE_NILS_IMP(IMP) \
-	do {                                      \
-		lng *rp, *rb, curval = 0;             \
-		rb = rp = (lng*)Tloc(r, 0);           \
-		if (p) {                              \
-			np = pnp = (bit*)Tloc(p, 0);      \
-			nend = np + cnt;                  \
-			for(; np < nend; np++) {          \
-				if (*np) {                    \
-					curval = np - pnp;        \
-					rp += curval;             \
-					IMP                       \
-					pnp = np;                 \
-				}                             \
-			}                                 \
-			curval = np - pnp;                \
-			rp += curval;                     \
-			IMP                               \
-		} else {                              \
-			curval = cnt;                     \
-			rp += curval;                     \
-			IMP                               \
-		}                                     \
+#define ANALYTICAL_COUNT_IGNORE_NILS_CALC(FRAME)            \
+	do {                                                    \
+		lng *rp, *rb, curval = 0;                           \
+		rb = rp = (lng*)Tloc(r, 0);                         \
+		if (p) {                                            \
+			np = pnp = (bit*)Tloc(p, 0);                    \
+			nend = np + cnt;                                \
+			for(; np < nend; np++) {                        \
+				if (*np) {                                  \
+					curval = np - pnp;                      \
+					rp += curval;                           \
+					ANALYTICAL_COUNT_IGNORE_NILS_IMP##FRAME \
+					pnp = np;                               \
+				}                                           \
+			}                                               \
+			curval = np - pnp;                              \
+			rp += curval;                                   \
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP##FRAME         \
+		} else {                                            \
+			curval = cnt;                                   \
+			rp += curval;                                   \
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP##FRAME         \
+		}                                                   \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP(TPE) \
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_NO_OVERLAP(TPE) \
 	do {                                                   \
 		for (;pbp < bp; pbp++)                             \
 			curval += !is_##TPE##_nil(*pbp);               \
@@ -1181,12 +1160,12 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		curval = 0;                                        \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP(TPE) \
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_ROWS(TPE)\
 	do {                                                \
 		TPE *bs, *bl, *be;                              \
 		bl = pbp;                                       \
 		for(; pbp<bp;pbp++) {                           \
-			bs = (pbp > bl+start) ? pbp - start : bl; \
+			bs = (pbp > bl+start) ? pbp - start : bl;   \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;   \
 			for(; bs<be; bs++)                          \
 				curval += !is_##TPE##_nil(*bs);         \
@@ -1196,7 +1175,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		}                                               \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(TPE, IMP) \
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(TPE, IMP)\
 	do {                                                 \
 		TPE *pbp, *bp = (TPE*)Tloc(b, 0);                \
 		lng *rp, *rb, curval = 0;                        \
@@ -1235,7 +1214,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		curval = 0;                                                   \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP(TPE_CAST, OFFSET)         \
+#define ANALYTICAL_COUNT_NO_NIL_STR_IMP_ROWS(TPE_CAST, OFFSET)            \
 	do {                                                                  \
 		m = k;                                                            \
 		for(;k<i;k++) {                                                   \
@@ -1249,7 +1228,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		}                                                                 \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_STR_IMP(TPE_CAST, OFFSET, IMP) \
+#define ANALYTICAL_COUNT_NO_NIL_STR_CALC(TPE_CAST, OFFSET, IMP)\
 	do {                                                       \
 		const void *restrict bp = Tloc(b, 0);                  \
 		lng *rp, *rb, curval = 0;                              \
@@ -1295,7 +1274,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		curval = 0;                                        \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_OVERLAP                      \
+#define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_ROWS                         \
 	do {                                                                    \
 		m = k;                                                              \
 		for(;k<i;k++) {                                                     \
@@ -1309,7 +1288,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		}                                                                   \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_OVERLAP \
+#define ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_ROWS    \
 	do {                                                \
 		m = k;                                          \
 		for(;k<i;k++) {                                 \
@@ -1323,7 +1302,7 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		}                                               \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES(IMP_VARSIZED, IMP_FIXEDSIZE) \
+#define ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC(IMP_VARSIZED, IMP_FIXEDSIZE) \
 	do {                                                                 \
 		const void *restrict nil = ATOMnilptr(tpe);                      \
 		int (*cmp)(const void *, const void *) = ATOMcompare(tpe);       \
@@ -1378,6 +1357,68 @@ ANALYTICAL_LIMIT(max, MAX, <)
 		}                                                                \
 	} while(0);
 
+#ifdef HAVE_HGE
+#define ANALYTICAL_COUNT_LIMIT(FRAME) \
+	case TYPE_hge: \
+		ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(hge, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+		break;
+#else
+#define ANALYTICAL_COUNT_LIMIT(FRAME)
+#endif
+
+#if SIZEOF_VAR_T != SIZEOF_INT
+#define ANALYTICAL_COUNT_STR_LIMIT(FRAME) \
+	case 4: \
+		ANALYTICAL_COUNT_NO_NIL_STR_CALC(const unsigned int *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
+		break;
+#else
+#define ANALYTICAL_COUNT_STR_LIMIT(FRAME)
+#endif
+
+#define ANALYTICAL_COUNT_BRANCHES(FRAME) \
+	switch (tpe) { \
+		case TYPE_bit: \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(bit, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			break; \
+		case TYPE_bte: \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(bte, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			break; \
+		case TYPE_sht: \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(sht, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			break; \
+		case TYPE_int: \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(int, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			break; \
+		case TYPE_lng: \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(lng, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			break; \
+		ANALYTICAL_COUNT_LIMIT(FRAME) \
+		case TYPE_flt: \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(flt, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			break; \
+		case TYPE_dbl: \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(dbl, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			break; \
+		case TYPE_str: { \
+			const char *restrict base = b->tvheap->base; \
+			switch (b->twidth) { \
+				case 1: \
+					ANALYTICAL_COUNT_NO_NIL_STR_CALC(const unsigned char *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
+					break; \
+				case 2: \
+					ANALYTICAL_COUNT_NO_NIL_STR_CALC(const unsigned short *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
+					break; \
+				ANALYTICAL_COUNT_STR_LIMIT(FRAME) \
+				default: \
+					ANALYTICAL_COUNT_NO_NIL_STR_CALC(const var_t *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
+					break; \
+			} \
+			break; \
+		} \
+		default: \
+			ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC(ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES##FRAME, ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES##FRAME) \
+	}
+
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe, BUN start, BUN end)
 {
@@ -1389,112 +1430,14 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	(void) o;
 	if(!*ignore_nils || b->T.nonil) {
 		if(start == 0 && end == 0) {
-			ANALYTICAL_COUNT_IGNORE_NILS_IMP(ANALYTICAL_COUNT_IGNORE_NILS_NO_OVERLAP)
+			ANALYTICAL_COUNT_IGNORE_NILS_CALC(_NO_OVERLAP)
 		} else {
-			ANALYTICAL_COUNT_IGNORE_NILS_IMP(ANALYTICAL_COUNT_IGNORE_NILS_OVERLAP)
+			ANALYTICAL_COUNT_IGNORE_NILS_CALC(_ROWS)
 		}
 	} else if(start == 0 && end == 0) {
-		switch (tpe) {
-			case TYPE_bit:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bit, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
-				break;
-			case TYPE_bte:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bte, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
-				break;
-			case TYPE_sht:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(sht, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
-				break;
-			case TYPE_int:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(int, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
-				break;
-			case TYPE_lng:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(lng, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(hge, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
-				break;
-#endif
-			case TYPE_flt:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(flt, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
-				break;
-			case TYPE_dbl:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(dbl, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP)
-				break;
-			case TYPE_str: {
-				const char *restrict base = b->tvheap->base;
-				switch (b->twidth) {
-					case 1:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned char *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP)
-						break;
-					case 2:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned short *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP)
-						break;
-#if SIZEOF_VAR_T != SIZEOF_INT
-					case 4:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned int *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP)
-						break;
-#endif
-					default:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const var_t *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP)
-						break;
-				}
-				break;
-			}
-			default:
-				ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES(ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_NO_OVERLAP, ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_NO_OVERLAP)
-		}
+		ANALYTICAL_COUNT_BRANCHES(_NO_OVERLAP)
 	} else {
-		switch (tpe) {
-			case TYPE_bit:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bit, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
-				break;
-			case TYPE_bte:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bte, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
-				break;
-			case TYPE_sht:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(sht, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
-				break;
-			case TYPE_int:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(int, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
-				break;
-			case TYPE_lng:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(lng, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(hge, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
-				break;
-#endif
-			case TYPE_flt:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(flt, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
-				break;
-			case TYPE_dbl:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(dbl, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP)
-				break;
-			case TYPE_str: {
-				const char *restrict base = b->tvheap->base;
-				switch (b->twidth) {
-					case 1:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned char *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP)
-						break;
-					case 2:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned short *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP)
-						break;
-#if SIZEOF_VAR_T != SIZEOF_INT
-					case 4:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned int *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP)
-						break;
-#endif
-					default:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const var_t *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP)
-						break;
-				}
-				break;
-			}
-			default:
-				ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES(ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_OVERLAP, ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_OVERLAP)
-		}
+		ANALYTICAL_COUNT_BRANCHES(_ROWS)
 	}
 	BATsetcount(r, cnt);
 	r->tnonil = true;
@@ -1502,22 +1445,25 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	return gdk_res;
 }
 
-#undef ANALYTICAL_COUNT_IGNORE_NILS_IMP
-#undef ANALYTICAL_COUNT_IGNORE_NILS_OVERLAP
-#undef ANALYTICAL_COUNT_IGNORE_NILS_NO_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_NO_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP
-#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_OVERLAP
+#undef ANALYTICAL_COUNT_IGNORE_NILS_CALC
+#undef ANALYTICAL_COUNT_IGNORE_NILS_IMP_ROWS
+#undef ANALYTICAL_COUNT_IGNORE_NILS_IMP_NO_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_ROWS
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_NO_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_STR_CALC
+#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_ROWS
 #undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP
+#undef ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC
 #undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_NO_OVERLAP
 #undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_NO_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES
+#undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_ROWS
+#undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_ROWS
+#undef ANALYTICAL_COUNT_LIMIT
+#undef ANALYTICAL_COUNT_STR_LIMIT
+#undef ANALYTICAL_COUNT_BRANCHES
 
-#define ANALYTICAL_SUM_NO_OVERLAP(TPE1, TPE2) \
+#define ANALYTICAL_SUM_IMP_NO_OVERLAP(TPE1, TPE2) \
 	do {                                      \
 		for(; pbp<bp; pbp++) {                \
 			v = *pbp;                         \
@@ -1536,7 +1482,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 			curval = TPE2##_nil;              \
 	} while(0);                               \
 
-#define ANALYTICAL_SUM_OVERLAP(TPE1, TPE2)            \
+#define ANALYTICAL_SUM_IMP_ROWS(TPE1, TPE2)           \
 	do {                                              \
 		TPE1 *bs, *bl, *be;                           \
 		bl = pbp;                                     \
@@ -1561,7 +1507,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_SUM_IMP(TPE1, TPE2, IMP)        \
+#define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)       \
 	do {                                           \
 		TPE1 *pbp, *bp, v;                         \
 		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
@@ -1604,7 +1550,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		goto finish;                               \
 	} while(0);
 
-#define ANALYTICAL_SUM_FP_NO_OVERLAP(TPE1, TPE2)     \
+#define ANALYTICAL_SUM_FP_IMP_NO_OVERLAP(TPE1, TPE2) \
 	do {                                             \
 		if(dofsum(pbp, 0, 0, ncnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, true, \
 				  "GDKanalyticalsum") == BUN_NONE) { \
@@ -1617,7 +1563,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 			has_nils = true;                         \
 	} while(0);
 
-#define ANALYTICAL_SUM_FP_OVERLAP(TPE1, TPE2)            \
+#define ANALYTICAL_SUM_FP_IMP_ROWS(TPE1, TPE2)           \
 	do {                                                 \
 		TPE1 *bs, *bl, *be;                              \
 		bl = pbp;                                        \
@@ -1635,6 +1581,122 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		}                                                \
 	} while(0);
 
+#ifdef HAVE_HGE
+#define ANALYTICAL_SUM_LIMIT(FRAME) \
+	case TYPE_hge: { \
+		switch (tp1) { \
+			case TYPE_bte: \
+				ANALYTICAL_SUM_CALC(bte, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				break; \
+			case TYPE_sht: \
+				ANALYTICAL_SUM_CALC(sht, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				break; \
+			case TYPE_int: \
+				ANALYTICAL_SUM_CALC(int, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				break; \
+			case TYPE_lng: \
+				ANALYTICAL_SUM_CALC(lng, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				break; \
+			case TYPE_hge: \
+				ANALYTICAL_SUM_CALC(hge, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				break; \
+			default: \
+				goto nosupport; \
+		} \
+		break; \
+	}
+#else
+#define ANALYTICAL_SUM_LIMIT(FRAME)
+#endif
+
+#define ANALYTICAL_SUM_BRANCHES(FRAME) \
+	switch (tp2) { \
+		case TYPE_bte: { \
+			switch (tp1) { \
+				case TYPE_bte: \
+					ANALYTICAL_SUM_CALC(bte, bte, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				default: \
+					goto nosupport; \
+			} \
+			break; \
+		} \
+		case TYPE_sht: { \
+			switch (tp1) { \
+				case TYPE_bte: \
+					ANALYTICAL_SUM_CALC(bte, sht, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				case TYPE_sht: \
+					ANALYTICAL_SUM_CALC(sht, sht, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				default: \
+					goto nosupport; \
+			} \
+			break; \
+		} \
+		case TYPE_int: { \
+			switch (tp1) { \
+				case TYPE_bte: \
+					ANALYTICAL_SUM_CALC(bte, int, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				case TYPE_sht: \
+					ANALYTICAL_SUM_CALC(sht, int, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				case TYPE_int: \
+					ANALYTICAL_SUM_CALC(int, int, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				default: \
+					goto nosupport; \
+			} \
+			break; \
+		} \
+		case TYPE_lng: { \
+			switch (tp1) { \
+				case TYPE_bte: \
+					ANALYTICAL_SUM_CALC(bte, lng, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				case TYPE_sht: \
+					ANALYTICAL_SUM_CALC(sht, lng, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				case TYPE_int: \
+					ANALYTICAL_SUM_CALC(int, lng, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				case TYPE_lng: \
+					ANALYTICAL_SUM_CALC(lng, lng, ANALYTICAL_SUM_IMP##FRAME); \
+					break; \
+				default: \
+					goto nosupport; \
+			} \
+			break; \
+		} \
+		ANALYTICAL_SUM_LIMIT(FRAME) \
+		case TYPE_flt: { \
+			switch (tp1) { \
+				case TYPE_flt: \
+					ANALYTICAL_SUM_CALC(flt, flt, ANALYTICAL_SUM_FP_IMP##FRAME); \
+					break; \
+				default: \
+					goto nosupport; \
+					break; \
+			} \
+		} \
+		case TYPE_dbl: { \
+			switch (tp1) { \
+				case TYPE_flt: \
+					ANALYTICAL_SUM_CALC(flt, dbl, ANALYTICAL_SUM_FP_IMP##FRAME); \
+					break; \
+				case TYPE_dbl: \
+					ANALYTICAL_SUM_CALC(dbl, dbl, ANALYTICAL_SUM_FP_IMP##FRAME); \
+					break; \
+				default: \
+					goto nosupport; \
+					break; \
+			} \
+		} \
+		default: \
+			goto nosupport; \
+	}
+
 gdk_return
 GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2, BUN start, BUN end)
 {
@@ -1644,225 +1706,9 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int t
 	int abort_on_error = 1;
 
 	if(start == 0 && end == 0) {
-		switch (tp2) {
-			case TYPE_bte: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, bte, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_sht: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, sht, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_SUM_IMP(sht, sht, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_int: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, int, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_SUM_IMP(sht, int, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_SUM_IMP(int, int, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_lng: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, lng, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_SUM_IMP(sht, lng, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_SUM_IMP(int, lng, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_SUM_IMP(lng, lng, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#ifdef HAVE_HGE
-			case TYPE_hge: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, hge, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_SUM_IMP(sht, hge, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_SUM_IMP(int, hge, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_SUM_IMP(lng, hge, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					case TYPE_hge:
-						ANALYTICAL_SUM_IMP(hge, hge, ANALYTICAL_SUM_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#endif
-			case TYPE_flt: {
-				switch (tp1) {
-					case TYPE_flt:
-						ANALYTICAL_SUM_IMP(flt, flt, ANALYTICAL_SUM_FP_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-						break;
-				}
-			}
-			case TYPE_dbl: {
-				switch (tp1) {
-					case TYPE_flt:
-						ANALYTICAL_SUM_IMP(flt, dbl, ANALYTICAL_SUM_FP_NO_OVERLAP);
-						break;
-					case TYPE_dbl:
-						ANALYTICAL_SUM_IMP(dbl, dbl, ANALYTICAL_SUM_FP_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-						break;
-				}
-			}
-			default:
-				goto nosupport;
-		}
+		ANALYTICAL_SUM_BRANCHES(_NO_OVERLAP)
 	} else {
-		switch (tp2) {
-			case TYPE_bte: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, bte, ANALYTICAL_SUM_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_sht: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, sht, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_SUM_IMP(sht, sht, ANALYTICAL_SUM_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_int: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, int, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_SUM_IMP(sht, int, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_SUM_IMP(int, int, ANALYTICAL_SUM_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_lng: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, lng, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_SUM_IMP(sht, lng, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_SUM_IMP(int, lng, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_SUM_IMP(lng, lng, ANALYTICAL_SUM_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#ifdef HAVE_HGE
-			case TYPE_hge: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_SUM_IMP(bte, hge, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_SUM_IMP(sht, hge, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_SUM_IMP(int, hge, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_SUM_IMP(lng, hge, ANALYTICAL_SUM_OVERLAP);
-						break;
-					case TYPE_hge:
-						ANALYTICAL_SUM_IMP(hge, hge, ANALYTICAL_SUM_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#endif
-			case TYPE_flt: {
-				switch (tp1) {
-					case TYPE_flt:
-						ANALYTICAL_SUM_IMP(flt, flt, ANALYTICAL_SUM_FP_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-						break;
-				}
-			}
-			case TYPE_dbl: {
-				switch (tp1) {
-					case TYPE_flt:
-						ANALYTICAL_SUM_IMP(flt, dbl, ANALYTICAL_SUM_FP_OVERLAP);
-						break;
-					case TYPE_dbl:
-						ANALYTICAL_SUM_IMP(dbl, dbl, ANALYTICAL_SUM_FP_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-						break;
-				}
-			}
-			default:
-				goto nosupport;
-		}
+		ANALYTICAL_SUM_BRANCHES(_ROWS)
 	}
 bailout:
 	GDKerror("error while calculating floating-point sum\n");
@@ -1880,11 +1726,13 @@ finish:
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_SUM_IMP
-#undef ANALYTICAL_SUM_NO_OVERLAP
-#undef ANALYTICAL_SUM_OVERLAP
-#undef ANALYTICAL_SUM_FP_NO_OVERLAP
-#undef ANALYTICAL_SUM_FP_OVERLAP
+#undef ANALYTICAL_SUM_CALC
+#undef ANALYTICAL_SUM_IMP_NO_OVERLAP
+#undef ANALYTICAL_SUM_IMP_ROWS
+#undef ANALYTICAL_SUM_FP_IMP_NO_OVERLAP
+#undef ANALYTICAL_SUM_FP_IMP_ROWS
+#undef ANALYTICAL_SUM_BRANCHES
+#undef ANALYTICAL_SUM_LIMIT
 
 #define ANALYTICAL_PROD_IMP_NO_OVERLAP(TPE1, TPE2, TPE3) \
 	do {                                                 \
@@ -1905,7 +1753,7 @@ finish:
 			curval = TPE2##_nil;                         \
 	} while (0);
 
-#define ANALYTICAL_PROD_IMP_OVERLAP(TPE1, TPE2, TPE3) \
+#define ANALYTICAL_PROD_IMP_ROWS(TPE1, TPE2, TPE3)    \
 	do {                                              \
 		TPE1 *bs, *bl, *be;                           \
 		bl = pbp;                                     \
@@ -1931,7 +1779,7 @@ finish:
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_PROD_IMP(TPE1, TPE2, TPE3, IMP) \
+#define ANALYTICAL_PROD_CALC(TPE1, TPE2, TPE3, IMP)\
 	do {                                           \
 		TPE1 *pbp, *bp, v;                         \
 		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
@@ -1961,7 +1809,7 @@ finish:
 			rp += ncnt;                            \
 			IMP(TPE1, TPE2, TPE3)                  \
 		} else {                                   \
-			for(; rb<rend; rb++, bp++)  {          \
+			for(; rb<rend; rb++, bp++) {           \
 				v = *bp;                           \
 				if(is_##TPE1##_nil(v)) {           \
 					*rb = TPE2##_nil;              \
@@ -1993,7 +1841,7 @@ finish:
 			curval = TPE2##_nil;                                   \
 	} while (0);
 
-#define ANALYTICAL_PROD_IMP_LIMIT_OVERLAP(TPE1, TPE2, REAL_IMP) \
+#define ANALYTICAL_PROD_IMP_LIMIT_ROWS(TPE1, TPE2, REAL_IMP)    \
 	do {                                                        \
 		TPE1 *bs, *bl, *be;                                     \
 		bl = pbp;                                               \
@@ -2018,7 +1866,7 @@ finish:
 		}                                                       \
 	} while(0);
 
-#define ANALYTICAL_PROD_IMP_LIMIT(TPE1, TPE2, IMP, REAL_IMP) \
+#define ANALYTICAL_PROD_CALC_LIMIT(TPE1, TPE2, IMP, REAL_IMP)\
 	do {                                                     \
 		TPE1 *pbp, *bp, v;                                   \
 		TPE2 *rp, *rb, *rend, curval = TPE2##_nil;           \
@@ -2048,7 +1896,7 @@ finish:
 			rp += ncnt;                                      \
 			IMP(TPE1, TPE2, REAL_IMP)                        \
 		} else {                                             \
-			for(; rp<rend; rp++, bp++)  {                    \
+			for(; rp<rend; rp++, bp++) {                     \
 				v = *bp;                                     \
 				if(is_##TPE1##_nil(v)) {                     \
 					*rp = TPE2##_nil;                        \
@@ -2092,7 +1940,7 @@ finish:
 			curval = TPE2##_nil;                            \
 	} while (0);
 
-#define ANALYTICAL_PROD_IMP_FP_OVERLAP(TPE1, TPE2)              \
+#define ANALYTICAL_PROD_IMP_FP_ROWS(TPE1, TPE2)                 \
 	do {                                                        \
 		TPE1 *bs, *bl, *be;                                     \
 		bl = pbp;                                               \
@@ -2117,7 +1965,7 @@ finish:
 		}                                                       \
 	} while(0);
 
-#define ANALYTICAL_PROD_IMP_FP(TPE1, TPE2, IMP)    \
+#define ANALYTICAL_PROD_CALC_FP(TPE1, TPE2, IMP)   \
 	do {                                           \
 		TPE1 *pbp, *bp, v;                         \
 		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
@@ -2160,6 +2008,141 @@ finish:
 		goto finish;                               \
 	} while(0);
 
+#ifdef HAVE_HGE
+#define ANALYTICAL_PROD_LIMIT(FRAME) \
+	case TYPE_lng: { \
+		switch (tp1) { \
+			case TYPE_bte: \
+				ANALYTICAL_PROD_CALC(bte, lng, hge, ANALYTICAL_PROD_IMP##FRAME); \
+				break; \
+			case TYPE_sht: \
+				ANALYTICAL_PROD_CALC(sht, lng, hge, ANALYTICAL_PROD_IMP##FRAME); \
+				break; \
+			case TYPE_int: \
+				ANALYTICAL_PROD_CALC(int, lng, hge, ANALYTICAL_PROD_IMP##FRAME); \
+				break; \
+			case TYPE_lng: \
+				ANALYTICAL_PROD_CALC(lng, lng, hge, ANALYTICAL_PROD_IMP##FRAME); \
+				break; \
+			default: \
+				goto nosupport; \
+		} \
+		break; \
+	} \
+	case TYPE_hge: { \
+		switch (tp1) { \
+			case TYPE_bte: \
+				ANALYTICAL_PROD_CALC_LIMIT(bte, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				break; \
+			case TYPE_sht: \
+				ANALYTICAL_PROD_CALC_LIMIT(sht, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				break; \
+			case TYPE_int: \
+				ANALYTICAL_PROD_CALC_LIMIT(int, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				break; \
+			case TYPE_lng: \
+				ANALYTICAL_PROD_CALC_LIMIT(lng, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				break; \
+			case TYPE_hge: \
+				ANALYTICAL_PROD_CALC_LIMIT(hge, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				break; \
+			default: \
+				goto nosupport; \
+		} \
+		break; \
+	}
+#else
+#define ANALYTICAL_PROD_LIMIT(FRAME) \
+	case TYPE_lng: { \
+		switch (tp1) { \
+			case TYPE_bte: \
+				ANALYTICAL_PROD_CALC_LIMIT(bte, lng, ANALYTICAL_PROD_IMP_LIMIT##FRAME, LNGMUL_CHECK); \
+				break; \
+			case TYPE_sht: \
+				ANALYTICAL_PROD_CALC_LIMIT(sht, lng, ANALYTICAL_PROD_IMP_LIMIT##FRAME, LNGMUL_CHECK); \
+				break; \
+			case TYPE_int: \
+				ANALYTICAL_PROD_CALC_LIMIT(int, lng, ANALYTICAL_PROD_IMP_LIMIT##FRAME, LNGMUL_CHECK); \
+				break; \
+			case TYPE_lng: \
+				ANALYTICAL_PROD_CALC_LIMIT(lng, lng, ANALYTICAL_PROD_IMP_LIMIT##FRAME, LNGMUL_CHECK); \
+				break; \
+			default: \
+				goto nosupport; \
+		} \
+		break; \
+	}
+#endif
+
+#define ANALYTICAL_PROD_BRANCHES(FRAME) \
+		switch (tp2) { \
+			case TYPE_bte: { \
+				switch (tp1) { \
+					case TYPE_bte: \
+						ANALYTICAL_PROD_CALC(bte, bte, sht, ANALYTICAL_PROD_IMP##FRAME); \
+						break; \
+					default: \
+						goto nosupport; \
+				} \
+				break; \
+			} \
+			case TYPE_sht: { \
+				switch (tp1) { \
+					case TYPE_bte: \
+						ANALYTICAL_PROD_CALC(bte, sht, int, ANALYTICAL_PROD_IMP##FRAME); \
+						break; \
+					case TYPE_sht: \
+						ANALYTICAL_PROD_CALC(sht, sht, int, ANALYTICAL_PROD_IMP##FRAME); \
+						break; \
+					default: \
+						goto nosupport; \
+				} \
+				break; \
+			} \
+			case TYPE_int: { \
+				switch (tp1) { \
+					case TYPE_bte: \
+						ANALYTICAL_PROD_CALC(bte, int, lng, ANALYTICAL_PROD_IMP##FRAME); \
+						break; \
+					case TYPE_sht: \
+						ANALYTICAL_PROD_CALC(sht, int, lng, ANALYTICAL_PROD_IMP##FRAME); \
+						break; \
+					case TYPE_int: \
+						ANALYTICAL_PROD_CALC(int, int, lng, ANALYTICAL_PROD_IMP##FRAME); \
+						break; \
+					default: \
+						goto nosupport; \
+				} \
+				break; \
+			} \
+			ANALYTICAL_PROD_LIMIT(FRAME) \
+			case TYPE_flt: { \
+				switch (tp1) { \
+					case TYPE_flt: \
+						ANALYTICAL_PROD_CALC_FP(flt, flt, ANALYTICAL_PROD_IMP_FP##FRAME); \
+						break; \
+					default: \
+						goto nosupport; \
+						break; \
+				} \
+			} \
+			case TYPE_dbl: { \
+				switch (tp1) { \
+					case TYPE_flt: \
+						ANALYTICAL_PROD_CALC_FP(flt, dbl, ANALYTICAL_PROD_IMP_FP##FRAME); \
+						break; \
+					case TYPE_dbl: \
+						ANALYTICAL_PROD_CALC_FP(dbl, dbl, ANALYTICAL_PROD_IMP_FP##FRAME); \
+						break; \
+					default: \
+						goto nosupport; \
+						break; \
+				} \
+			} \
+			default: \
+				goto nosupport; \
+		}
+
 gdk_return
 GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2, BUN start, BUN end)
 {
@@ -2169,265 +2152,9 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int 
 	int abort_on_error = 1;
 
 	if(start == 0 && end == 0) {
-		switch (tp2) {
-			case TYPE_bte: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP(bte, bte, sht, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_sht: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP(bte, sht, int, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP(sht, sht, int, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_int: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP(bte, int, lng, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP(sht, int, lng, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_PROD_IMP(int, int, lng, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#ifdef HAVE_HGE
-			case TYPE_lng: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP(bte, lng, hge, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP(sht, lng, hge, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_PROD_IMP(int, lng, hge, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_PROD_IMP(lng, lng, hge, ANALYTICAL_PROD_IMP_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_hge: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP_LIMIT(bte, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP_LIMIT(sht, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
-						break;
-					case TYPE_int:
-						ANALYTICAL_PROD_IMP_LIMIT(int, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_PROD_IMP_LIMIT(lng, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
-						break;
-					case TYPE_hge:
-						ANALYTICAL_PROD_IMP_LIMIT(hge, hge, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, HGEMUL_CHECK);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#else
-			case TYPE_lng: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP_LIMIT(bte, lng, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, LNGMUL_CHECK);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP_LIMIT(sht, lng, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, LNGMUL_CHECK);
-						break;
-					case TYPE_int:
-						ANALYTICAL_PROD_IMP_LIMIT(int, lng, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, LNGMUL_CHECK);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_PROD_IMP_LIMIT(lng, lng, ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP, LNGMUL_CHECK);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#endif
-			case TYPE_flt: {
-				switch (tp1) {
-					case TYPE_flt:
-						ANALYTICAL_PROD_IMP_FP(flt, flt, ANALYTICAL_PROD_IMP_FP_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-						break;
-				}
-			}
-			case TYPE_dbl: {
-				switch (tp1) {
-					case TYPE_flt:
-						ANALYTICAL_PROD_IMP_FP(flt, dbl, ANALYTICAL_PROD_IMP_FP_NO_OVERLAP);
-						break;
-					case TYPE_dbl:
-						ANALYTICAL_PROD_IMP_FP(dbl, dbl, ANALYTICAL_PROD_IMP_FP_NO_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-						break;
-				}
-			}
-			default:
-				goto nosupport;
-		}
+		ANALYTICAL_PROD_BRANCHES(_NO_OVERLAP)
 	} else {
-		switch (tp2) {
-			case TYPE_bte: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP(bte, bte, sht, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_sht: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP(bte, sht, int, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP(sht, sht, int, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_int: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP(bte, int, lng, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP(sht, int, lng, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_PROD_IMP(int, int, lng, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#ifdef HAVE_HGE
-			case TYPE_lng: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP(bte, lng, hge, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP(sht, lng, hge, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					case TYPE_int:
-						ANALYTICAL_PROD_IMP(int, lng, hge, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_PROD_IMP(lng, lng, hge, ANALYTICAL_PROD_IMP_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-			case TYPE_hge: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP_LIMIT(bte, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP_LIMIT(sht, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
-						break;
-					case TYPE_int:
-						ANALYTICAL_PROD_IMP_LIMIT(int, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_PROD_IMP_LIMIT(lng, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
-						break;
-					case TYPE_hge:
-						ANALYTICAL_PROD_IMP_LIMIT(hge, hge, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, HGEMUL_CHECK);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#else
-			case TYPE_lng: {
-				switch (tp1) {
-					case TYPE_bte:
-						ANALYTICAL_PROD_IMP_LIMIT(bte, lng, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, LNGMUL_CHECK);
-						break;
-					case TYPE_sht:
-						ANALYTICAL_PROD_IMP_LIMIT(sht, lng, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, LNGMUL_CHECK);
-						break;
-					case TYPE_int:
-						ANALYTICAL_PROD_IMP_LIMIT(int, lng, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, LNGMUL_CHECK);
-						break;
-					case TYPE_lng:
-						ANALYTICAL_PROD_IMP_LIMIT(lng, lng, ANALYTICAL_PROD_IMP_LIMIT_OVERLAP, LNGMUL_CHECK);
-						break;
-					default:
-						goto nosupport;
-				}
-				break;
-			}
-#endif
-			case TYPE_flt: {
-				switch (tp1) {
-					case TYPE_flt:
-						ANALYTICAL_PROD_IMP_FP(flt, flt, ANALYTICAL_PROD_IMP_FP_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-						break;
-				}
-			}
-			case TYPE_dbl: {
-				switch (tp1) {
-					case TYPE_flt:
-						ANALYTICAL_PROD_IMP_FP(flt, dbl, ANALYTICAL_PROD_IMP_FP_OVERLAP);
-						break;
-					case TYPE_dbl:
-						ANALYTICAL_PROD_IMP_FP(dbl, dbl, ANALYTICAL_PROD_IMP_FP_OVERLAP);
-						break;
-					default:
-						goto nosupport;
-						break;
-				}
-			}
-			default:
-				goto nosupport;
-		}
+		ANALYTICAL_PROD_BRANCHES(_ROWS)
 	}
 nosupport:
 	GDKerror("prod: type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
@@ -2442,24 +2169,25 @@ finish:
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_PROD_IMP_OVERLAP
+#undef ANALYTICAL_PROD_IMP_ROWS
 #undef ANALYTICAL_PROD_IMP_NO_OVERLAP
-#undef ANALYTICAL_PROD_IMP
-#undef ANALYTICAL_PROD_IMP_LIMIT_OVERLAP
+#undef ANALYTICAL_PROD_CALC
+#undef ANALYTICAL_PROD_IMP_LIMIT_ROWS
 #undef ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP
-#undef ANALYTICAL_PROD_IMP_LIMIT
-#undef ANALYTICAL_PROD_IMP_FP_OVERLAP
+#undef ANALYTICAL_PROD_CALC_LIMIT
+#undef ANALYTICAL_PROD_IMP_FP_ROWS
 #undef ANALYTICAL_PROD_IMP_FP_NO_OVERLAP
-#undef ANALYTICAL_PROD_IMP_FP
+#undef ANALYTICAL_PROD_CALC_FP
 #undef ANALYTICAL_PROD_IMP_FP_REAL
+#undef ANALYTICAL_PROD_BRANCHES
+#undef ANALYTICAL_PROD_LIMIT
 
-#define ANALYTICAL_AVERAGE_NO_OVERLAP(TPE,lng_hge,LABEL)      \
+#define ANALYTICAL_AVERAGE_IMP_NO_OVERLAP(TPE,lng_hge,LABEL)  \
 	do {                                                      \
 		for(; pbp<bp; pbp++) {                                \
 			v = *pbp;                                         \
 			if (!is_##TPE##_nil(v)) {                         \
-				ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, \
-							   sum, GDK_##lng_hge##_max,      \
+				ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, sum, GDK_##lng_hge##_max, \
 							   goto avg_overflow##TPE##LABEL##no_overlap); \
 				/* count only when no overflow occurs */      \
 				n++;                                          \
@@ -2498,7 +2226,7 @@ calc_done##TPE##LABEL##no_overlap:                            \
 		sum = 0;                                              \
 	} while(0);
 
-#define ANALYTICAL_AVERAGE_OVERLAP(TPE,lng_hge,LABEL)             \
+#define ANALYTICAL_AVERAGE_IMP_ROWS(TPE,lng_hge,LABEL)            \
 	do {                                                          \
 		TPE *bs, *bl, *be;                                        \
 		bl = pbp;                                                 \
@@ -2508,15 +2236,14 @@ calc_done##TPE##LABEL##no_overlap:                            \
 			for(; bs<be; bs++) {                                  \
 				v = *bs;                                          \
 				if (!is_##TPE##_nil(v)) {                         \
-					ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, \
-								   sum, GDK_##lng_hge##_max,      \
-								   goto avg_overflow##TPE##LABEL##overlap); \
+					ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, sum, GDK_##lng_hge##_max, \
+								   goto avg_overflow##TPE##LABEL##rows); \
 					/* count only when no overflow occurs */      \
 					n++;                                          \
 				}                                                 \
 			}                                                     \
 			if(0) {                                               \
-avg_overflow##TPE##LABEL##overlap:                                \
+avg_overflow##TPE##LABEL##rows:                                   \
 				assert(n > 0);                                    \
 				if (sum >= 0) {                                   \
 					a = (TPE) (sum / (lng_hge) n);                \
@@ -2537,10 +2264,10 @@ avg_overflow##TPE##LABEL##overlap:                                \
 					AVERAGE_ITER(TPE, v, a, rr, n);               \
 				}                                                 \
 				curval = a + (dbl) rr / n;                        \
-				goto calc_done##TPE##LABEL##overlap;              \
+				goto calc_done##TPE##LABEL##rows;                 \
 			}                                                     \
 			curval = n > 0 ? (dbl) sum / n : dbl_nil;             \
-calc_done##TPE##LABEL##overlap:                                   \
+calc_done##TPE##LABEL##rows:                                      \
 			has_nils = has_nils || (n == 0);                      \
 			*rb = curval;                                         \
 			rb++;                                                 \
@@ -2592,12 +2319,12 @@ calc_done##TPE##LABEL##overlap:                                   \
 	} while(0);
 
 #ifdef HAVE_HGE
-#define ANALYTICAL_AVERAGE(TYPE,IMP) ANALYTICAL_AVERAGE_LNG_HGE(TYPE,hge,IMP)
+#define ANALYTICAL_AVERAGE_CALC(TYPE,IMP) ANALYTICAL_AVERAGE_LNG_HGE(TYPE,hge,IMP)
 #else
-#define ANALYTICAL_AVERAGE(TYPE,IMP) ANALYTICAL_AVERAGE_LNG_HGE(TYPE,lng,IMP)
+#define ANALYTICAL_AVERAGE_CALC(TYPE,IMP) ANALYTICAL_AVERAGE_LNG_HGE(TYPE,lng,IMP)
 #endif
 
-#define ANALYTICAL_AVERAGE_FLOAT_NO_OVERLAP(TPE)  \
+#define ANALYTICAL_AVERAGE_FLOAT_IMP_NO_OVERLAP(TPE) \
 	do {                                          \
 		for(; pbp<bp; pbp++) {                    \
 			v = *pbp;                             \
@@ -2612,7 +2339,7 @@ calc_done##TPE##LABEL##overlap:                                   \
 		a = 0;                                    \
 	} while(0);
 
-#define ANALYTICAL_AVERAGE_FLOAT_OVERLAP(TPE)         \
+#define ANALYTICAL_AVERAGE_FLOAT_IMP_ROWS(TPE)        \
 	do {                                              \
 		TPE *bs, *bl, *be;                            \
 		bl = pbp;                                     \
@@ -2633,7 +2360,7 @@ calc_done##TPE##LABEL##overlap:                                   \
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_AVERAGE_FLOAT(TPE, IMP) \
+#define ANALYTICAL_AVERAGE_CALC_FLOAT(TPE, IMP) \
 	do {                                   \
 		TPE *pbp, *bp, v;                  \
 		dbl *rp, *rb, a = 0;               \
@@ -2674,6 +2401,41 @@ calc_done##TPE##LABEL##overlap:                                   \
 		goto finish;                       \
 	} while(0);
 
+#ifdef HAVE_HGE
+#define ANALYTICAL_AVERAGE_LIMIT(FRAME) \
+	case TYPE_hge: \
+		ANALYTICAL_AVERAGE_CALC(hge, ANALYTICAL_AVERAGE_IMP##FRAME); \
+		break;
+#else
+#define ANALYTICAL_AVERAGE_LIMIT(FRAME)
+#endif
+
+#define ANALYTICAL_AVERAGE_BRANCHES(FRAME) \
+	switch (tpe) { \
+		case TYPE_bte: \
+			ANALYTICAL_AVERAGE_CALC(bte, ANALYTICAL_AVERAGE_IMP##FRAME); \
+			break; \
+		case TYPE_sht: \
+			ANALYTICAL_AVERAGE_CALC(sht, ANALYTICAL_AVERAGE_IMP##FRAME); \
+			break; \
+		case TYPE_int: \
+			ANALYTICAL_AVERAGE_CALC(int, ANALYTICAL_AVERAGE_IMP##FRAME); \
+			break; \
+		case TYPE_lng: \
+			ANALYTICAL_AVERAGE_CALC(lng, ANALYTICAL_AVERAGE_IMP##FRAME); \
+			break; \
+		ANALYTICAL_AVERAGE_LIMIT(FRAME) \
+		case TYPE_flt: \
+			ANALYTICAL_AVERAGE_CALC_FLOAT(flt, ANALYTICAL_AVERAGE_FLOAT_IMP##FRAME); \
+			break; \
+		case TYPE_dbl: \
+			ANALYTICAL_AVERAGE_CALC_FLOAT(dbl, ANALYTICAL_AVERAGE_FLOAT_IMP##FRAME); \
+			break; \
+		default: \
+			GDKerror("GDKanalyticalavg: average of type %s unsupported.\n", ATOMname(tpe)); \
+			return GDK_FAIL; \
+	}
+
 gdk_return
 GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, BUN start, BUN end)
 {
@@ -2689,63 +2451,9 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, BUN s
 #endif
 
 	if(start == 0 && end == 0) {
-		switch (tpe) {
-			case TYPE_bte:
-				ANALYTICAL_AVERAGE(bte, ANALYTICAL_AVERAGE_NO_OVERLAP);
-				break;
-			case TYPE_sht:
-				ANALYTICAL_AVERAGE(sht, ANALYTICAL_AVERAGE_NO_OVERLAP);
-				break;
-			case TYPE_int:
-				ANALYTICAL_AVERAGE(int, ANALYTICAL_AVERAGE_NO_OVERLAP);
-				break;
-			case TYPE_lng:
-				ANALYTICAL_AVERAGE(lng, ANALYTICAL_AVERAGE_NO_OVERLAP);
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				ANALYTICAL_AVERAGE(hge, ANALYTICAL_AVERAGE_NO_OVERLAP);
-				break;
-#endif
-			case TYPE_flt:
-				ANALYTICAL_AVERAGE_FLOAT(flt, ANALYTICAL_AVERAGE_FLOAT_NO_OVERLAP);
-				break;
-			case TYPE_dbl:
-				ANALYTICAL_AVERAGE_FLOAT(dbl, ANALYTICAL_AVERAGE_FLOAT_NO_OVERLAP);
-				break;
-			default:
-				GDKerror("GDKanalyticalavg: average of type %s unsupported.\n", ATOMname(tpe));
-				return GDK_FAIL;
-		}
+		ANALYTICAL_AVERAGE_BRANCHES(_NO_OVERLAP)
 	} else {
-		switch (tpe) {
-			case TYPE_bte:
-				ANALYTICAL_AVERAGE(bte, ANALYTICAL_AVERAGE_OVERLAP);
-				break;
-			case TYPE_sht:
-				ANALYTICAL_AVERAGE(sht, ANALYTICAL_AVERAGE_OVERLAP);
-				break;
-			case TYPE_int:
-				ANALYTICAL_AVERAGE(int, ANALYTICAL_AVERAGE_OVERLAP);
-				break;
-			case TYPE_lng:
-				ANALYTICAL_AVERAGE(lng, ANALYTICAL_AVERAGE_OVERLAP);
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				ANALYTICAL_AVERAGE(hge, ANALYTICAL_AVERAGE_OVERLAP);
-				break;
-#endif
-			case TYPE_flt:
-				ANALYTICAL_AVERAGE_FLOAT(flt, ANALYTICAL_AVERAGE_FLOAT_OVERLAP);
-				break;
-			case TYPE_dbl:
-				ANALYTICAL_AVERAGE_FLOAT(dbl, ANALYTICAL_AVERAGE_FLOAT_OVERLAP);
-				break;
-			default:
-				GDKerror("GDKanalyticalavg: average of type %s unsupported.\n", ATOMname(tpe));
-				return GDK_FAIL;
-		}
+		ANALYTICAL_AVERAGE_BRANCHES(_ROWS)
 	}
 finish:
 	BATsetcount(r, cnt);
@@ -2754,10 +2462,12 @@ finish:
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_AVERAGE
+#undef ANALYTICAL_AVERAGE_CALC
 #undef ANALYTICAL_AVERAGE_LNG_HGE
-#undef ANALYTICAL_AVERAGE_OVERLAP
-#undef ANALYTICAL_AVERAGE_NO_OVERLAP
-#undef ANALYTICAL_AVERAGE_FLOAT
-#undef ANALYTICAL_AVERAGE_FLOAT_OVERLAP
-#undef ANALYTICAL_AVERAGE_FLOAT_NO_OVERLAP
+#undef ANALYTICAL_AVERAGE_IMP_ROWS
+#undef ANALYTICAL_AVERAGE_IMP_NO_OVERLAP
+#undef ANALYTICAL_AVERAGE_CALC_FLOAT
+#undef ANALYTICAL_AVERAGE_FLOAT_IMP_ROWS
+#undef ANALYTICAL_AVERAGE_FLOAT_IMP_NO_OVERLAP
+#undef ANALYTICAL_AVERAGE_BRANCHES
+#undef ANALYTICAL_AVERAGE_LIMIT
