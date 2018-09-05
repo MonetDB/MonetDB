@@ -726,7 +726,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %defattr(-,root,root)
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
-%dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
+%dir %attr(755,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
