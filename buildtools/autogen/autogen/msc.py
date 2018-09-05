@@ -326,13 +326,11 @@ def msc_dep(fd, tar, deplist, msc):
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
         of = b + '.' + de
-        of = msc_translate_file(of, msc)
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
     if ext == "tab.c":
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
         of = b + '.' + de
-        of = msc_translate_file(of, msc)
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
     if ext == "yy.c":
         fd.write(getsrc)
