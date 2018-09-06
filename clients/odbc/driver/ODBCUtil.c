@@ -143,7 +143,7 @@ ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 	j = 0;
 	while (j < length) {
 		if (src[j] <= 0x7F) {
-			dest[i++] = src[j];
+			dest[i++] = (SQLCHAR) src[j];
 		} else if (src[j] <= 0x7FF) {
 			dest[i++] = 0xC0 | (src[j] >> 6);
 			dest[i++] = 0x80 | (src[j] & 0x3F);
@@ -295,7 +295,7 @@ ODBCutf82wchar(const SQLCHAR *src,
 		}
 	}
 	if (buflenout)
-		*buflenout = i;
+		*buflenout = (SQLSMALLINT) i;
 	return NULL;
 }
 
