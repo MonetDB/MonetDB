@@ -1873,7 +1873,8 @@ ODBCFetch(ODBCStmt *stmt,
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
 
-			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS, (SQLWCHAR *) origptr, origbuflen, &n);
+			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
+				       (SQLWCHAR *) origptr, origbuflen, &n);
 #ifdef ODBCDEBUG
 			ODBCLOG("Writing %d bytes to %p\n",
 				(int) (n * sizeof(SQLWCHAR)),

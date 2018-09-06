@@ -2887,74 +2887,53 @@ strEpilogue(void *ret)
 		}										\
 	} while (0)
 
-/* Get the first char in (X2), and #bytes it takes */
-#define UTF8_GETCHAR_SZ(X1, SZ, X2)				\
-	do {										\
-		if ((*(X2) & 0x80) == 0) {				\
-			(X1) = *(X2)++;						\
-			(SZ) = 1;							\
-		} else if ((*(X2) & 0xE0) == 0xC0) {	\
-			(X1)  = (*(X2)++ & 0x1F) << 6;		\
-			(X1) |= (*(X2)++ & 0x3F);			\
-			(SZ) = 2;							\
-		} else if ((*(X2) & 0xF0) == 0xE0) {	\
-			(X1)  = (*(X2)++ & 0x0F) << 12;		\
-			(X1) |= (*(X2)++ & 0x3F) << 6;		\
-			(X1) |= (*(X2)++ & 0x3F);			\
-			(SZ) = 3;							\
-		} else if ((*(X2) & 0xF8) == 0xF0) {	\
-			(X1)  = (*(X2)++ & 0x07) << 18;		\
-			(X1) |= (*(X2)++ & 0x3F) << 12;		\
-			(X1) |= (*(X2)++ & 0x3F) << 6;		\
-			(X1) |= (*(X2)++ & 0x3F);			\
-			(SZ) = 4;							\
-		} else {								\
-			(X1) = int_nil;						\
-			(SZ) = 0;							\
-		}										\
+#define UTF8_GETCHAR(X1, X2)											\
+	do {																\
+		if ((*(X2) & 0x80) == 0) {										\
+			(X1) = *(X2)++;												\
+		} else if ((*(X2) & 0xE0) == 0xC0) {							\
+			(X1)  = (*(X2)++ & 0x1F) << 6;								\
+			(X1) |= (*(X2)++ & 0x3F);									\
+		} else if ((*(X2) & 0xF0) == 0xE0) {							\
+			(X1)  = (*(X2)++ & 0x0F) << 12;								\
+			(X1) |= (*(X2)++ & 0x3F) << 6;								\
+			(X1) |= (*(X2)++ & 0x3F);									\
+		} else if ((*(X2) & 0xF8) == 0xF0) {							\
+			(X1)  = (*(X2)++ & 0x07) << 18;								\
+			(X1) |= (*(X2)++ & 0x3F) << 12;								\
+			(X1) |= (*(X2)++ & 0x3F) << 6;								\
+			(X1) |= (*(X2)++ & 0x3F);									\
+			if ((X1) > 0x10FFFF || ((X1) & 0x1FF800) == 0xD800)			\
+				goto illegal;											\
+		} else {														\
+			(X1) = int_nil;												\
+		}																\
 	} while (0)
 
-#define UTF8_GETCHAR(X1, X2)					\
-	do {										\
-		if ((*(X2) & 0x80) == 0) {				\
-			(X1) = *(X2)++;						\
-		} else if ((*(X2) & 0xE0) == 0xC0) {	\
-			(X1)  = (*(X2)++ & 0x1F) << 6;		\
-			(X1) |= (*(X2)++ & 0x3F);			\
-		} else if ((*(X2) & 0xF0) == 0xE0) {	\
-			(X1)  = (*(X2)++ & 0x0F) << 12;		\
-			(X1) |= (*(X2)++ & 0x3F) << 6;		\
-			(X1) |= (*(X2)++ & 0x3F);			\
-		} else if ((*(X2) & 0xF8) == 0xF0) {	\
-			(X1)  = (*(X2)++ & 0x07) << 18;		\
-			(X1) |= (*(X2)++ & 0x3F) << 12;		\
-			(X1) |= (*(X2)++ & 0x3F) << 6;		\
-			(X1) |= (*(X2)++ & 0x3F);			\
-		} else {								\
-			(X1) = int_nil;						\
-		}										\
+#define UTF8_PUTCHAR(X1, X2)											\
+	do {																\
+		if ((X1) < 0 || (X1) > 0x10FFFF || ((X1) & 0x1FF800) == 0xD800) { \
+			goto illegal;												\
+		} else if ((X1) <= 0x7F) {										\
+			*(X2)++ = (X1);												\
+		} else if ((X1) <= 0x7FF) {										\
+			*(X2)++ = 0xC0 | ((X1) >> 6);								\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
+		} else if ((X1) <= 0xFFFF) {									\
+			*(X2)++ = 0xE0 | ((X1) >> 12);								\
+			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
+		} else {														\
+			*(X2)++ = 0xF0 | ((X1) >> 18);								\
+			*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);						\
+			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);						\
+			*(X2)++ = 0x80 | ((X1) & 0x3F);								\
+		}																\
 	} while (0)
 
-#define UTF8_PUTCHAR(X1,X2)							\
-	do {											\
-		if ((X1) < 0 || (X1) > 0x10FFFF) {			\
-			goto illegal;							\
-		} else if ((X1) <= 0x7F) {					\
-			*(X2)++ = (X1);							\
-		} else if ((X1) <= 0x7FF) {					\
-			*(X2)++ = 0xC0 | ((X1) >> 6);			\
-			*(X2)++ = 0x80 | ((X1) & 0x3F);			\
-		} else if ((X1) <= 0xFFFF) {				\
-			*(X2)++ = 0xE0 | ((X1) >> 12);			\
-			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);	\
-			*(X2)++ = 0x80 | ((X1) & 0x3F);			\
-		} else {									\
-			*(X2)++ = 0xF0 | ((X1) >> 18);			\
-			*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);	\
-			*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);	\
-			*(X2)++ = 0x80 | ((X1) & 0x3F);			\
-		}											\
-	} while (0)
+#define UTF8_CHARLEN(UC) \
+	((UC) <= 0x7F ? 1 : (UC) <= 0x7FF ? 2 : (UC) <= 0xFFFF ? 3 : 4)
+//	(1 + ((UC) > 0x7F) + ((UC) > 0x7FF) + ((UC) > 0xFFFF))
 
 static inline size_t
 UTF8_strlen(const char *s)
@@ -3016,7 +2995,7 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 	char *dst;
 	const char *end = src + len;
 	BUN UTF8_CONV_r;
-	int lower_to_upper = from == UTF8_toUpperFrom;
+	bool lower_to_upper = from == UTF8_toUpperFrom;
 
 	if (strNil(src)) {
 		*res = GDKstrdup(str_nil);
@@ -3044,8 +3023,8 @@ convertCase(BAT *from, BAT *to, str *res, const char *src, const char *malfunc)
 					if (UTF8_CONV_r != BUN_NONE)
 						c = *(int*) BUNtloc(toi, UTF8_CONV_r);
 				}
-				if (dst + 4 > *res + len) {
-					/* not guaranteed to fit, so allocate more space;
+				if (dst + UTF8_CHARLEN(c) > *res + len) {
+					/* doesn't fit, so allocate more space;
 					 * also allocate enough for the rest of the
 					 * source */
 					size_t off = dst - *res;
@@ -3304,6 +3283,8 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 	}
 	UTF8_GETCHAR(*res, s);
 	return MAL_SUCCEED;
+  illegal:
+	throw(MAL, "str.unicodeAt", SQLSTATE(42000) "Illegal Unicode code point");
 }
 
 /* returns whether arg1 starts with arg2 */
@@ -3604,6 +3585,9 @@ trimchars(const char *s, size_t *n)
 	}
 	*n = len;
 	return chars;
+  illegal:
+	GDKfree(chars);
+	return NULL;
 }
 
 /* remove the longest string containing only characters from arg2 from

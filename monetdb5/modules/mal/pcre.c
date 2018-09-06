@@ -85,101 +85,182 @@ mal_export str ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, cons
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {
 	char *k;
-	wchar_t *w;
+	uint32_t *w;
 	bool search;
-	ptrdiff_t len;
+	size_t len;
 	struct RE *n;
 } RE;
 
-/* we cannot use strcasecmp and strncasecmp since they work byte for
- * byte and don't deal with multibyte encodings (such as UTF-8) */
+/* We cannot use strcasecmp and strncasecmp since they work byte for
+ * byte and don't deal with multibyte encodings (such as UTF-8).
+ *
+ * We implement our own conversion from UTF-8 encoding to Unicode code
+ * points which we store in uint32_t.  The reason for this is,
+ * functions like mbsrtowcs are locale-dependent (so we need a UTF-8
+ * locale to use them), and on Windows, wchar_t is only 2 bytes and
+ * therefore cannot hold all Unicode code points.  We do use functions
+ * such as towlower to convert a Unicode code point to its lower-case
+ * equivalent, but again on Windows, if the code point doesn't fit in
+ * 2 bytes, we skip this conversion and compare the unconverted code
+ * points.
+ *
+ * Note, towlower is also locale-dependent, but we don't need a UTF-8
+ * locale in order to use it. */
 
-#ifdef _MSC_VER
-/* on Windows, we cannot set the UTF-8 locale, so we need to implement
- * our own version of mbrtowc and mbsrtowcs */
-
+/* helper function to convert a UTF-8 multibyte character to a wide
+ * character */
 static size_t
-my_mbrtowc(wchar_t *dst, const char *src, size_t len)
+utfc8touc(uint32_t *restrict dest, const char *restrict src)
 {
-	if (len == 0)
-		return (size_t) -1;
 	if ((src[0] & 0x80) == 0) {
-		*dst = src[0];
+		*dest = src[0];
 		return src[0] != 0;
-	}
-	if (len == 1)
-		return (size_t) -1;
-	if ((src[0] & 0xE0) == 0xC0) {
-		*dst = ((src[0] & 0x1F) << 6) | (src[1] & 0x3F);
+	} else if ((src[0] & 0xE0) == 0xC0
+		   && (src[1] & 0xC0) == 0x80
+		   && (src[0] & 0x1E) != 0) {
+		*dest = (src[0] & 0x1F) << 6
+			| (src[1] & 0x3F);
 		return 2;
-	}
-	if (len == 2)
-		return (size_t) -1;
-	if ((src[0] & 0xF0) == 0xE0) {
-		*dst = ((src[0] & 0x0F) << 12) | ((src[1] & 0x3F) << 6) | (src[2] & 0x3F);
+	} else if ((src[0] & 0xF0) == 0xE0
+		   && (src[1] & 0xC0) == 0x80
+		   && (src[2] & 0xC0) == 0x80
+		   && ((src[0] & 0x0F) != 0
+		       || (src[1] & 0x20) != 0)) {
+		*dest = (src[0] & 0x0F) << 12
+			| (src[1] & 0x3F) << 6
+			| (src[2] & 0x3F);
 		return 3;
-	}
-	if (len == 3)
-		return (size_t) -1;
-	if ((src[0] & 0xF8) == 0xF0) {
-		*dst = ((src[0] & 0x0F) << 18) | ((src[1] & 0x3F) << 12) | ((src[2] & 0x3F) << 6) | (src[3] & 0x3F);
+	} else if ((src[0] & 0xF8) == 0xF0
+		   && (src[1] & 0xC0) == 0x80
+		   && (src[2] & 0xC0) == 0x80
+		   && (src[3] & 0xC0) == 0x80) {
+		uint32_t c = (src[0] & 0x07) << 18
+			| (src[1] & 0x3F) << 12
+			| (src[2] & 0x3F) << 6
+			| (src[3] & 0x3F);
+		if (c < 0x10000
+		    || c > 0x10FFFF
+		    || (c & 0x1FF800) == 0x00D800)
+			return (size_t) -1;
+		*dest = c;
 		return 4;
 	}
 	return (size_t) -1;
 }
 
-static size_t
-my_mbsrtowcs(wchar_t *dst, const char **src, size_t len)
+/* helper function to convert a UTF-8 string to a wide character
+ * string, the wide character string is allocated */
+static uint32_t *
+utf8stoucs(const char *src)
 {
-	size_t i;
-	const char *s = *src;
+	uint32_t *dest;
+	size_t i = 0;
+	size_t j = 0;
 
-	for (i = 0; i < len; i++) {
-		if ((s[0] & 0x80) == 0) {
-			dst[i] = s[0];
-			s += 1;
-		} else if ((s[0] & 0xE0) == 0xC0) {
-			dst[i] = ((s[0] & 0x1F) << 6) | (s[1] & 0x3F);
-			s += 2;
-		} else if ((s[0] & 0xF0) == 0xE0) {
-			dst[i] = ((s[0] & 0x0F) << 12) | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F);
-			s += 3;
-		} else if ((s[0] & 0xF8) == 0xF0) {
-			dst[i] = ((s[0] & 0x0F) << 18) | ((s[1] & 0x3F) << 12) | ((s[2] & 0x3F) << 6) | (s[3] & 0x3F);
-			s += 4;
+	/* count how many uint32_t's we need, while also checking for
+	 * correctness of the input */
+	while (src[j]) {
+		i++;
+		if ((src[j+0] & 0x80) == 0) {
+			j += 1;
+		} else if ((src[j+0] & 0xE0) == 0xC0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+0] & 0x1E) != 0) {
+			j += 2;
+		} else if ((src[j+0] & 0xF0) == 0xE0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x0F) != 0
+			       || (src[j+1] & 0x20) != 0)) {
+			j += 3;
+		} else if ((src[j+0] & 0xF8) == 0xF0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && (src[j+3] & 0xC0) == 0x80) {
+			uint32_t c = (src[j+0] & 0x07) << 18
+				| (src[j+1] & 0x3F) << 12
+				| (src[j+2] & 0x3F) << 6
+				| (src[j+3] & 0x3F);
+			if (c < 0x10000
+			    || c > 0x10FFFF
+			    || (c & 0x1FF800) == 0x00D800)
+				return NULL;
+			j += 4;
 		} else {
-			*src = s;
-			return (size_t) -1;
-		}
-		if (dst[i] == 0) {
-			*src = NULL;
-			return i;
+			return NULL;
 		}
 	}
-	*src = s;
+	dest = GDKmalloc((i + 1) * sizeof(uint32_t));
+	if (dest == NULL)
+		return NULL;
+	/* go through the source string again, this time we can skip
+	 * the correctness tests */
+	i = j = 0;
+	while (src[j]) {
+		if ((src[j+0] & 0x80) == 0) {
+			dest[i++] = src[j+0];
+			j += 1;
+		} else if ((src[j+0] & 0xE0) == 0xC0) {
+			dest[i++] = (src[j+0] & 0x1F) << 6
+				| (src[j+1] & 0x3F);
+			j += 2;
+		} else if ((src[j+0] & 0xF0) == 0xE0) {
+			dest[i++] = (src[j+0] & 0x0F) << 12
+				| (src[j+1] & 0x3F) << 6
+				| (src[j+2] & 0x3F);
+			j += 3;
+		} else if ((src[j+0] & 0xF8) == 0xF0) {
+			dest[i++] = (src[j+0] & 0x07) << 18
+				| (src[j+1] & 0x3F) << 12
+				| (src[j+2] & 0x3F) << 6
+				| (src[j+3] & 0x3F);
+			j += 4;
+		}
+	}
+	dest[i] = 0;
+	return dest;
+}
+
+static uint32_t *
+myucschr(const uint32_t *ucs, uint32_t uc)
+{
+	while (*ucs) {
+		if (*ucs == uc)
+			return (uint32_t *) ucs;
+		ucs++;
+	}
+	return NULL;
+}
+
+static size_t
+myucslen(const uint32_t *ucs)
+{
+	size_t i = 0;
+
+	while (ucs[i])
+		i++;
 	return i;
 }
-#define mbrtowc(dst, src, len, ps)		my_mbrtowc(dst, src, len)
-#define mbsrtowcs(dst, src, len, ps)	my_mbsrtowcs(dst, src, len)
-#endif
 
 static int
-mywstrncasecmp(const char *s1, const wchar_t *s2, size_t n2)
+mywstrncasecmp(const char *restrict s1, const uint32_t *restrict s2, size_t n2)
 {
-	wchar_t c1;
+	uint32_t c1;
 
-#ifndef _MSC_VER
-	mbstate_t ps1;
-	memset(&ps1, 0, sizeof(ps1));
-#endif
 	while (n2 > 0) {
-		size_t nn1 = mbrtowc(&c1, s1, 1000, &ps1);
-		if (nn1 == 0)
+		size_t nn1 = utfc8touc(&c1, s1);
+		if (nn1 == 0 || nn1 == (size_t) -1)
 			return -(*s2 != 0);
 		if (*s2 == 0)
 			return 1;
 		if (nn1 == (size_t) -1 || nn1 == (size_t) -2)
 			return 0;	 /* actually an error that shouldn't happen */
+#if SIZEOF_WCHAR_T == 2
+		if (c1 > 0xFFFF || *s2 > 0xFFFF) {
+			if (c1 != *s2)
+				return c1 - *s2;
+		} else
+#endif
 		if (towlower((wint_t) c1) != towlower((wint_t) *s2))
 			return towlower((wint_t) c1) - towlower((wint_t) *s2);
 		s1 += nn1;
@@ -192,26 +273,24 @@ mywstrncasecmp(const char *s1, const wchar_t *s2, size_t n2)
 static int
 mystrcasecmp(const char *s1, const char *s2)
 {
-	wchar_t c1, c2;
+	uint32_t c1, c2;
 
-#ifndef _MSC_VER
-	mbstate_t ps1, ps2;
-	memset(&ps1, 0, sizeof(ps1));
-	memset(&ps2, 0, sizeof(ps2));
-#endif
 	for (;;) {
-		/* use some ridiculously high number as the length of the
-		 * input strings: we will still not go beyond the terminating
-		 * '\0' */
-		size_t nn1 = mbrtowc(&c1, s1, 1000, &ps1);
-		size_t nn2 = mbrtowc(&c2, s2, 1000, &ps2);
-		if (nn1 == 0)
-			return -(nn2 != 0);
-		if (nn2 == 0)
+		size_t nn1 = utfc8touc(&c1, s1);
+		size_t nn2 = utfc8touc(&c2, s2);
+		if (nn1 == 0 || nn1 == (size_t) -1)
+			return -(nn2 != 0 && nn2 != (size_t) -1);
+		if (nn2 == 0 || nn2 == (size_t) -1)
 			return 1;
 		if (nn1 == (size_t) -1 || nn1 == (size_t) -2 ||
 			nn2 == (size_t) -1 || nn2 == (size_t) -2)
 			return 0;	 /* actually an error that shouldn't happen */
+#if SIZEOF_WCHAR_T == 2
+		if (c1 > 0xFFFF || c2 > 0xFFFF) {
+			if (c1 != c2)
+				return c1 - c2;
+		} else
+#endif
 		if (towlower((wint_t) c1) != towlower((wint_t) c2))
 			return towlower((wint_t) c1) - towlower((wint_t) c2);
 		s1 += nn1;
@@ -220,25 +299,24 @@ mystrcasecmp(const char *s1, const char *s2)
 }
 
 static int
-mywstrcasecmp(const char *s1, const wchar_t *s2)
+mywstrcasecmp(const char *restrict s1, const uint32_t *restrict s2)
 {
-	wchar_t c1;
+	uint32_t c1;
 
-#ifndef _MSC_VER
-	mbstate_t ps1;
-	memset(&ps1, 0, sizeof(ps1));
-#endif
 	for (;;) {
-		/* use some ridiculously high number as the length of the
-		 * input strings: we will still not go beyond the terminating
-		 * '\0' */
-		size_t nn1 = mbrtowc(&c1, s1, 1000, &ps1);
-		if (nn1 == 0)
+		size_t nn1 = utfc8touc(&c1, s1);
+		if (nn1 == 0 || nn1 == (size_t) -1)
 			return -(*s2 != 0);
 		if (*s2 == 0)
 			return 1;
 		if (nn1 == (size_t) -1 || nn1 == (size_t) -2)
 			return 0;	 /* actually an error that shouldn't happen */
+#if SIZEOF_WCHAR_T == 2
+		if (c1 > 0xFFFF || *s2 > 0xFFFF) {
+			if (c1 != *s2)
+				return c1 - *s2;
+		} else
+#endif
 		if (towlower((wint_t) c1) != towlower((wint_t) *s2))
 			return towlower((wint_t) c1) - towlower((wint_t) *s2);
 		s1 += nn1;
@@ -247,44 +325,39 @@ mywstrcasecmp(const char *s1, const wchar_t *s2)
 }
 
 static const char *
-mywstrcasestr(const char *haystack, const wchar_t *wneedle)
+mywstrcasestr(const char *restrict haystack, const uint32_t *restrict wneedle)
 {
-	size_t nlen = wcslen(wneedle);
+	size_t nlen = myucslen(wneedle);
 
 	if (nlen == 0)
 		return haystack;
 
 	size_t hlen = strlen(haystack);
-#ifndef _MSC_VER
-	mbstate_t ps, pss;
-	memset(&ps, 0, sizeof(ps));
-	pss = ps;
-#endif
 
 	while (*haystack) {
 		size_t i;
 		size_t h;
 		size_t step = 0;
 		for (i = h = 0; i < nlen; i++) {
-			wchar_t c;
-			size_t j = mbrtowc(&c, haystack + h, hlen - h, &ps);
-			if (j == 0)
+			uint32_t c;
+			size_t j = utfc8touc(&c, haystack + h);
+			if (j == 0 || j == (size_t) -1)
 				return NULL;
 			if (i == 0) {
 				step = j;
-#ifndef _MSC_VER
-				pss = ps;
-#endif
 			}
+#if SIZEOF_WCHAR_T == 2
+			if (c > 0xFFFF || wneedle[i] > 0xFFFF) {
+				if (c != wneedle[i])
+					break;
+			} else
+#endif
 			if (towlower((wint_t) c) != towlower((wint_t) wneedle[i]))
 				break;
 			h += j;
 		}
 		if (i == nlen)
 			return haystack;
-#ifndef _MSC_VER
-		ps = pss;
-#endif
 		haystack += step;
 		hlen -= step;
 	}
@@ -384,23 +457,18 @@ re_create(const char *pat, int nr, bool caseignore)
 		r->search = true;
 	}
 	if (caseignore) {
-		size_t patlen = strlen(pat);
-		wchar_t *wp = GDKmalloc(sizeof(wchar_t) * (patlen + 1));
-		wchar_t *wq;
-#ifndef _MSC_VER
-		mbstate_t ps;
-		memset(&ps, 0, sizeof(ps));
-#endif
+		uint32_t *wp;
+		uint32_t *wq;
+		wp = utf8stoucs(pat);
 		if (wp == NULL) {
 			GDKfree(r);
 			return NULL;
 		}
-		mbsrtowcs(wp, &pat, patlen + 1, &ps);
 		r->w = wp;
-		while ((wq = wcschr(wp, L'%')) != NULL) {
+		while ((wq = myucschr(wp, '%')) != NULL) {
 			*wq = 0;
 			n->w = wp;
-			n->len = wq - wp;
+			n->len = (size_t) (wq - wp);
 			if (--nr > 0) {
 				n = n->n = (RE*)GDKmalloc(sizeof(RE));
 				if (n == NULL)
@@ -421,7 +489,7 @@ re_create(const char *pat, int nr, bool caseignore)
 		while ((q = strchr(p, '%')) != NULL) {
 			*q = 0;
 			n->k = p;
-			n->len = q - p;
+			n->len = (size_t) (q - p);
 			if (--nr > 0) {
 				n = n->n = (RE*)GDKmalloc(sizeof(RE));
 				if (n == NULL)
@@ -660,15 +728,10 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 		candlist = (const oid *) Tloc(s, p);
 		if (use_strcmp) {
 			if (caseignore) {
-				size_t patlen = strlen(pat);
-				wchar_t *wpat = GDKmalloc(sizeof(wchar_t) * (patlen + 1));
-#ifndef _MSC_VER
-				mbstate_t ps;
-				memset(&ps, 0, sizeof(ps));
-#endif
+				uint32_t *wpat;
+				wpat = utf8stoucs(pat);
 				if (wpat == NULL)
 					throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				mbsrtowcs(wpat, &pat, patlen + 1, &ps);
 				if (anti)
 					candscanloop(v && *v != '\200' &&
 								 mywstrcasecmp(v, wpat) != 0);
@@ -716,15 +779,10 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 		}
 		if (use_strcmp) {
 			if (caseignore) {
-				size_t patlen = strlen(pat);
-				wchar_t *wpat = GDKmalloc(sizeof(wchar_t) * (patlen + 1));
-#ifndef _MSC_VER
-				mbstate_t ps;
-				memset(&ps, 0, sizeof(ps));
-#endif
+				uint32_t *wpat;
+				wpat = utf8stoucs(pat);
 				if (wpat == NULL)
 					throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				mbsrtowcs(wpat, &pat, patlen + 1, &ps);
 				if (anti)
 					scanloop(v && *v != '\200' &&
 							 mywstrcasecmp(v, wpat) != 0);
