@@ -38,4 +38,4 @@ extern void hash_del(sql_hash *ht, int key, void *value);
 
 extern unsigned int hash_key(const char *n);
 
-#endif /* SQL_STACK_H */
+#endif /* SQL_HASH_H */
