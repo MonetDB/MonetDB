@@ -2049,7 +2049,8 @@ AS_VAR_IF([enable_odbc], [no],
 		CPPFLAGS="$save_CPPFLAGS"
 		AC_MSG_RESULT([using "$lenp_or_pointer_t"])
 		AC_DEFINE_UNQUOTED([LENP_OR_POINTER_T], [$lenp_or_pointer_t],
-			[Define as SQLLEN * or SQLPOINTER depending on the include file])])
+			[Define as SQLLEN * or SQLPOINTER depending on the include file])
+		AC_CHECK_SIZEOF([SQLWCHAR],,[@%:@include <sql.h>])])
 	 AC_SUBST([ODBC_INCS])
 	 AC_SUBST([ODBCINST_LIBS])
 	 AC_SUBST([ODBC_LIBS])

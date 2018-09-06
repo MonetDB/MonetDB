@@ -69,16 +69,6 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 	return tmp;
 }
 
-/* Conversion to and from SQLWCHAR */
-static int utf8chkmsk[] = {
-	0x0000007f,
-	0x00000780,
-	0x0000f800,
-	0x001f0000,
-	0x03e00000,
-	0x7c000000
-};
-
 /* Convert a SQLWCHAR (UTF-16 encoded string) to UTF-8.  On success,
    clears the location pointed to by errmsg and returns NULL or a
    newly allocated buffer.  On error, assigns a string with an error
@@ -89,77 +79,101 @@ static int utf8chkmsk[] = {
 SQLCHAR *
 ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 {
-	const SQLWCHAR *s1, *e;
-	unsigned long c;
-	SQLCHAR *buf, *p;
-	int l, n;
+	size_t i = 0;
+	SQLLEN j = 0;
+	uint32_t c;
+	SQLCHAR *dest;
 
 	if (errmsg)
 		*errmsg = NULL;
-	if (s == NULL)
+	if (src == NULL || length == SQL_NULL_DATA)
 		return NULL;
-	if (length == SQL_NTS)
-		for (s1 = s, length = 0; *s1; s1++)
-			length++;
-	else if (length == SQL_NULL_DATA)
-		return NULL;
-	else if (length < 0) {
+	if (length == SQL_NTS) {
+		/* a very large (positive) number that fits in SQLLEN */
+		length = (SQLLEN) (~(SQLULEN)0 >> 1);
+	} else if (length < 0) {
 		if (errmsg)
 			*errmsg = "Invalid length parameter";
 		return NULL;
 	}
-	e = s + length;
-	/* count necessary length */
-	l = 1;			/* space for NULL byte */
-	for (s1 = s; s1 < e && *s1; s1++) {
-		c = *s1;
-		if (0xD800 <= c && c <= 0xDBFF) {
-			/* high surrogate, must be followed by low surrogate */
-			s1++;
-			if (s1 >= e || *s1 < 0xDC00 || *s1 > 0xDFFF) {
+	while (j < length && src[j]) {
+		if (src[j] <= 0x7F) {
+			i += 1;
+		} else if (src[j] <= 0x7FF) {
+			i += 2;
+		} else if (
+#if SIZEOF_SQLWCHAR == 2
+			(src[j] & 0xFC00) != 0xD800
+#else
+			src[j] <= 0xFFFF
+#endif
+			) {
+			if ((src[j] & 0xF800) == 0xD800) {
 				if (errmsg)
-					*errmsg = "High surrogate not followed by low surrogate";
+					*errmsg = "Illegal surrogate";
 				return NULL;
 			}
-			c = (((c & 0x03FF) << 10) | (*s1 & 0x3FF)) + 0x10000;
-		} else if (0xDC00 <= c && c <= 0xDFFF) {
-			/* low surrogate--illegal */
-			if (errmsg)
-				*errmsg = "Low surrogate not preceded by high surrogate";
-			return NULL;
+			i += 3;
+		} else {
+#if SIZEOF_SQLWCHAR == 2
+			/* (src[j] & 0xFC00) == 0xD800, i.e. high surrogate */
+			if ((src[j+1] & 0xFC00) != 0xDC00) {
+				if (errmsg)
+					*errmsg = "Illegal surrogate";
+				return NULL;
+			}
+			j++;
+#else
+			c = src[j+0];
+			if (c > 0x10FFFF || (c & 0x1FF800) == 0xD800) {
+				if (errmsg)
+					*errmsg = "Illegal wide character value";
+				return NULL;
+			}
+#endif
+			i += 4;
 		}
-		for (n = 5; n > 0; n--)
-			if (c & utf8chkmsk[n])
-				break;
-		l += n + 1;
+		j++;
 	}
-	/* convert */
-	buf = (SQLCHAR *) malloc(l);
-	if (buf == NULL) {
-		if (errmsg)
-			*errmsg = "Memory allocation error";
+	length = j;	/* figured out the real length (might not change) */
+	dest = malloc((i + 1) * sizeof(SQLCHAR));
+	if (dest == NULL)
 		return NULL;
-	}
-	for (s1 = s, p = buf; s1 < e && *s1; s1++) {
-		c = *s1;
-		if (0xD800 <= c && c <= 0xDBFF) {
-			/* high surrogate followed by low surrogate */
-			s1++;
-			c = (((c & 0x03FF) << 10) | (*s1 & 0x3FF)) + 0x10000;
+	i = 0;
+	j = 0;
+	while (j < length) {
+		if (src[j] <= 0x7F) {
+			dest[i++] = src[j];
+		} else if (src[j] <= 0x7FF) {
+			dest[i++] = 0xC0 | (src[j] >> 6);
+			dest[i++] = 0x80 | (src[j] & 0x3F);
+		} else if (
+#if SIZEOF_SQLWCHAR == 2
+			(src[j] & 0xFC00) != 0xD800
+#else
+			src[j] <= 0xFFFF
+#endif
+			) {
+			dest[i++] = 0xE0 | (src[j] >> 12);
+			dest[i++] = 0x80 | ((src[j] >> 6) & 0x3F);
+			dest[i++] = 0x80 | (src[j] & 0x3F);
+		} else {
+#if SIZEOF_SQLWCHAR == 2
+			c = ((src[j+0] & 0x03FF) + 0x40) << 10
+				| (src[j+1] & 0x03FF);
+			j++;
+#else
+			c = src[j+0];
+#endif
+			dest[i++] = 0xF0 | (c >> 18);
+			dest[i++] = 0x80 | ((c >> 12) & 0x3F);
+			dest[i++] = 0x80 | ((c >> 6) & 0x3F);
+			dest[i++] = 0x80 | (c & 0x3F);
 		}
-		for (n = 5; n > 0; n--)
-			if (c & utf8chkmsk[n])
-				break;
-		if (n == 0)
-			*p++ = (SQLCHAR) c;
-		else {
-			*p++ = (SQLCHAR) (((c >> (n * 6)) | (0x1F80 >> n)) & 0xFF);
-			while (--n >= 0)
-				*p++ = (SQLCHAR) (((c >> (n * 6)) & 0x3F) | 0x80);
-		}
+		j++;
 	}
-	*p = 0;
-	return buf;
+	dest[i] = 0;
+	return dest;
 }
 
 /* Convert a UTF-8 encoded string to UTF-16 (SQLWCHAR).  On success
@@ -167,81 +181,121 @@ ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
    first two arguments describe the input, the last three arguments
    describe the output, both in the normal ODBC fashion. */
 const char *
-ODBCutf82wchar(const SQLCHAR *s,
+ODBCutf82wchar(const SQLCHAR *src,
 	       SQLINTEGER length,
 	       SQLWCHAR *buf,
 	       SQLLEN buflen,
 	       SQLSMALLINT *buflenout)
 {
-	SQLWCHAR *p;
-	const SQLCHAR *e;
-	int m, n;
-	unsigned int c;
-	SQLSMALLINT len = 0;
+	SQLLEN i = 0;
+	SQLINTEGER j = 0;
+	uint32_t c;
 
-	if (s == NULL || length == SQL_NULL_DATA) {
-		if (buf && buflen > 0)
-			*buf = 0;
+	if (buf == NULL)
+		buflen = 0;
+	else if (buflen == 0)
+		buf = NULL;
+
+	if (src == NULL || length == SQL_NULL_DATA) {
+		if (buflen > 0)
+			buf[0] = 0;
 		if (buflenout)
 			*buflenout = 0;
 		return NULL;
 	}
 	if (length == SQL_NTS)
-		length = (SQLINTEGER) strlen((const char *) s);
+		length = (SQLINTEGER) (~(SQLUINTEGER)0 >> 1);
 	else if (length < 0)
 		return "Invalid length parameter";
 
-	if (buf == NULL)
-		buflen = 0;
-
-	for (p = buf, e = s + length; s < e; ) {
-		c = *s++;
-		if ((c & 0x80) != 0) {
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-				;
-			/* n now is number of 10xxxxxx bytes that
-			 * should follow */
-			if (n == 0 || n >= 4)
-				return "Illegal UTF-8 sequence";
-			if (s + n > e)
-				return "Truncated UTF-8 sequence";
-			c &= ~(0xFFC0) >> n;
-			while (--n >= 0) {
-				c <<= 6;
-				c |= *s++ & 0x3F;
-			}
-		}
-		if (c > 0x10FFFF) {
-			/* cannot encode as UTF-16 */
-			return "Codepoint too large to be representable in UTF-16";
-		}
-		if ((c & 0x1FFF800) == 0xD800) {
-			/* UTF-8 encoded high or low surrogate */
+	while (j < length && i + 1 < buflen && src[j]) {
+		if ((src[j+0] & 0x80) == 0) {
+			buf[i++] = src[j+0];
+			j += 1;
+		} else if (j + 1 < length
+			   && (src[j+0] & 0xE0) == 0xC0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+0] & 0x1E) != 0) {
+			buf[i++] = (src[j+0] & 0x1F) << 6
+				| (src[j+1] & 0x3F);
+			j += 2;
+		} else if (j + 2 < length
+			   && (src[j+0] & 0xF0) == 0xE0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x0F) != 0
+			       || (src[j+1] & 0x20) != 0)) {
+			buf[i++] = (src[j+0] & 0x0F) << 12
+				| (src[j+1] & 0x3F) << 6
+				| (src[j+2] & 0x3F);
+			j += 3;
+		} else if (j + 3 < length
+			   && (src[j+0] & 0xF8) == 0xF0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && (src[j+3] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x07) != 0
+			       || (src[j+1] & 0x30) != 0)) {
+			c = (src[j+0] & 0x07) << 18
+				| (src[j+1] & 0x3F) << 12
+				| (src[j+2] & 0x3F) << 6
+				| (src[j+3] & 0x3F);
+			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
+				return "Illegal code point";
+#if SIZEOF_SQLWCHAR == 2
+				if (i + 2 >= buflen)
+					break;
+				buf[i++] = 0xD800 | ((c - 0x10000) >> 10);
+				buf[i++] = 0xDC00 | (c & 0x3FF);
+#else
+				buf[i++] = c;
+#endif
+			j += 4;
+		} else {
 			return "Illegal code point";
 		}
-		if (c <= 0xFFFF) {
-			if (--buflen > 0 && p != NULL)
-				*p++ = c;
-			len++;
+	}
+	if (buflen > 0)
+		buf[i] = 0;
+	while (j < length && src[j]) {
+		i++;
+		if ((src[j+0] & 0x80) == 0) {
+			j += 1;
+		} else if (j + 1 < length
+			   && (src[j+0] & 0xE0) == 0xC0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+0] & 0x1E) != 0) {
+			j += 2;
+		} else if (j + 2 < length
+			   && (src[j+0] & 0xF0) == 0xE0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x0F) != 0
+			       || (src[j+1] & 0x20) != 0)) {
+			j += 3;
+		} else if (j + 3 < length
+			   && (src[j+0] & 0xF8) == 0xF0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && (src[j+3] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x07) != 0
+			       || (src[j+1] & 0x30) != 0)) {
+			c = (src[j+0] & 0x07) << 18
+				| (src[j+1] & 0x3F) << 12
+				| (src[j+2] & 0x3F) << 6
+				| (src[j+3] & 0x3F);
+			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
+				return "Illegal code point";
+#if SIZEOF_SQLWCHAR == 2
+			i++;
+#endif
+			j += 4;
 		} else {
-			/* 0x10000 <= c && c <= 0x10FFFF
-			 * U-00000000000uuuuuxxxxxxxxxxxxxxxx is encoded as
-			 * 110110wwwwxxxxxx 110111xxxxxxxxxx
-			 * where wwww = uuuuu - 1 (note, uuuuu >= 0x1
-			 * and uuuuu <= 0x10) */
-			if ((buflen -= 2) > 0 && p != NULL) {
-				/* high surrogate */
-				*p++ = 0xD800 + ((c - 0x10000) >> 10);
-				/* low surrogate */
-				*p++ = 0xDC00 + (c & 0x3FF);
-			}
-			len += 2;
+			return "Illegal code point";
 		}
 	}
-	if (p != NULL)
-		*p = 0;
 	if (buflenout)
-		*buflenout = len;
+		*buflenout = i;
 	return NULL;
 }
 
