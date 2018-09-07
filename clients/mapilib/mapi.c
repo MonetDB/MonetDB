@@ -1598,15 +1598,15 @@ add_error(struct MapiResultSet *result, char *error)
 	size_t size = result->errorstr ? strlen(result->errorstr) : 0;
 
 	if (strlen(error) > 6 && error[5] == '!' &&
-	    ((error[0] >= '0' && error[0] <= '9') ||
+	    (isdigit((unsigned char) error[0]) ||
 	     (error[0] >= 'A' && error[0] <= 'Z')) &&
-	    ((error[1] >= '0' && error[1] <= '9') ||
+	    (isdigit((unsigned char) error[1]) ||
 	     (error[1] >= 'A' && error[1] <= 'Z')) &&
-	    ((error[2] >= '0' && error[2] <= '9') ||
+	    (isdigit((unsigned char) error[2]) ||
 	     (error[2] >= 'A' && error[2] <= 'Z')) &&
-	    ((error[3] >= '0' && error[3] <= '9') ||
+	    (isdigit((unsigned char) error[3]) ||
 	     (error[3] >= 'A' && error[3] <= 'Z')) &&
-	    ((error[4] >= '0' && error[4] <= '9') ||
+	    (isdigit((unsigned char) error[4]) ||
 	     (error[4] >= 'A' && error[4] <= 'Z'))) {
 		if (result->errorstr == NULL) {
 			/* remeber SQLSTATE for first error */

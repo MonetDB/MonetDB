@@ -4635,7 +4635,7 @@ literal:
 		  	while (err == 0 && i < len)
 		  	{
 				res <<= 4;
-				if ('0'<= hexa[i] && hexa[i] <= '9')
+				if (isdigit((unsigned char) hexa[i]))
 					res = res + (hexa[i] - '0');
 				else if ('A' <= hexa[i] && hexa[i] <= 'F')
 					res = res + (hexa[i] - 'A' + 10);

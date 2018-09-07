@@ -316,7 +316,7 @@ CMDqgramnormalize(str *res, str *Input)
 
 	for (i = 0; input[i]; i++) {
 		c = toupper(input[i]);
-		if (!(('A' <= c && c <= 'Z') || ('0' <= c && c <= '9')))
+		if (!(('A' <= c && c <= 'Z') || isdigit((unsigned char) c)))
 			c = ' ';
 		if (c != ' ' || last != ' ') {
 			(*res)[j++] = c;

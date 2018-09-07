@@ -438,10 +438,7 @@ cstToken(Client cntxt, ValPtr cst)
 	case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9':
 		if (hex) {
-			while (isalnum((unsigned char) *s)) {
-				if (!((tolower(*s) >= 'a' && tolower(*s) <= 'f')
-					  || isdigit((unsigned char) *s)))
-					break;
+			while (isxdigit((unsigned char) *s)) {
 				i++;
 				s++;
 			}

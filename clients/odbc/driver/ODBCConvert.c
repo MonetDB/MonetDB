@@ -88,7 +88,7 @@ parseint(const char *data, bignum_t *nval)
 	while (*data && *data != 'e' && *data != 'E' && !space(*data)) {
 		if (*data == '.')
 			fraction = 1;
-		else if ('0' <= *data && *data <= '9') {
+		else if (isdigit((unsigned char) *data)) {
 			if (overflow ||
 			    nval->val > MAXBIGNUM10 ||
 			    (nval->val == MAXBIGNUM10 &&
@@ -273,7 +273,7 @@ parsetime(const char *data, TIME_STRUCT *tval)
 	data += n;
 	n = 1;			/* tentative return value */
 	if (*data == '.') {
-		while (*++data && '0' <= *data && *data <= '9')
+		while (*++data && isdigit((unsigned char) *data))
 			;
 		n = 2;		/* indicate loss of precision */
 	}
@@ -324,7 +324,7 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 	data += n;
 	n = 1000000000;
 	if (*data == '.') {
-		while (*++data && '0' <= *data && *data <= '9') {
+		while (*++data && isdigit((unsigned char) *data)) {
 			n /= 10;
 			tsval->fraction += (*data - '0') * n;
 		}
@@ -800,7 +800,7 @@ parsesecondintervalstring(char **svalp,
 		sval++;
 		slen--;
 		secondprecision = 0;
-		while ('0' <= *sval && *sval <= '9') {
+		while (isdigit((unsigned char) *sval)) {
 			if (secondprecision < 9) {
 				secondprecision++;
 				ival->intval.day_second.fraction *= 10;
@@ -1309,7 +1309,7 @@ ODBCFetch(ODBCStmt *stmt,
 				return SQL_NO_DATA;
 			}
 			for (k = 0; k < datalen; k++) {
-				if ('0' <= data[k] && data[k] <= '9')
+				if (isdigit((unsigned char) data[k]))
 					n = data[k] - '0';
 				else if ('A' <= data[k] && data[k] <= 'F')
 					n = data[k] - 'A' + 10;
@@ -1873,7 +1873,8 @@ ODBCFetch(ODBCStmt *stmt,
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
 
-			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS, (SQLWCHAR *) origptr, origbuflen, &n);
+			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
+				       (SQLWCHAR *) origptr, origbuflen, &n);
 #ifdef ODBCDEBUG
 			ODBCLOG("Writing %d bytes to %p\n",
 				(int) (n * sizeof(SQLWCHAR)),
@@ -2765,7 +2766,7 @@ ODBCFetch(ODBCStmt *stmt,
 				}
 				data++;
 			}
-			if ('0' <= *data && *data <= '9')
+			if (isdigit((unsigned char) *data))
 				((unsigned char *) ptr)[i] = *data - '0';
 			else if ('a' <= *data && *data <= 'f')
 				((unsigned char *) ptr)[i] = *data - 'a' + 10;
@@ -2779,7 +2780,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			((unsigned char *) ptr)[i] <<= 4;
 			data++;
-			if ('0' <= *data && *data <= '9')
+			if (isdigit((unsigned char) *data))
 				((unsigned char *) ptr)[i] |= *data - '0';
 			else if ('a' <= *data && *data <= 'f')
 				((unsigned char *) ptr)[i] |= *data - 'a' + 10;

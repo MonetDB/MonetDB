@@ -34,7 +34,7 @@ decimal_from_str(char *dec, char **end)
 	} else if (*dec == '+') {
 		dec++;
 	}
-	for (; *dec && ((*dec >= '0' && *dec <= '9') || *dec == '.'); dec++) {
+	for (; *dec && (isdigit((unsigned char) *dec) || *dec == '.'); dec++) {
 		if (*dec != '.') {
 			if (res > max0 || (res == max0 && *dec - '0' > max1))
 				break;
