@@ -811,9 +811,9 @@ GDKreset(int status, int exit)
 			GDKbbpLock[i].free = 0;
 		}
 
-		memset((char*) GDKthreads, 0, sizeof(GDKthreads));
-		memset((char*) THRdata, 0, sizeof(THRdata));
-		memset((char*) THRprintbuf,0, sizeof(THRprintbuf));
+		memset(GDKthreads, 0, sizeof(GDKthreads));
+		memset(THRdata, 0, sizeof(THRdata));
+		memset(THRprintbuf, 0, sizeof(THRprintbuf));
 		gdk_bbp_reset();
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT

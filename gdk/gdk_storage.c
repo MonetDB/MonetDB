@@ -757,7 +757,7 @@ BATsave(BAT *bd)
 	b = &bs;
 
 	if (b->tvheap) {
-		b->tvheap = (Heap *) GDKmalloc(sizeof(Heap));
+		b->tvheap = GDKmalloc(sizeof(Heap));
 		if (b->tvheap == NULL) {
 			return GDK_FAIL;
 		}

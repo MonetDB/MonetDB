@@ -1882,7 +1882,7 @@ BATsetprop(BAT *b, int idx, int type, const void *v)
 	PROPrec *p = BATgetprop(b, idx);
 
 	if (p == NULL) {
-		if ((p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) == NULL) {
+		if ((p = GDKmalloc(sizeof(PROPrec))) == NULL) {
 			/* properties are hints, so if we can't create
 			 * one we ignore the error */
 			return;
