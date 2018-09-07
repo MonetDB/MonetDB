@@ -1113,12 +1113,6 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 #undef ANALYTICAL_MIN_MAX_BRANCHES
 #undef ANALYTICAL_MIN_MAX_LIMIT
 
-#define ANALYTICAL_COUNT_IGNORE_NILS_IMP_NO_OVERLAP \
-	do {                                            \
-		for (;rb < rp; rb++)                        \
-			*rb = curval;                           \
-	} while(0);
-
 #define ANALYTICAL_COUNT_IGNORE_NILS_IMP_ROWS       \
 	do {                                            \
 		lng *rs = rb, *fs, *fe;                     \
@@ -1129,38 +1123,92 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		}                                           \
 	} while(0);
 
-#define ANALYTICAL_COUNT_IGNORE_NILS_CALC(FRAME)            \
-	do {                                                    \
-		lng *rp, *rb, curval = 0;                           \
-		rb = rp = (lng*)Tloc(r, 0);                         \
-		if (p) {                                            \
-			np = pnp = (bit*)Tloc(p, 0);                    \
-			nend = np + cnt;                                \
-			for(; np < nend; np++) {                        \
-				if (*np) {                                  \
-					curval = np - pnp;                      \
-					rp += curval;                           \
-					ANALYTICAL_COUNT_IGNORE_NILS_IMP##FRAME \
-					pnp = np;                               \
-				}                                           \
-			}                                               \
-			curval = np - pnp;                              \
-			rp += curval;                                   \
-			ANALYTICAL_COUNT_IGNORE_NILS_IMP##FRAME         \
-		} else {                                            \
-			curval = cnt;                                   \
-			rp += curval;                                   \
-			ANALYTICAL_COUNT_IGNORE_NILS_IMP##FRAME         \
-		}                                                   \
+#define ANALYTICAL_COUNT_IGNORE_NILS_CALC_ROWS            \
+	do {                                                  \
+		lng *rp, *rb, curval = 0;                         \
+		rb = rp = (lng*)Tloc(r, 0);                       \
+		if (p) {                                          \
+			np = pnp = (bit*)Tloc(p, 0);                  \
+			nend = np + cnt;                              \
+			for(; np < nend; np++) {                      \
+				if (*np) {                                \
+					curval = np - pnp;                    \
+					rp += curval;                         \
+					ANALYTICAL_COUNT_IGNORE_NILS_IMP_ROWS \
+					pnp = np;                             \
+				}                                         \
+			}                                             \
+			curval = np - pnp;                            \
+			rp += curval;                                 \
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP_ROWS         \
+		} else {                                          \
+			curval = cnt;                                 \
+			rp += curval;                                 \
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP_ROWS         \
+		}                                                 \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_NO_OVERLAP(TPE) \
-	do {                                                   \
-		for (;pbp < bp; pbp++)                             \
-			curval += !is_##TPE##_nil(*pbp);               \
-		for (;rb < rp; rb++)                               \
-			*rb = curval;                                  \
-		curval = 0;                                        \
+#define ANALYTICAL_COUNT_IGNORE_NILS_IMP_RANGE_ALL \
+	do {                                           \
+		for (;rb < rp; rb++)                       \
+			*rb = curval;                          \
+	} while(0);
+
+#define ANALYTICAL_COUNT_IGNORE_NILS_IMP_RANGE_PART \
+	do {                                  \
+		bit *nl = lp, *ns, *ne;           \
+		BUN rstart, rend;                 \
+		for(; lp<lend;lp++) {             \
+			rstart = start;               \
+			for(ns=lp; ns>nl; ns--) {     \
+				if(*ns) {                 \
+					if(rstart == 0)       \
+						break;            \
+					rstart--;             \
+				}                         \
+			}                             \
+			rend = end;                   \
+			for(ne=lp+1; ne<lend; ne++) { \
+				if(*ne) {                 \
+					if(rend == 0)         \
+						break;            \
+					rend--;               \
+				}                         \
+			}                             \
+			curval = (lng)(ne - ns);      \
+			*rb = curval;                 \
+			rb++;                         \
+		}                                 \
+	} while(0);
+
+#define ANALYTICAL_COUNT_IGNORE_NILS_CALC_RANGE    \
+	do {                                           \
+		lng *rb, *rp, curval = 0;                  \
+		rp = rb = (lng*)Tloc(r, 0);                \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					ANALYTICAL_COUNT_IGNORE_NILS_IMP_RANGE_PART \
+					pnp = np;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP_RANGE_PART \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP_RANGE_PART \
+		} else {                                   \
+			curval = cnt;                          \
+			rp += curval;                          \
+			ANALYTICAL_COUNT_IGNORE_NILS_IMP_RANGE_ALL \
+		}                                          \
 	} while(0);
 
 #define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_ROWS(TPE)\
@@ -1177,7 +1225,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		}                                               \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(TPE, IMP)\
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC_ROWS(TPE, IMP) \
 	do {                                                 \
 		TPE *pbp, *bp = (TPE*)Tloc(b, 0);                \
 		lng *rp, *rb, curval = 0;                        \
@@ -1207,13 +1255,79 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		}                                                \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP(TPE_CAST, OFFSET)  \
-	do {                                                              \
-		for(;j<i;j++)                                                 \
-			curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
-		for (;rb < rp; rb++)                                          \
-			*rb = curval;                                             \
-		curval = 0;                                                   \
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_RANGE_ALL(TPE) \
+	do {                                                   \
+		for (;pbp < bp; pbp++)                             \
+			curval += !is_##TPE##_nil(*pbp);               \
+		for (;rb < rp; rb++)                               \
+			*rb = curval;                                  \
+		curval = 0;                                        \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_RANGE_PART(TPE) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		TPE *bs, *be;                           \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			bs = bp + (ns - nl);                \
+			be = bs + parcel;                   \
+			for(; bs<be; bs++)                  \
+				curval += !is_##TPE##_nil(*bs); \
+			*rb = curval;                       \
+			curval = 0;                         \
+			rb++;                               \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC_RANGE(TPE, IMP) \
+	do {                                           \
+		TPE *bp = (TPE*)Tloc(b, 0);                \
+		lng *rb, *rp, curval = 0;                  \
+		rp = rb = (lng*)Tloc(r, 0);                \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					IMP##_PART(TPE)                \
+					bp += ncnt;                    \
+					pnp = np;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			IMP##_PART(TPE)                        \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			IMP##_PART(TPE)                        \
+		} else {                                   \
+			TPE *pbp = bp;                         \
+			rp += cnt;                             \
+			bp += cnt;                             \
+			IMP##_ALL(TPE)                         \
+		}                                          \
 	} while(0);
 
 #define ANALYTICAL_COUNT_NO_NIL_STR_IMP_ROWS(TPE_CAST, OFFSET)            \
@@ -1230,50 +1344,104 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		}                                                                 \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_STR_CALC(TPE_CAST, OFFSET, IMP)\
-	do {                                                       \
-		const void *restrict bp = Tloc(b, 0);                  \
-		lng *rp, *rb, curval = 0;                              \
-		rb = rp = (lng*)Tloc(r, 0);                            \
-		if (p) {                                               \
-			pnp = np = (bit*)Tloc(p, 0);                       \
-			nend = np + cnt;                                   \
-			for(; np<nend; np++) {                             \
-				if (*np) {                                     \
-				    ncnt = (np - pnp);                         \
-					rp += ncnt;                                \
-					i += ncnt;                                 \
-					IMP(TPE_CAST, OFFSET)                      \
-					pnp = np;                                  \
-				}                                              \
-			}                                                  \
-			ncnt = (np - pnp);                                 \
-			rp += ncnt;                                        \
-			i += ncnt;                                         \
-			IMP(TPE_CAST, OFFSET)                              \
-		} else {                                               \
-			rp += cnt;                                         \
-			i += cnt;                                          \
-			IMP(TPE_CAST, OFFSET)                              \
-		}                                                      \
+#define ANALYTICAL_COUNT_NO_NIL_STR_CALC_ROWS(TPE_CAST, OFFSET, IMP) \
+	do {                                      \
+		const void *restrict bp = Tloc(b, 0); \
+		lng *rp, *rb, curval = 0;             \
+		rb = rp = (lng*)Tloc(r, 0);           \
+		if (p) {                              \
+			pnp = np = (bit*)Tloc(p, 0);      \
+			nend = np + cnt;                  \
+			for(; np<nend; np++) {            \
+				if (*np) {                    \
+				    ncnt = (np - pnp);        \
+					rp += ncnt;               \
+					i += ncnt;                \
+					IMP(TPE_CAST, OFFSET)     \
+					pnp = np;                 \
+				}                             \
+			}                                 \
+			ncnt = (np - pnp);                \
+			rp += ncnt;                       \
+			i += ncnt;                        \
+			IMP(TPE_CAST, OFFSET)             \
+		} else {                              \
+			rp += cnt;                        \
+			i += cnt;                         \
+			IMP(TPE_CAST, OFFSET)             \
+		}                                     \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_NO_OVERLAP               \
-	do {                                                                \
-		for(; j<i; j++)                                                 \
-			curval += (*cmp)(nil, base + ((const var_t *) bp)[j]) != 0; \
-		for (;rb < rp; rb++)                                            \
-			*rb = curval;                                               \
-		curval = 0;                                                     \
+#define ANALYTICAL_COUNT_NO_NIL_STR_IMP_RANGE_ALL(TPE_CAST, OFFSET)   \
+	do {                                                              \
+		for(;j<i;j++)                                                 \
+			curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
+		for (;rb < rp; rb++)                                          \
+			*rb = curval;                                             \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_NO_OVERLAP \
-	do {                                                   \
-		for(; j<i; j++)                                    \
-			curval += (*cmp)(Tloc(b, j), nil) != 0;        \
-		for (;rb < rp; rb++)                               \
-			*rb = curval;                                  \
-		curval = 0;                                        \
+#define ANALYTICAL_COUNT_NO_NIL_STR_IMP_RANGE_PART(TPE_CAST, OFFSET) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			j = i + (ns - nl);                  \
+			l = j + parcel;                     \
+			for(; j<l; j++)                     \
+				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200';\
+			*rb = curval;                       \
+			curval = 0;                         \
+			rb++;                               \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_STR_CALC_RANGE(TPE_CAST, OFFSET, IMP) \
+	do {                                           \
+		const void *restrict bp = Tloc(b, 0);      \
+		lng *rp, *rb, curval = 0;                  \
+		rb = rp = (lng*)Tloc(r, 0);                \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					IMP##_PART(TPE_CAST, OFFSET)   \
+					i += ncnt;                     \
+					pnp = np;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			IMP##_PART(TPE_CAST, OFFSET)           \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			IMP##_PART(TPE_CAST, OFFSET)           \
+		} else {                                   \
+			rp += cnt;                             \
+			i += cnt;                              \
+			IMP##_ALL(TPE_CAST, OFFSET)            \
+		}                                          \
 	} while(0);
 
 #define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_ROWS                         \
@@ -1304,65 +1472,200 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		}                                               \
 	} while(0);
 
-#define ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC(IMP_VARSIZED, IMP_FIXEDSIZE) \
-	do {                                                                 \
-		const void *restrict nil = ATOMnilptr(tpe);                      \
-		int (*cmp)(const void *, const void *) = ATOMcompare(tpe);       \
-		lng *rp, *rb, curval = 0;                                        \
-		rb = rp = (lng*)Tloc(r, 0);                                      \
-		if (b->tvarsized) {                                              \
-			const char *restrict base = b->tvheap->base;                 \
-			const void *restrict bp = Tloc(b, 0);                        \
-			if (p) {                                                     \
-				pnp = np = (bit*)Tloc(p, 0);                             \
-				nend = np + cnt;                                         \
-				for(; np < nend; np++) {                                 \
-					if (*np) {                                           \
-						ncnt = (np - pnp);                               \
-						rp += ncnt;                                      \
-						i += ncnt;                                       \
-						IMP_VARSIZED                                     \
-						pnp = np;                                        \
-					}                                                    \
-				}                                                        \
-				ncnt = (np - pnp);                                       \
-				rp += ncnt;                                              \
-				i += ncnt;                                               \
-				IMP_VARSIZED                                             \
-			} else {                                                     \
-				rp += cnt;                                               \
-				i += cnt;                                                \
-				IMP_VARSIZED                                             \
-			}                                                            \
-		} else {                                                         \
-			if (p) {                                                     \
-				pnp = np = (bit*)Tloc(p, 0);                             \
-				nend = np + cnt;                                         \
-				for(; np < nend; np++) {                                 \
-					if (*np) {                                           \
-						ncnt = (np - pnp);                               \
-						rp += ncnt;                                      \
-						i += ncnt;                                       \
-						IMP_FIXEDSIZE                                    \
-						pnp = np;                                        \
-					}                                                    \
-				}                                                        \
-				ncnt = (np - pnp);                                       \
-				rp += ncnt;                                              \
-				i += ncnt;                                               \
-				IMP_FIXEDSIZE                                            \
-			} else {                                                     \
-				rp += cnt;                                               \
-				i += cnt;                                                \
-				IMP_FIXEDSIZE                                            \
-			}                                                            \
-		}                                                                \
+#define ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC_ROWS(IMP_VARSIZED, IMP_FIXEDSIZE) \
+	do {                                                           \
+		const void *restrict nil = ATOMnilptr(tpe);                \
+		int (*cmp)(const void *, const void *) = ATOMcompare(tpe); \
+		lng *rp, *rb, curval = 0;                                  \
+		rb = rp = (lng*)Tloc(r, 0);                                \
+		if (b->tvarsized) {                                        \
+			const char *restrict base = b->tvheap->base;           \
+			const void *restrict bp = Tloc(b, 0);                  \
+			if (p) {                                               \
+				pnp = np = (bit*)Tloc(p, 0);                       \
+				nend = np + cnt;                                   \
+				for(; np < nend; np++) {                           \
+					if (*np) {                                     \
+						ncnt = (np - pnp);                         \
+						rp += ncnt;                                \
+						i += ncnt;                                 \
+						IMP_VARSIZED                               \
+						pnp = np;                                  \
+					}                                              \
+				}                                                  \
+				ncnt = (np - pnp);                                 \
+				rp += ncnt;                                        \
+				i += ncnt;                                         \
+				IMP_VARSIZED                                       \
+			} else {                                               \
+				rp += cnt;                                         \
+				i += cnt;                                          \
+				IMP_VARSIZED                                       \
+			}                                                      \
+		} else {                                                   \
+			if (p) {                                               \
+				pnp = np = (bit*)Tloc(p, 0);                       \
+				nend = np + cnt;                                   \
+				for(; np < nend; np++) {                           \
+					if (*np) {                                     \
+						ncnt = (np - pnp);                         \
+						rp += ncnt;                                \
+						i += ncnt;                                 \
+						IMP_FIXEDSIZE                              \
+						pnp = np;                                  \
+					}                                              \
+				}                                                  \
+				ncnt = (np - pnp);                                 \
+				rp += ncnt;                                        \
+				i += ncnt;                                         \
+				IMP_FIXEDSIZE                                      \
+			} else {                                               \
+				rp += cnt;                                         \
+				i += cnt;                                          \
+				IMP_FIXEDSIZE                                      \
+			}                                                      \
+		}                                                          \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_RANGE_ALL                \
+	do {                                                                \
+		for(; j<i; j++)                                                 \
+			curval += (*cmp)(nil, base + ((const var_t *) bp)[j]) != 0; \
+		for (;rb < rp; rb++)                                            \
+			*rb = curval;                                               \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_RANGE_PART \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			j = i + (ns - nl);                  \
+			l = j + parcel;                     \
+			for(; j<l; j++)                     \
+				curval += (*cmp)(nil, base + ((const var_t *) bp)[j]) != 0; \
+			*rb = curval;                       \
+			curval = 0;                         \
+			rb++;                               \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_RANGE_ALL \
+	do {                                                  \
+		for(; j<i; j++)                                   \
+			curval += (*cmp)(Tloc(b, j), nil) != 0;       \
+		for (;rb < rp; rb++)                              \
+			*rb = curval;                                 \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_RANGE_PART \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			j = i + (ns - nl);                  \
+			l = j + parcel;                     \
+			for(; j<l; j++)                     \
+				curval += (*cmp)(Tloc(b, j), nil) != 0; \
+			*rb = curval;                       \
+			curval = 0;                         \
+			rb++;                               \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC_RANGE(IMP_VARSIZED, IMP_FIXEDSIZE) \
+	do {                                                           \
+		const void *restrict nil = ATOMnilptr(tpe);                \
+		int (*cmp)(const void *, const void *) = ATOMcompare(tpe); \
+		lng *rp, *rb, curval = 0;                                  \
+		rb = rp = (lng*)Tloc(r, 0);                                \
+		if (b->tvarsized) {                                        \
+			const char *restrict base = b->tvheap->base;           \
+			const void *restrict bp = Tloc(b, 0);                  \
+			if (p) {                                               \
+				pnp = np = (bit*)Tloc(p, 0);                       \
+				lend = lp = o ? (bit*)Tloc(o, 0) : np;             \
+				nend = np + cnt;                                   \
+				for(; np<nend; np++) {                             \
+					if (*np) {                                     \
+						ncnt = (np - pnp);                         \
+						lend += ncnt;                              \
+						IMP_VARSIZED##_PART                        \
+						i += ncnt;                                 \
+						pnp = np;                                  \
+					}                                              \
+				}                                                  \
+				ncnt = (np - pnp);                                 \
+				lend += ncnt;                                      \
+				IMP_VARSIZED##_PART                                \
+			} else {                                               \
+				rp += cnt;                                         \
+				i += cnt;                                          \
+				IMP_VARSIZED##_ALL                                 \
+			}                                                      \
+		} else {                                                   \
+			if (p) {                                               \
+				pnp = np = (bit*)Tloc(p, 0);                       \
+				lend = lp = o ? (bit*)Tloc(o, 0) : np;             \
+				nend = np + cnt;                                   \
+				for(; np<nend; np++) {                             \
+					if (*np) {                                     \
+						ncnt = (np - pnp);                         \
+						lend += ncnt;                              \
+						IMP_FIXEDSIZE##_PART                       \
+						i += ncnt;                                 \
+						pnp = np;                                  \
+					}                                              \
+				}                                                  \
+				ncnt = (np - pnp);                                 \
+				lend += ncnt;                                      \
+				IMP_FIXEDSIZE##_PART                               \
+			} else {                                               \
+				rp += cnt;                                         \
+				i += cnt;                                          \
+				IMP_FIXEDSIZE##_ALL                                \
+			}                                                      \
+		}                                                          \
 	} while(0);
 
 #ifdef HAVE_HGE
 #define ANALYTICAL_COUNT_LIMIT(FRAME) \
 	case TYPE_hge: \
-		ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(hge, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+		ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC##FRAME(hge, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
 		break;
 #else
 #define ANALYTICAL_COUNT_LIMIT(FRAME)
@@ -1371,7 +1674,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 #if SIZEOF_VAR_T != SIZEOF_INT
 #define ANALYTICAL_COUNT_STR_LIMIT(FRAME) \
 	case 4: \
-		ANALYTICAL_COUNT_NO_NIL_STR_CALC(const unsigned int *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
+		ANALYTICAL_COUNT_NO_NIL_STR_CALC##FRAME(const unsigned int *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
 		break;
 #else
 #define ANALYTICAL_COUNT_STR_LIMIT(FRAME)
@@ -1380,72 +1683,67 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 #define ANALYTICAL_COUNT_BRANCHES(FRAME) \
 	switch (tpe) { \
 		case TYPE_bit: \
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(bit, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC##FRAME(bit, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
 			break; \
 		case TYPE_bte: \
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(bte, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC##FRAME(bte, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
 			break; \
 		case TYPE_sht: \
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(sht, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC##FRAME(sht, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
 			break; \
 		case TYPE_int: \
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(int, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC##FRAME(int, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
 			break; \
 		case TYPE_lng: \
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(lng, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC##FRAME(lng, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
 			break; \
 		ANALYTICAL_COUNT_LIMIT(FRAME) \
 		case TYPE_flt: \
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(flt, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC##FRAME(flt, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
 			break; \
 		case TYPE_dbl: \
-			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC(dbl, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
+			ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC##FRAME(dbl, ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP##FRAME) \
 			break; \
 		case TYPE_str: { \
 			const char *restrict base = b->tvheap->base; \
 			switch (b->twidth) { \
 				case 1: \
-					ANALYTICAL_COUNT_NO_NIL_STR_CALC(const unsigned char *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
+					ANALYTICAL_COUNT_NO_NIL_STR_CALC##FRAME(const unsigned char *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
 					break; \
 				case 2: \
-					ANALYTICAL_COUNT_NO_NIL_STR_CALC(const unsigned short *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
+					ANALYTICAL_COUNT_NO_NIL_STR_CALC##FRAME(const unsigned short *, [j] + GDK_VAROFFSET, ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
 					break; \
 				ANALYTICAL_COUNT_STR_LIMIT(FRAME) \
 				default: \
-					ANALYTICAL_COUNT_NO_NIL_STR_CALC(const var_t *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
+					ANALYTICAL_COUNT_NO_NIL_STR_CALC##FRAME(const var_t *, [j], ANALYTICAL_COUNT_NO_NIL_STR_IMP##FRAME) \
 					break; \
 			} \
 			break; \
 		} \
 		default: \
-			ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC(ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES##FRAME, ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES##FRAME) \
+			ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC##FRAME(ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES##FRAME, ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES##FRAME) \
 	}
 
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe, int unit, BUN start, BUN end)
 {
 	BUN i = 0, j = 0, k = 0, l = 0, m = 0, ncnt, cnt = BATcount(b);
-	bit *np, *pnp, *nend;
+	bit *pnp, *np, *nend, *lp, *lend;
 	gdk_return gdk_res = GDK_SUCCEED;
 
 	assert(ignore_nils);
 	assert(unit >= 0 && unit <= 2);
-	(void) o;
 
 	if(!*ignore_nils || b->T.nonil) {
-		if(unit == 0 && start == 0 && end == 0) {
-			ANALYTICAL_COUNT_IGNORE_NILS_CALC(_NO_OVERLAP)
-		} else if(unit == 0) {
-			ANALYTICAL_COUNT_IGNORE_NILS_CALC(_ROWS)
+		if(unit == 0) {
+			ANALYTICAL_COUNT_IGNORE_NILS_CALC_ROWS
 		} else {
-
+			ANALYTICAL_COUNT_IGNORE_NILS_CALC_RANGE
 		}
-	} else if(unit == 0 && start == 0 && end == 0) {
-		ANALYTICAL_COUNT_BRANCHES(_NO_OVERLAP)
 	} else if(unit == 0) {
 		ANALYTICAL_COUNT_BRANCHES(_ROWS)
 	} else {
-
+		ANALYTICAL_COUNT_BRANCHES(_RANGE)
 	}
 	BATsetcount(r, cnt);
 	r->tnonil = true;
@@ -1453,20 +1751,29 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	return gdk_res;
 }
 
-#undef ANALYTICAL_COUNT_IGNORE_NILS_CALC
+#undef ANALYTICAL_COUNT_IGNORE_NILS_CALC_ROWS
 #undef ANALYTICAL_COUNT_IGNORE_NILS_IMP_ROWS
-#undef ANALYTICAL_COUNT_IGNORE_NILS_IMP_NO_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC
+#undef ANALYTICAL_COUNT_IGNORE_NILS_CALC_RANGE
+#undef ANALYTICAL_COUNT_IGNORE_NILS_IMP_RANGE_ALL
+#undef ANALYTICAL_COUNT_IGNORE_NILS_IMP_RANGE_PART
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC_ROWS
 #undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_ROWS
-#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_NO_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_STR_CALC
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_CALC_RANGE
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_RANGE_PART
+#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_RANGE_ALL
+#undef ANALYTICAL_COUNT_NO_NIL_STR_CALC_ROWS
 #undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_ROWS
-#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_NO_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC
-#undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_NO_OVERLAP
-#undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_NO_OVERLAP
+#undef ANALYTICAL_COUNT_NO_NIL_STR_CALC_RANGE
+#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_RANGE_PART
+#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP_RANGE_ALL
+#undef ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC_ROWS
 #undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_ROWS
 #undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_ROWS
+#undef ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC_RANGE
+#undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_RANGE_PART
+#undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_RANGE_PART
+#undef ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES_RANGE_ALL
+#undef ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES_RANGE_ALL
 #undef ANALYTICAL_COUNT_LIMIT
 #undef ANALYTICAL_COUNT_STR_LIMIT
 #undef ANALYTICAL_COUNT_BRANCHES
@@ -1656,9 +1963,9 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 
 #define ANALYTICAL_SUM_CALC_RANGE(TPE1, TPE2, IMP) \
 	do {                                           \
-		TPE1 *pbp, *bp;                            \
+		TPE1 *bp;                                  \
 		TPE2 *rb, *rp, curval = TPE2##_nil;        \
-		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		bp = (TPE1*)Tloc(b, 0);                    \
 		rp = rb = (TPE2*)Tloc(r, 0);               \
 		if (p) {                                   \
 			pnp = np = (bit*)Tloc(p, 0);           \
@@ -1681,6 +1988,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 			lend += cnt;                           \
 			IMP##_PART(TPE1, TPE2)                 \
 		} else {                                   \
+			TPE1 *pbp = bp;                        \
 			rp += cnt;                             \
 			bp += cnt;                             \
 			IMP##_ALL(TPE1, TPE2)                  \
@@ -1840,10 +2148,9 @@ finish:
 #undef ANALYTICAL_SUM_IMP_RANGE_ALL
 #undef ANALYTICAL_SUM_FP_IMP_ROWS
 #undef ANALYTICAL_SUM_FP_IMP_RANGE_PART
-#undef ANALYTICAL_SUM_FP_IMP_RANGE
+#undef ANALYTICAL_SUM_FP_IMP_RANGE_ALL
 #undef ANALYTICAL_SUM_CALC_ROWS
-#undef ANALYTICAL_SUM_CALC_RANGE_PART
-#undef ANALYTICAL_SUM_CALC_RANGE_ALL
+#undef ANALYTICAL_SUM_CALC_RANGE
 #undef ANALYTICAL_SUM_BRANCHES
 #undef ANALYTICAL_SUM_LIMIT
 
@@ -2026,9 +2333,9 @@ finish:
 
 #define ANALYTICAL_PROD_CALC_NUM_RANGE(TPE1, TPE2, TPE3, IMP)   \
 	do {                                           \
-		TPE1 *pbp, *bp;                            \
+		TPE1 *bp;                                  \
 		TPE2 *rb, *rp, curval = TPE2##_nil;        \
-		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		bp = (TPE1*)Tloc(b, 0);                    \
 		rp = rb = (TPE2*)Tloc(r, 0);               \
 		if (p) {                                   \
 			pnp = np = (bit*)Tloc(p, 0);           \
@@ -2051,6 +2358,7 @@ finish:
 			lend += cnt;                           \
 			IMP##_PART(TPE1, TPE2, TPE3)           \
 		} else {                                   \
+			TPE1 *pbp = bp;                        \
 			rp += cnt;                             \
 			bp += cnt;                             \
 			IMP##_ALL(TPE1, TPE2, TPE3)            \
@@ -2123,9 +2431,9 @@ finish:
 
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT_RANGE(TPE1, TPE2, IMP, REAL_IMP) \
 	do {                                           \
-		TPE1 *pbp, *bp;                            \
+		TPE1 *bp;                                  \
 		TPE2 *rb, *rp, curval = TPE2##_nil;        \
-		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		bp = (TPE1*)Tloc(b, 0);                    \
 		rp = rb = (TPE2*)Tloc(r, 0);               \
 		if (p) {                                   \
 			pnp = np = (bit*)Tloc(p, 0);           \
@@ -2148,6 +2456,7 @@ finish:
 			lend += cnt;                           \
 			IMP##_PART(TPE1, TPE2, REAL_IMP)       \
 		} else {                                   \
+			TPE1 *pbp = bp;                        \
 			rp += cnt;                             \
 			bp += cnt;                             \
 			IMP##_ALL(TPE1, TPE2, REAL_IMP)        \
@@ -2288,9 +2597,9 @@ finish:
 
 #define ANALYTICAL_PROD_CALC_FP_RANGE(TPE1, TPE2, IMP) \
 	do {                                           \
-		TPE1 *pbp, *bp;                            \
+		TPE1 *bp;                                  \
 		TPE2 *rb, *rp, curval = TPE2##_nil;        \
-		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		bp = (TPE1*)Tloc(b, 0);                    \
 		rp = rb = (TPE2*)Tloc(r, 0);               \
 		if (p) {                                   \
 			pnp = np = (bit*)Tloc(p, 0);           \
@@ -2313,6 +2622,7 @@ finish:
 			lend += cnt;                           \
 			IMP##_PART(TPE1, TPE2)                 \
 		} else {                                   \
+			TPE1 *pbp = bp;                        \
 			rp += cnt;                             \
 			bp += cnt;                             \
 			IMP##_ALL(TPE1, TPE2)                  \
