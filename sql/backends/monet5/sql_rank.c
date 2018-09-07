@@ -951,7 +951,7 @@ SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
 static str
 SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int, int, BUN, BUN))
+				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int, BUN, BUN))
 {
 	BAT *r, *b, *p, *o;
 	bit force_order = 0;
@@ -973,7 +973,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, force_order, tpe, unit, (BUN) start, (BUN) end);
+		gdk_res = func(r, b, p, o, tpe, unit, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);

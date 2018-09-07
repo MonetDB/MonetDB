@@ -877,25 +877,6 @@ finish:
 #undef LEAD_CALC
 #undef ANALYTICAL_LEAD_OTHERS
 
-#define ANALYTICAL_MIN_MAX_IMP_NO_OVERLAP(TPE, IMP) \
-	do {                                          \
-		curval = *pbp;                            \
-		pbp++;                                    \
-		for(; pbp<bp; pbp++) {                    \
-			v = *pbp;                             \
-			if(!is_##TPE##_nil(v)) {              \
-				if(is_##TPE##_nil(curval))        \
-					curval = v;                   \
-				else                              \
-					curval = IMP(v, curval);      \
-			}                                     \
-		}                                         \
-		for (;rb < rp; rb++)                      \
-			*rb = curval;                         \
-		if(is_##TPE##_nil(curval))                \
-			has_nils = true;                      \
-	} while(0);
-
 #define ANALYTICAL_MIN_MAX_IMP_ROWS(TPE, IMP)         \
 	do {                                              \
 		TPE *bl = pbp, *bs, *be;                      \
@@ -920,12 +901,11 @@ finish:
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_MIN_MAX_CALC(TPE, IMP, REAL)    \
+#define ANALYTICAL_MIN_MAX_CALC_ROWS(TPE, IMP, REAL) \
 	do {                                           \
-		TPE *rp, *rb, *pbp, *bp, *rend, curval, v; \
+		TPE *rp, *rb, *pbp, *bp, curval, v;        \
 		rb = rp = (TPE*)Tloc(r, 0);                \
 		pbp = bp = (TPE*)Tloc(b, 0);               \
-		rend = rp + cnt;                           \
 		if (p) {                                   \
 			pnp = np = (bit*)Tloc(p, 0);           \
 			nend = np + cnt;                       \
@@ -943,51 +923,117 @@ finish:
 			rp += ncnt;                            \
 			bp += ncnt;                            \
 			REAL(TPE, IMP)                         \
-		} else if (o || force_order) {             \
+		} else {                                   \
 			rp += cnt;                             \
 			bp += cnt;                             \
 			REAL(TPE, IMP)                         \
-		} else {                                   \
-			for(; rp<rend; rp++, bp++) {           \
-				v = *bp;                           \
-				if(is_##TPE##_nil(v))              \
-					has_nils = true;               \
-				*rp = v;                           \
+		}                                          \
+	} while(0);
+
+#define ANALYTICAL_MIN_MAX_IMP_RANGE_ALL(TPE, IMP) \
+	do {                                          \
+		TPE v;                                    \
+		curval = *pbp;                            \
+		pbp++;                                    \
+		for(; pbp<bp; pbp++) {                    \
+			v = *pbp;                             \
+			if(!is_##TPE##_nil(v)) {              \
+				if(is_##TPE##_nil(curval))        \
+					curval = v;                   \
+				else                              \
+					curval = IMP(v, curval);      \
+			}                                     \
+		}                                         \
+		for (;rb < rp; rb++)                      \
+			*rb = curval;                         \
+		if(is_##TPE##_nil(curval))                \
+			has_nils = true;                      \
+	} while(0);
+
+#define ANALYTICAL_MIN_MAX_IMP_RANGE_PART(TPE, IMP) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		TPE *bs, *be, v;                        \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			bs = bp + (ns - nl);                \
+			be = bs + parcel;                   \
+			curval = *bs;                       \
+			bs++;                               \
+			for(; bs<be; bs++) {                \
+				v = *bs;                        \
+				if(!is_##TPE##_nil(v)) {        \
+					if(is_##TPE##_nil(curval))  \
+						curval = v;             \
+					else                        \
+						curval = IMP(v, curval);\
+				}                               \
+			}                                   \
+			*rb = curval;                       \
+			rb++;                               \
+			if(is_##TPE##_nil(curval))          \
+				has_nils = true;                \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_MIN_MAX_CALC_RANGE(TPE, IMP, REAL) \
+	do {                                           \
+		TPE *rp, *rb, *bp, curval;                 \
+		rb = rp = (TPE*)Tloc(r, 0);                \
+		bp = (TPE*)Tloc(b, 0);                     \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					REAL##_PART(TPE, IMP)          \
+					bp += ncnt;                    \
+					pnp = np;                      \
+				}                                  \
 			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			REAL##_PART(TPE, IMP)                  \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			REAL##_PART(TPE, IMP)                  \
+		} else {                                   \
+			TPE *pbp = bp;                         \
+			bp += cnt;                             \
+			rp += cnt;                             \
+			REAL##_ALL(TPE, IMP)                   \
 		}                                          \
 	} while(0);
 
 #ifdef HAVE_HUGE
-#define ANALYTICAL_MIN_MAX_LIMIT(IMP, REAL)     \
-	case TYPE_hge:                              \
-		ANALYTICAL_MIN_MAX_CALC(hge, IMP, REAL) \
+#define ANALYTICAL_MIN_MAX_LIMIT(FRAME, IMP, REAL) \
+	case TYPE_hge: \
+		ANALYTICAL_MIN_MAX_CALC##FRAME(hge, IMP, REAL) \
 	break;
 #else
-#define ANALYTICAL_MIN_MAX_LIMIT(IMP, REAL)
+#define ANALYTICAL_MIN_MAX_LIMIT(FRAME, IMP, REAL)
 #endif
-
-#define ANALYTICAL_MIN_MAX_OTHERS_IMP_NO_OVERLAP(SIGN_OP)                     \
-	do {                                                                      \
-		l = j;                                                                \
-		curval = BUNtail(bpi, j);                                             \
-		j++;                                                                  \
-		for (;j < i; j++) {                                                   \
-			void *next = BUNtail(bpi, j);                                     \
-			if((*atomcmp)(next, nil) != 0) {                                  \
-				if((*atomcmp)(curval, nil) == 0)                              \
-					curval = next;                                            \
-				else                                                          \
-					curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
-			}                                                                 \
-		}                                                                     \
-		j = l;                                                                \
-		for (;j < i; j++) {                                                   \
-			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)       \
-				goto finish;                                                  \
-		}                                                                     \
-		if((*atomcmp)(curval, nil) == 0)                                      \
-			has_nils = true;                                                  \
-	} while(0);
 
 #define ANALYTICAL_MIN_MAX_OTHERS_IMP_ROWS(SIGN_OP)                               \
 	do {                                                                          \
@@ -1013,85 +1059,165 @@ finish:
 		}                                                                         \
 	} while(0);
 
-#define ANALYTICAL_MIN_MAX_OTHERS_CALC(SIGN_OP, REAL)                     \
-	do {                                                                  \
-		BATiter bpi = bat_iterator(b);                                    \
-		void *restrict curval = BUNtail(bpi, 0);                          \
-		nil = ATOMnilptr(tpe);                                            \
-		atomcmp = ATOMcompare(tpe);                                       \
-		if (p) {                                                          \
-			pnp = np = (bit*)Tloc(p, 0);                                  \
-			nend = np + cnt;                                              \
-			for(; np<nend; np++) {                                        \
-				if (*np) {                                                \
-					i += (np - pnp);                                      \
-					REAL(SIGN_OP)                                         \
-					pnp = np;                                             \
-				}                                                         \
-			}                                                             \
-			i += (np - pnp);                                              \
-			REAL(SIGN_OP)                                                 \
-		} else if (o || force_order) {                                    \
-			i += cnt;                                                     \
-			REAL(SIGN_OP)                                                 \
-		} else {                                                          \
-			for(i=0; i<cnt; i++) {                                        \
-				void *next = BUNtail(bpi, i);                             \
-				if((*atomcmp)(next, nil) == 0)                            \
-					has_nils = true;                                      \
-				if ((gdk_res = BUNappend(r, next, false)) != GDK_SUCCEED) \
-					goto finish;                                          \
-			}                                                             \
-		}                                                                 \
+#define ANALYTICAL_MIN_MAX_OTHERS_CALC_ROWS(SIGN_OP, REAL) \
+	do {                                                   \
+		if (p) {                                           \
+			pnp = np = (bit*)Tloc(p, 0);                   \
+			nend = np + cnt;                               \
+			for(; np<nend; np++) {                         \
+				if (*np) {                                 \
+					i += (np - pnp);                       \
+					REAL(SIGN_OP)                          \
+					pnp = np;                              \
+				}                                          \
+			}                                              \
+			i += (np - pnp);                               \
+			REAL(SIGN_OP)                                  \
+		} else {                                           \
+			i += cnt;                                      \
+			REAL(SIGN_OP)                                  \
+		}                                                  \
+	} while(0);
+
+#define ANALYTICAL_MIN_MAX_OTHERS_IMP_RANGE_ALL(SIGN_OP)                      \
+	do {                                                                      \
+		l = j;                                                                \
+		curval = BUNtail(bpi, j);                                             \
+		j++;                                                                  \
+		for (;j < i; j++) {                                                   \
+			void *next = BUNtail(bpi, j);                                     \
+			if((*atomcmp)(next, nil) != 0) {                                  \
+				if((*atomcmp)(curval, nil) == 0)                              \
+					curval = next;                                            \
+				else                                                          \
+					curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
+			}                                                                 \
+		}                                                                     \
+		j = l;                                                                \
+		for (;j < i; j++) {                                                   \
+			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)       \
+				goto finish;                                                  \
+		}                                                                     \
+		if((*atomcmp)(curval, nil) == 0)                                      \
+			has_nils = true;                                                  \
+	} while(0);
+
+#define ANALYTICAL_MIN_MAX_OTHERS_IMP_RANGE_PART(SIGN_OP) \
+	do {                                                  \
+		bit *nl = lp, *ns, *ne;                           \
+		BUN rstart, rend, parcel;                         \
+		for(; lp<lend;lp++) {                             \
+			rstart = start;                               \
+			for(ns=lp; ns>nl; ns--) {                     \
+				if(*ns) {                                 \
+					if(rstart == 0)                       \
+						break;                            \
+					rstart--;                             \
+				}                                         \
+			}                                             \
+			rend = end;                                   \
+			for(ne=lp+1; ne<lend; ne++) {                 \
+				if(*ne) {                                 \
+					if(rend == 0)                         \
+						break;                            \
+					rend--;                               \
+				}                                         \
+			}                                             \
+			parcel = (ne - ns);                           \
+			j = i + (ns - nl);                            \
+			l = j + parcel;                               \
+			curval = BUNtail(bpi, j++);                   \
+			for (;j < l; j++) {                           \
+				void *next = BUNtail(bpi, j);             \
+				if((*atomcmp)(next, nil) != 0) {          \
+					if((*atomcmp)(curval, nil) == 0)      \
+						curval = next;                    \
+					else                                  \
+						curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
+				}                                         \
+			}                                             \
+			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
+				goto finish;                              \
+		}                                                 \
+	} while(0);
+
+#define ANALYTICAL_MIN_MAX_OTHERS_CALC_RANGE(SIGN_OP, REAL) \
+	do {                                                    \
+		if (p) {                                            \
+			pnp = np = (bit*)Tloc(p, 0);                    \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np;          \
+			nend = np + cnt;                                \
+			for(; np<nend; np++) {                          \
+				if (*np) {                                  \
+					ncnt = (np - pnp);                      \
+					lend += ncnt;                           \
+					REAL##_PART(SIGN_OP)                    \
+					i += ncnt;                              \
+					pnp = np;                               \
+				}                                           \
+			}                                               \
+			ncnt += (np - pnp);                             \
+			REAL##_PART(SIGN_OP)                            \
+		} else if (o) {                                     \
+			lend = lp = (bit*)Tloc(o, 0);                   \
+			lend += cnt;                                    \
+			REAL##_PART(SIGN_OP)                            \
+		} else {                                            \
+			i += cnt;                                       \
+			REAL##_ALL(SIGN_OP)                             \
+		}                                                   \
 	} while(0);
 
 #define ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, FRAME) \
 	switch(tpe) { \
 		case TYPE_bit: \
-			ANALYTICAL_MIN_MAX_CALC(bit, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			ANALYTICAL_MIN_MAX_CALC##FRAME(bit, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
 			break; \
 		case TYPE_bte: \
-			ANALYTICAL_MIN_MAX_CALC(bte, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			ANALYTICAL_MIN_MAX_CALC##FRAME(bte, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
 			break; \
 		case TYPE_sht: \
-			ANALYTICAL_MIN_MAX_CALC(sht, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			ANALYTICAL_MIN_MAX_CALC##FRAME(sht, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
 			break; \
 		case TYPE_int: \
-			ANALYTICAL_MIN_MAX_CALC(int, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			ANALYTICAL_MIN_MAX_CALC##FRAME(int, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
 			break; \
 		case TYPE_lng: \
-			ANALYTICAL_MIN_MAX_CALC(lng, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			ANALYTICAL_MIN_MAX_CALC##FRAME(lng, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
 			break; \
-		ANALYTICAL_MIN_MAX_LIMIT(IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+		ANALYTICAL_MIN_MAX_LIMIT(FRAME, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
 		case TYPE_flt: \
-			ANALYTICAL_MIN_MAX_CALC(flt, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			ANALYTICAL_MIN_MAX_CALC##FRAME(flt, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
 			break; \
 		case TYPE_dbl: \
-			ANALYTICAL_MIN_MAX_CALC(dbl, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
+			ANALYTICAL_MIN_MAX_CALC##FRAME(dbl, IMP, ANALYTICAL_MIN_MAX_IMP##FRAME) \
 			break; \
-		default: \
-			ANALYTICAL_MIN_MAX_OTHERS_CALC(SIGN_OP, ANALYTICAL_MIN_MAX_OTHERS_IMP##FRAME) \
+		default: { \
+			BATiter bpi = bat_iterator(b); \
+			void *restrict curval = BUNtail(bpi, 0); \
+			nil = ATOMnilptr(tpe); \
+			atomcmp = ATOMcompare(tpe); \
+			ANALYTICAL_MIN_MAX_OTHERS_CALC##FRAME(SIGN_OP, ANALYTICAL_MIN_MAX_OTHERS_IMP##FRAME) \
+		}\
 	}
 
 #define ANALYTICAL_MIN_MAX(OP, IMP, SIGN_OP) \
 gdk_return \
-GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, int unit, BUN start, BUN end) \
+GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, int unit, BUN start, BUN end) \
 { \
 	int (*atomcmp)(const void *, const void *); \
 	const void* restrict nil; \
 	bool has_nils = false; \
 	BUN i = 0, j = 0, l = 0, k = 0, m = 0, ncnt, cnt = BATcount(b); \
-	bit *np, *pnp, *nend; \
+	bit *np, *pnp, *nend, *lp, *lend; \
 	gdk_return gdk_res = GDK_SUCCEED; \
  \
 	assert(unit >= 0 && unit <= 2); \
  \
-	if(unit == 0 && start == 0 && end == 0) { \
-		ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, _NO_OVERLAP) \
-	} else if(unit == 0) { \
+	if(unit == 0) { \
 		ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, _ROWS) \
 	} else { \
-	    \
+		ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, _RANGE) \
 	} \
 finish: \
 	BATsetcount(r, cnt); \
@@ -1103,12 +1229,16 @@ finish: \
 ANALYTICAL_MIN_MAX(min, MIN, >)
 ANALYTICAL_MIN_MAX(max, MAX, <)
 
-#undef ANALYTICAL_MIN_MAX_CALC
+#undef ANALYTICAL_MIN_MAX_CALC_ROWS
+#undef ANALYTICAL_MIN_MAX_CALC_RANGE
 #undef ANALYTICAL_MIN_MAX_IMP_ROWS
-#undef ANALYTICAL_MIN_MAX_IMP_NO_OVERLAP
-#undef ANALYTICAL_MIN_MAX_OTHERS_CALC
+#undef ANALYTICAL_MIN_MAX_IMP_RANGE_PART
+#undef ANALYTICAL_MIN_MAX_IMP_RANGE_ALL
+#undef ANALYTICAL_MIN_MAX_OTHERS_CALC_ROWS
+#undef ANALYTICAL_MIN_MAX_OTHERS_CALC_RANGE
 #undef ANALYTICAL_MIN_MAX_OTHERS_IMP_ROWS
-#undef ANALYTICAL_MIN_MAX_OTHERS_IMP_NO_OVERLAP
+#undef ANALYTICAL_MIN_MAX_OTHERS_IMP_RANGE_PART
+#undef ANALYTICAL_MIN_MAX_OTHERS_IMP_RANGE_ALL
 #undef ANALYTICAL_MIN_MAX
 #undef ANALYTICAL_MIN_MAX_BRANCHES
 #undef ANALYTICAL_MIN_MAX_LIMIT
@@ -1474,8 +1604,6 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 
 #define ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC_ROWS(IMP_VARSIZED, IMP_FIXEDSIZE) \
 	do {                                                           \
-		const void *restrict nil = ATOMnilptr(tpe);                \
-		int (*cmp)(const void *, const void *) = ATOMcompare(tpe); \
 		lng *rp, *rb, curval = 0;                                  \
 		rb = rp = (lng*)Tloc(r, 0);                                \
 		if (b->tvarsized) {                                        \
@@ -1609,8 +1737,6 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 
 #define ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC_RANGE(IMP_VARSIZED, IMP_FIXEDSIZE) \
 	do {                                                           \
-		const void *restrict nil = ATOMnilptr(tpe);                \
-		int (*cmp)(const void *, const void *) = ATOMcompare(tpe); \
 		lng *rp, *rb, curval = 0;                                  \
 		rb = rp = (lng*)Tloc(r, 0);                                \
 		if (b->tvarsized) {                                        \
@@ -1720,8 +1846,11 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			} \
 			break; \
 		} \
-		default: \
+		default: { \
+			const void *restrict nil = ATOMnilptr(tpe); \
+			int (*cmp)(const void *, const void *) = ATOMcompare(tpe); \
 			ANALYTICAL_COUNT_NO_NIL_OTHER_TYPES_CALC##FRAME(ANALYTICAL_COUNT_NO_NIL_VARSIZED_TYPES##FRAME, ANALYTICAL_COUNT_NO_NIL_FIXEDSIZE_TYPES##FRAME) \
+		} \
 	}
 
 gdk_return
@@ -2179,7 +2308,7 @@ finish:
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_PROD_CALC_NUM_ROWS(TPE1, TPE2, TPE3, IMP)    \
+#define ANALYTICAL_PROD_CALC_NUM_ROWS(TPE1, TPE2, TPE3, IMP) \
 	do {                                           \
 		TPE1 *pbp, *bp, v;                         \
 		TPE2 *rp, *rb, curval = TPE2##_nil;        \
