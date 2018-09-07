@@ -898,8 +898,7 @@ finish:
 
 #define ANALYTICAL_MIN_MAX_IMP_ROWS(TPE, IMP)         \
 	do {                                              \
-		TPE *bs, *bl, *be;                            \
-		bl = pbp;                                     \
+		TPE *bl = pbp, *bs, *be;                      \
 		for(; pbp<bp;pbp++) {                         \
 			bs = (pbp > bl+start) ? pbp - start : bl; \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
@@ -1076,7 +1075,7 @@ finish:
 
 #define ANALYTICAL_MIN_MAX(OP, IMP, SIGN_OP) \
 gdk_return \
-GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, BUN start, BUN end) \
+GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, int unit, BUN start, BUN end) \
 { \
 	int (*atomcmp)(const void *, const void *); \
 	const void* restrict nil; \
@@ -1085,10 +1084,14 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, BUN 
 	bit *np, *pnp, *nend; \
 	gdk_return gdk_res = GDK_SUCCEED; \
  \
-	if(start == 0 && end == 0) { \
+	assert(unit >= 0 && unit <= 2); \
+ \
+	if(unit == 0 && start == 0 && end == 0) { \
 		ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, _NO_OVERLAP) \
-	} else { \
+	} else if(unit == 0) { \
 		ANALYTICAL_MIN_MAX_BRANCHES(OP, IMP, SIGN_OP, _ROWS) \
+	} else { \
+	    \
 	} \
 finish: \
 	BATsetcount(r, cnt); \
@@ -1162,8 +1165,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 
 #define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP_ROWS(TPE)\
 	do {                                                \
-		TPE *bs, *bl, *be;                              \
-		bl = pbp;                                       \
+		TPE *bl = pbp, *bs, *be;                        \
 		for(; pbp<bp;pbp++) {                           \
 			bs = (pbp > bl+start) ? pbp - start : bl;   \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;   \
@@ -1420,24 +1422,30 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	}
 
 gdk_return
-GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe, BUN start, BUN end)
+GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int tpe, int unit, BUN start, BUN end)
 {
 	BUN i = 0, j = 0, k = 0, l = 0, m = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *nend;
 	gdk_return gdk_res = GDK_SUCCEED;
 
 	assert(ignore_nils);
+	assert(unit >= 0 && unit <= 2);
 	(void) o;
+
 	if(!*ignore_nils || b->T.nonil) {
-		if(start == 0 && end == 0) {
+		if(unit == 0 && start == 0 && end == 0) {
 			ANALYTICAL_COUNT_IGNORE_NILS_CALC(_NO_OVERLAP)
-		} else {
+		} else if(unit == 0) {
 			ANALYTICAL_COUNT_IGNORE_NILS_CALC(_ROWS)
+		} else {
+
 		}
-	} else if(start == 0 && end == 0) {
+	} else if(unit == 0 && start == 0 && end == 0) {
 		ANALYTICAL_COUNT_BRANCHES(_NO_OVERLAP)
-	} else {
+	} else if(unit == 0) {
 		ANALYTICAL_COUNT_BRANCHES(_ROWS)
+	} else {
+
 	}
 	BATsetcount(r, cnt);
 	r->tnonil = true;
@@ -1463,29 +1471,9 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 #undef ANALYTICAL_COUNT_STR_LIMIT
 #undef ANALYTICAL_COUNT_BRANCHES
 
-#define ANALYTICAL_SUM_IMP_NO_OVERLAP(TPE1, TPE2) \
-	do {                                      \
-		for(; pbp<bp; pbp++) {                \
-			v = *pbp;                         \
-			if (!is_##TPE1##_nil(v)) {        \
-				if(is_##TPE2##_nil(curval))   \
-					curval = (TPE2) v;        \
-				else                          \
-					ADD_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
-			}                                 \
-		}                                     \
-		for (;rb < rp; rb++)                  \
-			*rb = curval;                     \
-		if(is_##TPE2##_nil(curval))           \
-			has_nils = true;                  \
-		else                                  \
-			curval = TPE2##_nil;              \
-	} while(0);                               \
-
 #define ANALYTICAL_SUM_IMP_ROWS(TPE1, TPE2)           \
 	do {                                              \
-		TPE1 *bs, *bl, *be;                           \
-		bl = pbp;                                     \
+		TPE1 *bl = pbp, *bs, *be, v;                  \
 		for(; pbp<bp;pbp++) {                         \
 			bs = (pbp > bl+start) ? pbp - start : bl; \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
@@ -1507,13 +1495,29 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)       \
+#define ANALYTICAL_SUM_FP_IMP_ROWS(TPE1, TPE2)           \
+	do {                                                 \
+		TPE1 *bl = pbp, *bs, *be;                        \
+		(void) curval;                                   \
+		for(; pbp<bp; pbp++) {                           \
+			bs = (pbp > bl+start) ? pbp - start : bl;    \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp;    \
+			if(dofsum(bs, 0, 0, (be - bs), rb, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, true, \
+					  "GDKanalyticalsum") == BUN_NONE) { \
+				goto bailout;                            \
+			}                                            \
+			if(is_##TPE2##_nil(*rb))                     \
+				has_nils = true;                         \
+			rb++;                                        \
+		}                                                \
+	} while(0);
+
+#define ANALYTICAL_SUM_CALC_ROWS(TPE1, TPE2, IMP)  \
 	do {                                           \
-		TPE1 *pbp, *bp, v;                         \
-		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
+		TPE1 *pbp, *bp;                            \
+		TPE2 *rp, *rb, curval = TPE2##_nil;        \
 		pbp = bp = (TPE1*)Tloc(b, 0);              \
 		rb = rp = (TPE2*)Tloc(r, 0);               \
-		rend = rp + cnt;                           \
 		if (p) {                                   \
 			pnp = np = (bit*)Tloc(p, 0);           \
 			nend = np + cnt;                       \
@@ -1531,54 +1535,157 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 			bp += ncnt;                            \
 			rp += ncnt;                            \
 			IMP(TPE1, TPE2)                        \
-		} else if (o || force_order) {             \
+		} else {                                   \
 			ncnt = cnt;                            \
 			bp += ncnt;                            \
 			rp += ncnt;                            \
 			IMP(TPE1, TPE2)                        \
-		} else {                                   \
-			for(; rb<rend; rb++, bp++) {           \
-				v = *bp;                           \
-				if(is_##TPE1##_nil(v)) {           \
-					*rb = TPE2##_nil;              \
-					has_nils = true;               \
-				} else {                           \
-					*rb = (TPE2) v;                \
-				}                                  \
-			}                                      \
 		}                                          \
 		goto finish;                               \
 	} while(0);
 
-#define ANALYTICAL_SUM_FP_IMP_NO_OVERLAP(TPE1, TPE2) \
+#define ANALYTICAL_SUM_IMP_RANGE_PART(TPE1, TPE2) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		TPE1 *bs, *be, v;                       \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			bs = bp + (ns - nl);                \
+			be = bs + parcel;                   \
+			for(; bs<be; bs++) {                \
+				v = *bs;                        \
+				if (!is_##TPE1##_nil(v)) {      \
+					if(is_##TPE2##_nil(curval)) \
+						curval = (TPE2) v;      \
+					else                        \
+						ADD_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+				}                               \
+			}                                   \
+			*rb = curval;                       \
+			rb++;                               \
+			if(is_##TPE2##_nil(curval))         \
+				has_nils = true;                \
+			else                                \
+				curval = TPE2##_nil;            \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_SUM_IMP_RANGE_ALL(TPE1, TPE2) \
+	do {                                      \
+		TPE1 v;                               \
+		for(; pbp<bp; pbp++) {                \
+			v = *pbp;                         \
+			if (!is_##TPE1##_nil(v)) {        \
+				if(is_##TPE2##_nil(curval))   \
+					curval = (TPE2) v;        \
+				else                          \
+					ADD_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}                                 \
+		}                                     \
+		for (;rb < rp; rb++)                  \
+			*rb = curval;                     \
+		if(is_##TPE2##_nil(curval))           \
+			has_nils = true;                  \
+	} while(0);                               \
+
+#define ANALYTICAL_SUM_FP_IMP_RANGE_PART(TPE1, TPE2) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		TPE1 *bs;                               \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			bs = bp + (ns - nl);                \
+			if(dofsum(bs, 0, 0, parcel, &curval, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, \
+					  true, "GDKanalyticalsum") == BUN_NONE) { \
+				goto bailout;                   \
+			}                                   \
+			*rb = curval;                       \
+			rb++;                               \
+			if(is_##TPE2##_nil(curval))         \
+				has_nils = true;                \
+			else                                \
+				curval = TPE2##_nil;            \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_SUM_FP_IMP_RANGE_ALL(TPE1, TPE2)  \
 	do {                                             \
-		if(dofsum(pbp, 0, 0, ncnt, rb, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, true, \
+		if(dofsum(pbp, 0, 0, cnt, &curval, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, true, \
 				  "GDKanalyticalsum") == BUN_NONE) { \
 			goto bailout;                            \
 		}                                            \
-		curval = *rb;                                \
 		for (;rb < rp; rb++)                         \
 			*rb = curval;                            \
 		if(is_##TPE2##_nil(curval))                  \
 			has_nils = true;                         \
 	} while(0);
 
-#define ANALYTICAL_SUM_FP_IMP_ROWS(TPE1, TPE2)           \
-	do {                                                 \
-		TPE1 *bs, *bl, *be;                              \
-		bl = pbp;                                        \
-		(void) curval;                                   \
-		for(; pbp<bp; pbp++) {                           \
-			bs = (pbp > bl+start) ? pbp - start : bl;    \
-			be = (pbp+end < bp) ? pbp + end + 1 : bp;    \
-			if(dofsum(bs, 0, 0, (be - bs), rb, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, true, \
-					  "GDKanalyticalsum") == BUN_NONE) { \
-				goto bailout;                            \
-			}                                            \
-			if(is_##TPE2##_nil(*rb))                     \
-				has_nils = true;                         \
-			rb++;                                        \
-		}                                                \
+#define ANALYTICAL_SUM_CALC_RANGE(TPE1, TPE2, IMP) \
+	do {                                           \
+		TPE1 *pbp, *bp;                            \
+		TPE2 *rb, *rp, curval = TPE2##_nil;        \
+		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		rp = rb = (TPE2*)Tloc(r, 0);               \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					IMP##_PART(TPE1, TPE2)         \
+					bp += ncnt;                    \
+					pnp = np;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			IMP##_PART(TPE1, TPE2)                 \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			IMP##_PART(TPE1, TPE2)                 \
+		} else {                                   \
+			rp += cnt;                             \
+			bp += cnt;                             \
+			IMP##_ALL(TPE1, TPE2)                  \
+		}                                          \
+		goto finish;                               \
 	} while(0);
 
 #ifdef HAVE_HGE
@@ -1586,19 +1693,19 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	case TYPE_hge: { \
 		switch (tp1) { \
 			case TYPE_bte: \
-				ANALYTICAL_SUM_CALC(bte, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				ANALYTICAL_SUM_CALC##FRAME(bte, hge, ANALYTICAL_SUM_IMP##FRAME); \
 				break; \
 			case TYPE_sht: \
-				ANALYTICAL_SUM_CALC(sht, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				ANALYTICAL_SUM_CALC##FRAME(sht, hge, ANALYTICAL_SUM_IMP##FRAME); \
 				break; \
 			case TYPE_int: \
-				ANALYTICAL_SUM_CALC(int, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				ANALYTICAL_SUM_CALC##FRAME(int, hge, ANALYTICAL_SUM_IMP##FRAME); \
 				break; \
 			case TYPE_lng: \
-				ANALYTICAL_SUM_CALC(lng, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				ANALYTICAL_SUM_CALC##FRAME(lng, hge, ANALYTICAL_SUM_IMP##FRAME); \
 				break; \
 			case TYPE_hge: \
-				ANALYTICAL_SUM_CALC(hge, hge, ANALYTICAL_SUM_IMP##FRAME); \
+				ANALYTICAL_SUM_CALC##FRAME(hge, hge, ANALYTICAL_SUM_IMP##FRAME); \
 				break; \
 			default: \
 				goto nosupport; \
@@ -1614,7 +1721,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		case TYPE_bte: { \
 			switch (tp1) { \
 				case TYPE_bte: \
-					ANALYTICAL_SUM_CALC(bte, bte, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(bte, bte, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				default: \
 					goto nosupport; \
@@ -1624,10 +1731,10 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		case TYPE_sht: { \
 			switch (tp1) { \
 				case TYPE_bte: \
-					ANALYTICAL_SUM_CALC(bte, sht, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(bte, sht, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				case TYPE_sht: \
-					ANALYTICAL_SUM_CALC(sht, sht, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(sht, sht, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				default: \
 					goto nosupport; \
@@ -1637,13 +1744,13 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		case TYPE_int: { \
 			switch (tp1) { \
 				case TYPE_bte: \
-					ANALYTICAL_SUM_CALC(bte, int, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(bte, int, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				case TYPE_sht: \
-					ANALYTICAL_SUM_CALC(sht, int, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(sht, int, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				case TYPE_int: \
-					ANALYTICAL_SUM_CALC(int, int, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(int, int, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				default: \
 					goto nosupport; \
@@ -1653,16 +1760,16 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		case TYPE_lng: { \
 			switch (tp1) { \
 				case TYPE_bte: \
-					ANALYTICAL_SUM_CALC(bte, lng, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(bte, lng, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				case TYPE_sht: \
-					ANALYTICAL_SUM_CALC(sht, lng, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(sht, lng, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				case TYPE_int: \
-					ANALYTICAL_SUM_CALC(int, lng, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(int, lng, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				case TYPE_lng: \
-					ANALYTICAL_SUM_CALC(lng, lng, ANALYTICAL_SUM_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(lng, lng, ANALYTICAL_SUM_IMP##FRAME); \
 					break; \
 				default: \
 					goto nosupport; \
@@ -1673,7 +1780,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		case TYPE_flt: { \
 			switch (tp1) { \
 				case TYPE_flt: \
-					ANALYTICAL_SUM_CALC(flt, flt, ANALYTICAL_SUM_FP_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(flt, flt, ANALYTICAL_SUM_FP_IMP##FRAME); \
 					break; \
 				default: \
 					goto nosupport; \
@@ -1683,10 +1790,10 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 		case TYPE_dbl: { \
 			switch (tp1) { \
 				case TYPE_flt: \
-					ANALYTICAL_SUM_CALC(flt, dbl, ANALYTICAL_SUM_FP_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(flt, dbl, ANALYTICAL_SUM_FP_IMP##FRAME); \
 					break; \
 				case TYPE_dbl: \
-					ANALYTICAL_SUM_CALC(dbl, dbl, ANALYTICAL_SUM_FP_IMP##FRAME); \
+					ANALYTICAL_SUM_CALC##FRAME(dbl, dbl, ANALYTICAL_SUM_FP_IMP##FRAME); \
 					break; \
 				default: \
 					goto nosupport; \
@@ -1698,17 +1805,19 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit *ignore_nils, int t
 	}
 
 gdk_return
-GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2, BUN start, BUN end)
+GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2, int unit, BUN start, BUN end)
 {
 	bool has_nils = false;
 	BUN ncnt, cnt = BATcount(b), nils = 0;
-	bit *np, *pnp, *nend;
+	bit *np, *pnp, *nend, *lp, *lend;
 	int abort_on_error = 1;
 
-	if(start == 0 && end == 0) {
-		ANALYTICAL_SUM_BRANCHES(_NO_OVERLAP)
-	} else {
+	assert(unit >= 0 && unit <= 2);
+
+	if(unit == 0) {
 		ANALYTICAL_SUM_BRANCHES(_ROWS)
+	} else {
+		ANALYTICAL_SUM_BRANCHES(_RANGE)
 	}
 bailout:
 	GDKerror("error while calculating floating-point sum\n");
@@ -1726,37 +1835,21 @@ finish:
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_SUM_CALC
-#undef ANALYTICAL_SUM_IMP_NO_OVERLAP
 #undef ANALYTICAL_SUM_IMP_ROWS
-#undef ANALYTICAL_SUM_FP_IMP_NO_OVERLAP
+#undef ANALYTICAL_SUM_IMP_RANGE_PART
+#undef ANALYTICAL_SUM_IMP_RANGE_ALL
 #undef ANALYTICAL_SUM_FP_IMP_ROWS
+#undef ANALYTICAL_SUM_FP_IMP_RANGE_PART
+#undef ANALYTICAL_SUM_FP_IMP_RANGE
+#undef ANALYTICAL_SUM_CALC_ROWS
+#undef ANALYTICAL_SUM_CALC_RANGE_PART
+#undef ANALYTICAL_SUM_CALC_RANGE_ALL
 #undef ANALYTICAL_SUM_BRANCHES
 #undef ANALYTICAL_SUM_LIMIT
 
-#define ANALYTICAL_PROD_IMP_NO_OVERLAP(TPE1, TPE2, TPE3) \
-	do {                                                 \
-		for(; pbp<bp; pbp++) {                           \
-			v = *pbp;                                    \
-			if (!is_##TPE1##_nil(v)) {                   \
-				if(is_##TPE2##_nil(curval))              \
-					curval = (TPE2) v;                   \
-				else                                     \
-					MUL4_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
-			}                                            \
-		}                                                \
-		for (;rb < rp; rb++)                             \
-			*rb = curval;                                \
-		if(is_##TPE2##_nil(curval))                      \
-			has_nils = true;                             \
-		else                                             \
-			curval = TPE2##_nil;                         \
-	} while (0);
-
-#define ANALYTICAL_PROD_IMP_ROWS(TPE1, TPE2, TPE3)    \
+#define ANALYTICAL_PROD_IMP_NUM_ROWS(TPE1, TPE2, TPE3) \
 	do {                                              \
-		TPE1 *bs, *bl, *be;                           \
-		bl = pbp;                                     \
+		TPE1 *bl = pbp, *bs, *be;                     \
 		for(; pbp<bp;pbp++) {                         \
 			bs = (pbp > bl+start) ? pbp - start : bl; \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
@@ -1779,13 +1872,12 @@ finish:
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_PROD_CALC(TPE1, TPE2, TPE3, IMP)\
+#define ANALYTICAL_PROD_CALC_NUM_ROWS(TPE1, TPE2, TPE3, IMP)    \
 	do {                                           \
 		TPE1 *pbp, *bp, v;                         \
-		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
+		TPE2 *rp, *rb, curval = TPE2##_nil;        \
 		pbp = bp = (TPE1*)Tloc(b, 0);              \
 		rb = rp = (TPE2*)Tloc(r, 0);               \
-		rend = rb + cnt;                           \
 		if (p) {                                   \
 			pnp = np = (bit*)Tloc(p, 0);           \
 			nend = np + cnt;                       \
@@ -1803,48 +1895,18 @@ finish:
 			bp += ncnt;                            \
 			rp += ncnt;                            \
 			IMP(TPE1, TPE2, TPE3)                  \
-		} else if (o || force_order) {             \
+		} else {                                   \
 			ncnt = cnt;                            \
 			bp += ncnt;                            \
 			rp += ncnt;                            \
 			IMP(TPE1, TPE2, TPE3)                  \
-		} else {                                   \
-			for(; rb<rend; rb++, bp++) {           \
-				v = *bp;                           \
-				if(is_##TPE1##_nil(v)) {           \
-					*rb = TPE2##_nil;              \
-					has_nils = true;               \
-				} else {                           \
-					*rb = (TPE2) v;                \
-				}                                  \
-			}                                      \
 		}                                          \
 		goto finish;                               \
 	} while(0);
 
-#define ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP(TPE1, TPE2, REAL_IMP) \
-	do {                                                           \
-		for(; pbp<bp; pbp++) {                                     \
-			v = *pbp;                                              \
-			if (!is_##TPE1##_nil(v)) {                             \
-				if(is_##TPE2##_nil(curval))                        \
-					curval = (TPE2) v;                             \
-				else                                               \
-					REAL_IMP(TPE1, v, TPE2, curval, curval, GDK_##TPE2##_max, goto calc_overflow); \
-			}                                                      \
-		}                                                          \
-		for (;rb < rp; rb++)                                       \
-			*rb = curval;                                          \
-		if(is_##TPE2##_nil(curval))                                \
-			has_nils = true;                                       \
-		else                                                       \
-			curval = TPE2##_nil;                                   \
-	} while (0);
-
-#define ANALYTICAL_PROD_IMP_LIMIT_ROWS(TPE1, TPE2, REAL_IMP)    \
+#define ANALYTICAL_PROD_IMP_NUM_LIMIT_ROWS(TPE1, TPE2, REAL_IMP) \
 	do {                                                        \
-		TPE1 *bs, *bl, *be;                                     \
-		bl = pbp;                                               \
+		TPE1 *bl = pbp, *bs, *be;                               \
 		for(; pbp<bp;pbp++) {                                   \
 			bs = (pbp > bl+start) ? pbp - start : bl;           \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;           \
@@ -1866,13 +1928,12 @@ finish:
 		}                                                       \
 	} while(0);
 
-#define ANALYTICAL_PROD_CALC_LIMIT(TPE1, TPE2, IMP, REAL_IMP)\
+#define ANALYTICAL_PROD_CALC_NUM_LIMIT_ROWS(TPE1, TPE2, IMP, REAL_IMP)\
 	do {                                                     \
 		TPE1 *pbp, *bp, v;                                   \
-		TPE2 *rp, *rb, *rend, curval = TPE2##_nil;           \
+		TPE2 *rp, *rb, curval = TPE2##_nil;                  \
 		pbp = bp = (TPE1*)Tloc(b, 0);                        \
 		rb = rp = (TPE2*)Tloc(r, 0);                         \
-		rend = rp + cnt;                                     \
 		if (p) {                                             \
 			pnp = np = (bit*)Tloc(p, 0);                     \
 			nend = np + cnt;                                 \
@@ -1890,23 +1951,208 @@ finish:
 			bp += ncnt;                                      \
 			rp += ncnt;                                      \
 			IMP(TPE1, TPE2, REAL_IMP)                        \
-		} else if (o || force_order) {                       \
+		} else {                                             \
 			ncnt = cnt;                                      \
 			bp += ncnt;                                      \
 			rp += ncnt;                                      \
 			IMP(TPE1, TPE2, REAL_IMP)                        \
-		} else {                                             \
-			for(; rp<rend; rp++, bp++) {                     \
-				v = *bp;                                     \
-				if(is_##TPE1##_nil(v)) {                     \
-					*rp = TPE2##_nil;                        \
-					has_nils = true;                         \
-				} else {                                     \
-					*rp = (TPE2) v;                          \
-				}                                            \
-			}                                                \
 		}                                                    \
 		goto finish;                                         \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_NUM_RANGE_ALL(TPE1, TPE2, TPE3) \
+	do {                                                 \
+		TPE1 v;                                          \
+		for(; pbp<bp; pbp++) {                           \
+			v = *pbp;                                    \
+			if (!is_##TPE1##_nil(v)) {                   \
+				if(is_##TPE2##_nil(curval))              \
+					curval = (TPE2) v;                   \
+				else                                     \
+					MUL4_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
+			}                                            \
+		}                                                \
+		for (;rb < rp; rb++)                             \
+			*rb = curval;                                \
+		if(is_##TPE2##_nil(curval))                      \
+			has_nils = true;                             \
+		else                                             \
+			curval = TPE2##_nil;                         \
+	} while (0);
+
+#define ANALYTICAL_PROD_IMP_NUM_RANGE_PART(TPE1, TPE2, TPE3) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		TPE1 *bs, *be, v;                       \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			bs = bp + (ns - nl);                \
+			be = bs + parcel;                   \
+			for(; bs<be; bs++) {                \
+				v = *bs;                        \
+				if (!is_##TPE1##_nil(v)) {      \
+					if(is_##TPE2##_nil(curval)) \
+						curval = (TPE2) v;      \
+					else                        \
+						MUL4_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, \
+										goto calc_overflow); \
+				}                               \
+			}                                   \
+			*rb = curval;                       \
+			rb++;                               \
+			if(is_##TPE2##_nil(curval))         \
+				has_nils = true;                \
+			else                                \
+				curval = TPE2##_nil;            \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_PROD_CALC_NUM_RANGE(TPE1, TPE2, TPE3, IMP)   \
+	do {                                           \
+		TPE1 *pbp, *bp;                            \
+		TPE2 *rb, *rp, curval = TPE2##_nil;        \
+		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		rp = rb = (TPE2*)Tloc(r, 0);               \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					IMP##_PART(TPE1, TPE2, TPE3)   \
+					bp += ncnt;                    \
+					pnp = np;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			IMP##_PART(TPE1, TPE2, TPE3)           \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			IMP##_PART(TPE1, TPE2, TPE3)           \
+		} else {                                   \
+			rp += cnt;                             \
+			bp += cnt;                             \
+			IMP##_ALL(TPE1, TPE2, TPE3)            \
+		}                                          \
+		goto finish;                               \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_NUM_LIMIT_RANGE_ALL(TPE1, TPE2, REAL_IMP)  \
+	do {                                                           \
+		TPE1 v;                                                    \
+		for(; pbp<bp; pbp++) {                                     \
+			v = *pbp;                                              \
+			if (!is_##TPE1##_nil(v)) {                             \
+				if(is_##TPE2##_nil(curval))                        \
+					curval = (TPE2) v;                             \
+				else                                               \
+					REAL_IMP(TPE1, v, TPE2, curval, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}                                                      \
+		}                                                          \
+		for (;rb < rp; rb++)                                       \
+			*rb = curval;                                          \
+		if(is_##TPE2##_nil(curval))                                \
+			has_nils = true;                                       \
+		else                                                       \
+			curval = TPE2##_nil;                                   \
+	} while (0);
+
+#define ANALYTICAL_PROD_IMP_NUM_LIMIT_RANGE_PART(TPE1, TPE2, REAL_IMP) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		TPE1 *bs, *be, v;                       \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			bs = bp + (ns - nl);                \
+			be = bs + parcel;                   \
+			for(; bs<be; bs++) {                \
+				v = *bs;                        \
+				if (!is_##TPE1##_nil(v)) {      \
+					if(is_##TPE2##_nil(curval)) \
+						curval = (TPE2) v;      \
+					else                        \
+						REAL_IMP(TPE1, v, TPE2, curval, curval, GDK_##TPE2##_max, goto calc_overflow); \
+				}                               \
+			}                                   \
+			*rb = curval;                       \
+			rb++;                               \
+			if(is_##TPE2##_nil(curval))         \
+				has_nils = true;                \
+			else                                \
+				curval = TPE2##_nil;            \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_PROD_CALC_NUM_LIMIT_RANGE(TPE1, TPE2, IMP, REAL_IMP) \
+	do {                                           \
+		TPE1 *pbp, *bp;                            \
+		TPE2 *rb, *rp, curval = TPE2##_nil;        \
+		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		rp = rb = (TPE2*)Tloc(r, 0);               \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					IMP##_PART(TPE1, TPE2, REAL_IMP) \
+					bp += ncnt;                    \
+					pnp = np;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			IMP##_PART(TPE1, TPE2, REAL_IMP)       \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			IMP##_PART(TPE1, TPE2, REAL_IMP)       \
+		} else {                                   \
+			rp += cnt;                             \
+			bp += cnt;                             \
+			IMP##_ALL(TPE1, TPE2, REAL_IMP)        \
+		}                                          \
+		goto finish;                               \
 	} while(0);
 
 #define ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2)                                          \
@@ -1921,29 +2167,9 @@ finish:
 		}                                                                                \
 	} while(0);
 
-#define ANALYTICAL_PROD_IMP_FP_NO_OVERLAP(TPE1, TPE2)       \
-	do {                                                    \
-		for(; pbp<bp; pbp++) {                              \
-			v = *pbp;                                       \
-			 if (!is_##TPE1##_nil(v)) {                     \
-				if(is_##TPE2##_nil(curval))                 \
-					curval = (TPE2) v;                      \
-				else                                        \
-					ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
-			}                                               \
-		}                                                   \
-		for (;rb < rp; rb++)                                \
-			*rb = curval;                                   \
-		if(is_##TPE2##_nil(curval))                         \
-			has_nils = true;                                \
-		else                                                \
-			curval = TPE2##_nil;                            \
-	} while (0);
-
 #define ANALYTICAL_PROD_IMP_FP_ROWS(TPE1, TPE2)                 \
 	do {                                                        \
-		TPE1 *bs, *bl, *be;                                     \
-		bl = pbp;                                               \
+		TPE1 *bl = pbp, *bs, *be;                               \
 		for(; pbp<bp;pbp++) {                                   \
 			bs = (pbp > bl+start) ? pbp - start : bl;           \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;           \
@@ -1965,13 +2191,12 @@ finish:
 		}                                                       \
 	} while(0);
 
-#define ANALYTICAL_PROD_CALC_FP(TPE1, TPE2, IMP)   \
+#define ANALYTICAL_PROD_CALC_FP_ROWS(TPE1, TPE2, IMP) \
 	do {                                           \
 		TPE1 *pbp, *bp, v;                         \
-		TPE2 *rp, *rb, *rend, curval = TPE2##_nil; \
+		TPE2 *rp, *rb, curval = TPE2##_nil;        \
 		pbp = bp = (TPE1*)Tloc(b, 0);              \
 		rb = rp = (TPE2*)Tloc(r, 0);               \
-		rend = rp + cnt;                           \
 		if (p) {                                   \
 			pnp = np = (bit*)Tloc(p, 0);           \
 			nend = np + cnt;                       \
@@ -1989,21 +2214,108 @@ finish:
 			bp += ncnt;                            \
 			rp += ncnt;                            \
 			IMP(TPE1, TPE2)                        \
-		} else if (o || force_order) {             \
+		} else {                                   \
 			ncnt = cnt;                            \
 			bp += ncnt;                            \
 			rp += ncnt;                            \
 			IMP(TPE1, TPE2)                        \
-		} else {                                   \
-			for(; rp<rend; rp++, bp++) {           \
-				v = *bp;                           \
-				if(is_##TPE1##_nil(v)) {           \
-					*rp = TPE2##_nil;              \
-					has_nils = true;               \
-				} else {                           \
-					*rp = (TPE2) v;                \
+		}                                          \
+		goto finish;                               \
+	} while(0);
+
+#define ANALYTICAL_PROD_IMP_FP_RANGE_ALL(TPE1, TPE2)        \
+	do {                                                    \
+		TPE1 v;                                             \
+		for(; pbp<bp; pbp++) {                              \
+			v = *pbp;                                       \
+			 if (!is_##TPE1##_nil(v)) {                     \
+				if(is_##TPE2##_nil(curval))                 \
+					curval = (TPE2) v;                      \
+				else                                        \
+					ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
+			}                                               \
+		}                                                   \
+		for (;rb < rp; rb++)                                \
+			*rb = curval;                                   \
+		if(is_##TPE2##_nil(curval))                         \
+			has_nils = true;                                \
+		else                                                \
+			curval = TPE2##_nil;                            \
+	} while (0);
+
+#define ANALYTICAL_PROD_IMP_FP_RANGE_PART(TPE1, TPE2) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		TPE1 *bs, *be, v;                       \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			bs = bp + (ns - nl);                \
+			be = bs + parcel;                   \
+			for(; bs<be; bs++) {                \
+				v = *bs;                        \
+				if (!is_##TPE1##_nil(v)) {      \
+					if(is_##TPE2##_nil(curval)) \
+						curval = (TPE2) v;      \
+					else                        \
+						ANALYTICAL_PROD_IMP_FP_REAL(TPE1, TPE2) \
+				}                               \
+			}                                   \
+			*rb = curval;                       \
+			rb++;                               \
+			if(is_##TPE2##_nil(curval))         \
+				has_nils = true;                \
+			else                                \
+				curval = TPE2##_nil;            \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_PROD_CALC_FP_RANGE(TPE1, TPE2, IMP) \
+	do {                                           \
+		TPE1 *pbp, *bp;                            \
+		TPE2 *rb, *rp, curval = TPE2##_nil;        \
+		pbp = bp = (TPE1*)Tloc(b, 0);              \
+		rp = rb = (TPE2*)Tloc(r, 0);               \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					IMP##_PART(TPE1, TPE2)         \
+					bp += ncnt;                    \
+					pnp = np;                      \
 				}                                  \
 			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			IMP##_PART(TPE1, TPE2)                 \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			IMP##_PART(TPE1, TPE2)                 \
+		} else {                                   \
+			rp += cnt;                             \
+			bp += cnt;                             \
+			IMP##_ALL(TPE1, TPE2)                  \
 		}                                          \
 		goto finish;                               \
 	} while(0);
@@ -2013,16 +2325,16 @@ finish:
 	case TYPE_lng: { \
 		switch (tp1) { \
 			case TYPE_bte: \
-				ANALYTICAL_PROD_CALC(bte, lng, hge, ANALYTICAL_PROD_IMP##FRAME); \
+				ANALYTICAL_PROD_CALC_NUM##FRAME(bte, lng, hge, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 				break; \
 			case TYPE_sht: \
-				ANALYTICAL_PROD_CALC(sht, lng, hge, ANALYTICAL_PROD_IMP##FRAME); \
+				ANALYTICAL_PROD_CALC_NUM##FRAME(sht, lng, hge, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 				break; \
 			case TYPE_int: \
-				ANALYTICAL_PROD_CALC(int, lng, hge, ANALYTICAL_PROD_IMP##FRAME); \
+				ANALYTICAL_PROD_CALC_NUM##FRAME(int, lng, hge, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 				break; \
 			case TYPE_lng: \
-				ANALYTICAL_PROD_CALC(lng, lng, hge, ANALYTICAL_PROD_IMP##FRAME); \
+				ANALYTICAL_PROD_CALC_NUM##FRAME(lng, lng, hge, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 				break; \
 			default: \
 				goto nosupport; \
@@ -2032,19 +2344,19 @@ finish:
 	case TYPE_hge: { \
 		switch (tp1) { \
 			case TYPE_bte: \
-				ANALYTICAL_PROD_CALC_LIMIT(bte, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(bte, hge, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, HGEMUL_CHECK); \
 				break; \
 			case TYPE_sht: \
-				ANALYTICAL_PROD_CALC_LIMIT(sht, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(sht, hge, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, HGEMUL_CHECK); \
 				break; \
 			case TYPE_int: \
-				ANALYTICAL_PROD_CALC_LIMIT(int, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(int, hge, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, HGEMUL_CHECK); \
 				break; \
 			case TYPE_lng: \
-				ANALYTICAL_PROD_CALC_LIMIT(lng, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(lng, hge, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, HGEMUL_CHECK); \
 				break; \
 			case TYPE_hge: \
-				ANALYTICAL_PROD_CALC_LIMIT(hge, hge, ANALYTICAL_PROD_IMP_LIMIT##FRAME, HGEMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(hge, hge, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, HGEMUL_CHECK); \
 				break; \
 			default: \
 				goto nosupport; \
@@ -2056,16 +2368,16 @@ finish:
 	case TYPE_lng: { \
 		switch (tp1) { \
 			case TYPE_bte: \
-				ANALYTICAL_PROD_CALC_LIMIT(bte, lng, ANALYTICAL_PROD_IMP_LIMIT##FRAME, LNGMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(bte, lng, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, LNGMUL_CHECK); \
 				break; \
 			case TYPE_sht: \
-				ANALYTICAL_PROD_CALC_LIMIT(sht, lng, ANALYTICAL_PROD_IMP_LIMIT##FRAME, LNGMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(sht, lng, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, LNGMUL_CHECK); \
 				break; \
 			case TYPE_int: \
-				ANALYTICAL_PROD_CALC_LIMIT(int, lng, ANALYTICAL_PROD_IMP_LIMIT##FRAME, LNGMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(int, lng, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, LNGMUL_CHECK); \
 				break; \
 			case TYPE_lng: \
-				ANALYTICAL_PROD_CALC_LIMIT(lng, lng, ANALYTICAL_PROD_IMP_LIMIT##FRAME, LNGMUL_CHECK); \
+				ANALYTICAL_PROD_CALC_NUM_LIMIT##FRAME(lng, lng, ANALYTICAL_PROD_IMP_NUM_LIMIT##FRAME, LNGMUL_CHECK); \
 				break; \
 			default: \
 				goto nosupport; \
@@ -2079,7 +2391,7 @@ finish:
 			case TYPE_bte: { \
 				switch (tp1) { \
 					case TYPE_bte: \
-						ANALYTICAL_PROD_CALC(bte, bte, sht, ANALYTICAL_PROD_IMP##FRAME); \
+						ANALYTICAL_PROD_CALC_NUM##FRAME(bte, bte, sht, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 						break; \
 					default: \
 						goto nosupport; \
@@ -2089,10 +2401,10 @@ finish:
 			case TYPE_sht: { \
 				switch (tp1) { \
 					case TYPE_bte: \
-						ANALYTICAL_PROD_CALC(bte, sht, int, ANALYTICAL_PROD_IMP##FRAME); \
+						ANALYTICAL_PROD_CALC_NUM##FRAME(bte, sht, int, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 						break; \
 					case TYPE_sht: \
-						ANALYTICAL_PROD_CALC(sht, sht, int, ANALYTICAL_PROD_IMP##FRAME); \
+						ANALYTICAL_PROD_CALC_NUM##FRAME(sht, sht, int, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 						break; \
 					default: \
 						goto nosupport; \
@@ -2102,13 +2414,13 @@ finish:
 			case TYPE_int: { \
 				switch (tp1) { \
 					case TYPE_bte: \
-						ANALYTICAL_PROD_CALC(bte, int, lng, ANALYTICAL_PROD_IMP##FRAME); \
+						ANALYTICAL_PROD_CALC_NUM##FRAME(bte, int, lng, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 						break; \
 					case TYPE_sht: \
-						ANALYTICAL_PROD_CALC(sht, int, lng, ANALYTICAL_PROD_IMP##FRAME); \
+						ANALYTICAL_PROD_CALC_NUM##FRAME(sht, int, lng, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 						break; \
 					case TYPE_int: \
-						ANALYTICAL_PROD_CALC(int, int, lng, ANALYTICAL_PROD_IMP##FRAME); \
+						ANALYTICAL_PROD_CALC_NUM##FRAME(int, int, lng, ANALYTICAL_PROD_IMP_NUM##FRAME); \
 						break; \
 					default: \
 						goto nosupport; \
@@ -2119,7 +2431,7 @@ finish:
 			case TYPE_flt: { \
 				switch (tp1) { \
 					case TYPE_flt: \
-						ANALYTICAL_PROD_CALC_FP(flt, flt, ANALYTICAL_PROD_IMP_FP##FRAME); \
+						ANALYTICAL_PROD_CALC_FP##FRAME(flt, flt, ANALYTICAL_PROD_IMP_FP##FRAME); \
 						break; \
 					default: \
 						goto nosupport; \
@@ -2129,10 +2441,10 @@ finish:
 			case TYPE_dbl: { \
 				switch (tp1) { \
 					case TYPE_flt: \
-						ANALYTICAL_PROD_CALC_FP(flt, dbl, ANALYTICAL_PROD_IMP_FP##FRAME); \
+						ANALYTICAL_PROD_CALC_FP##FRAME(flt, dbl, ANALYTICAL_PROD_IMP_FP##FRAME); \
 						break; \
 					case TYPE_dbl: \
-						ANALYTICAL_PROD_CALC_FP(dbl, dbl, ANALYTICAL_PROD_IMP_FP##FRAME); \
+						ANALYTICAL_PROD_CALC_FP##FRAME(dbl, dbl, ANALYTICAL_PROD_IMP_FP##FRAME); \
 						break; \
 					default: \
 						goto nosupport; \
@@ -2144,17 +2456,19 @@ finish:
 		}
 
 gdk_return
-GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tp1, int tp2, BUN start, BUN end)
+GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2, int unit, BUN start, BUN end)
 {
 	bool has_nils = false;
 	BUN ncnt, cnt = BATcount(b), nils = 0;
-	bit *pnp, *np, *nend;
+	bit *pnp, *np, *nend, *lp, *lend;
 	int abort_on_error = 1;
 
-	if(start == 0 && end == 0) {
-		ANALYTICAL_PROD_BRANCHES(_NO_OVERLAP)
-	} else {
+	assert(unit >= 0 && unit <= 2);
+
+	if(unit == 0) {
 		ANALYTICAL_PROD_BRANCHES(_ROWS)
+	} else {
+		ANALYTICAL_PROD_BRANCHES(_RANGE)
 	}
 nosupport:
 	GDKerror("prod: type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
@@ -2169,15 +2483,21 @@ finish:
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_PROD_IMP_ROWS
-#undef ANALYTICAL_PROD_IMP_NO_OVERLAP
-#undef ANALYTICAL_PROD_CALC
-#undef ANALYTICAL_PROD_IMP_LIMIT_ROWS
-#undef ANALYTICAL_PROD_IMP_LIMIT_NO_OVERLAP
-#undef ANALYTICAL_PROD_CALC_LIMIT
+#undef ANALYTICAL_PROD_IMP_NUM_ROWS
+#undef ANALYTICAL_PROD_IMP_NUM_RANGE_PART
+#undef ANALYTICAL_PROD_IMP_NUM_RANGE_ALL
+#undef ANALYTICAL_PROD_CALC_NUM_ROWS
+#undef ANALYTICAL_PROD_CALC_NUM_RANGE
+#undef ANALYTICAL_PROD_IMP_NUM_LIMIT_ROWS
+#undef ANALYTICAL_PROD_IMP_NUM_LIMIT_RANGE_PART
+#undef ANALYTICAL_PROD_IMP_NUM_LIMIT_RANGE_ALL
+#undef ANALYTICAL_PROD_CALC_NUM_LIMIT_ROWS
+#undef ANALYTICAL_PROD_CALC_NUM_LIMIT_RANGE
+#undef ANALYTICAL_PROD_CALC_FP_ROWS
+#undef ANALYTICAL_PROD_CALC_FP_RANGE
 #undef ANALYTICAL_PROD_IMP_FP_ROWS
-#undef ANALYTICAL_PROD_IMP_FP_NO_OVERLAP
-#undef ANALYTICAL_PROD_CALC_FP
+#undef ANALYTICAL_PROD_IMP_FP_RANGE_PART
+#undef ANALYTICAL_PROD_IMP_FP_RANGE_ALL
 #undef ANALYTICAL_PROD_IMP_FP_REAL
 #undef ANALYTICAL_PROD_BRANCHES
 #undef ANALYTICAL_PROD_LIMIT
@@ -2228,8 +2548,7 @@ calc_done##TPE##LABEL##no_overlap:                            \
 
 #define ANALYTICAL_AVERAGE_IMP_ROWS(TPE,lng_hge,LABEL)            \
 	do {                                                          \
-		TPE *bs, *bl, *be;                                        \
-		bl = pbp;                                                 \
+		TPE *bl = pbp, *bs, *be;                                  \
 		for(; pbp<bp;pbp++) {                                     \
 			bs = (pbp > bl+start) ? pbp - start : bl;             \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp;             \
@@ -2341,8 +2660,7 @@ calc_done##TPE##LABEL##rows:                                      \
 
 #define ANALYTICAL_AVERAGE_FLOAT_IMP_ROWS(TPE)        \
 	do {                                              \
-		TPE *bs, *bl, *be;                            \
-		bl = pbp;                                     \
+		TPE *bl = pbp, *bs, *be;                      \
 		for(; pbp<bp;pbp++) {                         \
 			bs = (pbp > bl+start) ? pbp - start : bl; \
 			be = (pbp+end < bp) ? pbp + end + 1 : bp; \
@@ -2437,7 +2755,7 @@ calc_done##TPE##LABEL##rows:                                      \
 	}
 
 gdk_return
-GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, BUN start, BUN end)
+GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, int unit, BUN start, BUN end)
 {
 	bool has_nils = false;
 	BUN ncnt, cnt = BATcount(b), nils = 0, n = 0, rr;
@@ -2450,10 +2768,14 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, BUN s
 	lng sum = 0;
 #endif
 
-	if(start == 0 && end == 0) {
+	assert(unit >= 0 && unit <= 2);
+
+	if(unit == 0 && start == 0 && end == 0) {
 		ANALYTICAL_AVERAGE_BRANCHES(_NO_OVERLAP)
-	} else {
+	} else if(unit == 0) {
 		ANALYTICAL_AVERAGE_BRANCHES(_ROWS)
+	} else {
+
 	}
 finish:
 	BATsetcount(r, cnt);

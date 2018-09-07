@@ -4482,7 +4482,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	sql_rel *r = *rel, *p;
 	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
-	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last;
+	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last,
+		has_order_by = (window_specification->h->next->data.sym != NULL);
 	dnode *dn = window_function->data.lval->h;
 
 	aname = qname_fname(dn->data.lval);
@@ -4521,7 +4522,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		p->r = gbe;
 	}
 	/* Order By */
-	if (window_specification->h->next->data.sym) {
+	if (has_order_by) {
 		sql_rel *g;
 		obe = rel_order_by(sql, &p, window_specification->h->next->data.sym, f);
 		if (!obe)
@@ -4678,9 +4679,6 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			append(args, e);
 			oe = exp_op(sql->sa, args, df);
 		}
-	} else if(aggr && !gbe && !obe) {
-		/* when there is no partition and no order by we calculate the aggregate over the entire column */
-		oe = exp_atom_bool(sql->sa, 1);
 	} else {
 		oe = exp_atom_bool(sql->sa, 0);
 	}
@@ -4726,9 +4724,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		append(args, list_fetch(fbe, 2)); /*end */
 		append(args, list_fetch(fbe, 3)); /*exclude */
 	} else if (aggr) {
-		append(args, exp_atom_int(sql->sa, 0)); /*ROWS */
-		append(args, exp_atom_int(sql->sa, 0)); /*start */
-		append(args, exp_atom_int(sql->sa, 0)); /*end */
+		append(args, exp_atom_int(sql->sa, has_order_by ? FRAME_RANGE : FRAME_ROWS));
+		append(args, exp_atom_int(sql->sa, GDK_int_max)); /*start */
+		append(args, exp_atom_int(sql->sa, has_order_by ? 0 : GDK_int_max)); /*end */
 		append(args, exp_atom_int(sql->sa, 0)); /*exclude */
 	}
 	call = exp_op(sql->sa, args, wf);

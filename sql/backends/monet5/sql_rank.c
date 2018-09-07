@@ -940,10 +940,18 @@ SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return do_lead_lag(cntxt, mb, stk, pci, "sql.lead", "lead", GDKanalyticallead);
 }
 
+#define CHECK_UNIT_EXCLUDE_PARAMETERS(OP) \
+	assert(unit >= 0 && unit <= 2); \
+	assert(excl >= 0 && unit <= 3); \
+	if (unit == 2) \
+		throw(SQL, OP, SQLSTATE(42000) "GROUPS frames are not yet implemented"); \
+	if (excl != 0) \
+		throw(SQL, OP, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
+
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
 static str
 SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int, BUN, BUN))
+				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int, int, BUN, BUN))
 {
 	BAT *r, *b, *p, *o;
 	bit force_order = 0;
@@ -955,8 +963,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 	int excl = *getArgReference_int(stk, pci, 7);
 	gdk_return gdk_res;
 
-	if (unit != 0 || excl != 0)
-		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	CHECK_UNIT_EXCLUDE_PARAMETERS(op)
 
 	if (msg)
 		return msg;
@@ -966,7 +973,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, force_order, tpe, (BUN) start, (BUN) end);
+		gdk_res = func(r, b, p, o, force_order, tpe, unit, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
@@ -1044,13 +1051,12 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	if (unit != 0 || excl != 0)
-		throw(SQL, "sql.count", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	CHECK_UNIT_EXCLUDE_PARAMETERS("sql.count")
 
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalcount(r, b, p, o, ignore_nils, tpe, (BUN) start, (BUN) end);
+		gdk_res = GDKanalyticalcount(r, b, p, o, ignore_nils, tpe, unit, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
@@ -1073,11 +1079,10 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, bit, int, int, BUN, BUN))
+					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int, int, BUN, BUN))
 {
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
 	int tp1, tp2, unit, start, end, excl;
-	bit force_order = 0;
 	gdk_return gdk_res;
 	str msg = MAL_SUCCEED;
 
@@ -1141,17 +1146,14 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			if (p) BBPunfix(p->batCacheid);
 			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
-	} else {
-		force_order = *getArgReference_bit(stk, pci, 3);
 	}
 
-	if (unit != 0 || excl != 0)
-		throw(SQL, op, SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	CHECK_UNIT_EXCLUDE_PARAMETERS(op)
 
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, force_order, tp1, tp2, (BUN) start, (BUN) end);
+		gdk_res = func(r, b, p, o, tp1, tp2, unit, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
@@ -1239,8 +1241,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int excl = *getArgReference_int(stk, pci, 7);
 	gdk_return gdk_res;
 
-	if (unit != 0 || excl != 0)
-		throw(SQL, "sql.avg", SQLSTATE(42000) "OVER currently only supports frame extends with unit ROWS (and none of the excludes)");
+	CHECK_UNIT_EXCLUDE_PARAMETERS("sql.avg")
 
 	if (msg)
 		return msg;
@@ -1250,7 +1251,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalavg(r, b, p, o, force_order, tpe, (BUN) start, (BUN) end);
+		gdk_res = GDKanalyticalavg(r, b, p, o, force_order, tpe, unit, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
@@ -1298,3 +1299,6 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return msg;
 }
+
+#undef CHECK_UNIT_EXCLUDE_PARAMETERS
+#undef voidresultBAT
