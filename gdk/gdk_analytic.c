@@ -1082,8 +1082,7 @@ finish:
 #define ANALYTICAL_MIN_MAX_OTHERS_IMP_RANGE_ALL(SIGN_OP)                      \
 	do {                                                                      \
 		l = j;                                                                \
-		curval = BUNtail(bpi, j);                                             \
-		j++;                                                                  \
+		curval = BUNtail(bpi, j++);                                           \
 		for (;j < i; j++) {                                                   \
 			void *next = BUNtail(bpi, j);                                     \
 			if((*atomcmp)(next, nil) != 0) {                                  \
@@ -1138,6 +1137,8 @@ finish:
 			}                                             \
 			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
 				goto finish;                              \
+			if((*atomcmp)(curval, nil) == 0)              \
+				has_nils = true;                          \
 		}                                                 \
 	} while(0);
 
@@ -1156,7 +1157,8 @@ finish:
 					pnp = np;                               \
 				}                                           \
 			}                                               \
-			ncnt += (np - pnp);                             \
+			ncnt = (np - pnp);                              \
+			lend += ncnt;                                   \
 			REAL##_PART(SIGN_OP)                            \
 		} else if (o) {                                     \
 			lend = lp = (bit*)Tloc(o, 0);                   \
@@ -2941,100 +2943,56 @@ finish:
 #undef ANALYTICAL_PROD_BRANCHES
 #undef ANALYTICAL_PROD_LIMIT
 
-#define ANALYTICAL_AVERAGE_IMP_NO_OVERLAP(TPE,lng_hge,LABEL)  \
-	do {                                                      \
-		for(; pbp<bp; pbp++) {                                \
-			v = *pbp;                                         \
-			if (!is_##TPE##_nil(v)) {                         \
-				ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, sum, GDK_##lng_hge##_max, \
-							   goto avg_overflow##TPE##LABEL##no_overlap); \
-				/* count only when no overflow occurs */      \
-				n++;                                          \
-			}                                                 \
-		}                                                     \
-		if(0) {                                               \
-avg_overflow##TPE##LABEL##no_overlap:                         \
-			assert(n > 0);                                    \
-			if (sum >= 0) {                                   \
-				a = (TPE) (sum / (lng_hge) n);                \
-				rr = (BUN) (sum % (SBUN) n);                  \
-			} else {                                          \
-				sum = -sum;                                   \
-				a = - (TPE) (sum / (lng_hge) n);              \
-				rr = (BUN) (sum % (SBUN) n);                  \
-				if (r) {                                      \
-					a--;                                      \
-					rr = n - rr;                              \
-				}                                             \
-			}                                                 \
-			for(; pbp<bp; pbp++) {                            \
-				v = *pbp;                                     \
-				if (is_##TPE##_nil(v))                        \
-					continue;                                 \
-				AVERAGE_ITER(TPE, v, a, rr, n);               \
-			}                                                 \
-			curval = a + (dbl) rr / n;                        \
-			goto calc_done##TPE##LABEL##no_overlap;           \
-		}                                                     \
-		curval = n > 0 ? (dbl) sum / n : dbl_nil;             \
-calc_done##TPE##LABEL##no_overlap:                            \
-		has_nils = has_nils || (n == 0);                      \
-		for (;rb < rp; rb++)                                  \
-			*rb = curval;                                     \
-		n = 0;                                                \
-		sum = 0;                                              \
-	} while(0);
-
-#define ANALYTICAL_AVERAGE_IMP_ROWS(TPE,lng_hge,LABEL)            \
-	do {                                                          \
-		TPE *bl = pbp, *bs, *be;                                  \
-		for(; pbp<bp;pbp++) {                                     \
-			bs = (pbp > bl+start) ? pbp - start : bl;             \
-			be = (pbp+end < bp) ? pbp + end + 1 : bp;             \
-			for(; bs<be; bs++) {                                  \
-				v = *bs;                                          \
-				if (!is_##TPE##_nil(v)) {                         \
+#define ANALYTICAL_AVERAGE_IMP_ROWS(TPE,lng_hge,LABEL) \
+	do {                                               \
+		TPE *bl = pbp, *bs, *be;                       \
+		for(; pbp<bp;pbp++) {                          \
+			bs = (pbp > bl+start) ? pbp - start : bl;  \
+			be = (pbp+end < bp) ? pbp + end + 1 : bp;  \
+			for(; bs<be; bs++) {                       \
+				v = *bs;                               \
+				if (!is_##TPE##_nil(v)) {              \
 					ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, sum, GDK_##lng_hge##_max, \
 								   goto avg_overflow##TPE##LABEL##rows); \
-					/* count only when no overflow occurs */      \
-					n++;                                          \
-				}                                                 \
-			}                                                     \
-			if(0) {                                               \
-avg_overflow##TPE##LABEL##rows:                                   \
-				assert(n > 0);                                    \
-				if (sum >= 0) {                                   \
-					a = (TPE) (sum / (lng_hge) n);                \
-					rr = (BUN) (sum % (SBUN) n);                  \
-				} else {                                          \
-					sum = -sum;                                   \
-					a = - (TPE) (sum / (lng_hge) n);              \
-					rr = (BUN) (sum % (SBUN) n);                  \
-					if (r) {                                      \
-						a--;                                      \
-						rr = n - rr;                              \
-					}                                             \
-				}                                                 \
-				for(; bs<be; bs++) {                              \
-					v = *bs;                                      \
-					if (is_##TPE##_nil(v))                        \
-						continue;                                 \
-					AVERAGE_ITER(TPE, v, a, rr, n);               \
-				}                                                 \
-				curval = a + (dbl) rr / n;                        \
-				goto calc_done##TPE##LABEL##rows;                 \
-			}                                                     \
-			curval = n > 0 ? (dbl) sum / n : dbl_nil;             \
-calc_done##TPE##LABEL##rows:                                      \
-			has_nils = has_nils || (n == 0);                      \
-			*rb = curval;                                         \
-			rb++;                                                 \
-			n = 0;                                                \
-			sum = 0;                                              \
-		}                                                         \
+					/* count only when no overflow occurs */ \
+					n++;                              \
+				}                                     \
+			}                                         \
+			if(0) {                                   \
+avg_overflow##TPE##LABEL##rows:                       \
+				assert(n > 0);                        \
+				if (sum >= 0) {                       \
+					a = (TPE) (sum / (lng_hge) n);    \
+					rr = (BUN) (sum % (SBUN) n);      \
+				} else {                              \
+					sum = -sum;                       \
+					a = - (TPE) (sum / (lng_hge) n);  \
+					rr = (BUN) (sum % (SBUN) n);      \
+					if (r) {                          \
+						a--;                          \
+						rr = n - rr;                  \
+					}                                 \
+				}                                     \
+				for(; bs<be; bs++) {                  \
+					v = *bs;                          \
+					if (is_##TPE##_nil(v))            \
+						continue;                     \
+					AVERAGE_ITER(TPE, v, a, rr, n);   \
+				}                                     \
+				curval = a + (dbl) rr / n;            \
+				goto calc_done##TPE##LABEL##rows;     \
+			}                                         \
+			curval = n > 0 ? (dbl) sum / n : dbl_nil; \
+calc_done##TPE##LABEL##rows:                          \
+			has_nils = has_nils || (n == 0);          \
+			*rb = curval;                             \
+			rb++;                                     \
+			n = 0;                                    \
+			sum = 0;                                  \
+		}                                             \
 	} while(0);
 
-#define ANALYTICAL_AVERAGE_LNG_HGE(TPE,lng_hge,IMP)   \
+#define ANALYTICAL_AVERAGE_CALC_ROWS(TPE,lng_hge,IMP) \
 	do {                                              \
 		TPE *pbp, *bp, a, v;                          \
 		dbl *rp, *rb;                                 \
@@ -3057,45 +3015,166 @@ calc_done##TPE##LABEL##rows:                                      \
 			bp += ncnt;                               \
 			rp += ncnt;                               \
 			IMP(TPE,lng_hge,final_partition)          \
-		} else if (o || force_order) {                \
+		} else {                                      \
 			bp += cnt;                                \
 			rp += cnt;                                \
 			IMP(TPE,lng_hge,single_partition)         \
-		} else {                                      \
-			dbl* rend = rp + cnt;                     \
-			for(; rp<rend; rp++, bp++) {              \
-				v = *bp;                              \
-				if(is_##TPE##_nil(v)) {               \
-					*rp = dbl_nil;                    \
-					has_nils = true;                  \
-				} else {                              \
-					*rp = (dbl) v;                    \
+		}                                             \
+		goto finish;                                  \
+	} while(0);
+
+#define ANALYTICAL_AVERAGE_IMP_RANGE_ALL(TPE,lng_hge,LABEL) \
+	do {                                                    \
+		for(; pbp<bp; pbp++) {                              \
+			v = *pbp;                                       \
+			if (!is_##TPE##_nil(v)) {                       \
+				ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, sum, GDK_##lng_hge##_max, \
+							   goto avg_overflow##TPE##LABEL##range_all); \
+				/* count only when no overflow occurs */ \
+				n++;                               \
+			}                                      \
+		}                                          \
+		if(0) {                                    \
+avg_overflow##TPE##LABEL##range_all:               \
+			assert(n > 0);                         \
+			if (sum >= 0) {                        \
+				a = (TPE) (sum / (lng_hge) n);     \
+				rr = (BUN) (sum % (SBUN) n);       \
+			} else {                               \
+				sum = -sum;                        \
+				a = - (TPE) (sum / (lng_hge) n);   \
+				rr = (BUN) (sum % (SBUN) n);       \
+				if (r) {                           \
+					a--;                           \
+					rr = n - rr;                   \
+				}                                  \
+			}                                      \
+			for(; pbp<bp; pbp++) {                 \
+				v = *pbp;                          \
+				if (is_##TPE##_nil(v))             \
+					continue;                      \
+				AVERAGE_ITER(TPE, v, a, rr, n);    \
+			}                                      \
+			curval = a + (dbl) rr / n;             \
+			goto calc_done##TPE##LABEL##range_all; \
+		}                                          \
+		curval = n > 0 ? (dbl) sum / n : dbl_nil;  \
+calc_done##TPE##LABEL##range_all:                  \
+		has_nils = has_nils || (n == 0);           \
+		for (;rb < rp; rb++)                       \
+			*rb = curval;                          \
+		n = 0;                                     \
+		sum = 0;                                   \
+	} while(0);
+
+#define ANALYTICAL_AVERAGE_IMP_RANGE_PART(TPE,lng_hge,LABEL) \
+	do {                                  \
+		bit *nl = lp, *ns, *ne;           \
+		TPE *bs, *be, v;                  \
+		BUN rstart, rend, parcel;         \
+		for(; lp<lend;lp++) {             \
+			rstart = start;               \
+			for(ns=lp; ns>nl; ns--) {     \
+				if(*ns) {                 \
+					if(rstart == 0)       \
+						break;            \
+					rstart--;             \
+				}                         \
+			}                             \
+			rend = end;                   \
+			for(ne=lp+1; ne<lend; ne++) { \
+				if(*ne) {                 \
+					if(rend == 0)         \
+						break;            \
+					rend--;               \
+				}                         \
+			}                             \
+			parcel = (ne - ns);           \
+			bs = bp + (ns - nl);          \
+			be = bs + parcel;             \
+			for(; bs<be; bs++) {          \
+				v = *bs;                  \
+				if (!is_##TPE##_nil(v)) { \
+					ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, sum, GDK_##lng_hge##_max, \
+								   goto avg_overflow##TPE##LABEL##range_part); \
+					/* count only when no overflow occurs */ \
+					n++;                                \
+				}                                       \
+			}                                           \
+			if(0) {                                     \
+avg_overflow##TPE##LABEL##range_part:                   \
+				assert(n > 0);                          \
+				if (sum >= 0) {                         \
+					a = (TPE) (sum / (lng_hge) n);      \
+					rr = (BUN) (sum % (SBUN) n);        \
+				} else {                                \
+					sum = -sum;                         \
+					a = - (TPE) (sum / (lng_hge) n);    \
+					rr = (BUN) (sum % (SBUN) n);        \
+					if (r) {                            \
+						a--;                            \
+						rr = n - rr;                    \
+					}                                   \
+				}                                       \
+				for(; bs<be; bs++) {                    \
+					v = *bs;                            \
+					if (is_##TPE##_nil(v))              \
+						continue;                       \
+					AVERAGE_ITER(TPE, v, a, rr, n);     \
+				}                                       \
+				curval = a + (dbl) rr / n;              \
+				goto calc_done##TPE##LABEL##range_part; \
+			}                                           \
+			curval = n > 0 ? (dbl) sum / n : dbl_nil;   \
+calc_done##TPE##LABEL##range_part:                      \
+			has_nils = has_nils || (n == 0);            \
+			*rb = curval;                               \
+			rb++;                                       \
+			n = 0;                                      \
+			sum = 0;                                    \
+		}                                               \
+	} while(0);
+
+#define ANALYTICAL_AVERAGE_CALC_RANGE(TPE,lng_hge,IMP) \
+	do {                                              \
+		TPE *bp, a, v;                                \
+		dbl *rp, *rb;                                 \
+		bp = (TPE*)Tloc(b, 0);                        \
+		rb = rp = (dbl*)Tloc(r, 0);                   \
+		if (p) {                                      \
+			pnp = np = (bit*)Tloc(p, 0);              \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np;    \
+			nend = np + cnt;                          \
+			for(; np<nend; np++) {                    \
+				if (*np) {                            \
+					ncnt = (np - pnp);                \
+					lend += ncnt;                     \
+					IMP##_PART(TPE,lng_hge,middle_partition) \
+					bp += ncnt;                       \
+					pnp = np;                         \
 				}                                     \
 			}                                         \
+			ncnt = (np - pnp);                        \
+			lend += ncnt;                             \
+			IMP##_PART(TPE,lng_hge,final_partition)   \
+		} else if (o) {                               \
+			lend = lp = (bit*)Tloc(o, 0);             \
+			lend += cnt;                              \
+			IMP##_PART(TPE,lng_hge,order_partition)   \
+		} else {                                      \
+			TPE *pbp = bp;                            \
+			bp += cnt;                                \
+			rp += cnt;                                \
+			IMP##_ALL(TPE,lng_hge,single_partition)   \
 		}                                             \
 		goto finish;                                  \
 	} while(0);
 
 #ifdef HAVE_HGE
-#define ANALYTICAL_AVERAGE_CALC(TYPE,IMP) ANALYTICAL_AVERAGE_LNG_HGE(TYPE,hge,IMP)
+#define ANALYTICAL_AVERAGE_LNG_HGE(FRAME,TYPE,IMP) ANALYTICAL_AVERAGE_CALC##FRAME(TYPE,hge,IMP)
 #else
-#define ANALYTICAL_AVERAGE_CALC(TYPE,IMP) ANALYTICAL_AVERAGE_LNG_HGE(TYPE,lng,IMP)
+#define ANALYTICAL_AVERAGE_LNG_HGE(FRAME,TYPE,IMP) ANALYTICAL_AVERAGE_CALC##FRAME(TYPE,lng,IMP)
 #endif
-
-#define ANALYTICAL_AVERAGE_FLOAT_IMP_NO_OVERLAP(TPE) \
-	do {                                          \
-		for(; pbp<bp; pbp++) {                    \
-			v = *pbp;                             \
-			if (!is_##TPE##_nil(v))               \
-				AVERAGE_ITER_FLOAT(TPE, v, a, n); \
-		}                                         \
-		curval = n > 0 ? a : dbl_nil;             \
-		has_nils = has_nils || (n == 0);          \
-		for (;rb < rp; rb++)                      \
-			*rb = curval;                         \
-		n = 0;                                    \
-		a = 0;                                    \
-	} while(0);
 
 #define ANALYTICAL_AVERAGE_FLOAT_IMP_ROWS(TPE)        \
 	do {                                              \
@@ -3117,51 +3196,131 @@ calc_done##TPE##LABEL##rows:                                      \
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_AVERAGE_CALC_FLOAT(TPE, IMP) \
-	do {                                   \
-		TPE *pbp, *bp, v;                  \
-		dbl *rp, *rb, a = 0;               \
-		pbp = bp = (TPE*)Tloc(b, 0);       \
-		rb = rp = (dbl*)Tloc(r, 0);        \
-		if (p) {                           \
-			pnp = np = (bit*)Tloc(p, 0);   \
-			nend = np + cnt;               \
-			for(; np<nend; np++) {         \
-				if (*np) {                 \
-					ncnt = np - pnp;       \
-					bp += ncnt;            \
-					rp += ncnt;            \
-					IMP(TPE)               \
-					pbp = bp;              \
-					pnp = np;              \
-				}                          \
-			}                              \
-			ncnt = np - pnp;               \
-			bp += ncnt;                    \
-			rp += ncnt;                    \
-			IMP(TPE)                       \
-		} else if (o || force_order) {     \
-			bp += cnt;                     \
-			rp += cnt;                     \
-			IMP(TPE)                       \
-		} else {                           \
-			dbl *rend = rp + cnt;          \
-			for(; rp<rend; rp++, bp++) {   \
-				if(is_##TPE##_nil(*bp)) {  \
-					*rp = dbl_nil;         \
-					has_nils = true;       \
-				} else {                   \
-					*rp = (dbl) *bp;       \
-				}                          \
-			}                              \
-		}                                  \
-		goto finish;                       \
+#define ANALYTICAL_AVERAGE_CALC_FLOAT_ROWS(TPE, IMP) \
+	do {                                 \
+		TPE *pbp, *bp, v;                \
+		dbl *rp, *rb, a = 0;             \
+		pbp = bp = (TPE*)Tloc(b, 0);     \
+		rb = rp = (dbl*)Tloc(r, 0);      \
+		if (p) {                         \
+			pnp = np = (bit*)Tloc(p, 0); \
+			nend = np + cnt;             \
+			for(; np<nend; np++) {       \
+				if (*np) {               \
+					ncnt = np - pnp;     \
+					bp += ncnt;          \
+					rp += ncnt;          \
+					IMP(TPE)             \
+					pbp = bp;            \
+					pnp = np;            \
+				}                        \
+			}                            \
+			ncnt = np - pnp;             \
+			bp += ncnt;                  \
+			rp += ncnt;                  \
+			IMP(TPE)                     \
+		} else {                         \
+			bp += cnt;                   \
+			rp += cnt;                   \
+			IMP(TPE)                     \
+		}                                \
+		goto finish;                     \
+	} while(0);
+
+#define ANALYTICAL_AVERAGE_FLOAT_IMP_RANGE_ALL(TPE) \
+	do {                                          \
+		TPE v;                                    \
+		for(; pbp<bp; pbp++) {                    \
+			v = *pbp;                             \
+			if (!is_##TPE##_nil(v))               \
+				AVERAGE_ITER_FLOAT(TPE, v, a, n); \
+		}                                         \
+		curval = n > 0 ? a : dbl_nil;             \
+		has_nils = has_nils || (n == 0);          \
+		for (;rb < rp; rb++)                      \
+			*rb = curval;                         \
+		n = 0;                                    \
+		a = 0;                                    \
+	} while(0);
+
+#define ANALYTICAL_AVERAGE_FLOAT_IMP_RANGE_PART(TPE) \
+	do {                                        \
+		bit *nl = lp, *ns, *ne;                 \
+		TPE *bs, *be, v;                        \
+		BUN rstart, rend, parcel;               \
+		for(; lp<lend;lp++) {                   \
+			rstart = start;                     \
+			for(ns=lp; ns>nl; ns--) {           \
+				if(*ns) {                       \
+					if(rstart == 0)             \
+						break;                  \
+					rstart--;                   \
+				}                               \
+			}                                   \
+			rend = end;                         \
+			for(ne=lp+1; ne<lend; ne++) {       \
+				if(*ne) {                       \
+					if(rend == 0)               \
+						break;                  \
+					rend--;                     \
+				}                               \
+			}                                   \
+			parcel = (ne - ns);                 \
+			bs = bp + (ns - nl);                \
+			be = bs + parcel;                   \
+			for(; bs<be; bs++) {                \
+				v = *bs;                        \
+				if (!is_##TPE##_nil(v))         \
+					AVERAGE_ITER_FLOAT(TPE, v, a, n); \
+			}                                   \
+			curval = n > 0 ? a : dbl_nil;       \
+			has_nils = has_nils || (n == 0);    \
+			n = 0;                              \
+			a = 0;                              \
+			*rb = curval;                       \
+			rb++;                               \
+		}                                       \
+	} while(0);
+
+#define ANALYTICAL_AVERAGE_CALC_FLOAT_RANGE(TPE, IMP) \
+	do {                                           \
+		TPE *bp;                                   \
+		dbl *rp, *rb, a = 0;                       \
+		bp = (TPE*)Tloc(b, 0);                     \
+		rp = rb = (dbl*)Tloc(r, 0);                \
+		if (p) {                                   \
+			pnp = np = (bit*)Tloc(p, 0);           \
+			lend = lp = o ? (bit*)Tloc(o, 0) : np; \
+			nend = np + cnt;                       \
+			for(; np<nend; np++) {                 \
+				if (*np) {                         \
+					ncnt = (np - pnp);             \
+					lend += ncnt;                  \
+					IMP##_PART(TPE)                \
+					bp += ncnt;                    \
+					pnp = np;                      \
+				}                                  \
+			}                                      \
+			ncnt = (np - pnp);                     \
+			lend += ncnt;                          \
+			IMP##_PART(TPE)                        \
+		} else if (o) {                            \
+			lend = lp = (bit*)Tloc(o, 0);          \
+			lend += cnt;                           \
+			IMP##_PART(TPE)                        \
+		} else {                                   \
+			TPE *pbp = bp;                         \
+			rp += cnt;                             \
+			bp += cnt;                             \
+			IMP##_ALL(TPE)                         \
+		}                                          \
+		goto finish;                               \
 	} while(0);
 
 #ifdef HAVE_HGE
 #define ANALYTICAL_AVERAGE_LIMIT(FRAME) \
 	case TYPE_hge: \
-		ANALYTICAL_AVERAGE_CALC(hge, ANALYTICAL_AVERAGE_IMP##FRAME); \
+		ANALYTICAL_AVERAGE_LNG_HGE(FRAME, hge, ANALYTICAL_AVERAGE_IMP##FRAME); \
 		break;
 #else
 #define ANALYTICAL_AVERAGE_LIMIT(FRAME)
@@ -3170,23 +3329,23 @@ calc_done##TPE##LABEL##rows:                                      \
 #define ANALYTICAL_AVERAGE_BRANCHES(FRAME) \
 	switch (tpe) { \
 		case TYPE_bte: \
-			ANALYTICAL_AVERAGE_CALC(bte, ANALYTICAL_AVERAGE_IMP##FRAME); \
+			ANALYTICAL_AVERAGE_LNG_HGE(FRAME, bte, ANALYTICAL_AVERAGE_IMP##FRAME); \
 			break; \
 		case TYPE_sht: \
-			ANALYTICAL_AVERAGE_CALC(sht, ANALYTICAL_AVERAGE_IMP##FRAME); \
+			ANALYTICAL_AVERAGE_LNG_HGE(FRAME, sht, ANALYTICAL_AVERAGE_IMP##FRAME); \
 			break; \
 		case TYPE_int: \
-			ANALYTICAL_AVERAGE_CALC(int, ANALYTICAL_AVERAGE_IMP##FRAME); \
+			ANALYTICAL_AVERAGE_LNG_HGE(FRAME, int, ANALYTICAL_AVERAGE_IMP##FRAME); \
 			break; \
 		case TYPE_lng: \
-			ANALYTICAL_AVERAGE_CALC(lng, ANALYTICAL_AVERAGE_IMP##FRAME); \
+			ANALYTICAL_AVERAGE_LNG_HGE(FRAME, lng, ANALYTICAL_AVERAGE_IMP##FRAME); \
 			break; \
 		ANALYTICAL_AVERAGE_LIMIT(FRAME) \
 		case TYPE_flt: \
-			ANALYTICAL_AVERAGE_CALC_FLOAT(flt, ANALYTICAL_AVERAGE_FLOAT_IMP##FRAME); \
+			ANALYTICAL_AVERAGE_CALC_FLOAT##FRAME(flt, ANALYTICAL_AVERAGE_FLOAT_IMP##FRAME); \
 			break; \
 		case TYPE_dbl: \
-			ANALYTICAL_AVERAGE_CALC_FLOAT(dbl, ANALYTICAL_AVERAGE_FLOAT_IMP##FRAME); \
+			ANALYTICAL_AVERAGE_CALC_FLOAT##FRAME(dbl, ANALYTICAL_AVERAGE_FLOAT_IMP##FRAME); \
 			break; \
 		default: \
 			GDKerror("GDKanalyticalavg: average of type %s unsupported.\n", ATOMname(tpe)); \
@@ -3194,11 +3353,11 @@ calc_done##TPE##LABEL##rows:                                      \
 	}
 
 gdk_return
-GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, int unit, BUN start, BUN end)
+GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, int unit, BUN start, BUN end)
 {
 	bool has_nils = false;
 	BUN ncnt, cnt = BATcount(b), nils = 0, n = 0, rr;
-	bit *np, *pnp, *nend;
+	bit *np, *pnp, *nend, *lp, *lend;
 	bool abort_on_error = true;
 	dbl curval;
 #ifdef HAVE_HGE
@@ -3209,12 +3368,10 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, int u
 
 	assert(unit >= 0 && unit <= 2);
 
-	if(unit == 0 && start == 0 && end == 0) {
-		ANALYTICAL_AVERAGE_BRANCHES(_NO_OVERLAP)
-	} else if(unit == 0) {
+	if(unit == 0) {
 		ANALYTICAL_AVERAGE_BRANCHES(_ROWS)
 	} else {
-
+		ANALYTICAL_AVERAGE_BRANCHES(_RANGE)
 	}
 finish:
 	BATsetcount(r, cnt);
@@ -3223,12 +3380,16 @@ finish:
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_AVERAGE_CALC
-#undef ANALYTICAL_AVERAGE_LNG_HGE
+#undef ANALYTICAL_AVERAGE_CALC_ROWS
+#undef ANALYTICAL_AVERAGE_CALC_RANGE
 #undef ANALYTICAL_AVERAGE_IMP_ROWS
-#undef ANALYTICAL_AVERAGE_IMP_NO_OVERLAP
-#undef ANALYTICAL_AVERAGE_CALC_FLOAT
+#undef ANALYTICAL_AVERAGE_IMP_RANGE_PART
+#undef ANALYTICAL_AVERAGE_IMP_RANGE_ALL
+#undef ANALYTICAL_AVERAGE_CALC_FLOAT_ROWS
+#undef ANALYTICAL_AVERAGE_CALC_FLOAT_RANGE
 #undef ANALYTICAL_AVERAGE_FLOAT_IMP_ROWS
-#undef ANALYTICAL_AVERAGE_FLOAT_IMP_NO_OVERLAP
+#undef ANALYTICAL_AVERAGE_FLOAT_IMP_RANGE_PART
+#undef ANALYTICAL_AVERAGE_FLOAT_IMP_RANGE_ALL
+#undef ANALYTICAL_AVERAGE_LNG_HGE
 #undef ANALYTICAL_AVERAGE_BRANCHES
 #undef ANALYTICAL_AVERAGE_LIMIT

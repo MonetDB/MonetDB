@@ -30,6 +30,6 @@ gdk_export gdk_return GDKanalyticalmax(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, 
 gdk_export gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit* restrict ignore_nils, int tpe, int unit, BUN start, BUN end);
 gdk_export gdk_return GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2, int unit, BUN start, BUN end);
 gdk_export gdk_return GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2, int unit, BUN start, BUN end);
-gdk_export gdk_return GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, bit force_order, int tpe, int unit, BUN start, BUN end);
+gdk_export gdk_return GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, int unit, BUN start, BUN end);
 
 #endif //_GDK_ANALYTIC_H_

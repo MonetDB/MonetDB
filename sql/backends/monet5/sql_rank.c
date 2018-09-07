@@ -571,7 +571,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef NTILE_VALUE_SINGLE_IMP
 
 static str
-SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, bit *force_order, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				  InstrPtr pci, int rtype, const str mod, const str err)
 {
 	*r = *b = *p = *o = NULL;
@@ -609,8 +609,6 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, bit *force_order, Client c
 			if (*p) BBPunfix((*p)->batCacheid);
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
-	} else {
-		*force_order = *getArgReference_bit(stk, pci, 3);
 	}
 	return MAL_SUCCEED;
 }
@@ -954,8 +952,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int, BUN, BUN))
 {
 	BAT *r, *b, *p, *o;
-	bit force_order = 0;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, &force_order, cntxt, mb, stk, pci, 0, op, err);
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, 0, op, err);
 	int tpe = getArgType(mb, pci, 1);
 	int unit = *getArgReference_int(stk, pci, 4);
 	int start = *getArgReference_int(stk, pci, 5);
@@ -1231,8 +1228,7 @@ str
 SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r, *b, *p, *o;
-	bit force_order = 0;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, &force_order, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
+	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
 								SQLSTATE(42000) "avg(:any_1,:bit,:bit)");
 	int tpe = getArgType(mb, pci, 1);
 	int unit = *getArgReference_int(stk, pci, 4);
@@ -1251,7 +1247,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalavg(r, b, p, o, force_order, tpe, unit, (BUN) start, (BUN) end);
+		gdk_res = GDKanalyticalavg(r, b, p, o, tpe, unit, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
 		if (o) BBPunfix(o->batCacheid);
