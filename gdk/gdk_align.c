@@ -136,6 +136,7 @@ VIEWcreate(oid seq, BAT *b)
 		GDKfree(bn);
 		return NULL;
 	}
+	ALGODEBUG fprintf(stderr, "#VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
 }
 

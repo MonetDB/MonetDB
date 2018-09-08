@@ -174,10 +174,25 @@ BATsetdims(BAT *b)
  * and memory map it. To make this possible, we must provide it with
  * filenames.
  */
-static BAT *
-BATnewstorage(oid hseq, int tt, BUN cap, int role)
+BAT *
+COLnew(oid hseq, int tt, BUN cap, int role)
 {
 	BAT *bn;
+
+	assert(cap <= BUN_MAX);
+	assert(hseq <= oid_nil);
+	assert(tt != TYPE_bat);
+	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "COLnew:tt error\n", NULL);
+	ERRORcheck(role < 0 || role >= 32, "COLnew:role error\n", NULL);
+
+	/* round up to multiple of BATTINY */
+	if (cap < BUN_MAX - BATTINY)
+		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
+	if (cap < BATTINY)
+		cap = BATTINY;
+	/* and in case we don't have assertions enabled: limit the size */
+	if (cap > BUN_MAX)
+		cap = BUN_MAX;
 
 	/* and in case we don't have assertions enabled: limit the size */
 	if (cap > BUN_MAX) {
@@ -206,32 +221,13 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
+	ALGODEBUG fprintf(stderr, "#COLnew()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid);
 	HEAPfree(&bn->theap, true);
 	GDKfree(bn);
 	return NULL;
-}
-
-BAT *
-COLnew(oid hseq, int tt, BUN cap, int role)
-{
-	assert(cap <= BUN_MAX);
-	assert(hseq <= oid_nil);
-	assert(tt != TYPE_bat);
-	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "COLnew:tt error\n", NULL);
-	ERRORcheck(role < 0 || role >= 32, "COLnew:role error\n", NULL);
-
-	/* round up to multiple of BATTINY */
-	if (cap < BUN_MAX - BATTINY)
-		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
-	if (cap < BATTINY)
-		cap = BATTINY;
-	/* and in case we don't have assertions enabled: limit the size */
-	if (cap > BUN_MAX)
-		cap = BUN_MAX;
-	return BATnewstorage(hseq, tt, cap, role);
 }
 
 BAT *
@@ -243,6 +239,7 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	if (bn != NULL) {
 		BATtseqbase(bn, tseq);
 		BATsetcount(bn, cnt);
+		ALGODEBUG fprintf(stderr, "#BATdense()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	}
 	return bn;
 }
@@ -858,6 +855,8 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 	}
 	if (!writable)
 		bn->batRestricted = BAT_READ;
+	ALGODEBUG fprintf(stderr, "#COLcopy(" ALGOBATFMT ")=" ALGOBATFMT "\n",
+			  ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);

@@ -1662,11 +1662,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 
+		bn = virtualize(bn);
 		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec)\n",
 				  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
-		return virtualize(bn);
+		return bn;
 	}
 
 	/* upper limit for result size */
@@ -1824,11 +1825,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				lval, hval, lnil, maximum, use_imprints);
 	}
 
+	bn = virtualize(bn);
 	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 			  " (" LLFMT " usec)\n",
 			  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
-	return virtualize(bn);
+	return bn;
 }
 
 /* theta select
