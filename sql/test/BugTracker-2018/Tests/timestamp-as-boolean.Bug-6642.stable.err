@@ -32,7 +32,7 @@ stderr of test 'timestamp-as-boolean.Bug-6642` in directory 'sql/test/BugTracker
 
 MAPI  = (monetdb) /var/tmp/mtest-24582/.s.monetdb.32492
 QUERY = select * from tmp where not t;
-
+ERROR = !types timestamp(7,0) and boolean(1,0) are not equal for column 't'
 CODE  = 42000
 
 # 17:59:44 >  
