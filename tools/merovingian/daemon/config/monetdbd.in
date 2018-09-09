@@ -4,6 +4,6 @@
 	missingok
 	notifempty
 	postrotate
-		kill -HUP $(cat @Erundir@@DIRSEP@merovingian.pid)
+		[ -s @Erundir@@DIRSEP@merovingian.pid ] && kill -HUP $(cat @Erundir@@DIRSEP@merovingian.pid)
 	endscript
 }
