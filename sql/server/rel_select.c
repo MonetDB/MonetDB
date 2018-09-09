@@ -2980,6 +2980,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!le)
 			return NULL;
 		le = rel_unop_(sql, le, NULL, "not", card_value);
+		if (le == NULL)
+			return NULL;
 		re = exp_atom_bool(sql->sa, 1);
 		le = exp_compare(sql->sa, le, re, cmp_equal);
 		return rel_select(sql->sa, rel, le);
