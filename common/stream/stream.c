@@ -4628,6 +4628,16 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 
 
 
+static void
+bs2_resetbuf(stream *ss)
+{
+	bs2 *s = (bs2 *) ss->stream_data.p;
+	assert(ss->read == bs2_read);
+	s->itotal = 0;
+	s->nr = 0;
+	s->readpos = 0;
+}
+
 int
 bs2_resizebuf(stream *ss, size_t bufsiz)
 {
@@ -4660,16 +4670,6 @@ bs2_resizebuf(stream *ss, size_t bufsiz)
 	}
 	bs2_resetbuf(ss);
 	return 0;
-}
-
-void
-bs2_resetbuf(stream *ss)
-{
-	bs2 *s = (bs2 *) ss->stream_data.p;
-	assert(ss->read == bs2_read);
-	s->itotal = 0;
-	s->nr = 0;
-	s->readpos = 0;
 }
 
 buffer

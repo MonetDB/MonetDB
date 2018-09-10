@@ -232,7 +232,6 @@ typedef enum {
 
 stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);
 stream_export int bs2_resizebuf(stream *ss, size_t bufsiz);
-stream_export void bs2_resetbuf(stream *ss);
 stream_export buffer bs2_buffer(stream *s);
 stream_export void bs2_setpos(stream *ss, size_t pos);
 

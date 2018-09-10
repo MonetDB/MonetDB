@@ -2705,7 +2705,6 @@ str zero_or_oneRef;
 stream *block_stream(stream *s);
 stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);
 buffer bs2_buffer(stream *s);
-void bs2_resetbuf(stream *ss);
 int bs2_resizebuf(stream *ss, size_t bufsiz);
 void bs2_setpos(stream *ss, size_t pos);
 stream *bs_stream(stream *s);
