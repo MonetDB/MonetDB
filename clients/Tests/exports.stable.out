@@ -2733,7 +2733,6 @@ size_t getFileSize(stream *s);
 stream *iconv_rstream(stream *restrict ss, const char *restrict charset, const char *restrict name);
 stream *iconv_wstream(stream *restrict ss, const char *restrict charset, const char *restrict name);
 int isa_block_stream(stream *s);
-int isa_fixed_block_stream(stream *s);
 int mnstr_byteorder(stream *s);
 void mnstr_clearerr(stream *s);
 void mnstr_close(stream *s);

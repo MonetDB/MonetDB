@@ -214,7 +214,6 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  */
 stream_export stream *block_stream(stream *s);
 stream_export int isa_block_stream(stream *s);
-stream_export int isa_fixed_block_stream(stream *s);
 stream_export stream *bs_stream(stream *s);
 
 
