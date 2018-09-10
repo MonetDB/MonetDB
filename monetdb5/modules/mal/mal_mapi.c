@@ -140,7 +140,6 @@ doChallenge(void *data)
 	ssize_t len = 0;
 	protocol_version protocol = PROTOCOL_9;
 	size_t buflen = BLOCK;
-	column_compression colcomp = COLUMN_COMPRESSION_NONE;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -236,8 +235,8 @@ doChallenge(void *data)
 		{
 			// convert the block_stream into a block_stream2
 			stream *from, *to;
-			from = block_stream2(fdin, buflen, comp, colcomp);
-			to = block_stream2(fdout, buflen, comp, colcomp);
+			from = block_stream2(fdin, buflen, comp);
+			to = block_stream2(fdout, buflen, comp);
 			if (from == NULL || to == NULL) {
 				GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 				close_stream(fdin);
