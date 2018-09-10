@@ -141,7 +141,6 @@ doChallenge(void *data)
 	protocol_version protocol = PROTOCOL_9;
 	size_t buflen = BLOCK;
 	column_compression colcomp = COLUMN_COMPRESSION_NONE;
-	int compute_column_widths = 0;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -197,10 +196,6 @@ doChallenge(void *data)
 		if (buflenstrend) buflenstrend[0] = '\0';
 		buflen = atol(buflenstr);
 		if (buflenstrend) buflenstrend[0] = ':';
-
-		if (strstr(buf, "COMPUTECOLWIDTH")) {
-			compute_column_widths = 1;
-		}
 
 		if (buflen < BLOCK) {
 			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
@@ -273,7 +268,7 @@ doChallenge(void *data)
 		return;
 	}
 	bs->eof = 1;
-	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen, compute_column_widths);
+	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
 }
 
 static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */
