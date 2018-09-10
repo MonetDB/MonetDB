@@ -82,3 +82,4 @@ multi-column-hash-wrongly-NIL.Bug-6638
 comment-on-table-is-null.Bug-6639
 crash-after-call-non-existing-loader
 timestamp-as-boolean.Bug-6642
+timestamp-roundtrip.Bug-6640
