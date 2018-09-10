@@ -299,6 +299,7 @@ SERVERlistenThread(SOCKET *Sock)
 	SOCKET msgsock = INVALID_SOCKET;
 	struct challengedata *data;
 	MT_Id tid;
+	stream *s;
 
 	if (*Sock) {
 		sock = Sock[0];
@@ -467,6 +468,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data->in = socket_rastream(msgsock, "Server read");
 		data->out = socket_wastream(msgsock, "Server write");
 		if (data->in == NULL || data->out == NULL) {
+		  stream_alloc_fail:
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -475,17 +477,16 @@ SERVERlistenThread(SOCKET *Sock)
 						  "cannot allocate stream");
 			continue;
 		}
-		data->in = block_stream(data->in);
-		data->out = block_stream(data->out);
-		if (data->in == NULL || data->out == NULL) {
-			mnstr_destroy(data->in);
-			mnstr_destroy(data->out);
-			GDKfree(data);
-			closesocket(msgsock);
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot allocate stream");
-			continue;
+		s = block_stream(data->in);
+		if (s == NULL) {
+			goto stream_alloc_fail;
 		}
+		data->in = s;
+		s = block_stream(data->out);
+		if (s == NULL) {
+			goto stream_alloc_fail;
+		}
+		data->out = s;
 		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
