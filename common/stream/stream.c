@@ -4628,21 +4628,6 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 
 
 
-void *
-bs2_stealbuf(stream *ss)
-{
-	void *buffer;
-	bs2 *s = (bs2 *) ss->stream_data.p;
-	assert(ss->read == bs2_read);
-	buffer = (void *) s->buf;
-	s->buf = malloc(s->bufsiz);
-	if (s->buf == NULL) {
-		s->buf = buffer;
-		return NULL;
-	}
-	return buffer;
-}
-
 int
 bs2_resizebuf(stream *ss, size_t bufsiz)
 {
