@@ -488,8 +488,8 @@ MNDBExecute(ODBCStmt *stmt)
 	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt &&
 	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* we're the only Stmt handle, and we're only going forward */
-		if (stmt->Dbc->cachelimit != 1000)
-			mapi_cache_limit(stmt->Dbc->mid, 1000);
+		if (stmt->Dbc->cachelimit != 10000)
+			mapi_cache_limit(stmt->Dbc->mid, 10000);
 		stmt->Dbc->cachelimit = 1000;
 	} else {
 		if (stmt->Dbc->cachelimit != 100)
