@@ -826,6 +826,12 @@ struct BlockCache {
 	int eos;		/* end of sequence */
 };
 
+enum mapi_lang_t {
+	LANG_MAL = 0,
+	LANG_SQL = 2,
+	LANG_PROFILER = 3
+};
+
 /* A connection to a server is represented by a struct MapiStruct.  An
    application can have any number of connections to any number of
    servers.  Connections are completely independent of each other.
@@ -840,7 +846,7 @@ struct MapiStruct {
 	char *language;
 	char *database;		/* to obtain from server */
 	char *uri;
-	int languageId;
+	enum mapi_lang_t languageId;
 	char *motd;		/* welcome message from server */
 
 	char *noexplain;	/* on error, don't explain, only print result */
@@ -1405,6 +1411,9 @@ mapi_ping(Mapi mid)
 		break;
 	case LANG_MAL:
 		hdl = mapi_query(mid, "io.print(1);");
+		break;
+	default:
+		break;
 	}
 	if (hdl)
 		mapi_close_handle(hdl);
