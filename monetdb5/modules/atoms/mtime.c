@@ -3615,7 +3615,7 @@ str
 MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 {
 	struct tm t;
-	char buf[BUFSIZ + 1];
+	char buf[512];
 	size_t sz;
 	int mon, year;
 
@@ -3631,7 +3631,7 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 	t.tm_year = year - 1900;
 	t.tm_isdst = -1;
 	(void)mktime(&t); /* corrects the tm_wday etc */
-	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+	if ((sz = strftime(buf, sizeof(buf), *format, &t)) == 0)
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
@@ -3660,7 +3660,7 @@ str
 MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 {
 	struct tm t;
-	char buf[BUFSIZ + 1];
+	char buf[512];
 	size_t sz;
 	int msec;
 
@@ -3675,7 +3675,7 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 	(void)msec;
 	t.tm_isdst = -1;
 	(void)mktime(&t); /* corrects the tm_wday etc */
-	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+	if ((sz = strftime(buf, sizeof(buf), *format, &t)) == 0)
 		throw(MAL, "mtime.time_to_str", "failed to convert time to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
@@ -3705,7 +3705,7 @@ str
 MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 {
 	struct tm t;
-	char buf[BUFSIZ + 1];
+	char buf[512];
 	size_t sz;
 	int mon, year, msec;
 
@@ -3723,7 +3723,7 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 	t.tm_isdst = -1;
 	(void)mktime(&t); /* corrects the tm_wday etc */
 	(void)msec;
-	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+	if ((sz = strftime(buf, sizeof(buf), *format, &t)) == 0)
 		throw(MAL, "mtime.timestamp_to_str", "failed to convert timestampt to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
