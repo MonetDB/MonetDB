@@ -241,20 +241,17 @@ doChallenge(void *data)
 		{
 			// convert the block_stream into a block_stream2
 			stream *from, *to;
-			from = bs_stealstream(fdin);
-			to = bs_stealstream(fdout);
-			close_stream(fdin);
-			close_stream(fdout);
-			fdin = block_stream2(from, buflen, comp, colcomp);
-			fdout = block_stream2(to, buflen, comp, colcomp);
-		}
-
-		if (fdin == NULL || fdout == NULL) {
-			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
-			close_stream(fdin);
-			close_stream(fdout);
-			GDKfree(buf);
-			return;
+			from = block_stream2(fdin, buflen, comp, colcomp);
+			to = block_stream2(fdout, buflen, comp, colcomp);
+			if (from == NULL || to == NULL) {
+				GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+				close_stream(fdin);
+				close_stream(fdout);
+				GDKfree(buf);
+				return;
+			}
+			fdin = from;
+			fdout = to;
 		}
 	}
 

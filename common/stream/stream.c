@@ -4122,16 +4122,6 @@ bs_stream(stream *s)
 }
 
 stream *
-bs_stealstream(stream *s)
-{
-	stream *res;
-	assert(isa_block_stream(s));
-	res = ((bs *) s->stream_data.p)->s;
-	((bs *) s->stream_data.p)->s = NULL;
-	return res;
-}
-
-stream *
 block_stream(stream *s)
 {
 	stream *ns;
@@ -4807,10 +4797,18 @@ stream *
 block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp)
 {
 	stream *ns;
+	stream *os = NULL;
 	bs2 *b;
 
 	if (s == NULL)
 		return NULL;
+	if (s->read == bs_read || s->write == bs_write) {
+		/* if passed in a block_stream instance, extract the
+		 * underlying stream */
+		os = s;
+		s = ((bs *) s->stream_data.p)->s;
+	}
+
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "block_stream2 %s\n", s->name ? s->name : "<unnamed>");
 #endif
@@ -4823,7 +4821,7 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compress
 	b->colcomp = colcomp;
 	/* blocksizes have a fixed little endian byteorder */
 #ifdef WORDS_BIGENDIAN
-	s->byteorder = 3412;	/* simply != 1234 */
+	ns->byteorder = 3412;	/* simply != 1234 */
 #endif
 	ns->type = s->type;
 	ns->access = s->access;
@@ -4836,6 +4834,13 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compress
 	ns->update_timeout = bs2_update_timeout;
 	ns->isalive = bs2_isalive;
 	ns->stream_data.p = (void *) b;
+
+	if (os != NULL) {
+		/* we extracted the underlying stream, destroy the old
+		 * shell */
+		((bs *) os->stream_data.p)->s = NULL;
+		bs_destroy(os);
+	}
 
 	return ns;
 }
