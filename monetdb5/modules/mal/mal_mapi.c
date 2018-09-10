@@ -1219,7 +1219,7 @@ SERVERlookup(int *ret, str *dbalias)
 str
 SERVERtrace(void *ret, int *key, int *flag){
 	(void )ret;
-	mapi_trace(SERVERsessions[*key].mid,*flag);
+	mapi_trace(SERVERsessions[*key].mid,(bool)*flag);
 	return MAL_SUCCEED;
 }
 

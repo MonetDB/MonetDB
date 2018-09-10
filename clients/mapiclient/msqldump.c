@@ -56,7 +56,7 @@ main(int argc, char **argv)
 	char *passwd = NULL;
 	char *host = NULL;
 	char *dbname = NULL;
-	int trace = 0;
+	bool trace = false;
 	bool describe = false;
 	bool functions = false;
 	bool useinserts = false;
@@ -123,7 +123,7 @@ main(int argc, char **argv)
 			quiet = true;
 			break;
 		case 'X':
-			trace = MAPI_TRACE;
+			trace = true;
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the

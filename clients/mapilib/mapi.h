@@ -11,6 +11,7 @@
 
 #include <stdio.h>		/* for FILE * */
 #include <stdint.h>		/* for int64_t */
+#include <stdbool.h>		/* for bool */
 
 #define MAPI_AUTO	0	/* automatic type detection */
 #define MAPI_TINY	1
@@ -37,9 +38,6 @@
 #define MAPI_SEEK_SET	0
 #define MAPI_SEEK_CUR	1
 #define MAPI_SEEK_END	2
-
-#define MAPI_TRACE	1
-#define MAPI_TRACE_LANG	2
 
 typedef int MapiMsg;
 
@@ -137,22 +135,22 @@ mapi_export void mapi_noexplain(Mapi mid, char *errorprefix);
 mapi_export void mapi_explain(Mapi mid, FILE *fd);
 mapi_export void mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export void mapi_explain_result(MapiHdl hdl, FILE *fd);
-mapi_export void mapi_trace(Mapi mid, int flag);
+mapi_export void mapi_trace(Mapi mid, bool flag);
 #ifdef ST_READ			/* if stream.h was included */
 mapi_export stream *mapi_get_from(Mapi mid);
 mapi_export stream *mapi_get_to(Mapi mid);
 #endif
-mapi_export int mapi_get_trace(Mapi mid);
-mapi_export int mapi_get_autocommit(Mapi mid);
+mapi_export bool mapi_get_trace(Mapi mid);
+mapi_export bool mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
-mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
+mapi_export MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit);
 mapi_export MapiMsg mapi_set_size_header(Mapi mid, int value);
 mapi_export MapiMsg mapi_release_id(Mapi mid, int id);
 mapi_export const char *mapi_result_error(MapiHdl hdl);
 mapi_export const char *mapi_result_errorcode(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
 mapi_export MapiMsg mapi_needmore(MapiHdl hdl);
-mapi_export int mapi_more_results(MapiHdl hdl);
+mapi_export bool mapi_more_results(MapiHdl hdl);
 mapi_export MapiHdl mapi_new_handle(Mapi mid);
 mapi_export MapiMsg mapi_close_handle(MapiHdl hdl);
 mapi_export MapiMsg mapi_bind(MapiHdl hdl, int fnr, char **ptr);
@@ -207,7 +205,7 @@ mapi_export char *mapi_get_user(Mapi mid);
 mapi_export char *mapi_get_mapi_version(Mapi mid);
 mapi_export char *mapi_get_monet_version(Mapi mid);
 mapi_export char *mapi_get_motd(Mapi mid);
-mapi_export int mapi_is_connected(Mapi mid);
+mapi_export bool mapi_is_connected(Mapi mid);
 mapi_export char *mapi_get_table(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_name(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_type(MapiHdl hdl, int fnr);

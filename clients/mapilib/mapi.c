@@ -636,7 +636,7 @@
  *
  * @subsection Miscellaneous
  * @itemize
- * @item MapiMsg mapi_setAutocommit(Mapi mid, int autocommit)
+ * @item MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit)
  *
  * Set the autocommit flag (default is on).  This only has an effect
  * when the language is SQL.  In that case, the server commits after each
@@ -678,7 +678,7 @@
  * representation into a C-representation. The storage space is
  * dynamically created and should be freed after use.
  *
- * @item MapiMsg  mapi_trace(Mapi mid, int flag)
+ * @item MapiMsg  mapi_trace(Mapi mid, bool flag)
  *
  * Set the trace flag to monitor interaction of the client
  * with the library. It is primarilly used for debugging
@@ -843,15 +843,15 @@ struct MapiStruct {
 	int languageId;
 	char *motd;		/* welcome message from server */
 
-	int trace;		/* Trace Mapi interaction */
-	int auto_commit;
 	char *noexplain;	/* on error, don't explain, only print result */
 	MapiMsg error;		/* Error occurred */
 	char *errorstr;		/* error from server */
 	const char *action;	/* pointer to constant string */
 
 	struct BlockCache blk;
-	int connected;
+	bool connected;
+	bool trace;		/* Trace Mapi interaction */
+	bool auto_commit;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
@@ -920,7 +920,7 @@ struct MapiStatement {
 	do {								\
 		debugprint("entering %s\n", (C));			\
 		assert(X);						\
-		if ((X)->connected == 0) {				\
+		if (!(X)->connected) {					\
 			mapi_setError((X), "Connection lost", (C), MERROR); \
 			return (X)->error;				\
 		}							\
@@ -930,7 +930,7 @@ struct MapiStatement {
 	do {								\
 		debugprint("entering %s\n", (C));			\
 		assert(X);						\
-		if ((X)->connected == 0) {				\
+		if (!(X)->connected) {					\
 			mapi_setError((X), "Connection lost", (C), MERROR); \
 			return 0;					\
 		}							\
@@ -941,7 +941,7 @@ struct MapiStatement {
 		debugprint("entering %s\n", (C));			\
 		assert(X);						\
 		assert((X)->mid);					\
-		if ((X)->mid->connected == 0) {				\
+		if (!(X)->mid->connected) {				\
 			mapi_setError((X)->mid, "Connection lost", (C), MERROR); \
 			return (X)->mid->error;				\
 		}							\
@@ -952,7 +952,7 @@ struct MapiStatement {
 		debugprint("entering %s\n", (C));			\
 		assert(X);						\
 		assert((X)->mid);					\
-		if ((X)->mid->connected == 0) {				\
+		if (!(X)->mid->connected) {				\
 			mapi_setError((X)->mid, "Connection lost", (C), MERROR); \
 			return 0;					\
 		}							\
@@ -1315,14 +1315,14 @@ mapi_get_from(Mapi mid)
 	return mid->from;
 }
 
-int
+bool
 mapi_get_trace(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_trace");
 	return mid->trace;
 }
 
-int
+bool
 mapi_get_autocommit(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_autocommit");
@@ -1420,7 +1420,7 @@ new_result(MapiHdl hdl)
 	assert((hdl->lastresult == NULL && hdl->result == NULL) ||
 	       (hdl->result != NULL && hdl->lastresult != NULL && hdl->lastresult->next == NULL));
 
-	if (hdl->mid->trace == MAPI_TRACE)
+	if (hdl->mid->trace)
 		printf("allocating new result set\n");
 	/* append a newly allocated struct to the end of the linked list */
 	result = malloc(sizeof(*result));
@@ -1478,7 +1478,7 @@ close_result(MapiHdl hdl)
 		return MERROR;
 	mid = hdl->mid;
 	assert(mid != NULL);
-	if (mid->trace == MAPI_TRACE)
+	if (mid->trace)
 		printf("closing result set\n");
 	if (result->tableid >= 0 && result->querytype != Q_PREPARE) {
 		if (mid->active &&
@@ -1666,7 +1666,7 @@ mapi_needmore(MapiHdl hdl)
 	return hdl->needmore ? MMORE : MOK;
 }
 
-int
+bool
 mapi_more_results(MapiHdl hdl)
 {
 	struct MapiResultSet *result;
@@ -1675,7 +1675,7 @@ mapi_more_results(MapiHdl hdl)
 
 	if ((result = hdl->result) == 0) {
 		/* there are no results at all */
-		return 0;
+		return false;
 	}
 	if (result->querytype == Q_TABLE && hdl->mid->active == hdl) {
 		/* read until next result (if any) */
@@ -1684,7 +1684,7 @@ mapi_more_results(MapiHdl hdl)
 	if (hdl->needmore) {
 		/* assume the application will provide more data and
 		   that we will then have a result */
-		return 1;
+		return true;
 	}
 	while (result->next) {
 		result = result->next;
@@ -1693,10 +1693,10 @@ mapi_more_results(MapiHdl hdl)
 			(hdl->result->querytype >= Q_TABLE &&
 			 hdl->result->querytype <= Q_PREPARE) ||
 		    result->errorstr != NULL)
-			return 1;
+			return true;
 	}
 	/* no more results */
-	return 0;
+	return false;
 }
 
 MapiHdl
@@ -1845,7 +1845,7 @@ mapi_new(void)
 
 	/* then fill in some details */
 	mid->index = index++;	/* for distinctions in log records */
-	mid->auto_commit = 1;
+	mid->auto_commit = true;
 	mid->error = MOK;
 	mid->hostname = NULL;
 	mid->server = NULL;
@@ -2533,7 +2533,7 @@ mapi_reconnect(Mapi mid)
 	check_stream(mid, mid->to, "Cannot open socket for writing", "mapi_reconnect", mid->error);
 	check_stream(mid, mid->from, "Cannot open socket for reading", "mapi_reconnect", mid->error);
 
-	mid->connected = 1;
+	mid->connected = true;
 
 	if (!isa_block_stream(mid->to)) {
 		mid->to = block_stream(mid->to);
@@ -2755,7 +2755,7 @@ mapi_reconnect(Mapi mid)
 		close_connection(mid);
 		return mid->error;
 	}
-	if (mid->trace == MAPI_TRACE) {
+	if (mid->trace) {
 		printf("sending first request [%d]:%s", BLOCK, buf);
 		fflush(stdout);
 	}
@@ -2931,7 +2931,7 @@ mapi_reconnect(Mapi mid)
 	}
 	mapi_close_handle(hdl);
 
-	if (mid->trace == MAPI_TRACE)
+	if (mid->trace)
 		printf("connection established\n");
 	if (mid->languageId != LANG_SQL)
 		return mid->error;
@@ -2991,7 +2991,7 @@ close_connection(Mapi mid)
 	MapiHdl hdl;
 	struct MapiResultSet *result;
 
-	mid->connected = 0;
+	mid->connected = false;
 	mid->active = NULL;
 	for (hdl = mid->first; hdl; hdl = hdl->next) {
 		hdl->active = NULL;
@@ -3169,7 +3169,7 @@ MapiMsg
 mapi_timeout(Mapi mid, unsigned int timeout)
 {
 	mapi_check(mid, "mapi_timeout");
-	if (mid->trace == MAPI_TRACE)
+	if (mid->trace)
 		printf("Set timeout to %u\n", timeout);
 	mnstr_settimeout(mid->to, timeout, NULL);
 	mnstr_settimeout(mid->from, timeout, NULL);
@@ -3421,7 +3421,7 @@ mapi_param_store(MapiHdl hdl)
 	}
 	checkSpace(strlen(p) + 1);
 	strcpy(hdl->query + k, p);
-	if (hdl->mid->trace == MAPI_TRACE)
+	if (hdl->mid->trace)
 		printf("param_store: result=%s\n", hdl->query);
 	return;
 }
@@ -3465,7 +3465,7 @@ read_line(Mapi mid)
 		s = mid->blk.buf + mid->blk.end;
 
 		/* fetch one more block */
-		if (mid->trace == MAPI_TRACE)
+		if (mid->trace)
 			printf("fetch next block: start at:%d\n", mid->blk.end);
 		len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 		check_stream(mid, mid->from, "Connection terminated during read line", "read_line", (mid->blk.eos = 1, (char *) 0));
@@ -3475,7 +3475,7 @@ read_line(Mapi mid)
 			mnstr_flush(mid->tracelog);
 		}
 		mid->blk.buf[mid->blk.end + len] = 0;
-		if (mid->trace == MAPI_TRACE) {
+		if (mid->trace) {
 			printf("got next block: length:%zd\n", len);
 			printf("text:%s\n", mid->blk.buf + mid->blk.end);
 		}
@@ -3494,7 +3494,7 @@ read_line(Mapi mid)
 		}
 		mid->blk.end += (int) len;
 	}
-	if (mid->trace == MAPI_TRACE) {
+	if (mid->trace) {
 		printf("got complete block: \n");
 		printf("text:%s\n", mid->blk.buf + mid->blk.nxt);
 	}
@@ -3505,14 +3505,14 @@ read_line(Mapi mid)
 	reply = mid->blk.buf + mid->blk.nxt;
 	mid->blk.nxt = (int) (nl - mid->blk.buf);
 
-	if (mid->trace == MAPI_TRACE)
+	if (mid->trace)
 		printf("read_line:%s\n", reply);
 	return reply;
 }
 
 /* set or unset the autocommit flag in the server */
 MapiMsg
-mapi_setAutocommit(Mapi mid, int autocommit)
+mapi_setAutocommit(Mapi mid, bool autocommit)
 {
 	if (mid->auto_commit == autocommit)
 		return MOK;
@@ -3554,7 +3554,7 @@ mapi_release_id(Mapi mid, int id)
 }
 
 void
-mapi_trace(Mapi mid, int flag)
+mapi_trace(Mapi mid, bool flag)
 {
 	mapi_clrError(mid);
 	mid->trace = flag;
@@ -3772,10 +3772,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TRANS:
-			if (*nline == 'f')
-				hdl->mid->auto_commit = 0;
-			else
-				hdl->mid->auto_commit = 1;
+			hdl->mid->auto_commit = *nline != 'f';
 			break;
 		case Q_UPDATE:
 			result->row_count = strtoll(nline, &nline, 10);
@@ -4082,7 +4079,7 @@ mapi_execute_internal(MapiHdl hdl)
 		return MERROR;
 	size = strlen(cmd);
 
-	if (mid->trace == MAPI_TRACE) {
+	if (mid->trace) {
 		printf("mapi_query:%zu:%s\n", size, cmd);
 	}
 	if (mid->languageId == LANG_SQL) {
@@ -4313,7 +4310,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		}
 	}
 
-	if (mid->trace == MAPI_TRACE) {
+	if (mid->trace) {
 		printf("mapi_query_part:%zu:%.*s\n", size, (int) size, query);
 	}
 	hdl->needmore = 0;
@@ -5386,7 +5383,7 @@ mapi_get_motd(Mapi mid)
 	return mid->motd;
 }
 
-int
+bool
 mapi_is_connected(Mapi mid)
 {
 	return mid->connected;

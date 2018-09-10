@@ -238,7 +238,7 @@ str RMTconnectScen(
 	MT_lock_init(&c->lock, "remote connection lock");
 
 #ifdef _DEBUG_MAPI_
-	mapi_trace(c->mconn, TRUE);
+	mapi_trace(c->mconn, true);
 #endif
 
 	MT_lock_unset(&mal_remoteLock);
@@ -1457,7 +1457,7 @@ RMTisalive(int *ret, str *conn)
 	rethrow("remote.get", tmp, RMTfindconn(&c, *conn));
 
 	*ret = 0;
-	if (mapi_is_connected(c->mconn) != 0 && mapi_ping(c->mconn) == MOK)
+	if (mapi_is_connected(c->mconn) && mapi_ping(c->mconn) == MOK)
 		*ret = 1;
 
 	return MAL_SUCCEED;
