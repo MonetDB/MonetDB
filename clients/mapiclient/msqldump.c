@@ -165,7 +165,7 @@ main(int argc, char **argv)
 		exit(2);
 	}
 	if (!quiet) {
-		char *motd = mapi_get_motd(mid);
+		const char *motd = mapi_get_motd(mid);
 
 		if (motd)
 			fprintf(stderr, "%s", motd);

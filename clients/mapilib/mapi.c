@@ -685,11 +685,11 @@
  * @item  char *mapi_get_table(MapiHdl hdl, int fnr)
  * @item  int mapi_get_len(Mapi mid, int fnr)
  *
- * @item  char *mapi_get_dbname(Mapi mid)
- * @item  char *mapi_get_host(Mapi mid)
- * @item  char *mapi_get_user(Mapi mid)
- * @item  char *mapi_get_lang(Mapi mid)
- * @item  char *mapi_get_motd(Mapi mid)
+ * @item  const char *mapi_get_dbname(Mapi mid)
+ * @item  const char *mapi_get_host(Mapi mid)
+ * @item  const char *mapi_get_user(Mapi mid)
+ * @item  const char *mapi_get_lang(Mapi mid)
+ * @item  const char *mapi_get_motd(Mapi mid)
  *
  * @end itemize
  * @- Implementation
@@ -5276,50 +5276,50 @@ mapi_get_sqloptimizertime(MapiHdl hdl)
 	return result->sqloptimizertime;
 }
 
-char *
+const char *
 mapi_get_dbname(Mapi mid)
 {
 	return mid->database ? mid->database : "";
 }
 
-char *
+const char *
 mapi_get_host(Mapi mid)
 {
 	return mid->hostname;
 }
 
-char *
+const char *
 mapi_get_user(Mapi mid)
 {
 	return mid->username;
 }
 
-char *
+const char *
 mapi_get_lang(Mapi mid)
 {
 	return mid->language;
 }
 
-char *
+const char *
 mapi_get_uri(Mapi mid)
 {
 	return mid->uri;
 }
 
-char *
+const char *
 mapi_get_mapi_version(Mapi mid)
 {
 	return mid->mapiversion;
 }
 
-char *
+const char *
 mapi_get_monet_version(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_monet_version");
 	return mid->server ? mid->server : "";
 }
 
-char *
+const char *
 mapi_get_motd(Mapi mid)
 {
 	mapi_check0(mid, "mapi_get_motd");

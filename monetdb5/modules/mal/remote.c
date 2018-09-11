@@ -193,8 +193,7 @@ str RMTconnectScen(
 
 	/* generate an unique connection name, they are only known
 	 * within one mserver, id is primary key, the rest is super key */
-	s = mapi_get_dbname(m);
-	snprintf(conn, BUFSIZ, "%s_%s_%zu", s, *user, connection_id++);
+	snprintf(conn, BUFSIZ, "%s_%s_%zu", mapi_get_dbname(m), *user, connection_id++);
 	/* make sure we can construct MAL identifiers using conn */
 	for (s = conn; *s != '\0'; s++) {
 		if (!isalnum((unsigned char)*s)) {
