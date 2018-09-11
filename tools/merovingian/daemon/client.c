@@ -585,9 +585,18 @@ acceptConnections(int sock, int usock)
 		/* start handleClient as a thread so that we're not blocked by
 		 * a slow client */
 		data = malloc(sizeof(*data)); /* freed by handleClient */
+		p = malloc(sizeof(*p));
+		if (data == NULL || p == NULL) {
+			if (data)
+				free(data);
+			if (p)
+				free(p);
+			closesocket(msgsock);
+			Mfprintf(stderr, "cannot allocate memory\n");
+			continue;
+		}
 		data->sock = msgsock;
 		data->isusock = FD_ISSET(usock, &fds);
-		p = malloc(sizeof(*p));
 		p->dead = 0;
 		data->self = p;
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {
