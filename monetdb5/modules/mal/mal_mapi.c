@@ -131,7 +131,7 @@ doChallenge(void *data)
 #ifdef DEBUG_SERVER
 	Client cntxt= mal_clients;
 #endif
-	char *buf = (char *) GDKmalloc(BLOCK + 1);
+	char *buf = GDKmalloc(BLOCK + 1);
 	char challenge[13];
 
 	stream *fdin = ((struct challengedata *) data)->in;
@@ -145,7 +145,7 @@ doChallenge(void *data)
 	srand((unsigned int) GDKusec());
 #endif
 	GDKfree(data);
-	if (buf == NULL){
+	if (buf == NULL) {
 		close_stream(fdin);
 		close_stream(fdout);
 		return;
@@ -410,7 +410,7 @@ SERVERlistenThread(SOCKET *Sock)
 				continue;
 			}
 
-			switch (*buf) {
+			switch (buf[0]) {
 				case '0':
 					/* nothing special, nothing to do */
 				break;

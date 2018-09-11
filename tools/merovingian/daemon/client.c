@@ -565,7 +565,7 @@ acceptConnections(int sock, int usock)
 				continue;
 			}
 
-			switch (*buf) {
+			switch (buf[0]) {
 			case '0':
 				/* nothing special, nothing to do */
 				break;

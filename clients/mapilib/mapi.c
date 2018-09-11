@@ -2544,7 +2544,7 @@ mapi_reconnect(Mapi mid)
 	assert(len < BLOCK);
 	buf[len] = 0;
 
-	if (len == 0){
+	if (len == 0) {
 		mapi_setError(mid, "Challenge string is not valid, it is empty", "mapi_start_talking", MERROR);
 		return mid->error;
 	}
@@ -2703,8 +2703,12 @@ mapi_reconnect(Mapi mid)
 				size_t len;
 				if (pwh == NULL)
 					continue;
-				len = strlen(pwh) + 11 /* {RIPEMD160} */ + 1;
+				len = strlen(pwh) + strlen(*algs) + 3 /* {}\0 */;
 				hash = malloc(len);
+				if (hash == NULL) {
+					close_connection(mid);
+					return mapi_setError(mid, "malloc failure", "mapi_reconnect", MERROR);
+				}
 				snprintf(hash, len, "{%s}%s", *algs, pwh);
 				free(pwh);
 				break;
