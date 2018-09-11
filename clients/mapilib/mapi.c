@@ -1202,10 +1202,10 @@ indented_print(const char *msg, const char *prefix, FILE *fd)
 }
 
 void
-mapi_noexplain(Mapi mid, char *errorprefix)
+mapi_noexplain(Mapi mid, const char *errorprefix)
 {
 	assert(mid);
-	mid->noexplain = errorprefix;
+	mid->noexplain = errorprefix ? strdup(errorprefix) : NULL;
 }
 
 void
@@ -2145,6 +2145,8 @@ mapi_destroy(Mapi mid)
 		free(mid->language);
 	if (mid->motd)
 		free(mid->motd);
+	if (mid->noexplain)
+		free(mid->noexplain);
 
 	if (mid->database)
 		free(mid->database);
