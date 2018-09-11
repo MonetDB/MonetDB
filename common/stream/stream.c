@@ -4692,7 +4692,7 @@ bs2_setpos(stream *ss, size_t pos)
 	s->nr = pos;
 }
 
-int
+bool
 isa_block_stream(stream *s)
 {
 	assert(s != NULL);
@@ -5184,11 +5184,11 @@ bstream_create(stream *s, size_t size)
 {
 	bstream *b;
 
-	if (s == NULL || size >= (1 << 30))
+	if (s == NULL)
 		return NULL;
 	if ((b = malloc(sizeof(*b))) == NULL)
 		return NULL;
-	b->mode = (int) size;
+	b->mode = size;
 	if (size == 0)
 		size = BUFSIZ;
 	b->s = s;
@@ -5200,7 +5200,7 @@ bstream_create(stream *s, size_t size)
 	b->size = size;
 	b->pos = 0;
 	b->len = 0;
-	b->eof = 0;
+	b->eof = false;
 	return b;
 }
 
@@ -5236,7 +5236,7 @@ bstream_read(bstream *s, size_t size)
 		s->buf = p;
 	}
 
-	if (size > s->size - s->len)
+	if (s->len + size > s->size)
 		size = s->size - s->len;
 
 	rd = s->s->read(s->s, s->buf + s->len, 1, size);
@@ -5245,7 +5245,7 @@ bstream_read(bstream *s, size_t size)
 		return rd;
 
 	if (rd == 0) {
-		s->eof = 1;
+		s->eof = true;
 		return 0;
 	}
 	s->len += (size_t) rd;
@@ -5298,7 +5298,7 @@ bstream_readline(bstream *s)
 	rd = strlen(s->buf + s->len);
 
 	if (rd == 0) {
-		s->eof = 1;
+		s->eof = true;
 		return 0;
 	}
 	s->len += rd;
@@ -5313,7 +5313,7 @@ bstream_next(bstream *s)
 	if (s == NULL)
 		return -1;
 	if (s->mode > 0) {
-		return bstream_read(s, (size_t) s->mode);
+		return bstream_read(s, s->mode);
 	} else if (s->s->read == file_read) {
 		return bstream_readline(s);
 	} else {
@@ -5345,6 +5345,10 @@ bstream_destroy(bstream *s)
 }
 
 /* ------------------------------------------------------------------ */
+/* callback stream
+ *
+ * read-only stream which calls a user-provided callback function in
+ * order to get more data to be returned to the reader */
 
 struct cbstream {
 	void *private;

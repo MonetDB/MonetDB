@@ -213,7 +213,7 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  * found. The next read will then start with a new major block.
  */
 stream_export stream *block_stream(stream *s);
-stream_export int isa_block_stream(stream *s);
+stream_export bool isa_block_stream(stream *s);
 stream_export stream *bs_stream(stream *s);
 
 
@@ -243,10 +243,10 @@ typedef struct bstream {
 	stream *s;
 	char *buf;
 	size_t size;		/* size of buf */
-	size_t pos;		/* the data cursor (ie read uptil pos) */
-	size_t len;		/* len of the data (could < size but usually == size) */
-	int eof;
-	int mode;		/* 0 line mode else size for block mode */
+	size_t pos;		/* the data cursor (ie read until pos) */
+	size_t len;		/* len of the data (<= size) */
+	size_t mode;		/* 0 line mode else size for block mode */
+	bool eof;
 } bstream;
 
 stream_export bstream *bstream_create(stream *rs, size_t chunk_size);

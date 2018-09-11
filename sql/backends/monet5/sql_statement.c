@@ -137,7 +137,7 @@ add_to_merge_partitions_accumulator(backend *be, int nr)
 	q = pushArgument(mb, q, help);
 	q = pushArgument(mb, q, nr);
 
-	be->first_statement_generated = 1; /* set the first statement as generated */
+	be->first_statement_generated = true; /* set the first statement as generated */
 
 	return getDestVar(q);
 }
