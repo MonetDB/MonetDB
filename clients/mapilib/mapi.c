@@ -805,7 +805,7 @@ struct BlockCache {
 	int lim;
 	int nxt;
 	int end;
-	int eos;		/* end of sequence */
+	bool eos;		/* end of sequence */
 };
 
 enum mapi_lang_t {
@@ -871,7 +871,7 @@ struct MapiResultSet {
 	char sqlstate[6];	/* the SQL state code */
 	struct MapiColumn *fields;
 	struct MapiRowBuf cache;
-	int commentonly;	/* only comments seen so far */
+	bool commentonly;	/* only comments seen so far */
 };
 
 struct MapiStatement {
@@ -883,7 +883,7 @@ struct MapiStatement {
 	int maxparams;
 	struct MapiParam *params;
 	struct MapiResultSet *result, *active, *lastresult;
-	int needmore;		/* need more input */
+	bool needmore;		/* need more input */
 	int *pending_close;
 	int npending_close;
 	MapiHdl prev, next;
@@ -955,7 +955,7 @@ static int unquote(const char *msg, char **start, const char **next, int endchar
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
-static int mapi_initialized = 0;
+static bool mapi_initialized = false;
 
 #define check_stream(mid,s,msg,f,e)					\
 	do {								\
@@ -1451,7 +1451,7 @@ new_result(MapiHdl hdl)
 	result->cache.tuplecount = 0;
 	result->cache.line = NULL;
 
-	result->commentonly = 1;
+	result->commentonly = true;
 
 	return result;
 }
@@ -1712,7 +1712,7 @@ mapi_new_handle(Mapi mid)
 	hdl->result = NULL;
 	hdl->lastresult = NULL;
 	hdl->active = NULL;
-	hdl->needmore = 0;
+	hdl->needmore = false;
 	hdl->pending_close = NULL;
 	hdl->npending_close = 0;
 	/* add to doubly-linked list */
@@ -1740,7 +1740,7 @@ finish_handle(MapiHdl hdl)
 	if (mid->to) {
 		if (hdl->needmore) {
 			assert(mid->active == NULL || mid->active == hdl);
-			hdl->needmore = 0;
+			hdl->needmore = false;
 			mid->active = hdl;
 			mnstr_flush(mid->to);
 			check_stream(mid, mid->to, "write error on stream", "finish_handle", mid->error);
@@ -1770,7 +1770,7 @@ finish_handle(MapiHdl hdl)
 			return MERROR;
 		if (hdl->needmore) {
 			assert(mid->active == NULL || mid->active == hdl);
-			hdl->needmore = 0;
+			hdl->needmore = false;
 			mid->active = hdl;
 			mnstr_flush(mid->to);
 			check_stream(mid, mid->to, "write error on stream", "finish_handle", mid->error);
@@ -1853,7 +1853,7 @@ mapi_new(void)
 	mid->redircnt = 0;
 	mid->redirmax = 10;
 	mid->tracelog = NULL;
-	mid->blk.eos = 0;
+	mid->blk.eos = false;
 	mid->blk.buf = malloc(BLOCK + 1);
 	if (mid->blk.buf == NULL) {
 		mapi_destroy(mid);
@@ -1959,7 +1959,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	char *query;
 
 	if (!mapi_initialized) {
-		mapi_initialized = 1;
+		mapi_initialized = true;
 		if (mnstr_init() < 0)
 			return NULL;
 	}
@@ -2075,7 +2075,7 @@ mapi_mapi(const char *host, int port, const char *username,
 	Mapi mid;
 
 	if (!mapi_initialized) {
-		mapi_initialized = 1;
+		mapi_initialized = true;
 		if (mnstr_init() < 0)
 			return NULL;
 	}
@@ -2539,7 +2539,7 @@ mapi_reconnect(Mapi mid)
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, BLOCK);
 
-	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_reconnect", (mid->blk.eos = 1, mid->error));
+	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_reconnect", (mid->blk.eos = true, mid->error));
 
 	assert(len < BLOCK);
 	buf[len] = 0;
@@ -3435,7 +3435,7 @@ read_line(Mapi mid)
 		return 0;
 
 	/* check if we need to read more blocks to get a new line */
-	mid->blk.eos = 0;
+	mid->blk.eos = false;
 	s = mid->blk.buf + mid->blk.nxt;
 	while ((nl = strchr(s, '\n')) == NULL && !mid->blk.eos) {
 		ssize_t len;
@@ -3463,7 +3463,7 @@ read_line(Mapi mid)
 		if (mid->trace)
 			printf("fetch next block: start at:%d\n", mid->blk.end);
 		len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
-		check_stream(mid, mid->from, "Connection terminated during read line", "read_line", (mid->blk.eos = 1, (char *) 0));
+		check_stream(mid, mid->from, "Connection terminated during read line", "read_line", (mid->blk.eos = true, (char *) 0));
 		if (mid->tracelog) {
 			mapi_log_header(mid, "R");
 			mnstr_write(mid->tracelog, mid->blk.buf + mid->blk.end, 1, len);
@@ -3754,7 +3754,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		if (result == NULL || (qt != Q_BLOCK && !result->commentonly))
 			result = new_result(hdl);
 		result->querytype = qt;
-		result->commentonly = 0;
+		result->commentonly = false;
 		result->querytime = 0;
 		result->maloptimizertime = 0;
 		result->sqloptimizertime = 0;
@@ -3828,7 +3828,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 
 	n = slice_row(line, NULL, &anchors, &lens, 10, '#');
 
-	result->commentonly = 0;
+	result->commentonly = false;
 
 	tag = etag + 1;
 	while (*tag && isspace((unsigned char) *tag))
@@ -3926,7 +3926,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	mid = hdl->mid;
 	assert(mid->active == hdl);
 	if (hdl->needmore) {
-		hdl->needmore = 0;
+		hdl->needmore = false;
 		mnstr_flush(mid->to);
 		check_stream(mid, mid->to, "write error on stream", "read_into_cache", mid->error);
 	}
@@ -3953,7 +3953,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				/* skip end of block */
 				mid->active = hdl;
 				read_line(mid);
-				hdl->needmore = 1;
+				hdl->needmore = true;
 				mid->active = hdl;
 			}
 			return mid->error;
@@ -3966,7 +3966,7 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					result->querytype > 0)
 			{
 				result = new_result(hdl);
-				result->commentonly = 0;
+				result->commentonly = false;
 				hdl->active = result;
 			}
 			add_error(result, line + 1 /* skip ! */ );
@@ -4055,7 +4055,7 @@ mapi_execute_internal(MapiHdl hdl)
 				do {
 					size_t n;
 
-					hdl->needmore = 0;
+					hdl->needmore = false;
 					if ((n = QUERYBLOCK) > size - i)
 						n = size - i;
 					mnstr_write(mid->to, cmd + i, 1, n);
@@ -4086,7 +4086,7 @@ mapi_execute_internal(MapiHdl hdl)
 					if (read_into_cache(hdl, 0) != MOK)
 						return mid->error;
 					if (i >= size && hdl->needmore) {
-						hdl->needmore = 0;
+						hdl->needmore = false;
 						mnstr_flush(mid->to);
 						check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
 					}
@@ -4254,7 +4254,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	if (mid->trace) {
 		printf("mapi_query_part:%zu:%.*s\n", size, (int) size, query);
 	}
-	hdl->needmore = 0;
+	hdl->needmore = false;
 	mnstr_write(mid->to, query, 1, size);
 	if (mid->tracelog) {
 		mnstr_write(mid->tracelog, query, 1, size);
@@ -4274,7 +4274,7 @@ mapi_query_done(MapiHdl hdl)
 	mid = hdl->mid;
 	assert(mid->active == NULL || mid->active == hdl);
 	mid->active = hdl;
-	hdl->needmore = 0;
+	hdl->needmore = false;
 	mnstr_flush(mid->to);
 	check_stream(mid, mid->to, "write error on stream", "mapi_query_done", mid->error);
 	ret = mid->error;
