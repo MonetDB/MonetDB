@@ -160,7 +160,6 @@ mapi_export MapiMsg mapi_param_numeric(MapiHdl hdl, int fnr, int scale, int prec
 mapi_export MapiMsg mapi_clear_params(MapiHdl hdl);
 mapi_export MapiHdl mapi_prepare(Mapi mid, const char *cmd);
 mapi_export MapiMsg mapi_prepare_handle(MapiHdl hdl, const char *cmd);
-mapi_export MapiMsg mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples);
 mapi_export MapiMsg mapi_execute(MapiHdl hdl);
 mapi_export MapiMsg mapi_fetch_reset(MapiHdl hdl);
 mapi_export MapiMsg mapi_finish(MapiHdl hdl);

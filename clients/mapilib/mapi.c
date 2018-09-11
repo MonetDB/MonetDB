@@ -306,7 +306,6 @@
  * @item mapi_table()	@tab	Get current table name
  * @item mapi_timeout()	@tab	Set timeout for long-running queries[TODO]
  * @item mapi_trace()	@tab	Set trace flag
- * @item mapi_virtual_result()	@tab Submit a virtual result set
  * @item mapi_unquote()	@tab	remove escaped characters
  * @end multitable
  *
@@ -460,23 +459,6 @@
  * terminated. It is automatically called when a new query using the same
  * query handle is shipped to the database and when the query handle is
  * closed with @code{mapi_close_handle()}.
- *
- * @item MapiMsg mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples)
- *
- * Submit a table of results to the library that can then subsequently be
- * accessed as if it came from the server.
- * columns is the number of columns of the result set and must be greater
- * than zero.
- * columnnames is a list of pointers to strings giving the names of the
- * individual columns.  Each pointer may be NULL and columnnames may be
- * NULL if there are no names.
- * tuplecount is the length (number of rows) of the result set.  If
- * tuplecount is less than zero, the number of rows is determined by a NULL
- * pointer in the list of tuples pointers.
- * tuples is a list of pointers to row values.  Each row value is a list of
- * pointers to strings giving the individual results.  If one of these
- * pointers is NULL it indicates a NULL/nil value.
- * @end itemize
  *
  * @subsection Getting Results
  * @itemize
@@ -4011,60 +3993,6 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			break;
 		}
 	}
-}
-
-MapiMsg
-mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples)
-{
-	Mapi mid;
-	struct MapiResultSet *result;
-	int i, n;
-	const char **tuple;
-	char **anchors;
-	size_t *lens;
-
-	if (columns <= 0)
-		return MERROR;
-	mid = hdl->mid;
-	if (mid->active && read_into_cache(mid->active, 0) != MOK)
-		return MERROR;
-	assert(mid->active == NULL);
-	finish_handle(hdl);
-	assert(hdl->result == NULL);
-	assert(hdl->active == NULL);
-	hdl->active = result = new_result(hdl);
-	result->fieldcnt = result->maxfields = columns;
-	REALLOC(result->fields, columns);
-	memset(result->fields, 0, columns * sizeof(*result->fields));
-	result->querytype = Q_TABLE;
-	for (i = 0; i < columns; i++) {
-		if (columnnames && columnnames[i])
-			result->fields[i].columnname = strdup(columnnames[i]);
-		if (columntypes && columntypes[i])
-			result->fields[i].columntype = strdup(columntypes[i]);
-		if (columnlengths)
-			result->fields[i].columnlength = columnlengths[i];
-	}
-	if (tuplecount > 0) {
-		result->tuple_count = tuplecount;
-		result->row_count = tuplecount;
-		result->cache.rowlimit = tuplecount;
-	}
-
-	for (tuple = *tuples++, n = 0; tuplecount < 0 ? tuple !=NULL : n < tuplecount; tuple = *tuples++, n++) {
-		add_cache(result, strdup("[ ]"), 1);
-		result->cache.line[n].fldcnt = columns;
-		anchors = malloc(columns * sizeof(*anchors));
-		result->cache.line[n].anchors = anchors;
-		lens = malloc(columns * sizeof(*lens));
-		result->cache.line[n].lens = lens;
-		for (i = 0; i < columns; i++) {
-			anchors[i] = tuple[i] ? strdup(tuple[i]) : NULL;
-			lens[i] = tuple[i] ? strlen(tuple[i]) : 0;
-		}
-	}
-	hdl->active = NULL;
-	return mid->error;
 }
 
 #define MAXQUERYSIZE	(100*1024)

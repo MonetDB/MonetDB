@@ -567,7 +567,6 @@ MapiHdl mapi_stream_query(Mapi mid, const char *cmd, int windowsize);
 MapiMsg mapi_timeout(Mapi mid, unsigned int time);
 void mapi_trace(Mapi mid, bool flag);
 char *mapi_unquote(char *msg);
-MapiMsg mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples);
 char *mcrypt_BackendSum(const char *string, size_t len);
 char *mcrypt_MD5Sum(const char *string, size_t len);
 char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
