@@ -1204,10 +1204,14 @@ BAT *
 BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	     bool li, bool hi, bool anti)
 {
-	bool hval, lval, equi, lnil, hash;
+	bool lval;		/* low value used for comparison */
+	bool lnil;		/* low value is nil */
+	bool hval;		/* high value used for comparison */
+	bool equi;		/* select for single value (not range) */
+	bool hash;		/* use hash (equi must be true) */
 	bool phash = false;	/* use hash on parent BAT (if view) */
-	int t;
-	bat parent;
+	int t;			/* data type */
+	bat parent;		/* b's parent bat (if b is a view) */
 	const void *nil;
 	BAT *bn, *tmp;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
