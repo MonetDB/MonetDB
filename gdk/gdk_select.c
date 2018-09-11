@@ -1398,6 +1398,65 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
+	if (anti) {
+		PROPrec *prop;
+		int c;
+
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			if (c > 0 || (li && c == 0)) {
+				if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+					c = ATOMcmp(t, th, VALptr(&prop->v));
+					if (c < 0 || (hi && c == 0)) {
+						/* tl..th range fully
+						 * inside MIN..MAX
+						 * range of values in
+						 * BAT, so nothing
+						 * left over for
+						 * anti */
+						ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+								  ",s=" ALGOOPTBATFMT ",anti=%d): "
+								  "nothing, out of range\n",
+								  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
+						return BATdense(0, 0, 0);
+					}
+				}
+			}
+		}
+	} else if (!equi || !lnil) {
+		PROPrec *prop;
+		int c;
+
+		if (hval && (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+			c = ATOMcmp(t, th, VALptr(&prop->v));
+			if (c < 0 || (!hi && c == 0)) {
+				/* smallest value in BAT larger than
+				 * what we're looking for */
+				ALGODEBUG fprintf(stderr, "#BATselect(b="
+						  ALGOBATFMT ",s="
+						  ALGOOPTBATFMT ",anti=%d): "
+						  "nothing, out of range\n",
+						  ALGOBATPAR(b),
+						  ALGOOPTBATPAR(s), anti);
+				return BATdense(0, 0, 0);
+			}
+		}
+		if (lval && (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			if (c > 0 || (!li && c == 0)) {
+				/* largest value in BAT smaller than
+				 * what we're looking for */
+				ALGODEBUG fprintf(stderr, "#BATselect(b="
+						  ALGOBATFMT ",s="
+						  ALGOOPTBATFMT ",anti=%d): "
+						  "nothing, out of range\n",
+						  ALGOBATPAR(b),
+						  ALGOOPTBATPAR(s), anti);
+				return BATdense(0, 0, 0);
+			}
+		}
+	}
+
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		NORMALIZE(oid);
 	} else {
