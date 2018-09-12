@@ -5207,13 +5207,15 @@ bstream_create(stream *s, size_t size)
 ssize_t
 bstream_read(bstream *s, size_t size)
 {
-	ssize_t rd;
+	ssize_t rd, rd1 = 0;
 
 	if (s == NULL)
 		return -1;
 
 	if (s->eof)
 		return 0;
+
+	assert(s->buf != NULL);
 
 	if (s->pos > 0) {
 		if (s->pos < s->len) {
@@ -5225,15 +5227,29 @@ bstream_read(bstream *s, size_t size)
 		s->pos = 0;
 	}
 
-	assert(s->buf != NULL);
 	if (s->len == s->size) {
+		size_t sz = size > 8192 ? 8192 : size;
+		char tmpbuf[8192];
+
+		/* before we realloc more space, see if there is a need */
+		if ((rd1 = s->s->read(s->s, tmpbuf, 1, sz)) == 0) {
+			s->eof = true;
+			return 0;
+		}
+		if (rd1 < 0)
+			return rd1;
 		char *p;
-		size_t ns = s->size + size + 8192;
+		size_t ns = s->size + size;
 		if ((p = realloc(s->buf, ns + 1)) == NULL) {
 			return -1;
 		}
 		s->size = ns;
 		s->buf = p;
+		memcpy(s->buf + s->len, tmpbuf, rd1);
+		s->len += rd1;
+		size -= rd1;
+		if (size == 0)
+			return rd1;
 	}
 
 	if (s->len + size > s->size)
@@ -5246,11 +5262,11 @@ bstream_read(bstream *s, size_t size)
 
 	if (rd == 0) {
 		s->eof = true;
-		return 0;
+		return rd1;
 	}
 	s->len += (size_t) rd;
 	s->buf[s->len] = 0;	/* fill in the spare with EOS */
-	return rd;
+	return rd + rd1;
 }
 
 #ifdef _POSIX2_LINE_MAX
