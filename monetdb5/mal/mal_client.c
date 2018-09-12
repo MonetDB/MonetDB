@@ -566,7 +566,7 @@ MCreadClient(Client c)
 			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
 				mnstr_write(c->fdout, c->prompt, c->promptlength, 1);
 			mnstr_flush(c->fdout);
-			in->eof = 0;
+			in->eof = false;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
 			sum += rd;

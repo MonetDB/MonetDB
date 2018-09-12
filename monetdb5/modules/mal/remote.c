@@ -1091,7 +1091,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "remote.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* grab the input stream and start reading */
-	fdin->eof = 0;
+	fdin->eof = false;
 	len = fdin->pos;
 	while (len < fdin->len || bstream_next(fdin) > 0) {
 		/* newline hunting (how spartan) */
@@ -1388,7 +1388,7 @@ str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	 * rest is binary data directly on the stream.  We get the first
 	 * line from the buffered stream we have here, and pass it on
 	 * together with the raw stream we have. */
-	cntxt->fdin->eof = 0; /* in case it was before */
+	cntxt->fdin->eof = false; /* in case it was before */
 	if (bstream_next(cntxt->fdin) <= 0)
 		throw(MAL, "remote.bincopyfrom", "expected JSON header");
 

@@ -266,7 +266,7 @@ doChallenge(void *data)
 		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 		return;
 	}
-	bs->eof = 1;
+	bs->eof = true;
 	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
 }
 

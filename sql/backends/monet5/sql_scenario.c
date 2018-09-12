@@ -918,7 +918,7 @@ SQLreader(Client c)
 					go = false;
 					break;
 				}
-				in->eof = 0;
+				in->eof = false;
 			}
 			if (in->buf == NULL) {
 				more = false;
@@ -927,7 +927,7 @@ SQLreader(Client c)
 #ifdef _SQL_READER_DEBUG
 				fprintf(stderr, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
-				if (be->language == 'D' && in->eof == 0)
+				if (be->language == 'D' && !in->eof)
 					return msg;
 
 				if (rd == 0 && language !=0 && in->eof && !be->console) {

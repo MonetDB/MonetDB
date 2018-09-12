@@ -3216,7 +3216,7 @@ struct icstream {
 	stream *s;
 	char buffer[BUFSIZ];
 	size_t buflen;
-	int eof;
+	bool eof;
 };
 
 static ssize_t
@@ -3330,7 +3330,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			break;
 		case 0:
 			/* end of file */
-			ic->eof = 1;
+			ic->eof = true;
 			if (ic->buflen > 0) {
 				/* incomplete input */
 				s->errnr = MNSTR_READ_ERROR;
@@ -3382,7 +3382,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		 * next call (i.e. keep ic->eof set), otherwise we
 		 * must clear it so that the next call will cause the
 		 * underlying stream to be read again */
-		ic->eof = 0;
+		ic->eof = false;
 	}
 	return (ssize_t) ((elmsize * cnt - outbytesleft) / elmsize);
 }
@@ -3493,7 +3493,7 @@ ic_open(iconv_t cd, stream *restrict ss, const char *restrict name)
 	ic->cd = cd;
 	ic->s = ss;
 	ic->buflen = 0;
-	ic->eof = 0;
+	ic->eof = false;
 	return s;
 }
 

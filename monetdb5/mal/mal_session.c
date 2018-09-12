@@ -598,7 +598,7 @@ MALreader(Client c)
 	int r = 1;
 	if (c == mal_clients) {
 		r = readConsole(c);
-		if (r < 0 && c->fdin->eof == 0)
+		if (r < 0 && !c->fdin->eof)
 			r = MCreadClient(c);
 		if (r > 0)
 			return MAL_SUCCEED;
