@@ -123,6 +123,19 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			*rb = --curval;                          \
 	} while(0);
 
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_START(TPE) \
+	do {                                                    \
+		TPE *bl = pbp;                                      \
+		for(; pbp<bp; pbp++, rb++)                          \
+			*rb = (int)(pbp - bl);                          \
+	} while(0);
+
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_END(TPE) \
+	do {                                                  \
+		for(; pbp<bp; pbp++, rb++)                        \
+			*rb = (int)(bp - pbp);                        \
+	} while(0);
+
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_START(TPE) \
 	do {                                                \
 		TPE *bl = pbp-1, *bs, v, blimit = (TPE) limit;  \
@@ -273,6 +286,19 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			*rb = curval;                          \
 		for(; k<i; k++, rb++)                      \
 			*rb = --curval;                        \
+	} while(0);
+
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_START \
+	do {                                                  \
+		BUN j = k;                                        \
+		for(; k<i; k++, rb++)                             \
+			*rb = (k - j);                                \
+	} while(0);
+
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_END \
+	do {                                                \
+		for(; k<i; k++, rb++)                           \
+			*rb = (i - k);                              \
 	} while(0);
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_START \
@@ -459,14 +485,16 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, int tpe, int unit, BUN limit, 
 	BATiter bpi = bat_iterator(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 
-	if(unit == 0) {
+	if(unit == 3) {
+		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL)
+	} else if(limit == GDK_int_max) {
+		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_UNBOUNDED)
+	} else if(unit == 0) {
 		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS)
 	} else if(unit == 1) {
 		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE)
 	} else if(unit == 2) {
 		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS)
-	} else if(unit == 3) {
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL)
 	} else {
 		assert(0);
 	}
@@ -476,22 +504,26 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, int tpe, int unit, BUN limit, 
 	return GDK_SUCCEED;
 }
 
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_START
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_END
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_START
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_END
 #undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_START
 #undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_END
 #undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_START
 #undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_END
 #undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_START
 #undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_END
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_START
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_END
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_START
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_END
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_START
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_END
 #undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_START
 #undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_END
 #undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_START
 #undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_END
 #undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_START
 #undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_END
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_START
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_END
 #undef ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED
 #undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES
 #undef ANALYTICAL_WINDOW_BOUNDS_LIMIT
