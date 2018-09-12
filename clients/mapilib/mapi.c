@@ -4001,9 +4001,6 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	}
 }
 
-#define MAXQUERYSIZE	(100*1024)
-#define QUERYBLOCK	(16*1024)
-
 static MapiMsg
 mapi_execute_internal(MapiHdl hdl)
 {
@@ -4026,83 +4023,12 @@ mapi_execute_internal(MapiHdl hdl)
 		printf("mapi_query:%zu:%s\n", size, cmd);
 	}
 	if (mid->languageId == LANG_SQL) {
-		if (size > MAXQUERYSIZE) {
-			/* If the query is large and we don't do
-			   anything about it, deadlock may occur: the
-			   client (we) blocks writing the query while
-			   the server blocks writing the initial
-			   results.  Therefore we split up large
-			   queries into smaller batches.  The split is
-			   done simplistically, but we are prepared to
-			   receive the secondary prompt.  We cache the
-			   results of all but the last batch.
-			   There is  a problem  if auto-commit is  on:
-			   the server  commits on batch boundaries, so
-			   if one of our batches  ends at the end of a
-			   (sub)query, the server commits prematurely.
-			   Another problem is when the query we
-			   received is incomplete.  We should tell the
-			   server that there is no more, but we
-			   don't. */
-			size_t i = 0;
-
-			while (i < size) {
-				mid->active = hdl;
-				mnstr_write(mid->to, "S", 1, 1);
-				if (mid->tracelog) {
-					mapi_log_header(mid, "W");
-					mnstr_printf(mid->tracelog, "S");
-				}
-				check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
-				do {
-					size_t n;
-
-					hdl->needmore = false;
-					if ((n = QUERYBLOCK) > size - i)
-						n = size - i;
-					mnstr_write(mid->to, cmd + i, 1, n);
-					if (mid->tracelog) {
-						mnstr_write(mid->tracelog, cmd + i, 1, n);
-						mnstr_flush(mid->tracelog);
-					}
-					check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
-					i += n;
-					if (i == size) {
-						if (mid->languageId == LANG_SQL) {
-							mnstr_write(mid->to, ";", 1, 1);
-							check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
-							if (mid->tracelog) {
-								mnstr_write(mid->tracelog, ";", 1, 1);
-								mnstr_flush(mid->tracelog);
-							}
-						}
-						mnstr_write(mid->to, "\n", 1, 1);
-						if (mid->tracelog) {
-							mnstr_write(mid->tracelog, "\n", 1, 1);
-							mnstr_flush(mid->tracelog);
-						}
-						check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
-					}
-					mnstr_flush(mid->to);
-					check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
-					if (read_into_cache(hdl, 0) != MOK)
-						return mid->error;
-					if (i >= size && hdl->needmore) {
-						hdl->needmore = false;
-						mnstr_flush(mid->to);
-						check_stream(mid, mid->to, "write error on stream", "mapi_execute", mid->error);
-					}
-				} while (hdl->needmore);
-			}
-			return MOK;
-		} else {
-			/* indicate to server this is a SQL command */
-			mnstr_write(mid->to, "s", 1, 1);
-			if (mid->tracelog) {
-				mapi_log_header(mid, "W");
-				mnstr_write(mid->tracelog, "s", 1, 1);
-				mnstr_flush(mid->tracelog);
-			}
+		/* indicate to server this is a SQL command */
+		mnstr_write(mid->to, "s", 1, 1);
+		if (mid->tracelog) {
+			mapi_log_header(mid, "W");
+			mnstr_write(mid->tracelog, "s", 1, 1);
+			mnstr_flush(mid->tracelog);
 		}
 	}
 	mnstr_write(mid->to, cmd, 1, size);
