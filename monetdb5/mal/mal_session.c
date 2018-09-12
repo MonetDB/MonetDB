@@ -195,7 +195,7 @@ exit_streams( bstream *fin, stream *fout )
 const char* mal_enableflag = "mal_for_all";
 
 void
-MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize, int compute_column_widths)
+MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s, *dbname;
@@ -391,7 +391,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 
 	c->protocol = protocol;
 	c->blocksize = blocksize;
-	c->compute_column_widths = compute_column_widths;
 
 	mnstr_settimeout(c->fdin->s, 50, GDKexiting);
 	msg = MSserveClient(c);
@@ -599,7 +598,7 @@ MALreader(Client c)
 	int r = 1;
 	if (c == mal_clients) {
 		r = readConsole(c);
-		if (r < 0 && c->fdin->eof == 0)
+		if (r < 0 && !c->fdin->eof)
 			r = MCreadClient(c);
 		if (r > 0)
 			return MAL_SUCCEED;

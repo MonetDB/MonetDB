@@ -1999,7 +1999,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
 {
-	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
+	logger *lg = GDKmalloc(sizeof(struct logger));
 	char filename[FILENAME_MAX];
 	char shared_log_filename[FILENAME_MAX];
 

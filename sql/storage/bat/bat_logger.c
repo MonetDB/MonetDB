@@ -585,20 +585,18 @@ bl_postversion(void *lg)
 			return GDK_FAIL;
 		}
 		bat_destroy(b);
-		int one = 1, zero = 0, col = 10;
-		bit t = 1;
 		int sid;
 		int tid = find_table_id(lg, "functions", &sid);
 		if (tabins(lg, true, -1, NULL, "sys", "_columns",
 			   "id", &id,
 			   "name", "system",
 			   "type", "boolean",
-			   "type_digits", &one,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {1}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
-			   "number", &col,
+			   "null", &((const bit) {TRUE}),
+			   "number", &((const int) {10}),
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -607,35 +605,31 @@ bl_postversion(void *lg)
 		/* also create entries for new tables
 		 * {table,range,value}_partitions */
 
-		sht tp = tt_table;
-		sht ca = CA_COMMIT;
-		sht ac = 0;
 		tid = id;
 		if (tabins(lg, true, -1, NULL, "sys", "_tables",
 			   "id", &tid,
 			   "name", "table_partitions",
 			   "schema_id", &sid,
 			   "query", str_nil,
-			   "type", &tp,
-			   "system", &t,
-			   "commit_action", &ca,
-			   "access", &ac,
+			   "type", &((const sht) {tt_table}),
+			   "system", &((const bit) {TRUE}),
+			   "commit_action", &((const sht) {CA_COMMIT}),
+			   "access", &((const sht) {0}),
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		id++;
-		int thirtytwo = 32;
-		col = 0;
+		int col = 0;
 		if (tabins(lg, false, TYPE_int,
 			   N("sys", "table_partitions", "id"),
 			   "sys", "_columns",
 			   "id", &id,
 			   "name", "id",
 			   "type", "int",
-			   "type_digits", &thirtytwo,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -648,11 +642,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "table_id",
 			   "type", "int",
-			   "type_digits", &thirtytwo,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -665,47 +659,45 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "column_id",
 			   "type", "int",
-			   "type_digits", &thirtytwo,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		id++;
 		col++;
-		int slen = STORAGE_MAX_VALUE_LENGTH;
 		if (tabins(lg, false, TYPE_str,
 			   N("sys", "table_partitions", "expression"),
 			   "sys", "_columns",
 			   "id", &id,
 			   "name", "expression",
 			   "type", "varchar",
-			   "type_digits", &slen,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {STORAGE_MAX_VALUE_LENGTH}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		id++;
 		col++;
-		int eight = 8;
 		if (tabins(lg, false, TYPE_bte,
 			   N("sys", "table_partitions", "type"),
 			   "sys", "_columns",
 			   "id", &id,
 			   "name", "type",
 			   "type", "tinyint",
-			   "type_digits", &eight,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {8}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -717,8 +709,8 @@ bl_postversion(void *lg)
 			   "obj_id", &tid,
 			   "auth_id", &pub,
 			   "privileges", &priv,
-			   "grantor", &zero,
-			   "grantable", &zero,
+			   "grantor", &((const int) {0}),
+			   "grantable", &((const int) {0}),
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		tid = id;
@@ -727,10 +719,10 @@ bl_postversion(void *lg)
 			   "name", "range_partitions",
 			   "schema_id", &sid,
 			   "query", str_nil,
-			   "type", &tp,
-			   "system", &t,
-			   "commit_action", &ca,
-			   "access", &ac,
+			   "type", &((const sht) {tt_table}),
+			   "system", &((const bit) {TRUE}),
+			   "commit_action", &((const sht) {CA_COMMIT}),
+			   "access", &((const sht) {0}),
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		id++;
@@ -741,11 +733,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "table_id",
 			   "type", "int",
-			   "type_digits", &thirtytwo,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -758,11 +750,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "partition_id",
 			   "type", "int",
-			   "type_digits", &thirtytwo,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -775,11 +767,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "minimum",
 			   "type", "varchar",
-			   "type_digits", &slen,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {STORAGE_MAX_VALUE_LENGTH}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -792,11 +784,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "maximum",
 			   "type", "varchar",
-			   "type_digits", &slen,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {STORAGE_MAX_VALUE_LENGTH}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -809,11 +801,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "with_nulls",
 			   "type", "boolean",
-			   "type_digits", &one,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {1}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -823,8 +815,8 @@ bl_postversion(void *lg)
 			   "obj_id", &tid,
 			   "auth_id", &pub,
 			   "privileges", &priv,
-			   "grantor", &zero,
-			   "grantable", &zero,
+			   "grantor", &((const int) {0}),
+			   "grantable", &((const int) {0}),
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 
@@ -834,10 +826,10 @@ bl_postversion(void *lg)
 			   "name", "value_partitions",
 			   "schema_id", &sid,
 			   "query", str_nil,
-			   "type", &tp,
-			   "system", &t,
-			   "commit_action", &ca,
-			   "access", &ac,
+			   "type", &((const sht) {tt_table}),
+			   "system", &((const bit) {TRUE}),
+			   "commit_action", &((const sht) {CA_COMMIT}),
+			   "access", &((const sht) {0}),
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		id++;
@@ -848,11 +840,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "table_id",
 			   "type", "int",
-			   "type_digits", &thirtytwo,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -865,11 +857,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "partition_id",
 			   "type", "int",
-			   "type_digits", &thirtytwo,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {32}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -882,11 +874,11 @@ bl_postversion(void *lg)
 			   "id", &id,
 			   "name", "value",
 			   "type", "varchar",
-			   "type_digits", &slen,
-			   "type_scale", &zero,
+			   "type_digits", &((const int) {STORAGE_MAX_VALUE_LENGTH}),
+			   "type_scale", &((const int) {0}),
 			   "table_id", &tid,
 			   "default", str_nil,
-			   "null", &t,
+			   "null", &((const bit) {TRUE}),
 			   "number", &col,
 			   "storage", str_nil,
 			   NULL) != GDK_SUCCEED)
@@ -895,8 +887,8 @@ bl_postversion(void *lg)
 			   "obj_id", &tid,
 			   "auth_id", &pub,
 			   "privileges", &priv,
-			   "grantor", &zero,
-			   "grantable", &zero,
+			   "grantor", &((const int) {0}),
+			   "grantable", &((const int) {0}),
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		//log_sequence(lg, OBJ_SID, id);

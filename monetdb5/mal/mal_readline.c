@@ -132,7 +132,7 @@ readConsole(Client cntxt)
 		return 1;
 	}
   bailout:
-	cntxt->fdin->eof = 1;
+	cntxt->fdin->eof = true;
 	return -1;
 }
 #endif

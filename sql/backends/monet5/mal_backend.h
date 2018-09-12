@@ -36,17 +36,17 @@ typedef enum output_format {
  * generated or not */
 
 typedef struct backend {
-	char 	console;
+	bool 	console;
 	char 	language;		/* 'S' or 's' or 'X' */
 	char 	depth;
-	bit		first_statement_generated;
+	bool 	first_statement_generated;
 	mvc 	*mvc;
 	stream 	*out;
 	ofmt	output_format;	/* csv, json */
 	Client 	client;
 	MalBlkPtr mb;		/* needed during mal generation */
 	int 	mvc_var;
-	int		cur_append;
+	int 	cur_append;
 	int	vtop;		/* top of the variable stack before the current function */
 	cq 	*q;		/* pointer to the cached query */
 } backend;

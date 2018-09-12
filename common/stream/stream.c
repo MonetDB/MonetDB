@@ -3216,7 +3216,7 @@ struct icstream {
 	stream *s;
 	char buffer[BUFSIZ];
 	size_t buflen;
-	int eof;
+	bool eof;
 };
 
 static ssize_t
@@ -3330,7 +3330,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			break;
 		case 0:
 			/* end of file */
-			ic->eof = 1;
+			ic->eof = true;
 			if (ic->buflen > 0) {
 				/* incomplete input */
 				s->errnr = MNSTR_READ_ERROR;
@@ -3382,7 +3382,7 @@ ic_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		 * next call (i.e. keep ic->eof set), otherwise we
 		 * must clear it so that the next call will cause the
 		 * underlying stream to be read again */
-		ic->eof = 0;
+		ic->eof = false;
 	}
 	return (ssize_t) ((elmsize * cnt - outbytesleft) / elmsize);
 }
@@ -3493,7 +3493,7 @@ ic_open(iconv_t cd, stream *restrict ss, const char *restrict name)
 	ic->cd = cd;
 	ic->s = ss;
 	ic->buflen = 0;
-	ic->eof = 0;
+	ic->eof = false;
 	return s;
 }
 
@@ -4122,16 +4122,6 @@ bs_stream(stream *s)
 }
 
 stream *
-bs_stealstream(stream *s)
-{
-	stream *res;
-	assert(isa_block_stream(s));
-	res = ((bs *) s->stream_data.p)->s;
-	((bs *) s->stream_data.p)->s = NULL;
-	return res;
-}
-
-stream *
 block_stream(stream *s)
 {
 	stream *ns;
@@ -4174,7 +4164,6 @@ typedef struct bs2 {
 	size_t bufsiz;
 	size_t readpos;
 	compression_method comp;
-	column_compression colcomp;
 	char *compbuf;
 	size_t compbufsiz;
 	char *buf;
@@ -4639,19 +4628,14 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 
 
 
-void *
-bs2_stealbuf(stream *ss)
+static void
+bs2_resetbuf(stream *ss)
 {
-	void *buffer;
 	bs2 *s = (bs2 *) ss->stream_data.p;
 	assert(ss->read == bs2_read);
-	buffer = (void *) s->buf;
-	s->buf = malloc(s->bufsiz);
-	if (s->buf == NULL) {
-		s->buf = buffer;
-		return NULL;
-	}
-	return buffer;
+	s->itotal = 0;
+	s->nr = 0;
+	s->readpos = 0;
 }
 
 int
@@ -4688,16 +4672,6 @@ bs2_resizebuf(stream *ss, size_t bufsiz)
 	return 0;
 }
 
-void
-bs2_resetbuf(stream *ss)
-{
-	bs2 *s = (bs2 *) ss->stream_data.p;
-	assert(ss->read == bs2_read);
-	s->itotal = 0;
-	s->nr = 0;
-	s->readpos = 0;
-}
-
 buffer
 bs2_buffer(stream *ss)
 {
@@ -4718,14 +4692,7 @@ bs2_setpos(stream *ss, size_t pos)
 	s->nr = pos;
 }
 
-column_compression
-bs2_colcomp(stream *ss)
-{
-	bs2 *s = (bs2 *) ss->stream_data.p;
-	return s->colcomp;
-}
-
-int
+bool
 isa_block_stream(stream *s)
 {
 	assert(s != NULL);
@@ -4734,13 +4701,6 @@ isa_block_stream(stream *s)
 		  s->write == bs_write) ||
 		 (s->read == bs2_read ||
 		  s->write == bs2_write));
-}
-
-int
-isa_fixed_block_stream(stream *s)
-{
-	assert(s != NULL);
-	return s && ((s->read == bs_read || s->write == bs_write));
 }
 
 static void
@@ -4804,13 +4764,21 @@ bs2_isalive(stream *ss)
 }
 
 stream *
-block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp)
+block_stream2(stream *s, size_t bufsiz, compression_method comp)
 {
 	stream *ns;
+	stream *os = NULL;
 	bs2 *b;
 
 	if (s == NULL)
 		return NULL;
+	if (s->read == bs_read || s->write == bs_write) {
+		/* if passed in a block_stream instance, extract the
+		 * underlying stream */
+		os = s;
+		s = ((bs *) s->stream_data.p)->s;
+	}
+
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "block_stream2 %s\n", s->name ? s->name : "<unnamed>");
 #endif
@@ -4820,10 +4788,9 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compress
 		destroy(ns);
 		return NULL;
 	}
-	b->colcomp = colcomp;
 	/* blocksizes have a fixed little endian byteorder */
 #ifdef WORDS_BIGENDIAN
-	s->byteorder = 3412;	/* simply != 1234 */
+	ns->byteorder = 3412;	/* simply != 1234 */
 #endif
 	ns->type = s->type;
 	ns->access = s->access;
@@ -4836,6 +4803,13 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compress
 	ns->update_timeout = bs2_update_timeout;
 	ns->isalive = bs2_isalive;
 	ns->stream_data.p = (void *) b;
+
+	if (os != NULL) {
+		/* we extracted the underlying stream, destroy the old
+		 * shell */
+		((bs *) os->stream_data.p)->s = NULL;
+		bs_destroy(os);
+	}
 
 	return ns;
 }
@@ -5210,11 +5184,11 @@ bstream_create(stream *s, size_t size)
 {
 	bstream *b;
 
-	if (s == NULL || size >= (1 << 30))
+	if (s == NULL)
 		return NULL;
 	if ((b = malloc(sizeof(*b))) == NULL)
 		return NULL;
-	b->mode = (int) size;
+	b->mode = size;
 	if (size == 0)
 		size = BUFSIZ;
 	b->s = s;
@@ -5226,20 +5200,22 @@ bstream_create(stream *s, size_t size)
 	b->size = size;
 	b->pos = 0;
 	b->len = 0;
-	b->eof = 0;
+	b->eof = false;
 	return b;
 }
 
 ssize_t
 bstream_read(bstream *s, size_t size)
 {
-	ssize_t rd;
+	ssize_t rd, rd1 = 0;
 
 	if (s == NULL)
 		return -1;
 
 	if (s->eof)
 		return 0;
+
+	assert(s->buf != NULL);
 
 	if (s->pos > 0) {
 		if (s->pos < s->len) {
@@ -5251,18 +5227,32 @@ bstream_read(bstream *s, size_t size)
 		s->pos = 0;
 	}
 
-	assert(s->buf != NULL);
 	if (s->len == s->size) {
+		size_t sz = size > 8192 ? 8192 : size;
+		char tmpbuf[8192];
+
+		/* before we realloc more space, see if there is a need */
+		if ((rd1 = s->s->read(s->s, tmpbuf, 1, sz)) == 0) {
+			s->eof = true;
+			return 0;
+		}
+		if (rd1 < 0)
+			return rd1;
 		char *p;
-		size_t ns = s->size + size + 8192;
+		size_t ns = s->size + size;
 		if ((p = realloc(s->buf, ns + 1)) == NULL) {
 			return -1;
 		}
 		s->size = ns;
 		s->buf = p;
+		memcpy(s->buf + s->len, tmpbuf, rd1);
+		s->len += rd1;
+		size -= rd1;
+		if (size == 0)
+			return rd1;
 	}
 
-	if (size > s->size - s->len)
+	if (s->len + size > s->size)
 		size = s->size - s->len;
 
 	rd = s->s->read(s->s, s->buf + s->len, 1, size);
@@ -5271,12 +5261,12 @@ bstream_read(bstream *s, size_t size)
 		return rd;
 
 	if (rd == 0) {
-		s->eof = 1;
-		return 0;
+		s->eof = true;
+		return rd1;
 	}
 	s->len += (size_t) rd;
 	s->buf[s->len] = 0;	/* fill in the spare with EOS */
-	return rd;
+	return rd + rd1;
 }
 
 #ifdef _POSIX2_LINE_MAX
@@ -5324,7 +5314,7 @@ bstream_readline(bstream *s)
 	rd = strlen(s->buf + s->len);
 
 	if (rd == 0) {
-		s->eof = 1;
+		s->eof = true;
 		return 0;
 	}
 	s->len += rd;
@@ -5339,7 +5329,7 @@ bstream_next(bstream *s)
 	if (s == NULL)
 		return -1;
 	if (s->mode > 0) {
-		return bstream_read(s, (size_t) s->mode);
+		return bstream_read(s, s->mode);
 	} else if (s->s->read == file_read) {
 		return bstream_readline(s);
 	} else {
@@ -5371,6 +5361,10 @@ bstream_destroy(bstream *s)
 }
 
 /* ------------------------------------------------------------------ */
+/* callback stream
+ *
+ * read-only stream which calls a user-provided callback function in
+ * order to get more data to be returned to the reader */
 
 struct cbstream {
 	void *private;

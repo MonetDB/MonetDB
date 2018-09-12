@@ -275,7 +275,7 @@ BATorderidx(BAT *b, bool stable)
 	do {								\
 		TYPE *minhp, t;						\
 		TYPE *v = (TYPE *) Tloc(b, 0);				\
-		if ((minhp = (TYPE *) GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) { \
+		if ((minhp = GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) {	\
 			goto bailout;					\
 		}							\
 		/* init min heap */					\
@@ -416,8 +416,8 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		/* use min-heap */
 		oid **p, **q, *t_oid;
 
-		p = (oid **) GDKmalloc(n_ar*sizeof(oid *));
-		q = (oid **) GDKmalloc(n_ar*sizeof(oid *));
+		p = GDKmalloc(n_ar*sizeof(oid *));
+		q = GDKmalloc(n_ar*sizeof(oid *));
 		if (p == NULL || q == NULL) {
 		  bailout:
 			GDKfree(p);
