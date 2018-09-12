@@ -6372,6 +6372,7 @@ char *token2string(int token)
 	TR(MODE);
 	SQL(INSERT);
 	SQL(DELETE);
+	SQL(TRUNCATE);
 	SQL(UPDATE);
 	SQL(CROSS);
 	SQL(JOIN);
@@ -6443,6 +6444,11 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
+	SQL(MERGE_PARTITION);
+	SQL(PARTITION_LIST);
+	SQL(PARTITION_RANGE);
+	SQL(PARTITION_COLUMN);
+	SQL(PARTITION_EXPRESSION);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }
