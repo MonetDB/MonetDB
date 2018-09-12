@@ -4707,8 +4707,11 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation");
 		if(!obe && frame_type == FRAME_GROUPS)
 			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
-		if(!obe && frame_type == FRAME_RANGE)
+		if(!obe && frame_type == FRAME_RANGE) {
+			if(d->data.sym->token == SQL_FRAME_PRECEDING || d->next->data.sym->token == SQL_FRAME_FOLLOWING)
+				return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING or FOLLOWING offsets requires an order by expression");
 			frame_type = FRAME_ALL; //special case, iterate the entire partition
+		}
 
 		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, excl) == NULL)
 			return NULL;

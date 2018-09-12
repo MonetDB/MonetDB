@@ -4175,7 +4175,7 @@ window_order_clause:
 window_frame_clause:
 	/* empty */ 	{ $$ = NULL; }
   |	window_frame_units window_frame_extent window_frame_exclusion
-	{ $$ = _symbol_create_list( SQL_FRAME, append_int(append_int($2, $1), $3)); }
+	{ $$ = _symbol_create_list( SQL_FRAME_DEFINITION, append_int(append_int($2, $1), $3)); }
   ;
 
 window_frame_units:
@@ -4185,14 +4185,14 @@ window_frame_units:
   ;
 
 window_frame_extent:
-	window_frame_start   { $$ = append_symbol(append_symbol(L(), $1), _symbol_create_int(SQL_FRAME, 0)); }
+	window_frame_start   { $$ = append_symbol(append_symbol(L(), $1), _symbol_create_int(SQL_FRAME_CURRENT, 0)); }
   |	window_frame_between { $$ = $1; }
   ;
 
 window_frame_start:
-	UNBOUNDED PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME, GDK_int_max); }
-  |	posint PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME, $1); }
-  |	CURRENT ROW			{ $$ = _symbol_create_int(SQL_FRAME, 0); }
+	UNBOUNDED PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME_UNBOUNDED, GDK_int_max); }
+  |	posint PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME_PRECEDING, $1); }
+  |	CURRENT ROW			{ $$ = _symbol_create_int(SQL_FRAME_CURRENT, 0); }
   ;
 
 window_frame_between:
@@ -4200,9 +4200,9 @@ window_frame_between:
   ;
 
 window_frame_end:
-	UNBOUNDED FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME, GDK_int_max); }
-  |	posint FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME, $1); }
-  |	CURRENT ROW			{ $$ = _symbol_create_int(SQL_FRAME, 0); }
+	UNBOUNDED FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME_UNBOUNDED, GDK_int_max); }
+  |	posint FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME_FOLLOWING, $1); }
+  |	CURRENT ROW			{ $$ = _symbol_create_int(SQL_FRAME_CURRENT, 0); }
   ;
 
 window_frame_exclusion:
@@ -6411,7 +6411,11 @@ char *token2string(int token)
 	SQL(FUNC);
 	SQL(AGGR);
 	SQL(RANK);
-	SQL(FRAME);
+	SQL(FRAME_DEFINITION);
+	SQL(FRAME_CURRENT);
+	SQL(FRAME_UNBOUNDED);
+	SQL(FRAME_FOLLOWING);
+	SQL(FRAME_PRECEDING);
 	SQL(COMPARE);
 	SQL(FILTER);
 	SQL(ROUTINE);
