@@ -563,7 +563,6 @@ MapiMsg mapi_set_size_header(Mapi mid, int value);
 int mapi_split_line(MapiHdl hdl);
 MapiMsg mapi_start_talking(Mapi mid);
 MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam);
-MapiHdl mapi_stream_query(Mapi mid, const char *cmd, int windowsize);
 MapiMsg mapi_timeout(Mapi mid, unsigned int time);
 void mapi_trace(Mapi mid, bool flag);
 char *mapi_unquote(char *msg);

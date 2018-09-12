@@ -302,7 +302,6 @@
  * @item mapi_rows_affected()	@tab Obtain number of rows changed
  * @item mapi_seek_row()	@tab	Move row reader to specific location in cache
  * @item mapi_setAutocommit()	@tab	Set auto-commit flag
- * @item mapi_stream_query()	@tab Send query and prepare for reading tuple stream
  * @item mapi_table()	@tab	Get current table name
  * @item mapi_timeout()	@tab	Set timeout for long-running queries[TODO]
  * @item mapi_trace()	@tab	Set trace flag
@@ -4209,30 +4208,6 @@ mapi_query_done(MapiHdl hdl)
 	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
 	return ret == MOK && hdl->needmore ? MMORE : ret;
-}
-
-/*
- * Stream queries are requests to the database engine that produce a stream
- * of answers of indefinite length. Elements are eaten away using the normal way.
- * The stream ends upon encountering of the prompt.
- * A stream query can not rely on upfront caching.
- * The stream query also ensures that the cache contains a window
- * over the stream by shuffling tuples once it is filled.
- */
-MapiHdl
-mapi_stream_query(Mapi mid, const char *cmd, int windowsize)
-{
-	MapiHdl hdl;
-	int cachelimit = mid->cachelimit;
-
-	mapi_check0(mid, "mapi_stream_query");
-
-	mid->cachelimit = windowsize;
-	hdl = mapi_query(mid, cmd);
-	mid->cachelimit = cachelimit;
-	if (hdl != NULL)
-		mapi_cache_shuffle(hdl, 100);
-	return hdl;
 }
 
 MapiMsg
