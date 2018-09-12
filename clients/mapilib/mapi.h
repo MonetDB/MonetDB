@@ -171,7 +171,6 @@ mapi_export MapiMsg mapi_query_done(MapiHdl hdl);
 mapi_export MapiHdl mapi_send(Mapi mid, const char *cmd);
 mapi_export MapiMsg mapi_read_response(MapiHdl hdl);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid, int limit);
-mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence);
 

@@ -258,7 +258,6 @@
  * @item mapi_bind_var()	@tab	Bind typed C-variable to a field
  * @item mapi_cache_freeup()	@tab Forcefully shuffle fraction for cache refreshment
  * @item mapi_cache_limit()	@tab Set the tuple cache limit
- * @item mapi_cache_shuffle()	@tab Set shuffle fraction for cache refreshment
  * @item mapi_clear_bindings()	@tab Clear all field bindings
  * @item mapi_clear_params()	@tab Clear all parameter bindings
  * @item mapi_close_handle()	@tab	Close query handle and free resources
@@ -632,16 +631,6 @@
  * non-read elements.  Filling the cache quicker than reading leads to an
  * error.
  *
- * @item MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage)
- *
- * Make room in the cache by shuffling percentage tuples out of the
- * cache.  It is sometimes handy to do so, for example, when your
- * application is stream-based and you process each tuple as it arrives
- * and still need a limited look-back.  This percentage can be set
- * between 0 to 100.  Making shuffle= 100% (default) leads to paging
- * behavior, while shuffle==1 leads to a sliding window over a tuple
- * stream with 1% refreshing.
- *
  * @item MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage)
  *
  * Forcefully shuffle the cache making room for new rows.  It ignores the
@@ -783,7 +772,6 @@ struct MapiParam {
  */
 struct MapiRowBuf {
 	int rowlimit;		/* maximum number of rows to cache */
-	int shuffle;		/* percentage of rows to shuffle upon overflow */
 	int limit;		/* current storage space limit */
 	int writer;
 	int reader;
@@ -1442,7 +1430,6 @@ new_result(MapiHdl hdl)
 	result->fields = NULL;
 
 	result->cache.rowlimit = hdl->mid->cachelimit;
-	result->cache.shuffle = 100;
 	result->cache.limit = 0;
 	result->cache.writer = 0;
 	result->cache.reader = -1;
@@ -4249,19 +4236,6 @@ mapi_cache_limit(Mapi mid, int limit)
 		read_into_cache(hdl, 0);
 		mapi_close_handle(hdl);	/* reads away any output */
 	}
-	return MOK;
-}
-
-MapiMsg
-mapi_cache_shuffle(MapiHdl hdl, int percentage)
-{
-	/* clean out superflous space TODO */
-	mapi_hdl_check(hdl, "mapi_cache_shuffle");
-	if (percentage < 0 || percentage > 100) {
-		return mapi_setError(hdl->mid, "Illegal percentage", "mapi_cache_shuffle", MERROR);
-	}
-	if (hdl->result)
-		hdl->result->cache.shuffle = percentage;
 	return MOK;
 }
 

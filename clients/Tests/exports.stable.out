@@ -479,7 +479,6 @@ MapiMsg mapi_bind_numeric(MapiHdl hdl, int fnr, int scale, int precision, void *
 MapiMsg mapi_bind_var(MapiHdl hdl, int fnr, int type, void *ptr);
 MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage);
 MapiMsg mapi_cache_limit(Mapi mid, int limit);
-MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage);
 MapiMsg mapi_clear_bindings(MapiHdl hdl);
 MapiMsg mapi_clear_params(MapiHdl hdl);
 MapiMsg mapi_close_handle(MapiHdl hdl);
