@@ -1636,6 +1636,10 @@ sqltypeinit( sql_allocator *sa)
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", ANY, BIT, SCALE_NONE);
 	sql_create_analytic2(sa, "diff", "sql", "diff", BIT, ANY, BIT, SCALE_NONE);
+	sql_create_analytic4(sa, "window_start_bound", "sql", "window_start_bound", ANY, INT, INT, INT, INT, SCALE_NONE);
+	sql_create_analytic5(sa, "window_start_bound", "sql", "window_start_bound", BIT, ANY, INT, INT, INT, INT, SCALE_NONE);
+	sql_create_analytic4(sa, "window_end_bound", "sql", "window_end_bound", ANY, INT, INT, INT, INT, SCALE_NONE);
+	sql_create_analytic5(sa, "window_end_bound", "sql", "window_end_bound", BIT, ANY, INT, INT, INT, INT, SCALE_NONE);
 
 	sql_create_analytic3(sa, "rank", "sql", "rank", ANY, BIT, BIT, INT, SCALE_NONE);
 	sql_create_analytic3(sa, "dense_rank", "sql", "dense_rank", ANY, BIT, BIT, INT, SCALE_NONE);
@@ -1700,78 +1704,78 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic4(sa, "nth_value", "sql", "nth_value", ANY, HGE, BIT, BIT, ANY, SCALE_NONE);
 #endif
 
-	sql_create_analytic4(sa, "count", "sql", "count", ANY, BIT, BIT, BIT, LNG, SCALE_NONE);
-	sql_create_analytic3(sa, "min", "sql", "min", ANY, BIT, BIT, ANY, SCALE_NONE);
-	sql_create_analytic3(sa, "max", "sql", "max", ANY, BIT, BIT, ANY, SCALE_NONE);
+	sql_create_analytic2(sa, "count", "sql", "count", ANY, BIT, LNG, SCALE_NONE);
+	sql_create_analytic(sa, "min", "sql", "min", ANY, ANY, SCALE_NONE);
+	sql_create_analytic(sa, "max", "sql", "max", ANY, ANY, SCALE_NONE);
 
 	//analytical sum for numerical and decimals
-	sql_create_analytic3(sa, "sum", "sql", "sum", BTE, BIT, BIT, LargestINT, SCALE_NONE);
-	sql_create_analytic3(sa, "sum", "sql", "sum", SHT, BIT, BIT, LargestINT, SCALE_NONE);
-	sql_create_analytic3(sa, "sum", "sql", "sum", INT, BIT, BIT, LargestINT, SCALE_NONE);
-	sql_create_analytic3(sa, "sum", "sql", "sum", LNG, BIT, BIT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", BTE, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", SHT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", INT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", LNG, LargestINT, SCALE_NONE);
 #ifdef HAVE_HGE
 	if (have_hge)
-		sql_create_analytic3(sa, "sum", "sql", "sum", HGE, BIT, BIT, LargestINT, SCALE_NONE);
+		sql_create_analytic(sa, "sum", "sql", "sum", HGE, LargestINT, SCALE_NONE);
 #endif
 
 	t = decimals; // BTE
-	sql_create_analytic3(sa, "sum", "sql", "sum", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", *(t), LargestDEC, SCALE_NONE);
 	t++; // SHT
-	sql_create_analytic3(sa, "sum", "sql", "sum", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", *(t), LargestDEC, SCALE_NONE);
 	t++; // INT
-	sql_create_analytic3(sa, "sum", "sql", "sum", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", *(t), LargestDEC, SCALE_NONE);
 	t++; // LNG
-	sql_create_analytic3(sa, "sum", "sql", "sum", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", *(t), LargestDEC, SCALE_NONE);
 #ifdef HAVE_HGE
 	if (have_hge) {
 		t++; // HGE
-		sql_create_analytic3(sa, "sum", "sql", "sum", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+		sql_create_analytic(sa, "sum", "sql", "sum", *(t), LargestDEC, SCALE_NONE);
 	}
 #endif
 
 	//analytical product for numerical and decimals
-	sql_create_analytic3(sa, "prod", "sql", "prod", BTE, BIT, BIT, LargestINT, SCALE_NONE);
-	sql_create_analytic3(sa, "prod", "sql", "prod", SHT, BIT, BIT, LargestINT, SCALE_NONE);
-	sql_create_analytic3(sa, "prod", "sql", "prod", INT, BIT, BIT, LargestINT, SCALE_NONE);
-	sql_create_analytic3(sa, "prod", "sql", "prod", LNG, BIT, BIT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", BTE, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", SHT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", INT, LargestINT, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", LNG, LargestINT, SCALE_NONE);
 #ifdef HAVE_HGE
 	if (have_hge)
-		sql_create_analytic3(sa, "prod", "sql", "prod", HGE, BIT, BIT, LargestINT, SCALE_NONE);
+		sql_create_analytic(sa, "prod", "sql", "prod", HGE, LargestINT, SCALE_NONE);
 #endif
 
 	t = decimals; // BTE
-	sql_create_analytic3(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 	t++; // SHT
-	sql_create_analytic3(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 	t++; // INT
-	sql_create_analytic3(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 	t++; // LNG
-	sql_create_analytic3(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+	sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 #ifdef HAVE_HGE
 	if (have_hge) {
 		t++; // HGE
-		sql_create_analytic3(sa, "prod", "sql", "prod", *(t), BIT, BIT, LargestDEC, SCALE_NONE);
+		sql_create_analytic(sa, "prod", "sql", "prod", *(t), LargestDEC, SCALE_NONE);
 	}
 #endif
 
 	for (t = floats; t < dates; t++) {
-		sql_create_analytic3(sa, "sum", "sql", "sum", *t, BIT, BIT, *t, SCALE_NONE);
-		sql_create_analytic3(sa, "prod", "sql", "prod", *t, BIT, BIT, *t, SCALE_NONE);
+		sql_create_analytic(sa, "sum", "sql", "sum", *t, *t, SCALE_NONE);
+		sql_create_analytic(sa, "prod", "sql", "prod", *t, *t, SCALE_NONE);
 	}
-	sql_create_analytic3(sa, "sum", "sql", "sum", MONINT, BIT, BIT, MONINT, SCALE_NONE);
-	sql_create_analytic3(sa, "sum", "sql", "sum", SECINT, BIT, BIT, SECINT, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", MONINT, MONINT, SCALE_NONE);
+	sql_create_analytic(sa, "sum", "sql", "sum", SECINT, SECINT, SCALE_NONE);
 
 	//analytical average for numerical types
-	sql_create_analytic3(sa, "avg", "sql", "avg", BTE, BIT, BIT, DBL, SCALE_NONE);
-	sql_create_analytic3(sa, "avg", "sql", "avg", SHT, BIT, BIT, DBL, SCALE_NONE);
-	sql_create_analytic3(sa, "avg", "sql", "avg", INT, BIT, BIT, DBL, SCALE_NONE);
-	sql_create_analytic3(sa, "avg", "sql", "avg", LNG, BIT, BIT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", BTE, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", SHT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", INT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", LNG, DBL, SCALE_NONE);
 #ifdef HAVE_HGE
 	if (have_hge)
-		sql_create_analytic3(sa, "avg", "sql", "avg", HGE, BIT, BIT, DBL, SCALE_NONE);
+		sql_create_analytic(sa, "avg", "sql", "avg", HGE, DBL, SCALE_NONE);
 #endif
-	sql_create_analytic3(sa, "avg", "sql", "avg", FLT, BIT, BIT, DBL, SCALE_NONE);
-	sql_create_analytic3(sa, "avg", "sql", "avg", DBL, BIT, BIT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", FLT, DBL, SCALE_NONE);
+	sql_create_analytic(sa, "avg", "sql", "avg", DBL, DBL, SCALE_NONE);
 
 	sql_create_func(sa, "and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);

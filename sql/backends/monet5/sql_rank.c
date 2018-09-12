@@ -61,6 +61,67 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool flow, const str mod)
+{
+	bool has_partitions = (pci->argc > 5);
+
+	(void)cntxt;
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		bat *res1 = getArgReference_bat(stk, pci, 0);
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, has_partitions ? 2 : 1)), *p, *r;
+		int unit = *getArgReference_int(stk, pci, has_partitions ? 3 : 2);
+		int excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3);
+		int limit = *getArgReference_int(stk, pci, has_partitions ? 5 : 4);
+		gdk_return gdk_code;
+
+		assert(unit >= 0 && unit <= 3);
+		assert(excl >= 0 && unit <= 3);
+		if (excl != 0)
+			throw(SQL, mod, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
+
+		if(limit < 0)
+			throw(SQL, mod, SQLSTATE(42000) "The limit value cannot be negative");
+		if (!b)
+			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+		voidresultBAT(r, TYPE_int, BATcount(b), b, mod);
+		if (has_partitions) {
+			p = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+			if (!p) {
+				BBPunfix(b->batCacheid);
+				throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+			gdk_code = GDKanalyticalwindowbounds(r, b, p, b->ttype, unit, (BUN) limit, flow);
+			BBPunfix(p->batCacheid);
+		} else {
+			gdk_code = GDKanalyticalwindowbounds(r, b, NULL, b->ttype, unit, (BUN) limit, flow);
+		}
+		BBPunfix(b->batCacheid);
+		if(gdk_code == GDK_SUCCEED) {
+			BBPkeepref(*res1 = r->batCacheid);
+		} else {
+			throw(SQL, mod, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+	} else {
+		int *res = getArgReference_int(stk, pci, 0);
+
+		*res = 0;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+SQLwindowstartbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return doSQLwindowbound(cntxt, mb, stk, pci, true, "sql.window_start_bound");
+}
+
+str
+SQLwindowendbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return doSQLwindowbound(cntxt, mb, stk, pci, false, "sql.window_end_bound");
+}
+
 str 
 SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -571,15 +632,14 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef NTILE_VALUE_SINGLE_IMP
 
 static str
-SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+SQLanalytics_args(BAT **r, BAT **b, BAT **s, BAT **e, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				  InstrPtr pci, int rtype, const str mod, const str err)
 {
-	*r = *b = *p = *o = NULL;
+	*r = *b = *s = *e = NULL;
 
 	(void)cntxt;
-	if (pci->argc != 8 ||
-		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
-		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
+	if (pci->argc != 4 || ((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 2)) != TYPE_int) ||
+		 (isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_int))) {
 		throw(SQL, mod, "%s", err);
 	}
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -587,26 +647,26 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **p, BAT **o, Client cntxt, MalBlkPtr mb
 		if (!*b)
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	if (b && *b) {
+	if (b) {
 		BUN cnt = BATcount(*b);
 		voidresultBAT((*r), rtype ? rtype : (*b)->ttype, cnt, (*b), mod);
 		if (!*r && *b)
 			BBPunfix((*b)->batCacheid);
 	}
 	if (isaBatType(getArgType(mb, pci, 2))) {
-		*p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-		if (!*p) {
+		*s = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+		if (!*s) {
 			if (*b) BBPunfix((*b)->batCacheid);
 			if (*r) BBPunfix((*r)->batCacheid);
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 	}
 	if (isaBatType(getArgType(mb, pci, 3))) {
-		*o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-		if (!*o) {
+		*e = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (!*e) {
 			if (*b) BBPunfix((*b)->batCacheid);
 			if (*r) BBPunfix((*r)->batCacheid);
-			if (*p) BBPunfix((*p)->batCacheid);
+			if (*s) BBPunfix((*s)->batCacheid);
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 	}
@@ -938,29 +998,15 @@ SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return do_lead_lag(cntxt, mb, stk, pci, "sql.lead", "lead", GDKanalyticallead);
 }
 
-#define CHECK_UNIT_EXCLUDE_PARAMETERS(OP) \
-	assert(unit >= 0 && unit <= 2); \
-	assert(excl >= 0 && unit <= 3); \
-	if (unit == 2) \
-		throw(SQL, OP, SQLSTATE(42000) "GROUPS frames are not yet implemented"); \
-	if (excl != 0) \
-		throw(SQL, OP, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
-
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
 static str
 SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int, BUN, BUN))
+				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
-	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, 0, op, err);
+	BAT *r, *b, *s, *e;
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, 0, op, err);
 	int tpe = getArgType(mb, pci, 1);
-	int unit = *getArgReference_int(stk, pci, 4);
-	int start = *getArgReference_int(stk, pci, 5);
-	int end = *getArgReference_int(stk, pci, 6);
-	int excl = *getArgReference_int(stk, pci, 7);
 	gdk_return gdk_res;
-
-	CHECK_UNIT_EXCLUDE_PARAMETERS(op)
 
 	if (msg)
 		return msg;
@@ -970,10 +1016,10 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, tpe, unit, (BUN) start, (BUN) end);
+		gdk_res = func(r, b, s, e, tpe);
 		BBPunfix(b->batCacheid);
-		if (p) BBPunfix(p->batCacheid);
-		if (o) BBPunfix(o->batCacheid);
+		if (s) BBPunfix(s->batCacheid);
+		if (e) BBPunfix(e->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
@@ -989,35 +1035,31 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 str
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.min", SQLSTATE(42000) "min(:any_1,:bit,:bit)", GDKanalyticalmin);
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.min", SQLSTATE(42000) "min(:any_1,:int,:int)", GDKanalyticalmin);
 }
 
 str
 SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:bit,:bit)", GDKanalyticalmax);
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:int,:int)", GDKanalyticalmax);
 }
 
 str
 SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
-	int tpe, unit, start, end, excl;
+	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL;
+	int tpe;
 	bit *ignore_nils;
 	gdk_return gdk_res;
 
 	(void) cntxt;
-	if (pci->argc != 9 || getArgType(mb, pci, 2) != TYPE_bit ||
-		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit) ||
-		(getArgType(mb, pci, 4) != TYPE_bit && getBatType(getArgType(mb, pci, 4)) != TYPE_bit)) {
-		throw(SQL, "sql.count", "%s", "count(:any_1,:bit,:bit,:bit)");
+	if (pci->argc != 5 || getArgType(mb, pci, 2) != TYPE_bit ||
+		(getArgType(mb, pci, 3) != TYPE_int && getBatType(getArgType(mb, pci, 3)) != TYPE_int) ||
+		(getArgType(mb, pci, 4) != TYPE_int && getBatType(getArgType(mb, pci, 4)) != TYPE_int)) {
+		throw(SQL, "sql.count", "%s", "count(:any_1,:bit,:int,:int)");
 	}
 	tpe = getArgType(mb, pci, 1);
 	ignore_nils = getArgReference_bit(stk, pci, 2);
-	unit = *getArgReference_int(stk, pci, 5);
-	start = *getArgReference_int(stk, pci, 6);
-	end = *getArgReference_int(stk, pci, 7);
-	excl = *getArgReference_int(stk, pci, 8);
 
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
@@ -1031,32 +1073,30 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		voidresultBAT(r, TYPE_lng, cnt, b, "sql.count");
 	}
 	if (isaBatType(getArgType(mb, pci, 3))) {
-		p = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-		if (!p) {
+		s = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (!s) {
 			if (b) BBPunfix(b->batCacheid);
 			if (r) BBPunfix(r->batCacheid);
 			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 	}
 	if (isaBatType(getArgType(mb, pci, 4))) {
-		o = BATdescriptor(*getArgReference_bat(stk, pci, 4));
-		if (!o) {
+		e = BATdescriptor(*getArgReference_bat(stk, pci, 4));
+		if (!e) {
 			if (b) BBPunfix(b->batCacheid);
 			if (r) BBPunfix(r->batCacheid);
-			if (p) BBPunfix(p->batCacheid);
+			if (s) BBPunfix(s->batCacheid);
 			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 	}
 
-	CHECK_UNIT_EXCLUDE_PARAMETERS("sql.count")
-
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalcount(r, b, p, o, ignore_nils, tpe, unit, (BUN) start, (BUN) end);
+		gdk_res = GDKanalyticalcount(r, b, s, e, ignore_nils, tpe);
 		BBPunfix(b->batCacheid);
-		if (p) BBPunfix(p->batCacheid);
-		if (o) BBPunfix(o->batCacheid);
+		if (s) BBPunfix(s->batCacheid);
+		if (e) BBPunfix(e->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
@@ -1076,24 +1116,19 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int, int, BUN, BUN))
+					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int))
 {
-	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
-	int tp1, tp2, unit, start, end, excl;
+	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL;
+	int tp1, tp2;
 	gdk_return gdk_res;
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
-	if (pci->argc != 8 ||
-		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) ||
-		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)) {
+	if (((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 2)) != TYPE_int) ||
+		(isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_int))) {
 		throw(SQL, op, "%s", err);
 	}
 	tp1 = getArgType(mb, pci, 1);
-	unit = *getArgReference_int(stk, pci, 4);
-	start = *getArgReference_int(stk, pci, 5);
-	end = *getArgReference_int(stk, pci, 6);
-	excl = *getArgReference_int(stk, pci, 7);
 
 	if (isaBatType(tp1)) {
 		tp1 = getBatType(tp1);
@@ -1125,35 +1160,28 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		}
 	}
 	if (b) {
+		bat *res;
+
 		voidresultBAT(r, tp2, BATcount(b), b, op);
-	}
-	if (isaBatType(getArgType(mb, pci, 2))) {
-		p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-		if (!p) {
-			if (b) BBPunfix(b->batCacheid);
-			if (r) BBPunfix(r->batCacheid);
+		s = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+		if (!s) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
 			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
-	}
-	if (isaBatType(getArgType(mb, pci, 3))) {
-		o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-		if (!o) {
-			if (b) BBPunfix(b->batCacheid);
-			if (r) BBPunfix(r->batCacheid);
-			if (p) BBPunfix(p->batCacheid);
+		e = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+		if (!e) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(r->batCacheid);
+			BBPunfix(s->batCacheid);
 			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
-	}
+		res = getArgReference_bat(stk, pci, 0);
+		gdk_res = func(r, b, s, e, tp1, tp2);
 
-	CHECK_UNIT_EXCLUDE_PARAMETERS(op)
-
-	if (b) {
-		bat *res = getArgReference_bat(stk, pci, 0);
-
-		gdk_res = func(r, b, p, o, tp1, tp2, unit, (BUN) start, (BUN) end);
 		BBPunfix(b->batCacheid);
-		if (p) BBPunfix(p->batCacheid);
-		if (o) BBPunfix(o->batCacheid);
+		BBPunfix(s->batCacheid);
+		BBPunfix(e->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
@@ -1215,29 +1243,25 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 str
 SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.sum", SQLSTATE(42000) "sum(:any_1,:bit,:bit)", GDKanalyticalsum);
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.sum", SQLSTATE(42000) "sum(:any_1,:int,:int)",
+								 GDKanalyticalsum);
 }
 
 str
 SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", SQLSTATE(42000) "prod(:any_1,:bit,:bit)", GDKanalyticalprod);
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", SQLSTATE(42000) "prod(:any_1,:int,:int)",
+								 GDKanalyticalprod);
 }
 
 str
 SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *r, *b, *p, *o;
-	str msg = SQLanalytics_args(&r, &b, &p, &o, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
-								SQLSTATE(42000) "avg(:any_1,:bit,:bit)");
+	BAT *r, *b, *s, *e;
+	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
+								SQLSTATE(42000) "avg(:any_1,:int,:int)");
 	int tpe = getArgType(mb, pci, 1);
-	int unit = *getArgReference_int(stk, pci, 4);
-	int start = *getArgReference_int(stk, pci, 5);
-	int end = *getArgReference_int(stk, pci, 6);
-	int excl = *getArgReference_int(stk, pci, 7);
 	gdk_return gdk_res;
-
-	CHECK_UNIT_EXCLUDE_PARAMETERS("sql.avg")
 
 	if (msg)
 		return msg;
@@ -1247,10 +1271,10 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalavg(r, b, p, o, tpe, unit, (BUN) start, (BUN) end);
+		gdk_res = GDKanalyticalavg(r, b, s, e, tpe);
 		BBPunfix(b->batCacheid);
-		if (p) BBPunfix(p->batCacheid);
-		if (o) BBPunfix(o->batCacheid);
+		if (s) BBPunfix(s->batCacheid);
+		if (e) BBPunfix(e->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
@@ -1296,5 +1320,4 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-#undef CHECK_UNIT_EXCLUDE_PARAMETERS
 #undef voidresultBAT

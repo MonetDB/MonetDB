@@ -100,6 +100,7 @@
 				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING  
 				             AND INTERVAL '1' MONTH FOLLOWING */
 #define FRAME_GROUPS 2
+#define FRAME_ALL 3 /* special case, aggregate over the entire partition */
 
 #define EXCLUDE_NONE 0		/* nothing excluded (also the default) */
 #define EXCLUDE_CURRENT_ROW 1	/* exclude the current row */

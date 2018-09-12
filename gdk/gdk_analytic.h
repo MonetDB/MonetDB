@@ -16,7 +16,8 @@
 
 #include "gdk.h"
 
-gdk_export gdk_return GDKanalyticaldiff(BAT *r, BAT *b, BAT *c, int tpe);
+gdk_export gdk_return GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe);
+gdk_export gdk_return GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, int tpe, int unit, BUN limit, bool start);
 
 gdk_export gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, const void* restrict ntile);
 gdk_export gdk_return GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, BUN lag, const void* restrict default_value, int tpe);
@@ -25,11 +26,11 @@ gdk_export gdk_return GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, BAT *o, int tpe
 gdk_export gdk_return GDKanalyticallast(BAT *r, BAT *b, BAT *p, BAT *o, int tpe);
 gdk_export gdk_return GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, BUN nth, int tpe);
 
-gdk_export gdk_return GDKanalyticalmin(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, int unit, BUN start, BUN end);
-gdk_export gdk_return GDKanalyticalmax(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, int unit, BUN start, BUN end);
-gdk_export gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *p, BAT *o, const bit* restrict ignore_nils, int tpe, int unit, BUN start, BUN end);
-gdk_export gdk_return GDKanalyticalsum(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2, int unit, BUN start, BUN end);
-gdk_export gdk_return GDKanalyticalprod(BAT *r, BAT *b, BAT *p, BAT *o, int tp1, int tp2, int unit, BUN start, BUN end);
-gdk_export gdk_return GDKanalyticalavg(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, int unit, BUN start, BUN end);
+gdk_export gdk_return GDKanalyticalmin(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
+gdk_export gdk_return GDKanalyticalmax(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
+gdk_export gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_nils, int tpe);
+gdk_export gdk_return GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2);
+gdk_export gdk_return GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2);
+gdk_export gdk_return GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 
 #endif //_GDK_ANALYTIC_H_

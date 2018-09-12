@@ -4415,26 +4415,6 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 	return exps;
 }
 
-static list *
-rel_frame(mvc *sql, symbol *frame, list *exps)
-{
-	/* units, extent, exclusion */
-	dnode *d = frame->data.lval->h;
-
-	/* ROWS, RANGE, GROUPS */
-	sql_exp *units = exp_atom_int(sql->sa, d->next->next->data.i_val);
-	symbol *start_sym = d->data.sym;
-	symbol *end_sym = d->next->data.sym;
-	sql_exp *start = exp_atom_int(sql->sa, start_sym->data.i_val);
-	sql_exp *end   = exp_atom_int(sql->sa, end_sym->data.i_val);
-	sql_exp *excl  = exp_atom_int(sql->sa, d->next->next->next->data.i_val);
-	append(exps, units);
-	append(exps, start);
-	append(exps, end);
-	append(exps, excl);
-	return exps;
-}
-
 static int
 check_duplicated_expression(void *data, void *key)
 {
@@ -4452,6 +4432,43 @@ check_duplicated_expression(void *data, void *key)
 }
 
 /* window functions */
+static sql_exp*
+calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e, int start,
+						int fend, int frame_type, int excl)
+{
+	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs = sa_list(sql->sa);
+	sql_subfunc *dc1, *dc2;
+	sql_subtype *it = sql_bind_localtype("int");
+
+	if(pe) {
+		append(targs, exp_subtype(pe));
+		append(rargs1, exp_copy(sql->sa, pe));
+		append(rargs2, exp_copy(sql->sa, pe));
+	}
+	append(rargs1, exp_copy(sql->sa, e));
+	append(rargs2, exp_copy(sql->sa, e));
+	append(targs, exp_subtype(e));
+	append(targs, it);
+	append(targs, it);
+	append(targs, it);
+
+	dc1 = sql_bind_func_(sql->sa, s, "window_start_bound", targs, F_ANALYTIC);
+	dc2 = sql_bind_func_(sql->sa, s, "window_end_bound", targs, F_ANALYTIC);
+	if (!dc1)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'window_start_bound' not found");
+	if (!dc2)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'window_end_bound' not found");
+	append(rargs1, exp_atom_int(sql->sa, frame_type));
+	append(rargs2, exp_atom_int(sql->sa, frame_type));
+	append(rargs1, exp_atom_int(sql->sa, excl));
+	append(rargs2, exp_atom_int(sql->sa, excl));
+	append(rargs1, exp_atom_int(sql->sa, start));
+	append(rargs2, exp_atom_int(sql->sa, fend));
+
+	*estart = exp_op(sql->sa, rargs1, dc1);
+	*eend = exp_op(sql->sa, rargs2, dc2);
+	return e; //return something to say there were no errors b:any_1, unit:int, excl:int, start:int
+}
 
 /*
  * select x, y, rank_op() over (partition by x order by y) as, ...
@@ -4475,15 +4492,17 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	dlist *l = se->data.lval;
 	symbol *window_function = l->h->data.sym;
 	dlist *window_specification = l->h->next->data.lval;
-	char *aname = NULL;
-	char *sname = NULL;
+	char *aname = NULL, *sname = NULL;
 	sql_subfunc *wf = NULL;
-	sql_exp *e = NULL, *pe = NULL, *oe = NULL, *call = NULL;
+	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL;
 	sql_rel *r = *rel, *p;
-	list *gbe = NULL, *obe = NULL, *fbe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
+	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last,
-		has_order_by = (window_specification->h->next->data.sym != NULL);
+		has_order_by = (window_specification->h->next->data.sym != NULL),
+		has_frame = (window_specification->h->next->next->data.sym != NULL),
+		frame_type = has_order_by ? FRAME_RANGE : FRAME_ROWS,
+		fstart = GDK_int_max, fend = has_order_by ? 0 : GDK_int_max, excl = EXCLUDE_NONE;
 	dnode *dn = window_function->data.lval->h;
 
 	aname = qname_fname(dn->data.lval);
@@ -4547,15 +4566,6 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			set_direction(en, 1);
 		}
 	}
-	/* Frame */
-	if (window_specification->h->next->next->data.sym) {
-		if (!aggr)
-			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation");
-		fbe = new_exp_list(sql->sa);
-		fbe = rel_frame(sql, window_specification->h->next->next->data.sym, fbe);
-		if (!fbe)
-			return NULL;
-	}
 
 	fargs = sa_list(sql->sa);
 	if (!aggr) { //rank function call
@@ -4564,34 +4574,34 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			 is_nth_value = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "nth_value") == 0);
 
 		if(!dnn || is_ntile) {
-			e = p->exps->h->data;
-			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
-			if(!e)
+			in = p->exps->h->data;
+			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
+			if(!in)
 				return NULL;
-			append(fargs, e);
+			append(fargs, in);
 		}
 		if(dnn) {
 			for(dnode *nn = dnn->h ; nn ; nn = nn->next) {
 				is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
-				e = rel_value_exp2(sql, &p, nn->data.sym, f, ek, &is_last);
-				if(!e)
+				in = rel_value_exp2(sql, &p, nn->data.sym, f, ek, &is_last);
+				if(!in)
 					return NULL;
 
 				if(is_ntile) { /* ntile only has one argument and in null case this cast should be done */
 					sql_subtype *empty = sql_bind_localtype("void");
-					if(subtype_cmp(&(e->tpe), empty) == 0) {
+					if(subtype_cmp(&(in->tpe), empty) == 0) {
 						sql_subtype *to = sql_bind_localtype("bte");
-						e = exp_convert(sql->sa, e, empty, to);
+						in = exp_convert(sql->sa, in, empty, to);
 					}
 				} else if(is_nth_value && dnn->h && nn == dnn->h->next) { /* corner case for nth_value */
 					sql_subtype *empty = sql_bind_localtype("void");
-					if(subtype_cmp(&(e->tpe), empty) == 0) {
+					if(subtype_cmp(&(in->tpe), empty) == 0) {
 						sql_exp *ep = p->exps->h->data;
-						e = exp_convert(sql->sa, e, empty, &(ep->tpe));
+						in = exp_convert(sql->sa, in, empty, &(ep->tpe));
 					}
 				}
-				append(fargs, e);
+				append(fargs, in);
 			}
 		}
 	} else { //aggregation function call
@@ -4600,15 +4610,15 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if (n) {
 			if (!n->next->data.sym) { /* count(*) */
 				if(!p->exps->h) { //no from clause, use a constant as the expression to project
-					e = exp_atom_lng(sql->sa, 0);
-					append(p->exps, e);
+					in = exp_atom_lng(sql->sa, 0);
+					append(p->exps, in);
 				} else {
-					e = p->exps->h->data;
-					e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
-					if(!e)
+					in = p->exps->h->data;
+					in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
+					if(!in)
 						return NULL;
 				}
-				append(fargs, e);
+				append(fargs, in);
 				append(fargs, exp_atom_bool(sql->sa, 0)); //don't ignore nills
 			} else {
 				is_last = 0;
@@ -4619,10 +4629,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				 * all aggregations implemented in a window have 1 and only 1 argument only, so for now no further
 				 * symbol compilation is required
 				 */
-				e = rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last);
-				if(!e)
+				in = rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last);
+				if(!in)
 					return NULL;
-				append(fargs, e);
+				append(fargs, in);
 				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
 					sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 					sql_exp* eo = fargs->h->data;
@@ -4663,7 +4673,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (obe) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 
-		for( n = obe->h; n; n = n->next)  {
+		for( n = obe->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subfunc *df;
 
@@ -4683,11 +4693,38 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		oe = exp_atom_bool(sql->sa, 0);
 	}
 
+	/* Frame */
+	if(has_frame) {
+		dnode *d = window_specification->h->next->next->data.sym->data.lval->h;
+		fstart = d->data.sym->data.i_val;
+		fend = d->next->data.sym->data.i_val;
+		frame_type = d->next->next->data.i_val;
+		excl = d->next->next->next->data.i_val;
+
+		if (!aggr)
+			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation");
+		if(!obe && frame_type == FRAME_GROUPS)
+			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
+		if(!obe && frame_type == FRAME_RANGE)
+			frame_type = FRAME_ALL; //special case, iterate the entire partition
+
+		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, excl) == NULL)
+			return NULL;
+	} else if (aggr) {
+		if(!obe)
+			frame_type = FRAME_ALL;
+		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, excl) == NULL)
+			return NULL;
+	}
+
 	if (!pe || !oe)
 		return NULL;
 
-	append(fargs, pe);
-	append(fargs, oe);
+	if(!aggr) {
+		append(fargs, pe);
+		append(fargs, oe);
+	}
+
 	types = exp_types(sql->sa, fargs);
 	wf = bind_func_(sql, s, aname, types, F_ANALYTIC);
 	if (!wf) {
@@ -4698,7 +4735,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 			for (n = fargs->h ; wf && op && n; op = op->next, n = n->next ) {
 				sql_arg *arg = op->data;
-				e = n->data;
+				sql_exp *e = n->data;
 
 				e = rel_check_type(sql, &arg->type, e, type_equal);
 				if (!e) {
@@ -4718,16 +4755,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	args = sa_list(sql->sa);
 	for(node *nn = fargs->h ; nn ; nn = nn->next)
 		append(args, (sql_exp*) nn->data);
-	if (fbe) {
-		append(args, list_fetch(fbe, 0)); /*units */
-		append(args, list_fetch(fbe, 1)); /*start */
-		append(args, list_fetch(fbe, 2)); /*end */
-		append(args, list_fetch(fbe, 3)); /*exclude */
-	} else if (aggr) {
-		append(args, exp_atom_int(sql->sa, has_order_by ? FRAME_RANGE : FRAME_ROWS));
-		append(args, exp_atom_int(sql->sa, GDK_int_max)); /*start */
-		append(args, exp_atom_int(sql->sa, has_order_by ? 0 : GDK_int_max)); /*end */
-		append(args, exp_atom_int(sql->sa, 0)); /*exclude */
+	if (aggr) {
+		append(args, start);
+		append(args, eend);
 	}
 	call = exp_op(sql->sa, args, wf);
 

@@ -500,7 +500,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					es = stmt_const(be, bin_first_column(be, left), es); /* ensure the first argument is a column */
 				/* last argument is condition, change into candidate list */
 				if (!en->next && !f->func->varres && !f->func->vararg && list_length(exps) > list_length(f->func->ops)) {
-					if (es->nrcols) {
+					if (!strcmp(f->func->base.name, "window_end_bound") && es->nrcols) {
 						if (!nrcols) {
 							node *n;
 							list *nl = sa_list(sql->sa);
