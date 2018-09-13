@@ -20,7 +20,7 @@ sql_next_seq_name(mvc *m)
 	oid len = 5 + ((id+7)>>3);
 	char *msg = sa_alloc(m->sa, len);
 
-	snprintf(msg, len, "seq_%d", store_next_oid());
+	snprintf(msg, len, "seq_%d", id);
 	return msg;
 }
 
@@ -96,7 +96,7 @@ rel_create_seq(
 		s = ss;
 	(void) tpe;
 	if (find_sql_sequence(s, name)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: " "name '%s' already in use", name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "
 				"for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
@@ -225,7 +225,7 @@ rel_alter_seq(
 		s = ss;
 	(void) tpe;
 	if (!(seq = find_sql_sequence(s, name))) {
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: " "no such sequence '%s'", name);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", name);
 	}
 	if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges "
