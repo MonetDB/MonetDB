@@ -17,7 +17,7 @@ char*
 sql_next_seq_name(mvc *m)
 {
 	int id = store_next_oid();
-	oid len = 5 + ((id+7)>>3);
+	size_t len = 5 + 10;	/* max nr of digits of (4 bytes) int is 10 */
 	char *msg = sa_alloc(m->sa, len);
 
 	snprintf(msg, len, "seq_%d", id);
