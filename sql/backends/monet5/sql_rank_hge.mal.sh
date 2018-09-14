@@ -13,6 +13,58 @@ module sql;
 
 EOF
 
+cat <<EOF
+pattern sql.window_start_bound(b:any_1, unit:int, excl:int, start:hge) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:hge) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern sql.window_start_bound(p:bit, b:any_1, unit:int, excl:int, start:hge) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:hge) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:bat[:hge]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:bat[:hge]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+
+pattern sql.window_end_bound(b:any_1, unit:int, excl:int, end:hge) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:hge) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern sql.window_end_bound(p:bit, b:any_1, unit:int, excl:int, end:hge) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:hge) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:bat[:hge]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:bat[:hge]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+EOF
+
 for tp1 in 1:bte 2:sht 4:int 8:lng 16:hge; do
     for tp2 in 16:hge; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then

@@ -388,7 +388,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES(FRAME, BOUNDF, BOUNDV) \
 	do { \
-		switch(tpe) { \
+		switch(tp1) { \
 			case TYPE_bit: \
 				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
@@ -457,46 +457,70 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #define NO_BOUNDARIES
 
+#define ANALYTICAL_BOUNDS_BRANCHES(TPE) \
+	do { \
+		if (l) { /* dynamic bounds */ \
+			TPE *restrict limit = (TPE*) Tloc(l, 0); \
+			BUN ll = 0; \
+			if (unit == 0) { \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, limit[ll++], limit[k]) \
+			} else if (unit == 1) { \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, limit[ll++], limit[k]) \
+			} else if (unit == 2) { \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, limit[ll++], limit[k]) \
+			} else { \
+				assert(0); \
+			} \
+		} else { /* static bounds */ \
+			TPE limit = *((TPE*)bound); \
+			if (limit == GDK_##TPE##_max) { /* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */  \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_UNBOUNDED, limit, limit) \
+			} else if (unit == 0) { \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, limit, limit) \
+			} else if (unit == 1) { \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, limit, limit) \
+			} else if (unit == 2) { \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, limit, limit) \
+			} else { \
+				assert(0); \
+			} \
+		} \
+	} while(0);
+
 gdk_return
-GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, lng bound, int tpe, int unit, bool start)
+GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit, bool start)
 {
 	BUN i = 0, k = 0, ncnt, cnt = BATcount(b);
 	lng *restrict rb = (lng*) Tloc(r, 0);
 	bit *np = p ? (bit*) Tloc(p, 0) : NULL, *pnp = np, *nend = np;
 	BATiter bpi = bat_iterator(b);
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp1);
 
 	if (unit == 3) { //special case, there are no boundaries
 		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL, NO_BOUNDARIES, NO_BOUNDARIES)
 	} else {
-		assert((!l && bound >= 0) || (l && bound == 0));
-		if (l) { //dynamic bounds
-			lng *restrict limit = (lng*) Tloc(l, 0);
-			BUN ll = 0;
-
-			if (unit == 0) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, limit[ll++], limit[k])
-			} else if (unit == 1) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, limit[ll++], limit[k])
-			} else if (unit == 2) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, limit[ll++], limit[k])
-			} else {
-				assert(0);
-			}
-		} else { //fixed bounds
-			lng limit = bound;
-
-			if (bound == GDK_lng_max) { //UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow.
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_UNBOUNDED, limit, limit)
-			} else if (unit == 0) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, limit, limit)
-			} else if (unit == 1) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, limit, limit)
-			} else if (unit == 2) {
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, limit, limit)
-			} else {
-				assert(0);
-			}
+		assert((!l && bound) || (l && !bound));
+		switch(tp2) {
+			case TYPE_bte:
+				ANALYTICAL_BOUNDS_BRANCHES(bte)
+				break;
+			case TYPE_sht:
+				ANALYTICAL_BOUNDS_BRANCHES(sht)
+				break;
+			case TYPE_int:
+				ANALYTICAL_BOUNDS_BRANCHES(int)
+				break;
+			case TYPE_lng:
+				ANALYTICAL_BOUNDS_BRANCHES(lng)
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				ANALYTICAL_BOUNDS_BRANCHES(hge)
+				break;
+#endif
+			default:
+				GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2));
+				return GDK_FAIL;
 		}
 	}
 	BATsetcount(r, cnt);
@@ -529,6 +553,7 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, lng bound, int tpe, in
 #undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES
 #undef ANALYTICAL_WINDOW_BOUNDS_LIMIT
 #undef NO_BOUNDARIES
+#undef ANALYTICAL_BOUNDS_BRANCHES
 
 #define NTILE_CALC(TPE)               \
 	do {                              \

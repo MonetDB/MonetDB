@@ -70,9 +70,11 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, has_partitions ? 2 : 1)), *p = NULL, *r, *l = NULL;
-		int unit = *getArgReference_int(stk, pci, has_partitions ? 3 : 2);
-		int excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3), limit_pos = has_partitions ? 5 : 4;
-		lng limit = 0;
+		int unit = *getArgReference_int(stk, pci, has_partitions ? 3 : 2),
+			excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3),
+			limit_pos = has_partitions ? 5 : 4, tpe = getArgType(mb, pci, limit_pos);
+		void* limit = NULL;
+		bool is_negative = false;
 		gdk_return gdk_code;
 
 		assert(unit >= 0 && unit <= 3);
@@ -83,22 +85,79 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 		if (!b)
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 		voidresultBAT(r, TYPE_lng, BATcount(b), b, mod);
-		if(isaBatType(getArgType(mb, pci, limit_pos))) {
+		if(isaBatType(tpe)) {
+			tpe = getBatType(tpe);
 			l = BATdescriptor(*getArgReference_bat(stk, pci, limit_pos));
 			if (!l) {
 				BBPunfix(b->batCacheid);
 				throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
-			for(lng *lp = (lng*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend; lp++) {
-				if(*lp < 0) {
+			switch (tpe) {
+				case TYPE_bte:
+					for(bte *lp = (bte*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+						is_negative |= (*lp < 0);
+					break;
+				case TYPE_sht:
+					for(sht *lp = (sht*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+						is_negative |= (*lp < 0);
+					break;
+				case TYPE_int:
+					for(int *lp = (int*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+						is_negative |= (*lp < 0);
+					break;
+				case TYPE_lng:
+					for(lng *lp = (lng*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+						is_negative |= (*lp < 0);
+					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					for(hge *lp = (hge*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+						is_negative |= (*lp < 0);
+					break;
+#endif
+				default: {
 					BBPunfix(b->batCacheid);
 					BBPunfix(l->batCacheid);
-					throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
+					throw(SQL, mod, SQLSTATE(42000) "%s limit not available for %s", mod, ATOMname(tpe));
 				}
 			}
+			if(is_negative) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(l->batCacheid);
+				throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
+			}
 		} else {
-			limit = *getArgReference_lng(stk, pci, limit_pos);
-			if(limit < 0)
+			ValRecord *vlimit = &(stk)->stk[(pci)->argv[limit_pos]];
+
+			switch (tpe) {
+				case TYPE_bte:
+					is_negative = vlimit->val.btval < 0;
+					limit = &vlimit->val.btval;
+					break;
+				case TYPE_sht:
+					is_negative = vlimit->val.shval < 0;
+					limit = &vlimit->val.shval;
+					break;
+				case TYPE_int:
+					is_negative = vlimit->val.ival < 0;
+					limit = &vlimit->val.ival;
+					break;
+				case TYPE_lng:
+					is_negative = vlimit->val.lval < 0;
+					limit = &vlimit->val.lval;
+					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					is_negative = vlimit->val.hval < 0;
+					limit = &vlimit->val.hval;
+					break;
+#endif
+				default: {
+					BBPunfix(b->batCacheid);
+					throw(SQL, mod, SQLSTATE(42000) "%s limit is not available for %s", mod, ATOMname(tpe));
+				}
+			}
+			if(is_negative)
 				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
 		}
 		if (has_partitions) {
@@ -110,7 +169,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 			}
 		}
 
-		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, b->ttype, unit, flow);
+		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, b->ttype, tpe, unit, flow);
 		if(l) BBPunfix(l->batCacheid);
 		if(p) BBPunfix(p->batCacheid);
 		BBPunfix(b->batCacheid);

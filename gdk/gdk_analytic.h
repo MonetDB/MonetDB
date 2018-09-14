@@ -17,7 +17,7 @@
 #include "gdk.h"
 
 gdk_export gdk_return GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe);
-gdk_export gdk_return GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, lng limit, int tpe, int unit, bool start);
+gdk_export gdk_return GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit, bool start);
 
 gdk_export gdk_return GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, const void* restrict ntile);
 gdk_export gdk_return GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, BUN lag, const void* restrict default_value, int tpe);

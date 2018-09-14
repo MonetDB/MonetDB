@@ -4438,24 +4438,29 @@ static sql_exp*
 calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e,
 						sql_exp *start, sql_exp *fend, int frame_type, int excl)
 {
-	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs = sa_list(sql->sa);
+	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs1 = sa_list(sql->sa), *targs2 = sa_list(sql->sa);
 	sql_subfunc *dc1, *dc2;
-	sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng");
+	sql_subtype *it = sql_bind_localtype("int");
 
 	if(pe) {
-		append(targs, exp_subtype(pe));
+		append(targs1, exp_subtype(pe));
+		append(targs2, exp_subtype(pe));
 		append(rargs1, exp_copy(sql->sa, pe));
 		append(rargs2, exp_copy(sql->sa, pe));
 	}
 	append(rargs1, exp_copy(sql->sa, e));
 	append(rargs2, exp_copy(sql->sa, e));
-	append(targs, exp_subtype(e));
-	append(targs, it);
-	append(targs, it);
-	append(targs, lon);
+	append(targs1, exp_subtype(e));
+	append(targs2, exp_subtype(e));
+	append(targs1, it);
+	append(targs2, it);
+	append(targs1, it);
+	append(targs2, it);
+	append(targs1, exp_subtype(start));
+	append(targs2, exp_subtype(fend));
 
-	dc1 = sql_bind_func_(sql->sa, s, "window_start_bound", targs, F_ANALYTIC);
-	dc2 = sql_bind_func_(sql->sa, s, "window_end_bound", targs, F_ANALYTIC);
+	dc1 = sql_bind_func_(sql->sa, s, "window_start_bound", targs1, F_ANALYTIC);
+	dc2 = sql_bind_func_(sql->sa, s, "window_end_bound", targs2, F_ANALYTIC);
 	if (!dc1)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'window_start_bound' not found");
 	if (!dc2)
@@ -4696,9 +4701,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	/* Frame */
 	if(window_specification->h->next->next->data.sym) {
 		dnode *d = window_specification->h->next->next->data.sym->data.lval->h;
-		sql_subtype *lon = sql_bind_localtype("lng");
 		exp_kind ek = {type_value, card_column, FALSE};
 		int excl = d->next->next->next->data.i_val;
+		unsigned char sclass, eclass;
 		frame_type = d->next->next->data.i_val;
 
 		if(!aggr)
@@ -4723,15 +4728,17 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		fstart = rel_value_exp2(sql, &p, d->data.sym, f, ek, &is_last);
 		if(!fstart)
 			return NULL;
-		if(subtype_cmp(&(fstart->tpe), lon) != 0)
-			fstart = exp_convert(sql->sa, fstart, &(fstart->tpe), lon);
+		sclass = fstart->tpe.type->eclass;
+		if(!(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)))
+			return sql_error(sql, 02, SQLSTATE(42000) "PRECEDING offset column must be of a countable SQL type");
 
 		is_last = 0;
 		fend = rel_value_exp2(sql, &p, d->next->data.sym, f, ek, &is_last);
 		if (!fend)
 			return NULL;
-		if (subtype_cmp(&(fend->tpe), lon) != 0)
-			fend = exp_convert(sql->sa, fend, &(fend->tpe), lon);
+		eclass = fend->tpe.type->eclass;
+		if(!(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass)))
+			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset column must be of a countable SQL type");
 
 		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, excl) == NULL)
 			return NULL;

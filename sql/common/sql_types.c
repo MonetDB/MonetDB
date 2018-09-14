@@ -1636,8 +1636,22 @@ sqltypeinit( sql_allocator *sa)
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", ANY, BIT, SCALE_NONE);
 	sql_create_analytic2(sa, "diff", "sql", "diff", BIT, ANY, BIT, SCALE_NONE);
+
+	sql_create_analytic4(sa, "window_start_bound", "sql", "window_start_bound", ANY, INT, INT, BTE, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_start_bound", "sql", "window_start_bound", BIT, ANY, INT, INT, BTE, LNG, SCALE_NONE);
+	sql_create_analytic4(sa, "window_start_bound", "sql", "window_start_bound", ANY, INT, INT, SHT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_start_bound", "sql", "window_start_bound", BIT, ANY, INT, INT, SHT, LNG, SCALE_NONE);
+	sql_create_analytic4(sa, "window_start_bound", "sql", "window_start_bound", ANY, INT, INT, INT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_start_bound", "sql", "window_start_bound", BIT, ANY, INT, INT, INT, LNG, SCALE_NONE);
 	sql_create_analytic4(sa, "window_start_bound", "sql", "window_start_bound", ANY, INT, INT, LNG, LNG, SCALE_NONE);
 	sql_create_analytic5(sa, "window_start_bound", "sql", "window_start_bound", BIT, ANY, INT, INT, LNG, LNG, SCALE_NONE);
+
+	sql_create_analytic4(sa, "window_end_bound", "sql", "window_end_bound", ANY, INT, INT, BTE, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_end_bound", "sql", "window_end_bound", BIT, ANY, INT, INT, BTE, LNG, SCALE_NONE);
+	sql_create_analytic4(sa, "window_end_bound", "sql", "window_end_bound", ANY, INT, INT, SHT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_end_bound", "sql", "window_end_bound", BIT, ANY, INT, INT, SHT, LNG, SCALE_NONE);
+	sql_create_analytic4(sa, "window_end_bound", "sql", "window_end_bound", ANY, INT, INT, INT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_end_bound", "sql", "window_end_bound", BIT, ANY, INT, INT, INT, LNG, SCALE_NONE);
 	sql_create_analytic4(sa, "window_end_bound", "sql", "window_end_bound", ANY, INT, INT, LNG, LNG, SCALE_NONE);
 	sql_create_analytic5(sa, "window_end_bound", "sql", "window_end_bound", BIT, ANY, INT, INT, LNG, LNG, SCALE_NONE);
 

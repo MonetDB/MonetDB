@@ -8,6 +8,55 @@
 
 module sql;
 
+pattern sql.window_start_bound(b:any_1, unit:int, excl:int, start:hge) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:hge) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern sql.window_start_bound(p:bit, b:any_1, unit:int, excl:int, start:hge) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:hge) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:bat[:hge]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:bat[:hge]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+
+pattern sql.window_end_bound(b:any_1, unit:int, excl:int, end:hge) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:hge) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern sql.window_end_bound(p:bit, b:any_1, unit:int, excl:int, end:hge) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:hge) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:bat[:hge]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:bat[:hge]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
 pattern sql.sum(b:bte, s:lng, e:lng) :hge
 address SQLsum
 comment "return the sum of groups";

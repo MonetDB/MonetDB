@@ -24,6 +24,152 @@ pattern batsql.diff(p:bat[:bit], b:bat[:any_1]) :bat[:bit]
 address SQLdiff
 comment "return true if cur != prev row";
 
+pattern sql.window_start_bound(b:any_1, unit:int, excl:int, start:bte) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:bte) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern sql.window_start_bound(p:bit, b:any_1, unit:int, excl:int, start:bte) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:bte) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:bat[:bte]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:bat[:bte]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+
+pattern sql.window_end_bound(b:any_1, unit:int, excl:int, end:bte) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:bte) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern sql.window_end_bound(p:bit, b:any_1, unit:int, excl:int, end:bte) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:bte) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:bat[:bte]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:bat[:bte]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern sql.window_start_bound(b:any_1, unit:int, excl:int, start:sht) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:sht) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern sql.window_start_bound(p:bit, b:any_1, unit:int, excl:int, start:sht) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:sht) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:bat[:sht]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:bat[:sht]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+
+pattern sql.window_end_bound(b:any_1, unit:int, excl:int, end:sht) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:sht) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern sql.window_end_bound(p:bit, b:any_1, unit:int, excl:int, end:sht) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:sht) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:bat[:sht]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:bat[:sht]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern sql.window_start_bound(b:any_1, unit:int, excl:int, start:int) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:int) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern sql.window_start_bound(p:bit, b:any_1, unit:int, excl:int, start:int) :lng
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:int) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:bat[:int]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:bat[:int]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+
+pattern sql.window_end_bound(b:any_1, unit:int, excl:int, end:int) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:int) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern sql.window_end_bound(p:bit, b:any_1, unit:int, excl:int, end:int) :lng
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:int) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:bat[:int]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:bat[:int]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
 
 pattern sql.window_start_bound(b:any_1, unit:int, excl:int, start:lng) :lng
 address SQLwindowstartbound
@@ -73,7 +219,6 @@ comment "computes the end ranges for each row";
 pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:bat[:lng]) :bat[:lng]
 address SQLwindowendbound
 comment "computes the end ranges for each row";
-
 
 pattern sql.row_number(b:any_1, p:bit, o:bit) :int
 address SQLrow_number
