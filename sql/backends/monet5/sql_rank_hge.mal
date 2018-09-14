@@ -8,91 +8,91 @@
 
 module sql;
 
-pattern sql.sum(b:bte, s:int, e:int) :hge
+pattern sql.sum(b:bte, s:lng, e:lng) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:bte], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.sum(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:bte, s:int, e:int) :hge
+pattern sql.prod(b:bte, s:lng, e:lng) :hge
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:bte], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.prod(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:sht, s:int, e:int) :hge
+pattern sql.sum(b:sht, s:lng, e:lng) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:sht], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.sum(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:sht, s:int, e:int) :hge
+pattern sql.prod(b:sht, s:lng, e:lng) :hge
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:sht], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.prod(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:int, s:int, e:int) :hge
+pattern sql.sum(b:int, s:lng, e:lng) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:int], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.sum(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:int, s:int, e:int) :hge
+pattern sql.prod(b:int, s:lng, e:lng) :hge
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:int], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.prod(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:lng, s:int, e:int) :hge
+pattern sql.sum(b:lng, s:lng, e:lng) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:lng], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.sum(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:lng, s:int, e:int) :hge
+pattern sql.prod(b:lng, s:lng, e:lng) :hge
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:lng], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.prod(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:hge, s:int, e:int) :hge
+pattern sql.sum(b:hge, s:lng, e:lng) :hge
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:hge], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.sum(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:hge, s:int, e:int) :hge
+pattern sql.prod(b:hge, s:lng, e:lng) :hge
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:hge], s:bat[:int], e:bat[:int]) :bat[:hge]
+pattern batsql.prod(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:hge]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.avg(b:hge, s:int, e:int) :dbl
+pattern sql.avg(b:hge, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:hge], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.avg(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 

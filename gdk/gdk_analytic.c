@@ -102,78 +102,72 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #undef ANALYTICAL_DIFF_IMP
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_START(TPE) \
-	do {                                               \
-		TPE *bs = MIN(pbp + limit, bp);                \
-		int curval = 0;                                \
-		for(; pbp<bs; pbp++, rb++)                     \
-			*rb = curval++;                            \
-		for(; pbp<bp; pbp++, rb++)                     \
-			*rb = curval;                              \
-	} while(0);
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_END(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_START(TPE, BOUNDF) \
 	do {                                             \
-		int curval = MIN(ncnt, limit);               \
-		TPE *bs = bp - curval;                       \
-		curval++;                                    \
-		for(; pbp<bs; pbp++, rb++)                   \
-			*rb = curval;                            \
-		for(; pbp<bp; pbp++, rb++)                   \
-			*rb = --curval;                          \
+		TPE *bl = pbp;                               \
+		for(; pbp<bp; pbp++, rb++) {                 \
+			lng rlimit = BOUNDF;                     \
+			*rb = MIN(pbp - bl, rlimit);             \
+		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_START(TPE) \
-	do {                                                    \
-		TPE *bl = pbp;                                      \
-		for(; pbp<bp; pbp++, rb++)                          \
-			*rb = (int)(pbp - bl);                          \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_END(TPE, BOUNDF) \
+	do {                                             \
+		for(; pbp<bp; pbp++, rb++) {                 \
+			lng rlimit = BOUNDF;                     \
+			*rb = MIN(bp - pbp-1, rlimit) + 1;       \
+		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_END(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_START(TPE, BOUNDF) \
+	do {                                                  \
+		TPE *bl = pbp;                                    \
+		for(; pbp<bp; pbp++, rb++)                        \
+			*rb = (lng)(pbp - bl);                        \
+	} while(0);
+
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_END(TPE, BOUNDF) \
 	do {                                                  \
 		for(; pbp<bp; pbp++, rb++)                        \
-			*rb = (int)(bp - pbp);                        \
+			*rb = (lng)(bp - pbp);                        \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_START(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_START(TPE, BOUNDF) \
 	do {                                                \
-		TPE *bl = pbp-1, *bs, v, blimit = (TPE) limit;  \
-		int curval;                                     \
+		TPE *bl = pbp-1, *bs, v, rlimit;                \
 		for(; pbp<bp; pbp++, rb++) {                    \
-			curval = 0;                                 \
+			lng curval = 0;                             \
+			rlimit = (TPE) BOUNDF;                      \
 			v = *pbp;                                   \
 			for(bs=pbp-1; bs>bl; bs--, curval++) {      \
-				if (ABSOLUTE(v - *bs) > blimit)         \
+				if (ABSOLUTE(v - *bs) > rlimit)         \
 					break;                              \
 			}                                           \
 			*rb = curval;                               \
 		}                                               \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_END(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_END(TPE, BOUNDF) \
 	do {                                              \
-		TPE *bs, v, blimit = (TPE) limit;             \
-		int curval;                                   \
+		TPE *bs, v, rlimit;                           \
 		for(; pbp<bp; pbp++, rb++) {                  \
-			curval = 1;                               \
+			lng curval = 1;                           \
+			rlimit = (TPE) BOUNDF;                    \
 			v = *pbp;                                 \
 			for(bs=pbp+1; bs<bp; bs++, curval++) {    \
-				if (ABSOLUTE(v - *bs) > blimit)       \
+				if (ABSOLUTE(v - *bs) > rlimit)       \
 					break;                            \
 			}                                         \
 			*rb = curval;                             \
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_START(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_START(TPE, BOUNDF) \
 	do {                                                 \
 		TPE *bl = pbp-1, *bs, v;                         \
-		int curval;                                      \
-		BUN rlimit;                                      \
 		for(; pbp<bp; pbp++, rb++) {                     \
-			curval = 0;                                  \
-			rlimit = limit;                              \
+			lng curval = 0;                              \
+			BUN rlimit = (BUN) BOUNDF;                   \
 			v = *pbp;                                    \
 			for(bs=pbp-1; bs>bl; bs--, curval++) {       \
 				if(v != *bs) {                           \
@@ -187,14 +181,12 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                                \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_END(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_END(TPE, BOUNDF) \
 	do {                                               \
 		TPE *bs, v;                                    \
-		int curval;                                    \
-		BUN rlimit;                                    \
 		for(; pbp<bp; pbp++, rb++) {                   \
-			curval = 1;                                \
-			rlimit = limit;                            \
+			lng curval = 1;                            \
+			BUN rlimit = (BUN) BOUNDF;                 \
 			v = *pbp;                                  \
 			for(bs=pbp+1; bs<bp; bs++, curval++) {     \
 				if(v != *bs) {                         \
@@ -208,21 +200,21 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                              \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_START(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_START(TPE, BOUNDF) \
 	do {                                              \
-		int curval = 0;                               \
+		lng curval = 0;                               \
 		for(; pbp<bp; pbp++, rb++)                    \
 			*rb = curval++;                           \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_END(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_END(TPE, BOUNDF) \
 	do {                                            \
-		int curval = ncnt + 1;                      \
+		lng curval = ncnt + 1;                      \
 		for(; pbp<bp; pbp++, rb++)                  \
 			*rb = --curval;                         \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(TPE, IMP) \
+#define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(TPE, IMP, BOUNDF) \
 	do {                                   \
 		TPE *pbp, *bp;                     \
 		pbp = bp = (TPE*)Tloc(b, 0);       \
@@ -233,18 +225,18 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 					if (*np) {             \
 						ncnt = (np - pnp); \
 						bp += ncnt;        \
-						IMP##_START(TPE)   \
+						IMP##_START(TPE, BOUNDF) \
 						pnp = np;          \
 						pbp = bp;          \
 					}                      \
 				}                          \
 				ncnt = (np - pnp);         \
 				bp += ncnt;                \
-				IMP##_START(TPE)           \
+				IMP##_START(TPE, BOUNDF)   \
 			} else {                       \
 				ncnt = cnt;                \
 				bp += ncnt;                \
-				IMP##_START(TPE)           \
+				IMP##_START(TPE, BOUNDF)   \
 			}                              \
 		} else if(np) {                    \
 			nend += cnt;                   \
@@ -252,105 +244,95 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				if (*np) {                 \
 				ncnt = (np - pnp);         \
 					bp += ncnt;            \
-					IMP##_END(TPE)         \
+					IMP##_END(TPE, BOUNDF) \
 					pnp = np;              \
 					pbp = bp;              \
 				}                          \
 			}                              \
 			ncnt = (np - pnp);             \
 			bp += ncnt;                    \
-			IMP##_END(TPE)                 \
+			IMP##_END(TPE, BOUNDF)         \
 		} else {                           \
 			ncnt = cnt;                    \
 			bp += ncnt;                    \
-			IMP##_END(TPE)                 \
+			IMP##_END(TPE, BOUNDF)         \
 		}                                  \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_START \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_START(BOUNDF) \
 	do {                                             \
-		int curval = 0;                              \
-		BUN l = MIN(k + limit, i);                   \
-		for(; k<l; k++, rb++)                        \
-			*rb = curval++;                          \
-		for(; k<i; k++, rb++)                        \
-			*rb = curval;                            \
+		BUN m = k;                                   \
+		for(; k<i; k++, rb++) {                      \
+			lng rlimit = BOUNDF;                     \
+			*rb = MIN((lng)(k - m), rlimit);         \
+		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_END \
-	do {                                           \
-		int curval = MIN(ncnt, limit);             \
-		BUN l = i - curval;                        \
-		curval++;                                  \
-		for(; k<l; k++, rb++)                      \
-			*rb = curval;                          \
-		for(; k<i; k++, rb++)                      \
-			*rb = --curval;                        \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_END(BOUNDF) \
+	do {                                             \
+		for(; k<i; k++, rb++) {                      \
+			lng rlimit = BOUNDF;                     \
+			*rb = MIN((lng)(i - k - 1), rlimit) + 1; \
+		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_START \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_START(BOUNDV) \
 	do {                                                  \
 		BUN j = k;                                        \
 		for(; k<i; k++, rb++)                             \
 			*rb = (k - j);                                \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_END \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_END(BOUNDV) \
 	do {                                                \
 		for(; k<i; k++, rb++)                           \
 			*rb = (i - k);                              \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_START \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_START(BOUNDV) \
 	do {                                              \
-		void *v;                                      \
-		int curval, llimit = (int)limit;              \
 		BUN j;                                        \
 		*rb = 0; /* the first element's window size is hardcoded to avoid overflow in BUN */ \
 		rb++;                                         \
 		k++;                                          \
 		j = k - 1;                                    \
 		for(; k<i; k++, rb++) {                       \
-			curval = 1;                               \
-			v = BUNtail(bpi, k);                      \
+			lng curval = 1;                           \
+			void *v = BUNtail(bpi, k);                \
 			for(BUN l=k-1; l>j; l--, curval++) {      \
-				if (ABSOLUTE(atomcmp(v, BUNtail(bpi, l))) > llimit) \
+				if (ABSOLUTE(atomcmp(v, BUNtail(bpi, l))) > BOUNDV) \
 					break;                            \
 			}                                         \
 			*rb = curval;                             \
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_END \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_END(BOUNDV) \
 	do {                                            \
-		void *v;                                    \
-		int curval, llimit = (int)limit;            \
 		for(; k<i; k++, rb++) {                     \
-			curval = 1;                             \
-			v = BUNtail(bpi, k);                    \
+			lng curval = 1;                         \
+			void *v = BUNtail(bpi, k);              \
 			for(BUN l=k+1; l<i; l++, curval++) {    \
-				if (ABSOLUTE(atomcmp(v, BUNtail(bpi, l))) > llimit) \
+				if (ABSOLUTE(atomcmp(v, BUNtail(bpi, l))) > BOUNDV) \
 					break;                          \
 			}                                       \
 			*rb = curval;                           \
 		}                                           \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_START \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_START(BOUNDV) \
 	do {                                               \
-		void *v, *next;                                \
-		int curval;                                    \
-		BUN j, rlimit;                                 \
+		BUN j;                                         \
 		*rb = 0; /* the first element's window size is hardcoded to avoid overflow in BUN */ \
 		rb++;                                          \
 		k++;                                           \
 		j = k - 1;                                     \
 		for(; k<i; k++, rb++) {                        \
-			curval = 1;                                \
-			rlimit = limit;                            \
-			v = BUNtail(bpi, k);                       \
+			lng curval = 1;                            \
+			BUN rlimit = (BUN) BOUNDV;                 \
+			void *v = BUNtail(bpi, k);                 \
 			for(BUN l=k-1; l>j; l--, curval++) {       \
-				next = BUNtail(bpi, l);                \
+				void *next = BUNtail(bpi, l);          \
 				if(atomcmp(v, next)) {                 \
 					if(rlimit == 0)                    \
 						break;                         \
@@ -362,17 +344,14 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                              \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_END \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_END(BOUNDV) \
 	do {                                             \
-		void *v, *next;                              \
-		int curval;                                  \
-		BUN rlimit;                                  \
 		for(; k<i; k++, rb++) {                      \
-			curval = 1;                              \
-			rlimit = limit;                          \
-			v = BUNtail(bpi, k);                     \
+			lng curval = 1;                          \
+			BUN rlimit = (BUN) BOUNDV;               \
+			void *v = BUNtail(bpi, k);               \
 			for(BUN l=k+1; l<i; l++, curval++) {     \
-				next = BUNtail(bpi, l);              \
+				void *next = BUNtail(bpi, l);        \
 				if(atomcmp(v, next)) {               \
 					if(rlimit == 0)                  \
 						break;                       \
@@ -384,53 +363,53 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_START \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_START(BOUNDV) \
 	do {                                            \
-		int curval = 0;                             \
+		lng curval = 0;                             \
 		for(; k<i; k++, rb++)                       \
 			*rb = curval++;                         \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_END \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_END(BOUNDV) \
 	do {                                          \
-		int curval = ncnt + 1;                    \
+		lng curval = ncnt + 1;                    \
 		for(; k<i; k++, rb++)                     \
 			*rb = --curval;                       \
 	} while(0);
 
 #ifdef HAVE_HGE
-#define ANALYTICAL_WINDOW_BOUNDS_LIMIT(FRAME) \
+#define ANALYTICAL_WINDOW_BOUNDS_LIMIT(FRAME, BOUNDF) \
 	case TYPE_hge: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(hge, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(hge, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 		break;
 #else
-#define ANALYTICAL_WINDOW_BOUNDS_LIMIT(FRAME)
+#define ANALYTICAL_WINDOW_BOUNDS_LIMIT(FRAME, BOUNDF)
 #endif
 
-#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES(FRAME) \
+#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES(FRAME, BOUNDF, BOUNDV) \
 	do { \
 		switch(tpe) { \
 			case TYPE_bit: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME) \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
 			case TYPE_bte: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME) \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
 			case TYPE_sht: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME) \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
 			case TYPE_int: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME) \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
 			case TYPE_lng: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME) \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
-			ANALYTICAL_WINDOW_BOUNDS_LIMIT(FRAME) \
+			ANALYTICAL_WINDOW_BOUNDS_LIMIT(FRAME, BOUNDF) \
 			case TYPE_flt: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(flt, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME) \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(flt, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
 			case TYPE_dbl: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME) \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
 			default: { \
 				if(start) { \
@@ -441,17 +420,17 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 							if (*np) { \
 								ncnt = (np - pnp); \
 								i += ncnt; \
-								ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START \
+								ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START(BOUNDV) \
 								pnp = np; \
 							} \
 						} \
 						ncnt = (np - pnp); \
 						i += ncnt; \
-						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START \
+						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START(BOUNDV) \
 					} else { \
 						ncnt = cnt; \
 						i += ncnt; \
-						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START \
+						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START(BOUNDV) \
 					} \
 				} else if (p) { \
 					pnp = np = (bit*)Tloc(p, 0); \
@@ -460,43 +439,65 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 						if (*np) { \
 							ncnt = (np - pnp); \
 							i += ncnt; \
-							ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END \
+							ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END(BOUNDV) \
 							pnp = np; \
 						} \
 					} \
 					ncnt = (np - pnp); \
 					i += ncnt; \
-					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END \
+					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END(BOUNDV) \
 				} else { \
 					ncnt = cnt; \
 					i += ncnt; \
-					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END \
+					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END(BOUNDV) \
 				} \
 			} \
 		} \
 	} while(0);
 
+#define NO_BOUNDARIES
+
 gdk_return
-GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, int tpe, int unit, BUN limit, bool start)
+GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, lng bound, int tpe, int unit, bool start)
 {
 	BUN i = 0, k = 0, ncnt, cnt = BATcount(b);
-	int *restrict rb = (int*)Tloc(r, 0);
-	bit *np = p ? (bit*)Tloc(p, 0) : NULL, *pnp = np, *nend = np;
+	lng *restrict rb = (lng*) Tloc(r, 0);
+	bit *np = p ? (bit*) Tloc(p, 0) : NULL, *pnp = np, *nend = np;
 	BATiter bpi = bat_iterator(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 
-	if(unit == 3) {
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL)
-	} else if(limit == GDK_int_max) {
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_UNBOUNDED)
-	} else if(unit == 0) {
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS)
-	} else if(unit == 1) {
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE)
-	} else if(unit == 2) {
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS)
+	if (unit == 3) { //special case, there are no boundaries
+		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL, NO_BOUNDARIES, NO_BOUNDARIES)
 	} else {
-		assert(0);
+		assert((!l && bound >= 0) || (l && bound == 0));
+		if (l) { //dynamic bounds
+			lng *restrict limit = (lng*) Tloc(l, 0);
+			BUN ll = 0;
+
+			if (unit == 0) {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, limit[ll++], limit[k])
+			} else if (unit == 1) {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, limit[ll++], limit[k])
+			} else if (unit == 2) {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, limit[ll++], limit[k])
+			} else {
+				assert(0);
+			}
+		} else { //fixed bounds
+			lng limit = bound;
+
+			if (bound == GDK_lng_max) { //UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow.
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_UNBOUNDED, limit, limit)
+			} else if (unit == 0) {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, limit, limit)
+			} else if (unit == 1) {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, limit, limit)
+			} else if (unit == 2) {
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, limit, limit)
+			} else {
+				assert(0);
+			}
+		}
 	}
 	BATsetcount(r, cnt);
 	r->tnonil = true;
@@ -527,6 +528,7 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, int tpe, int unit, BUN limit, 
 #undef ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED
 #undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES
 #undef ANALYTICAL_WINDOW_BOUNDS_LIMIT
+#undef NO_BOUNDARIES
 
 #define NTILE_CALC(TPE)               \
 	do {                              \
@@ -1346,12 +1348,12 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 { \
 	bool has_nils = false; \
 	BUN i = 0, j = 0, l = 0, cnt = BATcount(b); \
-	int *restrict start, *restrict end; \
+	lng *restrict start, *restrict end; \
 	gdk_return gdk_res = GDK_SUCCEED; \
  \
 	assert(s && e); \
-	start = (int*)Tloc(s, 0); \
-	end = (int*)Tloc(e, 0); \
+	start = (lng*)Tloc(s, 0); \
+	end = (lng*)Tloc(e, 0); \
  \
 	switch(tpe) { \
 		case TYPE_bit: \
@@ -1447,13 +1449,12 @@ gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_nils, int tpe)
 {
 	BUN i = 0, j = 0, l = 0, cnt = BATcount(b);
-	int *restrict start, *restrict end;
 	gdk_return gdk_res = GDK_SUCCEED;
-	lng *restrict rb = (lng*)Tloc(r, 0), curval = 0;
+	lng *restrict rb = (lng*)Tloc(r, 0), *restrict start, *restrict end, curval = 0;
 
 	assert(s && e && ignore_nils);
-	start = (int*)Tloc(s, 0);
-	end = (int*)Tloc(e, 0);
+	start = (lng*)Tloc(s, 0);
+	end = (lng*)Tloc(e, 0);
 
 	if(!*ignore_nils || b->T.nonil) {
 		for(; i<cnt; i++, rb++)
@@ -1602,11 +1603,12 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 {
 	bool has_nils = false;
 	BUN i = 0, cnt = BATcount(b), nils = 0;
-	int abort_on_error = 1, *restrict start, *restrict end;
+	int abort_on_error = 1;
+	lng *restrict start, *restrict end;
 
 	assert(s && e);
-	start = (int*)Tloc(s, 0);
-	end = (int*)Tloc(e, 0);
+	start = (lng*)Tloc(s, 0);
+	end = (lng*)Tloc(e, 0);
 
 	switch (tp2) {
 		case TYPE_bte: {
@@ -1831,11 +1833,12 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 {
 	bool has_nils = false;
 	BUN i = 0, cnt = BATcount(b), nils = 0;
-	int abort_on_error = 1, *restrict start, *restrict end;
+	int abort_on_error = 1;
+	lng *restrict start, *restrict end;
 
 	assert(s && e);
-	start = (int*)Tloc(s, 0);
-	end = (int*)Tloc(e, 0);
+	start = (lng*)Tloc(s, 0);
+	end = (lng*)Tloc(e, 0);
 
 	switch (tp2) {
 		case TYPE_bte: {
@@ -2067,7 +2070,7 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	bool has_nils = false;
 	BUN i = 0, cnt = BATcount(b), nils = 0, n = 0, rr = 0;
 	bool abort_on_error = true;
-	int *restrict start, *restrict end;
+	lng *restrict start, *restrict end;
 	dbl *restrict rb = (dbl*)Tloc(r, 0), curval, a = 0;
 #ifdef HAVE_HGE
 	hge sum = 0;
@@ -2076,8 +2079,8 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 #endif
 
 	assert(s && e);
-	start = (int*)Tloc(s, 0);
-	end = (int*)Tloc(e, 0);
+	start = (lng*)Tloc(s, 0);
+	end = (lng*)Tloc(e, 0);
 
 	switch (tpe) {
 		case TYPE_bte:

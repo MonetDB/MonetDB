@@ -17,19 +17,19 @@ for tp1 in 1:bte 2:sht 4:int 8:lng 16:hge; do
     for tp2 in 16:hge; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    cat <<EOF
-pattern sql.sum(b:${tp1#*:}, s:int, e:int) :${tp2#*:}
+pattern sql.sum(b:${tp1#*:}, s:lng, e:lng) :${tp2#*:}
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:${tp1#*:}], s:bat[:int], e:bat[:int]) :bat[:${tp2#*:}]
+pattern batsql.sum(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:${tp2#*:}]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:${tp1#*:}, s:int, e:int) :${tp2#*:}
+pattern sql.prod(b:${tp1#*:}, s:lng, e:lng) :${tp2#*:}
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:${tp1#*:}], s:bat[:int], e:bat[:int]) :bat[:${tp2#*:}]
+pattern batsql.prod(b:bat[:${tp1#*:}], s:bat[:lng], e:bat[:lng]) :bat[:${tp2#*:}]
 address SQLprod
 comment "return the product of groups";
 
@@ -39,11 +39,11 @@ EOF
 done
 
 	cat <<EOF
-pattern sql.avg(b:hge, s:int, e:int) :dbl
+pattern sql.avg(b:hge, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:hge], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.avg(b:bat[:hge], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 

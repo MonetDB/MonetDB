@@ -4435,12 +4435,12 @@ check_duplicated_expression(void *data, void *key)
 
 /* window functions */
 static sql_exp*
-calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e, int start,
-						int fend, int frame_type, int excl)
+calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e,
+						sql_exp *start, sql_exp *fend, int frame_type, int excl)
 {
 	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs = sa_list(sql->sa);
 	sql_subfunc *dc1, *dc2;
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng");
 
 	if(pe) {
 		append(targs, exp_subtype(pe));
@@ -4452,7 +4452,7 @@ calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *
 	append(targs, exp_subtype(e));
 	append(targs, it);
 	append(targs, it);
-	append(targs, it);
+	append(targs, lon);
 
 	dc1 = sql_bind_func_(sql->sa, s, "window_start_bound", targs, F_ANALYTIC);
 	dc2 = sql_bind_func_(sql->sa, s, "window_end_bound", targs, F_ANALYTIC);
@@ -4464,8 +4464,8 @@ calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *
 	append(rargs2, exp_atom_int(sql->sa, frame_type));
 	append(rargs1, exp_atom_int(sql->sa, excl));
 	append(rargs2, exp_atom_int(sql->sa, excl));
-	append(rargs1, exp_atom_int(sql->sa, start));
-	append(rargs2, exp_atom_int(sql->sa, fend));
+	append(rargs1, start);
+	append(rargs2, fend);
 
 	*estart = exp_op(sql->sa, rargs1, dc1);
 	*eend = exp_op(sql->sa, rargs2, dc2);
@@ -4496,15 +4496,13 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	dlist *window_specification = l->h->next->data.lval;
 	char *aname = NULL, *sname = NULL;
 	sql_subfunc *wf = NULL;
-	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL;
+	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL;
 	sql_rel *r = *rel, *p;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last,
 		has_order_by = (window_specification->h->next->data.sym != NULL),
-		has_frame = (window_specification->h->next->next->data.sym != NULL),
-		frame_type = has_order_by ? FRAME_RANGE : FRAME_ROWS,
-		fstart = GDK_int_max, fend = has_order_by ? 0 : GDK_int_max, excl = EXCLUDE_NONE;
+		frame_type = has_order_by ? FRAME_RANGE : FRAME_ROWS;
 	dnode *dn = window_function->data.lval->h;
 
 	aname = qname_fname(dn->data.lval);
@@ -4624,14 +4622,14 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				append(fargs, exp_atom_bool(sql->sa, 0)); //don't ignore nills
 			} else {
 				is_last = 0;
-				exp_kind ek1 = {type_value, card_column, FALSE};
+				exp_kind ek = {type_value, card_column, FALSE};
 
 				distinct = n->data.i_val;
 				/*
 				 * all aggregations implemented in a window have 1 and only 1 argument only, so for now no further
 				 * symbol compilation is required
 				 */
-				in = rel_value_exp2(sql, &p, n->next->data.sym, f, ek1, &is_last);
+				in = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
 				if(!in)
 					return NULL;
 				append(fargs, in);
@@ -4696,29 +4694,54 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	/* Frame */
-	if(has_frame) {
+	if(window_specification->h->next->next->data.sym) {
 		dnode *d = window_specification->h->next->next->data.sym->data.lval->h;
-		fstart = d->data.sym->data.i_val;
-		fend = d->next->data.sym->data.i_val;
+		sql_subtype *lon = sql_bind_localtype("lng");
+		exp_kind ek = {type_value, card_column, FALSE};
+		int excl = d->next->next->next->data.i_val;
 		frame_type = d->next->next->data.i_val;
-		excl = d->next->next->next->data.i_val;
 
-		if (!aggr)
+		if(!aggr)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation");
 		if(!obe && frame_type == FRAME_GROUPS)
 			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
 		if(!obe && frame_type == FRAME_RANGE) {
-			if(d->data.sym->token == SQL_FRAME_PRECEDING || d->next->data.sym->token == SQL_FRAME_FOLLOWING)
-				return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING or FOLLOWING offsets requires an order by expression");
+			atom *a = NULL;
+			if(d->data.sym->token == SQL_ATOM) {
+				a = ((AtomNode*) d->data.sym)->a;
+				if(a->data.vtype == TYPE_lng && a->data.val.lval == GDK_lng_max)
+					return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING offset requires an order by expression");
+			} else if(d->next->data.sym->token == SQL_ATOM) {
+				a = ((AtomNode*) d->next->data.sym)->a;
+				if(a->data.vtype == TYPE_lng && a->data.val.lval == GDK_lng_max)
+					return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with FOLLOWING offset requires an order by expression");
+			}
 			frame_type = FRAME_ALL; //special case, iterate the entire partition
 		}
+
+		is_last = 0;
+		fstart = rel_value_exp2(sql, &p, d->data.sym, f, ek, &is_last);
+		if(!fstart)
+			return NULL;
+		if(subtype_cmp(&(fstart->tpe), lon) != 0)
+			fstart = exp_convert(sql->sa, fstart, &(fstart->tpe), lon);
+
+		is_last = 0;
+		fend = rel_value_exp2(sql, &p, d->next->data.sym, f, ek, &is_last);
+		if (!fend)
+			return NULL;
+		if (subtype_cmp(&(fend->tpe), lon) != 0)
+			fend = exp_convert(sql->sa, fend, &(fend->tpe), lon);
 
 		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, excl) == NULL)
 			return NULL;
 	} else if (aggr) {
+		fstart = exp_atom_lng(sql->sa, GDK_lng_max);
+		fend = exp_atom_lng(sql->sa, has_order_by ? 0 : GDK_lng_max);
+
 		if(!obe)
 			frame_type = FRAME_ALL;
-		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, excl) == NULL)
+		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, EXCLUDE_NONE) == NULL)
 			return NULL;
 	}
 

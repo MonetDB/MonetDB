@@ -25,36 +25,52 @@ address SQLdiff
 comment "return true if cur != prev row";
 
 
-pattern sql.window_start_bound(b:any_1, unit:int, excl:int, start:int) :int
+pattern sql.window_start_bound(b:any_1, unit:int, excl:int, start:lng) :lng
 address SQLwindowstartbound
 comment "computes the start ranges for each row";
 
-pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:int) :bat[:int]
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:lng) :bat[:lng]
 address SQLwindowstartbound
 comment "computes the start ranges for each row";
 
-pattern sql.window_start_bound(p:bit, b:any_1, unit:int, excl:int, start:int) :int
+pattern sql.window_start_bound(p:bit, b:any_1, unit:int, excl:int, start:lng) :lng
 address SQLwindowstartbound
 comment "computes the start ranges for each row";
 
-pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:int) :bat[:int]
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:lng) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(b:bat[:any_1], unit:int, excl:int, start:bat[:lng]) :bat[:lng]
+address SQLwindowstartbound
+comment "computes the start ranges for each row";
+
+pattern batsql.window_start_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, start:bat[:lng]) :bat[:lng]
 address SQLwindowstartbound
 comment "computes the start ranges for each row";
 
 
-pattern sql.window_end_bound(b:any_1, unit:int, excl:int, end:int) :int
+pattern sql.window_end_bound(b:any_1, unit:int, excl:int, end:lng) :lng
 address SQLwindowendbound
 comment "computes the end ranges for each row";
 
-pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:int) :bat[:int]
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:lng) :bat[:lng]
 address SQLwindowendbound
 comment "computes the end ranges for each row";
 
-pattern sql.window_end_bound(p:bit, b:any_1, unit:int, excl:int, end:int) :int
+pattern sql.window_end_bound(p:bit, b:any_1, unit:int, excl:int, end:lng) :lng
 address SQLwindowendbound
 comment "computes the end ranges for each row";
 
-pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:int) :bat[:int]
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:lng) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(b:bat[:any_1], unit:int, excl:int, end:bat[:lng]) :bat[:lng]
+address SQLwindowendbound
+comment "computes the end ranges for each row";
+
+pattern batsql.window_end_bound(p:bat[:bit], b:bat[:any_1], unit:int, excl:int, end:bat[:lng]) :bat[:lng]
 address SQLwindowendbound
 comment "computes the end ranges for each row";
 
@@ -274,187 +290,187 @@ address SQLnth_value
 comment "return the nth value of each group";
 
 
-pattern sql.min(b:any_1, s:int, e:int) :any_1
+pattern sql.min(b:any_1, s:lng, e:lng) :any_1
 address SQLmin
 comment "return the minimum of groups";
 
-pattern batsql.min(b:bat[:any_1], s:bat[:int], e:bat[:int]) :bat[:any_1]
+pattern batsql.min(b:bat[:any_1], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
 address SQLmin
 comment "return the minimum of groups";
 
-pattern sql.max(b:any_1, s:int, e:int) :any_1
+pattern sql.max(b:any_1, s:lng, e:lng) :any_1
 address SQLmax
 comment "return the maximum of groups";
 
-pattern batsql.max(b:bat[:any_1], s:bat[:int], e:bat[:int]) :bat[:any_1]
+pattern batsql.max(b:bat[:any_1], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
 address SQLmax
 comment "return the maximum of groups";
 
-pattern sql.count(b:any_1, ignils:bit, s:int, e:int) :lng
+pattern sql.count(b:any_1, ignils:bit, s:lng, e:lng) :lng
 address SQLcount
 comment "return count of groups";
 
-pattern batsql.count(b:bat[:any_1], ignils:bit, s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.count(b:bat[:any_1], ignils:bit, s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLcount
 comment "return count of groups";
 
-pattern sql.sum(b:bte, s:int, e:int) :lng
+pattern sql.sum(b:bte, s:lng, e:lng) :lng
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:bte], s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.sum(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:bte, s:int, e:int) :lng
+pattern sql.prod(b:bte, s:lng, e:lng) :lng
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:bte], s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.prod(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:sht, s:int, e:int) :lng
+pattern sql.sum(b:sht, s:lng, e:lng) :lng
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:sht], s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.sum(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:sht, s:int, e:int) :lng
+pattern sql.prod(b:sht, s:lng, e:lng) :lng
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:sht], s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.prod(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:int, s:int, e:int) :lng
+pattern sql.sum(b:int, s:lng, e:lng) :lng
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:int], s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.sum(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:int, s:int, e:int) :lng
+pattern sql.prod(b:int, s:lng, e:lng) :lng
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:int], s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.prod(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:lng, s:int, e:int) :lng
+pattern sql.sum(b:lng, s:lng, e:lng) :lng
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:lng], s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.sum(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:lng, s:int, e:int) :lng
+pattern sql.prod(b:lng, s:lng, e:lng) :lng
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:lng], s:bat[:int], e:bat[:int]) :bat[:lng]
+pattern batsql.prod(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:lng]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:flt, s:int, e:int) :flt
+pattern sql.sum(b:flt, s:lng, e:lng) :flt
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:flt], s:bat[:int], e:bat[:int]) :bat[:flt]
+pattern batsql.sum(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:flt]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:flt, s:int, e:int) :flt
+pattern sql.prod(b:flt, s:lng, e:lng) :flt
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:flt], s:bat[:int], e:bat[:int]) :bat[:flt]
+pattern batsql.prod(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:flt]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:flt, s:int, e:int) :dbl
+pattern sql.sum(b:flt, s:lng, e:lng) :dbl
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:flt], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.sum(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:flt, s:int, e:int) :dbl
+pattern sql.prod(b:flt, s:lng, e:lng) :dbl
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:flt], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.prod(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.sum(b:dbl, s:int, e:int) :dbl
+pattern sql.sum(b:dbl, s:lng, e:lng) :dbl
 address SQLsum
 comment "return the sum of groups";
 
-pattern batsql.sum(b:bat[:dbl], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.sum(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLsum
 comment "return the sum of groups";
 
-pattern sql.prod(b:dbl, s:int, e:int) :dbl
+pattern sql.prod(b:dbl, s:lng, e:lng) :dbl
 address SQLprod
 comment "return the product of groups";
 
-pattern batsql.prod(b:bat[:dbl], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.prod(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLprod
 comment "return the product of groups";
 
-pattern sql.avg(b:bte, s:int, e:int) :dbl
+pattern sql.avg(b:bte, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:bte], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.avg(b:bat[:bte], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
-pattern sql.avg(b:sht, s:int, e:int) :dbl
+pattern sql.avg(b:sht, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:sht], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.avg(b:bat[:sht], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
-pattern sql.avg(b:int, s:int, e:int) :dbl
+pattern sql.avg(b:int, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:int], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.avg(b:bat[:int], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
-pattern sql.avg(b:lng, s:int, e:int) :dbl
+pattern sql.avg(b:lng, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:lng], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.avg(b:bat[:lng], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
-pattern sql.avg(b:flt, s:int, e:int) :dbl
+pattern sql.avg(b:flt, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:flt], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.avg(b:bat[:flt], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 
-pattern sql.avg(b:dbl, s:int, e:int) :dbl
+pattern sql.avg(b:dbl, s:lng, e:lng) :dbl
 address SQLavg
 comment "return the average of groups";
 
-pattern batsql.avg(b:bat[:dbl], s:bat[:int], e:bat[:int]) :bat[:dbl]
+pattern batsql.avg(b:bat[:dbl], s:bat[:lng], e:bat[:lng]) :bat[:dbl]
 address SQLavg
 comment "return the average of groups";
 

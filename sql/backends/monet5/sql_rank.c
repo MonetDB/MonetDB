@@ -68,11 +68,11 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
-		bat *res1 = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, has_partitions ? 2 : 1)), *p, *r;
+		bat *res = getArgReference_bat(stk, pci, 0);
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, has_partitions ? 2 : 1)), *p = NULL, *r, *l = NULL;
 		int unit = *getArgReference_int(stk, pci, has_partitions ? 3 : 2);
-		int excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3);
-		int limit = *getArgReference_int(stk, pci, has_partitions ? 5 : 4);
+		int excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3), limit_pos = has_partitions ? 5 : 4;
+		lng limit = 0;
 		gdk_return gdk_code;
 
 		assert(unit >= 0 && unit <= 3);
@@ -80,32 +80,49 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 		if (excl != 0)
 			throw(SQL, mod, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
 
-		if(limit < 0)
-			throw(SQL, mod, SQLSTATE(42000) "The limit value cannot be negative");
 		if (!b)
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
-		voidresultBAT(r, TYPE_int, BATcount(b), b, mod);
-		if (has_partitions) {
-			p = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-			if (!p) {
+		voidresultBAT(r, TYPE_lng, BATcount(b), b, mod);
+		if(isaBatType(getArgType(mb, pci, limit_pos))) {
+			l = BATdescriptor(*getArgReference_bat(stk, pci, limit_pos));
+			if (!l) {
 				BBPunfix(b->batCacheid);
 				throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
-			gdk_code = GDKanalyticalwindowbounds(r, b, p, b->ttype, unit, (BUN) limit, flow);
-			BBPunfix(p->batCacheid);
+			for(lng *lp = (lng*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend; lp++) {
+				if(*lp < 0) {
+					BBPunfix(b->batCacheid);
+					BBPunfix(l->batCacheid);
+					throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
+				}
+			}
 		} else {
-			gdk_code = GDKanalyticalwindowbounds(r, b, NULL, b->ttype, unit, (BUN) limit, flow);
+			limit = *getArgReference_lng(stk, pci, limit_pos);
+			if(limit < 0)
+				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
 		}
+		if (has_partitions) {
+			p = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+			if (!p) {
+				if(l) BBPunfix(l->batCacheid);
+				BBPunfix(b->batCacheid);
+				throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
+
+		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, b->ttype, unit, flow);
+		if(l) BBPunfix(l->batCacheid);
+		if(p) BBPunfix(p->batCacheid);
 		BBPunfix(b->batCacheid);
 		if(gdk_code == GDK_SUCCEED) {
-			BBPkeepref(*res1 = r->batCacheid);
+			BBPkeepref(*res = r->batCacheid);
 		} else {
 			throw(SQL, mod, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	} else {
-		int *res = getArgReference_int(stk, pci, 0);
+		lng *res = getArgReference_lng(stk, pci, 0);
 
-		*res = 0;
+		*res = flow ? 0 : 1;
 	}
 	return MAL_SUCCEED;
 }
@@ -638,8 +655,8 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **s, BAT **e, Client cntxt, MalBlkPtr mb
 	*r = *b = *s = *e = NULL;
 
 	(void)cntxt;
-	if (pci->argc != 4 || ((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 2)) != TYPE_int) ||
-		 (isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_int))) {
+	if (pci->argc != 4 || ((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 2)) != TYPE_lng) ||
+		 (isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_lng))) {
 		throw(SQL, mod, "%s", err);
 	}
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -1035,13 +1052,13 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 str
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.min", SQLSTATE(42000) "min(:any_1,:int,:int)", GDKanalyticalmin);
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.min", SQLSTATE(42000) "min(:any_1,:lng,:lng)", GDKanalyticalmin);
 }
 
 str
 SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:int,:int)", GDKanalyticalmax);
+	return SQLanalytical_func(cntxt, mb, stk, pci, "sql.max", SQLSTATE(42000) "max(:any_1,:lng,:lng)", GDKanalyticalmax);
 }
 
 str
@@ -1054,9 +1071,9 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	if (pci->argc != 5 || getArgType(mb, pci, 2) != TYPE_bit ||
-		(getArgType(mb, pci, 3) != TYPE_int && getBatType(getArgType(mb, pci, 3)) != TYPE_int) ||
-		(getArgType(mb, pci, 4) != TYPE_int && getBatType(getArgType(mb, pci, 4)) != TYPE_int)) {
-		throw(SQL, "sql.count", "%s", "count(:any_1,:bit,:int,:int)");
+		(getArgType(mb, pci, 3) != TYPE_lng && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
+		(getArgType(mb, pci, 4) != TYPE_lng && getBatType(getArgType(mb, pci, 4)) != TYPE_lng)) {
+		throw(SQL, "sql.count", "%s", "count(:any_1,:bit,:lng,:lng)");
 	}
 	tpe = getArgType(mb, pci, 1);
 	ignore_nils = getArgReference_bit(stk, pci, 2);
@@ -1124,8 +1141,8 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
-	if (((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 2)) != TYPE_int) ||
-		(isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_int))) {
+	if (((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 2)) != TYPE_lng) ||
+		(isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_lng))) {
 		throw(SQL, op, "%s", err);
 	}
 	tp1 = getArgType(mb, pci, 1);
@@ -1243,14 +1260,14 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 str
 SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.sum", SQLSTATE(42000) "sum(:any_1,:int,:int)",
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.sum", SQLSTATE(42000) "sum(:any_1,:lng,:lng)",
 								 GDKanalyticalsum);
 }
 
 str
 SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", SQLSTATE(42000) "prod(:any_1,:int,:int)",
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", SQLSTATE(42000) "prod(:any_1,:lng,:lng)",
 								 GDKanalyticalprod);
 }
 
@@ -1259,7 +1276,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *r, *b, *s, *e;
 	str msg = SQLanalytics_args(&r, &b, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg",
-								SQLSTATE(42000) "avg(:any_1,:int,:int)");
+								SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
 	int tpe = getArgType(mb, pci, 1);
 	gdk_return gdk_res;
 
