@@ -4703,7 +4703,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		dnode *d = window_specification->h->next->next->data.sym->data.lval->h;
 		exp_kind ek = {type_value, card_column, FALSE};
 		int excl = d->next->next->next->data.i_val;
-		unsigned char sclass, eclass;
+		sql_subtype* st, *et;
+		unsigned char sclass = 0, eclass = 0;
 		frame_type = d->next->next->data.i_val;
 
 		if(!aggr)
@@ -4728,16 +4729,20 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		fstart = rel_value_exp2(sql, &p, d->data.sym, f, ek, &is_last);
 		if(!fstart)
 			return NULL;
-		sclass = fstart->tpe.type->eclass;
-		if(!(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)))
+		st = exp_subtype(fstart);
+		if(st)
+			sclass = st->type->eclass;
+		if(!st || !(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)))
 			return sql_error(sql, 02, SQLSTATE(42000) "PRECEDING offset column must be of a countable SQL type");
 
 		is_last = 0;
 		fend = rel_value_exp2(sql, &p, d->next->data.sym, f, ek, &is_last);
 		if (!fend)
 			return NULL;
-		eclass = fend->tpe.type->eclass;
-		if(!(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass)))
+		et = exp_subtype(fend);
+		if(et)
+			eclass = et->type->eclass;
+		if(!et || !(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass)))
 			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset column must be of a countable SQL type");
 
 		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, excl) == NULL)

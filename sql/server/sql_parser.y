@@ -4190,9 +4190,9 @@ window_frame_extent:
   ;
 
 window_frame_start:
-	UNBOUNDED PRECEDING	{ sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, GDK_lng_max)); }
-  |	value_exp PRECEDING	{ $$ = $1; }
-  |	CURRENT ROW			{ sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, 0)); }
+	UNBOUNDED PRECEDING   { sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, GDK_lng_max)); }
+  |	simple_atom PRECEDING { $$ = $1; }
+  |	CURRENT ROW			  { sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, 0)); }
   ;
 
 window_frame_between:
@@ -4200,9 +4200,9 @@ window_frame_between:
   ;
 
 window_frame_end:
-	UNBOUNDED FOLLOWING	{ sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, GDK_lng_max)); }
-  |	value_exp FOLLOWING	{ $$ = $1; }
-  |	CURRENT ROW			{ sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, 0)); }
+	UNBOUNDED FOLLOWING   { sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, GDK_lng_max)); }
+  |	simple_atom FOLLOWING { $$ = $1; }
+  |	CURRENT ROW			  { sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, 0)); }
   ;
 
 window_frame_exclusion:
