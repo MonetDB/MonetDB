@@ -140,7 +140,9 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			rlimit = (TPE) BOUNDF;                      \
 			v = *pbp;                                   \
 			for(bs=pbp-1; bs>bl; bs--, curval++) {      \
-				if (ABSOLUTE(v - *bs) > rlimit)         \
+				TPE calc;                               \
+				SUB_WITH_CHECK(TPE, v, TPE, *bs, TPE, calc, GDK_##TPE##_max, goto calc_overflow); \
+				if (ABSOLUTE(calc) > rlimit)            \
 					break;                              \
 			}                                           \
 			*rb = curval;                               \
@@ -155,7 +157,9 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			rlimit = (TPE) BOUNDF;                    \
 			v = *pbp;                                 \
 			for(bs=pbp+1; bs<bp; bs++, curval++) {    \
-				if (ABSOLUTE(v - *bs) > rlimit)       \
+				TPE calc;                             \
+				SUB_WITH_CHECK(TPE, v, TPE, *bs, TPE, calc, GDK_##TPE##_max, goto calc_overflow); \
+				if (ABSOLUTE(calc) > rlimit)          \
 					break;                            \
 			}                                         \
 			*rb = curval;                             \
@@ -490,11 +494,12 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 gdk_return
 GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit, bool start)
 {
-	BUN i = 0, k = 0, ncnt, cnt = BATcount(b);
+	BUN i = 0, k = 0, ncnt, cnt = BATcount(b), nils = 0;
 	lng *restrict rb = (lng*) Tloc(r, 0);
 	bit *np = p ? (bit*) Tloc(p, 0) : NULL, *pnp = np, *nend = np;
 	BATiter bpi = bat_iterator(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp1);
+	int abort_on_error = 1;
 
 	if (unit == 3) { //special case, there are no boundaries
 		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL, NO_BOUNDARIES, NO_BOUNDARIES)
@@ -523,9 +528,14 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 				return GDK_FAIL;
 		}
 	}
+	goto finish;
+calc_overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return GDK_FAIL;
+finish:
 	BATsetcount(r, cnt);
-	r->tnonil = true;
-	r->tnil = false;
+	r->tnonil = (nils == 0);
+	r->tnil = (nils > 0);
 	return GDK_SUCCEED;
 }
 

@@ -52,7 +52,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.diff", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.diff", GDK_EXCEPTION);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 
@@ -74,7 +74,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 			excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3),
 			limit_pos = has_partitions ? 5 : 4, tpe = getArgType(mb, pci, limit_pos);
 		void* limit = NULL;
-		bool is_negative = false;
+		bool is_negative = false, is_null = false;
 		gdk_return gdk_code;
 
 		assert(unit >= 0 && unit <= 3);
@@ -94,25 +94,35 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 			}
 			switch (tpe) {
 				case TYPE_bte:
-					for(bte *lp = (bte*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+					for(bte *lp = (bte*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
+						is_null |= is_bte_nil(*lp);
 						is_negative |= (*lp < 0);
+					}
 					break;
 				case TYPE_sht:
-					for(sht *lp = (sht*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+					for(sht *lp = (sht*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
+						is_null |= is_sht_nil(*lp);
 						is_negative |= (*lp < 0);
+					}
 					break;
 				case TYPE_int:
-					for(int *lp = (int*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+					for(int *lp = (int*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
+						is_null |= is_int_nil(*lp);
 						is_negative |= (*lp < 0);
+					}
 					break;
 				case TYPE_lng:
-					for(lng *lp = (lng*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+					for(lng *lp = (lng*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
+						is_null |= is_lng_nil(*lp);
 						is_negative |= (*lp < 0);
+					}
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					for(hge *lp = (hge*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++)
+					for(hge *lp = (hge*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
+						is_null |= is_hge_nil(*lp);
 						is_negative |= (*lp < 0);
+					}
 					break;
 #endif
 				default: {
@@ -121,9 +131,11 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 					throw(SQL, mod, SQLSTATE(42000) "%s limit not available for %s", mod, ATOMname(tpe));
 				}
 			}
-			if(is_negative) {
+			if(is_null || is_negative) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(l->batCacheid);
+				if(is_null)
+					throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-null", flow ? "PRECEDING" : "FOLLOWING");
 				throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
 			}
 		} else {
@@ -131,23 +143,28 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 
 			switch (tpe) {
 				case TYPE_bte:
+					is_null = is_bte_nil(vlimit->val.btval);
 					is_negative = vlimit->val.btval < 0;
 					limit = &vlimit->val.btval;
 					break;
 				case TYPE_sht:
+					is_null = is_sht_nil(vlimit->val.shval);
 					is_negative = vlimit->val.shval < 0;
 					limit = &vlimit->val.shval;
 					break;
 				case TYPE_int:
+					is_null = is_int_nil(vlimit->val.ival);
 					is_negative = vlimit->val.ival < 0;
 					limit = &vlimit->val.ival;
 					break;
 				case TYPE_lng:
+					is_null = is_lng_nil(vlimit->val.lval);
 					is_negative = vlimit->val.lval < 0;
 					limit = &vlimit->val.lval;
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
+					is_null = is_hge_nil(vlimit->val.hval);
 					is_negative = vlimit->val.hval < 0;
 					limit = &vlimit->val.hval;
 					break;
@@ -157,6 +174,8 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 					throw(SQL, mod, SQLSTATE(42000) "%s limit is not available for %s", mod, ATOMname(tpe));
 				}
 			}
+			if(is_null)
+				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-null", flow ? "PRECEDING" : "FOLLOWING");
 			if(is_negative)
 				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
 		}
@@ -176,7 +195,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 		if(gdk_code == GDK_SUCCEED) {
 			BBPkeepref(*res = r->batCacheid);
 		} else {
-			throw(SQL, mod, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, mod, GDK_EXCEPTION);
 		}
 	} else {
 		lng *res = getArgReference_lng(stk, pci, 0);
@@ -673,7 +692,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.ntile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.ntile", GDK_EXCEPTION);
 	} else {
 		ptr res = getArgReference_ptr(stk, pci, 0);
 		ptr in = getArgReference_ptr(stk, pci, 1);
@@ -803,7 +822,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const st
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			return createException(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, op, GDK_EXCEPTION);
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
@@ -914,7 +933,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, "sql.nth_value", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.nth_value", GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
@@ -1046,7 +1065,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			throw(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, op, GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *vin = &(stk)->stk[(pci)->argv[1]];
@@ -1099,7 +1118,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			return createException(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, op, GDK_EXCEPTION);
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
@@ -1176,7 +1195,7 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			return createException(SQL, "sql.count", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.count", GDK_EXCEPTION);
 	} else {
 		lng *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
@@ -1261,7 +1280,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			return createException(SQL, op, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, op, GDK_EXCEPTION);
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
@@ -1354,7 +1373,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
-			return createException(SQL, "sql.avg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL, "sql.avg", GDK_EXCEPTION);
 	} else {
 		ptr *res = getArgReference(stk, pci, 0);
 		ptr *in = getArgReference(stk, pci, 1);
