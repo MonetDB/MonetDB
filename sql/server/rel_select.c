@@ -4712,16 +4712,19 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if(!obe && frame_type == FRAME_GROUPS)
 			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
 		if(!obe && frame_type == FRAME_RANGE) {
-			atom *a = NULL;
+			bool ok_preceding = false, ok_following = false;
 			if(d->data.sym->token == SQL_ATOM) {
-				a = ((AtomNode*) d->data.sym)->a;
-				if(a->data.vtype == TYPE_lng && a->data.val.lval == GDK_lng_max)
-					return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING offset requires an order by expression");
-			} else if(d->next->data.sym->token == SQL_ATOM) {
-				a = ((AtomNode*) d->next->data.sym)->a;
-				if(a->data.vtype == TYPE_lng && a->data.val.lval == GDK_lng_max)
-					return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with FOLLOWING offset requires an order by expression");
+				atom *a = ((AtomNode*) d->data.sym)->a;
+				if(a->data.vtype == TYPE_lng && (a->data.val.lval == 0 || a->data.val.lval == GDK_lng_max))
+					ok_preceding = true;
 			}
+			if(d->next->data.sym->token == SQL_ATOM) {
+				atom *a = ((AtomNode*) d->next->data.sym)->a;
+				if(a->data.vtype == TYPE_lng && (a->data.val.lval == 0 || a->data.val.lval == GDK_lng_max))
+					ok_following = true;
+			}
+			if(!ok_preceding || !ok_following)
+				return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING/FOLLOWING offset requires an order by expression");
 			frame_type = FRAME_ALL; //special case, iterate the entire partition
 		}
 
