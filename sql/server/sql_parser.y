@@ -620,7 +620,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
-%token LIMIT OFFSET SAMPLE
+%token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
@@ -3591,14 +3591,37 @@ opt_offset:
 opt_sample:
 	/* empty */	{ $$ = NULL; }
  |  SAMPLE poslng	{
-		  	  sql_subtype *t = sql_bind_localtype("lng");
-			  $$ = _newAtomNode( atom_int(SA, t, $2));
+
+	 				dlist *l = L();
+
+					 append_symbol(l,
+					 	_newAtomNode( atom_int(SA, sql_bind_localtype("lng"), $2)) );
+
+			  $$ = _symbol_create_list(SQL_SAMPLE, l);
 			}
  |  SAMPLE INTNUM	{
-		  	  sql_subtype *t = sql_bind_localtype("dbl");
-			  $$ = _newAtomNode( atom_float(SA, t, strtod($2,NULL)));
+
+	 				dlist *l = L();
+
+				append_symbol(l,
+					 	_newAtomNode( atom_float(SA, sql_bind_localtype("dbl"), strtod($2,NULL))) );
+
+			  $$ = _symbol_create_list(SQL_SAMPLE, l);
 			}
  |  SAMPLE param	{ $$ = $2; }
+
+ |  SAMPLE poslng SEED intval	{
+
+	 				dlist *l = L();
+
+					 append_symbol(l,
+					 	_newAtomNode( atom_int(SA, sql_bind_localtype("lng"), $2)) );
+
+					append_symbol(l,
+					 	_newAtomNode( atom_int(SA, sql_bind_localtype("int"), $4)) );
+
+			  $$ = _symbol_create_list(SQL_SAMPLE, l);
+		}
  ;
 
 sort_specification_list:

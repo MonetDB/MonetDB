@@ -210,6 +210,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LIKE", LIKE);
 	failed += keywords_insert("LIMIT", LIMIT);
 	failed += keywords_insert("SAMPLE", SAMPLE);
+	failed += keywords_insert("SEED", SEED);
 	failed += keywords_insert("LOCAL", LOCAL);
 	failed += keywords_insert("LOCKED", LOCKED);
 	failed += keywords_insert("NATURAL", NATURAL);

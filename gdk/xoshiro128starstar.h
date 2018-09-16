@@ -10,7 +10,7 @@ typedef uint32_t random_state_engine[4];
 void init_random_state_engine(random_state_engine* engine, uint32_t seed);
 void init_random_state_engine(random_state_engine* engine, uint32_t seed) {
 
-    random_state_engine s = { seed };
+    random_state_engine s = { seed << 1, seed + 1, seed >> 1, seed - 1 };
 
     memcpy(engine, &s, sizeof(random_state_engine));
 }
