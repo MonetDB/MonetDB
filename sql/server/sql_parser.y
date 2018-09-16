@@ -243,6 +243,7 @@ int yydebug=1;
 	opt_limit
 	opt_offset
 	opt_sample
+	opt_seed
 	param
 	case_exp
 	case_scalar_exp
@@ -3590,39 +3591,38 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poslng	{
+ |  SAMPLE poslng opt_seed	{
 
 	 				dlist *l = L();
 
 					 append_symbol(l,
 					 	_newAtomNode( atom_int(SA, sql_bind_localtype("lng"), $2)) );
 
+					if ($3)
+						append_symbol(l,$3);
+
 			  $$ = _symbol_create_list(SQL_SAMPLE, l);
 			}
- |  SAMPLE INTNUM	{
+ |  SAMPLE INTNUM opt_seed	{
 
 	 				dlist *l = L();
 
 				append_symbol(l,
 					 	_newAtomNode( atom_float(SA, sql_bind_localtype("dbl"), strtod($2,NULL))) );
+				
+				if ($3)
+						append_symbol(l,$3);
 
 			  $$ = _symbol_create_list(SQL_SAMPLE, l);
 			}
  |  SAMPLE param	{ $$ = $2; }
-
- |  SAMPLE poslng SEED intval	{
-
-	 				dlist *l = L();
-
-					 append_symbol(l,
-					 	_newAtomNode( atom_int(SA, sql_bind_localtype("lng"), $2)) );
-
-					append_symbol(l,
-					 	_newAtomNode( atom_int(SA, sql_bind_localtype("int"), $4)) );
-
-			  $$ = _symbol_create_list(SQL_SAMPLE, l);
-		}
  ;
+
+ opt_seed:
+	/* empty */	{ $$ = NULL; }
+ | SEED intval {
+			  $$ = _newAtomNode( atom_int(SA, sql_bind_localtype("int"), $2));
+ }
 
 sort_specification_list:
     ordering_spec	 { $$ = append_symbol(L(), $1); }
