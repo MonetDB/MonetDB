@@ -4436,11 +4436,13 @@ check_duplicated_expression(void *data, void *key)
 /* window functions */
 static sql_exp*
 calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e,
-						sql_exp *start, sql_exp *fend, int frame_type, int excl)
+						sql_exp *start, sql_exp *fend, int frame_type, int excl, int t1, int t2)
 {
 	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs1 = sa_list(sql->sa), *targs2 = sa_list(sql->sa);
 	sql_subfunc *dc1, *dc2;
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *it = sql_bind_localtype("int"), *bit = sql_bind_localtype("bit");
+	const char* f1 = (t1 != SQL_FOLLOWING) ? "window_preceding_bound" : "window_following_bound";
+	const char* f2 = (t2 != SQL_PRECEDING) ? "window_following_bound" : "window_preceding_bound";
 
 	if(pe) {
 		append(targs1, exp_subtype(pe));
@@ -4456,19 +4458,23 @@ calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *
 	append(targs2, it);
 	append(targs1, it);
 	append(targs2, it);
+	append(targs1, bit);
+	append(targs2, bit);
 	append(targs1, exp_subtype(start));
 	append(targs2, exp_subtype(fend));
 
-	dc1 = sql_bind_func_(sql->sa, s, "window_start_bound", targs1, F_ANALYTIC);
-	dc2 = sql_bind_func_(sql->sa, s, "window_end_bound", targs2, F_ANALYTIC);
+	dc1 = sql_bind_func_(sql->sa, s, f1, targs1, F_ANALYTIC);
+	dc2 = sql_bind_func_(sql->sa, s, f2, targs2, F_ANALYTIC);
 	if (!dc1)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'window_start_bound' not found");
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", f1);
 	if (!dc2)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'window_end_bound' not found");
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", f2);
 	append(rargs1, exp_atom_int(sql->sa, frame_type));
 	append(rargs2, exp_atom_int(sql->sa, frame_type));
 	append(rargs1, exp_atom_int(sql->sa, excl));
 	append(rargs2, exp_atom_int(sql->sa, excl));
+	append(rargs1, exp_atom_bool(sql->sa, 0));
+	append(rargs2, exp_atom_bool(sql->sa, 1));
 	append(rargs1, start);
 	append(rargs2, fend);
 
@@ -4702,6 +4708,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if(window_specification->h->next->next->data.sym) {
 		dnode *d = window_specification->h->next->next->data.sym->data.lval->h;
 		exp_kind ek = {type_value, card_column, FALSE};
+		symbol *wstart = d->data.sym, *wend = d->next->data.sym, *rstart = wstart->data.lval->h->data.sym,
+			   *rend = wend->data.lval->h->data.sym;
 		int excl = d->next->next->next->data.i_val;
 		sql_subtype* st, *et;
 		unsigned char sclass = 0, eclass = 0;
@@ -4711,15 +4719,21 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation");
 		if(!obe && frame_type == FRAME_GROUPS)
 			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
+		if(wstart->token == SQL_FOLLOWING && wend->token == SQL_PRECEDING)
+			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must come after PRECEDING offset");
+		if(wstart->token == SQL_CURRENT_ROW && wend->token == SQL_PRECEDING)
+			return sql_error(sql, 02, SQLSTATE(42000) "CURRENT ROW offset must come after PRECEDING offset");
+		if(wstart->token == SQL_FOLLOWING && wend->token == SQL_CURRENT_ROW)
+			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must come after CURRENT ROW offset");
 		if(!obe && frame_type == FRAME_RANGE) {
 			bool ok_preceding = false, ok_following = false;
-			if(d->data.sym->token == SQL_ATOM) {
-				atom *a = ((AtomNode*) d->data.sym)->a;
+			if(rstart->token == SQL_ATOM) {
+				atom *a = ((AtomNode*) rstart)->a;
 				if(a->data.vtype == TYPE_lng && (a->data.val.lval == 0 || a->data.val.lval == GDK_lng_max))
 					ok_preceding = true;
 			}
-			if(d->next->data.sym->token == SQL_ATOM) {
-				atom *a = ((AtomNode*) d->next->data.sym)->a;
+			if(rend->token == SQL_ATOM) {
+				atom *a = ((AtomNode*) rend)->a;
 				if(a->data.vtype == TYPE_lng && (a->data.val.lval == 0 || a->data.val.lval == GDK_lng_max))
 					ok_following = true;
 			}
@@ -4729,26 +4743,27 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		}
 
 		is_last = 0;
-		fstart = rel_value_exp2(sql, &p, d->data.sym, f, ek, &is_last);
+		fstart = rel_value_exp2(sql, &p, rstart, f, ek, &is_last);
 		if(!fstart)
 			return NULL;
 		st = exp_subtype(fstart);
 		if(st)
 			sclass = st->type->eclass;
 		if(!st || !(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)))
-			return sql_error(sql, 02, SQLSTATE(42000) "PRECEDING offset column must be of a countable SQL type");
+			return sql_error(sql, 02, SQLSTATE(42000) "PRECEDING offset must be of a countable SQL type");
 
 		is_last = 0;
-		fend = rel_value_exp2(sql, &p, d->next->data.sym, f, ek, &is_last);
+		fend = rel_value_exp2(sql, &p, rend, f, ek, &is_last);
 		if (!fend)
 			return NULL;
 		et = exp_subtype(fend);
 		if(et)
 			eclass = et->type->eclass;
 		if(!et || !(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass)))
-			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset column must be of a countable SQL type");
+			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must be of a countable SQL type");
 
-		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, excl) == NULL)
+		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend,
+								   frame_type, excl, wstart->token, wend->token) == NULL)
 			return NULL;
 	} else if (aggr) {
 		fstart = exp_atom_lng(sql->sa, GDK_lng_max);
@@ -4756,7 +4771,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 		if(!obe)
 			frame_type = FRAME_ALL;
-		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend, frame_type, EXCLUDE_NONE) == NULL)
+
+		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend,
+								   frame_type, EXCLUDE_NONE, SQL_PRECEDING, SQL_FOLLOWING) == NULL)
 			return NULL;
 	}
 

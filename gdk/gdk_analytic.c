@@ -102,44 +102,44 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #undef ANALYTICAL_DIFF_IMP
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_START(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_PRECEDING(TPE, BOUNDF) \
 	do {                                             \
 		TPE *bl = pbp;                               \
 		for(; pbp<bp; pbp++, rb++) {                 \
 			lng rlimit = BOUNDF;                     \
-			*rb = MIN(pbp - bl, rlimit);             \
+			*rb = -MIN(pbp - bl, rlimit - inc_last); \
 		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_END(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FOLLOWING(TPE, BOUNDF) \
 	do {                                             \
 		for(; pbp<bp; pbp++, rb++) {                 \
 			lng rlimit = BOUNDF;                     \
-			*rb = MIN(bp - pbp-1, rlimit) + 1;       \
+			*rb = MIN(bp - pbp - inc_last, rlimit) + inc_last; \
 		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_START(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_PRECEDING(TPE, BOUNDF) \
 	do {                                                  \
 		TPE *bl = pbp;                                    \
 		for(; pbp<bp; pbp++, rb++)                        \
-			*rb = (lng)(pbp - bl);                        \
+			*rb = -(lng)(pbp - bl);                       \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_END(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_FOLLOWING(TPE, BOUNDF) \
 	do {                                                  \
 		for(; pbp<bp; pbp++, rb++)                        \
 			*rb = (lng)(bp - pbp);                        \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_START(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_PRECEDING(TPE, BOUNDF) \
 	do {                                                \
 		TPE *bl = pbp-1, *bs, v, rlimit;                \
 		for(; pbp<bp; pbp++, rb++) {                    \
-			lng curval = 0;                             \
+			lng curval = -inc_last;                     \
 			rlimit = (TPE) BOUNDF;                      \
 			v = *pbp;                                   \
-			for(bs=pbp-1; bs>bl; bs--, curval++) {      \
+			for(bs=pbp-1; bs>bl; bs--, curval--) {      \
 				TPE calc;                               \
 				SUB_WITH_CHECK(TPE, v, TPE, *bs, TPE, calc, GDK_##TPE##_max, goto calc_overflow); \
 				if (ABSOLUTE(calc) > rlimit)            \
@@ -149,11 +149,11 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                               \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_END(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FOLLOWING(TPE, BOUNDF) \
 	do {                                              \
 		TPE *bs, v, rlimit;                           \
 		for(; pbp<bp; pbp++, rb++) {                  \
-			lng curval = 1;                           \
+			lng curval = inc_last;                    \
 			rlimit = (TPE) BOUNDF;                    \
 			v = *pbp;                                 \
 			for(bs=pbp+1; bs<bp; bs++, curval++) {    \
@@ -166,14 +166,14 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_START(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_PRECEDING(TPE, BOUNDF) \
 	do {                                                 \
 		TPE *bl = pbp-1, *bs, v;                         \
 		for(; pbp<bp; pbp++, rb++) {                     \
-			lng curval = 0;                              \
+			lng curval = -inc_last;                      \
 			BUN rlimit = (BUN) BOUNDF;                   \
 			v = *pbp;                                    \
-			for(bs=pbp-1; bs>bl; bs--, curval++) {       \
+			for(bs=pbp-1; bs>bl; bs--, curval--) {       \
 				if(v != *bs) {                           \
 					if(rlimit == 0)                      \
 						break;                           \
@@ -185,11 +185,11 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                                \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_END(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FOLLOWING(TPE, BOUNDF) \
 	do {                                               \
 		TPE *bs, v;                                    \
 		for(; pbp<bp; pbp++, rb++) {                   \
-			lng curval = 1;                            \
+			lng curval = inc_last;                     \
 			BUN rlimit = (BUN) BOUNDF;                 \
 			v = *pbp;                                  \
 			for(bs=pbp+1; bs<bp; bs++, curval++) {     \
@@ -204,14 +204,14 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                              \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_START(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_PRECEDING(TPE, BOUNDF) \
 	do {                                              \
 		lng curval = 0;                               \
 		for(; pbp<bp; pbp++, rb++)                    \
-			*rb = curval++;                           \
+			*rb = curval--;                           \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_END(TPE, BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_FOLLOWING(TPE, BOUNDF) \
 	do {                                            \
 		lng curval = ncnt + 1;                      \
 		for(; pbp<bp; pbp++, rb++)                  \
@@ -222,25 +222,25 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	do {                                   \
 		TPE *pbp, *bp;                     \
 		pbp = bp = (TPE*)Tloc(b, 0);       \
-		if(start) {                        \
+		if(preceding) {                    \
 			if(np) {                       \
 				nend += cnt;               \
 				for(; np<nend; np++) {     \
 					if (*np) {             \
 						ncnt = (np - pnp); \
 						bp += ncnt;        \
-						IMP##_START(TPE, BOUNDF) \
+						IMP##_PRECEDING(TPE, BOUNDF) \
 						pnp = np;          \
 						pbp = bp;          \
 					}                      \
 				}                          \
 				ncnt = (np - pnp);         \
 				bp += ncnt;                \
-				IMP##_START(TPE, BOUNDF)   \
+				IMP##_PRECEDING(TPE, BOUNDF) \
 			} else {                       \
 				ncnt = cnt;                \
 				bp += ncnt;                \
-				IMP##_START(TPE, BOUNDF)   \
+				IMP##_PRECEDING(TPE, BOUNDF) \
 			}                              \
 		} else if(np) {                    \
 			nend += cnt;                   \
@@ -248,31 +248,31 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				if (*np) {                 \
 				ncnt = (np - pnp);         \
 					bp += ncnt;            \
-					IMP##_END(TPE, BOUNDF) \
+					IMP##_FOLLOWING(TPE, BOUNDF) \
 					pnp = np;              \
 					pbp = bp;              \
 				}                          \
 			}                              \
 			ncnt = (np - pnp);             \
 			bp += ncnt;                    \
-			IMP##_END(TPE, BOUNDF)         \
+			IMP##_FOLLOWING(TPE, BOUNDF)   \
 		} else {                           \
 			ncnt = cnt;                    \
 			bp += ncnt;                    \
-			IMP##_END(TPE, BOUNDF)         \
+			IMP##_FOLLOWING(TPE, BOUNDF)   \
 		}                                  \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_START(BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_PRECEDING(BOUNDF) \
 	do {                                             \
 		BUN m = k;                                   \
 		for(; k<i; k++, rb++) {                      \
 			lng rlimit = BOUNDF;                     \
-			*rb = MIN((lng)(k - m), rlimit);         \
+			*rb = -MIN((lng)(k - m), rlimit);        \
 		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_END(BOUNDF) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FOLLOWING(BOUNDF) \
 	do {                                             \
 		for(; k<i; k++, rb++) {                      \
 			lng rlimit = BOUNDF;                     \
@@ -280,20 +280,20 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_START(BOUNDV) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_PRECEDING(BOUNDV) \
 	do {                                                  \
 		BUN j = k;                                        \
 		for(; k<i; k++, rb++)                             \
-			*rb = (k - j);                                \
+			*rb = -(lng)(k - j);                          \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_END(BOUNDV) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_FOLLOWING(BOUNDV) \
 	do {                                                \
 		for(; k<i; k++, rb++)                           \
 			*rb = (i - k);                              \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_START(BOUNDV) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_PRECEDING(BOUNDV) \
 	do {                                              \
 		BUN j;                                        \
 		*rb = 0; /* the first element's window size is hardcoded to avoid overflow in BUN */ \
@@ -301,9 +301,9 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		k++;                                          \
 		j = k - 1;                                    \
 		for(; k<i; k++, rb++) {                       \
-			lng curval = 1;                           \
+			lng curval = -inc_last;                   \
 			void *v = BUNtail(bpi, k);                \
-			for(BUN l=k-1; l>j; l--, curval++) {      \
+			for(BUN l=k-1; l>j; l--, curval--) {      \
 				if (ABSOLUTE(atomcmp(v, BUNtail(bpi, l))) > BOUNDV) \
 					break;                            \
 			}                                         \
@@ -311,10 +311,10 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                             \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_END(BOUNDV) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FOLLOWING(BOUNDV) \
 	do {                                            \
 		for(; k<i; k++, rb++) {                     \
-			lng curval = 1;                         \
+			lng curval = inc_last;                  \
 			void *v = BUNtail(bpi, k);              \
 			for(BUN l=k+1; l<i; l++, curval++) {    \
 				if (ABSOLUTE(atomcmp(v, BUNtail(bpi, l))) > BOUNDV) \
@@ -324,7 +324,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                           \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_START(BOUNDV) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_PRECEDING(BOUNDV) \
 	do {                                               \
 		BUN j;                                         \
 		*rb = 0; /* the first element's window size is hardcoded to avoid overflow in BUN */ \
@@ -332,10 +332,10 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		k++;                                           \
 		j = k - 1;                                     \
 		for(; k<i; k++, rb++) {                        \
-			lng curval = 1;                            \
+			lng curval = -inc_last;                    \
 			BUN rlimit = (BUN) BOUNDV;                 \
 			void *v = BUNtail(bpi, k);                 \
-			for(BUN l=k-1; l>j; l--, curval++) {       \
+			for(BUN l=k-1; l>j; l--, curval--) {       \
 				void *next = BUNtail(bpi, l);          \
 				if(atomcmp(v, next)) {                 \
 					if(rlimit == 0)                    \
@@ -348,10 +348,10 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                              \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_END(BOUNDV) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FOLLOWING(BOUNDV) \
 	do {                                             \
 		for(; k<i; k++, rb++) {                      \
-			lng curval = 1;                          \
+			lng curval = inc_last;                   \
 			BUN rlimit = (BUN) BOUNDV;               \
 			void *v = BUNtail(bpi, k);               \
 			for(BUN l=k+1; l<i; l++, curval++) {     \
@@ -367,14 +367,14 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                            \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_START(BOUNDV) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_PRECEDING(BOUNDV) \
 	do {                                            \
 		lng curval = 0;                             \
 		for(; k<i; k++, rb++)                       \
-			*rb = curval++;                         \
+			*rb = curval--;                         \
 	} while(0);
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_END(BOUNDV) \
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_FOLLOWING(BOUNDV) \
 	do {                                          \
 		lng curval = ncnt + 1;                    \
 		for(; k<i; k++, rb++)                     \
@@ -416,7 +416,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME, BOUNDF) \
 				break; \
 			default: { \
-				if(start) { \
+				if(preceding) { \
 					if (p) { \
 						pnp = np = (bit*)Tloc(p, 0); \
 						nend = np + cnt; \
@@ -424,17 +424,17 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 							if (*np) { \
 								ncnt = (np - pnp); \
 								i += ncnt; \
-								ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START(BOUNDV) \
+								ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_PRECEDING(BOUNDV) \
 								pnp = np; \
 							} \
 						} \
 						ncnt = (np - pnp); \
 						i += ncnt; \
-						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START(BOUNDV) \
+						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_PRECEDING(BOUNDV) \
 					} else { \
 						ncnt = cnt; \
 						i += ncnt; \
-						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_START(BOUNDV) \
+						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_PRECEDING(BOUNDV) \
 					} \
 				} else if (p) { \
 					pnp = np = (bit*)Tloc(p, 0); \
@@ -443,17 +443,17 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 						if (*np) { \
 							ncnt = (np - pnp); \
 							i += ncnt; \
-							ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END(BOUNDV) \
+							ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_FOLLOWING(BOUNDV) \
 							pnp = np; \
 						} \
 					} \
 					ncnt = (np - pnp); \
 					i += ncnt; \
-					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END(BOUNDV) \
+					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_FOLLOWING(BOUNDV) \
 				} else { \
 					ncnt = cnt; \
 					i += ncnt; \
-					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_END(BOUNDV) \
+					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##_FOLLOWING(BOUNDV) \
 				} \
 			} \
 		} \
@@ -492,14 +492,16 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	} while(0);
 
 gdk_return
-GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit, bool start)
+GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit, bool preceding, bool inc_inc_last)
 {
 	BUN i = 0, k = 0, ncnt, cnt = BATcount(b), nils = 0;
-	lng *restrict rb = (lng*) Tloc(r, 0);
+	lng *restrict rb = (lng*) Tloc(r, 0), inc_last = inc_inc_last ? 1 : 0;
 	bit *np = p ? (bit*) Tloc(p, 0) : NULL, *pnp = np, *nend = np;
 	BATiter bpi = bat_iterator(b);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp1);
 	int abort_on_error = 1;
+
+	assert(unit >= 0 && unit <= 3);
 
 	if (unit == 3) { //special case, there are no boundaries
 		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL, NO_BOUNDARIES, NO_BOUNDARIES)
@@ -539,26 +541,26 @@ finish:
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_START
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_END
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_START
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_END
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_START
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_END
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_START
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_END
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_START
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_END
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_START
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_END
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_START
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_END
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_START
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_END
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_START
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_END
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_START
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_END
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_UNBOUNDED_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_UNBOUNDED_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FOLLOWING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_PRECEDING
+#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FOLLOWING
 #undef ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED
 #undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES
 #undef ANALYTICAL_WINDOW_BOUNDS_LIMIT
@@ -1343,15 +1345,13 @@ finish:
 
 #define ANALYTICAL_MIN_MAX_CALC(TPE, OP)        \
 	do {                                        \
-		TPE *pbp, *bp, *bs, *be, v, curval, *restrict rb; \
+		TPE *pbp, *bp, *bs, *be, v, curval = TPE##_nil, *restrict rb; \
 		pbp = bp = (TPE*)Tloc(b, 0);            \
 		rb = (TPE*)Tloc(r, 0);                  \
 		bp += cnt;                              \
 		for(; pbp<bp; pbp++, i++, rb++) {       \
-			bs = pbp - start[i];                \
+			bs = pbp + start[i];                \
 			be = pbp + end[i];                  \
-			curval = *bs;                       \
-			bs++;                               \
 			for(; bs<be; bs++) {                \
 				v = *bs;                        \
 				if(!is_##TPE##_nil(v)) {        \
@@ -1364,7 +1364,8 @@ finish:
 			*rb = curval;                       \
 			if(is_##TPE##_nil(curval))          \
 				has_nils = true;                \
-			curval = TPE##_nil;                 \
+			else                                \
+				curval = TPE##_nil;             \
 		}                                       \
 	} while(0);
 
@@ -1419,7 +1420,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
 			void *curval; \
 			for(; i<cnt; i++) { \
-				j = i - start[i]; \
+				j = i + start[i]; \
 				l = i + end[i]; \
 				curval = (void *)nil; \
 				for (;j < l; j++) { \
@@ -1459,7 +1460,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		bp += cnt;                                  \
 		TPE *bs, *be;                               \
 		for(; pbp<bp; pbp++, i++, rb++) {           \
-			bs = pbp - start[i];                    \
+			bs = pbp + start[i];                    \
 			be = pbp + end[i];                      \
 			for(; bs<be; bs++)                      \
 				curval += !is_##TPE##_nil(*bs);     \
@@ -1471,7 +1472,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 #define ANALYTICAL_COUNT_NO_NIL_STR_IMP(TPE_CAST, OFFSET)                 \
 	do {                                                                  \
 		for(; i<cnt; i++, rb++) {                                         \
-			j = i - start[i];                                             \
+			j = i + start[i];                                             \
 			l = i + end[i];                                               \
 			for(; j<l; j++)                                               \
 				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
@@ -1483,9 +1484,8 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_nils, int tpe)
 {
-	BUN i = 0, j = 0, l = 0, cnt = BATcount(b);
 	gdk_return gdk_res = GDK_SUCCEED;
-	lng *restrict rb = (lng*)Tloc(r, 0), *restrict start, *restrict end, curval = 0;
+	lng *restrict rb = (lng*)Tloc(r, 0), *restrict start, *restrict end, curval = 0, i = 0, j = 0, l = 0, cnt = BATcount(b);
 
 	assert(s && e && ignore_nils);
 	start = (lng*)Tloc(s, 0);
@@ -1493,7 +1493,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 
 	if(!*ignore_nils || b->T.nonil) {
 		for(; i<cnt; i++, rb++)
-			*rb = (start[i] + end[i]);
+			*rb = (end[i] > start[i]) ? (end[i] - start[i]) : 0;
 	} else {
 		switch (tpe) {
 			case TYPE_bit:
@@ -1550,7 +1550,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 					const char *restrict base = b->tvheap->base;
 					const void *restrict bp = Tloc(b, 0);
 					for(; i<cnt; i++, rb++) {
-						j = i - start[i];
+						j = i + start[i];
 						l = i + end[i];
 						for(; j<l; j++)
 							curval += (*cmp)(nil, base + ((const var_t *) bp)[j]) != 0;
@@ -1559,7 +1559,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 					}
 				} else {
 					for(; i<cnt; i++, rb++) {
-						j = i - start[i];
+						j = i + start[i];
 						l = i + end[i];
 						for(; j<l; j++)
 							curval += (*cmp)(Tloc(b, j), nil) != 0;
@@ -1583,7 +1583,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 	do {                                        \
 		TPE1 *bs, *be, v;                       \
 		for(; pbp<bp; pbp++, i++, rb++) {       \
-			bs = pbp - start[i];                \
+			bs = pbp + start[i];                \
 			be = pbp + end[i];                  \
 			for(; bs<be; bs++) {                \
 				v = *bs;                        \
@@ -1607,7 +1607,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 		TPE1 *bs, *be;                          \
 		BUN parcel;                             \
 		for(; pbp<bp; pbp++, i++, rb++) {       \
-			bs = pbp - start[i];                \
+			bs = pbp + start[i];                \
 			be = pbp + end[i];                  \
 			parcel = (be - bs);                 \
 			if(dofsum(bs, 0, 0, parcel, &curval, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, \
@@ -1779,8 +1779,8 @@ finish:
 		pbp = bp = (TPE1*)Tloc(b, 0);             \
 		rb = (TPE2*)Tloc(r, 0);                   \
 		bp += cnt;                                \
-				for(; pbp<bp; pbp++, i++, rb++) { \
-			bs = pbp - start[i];                  \
+		for(; pbp<bp; pbp++, i++, rb++) {         \
+			bs = pbp + start[i];                  \
 			be = pbp + end[i];                    \
 			for(; bs<be; bs++) {                  \
 				v = *bs;                          \
@@ -1809,7 +1809,7 @@ finish:
 		rb = (TPE2*)Tloc(r, 0);                 \
 		bp += cnt;                              \
 		for(; pbp<bp;pbp++, i++, rb++) {        \
-			bs = pbp - start[i];                \
+			bs = pbp + start[i];                \
 			be = pbp + end[i];                  \
 			for(; bs<be; bs++) {                \
 				v = *bs;                        \
@@ -1836,8 +1836,8 @@ finish:
 		pbp = bp = (TPE1*)Tloc(b, 0);             \
 		rb = (TPE2*)Tloc(r, 0);                   \
 		bp += cnt;                                \
-				for(; pbp<bp;pbp++, i++, rb++) {  \
-			bs = pbp - start[i];                  \
+		for(; pbp<bp;pbp++, i++, rb++) {          \
+			bs = pbp + start[i];                  \
 			be = pbp + end[i];                    \
 			for(; bs<be; bs++) {                  \
 				v = *bs;                          \
@@ -2027,7 +2027,7 @@ finish:
 		pbp = bp = (TPE*)Tloc(b, 0);                  \
 		bp += cnt;                                    \
 		for(; pbp<bp;pbp++, i++, rb++) {              \
-			bs = pbp - start[i];                      \
+			bs = pbp + start[i];                      \
 			be = pbp + end[i];                        \
 			for(; bs<be; bs++) {                      \
 				v = *bs;                              \
@@ -2083,7 +2083,7 @@ calc_done##TPE:                                       \
 		pbp = bp = (TPE*)Tloc(b, 0);         \
 		bp += cnt;                           \
 		for(; pbp<bp; pbp++, i++, rb++) {    \
-			bs = pbp - start[i];             \
+			bs = pbp + start[i];             \
 			be = pbp + end[i];               \
 			for(; bs<be; bs++) {             \
 				v = *bs;                     \

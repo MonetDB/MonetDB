@@ -268,8 +268,9 @@ int yydebug=1;
 	window_partition_clause
 	window_order_clause
 	window_frame_clause
+	window_bound
 	window_frame_start
-	window_frame_end
+	window_following_bound
 	XML_value_function
 	XML_comment
   	XML_concatenation
@@ -4185,24 +4186,45 @@ window_frame_units:
   ;
 
 window_frame_extent:
-	window_frame_start   { sql_subtype *t = sql_bind_localtype("lng"); $$ = append_symbol(append_symbol(L(), $1), _newAtomNode( atom_int(SA, t, 0))); }
-  |	window_frame_between { $$ = $1; }
+	window_frame_start    { dlist *l = L(); append_symbol(l, $1);
+                            sql_subtype *t = sql_bind_localtype("lng");
+                            symbol *s = _newAtomNode( atom_int(SA, t, 0));
+                            dlist *l2 = append_symbol(L(), s);
+                            symbol *sym = _symbol_create_list( SQL_CURRENT_ROW, l2);
+                            append_symbol(l, sym);
+                            $$ = l; }
+  | window_frame_between  { $$ = $1; }
   ;
 
 window_frame_start:
-	UNBOUNDED PRECEDING   { sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, GDK_lng_max)); }
-  |	simple_atom PRECEDING { $$ = $1; }
-  |	CURRENT ROW			  { sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, 0)); }
+	UNBOUNDED PRECEDING   { sql_subtype *t = sql_bind_localtype("lng");
+                            symbol *s = _newAtomNode( atom_int(SA, t, GDK_lng_max));
+                            dlist *l2 = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_PRECEDING, l2); }
+  | simple_atom PRECEDING { dlist *l2 = append_symbol(L(), $1);
+                            $$ = _symbol_create_list( SQL_PRECEDING, l2); }
+  | CURRENT ROW           { sql_subtype *t = sql_bind_localtype("lng");
+                            symbol *s = _newAtomNode( atom_int(SA, t, 0));
+                            dlist *l = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_CURRENT_ROW, l); }
+  ;
+
+window_bound:
+	window_frame_start
+  | window_following_bound
   ;
 
 window_frame_between:
-	BETWEEN window_frame_start AND window_frame_end	{ $$ = append_symbol(append_symbol(L(), $2), $4); }
+	BETWEEN window_bound AND window_bound { $$ = append_symbol(append_symbol(L(), $2), $4); }
   ;
 
-window_frame_end:
-	UNBOUNDED FOLLOWING   { sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, GDK_lng_max)); }
-  |	simple_atom FOLLOWING { $$ = $1; }
-  |	CURRENT ROW			  { sql_subtype *t = sql_bind_localtype("lng"); $$ = _newAtomNode( atom_int(SA, t, 0)); }
+window_following_bound:
+	UNBOUNDED FOLLOWING   { sql_subtype *t = sql_bind_localtype("lng");
+                            symbol *s = _newAtomNode( atom_int(SA, t, GDK_lng_max));
+                            dlist *l2 = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
+  | simple_atom FOLLOWING { dlist *l2 = append_symbol(L(), $1);
+                            $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
   ;
 
 window_frame_exclusion:
@@ -6441,6 +6463,9 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
+	SQL(PRECEDING);
+	SQL(FOLLOWING);
+	SQL(CURRENT_ROW);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

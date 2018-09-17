@@ -62,9 +62,10 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool flow, const str mod)
+doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool preceding, const str mod)
 {
-	bool has_partitions = (pci->argc > 5);
+	bool has_partitions = (pci->argc > 6);
+	bit inc_last = *getArgReference_bit(stk, pci, has_partitions ? 5 : 4);
 
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -72,7 +73,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, has_partitions ? 2 : 1)), *p = NULL, *r, *l = NULL;
 		int unit = *getArgReference_int(stk, pci, has_partitions ? 3 : 2),
 			excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3),
-			limit_pos = has_partitions ? 5 : 4, tpe = getArgType(mb, pci, limit_pos);
+			limit_pos = has_partitions ? 6 : 5, tpe = getArgType(mb, pci, limit_pos);
 		void* limit = NULL;
 		bool is_negative = false, is_null = false;
 		gdk_return gdk_code;
@@ -135,8 +136,8 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 				BBPunfix(b->batCacheid);
 				BBPunfix(l->batCacheid);
 				if(is_null)
-					throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-null", flow ? "PRECEDING" : "FOLLOWING");
-				throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
+					throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-null", preceding ? "PRECEDING" : "FOLLOWING");
+				throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
 			}
 		} else {
 			ValRecord *vlimit = &(stk)->stk[(pci)->argv[limit_pos]];
@@ -175,9 +176,9 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 				}
 			}
 			if(is_null)
-				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-null", flow ? "PRECEDING" : "FOLLOWING");
+				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-null", preceding ? "PRECEDING" : "FOLLOWING");
 			if(is_negative)
-				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-negative", flow ? "PRECEDING" : "FOLLOWING");
+				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
 		}
 		if (has_partitions) {
 			p = BATdescriptor(*getArgReference_bat(stk, pci, 1));
@@ -188,7 +189,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 			}
 		}
 
-		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, b->ttype, tpe, unit, flow);
+		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, b->ttype, tpe, unit, preceding, inc_last ? true : false);
 		if(l) BBPunfix(l->batCacheid);
 		if(p) BBPunfix(p->batCacheid);
 		BBPunfix(b->batCacheid);
@@ -200,21 +201,21 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool f
 	} else {
 		lng *res = getArgReference_lng(stk, pci, 0);
 
-		*res = flow ? 0 : 1;
+		*res = preceding ? -inc_last : inc_last;
 	}
 	return MAL_SUCCEED;
 }
 
 str
-SQLwindowstartbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLwindow_preceding_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return doSQLwindowbound(cntxt, mb, stk, pci, true, "sql.window_start_bound");
+	return doSQLwindowbound(cntxt, mb, stk, pci, true, "sql.window_preceding_bound");
 }
 
 str
-SQLwindowendbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLwindow_following_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return doSQLwindowbound(cntxt, mb, stk, pci, false, "sql.window_end_bound");
+	return doSQLwindowbound(cntxt, mb, stk, pci, false, "sql.window_following_bound");
 }
 
 str 
