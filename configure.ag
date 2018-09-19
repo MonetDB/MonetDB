@@ -603,6 +603,7 @@ dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
 		MCHECK_ADD_FLAG([-Wmissing-declarations])
 		MCHECK_ADD_FLAG([-Wmissing-format-attribute])
 		MCHECK_ADD_FLAG([-Wmissing-prototypes])
+		MCHECK_ADD_FLAG([-Wno-missing-field-initializers])
 		MCHECK_ADD_FLAG([-Wold-style-definition])
 		MCHECK_ADD_FLAG([-Wpacked])
 		MCHECK_ADD_FLAG([-Wunknown-pragmas])
