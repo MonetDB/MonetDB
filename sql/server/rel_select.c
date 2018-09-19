@@ -4440,7 +4440,7 @@ calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *
 {
 	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs1 = sa_list(sql->sa), *targs2 = sa_list(sql->sa);
 	sql_subfunc *dc1, *dc2;
-	sql_subtype *it = sql_bind_localtype("int"), *bit = sql_bind_localtype("bit");
+	sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng");
 	const char* f1 = (t1 != SQL_FOLLOWING) ? "window_preceding_bound" : "window_following_bound";
 	const char* f2 = (t2 != SQL_PRECEDING) ? "window_following_bound" : "window_preceding_bound";
 
@@ -4458,8 +4458,8 @@ calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *
 	append(targs2, it);
 	append(targs1, it);
 	append(targs2, it);
-	append(targs1, bit);
-	append(targs2, bit);
+	append(targs1, lon);
+	append(targs2, lon);
 	append(targs1, exp_subtype(start));
 	append(targs2, exp_subtype(fend));
 
@@ -4473,8 +4473,8 @@ calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *
 	append(rargs2, exp_atom_int(sql->sa, frame_type));
 	append(rargs1, exp_atom_int(sql->sa, excl));
 	append(rargs2, exp_atom_int(sql->sa, excl));
-	append(rargs1, exp_atom_bool(sql->sa, 0));
-	append(rargs2, exp_atom_bool(sql->sa, 1));
+	append(rargs1, exp_atom_lng(sql->sa, 1));
+	append(rargs2, exp_atom_lng(sql->sa, 0));
 	append(rargs1, start);
 	append(rargs2, fend);
 

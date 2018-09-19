@@ -65,7 +65,7 @@ static str
 doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool preceding, const str mod)
 {
 	bool has_partitions = (pci->argc > 6);
-	bit inc_last = *getArgReference_bit(stk, pci, has_partitions ? 5 : 4);
+	lng first_half = *getArgReference_lng(stk, pci, has_partitions ? 5 : 4);
 
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -189,7 +189,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 			}
 		}
 
-		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, b->ttype, tpe, unit, preceding, inc_last ? true : false);
+		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, b->ttype, tpe, unit, preceding, first_half);
 		if(l) BBPunfix(l->batCacheid);
 		if(p) BBPunfix(p->batCacheid);
 		BBPunfix(b->batCacheid);
@@ -201,7 +201,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 	} else {
 		lng *res = getArgReference_lng(stk, pci, 0);
 
-		*res = preceding ? -inc_last : inc_last;
+		*res = preceding ? -first_half : first_half;
 	}
 	return MAL_SUCCEED;
 }
