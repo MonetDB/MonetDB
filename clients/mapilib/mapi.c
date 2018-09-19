@@ -1792,42 +1792,29 @@ mapi_new(void)
 	Mapi mid;
 	static uint32_t index = 0;
 
-	mid = calloc(1, sizeof(*mid));
+	mid = malloc(sizeof(*mid));
 	if (mid == NULL)
 		return NULL;
 
 	/* then fill in some details */
-	mid->index = index++;	/* for distinctions in log records */
-	mid->auto_commit = true;
-	mid->error = MOK;
-	mid->hostname = NULL;
-	mid->server = NULL;
-	mid->language = NULL;
-
-	mid->languageId = LANG_SQL;
-	mid->noexplain = NULL;
-	mid->motd = NULL;
-	mid->mapiversion = "mapi 1.0";
-	mid->username = NULL;
-	mid->password = NULL;
-
-	mid->cachelimit = 100;
-	mid->redircnt = 0;
-	mid->redirmax = 10;
-	mid->tracelog = NULL;
-	mid->blk.eos = false;
-	mid->blk.buf = malloc(BLOCK + 1);
+	*mid = (struct MapiStruct) {
+		.index = index++,	/* for distinctions in log records */
+		.auto_commit = true,
+		.error = MOK,
+		.languageId = LANG_SQL,
+		.mapiversion = "mapi 1.0",
+		.cachelimit = 100,
+		.redirmax = 10,
+		.blk.eos = false,
+		.blk.lim = BLOCK,
+		.blk.buf = malloc(BLOCK + 1),
+	};
 	if (mid->blk.buf == NULL) {
 		mapi_destroy(mid);
 		return NULL;
 	}
 	mid->blk.buf[BLOCK] = 0;
 	mid->blk.buf[0] = 0;
-	mid->blk.nxt = 0;
-	mid->blk.end = 0;
-	mid->blk.lim = BLOCK;
-
-	mid->first = NULL;
 
 	return mid;
 }
