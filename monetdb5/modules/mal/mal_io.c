@@ -623,8 +623,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 		throw(MAL, "io.export", RUNTIME_FILE_NOT_FOUND ":%s", *fnme);
 	}
     BATprintcolumns(s, 1, &b);
-	mnstr_close(s);
-	mnstr_destroy(s);
+	close_stream(s);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

@@ -3333,8 +3333,7 @@ ic_close(stream *s)
 		if (!s->readonly)
 			ic_flush(s);
 		iconv_close(ic->cd);
-		mnstr_close(ic->s);
-		mnstr_destroy(ic->s);
+		close_stream(ic->s);
 		free(s->stream_data.p);
 		s->stream_data.p = NULL;
 	}
@@ -5502,8 +5501,7 @@ stream_fwf_close(stream *s)
 
 	if (fsd != NULL) {
 		stream_fwf_data *fsd = (stream_fwf_data *) s->stream_data.p;
-		mnstr_close(fsd->s);
-		mnstr_destroy(fsd->s);
+		close_stream(fsd->s);
 		free(fsd->widths);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
@@ -5540,22 +5538,19 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 	}
 	fsd->in_buf = malloc(fsd->line_len);
 	if (fsd->in_buf == NULL) {
-		mnstr_close(fsd->s);
-		mnstr_destroy(fsd->s);
+		close_stream(fsd->s);
 		free(fsd);
 		return NULL;
 	}
 	fsd->out_buf = malloc(fsd->line_len * 3);
 	if (fsd->out_buf == NULL) {
-		mnstr_close(fsd->s);
-		mnstr_destroy(fsd->s);
+		close_stream(fsd->s);
 		free(fsd->in_buf);
 		free(fsd);
 		return NULL;
 	}
 	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
-		mnstr_close(fsd->s);
-		mnstr_destroy(fsd->s);
+		close_stream(fsd->s);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd);
