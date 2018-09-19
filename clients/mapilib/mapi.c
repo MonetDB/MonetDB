@@ -1409,40 +1409,21 @@ new_result(MapiHdl hdl)
 	result = malloc(sizeof(*result));
 	if (result == NULL)
 		return NULL;
-	result->next = NULL;
+	*result = (struct MapiResultSet) {
+		.hdl = hdl,
+		.tableid = -1,
+		.querytype = -1,
+		.last_id = -1,
+		.cache.rowlimit = hdl->mid->cachelimit,
+		.cache.reader = -1,
+		.commentonly = true,
+	};
 	if (hdl->lastresult == NULL)
 		hdl->result = hdl->lastresult = result;
 	else {
 		hdl->lastresult->next = result;
 		hdl->lastresult = result;
 	}
-
-	result->hdl = hdl;
-	result->tableid = -1;
-	result->querytype = -1;
-	result->errorstr = NULL;
-	result->querytime = 0;
-	result->maloptimizertime = 0;
-	result->sqloptimizertime = 0;
-	memset(result->sqlstate, 0, sizeof(result->sqlstate));
-
-	result->tuple_count = 0;
-	result->row_count = 0;
-	result->last_id = -1;
-
-	result->fieldcnt = 0;
-	result->maxfields = 0;
-	result->fields = NULL;
-
-	result->cache.rowlimit = hdl->mid->cachelimit;
-	result->cache.limit = 0;
-	result->cache.writer = 0;
-	result->cache.reader = -1;
-	result->cache.first = 0;
-	result->cache.tuplecount = 0;
-	result->cache.line = NULL;
-
-	result->commentonly = true;
 
 	return result;
 }
@@ -1693,21 +1674,11 @@ mapi_new_handle(Mapi mid)
 		mapi_setError(mid, "Memory allocation failure", "mapi_new_handle", MERROR);
 		return NULL;
 	}
-	hdl->mid = mid;
-	hdl->template = NULL;
-	hdl->query = NULL;
-	hdl->maxbindings = 0;
-	hdl->bindings = NULL;
-	hdl->maxparams = 0;
-	hdl->params = NULL;
-	hdl->result = NULL;
-	hdl->lastresult = NULL;
-	hdl->active = NULL;
-	hdl->needmore = false;
-	hdl->pending_close = NULL;
-	hdl->npending_close = 0;
+	*hdl = (struct MapiStatement) {
+		.mid = mid,
+		.needmore = false,
+	};
 	/* add to doubly-linked list */
-	hdl->prev = NULL;
 	hdl->next = mid->first;
 	mid->first = hdl;
 	if (hdl->next)

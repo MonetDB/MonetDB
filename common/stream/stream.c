@@ -692,31 +692,20 @@ create_stream(const char *name)
 		return NULL;
 	if ((s = (stream *) malloc(sizeof(*s))) == NULL)
 		return NULL;
-	s->swapbytes = false;
-	s->readonly = true;
-	s->isutf8 = false;	/* not known for sure */
-	s->binary = false;
-	s->name = strdup(name);
+	*s = (stream) {
+		.swapbytes = false,
+		.readonly = true,
+		.isutf8 = false,	/* not known for sure */
+		.binary = false,
+		.name = strdup(name),
+		.errnr = MNSTR_NO__ERROR,
+		.error = error,
+		.destroy = destroy,
+	};
 	if(s->name == NULL) {
 		free(s);
 		return NULL;
 	}
-	s->stream_data.p = NULL;
-	s->errnr = MNSTR_NO__ERROR;
-	s->read = NULL;
-	s->write = NULL;
-	s->close = NULL;
-	s->clrerr = NULL;
-	s->error = error;
-	s->destroy = destroy;
-	s->flush = NULL;
-	s->fsync = NULL;
-	s->fgetpos = NULL;
-	s->fsetpos = NULL;
-	s->timeout = 0;
-	s->timeout_func = NULL;
-	s->update_timeout = NULL;
-	s->isalive = NULL;
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "create_stream %s -> %p\n",
 		name ? name : "<unnamed>", s);
@@ -1264,6 +1253,7 @@ open_bzstream(const char *restrict filename, const char *restrict flags)
 		free(bzp);
 		return NULL;
 	}
+	*bzp = (struct bz) {0};
 	fl[0] = flags[0];	/* 'r' or 'w' */
 	fl[1] = 'b';		/* always binary */
 	fl[2] = '\0';
@@ -1893,12 +1883,15 @@ open_lz4stream(const char *restrict filename, const char *restrict flags)
 
 	if ((lz4 = malloc(sizeof(struct lz4_stream))) == NULL)
 		return NULL;
-	if ((lz4->ring_buffer = malloc(buffer_size)) == NULL) {
+	*lz4 = (struct lz4_stream) {
+		.ring_buffer = malloc(buffer_size),
+		.total_processing = (flags[0] == 'r') ? buffer_size : 0,
+		.ring_buffer_size = buffer_size,
+	};
+	if (lz4->ring_buffer == NULL) {
 		free(lz4);
 		return NULL;
 	}
-	lz4->total_processing = (flags[0] == 'r') ? buffer_size : 0;
-	lz4->ring_buffer_size = buffer_size;
 
 	if(flags[0] == 'w') {
 		error_code = LZ4F_createCompressionContext(&(lz4->context.comp_context), LZ4F_VERSION);
@@ -2326,10 +2319,9 @@ open_urlstream(const char *url)
 
 	if ((c = malloc(sizeof(*c))) == NULL)
 		return NULL;
-	c->handle = NULL;
-	c->buffer = NULL;
-	c->maxsize = c->usesize = c->offset = 0;
-	c->running = 1;
+	*c = (struct curl_data) {
+		.running = 1,
+	};
 	if ((s = create_stream(url)) == NULL) {
 		free(c);
 		return NULL;
@@ -3027,15 +3019,14 @@ file_rastream(FILE *restrict fp, const char *restrict name)
 #ifdef _MSC_VER
 	if (fileno(fp) == 0 && isatty(0)) {
 		struct console *c = malloc(sizeof(struct console));
-		if(c == NULL) {
+		if (c == NULL) {
 			destroy(s);
 			return NULL;
 		}
 		s->stream_data.p = c;
-		c->h = GetStdHandle(STD_INPUT_HANDLE);
-		c->i = 0;
-		c->len = 0;
-		c->rd = 0;
+		*c = (struct console) {
+			.h = GetStdHandle(STD_INPUT_HANDLE),
+		};
 		s->read = console_read;
 		s->write = NULL;
 		s->destroy = console_destroy;
@@ -3068,15 +3059,14 @@ file_wastream(FILE *restrict fp, const char *restrict name)
 #ifdef _MSC_VER
 	if ((fileno(fp) == 1 || fileno(fp) == 2) && isatty(fileno(fp))) {
 		struct console *c = malloc(sizeof(struct console));
-		if(c == NULL) {
+		if (c == NULL) {
 			destroy(s);
 			return NULL;
 		}
 		s->stream_data.p = c;
-		c->h = GetStdHandle(STD_OUTPUT_HANDLE);
-		c->i = 0;
-		c->len = 0;
-		c->rd = 0;
+		*c = (struct console) {
+			.h = GetStdHandle(STD_OUTPUT_HANDLE),
+		};
 		s->read = NULL;
 		s->write = console_write;
 		s->destroy = console_destroy;
@@ -3414,10 +3404,12 @@ ic_open(iconv_t cd, stream *restrict ss, const char *restrict name)
 		return NULL;
 	}
 	s->stream_data.p = ic;
-	ic->cd = cd;
-	ic->s = ss;
-	ic->buflen = 0;
-	ic->eof = false;
+	*ic = (struct icstream) {
+		.cd = cd,
+		.s = ss,
+		.buflen = 0,
+		.eof = false,
+	};
 	return s;
 }
 
@@ -3521,13 +3513,14 @@ buffer_create(size_t size)
 
 	if ((b = malloc(sizeof(*b))) == NULL)
 		return NULL;
-	b->pos = 0;
-	b->buf = malloc(size);
+	*b = (buffer) {
+		.buf = malloc(size),
+		.len = size,
+	};
 	if (b->buf == NULL) {
 		free(b);
 		return NULL;
 	}
-	b->len = size;
 	return b;
 }
 
@@ -3707,11 +3700,9 @@ bs_create(stream *s)
 
 	if ((ns = malloc(sizeof(*ns))) == NULL)
 		return NULL;
-	ns->s = s;
-	ns->nr = 0;
-	ns->itotal = 0;
-	ns->blks = 0;
-	ns->bytes = 0;
+	*ns = (bs) {
+		.s = s,
+	};
 	return ns;
 }
 
@@ -4185,17 +4176,16 @@ bs2_create(stream *s, size_t bufsiz, compression_method comp)
 
 	if ((ns = malloc(sizeof(*ns))) == NULL)
 		return NULL;
-	if ((ns->buf = malloc(bufsiz)) == NULL) {
+	*ns = (bs2) {
+		.buf = malloc(bufsiz),
+		.s = s,
+		.bufsiz = bufsiz,
+		.comp = comp,
+	};
+	if (ns->buf == NULL) {
 		free(ns);
 		return NULL;
 	}
-
-	ns->s = s;
-	ns->nr = 0;
-	ns->itotal = 0;
-	ns->bufsiz = bufsiz;
-	ns->comp = comp;
-	ns->compbuf = NULL;
 
 	compress_bound = compression_size_bound(ns);
 	if (compress_bound > 0) {
@@ -5141,19 +5131,19 @@ bstream_create(stream *s, size_t size)
 		return NULL;
 	if ((b = malloc(sizeof(*b))) == NULL)
 		return NULL;
-	b->mode = size;
+	*b = (bstream) {
+		.mode = size,
+		.s = s,
+		.eof = false,
+	};
 	if (size == 0)
 		size = BUFSIZ;
-	b->s = s;
 	b->buf = malloc(size + 1 + 1);
 	if (b->buf == NULL) {
 		free(b);
 		return NULL;
 	}
 	b->size = size;
-	b->pos = 0;
-	b->len = 0;
-	b->eof = false;
 	return b;
 }
 
@@ -5373,10 +5363,12 @@ callback_stream(void *restrict private,
 		destroy(s);
 		return NULL;
 	}
-	cb->private = private;
-	cb->destroy = destroy;
-	cb->read = read;
-	cb->close = close;
+	*cb = (struct cbstream) {
+		.private = private,
+		.destroy = destroy,
+		.read = read,
+		.close = close,
+	};
 	s->stream_data.p = cb;
 	s->read = cb_read;
 	s->destroy = cb_destroy;
@@ -5532,17 +5524,18 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 {
 	stream *ns;
 	stream_fwf_data *fsd = malloc(sizeof(stream_fwf_data));
-	size_t i, out_buf_len;
 
 	if (fsd == NULL) {
 		return NULL;
 	}
-	fsd->s = s;
-	fsd->num_fields = num_fields;
-	fsd->widths = widths;
-	fsd->filler = filler;
-	fsd->line_len = 0;
-	for (i = 0; i < num_fields; i++) {
+	*fsd = (stream_fwf_data) {
+		.s = s,
+		.num_fields = num_fields,
+		.widths = widths,
+		.filler = filler,
+		.line_len = 0,
+	};
+	for (size_t i = 0; i < num_fields; i++) {
 		fsd->line_len += widths[i];
 	}
 	fsd->in_buf = malloc(fsd->line_len);
@@ -5552,8 +5545,7 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 		free(fsd);
 		return NULL;
 	}
-	out_buf_len = fsd->line_len * 3;
-	fsd->out_buf = malloc(out_buf_len);
+	fsd->out_buf = malloc(fsd->line_len * 3);
 	if (fsd->out_buf == NULL) {
 		mnstr_close(fsd->s);
 		mnstr_destroy(fsd->s);
@@ -5561,7 +5553,6 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 		free(fsd);
 		return NULL;
 	}
-	fsd->out_buf_remaining = 0;
 	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
 		mnstr_close(fsd->s);
 		mnstr_destroy(fsd->s);
