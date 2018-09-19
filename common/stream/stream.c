@@ -136,7 +136,7 @@
 #define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
 /* on Windows, long is the same size as int */
 #define normal_int_SWAP(i)	((int) _byteswap_ulong((unsigned long) (i)))
-#define long_long_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (l)))
+#define long_int_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (l)))
 #else
 #define short_int_SWAP(s)				\
 	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\
@@ -148,7 +148,7 @@
 		((((unsigned) 0xff << 16) & (unsigned) (i)) >>  8) |	\
 		((((unsigned) 0xff << 24) & (unsigned) (i)) >> 24)))
 
-#define long_long_SWAP(l)						\
+#define long_int_SWAP(l)						\
 	((int64_t) (((((uint64_t) 0xff <<  0) & (uint64_t) (l)) << 56) | \
 		((((uint64_t) 0xff <<  8) & (uint64_t) (l)) << 40) |	\
 		((((uint64_t) 0xff << 16) & (uint64_t) (l)) << 24) |	\
@@ -4861,7 +4861,7 @@ mnstr_readLng(stream *restrict s, int64_t *restrict val)
 	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
 	case 1:
 		if (s->swapbytes)
-			*val = long_long_SWAP(*val);
+			*val = long_int_SWAP(*val);
 		return 1;
 	case 0:
 		return 0;
@@ -4876,7 +4876,7 @@ mnstr_writeLng(stream *s, int64_t val)
 	if (s == NULL || s->errnr)
 		return 0;
 	if (s->swapbytes)
-		val = long_long_SWAP(val);
+		val = long_int_SWAP(val);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
@@ -5033,7 +5033,7 @@ mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt)
 	if (s->swapbytes) {
 		size_t i;
 		for (i = 0; i < cnt; i++, val++)
-			*val = long_long_SWAP(*val);
+			*val = long_int_SWAP(*val);
 	}
 	return 1;
 }
