@@ -208,7 +208,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	s = strchr(user, ':');
 	if (s) {
 		*s = 0;
-		mnstr_set_byteorder(fin->s, strcmp(user, "BIG") == 0);
+		mnstr_set_bigendian(fin->s, strcmp(user, "BIG") == 0);
 		user = s + 1;
 	} else {
 		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);

@@ -2760,8 +2760,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKfree(tsep);
 	GDKfree(rsep);
-	if (ssep)
-		GDKfree(ssep);
+	GDKfree(ssep);
 	GDKfree(ns);
 	if (fname && s == NULL)
 		throw(IO, "bstreams.create", SQLSTATE(42000) "Failed to create block stream");
@@ -2784,7 +2783,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	mvc *m = NULL;
 	str msg;
 	BUN cnt = 0;
-	int init = 0;
+	bool init = false;
 	int i;
 	const char *sname = *getArgReference_str(stk, pci, 0 + pci->retc);
 	const char *tname = *getArgReference_str(stk, pci, 1 + pci->retc);
@@ -2891,7 +2890,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			throw(SQL, "sql", SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts", tname);
 		}
 		cnt = BATcount(c);
-		init = 1;
+		init = true;
 		*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
 	}

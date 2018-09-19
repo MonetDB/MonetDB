@@ -61,7 +61,7 @@ mystpcpy (char *yydest, const char *yysrc) {
 
 static lng 
 mnstr_swap_lng(stream *s, lng lngval) {
-	return mnstr_byteorder(s) != 1234 ? long_long_SWAP(lngval) : lngval;
+	return mnstr_get_swapbytes(s) ? long_long_SWAP(lngval) : lngval;
 }
 
 #define DEC_TOSTR(TYPE)							\
@@ -1707,7 +1707,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					// convert timestamp values to epoch
 					lng time;
 					size_t j = 0;
-					int swap = mnstr_byteorder(s) != 1234;
+					bool swap = mnstr_get_swapbytes(s);
 					timestamp *times = (timestamp*) Tloc(iterators[i].b, srow);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
@@ -1720,7 +1720,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					lng time;
 					timestamp tstamp;
 					size_t j = 0;
-					int swap = mnstr_byteorder(s) != 1234;
+					bool swap = mnstr_get_swapbytes(s);
 					date *dates = (date*) Tloc(iterators[i].b, srow);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
@@ -1730,7 +1730,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					}
 					atom_size = sizeof(lng);
 				} else {
-					if (mnstr_byteorder(s) != 1234) {
+					if (mnstr_get_swapbytes(s)) {
 						size_t j = 0;
 						switch (ATOMstorage(mtype)) {
 						case TYPE_sht: {

@@ -807,7 +807,7 @@ enum mapi_lang_t {
 */
 struct MapiStruct {
 	char *server;		/* server version */
-	char *mapiversion;	/* mapi version */
+	const char *mapiversion; /* mapi version */
 	char *hostname;
 	int port;
 	char *username;
@@ -838,7 +838,7 @@ struct MapiStruct {
 
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
-	int index;		/* to mark the log records */
+	uint32_t index;		/* to mark the log records */
 };
 
 struct MapiResultSet {
@@ -1333,18 +1333,19 @@ mapi_log_header(Mapi mid, char *mark)
 	static int64_t firstcall = 0;
 	int64_t now;
 
-	if (mid->tracelog == NULL)
-		return;
 	if (firstcall == 0)
 		firstcall = usec();
 	now = (usec() - firstcall) / 1000;
-	mnstr_printf(mid->tracelog, ":%"PRId64"[%d]:%s\n", now, mid->index, mark);
+	mnstr_printf(mid->tracelog, ":%" PRId64 "[%" PRIu32 "]:%s\n",
+		     now, mid->index, mark);
 	mnstr_flush(mid->tracelog);
 }
 
 static void
 mapi_log_record(Mapi mid, const char *msg)
 {
+	if (mid->tracelog == NULL)
+		return;
 	mapi_log_header(mid, "W");
 	mnstr_printf(mid->tracelog, "%s", msg);
 	mnstr_flush(mid->tracelog);
@@ -1818,7 +1819,7 @@ static Mapi
 mapi_new(void)
 {
 	Mapi mid;
-	static int index = 0;
+	static uint32_t index = 0;
 
 	mid = calloc(1, sizeof(*mid));
 	if (mid == NULL)
@@ -2713,7 +2714,7 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 		}
 
-		mnstr_set_byteorder(mid->from, strcmp(byteo, "BIG") == 0);
+		mnstr_set_bigendian(mid->from, strcmp(byteo, "BIG") == 0);
 
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
@@ -3424,7 +3425,7 @@ read_line(Mapi mid)
 	char *s;		/* from where to search for newline */
 
 	if (mid->active == NULL)
-		return 0;
+		return NULL;
 
 	/* check if we need to read more blocks to get a new line */
 	mid->blk.eos = false;
@@ -3911,7 +3912,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 static MapiMsg
 read_into_cache(MapiHdl hdl, int lookahead)
 {
-	char *line, *copy;
+	char *line;
 	Mapi mid;
 	struct MapiResultSet *result;
 
@@ -3934,17 +3935,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			hdl->active = NULL;
 			/* set needmore flag if line equals PROMPT2 up
 			   to newline */
-			copy = PROMPT2; /* \001\002\n */
-			while (*line) {
-				if (*line != *copy) /* must be EOF or PROMPT1 \001\001\n */
-					return mid->error;
-				line++;
-				copy++;
-			}
-			if (*copy == '\n' || *copy == 0) {
+			if (line[1] == PROMPT2[1] && line[2] == '\0') {
 				/* skip end of block */
 				mid->active = hdl;
-				read_line(mid);
+				(void) read_line(mid);
 				hdl->needmore = true;
 				mid->active = hdl;
 			}

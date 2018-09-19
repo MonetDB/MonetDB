@@ -74,12 +74,6 @@ typedef __int128_t hge;
 
 #define EOT 4
 
-#define ST_ASCII  0
-#define ST_BIN 1
-
-#define ST_READ  0
-#define ST_WRITE 1
-
 /* fwf gets turned into a csv with these parameters */
 #define STREAM_FWF_FIELD_SEP '|'
 #define STREAM_FWF_ESCAPE '\\'
@@ -146,9 +140,9 @@ stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p);
 stream_export char *mnstr_name(stream *s);
 stream_export int mnstr_errnr(stream *s);
 stream_export void mnstr_clearerr(stream *s);
-stream_export int mnstr_type(stream *s);
-stream_export int mnstr_byteorder(stream *s);
-stream_export void mnstr_set_byteorder(stream *s, char bigendian);
+stream_export bool mnstr_isbinary(stream *s);
+stream_export bool mnstr_get_swapbytes(stream *s);
+stream_export void mnstr_set_bigendian(stream *s, bool bigendian);
 stream_export void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void));
 stream_export int mnstr_isalive(stream *s);
 

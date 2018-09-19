@@ -132,7 +132,7 @@ mapi_export void mapi_explain(Mapi mid, FILE *fd);
 mapi_export void mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export void mapi_explain_result(MapiHdl hdl, FILE *fd);
 mapi_export void mapi_trace(Mapi mid, bool flag);
-#ifdef ST_READ			/* if stream.h was included */
+#ifdef _STREAM_H_		/* if stream.h was included */
 mapi_export stream *mapi_get_from(Mapi mid);
 mapi_export stream *mapi_get_to(Mapi mid);
 #endif

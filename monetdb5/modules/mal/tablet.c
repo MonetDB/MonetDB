@@ -1272,7 +1272,7 @@ SQLproducer(void *p)
 	for (;;) {
 		ateof[cur] = !tablet_read_more(task->b, task->out, task->b->size);
 #ifdef _DEBUG_TABLET_CNTRL
-		if (ateof[cur] == 0)
+		if (!ateof[cur])
 			mnstr_printf(GDKout, "#read %zu bytes pos = %zu eof=%d offset=" LLFMT " \n",
 						 task->b->len, task->b->pos, task->b->eof,
 						 (lng) (s - task->input[cur]));

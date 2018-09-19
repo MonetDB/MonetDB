@@ -45,7 +45,7 @@
  * -----------
  *
  * A tee stream is a write stream that duplicates all output to two
- * write streams of the same type (asc/bin).
+ * write streams of the same type (txt/bin).
  */
 
 
@@ -181,11 +181,11 @@
 
 
 struct stream {
-	short byteorder;
-	char access;		/* read/write */
-	char isutf8;		/* known to be UTF-8 due to BOM */
-	short type;		/* ascii/binary */
-	char *name;
+	char *name;		/* name of the stream */
+	bool swapbytes;		/* whether to swap bytes */
+	bool readonly;		/* only reading or only writing */
+	bool isutf8;		/* known to be UTF-8 due to BOM */
+	bool binary;		/* text/binary */
 	unsigned int timeout;	/* timeout in ms */
 	bool (*timeout_func)(void); /* callback function: NULL/true -> return */
 	union {
@@ -211,7 +211,7 @@ struct stream {
 int
 mnstr_init(void)
 {
-	static int inited = 0;
+	static bool inited = false;
 
 	if (inited)
 		return 0;
@@ -224,7 +224,7 @@ mnstr_init(void)
 			return -1;
 	}
 #endif
-	inited = 1;
+	inited = true;
 	return 0;
 }
 
@@ -363,7 +363,7 @@ mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	fprintf(stderr, "read %s %zu %zu\n",
 		s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
-	assert(s->access == ST_READ);
+	assert(s->readonly);
 	if (s->errnr)
 		return -1;
 	return s->read(s, buf, elmsize, cnt);
@@ -383,7 +383,7 @@ mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt)
 	fprintf(stderr, "readline %s %zu\n",
 		s->name ? s->name : "<unnamed>", maxcnt);
 #endif
-	assert(s->access == ST_READ);
+	assert(s->readonly);
 	if (s->errnr)
 		return -1;
 	if (maxcnt == 0)
@@ -402,13 +402,13 @@ mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt)
 			if (*start++ == '\n' || --maxcnt == 1) {
 				*start = 0;
 #if 0
-				if (s->type == ST_ASCII &&
+				if (!s->binary &&
 				    start[-1] == '\n' &&
 				    start > b + 1 &&
 				    start[-2] == '\r') {
 					/* convert CR-LF to just LF */
 					start[-2] = start[-1];
-					start--;
+					*--start = 0;
 				}
 #endif
 				return (ssize_t) (start - b);
@@ -441,7 +441,7 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 	fprintf(stderr, "write %s %zu %zu\n",
 		s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
-	assert(s->access == ST_WRITE);
+	assert(!s->readonly);
 	if (s->errnr)
 		return -1;
 	return s->write(s, buf, elmsize, cnt);
@@ -498,7 +498,7 @@ mnstr_flush(stream *s)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "flush %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	assert(s->access == ST_WRITE);
+	assert(!s->readonly);
 	if (s->errnr)
 		return -1;
 	if (s->flush)
@@ -516,7 +516,7 @@ mnstr_fsync(stream *s)
 	fprintf(stderr, "fsync %s (%d)\n",
 		s->name ? s->name : "<unnamed>", s->errnr);
 #endif
-	assert(s->access == ST_WRITE);
+	assert(!s->readonly);
 	if (s->errnr)
 		return -1;
 	if (s->fsync)
@@ -592,37 +592,40 @@ mnstr_clearerr(stream *s)
 	}
 }
 
-int
-mnstr_type(stream *s)
+bool
+mnstr_isbinary(stream *s)
+{
+	if (s == NULL)
+		return false;
+	return s->binary;
+}
+
+bool
+mnstr_get_swapbytes(stream *s)
 {
 	if (s == NULL)
 		return 0;
-	return s->type;
+	return s->swapbytes;
 }
 
-int
-mnstr_byteorder(stream *s)
-{
-	if (s == NULL)
-		return 0;
-	return s->byteorder;
-}
-
+/* set stream to big-endian/little-endian byte order; the default is
+ * native byte order */
 void
-mnstr_set_byteorder(stream *s, char bigendian)
+mnstr_set_bigendian(stream *s, bool bigendian)
 {
 	if (s == NULL)
 		return;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "mnstr_set_byteorder %s\n",
-		s->name ? s->name : "<unnamed>");
+	fprintf(stderr, "mnstr_set_bigendian %s %s\n",
+		s->name ? s->name : "<unnamed>",
+		swapbytes ? "true" : "false");
 #endif
-	assert(s->access == ST_READ);
-	s->type = ST_BIN;
+	assert(s->readonly);
+	s->binary = true;
 #ifdef WORDS_BIGENDIAN
-	s->byteorder = bigendian ? 1234 : 3412;
+	s->swapbytes = !bigendian;
 #else
-	s->byteorder = bigendian ? 3412 : 1234;
+	s->swapbytes = bigendian;
 #endif
 }
 
@@ -689,10 +692,10 @@ create_stream(const char *name)
 		return NULL;
 	if ((s = (stream *) malloc(sizeof(*s))) == NULL)
 		return NULL;
-	s->byteorder = 1234;
-	s->access = ST_READ;
-	s->isutf8 = 0;		/* not known for sure */
-	s->type = ST_ASCII;
+	s->swapbytes = false;
+	s->readonly = true;
+	s->isutf8 = false;	/* not known for sure */
+	s->binary = false;
 	s->name = strdup(name);
 	if(s->name == NULL) {
 		free(s);
@@ -779,7 +782,7 @@ file_close(stream *s)
 			pclose(fp);
 		else
 			fclose(fp);
-	} else if (s->access == ST_WRITE)
+	} else if (!s->readonly)
 		fflush(fp);
 	s->stream_data.p = NULL;
 }
@@ -806,7 +809,7 @@ file_flush(stream *s)
 {
 	FILE *fp = (FILE *) s->stream_data.p;
 
-	if (fp == NULL || (s->access == ST_WRITE && fflush(fp) < 0)) {
+	if (fp == NULL || (!s->readonly && fflush(fp) < 0)) {
 		s->errnr = MNSTR_WRITE_ERROR;
 		return -1;
 	}
@@ -820,7 +823,7 @@ file_fsync(stream *s)
 	FILE *fp = (FILE *) s->stream_data.p;
 
 	if (fp == NULL ||
-	    (s->access == ST_WRITE
+	    (!s->readonly
 #ifdef NATIVE_WIN32
 	     && _commit(fileno(fp)) < 0
 #else
@@ -912,7 +915,7 @@ open_stream(const char *restrict filename, const char *restrict flags)
 	if (flags[0] == 'r' && flags[1] != 'b' && fgetpos(fp, &pos) == 0) {
 		if (file_read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
-			s->isutf8 = 1;
+			s->isutf8 = true;
 		else if (fsetpos(fp, &pos) != 0) {
 			/* unlikely: we couldn't seek the file back */
 			fclose(fp);
@@ -980,7 +983,7 @@ stream_gzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 #ifdef WIN32
 	/* on Windows when in text mode, convert \r\n line
 	 * endings to \n */
-	if (s->type == ST_ASCII) {
+	if (!s->binary) {
 		char *p1, *p2, *pe;
 
 		p1 = buf;
@@ -1032,7 +1035,7 @@ stream_gzflush(stream *s)
 {
 	if (s->stream_data.p == NULL)
 		return -1;
-	if (s->access == ST_WRITE &&
+	if (!s->readonly &&
 	    gzflush((gzFile) s->stream_data.p, Z_SYNC_FLUSH) != Z_OK)
 		return -1;
 	return 0;
@@ -1078,7 +1081,7 @@ open_gzstream(const char *restrict filename, const char *restrict flags)
 		char buf[UTF8BOMLENGTH];
 		if (gzread(fp, buf, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-			s->isutf8 = 1;
+			s->isutf8 = true;
 		} else {
 			gzrewind(fp);
 		}
@@ -1093,13 +1096,7 @@ open_gzrstream(const char *filename)
 
 	if ((s = open_gzstream(filename, "rb")) == NULL)
 		return NULL;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    gzread((gzFile) s->stream_data.p, (void *) &s->byteorder, sizeof(s->byteorder)) < (int) sizeof(s->byteorder)) {
-		stream_gzclose(s);
-		destroy(s);
-		return NULL;
-	}
+	s->binary = true;
 	return s;
 }
 
@@ -1110,14 +1107,8 @@ open_gzwstream(const char *restrict filename, const char *restrict mode)
 
 	if ((s = open_gzstream(filename, mode)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    gzwrite((gzFile) s->stream_data.p, (void *) &s->byteorder, sizeof(s->byteorder)) < (int) sizeof(s->byteorder)) {
-		stream_gzclose(s);
-		destroy(s);
-		return NULL;
-	}
+	s->readonly = false;
+	s->binary = true;
 	return s;
 }
 
@@ -1128,7 +1119,7 @@ open_gzrastream(const char *filename)
 
 	if ((s = open_gzstream(filename, "r")) == NULL)
 		return NULL;
-	s->type = ST_ASCII;
+	s->binary = false;
 	return s;
 }
 
@@ -1139,8 +1130,8 @@ open_gzwastream(const char *restrict filename, const char *restrict mode)
 
 	if ((s = open_gzstream(filename, mode)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
+	s->readonly = false;
+	s->binary = false;
 	return s;
 }
 #else
@@ -1165,7 +1156,7 @@ stream_bzclose(stream *s)
 	int err = BZ_OK;
 
 	if (s->stream_data.p) {
-		if (s->access == ST_READ)
+		if (s->readonly)
 			BZ2_bzReadClose(&err, ((struct bz *) s->stream_data.p)->b);
 		else
 			BZ2_bzWriteClose(&err, ((struct bz *) s->stream_data.p)->b, 0, NULL, NULL);
@@ -1213,7 +1204,7 @@ stream_bzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 #ifdef WIN32
 	/* on Windows when in text mode, convert \r\n line endings to
 	 * \n */
-	if (s->type == ST_ASCII) {
+	if (!s->binary) {
 		char *p1, *p2, *pe;
 
 		p1 = buf;
@@ -1310,7 +1301,7 @@ open_bzstream(const char *restrict filename, const char *restrict flags)
 	s->flush = NULL;
 	s->stream_data.p = (void *) bzp;
 	if (flags[0] == 'r' && flags[1] != 'b') {
-		s->access = ST_READ;
+		s->readonly = true;
 		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
 		if (err == BZ_STREAM_END) {
 			BZ2_bzReadClose(&err, bzp->b);
@@ -1320,7 +1311,7 @@ open_bzstream(const char *restrict filename, const char *restrict flags)
 
 			if (stream_bzread(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 			    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-				s->isutf8 = 1;
+				s->isutf8 = true;
 			} else if (s->stream_data.p) {
 				bzp = s->stream_data.p;
 				BZ2_bzReadClose(&err, bzp->b);
@@ -1330,10 +1321,10 @@ open_bzstream(const char *restrict filename, const char *restrict flags)
 		}
 	} else if (flags[0] == 'r') {
 		bzp->b = BZ2_bzReadOpen(&err, bzp->f, 0, 0, NULL, 0);
-		s->access = ST_READ;
+		s->readonly = true;
 	} else {
 		bzp->b = BZ2_bzWriteOpen(&err, bzp->f, 9, 0, 30);
-		s->access = ST_WRITE;
+		s->readonly = false;
 	}
 	if (err != BZ_OK) {
 		stream_bzclose(s);
@@ -1350,13 +1341,7 @@ open_bzrstream(const char *filename)
 
 	if ((s = open_bzstream(filename, "rb")) == NULL)
 		return NULL;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    stream_bzread(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) != 1) {
-		stream_bzclose(s);
-		destroy(s);
-		return NULL;
-	}
+	s->binary = true;
 	return s;
 }
 
@@ -1367,14 +1352,8 @@ open_bzwstream(const char *restrict filename, const char *restrict mode)
 
 	if ((s = open_bzstream(filename, mode)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    stream_bzwrite(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) != 1) {
-		stream_bzclose(s);
-		destroy(s);
-		return NULL;
-	}
+	s->readonly = false;
+	s->binary = true;
 	return s;
 }
 
@@ -1385,7 +1364,7 @@ open_bzrastream(const char *filename)
 
 	if ((s = open_bzstream(filename, "r")) == NULL)
 		return NULL;
-	s->type = ST_ASCII;
+	s->binary = false;
 	return s;
 }
 
@@ -1396,8 +1375,8 @@ open_bzwastream(const char *restrict filename, const char *restrict mode)
 
 	if ((s = open_bzstream(filename, mode)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
+	s->readonly = false;
+	s->binary = false;
 	return s;
 }
 #else
@@ -1466,7 +1445,7 @@ stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 #ifdef WIN32
 		/* on Windows when in text mode, convert \r\n line
 		 * endings to \n */
-		if (s->type == ST_ASCII) {
+		if (!s->binary) {
 			char *p1, *p2, *pe;
 
 			p1 = buf;
@@ -1535,7 +1514,7 @@ stream_xzclose(stream *s)
 	xz_stream *xz = s->stream_data.p;
 
 	if (xz) {
-		if (s->access == ST_WRITE) {
+		if (!s->readonly) {
 			lzma_ret ret = lzma_code(&xz->strm, LZMA_FINISH);
 
 			if (xz->strm.avail_out && ret == LZMA_STREAM_END) {
@@ -1559,7 +1538,7 @@ stream_xzflush(stream *s)
 
 	if (xz == NULL)
 		return -1;
-	if (s->access == ST_WRITE && fflush(xz->fp))
+	if (!s->readonly && fflush(xz->fp))
 		return -1;
 	return 0;
 }
@@ -1625,7 +1604,7 @@ open_xzstream(const char *restrict filename, const char *restrict flags)
 		char buf[UTF8BOMLENGTH];
 		if (stream_xzread(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-			s->isutf8 = 1;
+			s->isutf8 = true;
 		} else {
 			FILE *fp = xz->fp;
 			lzma_ret ret;
@@ -1651,13 +1630,7 @@ open_xzrstream(const char *filename)
 
 	if ((s = open_xzstream(filename, "rb")) == NULL)
 		return NULL;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    stream_xzread(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
-		stream_xzclose(s);
-		destroy(s);
-		return NULL;
-	}
+	s->binary = true;
 	return s;
 }
 
@@ -1668,14 +1641,8 @@ open_xzwstream(const char *restrict filename, const char *restrict mode)
 
 	if ((s = open_xzstream(filename, mode)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    stream_xzwrite(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
-		stream_xzclose(s);
-		destroy(s);
-		return NULL;
-	}
+	s->readonly = false;
+	s->binary = true;
 	return s;
 }
 
@@ -1686,7 +1653,7 @@ open_xzrastream(const char *filename)
 
 	if ((s = open_xzstream(filename, "r")) == NULL)
 		return NULL;
-	s->type = ST_ASCII;
+	s->binary = false;
 	return s;
 }
 
@@ -1697,8 +1664,8 @@ open_xzwastream(const char *restrict filename, const char *restrict mode)
 
 	if ((s = open_xzstream(filename, mode)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
+	s->readonly = false;
+	s->binary = false;
 	return s;
 }
 #else
@@ -1764,7 +1731,7 @@ stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cn
 
 #ifdef WIN32
 	/* on Windows when in text mode, convert \r\n line endings to \n */
-	if (s->type == ST_ASCII) {
+	if (!s->binary) {
 		char *p1, *p2, *pe;
 
 		p1 = buf;
@@ -1839,7 +1806,7 @@ stream_lz4close(stream *s)
 	lz4_stream *lz4 = s->stream_data.p;
 
 	if (lz4) {
-		if (s->access == ST_WRITE) {
+		if (!s->readonly) {
 			size_t ret, real_written;
 
 			if (lz4->total_processing > 0 && lz4->total_processing < lz4->ring_buffer_size) { /* compress remaining */
@@ -1867,7 +1834,7 @@ stream_lz4close(stream *s)
 
 			fflush(lz4->fp);
 		}
-		if(s->access == ST_WRITE) {
+		if(!s->readonly) {
 			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
 		} else {
 			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
@@ -1887,7 +1854,7 @@ stream_lz4flush(stream *s)
 
 	if (lz4 == NULL)
 		return -1;
-	if (s->access == ST_WRITE) {
+	if (!s->readonly) {
 		if (lz4->total_processing > 0 && lz4->total_processing < lz4->ring_buffer_size) { /* compress remaining */
 			real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
 			if (real_written == 0) {
@@ -2012,7 +1979,7 @@ open_lz4stream(const char *restrict filename, const char *restrict flags)
 		char buf[UTF8BOMLENGTH];
 		if (stream_lz4read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-			s->isutf8 = 1;
+			s->isutf8 = true;
 		} else {
 			rewind(lz4->fp);
 			lz4->total_processing = buffer_size;
@@ -2031,12 +1998,7 @@ open_lz4rstream(const char *filename)
 
 	if ((s = open_lz4stream(filename, "rb")) == NULL)
 		return NULL;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR && stream_lz4read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
-		stream_lz4close(s);
-		destroy(s);
-		return NULL;
-	}
+	s->binary = true;
 	return s;
 }
 
@@ -2047,13 +2009,8 @@ open_lz4wstream(const char *restrict filename, const char *restrict mode)
 
 	if ((s = open_lz4stream(filename, mode)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR && stream_lz4write(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
-		stream_lz4close(s);
-		destroy(s);
-		return NULL;
-	}
+	s->readonly = false;
+	s->binary = true;
 	return s;
 }
 
@@ -2064,7 +2021,7 @@ open_lz4rastream(const char *filename)
 
 	if ((s = open_lz4stream(filename, "r")) == NULL)
 		return NULL;
-	s->type = ST_ASCII;
+	s->binary = false;
 	return s;
 }
 
@@ -2075,8 +2032,8 @@ open_lz4wastream(const char *restrict filename, const char *restrict mode)
 
 	if ((s = open_lz4stream(filename, mode)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
+	s->readonly = false;
+	s->binary = false;
 	return s;
 }
 #else
@@ -2113,16 +2070,7 @@ open_rstream(const char *filename)
 
 	if ((s = open_stream(filename, "rb")) == NULL)
 		return NULL;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR) {
-		FILE *fp = s->stream_data.p;
-		if (fread(&s->byteorder, sizeof(s->byteorder), 1, fp) < 1 ||
-		    ferror(fp)) {
-			fclose(fp);
-			destroy(s);
-			return NULL;
-		}
-	}
+	s->binary = true;
 	return s;
 }
 
@@ -2150,16 +2098,8 @@ open_wstream(const char *filename)
 
 	if ((s = open_stream(filename, "wb")) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR) {
-		FILE *fp = s->stream_data.p;
-		if (fwrite(&s->byteorder, sizeof(s->byteorder), 1, fp) < 1) {
-			fclose(fp);
-			destroy(s);
-			return NULL;
-		}
-	}
+	s->readonly = false;
+	s->binary = true;
 	return s;
 }
 
@@ -2187,7 +2127,7 @@ open_rastream(const char *filename)
 
 	if ((s = open_stream(filename, "r")) == NULL)
 		return NULL;
-	s->type = ST_ASCII;
+	s->binary = false;
 	return s;
 }
 
@@ -2215,8 +2155,8 @@ open_wastream(const char *filename)
 
 	if ((s = open_stream(filename, "w")) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
+	s->readonly = false;
+	s->binary = false;
 	return s;
 }
 
@@ -2667,7 +2607,7 @@ socket_close(stream *s)
 		 * stream is closed before the write stream was even
 		 * created.
 		 */
-		if (s->access == ST_READ) {
+		if (s->readonly) {
 #ifdef HAVE_SHUTDOWN
 			shutdown(fd, SHUT_RDWR);
 #endif
@@ -2688,7 +2628,7 @@ socket_update_timeout(stream *s)
 	tv.tv_sec = s->timeout / 1000;
 	tv.tv_usec = (s->timeout % 1000) * 1000;
 	/* cast to char * for Windows, no harm on "normal" systems */
-	if (s->access == ST_WRITE)
+	if (!s->readonly)
 		(void) setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
 
@@ -2790,7 +2730,7 @@ socket_rastream(SOCKET sock, const char *name)
 	fprintf(stderr, "socket_rastream %zd %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) != NULL)
-		s->type = ST_ASCII;
+		s->binary = false;
 	return s;
 }
 
@@ -2804,8 +2744,8 @@ socket_wastream(SOCKET sock, const char *name)
 #endif
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
+	s->readonly = false;
+	s->binary = false;
 	return s;
 }
 
@@ -3030,15 +2970,7 @@ file_rstream(FILE *restrict fp, const char *restrict name)
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
-	s->type = ST_BIN;
-
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    (fread((void *) &s->byteorder, sizeof(s->byteorder), 1, fp) < 1 ||
-	     ferror(fp))) {
-		fclose(fp);
-		destroy(s);
-		return NULL;
-	}
+	s->binary = true;
 	s->stream_data.p = (void *) fp;
 	return s;
 }
@@ -3055,16 +2987,8 @@ file_wstream(FILE *restrict fp, const char *restrict name)
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_BIN;
-
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    (fwrite((void *) &s->byteorder, sizeof(s->byteorder), 1, fp) < 1 ||
-	     ferror(fp))) {
-		fclose(fp);
-		destroy(s);
-		return NULL;
-	}
+	s->readonly = false;
+	s->binary = true;
 	s->stream_data.p = (void *) fp;
 	return s;
 }
@@ -3084,14 +3008,14 @@ file_rastream(FILE *restrict fp, const char *restrict name)
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
-	s->type = ST_ASCII;
+	s->binary = false;
 	s->stream_data.p = (void *) fp;
 	if (fstat(fileno(fp), &stb) == 0 &&
 	    S_ISREG(stb.st_mode) &&
 	    fgetpos(fp, &pos) == 0) {
 		if (file_read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
-			s->isutf8 = 1;
+			s->isutf8 = true;
 			return s;
 		}
 		if (fsetpos(fp, &pos) != 0) {
@@ -3120,7 +3044,7 @@ file_rastream(FILE *restrict fp, const char *restrict name)
 		s->fsync = NULL;
 		s->fgetpos = NULL;
 		s->fsetpos = NULL;
-		s->isutf8 = 1;
+		s->isutf8 = true;
 		return s;
 	}
 #endif
@@ -3139,8 +3063,8 @@ file_wastream(FILE *restrict fp, const char *restrict name)
 #endif
 	if ((s = file_stream(name)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
+	s->readonly = false;
+	s->binary = false;
 #ifdef _MSC_VER
 	if ((fileno(fp) == 1 || fileno(fp) == 2) && isatty(fileno(fp))) {
 		struct console *c = malloc(sizeof(struct console));
@@ -3161,7 +3085,7 @@ file_wastream(FILE *restrict fp, const char *restrict name)
 		s->fsync = NULL;
 		s->fgetpos = NULL;
 		s->fsetpos = NULL;
-		s->isutf8 = 1;
+		s->isutf8 = true;
 		return s;
 	}
 #endif
@@ -3416,7 +3340,7 @@ ic_close(stream *s)
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
 
 	if (ic) {
-		if (s->access == ST_WRITE)
+		if (!s->readonly)
 			ic_flush(s);
 		iconv_close(ic->cd);
 		mnstr_close(ic->s);
@@ -3484,12 +3408,12 @@ ic_open(iconv_t cd, stream *restrict ss, const char *restrict name)
 	s->flush = ic_flush;
 	s->update_timeout = ic_update_timeout;
 	s->isalive = ic_isalive;
-	s->stream_data.p = malloc(sizeof(struct icstream));
-	if (s->stream_data.p == NULL) {
+	ic = malloc(sizeof(struct icstream));
+	if (ic == NULL) {
 		mnstr_destroy(s);
 		return NULL;
 	}
-	ic = (struct icstream *) s->stream_data.p;
+	s->stream_data.p = ic;
 	ic->cd = cd;
 	ic->s = ss;
 	ic->buflen = 0;
@@ -3518,8 +3442,8 @@ iconv_rstream(stream *restrict ss, const char *restrict charset, const char *res
 		iconv_close(cd);
 		return NULL;
 	}
-	s->access = ST_READ;
-	s->isutf8 = 1;
+	s->readonly = true;
+	s->isutf8 = true;
 	return s;
 }
 
@@ -3544,7 +3468,7 @@ iconv_wstream(stream *restrict ss, const char *restrict charset, const char *res
 		iconv_close(cd);
 		return NULL;
 	}
-	s->access = ST_WRITE;
+	s->readonly = false;
 	return s;
 }
 
@@ -3726,7 +3650,7 @@ buffer_rastream(buffer *restrict b, const char *restrict name)
 #endif
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
-	s->type = ST_ASCII;
+	s->binary = false;
 	s->read = buffer_read;
 	s->write = buffer_write;
 	s->close = buffer_close;
@@ -3747,8 +3671,8 @@ buffer_wastream(buffer *restrict b, const char *restrict name)
 #endif
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
+	s->readonly = false;
+	s->binary = false;
 	s->read = buffer_read;
 	s->write = buffer_write;
 	s->close = buffer_close;
@@ -3811,7 +3735,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 	s = (bs *) ss->stream_data.p;
 	if (s == NULL)
 		return -1;
-	assert(ss->access == ST_WRITE);
+	assert(!ss->readonly);
 	assert(s->nr < sizeof(s->buf));
 	while (todo > 0) {
 		size_t n = sizeof(s->buf) - s->nr;
@@ -3845,9 +3769,6 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 			 * there, it's not at this moment, so shift it
 			 * to the left */
 			blksize = (int16_t) (blksize << 1);
-#ifdef WORDS_BIGENDIAN
-			blksize = short_int_SWAP(blksize);
-#endif
 			if (!mnstr_writeSht(s->s, blksize) ||
 			    s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = MNSTR_WRITE_ERROR;
@@ -3874,9 +3795,9 @@ bs_flush(stream *ss)
 	s = (bs *) ss->stream_data.p;
 	if (s == NULL)
 		return -1;
-	assert(ss->access == ST_WRITE);
+	assert(!ss->readonly);
 	assert(s->nr < sizeof(s->buf));
-	if (ss->access == ST_WRITE) {
+	if (!ss->readonly) {
 		/* flush the rest of buffer (if s->nr > 0), then set the
 		 * last bit to 1 to to indicate user-instigated flush */
 #ifdef BSTREAM_DEBUG
@@ -3899,9 +3820,6 @@ bs_flush(stream *ss)
 		 * setting the low-order bit */
 		blksize |= (int16_t) 1;
 		/* allways flush (even empty blocks) needed for the protocol) */
-#ifdef WORDS_BIGENDIAN
-		blksize = short_int_SWAP(blksize);
-#endif
 		if ((!mnstr_writeSht(s->s, blksize) ||
 		     (s->nr > 0 &&
 		      s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
@@ -3934,7 +3852,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	s = (bs *) ss->stream_data.p;
 	if (s == NULL)
 		return -1;
-	assert(ss->access == ST_READ);
+	assert(ss->readonly);
 	assert(s->nr <= 1);
 
 	if (s->itotal == 0) {
@@ -4140,10 +4058,10 @@ block_stream(stream *s)
 	}
 	/* blocksizes have a fixed little endian byteorder */
 #ifdef WORDS_BIGENDIAN
-	s->byteorder = 3412;	/* simply != 1234 */
+	s->swapbytes = true;
 #endif
-	ns->type = s->type;
-	ns->access = s->access;
+	ns->binary = s->binary;
+	ns->readonly = s->readonly;
 	ns->close = bs_close;
 	ns->clrerr = bs_clrerr;
 	ns->destroy = bs_destroy;
@@ -4318,7 +4236,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 	s = (bs2 *) ss->stream_data.p;
 	if (s == NULL)
 		return -1;
-	assert(ss->access == ST_WRITE);
+	assert(!ss->readonly);
 	assert(s->nr < s->bufsiz);
 	while (todo > 0) {
 		size_t n = s->bufsiz - s->nr;
@@ -4364,9 +4282,6 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 			/* the last bit tells whether a flush is in there, it's not
 			 * at this moment, so shift it to the left */
 			blksize <<= 1;
-#ifdef WORDS_BIGENDIAN
-			blksize = long_long_SWAP(blksize);
-#endif
 			if (!mnstr_writeLng(s->s, blksize) ||
 			    s->s->write(s->s, writebuf, 1, writelen) != (ssize_t) writelen) {
 				ss->errnr = MNSTR_WRITE_ERROR;
@@ -4394,9 +4309,9 @@ bs2_flush(stream *ss)
 	s = (bs2 *) ss->stream_data.p;
 	if (s == NULL)
 		return -1;
-	assert(ss->access == ST_WRITE);
+	assert(!ss->readonly);
 	assert(s->nr < s->bufsiz);
-	if (ss->access == ST_WRITE) {
+	if (!ss->readonly) {
 		/* flush the rest of buffer (if s->nr > 0), then set the
 		 * last bit to 1 to to indicate user-instigated flush */
 #ifdef BSTREAM_DEBUG
@@ -4432,9 +4347,6 @@ bs2_flush(stream *ss)
 		 * setting the low-order bit */
 		blksize <<= 1;
 		blksize |= 1;
-#ifdef WORDS_BIGENDIAN
-		blksize = long_long_SWAP(blksize);
-#endif
 		/* always flush (even empty blocks) needed for the protocol) */
 
 		if ((!mnstr_writeLng(s->s, blksize) ||
@@ -4468,7 +4380,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	s = (bs2 *) ss->stream_data.p;
 	if (s == NULL)
 		return -1;
-	assert(ss->access == ST_READ);
+	assert(ss->readonly);
 	assert(s->nr <= 1);
 
 	if (s->itotal == 0) {
@@ -4790,10 +4702,10 @@ block_stream2(stream *s, size_t bufsiz, compression_method comp)
 	}
 	/* blocksizes have a fixed little endian byteorder */
 #ifdef WORDS_BIGENDIAN
-	ns->byteorder = 3412;	/* simply != 1234 */
+	s->swapbytes = true;
 #endif
-	ns->type = s->type;
-	ns->access = s->access;
+	ns->binary = s->binary;
+	ns->readonly = s->readonly;
 	ns->close = bs2_close;
 	ns->clrerr = bs_clrerr;
 	ns->destroy = bs2_destroy;
@@ -4869,7 +4781,7 @@ mnstr_readSht(stream *restrict s, int16_t *restrict val)
 		return 0;
 	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
 	case 1:
-		if (s->byteorder != 1234)
+		if (s->swapbytes)
 			*val = short_int_SWAP(*val);
 		return 1;
 	case 0:
@@ -4884,6 +4796,8 @@ mnstr_writeSht(stream *s, int16_t val)
 {
 	if (s == NULL || s->errnr)
 		return 0;
+	if (s->swapbytes)
+		val = short_int_SWAP(val);
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
 
@@ -4895,7 +4809,7 @@ mnstr_readInt(stream *restrict s, int *restrict val)
 
 	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
 	case 1:
-		if (s->byteorder != 1234)
+		if (s->swapbytes)
 			*val = normal_int_SWAP(*val);
 		return 1;
 	case 0:
@@ -4910,6 +4824,8 @@ mnstr_writeInt(stream *s, int val)
 {
 	if (s == NULL || s->errnr)
 		return 0;
+	if (s->swapbytes)
+		val = normal_int_SWAP(val);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
@@ -4944,7 +4860,7 @@ mnstr_readLng(stream *restrict s, int64_t *restrict val)
 
 	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
 	case 1:
-		if (s->byteorder != 1234)
+		if (s->swapbytes)
 			*val = long_long_SWAP(*val);
 		return 1;
 	case 0:
@@ -4959,6 +4875,8 @@ mnstr_writeLng(stream *s, int64_t val)
 {
 	if (s == NULL || s->errnr)
 		return 0;
+	if (s->swapbytes)
+		val = long_long_SWAP(val);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
@@ -4985,7 +4903,7 @@ mnstr_readHge(stream *restrict s, hge *restrict val)
 {
 	switch (s->read(s, (void *) val, sizeof(*val), 1)) {
 	case 1:
-		if (s->byteorder != 1234)
+		if (s->swapbytes)
 			*val = huge_int_SWAP(*val);
 		return 1;
 	case 0:
@@ -5003,6 +4921,8 @@ mnstr_writeHge(stream *s, hge val)
 {
 	if (!s || s->errnr)
 		return 0;
+	if (s->swapbytes)
+		val = huge_int_SWAP(val);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 #endif
@@ -5042,7 +4962,7 @@ mnstr_readShtArray(stream *restrict s, int16_t *restrict val, size_t cnt)
 		return 0;
 	}
 
-	if (s->byteorder != 1234) {
+	if (s->swapbytes) {
 		size_t i;
 		for (i = 0; i < cnt; i++, val++)
 			*val = short_int_SWAP(*val);
@@ -5055,6 +4975,12 @@ mnstr_writeShtArray(stream *restrict s, const int16_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errnr || val == NULL)
 		return 0;
+	if (s->swapbytes) {
+		for (size_t i = 0; i < cnt; i++)
+			if (!mnstr_writeSht(s, val[i]))
+				return 0;
+		return 1;
+	}
 	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
@@ -5070,7 +4996,7 @@ mnstr_readIntArray(stream *restrict s, int *restrict val, size_t cnt)
 		return 0;
 	}
 
-	if (s->byteorder != 1234) {
+	if (s->swapbytes) {
 		size_t i;
 		for (i = 0; i < cnt; i++, val++)
 			*val = normal_int_SWAP(*val);
@@ -5083,6 +5009,12 @@ mnstr_writeIntArray(stream *restrict s, const int *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errnr || val == NULL)
 		return 0;
+	if (s->swapbytes) {
+		for (size_t i = 0; i < cnt; i++)
+			if (!mnstr_writeInt(s, val[i]))
+				return 0;
+		return 1;
+	}
 	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
@@ -5098,7 +5030,7 @@ mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt)
 		return 0;
 	}
 
-	if (s->byteorder != 1234) {
+	if (s->swapbytes) {
 		size_t i;
 		for (i = 0; i < cnt; i++, val++)
 			*val = long_long_SWAP(*val);
@@ -5111,6 +5043,12 @@ mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errnr || val == NULL)
 		return 0;
+	if (s->swapbytes) {
+		for (size_t i = 0; i < cnt; i++)
+			if (!mnstr_writeLng(s, val[i]))
+				return 0;
+		return 1;
+	}
 	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
@@ -5123,7 +5061,7 @@ mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt)
 		return 0;
 	}
 
-	if (s->byteorder != 1234) {
+	if (s->swapbytes) {
 		size_t i;
 		for (i = 0; i < cnt; i++, val++)
 			*val = huge_int_SWAP(*val);
@@ -5136,6 +5074,12 @@ mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt)
 {
 	if (!s || s->errnr)
 		return 0;
+	if (s->swapbytes) {
+		for (size_t i = 0; i < cnt; i++)
+			if (!mnstr_writeHge(s, val[i]))
+				return 0;
+		return 1;
+	}
 	return s->write(s, val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 #endif
@@ -5459,7 +5403,7 @@ stream_blackhole_create(void)
 	s->write = stream_blackhole_write;
 	s->close = stream_blackhole_close;
 	s->flush = NULL;
-	s->access = ST_WRITE;
+	s->readonly = false;
 	return s;
 }
 
@@ -5479,7 +5423,6 @@ typedef struct {
 	char *out_buf;
 	size_t out_buf_start;
 	size_t out_buf_remaining;
-	char nl_buf[1];
 } stream_fwf_data;
 
 
@@ -5489,6 +5432,7 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 	stream_fwf_data *fsd;
 	size_t to_write = cnt;
 	size_t buf_written = 0;
+	char nl_buf;
 
 	fsd = (stream_fwf_data *) s->stream_data.p;
 	if (fsd == NULL || elmsize != 1) {
@@ -5507,8 +5451,8 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 				return (ssize_t) buf_written;	/* skip last line */
 			}
 			/* consume to next newline */
-			while (fsd->s->read(fsd->s, fsd->nl_buf, 1, 1) == 1 &&
-			       *fsd->nl_buf != '\n')
+			while (fsd->s->read(fsd->s, &nl_buf, 1, 1) == 1 &&
+			       nl_buf != '\n')
 				;
 
 			for (field_idx = 0; field_idx < fsd->num_fields; field_idx++) {
@@ -5622,7 +5566,7 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 	ns->destroy = stream_fwf_destroy;
 	ns->write = NULL;
 	ns->flush = NULL;
-	ns->access = ST_READ;
+	ns->readonly = true;
 	ns->stream_data.p = fsd;
 	return ns;
 }
