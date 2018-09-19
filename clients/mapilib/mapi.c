@@ -162,15 +162,15 @@
  * #include <stdio.h>
  * #include <mapi.h>
  * #include <stdlib.h>
- *     
+ *
  * int
  * main(int argc, char** argv) {
  * 	const char *prog  = argv[0];
- * 	const char *host  = argv[1]; // where Mserver is started, e.g. localhost 
- * 	const char *db    = argv[2]; // database name e.g. demo 
- * 	int  port         = atoi(argv[3]); // mapi_port e.g. 50000 
- * 	char *mode        = argv[4]; // output format e.g. xml  
- * 	const char *query = argv[5]; // single-line query e.g. '1+1' (use quotes) 
+ * 	const char *host  = argv[1]; // where Mserver is started, e.g. localhost
+ * 	const char *db    = argv[2]; // database name e.g. demo
+ * 	int  port         = atoi(argv[3]); // mapi_port e.g. 50000
+ * 	char *mode        = argv[4]; // output format e.g. xml
+ * 	const char *query = argv[5]; // single-line query e.g. '1+1' (use quotes)
  * 	FILE *fp          = stderr;
  * 	char *line;
  *
@@ -178,31 +178,31 @@
  * 		fprintf(fp, "usage: %s <host>    <db> <port> <mode> <query>\n", prog);
  * 		fprintf(fp, "  e.g. %s localhost demo 50000  xml    '1+1'\n",   prog);
  * 	} else {
- * 		// CONNECT TO SERVER, default unsecure user/password, language="sql" 
+ * 		// CONNECT TO SERVER, default unsecure user/password, language="sql"
  * 		Mapi    mid = mapi_connect(host, port, "monetdb", "monetdb", "sql", db);
  * 		MapiHdl hdl;
  * 		if (mid == NULL) {
  * 			fprintf(fp, "%s: failed to connect.\n", prog);
  * 		} else {
- * 			hdl = mapi_query(mid, query); // FIRE OFF A QUERY 
+ * 			hdl = mapi_query(mid, query); // FIRE OFF A QUERY
  *
- * 			if (hdl == NULL || mapi_error(mid) != MOK) // CHECK CONNECTION ERROR 
- * 				fprintf(fp, "%s: connection error: %s\n", prog, mapi_error_str(mid)); // GET CONNECTION ERROR STRING 
+ * 			if (hdl == NULL || mapi_error(mid) != MOK) // CHECK CONNECTION ERROR
+ * 				fprintf(fp, "%s: connection error: %s\n", prog, mapi_error_str(mid)); // GET CONNECTION ERROR STRING
  * 			if (hdl) {
- * 				if (mapi_result_error(hdl) != MOK) // CHECK QUERY ERROR 
+ * 				if (mapi_result_error(hdl) != MOK) // CHECK QUERY ERROR
  * 					fprintf(fp, "%s: query error\n", prog);
  * 				else
- * 					fp = stdout; // success: connection&query went ok 
+ * 					fp = stdout; // success: connection&query went ok
  *
- * 				// FETCH SERVER QUERY ANSWER LINE-BY-LINE 
+ * 				// FETCH SERVER QUERY ANSWER LINE-BY-LINE
  * 				while((line = mapi_fetch_line(hdl)) != NULL) {
  * 					if (*line == '=') line++; // XML result lines start with '='
  * 					fprintf(fp, "%s\n", line);
  * 				}
  * 			}
- * 			mapi_close_handle(hdl); // CLOSE QUERY HANDLE 
+ * 			mapi_close_handle(hdl); // CLOSE QUERY HANDLE
  * 		}
- * 		mapi_disconnect(mid); // CLOSE CONNECTION 
+ * 		mapi_disconnect(mid); // CLOSE CONNECTION
  * 	}
  * 	return (fp == stdout)? 0 : -1;
  * }
@@ -471,7 +471,7 @@
  *
  * @item int64_t mapi_get_last_id(MapiHdl mid)
  *
- * If possible, return the last inserted id of auto_increment (or alike) column. 
+ * If possible, return the last inserted id of auto_increment (or alike) column.
  * A -1 is returned if this information is not available. We restrict this to
  * single row inserts and one auto_increment column per table. If the restrictions
  * do not hold, the result is unspecified.
@@ -976,7 +976,7 @@ static bool mapi_initialized = false;
  * The server side code works with a common/stream package, a fast
  * buffered IO scheme.  Nowadays this should be the only protocol used,
  * while historical uses were line-based instead.
- * 
+ *
  *
  * Error Handling
  * --------------
@@ -1364,7 +1364,7 @@ mapi_log(Mapi mid, const char *nme)
 	mid->tracelog = open_wastream(nme);
 	if (mid->tracelog == NULL || mnstr_errnr(mid->tracelog)) {
 		if (mid->tracelog)
-			mnstr_destroy(mid->tracelog);
+			close_stream(mid->tracelog);
 		mid->tracelog = NULL;
 		return mapi_setError(mid, "Could not create log file", "mapi_log", MERROR);
 	}
@@ -3771,10 +3771,14 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TABLE:
-			if (sscanf(nline, "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64 " %" SCNd64 " %" SCNd64 " %" SCNd64, 
+			if (sscanf(nline,
+				   "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64
+				   " %" SCNd64 " %" SCNd64 " %" SCNd64,
 				   &result->tableid, &result->row_count,
 				   &result->fieldcnt, &result->tuple_count,
-				   &queryid, &result->querytime, &result->maloptimizertime, &result->sqloptimizertime) < 8){
+				   &queryid, &result->querytime,
+				   &result->maloptimizertime,
+				   &result->sqloptimizertime) < 8){
 					result->querytime = 0;
 					result->maloptimizertime = 0;
 					result->sqloptimizertime = 0;
@@ -3787,8 +3791,9 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			       &result->fieldcnt, &result->tuple_count);
 			break;
 		case Q_BLOCK:
-			/* Mapi ignores the Q_BLOCK header, so spoof the querytype
-			 * back to a Q_TABLE to let it go unnoticed */
+			/* Mapi ignores the Q_BLOCK header, so spoof
+			 * the querytype back to a Q_TABLE to let it
+			 * go unnoticed */
 			result->querytype = Q_TABLE;
 			break;
 		}
