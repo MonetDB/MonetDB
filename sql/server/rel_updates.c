@@ -1492,9 +1492,11 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 			char *fname = n->data.sval;
 			sql_rel *nrel;
 
+#if 0
 			if (fname && !MT_path_absolute(fname))
 				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 						"have absolute path: %s", fname);
+#endif
 
 			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths);
 

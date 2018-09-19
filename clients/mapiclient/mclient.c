@@ -3027,6 +3027,69 @@ set_timezone(Mapi mid)
 	mapi_close_handle(hdl);
 }
 
+struct privdata {
+	stream *f;
+	char *buf;
+};
+
+//#define READSIZE	(1 << 14)
+#define READSIZE	(1 << 20)
+
+static char *
+getfile(void *data, const char *filename, bool binary, uint64_t offset, uint64_t *size)
+{
+	stream *f;
+	char *buf;
+	struct privdata *priv = data;
+	ssize_t s;
+
+	if (priv->buf == NULL)
+		priv->buf = malloc(READSIZE);
+	buf = priv->buf;
+	if (filename != NULL) {
+		if (binary)
+			f = open_rstream(filename);
+		else
+			f = open_rastream(filename);
+		if (f == NULL) {
+			*size = 0;	/* indicate error */
+			return "cannot open file";
+		}
+		while (offset > 1) {
+			s = mnstr_readline(f, buf, READSIZE);
+			if (s < 0) {
+				close_stream(f);
+				*size = 0;
+				return "error reading file";
+			}
+			if (s == 0) {
+				close_stream(f);
+				*size = 0;
+				return NULL;
+			}
+			if (buf[s - 1] == '\n')
+				offset--;
+		}
+		priv->f = f;
+	} else {
+		f = priv->f;
+		if (size == NULL) {
+			close_stream(f);
+			priv->f = NULL;
+			return NULL;
+		}
+	}
+	s = mnstr_read(f, buf, 1, READSIZE);
+	if (s <= 0) {
+		*size = 0;
+		close_stream(f);
+		priv->f = NULL;
+		return NULL;
+	}
+	*size = (uint64_t) s;
+	return buf;
+}
+
 __declspec(noreturn) static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
 
@@ -3428,6 +3491,10 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
+
+	struct privdata priv;
+	priv = (struct privdata) {0};
+	mapi_setfilecallback(mid, getfile, &priv);
 
 	if (!autocommit)
 		mapi_setAutocommit(mid, autocommit);

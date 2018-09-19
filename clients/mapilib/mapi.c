@@ -839,6 +839,8 @@ struct MapiStruct {
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
 	uint32_t index;		/* to mark the log records */
+	void *getfilecontentprivate;
+	char *(*getfilecontent)(void *, const char *, bool, uint64_t, uint64_t *);
 };
 
 struct MapiResultSet {
@@ -2676,7 +2678,7 @@ mapi_reconnect(Mapi mid)
 
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
-		if (snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
+		if (snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:FILETRANS:\n",
 #ifdef WORDS_BIGENDIAN
 			     "BIG",
 #else
@@ -2967,6 +2969,23 @@ mapi_disconnect(Mapi mid)
 
 	close_connection(mid);
 	return MOK;
+}
+
+/* Set callback function to retrieve file content for COPY INTO queries.
+ *
+ * The first call to the function for a new file is done with a
+ * filename filled in and an offset that gives the index of the first
+ * line to be returned (base 1, i.e. start of file has offset 1); all
+ * subsequent calls for the same file use a NULL pointer for the
+ * filename and a value of 0 for the offset.  The function is called
+ * until it returns NULL or sets the size value to 0.  This gives the
+ * callback function the opportunity to free any resources.
+ */
+void
+mapi_setfilecallback(Mapi mid, char *(*getfilecontent)(void *, const char *, bool, uint64_t, uint64_t *), void *getfilecontentprivate)
+{
+	mid->getfilecontent = getfilecontent;
+	mid->getfilecontentprivate = getfilecontentprivate;
 }
 
 #define testBinding(hdl,fnr,funcname)					\
@@ -3859,6 +3878,96 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	return result;
 }
 
+static void
+handle_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
+{
+	Mapi mid = hdl->mid;
+	uint64_t size = 0, flushsize = 0;
+	char *data, *line;
+
+	(void) read_line(mid);	/* read flush marker */
+	if (filename == NULL) {
+		/* malloc failure */
+		mnstr_printf(mid->to, "!HY001!allocation failure\n");
+		mnstr_flush(mid->to);
+		return;
+	}
+	if (mid->getfilecontent == NULL) {
+		free(filename);
+		mnstr_printf(mid->to, "!HY000!cannot retrieve files\n");
+		mnstr_flush(mid->to);
+		return;
+	}
+	data = mid->getfilecontent(mid->getfilecontentprivate, filename, binary, off, &size);
+	free(filename);
+	if (data != NULL && size == 0) {
+		if (strchr(data, '\n'))
+			data = "incorrect response from application";
+		mnstr_printf(mid->to, "!HY000!%.64s\n", data);
+		mnstr_flush(mid->to);
+		return;
+	}
+	mnstr_printf(mid->to, "\n");
+	while (data != NULL && size != 0) {
+		if (flushsize >= 1 << 20) {
+			mnstr_flush(mid->to);
+			line = read_line(mid);
+			if (line == NULL) {
+				/* error */
+				(void) mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, NULL);
+				return;
+			}
+			assert(line[0] == PROMPTBEG);
+			if (line[0] != PROMPTBEG) {
+				/* error */
+				(void) mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, NULL);
+				return;
+			}
+			if (line[1] == PROMPT3[1]) {
+				(void) mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, NULL);
+				(void) read_line(mid);
+				return;
+			}
+			assert(line[1] == PROMPT2[1]);
+			if (line[1] != PROMPT2[1]) {
+				/* error */
+				(void) mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, NULL);
+				return;
+			}
+			(void) read_line(mid);
+			flushsize = 0;
+		}
+		if (mnstr_write(mid->to, data, 1, size) != (ssize_t) size) {
+			mnstr_flush(mid->to);
+			return;
+		}
+		flushsize += size;
+		data = mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, &size);
+	}
+	mnstr_flush(mid->to);
+	line = read_line(mid);
+	if (line == NULL)
+		return;
+	assert(line[0] == PROMPTBEG);
+	if (line[0] != PROMPTBEG)
+		return;
+	if (line[1] == PROMPT3[1]) {
+		(void) read_line(mid);
+		return;
+	}
+	assert(line[1] == PROMPT2[1]);
+	if (line[1] != PROMPT2[1])
+		return;
+	(void) read_line(mid);
+	mnstr_flush(mid->to);
+	line = read_line(mid);
+	if (line == NULL)
+		return;
+	assert(line[0] == PROMPTBEG);
+	assert(line[1] == PROMPT3[1]);
+	(void) read_line(mid);
+}
+
 /* Read ahead and cache data read.  Depending on the second argument,
    reading may stop at the first non-header and non-error line, or at
    a prompt.
@@ -3904,6 +4013,33 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				(void) read_line(mid);
 				hdl->needmore = true;
 				mid->active = hdl;
+			} else if (line[1] == PROMPT3[1] && line[2] == '\0') {
+				mid->active = hdl;
+				line = read_line(mid);
+				/* rb FILE
+				 * r OFF FILE
+				 * w ???
+				 */
+				switch (*line++) {
+				case 'r': {
+					bool binary = false;
+					uint64_t off = 0;
+					if (*line == 'b') {
+						line++;
+						binary = true;
+					} else {
+						off = strtoul(line, &line, 10);
+					}
+					assert(*line == ' ');
+					line++; /* skip one space */
+					handle_file(hdl, off, strdup(line), binary);
+					break;
+				}
+				case 'w':
+					assert(0);
+					/* not yet implemented */
+				}
+				continue;
 			}
 			return mid->error;
 		case '!':
