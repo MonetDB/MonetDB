@@ -133,8 +133,8 @@ char* control_send(
 			buf = rbuf + 2;
 			ver = 9;
 
-			fdin = block_stream(socket_rastream(sock, "client in"));
-			fdout = block_stream(socket_wastream(sock, "client out"));
+			fdin = block_stream(socket_rstream(sock, "client in"));
+			fdout = block_stream(socket_wstream(sock, "client out"));
 		} else {
 			if (len > 2 &&
 					(strstr(rbuf + 2, ":BIG:") != NULL ||

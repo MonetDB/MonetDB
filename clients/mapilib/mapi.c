@@ -2510,9 +2510,9 @@ mapi_reconnect(Mapi mid)
 #endif
 	}
 
-	mid->to = socket_wastream(s, "Mapi client write");
+	mid->to = socket_wstream(s, "Mapi client write");
 	mapi_log_record(mid, "Mapi client write");
-	mid->from = socket_rastream(s, "Mapi client read");
+	mid->from = socket_rstream(s, "Mapi client read");
 	mapi_log_record(mid, "Mapi client read");
 	check_stream(mid, mid->to, "Cannot open socket for writing", "mapi_reconnect", mid->error);
 	check_stream(mid, mid->from, "Cannot open socket for reading", "mapi_reconnect", mid->error);

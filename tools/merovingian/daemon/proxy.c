@@ -230,8 +230,8 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		}
 	}
 
-	sfdin = block_stream(socket_rastream(ssock, "merovingian<-server (proxy read)"));
-	sfout = block_stream(socket_wastream(ssock, "merovingian->server (proxy write)"));
+	sfdin = block_stream(socket_rstream(ssock, "merovingian<-server (proxy read)"));
+	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
 
 	if (sfdin == 0 || sfout == 0) {
 		close_stream(sfout);
@@ -299,11 +299,11 @@ handleMySQLClient(int sock)
 	str p;
 	int len;
 
-	fdin = socket_rastream(sock, "merovingian<-mysqlclient (read)");
+	fdin = socket_rstream(sock, "merovingian<-mysqlclient (read)");
 	if (fdin == 0)
 		return(newErr("merovingian-mysqlclient inputstream problems"));
 
-	fout = socket_wastream(sock, "merovingian->mysqlclient (write)");
+	fout = socket_wstream(sock, "merovingian->mysqlclient (write)");
 	if (fout == 0) {
 		close_stream(fdin);
 		return(newErr("merovingian-mysqlclient outputstream problems"));

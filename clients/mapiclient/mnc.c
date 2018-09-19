@@ -277,8 +277,8 @@ main(int argc, char **argv)
 #endif
 	}
 
-	out = socket_wastream(s, "ascii write stream");
-	in = socket_rastream(s, "ascii read stream");
+	out = socket_wstream(s, "write stream");
+	in = socket_rstream(s, "read stream");
 
 	if (block) {
 		out = block_stream(out);

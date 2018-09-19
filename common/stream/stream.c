@@ -2722,30 +2722,30 @@ socket_open(SOCKET sock, const char *name)
 }
 
 stream *
-socket_rastream(SOCKET sock, const char *name)
+socket_rstream(SOCKET sock, const char *name)
 {
 	stream *s = NULL;
 
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_rastream %zd %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_rstream %zd %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) != NULL)
-		s->binary = false;
+		s->binary = true;
 	return s;
 }
 
 stream *
-socket_wastream(SOCKET sock, const char *name)
+socket_wstream(SOCKET sock, const char *name)
 {
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_wastream %zd %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_wstream %zd %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
 	s->readonly = false;
-	s->binary = false;
+	s->binary = true;
 	return s;
 }
 
