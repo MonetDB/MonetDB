@@ -2325,8 +2325,9 @@ mapi_reconnect(Mapi mid)
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
-		memset(&userver, 0, sizeof(struct sockaddr_un));
-		userver.sun_family = AF_UNIX;
+		userver = (struct sockaddr_un) {
+			.sun_family = AF_UNIX,
+		};
 		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path) - 1);
 		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
 
@@ -2378,10 +2379,11 @@ mapi_reconnect(Mapi mid)
 			mid->hostname = strdup("localhost");
 		snprintf(port, sizeof(port), "%d", mid->port & 0xFFFF);
 
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = AF_UNSPEC;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_protocol = IPPROTO_TCP;
+		hints = (struct addrinfo) {
+			.ai_family = AF_UNSPEC,
+			.ai_socktype = SOCK_STREAM,
+			.ai_protocol = IPPROTO_TCP,
+		};
 		ret = getaddrinfo(mid->hostname, port, &hints, &res);
 		if (ret) {
 			snprintf(errbuf, sizeof(errbuf), "getaddrinfo failed: %s", gai_strerror(ret));
@@ -2432,10 +2434,11 @@ mapi_reconnect(Mapi mid)
 				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
-		memset(&server, 0, sizeof(server));
+		server = (struct sockaddr_in) {
+			.sin_family = hp->h_addrtype,
+			.sin_port = htons((unsigned short) mid->port),
+		};
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		server.sin_family = hp->h_addrtype;
-		server.sin_port = htons((unsigned short) (mid->port & 0xFFFF));
 		s = socket(server.sin_family, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
 			   | SOCK_CLOEXEC

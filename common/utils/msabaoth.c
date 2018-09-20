@@ -833,10 +833,11 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 	memset(avg30, 0, sizeof(int) * 30);
 
 	/* clear the struct */
-	memset(ret, 0, sizeof(sabuplog));
-	ret->minuptime = -1;
-	ret->lastcrash = -1;
-	ret->laststop = -1;
+	*ret = (sabuplog) {
+		.minuptime = -1,
+		.lastcrash = -1,
+		.laststop = -1,
+	};
 
 	snprintf(log, sizeof(log), "%s/%s", db->path, UPLOGFILE);
 	if ((f = fopen(log, "r")) != NULL) {

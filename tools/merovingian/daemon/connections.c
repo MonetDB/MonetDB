@@ -115,14 +115,15 @@ openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
 	char sport[10];
 	char host[512];
 
-	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = AF_INET;      /* Allow IPv4 only (broadcasting) */
-	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
-	hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
-	hints.ai_protocol = 0;          /* Any protocol */
-	hints.ai_canonname = NULL;
-	hints.ai_addr = NULL;
-	hints.ai_next = NULL;
+	hints = (struct addrinfo) {
+		.ai_family = AF_INET,      /* Allow IPv4 only (broadcasting) */
+		.ai_socktype = SOCK_DGRAM, /* Datagram socket */
+		.ai_flags = AI_PASSIVE,    /* For wildcard IP address */
+		.ai_protocol = 0,          /* Any protocol */
+		.ai_canonname = NULL,
+		.ai_addr = NULL,
+		.ai_next = NULL,
+	};
 
 	snprintf(sport, 10, "%hu", port);
 	sock = getaddrinfo(bindaddr, sport, &hints, &result);
@@ -191,8 +192,9 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
-	memset(&server, 0, sizeof(struct sockaddr_un));
-	server.sun_family = AF_UNIX;
+	server = (struct sockaddr_un) {
+		.sun_family = AF_UNIX,
+	};
 	strncpy(server.sun_path, path, sizeof(server.sun_path) - 1);
 
 	/* have to use umask to restrict permissions to avoid a race

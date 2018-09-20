@@ -920,19 +920,21 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
 
-		memset((char *) &as, 0, sizeof(as));
-		as.nr_attrs = list_length(t->columns.set);
-		as.nr = (sz < 1) ? BUN_NONE : (BUN) sz;
-		as.offset = (BUN) offset;
-		as.error = NULL;
-		as.tryall = 0;
-		as.complaints = NULL;
-		as.filename = m->scanner.rs == bs ? NULL : "";
-		fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
+		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
 			sql_error(m, 500, "failed to allocate memory ");
 			return NULL;
 		}
+		as = (Tablet) {
+			.nr_attrs = list_length(t->columns.set),
+			.nr = (sz < 1) ? BUN_NONE : (BUN) sz,
+			.offset = (BUN) offset,
+			.error = NULL,
+			.tryall = 0,
+			.complaints = NULL,
+			.filename = m->scanner.rs == bs ? NULL : "",
+			.format = fmt,
+		};
 		if (!isa_block_stream(bs->s))
 			out = NULL;
 

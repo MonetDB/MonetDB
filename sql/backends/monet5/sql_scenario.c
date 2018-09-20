@@ -395,10 +395,11 @@ SQLinit(Client c)
 #endif
 
 	MT_lock_set(&sql_contextLock);
-	memset((char *) &be_funcs, 0, sizeof(backend_functions));
-	be_funcs.fstack = &monet5_freestack;
-	be_funcs.fcode = &monet5_freecode;
-	be_funcs.fresolve_function = &monet5_resolve_function;
+	be_funcs = (backend_functions) {
+		.fstack = &monet5_freestack,
+		.fcode = &monet5_freecode,
+		.fresolve_function = &monet5_resolve_function,
+	};
 	monet5_user_init(&be_funcs);
 
 	msg = MTIMEtimezone(&tz, &gmt);

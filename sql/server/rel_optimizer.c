@@ -9235,7 +9235,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	int changes = 0, e_changes = 0;
 	global_props gp; 
 
-	memset(&gp, 0, sizeof(global_props));
+	gp = (global_props) {0};
 	rel_properties(sql, &gp, rel);
 
 #ifdef DEBUG

@@ -3603,7 +3603,7 @@ MTIMEstr_to_date(date *d, const char * const *s, const char * const *format)
 		*d = date_nil;
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'\n", *format, *s);
 	*d = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
@@ -3624,7 +3624,7 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 			throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	fromdate(*d, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
@@ -3648,7 +3648,7 @@ MTIMEstr_to_time(daytime *d, const char * const *s, const char * const *format)
 		*d = daytime_nil;
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'\n", *format, *s);
 	*d = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
@@ -3669,7 +3669,7 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 			throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	fromtime(*d, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
 	(void)msec;
 	t.tm_isdst = -1;
@@ -3692,7 +3692,7 @@ MTIMEstr_to_timestamp(timestamp *ts, const char * const *s, const char * const *
 		*ts = *timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_timestamp", "format '%s', doesn't match timestamp '%s'\n", *format, *s);
 	ts->days = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
@@ -3714,7 +3714,7 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	fromdate(ts->days, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
