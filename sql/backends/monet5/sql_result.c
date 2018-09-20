@@ -920,11 +920,6 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
 
-		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
-		if (fmt == NULL) {
-			sql_error(m, 500, "failed to allocate memory ");
-			return NULL;
-		}
 		as = (Tablet) {
 			.nr_attrs = list_length(t->columns.set),
 			.nr = (sz < 1) ? BUN_NONE : (BUN) sz,
@@ -933,8 +928,13 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			.tryall = 0,
 			.complaints = NULL,
 			.filename = m->scanner.rs == bs ? NULL : "",
-			.format = fmt,
 		};
+		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
+		if (fmt == NULL) {
+			sql_error(m, 500, "failed to allocate memory ");
+			return NULL;
+		}
+		as.format = fmt;
 		if (!isa_block_stream(bs->s))
 			out = NULL;
 
