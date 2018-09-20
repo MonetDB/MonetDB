@@ -509,8 +509,9 @@ BATclear(BAT *b, bool force)
 		if (b->tvheap && b->tvheap->free > 0) {
 			Heap th;
 
-			memset(&th, 0, sizeof(th));
-			th.farmid = b->tvheap->farmid;
+			th = (Heap) {
+				.farmid = b->tvheap->farmid,
+			};
 			strncpy(th.filename, b->tvheap->filename, sizeof(th.filename));
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
@@ -729,11 +730,12 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 			 * with copy-on-write VM support */
 			Heap bthp, thp;
 
-			memset(&bthp, 0, sizeof(Heap));
-			memset(&thp, 0, sizeof(Heap));
-
-			bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
-			thp.farmid = BBPselectfarm(role, b->ttype, varheap);
+			bthp = (Heap) {
+				.farmid = BBPselectfarm(role, b->ttype, offheap),
+			};
+			thp = (Heap) {
+				.farmid = BBPselectfarm(role, b->ttype, varheap),
+			};
 			snprintf(bthp.filename, sizeof(bthp.filename),
 				 "%s.tail", BBP_physical(bn->batCacheid));
 			snprintf(thp.filename, sizeof(thp.filename), "%s.theap",

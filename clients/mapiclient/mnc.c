@@ -155,10 +155,11 @@ main(int argc, char **argv)
 
 		snprintf(sport, sizeof(sport), "%d", port & 0xFFFF);
 
-		memset(&hints, 0, sizeof(hints));
-		hints.ai_family = AF_UNSPEC;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_protocol = IPPROTO_TCP;
+		hints = (struct addrinfo) {
+			.ai_family = AF_UNSPEC,
+			.ai_socktype = SOCK_STREAM,
+			.ai_protocol = IPPROTO_TCP,
+		};
 		ret = getaddrinfo(host, sport, &hints, &res);
 		if (ret) {
 			fprintf(stderr, "getaddrinfo failed: %s\n", gai_strerror(ret));
@@ -194,10 +195,11 @@ main(int argc, char **argv)
 			fprintf(stderr, "gethostbyname failed: %s\n", errno ? strerror(errno) : hstrerror(h_errno));
 			exit(1);
 		}
-		memset(&server, 0, sizeof(server));
+		server = (struct sockaddr_in) {
+			.sin_family = hp->h_addrtype,
+			.sin_port = htons((unsigned short) port),
+		};
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		server.sin_family = hp->h_addrtype;
-		server.sin_port = htons((unsigned short) (port & 0xFFFF));
 		s = socket(server.sin_family, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
 			   | SOCK_CLOEXEC

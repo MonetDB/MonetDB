@@ -130,8 +130,9 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		char buf[1];
 		int *c_d;
 
-		memset(&server, 0, sizeof(struct sockaddr_un));
-		server.sun_family = AF_UNIX;
+		server = (struct sockaddr_un) {
+			.sun_family = AF_UNIX,
+		};
 		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
 		free(conn);
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM
@@ -205,10 +206,11 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		}
 		free(conn);
 
-		memset(&server, 0, sizeof(server));
+		server = (struct sockaddr_in) {
+			.sin_family = hp->h_addrtype,
+			.sin_port = htons((unsigned short) atoi(port)),
+		};
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		server.sin_family = hp->h_addrtype;
-		server.sin_port = htons((unsigned short) (atoi(port) & 0xFFFF));
 		serv = (struct sockaddr *) &server;
 		servsize = sizeof(server);
 

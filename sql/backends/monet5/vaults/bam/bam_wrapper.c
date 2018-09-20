@@ -79,7 +79,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 	char flushdir[128];
 
 	/* Enables clear function to check variables */
-	memset(bw, 0, sizeof(bam_wrapper));
+	*bw = (bam_wrapper) {0};
 
 	if (mkdir(DIR_BINARIES, 0777) == -1 && errno != EEXIST) {
 		throw(MAL, "init_bam_wrapper",
@@ -533,7 +533,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 {
 	bam_header_option *opt = NULL;
 
-	memset(ret_hl, 0, sizeof(bam_header_line));	/* Enable clear function to check all variables */
+	*ret_hl = (bam_header_line) {0};	/* Enable clear function to check all variables */
 
 	/* start by stripping \n, \r, \t and spaces */
 	while (**header == '\n' || **header == '\r' || **header == '\t'
@@ -1208,7 +1208,7 @@ init_alignment(bam_wrapper *bw, alignment * alig)
 	bit result;
 
 	/* Enables clear function to check variables */
-	memset(alig, 0, sizeof(alignment));
+	*alig = (alignment) {0};
 
 	alig->qname_size = 10000;
 	alig->rname_size = 10000;

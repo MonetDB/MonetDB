@@ -266,7 +266,7 @@ VIEWreset(BAT *b)
 		const char *nme;
 
 		/* alloc heaps */
-		memset(&tail, 0, sizeof(Heap));
+		tail = (Heap) {0};
 
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);

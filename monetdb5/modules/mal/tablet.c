@@ -1615,9 +1615,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				 threads, csep, rsep, quote);
 #endif
 	memset(ptask, 0, sizeof(ptask));
-	memset(&task, 0, sizeof(task));
-
-	task.cntxt = cntxt;
+	task = (READERtask) {
+		.cntxt = cntxt,
+	};
 
 	/* create the reject tables */
 	create_rejects_table(task.cntxt);
