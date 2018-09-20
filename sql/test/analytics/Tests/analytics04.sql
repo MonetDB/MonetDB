@@ -35,13 +35,15 @@ select cast(sum(aa) over (partition by bb order by bb rows between 3 preceding a
        cast(sum(aa) over (partition by bb order by bb rows between 0 following and 0 following) as bigint),
        cast(sum(aa) over (partition by bb order by bb rows between 0 preceding and 0 preceding) as bigint) from analytics;
 
+rollback;
+
 select count(*) over (order by bb range between 3 preceding and 2 preceding),
        count(*) over (order by bb range between 2 following and 3 following),
        count(*) over (order by bb range between 3 preceding and 3 preceding),
        count(*) over (order by bb range between 3 preceding and 9 preceding),
        count(*) over (order by bb range between current row and current row),
        count(*) over (order by bb range between 0 following and 0 following),
-       count(*) over (order by bb range between 0 preceding and 0 preceding) from analytics;
+       count(*) over (order by bb range between 0 preceding and 0 preceding) from analytics; --TODO someone brave to do add support to this...
 
 select cast(sum(aa) over (partition by bb order by bb range between 3 preceding and 2 preceding) as bigint),
        cast(sum(aa) over (partition by bb order by bb range between 2 following and 3 following) as bigint),
@@ -49,7 +51,7 @@ select cast(sum(aa) over (partition by bb order by bb range between 3 preceding 
        cast(sum(aa) over (partition by bb order by bb range between 3 preceding and 9 preceding) as bigint),
        cast(sum(aa) over (partition by bb order by bb range between current row and current row) as bigint),
        cast(sum(aa) over (partition by bb order by bb range between 0 following and 0 following) as bigint),
-       cast(sum(aa) over (partition by bb order by bb range between 0 preceding and 0 preceding) as bigint) from analytics;
+       cast(sum(aa) over (partition by bb order by bb range between 0 preceding and 0 preceding) as bigint) from analytics; --TODO someone brave to do add support to this...
 
 select count(*) over (order by bb groups between 3 preceding and 2 preceding),
        count(*) over (order by bb groups between 2 following and 3 following),
@@ -57,7 +59,7 @@ select count(*) over (order by bb groups between 3 preceding and 2 preceding),
        count(*) over (order by bb groups between 3 preceding and 9 preceding),
        count(*) over (order by bb groups between current row and current row),
        count(*) over (order by bb groups between 0 following and 0 following),
-       count(*) over (order by bb groups between 0 preceding and 0 preceding) from analytics;
+       count(*) over (order by bb groups between 0 preceding and 0 preceding) from analytics; --TODO someone brave to do add support to this...
 
 select cast(sum(aa) over (partition by bb order by bb groups between 3 preceding and 2 preceding) as bigint),
        cast(sum(aa) over (partition by bb order by bb groups between 2 following and 3 following) as bigint),
@@ -65,9 +67,7 @@ select cast(sum(aa) over (partition by bb order by bb groups between 3 preceding
        cast(sum(aa) over (partition by bb order by bb groups between 3 preceding and 9 preceding) as bigint),
        cast(sum(aa) over (partition by bb order by bb groups between current row and current row) as bigint),
        cast(sum(aa) over (partition by bb order by bb groups between 0 following and 0 following) as bigint),
-       cast(sum(aa) over (partition by bb order by bb groups between 0 preceding and 0 preceding) as bigint) from analytics;
-
-rollback;
+       cast(sum(aa) over (partition by bb order by bb groups between 0 preceding and 0 preceding) as bigint) from analytics; --TODO someone brave to do add support to this...
 
 select count(*) over (rows between 3 following and 2 preceding) from analytics; --error
 select count(*) over (rows between current row and 2 preceding) from analytics; --error

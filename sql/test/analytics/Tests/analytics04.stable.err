@@ -28,7 +28,43 @@ stderr of test 'analytics04` in directory 'sql/test/analytics` itself:
 # 14:06:28 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31905" "--port=30029"
 # 14:06:28 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-31905/.s.monetdb.30029
+MAPI  = (monetdb) /var/tmp/mtest-4171/.s.monetdb.32442
+QUERY = select count(*) over (order by bb range between 3 preceding and 2 preceding),
+               count(*) over (order by bb range between 2 following and 3 following),
+               count(*) over (order by bb range between 3 preceding and 3 preceding),
+               count(*) over (order by bb range between 3 preceding and 9 preceding),
+               count(*) over (order by bb range between current row and current row),
+               count(*) over (order by bb range between 0 following and 0 following),
+               count(*) over (order by bb range between 0 preceding and 0 preceding) from analytics; --TODO someone brave to do add support to this...
+ERROR = !Non-centered windows are only supported in row frames
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-4171/.s.monetdb.32442
+QUERY = select cast(sum(aa) over (partition by bb order by bb range between 3 preceding and 2 preceding) as bigint),
+               cast(sum(aa) over (partition by bb order by bb range between 2 following and 3 following) as bigint),
+               cast(sum(aa) over (partition by bb order by bb range between 3 preceding and 3 preceding) as bigint),
+               cast(sum(aa) over (partition by bb order by bb range between 3 preceding and 9 preceding) as bigint),
+               cast(sum(aa) over (partition by bb order by bb range between current row and current row) as bigint),
+ERROR = !Non-centered windows are only supported in row frames
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-4171/.s.monetdb.32442
+QUERY = select count(*) over (order by bb groups between 3 preceding and 2 preceding),
+               count(*) over (order by bb groups between 2 following and 3 following),
+               count(*) over (order by bb groups between 3 preceding and 3 preceding),
+               count(*) over (order by bb groups between 3 preceding and 9 preceding),
+               count(*) over (order by bb groups between current row and current row),
+               count(*) over (order by bb groups between 0 following and 0 following),
+               count(*) over (order by bb groups between 0 preceding and 0 preceding) from analytics; --TODO someone brave to do add support to this...
+ERROR = !Non-centered windows are only supported in row frames
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-4171/.s.monetdb.32442
+QUERY = select cast(sum(aa) over (partition by bb order by bb groups between 3 preceding and 2 preceding) as bigint),
+               cast(sum(aa) over (partition by bb order by bb groups between 2 following and 3 following) as bigint),
+               cast(sum(aa) over (partition by bb order by bb groups between 3 preceding and 3 preceding) as bigint),
+               cast(sum(aa) over (partition by bb order by bb groups between 3 preceding and 9 preceding) as bigint),
+               cast(sum(aa) over (partition by bb order by bb groups between current row and current row) as bigint),
+ERROR = !Non-centered windows are only supported in row frames
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-4171/.s.monetdb.32442
 QUERY = select count(*) over (rows between 3 following and 2 preceding) from analytics; --error
 ERROR = !FOLLOWING offset must come after PRECEDING offset
 CODE  = 42000

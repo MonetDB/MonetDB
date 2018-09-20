@@ -4725,6 +4725,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			return sql_error(sql, 02, SQLSTATE(42000) "CURRENT ROW offset must come after PRECEDING offset");
 		if(wstart->token == SQL_FOLLOWING && wend->token == SQL_CURRENT_ROW)
 			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must come after CURRENT ROW offset");
+		if(wstart->token == wend->token && (frame_type != FRAME_ROWS && frame_type != FRAME_ALL))
+			return sql_error(sql, 02, SQLSTATE(42000) "Non-centered windows are only supported in row frames");
 		if(!obe && frame_type == FRAME_RANGE) {
 			bool ok_preceding = false, ok_following = false;
 			if(rstart->token == SQL_ATOM) {
