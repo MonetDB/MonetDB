@@ -839,8 +839,9 @@ struct MapiStruct {
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
 	uint32_t index;		/* to mark the log records */
-	void *getfilecontentprivate;
-	char *(*getfilecontent)(void *, const char *, bool, uint64_t, uint64_t *);
+	void *filecontentprivate;
+	char *(*getfilecontent)(void *, const char *, bool, uint64_t, size_t *);
+	char *(*putfilecontent)(void *, const char *, const void *restrict, size_t);
 };
 
 struct MapiResultSet {
@@ -2985,10 +2986,11 @@ mapi_disconnect(Mapi mid)
  * callback function the opportunity to free any resources.
  */
 void
-mapi_setfilecallback(Mapi mid, char *(*getfilecontent)(void *, const char *, bool, uint64_t, uint64_t *), void *getfilecontentprivate)
+mapi_setfilecallback(Mapi mid, char *(*getfilecontent)(void *, const char *, bool, uint64_t, size_t *), char *(*putfilecontent)(void *, const char *, const void *restrict, size_t), void *filecontentprivate)
 {
 	mid->getfilecontent = getfilecontent;
-	mid->getfilecontentprivate = getfilecontentprivate;
+	mid->putfilecontent = putfilecontent;
+	mid->filecontentprivate = filecontentprivate;
 }
 
 #define testBinding(hdl,fnr,funcname)					\
@@ -3882,10 +3884,55 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 }
 
 static void
-handle_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
+write_file(MapiHdl hdl, char *filename)
 {
 	Mapi mid = hdl->mid;
-	uint64_t size = 0, flushsize = 0;
+	char *line;
+	char data[BLOCK];
+	ssize_t len;
+
+	(void) read_line(mid);	/* read flush marker */
+	if (filename == NULL) {
+		/* malloc failure */
+		mnstr_printf(mid->to, "!HY001!allocation failure\n");
+		mnstr_flush(mid->to);
+		return;
+	}
+	if (mid->putfilecontent == NULL) {
+		free(filename);
+		mnstr_printf(mid->to, "!HY000!cannot send files\n");
+		mnstr_flush(mid->to);
+		return;
+	}
+	line = mid->putfilecontent(mid->filecontentprivate, filename, NULL, 0);
+	free(filename);
+	if (line != NULL) {
+		if (strchr(line, '\n'))
+			line = "incorrect response from application";
+		mnstr_printf(mid->to, "!HY000!%.64s\n", line);
+		mnstr_flush(mid->to);
+		return;
+	}
+	mnstr_flush(mid->to);
+	while ((len = mnstr_read(mid->from, data, 1, sizeof(data))) > 0) {
+		if (line == NULL)
+			line = mid->putfilecontent(mid->filecontentprivate,
+						   NULL, data, len);
+	}
+	if (line == NULL)
+		line = mid->putfilecontent(mid->filecontentprivate,
+					   NULL, NULL, 0);
+	if (line && strchr(line, '\n'))
+		line = "incorrect response from application";
+	mnstr_printf(mid->to, "%s\n", line ? line : "");
+	mnstr_flush(mid->to);
+}
+
+static void
+read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
+{
+	Mapi mid = hdl->mid;
+	size_t size = 0, flushsize = 0;
 	char *data, *line;
 
 	(void) read_line(mid);	/* read flush marker */
@@ -3901,7 +3948,7 @@ handle_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 		mnstr_flush(mid->to);
 		return;
 	}
-	data = mid->getfilecontent(mid->getfilecontentprivate, filename, binary, off, &size);
+	data = mid->getfilecontent(mid->filecontentprivate, filename, binary, off, &size);
 	free(filename);
 	if (data != NULL && size == 0) {
 		if (strchr(data, '\n'))
@@ -3917,24 +3964,24 @@ handle_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 			line = read_line(mid);
 			if (line == NULL) {
 				/* error */
-				(void) mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, NULL);
+				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
 				return;
 			}
 			assert(line[0] == PROMPTBEG);
 			if (line[0] != PROMPTBEG) {
 				/* error */
-				(void) mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, NULL);
+				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
 				return;
 			}
 			if (line[1] == PROMPT3[1]) {
-				(void) mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, NULL);
+				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
 				(void) read_line(mid);
 				return;
 			}
 			assert(line[1] == PROMPT2[1]);
 			if (line[1] != PROMPT2[1]) {
 				/* error */
-				(void) mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, NULL);
+				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
 				return;
 			}
 			(void) read_line(mid);
@@ -3945,7 +3992,7 @@ handle_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 			return;
 		}
 		flushsize += size;
-		data = mid->getfilecontent(mid->getfilecontentprivate, NULL, false, 0, &size);
+		data = mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, &size);
 	}
 	mnstr_flush(mid->to);
 	line = read_line(mid);
@@ -4035,12 +4082,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					}
 					assert(*line == ' ');
 					line++; /* skip one space */
-					handle_file(hdl, off, strdup(line), binary);
+					read_file(hdl, off, strdup(line), binary);
 					break;
 				}
 				case 'w':
-					assert(0);
-					/* not yet implemented */
+					line++; /* skip one space */
+					write_file(hdl, strdup(line));
+					break;
 				}
 				continue;
 			}

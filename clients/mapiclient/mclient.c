@@ -3036,7 +3036,7 @@ struct privdata {
 #define READSIZE	(1 << 20)
 
 static char *
-getfile(void *data, const char *filename, bool binary, uint64_t offset, uint64_t *size)
+getfile(void *data, const char *filename, bool binary, uint64_t offset, size_t *size)
 {
 	stream *f;
 	char *buf;
@@ -3086,8 +3086,31 @@ getfile(void *data, const char *filename, bool binary, uint64_t offset, uint64_t
 		priv->f = NULL;
 		return NULL;
 	}
-	*size = (uint64_t) s;
+	*size = (size_t) s;
 	return buf;
+}
+
+static char *
+putfile(void *data, const char *filename, const void *restrict buf, size_t bufsize)
+{
+	struct privdata *priv = data;
+
+	if (filename != NULL) {
+		if ((priv->f = open_wastream(filename)) == NULL)
+			return "cannot open file";
+		if (buf == NULL || bufsize == 0)
+			return NULL;
+	} else if (buf == NULL) {
+		close_stream(priv->f);
+		priv->f = NULL;
+		return NULL;
+	}
+	if (mnstr_write(priv->f, buf, 1, bufsize) < (ssize_t) bufsize) {
+		close_stream(priv->f);
+		priv->f = NULL;
+		return "error writing output";
+	}
+	return NULL;		/* success */
 }
 
 __declspec(noreturn) static void usage(const char *prog, int xit)
@@ -3494,7 +3517,7 @@ main(int argc, char **argv)
 
 	struct privdata priv;
 	priv = (struct privdata) {0};
-	mapi_setfilecallback(mid, getfile, &priv);
+	mapi_setfilecallback(mid, getfile, putfile, &priv);
 
 	if (!autocommit)
 		mapi_setAutocommit(mid, autocommit);
