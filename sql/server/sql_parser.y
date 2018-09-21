@@ -162,6 +162,7 @@ int yydebug=1;
 	between_predicate
 	comparison_predicate
 	opt_from_clause
+	opt_window_clause
 	existence_test
 	in_predicate
 	insert_stmt
@@ -263,6 +264,7 @@ int yydebug=1;
 	if_opt_else
 	func_data_type
 	with_list_element
+	window_definition
 	window_function
 	window_function_type
 	window_partition_clause
@@ -436,6 +438,7 @@ int yydebug=1;
 	forest_element_list
 	forest_element
 	XML_value_expression_list
+	window_definition_list
 	window_frame_extent
 	window_frame_between
 	routine_designator
@@ -627,7 +630,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token INDEX REPLACE
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
-%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS
+%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW
 
 %token X_BODY 
 %%
@@ -3312,7 +3315,8 @@ simple_select:
 		$4->h->next->data.sym,
 		$4->h->next->next->data.sym,
 		$4->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, NULL, NULL,
+		$4->h->next->next->next->next->data.sym);
 	}
     ;
 
@@ -3323,7 +3327,8 @@ select_statement_single_row:
 		$6->h->next->data.sym,
 		$6->h->next->next->data.sym,
 		$6->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, NULL, NULL,
+		$6->h->next->next->next->next->data.sym);
 	}
     ;
 
@@ -3348,7 +3353,7 @@ select_no_parens_orderby:
 				$$ = newSelectNode( 
 					SA, 0, 
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5, NULL);
 			}
 	  	} else {
 			yyerror(m, "missing SELECT operator");
@@ -3419,13 +3424,29 @@ selection:
  ;
 
 table_exp:
-    opt_from_clause opt_where_clause opt_group_by_clause opt_having_clause
+    opt_from_clause opt_window_clause opt_where_clause opt_group_by_clause opt_having_clause
 
 	{ $$ = L();
 	  append_symbol($$, $1);
-	  append_symbol($$, $2);
 	  append_symbol($$, $3);
-	  append_symbol($$, $4); }
+	  append_symbol($$, $4);
+	  append_symbol($$, $5);
+	  append_symbol($$, $2); }
+ ;
+
+window_definition:
+    ident AS '(' window_specification ')' { dlist *l = L(); append_string(l, $1); append_list(l, $4);
+                                            $$ = _symbol_create_list(SQL_NAME, l); }
+ ;
+
+window_definition_list:
+    window_definition                            { $$ = append_symbol(L(), $1); }
+ |  window_definition_list ',' window_definition { $$ = append_symbol($1, $3); }
+ ;
+
+opt_window_clause:
+    /* empty */                   { $$ = NULL; }
+ |  WINDOW window_definition_list { $$ = _symbol_create_list( SQL_WINDOW, $2); }
  ;
 
 opt_from_clause:
@@ -4136,10 +4157,11 @@ param:
 
 */
 
-window_function: 
+window_function:
 	window_function_type OVER '(' window_specification ')'
-	{ $$ = _symbol_create_list( SQL_RANK, 
-		append_list(append_symbol(L(), $1), $4)); }
+	{ $$ = _symbol_create_list( SQL_RANK, append_list(append_symbol(L(), $1), $4)); }
+  | window_function_type OVER ident
+	{ $$ = _symbol_create_list( SQL_RANK, append_string(append_symbol(L(), $1), $3)); }
   ;
 
 window_function_type:
@@ -6472,6 +6494,7 @@ char *token2string(int token)
 	SQL(PRECEDING);
 	SQL(FOLLOWING);
 	SQL(CURRENT_ROW);
+	SQL(WINDOW);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

@@ -189,7 +189,8 @@ typedef enum tokens {
 	SQL_PARTITION_EXPRESSION,
 	SQL_PRECEDING,
 	SQL_FOLLOWING,
-	SQL_CURRENT_ROW
+	SQL_CURRENT_ROW,
+	SQL_WINDOW
 } tokens;
 
 typedef enum jt {

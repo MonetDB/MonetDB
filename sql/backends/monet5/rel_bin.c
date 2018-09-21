@@ -504,8 +504,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						es = stmt_const(be, bin_first_column(be, left), es);
 				}
 				/* last argument is condition, change into candidate list */
-				if (!en->next && !f->func->varres && !f->func->vararg && list_length(exps) > list_length(f->func->ops)) {
-					if (!strcmp(f->func->base.name, "window_following_bound") && es->nrcols) {
+				if (f->func->type != F_ANALYTIC && !en->next && !f->func->varres && !f->func->vararg && list_length(exps) > list_length(f->func->ops)) {
+					if (es->nrcols) {
 						if (!nrcols) {
 							node *n;
 							list *nl = sa_list(sql->sa);
@@ -518,7 +518,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 						}
 						es = stmt_uselect(be, es, stmt_bool(be,1), cmp_equal, NULL, 0);
-					} else if (f->func->type != F_ANALYTIC)/* need a condition */
+					} else /* need a condition */
 						cond_execution = es;
 				}
 				if (es->nrcols > nrcols)

@@ -22,6 +22,7 @@
 #include "sql_keyword.h"
 #include "sql_atom.h"
 #include "sql_query.h"
+#include "sql_symbol.h"
 
 #define ERRSIZE 8192
 
@@ -69,7 +70,8 @@ typedef struct sql_var {
 	const char *name;
 	atom a;
 	sql_table *t;
-	sql_rel *rel;	
+	sql_rel *rel;
+	dlist *wdef;
 	char view;
 	char frame;
 } sql_var;
@@ -230,6 +232,8 @@ extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);
 extern sql_var* stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
 extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
 extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
+extern sql_var* stack_push_window_def(mvc *sql, const char *name, dlist *sym);
+extern dlist* stack_get_window_def(mvc *sql, const char *name);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
 extern sql_var* stack_push_frame(mvc *sql, const char *name);

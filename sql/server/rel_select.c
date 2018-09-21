@@ -4504,17 +4504,28 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	node *n;
 	dlist *l = se->data.lval;
 	symbol *window_function = l->h->data.sym;
-	dlist *window_specification = l->h->next->data.lval;
 	char *aname = NULL, *sname = NULL;
 	sql_subfunc *wf = NULL;
 	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL;
 	sql_rel *r = *rel, *p;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
-	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last,
-		has_order_by = (window_specification->h->next->data.sym != NULL),
-		frame_type = has_order_by ? FRAME_RANGE : FRAME_ROWS;
 	dnode *dn = window_function->data.lval->h;
+	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last, has_order_by, frame_type;
+	dlist *window_specification = NULL;
+
+	if(l->h->next->type == type_list) {
+		window_specification = l->h->next->data.lval;
+	} else if (l->h->next->type == type_string) {
+		const char* window_alias = l->h->next->data.sval;
+		if((window_specification = stack_get_window_def(sql, window_alias)) == NULL)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found on WINDOW specification list", window_alias);
+	} else {
+		assert(0);
+	}
+
+	has_order_by = (window_specification->h->next->data.sym != NULL),
+	frame_type = has_order_by ? FRAME_RANGE : FRAME_ROWS;
 
 	aname = qname_fname(dn->data.lval);
 	sname = qname_schema(dn->data.lval);
@@ -4655,7 +4666,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			}
 		}
 	}
-	(void)distinct;
+	if(distinct)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: DISTINCT clause is not implemented for window functions");
 
 	/* diff for partitions */
 	if (gbe) {
@@ -5456,6 +5468,20 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 	if (ek.card != card_relation && sn->orderby)
 		return sql_error(sql, 01, SQLSTATE(42000) "SELECT: ORDER BY only allowed on outermost SELECT");
 
+	if (sn->window) {
+		dlist *wl = sn->window->data.lval;
+		for (dnode *n = wl->h; n ; n = n->next) {
+			dlist *wd = n->data.sym->data.lval;
+			const char *name = wd->h->data.sval;
+			dlist *wdef = wd->h->next->data.lval;
+			if(stack_get_window_def(sql, name)) {
+				return sql_error(sql, 01, SQLSTATE(42000) "SELECT: Duplicated definition of window '%s'", name);
+			} else if(!stack_push_window_def(sql, name, wdef)) {
+				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+		}
+	}
+
 	sql->use_views = 1;
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
@@ -5929,14 +5955,19 @@ rel_selects(mvc *sql, symbol *s)
 		break;
 	case SQL_SELECT: {
 		exp_kind ek = {type_value, card_relation, TRUE};
- 		SelectNode *sn = (SelectNode *) s;
+		SelectNode *sn = (SelectNode *) s;
+
+		if(!stack_push_frame(sql, "SELECT"))
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 		if (sn->into) {
 			sql->type = Q_SCHEMA;
-			return rel_select_with_into(sql, s);
+			ret = rel_select_with_into(sql, s);
+		} else {
+			ret = rel_subquery(sql, NULL, s, ek, APPLY_JOIN);
+			sql->type = Q_TABLE;
 		}
-		ret = rel_subquery(sql, NULL, s, ek, APPLY_JOIN);
-		sql->type = Q_TABLE;
+		stack_pop_frame(sql);
 	}	break;
 	case SQL_JOIN:
 		ret = rel_joinquery(sql, NULL, s);
