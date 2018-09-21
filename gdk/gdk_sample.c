@@ -26,7 +26,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "xoshiro128starstar.h"
+#include "xoshiro256starstar.h"
 
 #undef BATsample
 
@@ -109,7 +109,7 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
 
 /* BATsample implements sampling for void headed BATs */
 BAT *
-BATsample_with_seed(BAT *b, BUN n, uint32_t seed)
+BATsample_with_seed(BAT *b, BUN n, unsigned seed)
 {
 	BAT *bn;
 	BUN cnt, slen;
@@ -185,7 +185,7 @@ BATsample_with_seed(BAT *b, BUN n, uint32_t seed)
 BAT *
 BATsample(BAT *b, BUN n)
 {
-	uint32_t some_random_seed = (uint32_t) rand();
+	unsigned some_random_seed = (unsigned) rand();
 
 	return BATsample_with_seed(b, n,some_random_seed);
 }

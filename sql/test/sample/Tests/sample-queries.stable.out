@@ -1,0 +1,396 @@
+stdout of test 'sample-queries` in directory 'sql/test/sample` itself:
+
+
+# 14:40:06 >  
+# 14:40:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34313" "--set" "mapi_usock=/var/tmp/mtest-23651/.s.monetdb.34313" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/aris/Installations/default-env/var/MonetDB/mTests_sql_test_sample" "--set" "embedded_c=true"
+# 14:40:06 >  
+
+# MonetDB 5 server v11.32.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_sample', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.558 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-MonetDB:34313/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23651/.s.monetdb.34313
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:40:06 >  
+# 14:40:06 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23651" "--port=34313"
+# 14:40:06 >  
+
+#select * from GENERATE_SERIES(1,41) sample 0;               --empty set
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 1 # length
+#select * from GENERATE_SERIES(1,41) sample 1 seed 1234;     --1 sample
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select * from GENERATE_SERIES(1,41) sample 10 seed 1234;    --10 samples
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 1	]
+[ 7	]
+[ 8	]
+[ 17	]
+[ 18	]
+[ 20	]
+[ 24	]
+[ 31	]
+[ 33	]
+[ 37	]
+#select * from GENERATE_SERIES(1,41) sample 20 seed 1234;    --20 samples
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 1	]
+[ 2	]
+[ 4	]
+[ 7	]
+[ 8	]
+[ 10	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 20	]
+[ 21	]
+[ 24	]
+[ 26	]
+[ 29	]
+[ 31	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 37	]
+#select * from GENERATE_SERIES(1,41) sample 30 seed 1234;    --30 samples
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 9	]
+[ 10	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 19	]
+[ 21	]
+[ 22	]
+[ 23	]
+[ 25	]
+[ 26	]
+[ 27	]
+[ 28	]
+[ 29	]
+[ 30	]
+[ 32	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 38	]
+[ 39	]
+[ 40	]
+#select * from GENERATE_SERIES(1,41) sample 30 seed 4321;    --another 30 samples
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 2	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 20	]
+[ 21	]
+[ 22	]
+[ 23	]
+[ 25	]
+[ 26	]
+[ 29	]
+[ 32	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 37	]
+[ 38	]
+[ 39	]
+[ 40	]
+#select * from GENERATE_SERIES(1,41) sample 40;              --full table
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+[ 10	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 19	]
+[ 20	]
+[ 21	]
+[ 22	]
+[ 23	]
+[ 24	]
+[ 25	]
+[ 26	]
+[ 27	]
+[ 28	]
+[ 29	]
+[ 30	]
+[ 31	]
+[ 32	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 37	]
+[ 38	]
+[ 39	]
+[ 40	]
+#select * from GENERATE_SERIES(1,41) sample 0.0;             --empty set
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 1 # length
+#select * from GENERATE_SERIES(1,41) sample 0.025 seed 1234; --1 sample
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select * from GENERATE_SERIES(1,41) sample 0.25 seed 1234;  --10 samples
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 1	]
+[ 7	]
+[ 8	]
+[ 17	]
+[ 18	]
+[ 20	]
+[ 24	]
+[ 31	]
+[ 33	]
+[ 37	]
+#select * from GENERATE_SERIES(1,41) sample 0.5 seed 1234;   --20 samples
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 1	]
+[ 2	]
+[ 4	]
+[ 7	]
+[ 8	]
+[ 10	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 20	]
+[ 21	]
+[ 24	]
+[ 26	]
+[ 29	]
+[ 31	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 37	]
+#select * from GENERATE_SERIES(1,41) sample 0.75 seed 1234;  --30 samples
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 9	]
+[ 10	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 19	]
+[ 21	]
+[ 22	]
+[ 23	]
+[ 25	]
+[ 26	]
+[ 27	]
+[ 28	]
+[ 29	]
+[ 30	]
+[ 32	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 38	]
+[ 39	]
+[ 40	]
+#select * from GENERATE_SERIES(1,41) sample 0.75 seed 4321;  --another 30 samples
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 2	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 20	]
+[ 21	]
+[ 22	]
+[ 23	]
+[ 25	]
+[ 26	]
+[ 29	]
+[ 32	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 37	]
+[ 38	]
+[ 39	]
+[ 40	]
+#select * from GENERATE_SERIES(1,41) sample 1.0;             --full table
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 2 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+[ 10	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 19	]
+[ 20	]
+[ 21	]
+[ 22	]
+[ 23	]
+[ 24	]
+[ 25	]
+[ 26	]
+[ 27	]
+[ 28	]
+[ 29	]
+[ 30	]
+[ 31	]
+[ 32	]
+[ 33	]
+[ 34	]
+[ 35	]
+[ 36	]
+[ 37	]
+[ 38	]
+[ 39	]
+[ 40	]
+
+# 14:40:06 >  
+# 14:40:06 >  "Done."
+# 14:40:06 >  
+

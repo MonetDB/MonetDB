@@ -33,7 +33,7 @@
 #include "gdk.h"
 #include "mal_exception.h"
 #include "sample.h"
-// TODO: Go through this documentation.
+// TODO: Go through this documentation and update it with an explanation about seeds.
 /*
  * @- Uniform Sampling.
  *
@@ -72,13 +72,13 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	bat *r, *b;
 	lng sample_size;
-	int seed;
+	unsigned seed;
 	(void) cntxt;
 
 	BAT *br, *bb;
 
 	r = getArgReference_bat(stk, pci, 0);
-	b = getArgReference_bat(stk, pci, 1);\
+	b = getArgReference_bat(stk, pci, 1);
 
 	if ((bb = BATdescriptor(*b)) == NULL) {
 		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
@@ -102,7 +102,7 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 
 	if (pci->argc == 4) {
-		seed = *getArgReference_int(stk, pci, 3);
+		seed = (unsigned) *getArgReference_int(stk, pci, 3);
 		br = BATsample_with_seed(bb, (BUN) sample_size, seed);
 	}
 	else {
