@@ -2300,6 +2300,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr v;
 	int mtype;
 	BAT  *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
+	bool tostdout;
 
 	(void) format;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -2383,22 +2384,38 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
 	}
 	/* now select the file channel */
-	if ( strcmp(filename,"stdout") == 0 )
+	if ( strcmp(filename,"stdout") == 0 ) {
+		tostdout = true;
 		s= cntxt->fdout;
-	else if ( (s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
-		if (s)
-			close_stream(s);
-		msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-				      filename?filename:"stdout", strerror(errnr));
-		goto wrapup_result_set;
+	} else {
+		tostdout = false;
+		while (!m->scanner.rs->eof)
+			bstream_next(m->scanner.rs);
+		s = m->scanner.ws;
+		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
+		mnstr_printf(s, "w %s\n", filename);
+		mnstr_flush(s);
+		char buf[80];
+		if (mnstr_readline(m->scanner.rs->s, buf, sizeof(buf)) > 1) {
+			msg = createException(IO, "streams.open", "%s", buf);
+			goto wrapup_result_set;
+		}
 	}
 	if (mvc_export_result(cntxt->sqlcontext, s, res, strcmp(filename, "stdout") == 0, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
 	mb->starttime = 0;
 	mb->optimize = 0;
-	if( s != cntxt->fdout)
-		mnstr_close(s);
+	if (!tostdout) {
+		mnstr_flush(s);
+		char buf[80];
+		ssize_t sz;
+		while ((sz = mnstr_readline(m->scanner.rs->s, buf, sizeof(buf))) > 0) {
+			if (sz > 1) {
+				msg = createException(IO, "streams.open", "%s", buf);
+				goto wrapup_result_set;
+			}
+		}
+	}
   wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
