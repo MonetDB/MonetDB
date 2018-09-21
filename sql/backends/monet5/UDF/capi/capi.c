@@ -490,7 +490,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		(void)sigaddset(&signal_set, SIGBUS);
 		(void)pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
 
-		sa = (struct sigaction) {0};
+		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
 	if (!grouped) {
@@ -1339,7 +1339,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			errno = 0;
 			goto wrapup;
 		}
-		sa = (struct sigaction) {0};
+		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
 	if (msg) {
@@ -1532,7 +1532,7 @@ wrapup:
 			(void) sigaction(SIGSEGV, &oldsa, NULL);
 			(void) sigaction(SIGBUS, &oldsb, NULL);
 
-			sa = (struct sigaction) {0};
+			sa = (struct sigaction) {.sa_flags = 0,};
 		}
 		// clear any mprotected regions
 		while (regions) {

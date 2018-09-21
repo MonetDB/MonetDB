@@ -125,7 +125,7 @@ INETfromString(const char *src, size_t *len, inet **retval)
 		}
 		*len = sizeof(inet);
 	} else {
-		**retval = (inet) {0};
+		**retval = (inet) {.q1 = 0,};
 	}
 
 	/* handle the nil string */

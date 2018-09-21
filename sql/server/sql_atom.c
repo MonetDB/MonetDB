@@ -32,7 +32,7 @@ atom_create( sql_allocator *sa )
 	if(!a)
 		return NULL;
 
-	a->data = (ValRecord) {0};
+	a->data = (ValRecord) {.vtype = TYPE_void,};
 	a->d = dbl_nil;
 	a->varid = -1;
 	return a;
