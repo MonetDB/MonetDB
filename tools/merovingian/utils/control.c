@@ -66,8 +66,9 @@ char* control_send(
 #ifndef SOCK_CLOEXEC
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
-		memset(&server, 0, sizeof(struct sockaddr_un));
-		server.sun_family = AF_UNIX;
+		server = (struct sockaddr_un) {
+			.sun_family = AF_UNIX,
+		};
 		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
@@ -100,10 +101,11 @@ char* control_send(
 			closesocket(sock);
 			return(strdup(sbuf));
 		}
-		memset(&server, 0, sizeof(struct sockaddr_in));
-		server.sin_family = hp->h_addrtype;
+		server = (struct sockaddr_in) {
+			.sin_family = hp->h_addrtype,
+			.sin_port = htons((unsigned short) port),
+		};
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		server.sin_port = htons((unsigned short) (port & 0xFFFF));
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_in)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
 			closesocket(sock);
@@ -133,8 +135,8 @@ char* control_send(
 			buf = rbuf + 2;
 			ver = 9;
 
-			fdin = block_stream(socket_rastream(sock, "client in"));
-			fdout = block_stream(socket_wastream(sock, "client out"));
+			fdin = block_stream(socket_rstream(sock, "client in"));
+			fdout = block_stream(socket_wstream(sock, "client out"));
 		} else {
 			if (len > 2 &&
 					(strstr(rbuf + 2, ":BIG:") != NULL ||

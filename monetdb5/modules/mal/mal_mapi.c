@@ -456,8 +456,8 @@ SERVERlistenThread(SOCKET *Sock)
 			showException(GDKstdout, MAL, "initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			continue;
 		}
-		data->in = socket_rastream(msgsock, "Server read");
-		data->out = socket_wastream(msgsock, "Server write");
+		data->in = socket_rstream(msgsock, "Server read");
+		data->out = socket_wstream(msgsock, "Server write");
 		if (data->in == NULL || data->out == NULL) {
 		  stream_alloc_fail:
 			mnstr_destroy(data->in);

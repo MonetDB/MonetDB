@@ -1272,7 +1272,7 @@ SQLproducer(void *p)
 	for (;;) {
 		ateof[cur] = !tablet_read_more(task->b, task->out, task->b->size);
 #ifdef _DEBUG_TABLET_CNTRL
-		if (ateof[cur] == 0)
+		if (!ateof[cur])
 			mnstr_printf(GDKout, "#read %zu bytes pos = %zu eof=%d offset=" LLFMT " \n",
 						 task->b->len, task->b->pos, task->b->eof,
 						 (lng) (s - task->input[cur]));
@@ -1615,9 +1615,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				 threads, csep, rsep, quote);
 #endif
 	memset(ptask, 0, sizeof(ptask));
-	memset(&task, 0, sizeof(task));
-
-	task.cntxt = cntxt;
+	task = (READERtask) {
+		.cntxt = cntxt,
+	};
 
 	/* create the reject tables */
 	create_rejects_table(task.cntxt);

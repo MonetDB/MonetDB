@@ -415,7 +415,7 @@ sam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	memset(fields, 0, 11 * sizeof(bam_field));
 
-	if ((output = bsopen(output_path)) == NULL) {
+	if ((output = bsopen(output_path, false)) == NULL) {
 		msg = createException(MAL, "sam_export", SQLSTATE(BA000) "Could not open output file '%s' for writing", output_path);
 		goto cleanup;
 	}
@@ -492,7 +492,7 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	snprintf(output_header_path, 1024, "%s_tmp.sam", output_path);
-	if ((output_header = bsopen(output_header_path)) == NULL) {
+	if ((output_header = bsopen(output_header_path, false)) == NULL) {
 		msg = createException(MAL, "bam_export", SQLSTATE(BA000) "Could not open temporary output file '%s' for writing", output_header_path);
 		goto cleanup;
 	}

@@ -395,10 +395,11 @@ SQLinit(Client c)
 #endif
 
 	MT_lock_set(&sql_contextLock);
-	memset((char *) &be_funcs, 0, sizeof(backend_functions));
-	be_funcs.fstack = &monet5_freestack;
-	be_funcs.fcode = &monet5_freecode;
-	be_funcs.fresolve_function = &monet5_resolve_function;
+	be_funcs = (backend_functions) {
+		.fstack = &monet5_freestack,
+		.fcode = &monet5_freecode,
+		.fresolve_function = &monet5_resolve_function,
+	};
 	monet5_user_init(&be_funcs);
 
 	msg = MTIMEtimezone(&tz, &gmt);
@@ -484,7 +485,7 @@ SQLinit(Client c)
 			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
-			mnstr_destroy(createdb_stream);
+			close_stream(createdb_stream);
 			GDKfree(createdb_buf);
 			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -531,13 +532,13 @@ SQLinit(Client c)
 					size_t sz;
 					sz = getFileSize(fd);
 					if (sz > (size_t) 1 << 29) {
-						mnstr_destroy(fd);
+						close_stream(fd);
 						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
 					} else {
 						bstream *bfd = NULL;
 
 						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
-							mnstr_destroy(fd);
+							close_stream(fd);
 							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						} else {
 							if (bstream_next(bfd) >= 0)
@@ -789,16 +790,16 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fullname = *name;
 	fd = open_rastream(fullname);
 	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(42000) "could not open file: %s\n", *name);
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(42000) "file %s too large to process", fullname);
 	}
 	if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (bstream_next(bfd) < 0) {

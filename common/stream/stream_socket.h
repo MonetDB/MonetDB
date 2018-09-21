@@ -28,7 +28,5 @@
 
 stream_export stream *socket_rstream(SOCKET socket, const char *name);
 stream_export stream *socket_wstream(SOCKET socket, const char *name);
-stream_export stream *socket_rastream(SOCKET socket, const char *name);
-stream_export stream *socket_wastream(SOCKET socket, const char *name);
 
 #endif	/* _STREAM_SOCKET_H_ */

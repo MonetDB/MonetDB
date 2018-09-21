@@ -265,7 +265,7 @@ cleanup:
 	if(b)
 		buffer_destroy(b);
 	if(s)
-		mnstr_destroy(s);
+		close_stream(s);
 	return res;
 }
 
@@ -1253,8 +1253,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	/* output the data */
 	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
 
-	mnstr_close(s);
-	mnstr_destroy(s);
+	close_stream(s);
 	buffer_destroy(b);
 }
 

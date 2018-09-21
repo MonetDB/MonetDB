@@ -265,7 +265,7 @@ evalFile(str fname, int listing)
 	GDKfree(filename);
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		if (fd)
-			mnstr_destroy(fd);
+			close_stream(fd);
 		throw(MAL,"mal.eval", "WARNING: could not open file\n");
 	} 
 

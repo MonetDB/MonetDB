@@ -319,8 +319,7 @@ update(EventRecord *ev)
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument from a known MAL signature
 			maxevents = malsize;
-			events = (Event*) malloc(maxevents * sizeof(Event));
-			memset((char*)events, 0, maxevents * sizeof(Event));
+			events = calloc(maxevents, sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
 			if(currentquery) {
 				if( prevquery && strcmp(currentquery,prevquery)){

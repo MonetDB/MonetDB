@@ -215,7 +215,7 @@ WLRprocess(void *arg)
 	path[0]=0;
 	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
 		snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
-		fd= open_rstream(path);
+		fd= open_rastream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlr.process:'%s' can not be accessed \n",path);
 			// Be careful not to miss log files.

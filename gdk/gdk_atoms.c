@@ -185,11 +185,12 @@ ATOMallocate(const char *id)
 			}
 			GDKatomcnt++;
 		}
-		memset(BATatoms + t, 0, sizeof(atomDesc));
+		BATatoms[t] = (atomDesc) {
+			.size = sizeof(int),	/* default */
+			.linear = true,		/* default */
+			.storage = t,		/* default */
+		};
 		strcpy(BATatoms[t].name, id);
-		BATatoms[t].size = sizeof(int);		/* default */
-		BATatoms[t].linear = true;		/* default */
-		BATatoms[t].storage = t;		/* default */
 	}
 	MT_lock_unset(&GDKthreadLock);
 	return t;

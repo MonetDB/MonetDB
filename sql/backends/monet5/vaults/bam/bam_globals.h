@@ -106,6 +106,6 @@ hash_fprintf(FILE *f, const char *format, ...) {
 
 
 stream *
-bsopen(str filepath);
+bsopen(str filepath, bool binary);
 
 #endif
