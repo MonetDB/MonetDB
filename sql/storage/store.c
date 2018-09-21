@@ -596,7 +596,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 		ValRecord vmin, vmax;
 		ptr ok;
 
-		vmin = vmax = (ValRecord) {0};
+		vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
 		v1 = table_funcs.column_find_value(tr, find_sql_column(ranges, "minimum"), rid);
 		v2 = table_funcs.column_find_value(tr, find_sql_column(ranges, "maximum"), rid);
@@ -651,7 +651,7 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 		ValRecord vvalue;
 		ptr ok;
 
-		vvalue = (ValRecord) {0};
+		vvalue = (ValRecord) {.vtype = TYPE_void,};
 		void *v = table_funcs.column_find_value(tr, find_sql_column(values, "value"), rid);
 		ok = VALinit(&vvalue, TYPE_str, v);
 		_DELETE(v);
@@ -4816,7 +4816,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	ptr ok;
 
 	assert(isGlobal(mt));
-	vmin = vmax = (ValRecord) {0};
+	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
 	if(min) {
 		ok = VALinit(&vmin, localtype, min);

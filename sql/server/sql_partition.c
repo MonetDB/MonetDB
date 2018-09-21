@@ -321,7 +321,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 					ptr ok;
 
 					nv->tpe = found;
-					vvalue = (ValRecord) {0};
+					vvalue = (ValRecord) {.vtype = TYPE_void,};
 					ok = VALinit(&vvalue, TYPE_str, v->value);
 					if(ok)
 						ok = VALconvert(localtype, &vvalue);
@@ -342,7 +342,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				ValRecord vmin, vmax;
 				ptr ok;
 
-				vmin = vmax = (ValRecord) {0};
+				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 				ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue);
 				if(ok)
 					ok = VALconvert(localtype, &vmin);

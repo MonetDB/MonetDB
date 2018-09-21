@@ -526,7 +526,9 @@ parsemonthintervalstring(char **svalp,
 	long val1 = -1, val2 = -1;
 	SQLLEN leadingprecision;
 
-	*ival = (SQL_INTERVAL_STRUCT) {0};
+	*ival = (SQL_INTERVAL_STRUCT) {
+		.interval_type = SQL_IS_YEAR, /* anything will do */
+	};
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
@@ -684,7 +686,9 @@ parsesecondintervalstring(char **svalp,
 	unsigned v1, v2, v3, v4;
 	int n;
 
-	*ival = (SQL_INTERVAL_STRUCT) {0};
+	*ival = (SQL_INTERVAL_STRUCT) {
+		.interval_type = SQL_IS_YEAR, /* anything will do */
+	};
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;

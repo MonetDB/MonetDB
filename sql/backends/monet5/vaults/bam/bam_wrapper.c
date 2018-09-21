@@ -79,7 +79,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 	char flushdir[128];
 
 	/* Enables clear function to check variables */
-	*bw = (bam_wrapper) {0};
+	*bw = (bam_wrapper) {.type = SAM,};
 
 	if (mkdir(DIR_BINARIES, 0777) == -1 && errno != EEXIST) {
 		throw(MAL, "init_bam_wrapper",
