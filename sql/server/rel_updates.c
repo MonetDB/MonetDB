@@ -1483,20 +1483,9 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	if (files) {
 		dnode *n = files->h;
 
-		if (!copy_allowed(sql, 1))
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-					"COPY INTO from file(s) requires database administrator rights, "
-					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
-
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
 			sql_rel *nrel;
-
-#if 0
-			if (fname && !MT_path_absolute(fname))
-				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
-						"have absolute path: %s", fname);
-#endif
 
 			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths);
 
@@ -1757,20 +1746,6 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 	ssep_e = exp_atom_clob(sql->sa, ssep);
 	ns_e = exp_atom_clob(sql->sa, ns);
 	fname_e = filename?exp_atom_clob(sql->sa, filename):NULL;
-
-	if (filename) {
-		struct stat fs;
-		if (!copy_allowed(sql, 0)) 
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-					"COPY INTO file requires database administrator rights, "
-					"use 'COPY ... INTO STDOUT' instead");
-		if (filename && !MT_path_absolute(filename))
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
-					"have absolute path: %s", filename);
-		if (lstat(filename, &fs) == 0)
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: file already "
-					"exists: %s", filename);
-	}
 
 	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e);
 }
