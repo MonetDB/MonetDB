@@ -79,7 +79,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 		gdk_return gdk_code;
 
 		assert(unit >= 0 && unit <= 3);
-		assert(excl >= 0 && unit <= 3);
+		assert(excl >= 0 && excl <= 2);
 		if (excl != 0)
 			throw(SQL, mod, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
 
