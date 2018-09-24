@@ -533,7 +533,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 {
 	bam_header_option *opt = NULL;
 
-	*ret_hl = (bam_header_line) {0};	/* Enable clear function to check all variables */
+	*ret_hl = (bam_header_line) {.header_tag = {0}};	/* Enable clear function to check all variables */
 
 	/* start by stripping \n, \r, \t and spaces */
 	while (**header == '\n' || **header == '\r' || **header == '\t'
