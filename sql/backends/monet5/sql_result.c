@@ -61,7 +61,7 @@ mystpcpy (char *yydest, const char *yysrc) {
 
 static lng 
 mnstr_swap_lng(stream *s, lng lngval) {
-	return mnstr_byteorder(s) != 1234 ? long_long_SWAP(lngval) : lngval;
+	return mnstr_get_swapbytes(s) ? long_long_SWAP(lngval) : lngval;
 }
 
 #define DEC_TOSTR(TYPE)							\
@@ -920,19 +920,21 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
 
-		memset((char *) &as, 0, sizeof(as));
-		as.nr_attrs = list_length(t->columns.set);
-		as.nr = (sz < 1) ? BUN_NONE : (BUN) sz;
-		as.offset = (BUN) offset;
-		as.error = NULL;
-		as.tryall = 0;
-		as.complaints = NULL;
-		as.filename = m->scanner.rs == bs ? NULL : "";
-		fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
+		as = (Tablet) {
+			.nr_attrs = list_length(t->columns.set),
+			.nr = (sz < 1) ? BUN_NONE : (BUN) sz,
+			.offset = (BUN) offset,
+			.error = NULL,
+			.tryall = 0,
+			.complaints = NULL,
+			.filename = m->scanner.rs == bs ? NULL : "",
+		};
+		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
 			sql_error(m, 500, "failed to allocate memory ");
 			return NULL;
 		}
+		as.format = fmt;
 		if (!isa_block_stream(bs->s))
 			out = NULL;
 
@@ -1707,7 +1709,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					// convert timestamp values to epoch
 					lng time;
 					size_t j = 0;
-					int swap = mnstr_byteorder(s) != 1234;
+					bool swap = mnstr_get_swapbytes(s);
 					timestamp *times = (timestamp*) Tloc(iterators[i].b, srow);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
@@ -1720,7 +1722,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					lng time;
 					timestamp tstamp;
 					size_t j = 0;
-					int swap = mnstr_byteorder(s) != 1234;
+					bool swap = mnstr_get_swapbytes(s);
 					date *dates = (date*) Tloc(iterators[i].b, srow);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
@@ -1730,7 +1732,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					}
 					atom_size = sizeof(lng);
 				} else {
-					if (mnstr_byteorder(s) != 1234) {
+					if (mnstr_get_swapbytes(s)) {
 						size_t j = 0;
 						switch (ATOMstorage(mtype)) {
 						case TYPE_sht: {

@@ -939,6 +939,10 @@ logger_open(logger *lg)
 	filename = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
 
 	lg->log = open_wstream(filename);
+	if (lg->log) {
+		short byteorder = 1234;
+		mnstr_write(lg->log, &byteorder, sizeof(byteorder), 1);
+	}
 	lg->end = 0;
 
 	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != GDK_SUCCEED) {
@@ -1002,14 +1006,22 @@ logger_readlog(logger *lg, char *filename)
 
 	/* if the file doesn't exist, there is nothing to be read back */
 	if (lg->log == NULL || mnstr_errnr(lg->log)) {
-		mnstr_destroy(lg->log);
+		close_stream(lg->log);
 		lg->log = NULL;
 		GDKdebug = dbg;
 		return GDK_SUCCEED;
 	}
+	short byteorder;
+	if (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1) < 1) {
+		close_stream(lg->log);
+		lg->log = NULL;
+		GDKdebug = dbg;
+		return GDK_FAIL;
+	}
+	assert(byteorder == 1234);
 	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
-		mnstr_destroy(lg->log);
+		close_stream(lg->log);
 		lg->log = NULL;
 		GDKdebug = dbg;
 		/* If the file could be opened, but fstat fails,
@@ -1999,7 +2011,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
 {
-	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
+	logger *lg = GDKmalloc(sizeof(struct logger));
 	char filename[FILENAME_MAX];
 	char shared_log_filename[FILENAME_MAX];
 

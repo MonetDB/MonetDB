@@ -406,7 +406,7 @@ URLgetContent(str *retval, url *Str1)
 	if (mnstr_errnr(f) != 0) {
 		str err = createException(MAL, "url.getContent",
 				"opening stream failed: %s", mnstr_error(f));
-		mnstr_destroy(f);
+		close_stream(f);
 		*retval = NULL;
 		return err;
 	}
@@ -422,14 +422,14 @@ URLgetContent(str *retval, url *Str1)
 		if (retbuf == NULL) {
 			if (oldbuf != NULL)
 				GDKfree(oldbuf);
-			mnstr_destroy(f);
+			close_stream(f);
 			throw(MAL, "url.getContent", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		oldbuf = NULL;
 		(void)memcpy(retbuf + rlen, buf, len);
 		rlen += len;
 	}
-	mnstr_destroy(f);
+	close_stream(f);
 	if (len < 0) {
 		GDKfree(retbuf);
 		throw(MAL, "url.getContent", "read error");

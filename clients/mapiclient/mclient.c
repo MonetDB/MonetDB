@@ -2438,12 +2438,12 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 				case 'A':
 					if (mode != SQL)
 						break;
-					mapi_setAutocommit(mid, 1);
+					mapi_setAutocommit(mid, true);
 					continue;
 				case 'a':
 					if (mode != SQL)
 						break;
-					mapi_setAutocommit(mid, 0);
+					mapi_setAutocommit(mid, false);
 					continue;
 				case 'w':
 					pagewidth = atoi(line + 2);
@@ -3088,7 +3088,7 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
 	FILE *fp = NULL;
-	int trace = 0;
+	bool trace = false;
 	bool dump = false;
 	bool useinserts = false;
 	int c = 0;
@@ -3321,7 +3321,7 @@ main(int argc, char **argv)
 			pagewidthset = pagewidth != 0;
 			break;
 		case 'X':
-			trace = MAPI_TRACE;
+			trace = true;
 			break;
 		case 'z':
 			settz = false;

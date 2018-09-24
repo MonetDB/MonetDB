@@ -232,7 +232,7 @@ parsedate(const char *data, DATE_STRUCT *dval)
 {
 	int n;
 
-	memset(dval, 0, sizeof(*dval));
+	*dval = (DATE_STRUCT) {0};
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{d '%hd-%hu-%hu'}%n",
@@ -258,7 +258,7 @@ parsetime(const char *data, TIME_STRUCT *tval)
 	int n;
 	int braces;
 
-	memset(tval, 0, sizeof(*tval));
+	*tval = (TIME_STRUCT) {0};
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{t '%hu:%hu:%hu%n",
@@ -304,7 +304,7 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 	int n;
 	int braces;
 
-	memset(tsval, 0, sizeof(*tsval));
+	*tsval = (TIMESTAMP_STRUCT) {0};
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{TS '%hd-%hu-%hu %hu:%hu:%hu%n",
@@ -526,7 +526,9 @@ parsemonthintervalstring(char **svalp,
 	long val1 = -1, val2 = -1;
 	SQLLEN leadingprecision;
 
-	memset(ival, 0, sizeof(*ival));
+	*ival = (SQL_INTERVAL_STRUCT) {
+		.interval_type = SQL_IS_YEAR, /* anything will do */
+	};
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
@@ -684,7 +686,9 @@ parsesecondintervalstring(char **svalp,
 	unsigned v1, v2, v3, v4;
 	int n;
 
-	memset(ival, 0, sizeof(*ival));
+	*ival = (SQL_INTERVAL_STRUCT) {
+		.interval_type = SQL_IS_YEAR, /* anything will do */
+	};
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
@@ -2254,10 +2258,11 @@ ODBCFetch(ODBCStmt *stmt,
 				nval.scale--;
 				nval.precision--;
 			}
-			memset(&nmval, 0, sizeof(nmval));
-			nmval.precision = nval.precision;
-			nmval.scale = nval.scale;
-			nmval.sign = nval.sign;
+			nmval = (SQL_NUMERIC_STRUCT) {
+				.precision = nval.precision,
+				.scale = nval.scale,
+				.sign = nval.sign,
+			};
 			for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++) {
 				nmval.val[i] = (SQLCHAR) (nval.val & 0xFF);
 				nval.val >>= 8;
@@ -2513,10 +2518,11 @@ ODBCFetch(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-		memset(&ivval, 0, sizeof(ivval));
-		ivval.interval_sign = ival.interval_sign;
-		ivval.intval.year_month.year = 0;
-		ivval.intval.year_month.month = 0;
+		ivval = (SQL_INTERVAL_STRUCT) {
+			.interval_sign = ival.interval_sign,
+			.intval.year_month.year = 0,
+			.intval.year_month.month = 0,
+		};
 		switch (type) {
 		case SQL_C_INTERVAL_YEAR:
 			ivval.interval_type = SQL_IS_YEAR;
@@ -2601,13 +2607,14 @@ ODBCFetch(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-		memset(&ivval, 0, sizeof(ivval));
-		ivval.interval_sign = ival.interval_sign;
-		ivval.intval.day_second.day = 0;
-		ivval.intval.day_second.hour = 0;
-		ivval.intval.day_second.minute = 0;
-		ivval.intval.day_second.second = 0;
-		ivval.intval.day_second.fraction = 0;
+		ivval = (SQL_INTERVAL_STRUCT) {
+			.interval_sign = ival.interval_sign,
+			.intval.day_second.day = 0,
+			.intval.day_second.hour = 0,
+			.intval.day_second.minute = 0,
+			.intval.day_second.second = 0,
+			.intval.day_second.fraction = 0,
+		};
 		switch (type) {
 		case SQL_C_INTERVAL_DAY:
 			ivval.interval_type = SQL_IS_DAY;

@@ -79,28 +79,31 @@ malOpenSource(str file)
  * to find out how long the input is.
 */
 static str
-malLoadScript(Client c, str name, bstream **fdin)
+malLoadScript(str name, bstream **fdin)
 {
 	stream *fd;
 	size_t sz;
 
 	fd = malOpenSource(name);
-	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-		mnstr_destroy(fd);
+	if (fd == NULL || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
+		close_stream(fd);
 		throw(MAL, "malInclude", "could not open file: %s", name);
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "malInclude", "file %s too large to process", name);
 	}
 	*fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
 	if(*fdin == NULL) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "malInclude", MAL_MALLOC_FAIL);
 	}
-	if (bstream_next(*fdin) < 0)
-		mnstr_printf(c->fdout, "!WARNING: could not read %s\n", name);
+	if (bstream_next(*fdin) < 0) {
+		bstream_destroy(*fdin);
+		*fdin = NULL;
+		throw(MAL, "malInclude", "could not read %s", name);
+	}
 	return MAL_SUCCEED;
 }
 #endif
@@ -210,7 +213,7 @@ malInclude(Client c, str name, int listing)
 			c->srcFile = filename;
 			c->yycur = 0;
 			c->bak = NULL;
-			if ((msg = malLoadScript(c, filename, &c->fdin)) == MAL_SUCCEED) {
+			if ((msg = malLoadScript(filename, &c->fdin)) == MAL_SUCCEED) {
 				parseMAL(c, c->curprg, 1, INT_MAX);
 				bstream_destroy(c->fdin);
 			} else {
@@ -262,7 +265,7 @@ evalFile(str fname, int listing)
 	GDKfree(filename);
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		if (fd)
-			mnstr_destroy(fd);
+			close_stream(fd);
 		throw(MAL,"mal.eval", "WARNING: could not open file\n");
 	} 
 

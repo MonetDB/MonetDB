@@ -444,8 +444,7 @@ TKNZRdepositFile(void *r, str *fnme)
 			msg = TKNZRappend(&pos, &s);
 			if (msg ) {
 				bstream_destroy(bs);
-				mnstr_close(fs);
-				mnstr_destroy(fs);
+				close_stream(fs);
 				return msg;
 			}
 			*t = '\n';
@@ -455,8 +454,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	}
 
 	bstream_destroy(bs);
-	mnstr_close(fs);
-	mnstr_destroy(fs);
+	close_stream(fs);
 	return MAL_SUCCEED;
 }
 

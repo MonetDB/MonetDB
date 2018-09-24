@@ -1370,12 +1370,10 @@ update(char *line, EventRecord *ev)
 	int uid = 0,qid = 0;
 
 	if (topbox == maxbox || maxbox < topbox) {
-	
 		if( box == 0){
-			box = (Box*) malloc(MAXBOX * sizeof(Box));
-			memset((char*) box, 0, sizeof(Box) * MAXBOX);
+			box = calloc(MAXBOX, sizeof(Box));
 		} else
-			box = (Box*) realloc((void*)box, (maxbox + MAXBOX) * sizeof(Box));
+			box = realloc(box, (maxbox + MAXBOX) * sizeof(Box));
 		if( box == NULL){
 			fprintf(stderr, "Out of space for trace, exceeds max entries %d\n", maxbox);
 			fprintf(stderr, "Restart with a slower beat might help, e.g. --beat=5000  or --beat=0\n");

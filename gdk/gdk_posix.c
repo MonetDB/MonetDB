@@ -79,7 +79,7 @@ setenv(const char *name, const char *value, int overwrite)
 	int ret = 0;
 
 	if (overwrite || getenv(name) == NULL) {
-		char *p = (char *) GDKmalloc(2 + strlen(name) + strlen(value));
+		char *p = GDKmalloc(2 + strlen(name) + strlen(value));
 
 		if (p == NULL)
 			return -1;

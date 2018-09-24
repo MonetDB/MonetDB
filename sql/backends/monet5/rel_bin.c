@@ -5407,7 +5407,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 		if(be->cur_append) { /* finish the output bat */
 			s->nr = be->cur_append;
 			be->cur_append = 0;
-			be->first_statement_generated = 0;
+			be->first_statement_generated = false;
 		}
 		s = stmt_affected_rows(be, s);
 	}

@@ -811,9 +811,9 @@ GDKreset(int status, int exit)
 			GDKbbpLock[i].free = 0;
 		}
 
-		memset((char*) GDKthreads, 0, sizeof(GDKthreads));
-		memset((char*) THRdata, 0, sizeof(THRdata));
-		memset((char*) THRprintbuf,0, sizeof(THRprintbuf));
+		memset(GDKthreads, 0, sizeof(GDKthreads));
+		memset(THRdata, 0, sizeof(THRdata));
+		memset(THRprintbuf, 0, sizeof(THRprintbuf));
 		gdk_bbp_reset();
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
@@ -1350,12 +1350,13 @@ THRnew(const char *name)
 			return NULL;
 		}
 		tid = s->tid;
-		memset(s, 0, sizeof(*s));
-		s->pid = pid;
-		s->tid = tid;
-		s->data[1] = THRdata[1];
-		s->data[0] = THRdata[0];
-		s->sp = THRsp();
+		*s = (ThreadRec) {
+			.pid = pid,
+			.tid = tid,
+			.data[1] = THRdata[1],
+			.data[0] = THRdata[0],
+			.sp = THRsp(),
+		};
 
 		PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", (unsigned) s->tid, (size_t) pid, (size_t) s->sp);
 		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);

@@ -40,10 +40,10 @@ main(int argc, char **argv)
 
 	mapi_cache_limit(dbh, 2);
 	/* mapi_trace_log(dbh, "/tmp/mapilog"); */
-	/* mapi_trace(dbh, 1); */
+	/* mapi_trace(dbh, true); */
 	if (strcmp(argv[3], "sql") == 0) {
 		/* switch of autocommit */
-		if (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh))
+		if (mapi_setAutocommit(dbh, false) != MOK || mapi_error(dbh))
 			die(dbh,NULL);
 		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);

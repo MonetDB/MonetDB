@@ -221,7 +221,7 @@ TMsubcommit(BAT *b)
 	BUN p, q;
 	BATiter bi = bat_iterator(b);
 
-	subcommit = (bat *) GDKmalloc((BATcount(b) + 1) * sizeof(bat));
+	subcommit = GDKmalloc((BATcount(b) + 1) * sizeof(bat));
 	if (subcommit == NULL)
 		return GDK_FAIL;
 

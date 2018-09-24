@@ -32,7 +32,7 @@ atom_create( sql_allocator *sa )
 	if(!a)
 		return NULL;
 
-	memset(&a->data, 0, sizeof(a->data));
+	a->data = (ValRecord) {.vtype = TYPE_void,};
 	a->d = dbl_nil;
 	a->varid = -1;
 	return a;
@@ -1457,9 +1457,10 @@ atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 			break;
 		}
 		case EC_TIMESTAMP: {
-			memset(&tmp, 0, 1);
-			tmp.msecs = 0;
-			tmp.days = 0;
+			tmp = (timestamp) {
+				.msecs = 0,
+				.days = 0,
+			};
 			ret = &tmp;
 			break;
 		}
@@ -1569,9 +1570,10 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 			break;
 		}
 		case EC_TIMESTAMP: {
-			memset(&tmp, 0, 1);
-			tmp.msecs = 86399999; //milliseconds on a day
-			tmp.days = MTIMEtodate(31, 12, YEAR_MAX);
+			tmp = (timestamp) {
+				.msecs = 86399999, //milliseconds on a day
+				.days = MTIMEtodate(31, 12, YEAR_MAX),
+			};
 			ret = &tmp;
 			break;
 		}

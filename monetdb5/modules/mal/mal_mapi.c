@@ -131,7 +131,7 @@ doChallenge(void *data)
 #ifdef DEBUG_SERVER
 	Client cntxt= mal_clients;
 #endif
-	char *buf = (char *) GDKmalloc(BLOCK + 1);
+	char *buf = GDKmalloc(BLOCK + 1);
 	char challenge[13];
 
 	stream *fdin = ((struct challengedata *) data)->in;
@@ -140,14 +140,12 @@ doChallenge(void *data)
 	ssize_t len = 0;
 	protocol_version protocol = PROTOCOL_9;
 	size_t buflen = BLOCK;
-	column_compression colcomp = COLUMN_COMPRESSION_NONE;
-	int compute_column_widths = 0;
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
 	GDKfree(data);
-	if (buf == NULL){
+	if (buf == NULL) {
 		close_stream(fdin);
 		close_stream(fdout);
 		return;
@@ -198,10 +196,6 @@ doChallenge(void *data)
 		buflen = atol(buflenstr);
 		if (buflenstrend) buflenstrend[0] = ':';
 
-		if (strstr(buf, "COMPUTECOLWIDTH")) {
-			compute_column_widths = 1;
-		}
-
 		if (buflen < BLOCK) {
 			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
 			close_stream(fdin);
@@ -241,20 +235,17 @@ doChallenge(void *data)
 		{
 			// convert the block_stream into a block_stream2
 			stream *from, *to;
-			from = bs_stealstream(fdin);
-			to = bs_stealstream(fdout);
-			close_stream(fdin);
-			close_stream(fdout);
-			fdin = block_stream2(from, buflen, comp, colcomp);
-			fdout = block_stream2(to, buflen, comp, colcomp);
-		}
-
-		if (fdin == NULL || fdout == NULL) {
-			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
-			close_stream(fdin);
-			close_stream(fdout);
-			GDKfree(buf);
-			return;
+			from = block_stream2(fdin, buflen, comp);
+			to = block_stream2(fdout, buflen, comp);
+			if (from == NULL || to == NULL) {
+				GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+				close_stream(fdin);
+				close_stream(fdout);
+				GDKfree(buf);
+				return;
+			}
+			fdin = from;
+			fdout = to;
 		}
 	}
 
@@ -275,8 +266,8 @@ doChallenge(void *data)
 		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 		return;
 	}
-	bs->eof = 1;
-	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen, compute_column_widths);
+	bs->eof = true;
+	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
 }
 
 static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */
@@ -299,6 +290,7 @@ SERVERlistenThread(SOCKET *Sock)
 	SOCKET msgsock = INVALID_SOCKET;
 	struct challengedata *data;
 	MT_Id tid;
+	stream *s;
 
 	if (*Sock) {
 		sock = Sock[0];
@@ -419,7 +411,7 @@ SERVERlistenThread(SOCKET *Sock)
 				continue;
 			}
 
-			switch (*buf) {
+			switch (buf[0]) {
 				case '0':
 					/* nothing special, nothing to do */
 				break;
@@ -464,9 +456,10 @@ SERVERlistenThread(SOCKET *Sock)
 			showException(GDKstdout, MAL, "initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			continue;
 		}
-		data->in = socket_rastream(msgsock, "Server read");
-		data->out = socket_wastream(msgsock, "Server write");
+		data->in = socket_rstream(msgsock, "Server read");
+		data->out = socket_wstream(msgsock, "Server write");
 		if (data->in == NULL || data->out == NULL) {
+		  stream_alloc_fail:
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -475,17 +468,16 @@ SERVERlistenThread(SOCKET *Sock)
 						  "cannot allocate stream");
 			continue;
 		}
-		data->in = block_stream(data->in);
-		data->out = block_stream(data->out);
-		if (data->in == NULL || data->out == NULL) {
-			mnstr_destroy(data->in);
-			mnstr_destroy(data->out);
-			GDKfree(data);
-			closesocket(msgsock);
-			showException(GDKstdout, MAL, "initClient",
-						  "cannot allocate stream");
-			continue;
+		s = block_stream(data->in);
+		if (s == NULL) {
+			goto stream_alloc_fail;
 		}
+		data->in = s;
+		s = block_stream(data->out);
+		if (s == NULL) {
+			goto stream_alloc_fail;
+		}
+		data->out = s;
 		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
@@ -1228,7 +1220,7 @@ SERVERlookup(int *ret, str *dbalias)
 str
 SERVERtrace(void *ret, int *key, int *flag){
 	(void )ret;
-	mapi_trace(SERVERsessions[*key].mid,*flag);
+	mapi_trace(SERVERsessions[*key].mid,(bool)*flag);
 	return MAL_SUCCEED;
 }
 

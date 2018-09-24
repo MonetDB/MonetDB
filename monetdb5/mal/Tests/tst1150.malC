@@ -8,10 +8,10 @@
 	io.print(s);
 	streams.close(fp);
 
-	fp := streams.openWrite("tst1150garbage");
+	fp := streams.openWriteBytes("tst1150garbage");
 	streams.writeInt(fp,1234);
 	streams.close(fp);
-	fp := streams.openRead("tst1150garbage");
+	fp := streams.openReadBytes("tst1150garbage");
 	i := streams.readInt(fp);
 	io.print(i);
 	streams.close(fp);

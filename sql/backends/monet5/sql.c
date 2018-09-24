@@ -2170,7 +2170,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else if ( (s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
-			mnstr_destroy(s);
+			close_stream(s);
 		msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
 				      filename?filename:"stdout", strerror(errnr));
 		goto wrapup_result_set1;
@@ -2376,7 +2376,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else if ( (s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
-			mnstr_destroy(s);
+			close_stream(s);
 		msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
 				      filename?filename:"stdout", strerror(errnr));
 		goto wrapup_result_set;
@@ -2690,7 +2690,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!ss || mnstr_errnr(ss)) {
 			int errnr = mnstr_errnr(ss);
 			if (ss)
-				mnstr_destroy(ss);
+				close_stream(ss);
 			GDKfree(tsep);
 			GDKfree(rsep);
 			GDKfree(ssep);
@@ -2712,7 +2712,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			widths = malloc(sizeof(size_t) * ncol);
 			if (!widths) {
-				mnstr_destroy(ss);
+				close_stream(ss);
 				GDKfree(tsep);
 				GDKfree(rsep);
 				GDKfree(ssep);
@@ -2732,7 +2732,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!ssep) {
 				ssep = GDKmalloc(2);
 				if(ssep == NULL) {
-					mnstr_destroy(ss);
+					close_stream(ss);
 					GDKfree(tsep);
 					GDKfree(rsep);
 					GDKfree(ns);
@@ -2760,8 +2760,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKfree(tsep);
 	GDKfree(rsep);
-	if (ssep)
-		GDKfree(ssep);
+	GDKfree(ssep);
 	GDKfree(ns);
 	if (fname && s == NULL)
 		throw(IO, "bstreams.create", SQLSTATE(42000) "Failed to create block stream");
@@ -2784,7 +2783,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	mvc *m = NULL;
 	str msg;
 	BUN cnt = 0;
-	int init = 0;
+	bool init = false;
 	int i;
 	const char *sname = *getArgReference_str(stk, pci, 0 + pci->retc);
 	const char *tname = *getArgReference_str(stk, pci, 1 + pci->retc);
@@ -2891,7 +2890,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			throw(SQL, "sql", SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts", tname);
 		}
 		cnt = BATcount(c);
-		init = 1;
+		init = true;
 		*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
 	}
