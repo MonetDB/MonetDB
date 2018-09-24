@@ -1685,6 +1685,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 			}
 			break;
 		}
+#ifdef HAVE_HGE
 		case TYPE_hge: {
 			switch (tp1) {
 				case TYPE_bte:
@@ -1707,6 +1708,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 			}
 			break;
 		}
+#endif
 		case TYPE_flt: {
 			switch (tp1) {
 				case TYPE_flt:
