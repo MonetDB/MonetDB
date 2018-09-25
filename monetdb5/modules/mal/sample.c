@@ -89,6 +89,7 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		dbl pr = *getArgReference_dbl(stk, pci, 2);
 
 		if ( pr < 0.0 || pr > 1.0 ) {
+			BBPunfix(bb->batCacheid);
 			throw(MAL, "sample.subuniform", ILLEGAL_ARGUMENT
 					" p should be between 0 and 1.0" );
 		} else if (pr == 0) {/* special case */
