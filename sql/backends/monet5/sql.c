@@ -2059,12 +2059,13 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char *R = (unsigned char *) *getArgReference_str(stk, pci, 4);
 	unsigned char *S = (unsigned char *) *getArgReference_str(stk, pci, 5);
 	unsigned char *N = (unsigned char *) *getArgReference_str(stk, pci, 6);
+	int onclient = *getArgReference_int(stk, pci, 7);
 
-	bat tblId= *getArgReference_bat(stk, pci,7);
-	bat atrId= *getArgReference_bat(stk, pci,8);
-	bat tpeId= *getArgReference_bat(stk, pci,9);
-	bat lenId= *getArgReference_bat(stk, pci,10);
-	bat scaleId= *getArgReference_bat(stk, pci,11);
+	bat tblId= *getArgReference_bat(stk, pci,8);
+	bat atrId= *getArgReference_bat(stk, pci,9);
+	bat tpeId= *getArgReference_bat(stk, pci,10);
+	bat lenId= *getArgReference_bat(stk, pci,11);
+	bat scaleId= *getArgReference_bat(stk, pci,12);
 	stream *s;
 	bat bid;
 	int i,res;
@@ -2079,15 +2080,16 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool tostdout;
 
 	(void) format;
+	(void) onclient;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 
-	bid = *getArgReference_bat(stk,pci,12);
+	bid = *getArgReference_bat(stk,pci,13);
 	order = BATdescriptor(bid);
 	if ( order == NULL)
 		throw(MAL,"sql.resultset", SQLSTATE(HY005) "Cannot access column descriptor");
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 11), 1, order);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, order);
 	t = m->results;
 	if (res < 0){
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
@@ -2144,7 +2146,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	digits = (int*) Tloc(len,0);
 	scaledigits = (int*) Tloc(scale,0);
 
-	for( i = 12; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
+	for( i = 13; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
 		tblname = BUNtail(itertbl,o);
 		colname = BUNtail(iteratr,o);
@@ -2282,12 +2284,13 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	unsigned char *R = (unsigned char *) *getArgReference_str(stk, pci, 4);
 	unsigned char *S = (unsigned char *) *getArgReference_str(stk, pci, 5);
 	unsigned char *N = (unsigned char *) *getArgReference_str(stk, pci, 6);
+	int onclient = *getArgReference_int(stk, pci, 7);
 
-	bat tblId= *getArgReference_bat(stk, pci,7);
-	bat atrId= *getArgReference_bat(stk, pci,8);
-	bat tpeId= *getArgReference_bat(stk, pci,9);
-	bat lenId= *getArgReference_bat(stk, pci,10);
-	bat scaleId= *getArgReference_bat(stk, pci,11);
+	bat tblId= *getArgReference_bat(stk, pci,8);
+	bat atrId= *getArgReference_bat(stk, pci,9);
+	bat tpeId= *getArgReference_bat(stk, pci,10);
+	bat lenId= *getArgReference_bat(stk, pci,11);
+	bat scaleId= *getArgReference_bat(stk, pci,12);
 
 	size_t l;
 	int i, res;
@@ -2304,11 +2307,12 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool tostdout;
 
 	(void) format;
+	(void) onclient;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 11), 1, NULL);
+	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, NULL);
 
 	t = m->results;
 	if (res < 0){
@@ -2372,7 +2376,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	digits = (int*) Tloc(len,0);
 	scaledigits = (int*) Tloc(scale,0);
 
-	for( i = 12; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
+	for( i = 13; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		tblname = BUNtail(itertbl,o);
 		colname = BUNtail(iteratr,o);
 		tpename = BUNtail(itertpe,o);
@@ -2639,7 +2643,7 @@ fix_windows_newline(unsigned char *s)
 }
 #endif
 
-/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset); */
+/* str mvc_import_table_wrap(int *res, str *sname, str *tname, unsigned char* *T, unsigned char* *R, unsigned char* *S, unsigned char* *N, str *fname, lng *sz, lng *offset, int *locked, int *besteffort, str *fixed_width, int *onclient); */
 str
 mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2658,10 +2662,12 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int locked = *getArgReference_int(stk, pci, pci->retc + 8);
 	int besteffort = *getArgReference_int(stk, pci, pci->retc + 9);
 	char *fixed_widths = *getArgReference_str(stk, pci, pci->retc + 10);
+	int onclient = *getArgReference_int(stk, pci, pci->retc + 11);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
 
 	(void) mb;		/* NOT USED */
+	(void) onclient;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	be = cntxt->sqlcontext;
@@ -2932,10 +2938,12 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	int i;
 	const char *sname = *getArgReference_str(stk, pci, 0 + pci->retc);
 	const char *tname = *getArgReference_str(stk, pci, 1 + pci->retc);
+	int onclient = *getArgReference_int(stk, pci, 2 + pci->retc);
 	sql_schema *s;
 	sql_table *t;
 	node *n;
 
+	(void) onclient;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -2946,13 +2954,13 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	t = mvc_bind_table(m, s, tname);
 	if (!t)
 		throw(SQL, "sql", SQLSTATE(42S02) "Table missing %s", tname);
-	if (list_length(t->columns.set) != (pci->argc - (2 + pci->retc)))
+	if (list_length(t->columns.set) != (pci->argc - (3 + pci->retc)))
 		throw(SQL, "sql", SQLSTATE(42000) "Not enough columns found in input file");
 
 	if (!cntxt->filetrans) {
 		throw(MAL, "sql.copy_from", "cannot transfer files from client");
 	}
-	for (i = pci->retc + 2, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
+	for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		const char *fname = *getArgReference_str(stk, pci, i);
 #if 0
@@ -2988,7 +2996,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	backend *be = cntxt->sqlcontext;
 
-	for (i = pci->retc + 2, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
+	for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
 		BAT *c = NULL;
 		int tpe = col->type.type->localtype;
@@ -3036,11 +3044,11 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 		cnt = BATcount(c);
 		init = true;
-		*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
+		*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
 	}
 	if (init) {
-		for (i = pci->retc + 2, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
+		for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
 			// now that we know the BAT count, we can fill in the columns for which no parameters were passed
 			sql_column *col = n->data;
 			BAT *c = NULL;
@@ -3060,7 +3068,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 						throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					}
 				}
-				*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
+				*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
 				BBPkeepref(c->batCacheid);
 			}
 		}
