@@ -60,16 +60,16 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 174 # length
+% 181 # length
 function user.s10_1():void;
-    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 21:int);
+    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
-    (X_25:bat[:int], X_26:bat[:int], X_27:bat[:int]) := sql.copy_from(nil:ptr, "|":str, "\\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str);
-    X_29:int := sql.append(X_4:int, "sys":str, "ttt":str, "a":str, X_25:bat[:int]);
-    X_34:int := sql.append(X_29:int, "sys":str, "ttt":str, "b":str, X_26:bat[:int]);
-    X_37:int := sql.append(X_34:int, "sys":str, "ttt":str, "c":str, X_27:bat[:int]);
-    X_39:lng := aggr.count(X_27:bat[:int]);
-    sql.affectedRows(X_37:int, X_39:lng);
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(nil:ptr, "|":str, "\\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "a":str, X_26:bat[:int]);
+    X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
+    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
+    X_40:lng := aggr.count(X_28:bat[:int]);
+    sql.affectedRows(X_38:int, X_40:lng);
 end user.s10_1;
 #inline               actions= 0 time=1 usec 
 #candidates           actions= 1 time=14 usec 
@@ -119,16 +119,16 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 174 # length
+% 181 # length
 function user.s26_1():void;
-    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_1":str, 21:int);
+    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_1":str, 22:int);
     X_4:int := sql.mvc();
-    (X_25:bat[:int], X_26:bat[:int], X_27:bat[:int]) := sql.copy_from(nil:ptr, "|":str, "\\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str);
-    X_29:int := sql.append(X_4:int, "sys":str, "ttt":str, "a":str, X_25:bat[:int]);
-    X_34:int := sql.append(X_29:int, "sys":str, "ttt":str, "b":str, X_26:bat[:int]);
-    X_39:lng := aggr.count(X_27:bat[:int]);
-    X_37:int := sql.append(X_34:int, "sys":str, "ttt":str, "c":str, X_27:bat[:int]);
-    sql.affectedRows(X_37:int, X_39:lng);
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(nil:ptr, "|":str, "\\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "a":str, X_26:bat[:int]);
+    X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
+    X_40:lng := aggr.count(X_28:bat[:int]);
+    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
+    sql.affectedRows(X_38:int, X_40:lng);
 end user.s26_1;
 #inline               actions= 0 time=1 usec 
 #candidates           actions= 1 time=14 usec 

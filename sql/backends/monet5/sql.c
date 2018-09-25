@@ -2080,10 +2080,13 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool tostdout;
 
 	(void) format;
-	(void) onclient;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
+
+	if (onclient && !cntxt->filetrans) {
+		throw(MAL, "sql.resultSet", "cannot transfer files to client");
+	}
 
 	bid = *getArgReference_bat(stk,pci,13);
 	order = BATdescriptor(bid);
@@ -2163,11 +2166,17 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup_result_set1;
 
 	/* now select the file channel */
-	if ( strcmp(filename,"stdout") == 0 ) {
-		tostdout = true;
-		s= cntxt->fdout;
+	if ((tostdout = strcmp(filename,"stdout") == 0)) {
+		s = cntxt->fdout;
+	} else if (!onclient) {
+		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
+			int errnr = mnstr_errnr(s);
+			close_stream(s);
+			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
+					      filename?filename:"stdout", strerror(errnr));
+			goto wrapup_result_set1;
+		}
 	} else {
-		tostdout = false;
 		while (!m->scanner.rs->eof)
 			bstream_next(m->scanner.rs);
 		s = m->scanner.ws;
@@ -2185,7 +2194,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
 	mb->starttime = 0;
 	mb->optimize = 0;
-	if (!tostdout) {
+	if (onclient) {
 		mnstr_flush(s);
 		char buf[80];
 		ssize_t sz;
@@ -2195,6 +2204,8 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto wrapup_result_set1;
 			}
 		}
+	} else if (!tostdout) {
+		close_stream(s);
 	}
   wrapup_result_set1:
 	BBPunfix(order->batCacheid);
@@ -2307,11 +2318,14 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool tostdout;
 
 	(void) format;
-	(void) onclient;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	if (onclient && !cntxt->filetrans) {
+		throw(MAL, "sql.resultSet", "cannot transfer files to client");
+	}
+
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 12), 1, NULL);
 
 	t = m->results;
@@ -2389,11 +2403,17 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
 	}
 	/* now select the file channel */
-	if ( strcmp(filename,"stdout") == 0 ) {
-		tostdout = true;
-		s= cntxt->fdout;
+	if ((tostdout = strcmp(filename,"stdout") == 0)) {
+		s = cntxt->fdout;
+	} else if (!onclient) {
+		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
+			int errnr = mnstr_errnr(s);
+			close_stream(s);
+			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
+					      filename?filename:"stdout", strerror(errnr));
+			goto wrapup_result_set;
+		}
 	} else {
-		tostdout = false;
 		while (!m->scanner.rs->eof)
 			bstream_next(m->scanner.rs);
 		s = m->scanner.ws;
@@ -2411,7 +2431,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
 	mb->starttime = 0;
 	mb->optimize = 0;
-	if (!tostdout) {
+	if (onclient) {
 		mnstr_flush(s);
 		char buf[80];
 		ssize_t sz;
@@ -2421,6 +2441,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto wrapup_result_set;
 			}
 		}
+	} else if (!tostdout) {
+		close_stream(s);
 	}
   wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
@@ -2665,11 +2687,15 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int onclient = *getArgReference_int(stk, pci, pci->retc + 11);
 	str msg = MAL_SUCCEED;
 	bstream *s = NULL;
+	stream *ss;
 
 	(void) mb;		/* NOT USED */
-	(void) onclient;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	if (onclient && !cntxt->filetrans) {
+		throw(MAL, "sql.copy_from", "cannot transfer files from client");
+	}
+
 	be = cntxt->sqlcontext;
 	len = strlen((char *) T);
 	if ((tsep = GDKmalloc(len + 1)) == NULL)
@@ -2707,12 +2733,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fname = NULL;
 	if (!fname) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, sz, offset, locked, besteffort);
-	} else if (!cntxt->filetrans) {
-		GDKfree(ns);
-		GDKfree(tsep);
-		GDKfree(rsep);
-		GDKfree(ssep);
-		throw(MAL, "sql.copy_from", "cannot transfer files from client");
 	} else {
 		len = strlen(fname);
 		if ((fn = GDKmalloc(len + 1)) == NULL) {
@@ -2728,24 +2748,39 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 		GDKstrFromStr(fn, (unsigned char*)fname, len);
 #endif
-		mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-		if (offset > 1 && rsep && rsep[0] == '\n' && rsep[1] == '\0') {
-			/* only let client skip simple lines */
-			mnstr_printf(be->mvc->scanner.ws, "r " LLFMT " %s\n",
-				     offset, fn);
-			offset = 0;
+		if (onclient) {
+			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+			if (offset > 1 && rsep && rsep[0] == '\n' && rsep[1] == '\0') {
+				/* only let client skip simple lines */
+				mnstr_printf(be->mvc->scanner.ws, "r " LLFMT " %s\n",
+					     offset, fn);
+				offset = 0;
+			} else {
+				mnstr_printf(be->mvc->scanner.ws, "r 0 %s\n", fn);
+			}
+			msg = MAL_SUCCEED;
+			mnstr_flush(be->mvc->scanner.ws);
+			GDKfree(fn);
+			while (!be->mvc->scanner.rs->eof)
+				bstream_next(be->mvc->scanner.rs);
+			ss = be->mvc->scanner.rs->s;
+			char buf[80];
+			if (mnstr_readline(ss, buf, sizeof(buf)) > 1) {
+				throw(IO, "sql.copy_from", "%s", buf);
+			}
 		} else {
-			mnstr_printf(be->mvc->scanner.ws, "r 0 %s\n", fn);
-		}
-		msg = MAL_SUCCEED;
-		mnstr_flush(be->mvc->scanner.ws);
-		GDKfree(fn);
-		while (!be->mvc->scanner.rs->eof)
-			bstream_next(be->mvc->scanner.rs);
-		stream *ss = be->mvc->scanner.rs->s;
-		char buf[80];
-		if (mnstr_readline(ss, buf, sizeof(buf)) > 1) {
-			throw(IO, "sql.copy_from", "%s", buf);
+			ss = open_rastream((const char *) fn);
+			if (ss == NULL || mnstr_errnr(ss)) {
+				int errnr = mnstr_errnr(ss);
+				close_stream(ss);
+				GDKfree(tsep);
+				GDKfree(rsep);
+				GDKfree(ssep);
+				GDKfree(ns);
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fn, strerror(errnr));
+				GDKfree(fn);
+				return msg;
+			}
 		}
 
 		if (fixed_widths && strcmp(fixed_widths, str_nil) != 0) {
@@ -2803,10 +2838,12 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		if (s != NULL) {
 			msg = mvc_import_table(cntxt, &b, be->mvc, s, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, sz, offset, locked, besteffort);
-			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-			mnstr_flush(be->mvc->scanner.ws);
-			be->mvc->scanner.rs->eof = s->eof;
-			s->s = NULL;
+			if (onclient) {
+				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+				mnstr_flush(be->mvc->scanner.ws);
+				be->mvc->scanner.rs->eof = s->eof;
+				s->s = NULL;
+			}
 			bstream_destroy(s);
 		}
 	}
@@ -2943,7 +2980,6 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_table *t;
 	node *n;
 
-	(void) onclient;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -2956,45 +2992,17 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		throw(SQL, "sql", SQLSTATE(42S02) "Table missing %s", tname);
 	if (list_length(t->columns.set) != (pci->argc - (3 + pci->retc)))
 		throw(SQL, "sql", SQLSTATE(42000) "Not enough columns found in input file");
+	if (2 * pci->retc + 3 != pci->argc)
+		throw(SQL, "sql", SQLSTATE(42000) "Not enough output values");
 
-	if (!cntxt->filetrans) {
+	if (onclient && !cntxt->filetrans) {
 		throw(MAL, "sql.copy_from", "cannot transfer files from client");
-	}
-	for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
-		sql_column *col = n->data;
-		const char *fname = *getArgReference_str(stk, pci, i);
-#if 0
-		size_t flen;
-		char *fn;
-#endif
-
-		if (strcmp(fname, str_nil) == 0)  {
-			// no file name passed for this column
-			continue;
-		}
-
-		if (ATOMvarsized(col->type.type->localtype) && col->type.type->localtype != TYPE_str)
-			throw(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", *getArgReference_str(stk, pci, i));
-#if 0
-		flen =  strlen(fname);
-		fn = GDKmalloc(flen + 1);
-		if(fn == NULL)
-			throw(SQL, "sql.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
-		if (fn == NULL)
-			throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		f = fopen(fn, "r");
-		if (f == NULL) {
-			msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to open file %s", fn);
-			GDKfree(fn);
-			return msg;
-		}
-		GDKfree(fn);
-		fclose(f);
-#endif
 	}
 
 	backend *be = cntxt->sqlcontext;
+
+	for (i = 0; i < pci->retc; i++)
+		*getArgReference_bat(stk, pci, i) = 0;
 
 	for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
 		sql_column *col = n->data;
@@ -3006,41 +3014,97 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if (strcmp(fname, str_nil) == 0) {
 			// no filename for this column, skip for now because we potentially don't know the count yet
 			continue;
-		} else if (tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
+		}
+		if (ATOMvarsized(tpe) && tpe != TYPE_str) {
+			msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", *getArgReference_str(stk, pci, i));
+			goto bailout;
+		}
+
+		if (tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
 			size_t flen =  strlen(fname);
 			char *fn = GDKmalloc(flen + 1);
-			if(fn == NULL)
-				throw(SQL, "sql.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
-			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-			mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fn);
-			msg = MAL_SUCCEED;
-			mnstr_flush(be->mvc->scanner.ws);
-			GDKfree(fn);
-			while (!be->mvc->scanner.rs->eof)
-				bstream_next(be->mvc->scanner.rs);
-			stream *ss = be->mvc->scanner.rs->s;
-			char buf[80];
-			if (mnstr_readline(ss, buf, sizeof(buf)) > 1) {
-				throw(IO, "sql.attach", "%s", buf);
-			}
-			bstream *s = bstream_create(ss, 1 << 20);
 
-			c = BATattach_bstream(col->type.type->localtype, s, be->mvc->scanner.ws, cnt);
-			if (c == NULL)
-				throw(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
+			if (fn == NULL) {
+				msg = createException(SQL, "sql.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
+			if (onclient) {
+				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fn);
+				msg = MAL_SUCCEED;
+				mnstr_flush(be->mvc->scanner.ws);
+				GDKfree(fn);
+				while (!be->mvc->scanner.rs->eof)
+					bstream_next(be->mvc->scanner.rs);
+				stream *ss = be->mvc->scanner.rs->s;
+				char buf[80];
+				if (mnstr_readline(ss, buf, sizeof(buf)) > 1) {
+					msg = createException(IO, "sql.attach", "%s", buf);
+					goto bailout;
+				}
+				bstream *s = bstream_create(ss, 1 << 20);
+
+				c = BATattach_bstream(col->type.type->localtype, s, be->mvc->scanner.ws, cnt);
+				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+				mnstr_flush(be->mvc->scanner.ws);
+				be->mvc->scanner.rs->eof = s->eof;
+				s->s = NULL;
+				bstream_destroy(s);
+			} else if (tpe == TYPE_str) {
+				/* get the BAT and fill it with the strings */
+				c = COLnew(0, TYPE_str, 0, TRANSIENT);
+				if (c == NULL) {
+					msg = createException(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				/* this code should be extended to
+				 * deal with larger text strings. */
+				FILE *f = fopen(fn, "r");
+				if (f == NULL) {
+					BBPreclaim(c);
+					msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to re-open file %s", fname);
+					goto bailout;
+				}
+
+#define bufsiz	(128 * BLOCK)
+				char *buf = GDKmalloc(bufsiz);
+				if (buf == NULL) {
+					fclose(f);
+					BBPreclaim(c);
+					msg = createException(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				while (fgets(buf, bufsiz, f) != NULL) {
+					char *t = strrchr(buf, '\n');
+					if (t)
+						*t = 0;
+					if (BUNappend(c, buf, false) != GDK_SUCCEED) {
+						BBPreclaim(c);
+						fclose(f);
+						msg = createException(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+				}
+#undef bufsiz
+				fclose(f);
+				GDKfree(buf);
+			} else {
+				c = BATattach(tpe, fn, TRANSIENT);
+			}
+			if (c == NULL) {
+				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
+				goto bailout;
+			}
 			BATsetaccess(c, BAT_READ);
-			mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-			mnstr_flush(be->mvc->scanner.ws);
-			be->mvc->scanner.rs->eof = s->eof;
-			s->s = NULL;
-			bstream_destroy(s);
 		} else {
-			throw(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
+			msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
+			goto bailout;
 		}
 		if (init && cnt != BATcount(c)) {
 			BBPunfix(c->batCacheid);
-			throw(SQL, "sql", SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts", tname);
+			msg = createException(SQL, "sql", SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts", tname);
+			goto bailout;
 		}
 		cnt = BATcount(c);
 		init = true;
@@ -3056,24 +3120,28 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 			const char *fname = *getArgReference_str(stk, pci, i);
 			if (strcmp(fname, str_nil) == 0) {
-				BUN loop = 0;
-				const void* nil = ATOMnilptr(tpe);
 				// fill the new BAT with NULL values
-				c = COLnew(0, tpe, cnt, TRANSIENT);
-				if (c == NULL)
-					throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				for(loop = 0; loop < cnt; loop++) {
-					if (BUNappend(c, nil, false) != GDK_SUCCEED) {
-						BBPreclaim(c);
-						throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-					}
+				c = BATconstant(0, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
+				if (c == NULL) {
+					msg = createException(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					goto bailout;
 				}
 				*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
 				BBPkeepref(c->batCacheid);
 			}
 		}
-	} 
+	}
 	return MAL_SUCCEED;
+  bailout:
+	assert(msg != MAL_SUCCEED);
+	for (i = 0; i < pci->retc; i++) {
+		bat bid; 
+		if ((bid = *getArgReference_bat(stk, pci, i)) != 0) {
+			BBPrelease(bid);
+			*getArgReference_bat(stk, pci, i) = 0;
+		}
+	}
+	return msg;
 }
 
 str

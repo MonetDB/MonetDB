@@ -1,6 +1,18 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Sep 25 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a version of COPY INTO that reads/writes files from/to
+  the client instead of doing it in the server.  This has the
+  advantage that COPY INTO is then no longer restricted to only the
+  "super user" monetdb, nor only to absolute file names.  The syntax
+  to have the server communicate with the client for file content is
+  COPY INTO table FROM file ON CLIENT ...; and COPY query INTO file ON
+  CLIENT ...;.  This also works for COPY BINARY INTO.  There is also
+  the possibility to specify that files are to be read/written by the
+  server by using ON SERVER.  This is also the default when ON CLIENT
+  or ON SERVER is not specified.
+
 * Fri Aug 10 2018 Sjoerd Mullender <sjoerd@acm.org>
 - The sys.functions table now has an extra column called "system" of
   type BOOLEAN whose value is TRUE for system functions (i.e. functions

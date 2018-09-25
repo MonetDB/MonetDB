@@ -1485,9 +1485,21 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	if (files) {
 		dnode *n = files->h;
 
+		if (!onclient && !copy_allowed(sql, 1)) {
+			return sql_error(sql, 02, SQLSTATE(42000)
+					 "COPY INTO: insufficient privileges: "
+					 "COPY INTO from file(s) requires database administrator rights, "
+					 "use 'COPY INTO \"%s\" FROM file ON CLIENT' instead", tname);
+		}
+
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
 			sql_rel *nrel;
+
+			if (!onclient && fname && !MT_path_absolute(fname)) {
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
+						 "have absolute path: %s", fname);
+			}
 
 			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths, onclient);
 
@@ -1744,7 +1756,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string, int onc
 	exp_kind ek = {type_value, card_relation, TRUE};
 	sql_rel *r = rel_subquery(sql, NULL, sq, ek, APPLY_JOIN);
 
-	if (!r) 
+	if (!r)
 		return NULL;
 
 	tsep_e = exp_atom_clob(sql->sa, tsep);
@@ -1753,6 +1765,20 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string, int onc
 	ns_e = exp_atom_clob(sql->sa, ns);
 	oncl_e = exp_atom_int(sql->sa, onclient);
 	fname_e = filename?exp_atom_clob(sql->sa, filename):NULL;
+
+	if (!onclient && filename) {
+		struct stat fs;
+		if (!copy_allowed(sql, 0))
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
+					 "COPY INTO file requires database administrator rights, "
+					 "use 'COPY ... INTO file ON CLIENT' instead");
+		if (filename && !MT_path_absolute(filename))
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO ON SERVER: filename must "
+					 "have absolute path: %s", filename);
+		if (lstat(filename, &fs) == 0)
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO ON SERVER: file already "
+					 "exists: %s", filename);
+	}
 
 	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e, oncl_e);
 }
