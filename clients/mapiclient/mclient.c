@@ -3032,25 +3032,40 @@ struct privdata {
 	char *buf;
 };
 
-//#define READSIZE	(1 << 14)
-#define READSIZE	(1 << 20)
+#define READSIZE	(1 << 16)
+//#define READSIZE	(1 << 20)
 
 static char *
-getfile(void *data, const char *filename, bool binary, uint64_t offset, size_t *size)
+getfile(void *restrict data, const char *restrict filename, bool binary,
+	uint64_t offset, size_t *restrict size)
 {
 	stream *f;
 	char *buf;
 	struct privdata *priv = data;
 	ssize_t s;
 
-	if (priv->buf == NULL)
+	if (priv->buf == NULL) {
 		priv->buf = malloc(READSIZE);
+		if (priv->buf == NULL) {
+			*size = 0;
+			return "allocation failed";
+		}
+	}
 	buf = priv->buf;
 	if (filename != NULL) {
-		if (binary)
+		if (binary) {
 			f = open_rstream(filename);
-		else
+		} else {
 			f = open_rastream(filename);
+#ifdef HAVE_ICONV
+			if (encoding) {
+				stream *tmpf = f;
+				f = iconv_rstream(f, encoding, mnstr_name(f));
+				if (f == NULL)
+					close_stream(tmpf);
+			}
+#endif
+		}
 		if (f == NULL) {
 			*size = 0;	/* indicate error */
 			return "cannot open file";
@@ -3063,6 +3078,7 @@ getfile(void *data, const char *filename, bool binary, uint64_t offset, size_t *
 				return "error reading file";
 			}
 			if (s == 0) {
+				/* reached EOF withing offset lines */
 				close_stream(f);
 				*size = 0;
 				return NULL;
@@ -3074,6 +3090,7 @@ getfile(void *data, const char *filename, bool binary, uint64_t offset, size_t *
 	} else {
 		f = priv->f;
 		if (size == NULL) {
+			/* done reading before reaching EOF */
 			close_stream(f);
 			priv->f = NULL;
 			return NULL;
@@ -3084,14 +3101,15 @@ getfile(void *data, const char *filename, bool binary, uint64_t offset, size_t *
 		*size = 0;
 		close_stream(f);
 		priv->f = NULL;
-		return NULL;
+		return s < 0 ? "error reading file" : NULL;
 	}
 	*size = (size_t) s;
 	return buf;
 }
 
 static char *
-putfile(void *data, const char *filename, const void *restrict buf, size_t bufsize)
+putfile(void *restrict data, const char *restrict filename,
+	const void *restrict buf, size_t bufsize)
 {
 	struct privdata *priv = data;
 
@@ -3099,11 +3117,13 @@ putfile(void *data, const char *filename, const void *restrict buf, size_t bufsi
 		if ((priv->f = open_wastream(filename)) == NULL)
 			return "cannot open file";
 		if (buf == NULL || bufsize == 0)
-			return NULL;
+			return NULL; /* successfully opened file */
 	} else if (buf == NULL) {
+		/* done writing */
+		int flush = mnstr_flush(priv->f);
 		close_stream(priv->f);
 		priv->f = NULL;
-		return NULL;
+		return flush < 0 ? "error writing output" : NULL;
 	}
 	if (mnstr_write(priv->f, buf, 1, bufsize) < (ssize_t) bufsize) {
 		close_stream(priv->f);

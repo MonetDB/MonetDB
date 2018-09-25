@@ -840,8 +840,10 @@ struct MapiStruct {
 	stream *from, *to;
 	uint32_t index;		/* to mark the log records */
 	void *filecontentprivate;
-	char *(*getfilecontent)(void *, const char *, bool, uint64_t, size_t *);
-	char *(*putfilecontent)(void *, const char *, const void *restrict, size_t);
+	char *(*getfilecontent)(void *restrict, const char *restrict, bool,
+				uint64_t, size_t *restrict);
+	char *(*putfilecontent)(void *restrict, const char *restrict,
+				const void *restrict, size_t);
 };
 
 struct MapiResultSet {
@@ -2986,7 +2988,14 @@ mapi_disconnect(Mapi mid)
  * callback function the opportunity to free any resources.
  */
 void
-mapi_setfilecallback(Mapi mid, char *(*getfilecontent)(void *, const char *, bool, uint64_t, size_t *), char *(*putfilecontent)(void *, const char *, const void *restrict, size_t), void *filecontentprivate)
+mapi_setfilecallback(Mapi mid,
+		     char *(*getfilecontent)(void *restrict,
+					     const char *restrict, bool,
+					     uint64_t, size_t *restrict),
+		     char *(*putfilecontent)(void *restrict,
+					     const char *restrict,
+					     const void *restrict, size_t),
+		     void *filecontentprivate)
 {
 	mid->getfilecontent = getfilecontent;
 	mid->putfilecontent = putfilecontent;
@@ -3928,6 +3937,8 @@ write_file(MapiHdl hdl, char *filename)
 	mnstr_flush(mid->to);
 }
 
+#define MiB	(1 << 20)	/* a megabyte */
+
 static void
 read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 {
@@ -3948,7 +3959,8 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 		mnstr_flush(mid->to);
 		return;
 	}
-	data = mid->getfilecontent(mid->filecontentprivate, filename, binary, off, &size);
+	data = mid->getfilecontent(mid->filecontentprivate, filename, binary,
+				   off, &size);
 	free(filename);
 	if (data != NULL && size == 0) {
 		if (strchr(data, '\n'))
@@ -3959,8 +3971,14 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 	}
 	mnstr_printf(mid->to, "\n");
 	while (data != NULL && size != 0) {
-		if (flushsize >= 1 << 20) {
+		if (flushsize >= MiB) {
+			/* after every MiB give the server opportunity
+			 * to stop reading more data */
 			mnstr_flush(mid->to);
+			/* at this point we expect to get a PROMPT2 if
+			 * the server wants more data, or a PROMPT3 if
+			 * the server had enough; anything else is a
+			 * protocol violation */
 			line = read_line(mid);
 			if (line == NULL) {
 				/* error */
@@ -3969,30 +3987,42 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 			}
 			assert(line[0] == PROMPTBEG);
 			if (line[0] != PROMPTBEG) {
-				/* error */
+				/* error in protocol */
 				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
 				return;
 			}
 			if (line[1] == PROMPT3[1]) {
+				/* done reading: close file */
 				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
 				(void) read_line(mid);
 				return;
 			}
 			assert(line[1] == PROMPT2[1]);
 			if (line[1] != PROMPT2[1]) {
-				/* error */
+				/* error  in protocol */
 				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
 				return;
 			}
+			/* clear the flush marker */
 			(void) read_line(mid);
 			flushsize = 0;
 		}
-		if (mnstr_write(mid->to, data, 1, size) != (ssize_t) size) {
-			mnstr_flush(mid->to);
-			return;
+		if (size > MiB) {
+			if (mnstr_write(mid->to, data, 1, MiB) != MiB) {
+				mnstr_flush(mid->to);
+				return;
+			}
+			size -= MiB;
+			data += MiB;
+			flushsize += MiB;
+		} else {
+			if (mnstr_write(mid->to, data, 1, size) != (ssize_t) size) {
+				mnstr_flush(mid->to);
+				return;
+			}
+			flushsize += size;
+			data = mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, &size);
 		}
-		flushsize += size;
-		data = mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, &size);
 	}
 	mnstr_flush(mid->to);
 	line = read_line(mid);

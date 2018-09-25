@@ -2174,6 +2174,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mnstr_flush(s);
 		char buf[80];
 		if (mnstr_readline(m->scanner.rs->s, buf, sizeof(buf)) > 1) {
+			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
 			goto wrapup_result_set1;
 		}
@@ -2397,6 +2398,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mnstr_flush(s);
 		char buf[80];
 		if (mnstr_readline(m->scanner.rs->s, buf, sizeof(buf)) > 1) {
+			/* non-empty line indicates failure on client */
 			msg = createException(IO, "streams.open", "%s", buf);
 			goto wrapup_result_set;
 		}
