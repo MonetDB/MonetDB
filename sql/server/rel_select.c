@@ -4417,22 +4417,6 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 	return exps;
 }
 
-static int
-check_duplicated_expression(void *data, void *key)
-{
-	sql_exp* e1 = (sql_exp*)data;
-	sql_exp* e2 = (sql_exp*)key;
-	if(e1->name && !e2->name)
-		return 0;
-	if(!e1->name && e2->name)
-		return 0;
-	if(e1->rname && !e2->rname)
-		return 0;
-	if(!e1->rname && e2->rname)
-		return 0;
-	return !(strcmp(e1->name, e2->name) == 0 && strcmp(e1->rname, e2->rname) == 0);
-}
-
 /* window functions */
 static sql_exp*
 calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e,
@@ -4560,6 +4544,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		gbe = rel_group_by(sql, &p, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
 		if (!gbe)
 			return NULL;
+		for(n = gbe->h ; n ; n = n->next) {
+			sql_exp *en = n->data;
+			set_direction(en, 1);
+		}
 		p->r = gbe;
 	}
 	/* Order By */
@@ -4575,17 +4563,26 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			p->exps = list_distinct(p->exps, (fcmp)exp_equal, (fdup)NULL);
 		}
 		if (p->r) {
-			for(node *nn = ((list*)p->r)->h ; nn ; nn = nn->next) {
-				sql_exp *en = nn->data;
-				if(!list_find(obe, en, (fcmp)&check_duplicated_expression))
-					append(obe, en);
+			p->r = list_merge(sa_list(sql->sa), p->r, (fdup)NULL);
+			for(n = obe->h ; n ; n = n->next) {
+				sql_exp *e1 = n->data;
+				bool found = false;
+				for(node *nn = ((list*)p->r)->h ; nn && !found ; nn = nn->next) {
+					sql_exp *e2 = nn->data;
+					//the partition expression order should be the same as the one in the order by clause (if it's in there as well)
+					if(!exp_equal(e1, e2)) {
+						if(is_ascending(e1))
+							e2->flag |= ASCENDING;
+						else
+							e2->flag &= ~ASCENDING;
+						found = true;
+					}
+				}
+				if(!found)
+					append(p->r, e1);
 			}
-		}
-		p->r = obe;
-	} else if(p->r) { //set ascending order by default for both rank and aggregation calls
-		for(node *nn = ((list*)p->r)->h ; nn ; nn = nn->next) {
-			sql_exp *en = nn->data;
-			set_direction(en, 1);
+		} else {
+			p->r = obe;
 		}
 	}
 
