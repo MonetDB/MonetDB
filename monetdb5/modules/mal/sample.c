@@ -84,7 +84,7 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
 	}
 
-	if ((getArgType(mb, pci, 2) == TYPE_dbl))
+	if (getArgType(mb, pci, 2) == TYPE_dbl)
 	{
 		dbl pr = *getArgReference_dbl(stk, pci, 2);
 
