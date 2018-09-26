@@ -840,10 +840,8 @@ struct MapiStruct {
 	stream *from, *to;
 	uint32_t index;		/* to mark the log records */
 	void *filecontentprivate;
-	char *(*getfilecontent)(void *restrict, const char *restrict, bool,
-				uint64_t, size_t *restrict);
-	char *(*putfilecontent)(void *restrict, const char *restrict,
-				const void *restrict, size_t);
+	char *(*getfilecontent)(void *, const char *, bool, uint64_t, size_t *);
+	char *(*putfilecontent)(void *, const char *, const void *, size_t);
 };
 
 struct MapiResultSet {
@@ -2989,12 +2987,12 @@ mapi_disconnect(Mapi mid)
  */
 void
 mapi_setfilecallback(Mapi mid,
-		     char *(*getfilecontent)(void *restrict,
-					     const char *restrict, bool,
-					     uint64_t, size_t *restrict),
-		     char *(*putfilecontent)(void *restrict,
-					     const char *restrict,
-					     const void *restrict, size_t),
+		     char *(*getfilecontent)(void *,
+					     const char *, bool,
+					     uint64_t, size_t *),
+		     char *(*putfilecontent)(void *,
+					     const char *,
+					     const void *, size_t),
 		     void *filecontentprivate)
 {
 	mid->getfilecontent = getfilecontent;

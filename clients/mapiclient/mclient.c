@@ -3036,8 +3036,8 @@ struct privdata {
 //#define READSIZE	(1 << 20)
 
 static char *
-getfile(void *restrict data, const char *restrict filename, bool binary,
-	uint64_t offset, size_t *restrict size)
+getfile(void *data, const char *filename, bool binary,
+	uint64_t offset, size_t *size)
 {
 	stream *f;
 	char *buf;
@@ -3108,8 +3108,7 @@ getfile(void *restrict data, const char *restrict filename, bool binary,
 }
 
 static char *
-putfile(void *restrict data, const char *restrict filename,
-	const void *restrict buf, size_t bufsize)
+putfile(void *data, const char *filename, const void *buf, size_t bufsize)
 {
 	struct privdata *priv = data;
 

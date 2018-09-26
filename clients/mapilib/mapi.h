@@ -127,10 +127,10 @@ mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_ping(Mapi mid);
 mapi_export void mapi_setfilecallback(
 	Mapi mid,
-	char *(*getfunc)(void *restrict priv, const char *restrict filename,
-			 bool binary, uint64_t offset, size_t *restrict size),
-	char *(*putfunc)(void *restrict priv, const char *restrict filename,
-			 const void *restrict data, size_t size),
+	char *(*getfunc)(void *priv, const char *filename,
+			 bool binary, uint64_t offset, size_t *size),
+	char *(*putfunc)(void *priv, const char *filename,
+			 const void *data, size_t size),
 	void *priv);
 
 mapi_export MapiMsg mapi_error(Mapi mid);
