@@ -443,18 +443,18 @@ GDKinit(opt *set, int setlen)
 	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
-	assert(sizeof(char) == SIZEOF_CHAR);
-	assert(sizeof(short) == SIZEOF_SHORT);
-	assert(sizeof(int) == SIZEOF_INT);
-	assert(sizeof(long) == SIZEOF_LONG);
-	assert(sizeof(lng) == SIZEOF_LNG);
+	static_assert(sizeof(char) == SIZEOF_CHAR, "error in configure: bad value for SIZEOF_CHAR");
+	static_assert(sizeof(short) == SIZEOF_SHORT, "error in configure: bad value for SIZEOF_SHORT");
+	static_assert(sizeof(int) == SIZEOF_INT, "error in configure: bad value for SIZEOF_INT");
+	static_assert(sizeof(long) == SIZEOF_LONG, "error in configure: bad value for SIZEOF_LONG");
+	static_assert(sizeof(lng) == SIZEOF_LNG, "error in configure: bad value for SIZEOF_LNG");
 #ifdef HAVE_HGE
-	assert(sizeof(hge) == SIZEOF_HGE);
+	static_assert(sizeof(hge) == SIZEOF_HGE, "error in configure: bad value for SIZEOF_HGE");
 #endif
-	assert(sizeof(oid) == SIZEOF_OID);
-	assert(sizeof(void *) == SIZEOF_VOID_P);
-	assert(sizeof(size_t) == SIZEOF_SIZE_T);
-	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);
+	static_assert(sizeof(oid) == SIZEOF_OID, "error in configure: bad value for SIZEOF_OID");
+	static_assert(sizeof(void *) == SIZEOF_VOID_P, "error in configure: bad value for SIZEOF_VOID_P");
+	static_assert(sizeof(size_t) == SIZEOF_SIZE_T, "error in configure: bad value for SIZEOF_SIZE_T");
+	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG, "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&MT_system_lock,"MT_system_lock");

@@ -2844,6 +2844,12 @@ typedef enum {
 @%:@include <stdbool.h>
 @%:@include <assert.h>
 
+@%:@ifndef static_assert
+/* static_assert is a C11 feature, defined in assert.h which also exists
+ * in many other compilers we ignore it if the compiler doesn't support it */
+@%:@define static_assert(expr, mesg)	((void) 0)
+@%:@endif
+
 @%:@if defined(HAVE___INT128)
 typedef __int128 hge;
 typedef unsigned __int128 uhge;

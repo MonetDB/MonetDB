@@ -204,7 +204,7 @@ showBar(int level, int64_t clk, char *stmt)
 	nl = level/2-prevlevel/2;
 	if( level != 100 && (nl == 0 ||  level/2 <= prevlevel/2))
 		return;
-	assert(MSGLEN < BUFSIZ);
+	static_assert(MSGLEN < BUFSIZ, "MSGLEN too small");
 	if(prevlevel == 0)
 		printf("[");
 	else
