@@ -32,7 +32,7 @@ comment "return true if cur != prev row";
 
 EOF
 
-for tp in bte sht int lng; do
+for tp in bte sht int lng flt dbl; do
 	cat <<EOF
 pattern sql.window_preceding_bound(b:any_1, unit:int, excl:int, fh:lng, start:${tp}) :lng
 address SQLwindow_preceding_bound

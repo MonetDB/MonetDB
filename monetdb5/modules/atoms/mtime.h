@@ -36,6 +36,7 @@
 #endif
 
 #define YEAR_MAX		5867411
+#define YEAR_MIN		(-YEAR_MAX)
 
 typedef int date;
 #define date_nil		((date) int_nil)

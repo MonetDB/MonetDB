@@ -4209,8 +4209,7 @@ window_frame_units:
 
 window_frame_extent:
 	window_frame_start    { dlist *l = L(); append_symbol(l, $1);
-                            sql_subtype *t = sql_bind_localtype("lng");
-                            symbol *s = _newAtomNode( atom_int(SA, t, 0));
+                            symbol *s = _symbol_create_int( SQL_FOLLOWING, CURRENT_ROW_BOUND);
                             dlist *l2 = append_symbol(L(), s);
                             symbol *sym = _symbol_create_list( SQL_CURRENT_ROW, l2);
                             append_symbol(l, sym);
@@ -4219,14 +4218,12 @@ window_frame_extent:
   ;
 
 window_frame_start:
-	UNBOUNDED PRECEDING   { sql_subtype *t = sql_bind_localtype("lng");
-                            symbol *s = _newAtomNode( atom_int(SA, t, GDK_lng_max));
+	UNBOUNDED PRECEDING   { symbol *s = _symbol_create_int( SQL_PRECEDING, UNBOUNDED_PRECEDING_BOUND);
                             dlist *l2 = append_symbol(L(), s);
                             $$ = _symbol_create_list( SQL_PRECEDING, l2); }
   | simple_atom PRECEDING { dlist *l2 = append_symbol(L(), $1);
                             $$ = _symbol_create_list( SQL_PRECEDING, l2); }
-  | CURRENT ROW           { sql_subtype *t = sql_bind_localtype("lng");
-                            symbol *s = _newAtomNode( atom_int(SA, t, 0));
+  | CURRENT ROW           { symbol *s = _symbol_create_int( SQL_PRECEDING, CURRENT_ROW_BOUND);
                             dlist *l = append_symbol(L(), s);
                             $$ = _symbol_create_list( SQL_CURRENT_ROW, l); }
   ;
@@ -4241,8 +4238,7 @@ window_frame_between:
   ;
 
 window_following_bound:
-	UNBOUNDED FOLLOWING   { sql_subtype *t = sql_bind_localtype("lng");
-                            symbol *s = _newAtomNode( atom_int(SA, t, GDK_lng_max));
+	UNBOUNDED FOLLOWING   { symbol *s = _symbol_create_int( SQL_FOLLOWING, UNBOUNDED_FOLLOWING_BOUND);
                             dlist *l2 = append_symbol(L(), s);
                             $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
   | simple_atom FOLLOWING { dlist *l2 = append_symbol(L(), $1);

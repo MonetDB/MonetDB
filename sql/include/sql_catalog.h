@@ -94,6 +94,10 @@
 #define RD_UPD_VAL 3
 #define QUICK  4
 
+#define UNBOUNDED_PRECEDING_BOUND 0
+#define UNBOUNDED_FOLLOWING_BOUND 1
+#define CURRENT_ROW_BOUND         2
+
 #define FRAME_ROWS  0 		/* number of rows (preceding/following) */
 #define FRAME_RANGE 1		/* logical range (based on the ordering column).
 				   Example:

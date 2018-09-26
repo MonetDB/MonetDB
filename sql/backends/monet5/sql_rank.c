@@ -61,6 +61,17 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#define CHECK_NULLS_AND_NEGATIVES_COLUMN(TPE) \
+	for(TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) { \
+		is_null |= is_##TPE##_nil(*lp); \
+		is_negative |= (*lp < 0); \
+	} \
+
+#define CHECK_NULLS_AND_NEGATIVES_SINGLE(TPE, MEMBER) \
+	is_null = is_##TPE##_nil(vlimit->val.MEMBER); \
+	is_negative = vlimit->val.MEMBER < 0; \
+	limit = &vlimit->val.MEMBER; \
+
 static str
 doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool preceding, const str mod)
 {
@@ -73,21 +84,42 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, has_partitions ? 2 : 1)), *p = NULL, *r, *l = NULL;
 		int unit = *getArgReference_int(stk, pci, has_partitions ? 3 : 2),
 			excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3),
-			limit_pos = has_partitions ? 6 : 5, tpe = getArgType(mb, pci, limit_pos);
+			limit_pos = has_partitions ? 6 : 5, tpe = getArgType(mb, pci, limit_pos),
+			tp1 = getBatType(getArgType(mb, pci, has_partitions ? 2 : 1));
 		void* limit = NULL;
-		bool is_negative = false, is_null = false;
+		bool is_negative = false, is_null = false, is_a_bat;
 		gdk_return gdk_code;
 
 		assert(unit >= 0 && unit <= 3);
 		assert(excl >= 0 && excl <= 2);
-		if (excl != 0)
-			throw(SQL, mod, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
 
 		if (!b)
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
-		voidresultBAT(r, TYPE_lng, BATcount(b), b, mod);
-		if(isaBatType(tpe)) {
+
+		if (excl != 0) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, mod, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
+		}
+
+		is_a_bat = isaBatType(tpe);
+		if(is_a_bat)
 			tpe = getBatType(tpe);
+		if((unit == FRAME_ROWS || unit == FRAME_GROUPS) && (tpe == TYPE_flt || tpe == TYPE_dbl)) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, mod, SQLSTATE(42000) "Values on %s boundary on %s frame can't be a floating-point type",
+				  preceding ? "PRECEDING" : "FOLLOWING", (unit == FRAME_ROWS) ? "rows":"groups");
+		} else if(unit == FRAME_RANGE && (tpe == TYPE_flt || tpe == TYPE_dbl) && (tp1 != TYPE_flt && tp1 != TYPE_dbl)) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, mod, SQLSTATE(42000) "Values in the input column aren't floating-point while on %s boundary are",
+				  preceding ? "PRECEDING" : "FOLLOWING");
+		} else if(unit == FRAME_RANGE && (tp1 == TYPE_flt || tp1 == TYPE_dbl) && (tpe != TYPE_flt && tpe != TYPE_dbl)) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, mod, SQLSTATE(42000) "Values on %s boundary aren't floating-point while on input column are",
+				  preceding ? "PRECEDING" : "FOLLOWING");
+		}
+
+		voidresultBAT(r, TYPE_lng, BATcount(b), b, mod);
+		if(is_a_bat) {
 			l = BATdescriptor(*getArgReference_bat(stk, pci, limit_pos));
 			if (!l) {
 				BBPunfix(b->batCacheid);
@@ -95,35 +127,26 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 			}
 			switch (tpe) {
 				case TYPE_bte:
-					for(bte *lp = (bte*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
-						is_null |= is_bte_nil(*lp);
-						is_negative |= (*lp < 0);
-					}
+					CHECK_NULLS_AND_NEGATIVES_COLUMN(bte)
 					break;
 				case TYPE_sht:
-					for(sht *lp = (sht*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
-						is_null |= is_sht_nil(*lp);
-						is_negative |= (*lp < 0);
-					}
+					CHECK_NULLS_AND_NEGATIVES_COLUMN(sht)
 					break;
 				case TYPE_int:
-					for(int *lp = (int*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
-						is_null |= is_int_nil(*lp);
-						is_negative |= (*lp < 0);
-					}
+					CHECK_NULLS_AND_NEGATIVES_COLUMN(int)
 					break;
 				case TYPE_lng:
-					for(lng *lp = (lng*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
-						is_null |= is_lng_nil(*lp);
-						is_negative |= (*lp < 0);
-					}
+					CHECK_NULLS_AND_NEGATIVES_COLUMN(lng)
+					break;
+				case TYPE_flt:
+					CHECK_NULLS_AND_NEGATIVES_COLUMN(flt)
+					break;
+				case TYPE_dbl:
+					CHECK_NULLS_AND_NEGATIVES_COLUMN(dbl)
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					for(hge *lp = (hge*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_null && !is_negative; lp++) {
-						is_null |= is_hge_nil(*lp);
-						is_negative |= (*lp < 0);
-					}
+					CHECK_NULLS_AND_NEGATIVES_COLUMN(hge)
 					break;
 #endif
 				default: {
@@ -144,30 +167,26 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 
 			switch (tpe) {
 				case TYPE_bte:
-					is_null = is_bte_nil(vlimit->val.btval);
-					is_negative = vlimit->val.btval < 0;
-					limit = &vlimit->val.btval;
+					CHECK_NULLS_AND_NEGATIVES_SINGLE(bte, btval)
 					break;
 				case TYPE_sht:
-					is_null = is_sht_nil(vlimit->val.shval);
-					is_negative = vlimit->val.shval < 0;
-					limit = &vlimit->val.shval;
+					CHECK_NULLS_AND_NEGATIVES_SINGLE(sht, shval)
 					break;
 				case TYPE_int:
-					is_null = is_int_nil(vlimit->val.ival);
-					is_negative = vlimit->val.ival < 0;
-					limit = &vlimit->val.ival;
+					CHECK_NULLS_AND_NEGATIVES_SINGLE(int, ival)
 					break;
 				case TYPE_lng:
-					is_null = is_lng_nil(vlimit->val.lval);
-					is_negative = vlimit->val.lval < 0;
-					limit = &vlimit->val.lval;
+					CHECK_NULLS_AND_NEGATIVES_SINGLE(lng, lval)
+					break;
+				case TYPE_flt:
+					CHECK_NULLS_AND_NEGATIVES_SINGLE(flt, fval)
+					break;
+				case TYPE_dbl:
+					CHECK_NULLS_AND_NEGATIVES_SINGLE(dbl, dval)
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					is_null = is_hge_nil(vlimit->val.hval);
-					is_negative = vlimit->val.hval < 0;
-					limit = &vlimit->val.hval;
+					CHECK_NULLS_AND_NEGATIVES_SINGLE(hge, hval)
 					break;
 #endif
 				default: {
@@ -189,7 +208,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 			}
 		}
 
-		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, b->ttype, tpe, unit, preceding, first_half);
+		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tpe, unit, preceding, first_half);
 		if(l) BBPunfix(l->batCacheid);
 		if(p) BBPunfix(p->batCacheid);
 		BBPunfix(b->batCacheid);

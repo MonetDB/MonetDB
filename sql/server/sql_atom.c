@@ -1591,3 +1591,115 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 
 	return res;
 }
+
+atom*
+atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
+{
+	void *ret = NULL;
+	atom *res = NULL;
+
+#ifdef HAVE_HGE
+	hge hval = 0;
+#endif
+	lng lval = 0;
+	int ival = 0;
+	sht sval = 0;
+	bte bbval = 0;
+	bit bval = 0;
+	flt fval = 0;
+	dbl dval = 0;
+	date dt = 0;
+	daytime dyt = 0;
+	timestamp tmp;
+
+	switch (tpe->type->eclass) {
+		case EC_BIT:
+		{
+			ret = &bval;
+			break;
+		}
+		case EC_POS:
+		case EC_NUM:
+		case EC_DEC:
+		case EC_SEC:
+		case EC_MONTH:
+			switch (tpe->type->localtype) {
+#ifdef HAVE_HGE
+				case TYPE_hge:
+				{
+					ret = &hval;
+					break;
+				}
+#endif
+				case TYPE_lng:
+				{
+					ret = &lval;
+					break;
+				}
+				case TYPE_int:
+				{
+					ret = &ival;
+					break;
+				}
+				case TYPE_sht:
+				{
+					ret = &sval;
+					break;
+				}
+				case TYPE_bte:
+				{
+					ret = &bbval;
+					break;
+				}
+				default:
+					break;
+			}
+			break;
+		case EC_FLT:
+			switch (tpe->type->localtype) {
+				case TYPE_flt:
+				{
+					ret = &fval;
+					break;
+				}
+				case TYPE_dbl:
+				{
+					ret = &dval;
+					break;
+				}
+				default:
+					break;
+			}
+			break;
+		case EC_DATE: {
+			dt = MTIMEtodate(1, 1, YEAR_MIN);
+			ret = &dt;
+			break;
+		}
+		case EC_TIME: {
+			dyt = 0; //milliseconds on a day
+			ret = &dyt;
+			break;
+		}
+		case EC_TIMESTAMP: {
+			tmp = (timestamp) {
+					.msecs = 0, //milliseconds on a day
+					.days = MTIMEtodate(1, 1, YEAR_MIN),
+			};
+			ret = &tmp;
+			break;
+		}
+		default:
+			break;
+	} //no support for strings and blobs zero value
+
+	if(ret != NULL) {
+		res = atom_create(sa);
+		res->tpe = *tpe;
+		res->isnull = 0;
+		res->data.vtype = tpe->type->localtype;
+		VALset(&res->data, res->data.vtype, ret);
+	}
+
+	return res;
+}

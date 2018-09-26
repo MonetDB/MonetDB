@@ -385,6 +385,23 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_PRECEDING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_PRECEDING(LIMIT, LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_FOLLOWING(LIMIT, LIMIT)
 
+#define ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT) \
+	case TYPE_bit: \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		break; \
+	case TYPE_bte: \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		break; \
+	case TYPE_sht: \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		break; \
+	case TYPE_int: \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		break; \
+	case TYPE_lng: \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		break; \
+
 #ifdef HAVE_HGE
 #define ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT) \
 	case TYPE_hge: \
@@ -394,117 +411,138 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 #define ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT)
 #endif
 
-#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES(FRAME, HALF, LIMIT) \
+#define ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT) \
+	case TYPE_flt: \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(flt, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		break; \
+	case TYPE_dbl: \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		break; \
+
+#define ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT) \
+	if(preceding) { \
+		if (p) { \
+			pnp = np = (bit*)Tloc(p, 0); \
+			nend = np + cnt; \
+			for(; np<nend; np++) { \
+				if (*np) { \
+					i += (np - pnp); \
+					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
+					pnp = np; \
+				} \
+			} \
+			i += (np - pnp); \
+			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
+		} else { \
+			i += cnt; \
+			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
+		} \
+	} else if (p) { \
+		pnp = np = (bit*)Tloc(p, 0); \
+		nend = np + cnt; \
+		for(; np<nend; np++) { \
+			if (*np) { \
+				i += (np - pnp); \
+				ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
+				pnp = np; \
+			} \
+		} \
+		i += (np - pnp); \
+		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
+	} else { \
+		i += cnt; \
+		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
+	}
+
+#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(FRAME, HALF, LIMIT) \
 	do { \
 		switch(tp1) { \
-			case TYPE_bit: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
-				break; \
-			case TYPE_bte: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
-				break; \
-			case TYPE_sht: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
-				break; \
-			case TYPE_int: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
-				break; \
-			case TYPE_lng: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
-				break; \
+			ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT) \
 			ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT) \
-			case TYPE_flt: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(flt, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
-				break; \
-			case TYPE_dbl: \
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
-				break; \
+			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT) \
 			default: { \
-				if(preceding) { \
-					if (p) { \
-						pnp = np = (bit*)Tloc(p, 0); \
-						nend = np + cnt; \
-						for(; np<nend; np++) { \
-							if (*np) { \
-								i += (np - pnp); \
-								ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
-								pnp = np; \
-							} \
-						} \
-						i += (np - pnp); \
-						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
-					} else { \
-						i += cnt; \
-						ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
-					} \
-				} else if (p) { \
-					pnp = np = (bit*)Tloc(p, 0); \
-					nend = np + cnt; \
-					for(; np<nend; np++) { \
-						if (*np) { \
-							i += (np - pnp); \
-							ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
-							pnp = np; \
-						} \
-					} \
-					i += (np - pnp); \
-					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
-				} else { \
-					i += cnt; \
-					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
-				} \
+				ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT) \
 			} \
 		} \
 	} while(0);
 
-#define NO_LIMIT  ;
+#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM(FRAME, HALF, LIMIT) \
+	do { \
+		switch(tp1) { \
+			ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT) \
+			ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT) \
+			default: { \
+				ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT) \
+			} \
+		} \
+	} while(0);
 
-#define ANALYTICAL_BOUNDS_BRANCHES(TPE) \
+#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP(FRAME, HALF, LIMIT) \
+	do { \
+		switch(tp1) { \
+			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT) \
+			default: { \
+				GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2)); \
+				return GDK_FAIL; \
+			} \
+		} \
+	} while(0);
+
+#define NO_LIMIT ;
+
+#define ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(TPE, IMP) \
+	do { \
+		if (l) { /* dynamic bounds */ \
+			TPE *restrict limit = (TPE*) Tloc(l, 0); \
+			if(first_half) { \
+				IMP(_RANGE, _FIRST, limit[k]) \
+			} else { \
+				IMP(_RANGE, _SECOND, limit[k]) \
+			} \
+		} else { /* static bounds */ \
+			TPE limit = *((TPE*)bound); \
+			if (limit == GDK_##TPE##_max) { /* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */ \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT) \
+			} else if(first_half) { \
+				IMP(_RANGE, _FIRST, limit) \
+			} else { \
+				IMP(_RANGE, _SECOND, limit) \
+			} \
+		} \
+	} while(0);
+
+#define ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(TPE) \
 	do { \
 		if (l) { /* dynamic bounds */ \
 			TPE *restrict limit = (TPE*) Tloc(l, 0); \
 			if (unit == 0) { \
 				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, _FIRST, limit[k]) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _FIRST, limit[k]) \
 				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, _SECOND, limit[k]) \
-				} \
-			} else if (unit == 1) { \
-				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, _FIRST, limit[k]) \
-				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, _SECOND, limit[k]) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _SECOND, limit[k]) \
 				} \
 			} else if (unit == 2) { \
 				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, _FIRST, limit[k]) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _FIRST, limit[k]) \
 				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, _SECOND, limit[k]) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _SECOND, limit[k]) \
 				} \
 			} else { \
 				assert(0); \
 			} \
 		} else { /* static bounds */ \
 			TPE limit = *((TPE*)bound); \
-			if (limit == GDK_##TPE##_max) { /* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */  \
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL, _ALL, NO_LIMIT) \
-			} else if (unit == 0) { \
+			if (unit == 0) { \
 				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, _FIRST, limit) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _FIRST, limit) \
 				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ROWS, _SECOND, limit) \
-				} \
-			} else if (unit == 1) { \
-				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, _FIRST, limit) \
-				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_RANGE, _SECOND, limit) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _SECOND, limit) \
 				} \
 			} else if (unit == 2) { \
 				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, _FIRST, limit) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _FIRST, limit) \
 				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_GROUPS, _SECOND, limit) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _SECOND, limit) \
 				} \
 			} else { \
 				assert(0); \
@@ -526,33 +564,62 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 	assert(unit >= 0 && unit <= 3);
 
 	if (unit == 3) { //special case, there are no boundaries
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES(_ALL, _ALL, NO_LIMIT)
+		ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT)
+		goto finish;
 	} else {
 		assert((!l && bound) || (l && !bound));
-		switch(tp2) {
-			case TYPE_bte:
-				ANALYTICAL_BOUNDS_BRANCHES(bte)
-				break;
-			case TYPE_sht:
-				ANALYTICAL_BOUNDS_BRANCHES(sht)
-				break;
-			case TYPE_int:
-				ANALYTICAL_BOUNDS_BRANCHES(int)
-				break;
-			case TYPE_lng:
-				ANALYTICAL_BOUNDS_BRANCHES(lng)
-				break;
+		if(unit == 1) { /* on range frame, floating-point bounds are acceptable */
+			switch(tp2) {
+				case TYPE_bte:
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(bte, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					break;
+				case TYPE_sht:
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(sht, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					break;
+				case TYPE_int:
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(int, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					break;
+				case TYPE_lng:
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(lng, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					break;
+				case TYPE_flt:
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(flt, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP) 
+					break;
+				case TYPE_dbl:
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(dbl, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP)
+					break;
 #ifdef HAVE_HGE
-			case TYPE_hge:
-				ANALYTICAL_BOUNDS_BRANCHES(hge)
-				break;
+				case TYPE_hge:
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(hge, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					break;
 #endif
-			default:
-				GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2));
-				return GDK_FAIL;
+			}
+			goto finish;
+		} else {
+			switch(tp2) {
+				case TYPE_bte:
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(bte)
+					break;
+				case TYPE_sht:
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(sht)
+					break;
+				case TYPE_int:
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(int)
+					break;
+				case TYPE_lng:
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(lng)
+					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(hge)
+					break;
+#endif
+			}
+			goto finish;
 		}
+		GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2));
+		return GDK_FAIL;
 	}
-	goto finish;
 calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	return GDK_FAIL;
@@ -591,9 +658,15 @@ finish:
 #undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_PRECEDING
 #undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_FOLLOWING
 #undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_FOLLOWING
-#undef ANALYTICAL_BOUNDS_BRANCHES
+#undef ANALYTICAL_BOUNDS_BRANCHES_LOGICAL
+#undef ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL
+#undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM
+#undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP
 #undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES
+#undef ANALYTICAL_WINDOW_BOUNDS_NUM
 #undef ANALYTICAL_WINDOW_BOUNDS_HGE
+#undef ANALYTICAL_WINDOW_BOUNDS_FP
+#undef ANALYTICAL_WINDOW_BOUNDS_OTHERS
 #undef ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED
 #undef NO_LIMIT
 

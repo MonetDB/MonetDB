@@ -4720,9 +4720,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		symbol *wstart = d->data.sym, *wend = d->next->data.sym, *rstart = wstart->data.lval->h->data.sym,
 			   *rend = wend->data.lval->h->data.sym;
 		int excl = d->next->next->next->data.i_val;
-		sql_subtype* st, *et;
+		sql_subtype* st, *et, *it = sql_bind_localtype("int");
 		unsigned char sclass = 0, eclass = 0;
 		frame_type = d->next->next->data.i_val;
+		sql_exp *ie = obe ? obe->t->data : in;
 
 		if(!aggr)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation");
@@ -4738,53 +4739,107 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			return sql_error(sql, 02, SQLSTATE(42000) "Non-centered windows are only supported in row frames");
 		if(!obe && frame_type == FRAME_RANGE) {
 			bool ok_preceding = false, ok_following = false;
-			if(rstart->token == SQL_ATOM) {
-				atom *a = ((AtomNode*) rstart)->a;
-				if(a->data.vtype == TYPE_lng && (a->data.val.lval == 0 || a->data.val.lval == GDK_lng_max))
-					ok_preceding = true;
-			}
-			if(rend->token == SQL_ATOM) {
-				atom *a = ((AtomNode*) rend)->a;
-				if(a->data.vtype == TYPE_lng && (a->data.val.lval == 0 || a->data.val.lval == GDK_lng_max))
-					ok_following = true;
-			}
+			if((wstart->token == SQL_PRECEDING || wstart->token == SQL_CURRENT_ROW) &&
+			   (rstart->token == SQL_PRECEDING || rstart->token == SQL_CURRENT_ROW) && rstart->type == type_int &&
+			   (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND || rstart->data.i_val == CURRENT_ROW_BOUND))
+				ok_preceding = true;
+			if((wend->token == SQL_FOLLOWING || wend->token == SQL_CURRENT_ROW) &&
+			   (rend->token == SQL_FOLLOWING || rend->token == SQL_CURRENT_ROW) && rend->type == type_int &&
+			   (rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND || rend->data.i_val == CURRENT_ROW_BOUND))
+				ok_following = true;
 			if(!ok_preceding || !ok_following)
 				return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING/FOLLOWING offset requires an order by expression");
 			frame_type = FRAME_ALL; //special case, iterate the entire partition
 		}
 
-		is_last = 0;
-		fstart = rel_value_exp2(sql, &p, rstart, f, ek, &is_last);
-		if(!fstart)
-			return NULL;
-		st = exp_subtype(fstart);
-		if(st)
+		if((rstart->token == SQL_PRECEDING || rstart->token == SQL_FOLLOWING || rstart->token == SQL_CURRENT_ROW) && rstart->type == type_int) {
+			atom *a = NULL;
+			st = exp_subtype(ie);
 			sclass = st->type->eclass;
-		if(!st || !(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)))
-			return sql_error(sql, 02, SQLSTATE(42000) "PRECEDING offset must be of a countable SQL type");
 
-		is_last = 0;
-		fend = rel_value_exp2(sql, &p, rend, f, ek, &is_last);
-		if (!fend)
-			return NULL;
-		et = exp_subtype(fend);
-		if(et)
+			if((rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND || rstart->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
+				if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass))
+					a = atom_absolute_max(sql->sa, exp_subtype(ie));
+				else
+					a = atom_absolute_max(sql->sa, it);
+			} else if(rstart->data.i_val == CURRENT_ROW_BOUND) {
+				if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass))
+					a = atom_zero_value(sql->sa, exp_subtype(ie));
+				else
+					a = atom_zero_value(sql->sa, it);
+			} else {
+				assert(0);
+			}
+			fstart = exp_atom(sql->sa, a);
+		} else {
+			is_last = 0;
+			fstart = rel_value_exp2(sql, &p, rstart, f, ek, &is_last);
+			if(!fstart)
+				return NULL;
+			st = exp_subtype(fstart);
+			if(st)
+				sclass = st->type->eclass;
+			if(!st || !(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)))
+				return sql_error(sql, 02, SQLSTATE(42000) "PRECEDING offset must be of a countable SQL type");
+		}
+
+		if((rend->token == SQL_PRECEDING || rend->token == SQL_FOLLOWING || rend->token == SQL_CURRENT_ROW) && rend->type == type_int) {
+			atom *a = NULL;
+			et = exp_subtype(ie);
 			eclass = et->type->eclass;
-		if(!et || !(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass)))
-			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must be of a countable SQL type");
 
-		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend,
-								   frame_type, excl, wstart->token, wend->token) == NULL)
+			if((rend->data.i_val == UNBOUNDED_PRECEDING_BOUND || rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
+				if(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass))
+					a = atom_absolute_max(sql->sa, exp_subtype(ie));
+				else
+					a = atom_absolute_max(sql->sa, it);
+			} else if(rend->data.i_val == CURRENT_ROW_BOUND) {
+				if(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass))
+					a = atom_zero_value(sql->sa, exp_subtype(ie));
+				else
+					a = atom_zero_value(sql->sa, it);
+			} else {
+				assert(0);
+			}
+			fend = exp_atom(sql->sa, a);
+		} else {
+			is_last = 0;
+			fend = rel_value_exp2(sql, &p, rend, f, ek, &is_last);
+			if (!fend)
+				return NULL;
+			et = exp_subtype(fend);
+			if(et)
+				eclass = et->type->eclass;
+			if(!et || !(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass)))
+				return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must be of a countable SQL type");
+		}
+
+		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
+								   wstart->token, wend->token) == NULL)
 			return NULL;
 	} else if (aggr) {
-		fstart = exp_atom_lng(sql->sa, GDK_lng_max);
-		fend = exp_atom_lng(sql->sa, has_order_by ? 0 : GDK_lng_max);
+		sql_exp *ie = obe ? obe->t->data : in;
+		sql_subtype *it = sql_bind_localtype("int"), *st = exp_subtype(ie);
+		unsigned char sclass = st->type->eclass;
 
+		if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
+			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, exp_subtype(ie)));
+			if(has_order_by)
+				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, exp_subtype(ie)));
+			else
+				fend = exp_atom(sql->sa, atom_absolute_max(sql->sa, exp_subtype(ie)));
+		} else {
+			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, it));
+			if(has_order_by)
+				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, it));
+			else
+				fend = exp_atom(sql->sa, atom_absolute_max(sql->sa, it));
+		}
 		if(!obe)
 			frame_type = FRAME_ALL;
 
-		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, obe ? obe->t->data : in, fstart, fend,
-								   frame_type, EXCLUDE_NONE, SQL_PRECEDING, SQL_FOLLOWING) == NULL)
+		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
+								   SQL_PRECEDING, SQL_FOLLOWING) == NULL)
 			return NULL;
 	}
 
