@@ -403,7 +403,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			(void)stmt_control_end(be, wstmt);
 			return stmt_control_end(be, ifstmt);
 		} else if (e->flag & PSM_IF) {
-			stmt *cond = exp_bin(be, e->l, left, right, grp, cnt, ext, sel, rsel);
+			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel, rsel);
 			stmt *ifstmt = stmt_cond(be, cond, NULL, 0, 0), *res;
 			(void)exp_list(be, e->r, left, right, grp, cnt, ext, sel, rsel);
 			res = stmt_control_end(be, ifstmt);
@@ -433,7 +433,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return r;
 			return stmt_table(be, r, 1);
 		} else if (e->flag & PSM_EXCEPTION) {
-			stmt *cond = exp_bin(be, e->l, left, right, grp, cnt, ext, sel);
+			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel, rsel);
 			return stmt_exception(be, cond, (const char *) e->r, 0);
 		}
 		break;
@@ -2076,9 +2076,9 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			r = e->r;
 
 			/* for each equality join add a rel_select(r is NULL) */
-			s = exp_bin(be, r, right, NULL, NULL, NULL, NULL, NULL);
+			s = exp_bin(be, r, right, NULL, NULL, NULL, NULL, NULL, NULL);
 			if (!s)
-			 	s = exp_bin(be, l, right, NULL, NULL, NULL, NULL, NULL);
+			 	s = exp_bin(be, l, right, NULL, NULL, NULL, NULL, NULL, NULL);
 			if (s && !exp_is_atom(r)) {
 				sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 				sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", lng, lng, lng);
@@ -5183,7 +5183,7 @@ rel2bin_partition_limits(backend *be, sql_rel *rel, list *refs)
 	if(rel->exps) {
 		for(n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL);
+			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL, NULL);
 			append(slist, s);
 		}
 	}
@@ -5208,7 +5208,7 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 	if(rel->exps) {
 		for(n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL);
+			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL, NULL);
 			append(slist, s);
 		}
 	} else { //if there is no exception condition, just generate a statement list
