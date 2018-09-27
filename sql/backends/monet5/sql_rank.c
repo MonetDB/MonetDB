@@ -641,15 +641,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor"); \
 			}                                                                               \
 		}                                                                                   \
-		if (isaBatType(getArgType(mb, pci, 4))) {                                           \
-			o = BATdescriptor(*getArgReference_bat(stk, pci, 4));                           \
-			if (!o) {                                                                       \
-				BBPunfix(b->batCacheid);                                                    \
-				BBPunfix(p->batCacheid);                                                    \
-				throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor"); \
-			}                                                                               \
-		}                                                                                   \
-		gdk_code = GDKanalyticalntile(r, b, p, o, TYPE_##TPE, ntile);                       \
+		gdk_code = GDKanalyticalntile(r, b, p, TYPE_##TPE, ntile);                          \
 	} while(0);
 
 #define NTILE_VALUE_SINGLE_IMP(TPE)                                                     \
@@ -677,7 +669,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tp1)) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *o = NULL, *r;
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r;
 		if (!b)
 			throw(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
@@ -709,6 +701,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		BATsetcount(r, cnt);
 		BBPunfix(b->batCacheid);
+		if(p) BBPunfix(p->batCacheid);
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
@@ -790,9 +783,9 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **s, BAT **e, Client cntxt, MalBlkPtr mb
 
 static str
 do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
-			   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
+			   gdk_return (*func)(BAT *, BAT *, BAT *, int))
 {
-	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL;
+	BAT *r = NULL, *b = NULL, *p = NULL;
 	int tpe;
 	gdk_return gdk_res;
 
@@ -819,15 +812,6 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const st
 			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		}
 	}
-	if (isaBatType(getArgType(mb, pci, 3))) {
-		o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-		if (!o) {
-			if (b) BBPunfix(b->batCacheid);
-			if (r) BBPunfix(r->batCacheid);
-			if (p) BBPunfix(p->batCacheid);
-			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-		}
-	}
 
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
@@ -835,10 +819,9 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const st
 	if (b) {
 		bat *res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = func(r, b, p, o, tpe);
+		gdk_res = func(r, b, p, tpe);
 		BBPunfix(b->batCacheid);
 		if (p) BBPunfix(p->batCacheid);
-		if (o) BBPunfix(o->batCacheid);
 		if (gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
@@ -879,16 +862,8 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor"); \
 			}                                                                                   \
 		}                                                                                       \
-		if (isaBatType(getArgType(mb, pci, 4))) {                                               \
-			o = BATdescriptor(*getArgReference_bat(stk, pci, 4));                               \
-			if (!o) {                                                                           \
-				BBPunfix(b->batCacheid);                                                        \
-				BBPunfix(p->batCacheid);                                                        \
-				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor"); \
-			}                                                                                   \
-		}                                                                                       \
 		cast_value = is_##TPE##_nil(*nthvalue) ? BUN_NONE : (BUN)(((TPE)*nthvalue) - 1);        \
-		gdk_code = GDKanalyticalnthvalue(r, b, p, o, cast_value, tp1);                          \
+		gdk_code = GDKanalyticalnthvalue(r, b, p, cast_value, tp1);                             \
 	} while(0);
 
 #define NTH_VALUE_SINGLE_IMP(TPE)                                                               \
@@ -917,7 +892,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tp1)) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *o = NULL, *r;
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r;
 		if (!b)
 			throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
@@ -950,6 +925,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		BATsetcount(r, cnt);
 		BBPunfix(b->batCacheid);
+		if (p) BBPunfix(p->batCacheid);
 		if(gdk_code == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
@@ -995,7 +971,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str /* the variable m is used to fix the multiplier */
 do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str desc,
-			gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BUN, const void* restrict, int))
+			gdk_return (*func)(BAT *, BAT *, BAT *, BUN, const void* restrict, int))
 {
 	int tp1, tp2, tp3, base = 2;
 	BUN l_value = 1;
@@ -1054,7 +1030,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 	if (isaBatType(tp1)) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *o = NULL, *r;
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, 1)), *p = NULL, *r;
 		if (!b)
 			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 		cnt = BATcount(b);
@@ -1069,16 +1045,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 		}
-		if (isaBatType(getArgType(mb, pci, base + 1))) {
-			o = BATdescriptor(*getArgReference_bat(stk, pci, base + 1));
-			if (!o) {
-				BBPunfix(b->batCacheid);
-				BBPunfix(p->batCacheid);
-				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-			}
-		}
 
-		gdk_code = func(r, b, p, o, l_value, default_value, tp1);
+		gdk_code = func(r, b, p, l_value, default_value, tp1);
 
 		BATsetcount(r, cnt);
 		BBPunfix(b->batCacheid);

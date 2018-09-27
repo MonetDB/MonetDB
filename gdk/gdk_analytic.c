@@ -235,7 +235,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				i += (np - pnp);                    \
 				IMP##_PRECEDING(TPE, LIMIT)         \
 			} else {                                \
-				i += cnt;                           \
+				i += (lng) cnt;                     \
 				IMP##_PRECEDING(TPE, LIMIT)         \
 			}                                       \
 		} else if(np) {                             \
@@ -250,7 +250,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			i += (np - pnp);                        \
 			IMP##_FOLLOWING(TPE, LIMIT)             \
 		} else {                                    \
-			i += cnt;                               \
+			i += (lng) cnt;                         \
 			IMP##_FOLLOWING(TPE, LIMIT)             \
 		}                                           \
 	} while(0);
@@ -434,7 +434,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			i += (np - pnp); \
 			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
 		} else { \
-			i += cnt; \
+			i += (lng) cnt; \
 			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
 		} \
 	} else if (p) { \
@@ -450,7 +450,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		i += (np - pnp); \
 		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
 	} else { \
-		i += cnt; \
+		i += (lng) cnt; \
 		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
 	}
 
@@ -565,7 +565,6 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 
 	if (unit == 3) { //special case, there are no boundaries
 		ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT)
-		goto finish;
 	} else {
 		assert((!l && bound) || (l && !bound));
 		if(unit == 1) { /* on range frame, floating-point bounds are acceptable */
@@ -593,8 +592,10 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(hge, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
 					break;
 #endif
+				default:
+					GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2));
+					return GDK_FAIL;
 			}
-			goto finish;
 		} else {
 			switch(tp2) {
 				case TYPE_bte:
@@ -614,12 +615,13 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(hge)
 					break;
 #endif
+				default:
+					GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2));
+					return GDK_FAIL;
 			}
-			goto finish;
 		}
-		GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2));
-		return GDK_FAIL;
 	}
+goto finish;
 calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	return GDK_FAIL;
@@ -670,7 +672,7 @@ finish:
 #undef ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED
 #undef NO_LIMIT
 
-#define NTILE_CALC(TPE)               \
+#define NTILE_CALC                    \
 	do {                              \
 		if(bval >= ncnt) {            \
 			i = 1;                    \
@@ -699,8 +701,7 @@ finish:
 
 #define ANALYTICAL_NTILE_IMP(TPE)            \
 	do {                                     \
-		TPE i = 0, j = 1, *rp, *rb, buckets; \
-		TPE val = *(TPE*) ntile;             \
+		TPE j = 1, *rp, *rb, val = *(TPE*) ntile; \
 		BUN bval = (BUN) val;                \
 		rb = rp = (TPE*)Tloc(r, 0);          \
 		if(is_##TPE##_nil(val)) {            \
@@ -717,7 +718,7 @@ finish:
 					j = 1;                   \
 					ncnt = np - pnp;         \
 					rp += ncnt;              \
-					NTILE_CALC(TPE)          \
+					NTILE_CALC               \
 					pnp = np;                \
 				}                            \
 			}                                \
@@ -725,25 +726,24 @@ finish:
 			j = 1;                           \
 			ncnt = np - pnp;                 \
 			rp += ncnt;                      \
-			NTILE_CALC(TPE)                  \
+			NTILE_CALC                       \
 		} else {                             \
 			rp += cnt;                       \
-			NTILE_CALC(TPE)                  \
+			NTILE_CALC                       \
 		}                                    \
 		goto finish;                         \
 	} while(0);
 
 gdk_return
-GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *o, int tpe, const void* restrict ntile)
+GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void* restrict ntile)
 {
-	BUN cnt = BATcount(b), ncnt = cnt;
+	BUN cnt = BATcount(b), ncnt = cnt, buckets, i = 0;
 	bit *np, *pnp, *end;
 	bool has_nils = false;
 	gdk_return gdk_res = GDK_SUCCEED;
 
 	assert(ntile);
 
-	(void) o;
 	switch (tpe) {
 		case TYPE_bte:
 			ANALYTICAL_NTILE_IMP(bte)
@@ -818,7 +818,7 @@ finish:
 #define ANALYTICAL_FIRST_OTHERS                                         \
 	do {                                                                \
 		curval = BUNtail(bpi, j);                                       \
-		if((*atomcmp)(curval, nil) == 0)                                \
+		if(atomcmp(curval, nil) == 0)                                   \
 			has_nils = true;                                            \
 		for (;j < i; j++) {                                             \
 			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
@@ -827,7 +827,7 @@ finish:
 	} while(0);
 
 gdk_return
-GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
+GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, int tpe)
 {
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
@@ -836,7 +836,6 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
 	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 
-	(void) o;
 	switch(tpe) {
 		case TYPE_bit:
 			ANALYTICAL_FIRST_IMP(bit)
@@ -881,7 +880,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
 				}
 				i += (np - pnp);
 				ANALYTICAL_FIRST_OTHERS
-			} else { /* single value, ie no ordering */
+			} else {
 				i += cnt;
 				ANALYTICAL_FIRST_OTHERS
 			}
@@ -938,7 +937,7 @@ finish:
 #define ANALYTICAL_LAST_OTHERS                                          \
 	do {                                                                \
 		curval = BUNtail(bpi, i - 1);                                   \
-		if((*atomcmp)(curval, nil) == 0)                                \
+		if(atomcmp(curval, nil) == 0)                                   \
 			has_nils = true;                                            \
 		for (;j < i; j++) {                                             \
 			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
@@ -947,7 +946,7 @@ finish:
 	} while(0);
 
 gdk_return
-GDKanalyticallast(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
+GDKanalyticallast(BAT *r, BAT *b, BAT *p, int tpe)
 {
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
@@ -956,7 +955,6 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
 	bit *np, *pnp, *end;
 	gdk_return gdk_res = GDK_SUCCEED;
 
-	(void) o;
 	switch(tpe) {
 		case TYPE_bit:
 			ANALYTICAL_LAST_IMP(bit)
@@ -1001,7 +999,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *p, BAT *o, int tpe)
 				}
 				i += (np - pnp);
 				ANALYTICAL_LAST_OTHERS
-			} else { /* single value, ie no ordering */
+			} else {
 				i += cnt;
 				ANALYTICAL_LAST_OTHERS
 			}
@@ -1071,7 +1069,7 @@ finish:
 			curval = nil;                                               \
 		else                                                            \
 			curval = BUNtail(bpi, nth);                                 \
-		if((*atomcmp)(curval, nil) == 0)                                \
+		if(atomcmp(curval, nil) == 0)                                   \
 			has_nils = true;                                            \
 		for (;j < i; j++) {                                             \
 			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
@@ -1080,7 +1078,7 @@ finish:
 	} while(0);
 
 gdk_return
-GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, BUN nth, int tpe)
+GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BUN nth, int tpe)
 {
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
@@ -1089,7 +1087,6 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, BUN nth, int tpe)
 	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
-	(void) o;
 	switch (tpe) {
 		case TYPE_bte:
 			ANALYTICAL_NTHVALUE_IMP(bte)
@@ -1137,7 +1134,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *o, BUN nth, int tpe)
 				}
 				i += (np - pnp);
 				ANALYTICAL_NTHVALUE_OTHERS
-			} else { /* single value, ie no ordering */
+			} else {
 				i += cnt;
 				ANALYTICAL_NTHVALUE_OTHERS
 			}
@@ -1206,19 +1203,19 @@ finish:
 			if ((gdk_res = BUNappend(r, default_value, false)) != GDK_SUCCEED) \
 				goto finish;                                                   \
 		}                                                                      \
-		if(lag > 0 && (*atomcmp)(default_value, nil) == 0)                     \
+		if(lag > 0 && atomcmp(default_value, nil) == 0)                        \
 			has_nils = true;                                                   \
 		for(l=k-lag; k<j; k++, l++) {                                          \
 			curval = BUNtail(bpi, l);                                          \
 			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)        \
 				goto finish;                                                   \
-			if((*atomcmp)(curval, nil) == 0)                                   \
+			if(atomcmp(curval, nil) == 0)                                      \
 				has_nils = true;                                               \
 		}                                                                      \
 	} while (0);
 
 gdk_return
-GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, BUN lag, const void* restrict default_value, int tpe)
+GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void* restrict default_value, int tpe)
 {
 	int (*atomcmp)(const void *, const void *);
 	const void *restrict nil;
@@ -1229,7 +1226,6 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BAT *o, BUN lag, const void* restrict d
 
 	assert(default_value);
 
-	(void) o;
 	switch (tpe) {
 		case TYPE_bte:
 			ANALYTICAL_LAG_IMP(bte)
@@ -1356,7 +1352,7 @@ finish:
 				curval = BUNtail(bpi, n);                                      \
 				if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)    \
 					goto finish;                                               \
-				if((*atomcmp)(curval, nil) == 0)                               \
+				if(atomcmp(curval, nil) == 0)                                  \
 					has_nils = true;                                           \
 			}                                                                  \
 			k += i;                                                            \
@@ -1365,12 +1361,12 @@ finish:
 			if ((gdk_res = BUNappend(r, default_value, false)) != GDK_SUCCEED) \
 				goto finish;                                                   \
 		}                                                                      \
-		if(lead > 0 && (*atomcmp)(default_value, nil) == 0)                    \
+		if(lead > 0 && atomcmp(default_value, nil) == 0)                       \
 			has_nils = true;                                                   \
 	} while(0);
 
 gdk_return
-GDKanalyticallead(BAT *r, BAT *b, BAT *p, BAT *o, BUN lead, const void* restrict default_value, int tpe)
+GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void* restrict default_value, int tpe)
 {
 	int (*atomcmp)(const void *, const void *);
 	const void* restrict nil;
@@ -1381,7 +1377,6 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BAT *o, BUN lead, const void* restrict
 
 	assert(default_value);
 
-	(void) o;
 	switch (tpe) {
 		case TYPE_bte:
 			ANALYTICAL_LEAD_IMP(bte)
@@ -1449,8 +1444,8 @@ finish:
 
 #define ANALYTICAL_MIN_MAX_CALC(TPE, OP)        \
 	do {                                        \
-		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v, curval = TPE##_nil, *restrict rb; \
-		rb = (TPE*)Tloc(r, 0);                  \
+		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v, \
+			curval = TPE##_nil, *restrict rb = (TPE*)Tloc(r, 0); \
 		for(; i<cnt; i++, rb++) {               \
 			bs = bp + start[i];                 \
 			be = bp + end[i];                   \
@@ -1527,8 +1522,8 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 				curval = (void *)nil; \
 				for (;j < l; j++) { \
 					void *next = BUNtail(bpi, j); \
-					if((*atomcmp)(next, nil) != 0) { \
-						if((*atomcmp)(curval, nil) == 0) \
+					if(atomcmp(next, nil) != 0) { \
+						if(atomcmp(curval, nil) == 0) \
 							curval = next; \
 						else \
 							curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
@@ -1536,7 +1531,7 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 				} \
 				if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
 					goto finish; \
-				if((*atomcmp)(curval, nil) == 0) \
+				if(atomcmp(curval, nil) == 0) \
 					has_nils = true; \
 			} \
 		} \
