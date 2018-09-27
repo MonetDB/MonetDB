@@ -15,19 +15,18 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36250/
 # MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
+Running database upgrade commands:
+set schema sys;
+drop table sys.systemfunctions;
+create view sys.systemfunctions as select id as function_id from sys.functions where system;
+grant select on sys.systemfunctions to public;
+update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');
+set schema "sys";
+commit;
+
 # MonetDB/SQL module loaded
 
 Ready.
-Running database upgrade commands:
-set schema sys;
-create aggregate sys.group_concat(str string) returns string external name "aggr"."str_group_concat";
-grant execute on aggregate sys.group_concat(string) to public;
-create aggregate sys.group_concat(str string, sep string) returns string external name "aggr"."str_group_concat";
-grant execute on aggregate sys.group_concat(string, string) to public;
-insert into sys.systemfunctions (select id from sys.functions where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-set schema "testschema";
-commit;
 
 # 15:56:11 >  
 # 15:56:11 >  "/usr/bin/python" "upgrade.SQL.py" "upgrade"

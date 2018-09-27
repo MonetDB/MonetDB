@@ -79,28 +79,31 @@ malOpenSource(str file)
  * to find out how long the input is.
 */
 static str
-malLoadScript(Client c, str name, bstream **fdin)
+malLoadScript(str name, bstream **fdin)
 {
 	stream *fd;
 	size_t sz;
 
 	fd = malOpenSource(name);
-	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-		mnstr_destroy(fd);
+	if (fd == NULL || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
+		close_stream(fd);
 		throw(MAL, "malInclude", "could not open file: %s", name);
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "malInclude", "file %s too large to process", name);
 	}
 	*fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
 	if(*fdin == NULL) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "malInclude", MAL_MALLOC_FAIL);
 	}
-	if (bstream_next(*fdin) < 0)
-		mnstr_printf(c->fdout, "!WARNING: could not read %s\n", name);
+	if (bstream_next(*fdin) < 0) {
+		bstream_destroy(*fdin);
+		*fdin = NULL;
+		throw(MAL, "malInclude", "could not read %s", name);
+	}
 	return MAL_SUCCEED;
 }
 #endif
@@ -210,7 +213,7 @@ malInclude(Client c, str name, int listing)
 			c->srcFile = filename;
 			c->yycur = 0;
 			c->bak = NULL;
-			if ((msg = malLoadScript(c, filename, &c->fdin)) == MAL_SUCCEED) {
+			if ((msg = malLoadScript(filename, &c->fdin)) == MAL_SUCCEED) {
 				parseMAL(c, c->curprg, 1, INT_MAX);
 				bstream_destroy(c->fdin);
 			} else {
@@ -262,7 +265,7 @@ evalFile(str fname, int listing)
 	GDKfree(filename);
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		if (fd)
-			mnstr_destroy(fd);
+			close_stream(fd);
 		throw(MAL,"mal.eval", "WARNING: could not open file\n");
 	} 
 
@@ -317,6 +320,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	str msg = MAL_SUCCEED;
 	str qry;
 	str old = s;
+	stream *bs;
 	bstream *fdin = NULL;
 
 	s = mal_cmdline(s, &len);
@@ -335,7 +339,13 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 
 	buffer_init(b, qry, len);
-	fdin = bstream_create(buffer_rastream(b, "compileString"), b->len);
+	bs = buffer_rastream(b, "compileString");
+	if (bs == NULL) {
+		GDKfree(qry);
+		GDKfree(b);
+		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	fdin = bstream_create(bs, b->len);
 	if (fdin == NULL) {
 		GDKfree(qry);
 		GDKfree(b);
@@ -385,6 +395,7 @@ callString(Client cntxt, str s, int listing)
 	buffer *b;
 	str old =s;
 	str msg = MAL_SUCCEED, qry;
+	bstream *bs;
 
 	s = mal_cmdline(s, &len);
 	qry = s;
@@ -402,7 +413,13 @@ callString(Client cntxt, str s, int listing)
 	}
 
 	buffer_init(b, qry, len);
-	c= MCinitClient((oid)0, bstream_create(buffer_rastream(b, "callString"), b->len),0);
+	bs = bstream_create(buffer_rastream(b, "callString"), b->len);
+	if (bs == NULL){
+		GDKfree(b);
+		GDKfree(qry);
+		throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	c= MCinitClient((oid)0, bs,0);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
@@ -428,7 +445,13 @@ callString(Client cntxt, str s, int listing)
 		MCcloseClient(c);
 		return msg;
 	}
-	runScenario(c,1);
+	if((msg = runScenario(c,1)) != MAL_SUCCEED) {
+		c->usermodule = 0;
+		GDKfree(b);
+		GDKfree(qry);
+		MCcloseClient(c);
+		return msg;
+	}
 	// The command may have changed the environment of the calling client.
 	// These settings should be propagated for further use.
 	//if( msg == MAL_SUCCEED){

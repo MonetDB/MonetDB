@@ -15,7 +15,7 @@
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
-#ifdef NATIVE_WIN32
+#ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
 
@@ -28,7 +28,5 @@
 
 stream_export stream *socket_rstream(SOCKET socket, const char *name);
 stream_export stream *socket_wstream(SOCKET socket, const char *name);
-stream_export stream *socket_rastream(SOCKET socket, const char *name);
-stream_export stream *socket_wastream(SOCKET socket, const char *name);
 
 #endif	/* _STREAM_SOCKET_H_ */

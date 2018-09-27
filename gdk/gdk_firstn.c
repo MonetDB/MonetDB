@@ -139,7 +139,7 @@
  * that are not all included in the first N.
  */
 static BAT *
-BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
+BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, oid *lastp)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
@@ -321,12 +321,12 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 		*lastp = oids[0]; /* store id of largest value */
 	/* output must be sorted since it's a candidate list */
 	GDKqsort(oids, NULL, NULL, (size_t) n, sizeof(oid), 0, TYPE_oid);
-	bn->tsorted = 1;
+	bn->tsorted = true;
 	bn->trevsorted = n <= 1;
-	bn->tkey = 1;
+	bn->tkey = true;
 	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
-	bn->tnil = 0;
-	bn->tnonil = 1;
+	bn->tnil = false;
+	bn->tnonil = true;
 	return bn;
 }
 
@@ -408,7 +408,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
  * that same value.
  */
 static BAT *
-BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp, oid *lastgp)
+BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, oid *lastp, oid *lastgp)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
@@ -451,12 +451,12 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 				return NULL;
 			memcpy(Tloc(bn, 0), cand, n * sizeof(oid));
 			BATsetcount(bn, n);
-			bn->tsorted = 1;
+			bn->tsorted = true;
 			bn->trevsorted = n <= 1;
-			bn->tkey = 1;
+			bn->tkey = true;
 			bn->tseqbase = n <= 1 ? cand[0] : oid_nil;
-			bn->tnil = 0;
-			bn->tnonil = 1;
+			bn->tnil = false;
+			bn->tnonil = true;
 			return bn;
 		}
 		if (lastp)
@@ -610,17 +610,17 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 	GDKfree(goids);
 	/* output must be sorted since it's a candidate list */
 	GDKqsort(oids, NULL, NULL, (size_t) n, sizeof(oid), 0, TYPE_oid);
-	bn->tsorted = 1;
+	bn->tsorted = true;
 	bn->trevsorted = n <= 1;
-	bn->tkey = 1;
+	bn->tkey = true;
 	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
-	bn->tnil = 0;
-	bn->tnonil = 1;
+	bn->tnil = false;
+	bn->tnonil = true;
 	return bn;
 }
 
 static gdk_return
-BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int distinct)
+BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, bool asc, bool distinct)
 {
 	BAT *bn, *gn, *su = NULL;
 	oid last;
@@ -653,7 +653,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 
 			bn1 = bn;
 			BBPunfix(s->batCacheid);
-			bn = BATintersect(b, b, su, bn1, 1, BUN_NONE);
+			bn = BATintersect(b, b, su, bn1, true, BUN_NONE);
 			BBPunfix(bn1->batCacheid);
 			if (bn == NULL)
 				return GDK_FAIL;
@@ -662,7 +662,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 			BAT *bn1, *bn2;
 
 			bn1 = bn;
-			bn2 = BATselect(b, s, BUNtail(bi, last - b->hseqbase), NULL, 1, 0, 0);
+			bn2 = BATselect(b, s, BUNtail(bi, last - b->hseqbase), NULL, true, false, false);
 			if (bn2 == NULL) {
 				BBPunfix(bn1->batCacheid);
 				return GDK_FAIL;
@@ -681,13 +681,13 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 			BBPunfix(bn->batCacheid);
 			return GDK_FAIL;
 		}
-		rc = BATsort(NULL, &bn2, &bn3, bn1, NULL, NULL, !asc, 0);
+		rc = BATsort(NULL, &bn2, &bn3, bn1, NULL, NULL, !asc, false);
 		BBPunfix(bn1->batCacheid);
 		if (rc != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
 			return GDK_FAIL;
 		}
-		rc = BATsort(NULL, &bn4, NULL, bn2, NULL, NULL, 0, 0);
+		rc = BATsort(NULL, &bn4, NULL, bn2, NULL, NULL, false, false);
 		BBPunfix(bn2->batCacheid);
 		if (rc != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
@@ -709,7 +709,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 }
 
 static gdk_return
-BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int distinct)
+BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool distinct)
 {
 	BAT *bn, *gn;
 	oid last, lastg;
@@ -725,7 +725,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn2->batCacheid);
 			return GDK_FAIL;
 		}
-		bn4 = BATintersect(s, bn2, NULL, NULL, 0, BUN_NONE);
+		bn4 = BATintersect(s, bn2, NULL, NULL, false, BUN_NONE);
 		BBPunfix(bn2->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);
@@ -775,7 +775,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		BATiter bi = bat_iterator(b);
 
 		bn1 = bn;
-		bn2 = BATselect(g, NULL, &lastg, NULL, 1, 0, 0);
+		bn2 = BATselect(g, NULL, &lastg, NULL, true, false, false);
 		if (bn2 == NULL) {
 			BBPunfix(bn1->batCacheid);
 			return GDK_FAIL;
@@ -786,7 +786,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn1->batCacheid);
 			return  GDK_FAIL;
 		}
-		bn4 = BATselect(b, bn3, BUNtail(bi, last - b->hseqbase), NULL, 1, 0, 0);
+		bn4 = BATselect(b, bn3, BUNtail(bi, last - b->hseqbase), NULL, true, false, false);
 		BBPunfix(bn3->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);
@@ -801,7 +801,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	if (gids) {
 		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7, *bn8;
 
-		if ((bn1 = BATintersect(s, bn, NULL, NULL, 0, BUN_NONE)) == NULL) {
+		if ((bn1 = BATintersect(s, bn, NULL, NULL, false, BUN_NONE)) == NULL) {
 			BBPunfix(bn->batCacheid);
 			return  GDK_FAIL;
 		}
@@ -816,14 +816,14 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn2->batCacheid);
 			return GDK_FAIL;
 		}
-		rc = BATsort(NULL, &bn4, &bn5, bn2, NULL, NULL, 0, 0);
+		rc = BATsort(NULL, &bn4, &bn5, bn2, NULL, NULL, false, false);
 		BBPunfix(bn2->batCacheid);
 		if (rc != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
 			BBPunfix(bn3->batCacheid);
 			return GDK_FAIL;
 		}
-		rc = BATsort(NULL, &bn6, &bn7, bn3, bn4, bn5, !asc, 0);
+		rc = BATsort(NULL, &bn6, &bn7, bn3, bn4, bn5, !asc, false);
 		BBPunfix(bn3->batCacheid);
 		BBPunfix(bn4->batCacheid);
 		BBPunfix(bn5->batCacheid);
@@ -831,7 +831,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn->batCacheid);
 			return GDK_FAIL;
 		}
-		rc = BATsort(NULL, &bn8, NULL, bn6, NULL, NULL, 0, 0);
+		rc = BATsort(NULL, &bn8, NULL, bn6, NULL, NULL, false, false);
 		BBPunfix(bn6->batCacheid);
 		if (rc != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
@@ -853,7 +853,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 }
 
 gdk_return
-BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int distinct)
+BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool distinct)
 {
 	assert(topn != NULL);
 	if (b == NULL) {

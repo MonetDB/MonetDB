@@ -31,13 +31,14 @@ stderr of test 'set-negative-querytimeout.Bug-6070` in directory 'sql/test/BugTr
 
 MAPI  = (monetdb) /var/tmp/mtest-9911/.s.monetdb.38717
 QUERY = CALL "sys"."settimeout"(-9);
-ERROR = !Query time out should be > 0
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+ERROR = !Query time out should be >= 0
+MAPI  = (monetdb) /var/tmp/mtest-15044/.s.monetdb.30743
 QUERY = CALL "sys"."settimeout"(7, -9);
-ERROR = !Session time out should be > 0
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+ERROR = !Session time out should be >= 0
+MAPI  = (monetdb) /var/tmp/mtest-15044/.s.monetdb.30743
 QUERY = CALL "sys"."setsession"(-8);
-ERROR = !Query time out should be > 0
+ERROR = !Query time out should be >= 0
+
 
 
 # 17:30:21 >  

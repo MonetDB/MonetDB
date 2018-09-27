@@ -19,7 +19,7 @@ bin_mclient = {
 		../mapilib/libmapi \
 		../../common/stream/libstream \
 		$(READLINE_LIBS) \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 bin_msqldump = {
@@ -27,7 +27,7 @@ bin_msqldump = {
 	LIBS = libmcutil ../../common/utils/libmutils \
 		../mapilib/libmapi \
 		../../common/stream/libstream \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 bin_stethoscope = {
@@ -35,7 +35,7 @@ bin_stethoscope = {
 	LIBS = libmcutil ../../common/utils/libmutils \
 		../mapilib/libmapi \
 		../../common/stream/libstream \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 bin_tachograph = {
@@ -43,7 +43,7 @@ bin_tachograph = {
 	LIBS = libmcutil ../../common/utils/libmutils \
 		../mapilib/libmapi \
 		../../common/stream/libstream \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 bin_tomograph = {
@@ -51,7 +51,7 @@ bin_tomograph = {
 	LIBS = libmcutil ../../common/utils/libmutils \
 		../mapilib/libmapi \
 		../../common/stream/libstream \
-		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 # disabled: it's not really a tool for users, more to debug mapi

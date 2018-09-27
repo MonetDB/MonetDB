@@ -98,7 +98,7 @@ CMDbbpNames(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
-				if (BUNappend(b, BBP_logical(i), FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, BBP_logical(i), false) != GDK_SUCCEED) {
 					BBPunlock();
 					BBPreclaim(b);
 					throw(MAL, "catalog.bbpNames", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -150,7 +150,7 @@ CMDbbpCount(bat *ret)
 				if (bn) {
 					l = BATcount(bn);
 					BBPunfix(bn->batCacheid);
-					if (BUNappend(b,  &l, FALSE) != GDK_SUCCEED) {
+					if (BUNappend(b,  &l, false) != GDK_SUCCEED) {
 						BBPreclaim(b);
 						throw(MAL, "catalog.bbpCount", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					}
@@ -185,7 +185,7 @@ CMDbbpLocation(bat *ret)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				snprintf(buf,FILENAME_MAX,"%s/bat/%s",cwd,BBP_physical(i));
-				if (BUNappend(b, buf, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, buf, false) != GDK_SUCCEED) {
 					BBPunlock();
 					BBPreclaim(b);
 					throw(MAL, "catalog.bbpLocation", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -217,7 +217,7 @@ CMDbbpDirty(bat *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				BAT *bn = BBP_cache(i);
 
-				if (BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED) {
 					BBPunlock();
 					BBPreclaim(b);
 					throw(MAL, "catalog.bbpDirty", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -248,7 +248,7 @@ CMDbbpStatus(bat *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				char *loc = BBP_cache(i) ? "load" : "disk";
 
-				if (BUNappend(b, loc, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, loc, false) != GDK_SUCCEED) {
 					BBPunlock();
 					BBPreclaim(b);
 					throw(MAL, "catalog.bbpStatus", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -279,7 +279,7 @@ CMDbbpKind(bat *ret)
 				mode = "transient";
 			else
 				mode = "persistent";
-			if (BUNappend(b, mode, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(b, mode, false) != GDK_SUCCEED) {
 				BBPunlock();
 				BBPreclaim(b);
 					throw(MAL, "catalog.bbpKind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -306,7 +306,7 @@ CMDbbpRefCount(bat *ret)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_refs(i);
 
-			if (BUNappend(b, &refs, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(b, &refs, false) != GDK_SUCCEED) {
 				BBPunlock();
 				BBPreclaim(b);
 				throw(MAL, "catalog.bbpRefCount", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -333,7 +333,7 @@ CMDbbpLRefCount(bat *ret)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_lrefs(i);
 
-			if (BUNappend(b, &refs, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(b, &refs, false) != GDK_SUCCEED) {
 				BBPunlock();
 				BBPreclaim(b);
 				throw(MAL, "catalog.bbpLRefCount", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -414,17 +414,17 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
 					mode = "transient";
 				snprintf(buf, FILENAME_MAX, "%s", BBP_physical(i));
-				if (BUNappend(id, &i, FALSE) != GDK_SUCCEED ||
-					BUNappend(ns, BBP_logical(i), FALSE) != GDK_SUCCEED ||
-					BUNappend(tt, BATatoms[BATttype(bn)].name, FALSE) != GDK_SUCCEED ||
-					BUNappend(cnt, &l, FALSE) != GDK_SUCCEED ||
-					BUNappend(refcnt, &refs, FALSE) != GDK_SUCCEED ||
-					BUNappend(lrefcnt, &lrefs, FALSE) != GDK_SUCCEED ||
-					BUNappend(location, buf, FALSE) != GDK_SUCCEED ||
-					BUNappend(heat, &heat_, FALSE) != GDK_SUCCEED ||
-					BUNappend(dirty, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE) != GDK_SUCCEED ||
-					BUNappend(status, loc, FALSE) != GDK_SUCCEED ||
-					BUNappend(kind, mode, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(id, &i, false) != GDK_SUCCEED ||
+					BUNappend(ns, BBP_logical(i), false) != GDK_SUCCEED ||
+					BUNappend(tt, BATatoms[BATttype(bn)].name, false) != GDK_SUCCEED ||
+					BUNappend(cnt, &l, false) != GDK_SUCCEED ||
+					BUNappend(refcnt, &refs, false) != GDK_SUCCEED ||
+					BUNappend(lrefcnt, &lrefs, false) != GDK_SUCCEED ||
+					BUNappend(location, buf, false) != GDK_SUCCEED ||
+					BUNappend(heat, &heat_, false) != GDK_SUCCEED ||
+					BUNappend(dirty, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", false) != GDK_SUCCEED ||
+					BUNappend(status, loc, false) != GDK_SUCCEED ||
+					BUNappend(kind, mode, false) != GDK_SUCCEED) {
 					BBPunfix(bn->batCacheid);
 					goto bailout;
 				}

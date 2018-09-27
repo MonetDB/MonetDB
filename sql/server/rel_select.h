@@ -12,6 +12,7 @@
 #include "rel_semantic.h"
 #include "sql_semantic.h"
 
+extern sql_rel *rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti);
 extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 extern sql_rel *schema_selects(mvc *sql, sql_schema *s, symbol *sym);
 extern sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq, exp_kind ek, int apply);

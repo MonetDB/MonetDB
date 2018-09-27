@@ -16,9 +16,6 @@ stdout of test 'create_tables_t` in directory 'sql/test/rdf` itself:
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:36263/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3472/.s.monetdb.36263
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -58,6 +55,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 10:46:17 >  
 # 10:46:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3472" "--port=36263"

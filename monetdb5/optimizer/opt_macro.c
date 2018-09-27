@@ -500,7 +500,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		msg= OPTmacroImplementation(cntxt,mb,stk,p);
 	// similar to OPTmacro
 	if( msg) {
-		GDKfree(msg);
+		freeException(msg);
 		msg= MAL_SUCCEED;
 	}
 

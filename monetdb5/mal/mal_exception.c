@@ -51,7 +51,8 @@ static char *M5OutOfMemory = MAL_MALLOC_FAIL;
  * is good.
  */
 static str createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
-	__attribute__((__format__(__printf__, 3, 0)));
+	__attribute__((__format__(__printf__, 3, 0)))
+	__attribute__((__returns_nonnull__));
 static str
 createExceptionInternal(enum malexception type, const char *fcn, const char *format, va_list ap)
 {
@@ -189,7 +190,8 @@ showException(stream *out, enum malexception type, const char *fcn, const char *
  */
 static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
-	__attribute__((__format__(__printf__, 5, 0)));
+	__attribute__((__format__(__printf__, 5, 0)))
+	__attribute__((__returns_nonnull__));
 static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
@@ -359,15 +361,15 @@ getExceptionMessage(const char *exception)
 	char *msg = getExceptionMessageAndState(exception);
 
 	if (strlen(msg) > 6 && msg[5] == '!' &&
-		((msg[0] >= '0' && msg[0] <= '9') ||
+		(isdigit((unsigned char) msg[0]) ||
 	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
-	    ((msg[1] >= '0' && msg[1] <= '9') ||
+	    (isdigit((unsigned char) msg[1]) ||
 	     (msg[1] >= 'A' && msg[1] <= 'Z')) &&
-	    ((msg[2] >= '0' && msg[2] <= '9') ||
+	    (isdigit((unsigned char) msg[2]) ||
 	     (msg[2] >= 'A' && msg[2] <= 'Z')) &&
-	    ((msg[3] >= '0' && msg[3] <= '9') ||
+	    (isdigit((unsigned char) msg[3]) ||
 	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
-	    ((msg[4] >= '0' && msg[4] <= '9') ||
+	    (isdigit((unsigned char) msg[4]) ||
 	     (msg[4] >= 'A' && msg[4] <= 'Z')))
 		msg += 6;
 	return msg;

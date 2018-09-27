@@ -20,7 +20,7 @@
 #include <sys/time.h>		/* gettimeofday */
 #endif
 
-#if defined(HAVE_WINSOCK_H) && defined(NATIVE_WIN32)
+#ifdef HAVE_WINSOCK_H
 #include <winsock.h>		/* for timeval */
 #endif
 

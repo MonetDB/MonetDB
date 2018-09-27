@@ -73,13 +73,13 @@ Ready.
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.systemfunctions;
-% sys.L4 # table_name
+% sys.L10 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.systemfunctions;
-% sys.L4 # table_name
+% sys.L10 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

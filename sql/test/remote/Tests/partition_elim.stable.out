@@ -16,10 +16,6 @@ stdout of test 'partition_elim` in directory 'sql/test/remote` itself:
 # Listening for connection requests on mapi:monetdb://localhost.nes.nl:35081/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17557/.s.monetdb.35081
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -56,6 +52,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 18:37:29 >  
 # 18:37:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17557" "--port=35081"

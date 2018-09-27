@@ -73,6 +73,7 @@ propkind2string( prop *p)
 		PT(FETCH);
 		PT(REMOTE);
 		PT(USED);
+		PT(DISTRIBUTE);
 	}
 	return "UNKNOWN";
 }

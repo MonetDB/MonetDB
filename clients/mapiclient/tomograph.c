@@ -491,7 +491,7 @@ stop_disconnect:
 			if ( plen >= BSIZE-1){
 				error = -1;
 				break;
-			} 
+			}
 		}
 
 
@@ -500,7 +500,7 @@ stop_disconnect:
 			fprintf(stderr,"-- exec:%s\n",buf);
 			error = system(buf);
 		}
-		if( error == 0) 
+		if( error == 0)
 			fprintf(stderr,"-- done: %s.pdf\n", basefile);
 		else
 			fprintf(stderr, "gs -dNOPAUSE -sDEVICE=pdfwrite -sOUTPUTFILE=%s.pdf -dBATCH %s\n", basefile, pages);
@@ -581,7 +581,7 @@ static void resetTomograph(void){
 	}
 	memset((char*) box, 0, sizeof(Box) * maxbox);
 
-	totalclkticks = 0; 
+	totalclkticks = 0;
 	totalexecticks = 0;
 	lastclktick = 0;
 	figures = 0;
@@ -1141,7 +1141,7 @@ updatecolormap(int idx)
 		fnd = i;
 		colors[fnd].mod = strdup(mod);
 		colors[fnd].fcn = strdup(fcn);
-		if( debug) 
+		if( debug)
 			fprintf(stderr,"-- Added function #%d: %s.%s\n", fnd, mod, fcn);
 	}
 
@@ -1353,7 +1353,7 @@ updateNumaHeatmap(int thread, char *numa){
 
 /* the main issue to deal with in the analysis is
  * that the tomograph start can appear while the
- * system is already processing. 
+ * system is already processing.
  * receiving 'done' events without matching 'start'
  *
  * A secondary issue is to properly count the functions
@@ -1368,14 +1368,12 @@ update(char *line, EventRecord *ev)
 	int idx, i;
 	Box b;
 	int uid = 0,qid = 0;
- 
+
 	if (topbox == maxbox || maxbox < topbox) {
-	
 		if( box == 0){
-			box = (Box*) malloc(MAXBOX * sizeof(Box)); 
-			memset((char*) box, 0, sizeof(Box) * MAXBOX);
+			box = calloc(MAXBOX, sizeof(Box));
 		} else
-			box = (Box*) realloc((void*)box, (maxbox + MAXBOX) * sizeof(Box)); 
+			box = realloc(box, (maxbox + MAXBOX) * sizeof(Box));
 		if( box == NULL){
 			fprintf(stderr, "Out of space for trace, exceeds max entries %d\n", maxbox);
 			fprintf(stderr, "Restart with a slower beat might help, e.g. --beat=5000  or --beat=0\n");
@@ -1520,7 +1518,7 @@ update(char *line, EventRecord *ev)
 			capturing--;
 			if(debug)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
-		} 
+		}
 		if( capturing == 0){
 			if( tracefd){
 				fflush(tracefd);
@@ -1682,7 +1680,7 @@ main(int argc, char **argv)
 				prefix = strdup(prefix);
 				*(s+1) = 0;
 				prefix += s-dirpath;
-			} 
+			}
 			break;
 		case 'r':
 		{
@@ -1691,7 +1689,7 @@ main(int argc, char **argv)
 				break;
 			if( *optarg == '=')
 				optarg++;
-			cnt = sscanf(optarg,"%"PRId64"-%"PRId64, &startrange,&endrange); 
+			cnt = sscanf(optarg,"%"PRId64"-%"PRId64, &startrange,&endrange);
 			if( cnt != 2)
 				usageTomograph();
 				
@@ -1701,7 +1699,7 @@ main(int argc, char **argv)
 			} else if( strchr(optarg,'s')){
 				startrange *= 1000000;
 				endrange *= 1000000;
-			} else 
+			} else
 				usageTomograph();
 			if( debug )
 				fprintf(stderr,"Cut out slice %"PRId64" -%"PRId64"\n",startrange,endrange);
@@ -1792,7 +1790,7 @@ main(int argc, char **argv)
 				if (debug)
 					fprintf(stderr,"LASTLINE:%s", response);
 				len = strlen(response);
-				strncpy(buf, response, len + 1);
+				snprintf(buf, len + 1, "%s", response);
 			} else
 				len = 0;
 		}
@@ -1882,13 +1880,13 @@ main(int argc, char **argv)
 				if (debug)
 					fprintf(stderr,"LASTLINE:%s", response);
 				len = strlen(response);
-				strncpy(buffer, response, len + 1);
+				snprintf(buffer, len + 1, "%s", response);
 			} else /* reset this line of buffer */
 				len = 0;
 		}
 	}
 
-	if( !inputfile) 
+	if( !inputfile)
 		doQ("profiler.stop();");
   stop_disconnect:
 	if( !inputfile) {

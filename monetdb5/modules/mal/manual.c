@@ -67,11 +67,11 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							*tt = 0;
 							tt += 8;
 						}
-						if (BUNappend(mod, t->def->stmt[0]->modname, FALSE) != GDK_SUCCEED ||
-							BUNappend(fcn, t->def->stmt[0]->fcnname, FALSE) != GDK_SUCCEED ||
-							BUNappend(com, t->def->help ? t->def->help : "", TRUE) != GDK_SUCCEED ||
-							BUNappend(sig,buf,TRUE) != GDK_SUCCEED ||
-							BUNappend(adr, tt ? tt : "", TRUE) != GDK_SUCCEED) {
+						if (BUNappend(mod, t->def->stmt[0]->modname, false) != GDK_SUCCEED ||
+							BUNappend(fcn, t->def->stmt[0]->fcnname, false) != GDK_SUCCEED ||
+							BUNappend(com, t->def->help ? t->def->help : "", true) != GDK_SUCCEED ||
+							BUNappend(sig,buf,true) != GDK_SUCCEED ||
+							BUNappend(adr, tt ? tt : "", true) != GDK_SUCCEED) {
 							goto bailout;
 						}
 					}

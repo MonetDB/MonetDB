@@ -16,12 +16,6 @@ stdout of test 'window_function_crash.Bug-3861` in directory 'sql/test/BugTracke
 # Listening for connection requests on mapi:monetdb://gup-129-196.cwi.nl:34368/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1375/.s.monetdb.34368
 # MonetDB/GIS module loaded
-# Start processing logs sql/sql_logs version 52200
-# Finished processing logs sql/sql_logs
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -57,6 +51,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 11:10:37 >  
 # 11:10:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1375" "--port=34368"

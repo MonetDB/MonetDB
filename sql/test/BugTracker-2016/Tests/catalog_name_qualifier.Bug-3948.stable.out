@@ -130,16 +130,18 @@ Ready.
 [ 11	]
 [ 21	]
 #drop table sys.t3948;
-#select * from dependencies_tables_on_views();
-% .L1,	.L1,	.L1 # table_name
-% sch,	usr,	dep_type # name
-% varchar,	varchar,	varchar # type
-% 0,	0,	0 # length
-#select * from sys.dependencies_tables_on_views();
-% .L1,	.L1,	.L1 # table_name
-% sch,	usr,	dep_type # name
-% varchar,	varchar,	varchar # type
-% 0,	0,	0 # length
+#select * from generate_series(1,2);
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select * from sys.generate_series(1,2);
+% .L3 # table_name
+% value # name
+% tinyint # type
+% 1 # length
+[ 1	]
 
 # 11:57:28 >  
 # 11:57:28 >  "Done."

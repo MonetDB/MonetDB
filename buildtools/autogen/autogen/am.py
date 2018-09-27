@@ -722,6 +722,8 @@ def am_library(fd, var, libmap, am):
     cond = ''
     condname = ''
     if 'COND' in libmap:
+        if len(libmap['COND']) == 1 and libmap['COND'][0] in ('WIN32', 'NATIVE_WIN32'):
+            return
         for condname in libmap['COND']:
             fd.write("if %s\n" % condname)
         fd.write(" C_%s = %s\n" % (libname, libname))
@@ -760,6 +762,8 @@ def am_library(fd, var, libmap, am):
     if 'MODULE' in libmap:
         ldflags.append('-module')
         ldflags.append('-avoid-version')
+    if 'NOINST' not in libmap:
+        ldflags.append('@NO_UNDEFINED@')
     if "LDFLAGS" in libmap:
         for x in libmap["LDFLAGS"]:
             ldflags.append(x)

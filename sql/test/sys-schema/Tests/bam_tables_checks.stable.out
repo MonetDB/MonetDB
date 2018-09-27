@@ -1,0 +1,166 @@
+stdout of test 'bam_tables_checks` in directory 'sql/test/sys-schema` itself:
+
+
+# 18:51:05 >  
+# 18:51:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37311" "--set" "mapi_usock=/var/tmp/mtest-29561/.s.monetdb.37311" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_sys-schema" "--set" "embedded_c=true"
+# 18:51:05 >  
+
+# MonetDB 5 server v11.31.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_sys-schema', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.306 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:37311/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29561/.s.monetdb.37311
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:51:05 >  
+# 18:51:05 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29561" "--port=37311"
+# 18:51:05 >  
+
+#SELECT COUNT(*) AS duplicates, "file_id" FROM "bam"."files" GROUP BY "file_id" HAVING COUNT(*) > 1;
+% bam.L3,	bam.files # table_name
+% duplicates,	file_id # name
+% bigint,	bigint # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, "id", "file_id" FROM "bam"."pg" GROUP BY "id", "file_id" HAVING COUNT(*) > 1;
+% bam.L3,	bam.pg,	bam.pg # table_name
+% duplicates,	id,	file_id # name
+% bigint,	clob,	bigint # type
+% 1,	0,	1 # length
+#SELECT COUNT(*) AS duplicates, "id", "file_id" FROM "bam"."rg" GROUP BY "id", "file_id" HAVING COUNT(*) > 1;
+% bam.L3,	bam.rg,	bam.rg # table_name
+% duplicates,	id,	file_id # name
+% bigint,	clob,	bigint # type
+% 1,	0,	1 # length
+#SELECT COUNT(*) AS duplicates, "sn", "file_id" FROM "bam"."sq" GROUP BY "sn", "file_id" HAVING COUNT(*) > 1;
+% bam.L3,	bam.sq,	bam.sq # table_name
+% duplicates,	sn,	file_id # name
+% bigint,	clob,	bigint # type
+% 1,	0,	1 # length
+#SELECT * FROM "bam"."pg" WHERE "file_id" NOT IN (SELECT "file_id" FROM "bam"."files");
+% bam.pg,	bam.pg,	bam.pg,	bam.pg,	bam.pg,	bam.pg # table_name
+% id,	file_id,	pn,	cl,	pp,	vn # name
+% clob,	bigint,	clob,	clob,	clob,	clob # type
+% 0,	1,	0,	0,	0,	0 # length
+#SELECT * FROM "bam"."rg" WHERE "file_id" NOT IN (SELECT "file_id" FROM "bam"."files");
+% bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg # table_name
+% id,	file_id,	cn,	ds,	dt,	fo,	ks,	lb,	pg,	pi,	pl,	pu,	sm # name
+% clob,	bigint,	clob,	clob,	timestamp,	clob,	clob,	clob,	clob,	int,	clob,	clob,	clob # type
+% 0,	1,	0,	0,	26,	0,	0,	0,	0,	1,	0,	0,	0 # length
+#SELECT * FROM "bam"."sq" WHERE "file_id" NOT IN (SELECT "file_id" FROM "bam"."files");
+% bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq # table_name
+% sn,	file_id,	ln,	as,	m5,	sp,	ur # name
+% clob,	bigint,	int,	int,	clob,	clob,	clob # type
+% 0,	1,	1,	1,	0,	0,	0 # length
+#SELECT "qname", * FROM "bam"."export" WHERE "qname" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% qname,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "flag", * FROM "bam"."export" WHERE "flag" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% flag,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% smallint,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 1,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "rname", * FROM "bam"."export" WHERE "rname" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% rname,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "pos", * FROM "bam"."export" WHERE "pos" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% pos,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% int,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 1,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "mapq", * FROM "bam"."export" WHERE "mapq" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% mapq,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% smallint,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 1,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "cigar", * FROM "bam"."export" WHERE "cigar" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% cigar,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "rnext", * FROM "bam"."export" WHERE "rnext" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% rnext,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "pnext", * FROM "bam"."export" WHERE "pnext" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% pnext,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% int,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 1,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "tlen", * FROM "bam"."export" WHERE "tlen" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% tlen,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% int,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 1,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "seq", * FROM "bam"."export" WHERE "seq" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% seq,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "qual", * FROM "bam"."export" WHERE "qual" IS NULL;
+% bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export,	bam.export # table_name
+% qual,	qname,	flag,	rname,	pos,	mapq,	cigar,	rnext,	pnext,	tlen,	seq,	qual # name
+% clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
+% 0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length
+#SELECT "file_id", * FROM "bam"."files" WHERE "file_id" IS NULL;
+% bam.files,	bam.files,	bam.files,	bam.files,	bam.files,	bam.files,	bam.files # table_name
+% file_id,	file_id,	file_location,	dbschema,	format_version,	sorting_order,	comments # name
+% bigint,	bigint,	clob,	smallint,	varchar,	varchar,	clob # type
+% 1,	1,	0,	1,	0,	0,	0 # length
+#SELECT "file_location", * FROM "bam"."files" WHERE "file_location" IS NULL;
+% bam.files,	bam.files,	bam.files,	bam.files,	bam.files,	bam.files,	bam.files # table_name
+% file_location,	file_id,	file_location,	dbschema,	format_version,	sorting_order,	comments # name
+% clob,	bigint,	clob,	smallint,	varchar,	varchar,	clob # type
+% 0,	1,	0,	1,	0,	0,	0 # length
+#SELECT "dbschema", * FROM "bam"."files" WHERE "dbschema" IS NULL;
+% bam.files,	bam.files,	bam.files,	bam.files,	bam.files,	bam.files,	bam.files # table_name
+% dbschema,	file_id,	file_location,	dbschema,	format_version,	sorting_order,	comments # name
+% smallint,	bigint,	clob,	smallint,	varchar,	varchar,	clob # type
+% 1,	1,	0,	1,	0,	0,	0 # length
+#SELECT "id", * FROM "bam"."pg" WHERE "id" IS NULL;
+% bam.pg,	bam.pg,	bam.pg,	bam.pg,	bam.pg,	bam.pg,	bam.pg # table_name
+% id,	id,	file_id,	pn,	cl,	pp,	vn # name
+% clob,	clob,	bigint,	clob,	clob,	clob,	clob # type
+% 0,	0,	1,	0,	0,	0,	0 # length
+#SELECT "file_id", * FROM "bam"."pg" WHERE "file_id" IS NULL;
+% bam.pg,	bam.pg,	bam.pg,	bam.pg,	bam.pg,	bam.pg,	bam.pg # table_name
+% file_id,	id,	file_id,	pn,	cl,	pp,	vn # name
+% bigint,	clob,	bigint,	clob,	clob,	clob,	clob # type
+% 1,	0,	1,	0,	0,	0,	0 # length
+#SELECT "id", * FROM "bam"."rg" WHERE "id" IS NULL;
+% bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg # table_name
+% id,	id,	file_id,	cn,	ds,	dt,	fo,	ks,	lb,	pg,	pi,	pl,	pu,	sm # name
+% clob,	clob,	bigint,	clob,	clob,	timestamp,	clob,	clob,	clob,	clob,	int,	clob,	clob,	clob # type
+% 0,	0,	1,	0,	0,	26,	0,	0,	0,	0,	1,	0,	0,	0 # length
+#SELECT "file_id", * FROM "bam"."rg" WHERE "file_id" IS NULL;
+% bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg,	bam.rg # table_name
+% file_id,	id,	file_id,	cn,	ds,	dt,	fo,	ks,	lb,	pg,	pi,	pl,	pu,	sm # name
+% bigint,	clob,	bigint,	clob,	clob,	timestamp,	clob,	clob,	clob,	clob,	int,	clob,	clob,	clob # type
+% 1,	0,	1,	0,	0,	26,	0,	0,	0,	0,	1,	0,	0,	0 # length
+#SELECT "sn", * FROM "bam"."sq" WHERE "sn" IS NULL;
+% bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq # table_name
+% sn,	sn,	file_id,	ln,	as,	m5,	sp,	ur # name
+% clob,	clob,	bigint,	int,	int,	clob,	clob,	clob # type
+% 0,	0,	1,	1,	1,	0,	0,	0 # length
+#SELECT "file_id", * FROM "bam"."sq" WHERE "file_id" IS NULL;
+% bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq,	bam.sq # table_name
+% file_id,	sn,	file_id,	ln,	as,	m5,	sp,	ur # name
+% bigint,	clob,	bigint,	int,	int,	clob,	clob,	clob # type
+% 1,	0,	1,	1,	1,	0,	0,	0 # length
+
+# 18:51:05 >  
+# 18:51:05 >  "Done."
+# 18:51:05 >  
+

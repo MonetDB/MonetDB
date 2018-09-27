@@ -16,10 +16,6 @@ stdout of test 'create-view-crash.Bug-3414` in directory 'sql/test/BugTracker-20
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:31123/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27196/.s.monetdb.31123
 # MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -45,6 +41,9 @@ Ready.
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 19:54:27 >  
 # 19:54:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27196" "--port=31123"
