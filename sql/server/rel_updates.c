@@ -32,7 +32,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode);
 			_DELETE(typestr);
 			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-				return NULL;
+				return sql_error(sql, 02, SQLSTATE(HY005) "INSERT INTO: default expression could not be evaluated");
 			return e;
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
@@ -363,7 +363,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 							_DELETE(typestr);
 							e = rel_parse_val(sql, q, sql->emode);
 							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-								return NULL;
+								return sql_error(sql, 02, SQLSTATE(HY005) "INSERT INTO: default expression could not be evaluated");
 						} else {
 							atom *a = atom_general(sql->sa, &c->type, NULL);
 							e = exp_atom(sql->sa, a);
@@ -571,6 +571,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		return sql_error(sql, 02, SQLSTATE(21S01) "INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
 
 	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0);
+	if(!r->exps)
+		return NULL;
 	return rel_insert_table(sql, t, tname, r);
 }
 
@@ -1516,8 +1518,11 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		return rel;
 	if (reorder) 
 		rel = rel_project(sql->sa, rel, rel_inserts(sql, t, rel, collist, 1, 1));
-	else
+	else {
 		rel->exps = rel_inserts(sql, t, rel, collist, 1, 0);
+		if(!rel->exps)
+			return NULL;
+	}
 	rel = rel_insert_table(sql, t, tname, rel);
 	if (rel && locked)
 		rel->flag |= UPD_LOCKED;

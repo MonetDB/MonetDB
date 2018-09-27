@@ -36,8 +36,6 @@ Ready.
 [ 2005-09-23 12:34:26.736000,	4	]
 [ 2005-09-23 12:34:26.736000,	5	]
 [ 2005-09-23 12:34:26.736000,	6	]
-TABLE     sys.seqdeftest
-SEQUENCE  sys.test_seq
 #drop table seqdeftest;
 #drop sequence test_seq;
 #create table seqdeftest (
@@ -68,10 +66,6 @@ SEQUENCE  sys.test_seq
 [ 2005-10-01,	4,	4,	106	]
 [ 2005-10-01,	5,	5,	108	]
 [ 2005-10-01,	6,	6,	110	]
-SEQUENCE  sys.seq_8499
-SEQUENCE  sys.seq_8501
-SEQUENCE  sys.seq_8503
-TABLE     sys.seqdeftest
 #drop table seqdeftest;
 #CREATE SEQUENCE seq_5700 AS INTEGER;
 #CREATE TABLE kvk (
@@ -108,9 +102,6 @@ TABLE     sys.seqdeftest
 % 1,	1,	5 # length
 [ 3,	3,	"dries"	]
 [ 4,	4,	"viers"	]
-TABLE     sys.kvk
-TABLE     sys.kvk_cp
-SEQUENCE  sys.seq_5700
 #drop TABLE kvk;
 #insert into kvk_cp(kvk, bedrijfsnaam) values (5, 'vijfs');
 [ 1	]
@@ -122,10 +113,7 @@ SEQUENCE  sys.seq_5700
 [ 3,	3,	"dries"	]
 [ 4,	4,	"viers"	]
 [ 5,	5,	"vijfs"	]
-TABLE     sys.kvk_cp
-SEQUENCE  sys.seq_5700
 #drop TABLE kvk_cp;
-SEQUENCE  sys.seq_5700
 #drop SEQUENCE seq_5700;
 #ROLLBACK;
 
