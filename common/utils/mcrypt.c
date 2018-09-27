@@ -76,7 +76,7 @@ mcrypt_MD5Sum(const char *string, size_t len)
 	unsigned char md[MD5_DIGEST_LENGTH];
 	char *ret;
 
-	assert(MD5_DIGEST_LENGTH == 16);
+	static_assert(MD5_DIGEST_LENGTH == 16, "MD5_DIGEST_LENGTH should be 16");
 	MD5_Init(&c);
 	MD5_Update(&c, string, len);
 	MD5_Final(md, &c);
@@ -114,7 +114,7 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 	unsigned char md[SHA_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA_DIGEST_LENGTH == 20);
+	static_assert(SHA_DIGEST_LENGTH == 20, "SHA_DIGEST_LENGTH should be 20");
 	SHA1_Init(&c);
 	SHA1_Update(&c, string, len);
 	SHA1_Final(md, &c);
@@ -152,7 +152,7 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 	unsigned char md[SHA224_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA224_DIGEST_LENGTH == 28);
+	static_assert(SHA224_DIGEST_LENGTH == 28, "SHA224_DIGEST_LENGTH should be 28");
 	SHA224_Init(&c);
 	SHA224_Update(&c, string, len);
 	SHA224_Final(md, &c);
@@ -193,7 +193,7 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 	unsigned char md[SHA256_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA256_DIGEST_LENGTH == 32);
+	static_assert(SHA256_DIGEST_LENGTH == 32, "SHA256_DIGEST_LENGTH should be 32");
 	SHA256_Init(&c);
 	SHA256_Update(&c, string, len);
 	SHA256_Final(md, &c);
@@ -236,7 +236,7 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 	unsigned char md[SHA384_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA384_DIGEST_LENGTH == 48);
+	static_assert(SHA384_DIGEST_LENGTH == 48, "SHA384_DIGEST_LENGTH should be 48");
 	SHA384_Init(&c);
 	SHA384_Update(&c, string, len);
 	SHA384_Final(md, &c);
@@ -283,7 +283,7 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 	unsigned char md[SHA512_DIGEST_LENGTH];
 	char *ret;
 
-	assert(SHA512_DIGEST_LENGTH == 64);
+	static_assert(SHA512_DIGEST_LENGTH == 64, "SHA512_DIGEST_LENGTH should be 64");
 	SHA512_Init(&c);
 	SHA512_Update(&c, string, len);
 	SHA512_Final(md, &c);
@@ -335,7 +335,7 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 	unsigned char md[RIPEMD160_DIGEST_LENGTH];
 	char *ret;
 
-	assert(RIPEMD160_DIGEST_LENGTH == 20);
+	static_assert(RIPEMD160_DIGEST_LENGTH == 20, "RIPEMD160_DIGEST_LENGTH should be 20");
 	RIPEMD160_Init(&c);
 	RIPEMD160_Update(&c, string, len);
 	RIPEMD160_Final(md, &c);
