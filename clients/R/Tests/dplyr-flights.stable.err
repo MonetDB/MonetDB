@@ -30,7 +30,6 @@ stderr of test 'dplyr-flights` in directory 'clients/R` itself:
 # 11:44:05 >  "R" "--vanilla" "--slave" "--args" "30588"
 # 11:44:05 >  
 
-Identifier(s) "year", "month", "day", "hour", "minute" are reserved SQL keywords and need(s) to be quoted in queries.
 
 # 11:44:15 >  
 # 11:44:15 >  "Done."
