@@ -3115,6 +3115,16 @@ putfile(void *data, const char *filename, const void *buf, size_t bufsize)
 	if (filename != NULL) {
 		if ((priv->f = open_wastream(filename)) == NULL)
 			return "cannot open file";
+#ifdef HAVE_ICONV
+		if (encoding) {
+			stream *f = priv->f;
+			priv->f = iconv_wstream(f, encoding, mnstr_name(f));
+			if (priv->f == NULL) {
+				close_stream(f);
+				return "cannot open file";
+			}
+		}
+#endif
 		if (buf == NULL || bufsize == 0)
 			return NULL; /* successfully opened file */
 	} else if (buf == NULL) {
