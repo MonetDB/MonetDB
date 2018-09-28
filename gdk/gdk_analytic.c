@@ -279,12 +279,12 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	do {                                          \
 		lng m = k;                                \
 		for(; k<i; k++, rb++) {                   \
-			void *v = BUNtail(bpi, k);            \
+			void *v = BUNtail(bpi, (BUN) k);      \
 			if(atomcmp(v, nil) == 0)              \
 				j = m;                            \
 			else                                  \
 				for(j=k; j>m; j--) {              \
-					void *next = BUNtail(bpi, j); \
+					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
 						continue;                 \
 					if(ABSOLUTE(atomcmp(v, next)) > (int) LIMIT) { \
@@ -299,12 +299,12 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_PRECEDING(LIMIT) \
 	do {                                          \
 		for(; k<i; k++, rb++) {                   \
-			void *v = BUNtail(bpi, k);            \
+			void *v = BUNtail(bpi, (BUN) k);      \
 			if(atomcmp(v, nil) == 0)              \
 				j = i;                            \
 			else                                  \
 				for(j=k+1; j<i; j++) {            \
-					void *next = BUNtail(bpi, j); \
+					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
 						continue;                 \
 					if(ABSOLUTE(atomcmp(v, next)) > (int) LIMIT) \
@@ -322,12 +322,12 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		lng m = k;                                \
 		for(; k<i; k++, rb++) {                   \
 			lng rlimit = (lng) LIMIT;             \
-			void *v = BUNtail(bpi, k);            \
+			void *v = BUNtail(bpi, (BUN) k);      \
 			if(atomcmp(v, nil) == 0)              \
 				j = m;                            \
 			else                                  \
 				for(j=k; j>m; j--) {              \
-					void *next = BUNtail(bpi, j); \
+					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
 						continue;                 \
 					if(atomcmp(v, next)) {        \
@@ -347,12 +347,12 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	do {                                          \
 		for(; k<i; k++, rb++) {                   \
 			lng rlimit = (lng) LIMIT;             \
-			void *v = BUNtail(bpi, k);            \
+			void *v = BUNtail(bpi, (BUN) k);      \
 			if(atomcmp(v, nil) == 0)              \
 				j = i;                            \
 			else                                  \
 				for(j=k+1; j<i; j++) {            \
-					void *next = BUNtail(bpi, j); \
+					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
 						continue;                 \
 					if(atomcmp(v, next)) {        \
@@ -675,9 +675,9 @@ finish:
 #define NTILE_CALC                    \
 	do {                              \
 		if(bval >= ncnt) {            \
-			i = 1;                    \
-			for(; rb<rp; i++, rb++)   \
-				*rb = i;              \
+			j = 1;                    \
+			for(; rb<rp; j++, rb++)   \
+				*rb = j;              \
 		} else if(ncnt % bval == 0) { \
 			buckets = ncnt / bval;    \
 			for(; rb<rp; i++, rb++) { \
@@ -1519,9 +1519,9 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 			for(; i<cnt; i++) { \
 				j = start[i]; \
 				l = end[i]; \
-				curval = (void *)nil; \
+				curval = (void*)nil; \
 				for (;j < l; j++) { \
-					void *next = BUNtail(bpi, j); \
+					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) != 0) { \
 						if(atomcmp(curval, nil) == 0) \
 							curval = next; \
@@ -2168,7 +2168,7 @@ calc_done##TPE:                                       \
 #define ANALYTICAL_AVERAGE_CALC_FP(TPE)      \
 	do {                                     \
 		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v; \
-		dbl a = 0;				     	     \
+		dbl a = 0;                           \
 		for(; i<cnt; i++, rb++) {            \
 			bs = bp + start[i];              \
 			be = bp + end[i];                \
@@ -2221,7 +2221,7 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		case TYPE_hge:
 			ANALYTICAL_AVERAGE_LNG_HGE(hge);
 			break;
-#endif  
+#endif
 		case TYPE_flt:
 			ANALYTICAL_AVERAGE_CALC_FP(flt);
 			break;
@@ -2242,4 +2242,3 @@ finish:
 #undef ANALYTICAL_AVERAGE_LNG_HGE
 #undef ANALYTICAL_AVERAGE_CALC_NUM
 #undef ANALYTICAL_AVERAGE_CALC_FP
-
