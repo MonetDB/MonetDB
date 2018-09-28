@@ -3660,11 +3660,10 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case COLUMN_DEPENDENCY :
-							if((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
-								t = find_sql_table_id(s, t_id);
-								(void) sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
-								t = NULL;
-							}
+							t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY);
+							t = find_sql_table_id(s, t_id);
+							(void) sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
+							t = NULL;
 							break;
 				case VIEW_DEPENDENCY :
 							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE );
@@ -3895,7 +3894,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		seq_name[strlen(seq_name)-1] = '\0';
 		n = cs_find_name(&syss->seqs, seq_name);
 		seq = find_sql_sequence(syss, seq_name);
-		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY) > 0) {
+		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY)) {
 			sys_drop_sequence(tr, seq, drop_action);
 			seq->base.wtime = syss->base.wtime = tr->wtime = tr->wstime;
 			cs_del(&syss->seqs, n, seq->base.flag);
