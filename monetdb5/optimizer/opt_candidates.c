@@ -82,11 +82,11 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	//chkTypes(cntxt->usermodule, mb, FALSE);
 	//chkFlow(mb);
 	//chkDeclarations(mb);
-    /* keep all actions taken as a post block comment */
-	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","candidates",usec);
-    newComment(mb,buf);
-	addtoMalBlkHistory(mb);
 
+	/* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","candidates",usec);
+	newComment(mb,buf);
+	addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;
 }

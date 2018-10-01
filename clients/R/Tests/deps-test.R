@@ -1,4 +1,4 @@
-packages_required <- c("assertthat","testthat","survey","nycflights13","RSQLite","dbplyr","dplyr","gdata","callr","devtools","DBItest")
+packages_required <- c("assertthat","testthat","survey","nycflights13","RSQLite","dbplyr","dplyr","gdata","callr","DBItest")
 
 install_or_upgrade_packages <- function(lp) {
 	np <- lp[!(lp %in% installed.packages()[,"Package"])]

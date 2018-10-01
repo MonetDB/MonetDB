@@ -4268,7 +4268,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		n = cs_find_name(&syss->seqs, seq_name);
 		seq = find_sql_sequence(syss, seq_name);
 		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY)) {
-			sys_drop_sequence(tr, seq, drop_action);		
+			sys_drop_sequence(tr, seq, drop_action);
 			seq->base.wtime = syss->base.wtime = tr->wtime = tr->wstime;
 			cs_del(&syss->seqs, n, seq->base.flag);
 		}
