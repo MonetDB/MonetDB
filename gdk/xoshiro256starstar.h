@@ -1,4 +1,4 @@
-#include <limits.h>
+#include <stdint.h>
 #include <string.h>
 #include "gdk.h"
 
@@ -41,5 +41,5 @@ static inline ulng next(random_state_engine rse) {
 }
 
 static inline double next_double(random_state_engine rse) {
-	return (double) next(rse) / ULONG_MAX;
+	return (double) next(rse) / UINT64_MAX;
 }
