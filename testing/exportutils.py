@@ -61,18 +61,18 @@ def preprocess(data):
 
 def replace(line, defines, tried):
     changed = False
+    # match argument to macro with optionally several levels
+    # of parentheses
+    if deepnesting:     # optionally deeply nested parentheses
+        nested = r'(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*'
+    else:
+        nested = ''
     for name, (args, body) in defines.items():
         if name in tried:
             continue
         pat = r'\b%s\b' % name
         sep = r'\('
         for arg in args:
-            # match argument to macro with optionally several levels
-            # of parentheses
-            if deepnesting:     # optionally deeply nested parentheses
-                nested = r'(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*'
-            else:
-                nested = ''
             pat = pat + sep + r'([^,()]*(?:\([^()]*' + nested + r'\)[^,()]*)*)'
             sep = ','
         pat += r'\)'
