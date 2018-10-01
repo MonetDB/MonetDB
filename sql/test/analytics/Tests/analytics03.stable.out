@@ -250,19 +250,19 @@ Ready.
 #create table overflowme (aa int, bb int);
 #insert into overflowme values (2147483644, 1), (2147483645, 2), (2147483646, 1), (2147483644, 2), (2147483645, 1), (2147483646, 2);
 [ 6	]
-#select avg(aa) over (rows between current row and unbounded following),
-#       avg(aa) over (range between current row and unbounded following),
-#       avg(aa) over (order by bb rows between current row and unbounded following),
-#       avg(aa) over (order by bb range between current row and unbounded following),
-#       avg(aa) over (partition by bb order by bb rows unbounded preceding),
-#       avg(aa) over (partition by bb order by bb range unbounded preceding) from overflowme;
-% sys.L4,	sys.L10,	sys.L14,	sys.L20,	sys.L24,	sys.L30 # table_name
-% L4,	L10,	L14,	L20,	L24,	L30 # name
+#select floor(avg(aa) over (rows between current row and unbounded following)),
+#       floor(avg(aa) over (range between current row and unbounded following)),
+#       floor(avg(aa) over (order by bb rows between current row and unbounded following)),
+#       floor(avg(aa) over (order by bb range between current row and unbounded following)),
+#       floor(avg(aa) over (partition by bb order by bb rows unbounded preceding)),
+#       floor(avg(aa) over (partition by bb order by bb range unbounded preceding)) from overflowme;
+% sys.L5,	sys.L12,	sys.L17,	sys.L24,	sys.L31,	sys.L36 # table_name
+% L5,	L12,	L17,	L24,	L31,	L36 # name
 % double,	double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24,	24 # length
+[ 2147483645,	2147483645,	2147483644,	2147483645,	2147483645,	2147483645	]
 [ 2147483645,	2147483645,	2147483645,	2147483645,	2147483645,	2147483645	]
-[ 2147483645,	2147483645,	2147483645,	2147483645,	2147483646,	2147483645	]
-[ 2147483646,	2147483645,	2147483645,	2147483645,	2147483645,	2147483645	]
+[ 2147483645,	2147483645,	2147483645,	2147483645,	2147483645,	2147483645	]
 [ 2147483645,	2147483645,	2147483645,	2147483645,	2147483645,	2147483645	]
 [ 2147483645,	2147483645,	2147483644,	2147483645,	2147483645,	2147483645	]
 [ 2147483646,	2147483645,	2147483645,	2147483645,	2147483646,	2147483645	]

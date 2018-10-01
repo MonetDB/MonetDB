@@ -146,8 +146,8 @@ select avg(aa) over (partition by bb order by bb rows between 2 preceding and 2 
 
 create table overflowme (a int);
 insert into overflowme values (2147483644), (2147483645), (2147483646);
-select avg(a) over (rows between 2 preceding and 0 following) from overflowme;
-select avg(a) over (rows between 2 preceding and 2 following) from overflowme;
+select floor(avg(a) over (rows between 2 preceding and 0 following)) from overflowme;
+select floor(avg(a) over (rows between 2 preceding and 2 following)) from overflowme;
 
 rollback;
 

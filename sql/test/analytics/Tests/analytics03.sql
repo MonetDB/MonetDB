@@ -97,12 +97,12 @@ select max(aa) over (order by bb groups between 1 preceding and current row),
 create table overflowme (aa int, bb int);
 insert into overflowme values (2147483644, 1), (2147483645, 2), (2147483646, 1), (2147483644, 2), (2147483645, 1), (2147483646, 2);
 
-select avg(aa) over (rows between current row and unbounded following),
-       avg(aa) over (range between current row and unbounded following),
-       avg(aa) over (order by bb rows between current row and unbounded following),
-       avg(aa) over (order by bb range between current row and unbounded following),
-       avg(aa) over (partition by bb order by bb rows unbounded preceding),
-       avg(aa) over (partition by bb order by bb range unbounded preceding) from overflowme;
+select floor(avg(aa) over (rows between current row and unbounded following)),
+       floor(avg(aa) over (range between current row and unbounded following)),
+       floor(avg(aa) over (order by bb rows between current row and unbounded following)),
+       floor(avg(aa) over (order by bb range between current row and unbounded following)),
+       floor(avg(aa) over (partition by bb order by bb rows unbounded preceding)),
+       floor(avg(aa) over (partition by bb order by bb range unbounded preceding)) from overflowme;
 
 rollback;
 
