@@ -33,7 +33,7 @@
 				}                             \
 			}                                 \
 		}                                     \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
@@ -43,30 +43,30 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 	switch(tpe) {
 		case TYPE_bit:
-			ANALYTICAL_DIFF_IMP(bit)
+			ANALYTICAL_DIFF_IMP(bit);
 			break;
 		case TYPE_bte:
-			ANALYTICAL_DIFF_IMP(bte)
+			ANALYTICAL_DIFF_IMP(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_DIFF_IMP(sht)
+			ANALYTICAL_DIFF_IMP(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_DIFF_IMP(int)
+			ANALYTICAL_DIFF_IMP(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_DIFF_IMP(lng)
+			ANALYTICAL_DIFF_IMP(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_DIFF_IMP(hge)
+			ANALYTICAL_DIFF_IMP(hge);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_DIFF_IMP(flt)
+			ANALYTICAL_DIFF_IMP(flt);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_DIFF_IMP(dbl)
+			ANALYTICAL_DIFF_IMP(dbl);
 			break;
 		default: {
 			BATiter it = bat_iterator(b);
@@ -109,7 +109,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			lng rlimit = (lng) LIMIT;               \
 			*rb = MAX(k - rlimit + !first_half, j); \
 		}                                           \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING(TPE, LIMIT) \
 	do {                                            \
@@ -117,7 +117,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			lng rlimit = (lng) LIMIT;               \
 			*rb = MIN(k + rlimit + !first_half, i); \
 		}                                           \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_SECOND_PRECEDING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING(TPE, LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_SECOND_FOLLOWING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING(TPE, LIMIT)
@@ -143,7 +143,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				}                                  \
 			*rb = j;                               \
 		}                                          \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_FOLLOWING(TPE, LIMIT) \
 	do {                                         \
@@ -163,7 +163,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				}                                \
 			*rb = j;                             \
 		}                                        \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_SECOND_FOLLOWING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_FOLLOWING(TPE, LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_SECOND_PRECEDING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_PRECEDING(TPE, LIMIT)
@@ -191,7 +191,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				}                         \
 			*rb = j;                      \
 		}                                 \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_FOLLOWING(TPE, LIMIT) \
 	do {                                \
@@ -213,7 +213,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				}                       \
 			*rb = j;                    \
 		}                               \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_SECOND_FOLLOWING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_FOLLOWING(TPE, LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_SECOND_PRECEDING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_PRECEDING(TPE, LIMIT)
@@ -228,32 +228,32 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				for(; np<nend; np++) {              \
 					if (*np) {                      \
 						i += (np - pnp);            \
-						IMP##_PRECEDING(TPE, LIMIT) \
+						IMP##_PRECEDING(TPE, LIMIT); \
 						pnp = np;                   \
 					}                               \
 				}                                   \
 				i += (np - pnp);                    \
-				IMP##_PRECEDING(TPE, LIMIT)         \
+				IMP##_PRECEDING(TPE, LIMIT);	    \
 			} else {                                \
 				i += (lng) cnt;                     \
-				IMP##_PRECEDING(TPE, LIMIT)         \
+				IMP##_PRECEDING(TPE, LIMIT);	    \
 			}                                       \
 		} else if(np) {                             \
 			nend += cnt;                            \
 			for(; np<nend; np++) {                  \
 				if (*np) {                          \
 					i += (np - pnp);                \
-					IMP##_FOLLOWING(TPE, LIMIT)     \
+					IMP##_FOLLOWING(TPE, LIMIT);	\
 					pnp = np;                       \
 				}                                   \
 			}                                       \
 			i += (np - pnp);                        \
-			IMP##_FOLLOWING(TPE, LIMIT)             \
+			IMP##_FOLLOWING(TPE, LIMIT);		\
 		} else {                                    \
 			i += (lng) cnt;                         \
-			IMP##_FOLLOWING(TPE, LIMIT)             \
+			IMP##_FOLLOWING(TPE, LIMIT);		\
 		}                                           \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_PRECEDING(LIMIT) \
 	do {                                            \
@@ -262,7 +262,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			lng rlimit = (lng) LIMIT;               \
 			*rb = MAX(k - rlimit + !first_half, j); \
 		}                                           \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_FOLLOWING(LIMIT) \
 	do {                                            \
@@ -270,7 +270,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			lng rlimit = (lng) LIMIT;               \
 			*rb = MIN(k + rlimit + !first_half, i); \
 		}                                           \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_SECOND_PRECEDING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_PRECEDING(LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_SECOND_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_FOLLOWING(LIMIT)
@@ -294,7 +294,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				}                                 \
 			*rb = j;                              \
 		}                                         \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_PRECEDING(LIMIT) \
 	do {                                          \
@@ -312,7 +312,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				}                                 \
 			*rb = j;                              \
 		}                                         \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FIRST_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FIRST_PRECEDING(LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_PRECEDING(LIMIT)
@@ -341,7 +341,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				}                                 \
 			*rb = j;                              \
 		}                                         \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_SECOND_PRECEDING(LIMIT) \
 	do {                                          \
@@ -364,7 +364,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 				}                                 \
 			*rb = j;                              \
 		}                                         \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FIRST_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FIRST_PRECEDING(LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_SECOND_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_SECOND_PRECEDING(LIMIT)
@@ -374,38 +374,38 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		j = k;                \
 		for(; k<i; k++, rb++) \
 			*rb = j;          \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_FOLLOWING(TPE, LIMIT) \
 	do {                      \
 		for(; k<i; k++, rb++) \
 			*rb = i;          \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_PRECEDING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_PRECEDING(LIMIT, LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_FOLLOWING(LIMIT, LIMIT)
 
 #define ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT) \
 	case TYPE_bit: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
 		break; \
 	case TYPE_bte: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
 		break; \
 	case TYPE_sht: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
 		break; \
 	case TYPE_int: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
 		break; \
 	case TYPE_lng: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
 		break; \
 
 #ifdef HAVE_HGE
 #define ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT) \
 	case TYPE_hge: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(hge, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(hge, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
 		break;
 #else
 #define ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT)
@@ -413,10 +413,10 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT) \
 	case TYPE_flt: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(flt, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(flt, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
 		break; \
 	case TYPE_dbl: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
 		break; \
 
 #define ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT) \
@@ -427,15 +427,15 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			for(; np<nend; np++) { \
 				if (*np) { \
 					i += (np - pnp); \
-					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
+					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT); \
 					pnp = np; \
 				} \
 			} \
 			i += (np - pnp); \
-			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
+			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT); \
 		} else { \
 			i += (lng) cnt; \
-			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT) \
+			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT); \
 		} \
 	} else if (p) { \
 		pnp = np = (bit*)Tloc(p, 0); \
@@ -443,50 +443,50 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		for(; np<nend; np++) { \
 			if (*np) { \
 				i += (np - pnp); \
-				ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
+				ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT); \
 				pnp = np; \
 			} \
 		} \
 		i += (np - pnp); \
-		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT); \
 	} else { \
 		i += (lng) cnt; \
-		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT) \
+		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT); \
 	}
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(FRAME, HALF, LIMIT) \
 	do { \
 		switch(tp1) { \
-			ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT) \
-			ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT) \
-			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT) \
+			ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT); \
+			ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT); \
+			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT); \
 			default: { \
-				ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT) \
+				ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT); \
 			} \
 		} \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM(FRAME, HALF, LIMIT) \
 	do { \
 		switch(tp1) { \
-			ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT) \
-			ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT) \
+			ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT); \
+			ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT); \
 			default: { \
-				ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT) \
+				ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT); \
 			} \
 		} \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP(FRAME, HALF, LIMIT) \
 	do { \
 		switch(tp1) { \
-			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT) \
+			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT); \
 			default: { \
 				GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2)); \
 				return GDK_FAIL; \
 			} \
 		} \
-	} while(0);
+	} while(0)
 
 #define NO_LIMIT ;
 
@@ -495,21 +495,21 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		if (l) { /* dynamic bounds */ \
 			TPE *restrict limit = (TPE*) Tloc(l, 0); \
 			if(first_half) { \
-				IMP(_RANGE, _FIRST, limit[k]) \
+				IMP(_RANGE, _FIRST, limit[k]);	\
 			} else { \
-				IMP(_RANGE, _SECOND, limit[k]) \
+				IMP(_RANGE, _SECOND, limit[k]); \
 			} \
 		} else { /* static bounds */ \
 			TPE limit = *((TPE*)bound); \
 			if (limit == GDK_##TPE##_max) { /* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */ \
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT) \
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT); \
 			} else if(first_half) { \
-				IMP(_RANGE, _FIRST, limit) \
+				IMP(_RANGE, _FIRST, limit);	\
 			} else { \
-				IMP(_RANGE, _SECOND, limit) \
+				IMP(_RANGE, _SECOND, limit);	\
 			} \
 		} \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(TPE) \
 	do { \
@@ -517,15 +517,15 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			TPE *restrict limit = (TPE*) Tloc(l, 0); \
 			if (unit == 0) { \
 				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _FIRST, limit[k]) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _FIRST, limit[k]); \
 				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _SECOND, limit[k]) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _SECOND, limit[k]); \
 				} \
 			} else if (unit == 2) { \
 				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _FIRST, limit[k]) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _FIRST, limit[k]); \
 				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _SECOND, limit[k]) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _SECOND, limit[k]); \
 				} \
 			} else { \
 				assert(0); \
@@ -534,21 +534,21 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			TPE limit = *((TPE*)bound); \
 			if (unit == 0) { \
 				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _FIRST, limit) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _FIRST, limit); \
 				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _SECOND, limit) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _SECOND, limit); \
 				} \
 			} else if (unit == 2) { \
 				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _FIRST, limit) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _FIRST, limit); \
 				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _SECOND, limit) \
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _SECOND, limit); \
 				} \
 			} else { \
 				assert(0); \
 			} \
 		} \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit, bool preceding, lng first_half)
@@ -564,32 +564,32 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 	assert(unit >= 0 && unit <= 3);
 
 	if (unit == 3) { //special case, there are no boundaries
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT)
+		ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT);
 	} else {
 		assert((!l && bound) || (l && !bound));
 		if(unit == 1) { /* on range frame, floating-point bounds are acceptable */
 			switch(tp2) {
 				case TYPE_bte:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(bte, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(bte, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
 					break;
 				case TYPE_sht:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(sht, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(sht, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
 					break;
 				case TYPE_int:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(int, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(int, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
 					break;
 				case TYPE_lng:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(lng, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(lng, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
 					break;
 				case TYPE_flt:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(flt, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP) 
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(flt, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP); 
 					break;
 				case TYPE_dbl:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(dbl, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP)
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(dbl, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP);
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(hge, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM)
+					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(hge, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
 					break;
 #endif
 				default:
@@ -599,20 +599,20 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 		} else {
 			switch(tp2) {
 				case TYPE_bte:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(bte)
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(bte);
 					break;
 				case TYPE_sht:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(sht)
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(sht);
 					break;
 				case TYPE_int:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(int)
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(int);
 					break;
 				case TYPE_lng:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(lng)
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(lng);
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(hge)
+					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(hge);
 					break;
 #endif
 				default:
@@ -697,7 +697,7 @@ finish:
 				}                     \
 			}                         \
 		}                             \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_NTILE_IMP(TPE)            \
 	do {                                     \
@@ -718,7 +718,7 @@ finish:
 					j = 1;                   \
 					ncnt = np - pnp;         \
 					rp += ncnt;              \
-					NTILE_CALC               \
+					NTILE_CALC;		 \
 					pnp = np;                \
 				}                            \
 			}                                \
@@ -726,13 +726,13 @@ finish:
 			j = 1;                           \
 			ncnt = np - pnp;                 \
 			rp += ncnt;                      \
-			NTILE_CALC                       \
+			NTILE_CALC;			 \
 		} else {                             \
 			rp += cnt;                       \
-			NTILE_CALC                       \
+			NTILE_CALC;			 \
 		}                                    \
 		goto finish;                         \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void* restrict ntile)
@@ -746,20 +746,20 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void* restrict ntile)
 
 	switch (tpe) {
 		case TYPE_bte:
-			ANALYTICAL_NTILE_IMP(bte)
+			ANALYTICAL_NTILE_IMP(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_NTILE_IMP(sht)
+			ANALYTICAL_NTILE_IMP(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_NTILE_IMP(int)
+			ANALYTICAL_NTILE_IMP(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_NTILE_IMP(lng)
+			ANALYTICAL_NTILE_IMP(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_NTILE_IMP(hge)
+			ANALYTICAL_NTILE_IMP(hge);
 			break;
 #endif
 		default:
@@ -784,7 +784,7 @@ finish:
 			*rb = curval;          \
 		if(is_##TPE##_nil(curval)) \
 			has_nils = true;       \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_FIRST_IMP(TPE)           \
 	do {                                    \
@@ -800,7 +800,7 @@ finish:
 					ncnt = (np - pnp);      \
 					rp += ncnt;             \
 					bp += ncnt;             \
-					FIRST_CALC(TPE)         \
+					FIRST_CALC(TPE);	\
 					curval = *bp;           \
 					pnp = np;               \
 				}                           \
@@ -808,12 +808,12 @@ finish:
 			ncnt = (np - pnp);              \
 			rp += ncnt;                     \
 			bp += ncnt;                     \
-			FIRST_CALC(TPE)                 \
+			FIRST_CALC(TPE);		\
 		} else {                            \
 			rp += cnt;                      \
-			FIRST_CALC(TPE)                 \
+			FIRST_CALC(TPE);		\
 		}                                   \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_FIRST_OTHERS                                         \
 	do {                                                                \
@@ -824,7 +824,7 @@ finish:
 			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
 				goto finish;                                            \
 		}                                                               \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, int tpe)
@@ -838,30 +838,30 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, int tpe)
 
 	switch(tpe) {
 		case TYPE_bit:
-			ANALYTICAL_FIRST_IMP(bit)
+			ANALYTICAL_FIRST_IMP(bit);
 			break;
 		case TYPE_bte:
-			ANALYTICAL_FIRST_IMP(bte)
+			ANALYTICAL_FIRST_IMP(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_FIRST_IMP(sht)
+			ANALYTICAL_FIRST_IMP(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_FIRST_IMP(int)
+			ANALYTICAL_FIRST_IMP(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_FIRST_IMP(lng)
+			ANALYTICAL_FIRST_IMP(lng);
 			break;
 #ifdef HAVE_HUGE
 		case TYPE_hge:
-			ANALYTICAL_FIRST_IMP(hge)
+			ANALYTICAL_FIRST_IMP(hge);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_FIRST_IMP(flt)
+			ANALYTICAL_FIRST_IMP(flt);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_FIRST_IMP(dbl)
+			ANALYTICAL_FIRST_IMP(dbl);
 			break;
 		default: {
 			BATiter bpi = bat_iterator(b);
@@ -874,15 +874,15 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, int tpe)
 				for(; np<end; np++) {
 					if (*np) {
 						i += (np - pnp);
-						ANALYTICAL_FIRST_OTHERS
+						ANALYTICAL_FIRST_OTHERS;
 						pnp = np;
 					}
 				}
 				i += (np - pnp);
-				ANALYTICAL_FIRST_OTHERS
+				ANALYTICAL_FIRST_OTHERS;
 			} else {
 				i += cnt;
-				ANALYTICAL_FIRST_OTHERS
+				ANALYTICAL_FIRST_OTHERS;
 			}
 		}
 	}
@@ -904,7 +904,7 @@ finish:
 			has_nils = true;       \
 		for (;rb < rp; rb++)       \
 			*rb = curval;          \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_LAST_IMP(TPE)            \
 	do {                                    \
@@ -919,20 +919,20 @@ finish:
 					ncnt = (np - pnp);      \
 					rp += ncnt;             \
 					bp += ncnt;             \
-					LAST_CALC(TPE)          \
+					LAST_CALC(TPE);		\
 					pnp = np;               \
 				}                           \
 			}                               \
 			ncnt = (np - pnp);              \
 			rp += ncnt;                     \
 			bp += ncnt;                     \
-			LAST_CALC(TPE)                  \
+			LAST_CALC(TPE);			\
 		} else {                            \
 			rp += cnt;                      \
 			bp += cnt;                      \
-			LAST_CALC(TPE)                  \
+			LAST_CALC(TPE);			\
 		}                                   \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_LAST_OTHERS                                          \
 	do {                                                                \
@@ -943,7 +943,7 @@ finish:
 			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
 				goto finish;                                            \
 		}                                                               \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticallast(BAT *r, BAT *b, BAT *p, int tpe)
@@ -957,30 +957,30 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *p, int tpe)
 
 	switch(tpe) {
 		case TYPE_bit:
-			ANALYTICAL_LAST_IMP(bit)
+			ANALYTICAL_LAST_IMP(bit);
 			break;
 		case TYPE_bte:
-			ANALYTICAL_LAST_IMP(bte)
+			ANALYTICAL_LAST_IMP(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_LAST_IMP(sht)
+			ANALYTICAL_LAST_IMP(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_LAST_IMP(int)
+			ANALYTICAL_LAST_IMP(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_LAST_IMP(lng)
+			ANALYTICAL_LAST_IMP(lng);
 			break;
 #ifdef HAVE_HUGE
 		case TYPE_hge:
-			ANALYTICAL_LAST_IMP(hge)
+			ANALYTICAL_LAST_IMP(hge);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_LAST_IMP(flt)
+			ANALYTICAL_LAST_IMP(flt);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_LAST_IMP(dbl)
+			ANALYTICAL_LAST_IMP(dbl);
 			break;
 		default: {
 			BATiter bpi = bat_iterator(b);
@@ -993,15 +993,15 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *p, int tpe)
 				for(; np<end; np++) {
 					if (*np) {
 						i += (np - pnp);
-						ANALYTICAL_LAST_OTHERS
+						ANALYTICAL_LAST_OTHERS;
 						pnp = np;
 					}
 				}
 				i += (np - pnp);
-				ANALYTICAL_LAST_OTHERS
+				ANALYTICAL_LAST_OTHERS;
 			} else {
 				i += cnt;
-				ANALYTICAL_LAST_OTHERS
+				ANALYTICAL_LAST_OTHERS;
 			}
 		}
 	}
@@ -1026,7 +1026,7 @@ finish:
 			has_nils = true;       \
 		for(; rb<rp; rb++)         \
 			*rb = curval;          \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_NTHVALUE_IMP(TPE)     \
 	do {                                 \
@@ -1046,7 +1046,7 @@ finish:
 					ncnt = (np - pnp);   \
 					rp += ncnt;          \
 					bp += ncnt;          \
-					NTHVALUE_CALC(TPE)   \
+					NTHVALUE_CALC(TPE);  \
 					pbp = bp;            \
 					pnp = np;            \
 				}                        \
@@ -1054,14 +1054,14 @@ finish:
 			ncnt = (np - pnp);           \
 			rp += ncnt;                  \
 			bp += ncnt;                  \
-			NTHVALUE_CALC(TPE)           \
+			NTHVALUE_CALC(TPE);	     \
 		} else {                         \
 			rp += cnt;                   \
 			bp += cnt;                   \
-			NTHVALUE_CALC(TPE)           \
+			NTHVALUE_CALC(TPE);	     \
 		}                                \
 		goto finish;                     \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_NTHVALUE_OTHERS                                      \
 	do {                                                                \
@@ -1075,7 +1075,7 @@ finish:
 			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
 				goto finish;                                            \
 		}                                                               \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BUN nth, int tpe)
@@ -1089,27 +1089,27 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BUN nth, int tpe)
 
 	switch (tpe) {
 		case TYPE_bte:
-			ANALYTICAL_NTHVALUE_IMP(bte)
+			ANALYTICAL_NTHVALUE_IMP(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_NTHVALUE_IMP(sht)
+			ANALYTICAL_NTHVALUE_IMP(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_NTHVALUE_IMP(int)
+			ANALYTICAL_NTHVALUE_IMP(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_NTHVALUE_IMP(lng)
+			ANALYTICAL_NTHVALUE_IMP(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_NTHVALUE_IMP(hge)
+			ANALYTICAL_NTHVALUE_IMP(hge);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_NTHVALUE_IMP(flt)
+			ANALYTICAL_NTHVALUE_IMP(flt);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_NTHVALUE_IMP(dbl)
+			ANALYTICAL_NTHVALUE_IMP(dbl);
 			break;
 		default: {
 			BATiter bpi = bat_iterator(b);
@@ -1128,15 +1128,15 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BUN nth, int tpe)
 				for(; np<end; np++) {
 					if (*np) {
 						i += (np - pnp);
-						ANALYTICAL_NTHVALUE_OTHERS
+						ANALYTICAL_NTHVALUE_OTHERS;
 						pnp = np;
 					}
 				}
 				i += (np - pnp);
-				ANALYTICAL_NTHVALUE_OTHERS
+				ANALYTICAL_NTHVALUE_OTHERS;
 			} else {
 				i += cnt;
-				ANALYTICAL_NTHVALUE_OTHERS
+				ANALYTICAL_NTHVALUE_OTHERS;
 			}
 		}
 	}
@@ -1163,7 +1163,7 @@ finish:
 			if(is_##TPE##_nil(next))        \
 				has_nils = true;            \
 		}                                   \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_LAG_IMP(TPE)                   \
 	do {                                          \
@@ -1183,19 +1183,19 @@ finish:
 				if (*np) {                        \
 					ncnt = (np - pnp);            \
 					rp += ncnt;                   \
-					ANALYTICAL_LAG_CALC(TPE)      \
+					ANALYTICAL_LAG_CALC(TPE);      \
 					bp += (lag < ncnt) ? lag : 0; \
 					pnp = np;                     \
 				}                                 \
 			}                                     \
 			rp += (np - pnp);                     \
-			ANALYTICAL_LAG_CALC(TPE)              \
+			ANALYTICAL_LAG_CALC(TPE);              \
 		} else {                                  \
 			rp += cnt;                            \
-			ANALYTICAL_LAG_CALC(TPE)              \
+			ANALYTICAL_LAG_CALC(TPE);              \
 		}                                         \
 		goto finish;                              \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_LAG_OTHERS                                                  \
 	do {                                                                       \
@@ -1212,7 +1212,7 @@ finish:
 			if(atomcmp(curval, nil) == 0)                                      \
 				has_nils = true;                                               \
 		}                                                                      \
-	} while (0);
+	} while (0)
 
 gdk_return
 GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void* restrict default_value, int tpe)
@@ -1228,27 +1228,27 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void* restrict default_v
 
 	switch (tpe) {
 		case TYPE_bte:
-			ANALYTICAL_LAG_IMP(bte)
+			ANALYTICAL_LAG_IMP(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_LAG_IMP(sht)
+			ANALYTICAL_LAG_IMP(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_LAG_IMP(int)
+			ANALYTICAL_LAG_IMP(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_LAG_IMP(lng)
+			ANALYTICAL_LAG_IMP(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_LAG_IMP(hge)
+			ANALYTICAL_LAG_IMP(hge);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_LAG_IMP(flt)
+			ANALYTICAL_LAG_IMP(flt);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_LAG_IMP(dbl)
+			ANALYTICAL_LAG_IMP(dbl);
 			break;
 		default: {
 			BATiter bpi = bat_iterator(b);
@@ -1267,15 +1267,15 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void* restrict default_v
 				for(; np<end; np++) {
 					if (*np) {
 						j += (np - pnp);
-						ANALYTICAL_LAG_OTHERS
+						ANALYTICAL_LAG_OTHERS;
 						pnp = np;
 					}
 				}
 				j += (np - pnp);
-				ANALYTICAL_LAG_OTHERS
+				ANALYTICAL_LAG_OTHERS;
 			} else {
 				j += cnt;
-				ANALYTICAL_LAG_OTHERS
+				ANALYTICAL_LAG_OTHERS;
 			}
 		}
 	}
@@ -1308,7 +1308,7 @@ finish:
 			*rb = def;                       \
 		if(lead > 0 && is_##TPE##_nil(def))  \
 			has_nils = true;                 \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_LEAD_IMP(TPE)                  \
 	do {                                          \
@@ -1328,20 +1328,20 @@ finish:
 				if (*np) {                        \
 					ncnt = (np - pnp);            \
 					rp += ncnt;                   \
-					LEAD_CALC(TPE)                \
+					LEAD_CALC(TPE);		      \
 					pnp = np;                     \
 				}                                 \
 			}                                     \
 			ncnt = (np - pnp);                    \
 			rp += ncnt;                           \
-			LEAD_CALC(TPE)                        \
+			LEAD_CALC(TPE);			      \
 		} else {                                  \
 			ncnt = cnt;                           \
 			rp += ncnt;                           \
-			LEAD_CALC(TPE)                        \
+			LEAD_CALC(TPE);			      \
 		}                                         \
 		goto finish;                              \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_LEAD_OTHERS                                                 \
 	do {                                                                       \
@@ -1363,7 +1363,7 @@ finish:
 		}                                                                      \
 		if(lead > 0 && atomcmp(default_value, nil) == 0)                       \
 			has_nils = true;                                                   \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void* restrict default_value, int tpe)
@@ -1379,27 +1379,27 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void* restrict default
 
 	switch (tpe) {
 		case TYPE_bte:
-			ANALYTICAL_LEAD_IMP(bte)
+			ANALYTICAL_LEAD_IMP(bte);
 			break;
 		case TYPE_sht:
-			ANALYTICAL_LEAD_IMP(sht)
+			ANALYTICAL_LEAD_IMP(sht);
 			break;
 		case TYPE_int:
-			ANALYTICAL_LEAD_IMP(int)
+			ANALYTICAL_LEAD_IMP(int);
 			break;
 		case TYPE_lng:
-			ANALYTICAL_LEAD_IMP(lng)
+			ANALYTICAL_LEAD_IMP(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			ANALYTICAL_LEAD_IMP(hge)
+			ANALYTICAL_LEAD_IMP(hge);
 			break;
 #endif
 		case TYPE_flt:
-			ANALYTICAL_LEAD_IMP(flt)
+			ANALYTICAL_LEAD_IMP(flt);
 			break;
 		case TYPE_dbl:
-			ANALYTICAL_LEAD_IMP(dbl)
+			ANALYTICAL_LEAD_IMP(dbl);
 			break;
 		default: {
 			BUN m = 0, n = 0;
@@ -1419,15 +1419,15 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void* restrict default
 				for(; np<end; np++) {
 					if (*np) {
 						ncnt = (np - pnp);
-						ANALYTICAL_LEAD_OTHERS
+						ANALYTICAL_LEAD_OTHERS;
 						pnp = np;
 					}
 				}
 				ncnt = (np - pnp);
-				ANALYTICAL_LEAD_OTHERS
+				ANALYTICAL_LEAD_OTHERS;
 			} else {
 				ncnt = cnt;
-				ANALYTICAL_LEAD_OTHERS
+				ANALYTICAL_LEAD_OTHERS;
 			}
 		}
 	}
@@ -1464,12 +1464,12 @@ finish:
 			else                                \
 				curval = TPE##_nil;             \
 		}                                       \
-	} while(0);
+	} while(0)
 
 #ifdef HAVE_HUGE
 #define ANALYTICAL_MIN_MAX_LIMIT(OP) \
 	case TYPE_hge: \
-		ANALYTICAL_MIN_MAX_CALC(hge, OP) \
+		ANALYTICAL_MIN_MAX_CALC(hge, OP); \
 	break;
 #else
 #define ANALYTICAL_MIN_MAX_LIMIT(OP)
@@ -1490,26 +1490,26 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
  \
 	switch(tpe) { \
 		case TYPE_bit: \
-			ANALYTICAL_MIN_MAX_CALC(bit, IMP) \
+			ANALYTICAL_MIN_MAX_CALC(bit, IMP); \
 			break; \
 		case TYPE_bte: \
-			ANALYTICAL_MIN_MAX_CALC(bte, IMP) \
+			ANALYTICAL_MIN_MAX_CALC(bte, IMP); \
 			break; \
 		case TYPE_sht: \
-			ANALYTICAL_MIN_MAX_CALC(sht, IMP) \
+			ANALYTICAL_MIN_MAX_CALC(sht, IMP); \
 			break; \
 		case TYPE_int: \
-			ANALYTICAL_MIN_MAX_CALC(int, IMP) \
+			ANALYTICAL_MIN_MAX_CALC(int, IMP); \
 			break; \
 		case TYPE_lng: \
-			ANALYTICAL_MIN_MAX_CALC(lng, IMP) \
+			ANALYTICAL_MIN_MAX_CALC(lng, IMP); \
 			break; \
 		ANALYTICAL_MIN_MAX_LIMIT(IMP) \
 		case TYPE_flt: \
-			ANALYTICAL_MIN_MAX_CALC(flt, IMP) \
+			ANALYTICAL_MIN_MAX_CALC(flt, IMP); \
 			break; \
 		case TYPE_dbl: \
-			ANALYTICAL_MIN_MAX_CALC(dbl, IMP) \
+			ANALYTICAL_MIN_MAX_CALC(dbl, IMP); \
 			break; \
 		default: { \
 			BATiter bpi = bat_iterator(b); \
@@ -1562,7 +1562,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			*rb = curval;                           \
 			curval = 0;                             \
 		}                                           \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_COUNT_NO_NIL_STR_IMP(TPE_CAST, OFFSET)                 \
 	do {                                                                  \
@@ -1574,7 +1574,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			*rb = curval;                                                 \
 			curval = 0;                                                   \
 		}                                                                 \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_nils, int tpe)
@@ -1593,48 +1593,48 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 	} else {
 		switch (tpe) {
 			case TYPE_bit:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bit)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bit);
 				break;
 			case TYPE_bte:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bte)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(bte);
 				break;
 			case TYPE_sht:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(sht)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(sht);
 				break;
 			case TYPE_int:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(int)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(int);
 				break;
 			case TYPE_lng:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(lng)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(lng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(hge)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(hge);
 				break;
 #endif
 			case TYPE_flt:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(flt)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(flt);
 				break;
 			case TYPE_dbl:
-				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(dbl)
+				ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(dbl);
 				break;
 			case TYPE_str: {
 				const char *restrict base = b->tvheap->base;
 				const void *restrict bp = Tloc(b, 0);
 				switch (b->twidth) {
 					case 1:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned char *, [j] + GDK_VAROFFSET)
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned char *, [j] + GDK_VAROFFSET);
 						break;
 					case 2:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned short *, [j] + GDK_VAROFFSET)
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned short *, [j] + GDK_VAROFFSET);
 						break;
 #if SIZEOF_VAR_T != SIZEOF_INT
 					case 4:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned int *, [j])
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const unsigned int *, [j]);
 						break;
 #endif
 					default:
-						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const var_t *, [j])
+						ANALYTICAL_COUNT_NO_NIL_STR_IMP(const var_t *, [j]);
 						break;
 				}
 				break;
@@ -1696,7 +1696,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 			else                                \
 				curval = TPE2##_nil;            \
 		}                                       \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_SUM_IMP_FP(TPE1, TPE2)       \
 	do {                                        \
@@ -1716,16 +1716,16 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 			else                                \
 				curval = TPE2##_nil;            \
 		}                                       \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)    \
 	do {                                        \
 		TPE1 *bp = (TPE1*)Tloc(b, 0);           \
 		TPE2 *restrict rb, curval = TPE2##_nil; \
 		rb = (TPE2*)Tloc(r, 0);                 \
-		IMP(TPE1, TPE2)                         \
+		IMP(TPE1, TPE2);			\
 		goto finish;                            \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
@@ -1893,7 +1893,7 @@ finish:
 				curval = TPE2##_nil;              \
 		}                                         \
 		goto finish;                              \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT(TPE1, TPE2, REAL_IMP) \
 	do {                                        \
@@ -1919,7 +1919,7 @@ finish:
 				curval = TPE2##_nil;            \
 		}                                       \
 		goto finish;                            \
-	} while(0);
+	} while(0)
 
 #define ANALYTICAL_PROD_CALC_FP(TPE1, TPE2)       \
 	do {                                          \
@@ -1951,7 +1951,7 @@ finish:
 				curval = TPE2##_nil;              \
 		}                                         \
 		goto finish;                              \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
@@ -2157,7 +2157,7 @@ calc_done##TPE:                                       \
 			sum = 0;                                  \
 		}                                             \
 		goto finish;                                  \
-	} while(0);
+	} while(0)
 
 #ifdef HAVE_HGE
 #define ANALYTICAL_AVERAGE_LNG_HGE(TPE) ANALYTICAL_AVERAGE_CALC_NUM(TPE,hge)
@@ -2184,7 +2184,7 @@ calc_done##TPE:                                       \
 			a = 0;                           \
 		}                                    \
 		goto finish;                         \
-	} while(0);
+	} while(0)
 
 gdk_return
 GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
