@@ -405,7 +405,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->flag & PSM_IF) {
 			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel, rsel);
 			stmt *ifstmt = stmt_cond(be, cond, NULL, 0, 0), *res;
-			(void)exp_list(be, e->r, left, right, grp, cnt, ext, sel, rsel);
+			(void)exp_list(be, e->r, left, right, grp, ext, cnt, sel, rsel);
 			res = stmt_control_end(be, ifstmt);
 			if (e->f) {
 				stmt *elsestmt = stmt_cond(be, cond, NULL, 0, 1);
