@@ -102,20 +102,26 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #undef ANALYTICAL_DIFF_IMP
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING(TPE, LIMIT) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING(TPE, LIMIT) /* TPE is ignored in this case */ \
 	do {                                            \
+		lng calc1, calc2;                           \
 		j = k;                                      \
 		for(; k<i; k++, rb++) {                     \
 			lng rlimit = (lng) LIMIT;               \
-			*rb = MAX(k - rlimit + !first_half, j); \
+			SUB_WITH_CHECK(lng, k, lng, rlimit, lng, calc1, GDK_lng_max, goto calc_overflow); \
+			ADD_WITH_CHECK(lng, calc1, lng, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
+			*rb = MAX(calc2, j);                    \
 		}                                           \
 	} while(0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING(TPE, LIMIT) \
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING(TPE, LIMIT) /* TPE is ignored in this case */ \
 	do {                                            \
+		lng calc1, calc2;                           \
 		for(; k<i; k++, rb++) {                     \
 			lng rlimit = (lng) LIMIT;               \
-			*rb = MIN(k + rlimit + !first_half, i); \
+			ADD_WITH_CHECK(lng, rlimit, lng, k, lng, calc1, GDK_lng_max, goto calc_overflow); \
+			ADD_WITH_CHECK(lng, calc1, lng, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
+			*rb = MIN(calc2, i);                    \
 		}                                           \
 	} while(0)
 
@@ -255,22 +261,8 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}                                           \
 	} while(0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_PRECEDING(LIMIT) \
-	do {                                            \
-		j = k;                                      \
-		for(; k<i; k++, rb++) {                     \
-			lng rlimit = (lng) LIMIT;               \
-			*rb = MAX(k - rlimit + !first_half, j); \
-		}                                           \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_FOLLOWING(LIMIT) \
-	do {                                            \
-		for(; k<i; k++, rb++) {                     \
-			lng rlimit = (lng) LIMIT;               \
-			*rb = MIN(k + rlimit + !first_half, i); \
-		}                                           \
-	} while(0)
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_PRECEDING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING(lng, LIMIT)
+#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING(lng, LIMIT)
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_SECOND_PRECEDING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_PRECEDING(LIMIT)
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_SECOND_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_FOLLOWING(LIMIT)
@@ -1063,7 +1055,7 @@ allocation_error:
 
 #define ANALYTICAL_NTHVALUE_OTHERS                                      \
 	do {                                                                \
-		if(nth > (i - j))                                               \
+		if(nth > (i - j)) /*i should be always at least at value of j */\
 			curval = nil;                                               \
 		else                                                            \
 			curval = BUNtail(bpi, nth);                                 \
@@ -1648,7 +1640,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 						j = start[i];
 						l = end[i];
 						for(; j<l; j++)
-							curval += (*cmp)(nil, base + ((const var_t *) bp)[j]) != 0;
+							curval += cmp(nil, base + ((const var_t *) bp)[j]) != 0;
 						*rb = curval;
 						curval = 0;
 					}
@@ -1657,7 +1649,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 						j = start[i];
 						l = end[i];
 						for(; j<l; j++)
-							curval += (*cmp)(Tloc(b, j), nil) != 0;
+							curval += cmp(Tloc(b, j), nil) != 0;
 						*rb = curval;
 						curval = 0;
 					}
@@ -1699,15 +1691,16 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 
 #define ANALYTICAL_SUM_IMP_FP(TPE1, TPE2)       \
 	do {                                        \
-		TPE1 *bs, *be;                          \
+		TPE1 *bs;                               \
 		BUN parcel;                             \
 		for(; i<cnt; i++, rb++) {               \
-			bs = bp + start[i];                 \
-			be = bp + end[i];                   \
-			parcel = (be - bs);                 \
-			if(dofsum(bs, 0, 0, parcel, &curval, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, \
-				  	  true, "GDKanalyticalsum") == BUN_NONE) { \
-				goto bailout;                   \
+			if(end[i] > start[i]) {             \
+				bs = bp + start[i];             \
+				parcel = (end[i] - start[i]);   \
+				if(dofsum(bs, 0, 0, parcel, &curval, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, \
+					  	  true, "GDKanalyticalsum") == BUN_NONE) { \
+					goto bailout;               \
+				}                               \
 			}                                   \
 			*rb = curval;                       \
 			if(is_##TPE2##_nil(curval))         \
