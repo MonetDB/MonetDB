@@ -482,8 +482,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		switch(tp1) { \
 			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT); \
 			default: { \
-				GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2)); \
-				return GDK_FAIL; \
+				goto logical_bound_not_supported; \
 			} \
 		} \
 	} while(0)
@@ -495,7 +494,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		if (l) { /* dynamic bounds */ \
 			TPE *restrict limit = (TPE*) Tloc(l, 0); \
 			if(first_half) { \
-				IMP(_RANGE, _FIRST, limit[k]);	\
+				IMP(_RANGE, _FIRST, limit[k]); \
 			} else { \
 				IMP(_RANGE, _SECOND, limit[k]); \
 			} \
@@ -506,7 +505,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			} else if(first_half) { \
 				IMP(_RANGE, _FIRST, limit);	\
 			} else { \
-				IMP(_RANGE, _SECOND, limit);	\
+				IMP(_RANGE, _SECOND, limit); \
 			} \
 		} \
 	} while(0)
@@ -593,8 +592,7 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 					break;
 #endif
 				default:
-					GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2));
-					return GDK_FAIL;
+					goto physical_bound_not_supported;
 			}
 		} else {
 			switch(tp2) {
@@ -616,20 +614,24 @@ GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 					break;
 #endif
 				default:
-					GDKerror("analytical bounds: type %s not supported.\n", ATOMname(tp2));
-					return GDK_FAIL;
+					goto physical_bound_not_supported;
 			}
 		}
 	}
-goto finish;
-calc_overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	return GDK_FAIL;
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = (nils == 0);
 	r->tnil = (nils > 0);
 	return GDK_SUCCEED;
+logical_bound_not_supported:
+	GDKerror("GDKanalyticalwindowbounds: range frame bound type %s not supported.\n", ATOMname(tp1));
+	return GDK_FAIL;
+physical_bound_not_supported:
+	assert(unit == 0 || unit == 2);
+	GDKerror("GDKanalyticalwindowbounds: %s frame bound type %s not supported.\n", (unit == 0) ? "rows" : "groups", ATOMname(tp2));
+	return GDK_FAIL;
+calc_overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return GDK_FAIL;
 }
 
 #undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING
@@ -731,7 +733,6 @@ finish:
 			rp += cnt;                       \
 			NTILE_CALC;			 \
 		}                                    \
-		goto finish;                         \
 	} while(0)
 
 gdk_return
@@ -740,7 +741,6 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void* restrict ntile)
 	BUN cnt = BATcount(b), ncnt = cnt, buckets, i = 0;
 	bit *np, *pnp, *end;
 	bool has_nils = false;
-	gdk_return gdk_res = GDK_SUCCEED;
 
 	assert(ntile);
 
@@ -763,16 +763,13 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void* restrict ntile)
 			break;
 #endif
 		default:
-			goto nosupport;
+			GDKerror("GDKanalyticalntile: type %s not supported.\n", ATOMname(tpe));
+			return GDK_FAIL;
 	}
-nosupport:
-	GDKerror("ntile: type %s not supported.\n", ATOMname(tpe));
-	return GDK_FAIL;
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return gdk_res;
+	return GDK_SUCCEED;
 }
 
 #undef ANALYTICAL_NTILE_IMP
@@ -818,11 +815,11 @@ finish:
 #define ANALYTICAL_FIRST_OTHERS                                         \
 	do {                                                                \
 		curval = BUNtail(bpi, j);                                       \
-		if(atomcmp(curval, nil) == 0)                                   \
+		if (atomcmp(curval, nil) == 0)                                  \
 			has_nils = true;                                            \
 		for (;j < i; j++) {                                             \
-			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
-				goto finish;                                            \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED)             \
+				goto allocation_error;                                  \
 		}                                                               \
 	} while(0)
 
@@ -834,7 +831,6 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, int tpe)
 	bool has_nils = false;
 	BUN i = 0, j = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *end;
-	gdk_return gdk_res = GDK_SUCCEED;
 
 	switch(tpe) {
 		case TYPE_bit:
@@ -886,11 +882,13 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *p, int tpe)
 			}
 		}
 	}
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return gdk_res;
+	return GDK_SUCCEED;
+allocation_error:
+	GDKerror("GDKanalyticalfirst: malloc failure\n");
+	return GDK_FAIL;
 }
 
 #undef ANALYTICAL_FIRST_IMP
@@ -937,11 +935,11 @@ finish:
 #define ANALYTICAL_LAST_OTHERS                                          \
 	do {                                                                \
 		curval = BUNtail(bpi, i - 1);                                   \
-		if(atomcmp(curval, nil) == 0)                                   \
+		if (atomcmp(curval, nil) == 0)                                  \
 			has_nils = true;                                            \
 		for (;j < i; j++) {                                             \
-			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
-				goto finish;                                            \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED)             \
+				goto allocation_error;                                  \
 		}                                                               \
 	} while(0)
 
@@ -953,7 +951,6 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *p, int tpe)
 	bool has_nils = false;
 	BUN i = 0, j = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *end;
-	gdk_return gdk_res = GDK_SUCCEED;
 
 	switch(tpe) {
 		case TYPE_bit:
@@ -1005,11 +1002,13 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *p, int tpe)
 			}
 		}
 	}
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return gdk_res;
+	return GDK_SUCCEED;
+allocation_error:
+	GDKerror("GDKanalyticallast: malloc failure\n");
+	return GDK_FAIL;
 }
 
 #undef ANALYTICAL_LAST_IMP
@@ -1060,7 +1059,6 @@ finish:
 			bp += cnt;                   \
 			NTHVALUE_CALC(TPE);	     \
 		}                                \
-		goto finish;                     \
 	} while(0)
 
 #define ANALYTICAL_NTHVALUE_OTHERS                                      \
@@ -1069,11 +1067,11 @@ finish:
 			curval = nil;                                               \
 		else                                                            \
 			curval = BUNtail(bpi, nth);                                 \
-		if(atomcmp(curval, nil) == 0)                                   \
+		if (atomcmp(curval, nil) == 0)                                  \
 			has_nils = true;                                            \
 		for (;j < i; j++) {                                             \
-			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
-				goto finish;                                            \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED)             \
+				goto allocation_error;                                  \
 		}                                                               \
 	} while(0)
 
@@ -1084,7 +1082,6 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BUN nth, int tpe)
 	const void* restrict nil;
 	BUN i = 0, j = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *end;
-	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
 	switch (tpe) {
@@ -1119,8 +1116,8 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BUN nth, int tpe)
 			if(nth == BUN_NONE) {
 				has_nils = true;
 				for(i=0; i<cnt; i++) {
-					if ((gdk_res = BUNappend(r, nil, false)) != GDK_SUCCEED)
-						goto finish;
+					if (BUNappend(r, nil, false) != GDK_SUCCEED)
+						goto allocation_error;
 				}
 			} else if (p) {
 				pnp = np = (bit*)Tloc(p, 0);
@@ -1140,11 +1137,13 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BUN nth, int tpe)
 			}
 		}
 	}
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return gdk_res;
+	return GDK_SUCCEED;
+allocation_error:
+	GDKerror("GDKanalyticalnthvalue: malloc failure\n");
+	return GDK_FAIL;
 }
 
 #undef ANALYTICAL_NTHVALUE_IMP
@@ -1194,22 +1193,21 @@ finish:
 			rp += cnt;                            \
 			ANALYTICAL_LAG_CALC(TPE);              \
 		}                                         \
-		goto finish;                              \
 	} while(0)
 
 #define ANALYTICAL_LAG_OTHERS                                                  \
 	do {                                                                       \
 		for(i=0; i<lag && k<j; i++, k++) {                                     \
-			if ((gdk_res = BUNappend(r, default_value, false)) != GDK_SUCCEED) \
-				goto finish;                                                   \
+			if (BUNappend(r, default_value, false) != GDK_SUCCEED)             \
+				goto allocation_error;                                         \
 		}                                                                      \
 		if(lag > 0 && atomcmp(default_value, nil) == 0)                        \
 			has_nils = true;                                                   \
 		for(l=k-lag; k<j; k++, l++) {                                          \
 			curval = BUNtail(bpi, l);                                          \
-			if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)        \
-				goto finish;                                                   \
-			if(atomcmp(curval, nil) == 0)                                      \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED)                    \
+				goto allocation_error;                                         \
+			if (atomcmp(curval, nil) == 0)                                     \
 				has_nils = true;                                               \
 		}                                                                      \
 	} while (0)
@@ -1221,7 +1219,6 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void* restrict default_v
 	const void *restrict nil;
 	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *end;
-	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
 	assert(default_value);
@@ -1258,8 +1255,8 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void* restrict default_v
 			if(lag == BUN_NONE) {
 				has_nils = true;
 				for (j=0;j < cnt; j++) {
-					if ((gdk_res = BUNappend(r, nil, false)) != GDK_SUCCEED)
-						goto finish;
+					if (BUNappend(r, nil, false) != GDK_SUCCEED)
+						goto allocation_error;
 				}
 			} else if(p) {
 				pnp = np = (bit*)Tloc(p, 0);
@@ -1279,11 +1276,13 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void* restrict default_v
 			}
 		}
 	}
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return gdk_res;
+	return GDK_SUCCEED;
+allocation_error:
+	GDKerror("GDKanalyticallag: malloc failure\n");
+	return GDK_FAIL;
 }
 
 #undef ANALYTICAL_LAG_IMP
@@ -1340,7 +1339,6 @@ finish:
 			rp += ncnt;                           \
 			LEAD_CALC(TPE);			      \
 		}                                         \
-		goto finish;                              \
 	} while(0)
 
 #define ANALYTICAL_LEAD_OTHERS                                                 \
@@ -1350,16 +1348,16 @@ finish:
 			m = ncnt - lead;                                                   \
 			for(i=0,n=k+lead; i<m; i++, n++) {                                 \
 				curval = BUNtail(bpi, n);                                      \
-				if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED)    \
-					goto finish;                                               \
-				if(atomcmp(curval, nil) == 0)                                  \
+				if (BUNappend(r, curval, false) != GDK_SUCCEED)                \
+					goto allocation_error;                                     \
+				if (atomcmp(curval, nil) == 0)                                 \
 					has_nils = true;                                           \
 			}                                                                  \
 			k += i;                                                            \
 		}                                                                      \
 		for(; k<j; k++) {                                                      \
-			if ((gdk_res = BUNappend(r, default_value, false)) != GDK_SUCCEED) \
-				goto finish;                                                   \
+			if (BUNappend(r, default_value, false) != GDK_SUCCEED)             \
+				goto allocation_error;                                         \
 		}                                                                      \
 		if(lead > 0 && atomcmp(default_value, nil) == 0)                       \
 			has_nils = true;                                                   \
@@ -1372,7 +1370,6 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void* restrict default
 	const void* restrict nil;
 	BUN i = 0, j = 0, k = 0, l = 0, ncnt, cnt = BATcount(b);
 	bit *np, *pnp, *end;
-	gdk_return gdk_res = GDK_SUCCEED;
 	bool has_nils = false;
 
 	assert(default_value);
@@ -1410,8 +1407,8 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void* restrict default
 			if(lead == BUN_NONE) {
 				has_nils = true;
 				for (j=0;j < cnt; j++) {
-					if ((gdk_res = BUNappend(r, nil, false)) != GDK_SUCCEED)
-						goto finish;
+					if (BUNappend(r, nil, false) != GDK_SUCCEED)
+						goto allocation_error;
 				}
 			} else if(p) {
 				pnp = np = (bit*)Tloc(p, 0);
@@ -1431,11 +1428,13 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void* restrict default
 			}
 		}
 	}
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return gdk_res;
+	return GDK_SUCCEED;
+allocation_error:
+	GDKerror("GDKanalyticallead: malloc failure\n");
+	return GDK_FAIL;
 }
 
 #undef ANALYTICAL_LEAD_IMP
@@ -1482,7 +1481,6 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 	bool has_nils = false; \
 	BUN i = 0, cnt = BATcount(b); \
 	lng *restrict start, *restrict end, j = 0, l = 0; \
-	gdk_return gdk_res = GDK_SUCCEED; \
  \
 	assert(s && e); \
 	start = (lng*)Tloc(s, 0); \
@@ -1522,25 +1520,27 @@ GDKanalytical##OP(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 				curval = (void*)nil; \
 				for (;j < l; j++) { \
 					void *next = BUNtail(bpi, (BUN) j); \
-					if(atomcmp(next, nil) != 0) { \
-						if(atomcmp(curval, nil) == 0) \
+					if (atomcmp(next, nil) != 0) { \
+						if (atomcmp(curval, nil) == 0) \
 							curval = next; \
 						else \
 							curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
 					} \
 				} \
-				if ((gdk_res = BUNappend(r, curval, false)) != GDK_SUCCEED) \
-					goto finish; \
-				if(atomcmp(curval, nil) == 0) \
+				if (BUNappend(r, curval, false) != GDK_SUCCEED) \
+					goto allocation_error; \
+				if (atomcmp(curval, nil) == 0) \
 					has_nils = true; \
 			} \
 		} \
 	} \
-finish: \
 	BATsetcount(r, cnt); \
 	r->tnonil = !has_nils; \
 	r->tnil = has_nils; \
-	return gdk_res; \
+	return GDK_SUCCEED; \
+allocation_error: \
+	GDKerror("GDKanalytical""OP"": malloc failure\n"); \
+	return GDK_FAIL; \
 }
 
 ANALYTICAL_MIN_MAX(min, MIN, >)
@@ -1579,7 +1579,6 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_nils, int tpe)
 {
-	gdk_return gdk_res = GDK_SUCCEED;
 	BUN i = 0, cnt = BATcount(b);
 	lng *restrict rb = (lng*)Tloc(r, 0), *restrict start, *restrict end, curval = 0, j = 0, l = 0;
 
@@ -1669,7 +1668,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
-	return gdk_res;
+	return GDK_SUCCEED;
 }
 
 #undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP
@@ -1724,7 +1723,6 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 		TPE2 *restrict rb, curval = TPE2##_nil; \
 		rb = (TPE2*)Tloc(r, 0);                 \
 		IMP(TPE1, TPE2);			\
-		goto finish;                            \
 	} while(0)
 
 gdk_return
@@ -1829,8 +1827,8 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 					break;
 				default:
 					goto nosupport;
-					break;
 			}
+			break;
 		}
 		case TYPE_dbl: {
 			switch (tp1) {
@@ -1842,26 +1840,25 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 					break;
 				default:
 					goto nosupport;
-					break;
 			}
+			break;
 		}
 		default:
 			goto nosupport;
 	}
-bailout:
-	GDKerror("error while calculating floating-point sum\n");
-	return GDK_FAIL;
-nosupport:
-	GDKerror("sum: type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
-calc_overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	return GDK_FAIL;
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
+bailout:
+	GDKerror("GDKanalyticalsum: error while calculating floating-point sum\n");
+	return GDK_FAIL;
+nosupport:
+	GDKerror("GDKanalyticalsum: type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	return GDK_FAIL;
+calc_overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return GDK_FAIL;
 }
 
 #undef ANALYTICAL_SUM_IMP_NUM
@@ -1892,7 +1889,6 @@ finish:
 			else                                  \
 				curval = TPE2##_nil;              \
 		}                                         \
-		goto finish;                              \
 	} while(0)
 
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT(TPE1, TPE2, REAL_IMP) \
@@ -1918,7 +1914,6 @@ finish:
 			else                                \
 				curval = TPE2##_nil;            \
 		}                                       \
-		goto finish;                            \
 	} while(0)
 
 #define ANALYTICAL_PROD_CALC_FP(TPE1, TPE2)       \
@@ -1950,7 +1945,6 @@ finish:
 			else                                  \
 				curval = TPE2##_nil;              \
 		}                                         \
-		goto finish;                              \
 	} while(0)
 
 gdk_return
@@ -2075,8 +2069,8 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 					break;
 				default:
 					goto nosupport;
-					break;
 			}
+			break;
 		}
 		case TYPE_dbl: {
 			switch (tp1) {
@@ -2088,23 +2082,22 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 					break;
 				default:
 					goto nosupport;
-					break;
 			}
+			break;
 		}
 		default:
 			goto nosupport;
 	}
-nosupport:
-	GDKerror("prod: type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
-calc_overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	return GDK_FAIL;
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
+nosupport:
+	GDKerror("GDKanalyticalprod: type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	return GDK_FAIL;
+calc_overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return GDK_FAIL;
 }
 
 #undef ANALYTICAL_PROD_CALC_NUM
@@ -2156,7 +2149,6 @@ calc_done##TPE:                                       \
 			n = 0;                                    \
 			sum = 0;                                  \
 		}                                             \
-		goto finish;                                  \
 	} while(0)
 
 #ifdef HAVE_HGE
@@ -2183,7 +2175,6 @@ calc_done##TPE:                                       \
 			n = 0;                           \
 			a = 0;                           \
 		}                                    \
-		goto finish;                         \
 	} while(0)
 
 gdk_return
@@ -2232,7 +2223,6 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			GDKerror("GDKanalyticalavg: average of type %s unsupported.\n", ATOMname(tpe));
 			return GDK_FAIL;
 	}
-finish:
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
