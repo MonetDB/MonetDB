@@ -403,9 +403,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			(void)stmt_control_end(be, wstmt);
 			return stmt_control_end(be, ifstmt);
 		} else if (e->flag & PSM_IF) {
-			stmt *cond = exp_bin(be, e->l, left, right, grp, cnt, ext, sel);
+			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			stmt *ifstmt = stmt_cond(be, cond, NULL, 0, 0), *res;
-			(void)exp_list(be, e->r, left, right, grp, cnt, ext, sel);
+			(void)exp_list(be, e->r, left, right, grp, ext, cnt, sel);
 			res = stmt_control_end(be, ifstmt);
 			if (e->f) {
 				stmt *elsestmt = stmt_cond(be, cond, NULL, 0, 1);
@@ -433,7 +433,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return r;
 			return stmt_table(be, r, 1);
 		} else if (e->flag & PSM_EXCEPTION) {
-			stmt *cond = exp_bin(be, e->l, left, right, grp, cnt, ext, sel);
+			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			return stmt_exception(be, cond, (const char *) e->r, 0);
 		}
 		break;
