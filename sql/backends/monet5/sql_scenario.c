@@ -402,8 +402,10 @@ SQLinit(Client c)
 	monet5_user_init(&be_funcs);
 
 	msg = MTIMEtimezone(&tz, &gmt);
-	if (msg)
+	if (msg) {
+		MT_lock_unset(&sql_contextLock);
 		return msg;
+	}
 	(void) tz;
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);
@@ -476,14 +478,18 @@ SQLinit(Client c)
 			buffer* createdb_buf;
 			stream* createdb_stream;
 			bstream* createdb_bstream;
-			if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL)
+			if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL) {
+				MT_lock_unset(&sql_contextLock);
 				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			buffer_init(createdb_buf, createdb_inline, createdb_len);
 			if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
+				MT_lock_unset(&sql_contextLock);
 				GDKfree(createdb_buf);
 				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
-			if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
+			if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {\
+				MT_lock_unset(&sql_contextLock);
 				mnstr_destroy(createdb_stream);
 				GDKfree(createdb_buf);
 				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -582,10 +588,12 @@ SQLinit(Client c)
 		*m->errstr = 0;
 		sqlcleanup(m, mvc_status(m));
 	}
-	if ((msg = SQLresetClient(c)) != MAL_SUCCEED)
+
+	msg = SQLresetClient(c);
+	MT_lock_unset(&sql_contextLock);
+	if (msg != MAL_SUCCEED)
 		return msg;
 
-	MT_lock_unset(&sql_contextLock);
 	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
