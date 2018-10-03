@@ -736,9 +736,6 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#undef NTILE_IMP
-#undef NTILE_VALUE_SINGLE_IMP
-
 static str
 SQLanalytics_args(BAT **r, BAT **b, BAT **s, BAT **e, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				  InstrPtr pci, int rtype, const str mod, const str err)
@@ -960,9 +957,6 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#undef NTH_VALUE_IMP
-#undef NTH_VALUE_SINGLE_IMP
-
 #define CHECK_L_VALUE(TPE)                                                                     \
 	do {                                                                                       \
 		TPE rval = *getArgReference_##TPE(stk, pci, 2);                                        \
@@ -1066,8 +1060,6 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 	}
 	return MAL_SUCCEED;
 }
-
-#undef CHECK_L_VALUE
 
 str
 SQLlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1402,5 +1394,3 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return msg;
 }
-
-#undef voidresultBAT

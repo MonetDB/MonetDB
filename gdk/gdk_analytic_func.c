@@ -100,572 +100,6 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_DIFF_IMP
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING(TPE, LIMIT) /* TPE is ignored in this case */ \
-	do {                                            \
-		lng calc1, calc2;                           \
-		j = k;                                      \
-		for(; k<i; k++, rb++) {                     \
-			lng rlimit = (lng) LIMIT;               \
-			SUB_WITH_CHECK(lng, k, lng, rlimit, lng, calc1, GDK_lng_max, goto calc_overflow); \
-			ADD_WITH_CHECK(lng, calc1, lng, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
-			*rb = MAX(calc2, j);                    \
-		}                                           \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING(TPE, LIMIT) /* TPE is ignored in this case */ \
-	do {                                            \
-		lng calc1, calc2;                           \
-		for(; k<i; k++, rb++) {                     \
-			lng rlimit = (lng) LIMIT;               \
-			ADD_WITH_CHECK(lng, rlimit, lng, k, lng, calc1, GDK_lng_max, goto calc_overflow); \
-			ADD_WITH_CHECK(lng, calc1, lng, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
-			*rb = MIN(calc2, i);                    \
-		}                                           \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_SECOND_PRECEDING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING(TPE, LIMIT)
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_SECOND_FOLLOWING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING(TPE, LIMIT)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_PRECEDING(TPE, LIMIT) \
-	do {                                           \
-		lng m = k;                                 \
-		TPE v, rlimit, calc;                       \
-		for(; k<i; k++, rb++) {                    \
-			rlimit = (TPE) LIMIT;                  \
-			v = bp[k];                             \
-			if(is_##TPE##_nil(v))                  \
-				j = m;                             \
-			else                                   \
-				for(j=k; j>m; j--) {               \
-					if(is_##TPE##_nil(bp[j]))      \
-						continue;                  \
-					SUB_WITH_CHECK(TPE, v, TPE, bp[j], TPE, calc, GDK_##TPE##_max, goto calc_overflow); \
-					if (ABSOLUTE(calc) > rlimit) { \
-						j++;                       \
-						break;                     \
-					}                              \
-				}                                  \
-			*rb = j;                               \
-		}                                          \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_FOLLOWING(TPE, LIMIT) \
-	do {                                         \
-		TPE v, rlimit, calc;                     \
-		for(; k<i; k++, rb++) {                  \
-			rlimit = (TPE) LIMIT;                \
-			v = bp[k];                           \
-			if(is_##TPE##_nil(v))                \
-				j = i;                           \
-			else                                 \
-				for(j=k+1; j<i; j++) {           \
-					if(is_##TPE##_nil(bp[j]))    \
-						continue;                \
-					SUB_WITH_CHECK(TPE, v, TPE, bp[j], TPE, calc, GDK_##TPE##_max, goto calc_overflow); \
-					if (ABSOLUTE(calc) > rlimit) \
-						break;                   \
-				}                                \
-			*rb = j;                             \
-		}                                        \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_SECOND_FOLLOWING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_FOLLOWING(TPE, LIMIT)
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_SECOND_PRECEDING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_PRECEDING(TPE, LIMIT)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_PRECEDING(TPE, LIMIT) \
-	do {                                  \
-		lng m = k;                        \
-		for(; k<i; k++, rb++) {           \
-			lng rlimit = (lng) LIMIT;     \
-			TPE v = bp[k];                \
-			if(is_##TPE##_nil(v))         \
-				j = m;                    \
-			else                          \
-				for(j=k; j>m; j--) {      \
-					if(is_##TPE##_nil(bp[j])) \
-						continue;         \
-					if(v != bp[j]) {      \
-						if(rlimit == 0) { \
-							j++;          \
-							break;        \
-						}                 \
-						rlimit--;         \
-						v = bp[j];        \
-					}                     \
-				}                         \
-			*rb = j;                      \
-		}                                 \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_FOLLOWING(TPE, LIMIT) \
-	do {                                \
-		for(; k<i; k++, rb++) {         \
-			lng rlimit = (lng) LIMIT;   \
-			TPE v = bp[k];              \
-			if(is_##TPE##_nil(v))       \
-				j = i;                  \
-			else                        \
-				for(j=k+1; j<i; j++) {  \
-					if(is_##TPE##_nil(bp[j])) \
-						continue;       \
-					if(v != bp[j]) {    \
-						if(rlimit == 0) \
-							break;      \
-						rlimit--;       \
-						v = bp[j];      \
-					}                   \
-				}                       \
-			*rb = j;                    \
-		}                               \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_SECOND_FOLLOWING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_FOLLOWING(TPE, LIMIT)
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_SECOND_PRECEDING(TPE, LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_PRECEDING(TPE, LIMIT)
-	
-#define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(TPE, IMP, LIMIT) \
-	do {                                            \
-		TPE *restrict bp = (TPE*)Tloc(b, 0);        \
-		(void) bp;                                  \
-		if(preceding) {                             \
-			if(np) {                                \
-				nend += cnt;                        \
-				for(; np<nend; np++) {              \
-					if (*np) {                      \
-						i += (np - pnp);            \
-						IMP##_PRECEDING(TPE, LIMIT); \
-						pnp = np;                   \
-					}                               \
-				}                                   \
-				i += (np - pnp);                    \
-				IMP##_PRECEDING(TPE, LIMIT);	    \
-			} else {                                \
-				i += (lng) cnt;                     \
-				IMP##_PRECEDING(TPE, LIMIT);	    \
-			}                                       \
-		} else if(np) {                             \
-			nend += cnt;                            \
-			for(; np<nend; np++) {                  \
-				if (*np) {                          \
-					i += (np - pnp);                \
-					IMP##_FOLLOWING(TPE, LIMIT);	\
-					pnp = np;                       \
-				}                                   \
-			}                                       \
-			i += (np - pnp);                        \
-			IMP##_FOLLOWING(TPE, LIMIT);		\
-		} else {                                    \
-			i += (lng) cnt;                         \
-			IMP##_FOLLOWING(TPE, LIMIT);		\
-		}                                           \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_PRECEDING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING(lng, LIMIT)
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING(lng, LIMIT)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_SECOND_PRECEDING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_PRECEDING(LIMIT)
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_SECOND_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_FOLLOWING(LIMIT)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FIRST_PRECEDING(LIMIT) \
-	do {                                          \
-		lng m = k;                                \
-		for(; k<i; k++, rb++) {                   \
-			void *v = BUNtail(bpi, (BUN) k);      \
-			if(atomcmp(v, nil) == 0)              \
-				j = m;                            \
-			else                                  \
-				for(j=k; j>m; j--) {              \
-					void *next = BUNtail(bpi, (BUN) j); \
-					if(atomcmp(next, nil) == 0)   \
-						continue;                 \
-					if(ABSOLUTE(atomcmp(v, next)) > (int) LIMIT) { \
-						j++;                      \
-						break;                    \
-					}                             \
-				}                                 \
-			*rb = j;                              \
-		}                                         \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_PRECEDING(LIMIT) \
-	do {                                          \
-		for(; k<i; k++, rb++) {                   \
-			void *v = BUNtail(bpi, (BUN) k);      \
-			if(atomcmp(v, nil) == 0)              \
-				j = i;                            \
-			else                                  \
-				for(j=k+1; j<i; j++) {            \
-					void *next = BUNtail(bpi, (BUN) j); \
-					if(atomcmp(next, nil) == 0)   \
-						continue;                 \
-					if(ABSOLUTE(atomcmp(v, next)) > (int) LIMIT) \
-						break;                    \
-				}                                 \
-			*rb = j;                              \
-		}                                         \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FIRST_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FIRST_PRECEDING(LIMIT)
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_PRECEDING(LIMIT)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FIRST_PRECEDING(LIMIT) \
-	do {                                          \
-		lng m = k;                                \
-		for(; k<i; k++, rb++) {                   \
-			lng rlimit = (lng) LIMIT;             \
-			void *v = BUNtail(bpi, (BUN) k);      \
-			if(atomcmp(v, nil) == 0)              \
-				j = m;                            \
-			else                                  \
-				for(j=k; j>m; j--) {              \
-					void *next = BUNtail(bpi, (BUN) j); \
-					if(atomcmp(next, nil) == 0)   \
-						continue;                 \
-					if(atomcmp(v, next)) {        \
-						if(rlimit == 0) {         \
-							j++;                  \
-							break;                \
-						}                         \
-						rlimit--;                 \
-						v = next;                 \
-					}                             \
-				}                                 \
-			*rb = j;                              \
-		}                                         \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_SECOND_PRECEDING(LIMIT) \
-	do {                                          \
-		for(; k<i; k++, rb++) {                   \
-			lng rlimit = (lng) LIMIT;             \
-			void *v = BUNtail(bpi, (BUN) k);      \
-			if(atomcmp(v, nil) == 0)              \
-				j = i;                            \
-			else                                  \
-				for(j=k+1; j<i; j++) {            \
-					void *next = BUNtail(bpi, (BUN) j); \
-					if(atomcmp(next, nil) == 0)   \
-						continue;                 \
-					if(atomcmp(v, next)) {        \
-						if(rlimit == 0)           \
-							break;                \
-						rlimit--;                 \
-						v = next;                 \
-					}                             \
-				}                                 \
-			*rb = j;                              \
-		}                                         \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FIRST_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FIRST_PRECEDING(LIMIT)
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_SECOND_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_SECOND_PRECEDING(LIMIT)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_PRECEDING(TPE, LIMIT) \
-	do {                      \
-		j = k;                \
-		for(; k<i; k++, rb++) \
-			*rb = j;          \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_FOLLOWING(TPE, LIMIT) \
-	do {                      \
-		for(; k<i; k++, rb++) \
-			*rb = i;          \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_PRECEDING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_PRECEDING(LIMIT, LIMIT)
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_FOLLOWING(LIMIT) ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_FOLLOWING(LIMIT, LIMIT)
-
-#define ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT) \
-	case TYPE_bit: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bit, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
-		break; \
-	case TYPE_bte: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
-		break; \
-	case TYPE_sht: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
-		break; \
-	case TYPE_int: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
-		break; \
-	case TYPE_lng: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
-		break; \
-
-#ifdef HAVE_HGE
-#define ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT) \
-	case TYPE_hge: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(hge, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
-		break;
-#else
-#define ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT)
-#endif
-
-#define ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT) \
-	case TYPE_flt: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(flt, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
-		break; \
-	case TYPE_dbl: \
-		ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED##FRAME##HALF, LIMIT); \
-		break; \
-
-#define ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT) \
-	if(preceding) { \
-		if (p) { \
-			pnp = np = (bit*)Tloc(p, 0); \
-			nend = np + cnt; \
-			for(; np<nend; np++) { \
-				if (*np) { \
-					i += (np - pnp); \
-					ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT); \
-					pnp = np; \
-				} \
-			} \
-			i += (np - pnp); \
-			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT); \
-		} else { \
-			i += (lng) cnt; \
-			ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_PRECEDING(LIMIT); \
-		} \
-	} else if (p) { \
-		pnp = np = (bit*)Tloc(p, 0); \
-		nend = np + cnt; \
-		for(; np<nend; np++) { \
-			if (*np) { \
-				i += (np - pnp); \
-				ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT); \
-				pnp = np; \
-			} \
-		} \
-		i += (np - pnp); \
-		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT); \
-	} else { \
-		i += (lng) cnt; \
-		ANALYTICAL_WINDOW_BOUNDS_VARSIZED##FRAME##HALF##_FOLLOWING(LIMIT); \
-	}
-
-#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(FRAME, HALF, LIMIT) \
-	do { \
-		switch(tp1) { \
-			ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT); \
-			ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT); \
-			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT); \
-			default: { \
-				ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT); \
-			} \
-		} \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM(FRAME, HALF, LIMIT) \
-	do { \
-		switch(tp1) { \
-			ANALYTICAL_WINDOW_BOUNDS_NUM(FRAME, HALF, LIMIT); \
-			ANALYTICAL_WINDOW_BOUNDS_HGE(FRAME, HALF, LIMIT); \
-			default: { \
-				ANALYTICAL_WINDOW_BOUNDS_OTHERS(FRAME, HALF, LIMIT); \
-			} \
-		} \
-	} while(0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP(FRAME, HALF, LIMIT) \
-	do { \
-		switch(tp1) { \
-			ANALYTICAL_WINDOW_BOUNDS_FP(FRAME, HALF, LIMIT); \
-			default: { \
-				goto logical_bound_not_supported; \
-			} \
-		} \
-	} while(0)
-
-#define NO_LIMIT ;
-
-#define ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(TPE, IMP) \
-	do { \
-		if (l) { /* dynamic bounds */ \
-			TPE *restrict limit = (TPE*) Tloc(l, 0); \
-			if(first_half) { \
-				IMP(_RANGE, _FIRST, limit[k]); \
-			} else { \
-				IMP(_RANGE, _SECOND, limit[k]); \
-			} \
-		} else { /* static bounds */ \
-			TPE limit = *((TPE*)bound); \
-			if (limit == GDK_##TPE##_max) { /* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */ \
-				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT); \
-			} else if(first_half) { \
-				IMP(_RANGE, _FIRST, limit);	\
-			} else { \
-				IMP(_RANGE, _SECOND, limit); \
-			} \
-		} \
-	} while(0)
-
-#define ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(TPE) \
-	do { \
-		if (l) { /* dynamic bounds */ \
-			TPE *restrict limit = (TPE*) Tloc(l, 0); \
-			if (unit == 0) { \
-				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _FIRST, limit[k]); \
-				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _SECOND, limit[k]); \
-				} \
-			} else if (unit == 2) { \
-				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _FIRST, limit[k]); \
-				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _SECOND, limit[k]); \
-				} \
-			} else { \
-				assert(0); \
-			} \
-		} else { /* static bounds */ \
-			TPE limit = *((TPE*)bound); \
-			if (unit == 0) { \
-				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _FIRST, limit); \
-				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ROWS, _SECOND, limit); \
-				} \
-			} else if (unit == 2) { \
-				if(first_half) { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _FIRST, limit); \
-				} else { \
-					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_GROUPS, _SECOND, limit); \
-				} \
-			} else { \
-				assert(0); \
-			} \
-		} \
-	} while(0)
-
-gdk_return
-GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit, bool preceding, lng first_half)
-{
-	BUN cnt = BATcount(b), nils = 0;
-	lng *restrict rb = (lng*) Tloc(r, 0), i = 0, k = 0, j = 0;
-	bit *np = p ? (bit*) Tloc(p, 0) : NULL, *pnp = np, *nend = np;
-	BATiter bpi = bat_iterator(b);
-	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp1);
-	const void* restrict nil = ATOMnilptr(tp1);
-	int abort_on_error = 1;
-
-	assert(unit >= 0 && unit <= 3);
-
-	if (unit == 3) { //special case, there are no boundaries
-		ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PHYSICAL(_ALL, _ALL, NO_LIMIT);
-	} else {
-		assert((!l && bound) || (l && !bound));
-		if(unit == 1) { /* on range frame, floating-point bounds are acceptable */
-			switch(tp2) {
-				case TYPE_bte:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(bte, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(sht, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
-					break;
-				case TYPE_int:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(int, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
-					break;
-				case TYPE_lng:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(lng, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
-					break;
-				case TYPE_flt:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(flt, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP); 
-					break;
-				case TYPE_dbl:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(dbl, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP);
-					break;
-#ifdef HAVE_HGE
-				case TYPE_hge:
-					ANALYTICAL_BOUNDS_BRANCHES_LOGICAL(hge, ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM);
-					break;
-#endif
-				default:
-					goto physical_bound_not_supported;
-			}
-		} else {
-			switch(tp2) {
-				case TYPE_bte:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(bte);
-					break;
-				case TYPE_sht:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(sht);
-					break;
-				case TYPE_int:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(int);
-					break;
-				case TYPE_lng:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(lng);
-					break;
-#ifdef HAVE_HGE
-				case TYPE_hge:
-					ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL(hge);
-					break;
-#endif
-				default:
-					goto physical_bound_not_supported;
-			}
-		}
-	}
-	BATsetcount(r, cnt);
-	r->tnonil = (nils == 0);
-	r->tnil = (nils > 0);
-	return GDK_SUCCEED;
-logical_bound_not_supported:
-	GDKerror("GDKanalyticalwindowbounds: range frame bound type %s not supported.\n", ATOMname(tp1));
-	return GDK_FAIL;
-physical_bound_not_supported:
-	assert(unit == 0 || unit == 2);
-	GDKerror("GDKanalyticalwindowbounds: %s frame bound type %s not supported.\n", (unit == 0) ? "rows" : "groups", ATOMname(tp2));
-	return GDK_FAIL;
-calc_overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	return GDK_FAIL;
-}
-
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_FIRST_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_SECOND_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ROWS_SECOND_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_SECOND_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FIRST_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_SECOND_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_SECOND_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_FIRST_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_SECOND_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_FIRST_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_SECOND_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ROWS_SECOND_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FIRST_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FIRST_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_SECOND_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FIRST_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_SECOND_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_FIRST_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_SECOND_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_PRECEDING
-#undef ANALYTICAL_WINDOW_BOUNDS_FIXED_ALL_ALL_FOLLOWING
-#undef ANALYTICAL_WINDOW_BOUNDS_VARSIZED_ALL_ALL_FOLLOWING
-#undef ANALYTICAL_BOUNDS_BRANCHES_LOGICAL
-#undef ANALYTICAL_BOUNDS_BRANCHES_PHYSICAL
-#undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_NUM
-#undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES_LOGICAL_FP
-#undef ANALYTICAL_WINDOW_BOUNDS_BRANCHES
-#undef ANALYTICAL_WINDOW_BOUNDS_NUM
-#undef ANALYTICAL_WINDOW_BOUNDS_HGE
-#undef ANALYTICAL_WINDOW_BOUNDS_FP
-#undef ANALYTICAL_WINDOW_BOUNDS_OTHERS
-#undef ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED
-#undef NO_LIMIT
-
 #define NTILE_CALC                    \
 	do {                              \
 		if(bval >= ncnt) {            \
@@ -712,7 +146,7 @@ calc_overflow:
 					j = 1;                   \
 					ncnt = np - pnp;         \
 					rp += ncnt;              \
-					NTILE_CALC;		 \
+					NTILE_CALC;              \
 					pnp = np;                \
 				}                            \
 			}                                \
@@ -720,10 +154,10 @@ calc_overflow:
 			j = 1;                           \
 			ncnt = np - pnp;                 \
 			rp += ncnt;                      \
-			NTILE_CALC;			 \
+			NTILE_CALC;                      \
 		} else {                             \
 			rp += cnt;                       \
-			NTILE_CALC;			 \
+			NTILE_CALC;                      \
 		}                                    \
 	} while(0)
 
@@ -764,9 +198,6 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void* restrict ntile)
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_NTILE_IMP
-#undef NTILE_CALC
-
 #define FIRST_CALC(TPE)            \
 	do {                           \
 		for (;rb < rp; rb++)       \
@@ -789,7 +220,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void* restrict ntile)
 					ncnt = (np - pnp);      \
 					rp += ncnt;             \
 					bp += ncnt;             \
-					FIRST_CALC(TPE);	\
+					FIRST_CALC(TPE);        \
 					curval = *bp;           \
 					pnp = np;               \
 				}                           \
@@ -797,22 +228,22 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, int tpe, const void* restrict ntile)
 			ncnt = (np - pnp);              \
 			rp += ncnt;                     \
 			bp += ncnt;                     \
-			FIRST_CALC(TPE);		\
+			FIRST_CALC(TPE);                \
 		} else {                            \
 			rp += cnt;                      \
-			FIRST_CALC(TPE);		\
+			FIRST_CALC(TPE);                \
 		}                                   \
 	} while(0)
 
-#define ANALYTICAL_FIRST_OTHERS                                         \
-	do {                                                                \
-		curval = BUNtail(bpi, j);                                       \
-		if (atomcmp(curval, nil) == 0)                                  \
-			has_nils = true;                                            \
-		for (;j < i; j++) {                                             \
-			if (BUNappend(r, curval, false) != GDK_SUCCEED)             \
-				goto allocation_error;                                  \
-		}                                                               \
+#define ANALYTICAL_FIRST_OTHERS                             \
+	do {                                                    \
+		curval = BUNtail(bpi, j);                           \
+		if (atomcmp(curval, nil) == 0)                      \
+			has_nils = true;                                \
+		for (;j < i; j++) {                                 \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
+				goto allocation_error;                      \
+		}                                                   \
 	} while(0)
 
 gdk_return
@@ -883,10 +314,6 @@ allocation_error:
 	return GDK_FAIL;
 }
 
-#undef ANALYTICAL_FIRST_IMP
-#undef FIRST_CALC
-#undef ANALYTICAL_FIRST_OTHERS
-
 #define LAST_CALC(TPE)             \
 	do {                           \
 		curval = *(bp - 1);        \
@@ -909,30 +336,30 @@ allocation_error:
 					ncnt = (np - pnp);      \
 					rp += ncnt;             \
 					bp += ncnt;             \
-					LAST_CALC(TPE);		\
+					LAST_CALC(TPE);         \
 					pnp = np;               \
 				}                           \
 			}                               \
 			ncnt = (np - pnp);              \
 			rp += ncnt;                     \
 			bp += ncnt;                     \
-			LAST_CALC(TPE);			\
+			LAST_CALC(TPE);                 \
 		} else {                            \
 			rp += cnt;                      \
 			bp += cnt;                      \
-			LAST_CALC(TPE);			\
+			LAST_CALC(TPE);                 \
 		}                                   \
 	} while(0)
 
-#define ANALYTICAL_LAST_OTHERS                                          \
-	do {                                                                \
-		curval = BUNtail(bpi, i - 1);                                   \
-		if (atomcmp(curval, nil) == 0)                                  \
-			has_nils = true;                                            \
-		for (;j < i; j++) {                                             \
-			if (BUNappend(r, curval, false) != GDK_SUCCEED)             \
-				goto allocation_error;                                  \
-		}                                                               \
+#define ANALYTICAL_LAST_OTHERS                              \
+	do {                                                    \
+		curval = BUNtail(bpi, i - 1);                       \
+		if (atomcmp(curval, nil) == 0)                      \
+			has_nils = true;                                \
+		for (;j < i; j++) {                                 \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
+				goto allocation_error;                      \
+		}                                                   \
 	} while(0)
 
 gdk_return
@@ -1003,10 +430,6 @@ allocation_error:
 	return GDK_FAIL;
 }
 
-#undef ANALYTICAL_LAST_IMP
-#undef LAST_CALC
-#undef ANALYTICAL_LAST_OTHERS
-
 #define NTHVALUE_CALC(TPE)         \
 	do {                           \
 		if(nth > (BUN) (bp - pbp)) \
@@ -1045,11 +468,11 @@ allocation_error:
 			ncnt = (np - pnp);           \
 			rp += ncnt;                  \
 			bp += ncnt;                  \
-			NTHVALUE_CALC(TPE);	     \
+			NTHVALUE_CALC(TPE);          \
 		} else {                         \
 			rp += cnt;                   \
 			bp += cnt;                   \
-			NTHVALUE_CALC(TPE);	     \
+			NTHVALUE_CALC(TPE);          \
 		}                                \
 	} while(0)
 
@@ -1138,10 +561,6 @@ allocation_error:
 	return GDK_FAIL;
 }
 
-#undef ANALYTICAL_NTHVALUE_IMP
-#undef NTHVALUE_CALC
-#undef ANALYTICAL_NTHVALUE_OTHERS
-
 #define ANALYTICAL_LAG_CALC(TPE)            \
 	do {                                    \
 		for(i=0; i<lag && rb<rp; i++, rb++) \
@@ -1174,34 +593,34 @@ allocation_error:
 				if (*np) {                        \
 					ncnt = (np - pnp);            \
 					rp += ncnt;                   \
-					ANALYTICAL_LAG_CALC(TPE);      \
+					ANALYTICAL_LAG_CALC(TPE);     \
 					bp += (lag < ncnt) ? lag : 0; \
 					pnp = np;                     \
 				}                                 \
 			}                                     \
 			rp += (np - pnp);                     \
-			ANALYTICAL_LAG_CALC(TPE);              \
+			ANALYTICAL_LAG_CALC(TPE);             \
 		} else {                                  \
 			rp += cnt;                            \
-			ANALYTICAL_LAG_CALC(TPE);              \
+			ANALYTICAL_LAG_CALC(TPE);             \
 		}                                         \
 	} while(0)
 
-#define ANALYTICAL_LAG_OTHERS                                                  \
-	do {                                                                       \
-		for(i=0; i<lag && k<j; i++, k++) {                                     \
-			if (BUNappend(r, default_value, false) != GDK_SUCCEED)             \
-				goto allocation_error;                                         \
-		}                                                                      \
-		if(lag > 0 && atomcmp(default_value, nil) == 0)                        \
-			has_nils = true;                                                   \
-		for(l=k-lag; k<j; k++, l++) {                                          \
-			curval = BUNtail(bpi, l);                                          \
-			if (BUNappend(r, curval, false) != GDK_SUCCEED)                    \
-				goto allocation_error;                                         \
-			if (atomcmp(curval, nil) == 0)                                     \
-				has_nils = true;                                               \
-		}                                                                      \
+#define ANALYTICAL_LAG_OTHERS                                      \
+	do {                                                           \
+		for(i=0; i<lag && k<j; i++, k++) {                         \
+			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
+				goto allocation_error;                             \
+		}                                                          \
+		if(lag > 0 && atomcmp(default_value, nil) == 0)            \
+			has_nils = true;                                       \
+		for(l=k-lag; k<j; k++, l++) {                              \
+			curval = BUNtail(bpi, l);                              \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED)        \
+				goto allocation_error;                             \
+			if (atomcmp(curval, nil) == 0)                         \
+				has_nils = true;                                   \
+		}                                                          \
 	} while (0)
 
 gdk_return
@@ -1277,10 +696,6 @@ allocation_error:
 	return GDK_FAIL;
 }
 
-#undef ANALYTICAL_LAG_IMP
-#undef ANALYTICAL_LAG_CALC
-#undef ANALYTICAL_LAG_OTHERS
-
 #define LEAD_CALC(TPE)                       \
 	do {                                     \
 		if(lead < ncnt) {                    \
@@ -1319,40 +734,40 @@ allocation_error:
 				if (*np) {                        \
 					ncnt = (np - pnp);            \
 					rp += ncnt;                   \
-					LEAD_CALC(TPE);		      \
+					LEAD_CALC(TPE);               \
 					pnp = np;                     \
 				}                                 \
 			}                                     \
 			ncnt = (np - pnp);                    \
 			rp += ncnt;                           \
-			LEAD_CALC(TPE);			      \
+			LEAD_CALC(TPE);                       \
 		} else {                                  \
 			ncnt = cnt;                           \
 			rp += ncnt;                           \
-			LEAD_CALC(TPE);			      \
+			LEAD_CALC(TPE);                       \
 		}                                         \
 	} while(0)
 
-#define ANALYTICAL_LEAD_OTHERS                                                 \
-	do {                                                                       \
-		j += ncnt;                                                             \
-		if(lead < ncnt) {                                                      \
-			m = ncnt - lead;                                                   \
-			for(i=0,n=k+lead; i<m; i++, n++) {                                 \
-				curval = BUNtail(bpi, n);                                      \
-				if (BUNappend(r, curval, false) != GDK_SUCCEED)                \
-					goto allocation_error;                                     \
-				if (atomcmp(curval, nil) == 0)                                 \
-					has_nils = true;                                           \
-			}                                                                  \
-			k += i;                                                            \
-		}                                                                      \
-		for(; k<j; k++) {                                                      \
-			if (BUNappend(r, default_value, false) != GDK_SUCCEED)             \
-				goto allocation_error;                                         \
-		}                                                                      \
-		if(lead > 0 && atomcmp(default_value, nil) == 0)                       \
-			has_nils = true;                                                   \
+#define ANALYTICAL_LEAD_OTHERS                                     \
+	do {                                                           \
+		j += ncnt;                                                 \
+		if(lead < ncnt) {                                          \
+			m = ncnt - lead;                                       \
+			for(i=0,n=k+lead; i<m; i++, n++) {                     \
+				curval = BUNtail(bpi, n);                          \
+				if (BUNappend(r, curval, false) != GDK_SUCCEED)    \
+					goto allocation_error;                         \
+				if (atomcmp(curval, nil) == 0)                     \
+					has_nils = true;                               \
+			}                                                      \
+			k += i;                                                \
+		}                                                          \
+		for(; k<j; k++) {                                          \
+			if (BUNappend(r, default_value, false) != GDK_SUCCEED) \
+				goto allocation_error;                             \
+		}                                                          \
+		if(lead > 0 && atomcmp(default_value, nil) == 0)           \
+			has_nils = true;                                       \
 	} while(0)
 
 gdk_return
@@ -1428,10 +843,6 @@ allocation_error:
 	GDKerror("GDKanalyticallead: malloc failure\n");
 	return GDK_FAIL;
 }
-
-#undef ANALYTICAL_LEAD_IMP
-#undef LEAD_CALC
-#undef ANALYTICAL_LEAD_OTHERS
 
 #define ANALYTICAL_MIN_MAX_CALC(TPE, OP)        \
 	do {                                        \
@@ -1537,10 +948,6 @@ allocation_error: \
 
 ANALYTICAL_MIN_MAX(min, MIN, >)
 ANALYTICAL_MIN_MAX(max, MAX, <)
-
-#undef ANALYTICAL_MIN_MAX_CALC
-#undef ANALYTICAL_MIN_MAX_LIMIT
-#undef ANALYTICAL_MIN_MAX
 
 #define ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP(TPE) \
 	do {                                            \
@@ -1663,9 +1070,6 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 	return GDK_SUCCEED;
 }
 
-#undef ANALYTICAL_COUNT_NO_NIL_FIXED_SIZE_IMP
-#undef ANALYTICAL_COUNT_NO_NIL_STR_IMP
-
 #define ANALYTICAL_SUM_IMP_NUM(TPE1, TPE2)      \
 	do {                                        \
 		TPE1 *bs, *be, v;                       \
@@ -1696,7 +1100,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 		for(; i<cnt; i++, rb++) {               \
 			if(end[i] > start[i]) {             \
 				bs = bp + start[i];             \
-				parcel = (end[i] - start[i]);   \
+				parcel = (BUN)(end[i] - start[i]); \
 				if(dofsum(bs, 0, 0, parcel, &curval, 1, TYPE_##TPE1, TYPE_##TPE2, NULL, NULL, NULL, 0, 0, true, false, \
 					  	  true, "GDKanalyticalsum") == BUN_NONE) { \
 					goto bailout;               \
@@ -1715,7 +1119,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 		TPE1 *bp = (TPE1*)Tloc(b, 0);           \
 		TPE2 *restrict rb, curval = TPE2##_nil; \
 		rb = (TPE2*)Tloc(r, 0);                 \
-		IMP(TPE1, TPE2);			\
+		IMP(TPE1, TPE2);                        \
 	} while(0)
 
 gdk_return
@@ -1853,10 +1257,6 @@ calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	return GDK_FAIL;
 }
-
-#undef ANALYTICAL_SUM_IMP_NUM
-#undef ANALYTICAL_SUM_IMP_FP
-#undef ANALYTICAL_SUM_CALC
 
 #define ANALYTICAL_PROD_CALC_NUM(TPE1, TPE2, TPE3) \
 	do {                                          \
@@ -2093,10 +1493,6 @@ calc_overflow:
 	return GDK_FAIL;
 }
 
-#undef ANALYTICAL_PROD_CALC_NUM
-#undef ANALYTICAL_PROD_CALC_NUM_LIMIT
-#undef ANALYTICAL_PROD_CALC_FP
-
 #define ANALYTICAL_AVERAGE_CALC_NUM(TPE,lng_hge)      \
 	do {                                              \
 		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v, a = 0; \
@@ -2221,7 +1617,3 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
 }
-
-#undef ANALYTICAL_AVERAGE_LNG_HGE
-#undef ANALYTICAL_AVERAGE_CALC_NUM
-#undef ANALYTICAL_AVERAGE_CALC_FP
