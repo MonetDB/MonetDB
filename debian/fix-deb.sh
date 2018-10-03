@@ -69,3 +69,15 @@ trusty)
     sed -i '/^libmapi_la_LIBADD/s/$/ $(openssl_LIBS)/' clients/mapilib/Makefile.am clients/mapilib/Makefile.in
     ;;
 esac
+
+case $SUITE in
+cosmic)
+    # libbam is not available as a shared object (also true for older
+    # version) and this means that on 18.10 the libmonetdb5-server-bam
+    # package cannot be compiled on amd64
+    sed -i -e 's/libbam-dev, //' \
+	-e '/^Package: libmonetdb5-server-bam/,/^$/d' debian/control
+    sed -i '/samtools=yes/s/yes/no/' debian/rules
+    rm debian/libmonetdb5-server-bam.install
+    ;;
+esac
