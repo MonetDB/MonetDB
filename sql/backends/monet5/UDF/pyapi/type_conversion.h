@@ -24,12 +24,12 @@
 //! Copies the string of size up to max_size from the source to the destination,
 //! returns FALSE if "source" is not a legal ASCII string (i.e. a character is
 //! >= 128)
-bool string_copy(char *source, char *dest, size_t max_size, bool allow_unicode);
+bool string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode);
 #ifdef HAVE_HGE
 //! Converts a hge to a string and writes it into the string "str"
 int hge_to_string(char *str, hge);
 //! Converts a base-10 string to a hge value
-str str_to_hge(char *ptr, size_t maxsize, hge *value);
+str str_to_hge(const char *ptr, size_t maxsize, hge *value);
 //! Converts a base-10 utf32-encoded string to a hge value
 str unicode_to_hge(Py_UNICODE *utf32, size_t maxsize, hge *value);
 //! Converts a PyObject to a hge value
@@ -48,7 +48,7 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value);
 
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
-    str str_to_##tpe(char *ptr, size_t maxsize, tpe *value);          \
+    str str_to_##tpe(const char *ptr, size_t maxsize, tpe *value);          \
     str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value);                  \
     str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);
 
