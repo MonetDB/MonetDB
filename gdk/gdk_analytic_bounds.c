@@ -761,7 +761,8 @@ bound_not_supported:
 }
 
 gdk_return
-GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit, bool preceding, lng first_half)
+GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit,
+						  bool preceding, lng first_half)
 {
 	switch(unit) {
 		case 0:

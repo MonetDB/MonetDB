@@ -4752,6 +4752,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			frame_type = FRAME_ALL; //special case, iterate the entire partition
 		}
 
+		//SQL keyword case
 		if((rstart->token == SQL_PRECEDING || rstart->token == SQL_FOLLOWING || rstart->token == SQL_CURRENT_ROW) && rstart->type == type_int) {
 			atom *a = NULL;
 			st = exp_subtype(ie);
@@ -4771,7 +4772,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				assert(0);
 			}
 			fstart = exp_atom(sql->sa, a);
-		} else {
+		} else { //arbitrary expression case
 			is_last = 0;
 			fstart = rel_value_exp2(sql, &p, rstart, f, ek, &is_last);
 			if(!fstart)
@@ -4817,7 +4818,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
 								   wstart->token, wend->token) == NULL)
 			return NULL;
-	} else if (aggr) {
+	} else if (aggr) { //for aggregations with no frame clause, we use the standard default values
 		sql_exp *ie = obe ? obe->t->data : in;
 		sql_subtype *it = sql_bind_localtype("int"), *st = exp_subtype(ie);
 		unsigned char sclass = st->type->eclass;

@@ -1,0 +1,19 @@
+create table testing (aa int, bb int, cc bigint);
+insert into testing values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 0, NULL), (3, 0, 3), (4, 1, 4), (6, 3, 6), (8, 0, 8), (NULL, 4, NULL);
+
+start transaction;
+
+select count(aa) over (partition by bb), 75 + count(aa) over (partition by bb) from testing where bb <> 1;
+
+with relation as (select row_number() over () as dd, aa, bb from testing where bb <> 1)
+select aa, bb, dd,
+       count(aa) over (partition by bb rows between dd preceding and current row),
+       count(aa) over (partition by bb rows between dd preceding and dd following),
+       count(aa) over (partition by bb rows between dd + 1 preceding and dd preceding) from relation where bb <> 1;
+
+rollback;
+
+select max(aa) over (partition by bb rows 'something' preceding) from testing; --error
+select max(distinct aa) over (partition by bb) from testing; --error
+
+drop table testing;
