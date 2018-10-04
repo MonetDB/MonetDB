@@ -28,7 +28,7 @@ case $# in
 	exit 1
     fi
     ;;
-1)
+1|2)
     # we're passed the name of the distribution
     SUITE=$1
     ;;
