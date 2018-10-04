@@ -1,3 +1,3 @@
-debian/tmp/usr/lib/libmonetdb5.so usr/lib
+debian/tmp/usr/lib/x86_64-linux-gnu/libmonetdb5.so usr/lib/x86_64-linux-gnu
 debian/tmp/usr/include/monetdb/mal*.h usr/include/monetdb
-debian/tmp/usr/lib/pkgconfig/monetdb5.pc usr/lib/pkgconfig
+debian/tmp/usr/lib/x86_64-linux-gnu/pkgconfig/monetdb5.pc usr/lib/x86_64-linux-gnu/pkgconfig
