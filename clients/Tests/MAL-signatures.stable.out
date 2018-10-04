@@ -5,10 +5,10 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 # 21:44:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33053" "--set" "mapi_usock=/var/tmp/mtest-13793/.s.monetdb.33053" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/sjoerd/Monet-devel/var/MonetDB/mTests_clients" "--set" "mal_listing=2" "--set" "embedded_r=yes"
 # 21:44:50 >  
 
-# MonetDB 5 server v11.20.0
+# MonetDB 5 server v11.32.0
 # This is an unreleased version
 # Serving database 'mTests_clients', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Compiled for x86_64-unknown-linux-gnu/64bit
 # Found 15.386 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
@@ -5511,26 +5511,50 @@ Ready.
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:bte]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:bte], s:bat[:oid]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:bte], s:bat[:oid]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:bte], s:bat[:oid], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:bte], s:bat[:oid], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:bte], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:bte], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:dbl]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:dbl]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:dbl], s:bat[:oid]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:dbl], s:bat[:oid]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:dbl], s:bat[:oid], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:dbl], s:bat[:oid], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:dbl], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:dbl], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:flt]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:flt]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:flt], s:bat[:oid]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:flt], s:bat[:oid]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:flt], s:bat[:oid], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:flt], s:bat[:oid], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:flt], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:flt], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:int]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:int]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:int], s:bat[:oid]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:int], s:bat[:oid]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:int], s:bat[:oid], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:int], s:bat[:oid], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:int], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:int], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:lng]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:lng]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:lng], s:bat[:oid]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:lng], s:bat[:oid]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:lng], s:bat[:oid], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:lng], s:bat[:oid], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:lng], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:lng], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], s:bat[:oid]) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
 [ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], s:bat[:oid]):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], s:bat[:oid], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B with candidates list"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], s:bat[:oid], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], scale:int) (X_0:dbl, X_1:lng) ",	"CMDcalcavg;",	"average and number of non-nil values of B"	]
+[ "batcalc",	"avg",	"pattern batcalc.avg(b:bat[:sht], scale:int):dbl ",	"CMDcalcavg;",	"average of non-nil values of B with candidates list"	]
 [ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:any_1, hi:any_1):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive"	]
 [ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:any_1, hi:any_1, s:bat[:oid]):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive with candidates list"	]
 [ "batcalc",	"between",	"pattern batcalc.between(b:bat[:any_1], lo:any_1, hi:bat[:any_1]):bat[:bit] ",	"CMDbatBETWEEN;",	"B between LO and HI inclusive"	]
