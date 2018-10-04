@@ -16,10 +16,6 @@ stdout of test 'spaceissue` in directory 'sql/test/json` itself:
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:35515/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10039/.s.monetdb.35515
 # MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -48,8 +44,9 @@ Ready.
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
-#Bulk operator required for json.text
-#Bulk operator required for json.text
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 11:04:49 >  
 # 11:04:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10039" "--port=35515"

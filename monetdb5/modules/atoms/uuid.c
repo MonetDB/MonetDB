@@ -37,7 +37,12 @@
 #endif
 #define UUID_STRLEN	36			/* length of string representation */
 
-typedef struct {
+typedef union {
+#ifdef HAVE_HGE
+	hge h;						/* force alignment, not otherwise used */
+#else
+	lng l[2];					/* force alignment, not otherwise used */
+#endif
 #ifdef HAVE_UUID
 	uuid_t u;
 #else
@@ -141,7 +146,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval)
 				goto bailout;
 			s++;
 		}
-		if ('0' <= *s && *s <= '9')
+		if (isdigit((unsigned char) *s))
 			(*retval)->u[i] = *s - '0';
 		else if ('a' <= *s && *s <= 'f')
 			(*retval)->u[i] = *s - 'a' + 10;
@@ -152,7 +157,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval)
 		s++;
 		j++;
 		(*retval)->u[i] <<= 4;
-		if ('0' <= *s && *s <= '9')
+		if (isdigit((unsigned char) *s))
 			(*retval)->u[i] |= *s - '0';
 		else if ('a' <= *s && *s <= 'f')
 			(*retval)->u[i] |= *s - 'a' + 10;

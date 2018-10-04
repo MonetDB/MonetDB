@@ -1,0 +1,174 @@
+stdout of test 'mergepart18` in directory 'sql/test/merge-partitions` itself:
+
+
+# 14:11:23 >  
+# 14:11:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32333" "--set" "mapi_usock=/var/tmp/mtest-9747/.s.monetdb.32333" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 14:11:23 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:32333/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9747/.s.monetdb.32333
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 14:11:23 >  
+# 14:11:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9747" "--port=32333"
+# 14:11:23 >  
+
+#CREATE MERGE TABLE updateme (a int, b varchar(32)) PARTITION BY RANGE (a);
+#CREATE TABLE subt1 (a int, b varchar(32));
+#CREATE TABLE subt2 (a int, b varchar(32));
+#ALTER TABLE updateme ADD TABLE subt2 AS PARTITION BETWEEN '201' AND '300';
+#ALTER TABLE updateme ADD TABLE subt1 AS PARTITION BETWEEN '1' AND '100';
+#SELECT minimum, maximum, with_nulls FROM range_partitions;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum,	with_nulls # name
+% varchar,	varchar,	boolean # type
+% 3,	3,	5 # length
+[ "201",	"300",	false	]
+[ "1",	"100",	false	]
+#INSERT INTO updateme VALUES (1, 'first');
+[ 1	]
+#INSERT INTO subt1 VALUES (1, 'first');
+[ 1	]
+#SELECT a, b FROM updateme;
+% .updateme,	.updateme # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	5 # length
+[ 1,	"first"	]
+[ 1,	"first"	]
+#SELECT a, b FROM subt1;
+% sys.subt1,	sys.subt1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	5 # length
+[ 1,	"first"	]
+[ 1,	"first"	]
+#SELECT a, b FROM subt2;
+% sys.subt2,	sys.subt2 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	0 # length
+#DELETE FROM updateme;
+[ 2	]
+#ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '-100' AND '0';
+#SELECT minimum, maximum, with_nulls FROM range_partitions;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum,	with_nulls # name
+% varchar,	varchar,	boolean # type
+% 4,	3,	5 # length
+[ "201",	"300",	false	]
+[ "-100",	"0",	false	]
+#INSERT INTO updateme VALUES (0, 'second'), (201, 'other table');
+[ 2	]
+#INSERT INTO subt1 VALUES (0, 'second');
+[ 1	]
+#START TRANSACTION;
+#ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '0' AND '200';
+#SELECT minimum, maximum, with_nulls FROM range_partitions;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum,	with_nulls # name
+% varchar,	varchar,	boolean # type
+% 3,	3,	5 # length
+[ "201",	"300",	false	]
+[ "0",	"200",	false	]
+#INSERT INTO updateme VALUES (199, 'third');
+[ 1	]
+#ROLLBACK;
+#SELECT minimum, maximum, with_nulls FROM range_partitions;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum,	with_nulls # name
+% varchar,	varchar,	boolean # type
+% 4,	3,	5 # length
+[ "201",	"300",	false	]
+[ "-100",	"0",	false	]
+#INSERT INTO updateme VALUES (-50, 'fifth');
+[ 1	]
+#INSERT INTO subt1 VALUES (-50, 'fifth');
+[ 1	]
+#SELECT a, b FROM updateme;
+% .updateme,	.updateme # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	11 # length
+[ 201,	"other table"	]
+[ 0,	"second"	]
+[ 0,	"second"	]
+[ -50,	"fifth"	]
+[ -50,	"fifth"	]
+#SELECT a, b FROM subt1;
+% sys.subt1,	sys.subt1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	6 # length
+[ 0,	"second"	]
+[ 0,	"second"	]
+[ -50,	"fifth"	]
+[ -50,	"fifth"	]
+#SELECT a, b FROM subt2;
+% sys.subt2,	sys.subt2 # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	11 # length
+[ 201,	"other table"	]
+#ALTER TABLE updateme DROP TABLE subt1;
+#ALTER TABLE updateme DROP TABLE subt2;
+#DROP TABLE subt1;
+#DROP TABLE subt2;
+#DROP TABLE updateme;
+
+# 14:11:24 >  
+# 14:11:24 >  "Done."
+# 14:11:24 >  
+

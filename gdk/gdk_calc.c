@@ -1012,6 +1012,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s, int projected)
 	BINARY_GENERIC_FUNC(MINF, cmp, nil);
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1067,6 +1068,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s, int projected)
 	BINARY_GENERIC_FUNC(MIN_NO_NIL, cmp, nil);
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1123,6 +1125,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	UNARY_GENERIC_FUNC(MINCF, cmp, nil);
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1196,6 +1199,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	UNARY_GENERIC_FUNC(MINC_NO_NIL, cmp, nil);
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1259,6 +1263,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s, int projected)
 	BINARY_GENERIC_FUNC(MAXF, cmp, nil);
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1314,6 +1319,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s, int projected)
 	BINARY_GENERIC_FUNC(MAX_NO_NIL, cmp, nil);
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1370,6 +1376,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	UNARY_GENERIC_FUNC(MAXCF, cmp, nil);
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1443,6 +1450,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	UNARY_GENERIC_FUNC(MAXC_NO_NIL, cmp, nil);
 
 	BATsetcount(bn, cnt);
+	bn->theap.dirty = true;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
@@ -1479,7 +1487,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 		const TYPE2 *src2, const TYPE2 *v2p,			\
 		TYPE3 *restrict dst, const oid *restrict cand,		\
 		BUN start, BUN cnt, oid hoff, TYPE3 max,		\
-		int projected, int abort_on_error)			\
+		int projected, bool abort_on_error)			\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -1515,7 +1523,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 		const TYPE2 *src2, const TYPE2 *v2p,			\
 		TYPE3 *restrict dst, const oid *restrict cand,		\
 		BUN start, BUN cnt, oid hoff, TYPE3 max,		\
-		int projected, int abort_on_error)			\
+		int projected, bool abort_on_error)			\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -1780,7 +1788,7 @@ ADD_3TYPE(dbl, dbl, dbl, F)
 static BUN
 addswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict dst, int tp,
 	  const void *v1p, const void *v2p, oid hoff, BUN start, BUN cnt,
-	  const oid *restrict cand, int abort_on_error, int projected,
+	  const oid *restrict cand, bool abort_on_error, int projected,
 	  const char *func)
 {
 	switch (tp1) {
@@ -2460,9 +2468,8 @@ addswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict d
 /* like ADDSTR, but s2 is implicit, constant, and not NIL, and l2 is
  * already calculated */
 #define ADDSTR2(s1)	(strcmp(s1, str_nil) == 0 ? str_nil : (((l1 = strlen(s1)) + l2 >= slen ? (slen = l1 + l2 + 1024, GDKfree(buf), buf = GDKmalloc(slen)) : buf) ? strcpy(strcpy(buf, s1) + l1, p2) - l1 : NULL))
-
 BAT *
-BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
+BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -2525,7 +2532,7 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
 }
 
 BAT *
-BATcalcaddcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
+BATcalcaddcst(BAT *b, const ValRecord *v2, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -2599,7 +2606,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstadd(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstadd(const ValRecord *v1, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -2674,7 +2681,7 @@ BATcalccstadd(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 
 	if (ret->vtype == TYPE_str) {
@@ -2707,9 +2714,8 @@ VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
-
 BAT *
-BATcalcincr(BAT *b, BAT *s, int abort_on_error)
+BATcalcincr(BAT *b, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -2743,7 +2749,7 @@ BATcalcincr(BAT *b, BAT *s, int abort_on_error)
 }
 
 gdk_return
-VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error)
+VARcalcincr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 {
 	bte one = 1;
 
@@ -2763,7 +2769,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 		const TYPE2 *src2, const TYPE2 *v2p,			\
 		TYPE3 *restrict dst, const oid *restrict cand,		\
 		BUN start, BUN cnt, oid hoff, TYPE3 max,		\
-		int projected, int abort_on_error)			\
+		int projected, bool abort_on_error)			\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -2799,7 +2805,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 		const TYPE2 *src2, const TYPE2 *v2p,			\
 		TYPE3 *restrict dst, const oid *restrict cand,		\
 		BUN start, BUN cnt, oid hoff, TYPE3 max,		\
-		int projected, int abort_on_error)			\
+		int projected, bool abort_on_error)			\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -3064,7 +3070,7 @@ SUB_3TYPE(dbl, dbl, dbl, F)
 static BUN
 subswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict dst, int tp,
 	  const void *v1p, const void *v2p, oid hoff, BUN start, BUN cnt,
-	  const oid *restrict cand, int abort_on_error, int projected,
+	  const oid *restrict cand, bool abort_on_error, int projected,
 	  const char *func)
 {
 	switch (tp1) {
@@ -3735,7 +3741,7 @@ subswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict d
 }
 
 BAT *
-BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
+BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -3767,7 +3773,7 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
 }
 
 BAT *
-BATcalcsubcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
+BATcalcsubcst(BAT *b, const ValRecord *v2, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -3800,7 +3806,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstsub(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstsub(const ValRecord *v1, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -3834,7 +3840,7 @@ BATcalccstsub(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 
 	if (subswitch(NULL, lft->vtype, NULL, rgt->vtype, VALget(ret),
@@ -3845,7 +3851,7 @@ VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 }
 
 BAT *
-BATcalcdecr(BAT *b, BAT *s, int abort_on_error)
+BATcalcdecr(BAT *b, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -3879,7 +3885,7 @@ BATcalcdecr(BAT *b, BAT *s, int abort_on_error)
 }
 
 gdk_return
-VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
+VARcalcdecr(ValPtr ret, const ValRecord *v, bool abort_on_error)
 {
 	bte one = 1;
 
@@ -3899,7 +3905,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 		const TYPE2 *src2, const TYPE2 *v2p,			\
 		TYPE3 *restrict dst, const oid *restrict cand,		\
 		BUN start, BUN cnt, oid hoff, TYPE3 max,		\
-		int projected, int abort_on_error)			\
+		int projected, bool abort_on_error)			\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -3929,7 +3935,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 		const TYPE2 *src2, const TYPE2 *v2p,			\
 		TYPE3 *restrict dst, const oid *restrict cand,		\
 		BUN start, BUN cnt, oid hoff, TYPE3 max,		\
-		int projected, int abort_on_error)					\
+		int projected, bool abort_on_error)					\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -3965,7 +3971,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *src1, const TYPE1 *v1p,	\
 			    const TYPE2 *src2, const TYPE2 *v2p,	\
 			    lng *restrict dst, const oid *restrict cand, \
 			    BUN start, BUN cnt, oid hoff, lng max,	\
-			    int projected, int abort_on_error)		\
+			    int projected, bool abort_on_error)		\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -3997,7 +4003,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *src1, const TYPE1 *v1p,	\
 			    const TYPE2 *src2, const TYPE2 *v2p,	\
 			    hge *restrict dst, const oid *restrict cand, \
 			    BUN start, BUN cnt, oid hoff, hge max,	\
-			    int projected, int abort_on_error)		\
+			    int projected, bool abort_on_error)		\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -4029,7 +4035,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 		const TYPE2 *src2, const TYPE2 *v2p,			\
 		TYPE3 *restrict dst, const oid *restrict cand,		\
 		BUN start, BUN cnt, oid hoff, TYPE3 max,		\
-			    int projected, int abort_on_error)		\
+			    int projected, bool abort_on_error)		\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -4300,7 +4306,7 @@ MUL_3TYPE_float(dbl, dbl, dbl)
 static BUN
 mulswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict dst, int tp,
 	  const void *v1p, const void *v2p, oid hoff, BUN start, BUN cnt,
-	  const oid *restrict cand, int abort_on_error, int projected,
+	  const oid *restrict cand, bool abort_on_error, int projected,
 	  const char *func)
 {
 	switch (tp1) {
@@ -4972,7 +4978,7 @@ mulswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict d
 }
 
 BAT *
-BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
+BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -5004,7 +5010,7 @@ BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
 }
 
 BAT *
-BATcalcmulcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
+BATcalcmulcst(BAT *b, const ValRecord *v2, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -5050,7 +5056,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstmul(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstmul(const ValRecord *v1, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -5097,7 +5103,7 @@ BATcalccstmul(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 
 	if (mulswitch(NULL, lft->vtype, NULL, rgt->vtype, VALget(ret),
@@ -5116,7 +5122,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 				const TYPE2 *src2, const TYPE2 *v2p,	\
 				TYPE3 *restrict dst, const oid *restrict cand, \
 				BUN start, BUN cnt, oid hoff, TYPE3 max, \
-				int projected, int abort_on_error)	\
+				int projected, bool abort_on_error)	\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -5157,7 +5163,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 				const TYPE2 *src2, const TYPE2 *v2p,	\
 				TYPE3 *restrict dst, const oid *restrict cand, \
 				BUN start, BUN cnt, oid hoff, TYPE3 max, \
-				int projected, int abort_on_error)	\
+				int projected, bool abort_on_error)	\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -5198,7 +5204,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 				const TYPE2 *src2, const TYPE2 *v2p,	\
 				TYPE3 *restrict dst, const oid *restrict cand, \
 				BUN start, BUN cnt, oid hoff, TYPE3 max, \
-				int projected, int abort_on_error)	\
+				int projected, bool abort_on_error)	\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -5483,7 +5489,7 @@ DIV_3TYPE_float(dbl, dbl, dbl)
 static BUN
 divswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict dst, int tp,
 	  const void *v1p, const void *v2p, oid hoff, BUN start, BUN cnt,
-	  const oid *restrict cand, int abort_on_error, int projected,
+	  const oid *restrict cand, bool abort_on_error, int projected,
 	  const char *func)
 {
 	BUN nils = 0;
@@ -6408,7 +6414,7 @@ divswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict d
 }
 
 BAT *
-BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
+BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -6440,7 +6446,7 @@ BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
 }
 
 BAT *
-BATcalcdivcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
+BATcalcdivcst(BAT *b, const ValRecord *v2, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -6485,7 +6491,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstdiv(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstdiv(const ValRecord *v1, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -6517,7 +6523,7 @@ BATcalccstdiv(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 
 	if (divswitch(NULL, lft->vtype, NULL, rgt->vtype, VALget(ret),
@@ -6536,7 +6542,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 				const TYPE2 *src2, const TYPE2 *v2p,	\
 				TYPE3 *restrict dst, const oid *restrict cand, \
 				BUN start, BUN cnt, oid hoff,		\
-				int projected, int abort_on_error)	\
+				int projected, bool abort_on_error)	\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -6571,7 +6577,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 				const TYPE2 *src2, const TYPE2 *v2p,	\
 				TYPE3 *restrict dst, const oid *restrict cand, \
 				BUN start, BUN cnt, oid hoff,		\
-				int projected, int abort_on_error)	\
+				int projected, bool abort_on_error)	\
 {									\
 	TYPE1 v1 = v1p ? *v1p : 0;					\
 	TYPE2 v2 = v2p ? *v2p : 0;					\
@@ -6822,7 +6828,7 @@ FMOD_3TYPE(dbl, dbl, dbl, fmod)
 static BUN
 modswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict dst, int tp,
 	  const void *v1p, const void *v2p, oid hoff, BUN start, BUN cnt,
-	  const oid *restrict cand, int abort_on_error, int projected,
+	  const oid *restrict cand, bool abort_on_error, int projected,
 	  const char *func)
 {
 	BUN nils = 0;
@@ -7632,7 +7638,7 @@ modswitch(const void *src1, int tp1, const void *src2, int tp2, void *restrict d
 }
 
 BAT *
-BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
+BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -7664,7 +7670,7 @@ BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected)
 }
 
 BAT *
-BATcalcmodcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
+BATcalcmodcst(BAT *b, const ValRecord *v2, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -7694,7 +7700,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v2, BAT *s, int tp, int abort_on_error)
 }
 
 BAT *
-BATcalccstmod(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
+BATcalccstmod(const ValRecord *v1, BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -7725,7 +7731,7 @@ BATcalccstmod(const ValRecord *v1, BAT *b, BAT *s, int tp, int abort_on_error)
 
 gdk_return
 VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
-	   int abort_on_error)
+	   bool abort_on_error)
 {
 
 	if (modswitch(NULL, lft->vtype, NULL, rgt->vtype, VALget(ret),
@@ -8239,7 +8245,7 @@ static BUN
 lshswitch(int tp1, const void *src1, const void *v1p,
 	  int tp2, const void *src2, const void *v2p,
 	  void *restrict dst, oid hoff, BUN start, BUN cnt,
-	  const oid *restrict cand, int abort_on_error, int projected,
+	  const oid *restrict cand, bool abort_on_error, int projected,
 	  const char *func)
 {
 	BUN nils = 0;
@@ -8372,7 +8378,7 @@ lshswitch(int tp1, const void *src1, const void *v1p,
 }
 
 BAT *
-BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error, int projected)
+BATcalclsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -8405,7 +8411,7 @@ BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error, int projected)
 }
 
 BAT *
-BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
+BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -8440,7 +8446,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 }
 
 BAT *
-BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
+BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -8475,7 +8481,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 }
 
 gdk_return
-VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
+VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool abort_on_error)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
 		GDKerror("%s: incompatible input types.\n", __func__);
@@ -8500,7 +8506,7 @@ static BUN
 rshswitch(int tp1, const void *src1, const void *v1p,
 	  int tp2, const void *src2, const void *v2p,
 	  void *restrict dst, oid hoff, BUN start, BUN cnt,
-	  const oid *restrict cand, int abort_on_error, int projected,
+	  const oid *restrict cand, bool abort_on_error, int projected,
 	  const char *func)
 {
 	BUN nils = 0;
@@ -8633,7 +8639,7 @@ rshswitch(int tp1, const void *src1, const void *v1p,
 }
 
 BAT *
-BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error, int projected)
+BATcalcrsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -8666,7 +8672,7 @@ BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error, int projected)
 }
 
 BAT *
-BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
+BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -8701,7 +8707,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error)
 }
 
 BAT *
-BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
+BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -8736,7 +8742,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 }
 
 gdk_return
-VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
+VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool abort_on_error)
 {
 	if (ATOMbasetype(lft->vtype) != ATOMbasetype(rgt->vtype)) {
 		GDKerror("%s: incompatible input types.\n", __func__);
@@ -8938,7 +8944,7 @@ betweenswitch(BAT *b1, const void *src1, const void *v1p,
 	      BAT *b2, const void *src2, const void *v2p,
 	      BAT *b3, const void *src3, const void *v3p,
 	      bit *restrict dst, int tp, oid hoff, BUN start, BUN cnt,
-	      const oid *restrict cand, int symmetric,
+	      const oid *restrict cand, bool symmetric,
 	      int projected)
 {
 	BUN nils = 0;
@@ -9009,7 +9015,7 @@ betweenswitch(BAT *b1, const void *src1, const void *v1p,
 }
 
 BAT *
-BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int symmetric, int projected)
+BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -9074,7 +9080,7 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int symmetric, int projected)
 }
 
 BAT *
-BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, int symmetric)
+BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool symmetric)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -9117,7 +9123,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, i
 }
 
 BAT *
-BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int symmetric, int projected)
+BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool symmetric, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -9165,7 +9171,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int symmetric
 }
 
 BAT *
-BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int symmetric, int projected)
+BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool symmetric, int projected)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -9214,7 +9220,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int symmetric
 
 gdk_return
 VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
-	       const ValRecord *hi, int symmetric)
+	       const ValRecord *hi, bool symmetric)
 {
 	assert(ret->vtype == TYPE_bit);
 	if (ATOMbasetype(v->vtype) != ATOMbasetype(lo->vtype) ||
@@ -9494,7 +9500,7 @@ BATcalcifthencstelse(BAT *b, const ValRecord *v1, BAT *b2, BAT *s, int projected
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  const oid *restrict cand, BUN start, BUN cnt, \
-			  oid hoff, TYPE2 min, TYPE2 max, int abort_on_error) \
+			  oid hoff, TYPE2 min, TYPE2 max, bool abort_on_error) \
 {									\
 	TYPE1 v1;							\
 	BUN nils = 0;							\
@@ -9522,7 +9528,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  const oid *restrict cand, BUN start, BUN cnt, \
-			  oid hoff, TYPE2 min, TYPE2 max, int abort_on_error) \
+			  oid hoff, TYPE2 min, TYPE2 max, bool abort_on_error) \
 {									\
 	TYPE1 v1;							\
 	BUN nils = 0;							\
@@ -9557,7 +9563,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			  const oid *restrict cand, BUN start, BUN cnt, \
-			  oid hoff, TYPE2 min, TYPE2 max, int abort_on_error) \
+			  oid hoff, TYPE2 min, TYPE2 max, bool abort_on_error) \
 {									\
 	TYPE1 v1;							\
 	BUN nils = 0;							\
@@ -9703,7 +9709,7 @@ convert_any_str(BAT *b, BAT *bn, const oid *restrict cand, BUN start, BUN cnt, o
 		} else {
 			if ((*atomtostr)(&dst, &len, src) < 0)
 				goto bunins_failed;
-			tfastins_nocheck(bn, i, dst, bn->twidth);
+			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
 		}
 	}
 	GDKfree(dst);
@@ -9714,7 +9720,8 @@ convert_any_str(BAT *b, BAT *bn, const oid *restrict cand, BUN start, BUN cnt, o
 }
 
 static BUN
-convert_str_any(BAT *b, BAT *bn, const oid *restrict cand, BUN start, BUN cnt, oid hoff, int abort_on_error)
+convert_str_any(BAT *b, BAT *bn, const oid *restrict cand, 
+		BUN start, BUN cnt, oid hoff, bool abort_on_error)
 {
 	void *dst = NULL;
 	const char *src;
@@ -9759,7 +9766,7 @@ convert_str_any(BAT *b, BAT *bn, const oid *restrict cand, BUN start, BUN cnt, o
 }
 
 static BUN
-convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *restrict cand, BUN start, BUN cnt, oid hoff, int abort_on_error)
+convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *restrict cand, BUN start, BUN cnt, oid hoff, bool abort_on_error)
 {
 	switch (ATOMbasetype(tp1)) {
 	case TYPE_bte:
@@ -9985,7 +9992,7 @@ convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *r
 }
 
 static BUN
-convert_void_any(oid tseq, void *restrict dst, int tp, const oid *restrict cand, BUN start, BUN cnt, oid hoff, int abort_on_error, const char *func)
+convert_void_any(oid tseq, void *restrict dst, int tp, const oid *restrict cand, BUN start, BUN cnt, oid hoff, bool abort_on_error, const char *func)
 {
 	BUN nils = 0;
 	BUN i;
@@ -10085,7 +10092,7 @@ convert_void_any(oid tseq, void *restrict dst, int tp, const oid *restrict cand,
 }
 
 BAT *
-BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
+BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error)
 {
 	BAT *bn;
 	CALC_DECL;
@@ -10130,7 +10137,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 }
 
 gdk_return
-VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
+VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 {
 	BUN nils;
 

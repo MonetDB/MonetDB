@@ -13,7 +13,7 @@ def rsplit_filename(f):
         return f[:s], f[s+1:]
     return base, ext
 
-automake_ext = ['', 'c', 'def', 'h', 'lo', 'o', 'pm.c', 'tab.c', 'tab.h', 'yy.c', 'pm.i']
+automake_ext = ['', 'c', 'cpp', 'def', 'h', 'lo', 'o', 'pm.c', 'tab.c', 'tab.h', 'yy.c', 'pm.i']
 automake_extra_extensions = set([rsplit_filename(x)[1] for x in automake_ext if '.' in x])
 extra_extensions = ['in', 'bat', 'sed']
 

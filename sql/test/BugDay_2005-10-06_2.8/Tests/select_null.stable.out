@@ -1,17 +1,21 @@
 stdout of test 'select_null` in directory 'sql/test/BugDay_2005-10-06_2.8` itself:
 
 
-# 12:37:20 >  
-# 12:37:20 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 12:37:20 >  
+# 17:12:43 >  
+# 17:12:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37502" "--set" "mapi_usock=/var/tmp/mtest-28358/.s.monetdb.37502" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugDay_2005-10-06_2.8" "--set" "embedded_c=true"
+# 17:12:43 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-
-Ready.
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugDay_2005-10-06_2.8', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:37502/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28358/.s.monetdb.37502
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -35,6 +39,9 @@ Ready.
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 11:43:22 >  
 # 11:43:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"

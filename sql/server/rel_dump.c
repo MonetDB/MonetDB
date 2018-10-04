@@ -95,6 +95,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				exps_print(sql, fout, e->f, depth, refs, alias, 0);
 		} else if (e->flag & PSM_REL) {
 			rel_print_(sql, fout, e->l, depth+1, refs, 1);
+		} else if (e->flag & PSM_EXCEPTION) {
+			mnstr_printf(fout, "except ");
+			exp_print(sql, fout, e->l, depth, refs, 0, 0);
+			mnstr_printf(fout, " error %s", (const char *) e->r);
 		}
 	 	break;
 	}
@@ -378,7 +382,7 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			rel_print_(sql, fout, rel->l, depth+1, refs, decorate);
 		if (rel->r)
 			rel_print_(sql, fout, rel->r, depth+1, refs, decorate);
-		if (rel->exps && rel->flag == DDL_PSM) 
+		if (rel->exps && (rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION || rel->flag == DDL_LIST))
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
 		break;
 	case op_join: 
@@ -534,8 +538,25 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-	case op_ddl:
 		break;
+	case op_ddl:
+		if(rel->flag == DDL_LIST ||rel->flag == DDL_EXCEPTION) {
+			if(rel->l) {
+				rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
+				if(rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
+					rel_print_(sql, fout, rel->l, depth, refs, decorate);
+					list_append(refs, rel->l);
+				}
+			}
+			if(rel->r) {
+				rel_print_refs(sql, fout, rel->r, depth, refs, decorate);
+				if(rel_is_ref(rel->r) && !find_ref(refs, rel->r)) {
+					rel_print_(sql, fout, rel->r, depth, refs, decorate);
+					list_append(refs, rel->r);
+				}
+			}
+		}
+	break;
 	case op_join: 
 	case op_left: 
 	case op_right: 
@@ -1140,8 +1161,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 				if (is_anti(exp))
 					set_anti(ne);
 				return ne;
-			} else if (e)
-				return exp_compare(sql->sa, exp, e, f);
+			} else if (e) {
+				sql_exp *ne = exp_compare(sql->sa, exp, e, f);
+				if (is_anti(exp))
+					set_anti(ne);
+				return ne;
+			}
 		}
 	}
 	return exp;

@@ -1,0 +1,48 @@
+stderr of test 'mergepart02` in directory 'sql/test/merge-partitions` itself:
+
+
+# 14:32:13 >  
+# 14:32:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35037" "--set" "mapi_usock=/var/tmp/mtest-4188/.s.monetdb.35037" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 14:32:13 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35037
+# cmdline opt 	mapi_usock = /var/tmp/mtest-4188/.s.monetdb.35037
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 14:32:13 >  
+# 14:32:13 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4188" "--port=35037"
+# 14:32:13 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-4188/.s.monetdb.35037
+QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 10; --error
+ERROR = !ALTER TABLE: cannot add a range partition into a list partition table
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-4188/.s.monetdb.35037
+QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION IN ('3', '4', '5'); --error
+ERROR = !ALTER TABLE: the new partition is conflicting with the existing partition sys.subtable1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-4188/.s.monetdb.35037
+QUERY = DROP TABLE subtable1; --error
+ERROR = !DROP TABLE: unable to drop table subtable1 (there are database objects which depend on it)
+CODE  = 42000
+
+# 14:32:14 >  
+# 14:32:14 >  "Done."
+# 14:32:14 >  
+

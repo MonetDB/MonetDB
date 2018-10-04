@@ -1,3 +1,7 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org>
+- We now also build the Python 3 integration packages for Fedora, Debian,
+  and Ubuntu (not for Debian 8 or Ubuntu 14.04 which are too old).
+

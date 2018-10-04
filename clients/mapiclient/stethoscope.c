@@ -84,7 +84,7 @@ static FILE *trace = NULL;
 static void
 renderEvent(EventRecord *ev){
 	FILE *s;
-	if(trace != NULL) 
+	if(trace != NULL)
 		s = trace;
 	else
 		s = stdout;
@@ -94,7 +94,7 @@ renderEvent(EventRecord *ev){
 		fprintf(s, "0,	");
 		fprintf(s, "\"\",	" );
 		fprintf(s, "0,	");
-		fprintf(s, "\"system\",	"); 
+		fprintf(s, "\"system\",	");
 		fprintf(s, "0,	");
 		fprintf(s, "0,	");
 		fprintf(s, "0,	");
@@ -102,7 +102,7 @@ renderEvent(EventRecord *ev){
 		fprintf(s, "0,	");
 		fprintf(s, "0,	");
 		fprintf(s, "\"");
-		fprintf(s, "version:%s, release:%s, threads:%s, memory:%s, host:%s, oid:%d, package:%s ", 
+		fprintf(s, "version:%s, release:%s, threads:%s, memory:%s, host:%s, oid:%d, package:%s ",
 			ev->version, ev->release, ev->threads, ev->memory, ev->host, ev->oid, ev->package);
 		fprintf(s, "\"	]\n");
 		return ;
@@ -122,7 +122,7 @@ renderEvent(EventRecord *ev){
 	case MDB_DONE: fprintf(s, "\"done \",	"); break;
 	case MDB_WAIT: fprintf(s, "\"wait \",	"); break;
 	case MDB_PING: fprintf(s, "\"ping \",	"); break;
-	case MDB_SYSTEM: fprintf(s, "\"system\",	"); 
+	case MDB_SYSTEM: fprintf(s, "\"system\",	");
 	}
 	fprintf(s, "%"PRId64",	", ev->ticks);
 	fprintf(s, "%"PRId64",	", ev->rss);
@@ -186,7 +186,7 @@ convertOldFormat(char *inputfile)
 	}
 	fprintf(trace,"[\n{");
 	len = 0;
-	memset(&event, 0, sizeof(event));
+	event = (EventRecord) {0};
 	while (fgets(buf + len, (int) (bufsize - len), fdin) != NULL) {
 		while ((e = strchr(buf + len, '\n')) == NULL) {
 			/* rediculously long line */
@@ -494,7 +494,7 @@ main(int argc, char **argv)
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
-			strncpy(buffer, response, len + 1);
+			snprintf(buffer, len + 1, "%s", response);
 		} else /* reset this line of buffer */
 			len = 0;
 	}

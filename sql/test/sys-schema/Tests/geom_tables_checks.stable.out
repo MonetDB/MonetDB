@@ -1,0 +1,71 @@
+stdout of test 'geom_tables_checks` in directory 'sql/test/sys-schema` itself:
+
+
+# 18:51:04 >  
+# 18:51:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37311" "--set" "mapi_usock=/var/tmp/mtest-29561/.s.monetdb.37311" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_sys-schema" "--set" "embedded_c=true"
+# 18:51:04 >  
+
+# MonetDB 5 server v11.31.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_sys-schema', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.306 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:37311/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29561/.s.monetdb.37311
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:51:05 >  
+# 18:51:05 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29561" "--port=37311"
+# 18:51:05 >  
+
+#SELECT COUNT(*) AS duplicates, "srid" FROM "sys"."spatial_ref_sys" GROUP BY "srid" HAVING COUNT(*) > 1;
+% sys.L3,	sys.spatial_ref_sys # table_name
+% duplicates,	srid # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, "auth_name", "auth_srid", "srtext", "proj4text" FROM "sys"."spatial_ref_sys" GROUP BY "auth_name", "auth_srid", "srtext", "proj4text" HAVING COUNT(*) > 1;
+% sys.L3,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys # table_name
+% duplicates,	auth_name,	auth_srid,	srtext,	proj4text # name
+% bigint,	varchar,	int,	varchar,	varchar # type
+% 1,	0,	1,	0,	0 # length
+#SELECT "auth_srid", * FROM "sys"."spatial_ref_sys" WHERE "auth_srid" NOT IN (SELECT "srid" FROM "sys"."spatial_ref_sys");
+% sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys # table_name
+% auth_srid,	srid,	auth_name,	auth_srid,	srtext,	proj4text # name
+% int,	int,	varchar,	int,	varchar,	varchar # type
+% 1,	1,	0,	1,	0,	0 # length
+#SELECT "srid", * FROM "sys"."spatial_ref_sys" WHERE "srid" IS NULL;
+% sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys # table_name
+% srid,	srid,	auth_name,	auth_srid,	srtext,	proj4text # name
+% int,	int,	varchar,	int,	varchar,	varchar # type
+% 1,	1,	0,	1,	0,	0 # length
+#SELECT "auth_name", * FROM "sys"."spatial_ref_sys" WHERE "auth_name" IS NULL;
+% sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys # table_name
+% auth_name,	srid,	auth_name,	auth_srid,	srtext,	proj4text # name
+% varchar,	int,	varchar,	int,	varchar,	varchar # type
+% 0,	1,	0,	1,	0,	0 # length
+#SELECT "auth_srid", * FROM "sys"."spatial_ref_sys" WHERE "auth_srid" IS NULL;
+% sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys # table_name
+% auth_srid,	srid,	auth_name,	auth_srid,	srtext,	proj4text # name
+% int,	int,	varchar,	int,	varchar,	varchar # type
+% 1,	1,	0,	1,	0,	0 # length
+#SELECT "srtext", * FROM "sys"."spatial_ref_sys" WHERE "srtext" IS NULL;
+% sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys # table_name
+% srtext,	srid,	auth_name,	auth_srid,	srtext,	proj4text # name
+% varchar,	int,	varchar,	int,	varchar,	varchar # type
+% 0,	1,	0,	1,	0,	0 # length
+#SELECT "proj4text", * FROM "sys"."spatial_ref_sys" WHERE "proj4text" IS NULL;
+% sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys,	sys.spatial_ref_sys # table_name
+% proj4text,	srid,	auth_name,	auth_srid,	srtext,	proj4text # name
+% varchar,	int,	varchar,	int,	varchar,	varchar # type
+% 0,	1,	0,	1,	0,	0 # length
+
+# 18:51:05 >  
+# 18:51:05 >  "Done."
+# 18:51:05 >  
+

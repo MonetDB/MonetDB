@@ -374,6 +374,14 @@ command avg(b:bat[:bte], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on bte, also returns count";
 
+command avg(b:bat[:bte], g:bat[:oid], e:bat[:any_1], scale:int):bat[:dbl]
+address AGGRavg14_dbl
+comment "Grouped tail average on bte";
+
+command avg(b:bat[:bte], g:bat[:oid], e:bat[:any_1], scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRavg24_dbl
+comment "Grouped tail average on bte, also returns count";
+
 command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
@@ -388,6 +396,22 @@ comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+
+command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1s_dbl
+comment "Grouped average aggregate";
+
+command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
+
+command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2s_dbl
+comment "Grouped average aggregate, also returns count";
+
+command subavg(b:bat[:bte],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
 command stdev(b:bat[:bte], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
@@ -446,6 +470,14 @@ command avg(b:bat[:sht], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on sht, also returns count";
 
+command avg(b:bat[:sht], g:bat[:oid], e:bat[:any_1], scale:int):bat[:dbl]
+address AGGRavg14_dbl
+comment "Grouped tail average on sht";
+
+command avg(b:bat[:sht], g:bat[:oid], e:bat[:any_1], scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRavg24_dbl
+comment "Grouped tail average on sht, also returns count";
+
 command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
@@ -460,6 +492,22 @@ comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+
+command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1s_dbl
+comment "Grouped average aggregate";
+
+command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
+
+command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2s_dbl
+comment "Grouped average aggregate, also returns count";
+
+command subavg(b:bat[:sht],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
 command stdev(b:bat[:sht], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
@@ -518,6 +566,14 @@ command avg(b:bat[:int], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on int, also returns count";
 
+command avg(b:bat[:int], g:bat[:oid], e:bat[:any_1], scale:int):bat[:dbl]
+address AGGRavg14_dbl
+comment "Grouped tail average on int";
+
+command avg(b:bat[:int], g:bat[:oid], e:bat[:any_1], scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRavg24_dbl
+comment "Grouped tail average on int, also returns count";
+
 command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
@@ -532,6 +588,22 @@ comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+
+command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1s_dbl
+comment "Grouped average aggregate";
+
+command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
+
+command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2s_dbl
+comment "Grouped average aggregate, also returns count";
+
+command subavg(b:bat[:int],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
 command stdev(b:bat[:int], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
@@ -590,6 +662,14 @@ command avg(b:bat[:lng], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on lng, also returns count";
 
+command avg(b:bat[:lng], g:bat[:oid], e:bat[:any_1], scale:int):bat[:dbl]
+address AGGRavg14_dbl
+comment "Grouped tail average on lng";
+
+command avg(b:bat[:lng], g:bat[:oid], e:bat[:any_1], scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRavg24_dbl
+comment "Grouped tail average on lng, also returns count";
+
 command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
@@ -604,6 +684,22 @@ comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+
+command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1s_dbl
+comment "Grouped average aggregate";
+
+command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
+
+command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2s_dbl
+comment "Grouped average aggregate, also returns count";
+
+command subavg(b:bat[:lng],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
 command stdev(b:bat[:lng], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
@@ -662,6 +758,14 @@ command avg(b:bat[:flt], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on flt, also returns count";
 
+command avg(b:bat[:flt], g:bat[:oid], e:bat[:any_1], scale:int):bat[:dbl]
+address AGGRavg14_dbl
+comment "Grouped tail average on flt";
+
+command avg(b:bat[:flt], g:bat[:oid], e:bat[:any_1], scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRavg24_dbl
+comment "Grouped tail average on flt, also returns count";
+
 command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
@@ -676,6 +780,22 @@ comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+
+command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1s_dbl
+comment "Grouped average aggregate";
+
+command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
+
+command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2s_dbl
+comment "Grouped average aggregate, also returns count";
+
+command subavg(b:bat[:flt],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
 command stdev(b:bat[:flt], g:bat[:oid], e:bat[:any_1]):bat[:dbl]
@@ -734,6 +854,14 @@ command avg(b:bat[:dbl], g:bat[:oid], e:bat[:any_1]) (:bat[:dbl],:bat[:lng])
 address AGGRavg23_dbl
 comment "Grouped tail average on dbl, also returns count";
 
+command avg(b:bat[:dbl], g:bat[:oid], e:bat[:any_1], scale:int):bat[:dbl]
+address AGGRavg14_dbl
+comment "Grouped tail average on dbl";
+
+command avg(b:bat[:dbl], g:bat[:oid], e:bat[:any_1], scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRavg24_dbl
+comment "Grouped tail average on dbl, also returns count";
+
 command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:dbl]
 address AGGRsubavg1_dbl
 comment "Grouped average aggregate";
@@ -748,6 +876,22 @@ comment "Grouped average aggregate, also returns count";
 
 command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) (:bat[:dbl],:bat[:lng])
 address AGGRsubavg2cand_dbl
+comment "Grouped average aggregate with candidates list, also returns count";
+
+command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1s_dbl
+comment "Grouped average aggregate";
+
+command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) :bat[:dbl]
+address AGGRsubavg1scand_dbl
+comment "Grouped average aggregate with candidates list";
+
+command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2s_dbl
+comment "Grouped average aggregate, also returns count";
+
+command subavg(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit,scale:int) (:bat[:dbl],:bat[:lng])
+address AGGRsubavg2scand_dbl
 comment "Grouped average aggregate with candidates list, also returns count";
 
 command stdev(b:bat[:dbl], g:bat[:oid], e:bat[:any_1]):bat[:dbl]

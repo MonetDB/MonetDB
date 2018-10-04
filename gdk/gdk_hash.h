@@ -185,7 +185,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
+		if (BAThash((y).b) == GDK_SUCCEED) {			\
 			HASHloop_str((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -197,7 +197,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {							\
 		BUN _i;						\
 		(x) = BUN_NONE;					\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {		\
+		if (BAThash((y).b) == GDK_SUCCEED) {		\
 			HASHloop((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;			\
 				break;				\
@@ -209,7 +209,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
+		if (BAThash((y).b) == GDK_SUCCEED) {			\
 			HASHloop_##TYPE((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -232,12 +232,13 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
  * a pointer to the value to be stored.
  *
  * HASHins receives a BAT* param and is adaptive, killing wrongly
- * configured hash tables.
- * Use HASHins_any or HASHins_<tpe> instead if you know what you're
- * doing or want to keep the hash. */
+ * configured hash tables.  Also, persistent hashes cannot be
+ * maintained, so must be destroyed before this macro is called. */
 #define HASHins(b,i,v)							\
 	do {								\
 		if ((b)->thash) {					\
+			assert((b)->thash != (Hash *) 1);		\
+			assert((((size_t *) (b)->thash->heap.base)[0] & (1 << 24)) == 0); \
 			if (((i) & 1023) == 1023 && HASHgonebad((b), (v))) { \
 				HASHdestroy(b);				\
 			} else {					\

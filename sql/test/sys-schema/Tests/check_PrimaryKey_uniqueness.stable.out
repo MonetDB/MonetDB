@@ -19,54 +19,6 @@ stdout of test 'check_PrimaryKey_uniqueness` in directory 'sql/test/sys-schema` 
 # MonetDB/SQL module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 18_index.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 46_profiler.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 72_fits.sql
-# loading sql script: 74_netcdf.sql
-# loading sql script: 75_lidar.sql
-# loading sql script: 75_shp.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 99_system.sql
-#WARNING To speedup user.columnsize a bulk operator implementation is needed
-#    X_61:bat[:lng] := mal.multiplex("user":str,"columnsize":str,X_46:bat[:str],X_53:bat[:lng],X_60:bat[:lng]);
-#WARNING To speedup user.heapsize a bulk operator implementation is needed
-#    X_71:bat[:lng] := mal.multiplex("user":str,"heapsize":str,X_46:bat[:str],X_60:bat[:lng],X_70:bat[:int]);
-#WARNING To speedup user.hashsize a bulk operator implementation is needed
-#    X_80:bat[:lng] := mal.multiplex("user":str,"hashsize":str,X_79:bat[:bit],X_53:bat[:lng]);
-#WARNING To speedup user.imprintsize a bulk operator implementation is needed
-#    X_82:bat[:lng] := mal.multiplex("user":str,"imprintsize":str,X_53:bat[:lng],X_46:bat[:str]);
 
 # 16:31:34 >  
 # 16:31:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10384" "--port=31486"

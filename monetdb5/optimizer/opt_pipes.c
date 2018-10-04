@@ -160,8 +160,8 @@ static struct PIPELINES {
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.projectionpath();"
-	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
+	 "optimizer.reorder();"
 //	 "optimizer.reduce();" deprecated
 	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
@@ -203,8 +203,8 @@ static struct PIPELINES {
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.projectionpath();"
-	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
+	 "optimizer.reorder();"
 //	 "optimizer.reduce();" deprecated
 	 "optimizer.matpack();"
 	 "optimizer.querylog();"
@@ -358,9 +358,9 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 			BBPreclaim(bs);
 			throw(MAL,"getPipeCatalog", SQLSTATE(HY002) "#MAL.getAddress address of '%s' not found",pipes[i].name);
 		}
-		if (BUNappend(b, pipes[i].name, FALSE) != GDK_SUCCEED ||
-			BUNappend(bn, pipes[i].def, FALSE) != GDK_SUCCEED ||
-			BUNappend(bs, pipes[i].status, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b, pipes[i].name, false) != GDK_SUCCEED ||
+			BUNappend(bn, pipes[i].def, false) != GDK_SUCCEED ||
+			BUNappend(bs, pipes[i].status, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);

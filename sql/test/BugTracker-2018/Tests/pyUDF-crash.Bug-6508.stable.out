@@ -16,10 +16,6 @@ stdout of test 'pyUDF-crash.Bug-6508` in directory 'sql/test/BugTracker-2018` it
 # Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:34466/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10982/.s.monetdb.34466
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Python2 module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -59,6 +55,10 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+
+Ready.
 
 # 10:14:58 >  
 # 10:14:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10982" "--port=34466"

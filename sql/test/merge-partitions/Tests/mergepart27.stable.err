@@ -1,0 +1,91 @@
+stderr of test 'mergepart27` in directory 'sql/test/merge-partitions` itself:
+
+
+# 11:15:34 >  
+# 11:15:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38633" "--set" "mapi_usock=/var/tmp/mtest-12261/.s.monetdb.38633" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 11:15:34 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38633
+# cmdline opt 	mapi_usock = /var/tmp/mtest-12261/.s.monetdb.38633
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 11:15:35 >  
+# 11:15:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12261" "--port=38633"
+# 11:15:35 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = INSERT INTO checkreadonly VALUES (1, 'wrong'); --error
+ERROR = !INSERT: cannot insert read only table 'subt1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = ALTER TABLE checksequence ADD TABLE subt1 AS PARTITION BETWEEN 1 AND 100; --error not compatible sequences
+ERROR = !ALTER RANGE PARTITION TABLE: to be added table column DEFAULT value doesn't match RANGE PARTITION TABLE definition
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = ALTER TABLE checkdefault ADD TABLE subt1 AS PARTITION BETWEEN 1 AND 100; --error not compatible defaults
+ERROR = !ALTER RANGE PARTITION TABLE: to be added table column DEFAULT value doesn't match RANGE PARTITION TABLE definition
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = CREATE MERGE TABLE checkkeys (a int PRIMARY KEY, b varchar(32)) PARTITION BY RANGE USING (b || 'ups'); --error
+ERROR = !CREATE TABLE: sys.checkkeys: in a partitioned table the keys must match the columns used in the partition definition
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = CREATE MERGE TABLE checkkeys (a int, b varchar(32) PRIMARY KEY) PARTITION BY RANGE USING (a + 1); --error
+ERROR = !CREATE TABLE: sys.checkkeys: in a partitioned table the keys must match the columns used in the partition definition
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = CREATE MERGE TABLE checkkeys (a int, b int, PRIMARY KEY(a, b)) PARTITION BY RANGE USING (a + 1); --error
+ERROR = !CREATE TABLE: sys.checkkeys: in a partitioned table the keys must match the columns used in the partition definition
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = CREATE MERGE TABLE checkkeys (a int PRIMARY KEY, b varchar(32)) PARTITION BY RANGE ON (b); --error
+ERROR = !CREATE TABLE: sys.checkkeys: in a partitioned table the keys must match the columns used in the partition definition
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = CREATE MERGE TABLE checkkeys (a int, b varchar(32) PRIMARY KEY) PARTITION BY RANGE ON (a); --error
+ERROR = !CREATE TABLE: sys.checkkeys: in a partitioned table the keys must match the columns used in the partition definition
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = ALTER TABLE checkkeys ADD FOREIGN KEY (b) REFERENCES otherref (othermeme); --error not compatible key with partition
+ERROR = !ALTER TABLE: sys.checkkeys: in a partitioned table the keys must match the columns used in the partition definition
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = ALTER TABLE checkkeys ADD TABLE subt2 AS PARTITION BETWEEN 101 AND 200; --error
+ERROR = !ALTER RANGE PARTITION TABLE: to be added table column NULL check doesn't match RANGE PARTITION TABLE definition
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe); --error
+ERROR = !ALTER TABLE: cannot add constraint to MERGE TABLE 'checkkeys'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = ALTER TABLE checkkeys ADD FOREIGN KEY (b) REFERENCES otherref (othermeme); --error
+ERROR = !ALTER TABLE: cannot add constraint to MERGE TABLE 'checkkeys'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = ALTER TABLE checkkeys ADD TABLE subt3 AS PARTITION BETWEEN 1 AND 100; --error checkkeys does not have the foreign key
+ERROR = !ALTER RANGE PARTITION TABLE: to be added table key doesn't match RANGE PARTITION TABLE definition
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-12261/.s.monetdb.38633
+QUERY = ALTER TABLE checkkeys ADD TABLE subt3 AS PARTITION BETWEEN 1 AND 100; --error foreign keys reference different tables
+ERROR = !ALTER RANGE PARTITION TABLE: to be added table key doesn't match RANGE PARTITION TABLE definition
+CODE  = 3F000
+
+# 11:15:35 >  
+# 11:15:35 >  "Done."
+# 11:15:35 >  
+

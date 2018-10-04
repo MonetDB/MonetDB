@@ -351,7 +351,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 			BBPunfix(output->batCacheid);								\
 			return msg;													\
 		}																\
-		if (BUNappend(output, (ptr) r, FALSE) != GDK_SUCCEED) {			\
+		if (BUNappend(output, (ptr) r, false) != GDK_SUCCEED) {			\
 			BBPunfix(input->batCacheid);								\
 			BBPreclaim(output);											\
 			throw(MAL, "reverse_seq_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);				\
@@ -477,7 +477,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 		if ((msg = seq_char(&r, ref_pos, &seq_val, pos_val, &cigar_val)) != MAL_SUCCEED) {
 			goto cleanup;
 		}
-		if (BUNappend(result, (ptr) r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(result, (ptr) r, false) != GDK_SUCCEED) {
 			msg = createException(MAL, "seq_char_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}

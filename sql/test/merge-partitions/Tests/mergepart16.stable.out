@@ -1,0 +1,202 @@
+stdout of test 'mergepart16` in directory 'sql/test/merge-partitions` itself:
+
+
+# 16:36:19 >  
+# 16:36:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30967" "--set" "mapi_usock=/var/tmp/mtest-20495/.s.monetdb.30967" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 16:36:19 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:30967/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-20495/.s.monetdb.30967
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:36:19 >  
+# 16:36:19 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20495" "--port=30967"
+# 16:36:19 >  
+
+#CREATE MERGE TABLE testnestedpartitions (a int, b varchar(32)) PARTITION BY VALUES ON (a);
+#CREATE MERGE TABLE subnested1 (a int, b varchar(32)) PARTITION BY RANGE ON (a);
+#CREATE MERGE TABLE subnested2 (a int, b varchar(32)) PARTITION BY RANGE ON (a);
+#CREATE TABLE subt1 (a int, b varchar(32));
+#CREATE TABLE subt2 (a int, b varchar(32));
+#CREATE TABLE subt3 (a int, b varchar(32));
+#CREATE TABLE subt4 (a int, b varchar(32));
+#INSERT INTO subnested1 VALUES (1, 'ok');
+[ 1	]
+#INSERT INTO testnestedpartitions VALUES (1, 'ok');
+[ 1	]
+#ALTER TABLE subnested1 DROP TABLE subt1;
+#INSERT INTO testnestedpartitions VALUES (1, 'ok');
+[ 1	]
+#SELECT a, b FROM testnestedpartitions;
+% sys.testnestedpartitions,	sys.testnestedpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	2 # length
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+#SELECT a, b FROM subnested1;
+% sys.subnested1,	sys.subnested1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	2 # length
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+#SELECT a, b FROM subt1;
+% sys.subt1,	sys.subt1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	2 # length
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+#INSERT INTO testnestedpartitions VALUES (2, 'going'), (5, 'through');
+[ 2	]
+#SELECT a, b FROM testnestedpartitions;
+% .testnestedpartitions,	.testnestedpartitions # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	7 # length
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 2,	"going"	]
+[ 5,	"through"	]
+#SELECT a, b FROM subnested1;
+% sys.subnested1,	sys.subnested1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	5 # length
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 2,	"going"	]
+#SELECT a, b FROM subnested2;
+% sys.subnested2,	sys.subnested2 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	7 # length
+[ 5,	"through"	]
+#SELECT a, b FROM subt1;
+% sys.subt1,	sys.subt1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	5 # length
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 1,	"ok"	]
+[ 2,	"going"	]
+#SELECT a, b FROM subt2;
+% sys.subt2,	sys.subt2 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	7 # length
+[ 5,	"through"	]
+#TRUNCATE testnestedpartitions;
+[ 5	]
+#SELECT count(*) FROM testnestedpartitions;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM subnested1;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM subnested2;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM subt1;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM subt2;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#INSERT INTO testnestedpartitions VALUES (1, 'another'), (1, 'test'), (5, 'to'), (5, 'go');
+[ 4	]
+#TRUNCATE subnested1;
+[ 2	]
+#SELECT count(*) FROM testnestedpartitions;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#SELECT count(*) FROM subnested1;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM subnested2;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#SELECT count(*) FROM subt1;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM subt2;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#SELECT count(*) FROM subt3;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT count(*) FROM subt4;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#ALTER TABLE subnested1 DROP TABLE subt1;
+#ALTER TABLE subnested1 DROP TABLE subt3;
+#ALTER TABLE subnested2 DROP TABLE subt2;
+#ALTER TABLE subnested2 DROP TABLE subt4;
+#ALTER TABLE testnestedpartitions DROP TABLE subnested1;
+#ALTER TABLE testnestedpartitions DROP TABLE subnested2;
+#DROP TABLE testnestedpartitions;
+#DROP TABLE subnested1;
+#DROP TABLE subnested2;
+#DROP TABLE subt1;
+#DROP TABLE subt2;
+#DROP TABLE subt3;
+#DROP TABLE subt4;
+
+# 16:36:19 >  
+# 16:36:19 >  "Done."
+# 16:36:19 >  
+

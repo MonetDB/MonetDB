@@ -1,11 +1,11 @@
 stderr of test 'sqlitelogictest-coalesce-division-by-zero.Bug-6556` in directory 'sql/test/BugTracker-2018` itself:
 
 
-# 19:49:40 >  
-# 19:49:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34493" "--set" "mapi_usock=/var/tmp/mtest-25061/.s.monetdb.34493" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
-# 19:49:40 >  
+# 19:24:33 >  
+# 19:24:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31020" "--set" "mapi_usock=/var/tmp/mtest-27357/.s.monetdb.31020" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 19:24:33 >  
 
-# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-old/Linux-x86_64/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,18 +17,19 @@ stderr of test 'sqlitelogictest-coalesce-division-by-zero.Bug-6556` in directory
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 34493
-# cmdline opt 	mapi_usock = /var/tmp/mtest-25061/.s.monetdb.34493
+# cmdline opt 	mapi_port = 31020
+# cmdline opt 	mapi_usock = /var/tmp/mtest-27357/.s.monetdb.31020
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	embedded_c = true
 # cmdline opt 	gdk_debug = 553648138
 
-# 19:49:40 >  
-# 19:49:40 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25061" "--port=34493"
-# 19:49:40 >  
+# 19:24:33 >  
+# 19:24:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27357" "--port=31020"
+# 19:24:33 >  
 
 
-# 19:49:40 >  
-# 19:49:40 >  "Done."
-# 19:49:40 >  
+# 19:24:33 >  
+# 19:24:33 >  "Done."
+# 19:24:33 >  
 

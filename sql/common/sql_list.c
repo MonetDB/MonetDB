@@ -22,56 +22,39 @@ node_create(sql_allocator *sa, void *data)
 	return n;
 }
 
+static list *
+list_init(list *l, sql_allocator *sa, fdestroy destroy)
+{
+	if (l) {
+		l->sa = sa;
+		l->destroy = destroy;
+		l->h = l->t = NULL;
+		l->cnt = 0;
+		l->expected_cnt = 0;
+		l->ht = NULL;
+		MT_lock_init(&l->ht_lock, "sa_ht_lock");
+	}
+	return l;
+}
+
 list *
 list_create(fdestroy destroy)
 {
-	list *l = MNEW(list);
-	if (!l) {
-		return NULL;
-	}
-
-	l->sa = NULL;
-	l->destroy = destroy;
-	l->h = l->t = NULL;
-	l->cnt = 0;
-	l->expected_cnt = 0;
-	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "sa_ht_lock");
-	return l;
+	return list_init(MNEW(list), NULL, destroy);
 }
 
 list *
 sa_list(sql_allocator *sa)
 {
-	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
-	if (!l) {
-		return NULL;
-	}
-
-	l->sa = sa;
-	l->destroy = NULL;
-	l->h = l->t = NULL;
-	l->cnt = 0;
-	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "sa_ht_lock");
-	return l;
+	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
+	return list_init(l, sa, NULL);
 }
 
 list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
-	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
-	if (!l) {
-		return NULL;
-	}
-
-	l->sa = sa;
-	l->destroy = destroy;
-	l->h = l->t = NULL;
-	l->cnt = 0;
-	l->ht = NULL;
-	MT_lock_init(&l->ht_lock, "sa_ht_lock");
-	return l;
+	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
+	return list_init(l, sa, destroy);
 }
 
 static list *
@@ -158,6 +141,87 @@ list_append(list *l, void *data)
 	}
 	MT_lock_unset(&l->ht_lock);
 	return l;
+}
+
+void*
+list_append_with_validate(list *l, void *data, fvalidate cmp)
+{
+	node *n = node_create(l->sa, data), *m;
+	void* err = NULL;
+
+	if (n == NULL)
+		return NULL;
+	if (l->cnt) {
+		for (m = l->h; m; m = m->next) {
+			err = cmp(m->data, data);
+			if(err)
+				return err;
+		}
+		l->t->next = n;
+	} else {
+		l->h = n;
+	}
+	l->t = n;
+	l->cnt++;
+	MT_lock_set(&l->ht_lock);
+	if (l->ht) {
+		int key = l->ht->key(data);
+
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
+	}
+	MT_lock_unset(&l->ht_lock);
+	return NULL;
+}
+
+void*
+list_append_sorted(list *l, void *data, fcmpvalidate cmp)
+{
+	node *n = node_create(l->sa, data), *m, *prev = NULL;
+	int first = 1, comp = 0;
+	void* err = NULL;
+
+	if (n == NULL)
+		return NULL;
+	if (l->cnt == 0) {
+		l->h = n;
+		l->t = n;
+	} else {
+		for (m = l->h; m; m = m->next) {
+			err = cmp(m->data, data, &comp);
+			if(err)
+				return err;
+			if(comp < 0)
+				break;
+			first = 0;
+			prev = m;
+		}
+		if(first) {
+			n->next = l->h;
+			l->h = n;
+		} else if(!m) {
+			l->t->next = n;
+			l->t = n;
+		} else {
+			assert(prev);
+			n->next = m;
+			prev->next = n;
+		}
+	}
+	l->cnt++;
+	MT_lock_set(&l->ht_lock);
+	if (l->ht) {
+		int key = l->ht->key(data);
+
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
+	}
+	MT_lock_unset(&l->ht_lock);
+	return NULL;
 }
 
 list *
@@ -319,6 +383,19 @@ list_traverse(list *l, traverse_func f, void *clientdata)
 		n = n->next;
 	}
 	return res;
+}
+
+void *
+list_traverse_with_validate(list *l, void *data, fvalidate cmp)
+{
+	void* err = NULL;
+
+	for (node *n = l->h; n; n = n->next) {
+		err = cmp(n->data, data);
+		if(err)
+			break;
+	}
+	return err;
 }
 
 node *

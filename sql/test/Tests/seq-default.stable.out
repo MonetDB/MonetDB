@@ -15,19 +15,6 @@ stdout of test 'seq-default` in directory 'sql/test` itself:
 # MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-#function user.main():void;
-#    clients.quit();
-#end main;
-
 
 # 12:37:18 >  
 # 12:37:18 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < seq-default.sql
@@ -49,12 +36,26 @@ Ready.
 [ 2005-09-23 12:34:26.736000,	4	]
 [ 2005-09-23 12:34:26.736000,	5	]
 [ 2005-09-23 12:34:26.736000,	6	]
+#drop table seqdeftest;
+#drop sequence test_seq;
+#create table seqdeftest (
+#	d date,
+#	id serial,
+#	count int auto_increment,
+#	bla int generated always as identity (
+#		start with 100 increment by 2 no minvalue maxvalue 1000
+#		cache 2 cycle)
+#);
+#insert into seqdeftest(d) values ('2005-10-01');
+[ 1	]
+#insert into seqdeftest(d) values ('2005-10-01');
+[ 1	]
+#insert into seqdeftest(d) values ('2005-10-01');
 [ 1	]
 [ 1	]
 [ 1	]
 [ 1	]
-[ 1	]
-[ 1	]
+#select * from seqdeftest;
 % sys.seqdeftest,	sys.seqdeftest,	sys.seqdeftest,	sys.seqdeftest # table_name
 % d,	id,	count,	bla # name
 % date,	int,	int,	int # type
@@ -65,8 +66,58 @@ Ready.
 [ 2005-10-01,	4,	4,	106	]
 [ 2005-10-01,	5,	5,	108	]
 [ 2005-10-01,	6,	6,	110	]
+#drop table seqdeftest;
+#CREATE SEQUENCE seq_5700 AS INTEGER;
+#CREATE TABLE kvk (
+#        id                INTEGER       NOT NULL       DEFAULT next value for seq_5700,
+#        kvk               BIGINT,
+#        bedrijfsnaam      VARCHAR(256),
+#        CONSTRAINT kvk_id_pkey PRIMARY KEY (id)
+#);
+#insert into kvk(kvk, bedrijfsnaam) values (1, 'ones');
+[ 1	]
+#insert into kvk(kvk, bedrijfsnaam) values (2, 'toos');
+[ 1	]
+#select * from kvk;
+% sys.kvk,	sys.kvk,	sys.kvk # table_name
+% id,	kvk,	bedrijfsnaam # name
+% int,	bigint,	varchar # type
+% 1,	1,	4 # length
+[ 1,	1,	"ones"	]
+[ 2,	2,	"toos"	]
+#CREATE TABLE kvk_cp (
+#        id                INTEGER       NOT NULL       DEFAULT next value for seq_5700,
+#        kvk               BIGINT,
+#        bedrijfsnaam      VARCHAR(256),
+#        CONSTRAINT kvk_cp_id_pkey PRIMARY KEY (id)
+#);
+#insert into kvk_cp(kvk, bedrijfsnaam) values (3, 'dries');
+[ 1	]
+#insert into kvk_cp(kvk, bedrijfsnaam) values (4, 'viers');
+[ 1	]
+#select * from kvk_cp;
+% sys.kvk_cp,	sys.kvk_cp,	sys.kvk_cp # table_name
+% id,	kvk,	bedrijfsnaam # name
+% int,	bigint,	varchar # type
+% 1,	1,	5 # length
+[ 3,	3,	"dries"	]
+[ 4,	4,	"viers"	]
+#drop TABLE kvk;
+#insert into kvk_cp(kvk, bedrijfsnaam) values (5, 'vijfs');
+[ 1	]
+#select * from kvk_cp;
+% sys.kvk_cp,	sys.kvk_cp,	sys.kvk_cp # table_name
+% id,	kvk,	bedrijfsnaam # name
+% int,	bigint,	varchar # type
+% 1,	1,	5 # length
+[ 3,	3,	"dries"	]
+[ 4,	4,	"viers"	]
+[ 5,	5,	"vijfs"	]
+#drop TABLE kvk_cp;
+#drop SEQUENCE seq_5700;
+#ROLLBACK;
 
-# 12:37:18 >  
-# 12:37:18 >  Done.
-# 12:37:18 >  
+# 12:44:28 >  
+# 12:44:28 >  "Done."
+# 12:44:28 >  
 

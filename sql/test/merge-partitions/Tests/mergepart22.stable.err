@@ -1,0 +1,43 @@
+stderr of test 'mergepart22` in directory 'sql/test/merge-partitions` itself:
+
+
+# 12:12:30 >  
+# 12:12:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30019" "--set" "mapi_usock=/var/tmp/mtest-2053/.s.monetdb.30019" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 12:12:30 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30019
+# cmdline opt 	mapi_usock = /var/tmp/mtest-2053/.s.monetdb.30019
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 12:12:30 >  
+# 12:12:30 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2053" "--port=30019"
+# 12:12:30 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-2053/.s.monetdb.30019
+QUERY = UPDATE tryupdateme SET a = 5 WHERE a % 5 = 0; --error
+ERROR = !UPDATE: Update a column used by the partition's expression is not possible at the moment
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2053/.s.monetdb.30019
+QUERY = UPDATE subtable1 SET a = 5 WHERE a % 5 = 0; --error
+ERROR = !UPDATE: Update a column used by the partition's expression is not possible at the moment
+CODE  = 42000
+
+# 12:12:30 >  
+# 12:12:30 >  "Done."
+# 12:12:30 >  
+

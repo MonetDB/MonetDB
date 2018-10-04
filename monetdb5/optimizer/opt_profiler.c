@@ -110,11 +110,11 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	//chkTypes(cntxt->usermodule, mb, FALSE);
 	//chkFlow(mb);
 	//chkDeclarations(mb);
-	//
-    /* keep all actions taken as a post block comment */
+
+	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","profiler", usec);
-    newComment(mb,buf);
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","profiler", usec);
+	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	return MAL_SUCCEED;
 }

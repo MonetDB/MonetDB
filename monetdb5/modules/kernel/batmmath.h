@@ -18,9 +18,11 @@
 #define degreesf(x)      ((flt) degrees(x))
 
 
-#define scienceDef(X1)\
-mal_export str CMDscience_bat_dbl_##X1(bat *ret, const bat *bid);\
-mal_export str CMDscience_bat_flt_##X1(bat *ret, const bat *bid);
+#define scienceDef(X1)													\
+mal_export str CMDscience_bat_dbl_##X1(bat *ret, const bat *bid);		\
+mal_export str CMDscience_bat_flt_##X1(bat *ret, const bat *bid);		\
+mal_export str CMDscience_bat_dbl_##X1##_cand(bat *ret, const bat *bid, const bat *sid); \
+mal_export str CMDscience_bat_flt_##X1##_cand(bat *ret, const bat *bid, const bat *sid);
 
 scienceDef(asin)
 scienceDef(acos)
@@ -43,11 +45,19 @@ scienceDef(fabs)
 scienceDef(floor)
 
 mal_export str CMDscience_bat_cst_atan2_dbl(bat *ret, const bat *bid, const dbl *d);
+mal_export str CMDscience_bat_cst_atan2_dbl_cand(bat *ret, const bat *bid, const dbl *d, const bat *sid);
 mal_export str CMDscience_bat_cst_atan2_flt(bat *ret, const bat *bid, const flt *d);
+mal_export str CMDscience_bat_cst_atan2_flt_cand(bat *ret, const bat *bid, const flt *d, const bat *sid);
 mal_export str CMDscience_cst_bat_atan2_dbl(bat *ret, const dbl *d, const bat *bid);
+mal_export str CMDscience_cst_bat_atan2_dbl_cand(bat *ret, const dbl *d, const bat *bid, const bat *sid);
 mal_export str CMDscience_cst_bat_atan2_flt(bat *ret, const flt *d, const bat *bid);
+mal_export str CMDscience_cst_bat_atan2_flt_cand(bat *ret, const flt *d, const bat *bid, const bat *sid);
 mal_export str CMDscience_bat_cst_pow_dbl(bat *ret, const bat *bid, const dbl *d);
+mal_export str CMDscience_bat_cst_pow_dbl_cand(bat *ret, const bat *bid, const dbl *d, const bat *sid);
 mal_export str CMDscience_bat_cst_pow_flt(bat *ret, const bat *bid, const flt *d);
+mal_export str CMDscience_bat_cst_pow_flt_cand(bat *ret, const bat *bid, const flt *d, const bat *sid);
 mal_export str CMDscience_cst_bat_pow_dbl(bat *ret, const dbl *d, const bat *bid);
+mal_export str CMDscience_cst_bat_pow_dbl_cand(bat *ret, const dbl *d, const bat *bid, const bat *sid);
 mal_export str CMDscience_cst_bat_pow_flt(bat *ret, const flt *d, const bat *bid);
+mal_export str CMDscience_cst_bat_pow_flt_cand(bat *ret, const flt *d, const bat *bid, const bat *sid);
 #endif  /* _BATMATH_H */

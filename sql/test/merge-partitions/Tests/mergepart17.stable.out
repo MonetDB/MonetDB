@@ -1,0 +1,139 @@
+stdout of test 'mergepart17` in directory 'sql/test/merge-partitions` itself:
+
+
+# 16:54:54 >  
+# 16:54:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33193" "--set" "mapi_usock=/var/tmp/mtest-9208/.s.monetdb.33193" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true" "--set" "embedded_c=true"
+# 16:54:54 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:33193/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9208/.s.monetdb.33193
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:54:55 >  
+# 16:54:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9208" "--port=33193"
+# 16:54:55 >  
+
+#CREATE MERGE TABLE testupdates (a int, b varchar(32)) PARTITION BY RANGE (a);
+#CREATE TABLE sublimits1 (a int, b varchar(32));
+#INSERT INTO sublimits1 VALUES (1000, 'ups');
+[ 1	]
+#TRUNCATE sublimits1;
+[ 1	]
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
+#INSERT INTO sublimits1 VALUES (100, 'ok');
+[ 1	]
+#UPDATE sublimits1 SET b = 'p' || b WHERE a = 100;
+[ 1	]
+#SELECT a, b FROM testupdates;
+% sys.testupdates,	sys.testupdates # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	3 # length
+[ 100,	"pok"	]
+#SELECT a, b FROM sublimits1;
+% sys.sublimits1,	sys.sublimits1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	3 # length
+[ 100,	"pok"	]
+#ALTER TABLE testupdates DROP TABLE sublimits1;
+#UPDATE sublimits1 SET a = a + 1;
+[ 1	]
+#UPDATE sublimits1 SET b = b || 's' WHERE a = 101;
+[ 1	]
+#UPDATE sublimits1 SET a = a - 1;
+[ 1	]
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
+#SELECT a, b FROM testupdates;
+% sys.testupdates,	sys.testupdates # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	4 # length
+[ 100,	"poks"	]
+#SELECT a, b FROM sublimits1;
+% sys.sublimits1,	sys.sublimits1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	4 # length
+[ 100,	"poks"	]
+#ALTER TABLE testupdates DROP TABLE sublimits1;
+#START TRANSACTION;
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
+#ROLLBACK;
+#UPDATE sublimits1 SET a = a + 1;
+[ 1	]
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 101;
+#SELECT a, b FROM sublimits1;
+% sys.sublimits1,	sys.sublimits1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	4 # length
+[ 101,	"poks"	]
+#SELECT a, b FROM testupdates;
+% sys.testupdates,	sys.testupdates # table_name
+% a,	b # name
+% int,	varchar # type
+% 3,	4 # length
+[ 101,	"poks"	]
+#ALTER TABLE testupdates DROP TABLE sublimits1;
+#DROP TABLE sublimits1;
+#DROP TABLE testupdates;
+
+# 16:54:55 >  
+# 16:54:55 >  "Done."
+# 16:54:55 >  
+

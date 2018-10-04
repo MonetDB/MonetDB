@@ -16,12 +16,6 @@ stdout of test 'storagemodel` in directory 'sql/test/BugTracker-2016` itself:
 # Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30783/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21747/.s.monetdb.30783
 # MonetDB/GIS module loaded
-# Start processing logs sql/sql_logs version 52200
-# Finished processing logs sql/sql_logs
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -60,6 +54,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 23:38:44 >  
 # 23:38:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21747" "--port=30783"
@@ -67,7 +64,7 @@ Ready.
 
 #create table bug3923(i integer);
 #select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables');
-% .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
+% .L3,	.L3,	.L3,	.L3,	.L3,	.L12,	.L3,	.L3,	.L3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
 % clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint # type
 % 3,	7,	13,	8,	8,	2,	1,	5,	1 # length
@@ -91,8 +88,8 @@ Ready.
 [ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	1200,	true,	true,	NULL,	0	]
 #drop table bug3923;
 #create table bug3923(i integer);
-#select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables');
-% .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
+#select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from sys.storage('sys','_tables');
+% .L3,	.L3,	.L3,	.L3,	.L3,	.L12,	.L3,	.L3,	.L3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
 % clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint # type
 % 3,	7,	13,	8,	8,	2,	1,	5,	1 # length

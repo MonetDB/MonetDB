@@ -1,0 +1,26 @@
+create table compression_schemes (
+	name varchar(20),
+	extension varchar(5)
+);
+
+
+copy into compression_schemes
+from '$QTSTSRCDIR/copy-from-compressed.csv.raw'
+using delimiters ',', '\n';
+
+copy into compression_schemes
+from '$QTSTSRCDIR/copy-from-compressed.csv.gz'
+using delimiters ',', '\n';
+
+copy into compression_schemes
+from '$QTSTSRCDIR/copy-from-compressed.csv.bz2'
+using delimiters ',', '\n';
+
+copy into compression_schemes
+from '$QTSTSRCDIR/copy-from-compressed.csv.xz'
+using delimiters ',', '\n';
+
+
+select * from compression_schemes order by extension;
+
+drop table compression_schemes;
