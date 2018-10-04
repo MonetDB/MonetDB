@@ -97,7 +97,7 @@ cosmic)
     ;;
 esac
 
-# debhelper compatibility 9 and support multiarch by using
+# debhelper compatibility 9 and later support multiarch by using
 # architecture-specific subdirectories in /usr/lib (and /lib); our
 # code base is set up for amd64 (x86_64), so change to whatever
 # architecture we're compiling for
