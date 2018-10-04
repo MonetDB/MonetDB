@@ -1,4 +1,4 @@
-debian/tmp/usr/lib/libstream.so usr/lib
+debian/tmp/usr/lib/x86_64-linux-gnu/libstream.so usr/lib/x86_64-linux-gnu
 debian/tmp/usr/include/monetdb/stream.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/stream_socket.h usr/include/monetdb
-debian/tmp/usr/lib/pkgconfig/monetdb-stream.pc usr/lib/pkgconfig
+debian/tmp/usr/lib/x86_64-linux-gnu/pkgconfig/monetdb-stream.pc usr/lib/x86_64-linux-gnu/pkgconfig
