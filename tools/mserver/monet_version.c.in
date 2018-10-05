@@ -47,7 +47,7 @@ monet_version(void)
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
 	cores = MT_check_nr_cores();
 
-	printf("MonetDB 5 server v" VERSION " ");
+	printf("MonetDB 5 server v%s ", VERSION);
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 		printf("\"%s\" ", MONETDB_RELEASE);
@@ -63,7 +63,7 @@ monet_version(void)
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993 - July 2008 CWI\n"
-			"Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved\n");
+	       "Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved\n");
 	printf("Visit https://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");
@@ -95,7 +95,7 @@ monet_version(void)
 	/* no run-time version available, so only compile time */
 	printf("  libxml2: %s\n", LIBXML_DOTTED_VERSION);
 #endif
-	printf("Compiled by: %s (" HOST ")\n", "@builtby@");
+	printf("Compiled by: %s (%s)\n", "@builtby@", HOST);
 	printf("Compilation: %s\n", "@compilercall@");
 	printf("Linking    : %s\n", "@linkercall@");
 }
