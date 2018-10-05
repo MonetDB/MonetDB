@@ -15,11 +15,25 @@
 #include <pcre.h>
 #endif
 #ifdef HAVE_OPENSSL
+#include <openssl/opensslconf.h>
 #include <openssl/opensslv.h>
+#include <openssl/crypto.h>
 #endif
 #ifdef HAVE_LIBXML
 #include <libxml/xmlversion.h>
 #endif
+
+#define STRING(a)  # a
+#define XSTRING(s) STRING(s)
+
+static void
+print_libversion(const char *lib, const char *rtvers, const char *cmvers)
+{
+	printf("  %s: %s", lib, rtvers);
+	if (strcmp(rtvers, cmvers) != 0)
+		printf(" (compiled with %s)", cmvers);
+	printf("\n");
+}
 
 void
 monet_version(void)
@@ -56,31 +70,28 @@ monet_version(void)
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 	printf("Libraries:\n");
 #ifdef HAVE_LIBPCRE
-	{
-		char pcreversion[] = "@pcreversion@";
-		printf("  libpcre: %s", pcre_version());
-		if (*pcreversion)
-			printf(" (%s)", pcreversion);
-		printf("\n");
-	}
+	/* PCRE_PRERELEASE may be defined as an empty value.  In order
+	 * to get the proper amount of white space between various
+	 * parts of the version string on different compilers (none
+	 * between minor and prerelease, a single one between that
+	 * combination and the date), we need to resort to some
+	 * run-time trickery since we can't do it with the
+	 * preprocessor */
+	print_libversion("libpcre",
+			 pcre_version(),
+			 XSTRING(Z PCRE_PRERELEASE)[1] == 0
+			 ? XSTRING(PCRE_MAJOR.PCRE_MINOR PCRE_DATE)
+			 : XSTRING(PCRE_MAJOR.PCRE_MINOR)
+			   XSTRING(PCRE_PRERELEASE PCRE_DATE));
 #endif
 #ifdef HAVE_OPENSSL
-	{
-		char opensslversion[] = "@opensslversion@";
-		printf("  openssl: %s", OPENSSL_VERSION_TEXT);
-		if (*opensslversion)
-			printf(" (%s)", opensslversion);
-		printf("\n");
-	}
+	print_libversion("openssl",
+			 OpenSSL_version(OPENSSL_VERSION),
+			 OPENSSL_VERSION_TEXT);
 #endif
 #ifdef HAVE_LIBXML
-	{
-		char libxml2version[] = "@libxml2version@";
-		printf("  libxml2: %s", LIBXML_DOTTED_VERSION);
-		if (*libxml2version)
-			printf(" (%s)", libxml2version);
-		printf("\n");
-	}
+	/* no run-time version available, so only compile time */
+	printf("  libxml2: %s\n", LIBXML_DOTTED_VERSION);
 #endif
 	printf("Compiled by: %s (" HOST ")\n", "@builtby@");
 	printf("Compilation: %s\n", "@compilercall@");
