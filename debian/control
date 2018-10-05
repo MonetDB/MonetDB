@@ -5,7 +5,7 @@ Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/
-Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
+Build-Depends: debhelper (>= 9), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libpcre3-dev, libreadline-dev, liblzma-dev,
  libssl-dev, libxml2-dev, pkg-config,

@@ -1,4 +1,4 @@
-debian/tmp/usr/lib/monetdb5/rapi.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/rapi.R usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/autoload/??_rapi.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/lib_rapi.so usr/lib/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/rapi.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/rapi.R usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_rapi.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_rapi.so usr/lib/x86_64-linux-gnu/monetdb5
