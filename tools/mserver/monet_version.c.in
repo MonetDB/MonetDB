@@ -26,6 +26,7 @@
 #define STRING(a)  # a
 #define XSTRING(s) STRING(s)
 
+#if defined(HAVE_LIBPCRE) || defined(HAVE_OPENSSL)
 static void
 print_libversion(const char *lib, const char *rtvers, const char *cmvers)
 {
@@ -34,6 +35,7 @@ print_libversion(const char *lib, const char *rtvers, const char *cmvers)
 		printf(" (compiled with %s)", cmvers);
 	printf("\n");
 }
+#endif
 
 void
 monet_version(void)
