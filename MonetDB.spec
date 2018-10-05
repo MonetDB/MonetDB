@@ -108,7 +108,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Aug2018/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Aug2018-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1038,6 +1038,18 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 05 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
+- Rebuilt.
+- BZ#6640: timestamp_to_str returning incorrectly adjusted results
+- BZ#6641: race condition in SQL UDF with update
+- BZ#6642: Hanging query
+- BZ#6646: Example SQLcopyinto.java does not work
+
+* Wed Oct  3 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
+- buildtools: On Ubuntu 18.10 (Cosmic Cuttlefish), the libmonetdb5-server-bam package
+  cannot be built because of an incompatibility in the libbam library
+  (it cannot be used in a shared object.
+
 * Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.7-20180829
 - Rebuilt.
 
