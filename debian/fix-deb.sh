@@ -27,12 +27,22 @@ case $# in
 	echo "don't know what distro this is"
 	exit 1
     fi
+    ARCH=$(arch)
     ;;
 1)
     # we're passed the name of the distribution
     SUITE=$1
+    ARCH=$(arch)
+    ;;
+2)
+    SUITE=$1
+    ARCH=$2
     ;;
 esac
+
+if [[ $ARCH == i?86 ]]; then
+    ARCH=i386			# normalize
+fi
 
 case $SUITE in
 trusty)
@@ -73,4 +83,28 @@ jessie | trusty)
     sed -i -e 's/py3integration=yes/py3integration=no/' \
 	-e 's/python3=yes/python3=no/' debian/rules
 ;;
+esac
+
+case $SUITE in
+cosmic)
+    # libbam is not available as a shared object (also true for older
+    # version) and this means that on 18.10 the libmonetdb5-server-bam
+    # package cannot be compiled on amd64
+    sed -i -e 's/libbam-dev, //' \
+	-e '/^Package: libmonetdb5-server-bam/,/^$/d' debian/control
+    sed -i '/samtools=yes/s/yes/no/' debian/rules
+    rm debian/libmonetdb5-server-bam.install
+    ;;
+esac
+
+# debhelper compatibility 9 and later support multiarch by using
+# architecture-specific subdirectories in /usr/lib (and /lib); our
+# code base is set up for amd64 (x86_64), so change to whatever
+# architecture we're compiling for
+case $ARCH in
+x86_64 | amd64)
+    ;;
+*)
+    sed -i "s/x86_64/$ARCH/g" debian/*.install
+    ;;
 esac

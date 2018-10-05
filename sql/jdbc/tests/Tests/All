@@ -1,3 +1,4 @@
+HAVE_JDBCTESTS?SQLcopyinto
 HAVE_JDBCTESTS?Test_Cautocommit
 HAVE_JDBCTESTS?Test_CisValid
 HAVE_JDBCTESTS?Test_Clargequery

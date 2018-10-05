@@ -233,6 +233,7 @@ loadLibrary(str filename, int flag)
 
 	MT_lock_set(&mal_contextLock);
 	if (lastfile == maxfiles) {
+		MT_lock_unset(&mal_contextLock);
 		if (handle)
 			dlclose(handle);
 		throw(MAL,"mal.linker", "loadModule internal error, too many modules loaded");

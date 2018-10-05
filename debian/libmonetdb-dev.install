@@ -1,4 +1,4 @@
-debian/tmp/usr/lib/libbat.so usr/lib
+debian/tmp/usr/lib/x86_64-linux-gnu/libbat.so usr/lib/x86_64-linux-gnu
 debian/tmp/usr/include/monetdb/gdk*.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/monet*.h usr/include/monetdb
-debian/tmp/usr/lib/pkgconfig/monetdb-gdk.pc usr/lib/pkgconfig
+debian/tmp/usr/lib/x86_64-linux-gnu/pkgconfig/monetdb-gdk.pc usr/lib/x86_64-linux-gnu/pkgconfig
