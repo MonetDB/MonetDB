@@ -15,6 +15,7 @@
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
 #include <string.h>
+#include <ctype.h>
 #include "utils.h"
 #include "mutils.h"
 #include "database.h"
@@ -30,7 +31,7 @@ char* db_validname(char *dbname) {
 		if (
 				!(dbname[c] >= 'A' && dbname[c] <= 'Z') &&
 				!(dbname[c] >= 'a' && dbname[c] <= 'z') &&
-				!(dbname[c] >= '0' && dbname[c] <= '9') &&
+				!isdigit((unsigned char) dbname[c]) &&
 				!(dbname[c] == '-') &&
 				!(dbname[c] == '_')
 		   )

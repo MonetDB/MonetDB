@@ -1,0 +1,72 @@
+stderr of test 'mergepart05` in directory 'sql/test/merge-partitions` itself:
+
+
+# 17:44:52 >  
+# 17:44:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30658" "--set" "mapi_usock=/var/tmp/mtest-3693/.s.monetdb.30658" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:44:52 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30658
+# cmdline opt 	mapi_usock = /var/tmp/mtest-3693/.s.monetdb.30658
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:44:52 >  
+# 17:44:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3693" "--port=30658"
+# 17:44:52 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-12037/.s.monetdb.34928
+QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN RANGE MINVALUE AND 'something'; --error
+ERROR = !ALTER TABLE: absolute minimum value not available for varchar(32) type
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12037/.s.monetdb.34928
+QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'else' AND RANGE MAXVALUE; --error
+ERROR = !ALTER TABLE: absolute maximum value not available for varchar(32) type
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12037/.s.monetdb.34928
+QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN RANGE MINVALUE AND RANGE MAXVALUE; --error
+ERROR = !ALTER TABLE: absolute minimum value not available for varchar(32) type
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-8403/.s.monetdb.37659
+QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello"' AND '"world'; --error
+ERROR = !ALTER TABLE: minimum value is higher than maximum value
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-8403/.s.monetdb.37659
+QUERY = ALTER TABLE listparts DROP TABLE subtable1; --error
+ERROR = !ALTER TABLE: table 'sys.subtable1' isn't part of the MERGE TABLE 'sys.listparts'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-8403/.s.monetdb.37659
+QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '"hello' AND 'world"'; --error
+ERROR = !ALTER TABLE: there are values in the column b outside the partition range
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-14313/.s.monetdb.34865
+QUERY = ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN timestamp '2002-01-01 00:00' AND timestamp '2001-01-01 00:00'; --error
+ERROR = !ALTER TABLE: minimum value is higher than maximum value
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1763/.s.monetdb.37600
+QUERY = ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN timestamp '2048-01-01 00:00' AND timestamp '2049-01-01 00:00'; --error
+ERROR = !ALTER TABLE: there are values in the column b outside the partition range
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-12037/.s.monetdb.34928
+QUERY = ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND 0; --error
+ERROR = !ALTER TABLE: there are values in the column a outside the partition range
+CODE  = M0M29
+
+# 17:44:53 >  
+# 17:44:53 >  "Done."
+# 17:44:53 >  
+

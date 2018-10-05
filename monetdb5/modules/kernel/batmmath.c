@@ -18,6 +18,7 @@
  */
 #include "monetdb_config.h"
 #include "batmmath.h"
+#include "gdk_cand.h"
 #include <fenv.h>
 #ifndef FE_INVALID
 #define FE_INVALID			0
@@ -42,91 +43,87 @@
 	} while (0)
 
 
-#define scienceFcnImpl(FUNC,TYPE,SUFF)								\
-str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
-{																	\
-	BAT *b, *bn;													\
-	TYPE *o, *p, *q;												\
-	int e = 0, ex = 0;												\
-																	\
-	if ((b = BATdescriptor(*bid)) == NULL) {						\
-		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
-	}																\
-	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);					\
-	o = (TYPE *) Tloc(bn, 0);										\
-	p = (TYPE *) Tloc(b, 0);										\
-	q = (TYPE *) Tloc(b, BUNlast(b));								\
-																	\
-	errno = 0;														\
-	feclearexcept(FE_ALL_EXCEPT);									\
-	if (b->tnonil) {												\
-		for (; p < q; o++, p++)										\
-			*o = FUNC##SUFF(*p);									\
-	} else {														\
-		for (; p < q; o++, p++)										\
-			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*p);	\
-	}																\
-	if ((e = errno) != 0 ||											\
-		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |				\
-						   FE_OVERFLOW)) != 0) {					\
-		const char *err;											\
-		BBPunfix(bn->batCacheid);									\
-		BBPunfix(b->batCacheid);									\
-		if (e) {													\
-			err = strerror(e);										\
-		} else if (ex & FE_DIVBYZERO)								\
-			err = "Divide by zero";									\
-		else if (ex & FE_OVERFLOW)									\
-			err = "Overflow";										\
-		else														\
-			err = "Invalid result";									\
-		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);	\
-	}																\
-	BATsetcount(bn, BATcount(b));									\
-	bn->tsorted = 0;												\
-	bn->trevsorted = 0;												\
-	bn->tnil = b->tnil;												\
-	bn->tnonil = b->tnonil;											\
-	BATkey(bn, 0);													\
-	BBPkeepref(*ret = bn->batCacheid);								\
-	BBPunfix(b->batCacheid);										\
-	return MAL_SUCCEED;												\
-}
+/* from gdk_calc.c */
+#define CANDLOOP(dst, i, NIL, low, high)		\
+	do {										\
+		for ((i) = (low); (i) < (high); (i)++)	\
+			(dst)[i] = NIL;						\
+		nils += (high) - (low);					\
+	} while (0)
 
-#define scienceBinaryImpl(FUNC,TYPE,SUFF)								\
-str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
-									   const TYPE *d)					\
+#define scienceFcnImpl(FUNC,TYPE,SUFF)									\
+str CMDscience_bat_##TYPE##_##FUNC##_cand(bat *ret, const bat *bid, const bat *sid)	\
 {																		\
-	BAT *b, *bn;														\
-	TYPE *o, *p, *q;													\
+	BAT *b, *s = NULL, *bn;												\
+	BUN i, cnt, start, end;												\
+	const oid *restrict cand = NULL, *candend = NULL;					\
+	BUN nils = 0;														\
 	int e = 0, ex = 0;													\
 																		\
 	if ((b = BATdescriptor(*bid)) == NULL) {							\
 		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
 	}																	\
-	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
-	o = (TYPE *) Tloc(bn, 0);											\
-	p = (TYPE *) Tloc(b, 0);											\
-	q = (TYPE *) Tloc(b, BUNlast(b));									\
+	if (sid != NULL && !is_bat_nil(*sid) &&								\
+		(s = BATdescriptor(*sid)) == NULL) {							\
+		BBPunfix(b->batCacheid);										\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
+	}																	\
+	CANDINIT(b, s, start, end, cnt, cand, candend);						\
+	bn = COLnew(b->hseqbase, TYPE_##TYPE, cnt, TRANSIENT);				\
+	if (bn == NULL) {													\
+		BBPunfix(b->batCacheid);										\
+		BBPunfix(s->batCacheid);										\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+	}																	\
 																		\
+	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\
+	TYPE *restrict dst = (TYPE *) Tloc(bn, 0);							\
+	CANDLOOP(dst, i, TYPE##_nil, 0, start);								\
 	errno = 0;															\
 	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->tnonil) {													\
-		for (; p < q; o++, p++)											\
-			*o = FUNC##SUFF(*p, *d);									\
+	if (b->tnonil && cand == NULL) {									\
+		for (i = start; i < end; i++)									\
+			dst[i] = FUNC##SUFF(src[i]);								\
 	} else {															\
-		for (; p < q; o++, p++)											\
-			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*p, *d);	\
+		if (cand) {														\
+			for (i = start; i < end; i++) {								\
+				if (i < *cand - b->hseqbase) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+					continue;											\
+				}														\
+				assert(i == *cand - b->hseqbase);						\
+				if (++cand == candend)									\
+					end = i + 1;										\
+				if (is_##TYPE##_nil(src[i])) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+				} else {												\
+					dst[i] = FUNC##SUFF(src[i]);						\
+				}														\
+			}															\
+		} else {														\
+			for (i = start; i < end; i++) {								\
+				if (is_##TYPE##_nil(src[i])) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+				} else {												\
+					dst[i] = FUNC##SUFF(src[i]);						\
+				}														\
+			}															\
+		}																\
 	}																	\
-	if ((e = errno) != 0 ||												\
-		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
-						   FE_OVERFLOW)) != 0) {						\
+	e = errno;															\
+	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);			\
+	BBPunfix(b->batCacheid);											\
+	if (s)																\
+		BBPunfix(s->batCacheid);										\
+	if (e != 0 || ex != 0) {											\
 		const char *err;												\
-		BBPunfix(b->batCacheid);										\
 		BBPunfix(bn->batCacheid);										\
-		if (e) {														\
+		if (e)															\
 			err = strerror(e);											\
-		} else if (ex & FE_DIVBYZERO)									\
+		else if (ex & FE_DIVBYZERO)										\
 			err = "Divide by zero";										\
 		else if (ex & FE_OVERFLOW)										\
 			err = "Overflow";											\
@@ -134,66 +131,221 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 			err = "Invalid result";										\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
 	}																	\
-	BATsetcount(bn, BATcount(b));										\
-	bn->tsorted = 0;													\
-	bn->trevsorted = 0;													\
-	bn->tnil = b->tnil;													\
-	bn->tnonil = b->tnonil;												\
-	BATkey(bn,0);														\
+	CANDLOOP(dst, i, TYPE##_nil, end, cnt);								\
+	BATsetcount(bn, cnt);												\
+	bn->theap.dirty = true;												\
+																		\
+	bn->tsorted = false;												\
+	bn->trevsorted = false;												\
+	bn->tnil = nils != 0;												\
+	bn->tnonil = nils == 0;												\
+	BATkey(bn, false);													\
 	BBPkeepref(*ret = bn->batCacheid);									\
+	return MAL_SUCCEED;													\
+}																		\
+																		\
+str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)			\
+{																		\
+	return CMDscience_bat_##TYPE##_##FUNC##_cand(ret, bid, NULL);		\
+}
+
+#define scienceBinaryImpl(FUNC,TYPE,SUFF)								\
+str CMDscience_bat_cst_##FUNC##_##TYPE##_cand(bat *ret, const bat *bid, \
+											  const TYPE *d, const bat *sid) \
+{																		\
+	BAT *b, *s = NULL, *bn;												\
+	BUN i, cnt, start, end;												\
+	const oid *restrict cand = NULL, *candend = NULL;					\
+	BUN nils = 0;														\
+	int e = 0, ex = 0;													\
+																		\
+	if ((b = BATdescriptor(*bid)) == NULL) {							\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
+	}																	\
+	if (sid != NULL && !is_bat_nil(*sid) &&								\
+		(s = BATdescriptor(*sid)) == NULL) {							\
+		BBPunfix(b->batCacheid);										\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
+	}																	\
+	CANDINIT(b, s, start, end, cnt, cand, candend);						\
+	bn = COLnew(b->hseqbase, TYPE_##TYPE, cnt, TRANSIENT);				\
+	if (bn == NULL) {													\
+		BBPunfix(b->batCacheid);										\
+		BBPunfix(s->batCacheid);										\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+	}																	\
+																		\
+	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\
+	TYPE *restrict dst = (TYPE *) Tloc(bn, 0);							\
+	CANDLOOP(dst, i, TYPE##_nil, 0, start);								\
+	errno = 0;															\
+	feclearexcept(FE_ALL_EXCEPT);										\
+	if (b->tnonil && cand == NULL) {									\
+		for (i = start; i < end; i++)									\
+			dst[i] = FUNC##SUFF(src[i], *d);							\
+	} else {															\
+		if (cand) {														\
+			for (i = start; i < end; i++) {								\
+				if (i < *cand - b->hseqbase) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+					continue;											\
+				}														\
+				assert(i == *cand - b->hseqbase);						\
+				if (++cand == candend)									\
+					end = i + 1;										\
+				if (is_##TYPE##_nil(src[i])) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+				} else {												\
+					dst[i] = FUNC##SUFF(src[i], *d);					\
+				}														\
+			}															\
+		} else {														\
+			for (i = start; i < end; i++) {								\
+				if (is_##TYPE##_nil(src[i])) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+				} else {												\
+					dst[i] = FUNC##SUFF(src[i], *d);					\
+				}														\
+			}															\
+		}																\
+	}																	\
+	e = errno;															\
+	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);			\
 	BBPunfix(b->batCacheid);											\
+	if (s)																\
+		BBPunfix(s->batCacheid);										\
+	if (e != 0 || ex != 0) {											\
+		const char *err;												\
+		BBPunfix(bn->batCacheid);										\
+		if (e)															\
+			err = strerror(e);											\
+		else if (ex & FE_DIVBYZERO)										\
+			err = "Divide by zero";										\
+		else if (ex & FE_OVERFLOW)										\
+			err = "Overflow";											\
+		else															\
+			err = "Invalid result";										\
+		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
+	}																	\
+	CANDLOOP(dst, i, TYPE##_nil, end, cnt);								\
+	BATsetcount(bn, cnt);												\
+	bn->theap.dirty = true;												\
+																		\
+	bn->tsorted = false;												\
+	bn->trevsorted = false;												\
+	bn->tnil = nils != 0;												\
+	bn->tnonil = nils == 0;												\
+	BATkey(bn, false);													\
+	BBPkeepref(*ret = bn->batCacheid);									\
+	return MAL_SUCCEED;													\
+}																		\
+																		\
+str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
+									   const TYPE *d)					\
+{																		\
+	return CMDscience_bat_cst_##FUNC##_##TYPE##_cand(ret, bid, d, NULL); \
+}																		\
+																		\
+str CMDscience_cst_bat_##FUNC##_##TYPE##_cand(bat *ret, const TYPE *d,	\
+											  const bat *bid, const bat *sid) \
+{																		\
+	BAT *b, *s = NULL, *bn;												\
+	BUN i, cnt, start, end;												\
+	const oid *restrict cand = NULL, *candend = NULL;					\
+	BUN nils = 0;														\
+	int e = 0, ex = 0;													\
+																		\
+	if ((b = BATdescriptor(*bid)) == NULL) {							\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
+	}																	\
+	if (sid != NULL && !is_bat_nil(*sid) &&								\
+		(s = BATdescriptor(*sid)) == NULL) {							\
+		BBPunfix(b->batCacheid);										\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
+	}																	\
+	CANDINIT(b, s, start, end, cnt, cand, candend);						\
+	bn = COLnew(b->hseqbase, TYPE_##TYPE, cnt, TRANSIENT);				\
+	if (bn == NULL) {													\
+		BBPunfix(b->batCacheid);										\
+		BBPunfix(s->batCacheid);										\
+		throw(MAL, "batcalc." #FUNC, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
+	}																	\
+																		\
+	const TYPE *restrict src = (const TYPE *) Tloc(b, 0);				\
+	TYPE *restrict dst = (TYPE *) Tloc(bn, 0);							\
+	CANDLOOP(dst, i, TYPE##_nil, 0, start);								\
+	errno = 0;															\
+	feclearexcept(FE_ALL_EXCEPT);										\
+	if (b->tnonil && cand == NULL) {									\
+		for (i = start; i < end; i++)									\
+			dst[i] = FUNC##SUFF(*d, src[i]);							\
+	} else {															\
+		if (cand) {														\
+			for (i = start; i < end; i++) {								\
+				if (i < *cand - b->hseqbase) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+					continue;											\
+				}														\
+				assert(i == *cand - b->hseqbase);						\
+				if (++cand == candend)									\
+					end = i + 1;										\
+				if (is_##TYPE##_nil(src[i])) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+				} else {												\
+					dst[i] = FUNC##SUFF(*d, src[i]);					\
+				}														\
+			}															\
+		} else {														\
+			for (i = start; i < end; i++) {								\
+				if (is_##TYPE##_nil(src[i])) {							\
+					nils++;												\
+					dst[i] = TYPE##_nil;								\
+				} else {												\
+					dst[i] = FUNC##SUFF(*d, src[i]);					\
+				}														\
+			}															\
+		}																\
+	}																	\
+	e = errno;															\
+	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);			\
+	BBPunfix(b->batCacheid);											\
+	if (s)																\
+		BBPunfix(s->batCacheid);										\
+	if (e != 0 || ex != 0) {											\
+		const char *err;												\
+		BBPunfix(bn->batCacheid);										\
+		if (e)															\
+			err = strerror(e);											\
+		else if (ex & FE_DIVBYZERO)										\
+			err = "Divide by zero";										\
+		else if (ex & FE_OVERFLOW)										\
+			err = "Overflow";											\
+		else															\
+			err = "Invalid result";										\
+		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
+	}																	\
+	CANDLOOP(dst, i, TYPE##_nil, end, cnt);								\
+	BATsetcount(bn, cnt);												\
+	bn->theap.dirty = true;												\
+																		\
+	bn->tsorted = false;												\
+	bn->trevsorted = false;												\
+	bn->tnil = nils != 0;												\
+	bn->tnonil = nils == 0;												\
+	BATkey(bn, false);													\
+	BBPkeepref(*ret = bn->batCacheid);									\
 	return MAL_SUCCEED;													\
 }																		\
 																		\
 str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 									   const bat *bid)					\
 {																		\
-	BAT *b, *bn;														\
-	TYPE *o, *p, *q;													\
-	int e = 0, ex = 0;													\
-																		\
-	if ((b = BATdescriptor(*bid)) == NULL) {							\
-		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
-	}																	\
-	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
-	o = (TYPE *) Tloc(bn, 0);											\
-	p = (TYPE *) Tloc(b, 0);											\
-	q = (TYPE *) Tloc(b, BUNlast(b));									\
-																		\
-	errno = 0;															\
-	feclearexcept(FE_ALL_EXCEPT);										\
-	if (b->tnonil) {													\
-		for (; p < q; o++, p++)											\
-			*o = FUNC##SUFF(*d, *p);									\
-	} else {															\
-		for (; p < q; o++, p++)											\
-			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*d, *p);	\
-	}																	\
-	if ((e = errno) != 0 ||												\
-		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
-						   FE_OVERFLOW)) != 0) {						\
-		const char *err;												\
-		BBPunfix(b->batCacheid);										\
-		BBPunfix(bn->batCacheid);										\
-		if (e) {														\
-			err = strerror(e);											\
-		} else if (ex & FE_DIVBYZERO)									\
-			err = "Divide by zero";										\
-		else if (ex & FE_OVERFLOW)										\
-			err = "Overflow";											\
-		else															\
-			err = "Invalid result";										\
-		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
-	}																	\
-	BATsetcount(bn, BATcount(b));										\
-	bn->tsorted = 0;													\
-	bn->trevsorted = 0;													\
-	bn->tnil = b->tnil;													\
-	bn->tnonil = b->tnonil;												\
-	BATkey(bn,0);														\
-	BBPkeepref(*ret = bn->batCacheid);									\
-	BBPunfix(b->batCacheid);											\
-	return MAL_SUCCEED;													\
+	return CMDscience_cst_bat_##FUNC##_##TYPE##_cand(ret, d, bid, NULL); \
 }
 
 #define scienceImpl(Operator)					\

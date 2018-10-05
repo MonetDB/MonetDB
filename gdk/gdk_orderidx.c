@@ -20,30 +20,42 @@ BATidxsync(void *arg)
 	Heap *hp;
 	int fd;
 	lng t0 = 0;
+	const char *failed = " failed";
 
 	ALGODEBUG t0 = GDKusec();
 
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if ((hp = b->torderidx) != NULL) {
-		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED &&
-		    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
-			((oid *) hp->base)[0] |= (oid) 1 << 24;
-			if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
-				if (!(GDKdebug & NOSYNCMASK)) {
+		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
+			if (hp->storage == STORE_MEM) {
+				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
+					((oid *) hp->base)[0] |= (oid) 1 << 24;
+					if (write(fd, hp->base, SIZEOF_OID) >= 0) {
+						failed = ""; /* not failed */
+						if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
-					_commit(fd);
+							_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-					fdatasync(fd);
+							fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-					fsync(fd);
+							fsync(fd);
 #endif
+						}
+					} else {
+						perror("write hash");
+					}
+					close(fd);
 				}
 			} else {
-				perror("write orderidx");
+				((oid *) hp->base)[0] |= (oid) 1 << 24;
+				if (!(GDKdebug & NOSYNCMASK) &&
+				    MT_msync(hp->base, SIZEOF_OID) < 0)
+					((oid *) hp->base)[0] &= ~((oid) 1 << 24);
 			}
-			close(fd);
+			ALGODEBUG fprintf(stderr, "#BATidxsync(%s): orderidx persisted"
+					  " (" LLFMT " usec)%s\n",
+					  BATgetId(b), GDKusec() - t0, failed);
 		}
-		ALGODEBUG fprintf(stderr, "#BATidxsync: persisting orderidx %s (" LLFMT " usec)\n", hp->filename, GDKusec() - t0);
 	}
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	BBPunfix(b->batCacheid);
@@ -88,10 +100,10 @@ BATcheckorderidx(BAT *b)
 				    (hdata[2] == 0 || hdata[2] == 1) &&
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) (hp->size = hp->free = (ORDERIDXOFF + hdata[1]) * SIZEOF_OID) &&
-				    HEAPload(hp, nme, "torderidx", 0) == GDK_SUCCEED) {
+				    HEAPload(hp, nme, "torderidx", false) == GDK_SUCCEED) {
 					close(fd);
 					b->torderidx = hp;
-					ALGODEBUG fprintf(stderr, "#BATcheckorderidx: reusing persisted orderidx %d\n", b->batCacheid);
+					ALGODEBUG fprintf(stderr, "#BATcheckorderidx(" ALGOBATFMT "): reusing persisted orderidx\n", ALGOBATPAR(b));
 					MT_lock_unset(&GDKhashLock(b->batCacheid));
 					return true;
 				}
@@ -105,13 +117,13 @@ BATcheckorderidx(BAT *b)
 	}
 	ret = b->torderidx != NULL;
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckorderidx: already has orderidx %d, waited " LLFMT " usec\n", b->batCacheid, GDKusec() - t);
+	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckorderidx(" ALGOBATFMT "): already has orderidx, waited " LLFMT " usec\n", ALGOBATPAR(b), GDKusec() - t);
 	return ret;
 }
 
 /* create the heap for an order index; returns NULL on failure */
 Heap *
-createOIDXheap(BAT *b, int stable)
+createOIDXheap(BAT *b, bool stable)
 {
 	Heap *m;
 	oid *restrict mv;
@@ -130,7 +142,7 @@ createOIDXheap(BAT *b, int stable)
 	mv = (oid *) m->base;
 	*mv++ = ORDERIDX_VERSION;
 	*mv++ = (oid) BATcount(b);
-	*mv++ = (oid) !!stable;
+	*mv++ = (oid) stable;
 	return m;
 }
 
@@ -140,29 +152,31 @@ persistOIDX(BAT *b)
 {
 #ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-	    b->batInserted == b->batCount) {
+	    b->batInserted == b->batCount &&
+	    !b->theap.dirty) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
 		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		ALGODEBUG fprintf(stderr, "#BATorderidx: NOT persisting index %d\n", b->batCacheid);
+		ALGODEBUG fprintf(stderr, "#persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
 #else
 	(void) b;
 #endif
 }
 
 gdk_return
-BATorderidx(BAT *b, int stable)
+BATorderidx(BAT *b, bool stable)
 {
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
 		BAT *on;
-		if (BATsort(NULL, &on, NULL, b, NULL, NULL, 0, stable) != GDK_SUCCEED)
+		ALGODEBUG fprintf(stderr, "#BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
+		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
 		assert(BATcount(b) == BATcount(on));
-		if (on->tdense) {
+		if (BATtdense(on)) {
 			/* if the order bat is dense, the input was
 			 * sorted and we don't need an order index */
 			assert(b->tnosorted == 0);
@@ -261,7 +275,7 @@ BATorderidx(BAT *b, int stable)
 	do {								\
 		TYPE *minhp, t;						\
 		TYPE *v = (TYPE *) Tloc(b, 0);				\
-		if ((minhp = (TYPE *) GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) { \
+		if ((minhp = GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) {	\
 			goto bailout;					\
 		}							\
 		/* init min heap */					\
@@ -328,6 +342,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
+	ALGODEBUG fprintf(stderr, "#GDKmergeidx(" ALGOBATFMT ") create index\n", ALGOBATPAR(b));
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->torderidx) {
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
@@ -391,7 +406,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		default:
 			/* TODO: support strings, date, timestamps etc. */
 			assert(0);
-			HEAPfree(m, 1);
+			HEAPfree(m, true);
 			GDKfree(m);
 			MT_lock_unset(&GDKhashLock(b->batCacheid));
 			return GDK_FAIL;
@@ -401,13 +416,13 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		/* use min-heap */
 		oid **p, **q, *t_oid;
 
-		p = (oid **) GDKmalloc(n_ar*sizeof(oid *));
-		q = (oid **) GDKmalloc(n_ar*sizeof(oid *));
+		p = GDKmalloc(n_ar*sizeof(oid *));
+		q = GDKmalloc(n_ar*sizeof(oid *));
 		if (p == NULL || q == NULL) {
 		  bailout:
 			GDKfree(p);
 			GDKfree(q);
-			HEAPfree(m, 1);
+			HEAPfree(m, true);
 			GDKfree(m);
 			MT_lock_unset(&GDKhashLock(b->batCacheid));
 			return GDK_FAIL;
@@ -451,7 +466,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
 			BBPunfix(b->batCacheid);
 	} else
-		ALGODEBUG fprintf(stderr, "#GDKmergeidx: NOT persisting index %d\n", b->batCacheid);
+		ALGODEBUG fprintf(stderr, "#GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
 #endif
 
 	b->batDirtydesc = TRUE;
@@ -468,7 +483,7 @@ OIDXfree(BAT *b)
 		MT_lock_set(&GDKhashLock(b->batCacheid));
 		if ((hp = b->torderidx) != NULL && hp != (Heap *) 1) {
 			b->torderidx = (Heap *) 1;
-			HEAPfree(hp, 0);
+			HEAPfree(hp, false);
 			GDKfree(hp);
 		}
 		MT_lock_unset(&GDKhashLock(b->batCacheid));

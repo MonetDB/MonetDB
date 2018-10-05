@@ -120,6 +120,7 @@ typedef struct mvc {
 	int sizeheader;		/* print size header in result set */
 	int debug;
 
+	lng Topt;		/* timer for optimizer phase */
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
 
@@ -159,9 +160,9 @@ extern void mvc_cancel_session(mvc *m);
 #define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
 
 extern int mvc_trans(mvc *c);
-extern int mvc_commit(mvc *c, int chain, const char *name);
-extern int mvc_rollback(mvc *c, int chain, const char *name);
-extern int mvc_release(mvc *c, const char *name);
+extern str mvc_commit(mvc *c, int chain, const char *name, bool enabling_auto_commit);
+extern str mvc_rollback(mvc *c, int chain, const char *name, bool disabling_auto_commit);
+extern str mvc_release(mvc *c, const char *name);
 
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
@@ -180,15 +181,15 @@ extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
-extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg);
+extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
 extern int mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
 extern sql_schema *mvc_create_schema(mvc *m, const char *name, int auth_id, int owner);
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
-extern int mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
-extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz);
+extern str mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
+extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int persistence, const char *sql, bit system);
 extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
 

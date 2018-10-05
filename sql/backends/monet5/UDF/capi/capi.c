@@ -307,7 +307,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 		GENERATE_BAT_INPUT_BASE(tpe);                                          \
 		bat_data->count = BATcount(b);                                         \
 		bat_data->null_value = tpe##_nil;                                      \
-		if (b->tdense) {                                                       \
+		if (BATtdense(b)) {					\
 			size_t it = 0;                                                     \
 			tpe val = b->T.seq;                                                \
 			/* bat is dense, materialize it */                                 \
@@ -440,10 +440,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	sigset_t signal_set;
 
 #ifdef NDEBUG
-	int debug_build =
+	bool debug_build =
 		GDKgetenv_istrue(debug_flag) || GDKgetenv_isyes(debug_flag);
 #else
-	int debug_build = true;
+	bool debug_build = true;
 #endif
 	char* extra_cflags = NULL;
 	char* extra_ldflags = NULL;
@@ -490,7 +490,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		(void)sigaddset(&signal_set, SIGBUS);
 		(void)pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
 
-		memset(&sa, 0, sizeof(sa));
+		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
 	if (!grouped) {
@@ -980,7 +980,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				goto wrapup;
 			}
 			if (BUNappend(input_bats[index], input,
-						  FALSE) != GDK_SUCCEED) {
+						  false) != GDK_SUCCEED) {
 				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
@@ -1296,15 +1296,16 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	// set up the signal handler for catching segfaults
 	if (option_enable_mprotect) {
-		memset(&sa, 0, sizeof(sa));
-		sa.sa_flags = SA_SIGINFO;
-		sigfillset(&sa.sa_mask);
-		sa.sa_sigaction = handler;
+		sa = (struct sigaction) {
+			.sa_flags = SA_SIGINFO,
+			.sa_sigaction = handler,
+		};
+		(void) sigfillset(&sa.sa_mask);
 		if (sigaction(SIGSEGV, &sa, &oldsa) == -1 ||
 			sigaction(SIGBUS, &sa, &oldsb) == -1) {
 			msg = createException(MAL, "cudf.eval",
-								  "Failed to set signal handler: %s",
-								  strerror(errno));
+					      "Failed to set signal handler: %s",
+					      strerror(errno));
 			errno = 0;
 			goto wrapup;
 		}
@@ -1338,7 +1339,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			errno = 0;
 			goto wrapup;
 		}
-		memset(&sa, 0, sizeof(sa));
+		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
 	if (msg) {
@@ -1418,7 +1419,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (!ptr) {
 						ptr = str_nil;
 					}
-					if (BUNappend(b, ptr, FALSE) != GDK_SUCCEED) {
+					if (BUNappend(b, ptr, false) != GDK_SUCCEED) {
 						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 						goto wrapup;
 					}
@@ -1451,7 +1452,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						memcpy(&current_blob->data[0], blob.data, blob.size);
 					}
 
-					if (BUNappend(b, current_blob, FALSE) != GDK_SUCCEED) {
+					if (BUNappend(b, current_blob, false) != GDK_SUCCEED) {
 						if (current_blob) {
 							GDKfree(current_blob);
 						}
@@ -1483,7 +1484,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						}
 						appended_element = element;
 					}
-					if (BUNappend(b, appended_element, FALSE) != GDK_SUCCEED) {
+					if (BUNappend(b, appended_element, false) != GDK_SUCCEED) {
 						if (element) {
 							GDKfree(element);
 						}
@@ -1528,10 +1529,10 @@ wrapup:
 	// remove the signal handler, if any was set
 	if (option_enable_mprotect) {
 		if (sa.sa_sigaction) {
-			sigaction(SIGSEGV, &oldsa, NULL);
-			sigaction(SIGBUS, &oldsb, NULL);
+			(void) sigaction(SIGSEGV, &oldsa, NULL);
+			(void) sigaction(SIGBUS, &oldsb, NULL);
 
-			memset(&sa, 0, sizeof(sa));
+			sa = (struct sigaction) {.sa_flags = 0,};
 		}
 		// clear any mprotected regions
 		while (regions) {
@@ -1582,29 +1583,29 @@ wrapup:
 			if (inputs[i]) {
 				if (isaBatType(getArgType(mb, pci, i))) {
 					bat_type = getBatType(getArgType(mb, pci, i));
-					if (bat_type == TYPE_str || bat_type == TYPE_date ||
-						bat_type == TYPE_daytime ||
-						bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
-						bat_type == TYPE_sqlblob) {
-						// have to free input data
-						void *data = GetTypeData(bat_type, inputs[i]);
-						if (data) {
-							GDKfree(data);
+				}
+				if (bat_type == TYPE_str || bat_type == TYPE_date ||
+				    bat_type == TYPE_daytime ||
+				    bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
+				    bat_type == TYPE_sqlblob) {
+					// have to free input data
+					void *data = GetTypeData(bat_type, inputs[i]);
+					if (data) {
+						GDKfree(data);
+					}
+				} else if (bat_type > TYPE_str) {
+					// this type was converted to individually malloced
+					// strings
+					// we have to free all the individual strings
+					char **data = (char **)GetTypeData(bat_type, inputs[i]);
+					size_t count = GetTypeCount(bat_type, inputs[i]);
+					for (j = 0; j < count; j++) {
+						if (data[j]) {
+							GDKfree(data[j]);
 						}
-					} else if (bat_type > TYPE_str) {
-						// this type was converted to individually malloced
-						// strings
-						// we have to free all the individual strings
-						char **data = (char **)GetTypeData(bat_type, inputs[i]);
-						size_t count = GetTypeCount(bat_type, inputs[i]);
-						for (j = 0; j < count; j++) {
-							if (data[j]) {
-								GDKfree(data[j]);
-							}
-						}
-						if (data) {
-							GDKfree(data);
-						}
+					}
+					if (data) {
+						GDKfree(data);
 					}
 				}
 				GDKfree(inputs[i]);

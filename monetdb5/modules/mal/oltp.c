@@ -246,10 +246,10 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		now = (lng) oltp_locks[i].start * 1000; // convert to timestamp microsecond
 		if ((msg = MTIMEunix_epoch(&ts)) != MAL_SUCCEED ||
 			(msg = MTIMEtimestamp_add(&tsn, &ts, &now)) != MAL_SUCCEED ||
-			BUNappend(bs, oltp_locks[i].start ? &tsn : timestamp_nil, FALSE) != GDK_SUCCEED ||
-			BUNappend(bu, oltp_locks[i].cntxt ? oltp_locks[i].cntxt->username : str_nil, FALSE) != GDK_SUCCEED ||
-			BUNappend(bl, &i, FALSE) != GDK_SUCCEED ||
-			BUNappend(bc, &oltp_locks[i].used, FALSE) != GDK_SUCCEED)
+			BUNappend(bs, oltp_locks[i].start ? &tsn : timestamp_nil, false) != GDK_SUCCEED ||
+			BUNappend(bu, oltp_locks[i].cntxt ? oltp_locks[i].cntxt->username : str_nil, false) != GDK_SUCCEED ||
+			BUNappend(bl, &i, false) != GDK_SUCCEED ||
+			BUNappend(bc, &oltp_locks[i].used, false) != GDK_SUCCEED)
 			goto bailout;
 	}
 	//OLTPdump_(cntxt,"#lock table\n");

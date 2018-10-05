@@ -130,8 +130,9 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		char buf[1];
 		int *c_d;
 
-		memset(&server, 0, sizeof(struct sockaddr_un));
-		server.sun_family = AF_UNIX;
+		server = (struct sockaddr_un) {
+			.sun_family = AF_UNIX,
+		};
 		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
 		free(conn);
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM
@@ -205,10 +206,11 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		}
 		free(conn);
 
-		memset(&server, 0, sizeof(server));
+		server = (struct sockaddr_in) {
+			.sin_family = hp->h_addrtype,
+			.sin_port = htons((unsigned short) atoi(port)),
+		};
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		server.sin_family = hp->h_addrtype;
-		server.sin_port = htons((unsigned short) (atoi(port) & 0xFFFF));
 		serv = (struct sockaddr *) &server;
 		servsize = sizeof(server);
 
@@ -230,8 +232,8 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		}
 	}
 
-	sfdin = block_stream(socket_rastream(ssock, "merovingian<-server (proxy read)"));
-	sfout = block_stream(socket_wastream(ssock, "merovingian->server (proxy write)"));
+	sfdin = block_stream(socket_rstream(ssock, "merovingian<-server (proxy read)"));
+	sfout = block_stream(socket_wstream(ssock, "merovingian->server (proxy write)"));
 
 	if (sfdin == 0 || sfout == 0) {
 		close_stream(sfout);
@@ -299,11 +301,11 @@ handleMySQLClient(int sock)
 	str p;
 	int len;
 
-	fdin = socket_rastream(sock, "merovingian<-mysqlclient (read)");
+	fdin = socket_rstream(sock, "merovingian<-mysqlclient (read)");
 	if (fdin == 0)
 		return(newErr("merovingian-mysqlclient inputstream problems"));
 
-	fout = socket_wastream(sock, "merovingian->mysqlclient (write)");
+	fout = socket_wstream(sock, "merovingian->mysqlclient (write)");
 	if (fout == 0) {
 		close_stream(fdin);
 		return(newErr("merovingian-mysqlclient outputstream problems"));

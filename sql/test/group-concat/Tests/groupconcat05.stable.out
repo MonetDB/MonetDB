@@ -1,0 +1,120 @@
+stdout of test 'groupconcat05` in directory 'sql/test/group-concat` itself:
+
+
+# 12:57:06 >  
+# 12:57:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38648" "--set" "mapi_usock=/var/tmp/mtest-7772/.s.monetdb.38648" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test_group-concat"
+# 12:57:06 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_group-concat', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://gup-128-80.cwi.nl:38648/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7772/.s.monetdb.38648
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:57:06 >  
+# 12:57:06 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7772" "--port=38648"
+# 12:57:06 >  
+
+#start transaction;
+#create table testmore (a int, b clob);
+#insert into testmore values (1, 'another'), (1, 'testing'), (1, 'todo');
+[ 3	]
+#select a, group_concat(b, '!') from testmore group by a;
+% sys.testmore,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	20 # length
+[ 1,	"another!testing!todo"	]
+#select group_concat(b, '!') from testmore;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 20 # length
+[ "another!testing!todo"	]
+#insert into testmore values (2, 'lets'), (3, 'get'), (2, 'harder');
+[ 3	]
+#select a, group_concat(b, '---') from testmore group by a;
+% sys.testmore,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	24 # length
+[ 1,	"another---testing---todo"	]
+[ 2,	"lets---harder"	]
+[ 3,	"get"	]
+#select group_concat(b, '---') from testmore;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 46 # length
+[ "another---testing---todo---lets---get---harder"	]
+#insert into testmore values (3, 'even'), (2, 'more'), (1, '');
+[ 3	]
+#select a, group_concat(b, '') from testmore group by a;
+% sys.testmore,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	18 # length
+[ 1,	"anothertestingtodo"	]
+[ 2,	"letshardermore"	]
+[ 3,	"geteven"	]
+#select group_concat(b, '') from testmore;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 39 # length
+[ "anothertestingtodoletsgetharderevenmore"	]
+#select a, group_concat(b, '-') from testmore group by a;
+% sys.testmore,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	21 # length
+[ 1,	"another-testing-todo-"	]
+[ 2,	"lets-harder-more"	]
+[ 3,	"get-even"	]
+#select a, group_concat(b) from testmore group by a;
+% sys.testmore,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	21 # length
+[ 1,	"another,testing,todo,"	]
+[ 2,	"lets,harder,more"	]
+[ 3,	"get,even"	]
+#insert into testmore values (3, 'even'), (2, NULL), (1, '');
+[ 3	]
+#select a, group_concat(b, 'XyZ\n') from testmore group by a;
+% sys.testmore,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	34 # length
+[ 1,	"anotherXyZ\ntestingXyZ\ntodoXyZ\nXyZ\n"	]
+[ 2,	NULL	]
+[ 3,	"getXyZ\nevenXyZ\neven"	]
+#select a, group_concat(b, NULL) from testmore group by a;
+% sys.testmore,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	0 # length
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ 3,	NULL	]
+#select group_concat(b, NULL) from testmore;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#rollback;
+
+# 12:57:06 >  
+# 12:57:06 >  "Done."
+# 12:57:06 >  
+

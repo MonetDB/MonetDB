@@ -44,10 +44,18 @@
 #define SESSION_RO 1
 
 str
+#ifdef HAVE_HGE
+sql_update_var(mvc *m, const char *name, char *sval, hge sgn)
+#else
 sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
+#endif
 {
 	if (strcmp(name, "debug") == 0) {
+#ifdef HAVE_HGE
+		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 		m->debug = (int) sgn;
 	} else if (strcmp(name, "current_schema") == 0) {
 		if (!mvc_set_schema(m, sval)) {
@@ -58,13 +66,25 @@ sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
 			throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", sval);
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
+#ifdef HAVE_HGE
+		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 		m->timezone = (int) sgn;
 	} else if (strcmp(name, "cache") == 0) {
+#ifdef HAVE_HGE
+		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 		m->cache = (int) sgn;
 	} else if (strcmp(name, "history") == 0) {
+#ifdef HAVE_HGE
+		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 		m->history = (sgn != 0);
 	} 
 	return NULL;
@@ -81,13 +101,13 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION,  FUNC_LANG_SQL, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;", FALSE, FALSE);
+	mvc_create_func(m, NULL, s, "env", ops, res, F_UNION,  FUNC_LANG_SQL, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;", FALSE, FALSE, TRUE);
 
 	res = sa_list(m->sa);
 	list_append(res, sql_create_arg(m->sa, "name", sql_bind_subtype(m->sa, "varchar", 1024, 0), ARG_OUT));  
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_variables", "CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;", FALSE, FALSE);
+	mvc_create_func(m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "sql_variables", "CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;", FALSE, FALSE, TRUE);
 	return 0;
 }

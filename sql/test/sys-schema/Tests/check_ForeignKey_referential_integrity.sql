@@ -23,9 +23,8 @@ SELECT * FROM sys.functions WHERE type NOT IN (SELECT function_type_id FROM sys.
 SELECT * FROM sys.functions WHERE language NOT IN (SELECT language_id FROM sys.function_languages);
 -- SELECT * FROM sys.functions WHERE language NOT IN (0,1,2,3,4,5,6,7);  -- old check before table sys.function_languages existed
 
-SELECT * FROM sys.systemfunctions WHERE function_id NOT IN (SELECT id FROM sys.functions);
--- systemfunctions should refer only to functions in MonetDB system schemas (on Dec2016 these are: sys, json, profiler and bam)
-SELECT * FROM sys.systemfunctions WHERE function_id NOT IN (SELECT id FROM sys.functions WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name IN ('sys','json','profiler','bam')));
+-- system functions should refer only to functions in MonetDB system schemas (on Dec2016 these are: sys, json, profiler and bam)
+SELECT * FROM sys.functions WHERE system AND schema_id NOT IN (SELECT id FROM sys.schemas WHERE system);
 
 SELECT * FROM sys.args WHERE func_id NOT IN (SELECT id FROM sys.functions);
 SELECT * FROM sys.args WHERE type NOT IN (SELECT sqlname FROM sys.types);

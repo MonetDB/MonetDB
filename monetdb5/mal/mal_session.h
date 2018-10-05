@@ -14,7 +14,7 @@
 mal_export str malBootstrap(void);
 mal_export str MSserveClient(void *dummy);
 mal_export str MSinitClientPrg(Client cntxt, str mod, str nme);
-mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize, int compute_column_widths);
+mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
 
 mal_export str MALreader(Client c);
 mal_export str MALinitClient(Client c);

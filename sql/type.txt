@@ -1,0 +1,29 @@
+
+All types are defined by the char *name, int digits, int scale
+
+Decimal
+	Decimal's map to integer types, we support bte, sht, int, lng and if
+	compiled with 128 bits hge. The digits and scale reprecent the sql
+	digits and scale.
+
+Interval
+
+	2 interval types
+		month (ie year to month)
+		second (ie day to sec (with scale 
+			(currently max 3, extra zeros for scale up to 6))
+	For both interval types the from - to are defined by the nr of digits
+	see inttype2digits and digits2sk/ek
+	for second the scale isn't used currently, but should be in the
+	future (ie maps like a decimal)
+
+date
+	
+time 	(mal daytime) 
+	digits represent the seconds scale 
+	scale (will represent timezone), currently only has_tz
+timestamp
+	digits represent the seconds scale 
+	scale (will represent timezone), currently only has_tz
+
+Todo timezones!

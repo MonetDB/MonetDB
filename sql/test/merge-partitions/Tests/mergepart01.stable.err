@@ -1,0 +1,60 @@
+stderr of test 'mergepart01` in directory 'sql/test/merge-partitions` itself:
+
+
+# 17:07:38 >  
+# 17:07:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30770" "--set" "mapi_usock=/var/tmp/mtest-24782/.s.monetdb.30770" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:07:38 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30770
+# cmdline opt 	mapi_usock = /var/tmp/mtest-24782/.s.monetdb.30770
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:07:38 >  
+# 17:07:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24782" "--port=30770"
+# 17:07:38 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
+QUERY = ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10; --error
+ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of the MERGE TABLE 'sys.testme'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
+QUERY = ALTER TABLE testme ADD TABLE wrongtable AS PARTITION BETWEEN 5 AND 6; --error
+ERROR = !ALTER RANGE PARTITION TABLE: to be added table doesn't match RANGE PARTITION TABLE definition
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
+QUERY = ALTER TABLE testme ADD TABLE subtable2 AS PARTITION IN ('0', '1', '2'); --error
+ERROR = !ALTER TABLE: cannot add a value partition into a range partition table
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
+QUERY = ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 7 AND 9; --error
+ERROR = !ALTER TABLE: conflicting partitions: 7 to 9 and 5 to 10 from table sys.subtable1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
+QUERY = ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5; --error
+ERROR = !ALTER TABLE: conflicting partitions: 5 to 5 and 5 to 10 from table sys.subtable1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
+QUERY = DROP TABLE subtable1; --error
+ERROR = !DROP TABLE: unable to drop table subtable1 (there are database objects which depend on it)
+CODE  = 42000
+
+# 17:07:39 >  
+# 17:07:39 >  "Done."
+# 17:07:39 >  
+

@@ -68,7 +68,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
-					if (BUNappend(b, getFunctionId(sig), FALSE) != GDK_SUCCEED)
+					if (BUNappend(b, getFunctionId(sig), false) != GDK_SUCCEED)
 						goto bailout;
 				}
 			}
@@ -110,7 +110,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
-					if (BUNappend(b, getModuleId(sig), FALSE) != GDK_SUCCEED)
+					if (BUNappend(b, getModuleId(sig), false) != GDK_SUCCEED)
 						goto bailout;
 				}
 			}
@@ -152,7 +152,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				for (t = s->space[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 					str kind = operatorName(sig->token);
-					if (BUNappend(b, kind, FALSE) != GDK_SUCCEED)
+					if (BUNappend(b, kind, false) != GDK_SUCCEED)
 						goto bailout;
 				}
 			}
@@ -197,7 +197,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if(a) *a = 0;
-					if (BUNappend(b, (a = strchr(sig, '(')) ? a : "", FALSE) != GDK_SUCCEED)
+					if (BUNappend(b, (a = strchr(sig, '(')) ? a : "", false) != GDK_SUCCEED)
 						goto bailout;
 				}
 			}
@@ -242,7 +242,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if( a)
 						for( a=a+7; isspace((unsigned char) *a); a++)
 							;
-					if (BUNappend(b, (a? a: "nil"), FALSE) != GDK_SUCCEED)
+					if (BUNappend(b, (a? a: "nil"), false) != GDK_SUCCEED)
 						goto bailout;
 				}
 			}
@@ -283,7 +283,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; i < s->def->stop; i++) {
 			if((ps = instruction2str(s->def,0, getInstrPtr(s->def, i), 0)) == NULL)
 				goto bailout;
-			if (BUNappend(b, ps + 1, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(b, ps + 1, false) != GDK_SUCCEED) {
 				GDKfree(ps);
 				goto bailout;
 			}
@@ -336,7 +336,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*tail = 0;
 			if (tail && (w=strchr(tail, ';')) )
 				*w = 0;
-			if (BUNappend(b, c, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(b, c, false) != GDK_SUCCEED) {
 				GDKfree(ps);
 				goto bailout;
 			}
@@ -390,7 +390,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			if (tail && (w=strchr(tail, ';')) )
 				*w = 0;
-			if (BUNappend(b, (tail? tail: "nil"), FALSE) != GDK_SUCCEED) {
+			if (BUNappend(b, (tail? tail: "nil"), false) != GDK_SUCCEED) {
 				GDKfree(ps);
 				goto bailout;
 			}
@@ -425,7 +425,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0 &&
-			BUNappend(b, s->def->help, FALSE) != GDK_SUCCEED)
+			BUNappend(b, s->def->help, false) != GDK_SUCCEED)
 			goto bailout;
 		s = s->peer;
 	}
@@ -504,7 +504,7 @@ INSPECTatom_names(bat *ret)
 		throw(MAL, "inspect.getAtomNames", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++)
-		if (BUNappend(b, ATOMname(i), FALSE) != GDK_SUCCEED)
+		if (BUNappend(b, ATOMname(i), false) != GDK_SUCCEED)
 			goto bailout;
 
 	if (pseudo(ret,b,"view","atom","name"))
@@ -520,10 +520,10 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
 
-	b = COLcopy(GDKkey, GDKkey->ttype, 0, TRANSIENT);
+	b = COLcopy(GDKkey, GDKkey->ttype, false, TRANSIENT);
 	if (b == 0)
 		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	bn = COLcopy(GDKval, GDKval->ttype, 0, TRANSIENT);
+	bn = COLcopy(GDKval, GDKval->ttype, false, TRANSIENT);
 	if (bn == 0){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -565,7 +565,7 @@ INSPECTatom_sup_names(bat *ret)
 	for (i = 0; i < GDKatomcnt; i++) {
 		for (k = ATOMstorage(i); k > TYPE_str; k = ATOMstorage(k))
 			;
-		if (BUNappend(b, ATOMname(k), FALSE) != GDK_SUCCEED)
+		if (BUNappend(b, ATOMname(k), false) != GDK_SUCCEED)
 			goto bailout;
 	}
 
@@ -590,7 +590,7 @@ INSPECTatom_sizes(bat *ret)
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		s = ATOMsize(i);
-		if (BUNappend(b, &s, FALSE) != GDK_SUCCEED)
+		if (BUNappend(b, &s, false) != GDK_SUCCEED)
 			goto bailout;
 	}
 

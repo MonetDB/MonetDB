@@ -21529,6 +21529,18 @@ comment "average and number of non-nil values of B";
 pattern avg(b:bat[:bte],s:bat[:oid]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:bte],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:bte],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:bte],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:bte],s:bat[:oid],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
 
 pattern avg(b:bat[:sht]) :dbl
 address CMDcalcavg
@@ -21540,6 +21552,18 @@ pattern avg(b:bat[:sht]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
 pattern avg(b:bat[:sht],s:bat[:oid]) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:sht],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:sht],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:sht],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:sht],s:bat[:oid],scale:int) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
 
@@ -21555,6 +21579,18 @@ comment "average and number of non-nil values of B";
 pattern avg(b:bat[:int],s:bat[:oid]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:int],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:int],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:int],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:int],s:bat[:oid],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
 
 pattern avg(b:bat[:lng]) :dbl
 address CMDcalcavg
@@ -21566,6 +21602,18 @@ pattern avg(b:bat[:lng]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
 pattern avg(b:bat[:lng],s:bat[:oid]) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:lng],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:lng],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:lng],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:lng],s:bat[:oid],scale:int) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
 
@@ -21581,6 +21629,18 @@ comment "average and number of non-nil values of B";
 pattern avg(b:bat[:flt],s:bat[:oid]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:flt],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:flt],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:flt],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:flt],s:bat[:oid],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
 
 pattern avg(b:bat[:dbl]) :dbl
 address CMDcalcavg
@@ -21592,6 +21652,18 @@ pattern avg(b:bat[:dbl]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B";
 pattern avg(b:bat[:dbl],s:bat[:oid]) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:dbl],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:dbl],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:dbl],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:dbl],s:bat[:oid],scale:int) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
 

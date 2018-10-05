@@ -1,0 +1,93 @@
+stdout of test 'strptime.Bug-6626` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 16:25:57 >  
+# 16:25:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34729" "--set" "mapi_usock=/var/tmp/mtest-879/.s.monetdb.34729" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 16:25:57 >  
+
+# MonetDB 5 server v11.29.8
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.694 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:34729/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-879/.s.monetdb.34729
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:25:57 >  
+# 16:25:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-879" "--port=34729"
+# 16:25:57 >  
+
+#select
+#  str_to_date(DATE1, '%Y%m%d') as DATE1,
+#  str_to_date(DATE2, '%Y-%m-%d') as DATE2,
+#  str_to_date(DATE3, '%Y/%m/%d') as DATE3,
+#  str_to_date(DATE4, '%Y-%m-%d %H:%M:%S') as DATE4,
+#  str_to_date(DATE5, '%d-%m-%Y %H:%M') as DATE5,
+#  str_to_date(DATE6, '%Y %B %d') as DATE6
+#from (
+#select
+#'20181201' as DATE1,
+#'2018-12-01' as DATE2,
+#'2018/12/01' as DATE3,
+#'2018-12-01 06:12:15' as DATE4,
+#'01-09-2008 06:12' as DATE5,
+#'2008 May 12' as DATE6
+#) A;
+% .L16,	.L20,	.L22,	.L24,	.L26,	.L30 # table_name
+% date1,	date2,	date3,	date4,	date5,	date6 # name
+% date,	date,	date,	date,	date,	date # type
+% 10,	10,	10,	10,	10,	10 # length
+[ 2018-12-01,	2018-12-01,	2018-12-01,	2018-12-01,	2008-09-01,	2008-05-12	]
+
+# 16:25:57 >  
+# 16:25:57 >  "Done."
+# 16:25:57 >  
+

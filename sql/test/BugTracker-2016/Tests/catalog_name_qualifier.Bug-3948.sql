@@ -26,8 +26,8 @@ select * from sys.sys.t3948;
 select * from sys.sys.sys.t3948;
 drop table sys.t3948;
 
-select * from dependencies_tables_on_views();
-select * from sys.dependencies_tables_on_views();
-select * from sys.sys.dependencies_tables_on_views();
-select * from sys.sys.sys.dependencies_tables_on_views();
+select * from generate_series(1,2);
+select * from sys.generate_series(1,2);
+select * from sys.sys.generate_series(1,2);
+select * from sys.sys.sys.generate_series(1,2);
 

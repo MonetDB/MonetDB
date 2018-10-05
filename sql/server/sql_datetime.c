@@ -121,7 +121,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 	if (!n)
 		return -1;
 	if (sk == isec) {
-		int msec = 0;
+		lng msec = 0;
 		val *= 1000;
 		if (n && n[0] == '.') {
 			char *nn;
@@ -225,7 +225,7 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 	if (!n)
 		return -1;
 	if (sk == isec) {
-		int msec = 0;
+		lng msec = 0;
 		if (n && n[0] == '.') {
 			char *nn;
 			msec = strtol(n+1, &nn, 10);

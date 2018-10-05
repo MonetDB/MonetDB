@@ -111,10 +111,10 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
-	res->tdense = FALSE;
+	res->tseqbase = oid_nil;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(res, FALSE);
+	BATkey(res, false);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -238,10 +238,10 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
-	res->tdense = FALSE;
+	res->tseqbase = oid_nil;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(res, FALSE);
+	BATkey(res, false);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -360,7 +360,7 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	}
 	BATloop(b, p, q) {
 		TYPE r = NIL(TYPE);
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -397,7 +397,7 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -441,7 +441,7 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.num_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);

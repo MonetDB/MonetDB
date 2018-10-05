@@ -1143,7 +1143,7 @@ convertConstant(int type, ValPtr vr)
 				throw(SYNTAX, "convertConstant", "conversion error");
 			}
 			GDKfree(w);
-			memset((char *) vr, 0, sizeof(*vr));
+			*vr = (ValRecord) {.vtype = type,};
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0)
 				GDKfree(d);

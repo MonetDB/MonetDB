@@ -17,6 +17,6 @@ extern stmt * output_rel_bin(backend *be, sql_rel *rel);
 
 extern stmt * sql_parse(backend *be, sql_allocator *sa, char *query, char mode);
 
-extern list *rel_dependencies(sql_allocator *sa, sql_rel *r);
+extern list *rel_dependencies(mvc *sql, sql_rel *r);
 
 #endif /*_REL_BIN_H_*/

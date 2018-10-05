@@ -56,7 +56,7 @@ main(int argc, char **argv)
 	char *passwd = NULL;
 	char *host = NULL;
 	char *dbname = NULL;
-	int trace = 0;
+	bool trace = false;
 	bool describe = false;
 	bool functions = false;
 	bool useinserts = false;
@@ -123,7 +123,7 @@ main(int argc, char **argv)
 			quiet = true;
 			break;
 		case 'X':
-			trace = MAPI_TRACE;
+			trace = true;
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
@@ -165,7 +165,7 @@ main(int argc, char **argv)
 		exit(2);
 	}
 	if (!quiet) {
-		char *motd = mapi_get_motd(mid);
+		const char *motd = mapi_get_motd(mid);
 
 		if (motd)
 			fprintf(stderr, "%s", motd);
@@ -203,7 +203,7 @@ main(int argc, char **argv)
 	if (functions)
 		c = dump_functions(mid, out, true, NULL, NULL, NULL);
 	else if (table)
-		c = dump_table(mid, NULL, table, out, describe, true, useinserts);
+		c = dump_table(mid, NULL, table, out, describe, true, useinserts, false);
 	else
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);

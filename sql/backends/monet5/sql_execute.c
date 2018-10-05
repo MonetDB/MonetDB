@@ -491,6 +491,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if (!output) {
 		sql->output_format = OFMT_NONE;
 	}
+	sql->depth++;
 	// and do it again
 	m->qc = NULL;
 	m->caching = 0;
@@ -608,9 +609,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		mnstr_printf(c->fdout, "#SQLstatement:pre-compile\n");
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
+		be->depth++;
 		if (backend_callinline(be, c) < 0 ||
 		    backend_dumpstmt(be, c->curprg->def, r, 1, 1, NULL) < 0)
 			err = 1;
+		be->depth--;
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
@@ -636,8 +639,10 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 		if (!output)
 			sql->out = NULL;	/* no output stream */
+		be->depth++;
 		if (execute)
 			msg = SQLrun(c,be,m);
+		be->depth--;
 		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c, c->curprg->def, NULL, oldvtop);
 

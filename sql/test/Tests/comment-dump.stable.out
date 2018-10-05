@@ -16,10 +16,6 @@ stdout of test 'comment-dump` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://MacBook-Pro.local:31727/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32446/.s.monetdb.31727
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -57,6 +53,9 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 97_comments.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 17:19:14 >  
 # 17:19:14 >  "/usr/local/opt/python/bin/python2.7" "comment-dump.SQL.py" "comment-dump"
@@ -112,8 +111,8 @@ create function f(i int, j int, k int) returns int begin return 45; end;
 create function f(i int, j int, k int, l int) returns int begin return 45; end;
 create procedure g() begin delete from tab where false; end;
 COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
-SET SCHEMA "sys";
 ALTER SEQUENCE "foo"."counter" RESTART WITH 1 NO CYCLE;
+SET SCHEMA "sys";
 COMMIT;
 
 # 17:23:05 >  

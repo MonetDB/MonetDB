@@ -373,6 +373,10 @@ pattern batsql.password(user:bat[:str]) :bat[:str]
 address db_password_wrap
 comment "Return password hash of user";
 
+pattern rt_credentials(tablename:str) (uri:bat[:str], username:bat[:str], hash:bat[:str])
+address sql_rt_credentials_wrap
+comment "Return the remote table credentials for the given table";
+
 pattern dump_cache()(query:bat[:str],count:bat[:int])
 address dump_cache
 comment "dump the content of the query cache";
@@ -1016,7 +1020,7 @@ pattern drop_hash(sch:str, tbl:str)
 address SQLdrop_hash
 comment "Drop hash indices for the given table";
 
-command prelude()
+pattern prelude()
 address SQLprelude;
 
 command epilogue()

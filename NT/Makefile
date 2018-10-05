@@ -26,7 +26,6 @@ install: targetdirs all
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" install
 	$(INSTALL) .monetdb "$(sysconfdir)"
 	$(PYTHON) $(NT)\mksqlwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB5-SQL-Installer.wxs"
-	$(PYTHON) $(NT)\mkgeomwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB5-Geom-Installer.wxs"
 	$(PYTHON) $(NT)\mkodbcwxs.py $(VERSION) "$(MAKE_INCLUDEFILE)" "$(prefix)" > "$(prefix)\MonetDB-ODBC-Installer.wxs"
 
 $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"

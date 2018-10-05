@@ -4,7 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
-SUBDIRS = NOT_WIN32?vaults UDF LSST generator
+SUBDIRS = NOT_WIN32?vaults UDF generator
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/atoms \

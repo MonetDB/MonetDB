@@ -48,7 +48,8 @@ def preprocess(data):
             args = tuple([x.strip() for x in args.split(',')])
             if len(args) == 1 and args[0] == '':
                 args = ()       # empty argument list
-            if name not in defines or not defines[name][1].strip():
+            if name not in ('__attribute__', '__format__', '__alloc_size__') and \
+               (name not in defines or not defines[name][1].strip()):
                 defines[name] = (args, body)
         else:
             changed = True
@@ -60,18 +61,18 @@ def preprocess(data):
 
 def replace(line, defines, tried):
     changed = False
+    # match argument to macro with optionally several levels
+    # of parentheses
+    if deepnesting:     # optionally deeply nested parentheses
+        nested = r'(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*'
+    else:
+        nested = ''
     for name, (args, body) in defines.items():
         if name in tried:
             continue
         pat = r'\b%s\b' % name
         sep = r'\('
         for arg in args:
-            # match argument to macro with optionally several levels
-            # of parentheses
-            if deepnesting:     # optionally deeply nested parentheses
-                nested = r'(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)[^()]*)*'
-            else:
-                nested = ''
             pat = pat + sep + r'([^,()]*(?:\([^()]*' + nested + r'\)[^,()]*)*)'
             sep = ','
         pat += r'\)'
@@ -103,8 +104,8 @@ def replace(line, defines, tried):
                         pos = res2.start(0) + len(repl[arg])
                         bd = bd[:res2.start(0)] + repl[arg] + bd[res2.end(0):]
                     res2 = r2.search(bd, pos)
-            bd, changed = replace(bd, defines, tried + [name])
             bd = bd.replace('##', '')
+            bd, changed = replace(bd, defines, tried + [name])
             line = line[:res.start(0)] + bd + line[res.end(0):]
             res = r.search(line, res.start(0) + len(bd))
     return line, changed

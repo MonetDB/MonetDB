@@ -54,15 +54,13 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 		for (i = 0; i < cnt1; i++)
 			for (j = 0; j < cnt2; j++)
 				*p++ = lcand[i];
-		bn1->tdense = 0;
+		bn1->tseqbase = oid_nil;
 	} else {
 		seq = l->hseqbase + start1;
 		for (i = 0; i < cnt1; i++)
 			for (j = 0; j < cnt2; j++)
 				*p++ = i + seq;
-		bn1->tdense = bn1->tkey != 0;
-		if (bn1->tdense)
-			BATtseqbase(bn1, seq);
+		BATtseqbase(bn1, bn1->tkey ? seq : oid_nil);
 	}
 
 	BATsetcount(bn2, cnt1 * cnt2);
@@ -76,18 +74,17 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 		for (i = 0; i < cnt1; i++)
 			for (j = 0; j < cnt2; j++)
 				*p++ = rcand[j];
-		bn2->tdense = 0;
+		bn2->tseqbase = oid_nil;
 	} else {
 		seq = r->hseqbase + start2;
 		for (i = 0; i < cnt1; i++)
 			for (j = 0; j < cnt2; j++)
 				*p++ = j + seq;
-		bn2->tdense = bn2->tkey != 0;
-		if (bn2->tdense)
-			BATtseqbase(bn2, seq);
+		BATtseqbase(bn2, bn2->tkey ? seq : oid_nil);
 	}
 
 	*r1p = bn1;
 	*r2p = bn2;
+	ALGODEBUG fprintf(stderr, "#BATsubcross()=(" ALGOBATFMT "," ALGOBATFMT ")\n", ALGOBATPAR(bn1), ALGOBATPAR(bn2));
 	return GDK_SUCCEED;
 }

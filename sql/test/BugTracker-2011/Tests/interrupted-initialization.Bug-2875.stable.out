@@ -15,20 +15,6 @@ stdout of test 'interrupted-initialization.Bug-2875` in directory 'sql/test/BugT
 # Visit http://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:33477/
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-START TRANSACTION;
-COMMIT;
-# MonetDB 5 server v11.5.8
-# This is an unreleased version
-# Serving database 'mTests_test_BugTracker-2011-bug2875', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.662 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:33477/
-# MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 10_math.sql
 # loading sql script: 11_times.sql
@@ -49,6 +35,21 @@ COMMIT;
 # loading sql script: 40_geom.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+START TRANSACTION;
+COMMIT;
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2011-bug2875', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:31345/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4412/.s.monetdb.31345
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
 # 13:06:50 >  
 # 13:06:50 >  "Done."

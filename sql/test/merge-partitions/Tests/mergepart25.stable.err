@@ -1,0 +1,67 @@
+stderr of test 'mergepart25` in directory 'sql/test/merge-partitions` itself:
+
+
+# 11:43:40 >  
+# 11:43:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34400" "--set" "mapi_usock=/var/tmp/mtest-3127/.s.monetdb.34400" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 11:43:40 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34400
+# cmdline opt 	mapi_usock = /var/tmp/mtest-3127/.s.monetdb.34400
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 11:43:42 >  
+# 11:43:42 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3127" "--port=34400"
+# 11:43:42 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-3127/.s.monetdb.34400
+QUERY = UPDATE testmeplease SET a = a + 1 WHERE a = 1; --error
+ERROR = !UPDATE: range partitioned table 'testmeplease' has no partitions set
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-3127/.s.monetdb.34400
+QUERY = UPDATE testmeplease SET b = 'I should fail'; --error
+ERROR = !UPDATE: range partitioned table 'testmeplease' has no partitions set
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-3127/.s.monetdb.34400
+QUERY = UPDATE testmeplease SET b = 'I should fail again'; --error
+ERROR = !UPDATE: Update a column used by the partition's expression is not possible at the moment
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-3127/.s.monetdb.34400
+QUERY = INSERT INTO testmeplease VALUES (1, 'cannot cast me'); --error
+ERROR = !conversion of string 'cannot cast me' to type int failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-3127/.s.monetdb.34400
+QUERY = INSERT INTO sub1 VALUES (1, 'cannot cast me'); --error
+ERROR = !conversion of string 'cannot cast me' to type int failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-3127/.s.monetdb.34400
+QUERY = UPDATE testmeplease SET b = 'Cannot update me' WHERE a = 3; --error
+ERROR = !UPDATE: Update a column used by the partition's expression is not possible at the moment
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-3127/.s.monetdb.34400
+QUERY = UPDATE sub1 SET b = 'Cannot update me'; --error
+ERROR = !UPDATE: Update a column used by the partition's expression is not possible at the moment
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-3127/.s.monetdb.34400
+QUERY = UPDATE sub1 SET a = 30, b = '30' WHERE a = 1; --error
+ERROR = !UPDATE: Update a column used by the partition's expression is not possible at the moment
+CODE  = 42000
+
+# 11:43:42 >  
+# 11:43:42 >  "Done."
+# 11:43:42 >  
+

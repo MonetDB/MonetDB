@@ -77,14 +77,14 @@ handleClient(void *data)
 	isusock = ((struct clientdata *) data)->isusock;
 	self = ((struct clientdata *) data)->self;
 	free(data);
-	fdin = socket_rastream(sock, "merovingian<-client (read)");
+	fdin = socket_rstream(sock, "merovingian<-client (read)");
 	if (fdin == 0) {
 		self->dead = 1;
 		return(newErr("merovingian-client inputstream problems"));
 	}
 	fdin = block_stream(fdin);
 
-	fout = socket_wastream(sock, "merovingian->client (write)");
+	fout = socket_wstream(sock, "merovingian->client (write)");
 	if (fout == 0) {
 		close_stream(fdin);
 		self->dead = 1;
@@ -459,7 +459,17 @@ acceptConnections(int sock, int usock)
 		if (retval == -1) {
 			if (_mero_keep_listening == 0)
 				break;
-			if (errnr != EINTR) {
+			switch (errnr) {
+			case EINTR:
+				/* interrupted */
+				break;
+			case EMFILE:
+			case ENFILE:
+			case ENOBUFS:
+			case ENOMEM:
+				/* transient failures */
+				break;
+			default:
 				msg = strerror(errnr);
 				goto error;
 			}
@@ -469,8 +479,21 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				if (errno != EINTR) {
-					msg = strerror(errno);
+				switch (errnr) {
+				case EINTR:
+					/* interrupted */
+					break;
+				case EMFILE:
+				case ENFILE:
+				case ENOBUFS:
+				case ENOMEM:
+					/* transient failures */
+					break;
+				case ECONNABORTED:
+					/* connection aborted before we began */
+					break;
+				default:
+					msg = strerror(errnr);
 					goto error;
 				}
 				continue;
@@ -488,8 +511,21 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				if (errno != EINTR) {
-					msg = strerror(errno);
+				switch (errnr) {
+				case EINTR:
+					/* interrupted */
+					break;
+				case EMFILE:
+				case ENFILE:
+				case ENOBUFS:
+				case ENOMEM:
+					/* transient failures */
+					break;
+				case ECONNABORTED:
+					/* connection aborted before we began */
+					break;
+				default:
+					msg = strerror(errnr);
 					goto error;
 				}
 				continue;
@@ -529,7 +565,7 @@ acceptConnections(int sock, int usock)
 				continue;
 			}
 
-			switch (*buf) {
+			switch (buf[0]) {
 			case '0':
 				/* nothing special, nothing to do */
 				break;
@@ -549,9 +585,18 @@ acceptConnections(int sock, int usock)
 		/* start handleClient as a thread so that we're not blocked by
 		 * a slow client */
 		data = malloc(sizeof(*data)); /* freed by handleClient */
+		p = malloc(sizeof(*p));
+		if (data == NULL || p == NULL) {
+			if (data)
+				free(data);
+			if (p)
+				free(p);
+			closesocket(msgsock);
+			Mfprintf(stderr, "cannot allocate memory\n");
+			continue;
+		}
 		data->sock = msgsock;
 		data->isusock = FD_ISSET(usock, &fds);
-		p = malloc(sizeof(*p));
 		p->dead = 0;
 		data->self = p;
 		if (pthread_create(&p->tid, NULL, handleClient, data) == 0) {

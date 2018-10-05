@@ -1,0 +1,59 @@
+stderr of test 'mergepart18` in directory 'sql/test/merge-partitions` itself:
+
+
+# 14:11:23 >  
+# 14:11:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32333" "--set" "mapi_usock=/var/tmp/mtest-9747/.s.monetdb.32333" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 14:11:23 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32333
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9747/.s.monetdb.32333
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 14:11:23 >  
+# 14:11:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9747" "--port=32333"
+# 14:11:23 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
+QUERY = ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '1' AND '100'; --error
+ERROR = !ALTER TABLE: table 'sys.subt1' isn't part of the MERGE TABLE 'sys.updateme'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
+QUERY = ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '-100' AND '0'; --error
+ERROR = !ALTER TABLE: there are values in the column a outside the partition range
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
+QUERY = INSERT INTO updateme VALUES (1, 'ups'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
+QUERY = INSERT INTO subt1 VALUES (1, 'ups'); --error
+ERROR = !INSERT: table sys.subt1 is part of merge table sys.updateme and the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
+QUERY = INSERT INTO updateme VALUES (150, 'fourth'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
+QUERY = INSERT INTO subt1 VALUES (150, 'fourth'); --error
+ERROR = !INSERT: table sys.subt1 is part of merge table sys.updateme and the insert violates the partition range of values
+CODE  = M0M29
+
+# 14:11:24 >  
+# 14:11:24 >  "Done."
+# 14:11:24 >  
+

@@ -20,11 +20,11 @@
 #include "bam_globals.h"
 
 stream *
-bsopen(str filepath)
+bsopen(str filepath, bool binary)
 {
 	stream *s;
 
-	if ((s = open_wastream(filepath)) == NULL) {
+	if ((s = binary ? open_wstream(filepath) : open_wastream(filepath)) == NULL) {
 		return NULL;
 	}
 	if (mnstr_errnr(s)) {

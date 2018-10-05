@@ -312,7 +312,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val)
 		if (*s == ' ')
 			s++;
 
-		if (*s >= '0' && *s <= '9') {
+		if (isdigit((unsigned char) *s)) {
 			res = *s - '0';
 		} else if (*s >= 'A' && *s <= 'F') {
 			res = 10 + *s - 'A';
@@ -323,7 +323,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val)
 		}
 		s++;
 		res <<= 4;
-		if (*s >= '0' && *s <= '9') {
+		if (isdigit((unsigned char) *s)) {
 			res += *s - '0';
 		} else if (*s >= 'A' && *s <= 'F') {
 			res += 10 + *s - 'A';
@@ -470,7 +470,7 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 	for (i = 0; i < nitems; ++i) {
 		char res = 0;
 
-		if (*s >= '0' && *s <= '9') {
+		if (isdigit((unsigned char) *s)) {
 			res = *s - '0';
 		} else if (*s >= 'A' && *s <= 'F') {
 			res = 10 + *s - 'A';
@@ -482,7 +482,7 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 		}
 		s++;
 		res <<= 4;
-		if (*s >= '0' && *s <= '9') {
+		if (isdigit((unsigned char) *s)) {
 			res += *s - '0';
 		} else if (*s >= 'A' && *s <= 'F') {
 			res += 10 + *s - 'A';

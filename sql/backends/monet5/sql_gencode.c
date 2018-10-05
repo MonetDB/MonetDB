@@ -52,6 +52,8 @@
 #include "rel_dump.h"
 #include "rel_remote.h"
 
+#include "muuid.h"
+
 int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 {
@@ -263,7 +265,7 @@ cleanup:
 	if(b)
 		buffer_destroy(b);
 	if(s)
-		mnstr_destroy(s);
+		close_stream(s);
 	return res;
 }
 
@@ -275,14 +277,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	const char *uri = mapiuri_uri(prp->value, m->sa);
+	const char *local_tbl = prp->value;
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
 	char *lname;
 	sql_rel *r = rel;
 
-	if(uri == NULL)
+	if(local_tbl == NULL)
 		return -1;
 
 	lname = GDKstrdup(name);
@@ -354,11 +356,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		lret[i] = getArg(p, 0);
 	}
 
-	/* q := remote.connect("uri", "user", "pass"); */
+	/* q := remote.connect("schema.table", "msql"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
-	p = pushStr(curBlk, p, uri);
-	p = pushStr(curBlk, p, "monetdb");
-	p = pushStr(curBlk, p, "monetdb");
+	p = pushStr(curBlk, p, local_tbl);
 	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 
@@ -434,6 +434,70 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 	}
 	pushInstruction(curBlk, p);
+
+	if (mal_session_uuid) {
+		str rsupervisor_session = GDKstrdup(mal_session_uuid);
+		if (rsupervisor_session == NULL) {
+			return -1;
+		}
+
+		str lsupervisor_session = GDKstrdup(mal_session_uuid);
+		if (lsupervisor_session == NULL) {
+			GDKfree(rsupervisor_session);
+			return -1;
+		}
+
+		str rworker_plan_uuid = generateUUID();
+		if (rworker_plan_uuid == NULL) {
+			GDKfree(rsupervisor_session);
+			GDKfree(lsupervisor_session);
+			return -1;
+		}
+		str lworker_plan_uuid = GDKstrdup(rworker_plan_uuid);
+		if (lworker_plan_uuid == NULL) {
+			free(rworker_plan_uuid);
+			GDKfree(lsupervisor_session);
+			GDKfree(rsupervisor_session);
+			return -1;
+		}
+
+		/* remote.supervisor_register(connection, supervisor_uuid, plan_uuid) */
+		p = newInstruction(curBlk, remoteRef, execRef);
+		p = pushArgument(curBlk, p, q);
+		p = pushStr(curBlk, p, remoteRef);
+		p = pushStr(curBlk, p, register_supervisorRef);
+		getArg(p, 0) = -1;
+
+		/* We don't really care about the return value of supervisor_register,
+		 * but I have not found a good way to remotely execute a void mal function
+		 */
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushInt(curBlk, o, TYPE_int);  
+		p = pushReturn(curBlk, p, getArg(o, 0));
+
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, rsupervisor_session);
+		p = pushArgument(curBlk, p, getArg(o, 0));
+
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, rworker_plan_uuid);
+		p = pushArgument(curBlk, p, getArg(o, 0));
+
+		pushInstruction(curBlk, p);
+
+		/* Execute the same instruction locally */
+		p = newStmt(curBlk, remoteRef, register_supervisorRef);
+		p = pushStr(curBlk, p, lsupervisor_session);
+		p = pushStr(curBlk, p, lworker_plan_uuid);
+
+		GDKfree(lworker_plan_uuid);
+		free(rworker_plan_uuid);   /* This was created with strdup */
+		GDKfree(lsupervisor_session);
+		GDKfree(rsupervisor_session);
+	}
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
@@ -588,7 +652,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
-	if (top && c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+	if (top && c->clientid && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL)
 			return -1;
@@ -1189,8 +1253,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	/* output the data */
 	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
 
-	mnstr_close(s);
-	mnstr_destroy(s);
+	close_stream(s);
 	buffer_destroy(b);
 }
 

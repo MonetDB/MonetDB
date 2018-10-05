@@ -88,6 +88,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 
 		prop = BATgetprop(g, GDK_MAX_VALUE);
 		if (prop) {
+			assert(prop->v.vtype == TYPE_oid);
 			min = 0; /* just assume it starts at 0 */
 			max = prop->v.val.oval;
 		} else {
@@ -762,7 +763,7 @@ dosum(const void *restrict values, bool nonil, oid seqb, BUN start, BUN end,
 
 /* calculate group sums with optional candidates list */
 BAT *
-BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -828,7 +829,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 }
 
 gdk_return
-BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty)
+BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
 {
 	oid min, max;
 	BUN ngrp;
@@ -882,7 +883,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 			dbl avg;
 			BUN cnt;
 
-			if (BATcalcavg(b, s, &avg, &cnt) != GDK_SUCCEED)
+			if (BATcalcavg(b, s, &avg, &cnt, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			if (cnt == 0) {
 				avg = nil_if_empty ? dbl_nil : 0;
@@ -1361,7 +1362,7 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 
 /* calculate group products with optional candidates list */
 BAT *
-BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -1427,7 +1428,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 }
 
 gdk_return
-BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty)
+BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty)
 {
 	oid min, max;
 	BUN ngrp;
@@ -1632,7 +1633,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 
 /* calculate group averages with optional candidates list */
 gdk_return
-BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error, int scale)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -1786,6 +1787,13 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		cn->tnonil = true;
 		*cntsp = cn;
 	}
+	if (scale != 0) {
+		dbl fac = pow(10.0, (double) scale);
+		for (i = 0; i < ngrp; i++) {
+			if (!is_dbl_nil(dbls[i]))
+				dbls[i] *= fac;
+		}
+	}
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -1919,7 +1927,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	} while (0)
 
 gdk_return
-BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
+BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 {
 	BUN n = 0, r = 0, i = 0;
 #ifdef HAVE_HGE
@@ -1967,6 +1975,8 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 			 ATOMname(b->ttype));
 		return GDK_FAIL;
 	}
+	if (scale != 0 && !is_dbl_nil(*avg))
+		*avg *= pow(10.0, (double) scale);
 	if (vals)
 		*vals = n;
 	return GDK_SUCCEED;
@@ -2003,7 +2013,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 
 /* calculate group counts with optional candidates list */
 BAT *
-BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid gid;
@@ -2147,7 +2157,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 /* calculate group sizes (number of TRUE values) with optional
  * candidates list */
 BAT *
-BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_on_error)
 {
 	const oid *restrict gids;
 	oid min, max;
@@ -2597,25 +2607,68 @@ BATgroupminmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils,
 	return bn;
 }
 
-static void *
-BATminmax(BAT *b, void *aggr,
-	  BUN (*minmax)(oid *restrict, BAT *, const oid *restrict, BUN,
-			oid, oid, BUN, BUN, const oid *restrict,
-			const oid *, BUN, bool, bool))
+BAT *
+BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+	    bool skip_nils, bool abort_on_error)
 {
-	oid pos;
+	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
+			      do_groupmin, "BATgroupmin");
+}
+
+void *
+BATmin(BAT *b, void *aggr)
+{
+	PROPrec *prop;
 	const void *res;
 	size_t s;
-	BATiter bi;
 
-	if ((VIEWtparent(b) == 0 ||
-	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
-	    BATcheckimprints(b)) {
-		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
-		int i;
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATmin: non-linear type");
+		return NULL;
+	}
+	if (BATcount(b) == 0) {
+		res = ATOMnilptr(b->ttype);
+	} else if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+		res = VALptr(&prop->v);
+	} else {
+		oid pos;
+		BATiter bi;
+		BAT *pb = NULL;
 
-		pos = oid_nil;
-		if (minmax == do_groupmin) {
+		if (BATcheckorderidx(b) ||
+		    (VIEWtparent(b) &&
+		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     pb->theap.base == b->theap.base &&
+		     BATcount(pb) == BATcount(b) &&
+		     pb->hseqbase == b->hseqbase &&
+		     BATcheckorderidx(pb))) {
+			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+			BUN r;
+			if (!b->tnonil) {
+				r = binsearch(ords, 0, b->ttype, Tloc(b, 0),
+					      b->tvheap ? b->tvheap->base : NULL,
+					      b->twidth, 0, BATcount(b),
+					      ATOMnilptr(b->ttype), 1, 1);
+				if (r == 0) {
+					b->tnonil = true;
+					b->batDirtydesc = true;
+				}
+			} else {
+				r = 0;
+			}
+			if (r == BATcount(b)) {
+				/* no non-nil values */
+				pos = oid_nil;
+			} else {
+				pos = ords[r];
+			}
+		} else if ((VIEWtparent(b) == 0 ||
+			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			   BATcheckimprints(b)) {
+			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+			int i;
+
+			pos = oid_nil;
 			/* find first non-empty bin */
 			for (i = 0; i < imprints->bits; i++) {
 				if (imprints->stats[i + 128]) {
@@ -2624,23 +2677,18 @@ BATminmax(BAT *b, void *aggr,
 				}
 			}
 		} else {
-			/* find last non-empty bin */
-			for (i = imprints->bits - 1; i >= 0; i--) {
-				if (imprints->stats[i + 128]) {
-					pos = imprints->stats[i + 64] + b->hseqbase;
-					break;
-				}
-			}
+			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, 0,
+					   BATcount(b), NULL, NULL, BATcount(b),
+					   true, false);
 		}
-	} else {
-		(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b),
-				 NULL, NULL, BATcount(b), true, false);
-	}
-	if (is_oid_nil(pos)) {
-		res = ATOMnilptr(b->ttype);
-	} else {
-		bi = bat_iterator(b);
-		res = BUNtail(bi, pos - b->hseqbase);
+		if (is_oid_nil(pos)) {
+			res = ATOMnilptr(b->ttype);
+		} else {
+			bi = bat_iterator(b);
+			res = BUNtail(bi, pos - b->hseqbase);
+			if (b->tnonil)
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
+		}
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(b->ttype, res);
@@ -2654,22 +2702,8 @@ BATminmax(BAT *b, void *aggr,
 }
 
 BAT *
-BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    int skip_nils, int abort_on_error)
-{
-	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
-			      do_groupmin, "BATgroupmin");
-}
-
-void *
-BATmin(BAT *b, void *aggr)
-{
-	return BATminmax(b, aggr, do_groupmin);
-}
-
-BAT *
 BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	    int skip_nils, int abort_on_error)
+	    bool skip_nils, bool abort_on_error)
 {
 	return BATgroupminmax(b, g, e, s, tp, skip_nils, abort_on_error,
 			      do_groupmax, "BATgroupmax");
@@ -2678,7 +2712,70 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 void *
 BATmax(BAT *b, void *aggr)
 {
-	return BATminmax(b, aggr, do_groupmax);
+	PROPrec *prop;
+	const void *res;
+	size_t s;
+
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATmax: non-linear type");
+		return NULL;
+	}
+	if (BATcount(b) == 0) {
+		res = ATOMnilptr(b->ttype);
+	} else if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+		res = VALptr(&prop->v);
+	} else {
+		oid pos;
+		BATiter bi;
+		BAT *pb = NULL;
+
+		if (BATcheckorderidx(b) ||
+		    (VIEWtparent(b) &&
+		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
+		     pb->theap.base == b->theap.base &&
+		     BATcount(pb) == BATcount(b) &&
+		     pb->hseqbase == b->hseqbase &&
+		     BATcheckorderidx(pb))) {
+			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+
+			pos = ords[BATcount(b) - 1];
+		} else if ((VIEWtparent(b) == 0 ||
+			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			   BATcheckimprints(b)) {
+			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+			int i;
+
+			pos = oid_nil;
+			/* find last non-empty bin */
+			for (i = imprints->bits - 1; i >= 0; i--) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i + 64] + b->hseqbase;
+					break;
+				}
+			}
+		} else {
+			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, 0,
+					   BATcount(b), NULL, NULL, BATcount(b),
+					   true, false);
+		}
+		if (is_oid_nil(pos)) {
+			res = ATOMnilptr(b->ttype);
+		} else {
+			bi = bat_iterator(b);
+			res = BUNtail(bi, pos - b->hseqbase);
+			if (b->tnonil)
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, res);
+		}
+	}
+	if (aggr == NULL) {
+		s = ATOMlen(b->ttype, res);
+		aggr = GDKmalloc(s);
+	} else {
+		s = ATOMsize(ATOMtype(b->ttype));
+	}
+	if (aggr != NULL)	/* else: malloc error */
+		memcpy(aggr, res, s);
+	return aggr;
 }
 
 
@@ -2687,7 +2784,7 @@ BATmax(BAT *b, void *aggr)
 
 BAT *
 BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	       int skip_nils, int abort_on_error)
+	       bool skip_nils, bool abort_on_error)
 {
 	return BATgroupquantile(b,g,e,s,tp,0.5,skip_nils,abort_on_error);
 }
@@ -2701,7 +2798,7 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
-		 int skip_nils, int abort_on_error)
+		 bool skip_nils, bool abort_on_error)
 {
 	bool freeb = false, freeg = false;
 	oid min, max;
@@ -2767,7 +2864,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		if (BATtdense(g)) {
 			/* singleton groups, so calculating quantile is
 			 * easy */
-			bn = COLcopy(b, tp, 0, TRANSIENT);
+			bn = COLcopy(b, tp, false, TRANSIENT);
 			BAThseqbase(bn, g->tseqbase); /* deals with NULL */
 			if (freeb)
 				BBPunfix(b->batCacheid);
@@ -2775,14 +2872,14 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
-		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0) != GDK_SUCCEED)
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false) != GDK_SUCCEED)
 			goto bunins_failed;
 		if (freeg)
 			BBPunfix(g->batCacheid);
 		g = t1;
 		freeg = true;
 
-		if (BATsort(&t1, NULL, NULL, b, t2, g, 0, 0) != GDK_SUCCEED) {
+		if (BATsort(&t1, NULL, NULL, b, t2, g, false, false) != GDK_SUCCEED) {
 			BBPunfix(t2->batCacheid);
 			goto bunins_failed;
 		}
@@ -2834,6 +2931,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		while (BATcount(bn) < ngrp) {
 			bunfastapp_nocheck(bn, BUNlast(bn), nil, Tsize(bn));
 		}
+		bn->theap.dirty = true;
 		BBPunfix(g->batCacheid);
 	} else {
 		BUN index, r, p = BATcount(b);
@@ -2855,7 +2953,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		     BATcheckorderidx(pb))) {
 			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 		} else {
-			if (BATsort(NULL, &t1, NULL, b, NULL, g, 0, 0) != GDK_SUCCEED)
+			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false) != GDK_SUCCEED)
 				goto bunins_failed;
 			if (BATtdense(t1))
 				ords = NULL;
@@ -2892,7 +2990,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		}
 		if (t1)
 			BBPunfix(t1->batCacheid);
-		if (BUNappend(bn, v, FALSE) != GDK_SUCCEED)
+		if (BUNappend(bn, v, false) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
 
@@ -3108,7 +3206,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
-	    (BATtdense(g) || (g->tkey && g->tnonil))) {
+	    (BATtdense(g) || (g->tkey && g->tnonil)) &&
+	    (issample || b->tnonil)) {
 		/* trivial: singleton groups, so all results are equal
 		 * to zero (population) or nil (sample) */
 		dbl v = issample ? dbl_nil : 0;
@@ -3193,7 +3292,8 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	} else {
 		GDKfree(mean);
 	}
-	nils += nils2;
+	if (issample)
+		nils += nils2;
 	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);
@@ -3220,7 +3320,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		     int skip_nils, int abort_on_error)
+		     bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, false,
@@ -3229,7 +3329,7 @@ BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			 int skip_nils, int abort_on_error)
+			 bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, false,
@@ -3238,7 +3338,7 @@ BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-		     int skip_nils, int abort_on_error)
+		     bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, true, true,
@@ -3247,9 +3347,428 @@ BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 BAT *
 BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-			 int skip_nils, int abort_on_error)
+			 bool skip_nils, bool abort_on_error)
 {
 	(void) abort_on_error;
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, true,
 			    "BATgroupvariance_population");
 }
+
+#define IS_A_POINTER 0
+#define IS_A_BAT     1
+
+static gdk_return
+concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN end, BUN ngrp, const oid *restrict cand,
+			   const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils, const str separator,
+			   const char *func, BUN *has_nils)
+{
+	oid gid;
+	BUN i, p, q, nils = 0;
+	const oid *aux;
+	size_t* lengths = NULL, separator_length = strlen(separator), next_length;
+	oid *lastoid = NULL;
+	str* astrings = NULL, s, single_str = NULL;
+	BATiter bi;
+	BAT *bn = NULL;
+	gdk_return rres = GDK_SUCCEED;
+
+	(void) skip_nils;
+
+	if (what == IS_A_BAT && (bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
+		rres = GDK_FAIL;
+		goto finish;
+	}
+
+	bi = bat_iterator(b);
+
+	if (ngrp == 1) {
+		size_t offset = 0, single_length = 0;
+		oid single_oid = 0;
+		if (cand == NULL) {
+			if(nonil) {
+				BATloop(b,p,q) {
+					s = BUNtail(bi, p);
+					next_length = strlen(s);
+					single_length += next_length + separator_length;
+					single_oid = p;
+				}
+			} else {
+				BATloop(b,p,q) {
+					s = BUNtail(bi, p);
+					if (*s != '\200') {
+						next_length = strlen(s);
+						single_length += next_length + separator_length;
+						single_oid = p;
+					} else {
+						single_oid = BUN_NONE;
+						nils = 1;
+						break;
+					}
+				}
+			}
+			if(!nils) {
+				if ((single_str = GDKmalloc((single_length + 1 - separator_length) * sizeof(str))) == NULL) {
+					GDKerror("%s: malloc failure\n", func);
+					rres = GDK_FAIL;
+					goto finish;
+				}
+				BATloop(b,p,q){
+					s = BUNtail(bi, p);
+					next_length = strlen(s);
+					memcpy(single_str + offset, s, next_length);
+					offset += next_length;
+					if(p != single_oid) {
+						memcpy(single_str + offset, separator, separator_length);
+						offset += separator_length;
+					}
+				}
+				single_str[offset] = '\0';
+				if(what == IS_A_BAT) {
+					if(BUNappend(bn, single_str, false) != GDK_SUCCEED) {
+						GDKerror("%s: malloc failure\n", func);
+						rres = GDK_FAIL;
+						goto finish;
+					}
+				} else {
+					ValPtr pt = (ValPtr) res;
+					pt->len = single_str[offset];
+					if((pt->val.sval = GDKstrdup(single_str)) == NULL) {
+						GDKerror("%s: malloc failure\n", func);
+						rres = GDK_FAIL;
+						goto finish;
+					}
+				}
+			} else if(what == IS_A_BAT) {
+				if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+					GDKerror("%s: malloc failure\n", func);
+					rres = GDK_FAIL;
+					goto finish;
+				}
+			} else {
+				ValPtr pt = (ValPtr) res;
+				pt->len = 0;
+				if((pt->val.sval = GDKstrdup(str_nil)) == NULL) {
+					GDKerror("%s: malloc failure\n", func);
+					rres = GDK_FAIL;
+					goto finish;
+				}
+			}
+		} else { /* with candidate lists */
+			aux = cand;
+			if(nonil) {
+				while (cand < candend && nils == 0) {
+					i = *cand++ - seqb;
+					if (i >= end)
+						break;
+					s = BUNtail(bi, i);
+					next_length = strlen(s);
+					single_length += next_length + separator_length;
+					single_oid = i;
+				}
+			} else {
+				while (cand < candend && nils == 0) {
+					i = *cand++ - seqb;
+					if (i >= end)
+						break;
+					s = BUNtail(bi, i);
+					if (*s != '\200') {
+						next_length = strlen(s);
+						single_length += next_length + separator_length;
+						single_oid = i;
+					} else {
+						single_oid = BUN_NONE;
+						nils = 1;
+						break;
+					}
+				}
+			}
+			if (!nils) {
+				if ((single_str = GDKmalloc((single_length + 1 - separator_length) * sizeof(str))) == NULL) {
+					GDKerror("%s: malloc failure\n", func);
+					rres = GDK_FAIL;
+					goto finish;
+				}
+				cand = aux;
+				while (cand < candend) {
+					i = *cand++ - seqb;
+					if (i >= end)
+						break;
+					s = BUNtail(bi, i);
+					next_length = strlen(s);
+					memcpy(single_str + offset, s, next_length);
+					offset += next_length;
+					if (i != single_oid) {
+						memcpy(single_str + offset, separator, separator_length);
+						offset += separator_length;
+					}
+				}
+				single_str[offset] = '\0';
+				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
+					GDKerror("%s: malloc failure\n", func);
+					rres = GDK_FAIL;
+					goto finish;
+				}
+			} else if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+				GDKerror("%s: malloc failure\n", func);
+				rres = GDK_FAIL;
+				goto finish;
+			}
+		}
+	} else {
+		if((lengths = GDKzalloc(ngrp * sizeof(*lengths))) == NULL) { /* first used to calculated the total length of*/
+			rres = GDK_FAIL;                                           /* each group, then the the total offset */
+			goto finish;
+		}
+		if((lastoid = (oid*) GDKzalloc(ngrp * sizeof(oid))) == NULL) {
+			rres = GDK_FAIL;
+			goto finish;
+		}
+		if((astrings = (str*) GDKzalloc(ngrp * sizeof(str))) == NULL) {
+			rres = GDK_FAIL;
+			goto finish;
+		}
+		if (cand == NULL) {
+			for (i = start; i < end; i++) {
+				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
+					gid = gids ? gids[i] - min : (oid) i;
+					if (lastoid[gid] != BUN_NONE) {
+						s = BUNtail(bi, i);
+						if (*s != '\200') {
+							next_length = strlen(s);
+							lengths[gid] += next_length + separator_length;
+							lastoid[gid] = i;
+						} else {
+							lastoid[gid] = BUN_NONE;
+							nils++;
+						}
+					}
+				}
+			}
+			for (i = 0; i < ngrp; i++) {
+				if(lastoid[i] != BUN_NONE) {
+					if((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
+						GDKerror("%s: malloc failure\n", func);
+						rres = GDK_FAIL;
+						goto finish;
+					}
+					lengths[i] = 0;
+				}
+			}
+			for (i = start; i < end; i++) {
+				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
+					gid = gids ? gids[i] - min : (oid) i;
+					if (lastoid[gid] < BUN_NONE) {
+						s = BUNtail(bi, i);
+						next_length = strlen(s);
+						memcpy(astrings[gid] + lengths[gid], s, next_length);
+						lengths[gid] += next_length;
+						if (i != lastoid[gid]) {
+							memcpy(astrings[gid] + lengths[gid], separator, separator_length);
+							lengths[gid] += separator_length;
+						}
+					}
+				}
+			}
+			for (i = 0; i < ngrp; i++) {
+				if (lastoid[i] < BUN_NONE) {
+					astrings[i][lengths[i]] = '\0';
+					if(BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
+						GDKerror("%s: malloc failure\n", func);
+						rres = GDK_FAIL;
+						goto finish;
+					}
+				} else if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+					GDKerror("%s: malloc failure\n", func);
+					rres = GDK_FAIL;
+					goto finish;
+				}
+			}
+		} else {
+			aux = cand;
+			while (cand < candend) {
+				i = *cand++ - seqb;
+				if (i >= end)
+					break;
+				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
+					gid = gids ? gids[i] - min : (oid) i;
+					if (lastoid[gid] != BUN_NONE) {
+						s = BUNtail(bi, i);
+						if (*s != '\200') {
+							next_length = strlen(s);
+							lengths[gid] += next_length;
+							lastoid[gid] = i;
+						} else {
+							lastoid[gid] = BUN_NONE;
+							nils++;
+						}
+					}
+				}
+			}
+			for (i = 0; i < ngrp; i++) {
+				if(lastoid[i] != BUN_NONE) {
+					if((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
+						GDKerror("%s: malloc failure\n", func);
+						rres = GDK_FAIL;
+						goto finish;
+					}
+					lengths[i] = 0;
+				}
+			}
+			cand = aux;
+			while (cand < candend) {
+				i = *cand++ - seqb;
+				if (i >= end)
+					break;
+				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
+					gid = gids ? gids[i] - min : (oid) i;
+					if (lastoid[gid] < BUN_NONE) {
+						s = BUNtail(bi, i);
+						next_length = strlen(s);
+						memcpy(astrings[gid] + lengths[gid], s, next_length);
+						lengths[gid] += next_length;
+						if (i != lastoid[gid]) {
+							memcpy(astrings[gid] + lengths[gid], separator, separator_length);
+							lengths[gid] += separator_length;
+						}
+					}
+				}
+			}
+			for (i = 0; i < ngrp; i++) {
+				if (lastoid[i] < BUN_NONE) {
+					astrings[i][lengths[i]] = '\0';
+					if(BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
+						GDKerror("%s: malloc failure\n", func);
+						rres = GDK_FAIL;
+						goto finish;
+					}
+				} else if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+					GDKerror("%s: malloc failure\n", func);
+					rres = GDK_FAIL;
+					goto finish;
+				}
+			}
+		}
+	}
+
+finish:
+	if(has_nils)
+		*has_nils = nils;
+	if(lengths)
+		GDKfree(lengths);
+	if(astrings) {
+		for(i = 0 ; i < ngrp ; i++) {
+			if(astrings[i])
+				GDKfree(astrings[i]);
+		}
+		GDKfree(astrings);
+	}
+	if(single_str)
+		GDKfree(single_str);
+	if(lastoid)
+		GDKfree(lastoid);
+	if(rres == GDK_FAIL) {
+		if(bn) {
+			BBPreclaim(bn);
+			bn = NULL;
+		} else {
+			ValPtr pt = (ValPtr) res;
+			if(pt->val.sval) {
+				GDKfree(pt->val.sval);
+				pt->val.sval = NULL;
+			}
+		}
+	}
+	if(what == IS_A_BAT) {
+		*((BAT**)res) = bn;
+	}
+
+	return rres;
+}
+
+gdk_return
+BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, const str separator)
+{
+	oid min, max;
+	BUN ngrp, start, end;
+	const oid *cand = NULL, *candend = NULL;
+	const char *err;
+
+	(void) abort_on_error;
+	assert(separator);
+	res->vtype = TYPE_str;
+
+	if (BATcount(b) == 0 || *separator == '\200') {
+		res->len = 0;
+		res->val.sval = nil_if_empty ? GDKstrdup(str_nil) : GDKstrdup("");
+		if(res->val.sval == NULL) {
+			GDKerror("BATstr_group_concat: malloc failure\n");
+			return GDK_FAIL;
+		}
+		return GDK_SUCCEED;
+	}
+	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &start, &end, &cand, &candend)) != NULL) {
+		GDKerror("BATstr_group_concat: %s\n", err);
+		return GDK_FAIL;
+	}
+
+	return concat_strings(res, IS_A_POINTER, b, b->tnonil, b->hseqbase, start, end, 1, cand, candend, &min, min, max,
+						  skip_nils, separator, "BATstr_group_concat", NULL);
+}
+
+BAT *
+BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool abort_on_error, const str separator)
+{
+	const oid *restrict gids;
+	BAT *bn = NULL;
+	oid min, max;
+	BUN ngrp, start, end;
+	const oid *cand = NULL, *candend = NULL;
+	const char *err;
+	BUN nils = 0;
+	gdk_return res;
+
+	assert(separator);
+	(void) skip_nils;
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupstr_group_concat: %s\n", err);
+		return NULL;
+	}
+	if (g == NULL) {
+		GDKerror("BATgroupstr_group_concat: b and g must be aligned\n");
+		return NULL;
+	}
+
+	if (BATcount(b) == 0 || ngrp == 0 || *separator == '\200') {
+		/* trivial: no strings to concat, so return bat aligned with g with nil in the tail */
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
+	}
+
+	if ((e == NULL || (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+		(BATtdense(g) || (g->tkey && g->tnonil))) {
+		/* trivial: singleton groups, so all results are equal to the inputs (but possibly a different type) */
+		return BATconvert(b, s, TYPE_str, abort_on_error);
+	}
+
+	if (BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, start);
+
+	res = concat_strings(&bn, IS_A_BAT, b, b->tnonil, b->hseqbase, start, end, ngrp, cand, candend, gids, min,
+						  max, skip_nils, separator, "BATgroupstr_group_concat", &nils);
+
+	if (res == GDK_SUCCEED) {
+		BATsetcount(bn, ngrp);
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		bn->tnil = nils != 0;
+		bn->tnonil = nils == 0;
+	}
+
+	return bn;
+}
+
+#undef IS_A_POINTER
+#undef IS_A_BAT

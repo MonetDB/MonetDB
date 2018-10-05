@@ -19,7 +19,7 @@
  * data-intensive applications.  To eliminate all overhead, read-only
  * access to the BBP may be done by table-lookups. The integer index
  * type for these lookups is @emph{bat}, as retrieved by
- * @emph{BBPcacheid(b)}. The @emph{bat} zero is reserved for the nil
+ * @emph{b->batCacheid}. The @emph{bat} zero is reserved for the nil
  * bat.
  *
  * @item persistence
@@ -111,7 +111,6 @@ struct BBPfarm_t BBPfarms[MAXFARMS];
 bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 bat BBP_mask = 0;		/* number of buckets = & mask */
 
-static void BBPspin(bat bid, const char *debug, int event);
 static gdk_return BBPfree(BAT *b, const char *calledFrom);
 static void BBPdestroy(BAT *b);
 static void BBPuncacheit(bat bid, bool unloaddesc);
@@ -162,7 +161,7 @@ getBBPsize(void)
 /*
  * other globals
  */
-int BBP_dirty = 0;		/* BBP structures modified? */
+bool BBP_dirty = false;		/* BBP structures modified? */
 int BBPin = 0;			/* bats loaded statistic */
 int BBPout = 0;			/* bats saved statistic */
 
@@ -395,230 +394,6 @@ static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
 
-#ifdef GDKLIBRARY_SORTEDPOS
-static void
-fixsorted(void)
-{
-	bat bid;
-	BAT *b;
-	BATiter bi;
-	int dbg = GDKdebug;
-	bool loaded;
-
-	GDKdebug &= ~(CHECKMASK | PROPMASK);
-	for (bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++) {
-		if ((b = BBP_desc(bid)) == NULL)
-			continue; /* not a valid BAT */
-		loaded = false;
-		if (b->tnosorted != 0) {
-			if (b->tsorted) {
-				/* position should not be set */
-				b->batDirtydesc = 1;
-				b->tnosorted = 0;
-			} else if (b->tnosorted == 0 ||
-				   b->tnosorted >= b->batCount ||
-				   b->ttype < 0) {
-				/* out of range */
-				b->batDirtydesc = 1;
-				b->tnosorted = 0;
-			} else if (b->ttype == TYPE_void) {
-				/* void is always sorted */
-				b->batDirtydesc = 1;
-				b->tnosorted = 0;
-				b->tsorted = 1;
-			} else {
-				if (!loaded) {
-					b = BATdescriptor(bid);
-					bi = bat_iterator(b);
-					if (b == NULL)
-						b = BBP_desc(bid);
-					else
-						loaded = true;
-				}
-				if (!loaded ||
-				    ATOMcmp(b->ttype,
-					    BUNtail(bi, b->tnosorted - 1),
-					    BUNtail(bi, b->tnosorted)) <= 0) {
-					/* incorrect hint */
-					b->batDirtydesc = 1;
-					b->tnosorted = 0;
-				}
-			}
-		}
-		if (b->tnorevsorted != 0) {
-			if (b->trevsorted) {
-				/* position should not be set */
-				b->batDirtydesc = 1;
-				b->tnorevsorted = 0;
-			} else if (b->tnorevsorted == 0 ||
-				   b->tnorevsorted >= b->batCount ||
-				   b->ttype < 0) {
-				/* out of range */
-				b->batDirtydesc = 1;
-				b->tnorevsorted = 0;
-			} else if (b->ttype == TYPE_void) {
-				/* void is only revsorted if nil */
-				b->batDirtydesc = 1;
-				if (is_oid_nil(b->tseqbase) ||
-				    b->batCount <= 1) {
-					b->tnorevsorted = 0;
-					b->trevsorted = 1;
-				} else {
-					b->tnorevsorted = 1;
-				}
-			} else {
-				if (!loaded) {
-					b = BATdescriptor(bid);
-					bi = bat_iterator(b);
-					if (b == NULL)
-						b = BBP_desc(bid);
-					else
-						loaded = true;
-				}
-				if (!loaded ||
-				    ATOMcmp(b->ttype,
-					    BUNtail(bi, b->tnorevsorted - 1),
-					    BUNtail(bi, b->tnorevsorted)) >= 0) {
-					/* incorrect hint */
-					b->batDirtydesc = 1;
-					b->tnorevsorted = 0;
-				}
-			}
-		}
-		if (loaded)
-			BBPunfix(bid);
-	}
-	GDKdebug = dbg;
-}
-#endif
-
-#ifdef GDKLIBRARY_OLDWKB
-/* "Danger, Will Robinson".
- *
- * Upgrade the Well-known Binary (WKB) from older geom versions to the
- * one in current use.  This function must be called before the SQL
- * Write-ahead Log (WAL) is processed, and in order to be able to
- * recover safely, we call it here.  The WAL may create new BATs with
- * the WKB type, or append values to an existing BAT.  In the first
- * case it is hard, and in the second impossible, to upgrade the BAT
- * later.
- *
- * This function is located here, since it needs to be called early
- * (as discussed), and because it calls functions that are GDK only.
- * There is a little knowledge about the MonetDB WKB type, but nothing
- * about the internals of the type.  The only knowledge is the layout
- * of the old and new structures.
- *
- * All errors are fatal.
- */
-static void
-fixwkbheap(void)
-{
-	bat bid, bbpsize = getBBPsize();
-	BAT *b;
-	int utypewkb = ATOMunknown_find("wkb");
-	const char *nme, *bnme;
-	char filename[64];
-	Heap h1, h2;
-	const var_t *restrict old;
-	var_t *restrict new;
-	BUN i;
-	struct old_wkb {
-		int len;
-		char data[FLEXIBLE_ARRAY_MEMBER];
-	} *owkb;
-	struct new_wkb {
-		int len;
-		int srid;
-		char data[FLEXIBLE_ARRAY_MEMBER];
-	} *nwkb;
-	char *oldname, *newname;
-
-	if (utypewkb == 0)
-		GDKfatal("fixwkbheap: no space for wkb atom");
-
-	for (bid = 1; bid < bbpsize; bid++) {
-		if ((b = BBP_desc(bid)) == NULL)
-			continue; /* not a valid BAT */
-
-		if (b->ttype != utypewkb || b->batCount == 0)
-			continue; /* nothing to do for this BAT */
-		assert(b->tvheap);
-		assert(b->twidth == SIZEOF_VAR_T);
-
-		nme = BBP_physical(bid);
-		if ((bnme = strrchr(nme, DIR_SEP)) == NULL)
-			bnme = nme;
-		else
-			bnme++;
-		snprintf(filename, sizeof(filename),
-			 "BACKUP%c%s", DIR_SEP, bnme);
-		if ((oldname = GDKfilepath(b->theap.farmid, BATDIR, nme, "tail")) == NULL ||
-		    (newname = GDKfilepath(b->theap.farmid, BAKDIR, bnme, "tail")) == NULL ||
-		    GDKcreatedir(newname) != GDK_SUCCEED ||
-		    rename(oldname, newname) < 0)
-			GDKfatal("fixwkbheap: cannot make backup of %s.tail\n", nme);
-		GDKfree(oldname);
-		GDKfree(newname);
-		if ((oldname = GDKfilepath(b->tvheap->farmid, BATDIR, nme, "theap")) == NULL ||
-		    (newname = GDKfilepath(b->tvheap->farmid, BAKDIR, bnme, "theap")) == NULL ||
-		    rename(oldname, newname) < 0)
-			GDKfatal("fixwkbheap: cannot make backup of %s.theap\n", nme);
-		GDKfree(oldname);
-		GDKfree(newname);
-
-		h1 = b->theap;
-		h1.base = NULL;
-		h1.dirty = 0;
-		snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
-		h2 = *b->tvheap;
-		h2.base = NULL;
-		h2.dirty = 0;
-		snprintf(h2.filename, sizeof(h2.filename), "%s.theap", filename);
-
-		/* load old heaps */
-		if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED ||
-		    HEAPload(&h2, filename, "theap", 0) != GDK_SUCCEED)
-			GDKfatal("fixwkbheap: cannot load old heaps for BAT %d\n", bid);
-		/* create new heaps */
-		if (HEAPalloc(&b->theap, b->batCapacity, SIZEOF_VAR_T) != GDK_SUCCEED)
-			GDKfatal("fixwkbheap: cannot allocate heap\n");
-		b->theap.dirty = TRUE;
-		b->theap.free = h1.free;
-		HEAP_initialize(b->tvheap, b->batCapacity, 0, (int) sizeof(var_t));
-		if (b->tvheap->base == NULL)
-			GDKfatal("fixwkbheap: cannot allocate heap\n");
-		b->tvheap->parentid = bid;
-
-		/* do the conversion */
-		b->theap.dirty = TRUE;
-		b->tvheap->dirty = TRUE;
-		old = (const var_t *) h1.base;
-		new = (var_t *) Tloc(b, 0);
-		for (i = 0; i < b->batCount; i++) {
-			int len;
-			owkb = (struct old_wkb *) (h2.base + old[i]);
-			if ((len = owkb->len) == ~0)
-				len = 0;
-			if ((new[i] = HEAP_malloc(b->tvheap, offsetof(struct new_wkb, data) + len)) == 0)
-				GDKfatal("fixwkbheap: cannot allocate heap space\n");
-			nwkb = (struct new_wkb *) (b->tvheap->base + new[i]);
-			nwkb->len = owkb->len;
-			nwkb->srid = 0;
-			if (len > 0)
-				memcpy(nwkb->data, owkb->data, len);
-		}
-		HEAPfree(&h1, 0);
-		HEAPfree(&h2, 0);
-		if (HEAPsave(&b->theap, nme, "tail") != GDK_SUCCEED ||
-		    HEAPsave(b->tvheap, nme, "theap") != GDK_SUCCEED)
-			GDKfatal("fixwkbheap: saving heap failed\n");
-		HEAPfree(&b->theap, 0);
-		HEAPfree(b->tvheap, 0);
-	}
-}
-#endif
-
 #ifdef GDKLIBRARY_BADEMPTY
 /* There was a bug (fixed in changeset 1f5498568a24) which could
  * result in empty strings not being double-eliminated.  This code
@@ -670,7 +445,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 	*strrchr(srcdir, DIR_SEP) = 0;
 
 	/* load string heap */
-	if (HEAPload(b->tvheap, nme, "theap", 0) != GDK_SUCCEED)
+	if (HEAPload(b->tvheap, nme, "theap", false) != GDK_SUCCEED)
 		GDKfatal("fixstroffheap: loading string (theap) heap "
 			 "for BAT %d failed\n", b->batCacheid);
 	h = b->tvheap;		/* abbreviation */
@@ -690,7 +465,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		offsets[noffsets++] = (int) pos; /* < 65536, i.e. fits */
 		pos += GDK_STRLEN(s);
 	}
-	HEAPfree(b->tvheap, 0);
+	HEAPfree(b->tvheap, false);
 
 	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
 		bnme++;
@@ -720,11 +495,11 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		snprintf(h1.filename, sizeof(h1.filename), "%s.theap", filename);
 		h1.base = NULL;
 		h1.dirty = 0;
-		if (HEAPload(&h1, filename, "theap", 0) != GDK_SUCCEED)
+		if (HEAPload(&h1, filename, "theap", false) != GDK_SUCCEED)
 			GDKfatal("fixstroffheap: loading old tail heap "
 				 "for BAT %d failed\n", b->batCacheid);
 		memcpy(h2.base, h1.base, h2.free);
-		HEAPfree(&h1, 0);
+		HEAPfree(&h1, false);
 		h2.dirty = 1;
 		if ((*BATatoms[TYPE_str].atomPut)(&h2, &emptyoff, "") == 0)
 			GDKfatal("fixstroffheap: cannot insert empty string "
@@ -747,7 +522,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 	snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
 	h1.base = NULL;
 	h1.dirty = 0;
-	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
+	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED)
 		GDKfatal("fixstroffheap: loading old tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
 
@@ -815,15 +590,15 @@ fixstroffheap(BAT *b, int *restrict offsets)
 	}
 
 	/* cleanup */
-	HEAPfree(&h1, 0);
+	HEAPfree(&h1, false);
 	if (nofix) {
 		/* didn't fix anything, move backups back */
 		if (h2.dirty) {
-			HEAPfree(&h2, 1);
+			HEAPfree(&h2, true);
 			if (GDKmove(b->tvheap->farmid, BAKDIR, bnme, "theap", srcdir, bnme, "theap") != GDK_SUCCEED)
 				GDKfatal("fixstroffheap: cannot restore backup of %s.theap\n", nme);
 		}
-		HEAPfree(&h3, 1);
+		HEAPfree(&h3, true);
 		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED)
 			GDKfatal("fixstroffheap: cannot restore backup of %s.tail\n", nme);
 	} else {
@@ -835,12 +610,12 @@ fixstroffheap(BAT *b, int *restrict offsets)
 			 * the string heap */
 			if (HEAPsave(&h2, nme, "theap") != GDK_SUCCEED)
 				GDKfatal("fixstroffheap: saving heap failed\n");
-			HEAPfree(&h2, 0);
+			HEAPfree(&h2, false);
 			*b->tvheap = h2;
 		}
 		if (HEAPsave(&h3, nme, "tail") != GDK_SUCCEED)
 			GDKfatal("fixstroffheap: saving heap failed\n");
-		HEAPfree(&h3, 0);
+		HEAPfree(&h3, false);
 		b->theap = h3;
 	}
 	GDKfree(srcdir);
@@ -930,7 +705,7 @@ fixfltheap(BAT *b)
 	snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
 	h1.base = NULL;
 	h1.dirty = 0;
-	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
+	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED)
 		GDKfatal("fixfltheap: loading old tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
 
@@ -1001,10 +776,10 @@ fixfltheap(BAT *b)
 	}
 
 	/* cleanup */
-	HEAPfree(&h1, 0);
+	HEAPfree(&h1, false);
 	if (nofix) {
 		/* didn't fix anything, move backup back */
-		HEAPfree(&h2, 1);
+		HEAPfree(&h2, true);
 		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED)
 			GDKfatal("fixfltheap: cannot restore backup of %s.tail\n", nme);
 	} else {
@@ -1012,7 +787,7 @@ fixfltheap(BAT *b)
 		b->batDirtydesc = 1;
 		if (HEAPsave(&h2, nme, "tail") != GDK_SUCCEED)
 			GDKfatal("fixfltheap: saving heap failed\n");
-		HEAPfree(&h2, 0);
+		HEAPfree(&h2, false);
 		b->theap = h2;
 	}
 	GDKfree(srcdir);
@@ -1069,11 +844,7 @@ fixfloatbats(void)
 }
 #endif
 
-/*
- * A read only BAT can be shared in a file system by reading its
- * descriptor separately.  The default src=0 is to read the full
- * BBPdir file.
- */
+#ifdef GDKLIBRARY_HEADED
 static int
 headheapinit(oid *hseq, const char *buf, bat bid)
 {
@@ -1110,6 +881,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 	*hseq = (oid) base;
 	return n;
 }
+#endif
 
 static int
 heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpversion, bat bid, const char *filename)
@@ -1143,7 +915,7 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpvers
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &align, &free, &size, &storage,
 		   &n) < 13 :
-		sscanf(buf,
+	    sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu16
@@ -1186,12 +958,12 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpvers
 	b->tsorted = (bit) ((properties & 0x0001) != 0);
 	b->trevsorted = (bit) ((properties & 0x0080) != 0);
 	b->tkey = (properties & 0x0100) != 0;
-	b->tdense = (properties & 0x0200) != 0;
 	b->tnonil = (properties & 0x0400) != 0;
 	b->tnil = (properties & 0x0800) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
-	b->tseqbase = base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
+	/* (properties & 0x0200) is the old tdense flag */
+	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap.free = (size_t) free;
 	b->theap.size = (size_t) size;
 	b->theap.base = NULL;
@@ -1260,7 +1032,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
-		uint64_t inserted = 0, deleted = 0, first = 0, count, capacity, base = 0;
+		uint64_t first = 0, count, capacity, base = 0;
 #ifdef GDKLIBRARY_HEADED
 		/* these variables are not used in later versions */
 		char tailname[129];
@@ -1276,19 +1048,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			*s = 0;
 		}
 
-		if (bbpversion <= GDKLIBRARY_INSERTED ?
-		    sscanf(buf,
-			   "%" SCNu64 " %" SCNu16 " %128s %128s %23s %d %u"
-			   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
-			   " %" SCNu64 " %" SCNu16 " %" SCNu16 " %" SCNu16
-			   " %" SCNu16 ""
-			   "%n",
-			   &batid, &status, headname, tailname, filename,
-			   &lastused, &properties, &inserted, &deleted, &first,
-			   &count, &capacity, &map_head, &map_tail, &map_hheap,
-			   &map_theap,
-			   &nread) < 16 :
-		    bbpversion <= GDKLIBRARY_HEADED ?
+		if (bbpversion <= GDKLIBRARY_HEADED ?
 		    sscanf(buf,
 			   "%" SCNu64 " %" SCNu16 " %128s %128s %23s %d %u"
 			   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu16
@@ -1423,14 +1183,11 @@ BBPheader(FILE *fp)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_NIL_NAN &&
+	    bbpversion != GDKLIBRARY_TALIGN &&
 	    bbpversion != GDKLIBRARY_BADEMPTY &&
 	    bbpversion != GDKLIBRARY_NOKEY &&
-	    bbpversion != GDKLIBRARY_SORTEDPOS &&
-	    bbpversion != GDKLIBRARY_OLDWKB &&
-	    bbpversion != GDKLIBRARY_INSERTED &&
-	    bbpversion != GDKLIBRARY_HEADED &&
-	    bbpversion != GDKLIBRARY_TALIGN &&
-	    bbpversion != GDKLIBRARY_NIL_NAN) {
+	    bbpversion != GDKLIBRARY_HEADED) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
 			 "This database was probably created by %s version of MonetDB.",
 			 GDKLIBRARY, bbpversion,
@@ -1530,7 +1287,7 @@ BBPresetfarms(void)
 	BBPunlock();
 	BBPsize = 0;
 	if (BBPfarms[0].dirname != NULL) {
-		GDKfree((void*) BBPfarms[0].dirname);
+		GDKfree((void*) BBPfarms[0].dirname); /* loose "const" */
 	}
 	BBPfarms[0].dirname = NULL;
 	BBPfarms[0].roles = 0;
@@ -1543,9 +1300,13 @@ BBPinit(void)
 	FILE *fp = NULL;
 	struct stat st;
 	unsigned bbpversion;
-	str bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir");
-	str backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir");
+	str bbpdirstr, backupbbpdirstr;
 	int i;
+
+	if(!(bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir")))
+		GDKfatal("BBPinit: GDKmalloc failed\n");
+	if(!(backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir")))
+		GDKfatal("BBPinit: GDKmalloc failed\n");
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
@@ -1595,7 +1356,7 @@ BBPinit(void)
 	BBPlimit = 0;
 	memset(BBP, 0, sizeof(BBP));
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
-	BBPdirty(1);
+	BBP_dirty = true;
 
 	bbpversion = BBPheader(fp);
 
@@ -1631,14 +1392,6 @@ BBPinit(void)
 		}
 	}
 
-#ifdef GDKLIBRARY_SORTEDPOS
-	if (bbpversion <= GDKLIBRARY_SORTEDPOS)
-		fixsorted();
-#endif
-#ifdef GDKLIBRARY_OLDWKB
-	if (bbpversion <= GDKLIBRARY_OLDWKB)
-		fixwkbheap();
-#endif
 #ifdef GDKLIBRARY_BADEMPTY
 	if (bbpversion <= GDKLIBRARY_BADEMPTY)
 		fixstrbats();
@@ -1745,7 +1498,7 @@ heap_entry(FILE *fp, BAT *b)
 		       (unsigned short) b->tsorted |
 			   ((unsigned short) b->trevsorted << 7) |
 			   (((unsigned short) b->tkey & 0x01) << 8) |
-			   ((unsigned short) b->tdense << 9) |
+		           ((unsigned short) BATtdense(b) << 9) |
 			   ((unsigned short) b->tnonil << 10) |
 			   ((unsigned short) b->tnil << 11),
 		       b->tnokey[0],
@@ -1784,7 +1537,7 @@ new_bbpentry(FILE *fp, bat i, const char *prefix)
 	}
 #endif
 
-	if (fprintf(fp, "%s%zd %d %s %s %d " BUNFMT " "
+	if (fprintf(fp, "%s%zd %u %s %s %d " BUNFMT " "
 		    BUNFMT " " OIDFMT, prefix,
 		    /* BAT info */
 		    (ssize_t) i,
@@ -2011,7 +1764,7 @@ BBPdump(void)
 			continue;
 		fprintf(stderr,
 			"# %d[%s]: nme='%s' refs=%d lrefs=%d "
-			"status=%d count=" BUNFMT,
+			"status=%u count=" BUNFMT,
 			i,
 			ATOMname(b->ttype),
 			BBP_logical(i) ? BBP_logical(i) : "<NULL>",
@@ -2021,8 +1774,6 @@ BBPdump(void)
 			b->batCount);
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
-		if (b->batDirty)
-			fprintf(stderr, " Dirty");
 		if (b->batDirtydesc)
 			fprintf(stderr, " DirtyDesc");
 		if (b->theap.parentid) {
@@ -2063,7 +1814,7 @@ BBPdump(void)
 				}
 			}
 		}
-		if (b->thash && b->thash != (Hash *) -1) {
+		if (b->thash && b->thash != (Hash *) 1) {
 			fprintf(stderr,
 				" Thash=[%zu,%zu]",
 				HEAPmemsize(&b->thash->heap),
@@ -2327,7 +2078,7 @@ BBPinsert(BAT *bn)
 		BATDEBUG fprintf(stderr, "#%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
 	}
 
-	BBPdirty(1);
+	BBP_dirty = true;
 
 	return i;
 }
@@ -2336,7 +2087,7 @@ gdk_return
 BBPcacheit(BAT *bn, bool lock)
 {
 	bat i = bn->batCacheid;
-	int mode;
+	unsigned mode;
 
 	if (lock)
 		lock = locked_by == 0 || locked_by != MT_getpid();
@@ -2520,7 +2271,7 @@ BBPrename(bat bid, const char *nme)
 		BBP_status_on(bid, BBPRENAMED, "BBPrename");
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
-		BBPdirty(1);
+		BBP_dirty = true;
 	}
 	MT_lock_unset(&GDKnameLock);
 	MT_lock_unset(&GDKtrimLock(idx));
@@ -2539,36 +2290,58 @@ BBPrename(bat bid, const char *nme)
  * memory references can be unloaded.
  */
 static inline void
-BBPspin(bat i, const char *s, int event)
+BBPspin(bat i, const char *s, unsigned event)
 {
 	if (BBPcheck(i, "BBPspin") && (BBP_status(i) & event)) {
 		lng spin = LL_CONSTANT(0);
 
-		while (BBP_status(i) & event) {
+		do {
 			MT_sleep_ms(KITTENNAP);
 			spin++;
-		}
-		BATDEBUG fprintf(stderr, "#BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
+		} while (BBP_status(i) & event);
+		BATDEBUG fprintf(stderr, "#BBPspin(%d,%s,%u): " LLFMT " loops\n", (int) i, s, event, spin);
 	}
 }
 
+/* This function can fail if the input parameter (i) is incorrect
+ * (unlikely), of if the bat is a view, this is a physical (not
+ * logical) incref (i.e. called through BBPfix(), and it is the first
+ * reference (refs was 0 and should become 1).  It can fail in this
+ * case if the parent bat cannot be loaded.
+ * This means the return value of BBPfix should be checked in these
+ * circumstances, but not necessarily in others. */
 static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
 	bat tp, tvp;
-	BAT *b;
+	BAT *b, *pb = NULL, *pvb = NULL;
 	bool load = false;
-
-	if (is_bat_nil(i)) {
-		/* Stefan: May this happen? Or should we better call
-		 * GDKerror(), here? */
-		/* GDKerror("BBPincref() called with bat_nil!\n"); */
-		return 0;
-	}
 
 	if (!BBPcheck(i, logical ? "BBPretain" : "BBPfix"))
 		return 0;
+
+	/* Before we get the lock and before we do all sorts of
+	 * things, make sure we can load the parent bats if there are
+	 * any.  If we can't load them, we can still easily fail.  If
+	 * this is indeed a view, but not the first physical
+	 * reference, getting the parent BAT descriptor is
+	 * superfluous, but not too expensive, so we do it anyway. */
+	if (!logical && (b = BBP_desc(i)) != NULL) {
+		if (b->theap.parentid) {
+			pb = BATdescriptor(b->theap.parentid);
+			if (pb == NULL)
+				return 0;
+		}
+		if (b->tvheap && b->tvheap->parentid != i) {
+			pvb = BATdescriptor(b->tvheap->parentid);
+			if (pvb == NULL) {
+				if (pb)
+					BBPunfix(pb->batCacheid);
+				return 0;
+			}
+		}
+	}
 
 	if (lock) {
 		for (;;) {
@@ -2619,27 +2392,23 @@ incref(bat i, bool logical, bool lock)
 		 * to the correct values */
 		assert(!logical);
 		if (tp) {
-			BAT *pb;
-			incref(tp, false, lock);
-			pb = getBBPdescriptor(tp, lock);
+			assert(pb != NULL);
 			b->theap.base = pb->theap.base + (size_t) b->theap.base;
-			/* if we shared the hash before, share it
-			 * again note that if the parent's hash is
-			 * destroyed, we also don't have a hash
-			 * anymore */
-			if (b->thash == (Hash *) -1)
-				b->thash = pb->thash;
-		}
-		if (tvp) {
-			incref(tvp, false, lock);
-			(void) getBBPdescriptor(tvp, lock);
 		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING, "BBPfix");
+	} else if (!logical) {
+		/* this wasn't the first physical reference, so undo
+		 * the fixes on the parent bats */
+		if (pb)
+			BBPunfix(pb->batCacheid);
+		if (pvb)
+			BBPunfix(pvb->batCacheid);
 	}
 	return refs;
 }
 
+/* see comment for incref */
 int
 BBPfix(bat i)
 {
@@ -2662,14 +2431,14 @@ BBPshare(bat parent)
 	bool lock = locked_by == 0 || locked_by != MT_getpid();
 
 	assert(parent > 0);
+	(void) incref(parent, true, lock);
 	if (lock)
 		MT_lock_set(&GDKswapLock(parent));
-	(void) incref(parent, true, 0);
 	++BBP_cache(parent)->batSharecnt;
 	assert(BBP_refs(parent) > 0);
-	(void) incref(parent, false, 0);
 	if (lock)
 		MT_lock_unset(&GDKswapLock(parent));
+	(void) incref(parent, false, lock);
 }
 
 static inline int
@@ -2719,12 +2488,6 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			if (b && refs == 0) {
 				if ((tp = b->theap.parentid) != 0)
 					b->theap.base = (char *) (b->theap.base - BBP_cache(tp)->theap.base);
-				/* if a view shared the hash with its
-				 * parent, indicate this, but only if
-				 * view isn't getting destroyed */
-				if (tp && b->thash &&
-				    b->thash == BBP_cache(tp)->thash)
-					b->thash = (Hash *) -1;
 				tvp = VIEWvtparent(b);
 			}
 		}
@@ -2946,11 +2709,11 @@ BBPsave(BAT *b)
 		BBPspin(bid, "BBPsave", BBPSAVING);
 	} else {
 		/* save it */
-		int flags = BBPSAVING;
+		unsigned flags = BBPSAVING;
 
 		if (DELTAdirty(b)) {
 			flags |= BBPSWAPPED;
-			BBPdirty(1);
+			BBP_dirty = true;
 		}
 		if (b->batPersistence != PERSISTENT) {
 			flags |= BBPTMP;
@@ -3062,7 +2825,7 @@ BBPfree(BAT *b, const char *calledFrom)
  * parametrized.
  */
 static bool
-complexatom(int t, int delaccess)
+complexatom(int t, bool delaccess)
 {
 	if (t >= 0 && (BATatoms[t].atomFix || (delaccess && BATatoms[t].atomDel))) {
 		return true;
@@ -3071,7 +2834,7 @@ complexatom(int t, int delaccess)
 }
 
 BAT *
-BBPquickdesc(bat bid, int delaccess)
+BBPquickdesc(bat bid, bool delaccess)
 {
 	BAT *b;
 
@@ -3111,7 +2874,7 @@ dirty_bat(bat *i, bool subcommit)
 			    (subcommit || BATdirty(b)))
 				return b;	/* the bat is loaded, persistent and dirty */
 		} else if (BBP_status(*i) & BBPSWAPPED) {
-			b = (BAT *) BBPquickdesc(*i, TRUE);
+			b = (BAT *) BBPquickdesc(*i, true);
 			if (b && (subcommit || b->batDirtydesc))
 				return b;	/* only the desc is loaded & dirty */
 		}
@@ -3232,10 +2995,15 @@ BBPprepare(bool subcommit)
 {
 	bool start_subcommit;
 	int set = 1 + subcommit;
-	str bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
-	str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
-
+	str bakdirpath, subdirpath;
 	gdk_return ret = GDK_SUCCEED;
+
+	if(!(bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL)))
+		return GDK_FAIL;
+	if(!(subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL))) {
+		GDKfree(bakdirpath);
+		return GDK_FAIL;
+	}
 
 	/* tmLock is only used here, helds usually very shortly just
 	 * to protect the file counters */
@@ -3374,7 +3142,8 @@ BBPbackup(BAT *b, bool subcommit)
 		return GDK_SUCCEED;
 	}
 	/* determine location dir and physical suffix */
-	srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL);
+	if (!(srcdir = GDKfilepath(NOFARM, BATDIR, s, NULL)))
+		goto fail;
 	s = strrchr(srcdir, DIR_SEP);
 	if (!s)
 		goto fail;
@@ -3384,16 +3153,19 @@ BBPbackup(BAT *b, bool subcommit)
 
 	if (b->ttype != TYPE_void &&
 	    do_backup(srcdir, nme, "tail", &b->theap,
-		      b->batDirty || b->theap.dirty, subcommit) != GDK_SUCCEED)
+		      b->batDirtydesc || b->theap.dirty,
+		      subcommit) != GDK_SUCCEED)
 		goto fail;
 	if (b->tvheap &&
 	    do_backup(srcdir, nme, "theap", b->tvheap,
-		      b->batDirty || b->tvheap->dirty, subcommit) != GDK_SUCCEED)
+		      b->batDirtydesc || b->tvheap->dirty,
+		      subcommit) != GDK_SUCCEED)
 		goto fail;
 	GDKfree(srcdir);
 	return GDK_SUCCEED;
-  fail:
-	GDKfree(srcdir);
+fail:
+	if(srcdir)
+		GDKfree(srcdir);
 	return GDK_FAIL;
 }
 
@@ -3412,11 +3184,16 @@ gdk_return
 BBPsync(int cnt, bat *subcommit)
 {
 	gdk_return ret = GDK_SUCCEED;
-	int bbpdirty = 0;
+	bool bbpdirty = false;
 	int t0 = 0, t1 = 0;
+	str bakdir, deldir;
 
-	str bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL);
-	str deldir = GDKfilepath(0, NULL, DELDIR, NULL);
+	if(!(bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL)))
+		return GDK_FAIL;
+	if(!(deldir = GDKfilepath(0, NULL, DELDIR, NULL))) {
+		GDKfree(bakdir);
+		return GDK_FAIL;
+	}
 
 	PERFDEBUG t0 = t1 = GDKms();
 
@@ -3511,7 +3288,7 @@ BBPsync(int cnt, bat *subcommit)
 
 		/* AFTERMATH */
 		if (ret == GDK_SUCCEED) {
-			BBP_dirty = 0;
+			BBP_dirty = false;
 			backup_files = subcommit ? (backup_files - backup_subdir) : 0;
 			backup_dir = backup_subdir = 0;
 			if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
@@ -3549,7 +3326,10 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		strncpy(srcpath, name, len);
 		srcpath[len] = '\0';
-		dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL);
+		if(!(dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL))) {
+			GDKsyserror("force_move: malloc fail\n");
+			return GDK_FAIL;
+		}
 
 		/* step 1: remove the X.new file that is going to be
 		 * overridden by X */
@@ -3564,7 +3344,10 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
-		killfile = GDKfilepath(farmid, srcdir, name, NULL);
+		if(!(killfile = GDKfilepath(farmid, srcdir, name, NULL))) {
+			GDKsyserror("force_move: malloc fail\n");
+			return GDK_FAIL;
+		}
 		if (remove(killfile) != 0) {
 			ret = GDK_FAIL;
 			GDKsyserror("force_move: remove(%s)\n", killfile);
@@ -3580,8 +3363,12 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		/* two legal possible causes: file exists or dir
 		 * doesn't exist */
-		dstpath = GDKfilepath(farmid, dstdir, name, NULL);
-		srcpath = GDKfilepath(farmid, srcdir, name, NULL);
+		if(!(dstpath = GDKfilepath(farmid, dstdir, name, NULL)))
+			return GDK_FAIL;
+		if(!(srcpath = GDKfilepath(farmid, srcdir, name, NULL))) {
+			GDKfree(dstpath);
+			return GDK_FAIL;
+		}
 		if (remove(dstpath) != 0)	/* clear destination */
 			ret = GDK_FAIL;
 		IODEBUG fprintf(stderr, "#remove %s = %d\n", dstpath, (int) ret);
@@ -3938,7 +3725,7 @@ gdk_bbp_reset(void)
 	BBP_hash = 0;
 	BBP_mask = 0;
 
-	BBP_dirty = 0;
+	BBP_dirty = false;
 	BBPin = 0;
 	BBPout = 0;
 

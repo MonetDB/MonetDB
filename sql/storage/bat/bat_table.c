@@ -26,7 +26,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 		BAT *d, *diff = NULL;
 
 		if ((d = store_funcs.bind_del(tr, t, RD_INS)) != NULL) {
-			diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
+			diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
 			bat_destroy(d);
 		}
 		bat_destroy(tids);
@@ -75,14 +75,14 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		b = i;
 	} else {
 		if (BATcount(i)) {
-			r = COLcopy(b, b->ttype, 1, TRANSIENT); 
+			r = COLcopy(b, b->ttype, true, TRANSIENT); 
 			bat_destroy(b); 
 			if (r == NULL) {
 				bat_destroy(i);
 				return NULL;
 			}
 			b = r;
-			if (BATappend(b, i, NULL, TRUE) != GDK_SUCCEED) {
+			if (BATappend(b, i, NULL, true) != GDK_SUCCEED) {
 				bat_destroy(b);
 				bat_destroy(i);
 				return NULL;
@@ -96,7 +96,7 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		uv = temp_descriptor(bat->uvbid);
 		if (ui && BATcount(ui)) {
 			if (needcopy) {
-				r = COLcopy(b, b->ttype, 1, TRANSIENT); 
+				r = COLcopy(b, b->ttype, true, TRANSIENT); 
 				bat_destroy(b); 
 				b = r;
 				if(b == NULL) {
@@ -105,7 +105,7 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 					return NULL;
 				}
 			}
-			if (void_replace_bat(b, ui, uv, TRUE) != GDK_SUCCEED) {
+			if (void_replace_bat(b, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(b);
@@ -165,7 +165,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		bat_destroy(s);
 		goto return_nil;
 	}
-	r = BATselect(b, s, value, NULL, 1, 0, 0);
+	r = BATselect(b, s, value, NULL, true, false, false);
 	bat_destroy(s);
 	full_destroy(c, b);
 	if (!r)
@@ -180,7 +180,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 			bat_destroy(s);
 			goto return_nil;
 		}
-		r = BATselect(b, s, value, NULL, 1, 0, 0);
+		r = BATselect(b, s, value, NULL, true, false, false);
 		bat_destroy(s);
 		full_destroy(c, b);
 		if (!r)
@@ -284,7 +284,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 	rids *rs = ZNEW(rids);
 	const void *kvl = key_value_low, *kvh = key_value_high;
 	/* if pointers are equal, make it an inclusive select */
-	int hi = key_value_low == key_value_high;
+	bool hi = key_value_low == key_value_high;
 
 	if(!rs)
 		return NULL;
@@ -304,8 +304,8 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 	if (!kvh && kvl != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	if (key_value_low) {
-		BAThash(b, 0);
-		r = BATselect(b, s, kvl, kvh, 1, hi, 0);
+		BAThash(b);
+		r = BATselect(b, s, kvl, kvh, true, hi, false);
 		bat_destroy(s);
 		s = r;
 	}
@@ -326,7 +326,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 			if (!kvh && kvl != ATOMnilptr(b->ttype))
 				kvh = ATOMnilptr(b->ttype);
 			assert(kvh);
-			r = BATselect(b, s, kvl, kvh, 1, hi, 0);
+			r = BATselect(b, s, kvl, kvh, true, hi, false);
 			bat_destroy(s);
 			s = r;
 			full_destroy(key, b);
@@ -352,7 +352,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	b = full_column(tr, orderby_col);
 	s = BATproject(r->data, b);
 	full_destroy(orderby_col, b);
-	if (BATsort(NULL, &o, NULL, s, NULL, NULL, 0, 0) != GDK_SUCCEED) {
+	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false) != GDK_SUCCEED) {
 		bat_destroy(s);
 		return NULL;
 	}
@@ -401,7 +401,7 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	
 	lcb = full_column(tr, lc);
 	rcb = full_column(tr, rc);
-	ret = BATjoin(&s, &d, lcb, rcb, l->data, r->data, FALSE, BATcount(lcb));
+	ret = BATjoin(&s, &d, lcb, rcb, l->data, r->data, false, BATcount(lcb));
 	bat_destroy(l->data);
 	bat_destroy(d);
 	if (ret != GDK_SUCCEED) {
@@ -434,7 +434,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 		return NULL;
 	}
 
-	ret = BATjoin(&rids, &d, lcb, rcb, s, t1->data, FALSE, BATcount(lcb));
+	ret = BATjoin(&rids, &d, lcb, rcb, s, t1->data, false, BATcount(lcb));
 	bat_destroy(s);
 	full_destroy(rc, rcb);
 	if (ret != GDK_SUCCEED) {
@@ -467,7 +467,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 
 	/* need id, obc */
 	ids = o = g = NULL;
-	ret = BATsort(&ids, &o, &g, lcb, NULL, NULL, 0, 0);
+	ret = BATsort(&ids, &o, &g, lcb, NULL, NULL, false, false);
 	bat_destroy(lcb);
 	if (ret != GDK_SUCCEED) {
 		bat_destroy(obb);
@@ -476,7 +476,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 	}
 
 	s = NULL;
-	ret = BATsort(NULL, &s, NULL, obb, o, g, 0, 0);
+	ret = BATsort(NULL, &s, NULL, obb, o, g, false, false);
 	bat_destroy(obb);
 	bat_destroy(o);
 	bat_destroy(g);
@@ -573,7 +573,7 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 		return NULL;
 	}
 
-	diff = BATdiff(s, rcb, NULL, NULL, 0, BUN_NONE);
+	diff = BATdiff(s, rcb, NULL, NULL, false, BUN_NONE);
 	bat_destroy(rcb);
 	if (diff == NULL) {
 		full_destroy(rc, lcb);
@@ -581,7 +581,7 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 		return NULL;
 	}
 
-	ret = BATjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
+	ret = BATjoin(&rids, &d, lcb, s, NULL, diff, false, BATcount(s));
 	bat_destroy(diff);
 	full_destroy(lc, lcb);
 	bat_destroy(s);

@@ -373,6 +373,8 @@ CONDITIONALS = {
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
+    'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
+    'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
     'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
@@ -2170,10 +2172,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     TIMEOUT = int(TIMEOUT * TOf)
                 if TIMEOUT < 1 and par['TIMEOUT'] > 0:
                     TIMEOUT = 1
-        if env['exe']['Mtimeout'][0]:
-            # set timeout
-            env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
-            SetExecEnv(env['exe'],False)
         CTIMEOUT = 0
         if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
@@ -2317,11 +2315,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             STDOUT.flush()
         except IOError as err:
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
-
-        if env['exe']['Mtimeout'][0]:
-            # reset timeout
-            env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
-            SetExecEnv(env['exe'],False)
 
         Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
         Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
@@ -3423,9 +3416,7 @@ def SetExecEnv(exe,verbose) :
             V = 'MSERVER'
         else:
             V = v.upper()
-        if  v != 'Mtimeout':
-            os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
-        elif exe[v][0]:
+        if exe[v][0]:
             os.environ[V] = CALL+exe[v][1]
         else:
             os.environ[V] = ""
@@ -4192,7 +4183,6 @@ def main(argv) :
                 SOCK = ""
 
             exe = {}
-            exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
             exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
@@ -4202,8 +4192,6 @@ def main(argv) :
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
             exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
-            if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
-                exe['Mtimeout'] = '', ''
             env['exe'] = exe
             SetExecEnv(exe,verbose)
 

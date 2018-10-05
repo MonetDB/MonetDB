@@ -70,6 +70,10 @@ select name, authorization, owner, system from sys.schemas order by name;
 select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, '--.*\n*', '', ''), '[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 -- _columns
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
+-- partitioned tables (these three should be empty)
+select t.name, c.name, p.expression from sys.table_partitions p left outer join sys._tables t on p.table_id = t.id left outer join sys._columns c on p.column_id = c.id;
+select t.name, p.expression, r.minimum, r.maximum, r.with_nulls from sys.range_partitions r left outer join sys._tables t on t.id = r.table_id left outer join sys.table_partitions p on r.partition_id = p.id;
+select t.name, p.expression, v.value from sys.value_partitions v left outer join sys._tables t on t.id = v.table_id left outer join sys.table_partitions p on v.partition_id = p.id;
 -- external functions that don't reference existing MAL function (should be empty)
 with funcs as (select name, pcre_replace(func, '--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 -- args
@@ -84,7 +88,7 @@ MAXARGS = 16
 # columns of the args table we're interested in
 args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
 
-out += r"select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg"
+out += r"select s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg"
 for i in range(0, MAXARGS):
     for a in args[:-1]:
         out += ", a%d.%s as %s%d" % (i, a, a, i)
@@ -101,7 +105,6 @@ for i in range(0, MAXARGS):
         out += ", %s%d" % (a, i)
 out += ";"
 
-# substring used a bunch of time in the queries below
 out += '''
 -- auths
 select name, grantor from sys.auths;
@@ -145,8 +148,6 @@ select s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc,
 select count(*) from sys.statistics;
 -- storagemodelinput (expect empty)
 select count(*) from sys.storagemodelinput;
--- systemfunctions
-select f.name from sys.systemfunctions s left outer join sys.functions f on s.function_id = f.id order by f.name;
 -- triggers
 select t.name, g.name, case g.time when 0 then 'BEFORE' when 1 then 'AFTER' when 2 then 'INSTEAD OF' end as time, case g.orientation when 0 then 'ROW' when 1 then 'STATEMENT' end as orientation, case g.event when 0 then 'insert' when 1 then 'DELETE' when 2 then 'UPDATE' end as event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
 -- types

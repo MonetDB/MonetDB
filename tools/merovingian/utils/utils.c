@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
+#include <ctype.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
@@ -216,7 +217,7 @@ setConfVal(confkeyval *ckv, const char *val) {
 		}
 		case INT: {
 			const char *p = val;
-			while (*p >= '0' && *p <= '9')
+			while (isdigit((unsigned char) *p))
 				p++;
 			if (*p != '\0') {
 				char buf[256];

@@ -48,8 +48,9 @@
 		b = COLnew(0, TYPE_##tpe, cnt, TRANSIENT);						\
 		if (!b) break;                                                  \
 		b->tnil = 0; b->tnonil = 1; b->tkey = 0;						\
-		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
-		p = (tpe*) Tloc(b, 0);								\
+		b->tsorted = 1; b->trevsorted = 1;								\
+		b->tseqbase = oid_nil;											\
+		p = (tpe*) Tloc(b, 0);											\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = (tpe) access_fun(s)[j];							    \
 			if (na_check){ b->tnil = 1; 	b->tnonil = 0; 	*p= tpe##_nil;} \
@@ -229,12 +230,12 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 			if (rse == NA_STRING) {
 				b->tnil = 1;
 				b->tnonil = 0;
-				if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, str_nil, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 				}
 			} else {
-				if (BUNappend(b, CHAR(rse), FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, CHAR(rse), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 				}

@@ -76,6 +76,7 @@ newODBCDbc(ODBCEnv *env)
 	dbc->minor = 0;
 	dbc->patch = 0;
 	dbc->cachelimit = 0;
+	dbc->qtimeout = 0;
 	dbc->Mdebug = 0;
 
 	dbc->FirstStmt = NULL;

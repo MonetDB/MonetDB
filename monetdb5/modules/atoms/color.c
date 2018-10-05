@@ -45,13 +45,13 @@ CLRhextoint(char h, char l)
 {
 	int r = 0;
 
-	if (h >= '0' && h <= '9')
+	if (isdigit((unsigned char) h))
 		r = 16 * (int) (h - '0');
 	if (h >= 'a' && h <= 'f')
 		r = 16 * (int) (10 + h - 'a');
 	if (h >= 'A' && h <= 'F')
 		r = 16 * (int) (10 + h - 'A');
-	if (l >= '0' && l <= '9')
+	if (isdigit((unsigned char) l))
 		r += (int) (l - '0');
 	if (l >= 'a' && l <= 'f')
 		r += (int) (10 + l - 'a');

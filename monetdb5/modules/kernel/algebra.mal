@@ -321,7 +321,11 @@ command max(b:bat[:any_2]):any_2
 address ALGmaxany
 comment "Return the highest tail value or nil.";
 
-pattern avg (b:bat[:any_2] ) :dbl
+pattern avg(b:bat[:any_2]) :dbl
+address CMDcalcavg
+comment "Gives the avg of all tail values";
+
+pattern avg(b:bat[:any_2], scale:int) :dbl
 address CMDcalcavg
 comment "Gives the avg of all tail values";
 

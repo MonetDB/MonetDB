@@ -359,6 +359,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	/* a multiplex-funnel means starting a separate thread */
 	if (strcmp(kv->val, "mfunnel") == 0) {
+		FILE *f1, *f2;
 		/* create a dpair entry */
 		pthread_mutex_lock(&_mero_topdp_lock);
 
@@ -377,8 +378,20 @@ forkMserver(char *database, sabdb** stats, int force)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		kv = findConfKey(ckv, "mfunnel");
-		if ((er = multiplexInit(database, kv->val,
-								fdopen(pfdo[1], "a"), fdopen(pfde[1], "a"))) != NO_ERR) {
+		if(!(f1 = fdopen(pfdo[1], "a"))) {
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			return newErr("Failed to open file descriptor\n");
+		}
+		if(!(f2 = fdopen(pfde[1], "a"))) {
+			fclose(f1);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			return newErr("Failed to open file descriptor\n");
+		}
+		if ((er = multiplexInit(database, kv->val, f1, f2)) != NO_ERR) {
 			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
 					 getErrMsg(er));
 			freeConfFile(ckv);
@@ -583,13 +596,18 @@ forkMserver(char *database, sabdb** stats, int force)
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
 		ssize_t write_error;	/* to avoid compiler warning */
+		int dup_err;
 		close(pfdo[0]);
-		dup2(pfdo[1], 1);
+		dup_err = dup2(pfdo[1], 1);
 		close(pfdo[1]);
 
 		close(pfde[0]);
-		dup2(pfde[1], 2);
+		if(dup_err == -1)
+			perror("dup2");
+		dup_err = dup2(pfde[1], 2);
 		close(pfde[1]);
+		if(dup_err == -1)
+			perror("dup2");
 
 		write_error = write(1, "arguments:", 10);
 		for (c = 0; argv[c] != NULL; c++) {
@@ -755,6 +773,8 @@ forkMserver(char *database, sabdb** stats, int force)
 	return(newErr("%s", strerror(errno)));
 }
 
+#define BUFLEN 1024
+
 /**
  * Fork stethoscope and detatch, after performing sanity checks. The assumption
  * is that each mserver5 process can have at most one stethoscope process
@@ -882,18 +902,97 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	}
 	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", *log_path);
 
-	/* Make sure that the pid file is does not exist */
+	/* Make sure another instance of stethoscope is not running. */
 	error_code = stat(pidfilename, &path_info);
 	if (error_code != -1) {
-		error = newErr("pid file %s already exists. Is the profiler already running?",
-					   pidfilename);
-		free(*log_path);
-		*log_path = NULL;
-		goto cleanup;
+		char buf[8];
+		long pid;
+		/* The pid file exists. See if a process with this pid exists,
+		 * and if yes, if it is stethoscope.
+		 */
+
+		/* We cannot open the pidfile, bail out */
+		if ((pidfile = fopen(pidfilename, "r")) == NULL) {
+			error = newErr("pid file %s already exists, but is not accessible. Is the profiler already running?",
+						   pidfilename);
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+
+		if (fgets(buf, sizeof(buf), pidfile) == NULL) {
+			fclose(pidfile);
+			error = newErr("cannot read from pid file %s: %s\n",
+						   pidfilename, strerror(errno));
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		fclose(pidfile);
+
+		/* Verify that what we read is actually a number */
+		errno = 0;
+		pid = strtol(buf, NULL, 10);
+		if (errno != 0) {
+			error = newErr("contents of the pid file are not correct: %s\n",
+						   strerror(errno));
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+
+		// Open /proc/<pid>/comm and compare the contents to "stethoscope"
+		// This of course is specific to Linux
+		size_t fn_size = strlen("/proc/comm") + 9;
+		char *filename = malloc(fn_size);
+		if (filename == NULL) {
+			error = newErr("cannot allocate %zu bytes: %s\n",
+						   fn_size, strerror(errno));
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		snprintf(filename, fn_size, "/proc/%ld/comm", pid);
+
+		FILE *comm = fopen(filename, "r");
+		if (comm == NULL) {
+			/* We cannot open the file for the process with the specified pid,
+			 * so the process is not running.
+			 */
+			free(filename);
+			goto startup;
+		}
+		char buf2[BUFLEN];
+		size_t len = fread(buf2, 1, BUFLEN, comm);
+
+		if(ferror(comm)) {
+			error = newErr("cannot read from file %s\n", filename);
+			free(filename);
+			free(*log_path);
+			fclose(comm);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		if (len == BUFLEN)
+			len--;
+		buf2[len] = 0;
+
+		char expected_command[] = "stethoscope";
+		size_t command_len = strlen(expected_command);
+		if (strncmp(buf2, expected_command, command_len) == 0) {
+			error = newErr("profiler already running for %s\n", dbname);
+			free(filename);
+			free(*log_path);
+			fclose(comm);
+			*log_path = NULL;
+			goto cleanup;
+		}
+
+		fclose(comm);
+		free(filename);
 	}
 
-	/* TODO: if the pid file exists read it and check if stethoscope with the
-	 * given pid is running */
+  startup:
 	/* Open the pid file */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
 		error = newErr("unable to open %s for writing", pidfilename);
