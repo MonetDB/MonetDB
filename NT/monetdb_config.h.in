@@ -80,9 +80,6 @@
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
-/* location where binaries are installed */
-/* #undef BINDIR */
-
 /* read-only architecture-independent data */
 #define DATA_DIR PREFIX "\\share"
 
@@ -94,6 +91,9 @@
 
 /* architecture-dependent files */
 #define EXEC_PREFIX PREFIX
+
+/* location where binaries are installed */
+#define BINDIR EXEC_PREFIX "\\bin"
 
 /* Define to nothing if C supports flexible array members, and to 1 if it does
    not. That way, with a declaration like `struct s { int n; double
