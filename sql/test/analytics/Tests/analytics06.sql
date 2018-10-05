@@ -9,7 +9,7 @@ with relation as (select row_number() over () as dd, aa, bb from testing where b
 select aa, bb, dd,
        count(aa) over (partition by bb rows between dd preceding and current row),
        count(aa) over (partition by bb rows between dd preceding and dd following),
-       count(aa) over (partition by bb rows between dd + 1 preceding and dd preceding) from relation where bb <> 1;
+       count(aa) over (partition by bb rows between dd + 1 preceding and dd preceding) from relation;
 
 rollback;
 
