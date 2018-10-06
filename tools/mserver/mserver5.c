@@ -517,7 +517,7 @@ main(int argc, char **av)
 		for (pref = 0; LIBDIR[pref] != 0 && BINDIR[pref] == LIBDIR[pref]; pref++)
 			;
 		const char *libdirs[] = {
-			LIBDIR + pref,
+			&LIBDIR[pref],
 			"lib",
 			"lib64",
 			"lib/64",
