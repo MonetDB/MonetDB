@@ -153,6 +153,17 @@ typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t); 
 
 /*
+-- upgrade the necessary storage resources for columns, indices and tables
+-- needed for the upgrade of the logger structure (ie user tables are
+-- now stored using the object ids, no longer the names). This allows
+-- renames.
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*upgrade_col_fptr) (sql_column *c); 
+typedef int (*upgrade_idx_fptr) (sql_idx *i); 
+typedef int (*upgrade_del_fptr) (sql_table *t); 
+
+/*
 -- duplicate the necessary storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
@@ -226,6 +237,10 @@ typedef struct store_functions {
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;
 	create_del_fptr create_del;
+
+	upgrade_col_fptr upgrade_col;
+	upgrade_idx_fptr upgrade_idx;
+	upgrade_del_fptr upgrade_del;
 	
 	dup_col_fptr dup_col;
 	dup_idx_fptr dup_idx;
@@ -281,6 +296,7 @@ typedef int (*logger_create_shared_fptr) (int debug, const char *logdir, int cat
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
 typedef int (*logger_cleanup_fptr) (int keep_persisted_log_files);
+typedef void (*logger_with_ids_fptr) (void);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
@@ -290,6 +306,7 @@ typedef lng (*logger_get_transaction_drift_fptr)(void);
 typedef int (*logger_reload_fptr) (void);
 
 typedef int (*log_isnew_fptr)(void);
+typedef int (*log_needs_update_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
 typedef int (*log_tend_fptr) (void);
 typedef int (*log_sequence_fptr) (int seq, lng id);
@@ -301,6 +318,7 @@ typedef struct logger_functions {
 	logger_destroy_fptr destroy;
 	logger_restart_fptr restart;
 	logger_cleanup_fptr cleanup;
+	logger_with_ids_fptr with_ids;
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
@@ -310,6 +328,7 @@ typedef struct logger_functions {
 	logger_reload_fptr reload;
 
 	log_isnew_fptr log_isnew;
+	log_needs_update_fptr log_needs_update;
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
 	log_sequence_fptr log_sequence;

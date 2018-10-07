@@ -36,11 +36,11 @@ geom_catalog_upgrade(void *lg, int olddb)
 	if (!olddb)
 		return 1;
 
-	ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
+	ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type"), 0, 0));
 	cti = bat_iterator(ct);
-	cd = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits")));
+	cd = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits"), 0, 0));
 	cdi = bat_iterator(cd);
-	cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
+	cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale"), 0, 0));
 	csi = bat_iterator(cs);
 
 	if (!ct || !cd || !cs) {
@@ -146,9 +146,9 @@ geom_catalog_upgrade(void *lg, int olddb)
 	if (BATsetaccess(cnt, BAT_READ) != GDK_SUCCEED ||
 	    BATsetaccess(cnd, BAT_READ) != GDK_SUCCEED ||
 	    BATsetaccess(cns, BAT_READ) != GDK_SUCCEED ||
-	    logger_add_bat(lg, cnt, N(n, NULL, s, "_columns_type")) != GDK_SUCCEED ||
-	    logger_add_bat(lg, cnd, N(n, NULL, s, "_columns_type_digits")) != GDK_SUCCEED ||
-	    logger_add_bat(lg, cns, N(n, NULL, s, "_columns_type_scale")) != GDK_SUCCEED) {
+	    logger_add_bat(lg, cnt, N(n, NULL, s, "_columns_type"), 0, 0) != GDK_SUCCEED ||
+	    logger_add_bat(lg, cnd, N(n, NULL, s, "_columns_type_digits"), 0, 0) != GDK_SUCCEED ||
+	    logger_add_bat(lg, cns, N(n, NULL, s, "_columns_type_scale"), 0, 0) != GDK_SUCCEED) {
 		BBPunfix(cnt->batCacheid);
 		BBPunfix(ct->batCacheid);
 		BBPunfix(cnd->batCacheid);
