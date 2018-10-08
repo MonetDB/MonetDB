@@ -241,12 +241,12 @@ BATcalcnot(BAT *b, BAT *s)
 	bn->tkey = b->tkey;
 
 	if (nils != 0 && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -360,12 +360,12 @@ BATcalcnegate(BAT *b, BAT *s)
 	bn->tkey = b->tkey;
 
 	if (nils != 0 && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -489,12 +489,12 @@ BATcalcabsolute(BAT *b, BAT *s)
 	bn->tnonil = nils == 0;
 
 	if (nils && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -617,12 +617,12 @@ BATcalciszero(BAT *b, BAT *s)
 	bn->tnonil = nils == 0;
 
 	if (nils != 0 && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -749,12 +749,12 @@ BATcalcsign(BAT *b, BAT *s)
 	bn->tnonil = nils == 0;
 
 	if (nils != 0 && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -1010,14 +1010,14 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1094,14 +1094,14 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1173,14 +1173,14 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1262,14 +1262,14 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1348,14 +1348,14 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1432,14 +1432,14 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1511,14 +1511,14 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1600,14 +1600,14 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (cnt <= 1) {
-		bn->tsorted = 1;
-		bn->trevsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->trevsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
-		bn->tkey = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
+		bn->tkey = false;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -3668,12 +3668,12 @@ BATcalcincrdecr(BAT *b, BAT *s, int abort_on_error,
 	bn->tnonil = nils == 0;
 
 	if (nils && !b->tnil) {
-		b->tnil = 1;
-		b->batDirtydesc = 1;
+		b->tnil = true;
+		b->batDirtydesc = true;
 	}
 	if (nils == 0 && !b->tnonil) {
-		b->tnonil = 1;
-		b->batDirtydesc = 1;
+		b->tnonil = true;
+		b->batDirtydesc = true;
 	}
 
 	return bn;
@@ -14400,13 +14400,13 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 		bn->tsorted = nils == 0 && b->tsorted;
 		bn->trevsorted = nils == 0 && b->trevsorted;
 	} else {
-		bn->tsorted = 0;
-		bn->trevsorted = 0;
+		bn->tsorted = false;
+		bn->trevsorted = false;
 	}
 	if (bn->ttype != TYPE_bit || BATcount(bn) < 2)
-		bn->tkey = (b->tkey & 1) && nils <= 1;
+		bn->tkey = b->tkey && nils <= 1;
 	else
-		bn->tkey = 0;
+		bn->tkey = false;
 
 	return bn;
 }
