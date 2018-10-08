@@ -1709,58 +1709,42 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	}
 
 	if (BATcount(u_val)) {
-		BAT *o, *nu_id, *nu_val;
-		/* create subsets of u_id and u_val where the tail
-		 * values of u_id are also in s, and where those tail
-		 * values occur as head value in res */
-		if ((o = BATintersect(u_id, s, NULL, NULL, false, BUN_NONE)) == NULL) {
+		BAT *os, *ou;
+		/* figure out the positions in res that we have to
+		 * replace with values from u_val */
+		if (BATsemijoin(&ou, &os, u_id, s, NULL, NULL, false, BUN_NONE) != GDK_SUCCEED) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
 			BBPunfix(u_val->batCacheid);
 			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		nu_id = BATproject(o, u_id);
-		nu_val = BATproject(o, u_val);
-		BBPunfix(u_id->batCacheid);
-		BBPunfix(u_val->batCacheid);
-		BBPunfix(o->batCacheid);
-		tres = BATdense(res->hseqbase, res->hseqbase, BATcount(res));
-		if (nu_id == NULL ||
-		    nu_val == NULL ||
-		    tres == NULL ||
-		    (o = BATintersect(nu_id, tres, NULL, NULL, false, BUN_NONE)) == NULL) {
-			BBPunfix(s->batCacheid);
-			BBPunfix(res->batCacheid);
-			BBPreclaim(nu_id);
-			BBPreclaim(nu_val);
-			BBPreclaim(tres);
-			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		/* BATcount(ou) == BATcount(os) */
+		if (BATcount(ou) != 0) {
+			/* ou contains the position in u_id/u_val that
+			 * contain the new values */
+			BAT *nu_val = BATproject(ou, u_val);
+			BBPunfix(ou->batCacheid);
+			/* os contains the corresponding positions in
+			 * res that need to be replaced with those new
+			 * values */
+			if ((res = setwritable(res)) == NULL ||
+			    BATreplace(res, os, nu_val, false) != GDK_SUCCEED) {
+				if (res)
+					BBPunfix(res->batCacheid);
+				BBPunfix(os->batCacheid);
+				BBPunfix(s->batCacheid);
+				BBPunfix(u_id->batCacheid);
+				BBPunfix(u_val->batCacheid);
+				BBPunfix(nu_val->batCacheid);
+				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+			BBPunfix(nu_val->batCacheid);
+		} else {
+			/* nothing to replace */
+			BBPunfix(ou->batCacheid);
 		}
-		BBPunfix(tres->batCacheid);
-		u_id = BATproject(o, nu_id);
-		u_val = BATproject(o, nu_val);
-		BBPunfix(nu_id->batCacheid);
-		BBPunfix(nu_val->batCacheid);
-		BBPunfix(o->batCacheid);
-		if (u_id == NULL || u_val == NULL) {
-			BBPunfix(s->batCacheid);
-			BBPunfix(res->batCacheid);
-			BBPreclaim(u_id);
-			BBPreclaim(u_val);
-			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		/* now update res with the subset of u_id and u_val we
-		 * calculated */
-		if ((res = setwritable(res)) == NULL ||
-		    BATreplace(res, u_id, u_val, false) != GDK_SUCCEED) {
-			if (res)
-				BBPunfix(res->batCacheid);
-			BBPunfix(s->batCacheid);
-			BBPunfix(u_id->batCacheid);
-			BBPunfix(u_val->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
+		BBPunfix(os->batCacheid);
 	}
 	BBPunfix(s->batCacheid);
 	BBPunfix(u_id->batCacheid);
