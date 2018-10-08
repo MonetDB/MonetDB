@@ -273,7 +273,7 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp, sqlid reuse, bool rename)
+create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp, sqlid reuse)
 {
 	sql_allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
@@ -284,7 +284,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	if (STORE_READONLY)
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
-	if(!rename) {
+	if(!reuse) {
 		if (!s)
 			return sql_message(SQLSTATE(3F000) "CREATE %s: schema '%s' doesn't exist", (t->query) ? "TABLE" : "VIEW", sname);
 		if (mvc_bind_table(sql, s, t->base.name)) {
@@ -303,7 +303,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	sql->sa = NULL;
 
 	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
-								t->sz, t->properties, reuse ? reuse : 0);
+								t->sz, t->properties, reuse);
 
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -341,7 +341,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 				sql->sa = osa;
 				throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 			}
-			if(!rename) {
+			if(!reuse) {
 				id_l = rel_dependencies(sql, r);
 				mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
 			}
@@ -352,7 +352,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	}
 
 	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c, NULL, !rename);
+		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c, NULL, !reuse);
 
 		if (copied == NULL) {
 			sql->sa = osa;
@@ -372,7 +372,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
-		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1, !rename);
+		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1, !reuse);
 		sa_destroy(sql->sa);
 		sql->sa = NULL;
 		if(err) {
@@ -380,7 +380,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 			return err;
 		}
 	}
-	if(!rename) {
+	if(!reuse) {
 		check = sql_trans_set_partition_table(sql->session->tr, nt);
 		if(check == -1) {
 			sql->sa = osa;
@@ -394,7 +394,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
-			mvc_copy_idx(sql, nt, i, !rename);
+			mvc_copy_idx(sql, nt, i, !reuse);
 		}
 	}
 	if (t->keys.set) {
@@ -415,23 +415,23 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 				sql->sa = osa;
 				return err;
 			}
-			mvc_copy_key(sql, nt, k, !rename);
+			mvc_copy_key(sql, nt, k, !reuse);
 		}
 	}
 	if (t->members.set) {
 		for (n = t->members.set->h; n; n = n->next) {
 			sql_part *pt = n->data;
-			mvc_copy_part(sql, nt, pt, !rename);
+			mvc_copy_part(sql, nt, pt, !reuse);
 		}
 	}
 	if (t->triggers.set) {
 		for (n = t->triggers.set->h; n; n = n->next) {
 			sql_trigger *tr = n->data;
-			mvc_copy_trigger(sql, nt, tr, !rename);
+			mvc_copy_trigger(sql, nt, tr, !reuse);
 		}
 	}
 	/* also create dependencies when not renaming */
-	if (!rename && nt->query && isView(nt)) {
+	if (!reuse && nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
 		sql->sa = sa_create();
@@ -499,7 +499,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 			goto cleanup;
 		}
 	}
-	msg = create_table_or_view(sql, sname, t->base.name, t, 0, 0, false);
+	msg = create_table_or_view(sql, sname, t->base.name, t, 0, 0);
 	if (msg != MAL_SUCCEED) {
 		goto cleanup;
 	}

@@ -2816,7 +2816,7 @@ sql_trans_name_conflict( sql_trans *tr, const char *sname, const char *tname, co
 }
 
 sql_column *
-sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, char* new_name, bool create_row)
+sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, char *new_name, bool create_row)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
@@ -2841,11 +2841,10 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, char* new_nam
 
 	if (!create_row || isDeclaredTable(c->t)) {
 		if (isTable(t)) {
-			if(!create_row && c->data && store_funcs.dup_col(tr, c, col) != LOG_OK) {
+			if(!create_row && c->data && store_funcs.dup_col(tr, c, col) != LOG_OK)
 				return NULL;
-			} else if (store_funcs.create_col(tr, col) != LOG_OK) {
+			else if (store_funcs.create_col(tr, col) != LOG_OK)
 				return NULL;
-			}
 		}
 	}
 	if (create_row && !isDeclaredTable(t)) {
@@ -4534,9 +4533,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action, bool delete_row)
 		sql_column *pcols = find_sql_column(partitions, "table_id");
 		rids *rs = table_funcs.rids_select(tr, pcols, &t->base.id, &t->base.id, NULL);
 		oid poid;
-		if((poid = table_funcs.rids_next(rs)) != oid_nil) {
+		if((poid = table_funcs.rids_next(rs)) != oid_nil)
 			table_funcs.table_delete(tr, partitions, poid);
-		}
 		table_funcs.rids_destroy(rs);
 	}
 
@@ -4710,7 +4708,8 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, int id, int drop_action)
 }
 
 sql_func *
-create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system)
+create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod,
+				const char *impl, const char *query, bit varres, bit vararg, bit system)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -4913,7 +4912,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, int auth_id, int owner,
 	cs_add(&tr->schemas, s, TR_NEW);
 	if(!reuse) {
 		table_funcs.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner, &s->system);
-	} else { //while renaming a schema, instead of insert a new record, we must rename an existing one
+	} else { //while renaming a schema, instead of insert a new record, we rename the existing one
 		oid rid = table_funcs.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 		assert(!is_oid_nil(rid));
 		table_funcs.column_update_value(tr, find_sql_column(sysschema, "name"), rid, (void*) name);

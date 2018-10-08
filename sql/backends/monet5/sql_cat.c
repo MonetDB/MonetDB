@@ -1056,7 +1056,7 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0, false);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
 	return msg;
 }
 
@@ -1070,7 +1070,7 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0, false);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
 	return msg;
 }
 
@@ -1592,7 +1592,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (olds->tables.set) {
 		for (n = olds->tables.set->h; n; n = n->next) {
 			sql_table *ot = n->data;
-			if((msg = create_table_or_view(sql, news->base.name, ot->base.name, ot, ot->persistence, 0, true)) != MAL_SUCCEED)
+			if((msg = create_table_or_view(sql, news->base.name, ot->base.name, ot, ot->persistence, ot->base.id)) != MAL_SUCCEED)
 				return msg;
 		}
 	}
@@ -1607,7 +1607,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (n = olds->seqs.set->h; n; n = n->next) {
 			sql_sequence *os = n->data;
 			(void) sql_trans_create_sequence(sql->session->tr, news, os->base.name, os->start, os->minvalue,
-											 os->maxvalue, os->increment, os->cacheinc, os->cycle, 0, os->base.id);
+											 os->maxvalue, os->increment, os->cacheinc, os->cycle, os->bedropped, os->base.id);
 		}
 	}
 	return msg;
@@ -1640,7 +1640,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (sql_trans_drop_table(sql->session->tr, s, t->base.id, DROP_RESTRICT, false))
 		throw(SQL, "sql.rename_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	if ((msg = create_table_or_view(sql, s->base.name, new_name, t, t->persistence, t->base.id, true)) != MAL_SUCCEED)
+	if ((msg = create_table_or_view(sql, s->base.name, new_name, t, t->persistence, t->base.id)) != MAL_SUCCEED)
 		return msg;
 	return msg;
 }

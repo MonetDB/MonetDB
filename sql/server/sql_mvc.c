@@ -1931,7 +1931,7 @@ stack_get_number(mvc *sql, const char *name)
 }
 
 sql_column *
-mvc_copy_column( mvc *m, sql_table *t, sql_column *c, char* new_name, bool create_row)
+mvc_copy_column( mvc *m, sql_table *t, sql_column *c, char *new_name, bool create_row)
 {
 	return sql_trans_copy_column(m->session->tr, t, c, new_name, create_row);
 }
