@@ -1,0 +1,25 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+
+INCLUDES = ../../../include \
+	   ../../../common \
+	   ../../../../monetdb5/mal \
+	   ../../../../monetdb5/modules/mal
+
+lib__test_rss = {
+	MODULE
+	CONDINST = HAVE_TESTING WIN32
+	DIR = libdir/monetdb5
+	SOURCES = test_rss.c
+	LIBS = WIN32?../../../../monetdb5/tools/libmonetdb5 \
+	       WIN32?../../../../gdk/libbat
+}
+
+headers_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = test_rss.mal
+}
