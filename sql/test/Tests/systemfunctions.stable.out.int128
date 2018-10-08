@@ -16,10 +16,6 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36066/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26153/.s.monetdb.36066
 # MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -49,13 +45,16 @@ Ready.
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 16:20:25 >  
 # 16:20:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26153" "--port=36066"
 # 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
-% sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L16 # table_name
+% sys.L16,	sys.L20,	sys.L22,	sys.L24,	sys.L26 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	611 # length
@@ -601,54 +600,54 @@ Ready.
 [ "sys",	"fuse",	0,	"hugeint",	"create function fuse(one bigint, two bigint)\nreturns hugeint external name udf.fuse;"	]
 [ "sys",	"fuse",	1,	"bigint",	""	]
 [ "sys",	"fuse",	2,	"bigint",	""	]
-[ "sys",	"generate_series",	0,	"tinyint",	"create function sys.generate_series(first tinyint, last tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"tinyint",	"create function sys.generate_series(first tinyint, \"limit\" tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"tinyint",	""	]
 [ "sys",	"generate_series",	2,	"tinyint",	""	]
-[ "sys",	"generate_series",	0,	"tinyint",	"create function sys.generate_series(first tinyint, last tinyint, stepsize tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"tinyint",	"create function sys.generate_series(first tinyint, \"limit\" tinyint, stepsize tinyint)\nreturns table (value tinyint)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"tinyint",	""	]
 [ "sys",	"generate_series",	2,	"tinyint",	""	]
 [ "sys",	"generate_series",	3,	"tinyint",	""	]
-[ "sys",	"generate_series",	0,	"smallint",	"create function sys.generate_series(first smallint, last smallint)\nreturns table (value smallint)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"smallint",	"create function sys.generate_series(first smallint, \"limit\" smallint)\nreturns table (value smallint)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"smallint",	""	]
 [ "sys",	"generate_series",	2,	"smallint",	""	]
-[ "sys",	"generate_series",	0,	"smallint",	"create function sys.generate_series(first smallint, last smallint, stepsize smallint)\nreturns table (value smallint)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"smallint",	"create function sys.generate_series(first smallint, \"limit\" smallint, stepsize smallint)\nreturns table (value smallint)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"smallint",	""	]
 [ "sys",	"generate_series",	2,	"smallint",	""	]
 [ "sys",	"generate_series",	3,	"smallint",	""	]
-[ "sys",	"generate_series",	0,	"int",	"create function sys.generate_series(first int, last int)\nreturns table (value int)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"int",	"create function sys.generate_series(first int, \"limit\" int)\nreturns table (value int)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"int",	""	]
 [ "sys",	"generate_series",	2,	"int",	""	]
-[ "sys",	"generate_series",	0,	"int",	"create function sys.generate_series(first int, last int, stepsize int)\nreturns table (value int)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"int",	"create function sys.generate_series(first int, \"limit\" int, stepsize int)\nreturns table (value int)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"int",	""	]
 [ "sys",	"generate_series",	2,	"int",	""	]
 [ "sys",	"generate_series",	3,	"int",	""	]
-[ "sys",	"generate_series",	0,	"bigint",	"create function sys.generate_series(first bigint, last bigint)\nreturns table (value bigint)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"bigint",	"create function sys.generate_series(first bigint, \"limit\" bigint)\nreturns table (value bigint)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"bigint",	""	]
 [ "sys",	"generate_series",	2,	"bigint",	""	]
-[ "sys",	"generate_series",	0,	"bigint",	"create function sys.generate_series(first bigint, last bigint, stepsize bigint)\nreturns table (value bigint)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"bigint",	"create function sys.generate_series(first bigint, \"limit\" bigint, stepsize bigint)\nreturns table (value bigint)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"bigint",	""	]
 [ "sys",	"generate_series",	2,	"bigint",	""	]
 [ "sys",	"generate_series",	3,	"bigint",	""	]
-[ "sys",	"generate_series",	0,	"real",	"create function sys.generate_series(first real, last real, stepsize real)\nreturns table (value real)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"real",	"create function sys.generate_series(first real, \"limit\" real, stepsize real)\nreturns table (value real)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"real",	""	]
 [ "sys",	"generate_series",	2,	"real",	""	]
 [ "sys",	"generate_series",	3,	"real",	""	]
-[ "sys",	"generate_series",	0,	"double",	"create function sys.generate_series(first double, last double, stepsize double)\nreturns table (value double)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"double",	"create function sys.generate_series(first double, \"limit\" double, stepsize double)\nreturns table (value double)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"double",	""	]
 [ "sys",	"generate_series",	2,	"double",	""	]
 [ "sys",	"generate_series",	3,	"double",	""	]
-[ "sys",	"generate_series",	0,	"decimal",	"create function sys.generate_series(first decimal(10,2), last decimal(10,2), stepsize decimal(10,2))\nreturns table (value decimal(10,2))\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"decimal",	"create function sys.generate_series(first decimal(10,2), \"limit\" decimal(10,2), stepsize decimal(10,2))\nreturns table (value decimal(10,2))\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"decimal",	""	]
 [ "sys",	"generate_series",	2,	"decimal",	""	]
 [ "sys",	"generate_series",	3,	"decimal",	""	]
-[ "sys",	"generate_series",	0,	"timestamp",	"create function sys.generate_series(first timestamp, last timestamp, stepsize interval second)\nreturns table (value timestamp)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"timestamp",	"create function sys.generate_series(first timestamp, \"limit\" timestamp, stepsize interval second)\nreturns table (value timestamp)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"timestamp",	""	]
 [ "sys",	"generate_series",	2,	"timestamp",	""	]
 [ "sys",	"generate_series",	3,	"sec_interval",	""	]
-[ "sys",	"generate_series",	0,	"hugeint",	"create function sys.generate_series(first hugeint, last hugeint)\nreturns table (value hugeint)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"hugeint",	"create function sys.generate_series(first hugeint, \"limit\" hugeint)\nreturns table (value hugeint)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"hugeint",	""	]
 [ "sys",	"generate_series",	2,	"hugeint",	""	]
-[ "sys",	"generate_series",	0,	"hugeint",	"create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)\nreturns table (value hugeint)\nexternal name generator.series;"	]
+[ "sys",	"generate_series",	0,	"hugeint",	"create function sys.generate_series(first hugeint, \"limit\" hugeint, stepsize hugeint)\nreturns table (value hugeint)\nexternal name generator.series;"	]
 [ "sys",	"generate_series",	1,	"hugeint",	""	]
 [ "sys",	"generate_series",	2,	"hugeint",	""	]
 [ "sys",	"generate_series",	3,	"hugeint",	""	]

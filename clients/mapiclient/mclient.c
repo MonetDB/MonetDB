@@ -85,7 +85,7 @@ enum formatters {
 	NOformatter,
 	RAWformatter,		// as the data is received
 	TABLEformatter,		// render as a bordered table
-	CSVformatter,		// render as a comma separate file
+	CSVformatter,		// render as a comma or tab separated values list
 	XMLformatter,		// render as a valid XML document
 	TESTformatter,		// for testing, escape characters
 	TRASHformatter,		// remove the result set
@@ -404,7 +404,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				 * /usr/share/unicode/emoji/emoji-data.txt
 				 * and code points marked either F or
 				 * W in EastAsianWidth.txt; this list
-				 * is up-to-date with Unicode 9.0 */
+				 * is up-to-date with Unicode 11.0 */
 				if ((0x1100 <= c && c <= 0x115F) ||
 				    (0x231A <= c && c <= 0x231B) ||
 				    (0x2329 <= c && c <= 0x232A) ||
@@ -447,7 +447,7 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    (0x3000 <= c && c <= 0x303E) ||
 				    (0x3041 <= c && c <= 0x3096) ||
 				    (0x3099 <= c && c <= 0x30FF) ||
-				    (0x3105 <= c && c <= 0x312D) ||
+				    (0x3105 <= c && c <= 0x312F) ||
 				    (0x3131 <= c && c <= 0x318E) ||
 				    (0x3190 <= c && c <= 0x31BA) ||
 				    (0x31C0 <= c && c <= 0x31E3) ||
@@ -466,19 +466,20 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    (0xFE68 <= c && c <= 0xFE6B) ||
 				    (0xFF01 <= c && c <= 0xFF60) ||
 				    (0xFFE0 <= c && c <= 0xFFE6) ||
-				    c == 0x16FE0 ||
-				    (0x17000 <= c && c <= 0x187EC) ||
+				    (0x16FE0 <= c && c <= 0x16FE1) ||
+				    (0x17000 <= c && c <= 0x187F1) ||
 				    (0x18800 <= c && c <= 0x18AF2) ||
-				    (0x1B000 <= c && c <= 0x1B001) ||
+				    (0x1B000 <= c && c <= 0x1B11E) ||
+				    (0x1B170 <= c && c <= 0x1B2FB) ||
 				    c == 0x1F004 ||
 				    c == 0x1F0CF ||
 				    c == 0x1F18E ||
 				    (0x1F191 <= c && c <= 0x1F19A) ||
-				    /* removed 0x1F1E6..0x1F1FF */
 				    (0x1F200 <= c && c <= 0x1F202) ||
 				    (0x1F210 <= c && c <= 0x1F23B) ||
 				    (0x1F240 <= c && c <= 0x1F248) ||
 				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x1F260 <= c && c <= 0x1F265) ||
 				    (0x1F300 <= c && c <= 0x1F320) ||
 				    (0x1F32D <= c && c <= 0x1F335) ||
 				    (0x1F337 <= c && c <= 0x1F37C) ||
@@ -501,15 +502,15 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    c == 0x1F6CC ||
 				    (0x1F6D0 <= c && c <= 0x1F6D2) ||
 				    (0x1F6EB <= c && c <= 0x1F6EC) ||
-				    (0x1F6F4 <= c && c <= 0x1F6F6) ||
-				    (0x1F910 <= c && c <= 0x1F91E) ||
-				    (0x1F920 <= c && c <= 0x1F927) ||
-				    c == 0x1F930 ||
-				    (0x1F933 <= c && c <= 0x1F93E) ||
-				    (0x1F940 <= c && c <= 0x1F94B) ||
-				    (0x1F950 <= c && c <= 0x1F95E) ||
-				    (0x1F980 <= c && c <= 0x1F991) ||
-				    c == 0x1F9C0 ||
+				    (0x1F6F4 <= c && c <= 0x1F6F9) ||
+				    (0x1F910 <= c && c <= 0x1F93E) ||
+				    (0x1F940 <= c && c <= 0x1F970) ||
+				    (0x1F973 <= c && c <= 0x1F976) ||
+				    c == 0x1F97A ||
+				    (0x1F97C <= c && c <= 0x1F9A2) ||
+				    (0x1F9B0 <= c && c <= 0x1F9B9) ||
+				    (0x1F9C0 <= c && c <= 0x1F9C2) ||
+				    (0x1F9D0 <= c && c <= 0x1F9FF) ||
 				    (0x20000 <= c && c <= 0x2FFFD) ||
 				    (0x30000 <= c && c <= 0x3FFFD))
 					len++;
@@ -2182,7 +2183,7 @@ showCommands(void)
 	/* shared control options */
 	mnstr_printf(toConsole, "\\?       - show this message\n");
 	if (mode == MAL)
-		mnstr_printf(toConsole, "?pat  - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
+		mnstr_printf(toConsole, "?pat     - MAL function help. pat=[modnme[.fcnnme][(][)]] wildcard *\n");
 	mnstr_printf(toConsole, "\\<file   - read input from file\n");
 	mnstr_printf(toConsole, "\\>file   - save response in file, or stdout if no file is given\n");
 #ifdef HAVE_POPEN
@@ -2191,21 +2192,21 @@ showCommands(void)
 #ifdef HAVE_LIBREADLINE
 	mnstr_printf(toConsole, "\\history - show the readline history\n");
 #endif
-	mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
 	if (mode == SQL) {
-		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
+		mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
+		mnstr_printf(toConsole, "\\D table - dumps the table, or the complete database if none given.\n");
 		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
-		mnstr_printf(toConsole, "\\A      - enable auto commit\n");
-		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
+		mnstr_printf(toConsole, "\\A       - enable auto commit\n");
+		mnstr_printf(toConsole, "\\a       - disable auto commit\n");
 	}
-	mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
-	mnstr_printf(toConsole, "\\t      - set the timer {none,clock,performance} (none is default)\n");
-	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml,trash,rowcount}\n");
-	mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
-	mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
-	mnstr_printf(toConsole, "\\L file - save client/server interaction\n");
-	mnstr_printf(toConsole, "\\X      - trace mclient code\n");
-	mnstr_printf(toConsole, "\\q      - terminate session\n");
+	mnstr_printf(toConsole, "\\e       - echo the query in sql formatting mode\n");
+	mnstr_printf(toConsole, "\\t       - set the timer {none,clock,performance} (none is default)\n");
+	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded,sam}\n");
+	mnstr_printf(toConsole, "\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
+	mnstr_printf(toConsole, "\\r#      - set maximum rows per page (-1=raw)\n");
+	mnstr_printf(toConsole, "\\L file  - save client/server interaction\n");
+	mnstr_printf(toConsole, "\\X       - trace mclient code\n");
+	mnstr_printf(toConsole, "\\q       - terminate session\n");
 }
 
 #define MD_TABLE    1
@@ -2437,12 +2438,12 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 				case 'A':
 					if (mode != SQL)
 						break;
-					mapi_setAutocommit(mid, 1);
+					mapi_setAutocommit(mid, true);
 					continue;
 				case 'a':
 					if (mode != SQL)
 						break;
-					mapi_setAutocommit(mid, 0);
+					mapi_setAutocommit(mid, false);
 					continue;
 				case 'w':
 					pagewidth = atoi(line + 2);
@@ -2611,9 +2612,16 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
 						char *name_column = hasSchema ? "fullname" : "name";
+						const char *comments_clause = get_comments_clause(mid);
 
-						if (!query)
-							return true;
+						if (query == NULL) {
+							fprintf(stderr, "memory allocation failure\n");
+							continue;
+						}
+						if (comments_clause == NULL) {
+							free(query);
+							continue;
+						}
 
 						/*
 						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
@@ -2625,21 +2633,20 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq - q, "%s", get_with_comments_as_clause(mid));
+						q += snprintf(q, endq - q, "%s", comments_clause);
 						q += snprintf(q, endq - q, "%s", with_clause);
-						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM describe_all_objects\n");
-						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);
+						q += snprintf(q, endq - q, " SELECT type, fullname, remark FROM describe_all_objects");
+						q += snprintf(q, endq - q, " WHERE (ntype & %u) > 0", x);
 						if (!wantsSystem) {
-							q += snprintf(q, endq - q, "AND NOT system\n");
+							q += snprintf(q, endq - q, " AND NOT system");
 						}
 						if (!hasSchema) {
-							q += snprintf(q, endq - q, "AND (sname IS NULL OR sname = current_schema)\n");
+							q += snprintf(q, endq - q, " AND (sname IS NULL OR sname = current_schema)");
 						}
 						if (*line) {
-							q += snprintf(q, endq - q, "AND (%s LIKE '%s')\n", name_column, line);
+							q += snprintf(q, endq - q, " AND (%s LIKE '%s')", name_column, line);
 						}
-						q += snprintf(q, endq - q, "ORDER BY fullname, type, remark\n");
-						q += snprintf(q, endq - q, ";\n");
+						q += snprintf(q, endq - q, " ORDER BY fullname, type, remark");
 
 						hdl = mapi_query(mid, query);
 						free(query);
@@ -2788,7 +2795,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 					int h;
 					char *nl;
 
-					if (strcmp(line,"\\history") == 0) {
+					if (strcmp(line,"\\history\n") == 0) {
 						for (h = 0; h < history_length; h++) {
 							nl = history_get(h) ? history_get(h)->line : 0;
 							if (nl)
@@ -2850,6 +2857,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							break;
 						case EXPANDEDformatter:
 							mnstr_printf(toConsole, "expanded\n");
+							break;
+						case SAMformatter:
+							mnstr_printf(toConsole, "sam\n");
 							break;
 						default:
 							mnstr_printf(toConsole, "none\n");
@@ -3078,7 +3088,7 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *output = NULL;	/* output format as string */
 	FILE *fp = NULL;
-	int trace = 0;
+	bool trace = false;
 	bool dump = false;
 	bool useinserts = false;
 	int c = 0;
@@ -3311,7 +3321,7 @@ main(int argc, char **argv)
 			pagewidthset = pagewidth != 0;
 			break;
 		case 'X':
-			trace = MAPI_TRACE;
+			trace = true;
 			break;
 		case 'z':
 			settz = false;

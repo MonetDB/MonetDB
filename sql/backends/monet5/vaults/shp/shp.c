@@ -17,6 +17,9 @@
 #include "sql_mvc.h"
 #include "sql.h"
 #define HAVE_CXX11 0		/* stupid include file gdal/cpl_port.h */
+#ifndef __clang_major__		/* stupid include file gdal/cpl_port.h */
+#define __clang_major__ 0
+#endif
 #include "shp.h"
 #include <cpl_conv.h>		/* for CPLFree */
 #include "sql_execute.h"

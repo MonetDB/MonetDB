@@ -226,7 +226,6 @@ SQLmvc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int ret;
 	mvc *sql = NULL;
 	str msg;
 	(void) stk;
@@ -239,11 +238,7 @@ SQLcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (sql->session->auto_commit != 0)
 		throw(SQL, "sql.trans", SQLSTATE(2DM30) "COMMIT not allowed in auto commit mode");
-	ret = mvc_commit(sql, 0, 0);
-	if (ret < 0) {
-		throw(SQL, "sql.trans", SQLSTATE(2D000) "transaction commit failed");
-	}
-	return msg;
+	return mvc_commit(sql, 0, 0, false);
 }
 
 str
@@ -260,7 +255,7 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (sql->session->active) {
-		mvc_rollback(sql, 0, NULL);
+		msg = mvc_rollback(sql, 0, NULL, false);
 	}
 	return msg;
 }
@@ -308,7 +303,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp,
 	sql->sa = NULL;
 
 	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
-								t->sz, reuse ? reuse : 0);
+								t->sz, t->properties, reuse ? reuse : 0);
 
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -483,7 +478,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
 		goto cleanup;
 	}
-	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1))) {
+	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
 		msg = sql_error(sql, 02, "3F000!CREATE TABLE: could not create table '%s'", tname);
 		goto cleanup;
 	}
@@ -1489,9 +1484,9 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 {
 	BAT *c, *u_id, *u_val, *i = NULL, *res;
 
-	if ((u_id = BBPquickdesc(*uid, 0)) == NULL)
+	if ((u_id = BBPquickdesc(*uid, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(*ins, 0)) == NULL)
+	if (ins && (i = BBPquickdesc(*ins, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -1500,7 +1495,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(*col, 0)) == NULL)
+	if ((c = BBPquickdesc(*col, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */
@@ -1561,9 +1556,9 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 	BAT *c, *cminu = NULL, *u_id, *u_val, *u, *i = NULL, *res;
 	gdk_return ret;
 
-	if ((u_id = BBPquickdesc(*uid, 0)) == NULL)
+	if ((u_id = BBPquickdesc(*uid, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (ins && (i = BBPquickdesc(*ins, 0)) == NULL)
+	if (ins && (i = BBPquickdesc(*ins, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* no updates, no inserts */
@@ -1572,7 +1567,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 		return MAL_SUCCEED;
 	}
 
-	if ((c = BBPquickdesc(*col, 0)) == NULL)
+	if ((c = BBPquickdesc(*col, false)) == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* bat may change */
@@ -2194,7 +2189,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else if ( (s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
-			mnstr_destroy(s);
+			close_stream(s);
 		msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
 				      filename?filename:"stdout", strerror(errnr));
 		goto wrapup_result_set1;
@@ -2400,7 +2395,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else if ( (s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
-			mnstr_destroy(s);
+			close_stream(s);
 		msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
 				      filename?filename:"stdout", strerror(errnr));
 		goto wrapup_result_set;
@@ -2714,7 +2709,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!ss || mnstr_errnr(ss)) {
 			int errnr = mnstr_errnr(ss);
 			if (ss)
-				mnstr_destroy(ss);
+				close_stream(ss);
 			GDKfree(tsep);
 			GDKfree(rsep);
 			GDKfree(ssep);
@@ -2736,7 +2731,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			widths = malloc(sizeof(size_t) * ncol);
 			if (!widths) {
-				mnstr_destroy(ss);
+				close_stream(ss);
 				GDKfree(tsep);
 				GDKfree(rsep);
 				GDKfree(ssep);
@@ -2756,7 +2751,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!ssep) {
 				ssep = GDKmalloc(2);
 				if(ssep == NULL) {
-					mnstr_destroy(ss);
+					close_stream(ss);
 					GDKfree(tsep);
 					GDKfree(rsep);
 					GDKfree(ns);
@@ -2784,8 +2779,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	GDKfree(tsep);
 	GDKfree(rsep);
-	if (ssep)
-		GDKfree(ssep);
+	GDKfree(ssep);
 	GDKfree(ns);
 	if (fname && s == NULL)
 		throw(IO, "bstreams.create", SQLSTATE(42000) "Failed to create block stream");
@@ -2808,7 +2802,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	mvc *m = NULL;
 	str msg;
 	BUN cnt = 0;
-	int init = 0;
+	bool init = false;
 	int i;
 	const char *sname = *getArgReference_str(stk, pci, 0 + pci->retc);
 	const char *tname = *getArgReference_str(stk, pci, 1 + pci->retc);
@@ -2915,7 +2909,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			throw(SQL, "sql", SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts", tname);
 		}
 		cnt = BATcount(c);
-		init = 1;
+		init = true;
 		*getArgReference_bat(stk, pci, i - (2 + pci->retc)) = c->batCacheid;
 		BBPkeepref(c->batCacheid);
 	}

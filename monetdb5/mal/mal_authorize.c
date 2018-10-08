@@ -951,7 +951,7 @@ AUTHverifyPassword(const char *passwd)
 	}
 	len++; // required in case all the checks above are false
 	while (*p != '\0') {
-		if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9')))
+		if (!((*p >= 'a' && *p <= 'z') || isdigit((unsigned char) *p)))
 			throw(MAL, "verifyPassword",
 					"password does contain invalid characters, is it a"
 					"lowercase hex representation of a hash?");

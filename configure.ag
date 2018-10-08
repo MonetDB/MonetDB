@@ -32,6 +32,12 @@ dnl     than the second version is executed.
 dnl  AS_VAR_IF(var, word, eq-body, ne-body)
 dnl     If $var is equal to word, execute eq-body, else execute ne-body.
 
+dnl  AS_VAR_COPY(dest, src)
+dnl     Copy the contents of the polymorphic shell variable SRC to the
+dnl     polymorphic shell variable DEST.  (Polymorphic shell variable
+dnl     here means that they can cotains references to other shell
+dnl     variables).
+
 dnl  @%:@
 dnl     This is a quadrigraph for #.  We use this in C preprocessor
 dnl     code that we inline in the script so that it doesn't get
@@ -45,7 +51,7 @@ dnl  Also note that comments that start with # are copied to the
 dnl  configure file, whereas comments starting with dnl are elided
 dnl  (including their trailing newline).
 
-AC_PREREQ([2.63])
+AC_PREREQ([2.63b])
 AC_INIT([MonetDB], [11.32.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
 AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
@@ -279,12 +285,12 @@ AC_ARG_ENABLE([rintegration],
 	[enable_rintegration=$enableval],
 	[enable_rintegration=$dft_rintegration])
 
-dft_pyintegration=auto
-AC_ARG_ENABLE([pyintegration],
-	[AS_HELP_STRING([--enable-pyintegration],
+dft_py2integration=auto
+AC_ARG_ENABLE([py2integration],
+	[AS_HELP_STRING([--enable-py2integration],
 		[enable support for Python 2 integration into MonetDB (default=auto)])],
-	[enable_pyintegration=$enableval],
-	[enable_pyintegration=$dft_pyintegration])
+	[enable_py2integration=$enableval],
+	[enable_py2integration=$dft_py2integration])
 
 dft_py3integration=auto
 AC_ARG_ENABLE(py3integration,
@@ -348,7 +354,8 @@ AC_ARG_ENABLE([sanitizer],
 
 AC_ARG_ENABLE([static-analysis],
 	[AS_HELP_STRING([--enable-static-analysis], [configure for static code analysis (use only if you know what you are doing)])],
-	AC_DEFINE([STATIC_CODE_ANALYSIS], 1, [compiling for static code analysis]))
+	[AS_VAR_IF([enableval], [yes],
+		[AC_DEFINE([STATIC_CODE_ANALYSIS], 1, [compiling for static code analysis])])])
 
 # RIPEMD160 is patent free, academic and European, but unfortunately
 # can't use it by default, as that would exclude JDBC usage (Java
@@ -596,6 +603,8 @@ dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
 		MCHECK_ADD_FLAG([-Wmissing-declarations])
 		MCHECK_ADD_FLAG([-Wmissing-format-attribute])
 		MCHECK_ADD_FLAG([-Wmissing-prototypes])
+		# need this for clang 9.1.0 on Darwin:
+		MCHECK_ADD_FLAG([-Wno-missing-field-initializers])
 		MCHECK_ADD_FLAG([-Wold-style-definition])
 		MCHECK_ADD_FLAG([-Wpacked])
 		MCHECK_ADD_FLAG([-Wunknown-pragmas])
@@ -800,33 +809,15 @@ AC_LIBTOOL_SETUP
 AC_PROG_LIBTOOL
 AM_PROG_LIBTOOL
 
-READLINK='readlink -f'
-AC_MSG_CHECKING([for $READLINK])
-AS_IF([$READLINK /tmp >/dev/null 2>&1],
-	[],
-	[READLINK=echo])
-AC_MSG_RESULT([$READLINK])
-AC_SUBST([READLINK])
-
 translatepath=echo
-anttranslatepath=$READLINK
 
 # --with-translatepath
 AC_ARG_WITH([translatepath],
 	[AS_HELP_STRING([--with-translatepath=PROG],
 		[program to translate paths from configure-time format to execute-time format.  Take care that this program can be given paths like ${prefix}/etc which should be translated carefully.])],
-	[translatepath="$withval"
-	 anttranslatepath="$withval"],
+	[translatepath="$withval"],
 	[AS_VAR_IF([cross_compiling], [yes],
 		[AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])])])
-AC_SUBST([translatepath])
-
-# --with-anttranslatepath
-AC_ARG_WITH([anttranslatepath],
-	[AS_HELP_STRING([--with-anttranslatepath=PROG],
-		[program to translate paths from configure-time format to a format that can be given to the ant program (default: 'readlink -f' or value for --with-translatepath)])],
-	[anttranslatepath="$withval"])
-AC_SUBST([anttranslatepath])
 
 # check whether no (explictly chosen) mutual exclusive combinations
 # were made, compatability matrix:
@@ -1116,7 +1107,7 @@ AS_VAR_IF([have_python2], [no],
 		[],
 		[AC_PATH_PROG([PYTHON2], [$PYTHON2], [no], [$PATH])
 		 AS_VAR_IF([PYTHON2], [no],
-			[AS_IF([( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = x2],
+			[AS_IF([test '(' "x$have_python2" = xyes -o "x$have_python2" = xauto ')' -a "x$PYTHON_MAJ" = x2],
 				[PYTHON2="$PYTHON"
 				 have_python2=yes],
 				[AS_VAR_IF([have_python2], [auto],
@@ -1180,7 +1171,7 @@ AS_VAR_IF([have_python3], [no],
 		[],
 		[AC_PATH_PROG([PYTHON3], [$PYTHON3], [no], [$PATH])
 		 AS_VAR_IF([PYTHON3], [no],
-		 	[AS_IF([( test "x$have_python3" = xyes || test "x$have_python3" = xauto ) && test "x$PYTHON_MAJ" = x3],
+		 	[AS_IF([test '(' "x$have_python3" = xyes -o "x$have_python3" = xauto ')' -a "x$PYTHON_MAJ" = x3],
 				[PYTHON3="$PYTHON"
 				 have_python3=yes],
 				[AS_VAR_IF([have_python3], [auto],
@@ -1195,7 +1186,9 @@ AS_VAR_IF([have_python3], [no],
 	 # and no interpreter
 	 PYTHON3=false
 	 # and no Python 3 integration
-	 enable_py3integration=no],
+	 AS_CASE([$enable_py3integration],
+	 	[no|auto], [enable_py3integration=no],
+		[AC_MSG_ERROR([--enable-py3integration requires Python 3])])],
 	[have_python3_libdir=auto
 
 	 AC_ARG_WITH([python3-libdir],
@@ -1340,73 +1333,59 @@ AS_CASE([$host_os],
 # check for bz2 (de)compression library
 org_have_bz2=auto
 have_bz2=$org_have_bz2
-BZ_CFLAGS=""
-BZ_LIBS="-lbz2"
 AC_ARG_WITH([bz2],
-	[AS_HELP_STRING([--with-bz2=DIR],
-		[bz2 library is installed in DIR])],
-	[have_bz2="$withval"])
-
-AS_CASE([$have_bz2],
-	[yes|no|auto], [],
-	[
-		BZ_CFLAGS="-I$withval/include"
-		BZ_LIBS="-L$withval/lib -lbz2"])
-
+	[AS_HELP_STRING([--with-bz2],
+		[include bz2 support (default=auto)])],
+	[have_bz2=$withval])
 AS_VAR_IF([have_bz2], [no], [], [
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	LDFLAGS="$LDFLAGS $BZ_LIBS"
-	AC_CHECK_HEADER([bzlib.h],
-		[AC_CHECK_LIB([bz2], [BZ2_bzopen],
-			[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])],
-			[AS_VAR_IF([have_bz2], [auto], [], [AC_MSG_ERROR([-lbz2 library not found])])
-			 have_bz2=no; why_not_bz2="(bz2 library not found)"])],
-		[AS_VAR_IF([have_bz2], [auto], [], [AC_MSG_ERROR([bzlib.h header not found])])
-			 have_bz2=no; why_not_bz2="(bzlib.h header not found)"])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"])
-AS_VAR_IF([have_bz2], [no], [BZ_CFLAGS=""; BZ_LIBS=""])
-AC_SUBST([BZ_CFLAGS])
-AC_SUBST([BZ_LIBS])
-AM_CONDITIONAL([HAVE_LIBBZ2], [test x$have_bz2 != xno])
+	PKG_CHECK_MODULES([bzip2], [bzip2], [have_bz2=yes], [
+		dnl  RHEL 6 doesn't have a pkgconfig file for bzip2,
+		dnl  so we also do it the old-fashioned way.
+		dnl  When we drop support for RHEL 6, this whole "not found"
+		dnl  section can be replace with
+		dnl  [have_bz2=no; why_not_bz2="(bzip2 not found)"]
+		bzip2_CFLAGS=""
+		bzip2_LIBS="-lbz2"
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $bzip2_CFLAGS"
+		save_LDFLAGS="$LDFLAGS"
+		LDFLAGS="$LDFLAGS $bzip2_LIBS"
+		AC_CHECK_HEADER([bzlib.h],
+			[AC_CHECK_LIB([bz2], [BZ2_bzopen],
+				[have_bz2=yes],
+				[AS_VAR_IF([have_bz2], [auto], [],
+					[AC_MSG_ERROR([-lbz2 library not found])])
+				 have_bz2=no
+				 why_not_bz2="(bz2 library not found)"])],
+			[AS_VAR_IF([have_bz2], [auto], [],
+				[AC_MSG_ERROR([bzlib.h header not found])])
+			 have_bz2=no
+			 why_not_bz2="(bzlib.h header not found)"])
+		LDFLAGS="$save_LDFLAGS"
+		CPPFLAGS="$save_CPPFLAGS"])
+	AS_VAR_IF([have_bz2], [yes],
+		[AC_SUBST([PKG_BZIP2], [bzip2])])
+	AS_VAR_IF([have_bz2], [yes],
+		[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])])])
+AM_CONDITIONAL([HAVE_LIBBZ2], [test x"$have_libbz2" != xno])
 
 
 
 dnl  check for snappy (de)compression library
 org_have_snappy=auto
 have_snappy=$org_have_snappy
-snappy_CFLAGS=""
-snappy_LIBS="-lsnappy"
 AC_ARG_WITH([snappy],
-	[AS_HELP_STRING([--with-snappy=DIR],
-		[snappy library is installed in DIR])],
+	[AS_HELP_STRING([--with-snappy],
+		[include snappy support (default=auto)])],
 	[have_snappy="$withval"])
 
-AS_CASE(["$have_snappy"],
-	[yes|no|auto], [],
-	[
-		snappy_CFLAGS="-I$withval/include"
-		snappy_LIBS="-L$withval/lib -lsnappy"])
-
 AS_VAR_IF([have_snappy], [no], [], [
-	save_CPPFLAGS="$CPPFLAGS"
-	CPPFLAGS="$CPPFLAGS $snappy_CFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	LDFLAGS="$LDFLAGS $snappy_LDFLAGS"
-	AC_CHECK_HEADER([snappy-c.h],
-		[AC_CHECK_LIB([snappy], [snappy_max_compressed_length],
-			[AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])],
-			[AS_VAR_IF([have_snappy], [auto], [], [AC_MSG_ERROR([-lsnappy library not found])])
-			 have_snappy=no; why_not_snappy="(snappy library not found)"])],
-		[AS_VAR_IF([have_snappy], [auto], [], [AC_MSG_ERROR([snappy-c.h header not found])])
-			 have_snappy=no; why_not_snappy="(snappy-c.h header not found)"])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"])
-AS_VAR_IF([have_snappy], [no], [snappy_CFLAGS=""; snappy_LIBS=""])
-AC_SUBST([snappy_CFLAGS])
-AC_SUBST([snappy_LIBS])
+	PKG_CHECK_MODULES([snappy], [snappy],
+		[have_snappy=yes],
+		[have_snappy=no; why_not_snappy="(snappy library not found)"])
+	AS_VAR_IF([have_snappy], [yes], [
+		AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])
+		AC_SUBST([PKG_SNAPPY], [snappy])])])
 AM_CONDITIONAL([HAVE_LIBSNAPPY], [test x$have_snappy != xno])
 
 
@@ -1414,8 +1393,8 @@ dnl  check for lz4 (de)compression library
 org_have_lz4=auto
 have_lz4=$org_have_lz4
 AC_ARG_WITH([lz4],
-	[AS_HELP_STRING([--with-lz4=DIR],
-		[lz4 library is installed in DIR])],
+	[AS_HELP_STRING([--with-lz4],
+		[include lz4 library support (default=auto)])],
 	[have_lz4="$withval"])
 
 AS_VAR_IF([have_lz4], [no], [], [
@@ -1781,7 +1760,8 @@ AC_ARG_WITH([libxml2],
 AS_VAR_IF([have_libxml2], [no], [], [
 	PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2=yes], [have_libxml2=no; why_not_libxml2="(libxml2 not found)"])
 	AS_VAR_IF([have_libxml2], [yes], [
-		AC_DEFINE([HAVE_LIBXML], 1, [Define if you have the xml library])])])
+		AC_DEFINE([HAVE_LIBXML], 1, [Define if you have the xml library])
+		AC_SUBST([PKG_LIBXML2], [libxml-2.0])])])
 AM_CONDITIONAL([HAVE_LIBXML], [test x"$have_libxml2" != xno])
 
 
@@ -1799,13 +1779,11 @@ AS_VAR_IF([have_curl], [no], [], [
 AM_CONDITIONAL([HAVE_CURL], [test x"$have_curl" != xno])
 
 
-PKG_CHECK_MODULES([zlib], [zlib], [have_zlib=yes], [have_zlib=no; why_not_zlib="(zlib not found)"])
-AS_CASE([$have_zlib],
-	[no],
-		[# Solaris doesn't provide zlib.pc, but zlib may well be present
-		 AC_CHECK_LIB([z], [gzopen], [have_zlib=yes zlib_LIBS="-lz" zlib_CFLAGS= ])],
-	[yes],
-		[AC_SUBST([PKG_ZLIB], [zlib])])
+PKG_CHECK_MODULES([zlib], [zlib],
+	[AC_SUBST([PKG_ZLIB], [zlib])
+	 have_zlib=yes],
+	[# Solaris doesn't provide zlib.pc, but zlib may well be present
+	 AC_CHECK_LIB([z], [gzopen], [have_zlib=yes zlib_LIBS="-lz" zlib_CFLAGS=])])
 AS_VAR_IF([have_zlib], [yes], [
 	AC_DEFINE([HAVE_LIBZ], 1, [Define if you have the z library])])
 AM_CONDITIONAL([HAVE_LIBZ], [test x"$have_zlib" != xno])
@@ -1862,27 +1840,27 @@ AM_CONDITIONAL([HAVE_LIBR], [test x"$have_libr" != xno])
 
 # Python API (Python UDFs)
 have_libpy=no
-AS_VAR_IF([enable_pyintegration], [no], [], [
-	AS_CASE([$enable_pyintegration],
+AS_VAR_IF([enable_py2integration], [no], [], [
+	AS_CASE([$enable_py2integration],
 		[yes|auto], [XPATH="$PATH"],
-		[/*], [XPATH="$enable_pyintegration"
-		       enable_pyintegration=yes],
-		[AC_MSG_ERROR([--enable-pyintegration value must be yes|no|auto|absolute path of python-config])])
+		[/*], [XPATH="$enable_py2integration"
+		       enable_py2integration=yes],
+		[AC_MSG_ERROR([--enable-py2integration value must be yes|no|auto|absolute path of python-config])])
 	AS_VAR_IF([have_py2config], [], [
 	   	AC_PATH_PROG([PY2CONFIG], [python2-config], [no], [$PATH])
 	   	AS_VAR_IF([PY2CONFIG], [no], [
 		   	AC_PATH_PROG([PYCMD2], [python-config], [no], [$PATH])
 		   	AS_VAR_IF([PYCMD2], [no], [
-		   		AS_VAR_IF([enable_pyintegration], [yes],
+		   		AS_VAR_IF([enable_py2integration], [yes],
 					[AC_MSG_ERROR([python2-config library required for Python integration support])],
 					[have_libpy=no
 					 why_not_libpy="(python2-config command not found)"
-					 enable_pyintegration=no
-					 why_not_pyintegration="(python2-config command not found)"])
+					 enable_py2integration=no
+					 why_not_py2integration="(python2-config command not found)"])
 			], [PY2CONFIG="$PYCMD2"])
 	   	], [])
 	], [PY2CONFIG="$have_py2config"])
-	AS_VAR_IF([enable_pyintegration], [no], [], [
+	AS_VAR_IF([enable_py2integration], [no], [], [
 		PYTHON_CMD=$PYTHON2
 		NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
 		# check numpyconfig.h because autoconf tests includes by
@@ -1891,34 +1869,34 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 		AC_CHECK_HEADER([numpy/numpyconfig.h],
 			[NUMPYHEADERS=True],
 			[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
-		AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
-			[AS_VAR_IF([enable_pyintegration], [yes],
+		AS_IF([test "x$NUMPYVER" = x -o "x$NUMPYVER" = xFalse],
+			[AS_VAR_IF([enable_py2integration], [yes],
 				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])],
 				[have_libpy=no
 				 why_not_libpy="(numpy version >= 1.7.0 not found)"
-				 enable_pyintegration=no
-				 why_not_pyintegration="(numpy version >= 1.7.0 not found)"])],
+				 enable_py2integration=no
+				 why_not_py2integration="(numpy version >= 1.7.0 not found)"])],
 			[test "x$NUMPYHEADERS" = xFalse ],
-			[AS_VAR_IF([enable_pyintegration], [yes],
+			[AS_VAR_IF([enable_py2integration], [yes],
 				[AC_MSG_ERROR([numpy/arrayobject.h not found])],
 				[have_libpy=no
 				 why_not_libpy="(numpy/arrayobject.h not found)"
-				 enable_pyintegration=no
-				 why_not_pyintegration="(numpy/arrayobject.h not found)"])],
+				 enable_py2integration=no
+				 why_not_py2integration="(numpy/arrayobject.h not found)"])],
 			[libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
 			 libpy_LIBS=`$PY2CONFIG --ldflags`
 			 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
 				[have_libpy=yes
-				 AC_DEFINE([HAVE_LIBPY], 1, [Define if we can link to python])
+				 AC_DEFINE([HAVE_LIBPY], 1, [Define if we can link to python2])
 				 AC_SUBST([libpy_CFLAGS], [$libpy_CFLAGS])
 				 AC_SUBST([libpy_LIBS], [$libpy_LIBS])],
-				[AS_VAR_IF([enable_pyintegration], [yes],
+				[AS_VAR_IF([enable_py2integration], [yes],
 					[AC_MSG_ERROR([Python.h not found])],
 					[have_libpy=no
 					 why_not_libpy="Python.h not found"
-					 enable_pyintegration=no
-					 why_not_pyintegration="Python.h not found"])])])])])
+					 enable_py2integration=no
+					 why_not_py2integration="Python.h not found"])])])])])
 AM_CONDITIONAL([HAVE_LIBPY], [test x"$have_libpy" != xno])
 
 
@@ -1967,7 +1945,7 @@ AS_VAR_IF([enable_py3integration], [no], [],
 			[numpy/numpyconfig.h], 
 			[NUMPYHEADERS=True],
 			[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
-		AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
+		AS_IF([test "x$NUMPYVER" = x -o "x$NUMPYVER" = xFalse],
 			[AS_VAR_IF([enable_py3integration], [yes],
 				[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python3 integration support])],
 				[have_libpy3=no
@@ -1986,7 +1964,7 @@ AS_VAR_IF([enable_py3integration], [no], [],
 			 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 			 AS_VAR_IF([HAVEPYTHONHEADER], [True],
 				[have_libpy3=yes
-				 AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python])
+				 AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python3])
 				 AC_SUBST(libpy3_CFLAGS, $libpy3_CFLAGS)
 				 AC_SUBST(libpy3_LIBS, $libpy3_LIBS)],
 				[AS_VAR_IF([enable_py3integration], [yes],
@@ -2075,7 +2053,8 @@ AS_VAR_IF([enable_odbc], [no],
 		CPPFLAGS="$save_CPPFLAGS"
 		AC_MSG_RESULT([using "$lenp_or_pointer_t"])
 		AC_DEFINE_UNQUOTED([LENP_OR_POINTER_T], [$lenp_or_pointer_t],
-			[Define as SQLLEN * or SQLPOINTER depending on the include file])])
+			[Define as SQLLEN * or SQLPOINTER depending on the include file])
+		AC_CHECK_SIZEOF([SQLWCHAR],,[@%:@include <sql.h>])])
 	 AC_SUBST([ODBC_INCS])
 	 AC_SUBST([ODBCINST_LIBS])
 	 AC_SUBST([ODBC_LIBS])
@@ -2088,38 +2067,19 @@ AS_VAR_IF([enable_odbc], [no],
 AM_CONDITIONAL([HAVE_ODBC], [test x$have_unixodbc != xno])
 
 # proj only used in geom module
-org_have_proj="auto"
+org_have_proj=auto
 have_proj=$org_have_proj
-PROJ_INCS=''
-PROJ_LIBS=''
 AC_ARG_WITH([proj],
-	[AS_HELP_STRING([--with-proj=DIR],
-		[proj library is installed in DIR])],
+	[AS_HELP_STRING([--with-proj],
+		[include proj support (default=auto)])],
 	[have_proj="$withval"])
 AS_VAR_IF([have_proj], [no], [], [
-	AS_CASE([$have_proj],
-	[auto|yes], [],
-	[
-		PROJ_INCS="-I$have_proj/include"
-		PROJ_LIBS="-L$have_proj/lib -lproj"])
-	save_CPPFLAGS="$CPPFLAGS"
-	save_LDFLAGS="$LDFLAGS"
-	CPPFLAGS="$CPPFLAGS $PROJ_INCS"
-	LDFLAGS="$LDFLAGS $PROJ_LIBS"
-	AC_CHECK_HEADER([proj_api.h],
-		AC_CHECK_LIB([proj], [pj_init_plus],
-			[AC_DEFINE([HAVE_PROJ], 1, [Define if the proj library exists])],
-			[AS_VAR_IF([have_proj], [auto], [], [AC_MSG_ERROR([-lproj library not found])])
-			have_proj=no; why_not_proj="(proj library not found)" ], ),
-		[AS_VAR_IF([have_proj], [auto], [], [AC_MSG_ERROR([proj_api.h header not found])])
-		have_proj=no; why_not_proj="(proj_api.h header not found)" ])
-	LDFLAGS="$save_LDFLAGS"
-	CPPFLAGS="$save_CPPFLAGS"
-	AS_IF([test "x$have_proj" = "xyes" -o "x$have_proj" = "xauto"], [
-	    PROJ_INCS=
-	    PROJ_LIBS="-lproj"])])
-AC_SUBST([PROJ_INCS])
-AC_SUBST([PROJ_LIBS])
+	PKG_CHECK_MODULES([proj], [proj],
+		[AC_DEFINE([HAVE_PROJ], 1, [Define if the proj library exists])
+		 have_proj=yes],
+		[AS_VAR_IF([have_proj], [auto], [],
+			[AC_MSG_ERROR([-lproj library not found])])
+			 have_proj=no; why_not_proj="(proj library not found)"])])
 AM_CONDITIONAL([HAVE_PROJ], [test x"$have_proj" != xno])
 
 
@@ -2249,9 +2209,9 @@ AC_SUBST([GEOS_LIBS])
 org_have_gdal="auto"
 have_gdal=$org_have_gdal
 AC_ARG_WITH([gdal],
-	[AS_HELP_STRING([--with-gdal=DIR],
-		[gdal library is installed in DIR])],
-		[have_gdal="$withval"], [have_gdal="auto"])
+	[AS_HELP_STRING([--with-gdal],
+		[include gdal support (default=auto)])],
+	[have_gdal=$withval])
 
 AS_VAR_IF([enable_geom], [no],
 	[AS_CASE([$have_gdal],
@@ -2266,60 +2226,9 @@ AS_VAR_IF([enable_geom], [no],
 			 AS_VAR_IF([why_not_shp], [],
 				[why_not_shp="(ESRI Shapefile vault requires the geom module)"])],
 		[AC_MSG_ERROR([geom module required for shp])])],
-	[# first autoconf for distributions that added a .pc file themselves (Fedora)
-	 AS_VAR_IF([have_gdal], [no], [], [
-		AS_CASE([$have_gdal],
-		[auto|yes], [
-			PKG_CHECK_MODULES([GDAL], [gdal], [have_gdal="pkgconf"], [have_gdal="$have_gdal"])],
-		[
-			GDAL_CFLAGS="-I$have_gdal/include"
-			GDAL_LIBS="-L$have_gdal/lib"])])
-	 # try to detect it manually like upstream provides it
-	 AS_VAR_IF([have_gdal], [no],
-		[],
-		[AS_VAR_IF([have_gdal], [pkgconf],
-			[have_gdal=yes],
-			[save_CPPFLAGS="$CPPFLAGS"
-			 save_LDFLAGS="$LDFLAGS"
-			 save_LIBS="$LIBS"
-			 CPPFLAGS="$CPPFLAGS $GDAL_CFLAGS"
-			 LDFLAGS="$LDFLAGS $GDAL_LIBS"
-			 LIBS=""
-			 found_gdal_h=yes
-			 AC_CHECK_HEADER([gdal.h], [],
-				[AC_CHECK_HEADER([gdal/gdal.h],
-					[AS_VAR_IF([GDAL_CFLAGS], [],
-						[GDAL_CFLAGS="-I/usr/include/gdal"],
-						[GDAL_CFLAGS="$GDAL_CFLAGS/gdal"])
-					 CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
-					[found_gdal_h=no])])
-			 AS_VAR_IF([found_gdal_h], [yes],
-				[AC_CHECK_LIB([gdal], [GDALAllRegister],
-					[AC_DEFINE([HAVE_GDAL], 1, [Define if you have the gdal library])
-						have_gdal=yes
-						LIBS="$LIBS -lgdal"],
-					[AS_VAR_IF([have_gdal], [auto],
-						[],
-						[AC_MSG_ERROR([-lgdal library not found])])
-					 have_gdal=no
-					 why_not_gdal="(gdal library not found)"],
-					[$MATH_LIBS])],
-				[AS_VAR_IF([have_gdal], [auto],
-					[],
-					[AC_MSG_ERROR([gdal.h header not found])])
-				 have_gdal=no
-				 why_not_gdal="(gdal.h header not found)"])
-			 GDAL_LIBS="$GDAL_LIBS $LIBS"
-			 LDFLAGS="$save_LDFLAGS"
-			 CPPFLAGS="$save_CPPFLAGS"
-			 LIBS="$save_LIBS"
-			 AS_VAR_IF([have_gdal], [yes],
-				[],
-				[GDAL_CFLAGS=""
-				 GDAL_LIBS=""])])])
-
-	 AC_SUBST([gdal_CFLAGS], [$GDAL_CFLAGS])
-	 AC_SUBST([gdal_LIBS], [$GDAL_LIBS])
+	[AS_VAR_IF([have_gdal], [no], [], [
+	 	PKG_CHECK_MODULES([GDAL], [gdal], [have_gdal=yes],
+			[have_gdal=no; why_not_gdal="(gdal library not found)"])])
 
 	 # if shp is enabled and gdal was not found abort
 	 AS_VAR_IF([have_gdal], [no], [
@@ -2758,18 +2667,6 @@ AM_CONDITIONAL([HAVE_DEVELOPER], [test "x$enable_developer" = xyes])
 AC_SUBST([compilercall], ["$CC $CFLAGS $X_CFLAGS"])
 AC_SUBST([linkercall], ["$LD $LDFLAGS"])
 AC_SUBST([builtby], ["${USER}@`hostname`"])
-pcreversion="not linked to any PCRE library"
-AS_VAR_IF([have_pcre], [yes], [
-        pcreversion="compiled with `pkg-config --modversion libpcre 2>/dev/null`"])
-AC_SUBST([pcreversion])
-opensslversion="not linked to any openssl library"
-AS_VAR_IF([have_openssl], [yes], [
-        opensslversion="compiled with `openssl version 2>/dev/null`"])
-AC_SUBST([opensslversion])
-libxml2version="not linked to any libxml2 library"
-AS_VAR_IF([have_libxml2], [yes], [
-        libxml2version="compiled with `pkg-config --modversion libxml-2.0 2>/dev/null`"])
-AC_SUBST([libxml2version])
 
 # provide different versions of the paths derived above
 AS_VAR_IF([prefix], [NONE],
@@ -2939,6 +2836,12 @@ typedef enum {
 @%:@include <stdbool.h>
 @%:@include <assert.h>
 
+@%:@ifndef static_assert
+/* static_assert is a C11 feature, defined in assert.h which also exists
+ * in many other compilers we ignore it if the compiler doesn't support it */
+@%:@define static_assert(expr, mesg)	((void) 0)
+@%:@endif
+
 @%:@if defined(HAVE___INT128)
 typedef __int128 hge;
 typedef unsigned __int128 uhge;
@@ -3033,7 +2936,7 @@ for comp in \
 	'sql           ' \
 	'geom          ' \
 	'console       ' \
-	'pyintegration ' \
+	'py2integration' \
 	'py3integration' \
 	'rintegration  ' \
 	'odbc          ' \

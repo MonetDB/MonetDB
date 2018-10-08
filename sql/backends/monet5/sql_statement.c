@@ -137,7 +137,7 @@ add_to_merge_partitions_accumulator(backend *be, int nr)
 	q = pushArgument(mb, q, help);
 	q = pushArgument(mb, q, nr);
 
-	be->first_statement_generated = 1; /* set the first statement as generated */
+	be->first_statement_generated = true; /* set the first statement as generated */
 
 	return getDestVar(q);
 }
@@ -1404,6 +1404,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		switch (cmptype) {
 		case cmp_equal:
+		case cmp_equal_nil:
 			op = "=";
 			break;
 		case cmp_notequal:
@@ -1443,35 +1444,47 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
-		q = newStmt(mb, algebraRef, thetaselectRef);
-		q = pushArgument(mb, q, l);
-		if (sub)
-			q = pushArgument(mb, q, sub->nr);
-		q = pushArgument(mb, q, r);
-		switch (cmptype) {
-		case cmp_equal:
-			q = pushStr(mb, q, anti?"!=":"==");
-			break;
-		case cmp_notequal:
-			q = pushStr(mb, q, anti?"==":"!=");
-			break;
-		case cmp_lt:
-			q = pushStr(mb, q, anti?">=":"<");
-			break;
-		case cmp_lte:
-			q = pushStr(mb, q, anti?">":"<=");
-			break;
-		case cmp_gt:
-			q = pushStr(mb, q, anti?"<=":">");
-			break;
-		case cmp_gte:
-			q = pushStr(mb, q, anti?"<":">=");
-			break;
-		default:
-			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
-			if (q)
-				freeInstruction(q);
-			q = NULL;
+		if (cmptype == cmp_equal_nil) {
+			q = newStmt(mb, algebraRef, selectRef);
+			q = pushArgument(mb, q, l);
+			if (sub)
+				q = pushArgument(mb, q, sub->nr);
+			q = pushArgument(mb, q, r);
+			q = pushArgument(mb, q, r);
+			q = pushBit(mb, q, TRUE);
+			q = pushBit(mb, q, TRUE);
+			q = pushBit(mb, q, anti);
+		} else {
+			q = newStmt(mb, algebraRef, thetaselectRef);
+			q = pushArgument(mb, q, l);
+			if (sub)
+				q = pushArgument(mb, q, sub->nr);
+			q = pushArgument(mb, q, r);
+			switch (cmptype) {
+			case cmp_equal:
+				q = pushStr(mb, q, anti?"!=":"==");
+				break;
+			case cmp_notequal:
+				q = pushStr(mb, q, anti?"==":"!=");
+				break;
+			case cmp_lt:
+				q = pushStr(mb, q, anti?">=":"<");
+				break;
+			case cmp_lte:
+				q = pushStr(mb, q, anti?">":"<=");
+				break;
+			case cmp_gt:
+				q = pushStr(mb, q, anti?"<=":">");
+				break;
+			case cmp_gte:
+				q = pushStr(mb, q, anti?"<":">=");
+				break;
+			default:
+				showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
+				if (q)
+					freeInstruction(q);
+				q = NULL;
+			}
 		}
 		if (q == NULL)
 			return NULL;
@@ -3010,8 +3023,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 	char aggrF[64];
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
-	int complex_aggr = 0;
-	int abort_on_error, *stmt_nr = NULL;
+	bool complex_aggr = false;
+	bool abort_on_error;
+	int *stmt_nr = NULL;
 
 	if (op1->nr < 0)
 		return NULL;
@@ -3022,7 +3036,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 
 	if (strcmp(aggrfunc, "avg") == 0 || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
-		complex_aggr = 1;
+		complex_aggr = true;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
 	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0;
 

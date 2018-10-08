@@ -1204,10 +1204,14 @@ BAT *
 BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	     bool li, bool hi, bool anti)
 {
-	bool hval, lval, equi, lnil, hash;
+	bool lval;		/* low value used for comparison */
+	bool lnil;		/* low value is nil */
+	bool hval;		/* high value used for comparison */
+	bool equi;		/* select for single value (not range) */
+	bool hash;		/* use hash (equi must be true) */
 	bool phash = false;	/* use hash on parent BAT (if view) */
-	int t;
-	bat parent;
+	int t;			/* data type */
+	bat parent;		/* b's parent bat (if b is a view) */
 	const void *nil;
 	BAT *bn, *tmp;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
@@ -1394,6 +1398,65 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
+	if (anti) {
+		PROPrec *prop;
+		int c;
+
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			if (c > 0 || (li && c == 0)) {
+				if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+					c = ATOMcmp(t, th, VALptr(&prop->v));
+					if (c < 0 || (hi && c == 0)) {
+						/* tl..th range fully
+						 * inside MIN..MAX
+						 * range of values in
+						 * BAT, so nothing
+						 * left over for
+						 * anti */
+						ALGODEBUG fprintf(stderr, "#BATselect(b=" ALGOBATFMT
+								  ",s=" ALGOOPTBATFMT ",anti=%d): "
+								  "nothing, out of range\n",
+								  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti);
+						return BATdense(0, 0, 0);
+					}
+				}
+			}
+		}
+	} else if (!equi || !lnil) {
+		PROPrec *prop;
+		int c;
+
+		if (hval && (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+			c = ATOMcmp(t, th, VALptr(&prop->v));
+			if (c < 0 || (!hi && c == 0)) {
+				/* smallest value in BAT larger than
+				 * what we're looking for */
+				ALGODEBUG fprintf(stderr, "#BATselect(b="
+						  ALGOBATFMT ",s="
+						  ALGOOPTBATFMT ",anti=%d): "
+						  "nothing, out of range\n",
+						  ALGOBATPAR(b),
+						  ALGOOPTBATPAR(s), anti);
+				return BATdense(0, 0, 0);
+			}
+		}
+		if (lval && (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+			c = ATOMcmp(t, tl, VALptr(&prop->v));
+			if (c > 0 || (!li && c == 0)) {
+				/* largest value in BAT smaller than
+				 * what we're looking for */
+				ALGODEBUG fprintf(stderr, "#BATselect(b="
+						  ALGOBATFMT ",s="
+						  ALGOOPTBATFMT ",anti=%d): "
+						  "nothing, out of range\n",
+						  ALGOBATPAR(b),
+						  ALGOOPTBATPAR(s), anti);
+				return BATdense(0, 0, 0);
+			}
+		}
+	}
+
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		NORMALIZE(oid);
 	} else {
@@ -1434,7 +1497,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    (!s || (s && BATtdense(s)))    &&
 	    (BATcheckorderidx(b) ||
 	     (VIEWtparent(b) &&
-	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), 0))))) {
+	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), false))))) {
 		BAT *view = NULL;
 		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
@@ -1662,11 +1725,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 
+		bn = virtualize(bn);
 		ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 				  " (" LLFMT " usec)\n",
 				  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
-		return virtualize(bn);
+		return bn;
 	}
 
 	/* upper limit for result size */
@@ -1737,7 +1801,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 * hash chain (count divided by #slots) times the cost
 		 * to do a binary search on the candidate list (or 1
 		 * if no need for search)) */
-		tmp = BBPquickdesc(parent, 0);
+		tmp = BBPquickdesc(parent, false);
 		hash = phash = BATcheckhash(tmp) &&
 			(BATcount(tmp) == BATcount(b) ||
 			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
@@ -1818,17 +1882,18 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			!b->tvarsized &&
 			(b->batPersistence == PERSISTENT ||
 			 (parent != 0 &&
-			  (tmp = BBPquickdesc(parent, 0)) != NULL &&
+			  (tmp = BBPquickdesc(parent, false)) != NULL &&
 			  tmp->batPersistence == PERSISTENT));
 		bn = scanselect(b, s, bn, tl, th, li, hi, equi, anti,
 				lval, hval, lnil, maximum, use_imprints);
 	}
 
+	bn = virtualize(bn);
 	ALGODEBUG fprintf(stderr, "#BATselect(b=%s)=" ALGOOPTBATFMT
 			  " (" LLFMT " usec)\n",
 			  BATgetId(b), ALGOOPTBATPAR(bn), GDKusec() - t0);
 
-	return virtualize(bn);
+	return bn;
 }
 
 /* theta select
@@ -1989,7 +2054,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	ll = l->hseqbase;
 	lh = ll + l->batCount;
 	if ((!sl || (sl && BATtdense(sl))) &&
-	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), 0))))) {
+	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
 		use_orderidx = true;
 		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
 			l = BBPdescriptor(VIEWtparent(l));
@@ -2157,7 +2222,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	} else if ((BATcount(rl) > 2 ||
 		    l->batPersistence == PERSISTENT ||
 		    (VIEWtparent(l) != 0 &&
-		     (tmp = BBPquickdesc(VIEWtparent(l), 0)) != NULL &&
+		     (tmp = BBPquickdesc(VIEWtparent(l), false)) != NULL &&
 		     tmp->batPersistence == PERSISTENT) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {

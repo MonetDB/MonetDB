@@ -174,10 +174,25 @@ BATsetdims(BAT *b)
  * and memory map it. To make this possible, we must provide it with
  * filenames.
  */
-static BAT *
-BATnewstorage(oid hseq, int tt, BUN cap, int role)
+BAT *
+COLnew(oid hseq, int tt, BUN cap, int role)
 {
 	BAT *bn;
+
+	assert(cap <= BUN_MAX);
+	assert(hseq <= oid_nil);
+	assert(tt != TYPE_bat);
+	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "COLnew:tt error\n", NULL);
+	ERRORcheck(role < 0 || role >= 32, "COLnew:role error\n", NULL);
+
+	/* round up to multiple of BATTINY */
+	if (cap < BUN_MAX - BATTINY)
+		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
+	if (cap < BATTINY)
+		cap = BATTINY;
+	/* and in case we don't have assertions enabled: limit the size */
+	if (cap > BUN_MAX)
+		cap = BUN_MAX;
 
 	/* and in case we don't have assertions enabled: limit the size */
 	if (cap > BUN_MAX) {
@@ -206,32 +221,13 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
+	ALGODEBUG fprintf(stderr, "#COLnew()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:
 	BBPclear(bn->batCacheid);
 	HEAPfree(&bn->theap, true);
 	GDKfree(bn);
 	return NULL;
-}
-
-BAT *
-COLnew(oid hseq, int tt, BUN cap, int role)
-{
-	assert(cap <= BUN_MAX);
-	assert(hseq <= oid_nil);
-	assert(tt != TYPE_bat);
-	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "COLnew:tt error\n", NULL);
-	ERRORcheck(role < 0 || role >= 32, "COLnew:role error\n", NULL);
-
-	/* round up to multiple of BATTINY */
-	if (cap < BUN_MAX - BATTINY)
-		cap = (cap + BATTINY - 1) & ~(BATTINY - 1);
-	if (cap < BATTINY)
-		cap = BATTINY;
-	/* and in case we don't have assertions enabled: limit the size */
-	if (cap > BUN_MAX)
-		cap = BUN_MAX;
-	return BATnewstorage(hseq, tt, cap, role);
 }
 
 BAT *
@@ -243,6 +239,7 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	if (bn != NULL) {
 		BATtseqbase(bn, tseq);
 		BATsetcount(bn, cnt);
+		ALGODEBUG fprintf(stderr, "#BATdense()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	}
 	return bn;
 }
@@ -499,8 +496,7 @@ BATclear(BAT *b, bool force)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 
 	/* we must dispose of all inserted atoms */
 	if (force && BATatoms[b->ttype].atomDel == NULL) {
@@ -513,8 +509,9 @@ BATclear(BAT *b, bool force)
 		if (b->tvheap && b->tvheap->free > 0) {
 			Heap th;
 
-			memset(&th, 0, sizeof(th));
-			th.farmid = b->tvheap->farmid;
+			th = (Heap) {
+				.farmid = b->tvheap->farmid,
+			};
 			strncpy(th.filename, b->tvheap->filename, sizeof(th.filename));
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
@@ -563,9 +560,7 @@ BATfree(BAT *b)
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
-	if (b->tprops)
-		PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	HASHfree(b);
 	IMPSfree(b);
 	OIDXfree(b);
@@ -588,8 +583,7 @@ BATdestroy(BAT *b)
 	b->tident = BATstring_t;
 	if (b->tvheap)
 		GDKfree(b->tvheap);
-	if (b->tprops)
-		PROPdestroy(b->tprops);
+	PROPdestroy(b);
 	GDKfree(b);
 }
 
@@ -736,11 +730,12 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 			 * with copy-on-write VM support */
 			Heap bthp, thp;
 
-			memset(&bthp, 0, sizeof(Heap));
-			memset(&thp, 0, sizeof(Heap));
-
-			bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
-			thp.farmid = BBPselectfarm(role, b->ttype, varheap);
+			bthp = (Heap) {
+				.farmid = BBPselectfarm(role, b->ttype, offheap),
+			};
+			thp = (Heap) {
+				.farmid = BBPselectfarm(role, b->ttype, varheap),
+			};
 			snprintf(bthp.filename, sizeof(bthp.filename),
 				 "%s.tail", BBP_physical(bn->batCacheid));
 			snprintf(thp.filename, sizeof(thp.filename), "%s.theap",
@@ -858,6 +853,8 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 	}
 	if (!writable)
 		bn->batRestricted = BAT_READ;
+	ALGODEBUG fprintf(stderr, "#COLcopy(" ALGOBATFMT ")=" ALGOBATFMT "\n",
+			  ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -1053,8 +1050,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	if (b->thash == (Hash *) 1 ||
 	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
@@ -1121,8 +1117,7 @@ BUNdelete(BAT *b, oid o)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -1165,8 +1160,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		b->tnil = false;
 	}
 	HASHdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	if (b->tvarsized && b->ttype) {
@@ -2198,11 +2192,29 @@ BATassertProps(BAT *b)
 			 * prove uniqueness, we can do a simple
 			 * scan */
 			/* only call compare function if we have to */
-			int cmpprv = b->tsorted | b->trevsorted | b->tkey;
-			int cmpnil = b->tnonil | b->tnil;
+			bool cmpprv = b->tsorted | b->trevsorted | b->tkey;
+			bool cmpnil = b->tnonil | b->tnil;
+			PROPrec *prop;
+			const void *maxval = NULL;
+			const void *minval = NULL;
+			bool seenmax = false, seenmin = false;
 
+			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
+				maxval = VALptr(&prop->v);
+			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
+				minval = VALptr(&prop->v);
 			BATloop(b, p, q) {
 				valp = BUNtail(bi, p);
+				if (maxval) {
+					cmp = cmpf(maxval, valp);
+					assert(cmp >= 0);
+					seenmax |= cmp == 0;
+				}
+				if (minval) {
+					cmp = cmpf(minval, valp);
+					assert(cmp <= 0);
+					seenmin |= cmp == 0;
+				}
 				if (prev && cmpprv) {
 					cmp = cmpf(prev, valp);
 					assert(!b->tsorted || cmp <= 0);
@@ -2219,7 +2231,7 @@ BATassertProps(BAT *b)
 						 * for them */
 						seennil = true;
 						cmpnil = 0;
-						if (!cmpprv) {
+						if (!cmpprv && maxval == NULL && minval == NULL) {
 							/* we were
 							 * only
 							 * checking
@@ -2233,12 +2245,23 @@ BATassertProps(BAT *b)
 				}
 				prev = valp;
 			}
+			assert(maxval == NULL || seenmax);
+			assert(minval == NULL || seenmin);
 		} else {	/* b->tkey && !b->tsorted && !b->trevsorted */
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
 			Hash *hs = NULL;
 			BUN mask;
+			PROPrec *prop;
+			const void *maxval = NULL;
+			const void *minval = NULL;
+			bool seenmax = false, seenmin = false;
+
+			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
+				maxval = VALptr(&prop->v);
+			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
+				minval = VALptr(&prop->v);
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				fprintf(stderr,
@@ -2268,6 +2291,16 @@ BATassertProps(BAT *b)
 				BUN hb;
 				BUN prb;
 				valp = BUNtail(bi, p);
+				if (maxval) {
+					cmp = cmpf(maxval, valp);
+					assert(cmp >= 0);
+					seenmax |= cmp == 0;
+				}
+				if (minval) {
+					cmp = cmpf(minval, valp);
+					assert(cmp <= 0);
+					seenmin |= cmp == 0;
+				}
 				prb = HASHprobe(hs, valp);
 				for (hb = HASHget(hs,prb);
 				     hb != HASHnil(hs);
@@ -2283,6 +2316,8 @@ BATassertProps(BAT *b)
 			}
 			HEAPfree(&hs->heap, true);
 			GDKfree(hs);
+			assert(maxval == NULL || seenmax);
+			assert(minval == NULL || seenmin);
 		}
 	  abort_check:
 		assert(!b->tnil || seennil);

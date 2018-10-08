@@ -88,7 +88,7 @@ parseint(const char *data, bignum_t *nval)
 	while (*data && *data != 'e' && *data != 'E' && !space(*data)) {
 		if (*data == '.')
 			fraction = 1;
-		else if ('0' <= *data && *data <= '9') {
+		else if (isdigit((unsigned char) *data)) {
 			if (overflow ||
 			    nval->val > MAXBIGNUM10 ||
 			    (nval->val == MAXBIGNUM10 &&
@@ -232,7 +232,7 @@ parsedate(const char *data, DATE_STRUCT *dval)
 {
 	int n;
 
-	memset(dval, 0, sizeof(*dval));
+	*dval = (DATE_STRUCT) {0};
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{d '%hd-%hu-%hu'}%n",
@@ -258,7 +258,7 @@ parsetime(const char *data, TIME_STRUCT *tval)
 	int n;
 	int braces;
 
-	memset(tval, 0, sizeof(*tval));
+	*tval = (TIME_STRUCT) {0};
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{t '%hu:%hu:%hu%n",
@@ -273,7 +273,7 @@ parsetime(const char *data, TIME_STRUCT *tval)
 	data += n;
 	n = 1;			/* tentative return value */
 	if (*data == '.') {
-		while (*++data && '0' <= *data && *data <= '9')
+		while (*++data && isdigit((unsigned char) *data))
 			;
 		n = 2;		/* indicate loss of precision */
 	}
@@ -304,7 +304,7 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 	int n;
 	int braces;
 
-	memset(tsval, 0, sizeof(*tsval));
+	*tsval = (TIMESTAMP_STRUCT) {0};
 	while (space(*data))
 		data++;
 	if (sscanf(data, "{TS '%hd-%hu-%hu %hu:%hu:%hu%n",
@@ -324,7 +324,7 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 	data += n;
 	n = 1000000000;
 	if (*data == '.') {
-		while (*++data && '0' <= *data && *data <= '9') {
+		while (*++data && isdigit((unsigned char) *data)) {
 			n /= 10;
 			tsval->fraction += (*data - '0') * n;
 		}
@@ -526,7 +526,9 @@ parsemonthintervalstring(char **svalp,
 	long val1 = -1, val2 = -1;
 	SQLLEN leadingprecision;
 
-	memset(ival, 0, sizeof(*ival));
+	*ival = (SQL_INTERVAL_STRUCT) {
+		.interval_type = SQL_IS_YEAR, /* anything will do */
+	};
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
@@ -684,7 +686,9 @@ parsesecondintervalstring(char **svalp,
 	unsigned v1, v2, v3, v4;
 	int n;
 
-	memset(ival, 0, sizeof(*ival));
+	*ival = (SQL_INTERVAL_STRUCT) {
+		.interval_type = SQL_IS_YEAR, /* anything will do */
+	};
 	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
@@ -800,7 +804,7 @@ parsesecondintervalstring(char **svalp,
 		sval++;
 		slen--;
 		secondprecision = 0;
-		while ('0' <= *sval && *sval <= '9') {
+		while (isdigit((unsigned char) *sval)) {
 			if (secondprecision < 9) {
 				secondprecision++;
 				ival->intval.day_second.fraction *= 10;
@@ -1309,7 +1313,7 @@ ODBCFetch(ODBCStmt *stmt,
 				return SQL_NO_DATA;
 			}
 			for (k = 0; k < datalen; k++) {
-				if ('0' <= data[k] && data[k] <= '9')
+				if (isdigit((unsigned char) data[k]))
 					n = data[k] - '0';
 				else if ('A' <= data[k] && data[k] <= 'F')
 					n = data[k] - 'A' + 10;
@@ -1873,7 +1877,8 @@ ODBCFetch(ODBCStmt *stmt,
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
 
-			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS, (SQLWCHAR *) origptr, origbuflen, &n);
+			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
+				       (SQLWCHAR *) origptr, origbuflen, &n);
 #ifdef ODBCDEBUG
 			ODBCLOG("Writing %d bytes to %p\n",
 				(int) (n * sizeof(SQLWCHAR)),
@@ -2253,10 +2258,11 @@ ODBCFetch(ODBCStmt *stmt,
 				nval.scale--;
 				nval.precision--;
 			}
-			memset(&nmval, 0, sizeof(nmval));
-			nmval.precision = nval.precision;
-			nmval.scale = nval.scale;
-			nmval.sign = nval.sign;
+			nmval = (SQL_NUMERIC_STRUCT) {
+				.precision = nval.precision,
+				.scale = nval.scale,
+				.sign = nval.sign,
+			};
 			for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++) {
 				nmval.val[i] = (SQLCHAR) (nval.val & 0xFF);
 				nval.val >>= 8;
@@ -2512,10 +2518,11 @@ ODBCFetch(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-		memset(&ivval, 0, sizeof(ivval));
-		ivval.interval_sign = ival.interval_sign;
-		ivval.intval.year_month.year = 0;
-		ivval.intval.year_month.month = 0;
+		ivval = (SQL_INTERVAL_STRUCT) {
+			.interval_sign = ival.interval_sign,
+			.intval.year_month.year = 0,
+			.intval.year_month.month = 0,
+		};
 		switch (type) {
 		case SQL_C_INTERVAL_YEAR:
 			ivval.interval_type = SQL_IS_YEAR;
@@ -2600,13 +2607,14 @@ ODBCFetch(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-		memset(&ivval, 0, sizeof(ivval));
-		ivval.interval_sign = ival.interval_sign;
-		ivval.intval.day_second.day = 0;
-		ivval.intval.day_second.hour = 0;
-		ivval.intval.day_second.minute = 0;
-		ivval.intval.day_second.second = 0;
-		ivval.intval.day_second.fraction = 0;
+		ivval = (SQL_INTERVAL_STRUCT) {
+			.interval_sign = ival.interval_sign,
+			.intval.day_second.day = 0,
+			.intval.day_second.hour = 0,
+			.intval.day_second.minute = 0,
+			.intval.day_second.second = 0,
+			.intval.day_second.fraction = 0,
+		};
 		switch (type) {
 		case SQL_C_INTERVAL_DAY:
 			ivval.interval_type = SQL_IS_DAY;
@@ -2765,7 +2773,7 @@ ODBCFetch(ODBCStmt *stmt,
 				}
 				data++;
 			}
-			if ('0' <= *data && *data <= '9')
+			if (isdigit((unsigned char) *data))
 				((unsigned char *) ptr)[i] = *data - '0';
 			else if ('a' <= *data && *data <= 'f')
 				((unsigned char *) ptr)[i] = *data - 'a' + 10;
@@ -2779,7 +2787,7 @@ ODBCFetch(ODBCStmt *stmt,
 			}
 			((unsigned char *) ptr)[i] <<= 4;
 			data++;
-			if ('0' <= *data && *data <= '9')
+			if (isdigit((unsigned char) *data))
 				((unsigned char *) ptr)[i] |= *data - '0';
 			else if ('a' <= *data && *data <= 'f')
 				((unsigned char *) ptr)[i] |= *data - 'a' + 10;

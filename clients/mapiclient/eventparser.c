@@ -114,8 +114,9 @@ resetEventRecord(EventRecord *ev)
 	if( ev->numa) free(ev->numa);
 	if(ev->beauty) free(ev->beauty);
 	if(ev->prereq) free(ev->prereq);
-	memset( (char*) ev, 0, sizeof(EventRecord));
-	ev->eventnr = -1;
+	*ev = (EventRecord) {
+		.eventnr = -1,
+	};
 	clearArguments();
 }
 
@@ -353,7 +354,7 @@ lineparser(char *row, EventRecord *ev)
 		return -3;
 	/* convert time to epoch in seconds*/
 	cc =c;
-	memset(&stm, 0, sizeof(struct tm));
+	stm = (struct tm) {0};
 #ifdef HAVE_STRPTIME
 	c = strptime(c + 1, "%H:%M:%S", &stm);
 	ev->clkticks = (((int64_t) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;

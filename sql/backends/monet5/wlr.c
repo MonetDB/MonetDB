@@ -161,7 +161,7 @@ WLRprocess(void *arg)
 	size_t sz;
 	MalBlkPtr mb;
 	InstrPtr q;
-	str msg;
+	str msg, other;
 	mvc *sql;
 	lng currid =0;
 	Symbol prev = NULL;
@@ -215,7 +215,7 @@ WLRprocess(void *arg)
 	path[0]=0;
 	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
 		snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
-		fd= open_rstream(path);
+		fd= open_rastream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlr.process:'%s' can not be accessed \n",path);
 			// Be careful not to miss log files.
@@ -304,15 +304,18 @@ WLRprocess(void *arg)
 							// they should always succeed
 							mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
 							printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-							mvc_rollback(sql,0,NULL);
+							if((other = mvc_rollback(sql,0,NULL, false)) != MAL_SUCCEED) //an error was already established
+								GDKfree(other);
 							// cleanup
 							fprintFunction(stderr,mb,0,63);
 							resetMalBlkAndFreeInstructions(mb, 1);
 							trimMalVariables(mb, NULL);
 							pc = 0;
 						} else
-						if( mvc_commit(sql, 0, 0) < 0)
-							mnstr_printf(GDKerr,"#wlr.process transaction commit failed\n");
+						if((msg = mvc_commit(sql, 0, 0, false)) != MAL_SUCCEED) {
+							mnstr_printf(GDKerr,"#wlr.process transaction commit failed: %s\n", msg);
+							freeException(msg);
+						}
 					}
 				} else {
 					char line[FILENAME_MAX];
@@ -340,7 +343,7 @@ WLRprocess(void *arg)
 		wlr_batches++;
 		if((msg = WLRsetConfig()) != MAL_SUCCEED) {
 			mnstr_printf(GDKerr,"%s\n",msg);
-			GDKfree(msg);
+			freeException(msg);
 		}
 		// stop when we are about to read beyond the limited transaction (timestamp)
 		if( (wlr_limit != -1 || (wlr_timelimit[0] && wlr_read[0] && strncmp(wlr_read,wlr_timelimit,26)>= 0) )  && wlr_limit <= wlr_tag) {
@@ -377,7 +380,7 @@ WLRprocessScheduler(void *arg)
 
 	if((msg = WLRgetConfig()) != MAL_SUCCEED) {
 		mnstr_printf(GDKerr,"%s\n",msg);
-		GDKfree(msg);
+		freeException(msg);
 	}
 	wlr_state = WLR_RUN;
 	while(!GDKexiting() && wlr_state == WLR_RUN){
@@ -401,7 +404,7 @@ WLRprocessScheduler(void *arg)
 		if( wlr_master[0] && wlr_state != WLR_PAUSE){
 			if((msg = WLRgetMaster()) != MAL_SUCCEED) {
 				mnstr_printf(GDKerr,"%s\n",msg);
-				GDKfree(msg);
+				freeException(msg);
 			}
 			if( wlrprocessrunning == 0 && 
 				( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||

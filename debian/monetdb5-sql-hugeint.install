@@ -1,3 +1,3 @@
-debian/tmp/usr/lib/monetdb5/sql*_hge.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/autoload/??_sql_hge.mal usr/lib/monetdb5/autoload
-debian/tmp/usr/lib/monetdb5/createdb/*_hge.sql usr/lib/monetdb5/createdb
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/sql*_hge.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_sql_hge.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/createdb/*_hge.sql usr/lib/x86_64-linux-gnu/monetdb5/createdb

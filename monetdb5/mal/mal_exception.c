@@ -361,15 +361,15 @@ getExceptionMessage(const char *exception)
 	char *msg = getExceptionMessageAndState(exception);
 
 	if (strlen(msg) > 6 && msg[5] == '!' &&
-		((msg[0] >= '0' && msg[0] <= '9') ||
+		(isdigit((unsigned char) msg[0]) ||
 	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
-	    ((msg[1] >= '0' && msg[1] <= '9') ||
+	    (isdigit((unsigned char) msg[1]) ||
 	     (msg[1] >= 'A' && msg[1] <= 'Z')) &&
-	    ((msg[2] >= '0' && msg[2] <= '9') ||
+	    (isdigit((unsigned char) msg[2]) ||
 	     (msg[2] >= 'A' && msg[2] <= 'Z')) &&
-	    ((msg[3] >= '0' && msg[3] <= '9') ||
+	    (isdigit((unsigned char) msg[3]) ||
 	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
-	    ((msg[4] >= '0' && msg[4] <= '9') ||
+	    (isdigit((unsigned char) msg[4]) ||
 	     (msg[4] >= 'A' && msg[4] <= 'Z')))
 		msg += 6;
 	return msg;

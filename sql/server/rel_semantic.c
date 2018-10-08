@@ -129,6 +129,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:
 
+	case SQL_DECLARE_TABLE:
 	case SQL_CREATE_TABLE:
 	case SQL_CREATE_VIEW:
 	case SQL_DROP_TABLE:

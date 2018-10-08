@@ -62,7 +62,7 @@ bin_mserver5 = {
 		$(PSAPILIB) \
 		$(KVM_LIBS) \
 		$(zlib_LIBS) \
-		$(BZ_LIBS) \
+		$(bzip2_LIBS) \
 		$(snappy_LIBS) \
 		$(lz4_LIBS) \
 		$(liblzma_LIBS) \
@@ -89,7 +89,7 @@ bin_shutdowntest = {
 		$(PSAPILIB) \
 		$(KVM_LIBS) \
 		$(zlib_LIBS) \
-		$(BZ_LIBS) \
+		$(bzip2_LIBS) \
 		$(snappy_LIBS) \
 		$(lz4_LIBS) \
 		$(liblzma_LIBS) \

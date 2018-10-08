@@ -51,7 +51,7 @@
 
 const char* rapi_enableflag = "embedded_r";
 
-int RAPIEnabled(void) {
+static bool RAPIEnabled(void) {
 	return (GDKgetenv_istrue(rapi_enableflag)
 			|| GDKgetenv_isyes(rapi_enableflag));
 }

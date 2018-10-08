@@ -61,7 +61,7 @@ mystpcpy (char *yydest, const char *yysrc) {
 
 static lng 
 mnstr_swap_lng(stream *s, lng lngval) {
-	return mnstr_byteorder(s) != 1234 ? long_long_SWAP(lngval) : lngval;
+	return mnstr_get_swapbytes(s) ? long_long_SWAP(lngval) : lngval;
 }
 
 #define DEC_TOSTR(TYPE)							\
@@ -630,7 +630,7 @@ bat_max_hgelength(BAT *b)
 			s++;						\
 		}							\
 		for (i = 0; *s && *s != '.' && ((res == 0 && *s == '0') || i < t->digits - t->scale); s++) { \
-			if (!*s || *s < '0' || *s > '9')		\
+			if (!*s || !isdigit((unsigned char) *s))		\
 				return NULL;				\
 			res *= 10;					\
 			res += (*s-'0');				\
@@ -648,7 +648,7 @@ bat_max_hgelength(BAT *b)
 			if (*s != '.')					\
 				return NULL;				\
 			s++;						\
-			for (i = 0; *s && *s >= '0' && *s <= '9' && i < t->scale; i++, s++) { \
+			for (i = 0; *s && isdigit((unsigned char) *s) && i < t->scale; i++, s++) { \
 				res *= 10;				\
 				res += *s - '0';			\
 			}						\
@@ -717,7 +717,7 @@ sec_frstr(Column *c, int type, const char *s)
 		s++;
 	}
 	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
-		if (!*s || *s < '0' || *s > '9')
+		if (!*s || !isdigit((unsigned char) *s))
 			return NULL;
 		res *= 10;
 		res += (*s - '0');
@@ -732,7 +732,7 @@ sec_frstr(Column *c, int type, const char *s)
 			return NULL;
 		s++;
 		for (i = 0; *s && i < 3; i++, s++) {
-			if (*s < '0' || *s > '9')
+			if (!isdigit((unsigned char) *s))
 				return NULL;
 			res *= 10;
 			res += (*s - '0');
@@ -920,19 +920,21 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	if (t->columns.set) {
 		stream *out = m->scanner.ws;
 
-		memset((char *) &as, 0, sizeof(as));
-		as.nr_attrs = list_length(t->columns.set);
-		as.nr = (sz < 1) ? BUN_NONE : (BUN) sz;
-		as.offset = (BUN) offset;
-		as.error = NULL;
-		as.tryall = 0;
-		as.complaints = NULL;
-		as.filename = m->scanner.rs == bs ? NULL : "";
-		fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
+		as = (Tablet) {
+			.nr_attrs = list_length(t->columns.set),
+			.nr = (sz < 1) ? BUN_NONE : (BUN) sz,
+			.offset = (BUN) offset,
+			.error = NULL,
+			.tryall = 0,
+			.complaints = NULL,
+			.filename = m->scanner.rs == bs ? NULL : "",
+		};
+		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
 			sql_error(m, 500, "failed to allocate memory ");
 			return NULL;
 		}
+		as.format = fmt;
 		if (!isa_block_stream(bs->s))
 			out = NULL;
 
@@ -1707,7 +1709,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					// convert timestamp values to epoch
 					lng time;
 					size_t j = 0;
-					int swap = mnstr_byteorder(s) != 1234;
+					bool swap = mnstr_get_swapbytes(s);
 					timestamp *times = (timestamp*) Tloc(iterators[i].b, srow);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
@@ -1720,7 +1722,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					lng time;
 					timestamp tstamp;
 					size_t j = 0;
-					int swap = mnstr_byteorder(s) != 1234;
+					bool swap = mnstr_get_swapbytes(s);
 					date *dates = (date*) Tloc(iterators[i].b, srow);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
@@ -1730,7 +1732,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					}
 					atom_size = sizeof(lng);
 				} else {
-					if (mnstr_byteorder(s) != 1234) {
+					if (mnstr_get_swapbytes(s)) {
 						size_t j = 0;
 						switch (ATOMstorage(mtype)) {
 						case TYPE_sht: {
@@ -2193,7 +2195,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, FALSE);
+			order = BBPquickdesc(t->order, false);
 			if (!order)
 				return -1;
 
@@ -2367,7 +2369,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	/* tuple count */
 	if (only_header) {
 		if (t->order) {
-			order = BBPquickdesc(t->order, FALSE);
+			order = BBPquickdesc(t->order, false);
 			if (!order)
 				return -1;
 

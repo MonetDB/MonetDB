@@ -204,7 +204,7 @@ showBar(int level, int64_t clk, char *stmt)
 	nl = level/2-prevlevel/2;
 	if( level != 100 && (nl == 0 ||  level/2 <= prevlevel/2))
 		return;
-	assert(MSGLEN < BUFSIZ);
+	static_assert(MSGLEN < BUFSIZ, "MSGLEN too small");
 	if(prevlevel == 0)
 		printf("[");
 	else
@@ -319,8 +319,7 @@ update(EventRecord *ev)
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument from a known MAL signature
 			maxevents = malsize;
-			events = (Event*) malloc(maxevents * sizeof(Event));
-			memset((char*)events, 0, maxevents * sizeof(Event));
+			events = calloc(maxevents, sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
 			if(currentquery) {
 				if( prevquery && strcmp(currentquery,prevquery)){

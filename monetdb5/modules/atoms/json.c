@@ -30,9 +30,7 @@
 
 #define hex(J)													\
 	do {														\
-		if ((*(J) >='0' && *(J) <='9') ||						\
-			(*(J) >='a' && *(J) <='f') ||						\
-			(*(J) >='A' && *(J) <='F'))							\
+		if (isxdigit((unsigned char) *(J)))						\
 			(J)++;												\
 		else													\
 			throw(MAL, "json.parser", "illegal escape char");	\
@@ -462,7 +460,7 @@ JSONcompile(char *expr, pattern terms[])
 			s++;
 			skipblancs(s);
 			if (*s != '*') {
-				if (*s >= '0' && *s <= '9') {
+				if (isdigit((unsigned char) *s)) {
 					terms[t].index = atoi(s);
 					terms[t].first = terms[t].last = atoi(s);
 				} else
@@ -744,12 +742,12 @@ JSONnumberParser(const char *j, const char **next)
 	if (*j == '-')
 		j++;
 	skipblancs(j);
-	if (*j < '0' || *j > '9') {
+	if (!isdigit((unsigned char) *j)) {
 		*next = j;
 		throw(MAL, "json.parser", "Number expected");
 	}
 	for (; *j; j++)
-		if (*j < '0' || *j > '9')
+		if (!isdigit((unsigned char) *j))
 			break;
 	backup = j;
 	skipblancs(j);
@@ -757,7 +755,7 @@ JSONnumberParser(const char *j, const char **next)
 		j++;
 		skipblancs(j);
 		for (; *j; j++)
-			if (*j < '0' || *j > '9')
+			if (!isdigit((unsigned char) *j))
 				break;
 		backup = j;
 	} else
@@ -770,7 +768,7 @@ JSONnumberParser(const char *j, const char **next)
 			j++;
 		skipblancs(j);
 		for (; *j; j++)
-			if (*j < '0' || *j > '9')
+			if (!isdigit((unsigned char) *j))
 				break;
 	} else
 		j = backup;
@@ -800,7 +798,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (jt->error)
 				return idx;
 			if (jt->elm[nxt].kind != JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "Syntax error : element expected");
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected");
 				return idx;
 			}
 			JSONappend(jt, idx, nxt);
@@ -811,13 +809,13 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (*j == '}')
 				break;
 			if (*j != '}' && *j != ',') {
-				jt->error = createException(MAL, "json.parser", "Syntax error : ','  or '}' expected");
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: ','  or '}' expected");
 				return idx;
 			}
 			j++;
 		}
 		if (*j != '}') {
-			jt->error = createException(MAL, "json.parser", "Syntax error : '}' expected");
+			jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' expected");
 			return idx;
 		} else
 			j++;
@@ -868,18 +866,18 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (*j == ']')
 				break;
 			if (jt->elm[nxt].kind == JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "Syntax error : Array value expected");
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: Array value expected");
 				return idx;
 			}
 			if (*j != ']' && *j != ',') {
-				jt->error = createException(MAL, "json.parser", "Syntax error : ','  or ']' expected");
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: ','  or ']' expected");
 				return idx;
 			}
 			j++;
 			skipblancs(j);
 		}
 		if (*j != ']') {
-			jt->error = createException(MAL, "json.parser", "Syntax error : ']' expected");
+			jt->error = createException(MAL, "json.parser", "JSON syntax error: ']' expected");
 		} else
 			j++;
 		*next = j;
@@ -916,7 +914,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "Syntax error: NULL expected");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: NULL expected");
 		return idx;
 	case 't':
 		if (strncmp("true", j, 4) == 0) {
@@ -926,7 +924,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "Syntax error: True expected");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: True expected");
 		return idx;
 	case 'f':
 		if (strncmp("false", j, 5) == 0) {
@@ -936,10 +934,10 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 5;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "Syntax error: False expected");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: False expected");
 		return idx;
 	default:
-		if (*j == '-' || (*j >= '0' && *j <= '9')) {
+		if (*j == '-' || isdigit((unsigned char) *j)) {
 			jt->elm[idx].value = j;
 			msg = JSONnumberParser(j, next);
 			if (msg)
@@ -948,7 +946,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = *next - jt->elm[idx].value;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "Syntax error: value expected");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: value expected");
 		return idx;
 	}
 }
@@ -963,7 +961,7 @@ JSONparse(const char *j)
 		return NULL;
 	skipblancs(j);
 	if (!*j || !(*j == '{' || *j == '[')) {
-		jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed, expecting '{', '['");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: json parse failed, expecting '{', '['");
 		return jt;
 	}
 	JSONtoken(jt, j, &j);
@@ -971,7 +969,7 @@ JSONparse(const char *j)
 		return jt;
 	skipblancs(j);
 	if (*j)
-		jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: json parse failed");
 	return jt;
 }
 

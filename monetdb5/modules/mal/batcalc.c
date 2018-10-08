@@ -65,8 +65,8 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 }
 
 static str
-CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, int abort_on_error,
-			 BAT *(*batfunc)(BAT *, BAT *, int), const char *malfunc)
+CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, bool abort_on_error,
+			 BAT *(*batfunc)(BAT *, BAT *, bool), const char *malfunc)
 {
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
@@ -157,7 +157,7 @@ CMDbatINCR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatUNARY1(stk, pci, 1, BATcalcincr, "batcalc.incr");
+	return CMDbatUNARY1(stk, pci, true, BATcalcincr, "batcalc.incr");
 }
 
 mal_export str CMDbatDECR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -168,7 +168,7 @@ CMDbatDECR(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatUNARY1(stk, pci, 1, BATcalcdecr, "batcalc.decr");
+	return CMDbatUNARY1(stk, pci, true, BATcalcdecr, "batcalc.decr");
 }
 
 mal_export str CMDbatNEG(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -290,11 +290,11 @@ calcmodtype(int tp1, int tp2)
 
 static str
 CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int, int),
-			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int, int),
-			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int, int),
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int, bool),
+			  BAT *(batfunc1)(BAT *, const ValRecord *, BAT *, int, bool),
+			  BAT *(batfunc2)(const ValRecord *, BAT *, BAT *, int, bool),
 			  int (*typefunc)(int, int),
-			  int abort_on_error, const char *malfunc)
+			  bool abort_on_error, const char *malfunc)
 {
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
@@ -366,10 +366,10 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 static str
 CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
-			  BAT *(*batfunc)(BAT *, BAT *, BAT *, int),
-			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, int),
-			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, int),
-			  int abort_on_error,
+			  BAT *(*batfunc)(BAT *, BAT *, BAT *, bool),
+			  BAT *(*batfunc1)(BAT *, const ValRecord *, BAT *, bool),
+			  BAT *(*batfunc2)(const ValRecord *, BAT *, BAT *, bool),
+			  bool abort_on_error,
 			  const char *malfunc)
 {
 	bat *bid;
@@ -970,6 +970,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid;
 	BAT *b, *s = NULL;
 	gdk_return ret;
+	int scale = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -977,14 +978,20 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = getArgReference_bat(stk, pci, pci->retc + 0);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (pci->retc == pci->retc + 2) {
+	if ((pci->argc == pci->retc + 2 &&
+		 stk->stk[pci->argv[pci->retc + 1]].vtype == TYPE_bat) ||
+		pci->argc == pci->retc + 3) {
 		bat *sid = getArgReference_bat(stk, pci, pci->retc + 1);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
-	ret = BATcalcavg(b, s, &avg, &vals);
+	if (pci->argc >= pci->retc + 2 &&
+		stk->stk[pci->argv[pci->argc - 1]].vtype == TYPE_int) {
+		scale = *getArgReference_int(stk, pci, pci->argc - 1);
+	}
+	ret = BATcalcavg(b, s, &avg, &vals, scale);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -997,7 +1004,7 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, int abort_on_error)
+CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, bool abort_on_error)
 {
 	bat *bid;
 	BAT *b, *bn, *s = NULL;

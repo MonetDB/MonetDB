@@ -153,6 +153,17 @@ typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t); 
 
 /*
+-- upgrade the necessary storage resources for columns, indices and tables
+-- needed for the upgrade of the logger structure (ie user tables are
+-- now stored using the object ids, no longer the names). This allows
+-- renames.
+-- returns LOG_OK, LOG_ERR
+*/
+typedef int (*upgrade_col_fptr) (sql_column *c); 
+typedef int (*upgrade_idx_fptr) (sql_idx *i); 
+typedef int (*upgrade_del_fptr) (sql_table *t); 
+
+/*
 -- duplicate the necessary storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
@@ -227,6 +238,10 @@ typedef struct store_functions {
 	create_idx_fptr create_idx;
 	create_del_fptr create_del;
 
+	upgrade_col_fptr upgrade_col;
+	upgrade_idx_fptr upgrade_idx;
+	upgrade_del_fptr upgrade_del;
+
 	dup_col_fptr dup_col;
 	dup_idx_fptr dup_idx;
 	dup_del_fptr dup_del;
@@ -281,6 +296,7 @@ typedef int (*logger_create_shared_fptr) (int debug, const char *logdir, int cat
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
 typedef int (*logger_cleanup_fptr) (int keep_persisted_log_files);
+typedef void (*logger_with_ids_fptr) (void);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
@@ -290,16 +306,19 @@ typedef lng (*logger_get_transaction_drift_fptr)(void);
 typedef int (*logger_reload_fptr) (void);
 
 typedef int (*log_isnew_fptr)(void);
+typedef int (*log_needs_update_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
 typedef int (*log_tend_fptr) (void);
 typedef int (*log_sequence_fptr) (int seq, lng id);
 
+typedef void *(*log_find_table_value_fptr)(const char *, const char *, const void *, ...);
 typedef struct logger_functions {
 	logger_create_fptr create;
 	logger_create_shared_fptr create_shared;
 	logger_destroy_fptr destroy;
 	logger_restart_fptr restart;
 	logger_cleanup_fptr cleanup;
+	logger_with_ids_fptr with_ids;
 
 	logger_changes_fptr changes;
 	logger_get_sequence_fptr get_sequence;
@@ -309,9 +328,11 @@ typedef struct logger_functions {
 	logger_reload_fptr reload;
 
 	log_isnew_fptr log_isnew;
+	log_needs_update_fptr log_needs_update;
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
 	log_sequence_fptr log_sequence;
+	log_find_table_value_fptr log_find_table_value;
 } logger_functions;
 
 sqlstore_export logger_functions logger_funcs;
@@ -347,7 +368,7 @@ extern int sql_trans_commit(sql_trans *tr);
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema * s, const char *sqlname, int digits, int scale, int radix, const char *impl, sqlid reuse);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, int id, int drop_action);
 
-extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, sqlid reuse);
+extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, sqlid reuse);
 
 extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -360,7 +381,8 @@ extern void reset_functions(sql_trans *tr);
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, const char *name, int auth_id, int owner, sqlid reuse);
 extern int sql_trans_drop_schema(sql_trans *tr, int id, int drop_action, bool delete_row);
 
-extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, sqlid reuse);
+extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit properties, sqlid reuse);
+
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
 extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, ptr max, int with_nills, int update, sql_part** err);
@@ -417,7 +439,7 @@ extern int sql_trans_get_dependency_type(sql_trans *tr, int depend_id, short dep
 extern int sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, int id);
 
-extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, sqlid reuse);
+extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties, sqlid reuse);
 extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe, sqlid reuse);
 extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
@@ -426,7 +448,7 @@ extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
 extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg);
+extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);

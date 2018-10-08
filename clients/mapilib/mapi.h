@@ -11,6 +11,7 @@
 
 #include <stdio.h>		/* for FILE * */
 #include <stdint.h>		/* for int64_t */
+#include <stdbool.h>		/* for bool */
 
 #define MAPI_AUTO	0	/* automatic type detection */
 #define MAPI_TINY	1
@@ -38,9 +39,6 @@
 #define MAPI_SEEK_CUR	1
 #define MAPI_SEEK_END	2
 
-#define MAPI_TRACE	1
-#define MAPI_TRACE_LANG	2
-
 typedef int MapiMsg;
 
 #define MOK		0
@@ -48,10 +46,6 @@ typedef int MapiMsg;
 #define MTIMEOUT	(-2)
 #define MMORE		(-3)
 #define MSERVER		(-4)
-
-#define LANG_MAL	0
-#define LANG_SQL	2
-#define LANG_PROFILER	3
 
 /* prompts for MAPI protocol, also in monetdb_config.h.in */
 #define PROMPTBEG	'\001'	/* start prompt bracket */
@@ -133,26 +127,26 @@ mapi_export MapiMsg mapi_ping(Mapi mid);
 
 mapi_export MapiMsg mapi_error(Mapi mid);
 mapi_export const char *mapi_error_str(Mapi mid);
-mapi_export void mapi_noexplain(Mapi mid, char *errorprefix);
+mapi_export void mapi_noexplain(Mapi mid, const char *errorprefix);
 mapi_export void mapi_explain(Mapi mid, FILE *fd);
 mapi_export void mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export void mapi_explain_result(MapiHdl hdl, FILE *fd);
-mapi_export void mapi_trace(Mapi mid, int flag);
-#ifdef ST_READ			/* if stream.h was included */
+mapi_export void mapi_trace(Mapi mid, bool flag);
+#ifdef _STREAM_H_		/* if stream.h was included */
 mapi_export stream *mapi_get_from(Mapi mid);
 mapi_export stream *mapi_get_to(Mapi mid);
 #endif
-mapi_export int mapi_get_trace(Mapi mid);
-mapi_export int mapi_get_autocommit(Mapi mid);
+mapi_export bool mapi_get_trace(Mapi mid);
+mapi_export bool mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
-mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
+mapi_export MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit);
 mapi_export MapiMsg mapi_set_size_header(Mapi mid, int value);
 mapi_export MapiMsg mapi_release_id(Mapi mid, int id);
 mapi_export const char *mapi_result_error(MapiHdl hdl);
 mapi_export const char *mapi_result_errorcode(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
 mapi_export MapiMsg mapi_needmore(MapiHdl hdl);
-mapi_export int mapi_more_results(MapiHdl hdl);
+mapi_export bool mapi_more_results(MapiHdl hdl);
 mapi_export MapiHdl mapi_new_handle(Mapi mid);
 mapi_export MapiMsg mapi_close_handle(MapiHdl hdl);
 mapi_export MapiMsg mapi_bind(MapiHdl hdl, int fnr, char **ptr);
@@ -166,7 +160,6 @@ mapi_export MapiMsg mapi_param_numeric(MapiHdl hdl, int fnr, int scale, int prec
 mapi_export MapiMsg mapi_clear_params(MapiHdl hdl);
 mapi_export MapiHdl mapi_prepare(Mapi mid, const char *cmd);
 mapi_export MapiMsg mapi_prepare_handle(MapiHdl hdl, const char *cmd);
-mapi_export MapiMsg mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples);
 mapi_export MapiMsg mapi_execute(MapiHdl hdl);
 mapi_export MapiMsg mapi_fetch_reset(MapiHdl hdl);
 mapi_export MapiMsg mapi_finish(MapiHdl hdl);
@@ -177,9 +170,7 @@ mapi_export MapiMsg mapi_query_part(MapiHdl hdl, const char *cmd, size_t size);
 mapi_export MapiMsg mapi_query_done(MapiHdl hdl);
 mapi_export MapiHdl mapi_send(Mapi mid, const char *cmd);
 mapi_export MapiMsg mapi_read_response(MapiHdl hdl);
-mapi_export MapiHdl mapi_stream_query(Mapi mid, const char *cmd, int windowsize);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid, int limit);
-mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence);
 
@@ -199,15 +190,15 @@ mapi_export size_t mapi_fetch_field_len(MapiHdl hdl, int fnr);
 mapi_export MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam);
 mapi_export char *mapi_fetch_line(MapiHdl hdl);
 mapi_export int mapi_split_line(MapiHdl hdl);
-mapi_export char *mapi_get_lang(Mapi mid);
-mapi_export char *mapi_get_uri(Mapi mid);
-mapi_export char *mapi_get_dbname(Mapi mid);
-mapi_export char *mapi_get_host(Mapi mid);
-mapi_export char *mapi_get_user(Mapi mid);
-mapi_export char *mapi_get_mapi_version(Mapi mid);
-mapi_export char *mapi_get_monet_version(Mapi mid);
-mapi_export char *mapi_get_motd(Mapi mid);
-mapi_export int mapi_is_connected(Mapi mid);
+mapi_export const char *mapi_get_lang(Mapi mid);
+mapi_export const char *mapi_get_uri(Mapi mid);
+mapi_export const char *mapi_get_dbname(Mapi mid);
+mapi_export const char *mapi_get_host(Mapi mid);
+mapi_export const char *mapi_get_user(Mapi mid);
+mapi_export const char *mapi_get_mapi_version(Mapi mid);
+mapi_export const char *mapi_get_monet_version(Mapi mid);
+mapi_export const char *mapi_get_motd(Mapi mid);
+mapi_export bool mapi_is_connected(Mapi mid);
 mapi_export char *mapi_get_table(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_name(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_type(MapiHdl hdl, int fnr);

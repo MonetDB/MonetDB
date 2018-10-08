@@ -146,7 +146,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval)
 				goto bailout;
 			s++;
 		}
-		if ('0' <= *s && *s <= '9')
+		if (isdigit((unsigned char) *s))
 			(*retval)->u[i] = *s - '0';
 		else if ('a' <= *s && *s <= 'f')
 			(*retval)->u[i] = *s - 'a' + 10;
@@ -157,7 +157,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval)
 		s++;
 		j++;
 		(*retval)->u[i] <<= 4;
-		if ('0' <= *s && *s <= '9')
+		if (isdigit((unsigned char) *s))
 			(*retval)->u[i] |= *s - '0';
 		else if ('a' <= *s && *s <= 'f')
 			(*retval)->u[i] |= *s - 'a' + 10;

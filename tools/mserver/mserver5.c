@@ -50,7 +50,7 @@
 #endif
 
 #ifdef HAVE_CONSOLE
-static int monet_daemon;
+static bool monet_daemon;
 #endif
 
 /* NEEDED? */
@@ -204,9 +204,9 @@ monet_init(opt *set, int setlen)
 		return 0;
 
 #ifdef HAVE_CONSOLE
-	monet_daemon = 0;
+	monet_daemon = false;
 	if (GDKgetenv_isyes("monet_daemon")) {
-		monet_daemon = 1;
+		monet_daemon = true;
 #ifdef HAVE_SETSID
 		setsid();
 #endif
@@ -511,7 +511,19 @@ main(int argc, char **av)
 		 * bin/mserver5 -> ../
 		 * libX/monetdb5/lib/
 		 * probe libX = lib, lib32, lib64, lib/64 */
-		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
+		size_t pref;
+		/* "remove" common prefix of configured BIN and LIB
+		 * directories from LIBDIR */
+		for (pref = 0; LIBDIR[pref] != 0 && BINDIR[pref] == LIBDIR[pref]; pref++)
+			;
+		const char *libdirs[] = {
+			&LIBDIR[pref],
+			"lib",
+			"lib64",
+			"lib/64",
+			"lib32",
+			NULL,
+		};
 		struct stat sb;
 		if (binpath != NULL) {
 			char *p = strrchr(binpath, DIR_SEP);

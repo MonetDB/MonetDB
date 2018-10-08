@@ -52,7 +52,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p,i)].val.bval;
-		b = BBPquickdesc(bid,FALSE);
+		b = BBPquickdesc(bid, false);
 		if( b ){
 			if (tt == TYPE_any)
 				tt = b->ttype;

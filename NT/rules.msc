@@ -138,8 +138,8 @@ zlib_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 !IFNDEF LIBBZIP2
 LIBBZIP2 = C:\bzip2-1.0.5.win$(bits)
 !ENDIF
-BZ_LIBS = "$(LIBBZIP2)\lib\libbz2.lib"
-BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
+bzip2_LIBS = "$(LIBBZIP2)\lib\libbz2.lib"
+bzip2_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !ENDIF
 
 !IFDEF HAVE_LIBXML
@@ -284,11 +284,6 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) CROSS_COMPILING_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
-!IFDEF HAVE_FITS
-	$(ECHO) HAVE_FITS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_FITS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
 !IFDEF HAVE_CURL
 	$(ECHO) HAVE_CURL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -298,6 +293,11 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_DEVELOPER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_DEVELOPER_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_FITS
+	$(ECHO) HAVE_FITS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_FITS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_GDK
 	$(ECHO) HAVE_GDK_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -318,6 +318,11 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_LIBBZ2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_LIBBZ2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_LIBLZMA
+	$(ECHO) HAVE_LIBLZMA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_LIBLZMA_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_LIBPY
 	$(ECHO) HAVE_LIBPY_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -348,11 +353,6 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_LIDAR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_LIDAR_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ENDIF
-!IFDEF HAVE_SHP
-	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
-!ELSE
-	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_MONETDB5
 	$(ECHO) HAVE_MONETDB5_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -398,6 +398,11 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_SAMTOOLS_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) HAVE_SAMTOOLS_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF HAVE_SHP
+	$(ECHO) HAVE_SHP_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_SHP_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_SQL
 	$(ECHO) HAVE_SQL_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"

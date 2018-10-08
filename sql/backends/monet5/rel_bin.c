@@ -403,9 +403,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			(void)stmt_control_end(be, wstmt);
 			return stmt_control_end(be, ifstmt);
 		} else if (e->flag & PSM_IF) {
-			stmt *cond = exp_bin(be, e->l, left, right, grp, cnt, ext, sel);
+			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			stmt *ifstmt = stmt_cond(be, cond, NULL, 0, 0), *res;
-			(void)exp_list(be, e->r, left, right, grp, cnt, ext, sel);
+			(void)exp_list(be, e->r, left, right, grp, ext, cnt, sel);
 			res = stmt_control_end(be, ifstmt);
 			if (e->f) {
 				stmt *elsestmt = stmt_cond(be, cond, NULL, 0, 1);
@@ -433,7 +433,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return r;
 			return stmt_table(be, r, 1);
 		} else if (e->flag & PSM_EXCEPTION) {
-			stmt *cond = exp_bin(be, e->l, left, right, grp, cnt, ext, sel);
+			stmt *cond = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			return stmt_exception(be, cond, (const char *) e->r, 0);
 		}
 		break;
@@ -1607,6 +1607,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 	sql_exp *l = e->l;
 	stmt *idx = bin_find_column(be, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
 	int swap_exp = 0, swap_rel = 0;
+	comp_type comp = cmp_equal;
 
 	if (!idx) {
 		swap_exp = 1;
@@ -1647,6 +1648,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 
 			h = stmt_Nop(be, stmt_list(be, list_append( list_append(
 				list_append(sa_list(sql->sa), h), bits), s)), xor);
+			comp = cmp_equal_nil;
 		} else {
 			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, lng);
 
@@ -1655,12 +1657,12 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 	}
 	if (h && h->nrcols) {
 		if (!swap_rel) {
-			return stmt_join(be, idx, h, 0, cmp_equal);
+			return stmt_join(be, idx, h, 0, comp);
 		} else {
-			return stmt_join(be, h, idx, 0, cmp_equal);
+			return stmt_join(be, h, idx, 0, comp);
 		}
 	} else {
-		return stmt_uselect(be, idx, h, cmp_equal, NULL, 0);
+		return stmt_uselect(be, idx, h, comp, NULL, 0);
 	}
 }
 
@@ -1714,7 +1716,7 @@ releqjoin( backend *be, list *l1, list *l2, int used_hash, comp_type cmp_op, int
 	} else { /* need hash */
 		l = join_hash_key(be, l1);
 		r = join_hash_key(be, l2);
-		res = stmt_join(be, l, r, 0, cmp_op);
+		res = stmt_join(be, l, r, 0, cmp_op == cmp_equal ? cmp_equal_nil : cmp_op);
 	}
 	if (need_left) 
 		res->flag = cmp_left;
@@ -3117,7 +3119,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 		if (s->key && s->nrcols == 0) {
 			s = NULL;
 			if (k->idx && hash_index(k->idx->type))
-				s = stmt_uselect(be, stmt_idx(be, k->idx, dels), idx_inserts, cmp_equal, s, 0);
+				s = stmt_uselect(be, stmt_idx(be, k->idx, dels), idx_inserts, cmp_equal_nil, s, 0);
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *cs = list_fetch(inserts, c->c->colnr); 
@@ -5401,7 +5403,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 		if(be->cur_append) { /* finish the output bat */
 			s->nr = be->cur_append;
 			be->cur_append = 0;
-			be->first_statement_generated = 0;
+			be->first_statement_generated = false;
 		}
 		s = stmt_affected_rows(be, s);
 	}

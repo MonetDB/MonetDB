@@ -60,7 +60,13 @@ BATunique(BAT *b, BAT *s)
 				return NULL;
 			bn = BATproject(b, s);
 			BBPunfix(b->batCacheid);
-			return virtualize(bn);
+			bn = virtualize(bn);
+			ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
+					  "s=" ALGOBATFMT ")="
+					  ALGOOPTBATFMT "\n",
+					  ALGOBATPAR(b), ALGOBATPAR(s),
+					  ALGOOPTBATPAR(bn));
+			return bn;
 		}
 		/* we can return all values */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ",s=NULL):"
@@ -105,7 +111,13 @@ BATunique(BAT *b, BAT *s)
 		nr = BATproject(r, s);
 		BBPunfix(nb->batCacheid);
 		BBPunfix(r->batCacheid);
-		return virtualize(nr);
+		nr = virtualize(nr);
+		ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
+				  "s=" ALGOBATFMT ")="
+				  ALGOOPTBATFMT "\n",
+				  ALGOBATPAR(b), ALGOBATPAR(s),
+				  ALGOOPTBATPAR(nr));
+		return nr;
 	}
 
 	assert(b->ttype != TYPE_void);
@@ -354,7 +366,13 @@ BATunique(BAT *b, BAT *s)
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
-	return virtualize(bn);
+	bn = virtualize(bn);
+	ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
+			  "s=" ALGOBATFMT ")="
+			  ALGOOPTBATFMT "\n",
+			  ALGOBATPAR(b), ALGOBATPAR(s),
+			  ALGOOPTBATPAR(bn));
+	return bn;
 
   bunins_failed:
 	if (seen)

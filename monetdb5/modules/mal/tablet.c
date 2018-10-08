@@ -388,7 +388,8 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd, BUN nr_attr
 	return 0;
 }
 
-static int
+/* returns TRUE if there is/might be more */
+static bool
 tablet_read_more(bstream *in, stream *out, size_t n)
 {
 	if (out) {
@@ -396,20 +397,20 @@ tablet_read_more(bstream *in, stream *out, size_t n)
 			/* query is not finished ask for more */
 			/* we need more query text */
 			if (bstream_next(in) < 0)
-				return EOF;
+				return false;
 			if (in->eof) {
 				if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
 					mnstr_flush(out);
-				in->eof = 0;
+				in->eof = false;
 				/* we need more query text */
 				if (bstream_next(in) <= 0)
-					return EOF;
+					return false;
 			}
 		} while (in->len <= in->pos);
 	} else if (bstream_read(in, n) <= 0) {
-		return EOF;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 /*
@@ -625,7 +626,7 @@ typedef struct {
 	lng skip;					/* number of lines to be skipped */
 	lng *time, wtime;			/* time per col + time per thread */
 	int rounds;					/* how often did we divide the work */
-	int ateof;					/* io control */
+	bool ateof;					/* io control */
 	bstream *b;
 	stream *out;
 	MT_Id tid;
@@ -1234,8 +1235,8 @@ SQLproducer(void *p)
 	READERtask *task = (READERtask *) p;
 	int consoleinput = 0;
 	int cur = 0;		// buffer being filled
-	int blocked[MAXBUFFERS] = { 0 };
-	int ateof[MAXBUFFERS] = { 0 };
+	bool blocked[MAXBUFFERS] = { 0 };
+	bool ateof[MAXBUFFERS] = { 0 };
 	BUN cnt = 0, bufcnt[MAXBUFFERS] = { 0 };
 	char *end, *e, *s, *base;
 	const char *rsep = task->rsep;
@@ -1269,9 +1270,9 @@ SQLproducer(void *p)
 		goto parseSTDIN;
 	}
 	for (;;) {
-		ateof[cur] = tablet_read_more(task->b, task->out, task->b->size) == EOF;
+		ateof[cur] = !tablet_read_more(task->b, task->out, task->b->size);
 #ifdef _DEBUG_TABLET_CNTRL
-		if (ateof[cur] == 0)
+		if (!ateof[cur])
 			mnstr_printf(GDKout, "#read %zu bytes pos = %zu eof=%d offset=" LLFMT " \n",
 						 task->b->len, task->b->pos, task->b->eof,
 						 (lng) (s - task->input[cur]));
@@ -1292,14 +1293,14 @@ SQLproducer(void *p)
 #ifdef _DEBUG_TABLET_CNTRL
 				mnstr_printf(GDKout, "#bailout on SQLload %s\n", msg);
 #endif
-				ateof[cur] = 1;
+				ateof[cur] = true;
 				break;
 			}
 		}
 
 	  parseSTDIN:
 #ifdef _DEBUG_TABLET_
-		if (ateof[cur] == 0)
+		if (!ateof[cur])
 			mnstr_printf(GDKout, "#parse input:%.63s\n",
 						 task->b->buf + task->b->pos);
 #endif
@@ -1314,7 +1315,7 @@ SQLproducer(void *p)
 			   between the threads, which we can not now update.
 			   Mimick an ateof instead; */
 			tablet_error(task, lng_nil, int_nil, "record too long", "");
-			ateof[cur] = 1;
+			ateof[cur] = true;
 #ifdef _DEBUG_TABLET_CNTRL
 			mnstr_printf(GDKout, "#bailout on SQLload confronted with too large record\n");
 #endif
@@ -1457,7 +1458,7 @@ SQLproducer(void *p)
 				if (s+partial < end) {
 					/* found a EOS in the input */
 					tablet_error(task, lng_nil, int_nil, "record too long (EOS found)", "");
-					ateof[cur] = 1;
+					ateof[cur] = true;
 					goto reportlackofinput;
 				}
 				break;
@@ -1490,7 +1491,7 @@ SQLproducer(void *p)
 							 (cur + 1) % MAXBUFFERS);
 #endif
 				MT_sema_down(&task->producer);
-				blocked[(cur + 1) % MAXBUFFERS] = 0;
+				blocked[(cur + 1) % MAXBUFFERS] = false;
 				if (task->state == ENDOFCOPY) {
 					THRdel(thr);
 					return;
@@ -1498,7 +1499,7 @@ SQLproducer(void *p)
 			}
 			/* other buffer is done, proceed with current buffer */
 			assert(!blocked[(cur + 1) % MAXBUFFERS]);
-			blocked[cur] = 1;
+			blocked[cur] = true;
 			task->cur = cur;
 			task->ateof = ateof[cur];
 			task->cnt = bufcnt[cur];
@@ -1535,7 +1536,7 @@ SQLproducer(void *p)
 		/* consumers ask us to stop? */
 		if (task->state == ENDOFCOPY) {
 #ifdef _DEBUG_TABLET_CNTRL
-			if (ateof[cur] == 0)
+			if (!ateof[cur])
 				mnstr_printf(GDKout, "#SQL producer early exit %.63s\n",
 							 task->b->buf + task->b->pos);
 #endif
@@ -1544,7 +1545,7 @@ SQLproducer(void *p)
 		}
 		bufcnt[cur] = cnt;
 #ifdef _DEBUG_TABLET_CNTRL
-		if (ateof[cur] == 0)
+		if (!ateof[cur])
 			mnstr_printf(GDKout, "#shuffle %zu: %.63s\n", strlen(s), s);
 #endif
 		/* move the non-parsed correct row data to the head of the next buffer */
@@ -1614,9 +1615,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 				 threads, csep, rsep, quote);
 #endif
 	memset(ptask, 0, sizeof(ptask));
-	memset(&task, 0, sizeof(task));
-
-	task.cntxt = cntxt;
+	task = (READERtask) {
+		.cntxt = cntxt,
+	};
 
 	/* create the reject tables */
 	create_rejects_table(task.cntxt);
@@ -1674,7 +1675,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 
 	MT_sema_init(&task.producer, 0, "task.producer");
 	MT_sema_init(&task.consumer, 0, "task.consumer");
-	task.ateof = 0;
+	task.ateof = false;
 	task.b = b;
 	task.out = out;
 
@@ -1958,7 +1959,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 						 ptask[j].wtime);
 	}
 
-	task.ateof = 1;
+	task.ateof = true;
 	task.state = ENDOFCOPY;
 #ifdef _DEBUG_TABLET_
 	for (i = 0; i < as->nr_attrs; i++) {

@@ -687,7 +687,7 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 				if (n->next)
 					append(nexps, ae);
 			}
-			f = mvc_create_func(sql, sql->sa, s, nfname, args, res, F_UNION, FUNC_LANG_SQL, "user", "intern", "intern", FALSE, sf->func->vararg);
+			f = mvc_create_func(sql, sql->sa, s, nfname, args, res, F_UNION, FUNC_LANG_SQL, "user", "intern", "intern", FALSE, sf->func->vararg, FALSE);
 			/* call normal table function */
 			ie = exp_op(sql->sa, nexps, sf);
 			nexps = sa_list(sql->sa);
@@ -2980,6 +2980,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		if (!le)
 			return NULL;
 		le = rel_unop_(sql, le, NULL, "not", card_value);
+		if (le == NULL)
+			return NULL;
 		re = exp_atom_bool(sql->sa, 1);
 		le = exp_compare(sql->sa, le, re, cmp_equal);
 		return rel_select(sql->sa, rel, le);

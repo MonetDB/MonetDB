@@ -1426,29 +1426,6 @@ table_def:
  |  MERGE TABLE if_not_exists qname table_content_source opt_partition_by
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
 	  dlist *l = L();
-	  symbol* part = $6;
-
-	  if(part != NULL) {
-	  	dlist *prop = part->data.lval;
-	  	symbol *other = prop->h->next->data.sym;
-	  	if(prop->h->data.i_val == PARTITION_RANGE) {
-	  		if(other->token == SQL_PARTITION_COLUMN) {
-	  			tpe = SQL_MERGE_RANGE_PARTITION_COL;
-	  		} else if(other->token == SQL_PARTITION_EXPRESSION) {
-	  			tpe = SQL_MERGE_RANGE_PARTITION_EXP;
-	  		} else {
-	  			assert(0);
-	  		}
-	  	} else if(prop->h->data.i_val == PARTITION_LIST) {
-	  		if(other->token == SQL_PARTITION_COLUMN) {
-	  			tpe = SQL_MERGE_LIST_PARTITION_COL;
-	  		} else if(other->token == SQL_PARTITION_EXPRESSION) {
-	  			tpe = SQL_MERGE_LIST_PARTITION_EXP;
-	  		} else {
-	  			assert(0);
-	  		}
-	  	}
-	  }
 
 	  append_int(l, tpe);
 	  append_list(l, $4);
@@ -1523,8 +1500,20 @@ opt_partition_by:
  /* empty */									 { $$ = NULL; }
  | PARTITION BY partition_type partition_on
    { dlist *l = L();
+     int properties = $3;
      append_int(l, $3);
      append_symbol(l, $4);
+
+     assert($3 == PARTITION_RANGE || $3 == PARTITION_LIST);
+     if($4->token == SQL_PARTITION_COLUMN) {
+        properties |= PARTITION_COLUMN;
+     } else if($4->token == SQL_PARTITION_EXPRESSION) {
+        properties |= PARTITION_EXPRESSION;
+     } else {
+        assert(0);
+     }
+     append_int(l, properties);
+
      $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
  ;
 
@@ -4664,7 +4653,7 @@ literal:
 		  	while (err == 0 && i < len)
 		  	{
 				res <<= 4;
-				if ('0'<= hexa[i] && hexa[i] <= '9')
+				if (isdigit((unsigned char) hexa[i]))
 					res = res + (hexa[i] - '0');
 				else if ('A' <= hexa[i] && hexa[i] <= 'F')
 					res = res + (hexa[i] - 'A' + 10);
@@ -6399,6 +6388,7 @@ char *token2string(int token)
 	TR(MODE);
 	SQL(INSERT);
 	SQL(DELETE);
+	SQL(TRUNCATE);
 	SQL(UPDATE);
 	SQL(CROSS);
 	SQL(JOIN);
@@ -6470,6 +6460,11 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
+	SQL(MERGE_PARTITION);
+	SQL(PARTITION_LIST);
+	SQL(PARTITION_RANGE);
+	SQL(PARTITION_COLUMN);
+	SQL(PARTITION_EXPRESSION);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

@@ -336,7 +336,7 @@ SQLprepareClient(Client c, int login)
 str
 SQLresetClient(Client c)
 {
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, other = MAL_SUCCEED;
 
 	if (c->sqlcontext == NULL)
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
@@ -346,12 +346,11 @@ SQLresetClient(Client c)
 
 		assert(m->session);
 		if (m->session->auto_commit && m->session->active) {
-			if (mvc_status(m) >= 0 && mvc_commit(m, 0, NULL) < 0)
-				msg = handle_error(m, 0, 0);
+			if (mvc_status(m) >= 0)
+				msg = mvc_commit(m, 0, NULL, false);
 		}
-		if (m->session->active) {
-			mvc_rollback(m, 0, NULL);
-		}
+		if (m->session->active)
+			other = mvc_rollback(m, 0, NULL, false);
 
 		res_tables_destroy(m->results);
 		m->results = NULL;
@@ -363,6 +362,10 @@ SQLresetClient(Client c)
 		c->sqlcontext = NULL;
 	}
 	c->state[MAL_SCENARIO_READER] = NULL;
+	if(other && !msg)
+		msg = other;
+	else if(other && msg)
+		GDKfree(other);
 	return msg;
 }
 
@@ -372,8 +375,8 @@ static str
 SQLinit(Client c)
 {
 	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
-	int readonly = GDKgetenv_isyes("gdk_readonly");
-	int single_user = GDKgetenv_isyes("gdk_single_user");
+	bool readonly = GDKgetenv_isyes("gdk_readonly");
+	bool single_user = GDKgetenv_isyes("gdk_single_user");
 	const char *gmt = "GMT";
 	tzone tz;
 	static int maybeupgrade = 1;
@@ -392,15 +395,18 @@ SQLinit(Client c)
 #endif
 
 	MT_lock_set(&sql_contextLock);
-	memset((char *) &be_funcs, 0, sizeof(backend_functions));
-	be_funcs.fstack = &monet5_freestack;
-	be_funcs.fcode = &monet5_freecode;
-	be_funcs.fresolve_function = &monet5_resolve_function;
+	be_funcs = (backend_functions) {
+		.fstack = &monet5_freestack,
+		.fcode = &monet5_freecode,
+		.fresolve_function = &monet5_resolve_function,
+	};
 	monet5_user_init(&be_funcs);
 
 	msg = MTIMEtimezone(&tz, &gmt);
-	if (msg)
+	if (msg) {
+		MT_lock_unset(&sql_contextLock);
 		return msg;
+	}
 	(void) tz;
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);
@@ -465,45 +471,46 @@ SQLinit(Client c)
 			SQLnewcatalog = 1;
 	}
 	if (SQLnewcatalog > 0) {
-#ifdef HAVE_EMBEDDED
 		SQLnewcatalog = 0;
 		maybeupgrade = 0;
-		{
-			size_t createdb_len = strlen(createdb_inline);
-			buffer* createdb_buf;
-			stream* createdb_stream;
-			bstream* createdb_bstream;
-			if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL)
-				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			buffer_init(createdb_buf, createdb_inline, createdb_len);
-			if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
-				GDKfree(createdb_buf);
-				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
-			if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
-				mnstr_destroy(createdb_stream);
-				GDKfree(createdb_buf);
-				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
-			if (bstream_next(createdb_bstream) >= 0)
-				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
-			else
-				msg = createException(MAL, "createdb", SQLSTATE(42000) "Could not load inlined createdb script");
 
-			bstream_destroy(createdb_bstream);
-			GDKfree(createdb_buf);
-			if (m->sa)
-				sa_destroy(m->sa);
-			m->sa = NULL;
-			m->sqs = NULL;
+#ifdef HAVE_EMBEDDED
+		size_t createdb_len = strlen(createdb_inline);
+		buffer* createdb_buf;
+		stream* createdb_stream;
+		bstream* createdb_bstream;
+		if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL) {
+			MT_lock_unset(&sql_contextLock);
+			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
+		buffer_init(createdb_buf, createdb_inline, createdb_len);
+		if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
+			MT_lock_unset(&sql_contextLock);
+			GDKfree(createdb_buf);
+			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+		if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
+			MT_lock_unset(&sql_contextLock);
+			close_stream(createdb_stream);
+			GDKfree(createdb_buf);
+			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+		if (bstream_next(createdb_bstream) >= 0)
+			msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
+		else
+			msg = createException(MAL, "createdb", SQLSTATE(42000) "Could not load inlined createdb script");
+
+		bstream_destroy(createdb_bstream);
+		GDKfree(createdb_buf);
+		if (m->sa)
+			sa_destroy(m->sa);
+		m->sa = NULL;
+		m->sqs = NULL;
 
 #else
 		char path[FILENAME_MAX];
 		str fullname;
 
-		SQLnewcatalog = 0;
-		maybeupgrade = 0;
 		snprintf(path, FILENAME_MAX, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
@@ -531,13 +538,13 @@ SQLinit(Client c)
 					size_t sz;
 					sz = getFileSize(fd);
 					if (sz > (size_t) 1 << 29) {
-						mnstr_destroy(fd);
+						close_stream(fd);
 						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
 					} else {
 						bstream *bfd = NULL;
 
 						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
-							mnstr_destroy(fd);
+							close_stream(fd);
 							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						} else {
 							if (bstream_next(bfd) >= 0)
@@ -579,10 +586,12 @@ SQLinit(Client c)
 		*m->errstr = 0;
 		sqlcleanup(m, mvc_status(m));
 	}
-	if ((msg = SQLresetClient(c)) != MAL_SUCCEED)
+
+	msg = SQLresetClient(c);
+	MT_lock_unset(&sql_contextLock);
+	if (msg != MAL_SUCCEED)
 		return msg;
 
-	MT_lock_unset(&sql_contextLock);
 	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
@@ -615,11 +624,15 @@ handle_error(mvc *m, int pstatus, str msg)
 	}
 	if( new && msg){
 		newmsg = GDKzalloc( strlen(msg) + strlen(new) + 64);
-		strcpy(newmsg, msg);
-		/* strcat(newmsg,"!"); */
-		strcat(newmsg,new);
-		GDKfree(new);
-		GDKfree(msg);
+		if (newmsg == NULL) {
+			newmsg = createException(SQL, "sql.execute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		} else {
+			strcpy(newmsg, msg);
+			/* strcat(newmsg,"!"); */
+			strcat(newmsg,new);
+		}
+		freeException(new);
+		freeException(msg);
 	} else
 	if( msg)
 		newmsg = msg;
@@ -636,10 +649,9 @@ SQLautocommit(mvc *m)
 
 	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
-			mvc_rollback(m, 0, NULL);
-		} else if (mvc_commit(m, 0, NULL) < 0) {
-			msg = handle_error(m, 0, 0);
-			m->errstr[0] = 0;
+			msg = mvc_rollback(m, 0, NULL, false);
+		} else {
+			msg = mvc_commit(m, 0, NULL, false);
 		}
 	}
 	return msg;
@@ -786,16 +798,16 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fullname = *name;
 	fd = open_rastream(fullname);
 	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(42000) "could not open file: %s\n", *name);
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(42000) "file %s too large to process", fullname);
 	}
 	if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
-		mnstr_destroy(fd);
+		close_stream(fd);
 		throw(MAL, "sql.include", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (bstream_next(bfd) < 0) {
@@ -833,15 +845,15 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLreader(Client c)
 {
-	int go = TRUE;
+	bool go = true;
 	str msg = MAL_SUCCEED;
-	int more = TRUE;
-	int commit_done = FALSE;
+	bool more = true;
+	bool commit_done = false;
 	backend *be = (backend *) c->sqlcontext;
 	bstream *in = c->fdin;
 	int language = -1;
 	mvc *m = NULL;
-	int blocked = isa_block_stream(in->s);
+	bool blocked = isa_block_stream(in->s);
 
 	if (SQLinitialized == FALSE) {
 		c->mode = FINISHCLIENT;
@@ -871,7 +883,7 @@ SQLreader(Client c)
 	 * Distinguish between console reading and mclient connections.
 	 */
 	while (more) {
-		more = FALSE;
+		more = false;
 
 		/* Different kinds of supported statements sequences
 		   A;   -- single line                  s
@@ -884,7 +896,7 @@ SQLreader(Client c)
 		if (m->scanner.mode == LINE_N && !commit_done) {
 			msg = SQLautocommit(m);
 			go = msg == MAL_SUCCEED;
-			commit_done = TRUE;
+			commit_done = true;
 		}
 
 		if (go && in->pos >= in->len) {
@@ -908,32 +920,32 @@ SQLreader(Client c)
 				if (!(m->emod & mod_debug) && !commit_done) {
 					msg = SQLautocommit(m);
 					go = msg == MAL_SUCCEED;
-					commit_done = TRUE;
+					commit_done = true;
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
-					go = FALSE;
+					go = false;
 					break;
 				}
-				in->eof = 0;
+				in->eof = false;
 			}
 			if (in->buf == NULL) {
-				more = FALSE;
-				go = FALSE;
+				more = false;
+				go = false;
 			} else if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _SQL_READER_DEBUG
 				fprintf(stderr, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
-				if (be->language == 'D' && in->eof == 0)
+				if (be->language == 'D' && !in->eof)
 					return msg;
 
 				if (rd == 0 && language !=0 && in->eof && !be->console) {
 					/* we hadn't seen the EOF before, so just try again
 					   (this time with prompt) */
-					more = TRUE;
+					more = true;
 					continue;
 				}
-				go = FALSE;
+				go = false;
 				break;
 			} else if (go && !be->console && language == 0) {
 				if (in->buf[in->pos] == 's' && !in->eof) {
@@ -1095,11 +1107,10 @@ SQLparser(Client c)
 			m->session->auto_commit = (v) != 0;
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
-				if (commit && mvc_commit(m, 0, NULL) < 0) {
-					msg = createException(SQL, "COMMIT", SQLSTATE(42000) "Commit failed while enabling auto_commit");
-				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
+				if (commit) {
+					msg = mvc_commit(m, 0, NULL, true);
+				} else if (!commit && (msg = mvc_rollback(m, 0, NULL, true)) != MAL_SUCCEED) {
 					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
-					msg = createException(SQL, "COMMIT", SQLSTATE(42000) "rollback failed while " "disabling auto_commit");
 				}
 			}
 			in->pos = in->len;	/* HACK: should use parsed length */
@@ -1309,7 +1320,7 @@ SQLparser(Client c)
 			} else if(msg) {
 				str newmsg;
 				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
-				GDKfree(msg);
+				freeException(msg);
 				msg = newmsg;
 			}
 		}
@@ -1357,7 +1368,7 @@ SQLcallback(Client c, str msg){
 			strncpy(newerr, msg, s - msg);
 			newerr[s-msg] = 0;
 			snprintf(newerr + (s-msg), 1024 -(s-msg), SQLSTATE(HY020) "%s",s);
-			GDKfree(msg);
+			freeException(msg);
 			msg = GDKstrdup(newerr);
 		}
 	}

@@ -240,6 +240,12 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 			r2->trevsorted = true;
 			r2->tnorevsorted = 0;
 		}
+		ALGODEBUG fprintf(stderr,
+				  "#%s(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nomatch\n",
+				  func,
+				  BATgetId(l), BATgetId(r),
+				  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+				  GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	if (lcand) {
@@ -3028,6 +3034,11 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 	if (BATtvoid(l)) {
 		if (!BATtdense(l)) {
 			/* trivial: nils don't match anything */
+			ALGODEBUG fprintf(stderr,
+					  "#thetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nils\n",
+					  BATgetId(l), BATgetId(r),
+					  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+					  GDKusec() - t0);
 			return GDK_SUCCEED;
 		}
 		if (lcand) {
@@ -3042,6 +3053,11 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 	if (BATtvoid(r)) {
 		if (!BATtdense(r)) {
 			/* trivial: nils don't match anything */
+			ALGODEBUG fprintf(stderr,
+					  "#thetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us -- nils\n",
+					  BATgetId(l), BATgetId(r),
+					  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+					  GDKusec() - t0);
 			return GDK_SUCCEED;
 		}
 		if (rcand) {
@@ -3185,7 +3201,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 
 static gdk_return
 bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	 const void *c1, const void *c2, bool li, bool hi, BUN maxsize, lng t0)
+	 const void *c1, const void *c2, bool li, bool hi, BUN maxsize)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
@@ -3204,11 +3220,6 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	oid lo, ro;
 	bool lskipped = false;	/* whether we skipped values in l */
 	BUN nils = 0;		/* needed for XXX_WITH_CHECK macros */
-
-	ALGODEBUG fprintf(stderr, "#bandjoin(l=" ALGOBATFMT ","
-			  "r=" ALGOBATFMT ",sl=" ALGOOPTBATFMT ","
-			  "sr=" ALGOOPTBATFMT ")\n",
-			  ALGOBATPAR(l), ALGOBATPAR(r), ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr));
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
@@ -3566,10 +3577,6 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	} else {
 		r1->tseqbase = r2->tseqbase = 0;
 	}
-	ALGODEBUG fprintf(stderr, "#bandjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOBATFMT ") " LLFMT "us\n",
-			  BATgetId(l), BATgetId(r),
-			  ALGOBATPAR(r1), ALGOBATPAR(r2),
-			  GDKusec() - t0);
 	return GDK_SUCCEED;
 
   bailout:
@@ -3580,7 +3587,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 /* small ordered right, dense left, oid's only, do fetches */
 static gdk_return
-fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
+fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, lng t0)
 {
 	oid lo = l->tseqbase, hi = lo + BATcount(l);
 	BUN b = SORTfndfirst(r, &lo), e = SORTfndlast(r, &hi), p;
@@ -3614,6 +3621,10 @@ fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
 	r1->tsorted = r->tsorted || e - b <= 1;
 	r1->trevsorted = r->trevsorted || e - b <= 1;
 	r1->tseqbase = e == b ? 0 : e - b == 1 ? *(const oid *)Tloc(r1, 0) : oid_nil;
+	ALGODEBUG fprintf(stderr, "#fetchjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+			  BATgetId(l), BATgetId(r),
+			  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+			  GDKusec() - t0);
 	return GDK_SUCCEED;
   bailout:
 	BBPreclaim(r1);
@@ -3670,8 +3681,13 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r1p = r1;
 	if (r2p)
 		*r2p = r2;
-	if (maxsize == 0)
+	if (maxsize == 0) {
+		ALGODEBUG fprintf(stderr, "#leftjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOOPTBATFMT ") " LLFMT "us\n",
+				  BATgetId(l), BATgetId(r),
+				  ALGOBATPAR(r1), ALGOOPTBATPAR(r2),
+				  GDKusec() - t0);
 		return GDK_SUCCEED;
+	}
 	if (!nil_on_miss && !semi && !only_misses &&
 	    (lcount == 1 || (BATordered(l) && BATordered_rev(l)))) {
 		/* single value to join, use select */
@@ -3690,10 +3706,10 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 nil_on_miss, semi, only_misses, maxsize, t0,
 				 false);
 	if (BATtdense(l) && ATOMtype(l->ttype) == TYPE_oid && sl == NULL && sr == NULL && !semi && !nil_matches && !only_misses && (rcount * 1024) < lcount && BATordered(r))
-		return fetchjoin(r1, r2, l, r);
+		return fetchjoin(r1, r2, l, r, t0);
 	phash = sr == NULL &&
 		VIEWtparent(r) != 0 &&
-		BATcount(BBPquickdesc(VIEWtparent(r), 0)) == BATcount(r);
+		BATcount(BBPquickdesc(VIEWtparent(r), false)) == BATcount(r);
 	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, nil_on_miss, semi,
 			only_misses, maxsize, t0, false, phash, "leftjoin");
 }
@@ -3804,8 +3820,13 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, boo
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
-	if (maxsize == 0)
+	if (maxsize == 0) {
+		ALGODEBUG fprintf(stderr, "#BATthetajoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOBATFMT ") " LLFMT "us\n",
+				  BATgetId(l), BATgetId(r),
+				  ALGOBATPAR(r1), ALGOBATPAR(r2),
+				  GDKusec() - t0);
 		return GDK_SUCCEED;
+	}
 
 	return thetajoin(r1, r2, l, r, sl, sr, opcode, maxsize, t0);
 }
@@ -3860,14 +3881,23 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		}
 		*r1p = r1;
 		*r2p = r2;
+		ALGODEBUG fprintf(stderr, "#BATjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOBATFMT ") " LLFMT "us\n",
+				  BATgetId(l), BATgetId(r),
+				  ALGOBATPAR(r1), ALGOBATPAR(r2),
+				  GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
 	if ((maxsize = joininitresults(&r1, &r2, lcount, rcount, l->tkey, r->tkey, false, false, false, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
-	if (maxsize == 0)
+	if (maxsize == 0) {
+		ALGODEBUG fprintf(stderr, "#BATjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOBATFMT ") " LLFMT "us\n",
+				  BATgetId(l), BATgetId(r),
+				  ALGOBATPAR(r1), ALGOBATPAR(r2),
+				  GDKusec() - t0);
 		return GDK_SUCCEED;
+	}
 	swap = false;
 
 	/* some statistics to help us decide */
@@ -4001,8 +4031,15 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BAT *r1, *r2;
 	BUN maxsize;
 	lng t0 = 0;
+	gdk_return rc = GDK_SUCCEED;
 
 	ALGODEBUG t0 = GDKusec();
+
+	ALGODEBUG fprintf(stderr, "#BATbandjoin("
+			  "l=" ALGOBATFMT ",r=" ALGOBATFMT ","
+			  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ")\n",
+			  ALGOBATPAR(l), ALGOBATPAR(r),
+			  ALGOOPTBATPAR(sl), ALGOOPTBATPAR(sr));
 
 	*r1p = NULL;
 	*r2p = NULL;
@@ -4012,10 +4049,14 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
-	if (maxsize == 0)
-		return GDK_SUCCEED;
+	if (maxsize != 0)
+		rc = bandjoin(r1, r2, l, r, sl, sr, c1, c2, li, hi, maxsize);
 
-	return bandjoin(r1, r2, l, r, sl, sr, c1, c2, li, hi, maxsize, t0);
+	ALGODEBUG fprintf(stderr, "#BATbandjoin(l=%s,r=%s)=(" ALGOBATFMT "," ALGOBATFMT ") " LLFMT "us\n",
+			  BATgetId(l), BATgetId(r),
+			  ALGOBATPAR(r1), ALGOBATPAR(r2),
+			  GDKusec() - t0);
+	return rc;
 }
 
 gdk_return

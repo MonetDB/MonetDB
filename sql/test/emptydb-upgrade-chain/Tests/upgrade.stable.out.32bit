@@ -18,41 +18,10 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade-chain` itself:
 # MonetDB/GIS module loaded
 Running database upgrade commands:
 set schema sys;
-create aggregate sys.group_concat(str string) returns string external name "aggr"."str_group_concat";
-grant execute on aggregate sys.group_concat(string) to public;
-create aggregate sys.group_concat(str string, sep string) returns string external name "aggr"."str_group_concat";
-grant execute on aggregate sys.group_concat(string, string) to public;
-insert into sys.systemfunctions (select id from sys.functions where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-set schema "sys";
-commit;
-
-Running database upgrade commands:
-set schema sys;
-create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
-insert into sys.systemfunctions (select id from sys.functions where name='remote_table_credentials' and id not in (select function_id from sys.systemfunctions));
-set schema "sys";
-commit;
-
-Running database upgrade commands:
-set schema "sys";
-DROP FUNCTION dependencies_schemas_on_users();
-DROP FUNCTION dependencies_owners_on_schemas();
-DROP FUNCTION dependencies_tables_on_views();
-DROP FUNCTION dependencies_tables_on_indexes();
-DROP FUNCTION dependencies_tables_on_triggers();
-DROP FUNCTION dependencies_tables_on_foreignKeys();
-DROP FUNCTION dependencies_tables_on_functions();
-DROP FUNCTION dependencies_columns_on_views();
-DROP FUNCTION dependencies_columns_on_keys();
-DROP FUNCTION dependencies_columns_on_indexes();
-DROP FUNCTION dependencies_columns_on_functions();
-DROP FUNCTION dependencies_columns_on_triggers();
-DROP FUNCTION dependencies_views_on_functions();
-DROP FUNCTION dependencies_views_on_triggers();
-DROP FUNCTION dependencies_functions_on_functions();
-DROP FUNCTION dependencies_functions_on_triggers();
-DROP FUNCTION dependencies_keys_on_foreignKeys();
-delete from systemfunctions where function_id not in (select id from functions);
+drop table sys.systemfunctions;
+create view sys.systemfunctions as select id as function_id from sys.functions where system;
+grant select on sys.systemfunctions to public;
+update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');
 set schema "sys";
 commit;
 

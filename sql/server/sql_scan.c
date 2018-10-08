@@ -592,7 +592,7 @@ static inline int
 scanner_read_more(struct scanner *lc, int n)
 {
 	bstream *b = lc->rs;
-	int more = 0;
+	bool more = false;
 
 
 	while (b->len < b->pos + lc->yycur + n) {
@@ -604,8 +604,8 @@ scanner_read_more(struct scanner *lc, int n)
 		if (b->eof || !isa_block_stream(b->s)) {
 			if (mnstr_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
 				mnstr_flush(lc->ws);
-			b->eof = 0;
-			more = 1;
+			b->eof = false;
+			more = true;
 		}
 		/* we need more query text */
 		if (bstream_next(b) < 0 ||

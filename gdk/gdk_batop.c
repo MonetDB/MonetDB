@@ -189,7 +189,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? b->tvheap->size - GDK_VAROFFSET : b->tvheap->size)) {
 				/* offsets aren't going to fit, so
 				 * widen offset heap */
-				if (GDKupgradevarheap(b, (var_t) b->tvheap->size, 0, force) != GDK_SUCCEED) {
+				if (GDKupgradevarheap(b, (var_t) b->tvheap->size, false, force) != GDK_SUCCEED) {
 					toff = ~(size_t) 0;
 					goto bunins_failed;
 				}
@@ -372,7 +372,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 				    ((size_t) 1 << 8 * b->twidth) <= (b->twidth <= 2 ? v - GDK_VAROFFSET : v)) {
 					/* offset isn't going to fit,
 					 * so widen offset heap */
-					if (GDKupgradevarheap(b, v, 0, force) != GDK_SUCCEED) {
+					if (GDKupgradevarheap(b, v, false, force) != GDK_SUCCEED) {
 						goto bunins_failed;
 					}
 				}
@@ -600,8 +600,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 	if (b->thash == (Hash *) 1 || BATcount(b) == 0 ||
 	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
@@ -877,8 +876,7 @@ BATdel(BAT *b, BAT *d)
 	/* not sure about these anymore */
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
-	PROPdestroy(b->tprops);
-	b->tprops = NULL;
+	PROPdestroy(b);
 
 	return GDK_SUCCEED;
 }
@@ -948,9 +946,9 @@ BATslice(BAT *b, BUN l, BUN h)
 		BUN q = h;
 
 		bn = COLnew((oid) (b->hseqbase + low), BATtdense(b) ? TYPE_void : b->ttype, h - l, TRANSIENT);
-		if (bn == NULL) {
-			return bn;
-		}
+		if (bn == NULL)
+			return NULL;
+
 		if (bn->ttype == TYPE_void ||
 		    (!bn->tvarsized &&
 		     BATatoms[bn->ttype].atomPut == NULL &&
@@ -1015,6 +1013,8 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->trevsorted = b->trevsorted;
 		BATkey(bn, BATtkey(b));
 	}
+	ALGODEBUG fprintf(stderr, "#BATslice()=" ALGOBATFMT "\n",
+			  ALGOBATPAR(bn));
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -1816,6 +1816,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 	bn->trevsorted = true;
 	bn->tnonil = !bn->tnil;
 	bn->tkey = BATcount(bn) <= 1;
+	ALGODEBUG fprintf(stderr, "#BATconstant()=" ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
 
   bunins_failed:
@@ -1851,14 +1852,15 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
  */
 
 void
-PROPdestroy(PROPrec *p)
+PROPdestroy(BAT *b)
 {
+	PROPrec *p = b->tprops;
 	PROPrec *n;
 
+	b->tprops = NULL;
 	while (p) {
 		n = p->next;
-		if (p->v.vtype == TYPE_str)
-			GDKfree(p->v.val.sval);
+		VALclear(&p->v);
 		GDKfree(p);
 		p = n;
 	}
@@ -1878,22 +1880,47 @@ BATgetprop(BAT *b, int idx)
 }
 
 void
-BATsetprop(BAT *b, int idx, int type, void *v)
+BATsetprop(BAT *b, int idx, int type, const void *v)
 {
-	ValRecord vr;
 	PROPrec *p = BATgetprop(b, idx);
 
-	if (p == NULL &&
-	    (p = (PROPrec *) GDKmalloc(sizeof(PROPrec))) != NULL) {
+	if (p == NULL) {
+		if ((p = GDKmalloc(sizeof(PROPrec))) == NULL) {
+			/* properties are hints, so if we can't create
+			 * one we ignore the error */
+			return;
+		}
 		p->id = idx;
 		p->next = b->tprops;
 		p->v.vtype = 0;
 		b->tprops = p;
+	} else {
+		VALclear(&p->v);
 	}
-	if (p) {
-		VALset(&vr, type, v);
-		VALcopy(&p->v, &vr);
-		b->batDirtydesc = true;
+	if (VALinit(&p->v, type, v) == NULL) {
+		/* failed to initialize, so remove property */
+		BATrmprop(b, idx);
+	}
+	b->batDirtydesc = true;
+}
+
+void
+BATrmprop(BAT *b, int idx)
+{
+	PROPrec *prop = b->tprops, *prev = NULL;
+
+	while (prop) {
+		if (prop->id == idx) {
+			if (prev)
+				prev->next = prop->next;
+			else
+				b->tprops = prop->next;
+			VALclear(&prop->v);
+			GDKfree(prop);
+			return;
+		}
+		prev = prop;
+		prop = prop->next;
 	}
 }
 

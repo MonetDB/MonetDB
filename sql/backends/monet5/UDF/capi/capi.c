@@ -440,10 +440,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	sigset_t signal_set;
 
 #ifdef NDEBUG
-	int debug_build =
+	bool debug_build =
 		GDKgetenv_istrue(debug_flag) || GDKgetenv_isyes(debug_flag);
 #else
-	int debug_build = true;
+	bool debug_build = true;
 #endif
 	char* extra_cflags = NULL;
 	char* extra_ldflags = NULL;
@@ -490,7 +490,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		(void)sigaddset(&signal_set, SIGBUS);
 		(void)pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
 
-		memset(&sa, 0, sizeof(sa));
+		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
 	if (!grouped) {
@@ -1296,15 +1296,16 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	// set up the signal handler for catching segfaults
 	if (option_enable_mprotect) {
-		memset(&sa, 0, sizeof(sa));
-		sa.sa_flags = SA_SIGINFO;
+		sa = (struct sigaction) {
+			.sa_flags = SA_SIGINFO,
+			.sa_sigaction = handler,
+		};
 		(void) sigfillset(&sa.sa_mask);
-		sa.sa_sigaction = handler;
 		if (sigaction(SIGSEGV, &sa, &oldsa) == -1 ||
 			sigaction(SIGBUS, &sa, &oldsb) == -1) {
 			msg = createException(MAL, "cudf.eval",
-								  "Failed to set signal handler: %s",
-								  strerror(errno));
+					      "Failed to set signal handler: %s",
+					      strerror(errno));
 			errno = 0;
 			goto wrapup;
 		}
@@ -1338,7 +1339,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			errno = 0;
 			goto wrapup;
 		}
-		memset(&sa, 0, sizeof(sa));
+		sa = (struct sigaction) {.sa_flags = 0,};
 	}
 
 	if (msg) {
@@ -1531,7 +1532,7 @@ wrapup:
 			(void) sigaction(SIGSEGV, &oldsa, NULL);
 			(void) sigaction(SIGBUS, &oldsb, NULL);
 
-			memset(&sa, 0, sizeof(sa));
+			sa = (struct sigaction) {.sa_flags = 0,};
 		}
 		// clear any mprotected regions
 		while (regions) {

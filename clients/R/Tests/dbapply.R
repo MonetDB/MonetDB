@@ -1,3 +1,5 @@
+cat("#~BeginProfilingOutput~#\n", file=stderr())
+
 if (Sys.getenv("TSTTRGDIR") != "") {
 	.libPaths(c(.libPaths(), paste0(Sys.getenv("TSTTRGDIR"),"/rlibdir")))
 }
@@ -80,5 +82,7 @@ print(res)
 
 dbRemoveTable(con,tname)
 stopifnot(identical(FALSE, dbExistsTable(con,tname)))
+
+cat("#~EndProfilingOutput~#\n", file=stderr())
 
 print("SUCCESS")

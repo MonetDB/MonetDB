@@ -1,0 +1,4 @@
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/*_fits.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/createdb/*_fits.sql usr/lib/x86_64-linux-gnu/monetdb5/createdb
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/fits.mal usr/lib/x86_64-linux-gnu/monetdb5
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_fits.so usr/lib/x86_64-linux-gnu/monetdb5

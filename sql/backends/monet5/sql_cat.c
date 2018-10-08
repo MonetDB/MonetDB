@@ -756,7 +756,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
 		s = cur_schema(sql);
-	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg);
+	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system);
 	if (nf && nf->query && nf->lang <= FUNC_LANG_SQL) {
 		char *buf;
 		sql_rel *r = NULL;
@@ -1532,7 +1532,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!id_col || !remark_col)
 		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
 	rid = table_funcs.column_find_row(tx, id_col, &objid, NULL);
-	if (remark != NULL && *remark) {
+	if (remark != NULL && *remark && strcmp(remark, str_nil) != 0) {
 		if (!is_oid_nil(rid)) {
 			// have new remark and found old one, so update field
 			/* UPDATE sys.comments SET remark = %s WHERE id = %d */
@@ -1600,7 +1600,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (n = olds->funcs.set->h; n; n = n->next) {
 			sql_func *of = n->data;
 			(void) sql_trans_create_func(sql->session->tr, news, of->base.name, of->ops, of->res, of->type, of->lang,
-										 of->mod, of->imp, of->query, of->varres, of->vararg, of->base.id);
+										 of->mod, of->imp, of->query, of->varres, of->vararg, of->system, of->base.id);
 		}
 	}
 	if (olds->seqs.set) {

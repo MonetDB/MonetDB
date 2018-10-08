@@ -294,7 +294,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 	} *lockedfiles;
 	struct lockedfiles **fpp, *fp;
 
-	memset(&ov, 0, sizeof(ov));
+	ov = (OVERLAPPED) {0};
 #if defined(DUMMYSTRUCTNAME) && (defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS))	/* Windows SDK v7.0 */
 	ov.u.s.Offset = (unsigned int) off;
 #if 0

@@ -1,3 +1,19 @@
 # ChangeLog file for stream
 # This file is updated with Maddlog
 
+* Wed Sep 19 2018 Sjoerd Mullender <sjoerd@acm.org>
+- The functions mnstr_write{Sht,Int,Lng,Hge} and their Array variants
+  now swap bytes of the written values if the stream is set to swap bytes
+  (i.e. big-endian on a little-endian machine and v.v.).
+- Removed defines ST_ASCII, ST_BIN, ST_READ, ST_WRITE from stream.h.
+- Changed function mnstr_set_byteorder(stream, char) to
+  mnstr_set_bigendian(stream, bool) where the second argument should
+  be `true' for specifying that the stream is bigendian.  This sets an
+  internal flag whether or not to swap bytes which can be retrieved
+  with mnstr_get_swapbytes(stream).
+- Changed function `int mnstr_byteorder(stream)' to `bool
+  mnstr_get_swapbytes(stream)'; it now returns whether bytes are
+  swapped.
+- Changed function `int mnstr_type(stream)' to `bool
+  mnstr_isbinary(stream)'.
+

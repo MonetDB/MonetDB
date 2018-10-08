@@ -113,7 +113,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
-		h->base = (char *) GDKmalloc(h->size);
+		h->base = GDKmalloc(h->size);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc %zu %p\n", h->size, h->base);
 	}
 	if (h->base == NULL) {
@@ -378,7 +378,7 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 }
 
 gdk_return
-GDKupgradevarheap(BAT *b, var_t v, int copyall, bool mayshare)
+GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 {
 	bte shift = b->tshift;
 	unsigned short width = b->twidth;

@@ -1073,10 +1073,10 @@ gdk_export bte ATOMelmshift(int sz);
 		}							\
 	} while (false)
 #endif
-#define tfastins_nocheck(b, p, v, s)			\
-	do {						\
-		(b)->theap.free += (s);			\
-		Tputvalue((b), Tloc((b), (p)), (v), 0);	\
+#define tfastins_nocheck(b, p, v, s)				\
+	do {							\
+		(b)->theap.free += (s);				\
+		Tputvalue((b), Tloc((b), (p)), (v), false);	\
 	} while (false)
 
 #define bunfastapp_nocheck(b, p, v, ts)		\
@@ -1120,7 +1120,7 @@ gdk_export bte ATOMelmshift(int sz);
 		if ((b)->twidth < SIZEOF_VAR_T &&			\
 		    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 			/* doesn't fit in current heap, upgrade it */	\
-			if (GDKupgradevarheap((b), _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+			if (GDKupgradevarheap((b), _d, false, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 				goto bunins_failed;			\
 		}							\
 		switch ((b)->twidth) {					\
@@ -1158,7 +1158,7 @@ gdk_export bte ATOMelmshift(int sz);
 		bunfastapp_nocheckVAR(b, (b)->batCount, v, Tsize(b));	\
 	} while (false)
 
-gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, bool mayshare)
+gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bool force)
 	__attribute__((__warn_unused_result__));
@@ -1599,7 +1599,7 @@ gdk_export void BBPlock(void);
 
 gdk_export void BBPunlock(void);
 
-gdk_export BAT *BBPquickdesc(bat b, int delaccess);
+gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
 
 /*
  * @+ GDK Extensibility
@@ -2662,7 +2662,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (* (const TYPE *) v == * (const TYPE *) BUNtloc(bi, hb))
+		if (* (const TYPE *) (v) == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
@@ -2686,9 +2686,10 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 #define GDK_MIN_VALUE 3
 #define GDK_MAX_VALUE 4
 
-gdk_export void PROPdestroy(PROPrec *p);
+gdk_export void PROPdestroy(BAT *b);
 gdk_export PROPrec *BATgetprop(BAT *b, int idx);
-gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
+gdk_export void BATsetprop(BAT *b, int idx, int type, const void *v);
+gdk_export void BATrmprop(BAT *b, int idx);
 
 /*
  * @- BAT relational operators

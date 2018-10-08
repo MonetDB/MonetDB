@@ -25,6 +25,18 @@ Ready.
 # 16:31:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1703" "--port=32740"
 # 16:31:49 >  
 
+#select cast('2015-12-08T00:46:60' as timestamp);
+% .L2 # table_name
+% L2 # name
+% timestamp # type
+% 26 # length
+[ 2015-12-08 00:47:00.000000	]
+#select cast('2015-12-08 00:46:60' as timestamp);
+% .L2 # table_name
+% L2 # name
+% timestamp # type
+% 26 # length
+[ 2015-12-08 00:47:00.000000	]
 
 # 16:31:49 >  
 # 16:31:49 >  "Done."

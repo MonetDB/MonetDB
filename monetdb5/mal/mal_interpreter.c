@@ -832,7 +832,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					if (garbage[i] == -1 && stk->stk[getArg(pci, i)].vtype == TYPE_bat &&
 						!is_bat_nil(stk->stk[getArg(pci, i)].val.bval)) {
 						assert(stk->stk[getArg(pci, i)].val.bval > 0);
-						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, FALSE);
+						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, false);
 						if (b == NULL) {
 							if (ret == MAL_SUCCEED)
 								ret = createException(MAL, "mal.propertyCheck", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

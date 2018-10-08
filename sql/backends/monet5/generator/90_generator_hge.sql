@@ -6,10 +6,10 @@
 
 -- (c) Author M.Kersten
 
-create function sys.generate_series(first hugeint, last hugeint)
+create function sys.generate_series(first hugeint, "limit" hugeint)
 returns table (value hugeint)
 external name generator.series;
 
-create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)
+create function sys.generate_series(first hugeint, "limit" hugeint, stepsize hugeint)
 returns table (value hugeint)
 external name generator.series;
