@@ -418,7 +418,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 		if (tt == TYPE_void && BATtdense(b))
 			tseq = 1;
 	} else {		/* search trans action for create statement */
-		int i, found = 0;
+		int i;
 
 		for (i = 0; i < tr->nr; i++) {
 			if (tr->changes[i].type == LOG_CREATE &&
@@ -433,11 +433,10 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 					tseq = 1;
 					tt = TYPE_void;
 				}
-				found = 1;
 				break;
 			}
 		}
-		assert(found);
+		assert(i < tr->nr); /* found one */
 	}
 	assert((ht == TYPE_void && l->flag == LOG_INSERT) ||
 	       ((ht == TYPE_oid || !ht) && l->flag == LOG_UPDATE));
