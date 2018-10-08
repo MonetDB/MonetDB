@@ -1407,7 +1407,7 @@ create_delta( sql_delta *d, BAT *b, BAT *i)
 static int
 upgrade_delta( sql_delta *d, char tpe, oid id)
 {
-	return logger_upgrade_bat(bat_logger, d->name, tpe, id);
+	return logger_upgrade_bat(bat_logger, d->name, tpe, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static bat
@@ -1679,7 +1679,7 @@ upgrade_del(sql_table *t)
 	sql_dbat *bat = t->data;
 
 	if (!t->bootstrap)
-		return logger_upgrade_bat(bat_logger, bat->dname, LOG_TAB, t->base.id);
+		return logger_upgrade_bat(bat_logger, bat->dname, LOG_TAB, t->base.id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 

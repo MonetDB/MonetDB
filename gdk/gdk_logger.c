@@ -3236,9 +3236,9 @@ logger_upgrade_bat(logger *lg, const char *name, char tpe, oid id)
 	    	   BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
 	    	   BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
 	    	   BUNappend(lg->catalog_oid, &id, false) != GDK_SUCCEED) 
-			return LOG_ERR;
+			return GDK_FAIL;
 	}
-	return LOG_OK;
+	return GDK_SUCCEED;
 }
 
 gdk_return
