@@ -22,5 +22,10 @@ select a, group_concat(b, 'XyZ\n') from testmore group by a;
 
 select a, group_concat(b, NULL) from testmore group by a;
 select group_concat(b, NULL) from testmore;
+select group_concat(a, NULL) from testmore;
+select group_concat(a, a) from testmore;
+select group_concat(a, 8) from testmore;
+select group_concat(a, b) from testmore;
+select group_concat(b, a) from testmore;
 
 rollback;

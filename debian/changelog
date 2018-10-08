@@ -1,3 +1,21 @@
+monetdb (11.31.9) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6640: timestamp_to_str returning incorrectly adjusted results
+  * BZ#6641: race condition in SQL UDF with update
+  * BZ#6642: Hanging query
+  * BZ#6646: Example SQLcopyinto.java does not work
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 05 Oct 2018 09:50:02 +0200
+
+monetdb (11.31.9) unstable; urgency=low
+
+  * buildtools: On Ubuntu 18.10 (Cosmic Cuttlefish), the libmonetdb5-server-bam package
+    cannot be built because of an incompatibility in the libbam library
+    (it cannot be used in a shared object.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Oct 2018 09:50:02 +0200
+
 monetdb (11.31.7) unstable; urgency=low
 
   * Rebuilt.

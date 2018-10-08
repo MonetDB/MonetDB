@@ -548,6 +548,7 @@ typedef struct sql_table {
 	sht type;		/* table, view, etc */
 	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
+	bit bootstrap;		/* system table created during bootstrap */
 	bte properties;		/* used for merge_tables */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */

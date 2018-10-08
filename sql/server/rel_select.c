@@ -3632,10 +3632,20 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	if (!a && list_length(exps) > 1) { 
 		sql_subtype *t1 = exp_subtype(exps->h->data);
 		a = sql_bind_member_aggr(sql->sa, s, aname, exp_subtype(exps->h->data), list_length(exps));
+		bool is_group_concat = (!a && strcmp(s->base.name, "sys") == 0 && strcmp(aname, "group_concat") == 0);
 
-		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || subtype_cmp( 
+		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || is_group_concat || subtype_cmp(
 						&((sql_arg*)a->aggr->ops->h->data)->type,
 						&((sql_arg*)a->aggr->ops->h->next->data)->type) != 0) )  {
+			if(!a && is_group_concat) {
+				sql_subtype *tstr = sql_bind_localtype("str");
+				list *sargs = sa_list(sql->sa);
+				if (list_length(exps) >= 1)
+					append(sargs, tstr);
+				if (list_length(exps) == 2)
+					append(sargs, tstr);
+				a = sql_bind_aggr_(sql->sa, s, aname, sargs);
+			}
 			if (a) {
 				node *n, *op = a->aggr->ops->h;
 				list *nexps = sa_list(sql->sa);
@@ -3651,7 +3661,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 				}
 				if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
 					exps = nexps;
-				}
+			}
 		} else {
 			sql_exp *l = exps->h->data, *ol = l;
 			sql_exp *r = exps->h->next->data, *or = r;

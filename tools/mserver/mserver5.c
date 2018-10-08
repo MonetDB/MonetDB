@@ -511,7 +511,19 @@ main(int argc, char **av)
 		 * bin/mserver5 -> ../
 		 * libX/monetdb5/lib/
 		 * probe libX = lib, lib32, lib64, lib/64 */
-		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
+		size_t pref;
+		/* "remove" common prefix of configured BIN and LIB
+		 * directories from LIBDIR */
+		for (pref = 0; LIBDIR[pref] != 0 && BINDIR[pref] == LIBDIR[pref]; pref++)
+			;
+		const char *libdirs[] = {
+			&LIBDIR[pref],
+			"lib",
+			"lib64",
+			"lib/64",
+			"lib32",
+			NULL,
+		};
 		struct stat sb;
 		if (binpath != NULL) {
 			char *p = strrchr(binpath, DIR_SEP);

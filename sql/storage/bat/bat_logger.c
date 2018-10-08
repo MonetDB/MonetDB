@@ -64,7 +64,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	oid o;
 	int id;
 
-	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name")));
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name"), 0, 0));
 	if (b == NULL)
 		return 0;
 	s = BATselect(b, NULL, "sys", NULL, 1, 1, 0);
@@ -78,7 +78,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	bi = bat_iterator(s);
 	o = * (const oid *) BUNtail(bi, 0);
 	bat_destroy(s);
-	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "id")));
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "id"), 0, 0));
 	if (b == NULL)
 		return 0;
 	bi = bat_iterator(b);
@@ -87,7 +87,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	/* store id of schema "sys" */
 	*sid = id;
 
-	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "name")));
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "name"), 0, 0));
 	if (b == NULL) {
 		bat_destroy(s);
 		return 0;
@@ -100,7 +100,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 		bat_destroy(s);
 		return 0;
 	}
-	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "schema_id")));
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "schema_id"), 0, 0));
 	if (b == NULL) {
 		bat_destroy(s);
 		return 0;
@@ -120,7 +120,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	o = * (const oid *) BUNtail(bi, 0);
 	bat_destroy(s);
 
-	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "id")));
+	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "id"), 0, 0));
 	if (b == NULL)
 		return 0;
 	bi = bat_iterator(b);
@@ -143,7 +143,7 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 	while ((cname = va_arg(va, char *)) != NULL) {
 		cval = va_arg(va, void *);
 		snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
-		if ((b = temp_descriptor(logger_find_bat(lg, lname))) == NULL)
+		if ((b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL)
 			return GDK_FAIL;
 		if (first) {
 			BAT *bn;
@@ -153,7 +153,7 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 			}
 			BBPunfix(b->batCacheid);
 			if (BATsetaccess(bn, BAT_READ) != GDK_SUCCEED ||
-			    logger_add_bat(lg, bn, lname) != GDK_SUCCEED) {
+			    logger_add_bat(lg, bn, lname, 0, 0) != GDK_SUCCEED) {
 				BBPunfix(bn->batCacheid);
 				return GDK_FAIL;
 			}
@@ -168,7 +168,7 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
 			return GDK_FAIL;
 		if ((rc = BATsetaccess(b, BAT_READ)) == GDK_SUCCEED)
-			rc = logger_add_bat(lg, b, nname);
+			rc = logger_add_bat(lg, b, nname, 0, 0);
 		BBPunfix(b->batCacheid);
 		if (rc != GDK_SUCCEED)
 			return rc;
@@ -191,7 +191,7 @@ bl_postversion(void *lg)
 		int geomUpgrade = 0;
 		geomcatalogfix_fptr func;
 
-		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass")));
+		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass"), 0, 0));
 		if (te == NULL)
 			return GDK_FAIL;
 		bi = bat_iterator(te);
@@ -213,7 +213,7 @@ bl_postversion(void *lg)
 		}
 		bat_destroy(te);
 		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
-		    logger_add_bat(lg, tne, N("sys", "types", "eclass")) != GDK_SUCCEED) {
+		    logger_add_bat(lg, tne, N("sys", "types", "eclass"), 0, 0) != GDK_SUCCEED) {
 			bat_destroy(tne);
 			return GDK_FAIL;
 		}
@@ -222,7 +222,7 @@ bl_postversion(void *lg)
 		/* in the past, the args.inout column may have been
 		 * incorrectly upgraded to a bit instead of a bte
 		 * column */
-		te = temp_descriptor(logger_find_bat(lg, N("sys", "args", "inout")));
+		te = temp_descriptor(logger_find_bat(lg, N("sys", "args", "inout"), 0, 0));
 		if (te == NULL)
 			return GDK_FAIL;
 		if (te->ttype == TYPE_bit) {
@@ -242,7 +242,7 @@ bl_postversion(void *lg)
 				}
 			}
 			if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
-			    logger_add_bat(lg, tne, N("sys", "args", "inout")) != GDK_SUCCEED) {
+			    logger_add_bat(lg, tne, N("sys", "args", "inout"), 0, 0) != GDK_SUCCEED) {
 				bat_destroy(tne);
 				bat_destroy(te);
 				return GDK_FAIL;
@@ -253,7 +253,7 @@ bl_postversion(void *lg)
 
 		/* test whether the catalog contains information
 		 * regarding geometry types */
-		b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "types", "systemname")));
+		b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "types", "systemname"), 0, 0));
 		if (b == NULL)
 			return GDK_FAIL;
 		bi = bat_iterator(b);
@@ -273,7 +273,7 @@ bl_postversion(void *lg)
 		if (!geomUpgrade) {
 			/* test whether the catalog contains
 			 * information about geometry columns */
-			b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "_columns", "type")));
+			b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "_columns", "type"), 0, 0));
 			if (b == NULL)
 				return GDK_FAIL;
 			bi = bat_iterator(b);
@@ -339,7 +339,7 @@ bl_postversion(void *lg)
 		/* first figure out whether there are any columns in
 		 * the catalog called "readonly" (if there are fewer
 		 * then 2, then we don't have to do anything) */
-		BAT *cn = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "name")));
+		BAT *cn = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "name"), 0, 0));
 		if (cn == NULL)
 			return GDK_FAIL;
 		BAT *cs = BATselect(cn, NULL, "readonly", NULL, 1, 1, 0);
@@ -351,7 +351,7 @@ bl_postversion(void *lg)
 			/* find the OIDs of the rows of sys.schemas
 			 * where the name is either 'sys' or 'tmp',
 			 * result in ss */
-			BAT *sn = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name")));
+			BAT *sn = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name"), 0, 0));
 			if (sn == NULL) {
 				bat_destroy(cs);
 				bat_destroy(cn);
@@ -381,7 +381,7 @@ bl_postversion(void *lg)
 			/* find the OIDs of the rows of sys._tables
 			 * where the name is '_tables', result in
 			 * ts */
-			BAT *tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "name")));
+			BAT *tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "name"), 0, 0));
 			if (tn == NULL) {
 				bat_destroy(ss);
 				bat_destroy(cs);
@@ -401,8 +401,8 @@ bl_postversion(void *lg)
 			 * ts) and the schema is either 'sys' or 'tmp'
 			 * (candidate list ss for sys.schemas.id
 			 * column), result in ts1 */
-			tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "schema_id")));
-			sn = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "id")));
+			tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "schema_id"), 0, 0));
+			sn = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "id"), 0, 0));
 			if (tn == NULL || sn == NULL) {
 				bat_destroy(tn);
 				bat_destroy(sn);
@@ -428,8 +428,8 @@ bl_postversion(void *lg)
 			 * sys._tables or tmp._tables (candidate list
 			 * ts1 for sys._tables.table_id), result in
 			 * cs1, transferred to cs) */
-			BAT *ct = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "table_id")));
-			tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "id")));
+			BAT *ct = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "table_id"), 0, 0));
+			tn = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "id"), 0, 0));
 			if (ct == NULL || tn == NULL) {
 				bat_destroy(ct);
 				bat_destroy(tn);
@@ -454,8 +454,8 @@ bl_postversion(void *lg)
 				 * to change the name and type from
 				 * "readonly" and "boolean" to
 				 * "access" and "smallint" */
-				ct = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "type")));
-				BAT *cd = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "type_digits")));
+				ct = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "type"), 0, 0));
+				BAT *cd = temp_descriptor(logger_find_bat(lg, N("sys", "_columns", "type_digits"), 0, 0));
 				BAT *ctn = COLnew(ct->hseqbase, ct->ttype, BATcount(ct), PERSISTENT);
 				BAT *cdn = COLnew(cd->hseqbase, cd->ttype, BATcount(cd), PERSISTENT);
 				BAT *cnn = COLnew(cn->hseqbase, cn->ttype, BATcount(cn), PERSISTENT);
@@ -517,9 +517,9 @@ bl_postversion(void *lg)
 				if (BATsetaccess(cnn, BAT_READ) != GDK_SUCCEED ||
 				    BATsetaccess(cdn, BAT_READ) != GDK_SUCCEED ||
 				    BATsetaccess(ctn, BAT_READ) != GDK_SUCCEED ||
-				    logger_add_bat(lg, cnn, N("sys", "_columns", "name")) != GDK_SUCCEED ||
-				    logger_add_bat(lg, cdn, N("sys", "_columns", "type_digits")) != GDK_SUCCEED ||
-				    logger_add_bat(lg, ctn, N("sys", "_columns", "type")) != GDK_SUCCEED) {
+				    logger_add_bat(lg, cnn, N("sys", "_columns", "name"), 0, 0) != GDK_SUCCEED ||
+				    logger_add_bat(lg, cdn, N("sys", "_columns", "type_digits"), 0, 0) != GDK_SUCCEED ||
+				    logger_add_bat(lg, ctn, N("sys", "_columns", "type"), 0, 0) != GDK_SUCCEED) {
 					bat_destroy(ctn);
 					bat_destroy(cdn);
 					bat_destroy(cnn);
@@ -539,8 +539,8 @@ bl_postversion(void *lg)
 	if (catalog_version <= CATALOG_AUG2018) {
 		int id;
 		lng lid;
-		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id")));
-		BAT *sf = temp_descriptor(logger_find_bat(lg, N("sys", "systemfunctions", "function_id")));
+		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
+		BAT *sf = temp_descriptor(logger_find_bat(lg, N("sys", "systemfunctions", "function_id"), 0, 0));
 		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
 		    fid == NULL || sf == NULL) {
 			bat_destroy(fid);
@@ -579,7 +579,7 @@ bl_postversion(void *lg)
 		bat_destroy(fid);
 		bat_destroy(sf);
 		if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED ||
-		    logger_add_bat(lg, b, N("sys", "functions", "system")) != GDK_SUCCEED) {
+		    logger_add_bat(lg, b, N("sys", "functions", "system"), 0, 0) != GDK_SUCCEED) {
 
 			bat_destroy(b);
 			return GDK_FAIL;
@@ -964,6 +964,13 @@ bl_cleanup(int keep_persisted_log_files)
 	return LOG_OK;
 }
 
+static void
+bl_with_ids(void)
+{
+	if (bat_logger)
+		logger_with_ids(bat_logger);
+}
+
 static int
 bl_cleanup_shared(int keep_persisted_log_files)
 {
@@ -1016,6 +1023,15 @@ bl_log_isnew(void)
 }
 
 static int
+bl_log_needs_update(void)
+{
+	if (bat_logger->with_ids) {
+		return 0;
+	}
+	return 1;
+}
+
+static int
 bl_log_isnew_shared(void)
 {
 	if (BATcount(bat_logger_shared->catalog_bid) > 10) {
@@ -1057,7 +1073,7 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 
 	va_start(va, val);
 	do {
-		b = temp_descriptor(logger_find_bat(bat_logger, tab));
+		b = temp_descriptor(logger_find_bat(bat_logger, tab, 0, 0));
 		if (b == NULL) {
 			bat_destroy(s);
 			return NULL;
@@ -1080,7 +1096,7 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 	oid o = * (const oid *) BUNtail(bi, 0);
 	bat_destroy(s);
 
-	b = temp_descriptor(logger_find_bat(bat_logger, tabnam));
+	b = temp_descriptor(logger_find_bat(bat_logger, tabnam, 0, 0));
 	if (b == NULL)
 		return NULL;
 	bi = bat_iterator(b);
@@ -1100,9 +1116,11 @@ bat_logger_init( logger_functions *lf )
 	lf->destroy = bl_destroy;
 	lf->restart = bl_restart;
 	lf->cleanup = bl_cleanup;
+	lf->with_ids = bl_with_ids;
 	lf->changes = bl_changes;
 	lf->get_sequence = bl_get_sequence;
 	lf->log_isnew = bl_log_isnew;
+	lf->log_needs_update = bl_log_needs_update;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
 	lf->log_sequence = bl_sequence;
@@ -1115,9 +1133,11 @@ bat_logger_init_shared( logger_functions *lf )
 	lf->create_shared = bl_create_shared;
 	lf->destroy = bl_destroy_shared;
 	lf->cleanup = bl_cleanup_shared;
+	lf->with_ids = bl_with_ids;
 	lf->get_sequence = bl_get_sequence_shared;
 	lf->read_last_transaction_id = bl_read_last_transaction_id_shared;
 	lf->get_transaction_drift = bl_get_transaction_drift_shared;
 	lf->log_isnew = bl_log_isnew_shared;
+	lf->log_needs_update = bl_log_needs_update;
 	lf->reload = bl_reload_shared;
 }
