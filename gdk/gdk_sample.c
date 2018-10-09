@@ -26,6 +26,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "xoshiro256starstar.h"
 
 #undef BATsample
 
@@ -108,7 +109,7 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
 
 /* BATsample implements sampling for void headed BATs */
 BAT *
-BATsample(BAT *b, BUN n)
+BATsample_with_seed(BAT *b, BUN n, unsigned seed)
 {
 	BAT *bn;
 	BUN cnt, slen;
@@ -128,6 +129,9 @@ BATsample(BAT *b, BUN n)
 	} else {
 		oid minoid = b->hseqbase;
 		oid maxoid = b->hseqbase + cnt;
+		random_state_engine rse;
+		
+		
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
 		bool antiset = n > cnt / 2;
@@ -144,12 +148,17 @@ BATsample(BAT *b, BUN n)
 			GDKfree(tree);
 			return NULL;
 		}
+
+		init_random_state_engine(&rse, seed);
+
 		/* while we do not have enough sample OIDs yet */
 		for (rescnt = 0; rescnt < n; rescnt++) {
 			oid candoid;
 			do {
+				double random_double = next_double(rse);
+
 				/* generate a new random OID */
-				candoid = (oid) (minoid + DRAND * (maxoid - minoid));
+				candoid = (oid) (minoid + random_double * (maxoid - minoid));
 				/* if that candidate OID was already
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
@@ -171,4 +180,12 @@ BATsample(BAT *b, BUN n)
 			  ALGOOPTBATFMT "\n",
 			  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;
+}
+
+BAT *
+BATsample(BAT *b, BUN n)
+{
+	unsigned some_random_seed = (unsigned) rand();
+
+	return BATsample_with_seed(b, n,some_random_seed);
 }

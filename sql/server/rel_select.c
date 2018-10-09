@@ -5206,10 +5206,21 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 	if (sn->sample) {
 		list *exps = new_exp_list(sql->sa);
-		sql_exp *o = rel_value_exp( sql, NULL, sn->sample, 0, ek);
-		if (!o)
+		
+		// TODO: add documentation
+
+		dlist* sample_parameters = sn->sample->data.lval;
+
+		sql_exp *sample_size = rel_value_exp( sql, NULL, sample_parameters->h->data.sym, 0, ek);
+		if (!sample_size)
 			return NULL;
-		append(exps, o);
+		append(exps, sample_size);
+
+		if (sample_parameters->cnt == 2) {
+			sql_exp *seed_value = rel_value_exp( sql, NULL, sample_parameters->h->next->data.sym, 0, ek);
+			append(exps, seed_value);
+		}
+
 		rel = rel_sample(sql->sa, rel, exps);
 	}
 

@@ -1,6 +1,14 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Die Okt  9 2018 Aris Koning <aris.koning@monetdbsolutions.com>
+- The sql SAMPLE syntax is extended to include an optional integral SEED
+  parameter that sets the seed for the internal random number generator
+  in the sample algorithm.  When the seed is set, the user can obtain
+  a reproducible sample set from a static dataset with the same sample
+  query. The new syntax is
+  SELECT ... FROM ... WHERE ... SAMPLE <expr> [SEED <integer>]
+
 * Fri Aug 10 2018 Sjoerd Mullender <sjoerd@acm.org>
 - The sys.functions table now has an extra column called "system" of
   type BOOLEAN whose value is TRUE for system functions (i.e. functions

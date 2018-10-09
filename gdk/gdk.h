@@ -2763,6 +2763,7 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
  *
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
+gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
 
 /*
  *
