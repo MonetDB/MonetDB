@@ -10,8 +10,8 @@ rollback;
 
 select "name" from sys.schemas where "name" = 'testing';
 select "name" from sys.schemas where "name" = 'altered';
-select "name" from sys.tables where name = 'anothertable';
+select "name" from sys.tables where "name" = 'anothertable';
 
 drop schema "testing";
 select "name" from sys.schemas where "name" in ('testing', 'altered');
-select "name" from sys.tables where name = 'anothertable';
+select "name" from sys.tables where "name" = 'anothertable';

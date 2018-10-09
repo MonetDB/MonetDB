@@ -65,7 +65,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 		if ( b == 0)
 			return -1;
 		cnt |= BATcount(b) > 0;
-		if (isTable(t) && t->access != TABLE_READONLY && (t->base.flag != TR_NEW /* alter */ ) &&
+		if (isTable(t) && t->access != TABLE_READONLY && (!isNew(t) /* alter */ ) &&
 		    t->persistence == SQL_PERSIST && !t->commit_action)
 			cnt |= store_funcs.count_col(tr, c, 0) > 0;
 		BBPunfix(b->batCacheid);
@@ -1601,7 +1601,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(t = mvc_bind_table(sql, s, old_name)))
 		throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", old_name, schema_name);
 	if (t->system)
-		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename system table '%s'", old_name);
+		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 	if (!new_name || strcmp(new_name, str_nil) == 0)
 		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
 	if (mvc_bind_table(sql, s, new_name))
@@ -1632,7 +1632,7 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(t = mvc_bind_table(sql, s, table_name)))
 		throw(SQL, "sql.rename_column", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", table_name, schema_name);
 	if (t->system)
-		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename system table '%s'", t->base.name);
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
 	if (isView(t))
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, t->base.name);
 	if (!mvc_bind_column(sql, t, old_name))

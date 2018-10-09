@@ -17,7 +17,6 @@
 #define LOG_OK		0
 #define LOG_ERR		(-1)
 
-#define isNew(x)  ((x)->base.flag == TR_NEW)
 #define isTemp(x) (isNew((x)->t)||(x)->t->persistence!=SQL_PERSIST)
 #define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
 #define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && \
