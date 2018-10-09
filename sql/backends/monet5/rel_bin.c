@@ -2925,7 +2925,7 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *newl;
-	stmt *sub = NULL, *s = NULL, *sample = NULL;
+	stmt *sub = NULL, *sample_size = NULL, *sample = NULL, *seed = NULL;
 	node *n;
 
 	if (rel->l) /* first construct the sub relation */
@@ -2941,13 +2941,17 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 		const char *cname = column_name(sql->sa, sc);
 		const char *tname = table_name(sql->sa, sc);
 
-		s = exp_bin(be, rel->exps->h->data, NULL, NULL, NULL, NULL, NULL, NULL);
+		sample_size = exp_bin(be, rel->exps->h->data, NULL, NULL, NULL, NULL, NULL, NULL);
 
-		if (!s)
-			s = stmt_atom_lng_nil(be);
+		if (!sample_size)
+			sample_size = stmt_atom_lng_nil(be);
+		
+		if (rel->exps->cnt == 2) {
+			seed = exp_bin(be, rel->exps->h->next->data, NULL, NULL, NULL, NULL, NULL, NULL);
+		}
 
 		sc = column(be, sc);
-		sample = stmt_sample(be, stmt_alias(be, sc, tname, cname),s);
+		sample = stmt_sample(be, stmt_alias(be, sc, tname, cname),sample_size, seed);
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;

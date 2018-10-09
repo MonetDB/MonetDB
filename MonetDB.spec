@@ -108,7 +108,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Aug2018/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Aug2018-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -350,7 +350,8 @@ This package contains the files needed to develop with the
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Requires(pre): unixODBC
+Requires(post): unixODBC
+Requires(postun): unixODBC
 
 %description client-odbc
 MonetDB is a database management system that is developed from a
@@ -737,10 +738,10 @@ used from the MAL level.
 %package SQL-server5
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires(pre): MonetDB5-server%{?_isa} = %{version}-%{release}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-Requires: %{_bindir}/systemd-tmpfiles
+Requires(post): %{_bindir}/systemd-tmpfiles
 %endif
 %if (0%{?fedora} >= 22)
 %if %{with hugeint}
@@ -881,9 +882,12 @@ Group: Applications/Databases
 %if "%{?_selinux_policy_version}" != ""
 Requires:       selinux-policy >= %{?_selinux_policy_version}
 %endif
-Requires:       %{name}-SQL-server5 = %{version}-%{release}
-Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
-Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
+Requires(post):   MonetDB5-server = %{version}-%{release}
+Requires(postun): MonetDB5-server
+Requires(post):   %{name}-SQL-server5 = %{version}-%{release}
+Requires(postun): %{name}-SQL-server5
+Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
+Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
 BuildArch: noarch
 
 %global selinux_types %(%{__awk} '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
@@ -1038,6 +1042,18 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Oct 05 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
+- Rebuilt.
+- BZ#6640: timestamp_to_str returning incorrectly adjusted results
+- BZ#6641: race condition in SQL UDF with update
+- BZ#6642: Hanging query
+- BZ#6646: Example SQLcopyinto.java does not work
+
+* Wed Oct  3 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
+- buildtools: On Ubuntu 18.10 (Cosmic Cuttlefish), the libmonetdb5-server-bam package
+  cannot be built because of an incompatibility in the libbam library
+  (it cannot be used in a shared object.
+
 * Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.7-20180829
 - Rebuilt.
 

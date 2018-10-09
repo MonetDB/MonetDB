@@ -136,7 +136,7 @@ sql_completion(const char *text, int start, int end)
 
 /* The MAL completion help */
 
-static char *mal_commands[] = {
+static const char *mal_commands[] = {
 	"address",
 	"atom",
 	"barrier",
@@ -209,7 +209,8 @@ mal_command_generator(const char *text, int state)
 	static int64_t seekpos, rowcount;
 	static size_t len;
 	static MapiHdl table_hdl;
-	char *name, *buf;
+	const char *name;
+	char *buf;
 
 	/* we pick our own portion of the linebuffer */
 	text = rl_line_buffer + strlen(rl_line_buffer) - 1;

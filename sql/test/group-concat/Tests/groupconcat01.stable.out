@@ -128,6 +128,16 @@ Ready.
 [ 3,	NULL	]
 [ 4,	NULL	]
 [ 5,	","	]
+#select a, group_concat(a) from testme group by a;
+% sys.testme,	sys.L3 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	13 # length
+[ 1,	"1,1,1,1"	]
+[ 2,	"2,2,2,2"	]
+[ 3,	"3,3,3,3,3,3,3"	]
+[ 4,	"4,4,4"	]
+[ 5,	"5,5"	]
 #rollback;
 
 # 14:11:33 >  
