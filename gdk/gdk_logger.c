@@ -339,8 +339,7 @@ static gdk_return
 log_write_id(logger *l, char tpe, oid id)
 {
 	lng lid = id;
-	if (lid < 0 || lid > 1000000)
-		assert(0);
+	assert(lid >= 0 && lid <= 1000000);
 	if (mnstr_writeChr(l->log, tpe) &&
 	    mnstr_writeLng(l->log, id))
 		return GDK_SUCCEED;
@@ -422,8 +421,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 
 		for (i = 0; i < tr->nr; i++) {
 			if (tr->changes[i].type == LOG_CREATE &&
-			   ((!tpe && strcmp(tr->changes[i].name, name) == 0)  ||
-			   (tpe && tr->changes[i].tpe == tpe && tr->changes[i].cid == id))) {
+			    (tpe == 0
+			     ? strcmp(tr->changes[i].name, name) == 0
+			     : tr->changes[i].tpe == tpe && tr->changes[i].cid == id)) {
 				ht = tr->changes[i].ht;
 				if (ht < 0) {
 					ht = TYPE_void;
@@ -2797,8 +2797,7 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 	}
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED) ||
-	    (!tpe && log_write_string(lg, name) != GDK_SUCCEED)) {
+	    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_bat_transient: write failed\n");
 		return GDK_FAIL;
 	}
@@ -2833,8 +2832,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 
 		l.flag = (tpe)?LOG_UPDATE_ID:LOG_UPDATE;
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
-		    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED) ||
-		    (!tpe && log_write_string(lg, name) != GDK_SUCCEED))
+		    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED)
 			return GDK_FAIL;
 
 		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
@@ -2876,8 +2874,7 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 
 		l.flag = tpe?LOG_INSERT_ID:LOG_INSERT;
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
-		    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED) ||
-		    (!tpe && log_write_string(lg, name) != GDK_SUCCEED))
+		    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED)
 			return GDK_FAIL;
 
 		if (b->ttype > TYPE_void &&
@@ -2919,8 +2916,7 @@ log_bat_clear(logger *lg, const char *name, char tpe, oid id)
 
 	l.flag = (tpe)?LOG_CLEAR_ID:LOG_CLEAR;
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED) ||
-	    (!tpe && log_write_string(lg, name) != GDK_SUCCEED))
+	    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	if (lg->debug & 1)
