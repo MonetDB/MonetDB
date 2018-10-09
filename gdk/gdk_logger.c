@@ -339,7 +339,7 @@ static gdk_return
 log_write_id(logger *l, char tpe, oid id)
 {
 	lng lid = id;
-	assert(lid >= 0 && lid <= 1000000);
+	assert(lid >= 0);
 	if (mnstr_writeChr(l->log, tpe) &&
 	    mnstr_writeLng(l->log, lid))
 		return GDK_SUCCEED;
@@ -1785,7 +1785,6 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 
-		/* TODO add upgrade code !! */
 		snprintf(bak, sizeof(bak), "%s_catalog_tpe", fn);
 		catalog_tpe = BBPindex(bak);
 		t = BATdescriptor(catalog_tpe);
