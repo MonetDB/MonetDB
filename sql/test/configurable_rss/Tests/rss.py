@@ -20,7 +20,7 @@ drop function test_rss;
         self.rss_max_in_Bytes = 30000000
 
     def prepare_server_options(self):
-        return ["--set", "gdk_mem_maxsize={}".format(self.rss_max_in_Bytes)] if self.is_capped else []
+        return ["--set", "gdk_mem_maxsize={}".format(self.rss_max_in_Bytes)]
 
     def prepare_sql_script(self):
         return RSSTestConfig.sql_template.format(gdk_mem_maxsize=self.rss_max_in_Bytes)
