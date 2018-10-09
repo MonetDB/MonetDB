@@ -698,10 +698,6 @@ used from the MAL level.
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires(pre): MonetDB5-server%{?_isa} = %{version}-%{release}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# RHEL >= 7, and all current Fedora
-Requires(post): %{_bindir}/systemd-tmpfiles
-%endif
 %if (0%{?fedora} >= 22)
 %if %{with hugeint}
 Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
@@ -718,11 +714,6 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%post SQL-server5
-systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%endif
-
 %files SQL-server5
 %defattr(-,root,root)
 %{_bindir}/monetdb
@@ -730,12 +721,13 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-%{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%dir %attr(775,monetdb,monetdb) /run/monetdb
+%{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
 %else
 # RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
-%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%exclude %{_tmpfilesdir}/monetdbd.conf
 # no _unitdir macro
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
@@ -867,7 +859,7 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -880,7 +872,7 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
-  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
   fi
@@ -976,10 +968,15 @@ cd -
 %install
 %make_install
 
-mkdir -p %{buildroot}%{_localstatedir}/MonetDB
-mkdir -p %{buildroot}%{_localstatedir}/monetdb5/dbfarm
-mkdir -p %{buildroot}%{_localstatedir}/log/monetdb
-mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
+# move file to correct location
+mkdir -p %{buildroot}%{_tmpfilesdir}
+mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdir}
+rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
+
+install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
+install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
+install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
+install -d -m 0775 %{buildroot}/run/monetdb
 
 # remove unwanted stuff
 # .la files
