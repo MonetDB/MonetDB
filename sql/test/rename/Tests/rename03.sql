@@ -22,8 +22,8 @@ alter table "rename" alter column "oneval" rename to "threeval"; --error
 alter table "ichanged" alter column "oneval" rename to "threeval";
 
 insert into "rename" values (NULL, NULL), (5, 'five'); --error
-insert into "ichanged" values (NULL, NULL), (5, 'five'); --error
-insert into "ichanged" values (NULL, NULL), ('five', 5);
+insert into "ichanged" values (NULL, NULL), (5, 'five');
+insert into "ichanged" values (NULL, NULL), ('five', 5); --error
 
 select "name" from sys.columns where "table_id" in (select "id" from sys.tables where "name" = 'rename');
 select "name" from sys.columns where "table_id" in (select "id" from sys.tables where "name" = 'ichanged');

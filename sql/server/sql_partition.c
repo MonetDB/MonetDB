@@ -211,7 +211,7 @@ find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 
 str
-bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate, bool create_dependencies)
+bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate)
 {
 	sql_exp *exp;
 	char *query, *msg = NULL;
@@ -257,21 +257,19 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		r->exps = sa_list(sql->sa);
 		list_append(r->exps, exp);
 
-		if(create_dependencies) {
-			if (r)
-				r = rel_optimizer(sql, r, 0);
-			if (r) {
-				int i;
-				node *n, *found = NULL;
-				list *id_l = rel_dependencies(sql, r);
-				for(i = 0, n = id_l->h ; n ; n = n->next, i++) { //remove the table itself from the list of dependencies
-					if(*(int *) n->data == mt->base.id)
-						found = n;
-				}
-				assert(found);
-				list_remove_node(id_l, found);
-				mvc_create_dependencies(sql, id_l, mt->base.id, TABLE_DEPENDENCY);
+		if (r)
+			r = rel_optimizer(sql, r, 0);
+		if (r) {
+			int i;
+			node *n, *found = NULL;
+			list *id_l = rel_dependencies(sql, r);
+			for(i = 0, n = id_l->h ; n ; n = n->next, i++) { //remove the table itself from the list of dependencies
+				if(*(int *) n->data == mt->base.id)
+					found = n;
 			}
+			assert(found);
+			list_remove_node(id_l, found);
+			mvc_create_dependencies(sql, id_l, mt->base.id, TABLE_DEPENDENCY);
 		}
 	}
 
@@ -297,7 +295,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 	sql_subtype found;
 	int localtype;
 
-	if(isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, sql->session->tr->sa, mt, 0, true)) != NULL)
+	if(isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, sql->session->tr->sa, mt, 0)) != NULL)
 		return res;
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;

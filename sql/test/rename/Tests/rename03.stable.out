@@ -124,15 +124,15 @@ Ready.
 [ 5,	"five"	]
 #select * from "ichanged";
 % sys.ichanged,	sys.ichanged # table_name
-% twoval,	threeval # name
-% clob,	int # type
-% 5,	1 # length
-[ "one",	1	]
-[ "two",	2	]
-[ "three",	3	]
-[ "four",	4	]
+% threeval,	twoval # name
+% int,	clob # type
+% 1,	5 # length
+[ 1,	"one"	]
+[ 2,	"two"	]
+[ 3,	"three"	]
+[ 4,	"four"	]
 [ NULL,	NULL	]
-[ "five",	5	]
+[ 5,	"five"	]
 #drop table "ichanged";
 #select "name" from sys.tables where "name" in ('rename', 'ichanged');
 % .tables # table_name

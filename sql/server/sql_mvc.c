@@ -1060,7 +1060,7 @@ mvc_create_type(mvc *sql, sql_schema * s, const char *name, int digits, int scal
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_type %s\n", name);
 
-	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl, 0);
+	t = sql_trans_create_type(sql->session->tr, s, name, digits, scale, radix, impl);
 	return t;
 }
 
@@ -1086,7 +1086,7 @@ mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, l
 		f = create_sql_func(sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 		f->s = s;
 	} else
-		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system, 0);
+		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 	return f;
 }
 
@@ -1116,7 +1116,7 @@ mvc_create_schema(mvc *m, const char *name, int auth_id, int owner)
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_schema %s %d %d\n", name, auth_id, owner);
 
-	s = sql_trans_create_schema(m->session->tr, name, auth_id, owner, 0);
+	s = sql_trans_create_schema(m->session->tr, name, auth_id, owner);
 	return s;
 }
 
@@ -1125,7 +1125,7 @@ mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_schema %s\n", s->base.name);
-	return sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, true);
+	return sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 sql_ukey *
@@ -1272,11 +1272,11 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action, (int)properties);
 
 	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
-		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action, properties, 0);
+		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action, properties);
 		t->s = s;
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, properties, 0);
-		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, m->session->tr->sa, t, 1, true))) {
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, properties);
+		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, m->session->tr->sa, t, 1))) {
 			(void) sql_error(m, 02, "%s", err);
 			return NULL;
 		}
@@ -1301,11 +1301,11 @@ mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const 
 		fprintf(stderr, "#mvc_create_view %s %s %s\n", s->base.name, name, sql);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0, 0, 0);
+		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0, 0);
 		t->s = s;
 		t->query = sa_strdup(m->sa, sql);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0);
 	}
 	return t;
 }
@@ -1319,11 +1319,11 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 		fprintf(stderr, "#mvc_create_remote %s %s %s\n", s->base.name, name, loc);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0, 0, 0);
+		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0, 0);
 		t->s = s;
 		t->query = sa_strdup(m->sa, loc);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
 	}
 	return t;
 }
@@ -1356,7 +1356,7 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 			return AUTHres;
 	}
 
-	if(sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, true))
+	if(sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT))
 		throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -1375,7 +1375,7 @@ mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, int
 	if (!sql_find_subtype(&tpe, type, digits, 0))
 		return NULL;
 
-	return sql_trans_create_column(m->session->tr, t, name, &tpe, 0);
+	return sql_trans_create_column(m->session->tr, t, name, &tpe);
 }
 
 sql_column *
@@ -1385,9 +1385,9 @@ mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 		fprintf(stderr, "#mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
 	if (t->persistence == SQL_DECLARED_TABLE && (!t->s || strcmp(t->s->base.name, dt_schema))) 
 		/* declared tables should not end up in the catalog */
-		return create_sql_column(m->sa, t, name, tpe, 0);
+		return create_sql_column(m->sa, t, name, tpe);
 	else
-		return sql_trans_create_column(m->session->tr, t, name, tpe, 0);
+		return sql_trans_create_column(m->session->tr, t, name, tpe);
 }
 
 int
@@ -1399,7 +1399,7 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 		drop_sql_column(t, col->base.id, drop_action);
 		return 0;
 	} else
-		return sql_trans_drop_column(m->session->tr, t, col->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT, true);
+		return sql_trans_drop_column(m->session->tr, t, col->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 void
@@ -1931,33 +1931,33 @@ stack_get_number(mvc *sql, const char *name)
 }
 
 sql_column *
-mvc_copy_column( mvc *m, sql_table *t, sql_column *c, char *new_name, bool create_row)
+mvc_copy_column( mvc *m, sql_table *t, sql_column *c)
 {
-	return sql_trans_copy_column(m->session->tr, t, c, new_name, create_row);
+	return sql_trans_copy_column(m->session->tr, t, c);
 }
 
 sql_key *
-mvc_copy_key(mvc *m, sql_table *t, sql_key *k, bool create_row)
+mvc_copy_key(mvc *m, sql_table *t, sql_key *k)
 {
-	return sql_trans_copy_key(m->session->tr, t, k, create_row);
+	return sql_trans_copy_key(m->session->tr, t, k);
 }
 
 sql_idx *
-mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i, bool create_row)
+mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
 {
-	return sql_trans_copy_idx(m->session->tr, t, i, create_row);
+	return sql_trans_copy_idx(m->session->tr, t, i);
 }
 
 sql_trigger *
-mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, bool create_row)
+mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr)
 {
-	return sql_trans_copy_trigger(m->session->tr, t, tr, create_row);
+	return sql_trans_copy_trigger(m->session->tr, t, tr);
 }
 
 sql_part *
-mvc_copy_part(mvc *m, sql_table *t, sql_part *pt, bool create_row)
+mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
 {
-	return sql_trans_copy_part(m->session->tr, t, pt, create_row);
+	return sql_trans_copy_part(m->session->tr, t, pt);
 }
 
 sql_subquery *

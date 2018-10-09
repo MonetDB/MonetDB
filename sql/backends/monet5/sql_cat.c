@@ -375,7 +375,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 		if (!pt || (n = cs_find_id(&mt->members, pt->base.id)) == NULL)
 			throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
 
-		sql_trans_del_table(sql->session->tr, mt, pt, drop_action, true);
+		sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
 	} else if (mt) {
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
 	} else {
@@ -635,7 +635,7 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 	} else if (!mvc_schema_privs(sql, s)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
-	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped, 0);
+	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
 	return NULL;
 }
 
@@ -881,7 +881,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
 		sql_column *c = n->data;
-		mvc_copy_column(sql, nt, c, NULL, true);
+		mvc_copy_column(sql, nt, c);
 	}
 	if (t->idxs.set) {
 		/* alter drop index */
@@ -916,7 +916,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				if (r != GDK_SUCCEED)
 					throw(SQL, "sql.alter_table", GDK_EXCEPTION);
 			}
-			mvc_copy_idx(sql, nt, i, true);
+			mvc_copy_idx(sql, nt, i);
 		}
 	}
 	if (t->keys.set) {
@@ -936,7 +936,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			str err;
 			if((err = sql_partition_validate_key(sql, t, k, "ALTER")))
 				return err;
-			mvc_copy_key(sql, nt, k, true);
+			mvc_copy_key(sql, nt, k);
 		}
 	}
 	return MAL_SUCCEED;
@@ -1056,7 +1056,7 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
 	return msg;
 }
 
@@ -1070,7 +1070,7 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, t->base.name, t, temp, 0);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
 	return msg;
 }
 
@@ -1561,55 +1561,24 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	str old_name = *getArgReference_str(stk, pci, 1);
 	str new_name = *getArgReference_str(stk, pci, 2);
-	sql_schema *olds, *news;
-	node *n;
+	sql_schema *s;
 
 	initcontext();
-	if (!(olds = mvc_bind_schema(sql, old_name)))
+	if (!(s = mvc_bind_schema(sql, old_name)))
 		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
-	if (!mvc_schema_privs(sql, olds))
+	if (!mvc_schema_privs(sql, s))
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
-	if (olds->system)
+	if (s->system)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (olds == cur_schema(sql))
+	if (s == cur_schema(sql))
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename current schema");
 	if (!new_name || strcmp(new_name, str_nil) == 0)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
 	if (mvc_bind_schema(sql, new_name))
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
-	if (sql_trans_drop_schema(sql->session->tr, olds->base.id, DROP_RESTRICT, false))
-		throw(SQL, "sql.rename_schema", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	news = sql_trans_create_schema(sql->session->tr, new_name, sql->role_id, sql->user_id, olds->base.id);
-
-	if (olds->types.set) {
-		for (n = olds->types.set->h; n; n = n->next) {
-			sql_type *ot = n->data;
-			if(sql_trans_create_type(sql->session->tr, news, ot->sqlname, ot->digits, ot->scale, ot->radix, ot->base.name, ot->base.id))
-				throw(SQL, "sql.rename_schema", SQLSTATE(0D000) "ALTER SCHEMA: unknown external type '%s'", ot->base.name);
-		}
-	}
-	if (olds->tables.set) {
-		for (n = olds->tables.set->h; n; n = n->next) {
-			sql_table *ot = n->data;
-			if((msg = create_table_or_view(sql, news->base.name, ot->base.name, ot, ot->persistence, ot->base.id)) != MAL_SUCCEED)
-				return msg;
-		}
-	}
-	if (olds->funcs.set) {
-		for (n = olds->funcs.set->h; n; n = n->next) {
-			sql_func *of = n->data;
-			(void) sql_trans_create_func(sql->session->tr, news, of->base.name, of->ops, of->res, of->type, of->lang,
-										 of->mod, of->imp, of->query, of->varres, of->vararg, of->system, of->base.id);
-		}
-	}
-	if (olds->seqs.set) {
-		for (n = olds->seqs.set->h; n; n = n->next) {
-			sql_sequence *os = n->data;
-			(void) sql_trans_create_sequence(sql->session->tr, news, os->base.name, os->start, os->minvalue,
-											 os->maxvalue, os->increment, os->cacheinc, os->cycle, os->bedropped, os->base.id);
-		}
-	}
+	if(!sql_trans_rename_schema(sql->session->tr, s->base.id, new_name))
+		throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -1617,7 +1586,7 @@ str
 SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	str schema_name = *getArgReference_str(stk, pci, 1);
 	str old_name = *getArgReference_str(stk, pci, 2);
 	str new_name = *getArgReference_str(stk, pci, 3);
@@ -1638,10 +1607,8 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_bind_table(sql, s, new_name))
 		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
 
-	if (sql_trans_drop_table(sql->session->tr, s, t->base.id, DROP_RESTRICT, false))
-		throw(SQL, "sql.rename_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	if ((msg = create_table_or_view(sql, s->base.name, new_name, t, t->persistence, t->base.id)) != MAL_SUCCEED)
-		return msg;
+	if(!sql_trans_rename_table(sql->session->tr, s, t->base.id, new_name))
+		throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -1649,14 +1616,13 @@ str
 SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	str schema_name = *getArgReference_str(stk, pci, 1);
 	str table_name = *getArgReference_str(stk, pci, 2);
 	str old_name = *getArgReference_str(stk, pci, 3);
 	str new_name = *getArgReference_str(stk, pci, 4);
 	sql_schema *s;
 	sql_table *t;
-	sql_column *oc, *nc;
 
 	initcontext();
 	if (!(s = mvc_bind_schema(sql, schema_name)))
@@ -1669,20 +1635,14 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename system table '%s'", t->base.name);
 	if (isView(t))
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, t->base.name);
-	if (!(oc = mvc_bind_column(sql, t, old_name)))
+	if (!mvc_bind_column(sql, t, old_name))
 		throw(SQL, "sql.rename_column", "ALTER TABLE: no such column '%s' in table '%s'", old_name, t->base.name);
 	if (!new_name || strcmp(new_name, str_nil) == 0)
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: invalid new column name");
 	if (mvc_bind_column(sql, t, new_name))
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, t->base.name);
 
-	nc = mvc_copy_column(sql, t, oc, new_name, false);
-	if (sql_trans_drop_column(sql->session->tr, t, oc->base.id, DROP_RESTRICT, false))
-		throw(SQL, "sql.rename_column", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	if (isPartitionedByColumnTable(t) && t->part.pcol->base.id == oc->base.id) {
-		t->part.pcol = nc;
-	} else if (isPartitionedByExpressionTable(t) && (msg = bootstrap_partition_expression(sql, sql->session->tr->sa, t, 0, false)) != MAL_SUCCEED) {
-		throw(SQL, "sql.rename_column", "%s", msg);
-	}
+	if(!sql_trans_rename_column(sql->session->tr, t, old_name, new_name))
+		throw(SQL, "sql.rename_column",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
