@@ -18,5 +18,6 @@ select a, group_concat(b) from testme group by a;
 
 insert into testme values (5, ''), (4, 'nothing'), (5, ''), (3, '');
 select a, group_concat(b) from testme group by a;
+select a, group_concat(a) from testme group by a;
 
 rollback;
