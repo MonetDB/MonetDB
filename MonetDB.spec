@@ -14,6 +14,10 @@
 
 %global release %{buildno}%{?dist}
 
+# This package contains monetdbd which is a (long running) daemon, so
+# we need to harden:
+%global _hardened_build 1
+
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
 # for Enterprise Linux (EPEL) repository is available, you can enable
 # its use by providing rpmbuild or mock with the "--with epel" option.
