@@ -341,7 +341,7 @@ log_write_id(logger *l, bte tpe, oid id)
 	lng lid = id;
 	assert(lid >= 0 && lid <= 1000000);
 	if (mnstr_writeChr(l->log, tpe) &&
-	    mnstr_writeLng(l->log, id))
+	    mnstr_writeLng(l->log, lid))
 		return GDK_SUCCEED;
 	fprintf(stderr, "!ERROR: log_write_id: write failed\n");
 	return GDK_FAIL;
@@ -646,6 +646,7 @@ la_bat_destroy(logger *lg, logaction *la)
 			return GDK_FAIL;
 
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
+			oid pos = (oid) p;
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->batRole == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
@@ -655,7 +656,7 @@ la_bat_destroy(logger *lg, logaction *la)
 				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
 			}
 #endif
-			if (BUNappend(lg->dsnapshots, &p, false) != GDK_SUCCEED)
+			if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 	}
@@ -3183,6 +3184,7 @@ gdk_return
 logger_add_bat(logger *lg, BAT *b, const char *name, bte tpe, oid id)
 {
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
+	lng lid = (lng) id;
 
 	assert(b->batRestricted > 0 ||
 	       b == lg->snapshots_bid ||
@@ -3213,7 +3215,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name, bte tpe, oid id)
 	if (BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_oid, &id, false) != GDK_SUCCEED) 
+	    BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED) 
 		return GDK_FAIL;
 	BBPretain(bid);
 	return GDK_SUCCEED;
@@ -3225,13 +3227,14 @@ logger_upgrade_bat(logger *lg, const char *name, bte tpe, oid id)
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
 
 	if (bid) {
-		BUN p = log_find(lg->catalog_bid, lg->dcatalog, bid);
+		oid p = (oid) log_find(lg->catalog_bid, lg->dcatalog, bid);
+		lng lid = (lng) id;
 
 		if (BUNappend(lg->dcatalog, &p, false) != GDK_SUCCEED ||
 		   BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
 	    	   BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
 	    	   BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
-	    	   BUNappend(lg->catalog_oid, &id, false) != GDK_SUCCEED) 
+	    	   BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED) 
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -3242,6 +3245,7 @@ logger_del_bat(logger *lg, log_bid bid)
 {
 	BAT *b = BATdescriptor(bid);
 	BUN p = log_find(lg->catalog_bid, lg->dcatalog, bid), q;
+	oid pos;
 
 	assert(p != BUN_NONE);
 	if (p == BUN_NONE) {
@@ -3254,8 +3258,8 @@ logger_del_bat(logger *lg, log_bid bid)
 	 * transient */
 	if (p >= lg->catalog_bid->batInserted &&
 	    (q = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
-
-		if (BUNappend(lg->dsnapshots, &q, false) != GDK_SUCCEED) {
+		pos = (oid) q;
+		if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED) {
 			logbat_destroy(b);
 			return GDK_FAIL;
 		}
@@ -3279,7 +3283,8 @@ logger_del_bat(logger *lg, log_bid bid)
 		lg->changes += BATcount(b) + 1;
 		BBPunfix(b->batCacheid);
 	}
-	return BUNappend(lg->dcatalog, &p, false);
+	pos = (oid) p;
+	return BUNappend(lg->dcatalog, &pos, false);
 /*assert(BBP_lrefs(bid) == 0);*/
 }
 
@@ -3302,7 +3307,8 @@ logger_find_bat(logger *lg, const char *name, bte tpe, oid id)
 		BUN p;
 
 		if (BAThash(lg->catalog_oid) == GDK_SUCCEED) {
-			HASHloop_lng(cni, cni.b->thash, p, &id) {
+			lng lid = (lng) id;
+			HASHloop_lng(cni, cni.b->thash, p, &lid) {
 				oid pos = p;
 				if (*(bte*)Tloc(lg->catalog_tpe, p) == tpe) {
 					if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
