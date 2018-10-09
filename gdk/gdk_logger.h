@@ -19,7 +19,7 @@ typedef struct logaction {
 	int tt;
 	lng id;
 	char *name;		/* optional */
-	char tpe;		/* tpe of column */
+	bte tpe;		/* tpe of column */
 	oid cid;		/* id of object */
 	BAT *b;			/* temporary bat with changes */
 	BAT *uid;		/* temporary bat with bun positions to update */

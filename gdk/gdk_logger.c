@@ -119,7 +119,7 @@ static char *log_commands[] = {
 };
 
 typedef struct logformat_t {
-	char flag;
+	bte flag;
 	int tid;
 	lng nr;
 } logformat;
@@ -250,7 +250,7 @@ log_write_string(logger *l, const char *n)
 }
 
 static log_return
-log_read_clear(logger *lg, trans *tr, char *name, char tpe, oid id)
+log_read_clear(logger *lg, trans *tr, char *name, bte tpe, oid id)
 {
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger found log_read_clear %s\n", NAME(name, tpe, id));
@@ -336,20 +336,19 @@ log_read_seq(logger *lg, logformat *l)
 }
 
 static gdk_return
-log_write_id(logger *l, char tpe, oid id)
+log_write_id(logger *l, bte tpe, oid id)
 {
 	lng lid = id;
-	if (lid < 0 || lid > 1000000)
-		assert(0);
+	assert(lid >= 0 && lid <= 1000000);
 	if (mnstr_writeChr(l->log, tpe) &&
-	    mnstr_writeLng(l->log, id))
+	    mnstr_writeLng(l->log, lid))
 		return GDK_SUCCEED;
 	fprintf(stderr, "!ERROR: log_write_id: write failed\n");
 	return GDK_FAIL;
 }
 
 static int
-log_read_id(logger *lg, char *tpe, oid *id)
+log_read_id(logger *lg, bte *tpe, oid *id)
 {
 	lng lid;
 
@@ -402,7 +401,7 @@ mbrRead(void *dst, stream *s, size_t cnt)
 #endif
 
 static log_return
-log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid id)
+log_read_updates(logger *lg, trans *tr, logformat *l, char *name, bte tpe, oid id)
 {
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
 	BAT *b = BATdescriptor(bid);
@@ -422,8 +421,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 
 		for (i = 0; i < tr->nr; i++) {
 			if (tr->changes[i].type == LOG_CREATE &&
-			   ((!tpe && strcmp(tr->changes[i].name, name) == 0)  ||
-			   (tpe && tr->changes[i].tpe == tpe && tr->changes[i].cid == id))) {
+			    (tpe == 0
+			     ? strcmp(tr->changes[i].name, name) == 0
+			     : tr->changes[i].tpe == tpe && tr->changes[i].cid == id)) {
 				ht = tr->changes[i].ht;
 				if (ht < 0) {
 					ht = TYPE_void;
@@ -620,7 +620,7 @@ la_bat_updates(logger *lg, logaction *la)
 }
 
 static log_return
-log_read_destroy(logger *lg, trans *tr, char *name, char tpe, oid id)
+log_read_destroy(logger *lg, trans *tr, char *name, bte tpe, oid id)
 {
 	(void) lg;
 	if (tr_grow(tr) == GDK_SUCCEED) {
@@ -646,6 +646,7 @@ la_bat_destroy(logger *lg, logaction *la)
 			return GDK_FAIL;
 
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
+			oid pos = (oid) p;
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->batRole == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
@@ -655,7 +656,7 @@ la_bat_destroy(logger *lg, logaction *la)
 				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
 			}
 #endif
-			if (BUNappend(lg->dsnapshots, &p, false) != GDK_SUCCEED)
+			if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
 	}
@@ -663,7 +664,7 @@ la_bat_destroy(logger *lg, logaction *la)
 }
 
 static log_return
-log_read_create(logger *lg, trans *tr, char *name, char tpe, oid id)
+log_read_create(logger *lg, trans *tr, char *name, bte tpe, oid id)
 {
 	char *buf = log_read_string(lg);
 	int ht, tt;
@@ -732,7 +733,7 @@ la_bat_create(logger *lg, logaction *la)
 }
 
 static log_return
-log_read_use(logger *lg, trans *tr, logformat *l, char *name, char tpe, oid id)
+log_read_use(logger *lg, trans *tr, logformat *l, char *name, bte tpe, oid id)
 {
 	(void) lg;
 	if (tr_grow(tr) != GDK_SUCCEED)
@@ -1092,7 +1093,7 @@ logger_readlog(logger *lg, char *filename)
 	}
 	while (err == LOG_OK && log_read_format(lg, &l)) {
 		char *name = NULL;
-		char tpe;
+		bte tpe;
 		oid id; 
 
 		t1 = time(NULL);
@@ -1121,7 +1122,7 @@ logger_readlog(logger *lg, char *filename)
 		if (lg->debug & 1) {
 			fprintf(stderr, "#logger_readlog: ");
 			if (l.flag > 0 &&
-			    l.flag < (char) (sizeof(log_commands) / sizeof(log_commands[0])))
+			    (size_t) l.flag < sizeof(log_commands) / sizeof(log_commands[0]))
 				fprintf(stderr, "%s", log_commands[(int) l.flag]);
 			else
 				fprintf(stderr, "%d", l.flag);
@@ -1800,7 +1801,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				goto error;
 			}
 			for(i=0;i<BATcount(n); i++) {
-				char zero = 0;
+				bte zero = 0;
 			    	if (BUNappend(t, &zero, false) != GDK_SUCCEED)
 					goto error;
 			}
@@ -2681,13 +2682,13 @@ logger_sequence(logger *lg, int seq, lng *id)
  * should simply introduce a versioning scheme.
  */
 gdk_return
-log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
+log_bat_persists(logger *lg, BAT *b, const char *name, bte tpe, oid id)
 {
 	char *ha, *ta;
 	int len;
 	char buf[BUFSIZ];
 	logformat l;
-	int flag = (b->batPersistence == PERSISTENT) ? LOG_USE : LOG_CREATE;
+	bte flag = (b->batPersistence == PERSISTENT) ? LOG_USE : LOG_CREATE;
 	BUN p;
 
 	l.nr = 0;
@@ -2757,7 +2758,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 }
 
 gdk_return
-log_bat_transient(logger *lg, const char *name, char tpe, oid id)
+log_bat_transient(logger *lg, const char *name, bte tpe, oid id)
 {
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
 	logformat l;
@@ -2797,8 +2798,7 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 	}
 
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED) ||
-	    (!tpe && log_write_string(lg, name) != GDK_SUCCEED)) {
+	    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_bat_transient: write failed\n");
 		return GDK_FAIL;
 	}
@@ -2809,7 +2809,7 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 }
 
 gdk_return
-log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
+log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, bte tpe, oid id)
 {
 	gdk_return ok = GDK_SUCCEED;
 	logformat l;
@@ -2833,8 +2833,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 
 		l.flag = (tpe)?LOG_UPDATE_ID:LOG_UPDATE;
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
-		    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED) ||
-		    (!tpe && log_write_string(lg, name) != GDK_SUCCEED))
+		    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED)
 			return GDK_FAIL;
 
 		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
@@ -2855,7 +2854,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 }
 
 gdk_return
-log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
+log_bat(logger *lg, BAT *b, const char *name, bte tpe, oid id)
 {
 	gdk_return ok = GDK_SUCCEED;
 	logformat l;
@@ -2876,8 +2875,7 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 
 		l.flag = tpe?LOG_INSERT_ID:LOG_INSERT;
 		if (log_write_format(lg, &l) != GDK_SUCCEED ||
-		    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED) ||
-		    (!tpe && log_write_string(lg, name) != GDK_SUCCEED))
+		    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED)
 			return GDK_FAIL;
 
 		if (b->ttype > TYPE_void &&
@@ -2904,7 +2902,7 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 }
 
 gdk_return
-log_bat_clear(logger *lg, const char *name, char tpe, oid id)
+log_bat_clear(logger *lg, const char *name, bte tpe, oid id)
 {
 	logformat l;
 
@@ -2919,8 +2917,7 @@ log_bat_clear(logger *lg, const char *name, char tpe, oid id)
 
 	l.flag = (tpe)?LOG_CLEAR_ID:LOG_CLEAR;
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
-	    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED) ||
-	    (!tpe && log_write_string(lg, name) != GDK_SUCCEED))
+	    (tpe ? log_write_id(lg, tpe, id) : log_write_string(lg, name)) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	if (lg->debug & 1)
@@ -3184,9 +3181,10 @@ bm_commit(logger *lg)
 }
 
 gdk_return
-logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
+logger_add_bat(logger *lg, BAT *b, const char *name, bte tpe, oid id)
 {
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
+	lng lid = (lng) id;
 
 	assert(b->batRestricted > 0 ||
 	       b == lg->snapshots_bid ||
@@ -3217,25 +3215,26 @@ logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	if (BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_oid, &id, false) != GDK_SUCCEED) 
+	    BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED) 
 		return GDK_FAIL;
 	BBPretain(bid);
 	return GDK_SUCCEED;
 }
 
 gdk_return
-logger_upgrade_bat(logger *lg, const char *name, char tpe, oid id)
+logger_upgrade_bat(logger *lg, const char *name, bte tpe, oid id)
 {
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
 
 	if (bid) {
-		BUN p = log_find(lg->catalog_bid, lg->dcatalog, bid);
+		oid p = (oid) log_find(lg->catalog_bid, lg->dcatalog, bid);
+		lng lid = (lng) id;
 
 		if (BUNappend(lg->dcatalog, &p, false) != GDK_SUCCEED ||
 		   BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
 	    	   BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
 	    	   BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
-	    	   BUNappend(lg->catalog_oid, &id, false) != GDK_SUCCEED) 
+	    	   BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED) 
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -3246,6 +3245,7 @@ logger_del_bat(logger *lg, log_bid bid)
 {
 	BAT *b = BATdescriptor(bid);
 	BUN p = log_find(lg->catalog_bid, lg->dcatalog, bid), q;
+	oid pos;
 
 	assert(p != BUN_NONE);
 	if (p == BUN_NONE) {
@@ -3258,8 +3258,8 @@ logger_del_bat(logger *lg, log_bid bid)
 	 * transient */
 	if (p >= lg->catalog_bid->batInserted &&
 	    (q = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
-
-		if (BUNappend(lg->dsnapshots, &q, false) != GDK_SUCCEED) {
+		pos = (oid) q;
+		if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED) {
 			logbat_destroy(b);
 			return GDK_FAIL;
 		}
@@ -3283,12 +3283,13 @@ logger_del_bat(logger *lg, log_bid bid)
 		lg->changes += BATcount(b) + 1;
 		BBPunfix(b->batCacheid);
 	}
-	return BUNappend(lg->dcatalog, &p, false);
+	pos = (oid) p;
+	return BUNappend(lg->dcatalog, &pos, false);
 /*assert(BBP_lrefs(bid) == 0);*/
 }
 
 log_bid
-logger_find_bat(logger *lg, const char *name, char tpe, oid id)
+logger_find_bat(logger *lg, const char *name, bte tpe, oid id)
 {
 	if (!tpe || !lg->with_ids) {
 		BATiter cni = bat_iterator(lg->catalog_nme);
@@ -3306,9 +3307,10 @@ logger_find_bat(logger *lg, const char *name, char tpe, oid id)
 		BUN p;
 
 		if (BAThash(lg->catalog_oid) == GDK_SUCCEED) {
-			HASHloop_lng(cni, cni.b->thash, p, &id) {
+			lng lid = (lng) id;
+			HASHloop_lng(cni, cni.b->thash, p, &lid) {
 				oid pos = p;
-				if (*(char*)Tloc(lg->catalog_tpe, p) == tpe) {
+				if (*(bte*)Tloc(lg->catalog_tpe, p) == tpe) {
 					if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
 						return *(log_bid *) Tloc(lg->catalog_bid, p);
 				}
