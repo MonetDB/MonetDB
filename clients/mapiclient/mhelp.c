@@ -544,7 +544,7 @@ SQLhelp sqlhelp[] = {
 	 "BOOLEAN | BOOL | TINYINT | SMALLINT | INT | INTEGER | BIGINT | HUGEINT |\n"
 	 " { DECIMAL | DEC | NUMERIC | FLOAT } [ '(' nonzero [',' nonzero ] ')' ] |\n"
 	 " REAL | DOUBLE [ PRECISION ] |\n"
-	 " { VARCHAR | CHARARCTER VARYING } '(' nonzero ')' |\n"
+	 " { VARCHAR | CHARACTER VARYING } '(' nonzero ')' |\n"
 	 " { CHAR | CHARACTER [ LARGE OBJECT ] | CLOB | TEXT | STRING | JSON | URL } [ '(' nonzero ')' ] |\n"
 	 " { BINARY LARGE OBJECT | BLOB } [ '(' nonzero ')' ] |\n"
 	 " UUID | INET | datetime_type | interval_type | geometry_type",
