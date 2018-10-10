@@ -731,7 +731,7 @@ use SQL with MonetDB, you will need to install this package.
 %else
 # RedHat Enterprise Linux < 7
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
-%exclude %{_tmpfilesdir}/monetdbd.conf
+%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # no _unitdir macro
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
@@ -977,9 +977,11 @@ cd -
 %make_install
 
 # move file to correct location
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 mkdir -p %{buildroot}%{_tmpfilesdir}
 mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdir}
 rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
+%endif
 
 install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
