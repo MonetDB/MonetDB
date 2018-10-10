@@ -14,6 +14,10 @@
 
 %global release %{buildno}%{?dist}
 
+# This package contains monetdbd which is a (long running) daemon, so
+# we need to harden:
+%global _hardened_build 1
+
 # On RedHat Enterprise Linux and derivatives, if the Extra Packages
 # for Enterprise Linux (EPEL) repository is available, you can enable
 # its use by providing rpmbuild or mock with the "--with epel" option.
@@ -739,10 +743,6 @@ used from the MAL level.
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires(pre): MonetDB5-server%{?_isa} = %{version}-%{release}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# RHEL >= 7, and all current Fedora
-Requires(post): %{_bindir}/systemd-tmpfiles
-%endif
 %if (0%{?fedora} >= 22)
 %if %{with hugeint}
 Recommends: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
@@ -759,11 +759,6 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-%post SQL-server5
-systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%endif
-
 %files SQL-server5
 %defattr(-,root,root)
 %{_bindir}/monetdb
@@ -771,7 +766,8 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
-%{_sysconfdir}/tmpfiles.d/monetdbd.conf
+%dir %attr(775,monetdb,monetdb) /run/monetdb
+%{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
 %else
 # RedHat Enterprise Linux < 7
@@ -908,6 +904,8 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
+# use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
+# %{_localstatedir}/run is a symlink to /run
 /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
@@ -921,6 +919,8 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
+  # use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
+  # %{_localstatedir}/run is a symlink to /run
   /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
@@ -943,11 +943,18 @@ fi
 # that causes it to report an internal error when compiling
 # testing/difflib.c.  The work around is to not use -fstack-protector-strong.
 # The bug exhibits itself on CentOS 7 on AArch64.
-if [ `gcc -v 2>&1 | grep -c 'Target: aarch64\|gcc version 4\.'` -eq 2 ]; then
-	# set CFLAGS before configure, so that this value gets used
-	CFLAGS='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -grecord-gcc-switches  '
-	export CFLAGS
-fi
+# Everywhere else, add -Wno-format-truncation to the compiler options
+# to reduce the number of warnings during compilation.
+%ifarch aarch64
+    if gcc -v 2>&1 | grep -q 'gcc version 4\.'; then
+	CFLAGS="${CFLAGS:-$(echo %optflags | sed 's/-fstack-protector-strong//')"
+    else
+	CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
+    fi
+%else
+    CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
+%endif
+export CFLAGS
 %{configure} \
 	--enable-assert=no \
 	--enable-console=yes \
@@ -1017,10 +1024,23 @@ cd -
 %install
 %make_install
 
-mkdir -p %{buildroot}%{_localstatedir}/MonetDB
-mkdir -p %{buildroot}%{_localstatedir}/monetdb5/dbfarm
-mkdir -p %{buildroot}%{_localstatedir}/log/monetdb
-mkdir -p %{buildroot}%{_localstatedir}/run/monetdb
+# move file to correct location
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+mkdir -p %{buildroot}%{_tmpfilesdir}
+mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdir}
+rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
+%endif
+
+install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
+install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
+install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
+install -d -m 0775 %{buildroot}/run/monetdb
+%else
+# RedHat Enterprise Linux < 7
+install -d -m 0775 %{buildroot}%{_localstatedir}/run/monetdb
+%endif
 
 # remove unwanted stuff
 # .la files
