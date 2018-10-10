@@ -902,11 +902,18 @@ fi
 # that causes it to report an internal error when compiling
 # testing/difflib.c.  The work around is to not use -fstack-protector-strong.
 # The bug exhibits itself on CentOS 7 on AArch64.
-if [ `gcc -v 2>&1 | grep -c 'Target: aarch64\|gcc version 4\.'` -eq 2 ]; then
-	# set CFLAGS before configure, so that this value gets used
-	CFLAGS='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -grecord-gcc-switches  '
-	export CFLAGS
-fi
+# Everywhere else, add -Wno-format-truncation to the compiler options
+# to reduce the number of warnings during compilation.
+%ifarch aarch64
+    if gcc -v 2>&1 | grep -q 'gcc version 4\.'; then
+	CFLAGS="${CFLAGS:-$(echo %optflags | sed 's/-fstack-protector-strong//')"
+    else
+	CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
+    fi
+%else
+    CFLAGS="${CFLAGS:-%optflags -Wno-format-truncation}"
+%endif
+export CFLAGS
 %{configure} \
 	--enable-assert=no \
 	--enable-console=yes \
