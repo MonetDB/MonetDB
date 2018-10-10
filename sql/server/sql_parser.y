@@ -6488,6 +6488,9 @@ char *token2string(int token)
 	SQL(PARTITION_RANGE);
 	SQL(PARTITION_COLUMN);
 	SQL(PARTITION_EXPRESSION);
+	SQL(RENAME_SCHEMA);
+	SQL(RENAME_TABLE);
+	SQL(RENAME_COLUMN);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

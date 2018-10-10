@@ -41,7 +41,7 @@ typedef struct {
 	const char *comments;
 } SQLhelp;
 
-#define NUMBER_MAJOR_COMMANDS 74 // The number of major commands to show in case of no query
+#define NUMBER_MAJOR_COMMANDS 75 // The number of major commands to show in case of no query
 
 SQLhelp sqlhelp[] = {
 	// major commands
@@ -52,9 +52,11 @@ SQLhelp sqlhelp[] = {
 	 "ALTER TABLE qname ALTER [ COLUMN ] ident SET [NOT] NULL\n"
 	 "ALTER TABLE qname ALTER [ COLUMN ] ident DROP DEFAULT\n"
 	 "ALTER TABLE qname ALTER [ COLUMN ] ident SET STORAGE {string | NULL}\n"
+	 "ALTER TABLE qname ALTER [ COLUMN ] ident RENAME TO ident\n"
 	 "ALTER TABLE qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
-	 "ALTER TABLE qname SET { { READ | INSERT } ONLY | READ WRITE }",
+	 "ALTER TABLE qname SET { { READ | INSERT } ONLY | READ WRITE }\n"
+	 "ALTER TABLE qname RENAME TO ident",
 	 "column_def,table_constraint",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER MERGE TABLE",
@@ -64,6 +66,11 @@ SQLhelp sqlhelp[] = {
 	 "ALTER TABLE qname SET TABLE qname AS PARTITION opt_partition_spec",
 	 "opt_partition_spec",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"},
+	{"ALTER SCHEMA",
+	 "",
+	 "ALTER SCHEMA ident RENAME TO ident",
+	 NULL,
+	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER SEQUENCE",
 	 "",
 	 "ALTER SEQUENCE ident [ AS datatype] [ RESTART [WITH start]] [INCREMENT BY increment]\n"
