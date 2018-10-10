@@ -1,2 +1,5 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
+* Wed Oct 10 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Some subtle dependencies between RPMs have been fixed.
+
