@@ -1276,6 +1276,43 @@ load_trans(sql_trans* tr, sqlid id)
 	table_funcs.rids_destroy(schemas);
 }
 
+static int
+store_upgrade_ids(sql_trans* tr)
+{
+	node *n, *m, *o;
+	for (n = tr->schemas.set->h; n; n = n->next) {
+		sql_schema *s = n->data;
+
+		if (isDeclaredSchema(s))
+			continue;
+		if (s->tables.set)
+		for (m = s->tables.set->h; m; m = m->next) {
+			sql_table *t = m->data;
+
+			if (!isTable(t))
+				continue;
+			if (store_funcs.upgrade_del(t) != LOG_OK)
+				return SQL_ERR;
+			for (o = t->columns.set->h; o; o = o->next) {
+				sql_column *c = o->data;
+
+				if (store_funcs.upgrade_col(c) != LOG_OK)
+					return SQL_ERR;
+			}
+			if (t->idxs.set)
+			for (o = t->idxs.set->h; o; o = o->next) {
+				sql_idx *i = o->data;
+
+				if (store_funcs.upgrade_idx(i) != LOG_OK)
+					return SQL_ERR;
+			}
+		}
+	}
+	store_apply_deltas();
+	logger_funcs.with_ids();
+	return SQL_OK;
+}
+
 static sqlid
 next_oid(void)
 {
@@ -1621,6 +1658,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	} else {
 		t = create_sql_table(tr->sa, name, tt_table, 1, persistence, commit_action, 0);
 	}
+	t->bootstrap = 1;
 
 	if (bs_debug)
 		fprintf(stderr, "#bootstrap_create_table %s\n", name );
@@ -1907,6 +1945,9 @@ store_load(void) {
 	GDKfree(store_oids);
 	store_oids = NULL;
 	nstore_oids = 0;
+	if (logger_funcs.log_needs_update())
+		if (store_upgrade_ids(gtrans) != SQL_OK)
+			fprintf(stderr, "cannot commit upgrade transaction\n");
 	return first;
 }
 
@@ -2721,6 +2762,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	obj_ref(ot,t,flag);
 	t->type = ot->type;
 	t->system = ot->system;
+	t->bootstrap = ot->bootstrap;
 	t->persistence = ot->persistence;
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;

@@ -52,6 +52,7 @@ typedef enum tokens {
 	SQL_DECLARE_TABLE,
 	SQL_COMMENT,
 	SQL_SET,
+	SQL_SAMPLE,
 	SQL_CALL,
 	SQL_PREP,
 	SQL_PREPARE,

@@ -17,10 +17,10 @@
 
 /* #define _DEBUG_SAMPLE_ */
 
-mal_export str
-SAMPLEuniform(bat *r, bat *b, lng *s);
 
+#include "mal_interpreter.h"
+ 
 mal_export str
-SAMPLEuniform_dbl(bat *r, bat *b, dbl *p);
+SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

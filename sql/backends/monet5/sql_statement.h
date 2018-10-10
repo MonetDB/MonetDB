@@ -210,7 +210,7 @@ extern stmt *stmt_result(backend *be, stmt *s, int nr);
  * order:    is order important or not (firstn vs slice)
  */ 
 extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order);
-extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample);
+extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *orderby_grp);
 

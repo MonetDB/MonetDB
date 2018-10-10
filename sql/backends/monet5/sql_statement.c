@@ -1141,7 +1141,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 }
 
 stmt *
-stmt_sample(backend *be, stmt *s, stmt *sample)
+stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1151,6 +1151,14 @@ stmt_sample(backend *be, stmt *s, stmt *sample)
 	q = newStmt(mb, sampleRef, subuniformRef);
 	q = pushArgument(mb, q, s->nr);
 	q = pushArgument(mb, q, sample->nr);
+
+	if (seed) {
+		if (seed->nr < 0)
+			return NULL;
+
+		q = pushArgument(mb, q, seed->nr);
+	}
+
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_sample);
 		if (ns == NULL) {
@@ -1160,6 +1168,11 @@ stmt_sample(backend *be, stmt *s, stmt *sample)
 
 		ns->op1 = s;
 		ns->op2 = sample;
+
+		if (seed) {
+			ns->op3 = seed;
+		}
+
 		ns->nrcols = s->nrcols;
 		ns->key = s->key;
 		ns->aggr = s->aggr;

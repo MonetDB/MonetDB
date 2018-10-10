@@ -33,7 +33,7 @@
 #include "gdk.h"
 #include "mal_exception.h"
 #include "sample.h"
-
+// TODO: Go through this documentation and update it with an explanation about seeds.
 /*
  * @- Uniform Sampling.
  *
@@ -68,39 +68,52 @@
  */
 
 str
-SAMPLEuniform(bat *r, bat *b, lng *s) {
+SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+
+	bat *r, *b;
+	lng sample_size;
+	unsigned seed;
+	(void) cntxt;
+
 	BAT *br, *bb;
+
+	r = getArgReference_bat(stk, pci, 0);
+	b = getArgReference_bat(stk, pci, 1);
 
 	if ((bb = BATdescriptor(*b)) == NULL) {
 		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
 	}
-	br = BATsample(bb, (BUN) *s);
+
+	if (getArgType(mb, pci, 2) == TYPE_dbl)
+	{
+		dbl pr = *getArgReference_dbl(stk, pci, 2);
+
+		if ( pr < 0.0 || pr > 1.0 ) {
+			BBPunfix(bb->batCacheid);
+			throw(MAL, "sample.subuniform", ILLEGAL_ARGUMENT
+					" p should be between 0 and 1.0" );
+		} else if (pr == 0) {/* special case */
+			sample_size = 0;
+			// TODO: Add special case for pr == 1.0.
+		} else {
+			sample_size = (lng) (pr*(double)BATcount(bb));
+		}
+	} else {
+		sample_size = *getArgReference_lng(stk, pci, 2);
+	}
+
+	if (pci->argc == 4) {
+		seed = (unsigned) *getArgReference_int(stk, pci, 3);
+		br = BATsample_with_seed(bb, (BUN) sample_size, seed);
+	}
+	else {
+		br = BATsample(bb, (BUN) sample_size);
+	}
+
 	BBPunfix(bb->batCacheid);
 	if (br == NULL)
 		throw(MAL, "sample.subuniform", OPERATION_FAILED);
 
 	BBPkeepref(*r = br->batCacheid);
 	return MAL_SUCCEED;
-
-}
-
-str
-SAMPLEuniform_dbl(bat *r, bat *b, dbl *p) {
-	BAT *bb;
-	double pr = *p;
-	lng s;
-
-	if ( pr < 0.0 || pr > 1.0 ) {
-		throw(MAL, "sample.subuniform", ILLEGAL_ARGUMENT
-				" p should be between 0 and 1.0" );
-	} else if (pr == 0) {/* special case */
-		s = 0;
-		return SAMPLEuniform(r, b, &s);
-	}
-	if ((bb = BATdescriptor(*b)) == NULL) {
-		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
-	}
-	s = (lng) (pr*(double)BATcount(bb));
-	BBPunfix(bb->batCacheid);
-	return SAMPLEuniform(r, b, &s);
 }
