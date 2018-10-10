@@ -41,7 +41,7 @@ typedef struct {
 	const char *comments;
 } SQLhelp;
 
-#define NUMBER_MAJOR_COMMANDS 73 // The number of major commands to show in case of no query
+#define NUMBER_MAJOR_COMMANDS 74 // The number of major commands to show in case of no query
 
 SQLhelp sqlhelp[] = {
 	// major commands
@@ -215,7 +215,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE TRIGGER",
 	 "",
-	 "CREATE [ OR REPLACE ] TRIGGER wname { BEFORE | AFTER } { INSERT | DELETE | TRUNCATE ...\n"
+	 "CREATE [ OR REPLACE ] TRIGGER qname { BEFORE | AFTER } { INSERT | DELETE | TRUNCATE ...\n"
 	 " | UPDATE [ OF ident [',' ident]] } ON qname REFERENCING trigger_reference... triggered_action",
 	 "trigger_reference",
 	 NULL},
