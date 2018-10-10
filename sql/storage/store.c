@@ -4905,7 +4905,7 @@ sql_trans_rename_schema(sql_trans *tr, int id, const char *new_name)
 
 	assert(new_name && strcmp(new_name, str_nil) != 0);
 
-	list_hash_delete(tr->schemas.set, s, NULL);
+	list_hash_delete(tr->schemas.set, s, NULL); /* has to re-hash the entry in the changeset */
 	s->base.name = sa_strdup(tr->sa, new_name);
 	if(!list_hash_add(tr->schemas.set, s, NULL))
 		return NULL;
@@ -5201,7 +5201,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, int id, const char *new_nam
 
 	assert(new_name && strcmp(new_name, str_nil) != 0);
 
-	list_hash_delete(s->tables.set, t, NULL);
+	list_hash_delete(s->tables.set, t, NULL); /* has to re-hash the entry in the changeset */
 	t->base.name = sa_strdup(tr->sa, new_name);
 	if(!list_hash_add(s->tables.set, t, NULL))
 		return NULL;
@@ -5210,6 +5210,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, int id, const char *new_nam
 	assert(!is_oid_nil(rid));
 	table_funcs.column_update_value(tr, find_sql_column(systable, "name"), rid, (void*) new_name);
 
+	setRenamedFlag(t);
 	t->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return t;
@@ -5586,7 +5587,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 
 	assert(new_name && strcmp(new_name, str_nil) != 0);
 
-	list_hash_delete(t->columns.set, c, NULL);
+	list_hash_delete(t->columns.set, c, NULL); /* has to re-hash the entry in the changeset */
 	c->base.name = sa_strdup(tr->sa, new_name);
 	if(!list_hash_add(t->columns.set, c, NULL))
 		return NULL;
@@ -5595,6 +5596,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 	assert(!is_oid_nil(rid));
 	table_funcs.column_update_value(tr, find_sql_column(syscolumn, "name"), rid, (void*) new_name);
 
+	setRenamedFlag(c);
 	c->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return c;
