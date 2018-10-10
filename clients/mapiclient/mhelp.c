@@ -41,7 +41,7 @@ typedef struct {
 	const char *comments;
 } SQLhelp;
 
-#define NUMBER_MAJOR_COMMANDS 73 // The number of major commands to show in case of no query
+#define NUMBER_MAJOR_COMMANDS 74 // The number of major commands to show in case of no query
 
 SQLhelp sqlhelp[] = {
 	// major commands
@@ -62,7 +62,7 @@ SQLhelp sqlhelp[] = {
 	 "ALTER TABLE qname ADD TABLE qname [ AS PARTITION opt_partition_spec ]\n"
 	 "ALTER TABLE qname DROP TABLE qname [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE qname SET TABLE qname AS PARTITION opt_partition_spec",
-	 "",
+	 "opt_partition_spec",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"},
 	{"ALTER SEQUENCE",
 	 "",
@@ -81,7 +81,7 @@ SQLhelp sqlhelp[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Users"},
 	{"ANALYZE",
 	 "Collect column data statistics for optimizations",
-	 "ANALYZE schemaname [ . tablename [ column_list ] ] [SAMPLE size] [MINMAX]",
+	 "ANALYZE ident [ . ident [ column_list ] ] [SAMPLE size] [MINMAX]",
 	 "column_list",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/statistics"},
 	{"CALL",
@@ -179,7 +179,7 @@ SQLhelp sqlhelp[] = {
 	{"CREATE MERGE TABLE",
 	 "",
 	 "CREATE MERGE TABLE [ IF NOT EXISTS ] qname table_source [ opt_partition_by ];",
-	 NULL,
+	 "table_source,opt_partition_by",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"},
 	{"CREATE REMOTE TABLE",
 	 "",
@@ -205,7 +205,7 @@ SQLhelp sqlhelp[] = {
 	{"CREATE STREAM TABLE",
 	 "Temporary table, locked during updates/ continues query processing",
 	 "CREATE STREAM TABLE [ IF NOT EXISTS ] qname table_source\n",
-	 NULL,
+	 "table_source",
 	 NULL},
 	{"CREATE TABLE",
 	 "",
@@ -216,9 +216,9 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE TRIGGER",
 	 "",
-	 "CREATE [ OR REPLACE ] TRIGGER wname { BEFORE | AFTER } { INSERT | DELETE | TRUNCATE ...\n"
+	 "CREATE [ OR REPLACE ] TRIGGER qname { BEFORE | AFTER } { INSERT | DELETE | TRUNCATE ...\n"
 	 " | UPDATE [ OF ident [',' ident]] } ON qname REFERENCING trigger_reference... triggered_action",
-	 "trigger_reference",
+	 "trigger_reference,triggered_action",
 	 NULL},
 	{"CREATE TYPE",
 	 "Add user defined type to the type system ",
@@ -275,13 +275,13 @@ SQLhelp sqlhelp[] = {
 	 "",
 	 "DROP ALL AGGREGATE qname [ RESTRICT | CASCADE ]\n"
 	 "DROP AGGREGATE [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 NULL,
+	 "param",
 	 NULL},
 	{"DROP FUNCTION",
 	 "",
 	 "DROP ALL [FILTER] FUNCTION qname [ RESTRICT | CASCADE ]\n"
 	 "DROP [FILTER] FUNCTION [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 NULL,
+	 "param",
 	 NULL},
 	{"DROP INDEX",
 	 "",
@@ -292,13 +292,13 @@ SQLhelp sqlhelp[] = {
 	 "",
 	 "DROP ALL LOADER qname [ RESTRICT | CASCADE ]\n"
 	 "DROP LOADER [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 NULL,
+	 "param",
 	 NULL},
 	{"DROP PROCEDURE",
 	 "",
 	 "DROP ALL PROCEDURE qname [ RESTRICT | CASCADE ]\n"
 	 "DROP PROCEDURE [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
-	 NULL,
+	 "param",
 	 NULL},
 	{"DROP ROLE",
 	 "",
@@ -356,7 +356,7 @@ SQLhelp sqlhelp[] = {
 	 "Define access privileges",
 	 "GRANT privileges TO grantee [',' ...] [ WITH GRANT OPTION ]\n"
 	 "GRANT role [',' ...] TO grantee [',' ...] [ WITH ADMIN OPTION]",
-	 "privileges,role",
+	 "privileges,role,grantee",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Permissions"},
 	{"RELEASE SAVEPOINT",
 	 "",
@@ -366,7 +366,7 @@ SQLhelp sqlhelp[] = {
 	{"RETURN",
 	 "",
 	 "RETURN { query_expression | search_condition | TABLE '(' query_expression ')'",
-	 NULL,
+	 "query_expression,search_condition",
 	 NULL},
 	{"REVOKE",
 	 "Remove some privileges",
@@ -457,7 +457,7 @@ SQLhelp sqlhelp[] = {
 	 "table_ref NATURAL [ INNER | LEFT | RIGHT | FULL ] JOIN table_ref |\n"
 	 "table_ref UNION JOIN table_ref { ON search_condition | USING column_list } |\n"
 	 "table_ref [ INNER | LEFT | RIGHT | FULL ] JOIN table_ref { ON search_condition | USING column_list }",
-	 NULL,
+	 "table_ref,search_condition,column_list",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"},
 	{"TRACE",
 	 "Give execution trace",
@@ -477,7 +477,7 @@ SQLhelp sqlhelp[] = {
 	{"WHILE",
 	 "",
 	 "[ident ':'] WHILE search_condition DO procedure_statement ... END WHILE [ident]",
-	 NULL,
+	 "search_condition,procedure_statement",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"WINDOW",
 	 "",
@@ -527,7 +527,7 @@ SQLhelp sqlhelp[] = {
 	 NULL,
 	 "NULL | NOT NULL | UNIQUE | PRIMARY KEY | CHECK '(' search_condition ')' |\n"
 	 " REFERENCES qname [ column_list ] [ MATCH {FULL|PARTIAL|SIMPLE} ] reference_action ...\n",
-	 "search_condition,reference_action",
+	 "column_list,search_condition,reference_action",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableIdentityColumn"},
 	{"control_statement",
 	 NULL,
@@ -634,15 +634,15 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"opt_partition_by",
 	 NULL,
-	 "PARTITION BY { RANGE | VALUES } { ON '(' ident ')' | USING '(' expression ')' }",
-	 NULL,
+	 "PARTITION BY { RANGE | VALUES } { ON '(' ident ')' | USING '(' query_expression ')' }",
+	 "query_expression",
 	 NULL},
 	{"opt_partition_spec",
 	 NULL,
 	 "IN '(' partition_list ')' [ WITH NULL ]\n"
 	 "BETWEEN partition_range_from AND partition_range_to [ WITH NULL ]\n"
 	 "WITH NULL",
-	 NULL,
+	 "partition_list,partition_range_from,partition_range_to",
 	 NULL},
 	{"param",
 	 NULL,
@@ -651,18 +651,18 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"partition_list",
 	 NULL,
-	 "expression [ ',' ... ]",
-	 NULL,
+	 "query_expression [ ',' ... ]",
+	 "query_expression",
 	 NULL},
 	{"partition_range_from",
 	 NULL,
-	 "{ RANGE MINVALUE | expression }",
-	 NULL,
+	 "{ RANGE MINVALUE | query_expression }",
+	 "query_expression",
 	 NULL},
 	{"partition_range_to",
 	 NULL,
-	 "{ RANGE MAXVALUE | expression }",
-	 NULL,
+	 "{ RANGE MAXVALUE | query_expression }",
+	 "query_expression",
 	 NULL},
 	{"privileges",
 	 NULL,
@@ -739,7 +739,7 @@ SQLhelp sqlhelp[] = {
 	{"table_ref",
 	 NULL,
 	 "[LATERAL] func_ref [table_name] | [LATERAL] subquery | joined_table",
-	 NULL,
+	 "table_name,subquery",
 	 NULL},
 	{"table_source",
 	 NULL,
@@ -764,7 +764,7 @@ SQLhelp sqlhelp[] = {
 	{"transactionmode",
 	 NULL,
 	 "{ READ ONLY | READ WRITE | ISOLATION LEVEL isolevel | DIAGNOSTICS intval } [ , ... ]",
-	 NULL,
+	 "isolevel",
 	 NULL},
 	{"trigger_reference",
 	 NULL,
@@ -780,7 +780,7 @@ SQLhelp sqlhelp[] = {
 	 NULL,
 	 "[ FOR EACH { ROW | STATEMENT } ] [ WHEN '(' search_condition ')'\n"
 	 "BEGIN ATOMIC trigger_statement ... END ",
-	 NULL,
+	 "trigger_statement,search_condition",
 	 NULL},
 	{"trigger_statement",
 	 NULL,
@@ -790,7 +790,7 @@ SQLhelp sqlhelp[] = {
 	{"when_statement",
 	 NULL,
 	 "WHEN scalar_expression THEN procedure_statement ...",
-	 NULL,
+	 "procedure_statement",
 	 NULL},
 	{"with_list",
 	 NULL,
