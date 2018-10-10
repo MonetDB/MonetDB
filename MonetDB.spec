@@ -863,7 +863,9 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+# use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
+# %{_localstatedir}/run is a symlink to /run
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -876,7 +878,9 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
-  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb /run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  # use %{_localstatedir}/run/monetdb here for EPEL 6; on other systems,
+  # %{_localstatedir}/run is a symlink to /run
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
   fi
@@ -980,7 +984,13 @@ rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
 install -d -m 0750 %{buildroot}%{_localstatedir}/MonetDB
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
 install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# RHEL >= 7, and all current Fedora
 install -d -m 0775 %{buildroot}/run/monetdb
+%else
+# RedHat Enterprise Linux < 7
+install -d -m 0775 %{buildroot}%{_localstatedir}/run/monetdb
+%endif
 
 # remove unwanted stuff
 # .la files
