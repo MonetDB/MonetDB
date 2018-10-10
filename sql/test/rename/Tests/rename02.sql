@@ -15,3 +15,22 @@ select "name" from sys.tables where "name" = 'anothertable';
 drop schema "testing";
 select "name" from sys.schemas where "name" in ('testing', 'altered');
 select "name" from sys.tables where "name" = 'anothertable';
+
+create schema testing;
+start transaction;
+alter schema "testing" rename to "altered";
+this query is wrong; --error
+rollback;
+
+drop schema "testing";
+select "name" from sys.schemas where "name" in ('testing', 'altered');
+
+create schema testing;
+start transaction;
+alter schema "testing" rename to "altered";
+commit;
+
+select "name" from sys.schemas where "name" in ('testing', 'altered');
+drop schema "testing"; --error
+drop schema "altered";
+select "name" from sys.schemas where "name" in ('testing', 'altered');

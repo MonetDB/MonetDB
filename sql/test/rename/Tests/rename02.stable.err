@@ -30,6 +30,14 @@ stderr of test 'rename02` in directory 'sql/test/rename` itself:
 # 17:22:11 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19835" "--port=37796"
 # 17:22:11 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-5956/.s.monetdb.37075
+QUERY = this query is wrong; --error
+ERROR = !syntax error, unexpected IDENT in: "this"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-5956/.s.monetdb.37075
+QUERY = drop schema "testing"; --error
+ERROR = !DROP SCHEMA: name testing does not exist
+CODE  = 3F000
 
 # 17:22:11 >  
 # 17:22:11 >  "Done."

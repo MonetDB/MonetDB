@@ -111,6 +111,31 @@ Ready.
 % name # name
 % varchar # type
 % 0 # length
+#create schema testing;
+#start transaction;
+#alter schema "testing" rename to "altered";
+#rollback;
+#select "name" from sys.schemas where "name" = 'testing';
+% sys.schemas # table_name
+% name # name
+% varchar # type
+% 0 # length
+#create schema testing;
+#start transaction;
+#alter schema "testing" rename to "altered";
+#commit;
+#select "name" from sys.schemas where "name" in ('testing', 'altered');
+% sys.schemas # table_name
+% name # name
+% varchar # type
+% 7 # length
+[ "altered"	]
+#drop schema "altered";
+#select "name" from sys.schemas where "name" in ('testing', 'altered');
+% sys.schemas # table_name
+% name # name
+% varchar # type
+% 0 # length
 
 # 17:22:11 >  
 # 17:22:11 >  "Done."

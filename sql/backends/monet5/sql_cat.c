@@ -1570,15 +1570,16 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
 	if (s->system)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (s == cur_schema(sql))
-		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename current schema");
 	if (!new_name || strcmp(new_name, str_nil) == 0)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
 	if (mvc_bind_schema(sql, new_name))
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
-	if(!sql_trans_rename_schema(sql->session->tr, s->base.id, new_name))
+	if (!sql_trans_rename_schema(sql->session->tr, s->base.id, new_name))
 		throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (s == cur_schema(sql))
+		if(!mvc_set_schema(sql, new_name))
+			throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -1607,7 +1608,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mvc_bind_table(sql, s, new_name))
 		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
 
-	if(!sql_trans_rename_table(sql->session->tr, s, t->base.id, new_name))
+	if (!sql_trans_rename_table(sql->session->tr, s, t->base.id, new_name))
 		throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
@@ -1636,13 +1637,13 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isView(t))
 		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, t->base.name);
 	if (!mvc_bind_column(sql, t, old_name))
-		throw(SQL, "sql.rename_column", "ALTER TABLE: no such column '%s' in table '%s'", old_name, t->base.name);
+		throw(SQL, "sql.rename_column", SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, t->base.name);
 	if (!new_name || strcmp(new_name, str_nil) == 0)
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: invalid new column name");
 	if (mvc_bind_column(sql, t, new_name))
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, t->base.name);
 
-	if(!sql_trans_rename_column(sql->session->tr, t, old_name, new_name))
+	if (!sql_trans_rename_column(sql->session->tr, t, old_name, new_name))
 		throw(SQL, "sql.rename_column",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
