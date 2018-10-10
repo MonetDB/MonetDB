@@ -164,6 +164,7 @@ gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force) __attribute__((__warn_
 void BATrmprop(BAT *b, int idx);
 gdk_return BATroles(BAT *b, const char *tnme);
 BAT *BATsample(BAT *b, BUN n);
+BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
 BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, bool li, bool hi, bool anti);
 gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
 gdk_return BATsetaccess(BAT *b, int mode);
@@ -1731,8 +1732,7 @@ str SABmarchConnection(void *ret, str *host, int *port);
 str SABmarchScenario(void *ret, str *lang);
 str SABprelude(void *ret);
 str SABretreatScenario(void *ret, str *lang);
-str SAMPLEuniform(bat *r, bat *b, lng *s);
-str SAMPLEuniform_dbl(bat *r, bat *b, dbl *p);
+str SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str SERVERclient(void *res, const Stream *In, const Stream *Out);
 str SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
