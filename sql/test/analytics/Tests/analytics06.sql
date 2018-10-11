@@ -3,7 +3,7 @@ insert into testing values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 
 
 start transaction;
 
-select count(aa) over (partition by bb), 75 + count(aa) over (partition by bb) from testing where bb <> 1;
+select count(aa) over (partition by bb), cast(75 + count(aa) over (partition by bb) as bigint) from testing where bb <> 1;
 
 with relation as (select row_number() over () as dd, aa, bb from testing where bb <> 1)
 select aa, bb, dd,

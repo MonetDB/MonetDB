@@ -71,7 +71,7 @@ Ready.
 #select count(aa) over (partition by bb), 75 + count(aa) over (partition by bb) from testing where bb <> 1;
 % sys.L4,	sys.L11 # table_name
 % L4,	L11 # name
-% bigint,	hugeint # type
+% bigint,	bigint # type
 % 1,	2 # length
 [ 2,	77	]
 [ 2,	77	]
