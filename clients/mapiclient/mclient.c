@@ -2330,11 +2330,11 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 
 	bufsiz = READBLOCK;
 	buf = malloc(bufsiz);
-
 	if (buf == NULL) {
 		fprintf(stderr,"Malloc for doFile failed");
 		exit(2);
 	}
+
 	do {
 		bool seen_null_byte = false;
 
@@ -2392,7 +2392,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 			/* end of file */
 			if (hdl == NULL) {
 				/* nothing more to do */
-				free(buf);
 				goto bailout;
 			}
 
@@ -2426,20 +2425,17 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 					line[6] = prepno % 10 + '0';
 				}
 				if (strcmp(line, "exit\n") == 0) {
-					free(buf);
 					goto bailout;
 				}
 				break;
 			case 'q':
 				if (strcmp(line, "quit\n") == 0) {
-					free(buf);
 					goto bailout;
 				}
 				break;
 			case '\\':
 				switch (line[1]) {
 				case 'q':
-					free(buf);
 					goto bailout;
 				case 'X':
 					/* toggle interaction trace */
@@ -2960,6 +2956,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 	/* reached on end of file */
 	assert(hdl == NULL);
   bailout:
+	free(buf);
 #ifdef HAVE_LIBREADLINE
 	if (prompt)
 		deinit_readline();
