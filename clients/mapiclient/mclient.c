@@ -2204,9 +2204,9 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded,sam}\n");
 	mnstr_printf(toConsole, "\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#      - set maximum rows per page (-1=raw)\n");
-	mnstr_printf(toConsole, "\\L file  - save client/server interaction\n");
+	mnstr_printf(toConsole, "\\L file  - save client-server interaction\n");
 	mnstr_printf(toConsole, "\\X       - trace mclient code\n");
-	mnstr_printf(toConsole, "\\q       - terminate session\n");
+	mnstr_printf(toConsole, "\\q       - terminate session and quit mclient\n");
 }
 
 #define MD_TABLE    1
@@ -2424,6 +2424,16 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 				    strncmp(line, "exec **", 7) == 0) {
 					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
 					line[6] = prepno % 10 + '0';
+				}
+				if (strcmp(line, "exit\n") == 0) {
+					free(buf);
+					goto bailout;
+				}
+				break;
+			case 'q':
+				if (strcmp(line, "quit\n") == 0) {
+					free(buf);
+					goto bailout;
 				}
 				break;
 			case '\\':
