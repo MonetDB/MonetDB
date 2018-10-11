@@ -85,3 +85,4 @@ timestamp-as-boolean.Bug-6642
 timestamp-roundtrip.Bug-6640
 convert-key.Bug-6648
 update-transaction-select.Bug-6649
+prepared-statement-with-udf.Bug-6650
