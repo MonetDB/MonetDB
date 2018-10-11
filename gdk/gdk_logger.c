@@ -1431,7 +1431,7 @@ static gdk_return
 bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, BAT *catalog_tpe, BAT *catalog_oid, BAT *dcatalog, BAT *extra, int debug)
 {
 	BUN p, q;
-	BUN nn = 6 + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
+	BUN nn = 10 + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
 	bat *n = GDKmalloc(sizeof(bat) * nn);
 	int i = 0;
 	BATiter iter = (list_nme)?bat_iterator(list_nme):bat_iterator(list_bid);
