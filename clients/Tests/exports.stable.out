@@ -22,31 +22,16 @@ atomDesc BATatoms[];
 BAT *BATattach(int tt, const char *heapfile, int role);
 gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, bool li, bool hi, BUN estimate) __attribute__((__warn_unused_result__));
 BAT *BATcalcabsolute(BAT *b, BAT *s);
-<<<<<<< local
-BAT *BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected);
-BAT *BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error);
-BAT *BATcalcand(BAT *b1, BAT *b2, BAT *s, int projected);
-=======
-BAT *BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error);
+BAT *BATcalcadd(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected);
 BAT *BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error);
-BAT *BATcalcand(BAT *b1, BAT *b2, BAT *s);
->>>>>>> other
+BAT *BATcalcand(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcandcst(BAT *b, const ValRecord *v, BAT *s);
-<<<<<<< local
-gdk_return BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals);
-BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int symmetric, int projected);
-BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int symmetric, int projected);
-BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int symmetric, int projected);
-BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, int symmetric);
-BAT *BATcalccmp(BAT *b1, BAT *b2, BAT *s, int projected);
-=======
 gdk_return BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale);
-BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool sym);
-BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool sym);
-BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool sym);
-BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool sym);
-BAT *BATcalccmp(BAT *b1, BAT *b2, BAT *s);
->>>>>>> other
+BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric, int projected);
+BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool symmetric, int projected);
+BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool symmetric, int projected);
+BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool symmetric);
+BAT *BATcalccmp(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalccmpcst(BAT *b, const ValRecord *v, BAT *s);
 BAT *BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error);
 BAT *BATcalccstand(const ValRecord *v, BAT *b, BAT *s);
@@ -69,49 +54,28 @@ BAT *BATcalccstor(const ValRecord *v, BAT *b, BAT *s);
 BAT *BATcalccstrsh(const ValRecord *v, BAT *b, BAT *s, bool abort_on_error);
 BAT *BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp, bool abort_on_error);
 BAT *BATcalccstxor(const ValRecord *v, BAT *b, BAT *s);
-<<<<<<< local
-BAT *BATcalcdecr(BAT *b, BAT *s, int abort_on_error);
-BAT *BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected);
-BAT *BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error);
-BAT *BATcalceq(BAT *b1, BAT *b2, BAT *s, int projected);
-=======
 BAT *BATcalcdecr(BAT *b, BAT *s, bool abort_on_error);
-BAT *BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error);
+BAT *BATcalcdiv(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected);
 BAT *BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error);
-BAT *BATcalceq(BAT *b1, BAT *b2, BAT *s);
->>>>>>> other
+BAT *BATcalceq(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalceqcst(BAT *b, const ValRecord *v, BAT *s);
 BAT *BATcalcge(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcgecst(BAT *b, const ValRecord *v, BAT *s);
 BAT *BATcalcgt(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcgtcst(BAT *b, const ValRecord *v, BAT *s);
-<<<<<<< local
 BAT *BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2, BAT *s);
 BAT *BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2, BAT *s, int projected);
-BAT *BATcalcincr(BAT *b, BAT *s, int abort_on_error);
-=======
-BAT *BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2);
-BAT *BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2);
-BAT *BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2);
-BAT *BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2);
 BAT *BATcalcincr(BAT *b, BAT *s, bool abort_on_error);
->>>>>>> other
 BAT *BATcalcisnil(BAT *b, BAT *s);
 BAT *BATcalcisnotnil(BAT *b, BAT *s);
 BAT *BATcalciszero(BAT *b, BAT *s);
 BAT *BATcalcle(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalclecst(BAT *b, const ValRecord *v, BAT *s);
-<<<<<<< local
-BAT *BATcalclsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error, int projected);
-BAT *BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error);
-BAT *BATcalclt(BAT *b1, BAT *b2, BAT *s, int projected);
-=======
-BAT *BATcalclsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error);
+BAT *BATcalclsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error, int projected);
 BAT *BATcalclshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error);
-BAT *BATcalclt(BAT *b1, BAT *b2, BAT *s);
->>>>>>> other
+BAT *BATcalclt(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcltcst(BAT *b, const ValRecord *v, BAT *s);
 BAT *BATcalcmax(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s, int projected);
@@ -121,41 +85,23 @@ BAT *BATcalcmin(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcmincst(BAT *b, const ValRecord *v, BAT *s);
 BAT *BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s);
-<<<<<<< local
-BAT *BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected);
-BAT *BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error);
-BAT *BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected);
-BAT *BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error);
-BAT *BATcalcne(BAT *b1, BAT *b2, BAT *s, int projected);
-=======
-BAT *BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error);
+BAT *BATcalcmod(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected);
 BAT *BATcalcmodcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error);
-BAT *BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error);
+BAT *BATcalcmul(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected);
 BAT *BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error);
-BAT *BATcalcne(BAT *b1, BAT *b2, BAT *s);
->>>>>>> other
+BAT *BATcalcne(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcnecst(BAT *b, const ValRecord *v, BAT *s);
 BAT *BATcalcnegate(BAT *b, BAT *s);
 BAT *BATcalcnot(BAT *b, BAT *s);
 BAT *BATcalcor(BAT *b1, BAT *b2, BAT *s, int projected);
 BAT *BATcalcorcst(BAT *b, const ValRecord *v, BAT *s);
-<<<<<<< local
-BAT *BATcalcrsh(BAT *b1, BAT *b2, BAT *s, int abort_on_error, int projected);
-BAT *BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, int abort_on_error);
-=======
-BAT *BATcalcrsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error);
+BAT *BATcalcrsh(BAT *b1, BAT *b2, BAT *s, bool abort_on_error, int projected);
 BAT *BATcalcrshcst(BAT *b, const ValRecord *v, BAT *s, bool abort_on_error);
->>>>>>> other
 BAT *BATcalcsign(BAT *b, BAT *s);
 dbl BATcalcstdev_population(dbl *avgp, BAT *b);
 dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
-<<<<<<< local
-BAT *BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, int abort_on_error, int projected);
-BAT *BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, int abort_on_error);
-=======
-BAT *BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error);
+BAT *BATcalcsub(BAT *b1, BAT *b2, BAT *s, int tp, bool abort_on_error, int projected);
 BAT *BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp, bool abort_on_error);
->>>>>>> other
 dbl BATcalcvariance_population(dbl *avgp, BAT *b);
 dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
 BAT *BATcalcxor(BAT *b1, BAT *b2, BAT *s, int projected);
@@ -390,11 +336,7 @@ ValPtr VALset(ValPtr v, int t, ptr p);
 gdk_return VARcalcabsolute(ValPtr ret, const ValRecord *v);
 gdk_return VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool abort_on_error);
 gdk_return VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
-<<<<<<< local
-gdk_return VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi, int symmetric);
-=======
-gdk_return VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi, bool sym);
->>>>>>> other
+gdk_return VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi, bool symmetric);
 gdk_return VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_return VARcalcdecr(ValPtr ret, const ValRecord *v, bool abort_on_error);
 gdk_return VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool abort_on_error);
