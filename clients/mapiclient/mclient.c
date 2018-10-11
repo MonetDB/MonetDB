@@ -2614,18 +2614,13 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							"    LEFT OUTER JOIN comments c ON s.id = c.id\n"
 							"  ORDER BY system, name, sname, ntype)\n"
 							;
-						size_t len = strlen(with_clause) + 1500 + strlen(line);
+						const char *comments_clause = get_comments_clause(mid);
+						size_t len = strlen(comments_clause) + strlen(with_clause) + 400 + strlen(line);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
-						char *name_column = hasSchema ? "fullname" : "name";
-						const char *comments_clause = get_comments_clause(mid);
 
 						if (query == NULL) {
 							fprintf(stderr, "memory allocation failure\n");
-							continue;
-						}
-						if (comments_clause == NULL) {
-							free(query);
 							continue;
 						}
 
@@ -2639,10 +2634,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq - q, "%s", comments_clause);
-						q += snprintf(q, endq - q, "%s", with_clause);
-						q += snprintf(q, endq - q, " SELECT type, fullname, remark FROM describe_all_objects");
-						q += snprintf(q, endq - q, " WHERE (ntype & %u) > 0", x);
+						q += snprintf(q, endq - q, "%s%s", comments_clause, with_clause);
+						q += snprintf(q, endq - q, " SELECT type, fullname, remark FROM describe_all_objects WHERE (ntype & %u) > 0", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, " AND NOT system");
 						}
@@ -2650,7 +2643,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							q += snprintf(q, endq - q, " AND (sname IS NULL OR sname = current_schema)");
 						}
 						if (*line) {
-							q += snprintf(q, endq - q, " AND (%s LIKE '%s')", name_column, line);
+							q += snprintf(q, endq - q, " AND (%s LIKE '%s')", (hasSchema ? "fullname" : "name"), line);
 						}
 						q += snprintf(q, endq - q, " ORDER BY fullname, type, remark");
 
