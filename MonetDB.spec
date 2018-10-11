@@ -1021,6 +1021,14 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Oct 11 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.11-20181011
+- Rebuilt.
+- BZ#6648: key property potentially wrong after type conversion
+- BZ#6649: Projection inside within transaction gives wrong results
+
+* Wed Oct 10 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.11-20181011
+- MonetDB: Some subtle dependencies between RPMs have been fixed.
+
 * Fri Oct 05 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
 - Rebuilt.
 - BZ#6640: timestamp_to_str returning incorrectly adjusted results
