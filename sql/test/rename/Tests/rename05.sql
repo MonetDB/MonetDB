@@ -1,9 +1,9 @@
 create schema "nschema";
-create table "nschema"."ntable" (a int);
-insert into "nschema"."ntable" values (1);
-
 set schema "nschema";
 alter schema "nschema" rename to "nother"; --should be possible to rename current schema, if it's not a system one
+
+create table "nother"."ntable" (a int);
+insert into "nother"."ntable" values (1);
 select "a" from "ntable";
 select "a" from "nother"."ntable";
 
@@ -15,11 +15,11 @@ begin
 end;
 
 select onefunc();
-alter table "ntable" rename to "ttable";
-insert into "ttable" values (1);
-select onefunc(); --error
+alter table "ntable" rename to "ttable"; --error because of dependencies
+insert into "ntable" values (1);
+select onefunc();
 
 drop function "onefunc";
-drop table "ttable";
+drop table "ntable";
 set schema "sys";
 drop schema "nother";

@@ -2449,6 +2449,8 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
 	if (s->system)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
+	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
 	if (!new_name || strcmp(new_name, str_nil) == 0)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
 	if (mvc_bind_schema(sql, new_name))
@@ -2475,17 +2477,19 @@ rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name)
 	assert(schema_name && old_name && new_name);
 
 	if (!(s = mvc_bind_schema(sql, schema_name)))
-		return sql_error(sql, 02,SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
 	if (!(t = mvc_bind_table(sql, s, old_name)))
-		return sql_error(sql, 02,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", old_name, schema_name);
+		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", old_name, schema_name);
 	if (t->system)
-		return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to rename table %s (there are database objects which depend on it)", old_name);
 	if (!new_name || strcmp(new_name, str_nil) == 0)
-		return sql_error(sql, 02,SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
 	if (mvc_bind_table(sql, s, new_name))
-		return sql_error(sql, 02,SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
 
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
@@ -2503,6 +2507,7 @@ rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name,
 {
 	sql_schema *s;
 	sql_table *t;
+	sql_column *col;
 	sql_rel *rel;
 	list *exps;
 
@@ -2517,13 +2522,15 @@ rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name,
 	if (t->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
 	if (isView(t))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, t->base.name);
-	if (!mvc_bind_column(sql, t, old_name))
-		return sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, table_name);
+	if (!(col = mvc_bind_column(sql, t, old_name)))
+		return sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
+	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: cannot rename column '%s' (there are database objects which depend on it)", old_name);
 	if (!new_name || strcmp(new_name, str_nil) == 0)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: invalid new column name");
 	if (mvc_bind_column(sql, t, new_name))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, t->base.name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);
 
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);

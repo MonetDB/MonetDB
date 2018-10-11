@@ -25,11 +25,11 @@ Ready.
 # 10:55:46 >  
 
 #create schema "nschema";
-#create table "nschema"."ntable" (a int);
-#insert into "nschema"."ntable" values (1);
-[ 1	]
 #set schema "nschema";
-#alter schema "nschema" rename to "nother"; --should be possible to rename current schema if it's not a system one
+#alter schema "nschema" rename to "nother"; --should be possible to rename current schema, if it's not a system one
+#create table "nother"."ntable" (a int);
+#insert into "nother"."ntable" values (1);
+[ 1	]
 #select "a" from "ntable";
 % nother.ntable # table_name
 % a # name
@@ -55,6 +55,12 @@ Ready.
 #alter table "ntable" rename to "ttable";
 #insert into "ttable" values (1);
 [ 1	]
+#select onefunc();
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 2	]
 #drop function "onefunc";
 #drop table "ttable";
 #set schema "sys";

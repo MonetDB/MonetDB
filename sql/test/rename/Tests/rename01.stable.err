@@ -28,20 +28,24 @@ stderr of test 'rename01` in directory 'sql/test/rename` itself:
 # 16:50:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22855" "--port=37559"
 # 16:50:35 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-22855/.s.monetdb.37559
-QUERY = select oneval from "changed"."testme"; --error
-ERROR = !SELECT: no such schema 'changed'
+MAPI  = (monetdb) /var/tmp/mtest-23612/.s.monetdb.38749
+QUERY = alter schema "changeme" rename to "another"; --error, does not exist
+ERROR = !ALTER SCHEMA: no such schema 'changeme'
 CODE  = 3F000
-MAPI  = (monetdb) /var/tmp/mtest-22855/.s.monetdb.37559
-QUERY = select oneval from "changeme"."testme"; --error
+MAPI  = (monetdb) /var/tmp/mtest-23612/.s.monetdb.38749
+QUERY = alter schema "changed" rename to "another"; --error, dependencies on it
+ERROR = !ALTER SCHEMA: unable to rename schema 'changed' (there are database objects which depend on it)
+CODE  = 2BM37
+MAPI  = (monetdb) /var/tmp/mtest-23612/.s.monetdb.38749
+QUERY = select oneval from "changeme"."testme"; --error, does not exist
 ERROR = !SELECT: no such schema 'changeme'
 CODE  = 3F000
-MAPI  = (monetdb) /var/tmp/mtest-22855/.s.monetdb.37559
-QUERY = drop table "changeme"."testme"; --error
+MAPI  = (monetdb) /var/tmp/mtest-23612/.s.monetdb.38749
+QUERY = drop table "changeme"."testme"; --error, does not exist
 ERROR = !DROP TABLE: no such schema 'changeme'
 CODE  = 3F000
-MAPI  = (monetdb) /var/tmp/mtest-22855/.s.monetdb.37559
-QUERY = drop schema "changeme"; --error
+MAPI  = (monetdb) /var/tmp/mtest-23612/.s.monetdb.38749
+QUERY = drop schema "changeme"; --error, does not exist
 ERROR = !DROP SCHEMA: name changeme does not exist
 CODE  = 3F000
 

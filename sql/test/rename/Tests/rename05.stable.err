@@ -32,10 +32,10 @@ MAPI  = (monetdb) /var/tmp/mtest-28754/.s.monetdb.34524
 QUERY = alter schema "sys" rename to "nsys"; --error
 ERROR = !ALTER SCHEMA: cannot rename a system schema
 CODE  = 3F000
-MAPI  = (monetdb) /var/tmp/mtest-30395/.s.monetdb.30554
-QUERY = select onefunc(); --error
-ERROR = !Table missing nother.ntable
-CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-23272/.s.monetdb.36538
+QUERY = alter table "ntable" rename to "ttable"; --error because of dependencies
+ERROR = !ALTER TABLE: unable to rename table ntable (there are database objects which depend on it)
+CODE  = 2BM37
 
 # 10:55:46 >  
 # 10:55:46 >  "Done."

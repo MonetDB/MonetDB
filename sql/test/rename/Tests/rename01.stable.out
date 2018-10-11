@@ -65,9 +65,6 @@ Ready.
 # 16:50:35 >  
 
 #create schema changeme;
-#create table "changeme"."testme" (oneval int);
-#insert into "changeme"."testme" values (1), (2), (NULL);
-[ 3	]
 #select "name", "system" from sys.schemas where "name" = 'changeme';
 % sys.schemas,	sys.schemas # table_name
 % name,	system # name
@@ -79,14 +76,6 @@ Ready.
 % name,	system # name
 % varchar,	boolean # type
 % 0,	5 # length
-#select oneval from "changeme"."testme";
-% changeme.testme # table_name
-% oneval # name
-% int # type
-% 1 # length
-[ 1	]
-[ 2	]
-[ NULL	]
 #alter schema "changeme" rename to "changed";
 #select "name", "system" from sys.schemas where "name" = 'changeme';
 % sys.schemas,	sys.schemas # table_name
@@ -99,6 +88,9 @@ Ready.
 % varchar,	boolean # type
 % 7,	5 # length
 [ "changed",	false	]
+#create table "changed"."testme" (oneval int);
+#insert into "changed"."testme" values (1), (2), (NULL);
+[ 3	]
 #select oneval from "changed"."testme";
 % changed.testme # table_name
 % oneval # name
