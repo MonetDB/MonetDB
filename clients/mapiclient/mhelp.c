@@ -47,28 +47,28 @@ SQLhelp sqlhelp[] = {
 	// major commands
 	{"ALTER TABLE",
 	 "",
-	 "ALTER TABLE qname ADD [ COLUMN ] { column_def | table_constraint }\n"
-	 "ALTER TABLE qname ALTER [ COLUMN ] ident SET DEFAULT value\n"
-	 "ALTER TABLE qname ALTER [ COLUMN ] ident SET [NOT] NULL\n"
-	 "ALTER TABLE qname ALTER [ COLUMN ] ident DROP DEFAULT\n"
-	 "ALTER TABLE qname ALTER [ COLUMN ] ident SET STORAGE {string | NULL}\n"
-	 "ALTER TABLE qname ALTER [ COLUMN ] ident RENAME TO ident\n"
-	 "ALTER TABLE qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
-	 "ALTER TABLE qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
-	 "ALTER TABLE qname SET { { READ | INSERT } ONLY | READ WRITE }\n"
-	 "ALTER TABLE qname RENAME TO ident",
+	 "ALTER TABLE [ IF EXISTS ] qname ADD [ COLUMN ] { column_def | table_constraint }\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET DEFAULT value\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET [NOT] NULL\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident DROP DEFAULT\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET STORAGE {string | NULL}\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident RENAME TO ident\n"
+	 "ALTER TABLE [ IF EXISTS ] qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
+	 "ALTER TABLE [ IF EXISTS ] qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
+	 "ALTER TABLE [ IF EXISTS ] qname SET { { READ | INSERT } ONLY | READ WRITE }\n"
+	 "ALTER TABLE [ IF EXISTS ] qname RENAME TO ident",
 	 "column_def,table_constraint",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER MERGE TABLE",
 	 "",
-	 "ALTER TABLE qname ADD TABLE qname [ AS PARTITION opt_partition_spec ]\n"
-	 "ALTER TABLE qname DROP TABLE qname [ RESTRICT | CASCADE ]\n"
-	 "ALTER TABLE qname SET TABLE qname AS PARTITION opt_partition_spec",
+	 "ALTER TABLE [ IF EXISTS ] qname ADD TABLE qname [ AS PARTITION opt_partition_spec ]\n"
+	 "ALTER TABLE [ IF EXISTS ] qname DROP TABLE qname [ RESTRICT | CASCADE ]\n"
+	 "ALTER TABLE [ IF EXISTS ] qname SET TABLE qname AS PARTITION opt_partition_spec",
 	 "opt_partition_spec",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"},
 	{"ALTER SCHEMA",
 	 "",
-	 "ALTER SCHEMA ident RENAME TO ident",
+	 "ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER SEQUENCE",

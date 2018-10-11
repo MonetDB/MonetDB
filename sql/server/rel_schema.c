@@ -1413,7 +1413,7 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 }
 
 static sql_rel *
-sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
+sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1421,8 +1421,9 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 	sql_table *t = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
-		return NULL;
+		if(if_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 	}
 	if (!s)
 		s = cur_schema(sql);
@@ -1430,6 +1431,8 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
 		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
 			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
+		if(if_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 	} else {
 		node *n;
@@ -1469,6 +1472,8 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
 
 			if (te->token == SQL_TABLE) {
+				symbol *extra = dl->h->next->next->next->data.sym;
+
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
 
@@ -2436,15 +2441,18 @@ credentials_password(dlist *credentials)
 }
 
 static sql_rel *
-rel_rename_schema(mvc *sql, char *old_name, char *new_name)
+rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 {
 	sql_schema *s;
 	sql_rel *rel;
 	list *exps;
 
 	assert(old_name && new_name);
-	if (!(s = mvc_bind_schema(sql, old_name)))
+	if (!(s = mvc_bind_schema(sql, old_name))) {
+		if (if_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
+	}
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
 	if (s->system)
@@ -2467,7 +2475,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name)
 }
 
 static sql_rel *
-rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name)
+rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name, int if_exists)
 {
 	sql_schema *s;
 	sql_table *t;
@@ -2476,12 +2484,18 @@ rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name)
 
 	assert(schema_name && old_name && new_name);
 
-	if (!(s = mvc_bind_schema(sql, schema_name)))
+	if (!(s = mvc_bind_schema(sql, schema_name))) {
+		if (if_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+	}
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
-	if (!(t = mvc_bind_table(sql, s, old_name)))
+	if (!(t = mvc_bind_table(sql, s, old_name))) {
+		if (if_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", old_name, schema_name);
+	}
 	if (t->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
@@ -2503,7 +2517,7 @@ rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name)
 }
 
 static sql_rel *
-rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name, char *new_name)
+rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name, char *new_name, int if_exists)
 {
 	sql_schema *s;
 	sql_table *t;
@@ -2513,12 +2527,18 @@ rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name,
 
 	assert(schema_name && table_name && old_name && new_name);
 
-	if (!(s = mvc_bind_schema(sql, schema_name)))
+	if (!(s = mvc_bind_schema(sql, schema_name))) {
+		if (if_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+	}
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
-	if (!(t = mvc_bind_table(sql, s, table_name)))
+	if (!(t = mvc_bind_table(sql, s, table_name))) {
+		if (if_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", table_name, schema_name);
+	}
 	if (t->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
 	if (isView(t))
@@ -2642,10 +2662,10 @@ rel_schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = sql_alter_table(sql, 
+		ret = sql_alter_table(sql, l,
 			l->h->data.lval,      /* table name */
 			l->h->next->data.sym, /* table element */
-			l->h->next->next->data.sym);
+			l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_GRANT_ROLES:
 	{
@@ -2751,7 +2771,7 @@ rel_schemas(mvc *sql, symbol *s)
 	} 	break;
 	case SQL_RENAME_SCHEMA: {
 		dlist *l = s->data.lval;
-		ret = rel_rename_schema(sql, l->h->data.sval, l->h->next->data.sval);
+		ret = rel_rename_schema(sql, l->h->data.sval, l->h->next->data.sval, l->h->next->next->data.i_val);
 	} 	break;
 	case SQL_RENAME_TABLE: {
 		dlist *l = s->data.lval;
@@ -2759,7 +2779,7 @@ rel_schemas(mvc *sql, symbol *s)
 		char *tname = qname_table(l->h->data.lval);
 		if (!sname)
 			sname = cur_schema(sql)->base.name;
-		ret = rel_rename_table(sql, sname, tname, l->h->next->data.sval);
+		ret = rel_rename_table(sql, sname, tname, l->h->next->data.sval, l->h->next->next->data.i_val);
 	} 	break;
 	case SQL_RENAME_COLUMN: {
 		dlist *l = s->data.lval;
@@ -2767,7 +2787,7 @@ rel_schemas(mvc *sql, symbol *s)
 		char *tname = qname_table(l->h->data.lval);
 		if (!sname)
 			sname = cur_schema(sql)->base.name;
-		ret = rel_rename_column(sql, sname, tname, l->h->next->data.sval, l->h->next->next->data.sval);
+		ret = rel_rename_column(sql, sname, tname, l->h->next->data.sval, l->h->next->next->data.sval, l->h->next->next->next->data.i_val);
 	} 	break;
 	case SQL_CREATE_TYPE: {
 		dlist *l = s->data.lval;
