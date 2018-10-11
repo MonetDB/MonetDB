@@ -837,10 +837,10 @@ Group: Applications/Databases
 %if "%{?_selinux_policy_version}" != ""
 Requires:       selinux-policy >= %{?_selinux_policy_version}
 %endif
-Requires(post):   MonetDB5-server = %{version}-%{release}
-Requires(postun): MonetDB5-server
-Requires(post):   %{name}-SQL-server5 = %{version}-%{release}
-Requires(postun): %{name}-SQL-server5
+Requires(post):   MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires(postun): MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires(post):   %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires(postun): %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
 BuildArch: noarch
