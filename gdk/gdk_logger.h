@@ -41,21 +41,21 @@ typedef gdk_return (*postversionfix_fptr)(void *lg);
 
 typedef struct logger {
 	int debug;
-	lng changes;
 	int version;
-	int with_ids;
+	lng changes;
 	lng id;
 	int tid;
+	bool with_ids;
 #ifdef GDKLIBRARY_NIL_NAN
 	/* convert old style floating point NIL values to NaN */
-	int convert_nil_nan;
+	bool convert_nil_nan;
 #endif
+	bool shared; /* a flag to indicate if the logger is a shared on (usually read-only) */
 	char *fn;
 	char *dir;
 	char *local_dir; /* the directory in which the non-shared log is written */
-	int shared; /* a flag to indicate if the logger is a shared on (usually read-only) */
-	int dbfarm_role; /* role for the dbram used for the logdir, PERSISTENT by default */
-	int local_dbfarm_role; /* role for the dbram used for the logdir, PERSISTENT by default */
+	int dbfarm_role; /* role for the dbfarm used for the logdir, PERSISTENT by default */
+	int local_dbfarm_role; /* role for the dbfarm used for the logdir, PERSISTENT by default */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	stream *log;

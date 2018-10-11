@@ -1285,7 +1285,8 @@ store_upgrade_ids(sql_trans* tr)
 
 		if (isDeclaredSchema(s))
 			continue;
-		if (s->tables.set)
+		if (s->tables.set == NULL)
+			continue;
 		for (m = s->tables.set->h; m; m = m->next) {
 			sql_table *t = m->data;
 
@@ -1299,7 +1300,8 @@ store_upgrade_ids(sql_trans* tr)
 				if (store_funcs.upgrade_col(c) != LOG_OK)
 					return SQL_ERR;
 			}
-			if (t->idxs.set)
+			if (t->idxs.set == NULL)
+				continue;
 			for (o = t->idxs.set->h; o; o = o->next) {
 				sql_idx *i = o->data;
 
