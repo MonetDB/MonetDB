@@ -6,84 +6,84 @@
 
 module generator;
 
-pattern series(first:bte,last:bte):bat[:bte]
+pattern series(first:bte,limit:bte):bat[:bte]
 address VLTgenerator_table;
 
-pattern series(first:sht,last:sht):bat[:sht]
+pattern series(first:sht,limit:sht):bat[:sht]
 address VLTgenerator_table;
 
-pattern series(first:int,last:int):bat[:int]
+pattern series(first:int,limit:int):bat[:int]
 address VLTgenerator_table;
 
-pattern series(first:lng,last:lng):bat[:lng]
+pattern series(first:lng,limit:lng):bat[:lng]
 address VLTgenerator_table;
 
-pattern series(first:flt,last:flt):bat[:flt]
+pattern series(first:flt,limit:flt):bat[:flt]
 address VLTgenerator_table;
 
-pattern series(first:dbl,last:dbl):bat[:dbl]
+pattern series(first:dbl,limit:dbl):bat[:dbl]
 address VLTgenerator_table;
 
-pattern series(first:bte,last:bte,step:bte):bat[:bte]
+pattern series(first:bte,limit:bte,step:bte):bat[:bte]
 address VLTgenerator_table;
 
-pattern series(first:sht,last:sht,step:sht):bat[:sht]
+pattern series(first:sht,limit:sht,step:sht):bat[:sht]
 address VLTgenerator_table;
 
-pattern series(first:int,last:int,step:int):bat[:int]
+pattern series(first:int,limit:int,step:int):bat[:int]
 address VLTgenerator_table;
 
-pattern series(first:lng,last:lng,step:lng):bat[:lng]
+pattern series(first:lng,limit:lng,step:lng):bat[:lng]
 address VLTgenerator_table;
 
-pattern series(first:flt,last:flt,step:flt):bat[:flt]
+pattern series(first:flt,limit:flt,step:flt):bat[:flt]
 address VLTgenerator_table;
 
-pattern series(first:dbl,last:dbl,step:dbl):bat[:dbl]
+pattern series(first:dbl,limit:dbl,step:dbl):bat[:dbl]
 address VLTgenerator_table
 comment "Create and materialize a generator table";
 
-pattern series(first:timestamp,last:timestamp,step:lng):bat[:timestamp]
+pattern series(first:timestamp,limit:timestamp,step:lng):bat[:timestamp]
 address VLTgenerator_table;
 
-pattern parameters(first:bte,last:bte,step:bte):bat[:bte]
+pattern parameters(first:bte,limit:bte,step:bte):bat[:bte]
 address VLTgenerator_noop;
 
-pattern parameters(first:sht,last:sht,step:sht):bat[:sht]
+pattern parameters(first:sht,limit:sht,step:sht):bat[:sht]
 address VLTgenerator_noop;
 
-pattern parameters(first:int,last:int,step:int):bat[:int]
+pattern parameters(first:int,limit:int,step:int):bat[:int]
 address VLTgenerator_noop;
 
-pattern parameters(first:lng,last:lng,step:lng):bat[:lng]
+pattern parameters(first:lng,limit:lng,step:lng):bat[:lng]
 address VLTgenerator_noop;
 
-pattern parameters(first:flt,last:flt,step:flt):bat[:flt]
+pattern parameters(first:flt,limit:flt,step:flt):bat[:flt]
 address VLTgenerator_noop;
 
-pattern parameters(first:dbl,last:dbl,step:dbl):bat[:dbl]
+pattern parameters(first:dbl,limit:dbl,step:dbl):bat[:dbl]
 address VLTgenerator_noop;
 
-pattern parameters(first:timestamp,last:timestamp,step:lng):bat[:timestamp]
+pattern parameters(first:timestamp,limit:timestamp,step:lng):bat[:timestamp]
 address VLTgenerator_noop
 comment "Retain the table definition, but don't materialize";
 
-pattern parameters(first:bte,last:bte):bat[:bte]
+pattern parameters(first:bte,limit:bte):bat[:bte]
 address VLTgenerator_noop;
 
-pattern parameters(first:sht,last:sht):bat[:sht]
+pattern parameters(first:sht,limit:sht):bat[:sht]
 address VLTgenerator_noop;
 
-pattern parameters(first:int,last:int):bat[:int]
+pattern parameters(first:int,limit:int):bat[:int]
 address VLTgenerator_noop;
 
-pattern parameters(first:lng,last:lng):bat[:lng]
+pattern parameters(first:lng,limit:lng):bat[:lng]
 address VLTgenerator_noop;
 
-pattern parameters(first:flt,last:flt):bat[:flt]
+pattern parameters(first:flt,limit:flt):bat[:flt]
 address VLTgenerator_noop;
 
-pattern parameters(first:dbl,last:dbl):bat[:dbl]
+pattern parameters(first:dbl,limit:dbl):bat[:dbl]
 address VLTgenerator_noop;
 
 pattern thetaselect(b:bat[:bte], low:bte, oper:str) :bat[:oid]

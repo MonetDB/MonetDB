@@ -163,7 +163,7 @@ def filter(st):
         return st + '\n'
     return ''
 
-OutList.sort(key=lambda x: x.count(os.sep))
+OutList.sort(key=lambda x: x.count('/'))
 OutList = map(filter, OutList)
 OutListFd = open("acout.in", "w")
 OutListFd.writelines(OutList)

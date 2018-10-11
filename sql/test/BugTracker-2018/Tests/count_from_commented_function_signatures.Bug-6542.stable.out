@@ -86,7 +86,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 150 # length
+% 152 # length
 project (
 | group by (
 | | project (
@@ -98,35 +98,39 @@ project (
 | | | | | | | | project (
 | | | | | | | | | project (
 | | | | | | | | | | project (
-| | | | | | | | | | | left outer join (
+| | | | | | | | | | | project (
 | | | | | | | | | | | | left outer join (
-| | | | | | | | | | | | | join (
+| | | | | | | | | | | | | left outer join (
 | | | | | | | | | | | | | | join (
-| | | | | | | | | | | | | | | table(sys.functions) [ "functions"."id" as "f"."id", "functions"."schema_id" as "f"."schema_id" ] COUNT ,
-| | | | | | | | | | | | | | | table(sys.comments) [ "comments"."id" NOT NULL HASHCOL  as "c"."id" ] COUNT 
-| | | | | | | | | | | | | | ) [ "f"."id" = "c"."id" NOT NULL HASHCOL  ],
-| | | | | | | | | | | | | | table(sys.schemas) [ "schemas"."id" as "s"."id" ] COUNT 
-| | | | | | | | | | | | | ) [ "f"."schema_id" = "s"."id" ],
-| | | | | | | | | | | | | table(sys.systemfunctions) [ "systemfunctions"."function_id" NOT NULL as "sf"."function_id" ] COUNT 
-| | | | | | | | | | | | ) [ "f"."id" = "sf"."function_id" NOT NULL ],
-| | | | | | | | | | | | select (
-| | | | | | | | | | | | | table(sys.args) [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ] COUNT 
-| | | | | | | | | | | | ) [ "p"."inout" = tinyint "1" ]
-| | | | | | | | | | | ) [ "f"."id" = "p"."func_id" ]
+| | | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | | table(sys.functions) [ "functions"."id" as "f"."id", "functions"."schema_id" as "f"."schema_id" ] COUNT ,
+| | | | | | | | | | | | | | | | table(sys.comments) [ "comments"."id" NOT NULL HASHCOL  as "c"."id" ] COUNT 
+| | | | | | | | | | | | | | | ) [ "f"."id" = "c"."id" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | table(sys.schemas) [ "schemas"."id" as "s"."id" ] COUNT 
+| | | | | | | | | | | | | | ) [ "f"."schema_id" = "s"."id" ],
+| | | | | | | | | | | | | | select (
+| | | | | | | | | | | | | | | table(sys.functions) [ "functions"."id", "functions"."system" ] COUNT 
+| | | | | | | | | | | | | | ) [ "functions"."system" = boolean "true" ]
+| | | | | | | | | | | | | ) [ "f"."id" = "functions"."id" ],
+| | | | | | | | | | | | | select (
+| | | | | | | | | | | | | | table(sys.args) [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ] COUNT 
+| | | | | | | | | | | | | ) [ "p"."inout" = tinyint "1" ]
+| | | | | | | | | | | | ) [ "f"."id" = "p"."func_id" ]
+| | | | | | | | | | | ) [ "f"."id", "p"."number" ]
 | | | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id", "p"."number" ASC ]
 | | | | | | | | | ) [ "f"."id", "p"."number" ]
 | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id", "p"."number" ]
 | | | | | | | ) [ "f"."id", "p"."number" ]
 | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
-| | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "L37"."L37" ]
-| | | | ) [ "f"."id", "L37"."L37" ]
-| | | ) [ "f"."id" as "L2"."fid", "L37"."L37" as "L40"."line" ] [ "L40"."line" ASC ]
-| | ) [ "L2"."fid" as "commented_function_signatures_6542"."fid" ]
-| ) [  ] [ sys.count() NOT NULL as "L46"."L46" ]
-) [ "L46"."L46" NOT NULL ]
+| | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "L43"."L43" ]
+| | | | ) [ "f"."id", "L43"."L43" ]
+| | | ) [ "f"."id" as "L6"."fid", "L43"."L43" as "L44"."line" ] [ "L44"."line" ASC ]
+| | ) [ "L6"."fid" as "commented_function_signatures_6542"."fid" ]
+| ) [  ] [ sys.count() NOT NULL as "L52"."L52" ]
+) [ "L52"."L52" NOT NULL ]
 #select count (*) from sys.commented_function_signatures_6542;
-% .L46 # table_name
-% L46 # name
+% .L52 # table_name
+% L52 # name
 % bigint # type
 % 1 # length
 [ 0	]

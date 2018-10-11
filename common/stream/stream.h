@@ -74,12 +74,6 @@ typedef __int128_t hge;
 
 #define EOT 4
 
-#define ST_ASCII  0
-#define ST_BIN 1
-
-#define ST_READ  0
-#define ST_WRITE 1
-
 /* fwf gets turned into a csv with these parameters */
 #define STREAM_FWF_FIELD_SEP '|'
 #define STREAM_FWF_ESCAPE '\\'
@@ -146,10 +140,10 @@ stream_export int mnstr_fsetpos(stream *restrict s, fpos_t *restrict p);
 stream_export char *mnstr_name(stream *s);
 stream_export int mnstr_errnr(stream *s);
 stream_export void mnstr_clearerr(stream *s);
-stream_export int mnstr_type(stream *s);
-stream_export int mnstr_byteorder(stream *s);
-stream_export void mnstr_set_byteorder(stream *s, char bigendian);
-stream_export void mnstr_settimeout(stream *s, unsigned int ms, int (*func)(void));
+stream_export bool mnstr_isbinary(stream *s);
+stream_export bool mnstr_get_swapbytes(stream *s);
+stream_export void mnstr_set_bigendian(stream *s, bool bigendian);
+stream_export void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void));
 stream_export int mnstr_isalive(stream *s);
 
 stream_export stream *open_rstream(const char *filename);
@@ -213,10 +207,8 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  * found. The next read will then start with a new major block.
  */
 stream_export stream *block_stream(stream *s);
-stream_export int isa_block_stream(stream *s);
-stream_export int isa_fixed_block_stream(stream *s);
+stream_export bool isa_block_stream(stream *s);
 stream_export stream *bs_stream(stream *s);
-stream_export stream *bs_stealstream(stream *s);
 
 
 typedef enum {
@@ -232,17 +224,9 @@ typedef enum {
 	COMPRESSION_AUTO = 255
 } compression_method;
 
-typedef enum {
-	COLUMN_COMPRESSION_NONE = 0,
-	COLUMN_COMPRESSION_AUTO = 255
-} column_compression;
-
-stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp);
-stream_export void *bs2_stealbuf(stream *ss);
+stream_export stream *block_stream2(stream *s, size_t bufsiz, compression_method comp);
 stream_export int bs2_resizebuf(stream *ss, size_t bufsiz);
-stream_export void bs2_resetbuf(stream *ss);
 stream_export buffer bs2_buffer(stream *s);
-stream_export column_compression bs2_colcomp(stream *ss);
 stream_export void bs2_setpos(stream *ss, size_t pos);
 
 
@@ -253,10 +237,10 @@ typedef struct bstream {
 	stream *s;
 	char *buf;
 	size_t size;		/* size of buf */
-	size_t pos;		/* the data cursor (ie read uptil pos) */
-	size_t len;		/* len of the data (could < size but usually == size) */
-	int eof;
-	int mode;		/* 0 line mode else size for block mode */
+	size_t pos;		/* the data cursor (ie read until pos) */
+	size_t len;		/* len of the data (<= size) */
+	size_t mode;		/* 0 line mode else size for block mode */
+	bool eof;
 } bstream;
 
 stream_export bstream *bstream_create(stream *rs, size_t chunk_size);

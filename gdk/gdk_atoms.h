@@ -284,36 +284,6 @@ gdk_export const ptr ptr_nil;
 		*d_ = loc_;						\
 		ATOMfix(t_, s_);					\
 	} while (0)
-#define ATOMreplaceFIX(type, dst, src)			\
-	do {						\
-		int t_ = (type);			\
-		void *d_ = (dst);			\
-		const void *s_ = (src);			\
-							\
-		assert(BATatoms[t_].atomPut == NULL);	\
-		ATOMfix(t_, s_);			\
-		ATOMunfix(t_, d_);			\
-		switch (ATOMsize(t_)) {			\
-		case 0:	     /* void */			\
-			break;				\
-		case 1:					\
-			* (bte *) d_ = * (bte *) s_;	\
-			break;				\
-		case 2:					\
-			* (sht *) d_ = * (sht *) s_;	\
-			break;				\
-		case 4:					\
-			* (int *) d_ = * (int *) s_;	\
-			break;				\
-		case 8:					\
-			* (lng *) d_ = * (lng *) s_;	\
-			break;				\
-		ATOM_CASE_16_hge;			\
-		default:				\
-			memcpy(d_, s_, ATOMsize(t_));	\
-			break;				\
-		}					\
-	} while (0)
 
 /* string heaps:
  * - strings are 8 byte aligned

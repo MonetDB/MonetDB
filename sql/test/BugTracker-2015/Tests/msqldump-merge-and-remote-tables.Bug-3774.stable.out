@@ -74,7 +74,7 @@ CREATE MERGE TABLE "sys"."mt1" (
 );
 CREATE REMOTE TABLE "sys"."rt1" (
 	"t" INTEGER
-) ON 'mapi:monetdb://localhost:50000/test';
+) ON 'mapi:monetdb://localhost:50000/test' WITH USER 'monetdb' ENCRYPTED PASSWORD 'a73f1d86383446438ac64f56e15ada38b41fbb18f029d2181723aeb2acac6a831f60e5fdbd64ac2c8c70e035dd44cbbe3b45565ef2d58feb2821a2078c7fad35';
 START TRANSACTION;
 SET SCHEMA "sys";
 CREATE TABLE "sys"."t1" (
@@ -85,7 +85,7 @@ CREATE MERGE TABLE "sys"."mt1" (
 );
 CREATE REMOTE TABLE "sys"."rt1" (
 	"t" INTEGER
-) ON 'mapi:monetdb://localhost:50000/test';
+) ON 'mapi:monetdb://localhost:50000/test' WITH USER 'monetdb' ENCRYPTED PASSWORD 'a73f1d86383446438ac64f56e15ada38b41fbb18f029d2181723aeb2acac6a831f60e5fdbd64ac2c8c70e035dd44cbbe3b45565ef2d58feb2821a2078c7fad35';
 ALTER TABLE "sys"."mt1" ADD TABLE "t1";
 COMMIT;
 

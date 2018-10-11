@@ -77,6 +77,7 @@ extern sql_exp * exp_var(sql_allocator *sa, const char *name, sql_subtype *type,
 extern sql_exp * exp_table(sql_allocator *sa, const char *name, sql_table *t, int level);
 extern sql_exp * exp_return(sql_allocator *sa, sql_exp *val, int level);
 extern sql_exp * exp_while(sql_allocator *sa, sql_exp *cond, list *stmts);
+extern sql_exp * exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message);
 extern sql_exp * exp_if(sql_allocator *sa, sql_exp *cond, list *if_stmts, list *else_stmts);
 extern sql_exp * exp_rel(mvc *sql, sql_rel * r);
 
@@ -151,5 +152,7 @@ extern int is_identity( sql_exp *e, sql_rel *r);
 extern atom *exp_flatten(mvc *sql, sql_exp *e);
 
 extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
+
+extern sql_exp *create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value);
 
 #endif /* _REL_EXP_H_ */

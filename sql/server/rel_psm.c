@@ -18,7 +18,7 @@
 
 static list *sequential_block(mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
-static sql_rel *
+sql_rel *
 rel_psm_block(sql_allocator *sa, list *l)
 {
 	if (l) {
@@ -201,7 +201,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 static sql_exp *
 rel_psm_declare_table(mvc *sql, dnode *n)
 {
-	sql_rel *rel = NULL;
+	sql_rel *rel = NULL, *baset = NULL;
 	dlist *qname = n->next->data.lval;
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -209,18 +209,26 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 
 	if (sname)  /* not allowed here */
 		return sql_error(sql, 02, SQLSTATE(42000) "DECLARE TABLE: qualified name not allowed");
-	if (frame_find_var(sql, name)) 
+	if (frame_find_var(sql, name))
 		return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
-	
+
 	assert(n->next->next->next->type == type_int);
-	
-	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL, 0);
+	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym,
+			n->next->next->next->data.i_val, NULL, NULL, NULL, false, NULL, 0);
 
-	if (!rel || rel->op != op_ddl || rel->flag != DDL_CREATE_TABLE)
+	if (!rel)
 		return NULL;
-
-	t = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
-	if(!stack_push_table(sql, name, rel, t))
+	if(rel->op == op_ddl) {
+		baset = rel;
+	} else if(rel->op == op_insert) {
+		baset = rel->l;
+	} else {
+		return NULL;
+	}
+	if(baset->flag != DDL_CREATE_TABLE)
+		return NULL;
+	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
+	if(!stack_push_table(sql, name, baset, t))
 		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return exp_table(sql->sa, sa_strdup(sql->sa, name), t, sql->frame);
 }
@@ -619,6 +627,7 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 		case SQL_DECLARE:
 			reslist = rel_psm_declare(sql, s->data.lval->h);
 			break;
+		case SQL_DECLARE_TABLE:
 		case SQL_CREATE_TABLE: 
 			res = rel_psm_declare_table(sql, s->data.lval->h);
 			break;
@@ -886,7 +895,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
  					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
 			sql->params = NULL;
 			if (create) {
-				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang,  mod, fname, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE);
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: R function %s.%s not bound", KF, F, s->base.name, fname );
 			} /*else {
@@ -905,7 +914,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 
 			if (create) { /* needed for recursive functions */
 				q = query_cleaned(q);
-				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg);
+				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg, FALSE);
 				GDKfree(q);
 			}
 			sql->session->schema = s;
@@ -938,7 +947,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			sql->params = NULL;
 			if (create) {
 				q = query_cleaned(q);
-				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg);
+				f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE);
 				GDKfree(q);
 			} else if (!sf) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: external name %s.%s not bound (%s.%s)", KF, F, fmod, fnme, s->base.name, fname );
@@ -1487,7 +1496,10 @@ rel_psm(mvc *sql, symbol *s)
 	    dlist *qname = l->h->data.lval;
 	    symbol *sym = l->h->next->data.sym;
 
-	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, create_table_from_loader(sql, qname, sym)));
+	    ret = create_table_from_loader(sql, qname, sym);
+	    if (ret == NULL)
+		    return NULL;
+	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, ret));
 	    sql->type = Q_SCHEMA;
 	}	break;
 	case SQL_CREATE_TRIGGER:

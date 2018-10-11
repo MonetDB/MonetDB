@@ -1,0 +1,88 @@
+stdout of test 'reload-again` in directory 'sql/test/Dump` itself:
+
+
+# 22:29:02 >  
+# 22:29:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34496" "--set" "mapi_usock=/var/tmp/mtest-27940/.s.monetdb.34496" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_Dump" "--set" "embedded_c=true"
+# 22:29:02 >  
+
+# MonetDB 5 server v11.29.4 (hg id: c717aa6c1f76)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Dump', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.513 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:34496/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27940/.s.monetdb.34496
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:29:02 >  
+# 22:29:02 >  "/usr/bin/python" "reload-again.SQL.py" "reload-again"
+# 22:29:02 >  
+
+#START TRANSACTION;
+#CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
+#SET SCHEMA "sys";
+#CREATE TABLE "sys"."test" (
+#	"id" INTEGER,
+#	"i"  SMALLINT      DEFAULT next value for "sys"."test_seq"
+#);
+#INSERT INTO "sys"."test" VALUES (0, 7);
+[ 1	]
+#INSERT INTO "sys"."test" VALUES (1, 10);
+[ 1	]
+#INSERT INTO "sys"."test" VALUES (2, 5);
+[ 1	]
+#INSERT INTO "sys"."test" VALUES (3, 8);
+[ 1	]
+#INSERT INTO "sys"."test" VALUES (4, 5);
+[ 1	]
+#CREATE TABLE "sys"."typestest" (
+#	"boolean"        BOOLEAN,
+#	"tinyint"        TINYINT,
+#	"smallint"       SMALLINT,
+#	"int"            INTEGER,
+#	"bigint"         BIGINT,
+#	"double"         DOUBLE,
+#	"real"           REAL,
+#	"decimal"        DECIMAL(18,3),
+#	"decimal9"       DECIMAL(9),
+#	"decimal83"      DECIMAL(8,3),
+#	"float"          DOUBLE,
+#	"float9"         FLOAT(9),
+#	"float83"        FLOAT(8,3),
+#	"date"           DATE,
+#	"iY"             INTERVAL YEAR,
+#	"iYM"            INTERVAL YEAR TO MONTH,
+#	"iM"             INTERVAL MONTH,
+#INSERT INTO "sys"."typestest" VALUES (true, 10, 10000, 1000000, 10000000000, 1e+30, 1e+20, 1.000, 123456789, 12345.678, 3.1415, 3.1415, 3.1415, DATE '2009-04-15', INTERVAL '2' YEAR, INTERVAL '1-06' YEAR TO MONTH, INTERVAL '3' MONTH, INTERVAL '20' DAY, INTERVAL '1 06' DAY TO HOUR, INTERVAL '1 09:20' DAY TO MINUTE, INTERVAL '1 03:46:40' DAY TO SECOND, INTERVAL '10' HOUR, INTERVAL '1:40' HOUR TO MINUTE, INTERVAL '0:33:20' HOUR TO SECOND, INTERVAL '10' MINUTE, INTERVAL '1:40' MINUTE TO SECOND, INTERVAL '10' SECOND, TIMESTAMP '1995-07-15 07:30', TIMESTAMP '1995-07-15 07:30', TIMESTAMP '1995-07-15 07:30', TIMESTAMP '1995-07-15 07:30', TIME '07:30', TIME '07:30', TIME '07:30', TIME '07:30', BLOB '123456', BLOB '123456', '123456', '123456', 'x', 'varchar', '0123456789', '127.0.0.0', '127.127.127.255', '{"a": 123}', '{"b": 456}', 'https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes', 'https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype', 'ae106ad4-81fd-4f1a-85e8-5efface60da4');
+[ 1	]
+#CREATE TABLE "sys"."keytest1" (
+#	"key1" INTEGER       NOT NULL,
+#	"key2" INTEGER       NOT NULL,
+#	CONSTRAINT "keytest1_key1_key2_pkey" PRIMARY KEY ("key1", "key2")
+#);
+#INSERT INTO "sys"."keytest1" VALUES (0, 0);
+[ 1	]
+#INSERT INTO "sys"."keytest1" VALUES (0, 1);
+[ 1	]
+#CREATE TABLE "sys"."keytest2" (
+#	"key1" INTEGER,
+#	"key2" INTEGER
+#);
+#INSERT INTO "sys"."keytest2" VALUES (0, 0);
+[ 1	]
+#INSERT INTO "sys"."keytest2" VALUES (0, 1);
+[ 1	]
+#ALTER TABLE "sys"."keytest2" ADD CONSTRAINT "keytest2_key1_key2_fkey" FOREIGN KEY ("key1", "key2") REFERENCES "sys"."keytest1" ("key1", "key2");
+#ALTER SEQUENCE "sys"."test_seq" RESTART WITH 8 INCREMENT BY 3 MINVALUE 5 MAXVALUE 10 CYCLE;
+#COMMIT;
+
+# 22:29:02 >  
+# 22:29:02 >  "Done."
+# 22:29:02 >  
+

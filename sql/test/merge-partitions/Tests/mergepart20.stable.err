@@ -1,0 +1,51 @@
+stderr of test 'mergepart20` in directory 'sql/test/merge-partitions` itself:
+
+
+# 10:47:20 >  
+# 10:47:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31480" "--set" "mapi_usock=/var/tmp/mtest-26529/.s.monetdb.31480" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 10:47:20 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31480
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26529/.s.monetdb.31480
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 10:47:20 >  
+# 10:47:20 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26529" "--port=31480"
+# 10:47:20 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-26529/.s.monetdb.31480
+QUERY = CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (iamdummy(a)); --error
+ERROR = !SELECT: no such unary operator 'iamdummy(int)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-26529/.s.monetdb.31480
+QUERY = ALTER TABLE testme ADD TABLE subtable3 AS PARTITION BETWEEN 'abc' AND 'cde'; --error
+ERROR = !conversion of string 'abc' to type int failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-4817/.s.monetdb.33584
+QUERY = INSERT INTO testme VALUES (12, 'this'), (6, 'not'), (50, 'ok'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-26529/.s.monetdb.31480
+QUERY = INSERT INTO subtable1 VALUES (2, 'seventh'); --error
+ERROR = !INSERT: table sys.subtable1 is part of merge table sys.testme and the insert violates the partition range of values
+CODE  = M0M29
+
+# 10:47:21 >  
+# 10:47:21 >  "Done."
+# 10:47:21 >  
+

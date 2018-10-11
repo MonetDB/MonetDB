@@ -195,10 +195,10 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
         chkFlow(mb);
         chkDeclarations(mb);
     }
-    /* keep all actions taken as a post block comment */
+	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","querylog", usec);
-    newComment(mb,buf);
+	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","querylog", usec);
+	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	return msg;
 }

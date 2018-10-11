@@ -53,9 +53,9 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 		WriteData(ValuePtr, SQL_ASYNC_ENABLE_OFF, SQLULEN);
 		break;
 	case SQL_ATTR_AUTO_IPD:			/* SQLUINTEGER */
-		/* TODO implement automatic filling of IPD See also
-		 * SQLSetStmtAttr.c for SQL_ATTR_ENABLE_AUTO_IPD */
-		WriteData(ValuePtr, SQL_FALSE, SQLUINTEGER);
+		/* See also SQLSetStmtAttr.c for
+		 * SQL_ATTR_ENABLE_AUTO_IPD */
+		WriteData(ValuePtr, SQL_TRUE, SQLUINTEGER);
 		break;
 	case SQL_ATTR_AUTOCOMMIT:		/* SQLUINTEGER */
 		/* SQL_AUTOCOMMIT */

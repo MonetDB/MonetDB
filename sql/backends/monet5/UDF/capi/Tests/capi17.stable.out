@@ -1,0 +1,95 @@
+stdout of test 'capi17` in directory 'sql/backends/monet5/UDF/capi` itself:
+
+
+# 15:53:02 >  
+# 15:53:02 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37852" "--set" "mapi_usock=/var/tmp/mtest-14326/.s.monetdb.37852" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/myth/opt/var/MonetDB/mTests_sql_backends_monet5_UDF_capi" "--set" "embedded_py=true" "--set" "embedded_c=true"
+# 15:53:02 >  
+
+# MonetDB 5 server v11.29.4
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_UDF_capi', using 4 threads
+# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-30.eduroam.cwi.nl:37852/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14326/.s.monetdb.37852
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 15:53:03 >  
+# 15:53:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14326" "--port=37852"
+# 15:53:03 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION capi17(inp OID) RETURNS BOOLEAN LANGUAGE C {
+#    size_t i;
+#    result->initialize(result, inp.count);
+#    char* value = malloc(100);
+#    for(i = 0; i < inp.count; i++) {
+#        if (inp.data[i] == inp.null_value) {
+#            result->data[i] = 0;
+#        } else {
+#            result->data[i] = 1;
+#        }
+#    }
+#    free(value);
+#};
+#CREATE TABLE oids(i OID);
+#INSERT INTO oids(i) VALUES (100), (NULL), (200);
+[ 3	]
+#SELECT * FROM oids WHERE capi17(i);
+% sys.oids # table_name
+% i # name
+% oid # type
+% 5 # length
+[ 100@0	]
+[ 200@0	]
+#DROP FUNCTION capi17;
+#DROP TABLE oids;
+#ROLLBACK;
+
+# 15:53:05 >  
+# 15:53:05 >  "Done."
+# 15:53:05 >  
+

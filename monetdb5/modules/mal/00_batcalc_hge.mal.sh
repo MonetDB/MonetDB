@@ -483,6 +483,18 @@ comment "average and number of non-nil values of B";
 pattern avg(b:bat[:$tp],s:bat[:oid]) (:dbl, :lng)
 address CMDcalcavg
 comment "average and number of non-nil values of B with candidates list";
+pattern avg(b:bat[:$tp],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B with candidates list";
+pattern avg(b:bat[:$tp],s:bat[:oid],scale:int) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+pattern avg(b:bat[:$tp],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B";
+pattern avg(b:bat[:$tp],s:bat[:oid],scale:int) (:dbl, :lng)
+address CMDcalcavg
+comment "average and number of non-nil values of B with candidates list";
 
 EOF
 done

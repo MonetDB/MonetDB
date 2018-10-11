@@ -50,7 +50,7 @@
 #endif
 
 #ifdef HAVE_CONSOLE
-static int monet_daemon;
+static bool monet_daemon;
 #endif
 
 /* NEEDED? */
@@ -205,9 +205,9 @@ monet_init(opt *set, int setlen)
 		return 0;
 
 #ifdef HAVE_CONSOLE
-	monet_daemon = 0;
+	monet_daemon = false;
 	if (GDKgetenv_isyes("monet_daemon")) {
-		monet_daemon = 1;
+		monet_daemon = true;
 #ifdef HAVE_SETSID
 		setsid();
 #endif
@@ -572,23 +572,24 @@ main(int argc, char **av)
 	{
 		struct sigaction sa;
 
-		sigemptyset(&sa.sa_mask);
+		(void) sigemptyset(&sa.sa_mask);
 		sa.sa_flags = 0;
 		sa.sa_handler = handler;
-		if (
-				sigaction(SIGINT, &sa, NULL) == -1 ||
-				sigaction(SIGQUIT, &sa, NULL) == -1 ||
-				sigaction(SIGTERM, &sa, NULL) == -1)
-		{
+		if (sigaction(SIGINT, &sa, NULL) == -1 ||
+		    sigaction(SIGQUIT, &sa, NULL) == -1 ||
+		    sigaction(SIGTERM, &sa, NULL) == -1) {
 			fprintf(stderr, "!unable to create signal handlers\n");
 		}
 	}
 #else
-	signal(SIGINT, handler);
+	if(signal(SIGINT, handler) == SIG_ERR)
+		fprintf(stderr, "!unable to create signal handlers\n");
 #ifdef SIGQUIT
-	signal(SIGQUIT, handler);
+	if(signal(SIGQUIT, handler) == SIG_ERR)
+		fprintf(stderr, "!unable to create signal handlers\n");
 #endif
-	signal(SIGTERM, handler);
+	if(signal(SIGTERM, handler) == SIG_ERR)
+		fprintf(stderr, "!unable to create signal handlers\n");
 #endif
 
 	{

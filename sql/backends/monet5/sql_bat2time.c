@@ -52,7 +52,7 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -99,7 +99,7 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -139,7 +139,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -179,7 +179,7 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -226,7 +226,7 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -266,7 +266,7 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);

@@ -30,4 +30,8 @@ lib_msabaoth = {
 	SOURCES = msabaoth.h msabaoth.c
 }
 
-EXTRA_DIST = strptime.c
+lib_strptime = {
+	NOINST
+	SOURCES = strptime.cpp
+	COND = NATIVE_WIN32
+}

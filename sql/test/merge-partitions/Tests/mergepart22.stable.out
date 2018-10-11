@@ -1,0 +1,118 @@
+stdout of test 'mergepart22` in directory 'sql/test/merge-partitions` itself:
+
+
+# 12:12:30 >  
+# 12:12:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30019" "--set" "mapi_usock=/var/tmp/mtest-2053/.s.monetdb.30019" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 12:12:30 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:30019/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2053/.s.monetdb.30019
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:12:30 >  
+# 12:12:30 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2053" "--port=30019"
+# 12:12:30 >  
+
+#CREATE FUNCTION multiplybytwo(a int) RETURNS INT BEGIN RETURN a * 2; END;
+#CREATE MERGE TABLE tryupdateme (a int, b varchar(32)) PARTITION BY VALUES USING (multiplybytwo(a) + 5);
+#CREATE TABLE subtable1 (a int, b varchar(32));
+#CREATE TABLE subtable2 (a int, b varchar(32));
+#ALTER TABLE tryupdateme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);
+#ALTER TABLE tryupdateme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);
+#INSERT INTO tryupdateme VALUES (5, 'first'), (10, 'first'), (20, 'second'), (25, 'second');
+[ 4	]
+#SELECT a, b FROM tryupdateme;
+% .tryupdateme,	.tryupdateme # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	6 # length
+[ 5,	"first"	]
+[ 10,	"first"	]
+[ 20,	"second"	]
+[ 25,	"second"	]
+#SELECT a, b FROM subtable1;
+% sys.subtable1,	sys.subtable1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	5 # length
+[ 5,	"first"	]
+[ 10,	"first"	]
+#SELECT a, b FROM subtable2;
+% sys.subtable2,	sys.subtable2 # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	6 # length
+[ 20,	"second"	]
+[ 25,	"second"	]
+#SELECT a, b FROM tryupdateme;
+% .tryupdateme,	.tryupdateme # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	6 # length
+[ 5,	"first"	]
+[ 10,	"first"	]
+[ 20,	"second"	]
+[ 25,	"second"	]
+#SELECT a, b FROM subtable1;
+% sys.subtable1,	sys.subtable1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	5 # length
+[ 5,	"first"	]
+[ 10,	"first"	]
+#SELECT a, b FROM subtable2;
+% sys.subtable2,	sys.subtable2 # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	6 # length
+[ 20,	"second"	]
+[ 25,	"second"	]
+#UPDATE tryupdateme SET b = 'updated' WHERE a % 5 = 0;
+[ 4	]
+#UPDATE subtable2 SET b = 'something' || b || 'else' WHERE a % 5 = 0;
+[ 2	]
+#SELECT a, b FROM tryupdateme;
+% .tryupdateme,	.tryupdateme # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	20 # length
+[ 5,	"updated"	]
+[ 10,	"updated"	]
+[ 20,	"somethingupdatedelse"	]
+[ 25,	"somethingupdatedelse"	]
+#SELECT a, b FROM subtable1;
+% sys.subtable1,	sys.subtable1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	7 # length
+[ 5,	"updated"	]
+[ 10,	"updated"	]
+#SELECT a, b FROM subtable2;
+% sys.subtable2,	sys.subtable2 # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	20 # length
+[ 20,	"somethingupdatedelse"	]
+[ 25,	"somethingupdatedelse"	]
+#ALTER TABLE tryupdateme DROP TABLE subtable1;
+#ALTER TABLE tryupdateme DROP TABLE subtable2;
+#DROP TABLE subtable1;
+#DROP TABLE subtable2;
+#DROP TABLE tryupdateme;
+#DROP FUNCTION multiplybytwo;
+
+# 12:12:30 >  
+# 12:12:30 >  "Done."
+# 12:12:30 >  
+

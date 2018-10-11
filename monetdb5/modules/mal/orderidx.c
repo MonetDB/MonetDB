@@ -64,7 +64,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 			break;
 		/* fall through */
 	default:
-		if (BATorderidx(b, 1) != GDK_SUCCEED)
+		if (BATorderidx(b, true) != GDK_SUCCEED)
 			throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 		return MAL_SUCCEED;
 	}

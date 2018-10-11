@@ -103,6 +103,14 @@
 #define EXCLUDE_TIES 3
 #define EXCLUDE_NO_OTHERS 4
 
+/* The following macros are used in properties field of sql_table */
+#define PARTITION_RANGE       1
+#define PARTITION_LIST        2
+#define PARTITION_COLUMN      4
+#define PARTITION_EXPRESSION  8
+
+#define STORAGE_MAX_VALUE_LENGTH 2048
+
 #define cur_user 1
 #define cur_role 2
 
@@ -110,7 +118,6 @@
 
 #define dt_schema 	"%dt%"
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
-
 
 extern const char *TID;
 
@@ -190,8 +197,10 @@ typedef struct changeset {
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
+extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
+extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, int id);
@@ -329,6 +338,7 @@ typedef struct sql_func {
 	bit side_effect;
 	bit varres;	/* variable output result */
 	bit vararg;	/* variable input arguments */
+	bit system;	/* system function */
 	int fix_scale;
 			/*
 	   		   SCALE_NOFIX/SCALE_NONE => nothing
@@ -481,29 +491,64 @@ typedef enum table_types {
 	tt_replica_table = 6	/* multiple replica of the same table */
 } table_types;
 
-#define isTable(x) 	  (x->type==tt_table)
-#define isView(x)  	  (x->type==tt_view)
-#define isMergeTable(x)   (x->type==tt_merge_table)
-#define isStream(x)  	  (x->type==tt_stream)
-#define isRemote(x)  	  (x->type==tt_remote)
-#define isReplicaTable(x) (x->type==tt_replica_table)
-#define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)    (isTable(x) && x->p)
+#define TABLE_TYPE_DESCRIPTION(tt,properties)                                                                       \
+(tt == tt_table)?"TABLE":(tt == tt_view)?"VIEW":(tt == tt_merge_table && !properties)?"MERGE TABLE":                \
+(tt == tt_stream)?"STREAM TABLE":(tt == tt_remote)?"REMOTE TABLE":                                                  \
+(tt == tt_merge_table && (properties & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
+(tt == tt_merge_table && (properties & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
+
+#define isTable(x)                        (x->type==tt_table)
+#define isView(x)                         (x->type==tt_view)
+#define isNonPartitionedTable(x)          (x->type==tt_merge_table && !x->properties)
+#define isRangePartitionTable(x)          (x->type==tt_merge_table && (x->properties & PARTITION_RANGE) == PARTITION_RANGE)
+#define isListPartitionTable(x)           (x->type==tt_merge_table && (x->properties & PARTITION_LIST) == PARTITION_LIST)
+#define isPartitionedByColumnTable(x)     (x->type==tt_merge_table && (x->properties & PARTITION_COLUMN) == PARTITION_COLUMN)
+#define isPartitionedByExpressionTable(x) (x->type==tt_merge_table && (x->properties & PARTITION_EXPRESSION) == PARTITION_EXPRESSION)
+#define isMergeTable(x)                   (x->type==tt_merge_table)
+#define isStream(x)                       (x->type==tt_stream)
+#define isRemote(x)                       (x->type==tt_remote)
+#define isReplicaTable(x)                 (x->type==tt_replica_table)
+#define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
+#define isPartition(x)                    (isTable(x) && x->p)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
 #define TABLE_APPENDONLY	2
 
+typedef struct sql_part_value {
+	sql_subtype tpe;
+	ptr value;
+	size_t length;
+} sql_part_value;
+
 typedef struct sql_part {
 	sql_base base;
-	struct sql_table *t; /* cached value */
+	struct sql_table *t; /* cached value of the merge table */
+	sql_subtype tpe;     /* the column/expression type */
+	int with_nills;
+	union {
+		list *values;         /* partition by values/list */
+		struct sql_range {    /* partition by range */
+			ptr minvalue;
+			ptr maxvalue;
+			size_t minlength;
+			size_t maxlength;
+		} range;
+	} part;
 } sql_part;
+
+typedef struct sql_expression {
+	sql_subtype type; /* the returning sql_subtype of the expression */
+	char *exp;        /* the expression itself */
+	list *cols;       /* list of colnr of the columns of the table used in the expression */
+} sql_expression;
 
 typedef struct sql_table {
 	sql_base base;
 	sht type;		/* table, view, etc */
 	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
+	bte properties;		/* used for merge_tables */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
 	char *query;		/* views may require some query */
@@ -520,8 +565,13 @@ typedef struct sql_table {
 	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
-	struct sql_table *p;	/* The table is part of this merge table */
 	struct sql_table *po;	/* the outer transactions table */
+
+	struct sql_table *p;	 /* The table is part of this merge table */
+	union {
+		struct sql_column *pcol; /* If it is partitioned on a column */
+		struct sql_expression *pexp; /* If it is partitioned by an expression */
+	} part;
 } sql_table;
 
 typedef struct res_col {
@@ -581,6 +631,8 @@ extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
+extern sql_part *find_sql_part(sql_table *t, const char *tname);
+
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);
 extern node *find_sql_table_node(sql_schema *s, int id);
@@ -600,6 +652,10 @@ extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
+
+extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
+extern void *sql_range_part_validate_and_insert(void *v1, void *v2);
+extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
 
 typedef struct {
 	BAT *b;

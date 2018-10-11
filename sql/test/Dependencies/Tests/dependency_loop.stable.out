@@ -115,11 +115,11 @@ Ready.
 #UNION
 #( SELECT subject,'dc:creator' AS predicate,object FROM dc_creator )
 #select count(*) from dependencies where depend_type = 5;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length
-[ 381	]
+[ 384	]
 
 # 10:37:19 >  
 # 10:37:19 >  Done.

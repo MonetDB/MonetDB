@@ -9,7 +9,7 @@
 MTSAFE
 
 INCLUDES = $(zlib_CFLAGS) \
-		   $(BZ_CFLAGS) \
+		   $(bzip2_CFLAGS) \
 		   $(snappy_CFLAGS) \
    		   $(lz4_CFLAGS) \
 		   $(liblzma_CFLAGS) \
@@ -20,7 +20,7 @@ lib_stream  =  {
 	VERSION = $(STREAM_VERSION)
 	LIBS = WIN32?$(SOCKET_LIBS) \
 	       WIN32?$(zlib_LIBS) \
-	       WIN32?$(BZ_LIBS) \
+	       WIN32?$(bzip2_LIBS) \
 	       WIN32?$(snappy_LIBS) \
    	       WIN32?$(lz4_LIBS) \
 	       WIN32?$(liblzma_LIBS) \

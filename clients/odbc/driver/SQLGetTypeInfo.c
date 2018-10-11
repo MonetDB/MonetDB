@@ -30,78 +30,7 @@
 #include <float.h>
 
 
-#define NCOLUMNS	19
-
-/* column names of result set */
-static const char *columnnames[NCOLUMNS] = {
-	"type_name",
-	"data_type",
-	"column_size",
-	"literal_prefix",
-	"literal_suffix",
-	"create_params",
-	"nullable",
-	"case_sensitive",
-	"searchable",
-	"unsigned_attribute",
-	"fixed_prec_scale",
-	"auto_unique_value",
-	"local_type_name",
-	"minimum_scale",
-	"maximum_scale",
-	"sql_data_type",
-	"sql_datetime_sub",
-	"num_prec_radix",
-	"interval_precision"
-};
-
-/* column types of result set */
-static const char *columntypes[NCOLUMNS] = {
-	"varchar",
-	"smallint",
-	"int",
-	"varchar",
-	"varchar",
-	"varchar",
-	"smallint",
-	"smallint",
-	"smallint",
-	"smallint",
-	"smallint",
-	"smallint",
-	"varchar",
-	"smallint",
-	"smallint",
-	"smallint",
-	"smallint",
-	"int",
-	"smallint"
-};
-
-/* column lengths of result set */
-static const int columnlengths[NCOLUMNS] = {
-	128,
-	5,
-	10,
-	128,
-	128,
-	128,
-	5,
-	5,
-	5,
-	5,
-	5,
-	5,
-	128,
-	5,
-	5,
-	5,
-	5,
-	10,
-	5
-};
-
-static struct types {
+static const struct types {
 	const char *type_name;
 	const int data_type;	/* concise type */
 	const int column_size;
@@ -121,803 +50,768 @@ static struct types {
 	const int sql_datetime_sub;
 	const int num_prec_radix;
 	const int interval_precision;
-	const char **tuple;
 } types[] = {
-	/* this table is sorted on the value of data_type and then on
+	/* This table is sorted on the value of data_type and then on
 	 * how "close" the type maps to the corresponding ODBC SQL
-	 * type (i.e. in the order SQLGetTypeInfo wants it) */
+	 * type (i.e. in the order SQLGetTypeInfo wants it).
+	 * Except for the type_name value, the string values are ready
+	 * to paste into an SQL query (i.e. including quotes). */
 	{
-		"uuid",		       /* type_name */
-		SQL_GUID,	       /* data_type */
-		36,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_GUID,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"uuid",			/* type_name */
+		SQL_GUID,		/* data_type */
+		36,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_GUID,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
 		"character large object", /* type_name */
-		SQL_WLONGVARCHAR,      /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_WLONGVARCHAR,      /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		SQL_WLONGVARCHAR,	/* data_type */
+		1000000,		/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_TRUE,		/* case_sensitive */
+		SQL_SEARCHABLE,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_WLONGVARCHAR,	/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"varchar",	       /* type_name */
-		SQL_WVARCHAR,	       /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"length",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_WVARCHAR,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"varchar",		/* type_name */
+		SQL_WVARCHAR,		/* data_type */
+		1000000,		/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'length'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_TRUE,		/* case_sensitive */
+		SQL_SEARCHABLE,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_WVARCHAR,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"character",	       /* type_name */
-		SQL_WCHAR,	       /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"length",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_WCHAR,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"character",		/* type_name */
+		SQL_WCHAR,		/* data_type */
+		1000000,		/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'length'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_TRUE,		/* case_sensitive */
+		SQL_SEARCHABLE,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_WCHAR,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"char",		       /* type_name */
-		SQL_WCHAR,	       /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"length",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_WCHAR,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"char",			/* type_name */
+		SQL_WCHAR,		/* data_type */
+		1000000,		/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'length'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_TRUE,		/* case_sensitive */
+		SQL_SEARCHABLE,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_WCHAR,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"boolean",	       /* type_name */
-		SQL_BIT,	       /* data_type */
-		1,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_TRUE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_BIT,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"boolean",		/* type_name */
+		SQL_BIT,		/* data_type */
+		1,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_TRUE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_BIT,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"tinyint",	       /* type_name */
-		SQL_TINYINT,	       /* data_type */
-		2,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_TINYINT,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"tinyint",		/* type_name */
+		SQL_TINYINT,		/* data_type */
+		2,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_TINYINT,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"bigint",	       /* type_name */
-		SQL_BIGINT,	       /* data_type */
-		19,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_BIGINT,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"bigint",		/* type_name */
+		SQL_BIGINT,		/* data_type */
+		19,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_BIGINT,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"binary large object", /* type_name */
-		SQL_LONGVARBINARY,     /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_LONGVARBINARY,     /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"binary large object",	/* type_name */
+		SQL_LONGVARBINARY,	/* data_type */
+		1000000,		/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_TRUE,		/* case_sensitive */
+		SQL_SEARCHABLE,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_LONGVARBINARY,	/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"binary large object", /* type_name */
-		SQL_VARBINARY,	       /* data_type */
-		1000000,	       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"length",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_TRUE,	       /* case_sensitive */
-		SQL_SEARCHABLE,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_VARBINARY,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"binary large object",	/* type_name */
+		SQL_VARBINARY,		/* data_type */
+		1000000,		/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'length'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_TRUE,		/* case_sensitive */
+		SQL_SEARCHABLE,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_VARBINARY,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	/* SQL_BINARY */
 	{
-		"numeric",	       /* type_name */
-		SQL_NUMERIC,	       /* data_type */
-		19,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision,scale",     /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		19,		       /* maximum_scale */
-		SQL_NUMERIC,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"numeric",		/* type_name */
+		SQL_NUMERIC,		/* data_type */
+		19,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision,scale'",	/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		19,			/* maximum_scale */
+		SQL_NUMERIC,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"decimal",	       /* type_name */
-		SQL_DECIMAL,	       /* data_type */
-		19,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision,scale",     /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		19,		       /* maximum_scale */
-		SQL_DECIMAL,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"decimal",		/* type_name */
+		SQL_DECIMAL,		/* data_type */
+		19,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision,scale'",	/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		19,			/* maximum_scale */
+		SQL_DECIMAL,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"integer",	       /* type_name */
-		SQL_INTEGER,	       /* data_type */
-		9,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTEGER,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"integer",		/* type_name */
+		SQL_INTEGER,		/* data_type */
+		9,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTEGER,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"int",		       /* type_name */
-		SQL_INTEGER,	       /* data_type */
-		9,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTEGER,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"int",			/* type_name */
+		SQL_INTEGER,		/* data_type */
+		9,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTEGER,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"mediumint",	       /* type_name */
-		SQL_INTEGER,	       /* data_type */
-		9,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTEGER,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"mediumint",		/* type_name */
+		SQL_INTEGER,		/* data_type */
+		9,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTEGER,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"smallint",	       /* type_name */
-		SQL_SMALLINT,	       /* data_type */
-		4,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_SMALLINT,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"smallint",		/* type_name */
+		SQL_SMALLINT,		/* data_type */
+		4,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_SMALLINT,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"float",	       /* type_name */
-		SQL_FLOAT,	       /* data_type */
-		DBL_MANT_DIG,	       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_FLOAT,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		2,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"float",		/* type_name */
+		SQL_FLOAT,		/* data_type */
+		DBL_MANT_DIG,		/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_FLOAT,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		2,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"real",		       /* type_name */
-		SQL_REAL,	       /* data_type */
-		FLT_MANT_DIG,	       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_REAL,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		2,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"real",			/* type_name */
+		SQL_REAL,		/* data_type */
+		FLT_MANT_DIG,		/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_REAL,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		2,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"double",	       /* type_name */
-		SQL_DOUBLE,	       /* data_type */
-		DBL_MANT_DIG,	       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_DOUBLE,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		2,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"double",		/* type_name */
+		SQL_DOUBLE,		/* data_type */
+		DBL_MANT_DIG,		/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_DOUBLE,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		2,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"date",		       /* type_name */
-		SQL_TYPE_DATE,	       /* data_type */
-		10,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_DATETIME,	       /* sql_data_type */
-		SQL_CODE_DATE,	       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"date",			/* type_name */
+		SQL_TYPE_DATE,		/* data_type */
+		10,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_DATETIME,		/* sql_data_type */
+		SQL_CODE_DATE,		/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"time",		       /* type_name */
-		SQL_TYPE_TIME,	       /* data_type */
-		12,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		NULL,		       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_DATETIME,	       /* sql_data_type */
-		SQL_CODE_TIME,	       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"time",			/* type_name */
+		SQL_TYPE_TIME,		/* data_type */
+		12,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"NULL",			/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_DATETIME,		/* sql_data_type */
+		SQL_CODE_TIME,		/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"timestamp",	       /* type_name */
-		SQL_TYPE_TIMESTAMP,    /* data_type */
-		23,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		-1,		       /* minimum_scale */
-		-1,		       /* maximum_scale */
-		SQL_DATETIME,	       /* sql_data_type */
-		SQL_CODE_TIMESTAMP,    /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"timestamp",		/* type_name */
+		SQL_TYPE_TIMESTAMP,	/* data_type */
+		23,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		-1,			/* minimum_scale */
+		-1,			/* maximum_scale */
+		SQL_DATETIME,		/* sql_data_type */
+		SQL_CODE_TIMESTAMP,	/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 	{
-		"interval year",       /* type_name */
-		SQL_INTERVAL_YEAR,     /* data_type */
-		9,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
-		SQL_CODE_YEAR,	       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		9,		       /* interval_precision */
-		NULL		       /* tuple */
+		"interval year",	/* type_name */
+		SQL_INTERVAL_YEAR,	/* data_type */
+		9,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
+		SQL_CODE_YEAR,		/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		9,			/* interval_precision */
 	},
 	{
-		"interval month",      /* type_name */
-		SQL_INTERVAL_MONTH,    /* data_type */
-		10,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
-		SQL_CODE_MONTH,	       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		10,		       /* interval_precision */
-		NULL		       /* tuple */
+		"interval month",	/* type_name */
+		SQL_INTERVAL_MONTH,	/* data_type */
+		10,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
+		SQL_CODE_MONTH,		/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		10,			/* interval_precision */
 	},
 	{
-		"interval day",	       /* type_name */
-		SQL_INTERVAL_DAY,      /* data_type */
-		5,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
-		SQL_CODE_DAY,	       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		5,		       /* interval_precision */
-		NULL		       /* tuple */
+		"interval day",		/* type_name */
+		SQL_INTERVAL_DAY,	/* data_type */
+		5,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
+		SQL_CODE_DAY,		/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		5,			/* interval_precision */
 	},
 	{
-		"interval hour",       /* type_name */
-		SQL_INTERVAL_HOUR,     /* data_type */
-		6,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
-		SQL_CODE_HOUR,	       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		6,		       /* interval_precision */
-		NULL		       /* tuple */
+		"interval hour",	/* type_name */
+		SQL_INTERVAL_HOUR,	/* data_type */
+		6,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
+		SQL_CODE_HOUR,		/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		6,			/* interval_precision */
 	},
 	{
-		"interval minute",     /* type_name */
-		SQL_INTERVAL_MINUTE,   /* data_type */
-		8,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
-		SQL_CODE_MINUTE,       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		8,		       /* interval_precision */
-		NULL		       /* tuple */
+		"interval minute",	/* type_name */
+		SQL_INTERVAL_MINUTE,	/* data_type */
+		8,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
+		SQL_CODE_MINUTE,	/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		8,			/* interval_precision */
 	},
 	{
-		"interval second",     /* type_name */
-		SQL_INTERVAL_SECOND,   /* data_type */
-		10,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
-		SQL_CODE_SECOND,       /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		10,		       /* interval_precision */
-		NULL		       /* tuple */
+		"interval second",	/* type_name */
+		SQL_INTERVAL_SECOND,	/* data_type */
+		10,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
+		SQL_CODE_SECOND,	/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		10,			/* interval_precision */
 	},
 	{
 		"interval year to month",/* type_name */
 		SQL_INTERVAL_YEAR_TO_MONTH,/* data_type */
-		12,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
+		12,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
 		SQL_CODE_YEAR_TO_MONTH,/* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		9,		       /* interval_precision */
-		NULL		       /* tuple */
+		-1,			/* num_prec_radix */
+		9,			/* interval_precision */
 	},
 	{
 		"interval day to hour",/* type_name */
 		SQL_INTERVAL_DAY_TO_HOUR,/* data_type */
-		8,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
-		SQL_CODE_DAY_TO_HOUR,  /* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		5,		       /* interval_precision */
-		NULL		       /* tuple */
+		8,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
+		SQL_CODE_DAY_TO_HOUR,	/* sql_datetime_sub */
+		-1,			/* num_prec_radix */
+		5,			/* interval_precision */
 	},
 	{
 		"interval day to minute",/* type_name */
 		SQL_INTERVAL_DAY_TO_MINUTE,/* data_type */
-		11,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
+		11,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
 		SQL_CODE_DAY_TO_MINUTE,/* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		5,		       /* interval_precision */
-		NULL		       /* tuple */
+		-1,			/* num_prec_radix */
+		5,			/* interval_precision */
 	},
 	{
 		"interval day to second",/* type_name */
 		SQL_INTERVAL_DAY_TO_SECOND,/* data_type */
-		14,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
+		14,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
 		SQL_CODE_DAY_TO_SECOND,/* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		5,		       /* interval_precision */
-		NULL		       /* tuple */
+		-1,			/* num_prec_radix */
+		5,			/* interval_precision */
 	},
 	{
 		"interval hour to minute",/* type_name */
 		SQL_INTERVAL_HOUR_TO_MINUTE,/* data_type */
-		9,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
+		9,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
 		SQL_CODE_HOUR_TO_MINUTE,/* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		6,		       /* interval_precision */
-		NULL		       /* tuple */
+		-1,			/* num_prec_radix */
+		6,			/* interval_precision */
 	},
 	{
 		"interval hour to second",/* type_name */
 		SQL_INTERVAL_HOUR_TO_SECOND,/* data_type */
-		12,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
+		12,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
 		SQL_CODE_HOUR_TO_SECOND,/* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		6,		       /* interval_precision */
-		NULL		       /* tuple */
+		-1,			/* num_prec_radix */
+		6,			/* interval_precision */
 	},
 	{
 		"interval minute to second",/* type_name */
 		SQL_INTERVAL_MINUTE_TO_SECOND,/* data_type */
-		13,		       /* column_size */
-		"'",		       /* literal_prefix */
-		"'",		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		-1,		       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		-1,		       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_INTERVAL,	       /* sql_data_type */
+		13,			/* column_size */
+		"''''",			/* literal_prefix */
+		"''''",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		-1,			/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		-1,			/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_INTERVAL,		/* sql_data_type */
 		SQL_CODE_MINUTE_TO_SECOND,/* sql_datetime_sub */
-		-1,		       /* num_prec_radix */
-		10,		       /* interval_precision */
-		NULL		       /* tuple */
+		-1,			/* num_prec_radix */
+		10,			/* interval_precision */
 	},
 	{
-		"hugeint",	       /* type_name */
-		SQL_HUGEINT,	       /* data_type */
-		19,		       /* column_size */
-		NULL,		       /* literal_prefix */
-		NULL,		       /* literal_suffix */
-		"precision",	       /* create_params */
-		SQL_NULLABLE,	       /* nullable */
-		SQL_FALSE,	       /* case_sensitive */
-		SQL_PRED_BASIC,	       /* searchable */
-		SQL_FALSE,	       /* unsigned_attribute */
-		SQL_FALSE,	       /* fixed_prec_scale */
-		SQL_FALSE,	       /* auto_unique_value */
-		NULL,		       /* local_type_name */
-		0,		       /* minimum_scale */
-		0,		       /* maximum_scale */
-		SQL_HUGEINT,	       /* sql_data_type */
-		-1,		       /* sql_datetime_sub */
-		10,		       /* num_prec_radix */
-		-1,		       /* interval_precision */
-		NULL		       /* tuple */
+		"hugeint",		/* type_name */
+		SQL_HUGEINT,		/* data_type */
+		19,			/* column_size */
+		"NULL",			/* literal_prefix */
+		"NULL",			/* literal_suffix */
+		"'precision'",		/* create_params */
+		SQL_NULLABLE,		/* nullable */
+		SQL_FALSE,		/* case_sensitive */
+		SQL_PRED_BASIC,		/* searchable */
+		SQL_FALSE,		/* unsigned_attribute */
+		SQL_FALSE,		/* fixed_prec_scale */
+		SQL_FALSE,		/* auto_unique_value */
+		"NULL",			/* local_type_name */
+		0,			/* minimum_scale */
+		0,			/* maximum_scale */
+		SQL_HUGEINT,		/* sql_data_type */
+		-1,			/* sql_datetime_sub */
+		10,			/* num_prec_radix */
+		-1,			/* interval_precision */
 	},
 };
 
@@ -928,7 +822,7 @@ ODBCGetTypeInfo(int concise_type,
 		int *sql_data_type,
 		int *sql_datetime_sub)
 {
-	struct types *t;
+	const struct types *t;
 
 	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
 		if (t->data_type == concise_type) {
@@ -948,9 +842,9 @@ static SQLRETURN
 MNDBGetTypeInfo(ODBCStmt *stmt,
 		SQLSMALLINT DataType)
 {
-	const char **tuples[sizeof(types) / sizeof(types[0])];
-	struct types *t;
+	const struct types *t;
 	int i;
+	char query[4096];
 
 	switch (DataType) {
 	case SQL_ALL_TYPES:
@@ -1053,115 +947,104 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 
-	for (t = types, i = 0; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
+	i = snprintf(query, sizeof(query), "select * from (values ");
+
+	bool first = true;
+	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
 		assert(t == types || t->data_type >= (t-1)->data_type);
-		if (DataType == SQL_ALL_TYPES || DataType == t->data_type) {
-			if (t->tuple == NULL) {
-				char buf[32];
-
-				t->tuple = malloc(NCOLUMNS * sizeof(*t->tuple));
-				t->tuple[0] = t->type_name;
-
-				snprintf(buf, sizeof(buf), "%d", t->data_type);
-				t->tuple[1] = strdup(buf);
-
-				if (t->column_size == -1)
-					t->tuple[2] = NULL;
-
-				else {
-					snprintf(buf, sizeof(buf),
-						 "%d", t->column_size);
-					t->tuple[2] = strdup(buf);
-				}
-				t->tuple[3] = t->literal_prefix;
-				t->tuple[4] = t->literal_suffix;
-				t->tuple[5] = t->create_params;
-
-				snprintf(buf, sizeof(buf), "%d", t->nullable);
-				t->tuple[6] = strdup(buf);
-
-				snprintf(buf, sizeof(buf),
-					 "%d", t->case_sensitive);
-				t->tuple[7] = strdup(buf);
-
-				snprintf(buf, sizeof(buf), "%d", t->searchable);
-				t->tuple[8] = strdup(buf);
-
-				if (t->unsigned_attribute == -1)
-					t->tuple[9] = NULL;
-
-				else {
-					snprintf(buf, sizeof(buf),
-						 "%d", t->unsigned_attribute);
-					t->tuple[9] = strdup(buf);
-				}
-				snprintf(buf, sizeof(buf),
-					 "%d", t->fixed_prec_scale);
-				t->tuple[10] = strdup(buf);
-
-				if (t->auto_unique_value == -1)
-					t->tuple[11] = NULL;
-
-				else {
-					snprintf(buf, sizeof(buf),
-						 "%d", t->auto_unique_value);
-					t->tuple[11] = strdup(buf);
-				}
-				t->tuple[12] = t->local_type_name;
-
-				if (t->minimum_scale == -1)
-					t->tuple[13] = NULL;
-
-				else {
-					snprintf(buf, sizeof(buf),
-						 "%d", t->minimum_scale);
-					t->tuple[13] = strdup(buf);
-				}
-				if (t->maximum_scale == -1)
-					t->tuple[14] = NULL;
-
-				else {
-					snprintf(buf, sizeof(buf),
-						 "%d", t->maximum_scale);
-					t->tuple[14] = strdup(buf);
-				}
-				snprintf(buf, sizeof(buf),
-					 "%d", t->sql_data_type);
-				t->tuple[15] = strdup(buf);
-
-				if (t->sql_datetime_sub == -1)
-					t->tuple[16] = NULL;
-
-				else {
-					snprintf(buf, sizeof(buf),
-						 "%d", t->sql_datetime_sub);
-					t->tuple[16] = strdup(buf);
-				}
-				if (t->num_prec_radix == -1)
-					t->tuple[17] = NULL;
-
-				else {
-					snprintf(buf, sizeof(buf),
-						 "%d", t->num_prec_radix);
-					t->tuple[17] = strdup(buf);
-				}
-				if (t->interval_precision == -1)
-					t->tuple[18] = NULL;
-
-				else {
-					snprintf(buf, sizeof(buf),
-						 "%d", t->interval_precision);
-					t->tuple[18] = strdup(buf);
-				}
-			}
-			tuples[i++] = t->tuple;
+		if (DataType != SQL_ALL_TYPES && DataType != t->data_type)
+			continue;
+		if (first) {
+			/* specify column types in first set of values */
+			i += snprintf(query + i, sizeof(query) - i,
+				      "(cast('%s' as varchar(128))"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as integer)"
+				      ",cast(%s as varchar(128))"
+				      ",cast(%s as varchar(128))"
+				      ",cast(%s as varchar(128))"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as smallint)"
+				      ",cast(%s as varchar(128))"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as smallint)"
+				      ",cast(%d as integer)"
+				      ",cast(%d as smallint))",
+				      t->type_name,
+				      t->data_type,
+				      t->column_size,
+				      t->literal_prefix,
+				      t->literal_suffix,
+				      t->create_params,
+				      t->nullable,
+				      t->case_sensitive,
+				      t->searchable,
+				      t->unsigned_attribute,
+				      t->fixed_prec_scale,
+				      t->auto_unique_value,
+				      t->local_type_name,
+				      t->minimum_scale,
+				      t->maximum_scale,
+				      t->sql_data_type,
+				      t->sql_datetime_sub,
+				      t->num_prec_radix,
+				      t->interval_precision);
+			first = false;
+		} else {
+			i += snprintf(query + i, sizeof(query) - i,
+				      ",('%s',%d,%d,%s,%s,%s,%d,%d,%d"
+				      ",%d,%d,%d,%s,%d,%d,%d,%d,%d,%d)",
+				      t->type_name,
+				      t->data_type,
+				      t->column_size,
+				      t->literal_prefix,
+				      t->literal_suffix,
+				      t->create_params,
+				      t->nullable,
+				      t->case_sensitive,
+				      t->searchable,
+				      t->unsigned_attribute,
+				      t->fixed_prec_scale,
+				      t->auto_unique_value,
+				      t->local_type_name,
+				      t->minimum_scale,
+				      t->maximum_scale,
+				      t->sql_data_type,
+				      t->sql_datetime_sub,
+				      t->num_prec_radix,
+				      t->interval_precision);
 		}
 	}
+	i += snprintf(query+ i, sizeof(query) - i, ") as monetdb_types "
+		      "(type_name"
+		      ",data_type"
+		      ",column_size"
+		      ",literal_prefix"
+		      ",literal_suffix"
+		      ",create_params"
+		      ",nullable"
+		      ",case_sensitive"
+		      ",searchable"
+		      ",unsigned_attribute"
+		      ",fixed_prec_scale"
+		      ",auto_unique_value"
+		      ",local_type_name"
+		      ",minimum_scale"
+		      ",maximum_scale"
+		      ",sql_data_type"
+		      ",sql_datetime_sub"
+		      ",num_prec_radix"
+		      ",interval_precision)");
+	assert(i < (int) sizeof(query));
 
-	mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames,
-			    columntypes, columnlengths, i, tuples);
-
-	return ODBCInitResult(stmt);
+	return MNDBExecDirect(stmt, (SQLCHAR *) query,
+			      (SQLINTEGER) i);
 }
 
 #ifdef ODBCDEBUG

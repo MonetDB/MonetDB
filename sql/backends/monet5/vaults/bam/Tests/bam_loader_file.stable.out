@@ -7,17 +7,15 @@ stdout of test 'bam_loader_file` in directory 'sql/backends/monet5/vaults/bam` i
 
 # MonetDB 5 server v11.18.0
 # This is an unreleased version
-# Serving database 'mTests_sql_backends_monet5_bam', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.333 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://robin-xps13:32986/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16074/.s.monetdb.32986
-# MonetDB/SQL module loaded
-
-Ready.
+# Serving database 'mTests_sql_backends_monet5_vaults_bam', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:39285/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1158/.s.monetdb.39285
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -44,6 +42,9 @@ Ready.
 # loading sql script: 80_udf.sql
 # loading sql script: 85_bam.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 10:22:37 >  
 # 10:22:37 >  "/usr/bin/python2" "bam_loader_file.SQL.py" "bam_loader_file"

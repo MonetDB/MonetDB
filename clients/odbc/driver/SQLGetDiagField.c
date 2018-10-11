@@ -337,8 +337,8 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 
 	if (ptr != DiagInfoPtr) {
 		if (SQL_SUCCEEDED(rc)) {
-			char *e = ODBCutf82wchar(ptr, n, DiagInfoPtr,
-						 BufferLength / 2, &n);
+			const char *e = ODBCutf82wchar(ptr, n, DiagInfoPtr,
+						       BufferLength / 2, &n);
 
 			if (e)
 				rc = SQL_ERROR;
