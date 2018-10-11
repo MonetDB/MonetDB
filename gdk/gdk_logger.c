@@ -97,7 +97,7 @@
 
 #define NAME(name,tpe,id) (name?name:"tpe id")
 
-static char *log_commands[] = {
+static const char *log_commands[] = {
 	NULL,
 	"LOG_START",
 	"LOG_END",
@@ -1560,7 +1560,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
  */
 static int
 logger_set_logdir_path(char *filename, const char *fn,
-		       const char *logdir, int shared)
+		       const char *logdir, bool shared)
 {
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
@@ -1804,7 +1804,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			    	if (BUNappend(t, &zero, false) != GDK_SUCCEED)
 					goto error;
 			}
-			lg->with_ids = 0;
+			lg->with_ids = false;
 		}
 
 		snprintf(bak, sizeof(bak), "%s_catalog_oid", fn);
@@ -1827,7 +1827,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			    	if (BUNappend(o, &zero, false) != GDK_SUCCEED)
 					goto error;
 			}
-			lg->with_ids = 0;
+			lg->with_ids = false;
 		}
 
 		snprintf(bak, sizeof(bak), "%s_dcatalog", fn);
@@ -1972,7 +1972,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		bat seqs_val = logger_find_bat(lg, "seqs_val", 0, 0);
 		bat snapshots_tid = logger_find_bat(lg, "snapshots_tid", 0, 0);
 		bat dsnapshots = logger_find_bat(lg, "dsnapshots", 0, 0);
-		int needcommit = 0;
+		bool needcommit = false;
 		int dbg = GDKdebug;
 
 		if (seqs_id) {
@@ -2044,7 +2044,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 					 "%s failed", bak);
 				goto error;
 			}
-			needcommit = 1;
+			needcommit = true;
 		}
 		GDKdebug &= ~CHECKMASK;
 		if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
@@ -2138,7 +2138,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 					goto error;
 				}
 				/* set the flag that we need to convert */
-				lg->convert_nil_nan = 1;
+				lg->convert_nil_nan = true;
 			} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "r")) != NULL) {
 				/* the versioned conversion file
 				 * exists: check version */
@@ -2148,7 +2148,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				    newid == curid) {
 					/* versions match, we need to
 					 * convert */
-					lg->convert_nil_nan = 1;
+					lg->convert_nil_nan = true;
 				}
 				fclose(fp1);
 				if (!lg->convert_nil_nan) {
@@ -2170,7 +2170,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			/* we converted, remove versioned file and
 			 * reset conversion flag */
 			GDKunlink(0, NULL, cvfile, NULL);
-			lg->convert_nil_nan = 0;
+			lg->convert_nil_nan = false;
 		}
 #endif
 		if (lg->postfuncp && (*lg->postfuncp)(lg) != GDK_SUCCEED)
@@ -2207,7 +2207,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
+logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, bool shared, const char *local_logdir)
 {
 	logger *lg = GDKmalloc(sizeof(struct logger));
 	char filename[FILENAME_MAX];
@@ -2224,12 +2224,12 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 
 	lg->changes = 0;
 	lg->version = version;
-	lg->with_ids = 1;
+	lg->with_ids = true;
 	lg->id = 1;
 
 	lg->tid = 0;
 #ifdef GDKLIBRARY_NIL_NAN
-	lg->convert_nil_nan = 0;
+	lg->convert_nil_nan = false;
 #endif
 
 	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);;
@@ -2335,7 +2335,7 @@ logger *
 logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files)
 {
 	logger *lg;
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 0, NULL);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, false, NULL);
 	if (lg == NULL)
 		return NULL;
 	if (lg->debug & 1) {
@@ -2369,7 +2369,7 @@ logger *
 logger_create_shared(int debug, const char *fn, const char *logdir, const char *local_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg;
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, 1, local_logdir);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, true, local_logdir);
 	if (lg && lg->debug & 1) {
 		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
 		fflush(stdout);
@@ -2616,7 +2616,7 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 void
 logger_with_ids(logger *lg)
 {
-	lg->with_ids = 1;
+	lg->with_ids = true;
 }
 
 /* Clean-up write-ahead log files already persisted in the BATs, leaving only the most recent one.
