@@ -1818,8 +1818,6 @@ gdk_export ptr ATOMdup(int id, const void *val);
  * structures.
  */
 gdk_export gdk_return BAThash(BAT *b);
-gdk_export gdk_return BATsubhash(BAT *b, BAT *s);
-
 
 /*
  * @- Column Imprints Functions
