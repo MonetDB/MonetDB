@@ -1596,7 +1596,7 @@ upgrade_idx(sql_idx *i)
 {
 	sql_delta *bat = i->data;
 
-	if (!i->t->bootstrap)
+	if (!i->t->bootstrap && bat != NULL)
 		return upgrade_delta(bat, LOG_IDX, i->base.id);
 	return LOG_OK;
 }
