@@ -58,22 +58,20 @@ get_with_comments_as_clause(Mapi mid)
 			"WHERE id = language_id"
 		     ")";
 
-	MapiHdl hdl;
-	const char *comments_clause;
-
-	hdl = mapi_query(mid, query);
-	if (mapi_error(mid)) {
-		if (hdl) {
+	bool has_sys_comments = false;
+	MapiHdl hdl = mapi_query(mid, query);
+	if (hdl) {
+		if (mapi_error(mid)) {
 			mapi_explain_result(hdl, stderr);
-			mapi_close_handle(hdl);
-		} else
-			mapi_explain(mid, stderr);
-		return NULL;
-	}
-	comments_clause = mapi_fetch_row(hdl) ? new_clause : old_clause;
-	mapi_close_handle(hdl);
+		} else {
+			if (mapi_fetch_row(hdl))
+				has_sys_comments = true;
+		}
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
 
-	return comments_clause;
+	return has_sys_comments ? new_clause : old_clause;
 }
 
 const char *
@@ -82,6 +80,7 @@ get_comments_clause(Mapi mid)
 	static const char *comments_clause = NULL;
 	if (comments_clause == NULL) {
 		comments_clause = get_with_comments_as_clause(mid);
+		assert(comments_clause != NULL);
 	}
 	return comments_clause;
 }
@@ -935,9 +934,6 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	bool hashge;
 	const char *comments_clause = get_comments_clause(mid);
 
-	if (comments_clause == NULL)
-		return 1;
-
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
 			size_t len = sname - tname;
@@ -1252,9 +1248,6 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 	char *sname = NULL;
 	const char *comments_clause = get_comments_clause(mid);
 
-	if (comments_clause == NULL)
-		return 1;
-
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
 			size_t len = sname - tname;
@@ -1353,9 +1346,6 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 	MapiHdl hdl = NULL;
 	char schemas[5120];
 	const char *comments_clause = get_comments_clause(mid);
-
-	if (comments_clause == NULL)
-		return 1;
 
 	snprintf(schemas, sizeof(schemas),
 		"%s "
@@ -1612,10 +1602,8 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	int flang, ftype;
 	const char *comments_clause = get_comments_clause(mid);
 
-	if (comments_clause == NULL)
-		return 1;
-
-	if ((query = malloc(query_size)) == NULL)
+	query = malloc(query_size);
+	if (query == NULL)
 		return 1;
 
 	query_len = snprintf(query, query_size,
@@ -2161,9 +2149,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	size_t query_size = 5120;
 	int query_len = 0;
 	const char *comments_clause = get_comments_clause(mid);
-
-	if (comments_clause == NULL)
-		return 1;
 
 	query = malloc(query_size);
 	if (!query)
