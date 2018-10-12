@@ -137,6 +137,8 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_VIEW:
 	case SQL_ALTER_TABLE:
 
+	case SQL_COMMENT:
+
 	case SQL_GRANT:
 	case SQL_REVOKE:
 	case SQL_GRANT_ROLES:
@@ -179,6 +181,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
+	case SQL_TRUNCATE:
 	case SQL_COPYFROM:
 	case SQL_BINCOPYFROM:
 	case SQL_COPYLOADER:

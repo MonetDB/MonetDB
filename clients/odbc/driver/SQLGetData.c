@@ -40,10 +40,10 @@ SQLGetData(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetData " PTRFMT " %u %s " PTRFMT " " LENFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) Col_or_Param_Num,
-		translateCType(TargetType), PTRFMTCAST TargetValuePtr,
-		LENCAST BufferLength, PTRFMTCAST StrLen_or_IndPtr);
+	ODBCLOG("SQLGetData %p %u %s %p " LENFMT " %p\n",
+		StatementHandle, (unsigned int) Col_or_Param_Num,
+		translateCType(TargetType), TargetValuePtr,
+		LENCAST BufferLength, StrLen_or_IndPtr);
 #endif
 
 	if (!isValidStmt(stmt))

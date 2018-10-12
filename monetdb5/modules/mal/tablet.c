@@ -71,8 +71,7 @@ void_bat_create(int adt, BUN nr)
 	b->trevsorted = FALSE;
 	b->tnosorted = 0;
 	b->tnorevsorted = 0;
-	b->tdense = FALSE;
-	b->tnodense = 0;
+	b->tseqbase = oid_nil;
 	b->tkey = FALSE;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
@@ -207,12 +206,11 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 
 		b->tkey = (offset > 0) ? FALSE : bv->tkey;
 		b->tnonil &= bv->tnonil;
-		b->tdense &= bv->tdense;
 		if (b->tsorted != bv->tsorted)
 			b->tsorted = 0;
 		if (b->trevsorted != bv->trevsorted)
 			b->trevsorted = 0;
-		if (b->tdense)
+		if (BATtdense(b))
 			b->tkey = TRUE;
 		b->batDirty = TRUE;
 
@@ -749,11 +747,11 @@ mycpstr(char *t, const char *s)
 		if ((*s & 0x80) == 0) {
 			*t++ = *s++;
 		} else if ((*s & 0xC0) == 0x80) {
-			t += sprintf(t, "<%02X>", *s++ & 0xFF);
+			t += sprintf(t, "<%02X>", (uint8_t) *s++);
 		} else if ((*s & 0xE0) == 0xC0) {
 			/* two-byte sequence */
 			if ((s[1] & 0xC0) != 0x80)
-				t += sprintf(t, "<%02X>", *s++ & 0xFF);
+				t += sprintf(t, "<%02X>", (uint8_t) *s++);
 			else {
 				*t++ = *s++;
 				*t++ = *s++;
@@ -761,7 +759,7 @@ mycpstr(char *t, const char *s)
 		} else if ((*s & 0xF0) == 0xE0) {
 			/* three-byte sequence */
 			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80)
-				t += sprintf(t, "<%02X>", *s++ & 0xFF);
+				t += sprintf(t, "<%02X>", (uint8_t) *s++);
 			else {
 				*t++ = *s++;
 				*t++ = *s++;
@@ -770,7 +768,7 @@ mycpstr(char *t, const char *s)
 		} else if ((*s & 0xF8) == 0xF0) {
 			/* four-byte sequence */
 			if ((s[1] & 0xC0) != 0x80 || (s[2] & 0xC0) != 0x80 || (s[3] & 0xC0) != 0x80)
-				t += sprintf(t, "<%02X>", *s++ & 0xFF);
+				t += sprintf(t, "<%02X>", (uint8_t) *s++);
 			else {
 				*t++ = *s++;
 				*t++ = *s++;
@@ -779,7 +777,7 @@ mycpstr(char *t, const char *s)
 			}
 		} else {
 			/* not a valid start byte */
-			t += sprintf(t, "<%02X>", *s++ & 0xFF);
+			t += sprintf(t, "<%02X>", (uint8_t) *s++);
 		}
 	}
 	*t = 0;
@@ -1031,7 +1029,7 @@ SQLload_parse_line(READERtask *task, int idx)
 		  endoffieldcheck:
 			;
 			/* check for user defined NULL string */
-			if (!fmt->skip && (!quote || !fmt->null_length) && fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0)
+			if ((!quote || !fmt->null_length) && fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0)
 				task->fields[i][idx] = 0;
 		}
 	} else {
@@ -1240,7 +1238,7 @@ SQLproducer(void *p)
 	thr = THRnew("SQLproducer");
 
 #ifdef _DEBUG_TABLET_CNTRL
-	mnstr_printf(GDKout, "#SQLproducer started size " SZFMT " len " SZFMT "\n",
+	mnstr_printf(GDKout, "#SQLproducer started size %zu len %zu\n",
 				 task->b->size, task->b->len);
 #endif
 	base = end = s = task->input[cur];
@@ -1254,7 +1252,7 @@ SQLproducer(void *p)
 		ateof[cur] = tablet_read_more(task->b, task->out, task->b->size) == EOF;
 #ifdef _DEBUG_TABLET_CNTRL
 		if (ateof[cur] == 0)
-			mnstr_printf(GDKout, "#read " SZFMT " bytes pos = " SZFMT " eof=%d offset=" LLFMT " \n",
+			mnstr_printf(GDKout, "#read %zu bytes pos = %zu eof=%d offset=" LLFMT " \n",
 						 task->b->len, task->b->pos, task->b->eof,
 						 (lng) (s - task->input[cur]));
 #endif
@@ -1527,7 +1525,7 @@ SQLproducer(void *p)
 		bufcnt[cur] = cnt;
 #ifdef _DEBUG_TABLET_CNTRL
 		if (ateof[cur] == 0)
-			mnstr_printf(GDKout, "#shuffle " SZFMT ": %.63s\n", strlen(s), s);
+			mnstr_printf(GDKout, "#shuffle %zu: %.63s\n", strlen(s), s);
 #endif
 		/* move the non-parsed correct row data to the head of the next buffer */
 		s = task->input[cur];

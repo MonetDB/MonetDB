@@ -74,7 +74,7 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 void
 initSQLreferences(void)
 {
-	if (algebraRef == NULL)
+	if (zero_or_oneRef == NULL)
 		GDKfatal("error initSQLreferences");
 }
 
@@ -485,6 +485,16 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	for (i = 0; i < curInstr->retc; i++)
 		p = pushArgument(curBlk, p, lret[i]);
 	pushInstruction(curBlk, p);
+
+	/* catch exceptions */
+	p = newCatchStmt(curBlk,"MALexception");
+        p = newExitStmt(curBlk,"MALexception");
+        p = newCatchStmt(curBlk,"SQLexception");
+        p = newExitStmt(curBlk,"SQLexception");
+	/* remote.disconnect(q); */
+	p = newStmt(curBlk, remoteRef, disconnectRef);
+	p = pushArgument(curBlk, p, q);
+
 	pushEndInstruction(curBlk);
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
@@ -1169,12 +1179,12 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	b->buf[b->pos - 1] = '\0';  /* should always end with a \n, can overwrite */
 
 	/* craft a semi-professional header */
-	mnstr_printf(fd, "&1 0 " SZFMT " 1 " SZFMT "\n", /* type id rows columns tuples */
+	mnstr_printf(fd, "&1 0 %zu 1 %zu\n", /* type id rows columns tuples */
 			nl, nl);
 	mnstr_printf(fd, "%% .plan # table_name\n");
 	mnstr_printf(fd, "%% rel # name\n");
 	mnstr_printf(fd, "%% clob # type\n");
-	mnstr_printf(fd, "%% " SZFMT " # length\n", len - 1 /* remove = */);
+	mnstr_printf(fd, "%% %zu # length\n", len - 1 /* remove = */);
 
 	/* output the data */
 	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);

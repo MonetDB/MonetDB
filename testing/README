@@ -184,8 +184,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	----		-------					-----------
 	TSTSRCBASE	`<PACKAGE>-config --source`		base of test source tree
 	TSTTRGBASE	`<PACKAGE>-config --prefix`		base for test output
-	MALCLIENT	mclient -lmal				mal-client program	`)
-	SQLCLIENT	mclient -lsql				sql-client program	`)
+	MALCLIENT	mclient -lmal -ftest -tnone		mal-client program	`)
+	SQLCLIENT	mclient -lsql -ftest -tnone		sql-client program	`)
 	SQLDUMP	        msqldump				sql-dump program	`)
 
     `) Alternative MAL & SQL client programs need to accept (or ignore)
@@ -245,11 +245,16 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 - Mtest.py stores the output of test "$TSTSRCDIR/TST" in
   $TSTTRGDIR/TST.test.{out,err} and checks it against
   $TSTSRCDIR/TST.stable.{out,err}. If system specific stable output files
-  ($TSTSRCDIR/TST.stable.{out,err}[.($SYST|$SYSTVER)][.(64|32)bit][.oid(32|64)][.Five][.STATIC])
+  ($TSTSRCDIR/TST.stable.{out,err}[.($SYST|$SYSTVER|$DIST|$DISTVER)][.((64|32)bit|$ARCH)][.int128][.single])
   exist, the most specific stable output is used. Mtest.py stores the
   respective Mdiff results in $TSTTRGDIR/TST.{out,err}.diff.html.
   For each test directory, a common entry point to the test results is
   created as $TSTTRGDIR/.index.html.
+  Here, $DIST is the name of the distribution (e.g. Fedora, Ubuntu,
+  Windows), $DISTVER is the name of the distribution with the
+  distribution version number, and $ARCH is the CPU architecture as
+  reported by mserver5 on startup ("Compiled for").  The other
+  variables are as described above.
   For the whole test run, a global entry point to the test results is
   created as $TSTTRGBASE/mTests/index.html.
 

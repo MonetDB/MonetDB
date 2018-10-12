@@ -18,6 +18,7 @@
 str
 OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+#if 0							// Don't use this right now
 	int i, j, slimit, limit, actions=0;
 	InstrPtr *old = 0;
     InstrPtr q, *vars = 0;
@@ -89,4 +90,11 @@ finished:
 wrapup:
 	if(vars) GDKfree(vars);
 	return msg;
+#else
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) p;
+	return MAL_SUCCEED;
+#endif
 }

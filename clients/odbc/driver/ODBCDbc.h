@@ -53,7 +53,8 @@ typedef struct tODBCDRIVERDBC {
 	char *host;		/* Server host */
 	int port;		/* Server port */
 	char *dbname;		/* Database Name or NULL */
-	int Connected;		/* 1 is Yes, 0 is No */
+	bool Connected;		/* whether we are connecte to a server */
+	bool has_comment;	/* whether the server has sys.comments */
 	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
 	SQLUINTEGER sql_attr_connection_timeout;

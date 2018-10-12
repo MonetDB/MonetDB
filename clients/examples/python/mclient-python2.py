@@ -6,6 +6,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
+from __future__ import print_function
+
 import sys
 import getopt
 
@@ -53,7 +55,7 @@ def main() :
               password = password,
               language = language,
               database = database)
-    print "#mclient (python) connected to %s:%d as %s" % (hostname, int(port), username)
+    print("#mclient (python) connected to %s:%d as %s" % (hostname, int(port), username))
     fi = sys.stdin
     prompt = '%s>' % language
 
@@ -67,7 +69,7 @@ def main() :
         res = s.cmd('s' + line)
         if encoding != 'utf-8':
             res = unicode(res, 'utf-8').encode(encoding, 'replace')
-        print res
+        print(res)
         sys.stdout.write(prompt)
         line = fi.readline()
 

@@ -1,0 +1,82 @@
+stdout of test 'groupconcat02` in directory 'sql/test/group-concat` itself:
+
+
+# 14:11:33 >  
+# 14:11:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37314" "--set" "mapi_usock=/var/tmp/mtest-28908/.s.monetdb.37314" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test_group-concat"
+# 14:11:33 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_group-concat', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://gup-128-80.cwi.nl:37314/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28908/.s.monetdb.37314
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:11:34 >  
+# 14:11:34 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28908" "--port=37314"
+# 14:11:34 >  
+
+#start transaction;
+#create table testme (b varchar(16));
+#insert into testme values ('another'), ('testing'), ('all');
+[ 3	]
+#select group_concat(b) from testme;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 19 # length
+[ "another,testing,all"	]
+#insert into testme values ('lets'), ('get'), ('harder');
+[ 3	]
+#select group_concat(b) from testme;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 35 # length
+[ "another,testing,all,lets,get,harder"	]
+#insert into testme values ('even'), ('more'), ('serious');
+[ 3	]
+#select group_concat(b) from testme;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 53 # length
+[ "another,testing,all,lets,get,harder,even,more,serious"	]
+#insert into testme values (NULL);
+[ 1	]
+#select group_concat(b) from testme;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#delete from testme where b is null;
+[ 1	]
+#select group_concat(b) from testme;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 53 # length
+[ "another,testing,all,lets,get,harder,even,more,serious"	]
+#insert into testme values (''), ('stress'), ('');
+[ 3	]
+#select group_concat(b) from testme;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 62 # length
+[ "another,testing,all,lets,get,harder,even,more,serious,,stress,"	]
+#rollback;
+
+# 14:11:34 >  
+# 14:11:34 >  "Done."
+# 14:11:34 >  
+

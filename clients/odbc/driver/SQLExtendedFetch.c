@@ -45,11 +45,11 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExtendedFetch " PTRFMT " %s " LENFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLExtendedFetch %p %s " LENFMT " %p %p\n",
+		StatementHandle,
 		translateFetchOrientation(FetchOrientation),
-		LENCAST FetchOffset, PTRFMTCAST RowCountPtr,
-		PTRFMTCAST RowStatusArray);
+		LENCAST FetchOffset, RowCountPtr,
+		RowStatusArray);
 #endif
 
 	if (!isValidStmt(stmt))

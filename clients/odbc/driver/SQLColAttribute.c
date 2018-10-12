@@ -250,12 +250,12 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 		LENP_OR_POINTER_T NumericAttributePtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttribute " PTRFMT " %d %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (int) ColumnNumber,
+	ODBCLOG("SQLColAttribute %p %d %s %p %d %p %p\n",
+		StatementHandle, (int) ColumnNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr,
-		PTRFMTCAST (void *) NumericAttributePtr);
+		CharacterAttributePtr, (int) BufferLength,
+		StringLengthPtr,
+		(void *) NumericAttributePtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -340,12 +340,12 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributeW " PTRFMT " %d %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (int) ColumnNumber,
+	ODBCLOG("SQLColAttributeW %p %d %s %p %d %p %p\n",
+		StatementHandle, (int) ColumnNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr,
-		PTRFMTCAST (void *) NumericAttributePtr);
+		CharacterAttributePtr, (int) BufferLength,
+		StringLengthPtr,
+		(void *) NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))

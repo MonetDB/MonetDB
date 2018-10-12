@@ -36,7 +36,7 @@ SQLRowCount(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLRowCount " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLRowCount %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

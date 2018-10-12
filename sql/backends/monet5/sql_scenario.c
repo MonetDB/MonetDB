@@ -603,10 +603,14 @@ SQLinitClient(Client c)
 						mnstr_destroy(fd);
 						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
 					} else {
-						bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
-						if (bfd && bstream_next(bfd) >= 0)
-							newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
-						bstream_destroy(bfd);
+						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+							mnstr_destroy(fd);
+							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						} else {
+							if (bstream_next(bfd) >= 0)
+								newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
+							bstream_destroy(bfd);
+						}
 					}
 					if (m->sa)
 						sa_destroy(m->sa);
@@ -772,7 +776,10 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mnstr_destroy(fd);
 		throw(MAL, "sql.include", SQLSTATE(42000) "file %s too large to process", fullname);
 	}
-	bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
+	if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
+		mnstr_destroy(fd);
+		throw(MAL, "sql.include", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	if (bstream_next(bfd) < 0) {
 		bstream_destroy(bfd);
 		throw(MAL, "sql.include", SQLSTATE(42000) "could not read %s\n", *name);

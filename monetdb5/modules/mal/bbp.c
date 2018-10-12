@@ -19,11 +19,10 @@ static int
 pseudo(bat *ret, BAT *b, str X1,str X2) {
 	char buf[BUFSIZ];
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
-	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0) {
+	if ((BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0) || BATroles(b,X2) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return -1;
 	}
-	BATroles(b,X2);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return -0;

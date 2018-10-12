@@ -39,7 +39,7 @@ SQLPutData(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPutData " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLPutData %p\n", StatementHandle);
 #endif
 
 	(void) DataPtr;		/* Stefan: unused!? */

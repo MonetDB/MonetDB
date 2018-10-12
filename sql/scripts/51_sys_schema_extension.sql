@@ -42,9 +42,11 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('CHECK'),
   ('CLOB'),
   ('COALESCE'),
+  ('COMMENT'),
   ('COMMIT'),
   ('COMMITTED'),
   ('CONSTRAINT'),
+  ('CONTINUE'),
   ('CONVERT'),
   ('COPY'),
   ('CORRESPONDING'),
@@ -182,6 +184,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('SMALLINT'),
   ('SOME'),
   ('SPLIT_PART'),
+  ('START'),
   ('STDIN'),
   ('STDOUT'),
   ('STORAGE'),
@@ -195,6 +198,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('TO'),
   ('TRANSACTION'),
   ('TRIGGER'),
+  ('TRUNCATE'),
   ('TRUE'),
   ('UNBOUNDED'),
   ('UNCOMMITTED'),
@@ -265,70 +269,50 @@ ALTER TABLE sys.table_types SET READ ONLY;
 GRANT SELECT ON sys.table_types TO PUBLIC;
 
 
-CREATE TABLE sys.dependency_types (
-    dependency_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    dependency_type_name VARCHAR(15) NOT NULL UNIQUE);
-
--- Values taken from sql/include/sql_catalog.h  see: #define SCHEMA_DEPENDENCY 1, TABLE_DEPENDENCY 2, ..., TYPE_DEPENDENCY 15.
-INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES
-  (1, 'SCHEMA'),
-  (2, 'TABLE'),
-  (3, 'COLUMN'),
-  (4, 'KEY'),
-  (5, 'VIEW'),
-  (6, 'USER'),
-  (7, 'FUNCTION'),
-  (8, 'TRIGGER'),
-  (9, 'OWNER'),
-  (10, 'INDEX'),
-  (11, 'FKEY'),
-  (12, 'SEQUENCE'),
-  (13, 'PROCEDURE'),
-  (14, 'BE_DROPPED'),
-  (15, 'TYPE');
-
-ALTER TABLE sys.dependency_types SET READ ONLY;
-GRANT SELECT ON sys.dependency_types TO PUBLIC;
-
-
 CREATE TABLE sys.function_types (
     function_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    function_type_name VARCHAR(30) NOT NULL UNIQUE);
+    function_type_name VARCHAR(30) NOT NULL UNIQUE,
+    function_type_keyword VARCHAR(30) NOT NULL);
 
 -- Values taken from sql/include/sql_catalog.h see: #define F_FUNC 1,
 -- F_PROC 2, F_AGGR 3, F_FILT 4, F_UNION 5, F_ANALYTIC 6, F_LOADER 7.
-INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
-  (1, 'Scalar function'),
-  (2, 'Procedure'),
-  (3, 'Aggregate function'),
-  (4, 'Filter function'),
-  (5, 'Function returning a table'),
-  (6, 'Analytic function'),
-  (7, 'Loader function');
+INSERT INTO sys.function_types (function_type_id, function_type_name, function_type_keyword) VALUES
+  (1, 'Scalar function', 'FUNCTION'),
+  (2, 'Procedure', 'PROCEDURE'),
+  (3, 'Aggregate function', 'AGGREGATE'),
+  (4, 'Filter function', 'FILTER FUNCTION'),
+  (5, 'Function returning a table', 'FUNCTION'),
+  (6, 'Analytic function', 'FUNCTION'),
+  (7, 'Loader function', 'LOADER');
 
 ALTER TABLE sys.function_types SET READ ONLY;
 GRANT SELECT ON sys.function_types TO PUBLIC;
 
 
 CREATE TABLE sys.function_languages (
-    language_id   SMALLINT NOT NULL PRIMARY KEY,
-    language_name VARCHAR(20) NOT NULL UNIQUE);
+    language_id      SMALLINT    NOT NULL PRIMARY KEY,
+    language_name    VARCHAR(20) NOT NULL UNIQUE,
+    language_keyword VARCHAR(20));
 
 -- Values taken from sql/include/sql_catalog.h see: #define
 -- FUNC_LANG_INT 0, FUNC_LANG_MAL 1, FUNC_LANG_SQL 2, FUNC_LANG_R 3,
--- FUNC_LANG_PY 6, FUNC_LANG_MAP_PY 7, FUNC_LANG_PY2 8,
--- FUNC_LANG_MAP_PY2 9, FUNC_LANG_PY3 10, FUNC_LANG_MAP_PY3 11.
-INSERT INTO sys.function_languages (language_id, language_name) VALUES
-  (0, 'Internal C'),
-  (1, 'MAL'),
-  (2, 'SQL'),
-  (3, 'R'),
-  (6, 'Python'),
-  (7, 'Python Mapped'),
-  (8, 'Python2'),
-  (9, 'Python2 Mapped'),
-  (10, 'Python3'),
-  (11, 'Python3 Mapped');
+-- FUNC_LANG_C 4, FUNC_LANG_PY 6, FUNC_LANG_MAP_PY 7, FUNC_LANG_PY2 8,
+-- FUNC_LANG_MAP_PY2 9, FUNC_LANG_PY3 10, FUNC_LANG_MAP_PY3 11,
+-- FUNC_LANG_CPP 12.
+INSERT INTO sys.function_languages (language_id, language_name, language_keyword) VALUES
+  (0, 'Internal C', NULL),
+  (1, 'MAL', NULL),
+  (2, 'SQL', NULL),
+  (3, 'R', 'R'),
+  (4, 'C', 'C'),
+--  (5, 'J', 'J'), -- Javascript? not yet available for use
+  (6, 'Python', 'PYTHON'),
+  (7, 'Python Mapped', 'PYTHON_MAP'),
+  (8, 'Python2', 'PYTHON2'),
+  (9, 'Python2 Mapped', 'PYTHON2_MAP'),
+  (10, 'Python3', 'PYTHON3'),
+  (11, 'Python3 Mapped', 'PYTHON3_MAP'),
+  (12, 'C++', 'CPP');
 
 ALTER TABLE sys.function_languages SET READ ONLY;
 GRANT SELECT ON sys.function_languages TO PUBLIC;
@@ -370,11 +354,11 @@ GRANT SELECT ON sys.index_types TO PUBLIC;
 
 CREATE TABLE sys.privilege_codes (
     privilege_code_id   INT NOT NULL PRIMARY KEY,
-    privilege_code_name VARCHAR(30) NOT NULL UNIQUE);
+    privilege_code_name VARCHAR(40) NOT NULL UNIQUE);
 
 -- Values taken from sql/include/sql_catalog.h see: #define
 -- PRIV_SELECT 1, PRIV_UPDATE 2, PRIV_INSERT 4, PRIV_DELETE 8,
--- PRIV_EXECUTE 16, PRIV_GRANT 32
+-- PRIV_EXECUTE 16, PRIV_GRANT 32, PRIV_TRUNCATE 64
 INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (1, 'SELECT'),
   (2, 'UPDATE'),
@@ -382,6 +366,7 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (8, 'DELETE'),
   (16, 'EXECUTE'),
   (32, 'GRANT'),
+  (64, 'TRUNCATE'),
 -- next are combined privileges applicable only to tables and columns
   (3, 'SELECT,UPDATE'),
   (5, 'SELECT,INSERT'),
@@ -393,8 +378,50 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (12, 'INSERT,DELETE'),
   (13, 'SELECT,INSERT,DELETE'),
   (14, 'INSERT,UPDATE,DELETE'),
-  (15, 'SELECT,INSERT,UPDATE,DELETE');
+  (15, 'SELECT,INSERT,UPDATE,DELETE'),
+  (65, 'SELECT,TRUNCATE'),
+  (66, 'UPDATE,TRUNCATE'),
+  (68, 'INSERT,TRUNCATE'),
+  (72, 'DELETE,TRUNCATE'),
+  (67, 'SELECT,UPDATE,TRUNCATE'),
+  (69, 'SELECT,INSERT,TRUNCATE'),
+  (73, 'SELECT,DELETE,TRUNCATE'),
+  (70, 'INSERT,UPDATE,TRUNCATE'),
+  (76, 'INSERT,DELETE,TRUNCATE'),
+  (74, 'UPDATE,DELETE,TRUNCATE'),
+  (71, 'SELECT,INSERT,UPDATE,TRUNCATE'),
+  (75, 'SELECT,UPDATE,DELETE,TRUNCATE'),
+  (77, 'SELECT,INSERT,DELETE,TRUNCATE'),
+  (78, 'INSERT,UPDATE,DELETE,TRUNCATE'),
+  (79, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE');
 
 ALTER TABLE sys.privilege_codes SET READ ONLY;
 GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 
+
+-- Utility view to list the defined roles.
+-- Note: sys.auths contains both users and roles as the names must be distinct.
+CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_users() u);
+GRANT SELECT ON sys.roles TO PUBLIC;
+
+
+-- Utility view to list the standard variables (as defined in sys.var()) and their run-time value
+CREATE VIEW sys.var_values (var_name, value) AS
+SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL
+SELECT 'current_role', current_role UNION ALL
+SELECT 'current_schema', current_schema UNION ALL
+SELECT 'current_timezone', current_timezone UNION ALL
+SELECT 'current_user', current_user UNION ALL
+SELECT 'debug', debug UNION ALL
+SELECT 'history', history UNION ALL
+SELECT 'last_id', last_id UNION ALL
+SELECT 'optimizer', optimizer UNION ALL
+SELECT 'pi', pi() UNION ALL
+SELECT 'rowcnt', rowcnt;
+GRANT SELECT ON sys.var_values TO PUBLIC;
+
+CREATE AGGREGATE sys.group_concat(str string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
+GRANT EXECUTE ON AGGREGATE sys.group_concat(string) TO PUBLIC;
+
+CREATE AGGREGATE sys.group_concat(str string, sep string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
+GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;

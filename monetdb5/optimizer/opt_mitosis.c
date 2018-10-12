@@ -173,7 +173,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 #ifdef DEBUG_OPT_MITOSIS
 	fprintf(stderr, "#opt_mitosis: target is %s.%s "
-							   " with " BUNFMT " rows of size %d into " SZFMT
+							   " with " BUNFMT " rows of size %d into %zu"
 								" rows/piece %d threads %d pieces"
 								" fixed parts %d fixed size %d\n",
 				 getVarConstant(mb, getArg(target, 2)).val.sval,

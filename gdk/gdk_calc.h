@@ -150,3 +150,6 @@ gdk_export dbl BATcalcvariance_population(dbl *avgp, BAT *b);
 gdk_export dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
 gdk_export BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+
+gdk_export BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils, int abort_on_error, const str separator);
+gdk_export gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty, const str separator);

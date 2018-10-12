@@ -1,0 +1,45 @@
+The following packages (RPMs) are or can be used by MonetDB.
+
+These packages are required.
+
+bison
+gettext-devel
+libtool
+libxml2-devel
+mercurial
+openssl-devel
+pkgconf-m4
+pkgconf-pkg-config
+
+These packages are optional, but they are required to build RPMs using
+the command make rpm.
+
+bzip2-devel		# optional: read and write .bz2 compressed files
+bzip2			# optional, required to create a tar ball (make dist)
+checkpolicy		# optional, required to create RPMs (make rpm)
+geos-devel		# optional: required for geom module
+libatomic_ops-devel	# optional but recommended
+libcurl-devel		# optional: read remote files with sys.getcontent(url)
+libuuid-devel		# optional
+pcre-devel		# optional: use PCRE library, enable some functions
+python2-devel		# optional, needed for Python 2 integration
+python2-numpy		# optional, needed for Python 2 integration
+R-core-devel		# optional, needed for R integration
+readline-devel		# optional, enable editing in mclient
+rpm-build		# optional, required to create RPMs (make rpm)
+samtools-devel		# optional: read BAM and SAM files
+selinux-policy-devel	# optional, required to create RPMs (make rpm)
+unixODBC-devel		# optional, needed for ODBC driver
+
+These packages are optional.
+
+cfitsio-devel		# optional: read FITS files
+libasan			# optional: --enable-sanitizer configuration (debug)
+liblas-devel		# optional: read LIDAR files
+lz4-devel		# optional: compression in new (unused) MAPI protocol, also used to read and write .lz4 compressed files
+netcdf-devel		# optional: read NetCDF files
+proj-devel		# optional, only optionally used in geom module
+python3-devel		# optional, needed for Python 3 integration
+python3-numpy		# optional, needed for Python 3 integration
+snappy-devel		# optional: compression in new (unused) MAPI protocol
+valgrind-devel		# optional: --with-valgrind configuration (debug)

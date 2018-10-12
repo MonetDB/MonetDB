@@ -1,3 +1,5 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Tue Feb 13 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added support for lz4 compressed files on stream library

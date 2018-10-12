@@ -118,7 +118,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			errorCheck(p,algebraRef,getArg(p,2));
 		} else if ( getModuleId(p) == sqlRef && getFunctionId(p) ==  putName("exportValue") && isaBatType(getArgType(mb,p,0)) ){
 			// interface expects scalar type only, not expressable in MAL signature
-			mb->errors=createException(MAL, "generate_series", "internal error, generate_series is a table producing function");
+			mb->errors=createException(MAL, "generate_series", SQLSTATE(42000) "internal error, generate_series is a table producing function");
 		}else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == bteRef && series[getArg(p,1)] && p->argc == 2 ){
 			casting(bte);
 		} else if ( getModuleId(p) == batcalcRef && getFunctionId(p) == shtRef && series[getArg(p,1)] && p->argc == 2 ){

@@ -264,18 +264,6 @@ unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str
 address mvc_export_table_wrap
 comment "Prepare a table result set for the COPY INTO stream";
 
-pattern drop_func_upgrade_oct2014(id:int) :int
-address UPGdrop_func
-comment "Drop the function identified by id, needed for the Oct2014 upgrade";
-
-pattern create_func_upgrade_oct2014(sname:str,f:str) :int
-address UPGcreate_func
-comment "Create the function described by f, needed for the Oct2014 upgrade";
-
-pattern create_view_upgrade_oct2014(sname:str,v:str) :int
-address UPGcreate_view
-comment "Create the view described by f, needed for the Oct2014 upgrade";
-
 unsafe pattern exportHead(s:streams, res_id:int) :void
 address mvc_export_head_wrap
 comment "Export a result (in order) to stream s"; 
@@ -378,6 +366,10 @@ address db_users_wrap
 comment "return table of users with sql scenario";
 
 pattern password(user:str) :str
+address db_password_wrap
+comment "Return password hash of user";
+
+pattern batsql.password(user:bat[:str]) :bat[:str]
 address db_password_wrap
 comment "Return password hash of user";
 

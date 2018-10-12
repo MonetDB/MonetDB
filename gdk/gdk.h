@@ -330,15 +330,6 @@
 
 #include <limits.h>		/* for *_MIN and *_MAX */
 #include <float.h>		/* for FLT_MAX and DBL_MAX */
-#ifndef LLONG_MAX
-#ifdef LONGLONG_MAX
-#define LLONG_MAX LONGLONG_MAX
-#define LLONG_MIN LONGLONG_MIN
-#else
-#define LLONG_MAX LL_CONSTANT(9223372036854775807)
-#define LLONG_MIN (-LL_CONSTANT(9223372036854775807) - LL_CONSTANT(1))
-#endif
-#endif
 
 #include "gdk_system.h"
 #include "gdk_posix.h"
@@ -502,10 +493,12 @@
 typedef int8_t bit;
 typedef int8_t bte;
 typedef int16_t sht;
+typedef int64_t lng;
+typedef uint64_t ulng;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
-#define OIDFMT		SZFMT
+#define OIDFMT		"%zu"
 
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
@@ -515,7 +508,10 @@ typedef float flt;
 typedef double dbl;
 typedef char *str;
 
+#define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
+#define LLFMT			"%" PRId64
+#define ULLFMT			"%" PRIu64
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -524,7 +520,7 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #if SIZEOF_VAR_T == SIZEOF_INT
 #define VAR_MAX		((var_t) INT_MAX)
 #else
-#define VAR_MAX		((var_t) LLONG_MAX)
+#define VAR_MAX		((var_t) INT64_MAX)
 #endif
 
 typedef oid BUN;		/* BUN position */
@@ -533,12 +529,12 @@ typedef oid BUN;		/* BUN position */
 /* alternatively:
 typedef size_t BUN;
 #define SIZEOF_BUN	SIZEOF_SIZE_T
-#define BUNFMT		SZFMT
+#define BUNFMT		"%zu"
 */
 #if SIZEOF_BUN == SIZEOF_INT
 #define BUN_NONE ((BUN) INT_MAX)
 #else
-#define BUN_NONE ((BUN) LLONG_MAX)
+#define BUN_NONE ((BUN) INT64_MAX)
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
@@ -584,13 +580,13 @@ typedef struct {
 	char *base;		/* base pointer in memory. */
 	char filename[32];	/* file containing image of the heap */
 
-	unsigned int copied:1,	/* a copy of an existing map. */
+	bool copied:1,		/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */
 		forcemap:1,	/* force STORE_MMAP even if heap exists */
-		cleanhash:1;	/* string heaps must clean hash */
+		cleanhash:1,	/* string heaps must clean hash */
+		dirty:1;	/* specific heap dirty marker */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
-	bte dirty;		/* specific heap dirty marker */
 	bte farmid;		/* id of farm where heap is located */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
@@ -750,13 +746,13 @@ typedef struct {
 	MT_Id tid;		/* which thread created it */
 	unsigned int
 	 copiedtodisk:1,	/* once written */
-	 dirty:2,		/* dirty wrt disk? */
+	 dirty:1,		/* dirty wrt disk? */
 	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 restricted:2,		/* access privileges */
 	 persistence:1,		/* should the BAT persist on disk? */
 	 role:8,		/* role of the bat */
-	 unused:15;		/* value=0 for now */
+	 unused:17;		/* value=0 for now (sneakily used by mat.c) */
 	int sharecnt;		/* incoming view count */
 
 	/* delta status administration */
@@ -770,25 +766,22 @@ typedef struct PROPrec PROPrec;
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;			/* label for head/tail column */
+	str id;			/* label for column */
 
 	unsigned short width;	/* byte-width of the atom array */
 	bte type;		/* type id. */
-	bte shift;		/* log2 of bunwidth */
-	unsigned int
-	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:1,			/* no duplicate values present */
-	 unique:1,		/* no duplicate values allowed */
-	 dense:1,		/* OID only: only consecutive values */
-	 nonil:1,		/* there are no nils in the column */
-	 nil:1,			/* there is a nil in the column */
-	 sorted:1,		/* column is sorted in ascending order */
-	 revsorted:1;		/* column is sorted in descending order */
+	bte shift;		/* log2 of bun width */
+	bool varsized:1,	/* varsized/void (1) or fixedsized (0) */
+		key:1,		/* no duplicate values present */
+		unique:1,	/* no duplicate values allowed */
+		nonil:1,	/* there are no nils in the column */
+		nil:1,		/* there is a nil in the column */
+		sorted:1,	/* column is sorted in ascending order */
+		revsorted:1;	/* column is sorted in descending order */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
-	BUN nodense;		/* position that proves dense==FALSE */
-	oid seq;		/* start of dense head sequence */
+	oid seq;		/* start of dense sequence */
 
 	Heap heap;		/* space for the column. */
 	Heap *vheap;		/* space for the varsized data. */
@@ -805,15 +798,12 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_SORTEDPOS	061030	/* version where we can't trust no(rev)sorted */
-#define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
-#define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
-#define GDKLIBRARY_HEADED	061033	/* head properties are stored */
-#define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
-#define GDKLIBRARY_BADEMPTY	061035	/* possibility of duplicate empty str */
-#define GDKLIBRARY_TALIGN	061036	/* talign field in BBP.dir */
-#define GDKLIBRARY_NIL_NAN	061037	/* flt/dbl NIL not represented by NaN */
-#define GDKLIBRARY		061040
+#define GDKLIBRARY_HEADED	061033U	/* head properties are stored */
+#define GDKLIBRARY_NOKEY	061034U	/* nokey values can't be trusted */
+#define GDKLIBRARY_BADEMPTY	061035U	/* possibility of duplicate empty str */
+#define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
+#define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
+#define GDKLIBRARY		061040U
 
 typedef struct BAT {
 	/* static bat properties */
@@ -852,7 +842,6 @@ typedef struct BATiter {
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
-#define tdense		T.dense
 #define tident		T.id
 #define torderidx	T.orderidx
 #define twidth		T.width
@@ -862,7 +851,6 @@ typedef struct BATiter {
 #define tnokey		T.nokey
 #define tnosorted	T.nosorted
 #define tnorevsorted	T.norevsorted
-#define tnodense	T.nodense
 #define theap		T.heap
 #define tvheap		T.vheap
 #define thash		T.hash
@@ -1030,7 +1018,7 @@ gdk_export bte ATOMelmshift(int sz);
  * pointer and BUN identifier.
  * @itemize
  * @item
- * BAThtype(b) and  BATttype(b) find out the head and tail type of a BAT.
+ * BATttype(b) finds out the type of a BAT.
  * @item
  * BUNlast(b) returns the BUN pointer directly after the last BUN
  * in the BAT.
@@ -1254,8 +1242,7 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 	 BUN_NONE :							\
 	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
-#define BATttype(b)	((b)->ttype == TYPE_void && !is_oid_nil((b)->tseqbase) ? \
-			 TYPE_oid : (b)->ttype)
+#define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
 #define Tbase(b)	((b)->tvheap->base)
 
 #define Tsize(b)	((b)->twidth)
@@ -1312,7 +1299,7 @@ bat_iterator(BAT *b)
  * @item void
  * @tab BATsetcount (BAT *b, BUN cnt)
  * @item BAT *
- * @tab BATkey (BAT *b, int onoff)
+ * @tab BATkey (BAT *b, bool onoff)
  * @item BAT *
  * @tab BATmode (BAT *b, int mode)
  * @item BAT *
@@ -1354,9 +1341,9 @@ gdk_export BUN BATcount_no_nil(BAT *b);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
-gdk_export gdk_return BATkey(BAT *b, int onoff);
+gdk_export gdk_return BATkey(BAT *b, bool onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
-gdk_export void BATroles(BAT *b, const char *tnme);
+gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 gdk_export gdk_return BATsetaccess(BAT *b, int mode);
@@ -1371,7 +1358,7 @@ gdk_export int BATgetaccess(BAT *b);
 #define PERSISTENT		0
 #define TRANSIENT		1
 #define LOG_DIR			2
-#define SHARED_LOG_DIR	3
+#define SHARED_LOG_DIR		3
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
 #define BAT_READ		1	/* only read-access allowed */
@@ -1427,8 +1414,6 @@ gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b,
 
 gdk_export void BATmsync(BAT *b);
 
-gdk_export size_t BATmemsize(BAT *b, int dirty);
-
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 
 gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
@@ -1479,30 +1464,31 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 	__attribute__ ((__warn_unused_result__));
 
 
-gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
-gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
 
-#define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
-#define BATtrevordered(b) (((b)->ttype == TYPE_void && is_oid_nil((b)->tseqbase)) || (b)->trevsorted)
-#define BATtdense(b)	(BATtvoid(b) && !is_oid_nil((b)->tseqbase))
-#define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
-#define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
+#define BATtordered(b)	((b)->tsorted)
+#define BATtrevordered(b) ((b)->trevsorted)
+/* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
+#define BATtdense(b)	(!is_oid_nil((b)->tseqbase))
+/* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
+#define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
+#define BATtkey(b)	((b)->tkey || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
 #define BATsettrivprop(b)						\
 	do {								\
 		assert(!is_oid_nil((b)->hseqbase));			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
-		/* the other head properties should already be correct */ \
+		assert(is_oid_nil((b)->tseqbase) ||			\
+		       ATOMtype((b)->ttype) == TYPE_oid);		\
 		if ((b)->ttype == TYPE_void) {				\
 			if (is_oid_nil((b)->tseqbase)) {		\
 				(b)->tnonil = (b)->batCount == 0;	\
 				(b)->tnil = !(b)->tnonil;		\
 				(b)->trevsorted = 1;			\
 				(b)->tkey = (b)->batCount <= 1;		\
-				(b)->tdense = 0;			\
 			} else {					\
-				(b)->tdense = 1;			\
 				(b)->tnonil = 1;			\
 				(b)->tnil = 0;				\
 				(b)->tkey = 1;				\
@@ -1519,18 +1505,15 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				(b)->tnonil = 1;			\
 				(b)->tnil = 0;				\
 				if ((b)->ttype == TYPE_oid) {		\
-					(b)->tdense = 1;		\
 					(b)->tseqbase = 0;		\
 				}					\
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
-				oid sqbs;				\
-				if (is_oid_nil((sqbs = ((oid *) (b)->theap.base)[0]))) { \
-					(b)->tdense = 0;		\
+				oid sqbs = ((const oid *) (b)->theap.base)[0]; \
+				if (is_oid_nil(sqbs)) {			\
 					(b)->tnonil = 0;		\
 					(b)->tnil = 1;			\
 				} else {				\
-					(b)->tdense = 1;		\
 					(b)->tnonil = 1;		\
 					(b)->tnil = 0;			\
 				}					\
@@ -1970,80 +1953,80 @@ gdk_export str GDKstrndup(const char *s, size_t n)
  * the calling function.
  */
 #ifdef __GNUC__
-#define GDKmalloc(s)							\
-	({								\
-		size_t _size = (s);					\
-		void *_res = GDKmalloc(_size);				\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmalloc(" SZFMT ") -> " PTRFMT	\
-				" %s[%s:%d]\n",				\
-				_size, PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKmalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKmalloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKmalloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define GDKzalloc(s)							\
-	({								\
-		size_t _size = (s);					\
-		void *_res = GDKzalloc(_size);				\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKzalloc(" SZFMT ") -> " PTRFMT	\
-				" %s[%s:%d]\n",				\
-				_size, PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKzalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKzalloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKzalloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define GDKrealloc(p, s)						\
-	({								\
-		void *_ptr = (p);					\
-		size_t _size = (s);					\
-		void *_res = GDKrealloc(_ptr, _size);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKrealloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr, _size, PTRFMTCAST _res, \
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKrealloc(p, s)					\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		void *_res = GDKrealloc(_ptr, _size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKrealloc(%p,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_ptr, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	 })
-#define GDKfree(p)							\
-	({								\
-		void *_ptr = (p);					\
-		ALLOCDEBUG if (_ptr)					\
-			fprintf(stderr,					\
-				"#GDKfree(" PTRFMT ")"			\
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr,			\
-				__func__, __FILE__, __LINE__);		\
-		GDKfree(_ptr);						\
+#define GDKfree(p)						\
+	({							\
+		void *_ptr = (p);				\
+		ALLOCDEBUG if (_ptr)				\
+			fprintf(stderr,				\
+				"#GDKfree(%p)"			\
+				" %s[%s:%d]\n",			\
+				_ptr,				\
+				__func__, __FILE__, __LINE__);	\
+		GDKfree(_ptr);					\
 	})
-#define GDKstrdup(s)							\
-	({								\
-		const char *_str = (s);					\
-		void *_res = GDKstrdup(_str);				\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKstrdup(len=" SZFMT ") -> " PTRFMT	\
-				" %s[%s:%d]\n",				\
-				strlen(_str),				\
-				PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKstrdup(s)						\
+	({							\
+		const char *_str = (s);				\
+		void *_res = GDKstrdup(_str);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKstrdup(len=%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				strlen(_str),			\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define GDKstrndup(s, n)						\
-	({								\
-		const char *_str = (s);					\
-		size_t _n = (n);					\
-		void *_res = GDKstrndup(_str, _n);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKstrndup(len=" SZFMT ") -> " PTRFMT	\
-				" %s[%s:%d]\n",				\
-				_n,					\
-				PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKstrndup(s, n)					\
+	({							\
+		const char *_str = (s);				\
+		size_t _n = (n);				\
+		void *_res = GDKstrndup(_str, _n);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKstrndup(len=%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_n,				\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
 #define GDKmmap(p, m, l)						\
 	({								\
@@ -2053,61 +2036,62 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 		void *_res = GDKmmap(_path, _mode, _len);		\
 		ALLOCDEBUG						\
 			fprintf(stderr,					\
-				"#GDKmmap(%s,0x%x," SZFMT ") -> " PTRFMT \
+				"#GDKmmap(%s,0x%x,%zu) -> %p"		\
 				" %s[%s:%d]\n",				\
-				_path ? _path : "NULL", _mode, _len,	\
-				PTRFMTCAST _res,			\
+				_path ? _path : "NULL",			\
+				(unsigned) _mode, _len,			\
+				_res,					\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
-#define malloc(s)							\
-	({								\
-		size_t _size = (s);					\
-		void *_res = malloc(_size);				\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#malloc(" SZFMT ") -> " PTRFMT		\
-				" %s[%s:%d]\n",				\
-				_size, PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define malloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = malloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#malloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define calloc(n, s)							\
-	({								\
-		size_t _nmemb = (n);					\
-		size_t _size = (s);					\
-		void *_res = calloc(_nmemb,_size);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#calloc(" SZFMT "," SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				_nmemb, _size, PTRFMTCAST _res,		\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define calloc(n, s)						\
+	({							\
+		size_t _nmemb = (n);				\
+		size_t _size = (s);				\
+		void *_res = calloc(_nmemb,_size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#calloc(%zu,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_nmemb, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define realloc(p, s)							\
-	({								\
-		void *_ptr = (p);					\
-		size_t _size = (s);					\
-		void *_res = realloc(_ptr, _size);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#realloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr, _size, PTRFMTCAST _res, \
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define realloc(p, s)						\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		void *_res = realloc(_ptr, _size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#realloc(%p,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_ptr, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	 })
-#define free(p)								\
-	({								\
-		void *_ptr = (p);					\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#free(" PTRFMT ")"			\
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr,			\
-				__func__, __FILE__, __LINE__);		\
-		free(_ptr);						\
+#define free(p)							\
+	({							\
+		void *_ptr = (p);				\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#free(%p)"			\
+				" %s[%s:%d]\n",			\
+				_ptr,				\
+				__func__, __FILE__, __LINE__);	\
+		free(_ptr);					\
 	})
 #else
 static inline void *
@@ -2115,8 +2099,8 @@ GDKmalloc_debug(size_t size, const char *filename, int lineno)
 {
 	void *res = GDKmalloc(size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmalloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
-			   size, PTRFMTCAST res, filename, lineno);
+			   "#GDKmalloc(%zu) -> %p [%s:%d]\n",
+			   size, res, filename, lineno);
 	return res;
 }
 #define GDKmalloc(s)	GDKmalloc_debug((s), __FILE__, __LINE__)
@@ -2125,8 +2109,8 @@ GDKzalloc_debug(size_t size, const char *filename, int lineno)
 {
 	void *res = GDKzalloc(size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKzalloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
-			   size, PTRFMTCAST res, filename, lineno);
+			   "#GDKzalloc(%zu) -> %p [%s:%d]\n",
+			   size, res, filename, lineno);
 	return res;
 }
 #define GDKzalloc(s)	GDKzalloc_debug((s), __FILE__, __LINE__)
@@ -2135,9 +2119,9 @@ GDKrealloc_debug(void *ptr, size_t size, const char *filename, int lineno)
 {
 	void *res = GDKrealloc(ptr, size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKrealloc(" PTRFMT "," SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   PTRFMTCAST ptr, size, PTRFMTCAST res,
+			   "#GDKrealloc(%p,%zu) -> "
+			   "%p [%s:%d]\n",
+			   ptr, size, res,
 			   filename, lineno);
 	return res;
 }
@@ -2145,8 +2129,8 @@ GDKrealloc_debug(void *ptr, size_t size, const char *filename, int lineno)
 static inline void
 GDKfree_debug(void *ptr, const char *filename, int lineno)
 {
-	ALLOCDEBUG fprintf(stderr, "#GDKfree(" PTRFMT ") [%s:%d]\n",
-			   PTRFMTCAST ptr, filename, lineno);
+	ALLOCDEBUG fprintf(stderr, "#GDKfree(%p) [%s:%d]\n",
+			   ptr, filename, lineno);
 	GDKfree(ptr);
 }
 #define GDKfree(p)	GDKfree_debug((p), __FILE__, __LINE__)
@@ -2154,9 +2138,9 @@ static inline char *
 GDKstrdup_debug(const char *str, const char *filename, int lineno)
 {
 	void *res = GDKstrdup(str);
-	ALLOCDEBUG fprintf(stderr, "#GDKstrdup(len=" SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   strlen(str), PTRFMTCAST res, filename, lineno);
+	ALLOCDEBUG fprintf(stderr, "#GDKstrdup(len=%zu) -> "
+			   "%p [%s:%d]\n",
+			   strlen(str), res, filename, lineno);
 	return res;
 }
 #define GDKstrdup(s)	GDKstrdup_debug((s), __FILE__, __LINE__)
@@ -2164,9 +2148,9 @@ static inline char *
 GDKstrndup_debug(const char *str, size_t n, const char *filename, int lineno)
 {
 	void *res = GDKstrndup(str, n);
-	ALLOCDEBUG fprintf(stderr, "#GDKstrndup(len=" SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   n, PTRFMTCAST res, filename, lineno);
+	ALLOCDEBUG fprintf(stderr, "#GDKstrndup(len=%zu) -> "
+			   "%p [%s:%d]\n",
+			   n, res, filename, lineno);
 	return res;
 }
 #define GDKstrndup(s, n)	GDKstrndup_debug((s), (n), __FILE__, __LINE__)
@@ -2175,10 +2159,10 @@ GDKmmap_debug(const char *path, int mode, size_t len, const char *filename, int 
 {
 	void *res = GDKmmap(path, mode, len);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmmap(%s,0x%x," SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
+			   "#GDKmmap(%s,0x%x,%zu) -> "
+			   "%p [%s:%d]\n",
 			   path ? path : "NULL", mode, len,
-			   PTRFMTCAST res, filename, lineno);
+			   res, filename, lineno);
 	return res;
 }
 #define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l), __FILE__, __LINE__)
@@ -2187,8 +2171,8 @@ malloc_debug(size_t size, const char *filename, int lineno)
 {
 	void *res = malloc(size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#malloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
-			   size, PTRFMTCAST res, filename, lineno);
+			   "#malloc(%zu) -> %p [%s:%d]\n",
+			   size, res, filename, lineno);
 	return res;
 }
 #define malloc(s)	malloc_debug((s), __FILE__, __LINE__)
@@ -2197,9 +2181,9 @@ calloc_debug(size_t nmemb, size_t size, const char *filename, int lineno)
 {
 	void *res = calloc(nmemb, size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#calloc(" SZFMT "," SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   nmemb, size, PTRFMTCAST res, filename, lineno);
+			   "#calloc(%zu,%zu) -> "
+			   "%p [%s:%d]\n",
+			   nmemb, size, res, filename, lineno);
 	return res;
 }
 #define calloc(n, s)	calloc_debug((n), (s), __FILE__, __LINE__)
@@ -2208,9 +2192,9 @@ realloc_debug(void *ptr, size_t size, const char *filename, int lineno)
 {
 	void *res = realloc(ptr, size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#realloc(" PTRFMT "," SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   PTRFMTCAST ptr, size, PTRFMTCAST res,
+			   "#realloc(%p,%zu) -> "
+			   "%p [%s:%d]\n",
+			   ptr, size, res,
 			   filename, lineno);
 	return res;
 }
@@ -2218,8 +2202,8 @@ realloc_debug(void *ptr, size_t size, const char *filename, int lineno)
 static inline void
 free_debug(void *ptr, const char *filename, int lineno)
 {
-	ALLOCDEBUG fprintf(stderr, "#free(" PTRFMT ") [%s:%d]\n",
-			   PTRFMTCAST ptr, filename, lineno);
+	ALLOCDEBUG fprintf(stderr, "#free(%p) [%s:%d]\n",
+			   ptr, filename, lineno);
 	free(ptr);
 }
 #define free(p)	free_debug((p), __FILE__, __LINE__)
@@ -2299,7 +2283,7 @@ gdk_export void GDKclrerr(void);
 #include "gdk_utils.h"
 
 /* functions defined in gdk_bat.c */
-gdk_export BUN void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
+gdk_export gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 	__attribute__ ((__warn_unused_result__));
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bit force)
 	__attribute__ ((__warn_unused_result__));
@@ -2540,8 +2524,6 @@ gdk_export void BATundo(BAT *b);
  * @tab ALIGNsync   (BAT *b1, BAT *b2)
  * @item int
  * @tab ALIGNrelated (BAT *b1, BAT *b2)
- * @item int
- * @tab ALIGNsetT    ((BAT *dst, BAT *src)
  *
  * @item BAT*
  * @tab VIEWcreate   (oid seq, BAT *b)
@@ -2553,8 +2535,6 @@ gdk_export void BATundo(BAT *b);
  * @tab VIEWtparent   (BAT *b)
  * @item BAT*
  * @tab VIEWreset    (BAT *b)
- * @item BAT*
- * @tab BATmaterialize  (BAT *b)
  * @end multitable
  *
  * Alignments of two columns of a BAT means that the system knows
@@ -2576,9 +2556,6 @@ gdk_export void BATundo(BAT *b);
  * VIEWreset creates a normal BAT with the same contents as its view
  * parameter (it converts void columns with seqbase!=nil to
  * materialized oid columns).
- *
- * The BATmaterialize materializes a VIEW (TODO) or void bat inplace.
- * This is useful as materialization is usually needed for updates.
  */
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
@@ -2589,18 +2566,17 @@ gdk_export void BATassertProps(BAT *b);
 #define BATPROPS_CHECK  3	/* BATPROPS_ALL, but start from scratch and report illegally set properties */
 
 gdk_export BAT *VIEWcreate(oid seq, BAT *b);
-gdk_export BAT *VIEWcreate_(oid seq, BAT *b, int stable);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
-/* low level functions */
-gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
-gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
-
-#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e); } while (0)
-#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e); } while (0)
-
-#define BAThrestricted(b) ((b)->batRestricted)
-#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
+#define ALIGNapp(x, y, f, e)						\
+	do {								\
+		if (!(f) && ((x)->batRestricted == BAT_READ ||		\
+			     (x)->batSharecnt > 0)) {			\
+			GDKerror("%s: access denied to %s, aborting.\n", \
+				 (y), BATgetId(x));			\
+			return (e);					\
+		}							\
+	} while (0)
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -2608,14 +2584,9 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
  *                BAT_READ   = read-only
  * VIEW bats are always mapped read-only.
  */
-#define	VIEWchk(x,y,z,e)						\
-	do {								\
-		if ((((x)->batRestricted & (z)) != 0) | ((x)->batSharecnt > 0)) { \
-			GDKerror("%s: access denied to %s, aborting.\n", \
-				 (y), BATgetId(x));			\
-			return (e);					\
-		}							\
-	} while (0)
+
+#define BAThrestricted(b) ((b)->batRestricted)
+#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
 
 /* the parentid in a VIEW is correct for the normal view. We must
  * correct for the reversed view.

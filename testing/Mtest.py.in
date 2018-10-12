@@ -1,4 +1,4 @@
-#!@PYTHON2@
+#!@PYTHON@
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
@@ -185,7 +185,7 @@ except ImportError:
     try:
         import MonetDBtesting.Mfilter as Mfilter
     except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
         sys.path.insert(0, p)
         import MonetDBtesting.Mfilter as Mfilter
         if 'PYTHONPATH' in os.environ:
@@ -373,6 +373,7 @@ CONDITIONALS = {
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
+    'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
     'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
@@ -1163,7 +1164,7 @@ def SkipTest(env, TST, EXT, REASON, length) :
             if len(TST) <= l:
                 s = '%-*s' % (l, TST)
             else:
-                s = '%s...%s' % (TST[:l/2 - 2], TST[-(l/2 - 1):])
+                s = '%s...%s' % (TST[:l//2 - 2], TST[-(l//2 - 1):])
         else:
             s = '%-*s' % (length, TST)
         STDOUT.write('%s%s skipped (%s)\n' % (prompt(), s, REASON))
@@ -1224,13 +1225,13 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     else: # THISFILE == "Mapprove.py"
         TSTDB = ""
 
-    if testlist:
-        tl = []
-        for tst in testlist:
-            tl.append((tst,None))
-        testlist = tl
+    alltests = []
+    try:
+        allf = open(os.path.join(TSTSRCDIR, "All"))
+    except IOError:
+        pass
     else:
-        for tc in open(os.path.join(TSTSRCDIR,"All")):
+        for tc in allf:
             if '#' in tc:
                 # get rid of comment anywhere on line
                 tc = tc.split('#', 1)[0]
@@ -1240,7 +1241,21 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     cond,tst = tc.split('?')
                 else:
                     cond,tst = None,tc
-                testlist.append((tst,cond))
+                alltests.append((tst,cond))
+        allf.close()
+
+    if testlist:
+        tl = []
+        for tst in testlist:
+            for t, c in alltests:
+                if t == tst:
+                    tl.append((t, c))
+                    break
+            else:
+                tl.append((tst,None))
+        testlist = tl
+    else:
+        testlist = alltests
     if not testlist:
         Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
         return td, elem, max(FdOut, FdErr), interrupted
@@ -1715,18 +1730,23 @@ def GetBitsAndModsAndThreads(env) :
     env['TST_INT128'] = ""
     env['TST_SINGLE'] = ""
     env['TST_THREADS'] = ""
+    env['TST_ARCH'] = ""
     if qOut:
-        tbos = re.compile("^# Compiled for .*/([63][42]bit)( with 128bit integers|)", re.MULTILINE)
+        tbos = re.compile("^# Compiled for (?P<arch>[^-]+).*/(?P<bits>[63][42]bit)(?P<int128> with 128bit integers|)", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
         tm = re.compile("^Modules: (.+)$", re.MULTILINE)
         for l in qOut.split('\n'):
             obs = tbos.match(l)
-            if obs:
-                env['TST_BITS'] = obs.group(1)
+            if obs is not None:
+                env['TST_BITS'] = obs.group('bits')
                 os.environ['TST_BITS'] = env['TST_BITS']
-                if obs.group(2) == " with 128bit integers":
+                if obs.group('int128') == " with 128bit integers":
                     env['TST_INT128'] = "int128"
                     os.environ['TST_INT128'] = env['TST_INT128']
+                arch = obs.group('arch')
+                if arch == 'amd64':
+                    arch = 'x86_64' # normalize name
+                env['TST_ARCH'] = arch
             t = tt.match(l)
             if t:
                 if t.group(1) == "1":
@@ -1801,8 +1821,9 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     SINGLE = env['TST_SINGLE']
     if SINGLE:
         SINGLE = r"(\.single)?"
+    ARCH = env['TST_ARCH']
     dir,file = os.path.split(TST)
-    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, INT128, SINGLE))
+    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.(%s|%s))?%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, ARCH, INT128, SINGLE))
     bestout = besterr = ''
     for f in listdir(dir or os.curdir):
         res = outre.match(f)
@@ -1935,6 +1956,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
     nomito = os.path.isfile(TST + '.nomito')
+    user = None
+    passwd = None
 
 
     os.chdir(TSTTRGDIR)
@@ -2008,6 +2031,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
+            elif cond.startswith('USER='):
+                if negate:
+                    reason = "impossible combination of USER= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                user = cond[5:]
+            elif cond.startswith('PASSWD='):
+                if negate:
+                    reason = "impossible combination of PASSWD= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                passwd = cond[7:]
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
@@ -2187,7 +2222,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, COND, all_tests)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests)
         if tres == 'segfault':
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
@@ -2655,10 +2690,71 @@ def Prompt(cmd) :
     return '%s%s"%s"%s\n\n' % (prmpt, prmpt, cmd, prmpt)
 ### Prompt(cmd) #
 
+def getkids():
+    # return a dictionary with process IDs as key and a list of child
+    # processes as value
+    p = process.Popen(['ps', '-lu', os.getenv('USER')],
+                      stdout = process.PIPE, stderr = process.PIPE,
+                      universal_newlines = True)
+    out, err = p.communicate()
+    if err:
+        return {}
+    lines = out.split('\n')
+    line0 = lines[0].split()
+    del lines[0]
+    del lines[-1]
+    pidcol = ppidcol = None
+    for i in range(len(line0)):
+        if line0[i] == 'PID':
+            pidcol = i
+        elif line0[i] == 'PPID':
+            ppidcol = i
+    if pidcol is None or ppidcol is None:
+        return {}
+    procs = {}
+    for line in lines:
+        line = line.split()
+        try:
+            pid = int(line[pidcol])
+            ppid = int(line[ppidcol])
+        except (ValueError, IndexError):
+            continue
+        if ppid not in procs:
+            procs[ppid] = []
+        procs[ppid].append(pid)
+    return procs
+
+def killchildren(pid, procs = None):
+    # kill the specified process ID and all its children
+    if procs is None:
+        try:
+            os.killpg(pid, signal.SIGKILL)
+            return
+        except AttributeError:
+            try:
+                os.kill(-pid, signal.SIGKILL)
+                return
+            except OSError:
+                pass
+        except OSError:
+            pass
+        procs = getkids()
+    for kid in procs.get(pid, []):
+        killchildren(kid, procs)
+    if procdebug:
+        print('killing process %d' % pid)
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except OSError:
+        if procdebug:
+            print('killing process %d failed' % pid)
+
 def killProc(proc, outfile = None, cmd = None):
+    if type(cmd) is type([]):
+        cmd = ' '.join(cmd)
+    if procdebug:
+        print('timeout for process %d (%s)' % (proc.pid, cmd))
     if outfile is not None and cmd is not None:
-        if type(cmd) is type([]):
-            cmd = ' '.join(cmd)
         try:
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
         except (ValueError, IOError):
@@ -2697,7 +2793,8 @@ def killProc(proc, outfile = None, cmd = None):
             print(out)
     proc.killed = True
     try:
-        os.kill(-proc.pid, signal.SIGKILL)
+        signal.SIGKILL          # Windows doesn't have this
+        os.kill
     except AttributeError:
         if procdebug:
             print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
@@ -2707,8 +2804,8 @@ def killProc(proc, outfile = None, cmd = None):
         out, err = p.communicate()
         if procdebug:
             print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
-    except OSError:
-        pass
+    else:
+        killchildren(proc.pid)
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     global setpgrp
@@ -2816,7 +2913,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, COND, all_tests) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2833,7 +2930,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if len(TST) <= l:
                 s = '%-*s ' % (l, TST)
             else:
-                s = '%s...%s ' % (TST[:l/2 - 2], TST[l/2+1-l:])
+                s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
         else:
             s = '%-*s ' % (length, TST)
         STDOUT.write('%s%s' % (prompt(), s))
@@ -3046,6 +3143,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         TSTs.append(f)
 
                 Clnt = splitcommand(exe['SQL_Client'][1])
+                if user:
+                    Clnt.append('-u%s' % user)
+                if passwd:
+                    Clnt.append('-P%s' % passwd)
                 for f in TSTs:
                     returncode = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
@@ -3346,6 +3447,7 @@ def ReadMapproveRc(f) :
     v['BITS'] = ''
     v['INT128'] = ''
     v['SINGLE'] = ''
+    v['ARCH'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z][A-Z0-9_]*) = "(.*)".*$')
         for l in open(f):
@@ -3655,7 +3757,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'INT128', 'SINGLE':
+        for i in 'INT128', 'SINGLE':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -3664,9 +3766,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.int128][.single]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])),
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.((32|64)bit|<ARCH>)][.int128][.single]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])][.(%s|%s)%s%s')"
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ('nopatch', None, 'nopatch', None,
@@ -3681,32 +3783,6 @@ def main(argv) :
         opts, args = monet_options.parse_options(argv[1:], options, Usage, False)
     except monet_options.Error:
         sys.exit(1)
-
-    if len(args) == 1 and not os.path.isdir(args[0]):
-        head, tail = os.path.split(args[0])
-        if os.path.isfile(args[0]):
-            head, tst = os.path.split(head)
-            if tst != 'Tests':
-                ErrXit("%s: not a valid test name" % args[0])
-            args = [head]
-            if tail != 'All':
-                for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
-                            '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
-                            '.sql', '.py', '.R', ''):
-                    # extentions .in and .src are never combined
-                    if tail.endswith(ext + '.in'):
-                        args.append(tail[:-len(ext + '.in')])
-                        break
-                    if tail.endswith(ext + '.src'):
-                        args.append(tail[:-len(ext + '.src')])
-                        break
-                    if tail.endswith(ext):
-                        args.append(tail[:-len(ext)])
-                        break
-                else:
-                    ErrXit("%s: not a valid test name" % args[0])
-        elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-            args = [head, tail]
 
     config = opts.get('config', '')
     if config:
@@ -3988,17 +4064,18 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'INT128', 'SINGLE':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'ARCH', 'INT128', 'SINGLE':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'INT128', 'SINGLE':
+        for i in 'BITS', 'ARCH', 'INT128', 'SINGLE':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
+        for i in 'INT128', 'SINGLE':
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['INT128'], w['SINGLE'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?(.(%s|%s))?%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?(\.(%s|%s))?%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['ARCH'], w['INT128'], w['SINGLE'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -4141,6 +4218,32 @@ def main(argv) :
         testdirs = []
         testlist = []
         dirlist = []
+        if len(args) == 1 and not os.path.isdir(args[0]):
+            head, tail = os.path.split(args[0])
+            if os.path.isfile(args[0]):
+                head, tst = os.path.split(head)
+                if tst != 'Tests':
+                    ErrXit("%s: not a valid test name" % args[0])
+                args = [head]
+                if tail != 'All':
+                    for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
+                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
+                                '.sql', '.py', '.R', ''):
+                        # extentions .in and .src are never combined
+                        if tail.endswith(ext + '.in'):
+                            args.append(tail[:-len(ext + '.in')])
+                            break
+                        if tail.endswith(ext + '.src'):
+                            args.append(tail[:-len(ext + '.src')])
+                            break
+                        if tail.endswith(ext):
+                            args.append(tail[:-len(ext)])
+                            break
+                    else:
+                        ErrXit("%s: not a valid test name" % args[0])
+            elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
+                args = [head, tail]
+
         if   len(args) == 1:
             if   os.path.isdir(args[0]):
                 d = os.path.realpath(args[0])
@@ -4278,6 +4381,7 @@ def main(argv) :
             env['TST_INT128'] = ""
             env['TST_SINGLE'] = ""
             env['TST_THREADS'] = ""
+            env['TST_ARCH'] = ""
             cmd = splitcommand(env['exe']['mserver5'][1])
             cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
             if env.get('MULTIFARM'):
@@ -4292,6 +4396,7 @@ def main(argv) :
             STDERR.flush()
             if verbose:
                 print("Bits: " + env['TST_BITS'])
+                print("Arch: " + env['TST_ARCH'])
                 if env['TST_INT128']:
                     print("Integers: 128bit")
                 print("Modules: " + str(env['TST_MODS']))
@@ -4312,7 +4417,7 @@ def main(argv) :
             env['VERSION'] = os.environ['VERSION']
             n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
             f = open(n, 'w')
-            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_INT128', 'TST_SINGLE':
+            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_ARCH', 'TST_INT128', 'TST_SINGLE':
                 w = v.replace('TST_','')
                 f.write('%s = "%s"\n' % (w, env[v]))
             f.close()
@@ -4557,15 +4662,7 @@ VALUES (%s, '%s', '%s', '%s',
 ### main(argv) #
 
 if __name__ == "__main__":
-    if '--trace' in sys.argv:
-        sys.argv.remove('--trace')
-        try:
-            import trace
-        except ImportError:
-            from MonetDBtesting import trace
-        t = trace.Trace(trace=1, count=0, ignoremods=('ntpath','monet_options','Mfilter','re', 'sre_parse', 'sre_compile'))
-        t.runfunc(main, sys.argv)
-    elif '--debug' in sys.argv:
+    if '--debug' in sys.argv:
         sys.argv.remove('--debug')
         import pdb
         pdb.run('main(sys.argv)')

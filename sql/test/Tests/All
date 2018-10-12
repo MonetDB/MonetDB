@@ -1,4 +1,10 @@
 
+# Run these first so comment-dump doesn't encounter
+# leftovers from other tests
+comment-dump
+comment-on
+comment-auth
+
 bincopycollist-prepare
 bincopycollist
 
@@ -112,7 +118,17 @@ alastair_udf_mergetable_bug
 
 copy-into-fwf
 
+truncate-statements
+truncate-statements-extra
+create-or-replace-triggers
+create-or-replace-views
+drop-function-if-exists
+drop-trigger-if-exists
+
 constant-not-in
 
 fsum
 THREADS=1?fsum1
+
+NOT_WIN32&HAVE_LIBLZ4?copy-into-lz4
+NOT_WIN32&HAVE_LIBLZ4?copy-from-lz4

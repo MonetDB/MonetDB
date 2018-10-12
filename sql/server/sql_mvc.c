@@ -24,6 +24,23 @@
 
 static int mvc_debug = 0;
 
+static void
+sql_create_comments(mvc *m, sql_schema *s)
+{
+	sql_table *t;
+	sql_column *c;
+	sql_key *k;
+
+	t = mvc_create_table(m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1);
+	c = mvc_create_column_(m, t, "id", "int", 32);
+	k = sql_trans_create_ukey(m->session->tr, t, "comments_id_pkey", pkey);
+	k = sql_trans_create_kc(m->session->tr, k, c);
+	k = sql_trans_key_done(m->session->tr, k);
+	sql_trans_create_dependency(m->session->tr, c->base.id, k->idx->base.id, INDEX_DEPENDENCY);
+	c = mvc_create_column_(m, t, "remark", "varchar", 65000);
+	sql_trans_alter_null(m->session->tr, c, 0);
+}
+
 int
 mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
@@ -158,8 +175,9 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ncid);
 			}
-		} else { 
+		} else {
 			sql_create_env(m, s);
+			sql_create_comments(m, s);
 			sql_create_privileges(m, s);
 		}
 
@@ -589,6 +607,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->argc = 0;
 	m->sym = NULL;
 
+	m->Topt = 0;
 	m->rowcnt = m->last_id = m->role_id = m->user_id = -1;
 	m->timezone = 0;
 	m->clientid = clientid;
@@ -662,6 +681,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->argc = 0;
 	m->sym = NULL;
 
+	m->Topt = 0;
 	m->rowcnt = m->last_id = m->role_id = m->user_id = -1;
 	m->emode = m_normal;
 	m->emod = mod_none;
@@ -991,22 +1011,22 @@ mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, l
 	return f;
 }
 
-void
+int
 mvc_drop_func(mvc *m, sql_schema *s, sql_func *f, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_func %s %s\n", s->base.name, f->base.name);
 
-	sql_trans_drop_func(m->session->tr, s, f->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	return sql_trans_drop_func(m->session->tr, s, f->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
-void
+int
 mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_all_func %s %s\n", s->base.name, ((sql_func *) list_func->h->data)->base.name);
 
-	sql_trans_drop_all_func(m->session->tr, s, list_func, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	return sql_trans_drop_all_func(m->session->tr, s, list_func, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 sql_schema *
@@ -1021,12 +1041,12 @@ mvc_create_schema(mvc *m, const char *name, int auth_id, int owner)
 	return s;
 }
 
-void
+int
 mvc_drop_schema(mvc *m, sql_schema * s, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_schema %s\n", s->base.name);
-	sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	return sql_trans_drop_schema(m->session->tr, s->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 sql_ukey *
@@ -1053,7 +1073,7 @@ sql_fkey *
 mvc_create_fkey(mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
 {
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_fkey %s %u " PTRFMT "\n", t->base.name, kt, PTRFMTCAST rkey);
+		fprintf(stderr, "#mvc_create_fkey %s %u %p\n", t->base.name, kt, rkey);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		return create_sql_fkey(m->sa, t, name, kt, rkey, on_delete, on_update);	
 	else
@@ -1080,15 +1100,16 @@ mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c)
 		return sql_trans_create_fkc(m->session->tr, fk, c);
 }
 
-void
+int
 mvc_drop_key(mvc *m, sql_schema *s, sql_key *k, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_key %s %s\n", s->base.name, k->base.name);
-	if (k->t->persistence == SQL_DECLARED_TABLE)
+	if (k->t->persistence == SQL_DECLARED_TABLE) {
 		drop_sql_key(k->t, k->base.id, drop_action);
-	else
-		sql_trans_drop_key(m->session->tr, s, k->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+		return 0;
+	} else
+		return sql_trans_drop_key(m->session->tr, s, k->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 sql_idx *
@@ -1117,17 +1138,18 @@ mvc_create_ic(mvc *m, sql_idx * i, sql_column *c)
 		return sql_trans_create_ic(m->session->tr, i, c);
 }
 
-void
+int
 mvc_drop_idx(mvc *m, sql_schema *s, sql_idx *i)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_idx %s %s\n", s->base.name, i->base.name);
 
-	if (i->t->persistence == SQL_DECLARED_TABLE)
+	if (i->t->persistence == SQL_DECLARED_TABLE) {
 		/* declared tables should not end up in the catalog */
 		drop_sql_idx(i->t, i->base.id);
-	else
-		sql_trans_drop_idx(m->session->tr, s, i->base.id, DROP_RESTRICT);
+		return 0;
+	} else
+		return sql_trans_drop_idx(m->session->tr, s, i->base.id, DROP_RESTRICT);
 }
 
 sql_trigger * 
@@ -1150,13 +1172,13 @@ mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as t
 	return i;
 }
 
-void
+int
 mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_trigger %s %s\n", s->base.name, tri->base.name);
 
-	sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
+	return sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
 
 
@@ -1213,13 +1235,13 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 	return t;
 }
 
-void
+int
 mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_table %s %s\n", s->base.name, t->base.name);
 
-	sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	return sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 BUN
@@ -1251,15 +1273,16 @@ mvc_create_column(mvc *m, sql_table *t, const char *name, sql_subtype *tpe)
 		return sql_trans_create_column(m->session->tr, t, name, tpe);
 }
 
-void
+int
 mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_column %s %s\n", t->base.name, col->base.name);
-	if (col->t->persistence == SQL_DECLARED_TABLE)
+	if (col->t->persistence == SQL_DECLARED_TABLE) {
 		drop_sql_column(t, col->base.id, drop_action);
-	else
-		sql_trans_drop_column(m->session->tr, t, col->base.id,  drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+		return 0;
+	} else
+		return sql_trans_drop_column(m->session->tr, t, col->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 void

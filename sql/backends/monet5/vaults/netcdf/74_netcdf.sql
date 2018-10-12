@@ -1,3 +1,8 @@
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0.  If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+--
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 create table netcdf_files(
       file_id int,
@@ -44,3 +49,10 @@ create procedure netcdf_attach(fname varchar(256))
 create procedure netcdf_importvar(fid integer, varnname varchar(256))
     external name netcdf.importvariable;
 
+grant select on netcdf_files to public;
+grant select on netcdf_dims to public;
+grant select on netcdf_vars to public;
+grant select on netcdf_vardim to public;
+grant select on netcdf_attrs to public;
+grant execute on procedure netcdf_attach(varchar(256)) to public;
+grant execute on procedure netcdf_importvar(integer, varchar(256)) to public;

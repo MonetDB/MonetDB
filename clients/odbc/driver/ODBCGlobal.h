@@ -70,23 +70,18 @@
 #include <ctype.h>
 
 #ifdef SQLLEN			/* it's a define for 32, a typedef for 64 */
-#define LENFMT		"%d"
-#define ULENFMT		"%u"
-#define LENCAST		(int)
-#define ULENCAST	(unsigned int)
+#define LENFMT		"%" PRId32
+#define ULENFMT		"%" PRIu32
+#define LENCAST		(int32_t)
+#define ULENCAST	(uint32_t)
 #else
-#ifdef _MSC_VER
-#define LENFMT		"%I64d"
-#define ULENFMT		"%I64u"
-#define LENCAST		(__int64)
-#define ULENCAST	(unsigned __int64)
-#else
-#define LENFMT		"%ld"
-#define ULENFMT		"%lu"
-#define LENCAST		(long)
-#define ULENCAST	(unsigned long)
+#define LENFMT		"%" PRId64
+#define ULENFMT		"%" PRIu64
+#define LENCAST		(int64_t)
+#define ULENCAST	(uint64_t)
 #endif
-#endif
+
+#define SQL_HUGEINT	0x4000
 
 /* these functions are called from within the library */
 SQLRETURN MNDBAllocHandle(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle, SQLHANDLE *pnOutputHandle);

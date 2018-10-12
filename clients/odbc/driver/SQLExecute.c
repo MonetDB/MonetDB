@@ -42,6 +42,7 @@ static struct msql_types {
 	{"date", SQL_TYPE_DATE},
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
+	{"hugeint", SQL_HUGEINT},
 	{"int", SQL_INTEGER},
 	{"month_interval", SQL_INTERVAL_MONTH},
 	{"oid", SQL_BIGINT},
@@ -472,7 +473,7 @@ MNDBExecute(ODBCStmt *stmt)
 	query[querypos] = 0;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute " PTRFMT " %s\n", PTRFMTCAST stmt, query);
+	ODBCLOG("SQLExecute %p %s\n", stmt, query);
 #endif
 
 	/* Have the server execute the query */
@@ -522,7 +523,7 @@ SQLRETURN SQL_API
 SQLExecute(SQLHSTMT StatementHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLExecute %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))

@@ -1,0 +1,170 @@
+stdout of test 'comment-on` in directory 'sql/test` itself:
+
+
+# 15:45:21 >  
+# 15:45:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37253" "--set" "mapi_usock=/var/tmp/mtest-10547/.s.monetdb.37253" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/joeri/monets/default/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes"
+# 15:45:21 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test', using 8 threads
+# Compiled for x86_64-apple-darwin17.2.0/64bit with 128bit integers
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-214.eduroam.cwi.nl:37253/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10547/.s.monetdb.37253
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 97_comments.sql
+# loading sql script: 99_system.sql
+
+# 15:45:21 >  
+# 15:45:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10547" "--port=37253"
+# 15:45:21 >  
+
+#DROP SCHEMA IF EXISTS foo;
+#CREATE SCHEMA foo;
+#SET SCHEMA foo;
+SCHEMA  foo
+CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
+SCHEMA  foo  'foo foo'
+CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
+COMMENT ON SCHEMA "foo" IS 'foo foo';
+SCHEMA  foo  'bar bar'
+CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
+COMMENT ON SCHEMA "foo" IS 'bar bar';
+SCHEMA  foo
+CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
+SCHEMA  foo  'foo bar'
+CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
+COMMENT ON SCHEMA "foo" IS 'foo bar';
+SCHEMA  foo
+CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
+#CREATE SCHEMA "space separated";
+SCHEMA  foo              'one final comment'
+SCHEMA  space separated  'space separated'
+CREATE SCHEMA "space separated" AUTHORIZATION "monetdb";
+COMMENT ON SCHEMA "space separated" IS 'space separated';
+#DROP SCHEMA "space separated";
+#CREATE TABLE tab(i INT, j DECIMAL(4,2));
+TABLE  foo.tab
+TABLE  foo.tab  'table'
+CREATE TABLE "foo"."tab" (
+	"i" INTEGER,
+	"j" DECIMAL(4,2)
+);
+COMMENT ON TABLE "foo"."tab" IS 'table';
+TABLE  foo.tab  'qualified table'
+CREATE TABLE "foo"."tab" (
+	"i" INTEGER,
+	"j" DECIMAL(4,2)
+);
+COMMENT ON TABLE "foo"."tab" IS 'qualified table';
+#SET SCHEMA sys;
+#SET SCHEMA foo;
+TABLE  foo.tab  'table'
+CREATE TABLE "foo"."tab" (
+	"i" INTEGER,
+	"j" DECIMAL(4,2)
+);
+COMMENT ON TABLE "foo"."tab" IS 'table';
+#CREATE VIEW vivi AS SELECT * FROM tab;
+VIEW  foo.vivi  'phew'
+create view vivi as select * from tab;
+COMMENT ON VIEW "foo"."vivi" IS 'phew';
+TABLE  foo.tab   'table'
+VIEW   foo.vivi  'phew'
+#CREATE TEMPORARY TABLE tempo(LIKE foo.tab);
+CREATE TABLE "foo"."tab" (
+	"i" INTEGER,
+	"j" DECIMAL(4,2)
+);
+COMMENT ON TABLE "foo"."tab" IS 'table';
+COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';
+COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';
+#CREATE INDEX idx ON tab(j,i);
+CREATE TABLE "foo"."tab" (
+	"i" INTEGER,
+	"j" DECIMAL(4,2)
+);
+COMMENT ON TABLE "foo"."tab" IS 'table';
+CREATE INDEX "idx" ON "foo"."tab" ("j", "i");
+COMMENT ON INDEX "foo"."idx" IS 'index on j';
+COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';
+COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';
+#CREATE SEQUENCE counter AS INT;
+SEQUENCE  foo.counter
+SEQUENCE  foo.counter  'counting'
+CREATE SEQUENCE "foo"."counter" START WITH 1 NO CYCLE;
+COMMENT ON SEQUENCE "foo"."counter" IS 'counting';
+#SET SCHEMA sys;
+#SET SCHEMA foo;
+SEQUENCE  foo.counter  'still counting'
+#CREATE FUNCTION f() RETURNS INT BEGIN RETURN 42; END;
+#CREATE FUNCTION f(i INT) RETURNS INT BEGIN RETURN 43; END;
+#CREATE FUNCTION f(i INT, j INT) RETURNS INT BEGIN RETURN 44; END;
+#CREATE PROCEDURE g() BEGIN DELETE FROM tab WHERE FALSE; END;
+FUNCTION  foo.f
+FUNCTION  foo.f  '0 parms'
+FUNCTION   foo.f  '1 parm'
+FUNCTION   foo.f  '2 parms'
+PROCEDURE  foo.g  'proc'
+create function f() returns int begin return 42; end;
+COMMENT ON FUNCTION "foo"."f"() IS '0 parms';
+create function f(i int) returns int begin return 43; end;
+COMMENT ON FUNCTION "foo"."f"(INTEGER) IS '1 parm';
+create function f(i int, j int) returns int begin return 44; end;
+COMMENT ON FUNCTION "foo"."f"(INTEGER, INTEGER) IS '2 parms';
+create function f(i int, j int, k int) returns int begin return 45; end;
+create function f(i int, j int, k int, l int) returns int begin return 45; end;
+create procedure g() begin delete from tab where false; end;
+COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
+create procedure g() begin delete from tab where false; end;
+COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
+create procedure g() begin delete from tab where false; end;
+COMMENT ON PROCEDURE "foo"."g"() IS 'proc!';
+
+# 12:35:23 >  
+# 12:35:23 >  "Done."
+# 12:35:23 >  
+

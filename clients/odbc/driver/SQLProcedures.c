@@ -128,6 +128,7 @@ MNDBProcedures(ODBCStmt *stmt,
 #define F_FUNC 1
 #define F_PROC 2
 #define F_UNION 5
+#define FUNC_LANG_SQL 2
 	snprintf(query_end, 1000,
 		 "select e.value as procedure_cat, "
 			"s.name as procedure_schem, "
@@ -135,17 +136,19 @@ MNDBProcedures(ODBCStmt *stmt,
 			"0 as num_input_params, "
 			"0 as num_output_params, "
 			"0 as num_result_sets, "
-			"cast('' as varchar(1)) as remarks, "
+			"%s as remarks, "
 			"cast(case when p.type = %d then %d else %d end as smallint) as procedure_type "
 		 "from sys.schemas as s, "
 		      "sys.env() as e, "
-		      "sys.functions as p "
+		      "sys.functions as p%s "
 		 "where p.schema_id = s.id and "
-		       "p.sql = true and "
+		       "p.language >= %d and "
 		       "p.type in (%d, %d, %d) and "
 		       "e.name = 'gdk_dbname'",
+		 stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 		 F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
-		 F_FUNC, F_PROC, F_UNION);
+		 stmt->Dbc->has_comment ? " left outer join sys.comments c on p.id = c.id" : "",
+		 FUNC_LANG_SQL, F_FUNC, F_PROC, F_UNION);
 	assert(strlen(query) < 800);
 	query_end += strlen(query_end);
 
@@ -207,7 +210,7 @@ SQLProcedures(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedures " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLProcedures %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -247,7 +250,7 @@ SQLProceduresW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProceduresW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLProceduresW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

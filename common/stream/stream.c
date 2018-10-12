@@ -93,6 +93,7 @@
 #endif
 #ifdef HAVE_LIBLZ4
 #include <lz4.h>
+#include <lz4frame.h>
 #endif
 
 #ifdef HAVE_ICONV
@@ -132,14 +133,14 @@
 
 #ifdef _MSC_VER
 /* use intrinsic functions on Windows */
-#define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
+#define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
 /* on Windows, long is the same size as int */
 #define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
-#define long_long_SWAP(l)	((lng) _byteswap_uint64((unsigned __int64) (s)))
+#define long_long_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (s)))
 #else
-#define short_int_SWAP(s)					\
-	((short) (((0x00ff & (unsigned short) (s)) << 8) |	\
-		  ((0xff00 & (unsigned short) (s)) >> 8)))
+#define short_int_SWAP(s)				\
+	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\
+		  ((0xff00 & (uint16_t) (s)) >> 8)))
 
 #define normal_int_SWAP(i)						\
 	((int) (((((unsigned) 0xff <<  0) & (unsigned) (i)) << 24) |	\
@@ -147,15 +148,15 @@
 		((((unsigned) 0xff << 16) & (unsigned) (i)) >>  8) |	\
 		((((unsigned) 0xff << 24) & (unsigned) (i)) >> 24)))
 
-#define long_long_SWAP(l)					\
-	((lng) (((((ulng) 0xff <<  0) & (ulng) (l)) << 56) |	\
-		((((ulng) 0xff <<  8) & (ulng) (l)) << 40) |	\
-		((((ulng) 0xff << 16) & (ulng) (l)) << 24) |	\
-		((((ulng) 0xff << 24) & (ulng) (l)) <<  8) |	\
-		((((ulng) 0xff << 32) & (ulng) (l)) >>  8) |	\
-		((((ulng) 0xff << 40) & (ulng) (l)) >> 24) |	\
-		((((ulng) 0xff << 48) & (ulng) (l)) >> 40) |	\
-		((((ulng) 0xff << 56) & (ulng) (l)) >> 56)))
+#define long_long_SWAP(l)						\
+	((int64_t) (((((uint64_t) 0xff <<  0) & (uint64_t) (l)) << 56) | \
+		((((uint64_t) 0xff <<  8) & (uint64_t) (l)) << 40) |	\
+		((((uint64_t) 0xff << 16) & (uint64_t) (l)) << 24) |	\
+		((((uint64_t) 0xff << 24) & (uint64_t) (l)) <<  8) |	\
+		((((uint64_t) 0xff << 32) & (uint64_t) (l)) >>  8) |	\
+		((((uint64_t) 0xff << 40) & (uint64_t) (l)) >> 24) |	\
+		((((uint64_t) 0xff << 48) & (uint64_t) (l)) >> 40) |	\
+		((((uint64_t) 0xff << 56) & (uint64_t) (l)) >> 56)))
 #endif
 
 #ifdef HAVE_HGE
@@ -361,7 +362,7 @@ mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "read %s " SZFMT " " SZFMT "\n",
+	fprintf(stderr, "read %s %zu %zu\n",
 		s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->access == ST_READ);
@@ -381,7 +382,7 @@ mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt)
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "readline %s " SZFMT "\n",
+	fprintf(stderr, "readline %s %zu\n",
 		s->name ? s->name : "<unnamed>", maxcnt);
 #endif
 	assert(s->access == ST_READ);
@@ -439,7 +440,7 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "write %s " SZFMT " " SZFMT "\n",
+	fprintf(stderr, "write %s %zu %zu\n",
 		s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->access == ST_WRITE);
@@ -695,6 +696,10 @@ create_stream(const char *name)
 	s->isutf8 = 0;		/* not known for sure */
 	s->type = ST_ASCII;
 	s->name = strdup(name);
+	if(s->name == NULL) {
+		free(s);
+		return NULL;
+	}
 	s->stream_data.p = NULL;
 	s->errnr = MNSTR_NO__ERROR;
 	s->read = NULL;
@@ -712,8 +717,8 @@ create_stream(const char *name)
 	s->update_timeout = NULL;
 	s->isalive = NULL;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "create_stream %s -> " PTRFMT "\n",
-		name ? name : "<unnamed>", PTRFMTCAST s);
+	fprintf(stderr, "create_stream %s -> %p\n",
+		name ? name : "<unnamed>", s);
 #endif
 	return s;
 }
@@ -1696,6 +1701,384 @@ open_xzwastream(const char *restrict filename, const char *restrict mode)
 #endif
 
 /* ------------------------------------------------------------------ */
+/* streams working on a lz4-compressed disk file */
+
+#ifdef HAVE_LIBLZ4
+#define LZ4DECOMPBUFSIZ 128*1024
+typedef struct lz4_stream {
+	FILE *fp;
+	size_t total_processing;
+	size_t ring_buffer_size;
+	void* ring_buffer;
+	union {
+		LZ4F_compressionContext_t comp_context;
+		LZ4F_decompressionContext_t dec_context;
+	} context;
+} lz4_stream;
+
+static ssize_t
+stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+{
+	lz4_stream *lz4 = s->stream_data.p;
+	size_t size = elmsize * cnt, total_read = 0, total_decompressed, ret, remaining_to_decompress;
+
+	if (lz4 == NULL || size <= 0) {
+		s->errnr = MNSTR_READ_ERROR;
+		return -1;
+	}
+
+	while (total_read < size) {
+		if (lz4->total_processing == lz4->ring_buffer_size) {
+			if(feof(lz4->fp)) {
+				break;
+			} else {
+				lz4->ring_buffer_size = fread(lz4->ring_buffer, 1, LZ4_COMPRESSBOUND(LZ4DECOMPBUFSIZ), lz4->fp);
+				if (lz4->ring_buffer_size == 0 || ferror(lz4->fp)) {
+					s->errnr = MNSTR_READ_ERROR;
+					return -1;
+				}
+				lz4->total_processing = 0;
+			}
+		}
+
+		remaining_to_decompress = size - total_read;
+		total_decompressed = lz4->ring_buffer_size - lz4->total_processing;
+		ret = LZ4F_decompress(lz4->context.dec_context, (char*)buf + total_read, &remaining_to_decompress,
+				      (char*)lz4->ring_buffer + lz4->total_processing, &total_decompressed, NULL);
+		if(LZ4F_isError(ret)) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		}
+
+		lz4->total_processing += total_decompressed;
+		total_read += remaining_to_decompress;
+	}
+
+#ifdef WIN32
+	/* on Windows when in text mode, convert \r\n line endings to \n */
+	if (s->type == ST_ASCII) {
+		char *p1, *p2, *pe;
+
+		p1 = buf;
+		pe = p1 + total_read;
+		while (p1 < pe && *p1 != '\r')
+			p1++;
+		p2 = p1;
+		while (p1 < pe) {
+			if (*p1 == '\r' && p1[1] == '\n')
+				total_read--;
+			else
+				*p2++ = *p1;
+			p1++;
+		}
+	}
+#endif
+	return (ssize_t) (total_read / elmsize);
+}
+
+static ssize_t
+stream_lz4write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
+{
+	lz4_stream *lz4 = s->stream_data.p;
+	size_t ret, size = elmsize * cnt, total_written = 0, next_batch, next_attempt, available, real_written;
+
+	if (lz4 == NULL || size > LZ4_MAX_INPUT_SIZE || size <= 0) {
+		s->errnr = MNSTR_WRITE_ERROR;
+		return -1;
+	}
+
+	while (total_written < size) {
+		next_batch = size - total_written;
+		available = lz4->ring_buffer_size - lz4->total_processing;
+		do {
+			next_attempt = LZ4F_compressBound(next_batch, NULL); /* lz4->ring_buffer must be at least 65548 bytes */
+			if(next_attempt > available) {
+				next_batch >>= 1;
+			} else {
+				break;
+			}
+			if(next_batch == 0)
+				break;
+		} while(1);
+		assert(next_batch > 0);
+
+		ret = LZ4F_compressUpdate(lz4->context.comp_context, ((char*)lz4->ring_buffer) + lz4->total_processing,
+					  available, ((char*)buf) + total_written, next_batch, NULL);
+		if(LZ4F_isError(ret)) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		} else {
+			lz4->total_processing += ret;
+		}
+
+		if(lz4->total_processing == lz4->ring_buffer_size) {
+			real_written = fwrite((void *)lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
+			if (real_written == 0) {
+				s->errnr = MNSTR_WRITE_ERROR;
+				return -1;
+			}
+			lz4->total_processing = 0;
+		}
+		total_written += next_batch;
+	}
+
+	return (ssize_t) (total_written / elmsize);
+}
+
+static void
+stream_lz4close(stream *s)
+{
+	lz4_stream *lz4 = s->stream_data.p;
+
+	if (lz4) {
+		if (s->access == ST_WRITE) {
+			size_t ret, real_written;
+
+			if (lz4->total_processing > 0 && lz4->total_processing < lz4->ring_buffer_size) { /* compress remaining */
+				real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
+				if (real_written == 0) {
+					s->errnr = MNSTR_WRITE_ERROR;
+					return ;
+				}
+				lz4->total_processing = 0;
+			} /* finish compression */
+			ret = LZ4F_compressEnd(lz4->context.comp_context, lz4->ring_buffer, lz4->ring_buffer_size, NULL);
+			if(LZ4F_isError(ret)) {
+				s->errnr = MNSTR_WRITE_ERROR;
+				return ;
+			}
+			assert(ret < LZ4DECOMPBUFSIZ);
+			lz4->total_processing = ret;
+
+			real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
+			if (real_written == 0) {
+				s->errnr = MNSTR_WRITE_ERROR;
+				return ;
+			}
+			lz4->total_processing = 0;
+
+			fflush(lz4->fp);
+		}
+		if(s->access == ST_WRITE) {
+			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
+		} else {
+			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
+		}
+		fclose(lz4->fp);
+		free(lz4->ring_buffer);
+		free(lz4);
+	}
+	s->stream_data.p = NULL;
+}
+
+static int
+stream_lz4flush(stream *s)
+{
+	lz4_stream *lz4 = s->stream_data.p;
+	size_t real_written, ret;
+
+	if (lz4 == NULL)
+		return -1;
+	if (s->access == ST_WRITE) {
+		if (lz4->total_processing > 0 && lz4->total_processing < lz4->ring_buffer_size) { /* compress remaining */
+			real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
+			if (real_written == 0) {
+				s->errnr = MNSTR_WRITE_ERROR;
+				return -1;
+			}
+			lz4->total_processing = 0;
+		}
+		ret = LZ4F_flush(lz4->context.comp_context, lz4->ring_buffer, lz4->ring_buffer_size, NULL); /* flush it */
+		if(LZ4F_isError(ret)) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		}
+		lz4->total_processing = ret;
+		real_written = fwrite(lz4->ring_buffer, 1, lz4->total_processing, lz4->fp);
+		if (real_written == 0) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		}
+		lz4->total_processing = 0;
+
+		if(fflush(lz4->fp))
+			return -1;
+	}
+	return 0;
+}
+
+static stream *
+open_lz4stream(const char *restrict filename, const char *restrict flags)
+{
+	stream *s;
+	lz4_stream *lz4;
+	LZ4F_errorCode_t error_code;
+	char fl[3];
+	size_t buffer_size = (flags[0] == 'r') ? LZ4_COMPRESSBOUND(LZ4DECOMPBUFSIZ) : LZ4DECOMPBUFSIZ;
+
+	if ((lz4 = malloc(sizeof(struct lz4_stream))) == NULL)
+		return NULL;
+	if ((lz4->ring_buffer = malloc(buffer_size)) == NULL) {
+		free(lz4);
+		return NULL;
+	}
+	lz4->total_processing = (flags[0] == 'r') ? buffer_size : 0;
+	lz4->ring_buffer_size = buffer_size;
+
+	if(flags[0] == 'w') {
+		error_code = LZ4F_createCompressionContext(&(lz4->context.comp_context), LZ4F_VERSION);
+	} else {
+		error_code = LZ4F_createDecompressionContext(&(lz4->context.dec_context), LZ4F_VERSION);
+	}
+	if(LZ4F_isError(error_code)) {
+		free(lz4->ring_buffer);
+		free(lz4);
+		return NULL;
+	}
+
+	if ((s = create_stream(filename)) == NULL) {
+		if(flags[0] == 'w') {
+			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
+		} else {
+			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
+		}
+		free(lz4->ring_buffer);
+		free(lz4);
+		return NULL;
+	}
+	fl[0] = flags[0];	/* 'r' or 'w' */
+	fl[1] = 'b';		/* always binary */
+	fl[2] = '\0';
+#ifdef HAVE__WFOPEN
+	{
+		wchar_t *wfname = utf8towchar(filename);
+		wchar_t *wflags = utf8towchar(fl);
+		if (wfname != NULL)
+			lz4->fp = _wfopen(wfname, wflags);
+		else
+			lz4->fp = NULL;
+		if (wfname)
+			free(wfname);
+		if (wflags)
+			free(wflags);
+	}
+#else
+	{
+		char *fname = cvfilename(filename);
+		if (fname) {
+			lz4->fp = fopen(fname, fl);
+			free(fname);
+		} else
+			lz4->fp = NULL;
+	}
+#endif
+	if (lz4->fp == NULL) {
+		destroy(s);
+		if(flags[0] == 'w') {
+			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
+		} else {
+			(void) LZ4F_freeDecompressionContext(lz4->context.dec_context);
+		}
+		free(lz4->ring_buffer);
+		free(lz4);
+		return NULL;
+	}
+	s->read = stream_lz4read;
+	s->write = stream_lz4write;
+	s->close = stream_lz4close;
+	s->flush = stream_lz4flush;
+	s->stream_data.p = (void *) lz4;
+
+	if(flags[0] == 'w') { /* start compression by writting the headers */
+		size_t nwritten = LZ4F_compressBegin(lz4->context.comp_context, lz4->ring_buffer, lz4->ring_buffer_size, NULL);
+		assert(nwritten < LZ4DECOMPBUFSIZ);
+		if(LZ4F_isError(nwritten)) {
+			(void) LZ4F_freeCompressionContext(lz4->context.comp_context);
+			free(lz4->ring_buffer);
+			free(lz4);
+			return NULL;
+		} else {
+			lz4->total_processing += nwritten;
+		}
+	} else if (flags[0] == 'r' && flags[1] != 'b') { /* check for utf-8 encoding */
+		char buf[UTF8BOMLENGTH];
+		if (stream_lz4read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
+		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
+			s->isutf8 = 1;
+		} else {
+			rewind(lz4->fp);
+			lz4->total_processing = buffer_size;
+			lz4->ring_buffer_size = buffer_size;
+			LZ4F_resetDecompressionContext(lz4->context.dec_context);
+			mnstr_clearerr(s);
+		}
+	}
+	return s;
+}
+
+static stream *
+open_lz4rstream(const char *filename)
+{
+	stream *s;
+
+	if ((s = open_lz4stream(filename, "rb")) == NULL)
+		return NULL;
+	s->type = ST_BIN;
+	if (s->errnr == MNSTR_NO__ERROR && stream_lz4read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
+		stream_lz4close(s);
+		destroy(s);
+		return NULL;
+	}
+	return s;
+}
+
+static stream *
+open_lz4wstream(const char *restrict filename, const char *restrict mode)
+{
+	stream *s;
+
+	if ((s = open_lz4stream(filename, mode)) == NULL)
+		return NULL;
+	s->access = ST_WRITE;
+	s->type = ST_BIN;
+	if (s->errnr == MNSTR_NO__ERROR && stream_lz4write(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
+		stream_lz4close(s);
+		destroy(s);
+		return NULL;
+	}
+	return s;
+}
+
+static stream *
+open_lz4rastream(const char *filename)
+{
+	stream *s;
+
+	if ((s = open_lz4stream(filename, "r")) == NULL)
+		return NULL;
+	s->type = ST_ASCII;
+	return s;
+}
+
+static stream *
+open_lz4wastream(const char *restrict filename, const char *restrict mode)
+{
+	stream *s;
+
+	if ((s = open_lz4stream(filename, mode)) == NULL)
+		return NULL;
+	s->access = ST_WRITE;
+	s->type = ST_ASCII;
+	return s;
+}
+#else
+#define open_lz4rstream(filename)	NULL
+#define open_lz4wstream(filename, mode)	NULL
+#define open_lz4rastream(filename)	NULL
+#define open_lz4wastream(filename, mode)	NULL
+#endif
+
+/* ------------------------------------------------------------------ */
 /* streams working on a disk file, compressed or not */
 
 stream *
@@ -1717,6 +2100,8 @@ open_rstream(const char *filename)
 		return open_bzrstream(filename);
 	if (strcmp(ext, "xz") == 0)
 		return open_xzrstream(filename);
+	if (strcmp(ext, "lz4") == 0)
+		return open_lz4rstream(filename);
 
 	if ((s = open_stream(filename, "rb")) == NULL)
 		return NULL;
@@ -1752,6 +2137,8 @@ open_wstream(const char *filename)
 		return open_bzwstream(filename, "wb");
 	if (strcmp(ext, "xz") == 0)
 		return open_xzwstream(filename, "wb");
+	if (strcmp(ext, "lz4") == 0)
+		return open_lz4wstream(filename, "wb");
 
 	if ((s = open_stream(filename, "wb")) == NULL)
 		return NULL;
@@ -1787,6 +2174,8 @@ open_rastream(const char *filename)
 		return open_bzrastream(filename);
 	if (strcmp(ext, "xz") == 0)
 		return open_xzrastream(filename);
+	if (strcmp(ext, "lz4") == 0)
+		return open_lz4rastream(filename);
 
 	if ((s = open_stream(filename, "r")) == NULL)
 		return NULL;
@@ -1813,6 +2202,8 @@ open_wastream(const char *filename)
 		return open_bzwastream(filename, "w");
 	if (strcmp(ext, "xz") == 0)
 		return open_xzwastream(filename, "w");
+	if (strcmp(ext, "lz4") == 0)
+		return open_lz4wastream(filename, "w");
 
 	if ((s = open_stream(filename, "w")) == NULL)
 		return NULL;
@@ -2388,7 +2779,7 @@ socket_rastream(SOCKET sock, const char *name)
 	stream *s = NULL;
 
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_rastream " SSZFMT " %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_rastream %zd %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) != NULL)
 		s->type = ST_ASCII;
@@ -2401,7 +2792,7 @@ socket_wastream(SOCKET sock, const char *name)
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_wastream " SSZFMT " %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_wastream %zd %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
@@ -2704,6 +3095,10 @@ file_rastream(FILE *restrict fp, const char *restrict name)
 #ifdef _MSC_VER
 	if (fileno(fp) == 0 && isatty(0)) {
 		struct console *c = malloc(sizeof(struct console));
+		if(c == NULL) {
+			destroy(s);
+			return NULL;
+		}
 		s->stream_data.p = c;
 		c->h = GetStdHandle(STD_INPUT_HANDLE);
 		c->i = 0;
@@ -2741,6 +3136,10 @@ file_wastream(FILE *restrict fp, const char *restrict name)
 #ifdef _MSC_VER
 	if ((fileno(fp) == 1 || fileno(fp) == 2) && isatty(fileno(fp))) {
 		struct console *c = malloc(sizeof(struct console));
+		if(c == NULL) {
+			destroy(s);
+			return NULL;
+		}
 		s->stream_data.p = c;
 		c->h = GetStdHandle(STD_OUTPUT_HANDLE);
 		c->i = 0;
@@ -3399,7 +3798,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 {
 	bs *s;
 	size_t todo = cnt * elmsize;
-	short blksize;
+	int16_t blksize;
 
 	s = (bs *) ss->stream_data.p;
 	if (s == NULL)
@@ -3432,12 +3831,12 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 #endif
 			/* since the block is at max BLOCK (8K) - 2 size we can
 			 * store it in a two byte integer */
-			blksize = (short) s->nr;
+			blksize = (int16_t) s->nr;
 			s->bytes += s->nr;
 			/* the last bit tells whether a flush is in
 			 * there, it's not at this moment, so shift it
 			 * to the left */
-			blksize = (short) (blksize << 1);
+			blksize = (int16_t) (blksize << 1);
 #ifdef WORDS_BIGENDIAN
 			blksize = short_int_SWAP(blksize);
 #endif
@@ -3461,7 +3860,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 static int
 bs_flush(stream *ss)
 {
-	short blksize;
+	int16_t blksize;
 	bs *s;
 
 	s = (bs *) ss->stream_data.p;
@@ -3486,11 +3885,11 @@ bs_flush(stream *ss)
 			fprintf(stderr, "W %s 0\n", ss->name);
 		}
 #endif
-		blksize = (short) (s->nr << 1);
+		blksize = (int16_t) (s->nr << 1);
 		s->bytes += s->nr;
 		/* indicate that this is the last buffer of a block by
 		 * setting the low-order bit */
-		blksize |= (short) 1;
+		blksize |= (int16_t) 1;
 		/* allways flush (even empty blocks) needed for the protocol) */
 #ifdef WORDS_BIGENDIAN
 		blksize = short_int_SWAP(blksize);
@@ -3531,7 +3930,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	assert(s->nr <= 1);
 
 	if (s->itotal == 0) {
-		short blksize = 0;
+		int16_t blksize = 0;
 
 		if (s->nr) {
 			/* We read the closing block but hadn't
@@ -3587,7 +3986,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			{
 				ssize_t i;
 
-				fprintf(stderr, "RD %s " SSZFMT " \"", ss->name, m);
+				fprintf(stderr, "RD %s %zd \"", ss->name, m);
 				for (i = 0; i < m; i++)
 					if (' ' <= ((char *) buf)[i] &&
 					    ((char *) buf)[i] < 127)
@@ -3605,7 +4004,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		}
 
 		if (s->itotal == 0) {
-			short blksize = 0;
+			int16_t blksize = 0;
 
 			/* The current block has been completely read,
 			 * so read the count for the next block, only
@@ -3915,7 +4314,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 {
 	bs2 *s;
 	size_t todo = cnt * elmsize;
-	lng blksize;
+	int64_t blksize;
 	char *writebuf;
 	size_t writelen;
 
@@ -3951,7 +4350,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 #endif
 
 			writelen = s->nr;
-			blksize = (lng) s->nr;
+			blksize = (int64_t) s->nr;
 			writebuf = s->buf;
 
 			if (s->comp != COMPRESSION_NONE) {
@@ -3960,7 +4359,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 					return -1;
 				}
 				writebuf = s->compbuf;
-				blksize = (lng) compressed_length;
+				blksize = (int64_t) compressed_length;
 				writelen = (size_t) compressed_length;
 			}
 
@@ -3990,7 +4389,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 static int
 bs2_flush(stream *ss)
 {
-	lng blksize;
+	int64_t blksize;
 	bs2 *s;
 	char *writebuf;
 	size_t writelen;
@@ -4019,7 +4418,7 @@ bs2_flush(stream *ss)
 #endif
 
 		writelen = s->nr;
-		blksize = (lng) s->nr;
+		blksize = (int64_t) s->nr;
 		writebuf = s->buf;
 
 		if (s->nr > 0 && s->comp != COMPRESSION_NONE) {
@@ -4028,7 +4427,7 @@ bs2_flush(stream *ss)
 				return -1;
 			}
 			writebuf = s->compbuf;
-			blksize = (lng) compressed_length;
+			blksize = (int64_t) compressed_length;
 			writelen = (size_t) compressed_length;
 		}
 
@@ -4076,7 +4475,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	assert(s->nr <= 1);
 
 	if (s->itotal == 0) {
-		lng blksize = 0;
+		int64_t blksize = 0;
 
 		if (s->nr) {
 			/* We read the closing block but hadn't
@@ -4159,7 +4558,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		s->itotal -= n;
 
 		if (s->itotal == 0) {
-			lng blksize = 0;
+			int64_t blksize = 0;
 
 			/* The current block has been completely read,
 			 * so read the count for the next block, only
@@ -4482,7 +4881,7 @@ mnstr_writeBte(stream *s, int8_t val)
 }
 
 int
-mnstr_readSht(stream *restrict s, short *restrict val)
+mnstr_readSht(stream *restrict s, int16_t *restrict val)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4499,7 +4898,7 @@ mnstr_readSht(stream *restrict s, short *restrict val)
 }
 
 int
-mnstr_writeSht(stream *s, short val)
+mnstr_writeSht(stream *s, int16_t val)
 {
 	if (s == NULL || s->errnr)
 		return 0;
@@ -4556,7 +4955,7 @@ mnstr_readStr(stream *restrict s, char *restrict val)
 
 
 int
-mnstr_readLng(stream *restrict s, lng *restrict val)
+mnstr_readLng(stream *restrict s, int64_t *restrict val)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4574,7 +4973,7 @@ mnstr_readLng(stream *restrict s, lng *restrict val)
 }
 
 int
-mnstr_writeLng(stream *s, lng val)
+mnstr_writeLng(stream *s, int64_t val)
 {
 	if (s == NULL || s->errnr)
 		return 0;
@@ -4650,7 +5049,7 @@ mnstr_writeBteArray(stream *restrict s, const int8_t *restrict val, size_t cnt)
 }
 
 int
-mnstr_readShtArray(stream *restrict s, short *restrict val, size_t cnt)
+mnstr_readShtArray(stream *restrict s, int16_t *restrict val, size_t cnt)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4670,7 +5069,7 @@ mnstr_readShtArray(stream *restrict s, short *restrict val, size_t cnt)
 }
 
 int
-mnstr_writeShtArray(stream *restrict s, const short *restrict val, size_t cnt)
+mnstr_writeShtArray(stream *restrict s, const int16_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errnr || val == NULL)
 		return 0;
@@ -4706,7 +5105,7 @@ mnstr_writeIntArray(stream *restrict s, const int *restrict val, size_t cnt)
 }
 
 int
-mnstr_readLngArray(stream *restrict s, lng *restrict val, size_t cnt)
+mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4726,7 +5125,7 @@ mnstr_readLngArray(stream *restrict s, lng *restrict val, size_t cnt)
 }
 
 int
-mnstr_writeLngArray(stream *restrict s, const lng *restrict val, size_t cnt)
+mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errnr || val == NULL)
 		return 0;

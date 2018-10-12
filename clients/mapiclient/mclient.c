@@ -71,12 +71,11 @@ static stream *fromConsole = NULL;
 static char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
-static int echoquery = 0;
-static int showtiming = 0;
+static bool echoquery = false;
 #ifdef HAVE_ICONV
 static char *encoding;
 #endif
-static int errseen = 0;
+static bool errseen = false;
 
 #define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
@@ -88,21 +87,19 @@ enum formatters {
 	TABLEformatter,		// render as a bordered table
 	CSVformatter,		// render as a comma separate file
 	XMLformatter,		// render as a valid XML document
-	JSONformatter,		// render as a valid JSON document
 	TESTformatter,		// for testing, escape characters
-	TRASHformatter,		// remove the result set 
+	TRASHformatter,		// remove the result set
 	SAMformatter,		// render a SAM result set
 	EXPANDEDformatter	// render as multi-row single record
 };
 static enum formatters formatter = NOformatter;
 char *separator = NULL;		/* column separator for CSV/TAB format */
-int csvheader = 0;		/* include header line in CSV format */
+bool csvheader = false;		/* include header line in CSV format */
 
 #define DEFWIDTH 80
 
 /* use a 64 bit integer for the timer */
 typedef int64_t timertype;
-#define TTFMT "%" PRId64
 
 static timertype t0, t1;	/* used for timing */
 
@@ -126,9 +123,9 @@ static char *pager = 0;		/* use external pager */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
-static int pagewidthset = 0;	/* whether the user set the width explicitly */
-static int croppedfields = 0;  /* whatever got cropped/truncated */
-static char firstcrop = 1;     /* first time we see cropping/truncation */
+static bool pagewidthset = false; /* whether the user set the width explicitly */
+static int croppedfields = 0;	/* whatever got cropped/truncated */
+static bool firstcrop = true;	/* first time we see cropping/truncation */
 
 enum modifiers {
 	NOmodifier,
@@ -257,44 +254,69 @@ timerHumanStop(void)
 }
 
 static enum itimers {
-	T_CLOCK = 0,	// render wallclock time in human readable format
-	T_PERF,		// return detailed performance
-	T_NONE		// don't render the timing information
-} timermode = T_CLOCK;
+	T_NONE = 0,	// don't render the timing information
+	T_CLOCK,	// render wallclock time in human readable format
+	T_PERF		// return detailed performance
+} timermode = T_NONE;
 
-static char htimbuf[128];
-static char *
-timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
+static bool timerHumanCalled = false;
+static void
+timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool singleinstr, bool total)
 {
 	timertype t = th - t0;
 
+	timerHumanCalled = true;
 
-	(void) sqloptimizer;
-	if (timermode == T_CLOCK){
-		if( t / 1000 < 950) {
-			snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ".%03d ms" , t / 1000, (int) (t % 1000));
-			return(htimbuf);
+	/*
+	 * report only the times we do actually measure:
+	 * - client-measured wall-clock time per query only when executing indivual queries,
+	 *   otherwise only the total wall-clock time at the end of a batch;
+	 * - server-measured detailed performance measures only per query.
+	 */
+
+	/* "(singleinstr != total)" is C for (logical) "(singleinstr XOR total)" */
+	if (timermode == T_CLOCK && (singleinstr != total)) {
+		/* print wall-clock in "human-friendly" format */
+		fflush(stderr);
+		mnstr_flush(toConsole);
+		if (t / 1000 < 1000) {
+			fprintf(stderr, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
+			fflush(stderr);
+			return;
 		}
 		t /= 1000;
 		if (t / 1000 < 60) {
-			snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ".%02d sec", t / 1000, (int) ((t % 1000) / 100));
-			return(htimbuf);
+			fprintf(stderr, "clk: %" PRId64 ".%03d sec\n", t / 1000, (int) (t % 1000));
+			fflush(stderr);
+			return;
 		}
 		t /= 1000;
-		snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ":%02d min", t / 60, (int) (t % 60));
-		return(htimbuf);
+		if (t / 60 < 60) {
+			fprintf(stderr, "clk: %" PRId64 ":%02d min\n", t / 60, (int) (t % 60));
+			fflush(stderr);
+			return;
+		}
+		t /= 60;
+		fprintf(stderr, "clk: %" PRId64 ":%02d h\n", t / 60, (int) (t % 60));
+		fflush(stderr);
+		return;
 	}
-	/* for performance measures we use milliseconds as the base */
-	if (timermode == T_PERF){ 
-			snprintf(htimbuf, sizeof(htimbuf), "clk:%" PRId64 ".%03d sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ms", 
-			t / 1000, (int)(t % 1000),
-			sqloptimizer/1000, (int)(sqloptimizer % 1000), 
-			maloptimizer /1000, (int)(maloptimizer % 1000), 
-			querytime /1000, (int)(querytime % 1000));
-		return(htimbuf);
+	if (timermode == T_PERF && (!total || (singleinstr != total))) {
+		/* for performance measures we use milliseconds as the base */
+		fflush(stderr);
+		mnstr_flush(toConsole);
+		if (!total)
+			fprintf(stderr, "sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ",
+				 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
+				 maloptimizer / 1000, (int) (maloptimizer % 1000),
+				 querytime / 1000, (int) (querytime % 1000));
+		if (singleinstr != total)
+			fprintf(stderr, "clk:%" PRId64 ".%03d ", t / 1000, (int) (t % 1000));
+		fprintf(stderr, "ms\n");
+		fflush(stderr);
+		return;
 	}
-	htimbuf[0] = 0;
-	return(htimbuf);
+	return;
 }
 
 /* The Mapi library eats away the comment lines, which we need to
@@ -549,13 +571,14 @@ utf8skip(char *s, size_t i)
 static int
 SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 {
-	int i, more, first = 1;
+	int i;
+	bool more, first = true;
 	char *t;
 	int rows = 0;		/* return number of output lines printed */
 	size_t ulen;
 	int *cutafter = malloc(sizeof(int) * fields);
 
-	if (cutafter == NULL){
+	if (cutafter == NULL) {
 		fprintf(stderr,"Malloc for SQLrow failed");
 		exit(2);
 	}
@@ -576,12 +599,12 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 		cutafter[i] = -1;
 
 	do {
-		more = 0;
+		more = false;
 		for (i = 0; i < fields; i++) {
 			if (rest[i] == NULL || *rest[i] == 0) {
 				mnstr_printf(toConsole, "%c %*s ",
-						first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
-						len[i], "");
+					     first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
+					     len[i], "");
 			} else {
 				ulen = utf8strlen(rest[i], NULL);
 
@@ -675,10 +698,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 					if (cutafter[i] == 0)
 						rest[i] = NULL;
 					if (rest[i])
-						more = 1;
+						more = true;
 				} else {
 					mnstr_printf(toConsole, "%c",
-							first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
+						     first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
 					if (numeric[i]) {
 						mnstr_printf(toConsole, "%*s",
 							     (int) (len[i] - ulen),
@@ -712,9 +735,9 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 			}
 		}
 		mnstr_printf(toConsole, "%c%s\n",
-				first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
-				wm ? ">" : "");
-		first = 0;
+			     first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':',
+			     wm ? ">" : "");
+		first = false;
 		rows++;
 	} while (more);
 
@@ -1119,7 +1142,6 @@ TESTrenderer(MapiHdl hdl)
 	char *sep;
 	int i;
 
-	SQLqueryEcho(hdl);
 	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
 		if (*reply != '[') {
 			if (*reply == '=')
@@ -1259,7 +1281,6 @@ RAWrenderer(MapiHdl hdl)
 {
 	char *line;
 
-	SQLqueryEcho(hdl);
 	while ((line = fetch_line(hdl)) != 0) {
 		if (*line == '=')
 			line++;
@@ -1347,14 +1368,15 @@ SAMrenderer(MapiHdl hdl)
 static void
 SQLheader(MapiHdl hdl, int *len, int fields, char more)
 {
-	SQLqueryEcho(hdl);
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
 		int i;
 		char **names = (char **) malloc(fields * sizeof(char *));
 		int *numeric = (int *) malloc(fields * sizeof(int));
 
-		if (names == NULL || numeric == NULL){
+		if (names == NULL || numeric == NULL) {
+			free(names);
+			free(numeric);
 			fprintf(stderr,"Malloc for SQLheader failed");
 			exit(2);
 		}
@@ -1393,7 +1415,7 @@ SQLdebugRendering(MapiHdl hdl)
 }
 
 static void
-SQLpagemove(int *len, int fields, int *ps, int *silent)
+SQLpagemove(int *len, int fields, int *ps, bool *silent)
 {
 	char buf[512];
 	ssize_t sz;
@@ -1406,27 +1428,25 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 		if (buf[0] == 'c')
 			*ps = 0;
 		if (buf[0] == 'q')
-			*silent = 1;
+			*silent = true;
 		while (sz > 0 && buf[sz - 1] != '\n')
 			sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	}
-	if (*silent == 0)
+	if (!*silent)
 		SQLseparator(len, fields, '-');
 }
 
 static void
-SQLrenderer(MapiHdl hdl, char singleinstr)
+SQLrenderer(MapiHdl hdl)
 {
 	int i, total, lentotal, vartotal, minvartotal;
 	int fields, rfields, printfields = 0, max = 1, graphwaste = 0;
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
-	int ps = rowsperpage, silent = 0;
+	int ps = rowsperpage;
+	bool silent = false;
 	int64_t rows = 0;
-
-	/* in case of interactive mode, we should show timing on request */
-	singleinstr = showtiming? 1 :singleinstr;
 
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
@@ -1436,6 +1456,14 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	hdr = calloc(fields, sizeof(*hdr));
 	rest = calloc(fields, sizeof(*rest));
 	numeric = calloc(fields, sizeof(*numeric));
+	if (len == NULL || hdr == NULL || rest == NULL || numeric == NULL) {
+		free(len);
+		free(hdr);
+		free(rest);
+		free(numeric);
+		fprintf(stderr,"Malloc for SQLrenderer failed");
+		exit(2);
+	}
 
 	total = 0;
 	lentotal = 0;
@@ -1534,7 +1562,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		for (i = 0; i < printfields; i++) {
 			if (hdr[i] > len[i]) {
 				if (max == -1 ||
-						hdr[max] - len[max] < hdr[i] - len[i])
+				    hdr[max] - len[max] < hdr[i] - len[i])
 					max = i;
 			}
 		}
@@ -1579,8 +1607,8 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			continue;
 		if (rfields != fields) {
 			mnstr_printf(stderr_stream,
-					"invalid tuple received from server, "
-					"got %d columns, expected %d, ignoring\n", rfields, fields);
+				     "invalid tuple received from server, "
+				     "got %d columns, expected %d, ignoring\n", rfields, fields);
 			continue;
 		}
 		if (silent)
@@ -1625,27 +1653,27 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
-	printf("%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
+	mnstr_printf(toConsole, "%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
 
 	if (fields != printfields || croppedfields > 0)
-		printf(" !");
+		mnstr_printf(toConsole, " !");
 	if (fields != printfields) {
 		rows = fields - printfields;
-		printf("%" PRId64 " column%s dropped", rows, rows != 1 ? "s" : "");
+		mnstr_printf(toConsole, "%" PRId64 " column%s dropped", rows, rows != 1 ? "s" : "");
 	}
 	if (fields != printfields && croppedfields > 0)
-		printf(", ");
+		mnstr_printf(toConsole, ", ");
 	if (croppedfields > 0)
-		printf("%d field%s truncated",
-				croppedfields, croppedfields != 1 ? "s" : "");
+		mnstr_printf(toConsole, "%d field%s truncated",
+		       croppedfields, croppedfields != 1 ? "s" : "");
 	if (fields != printfields || croppedfields > 0) {
-		printf("!");
-		if (firstcrop == 1) {
-			firstcrop = 0;
-			printf("\nnote: to disable dropping columns and/or truncating fields use \\w-1");
+		mnstr_printf(toConsole, "!");
+		if (firstcrop) {
+			firstcrop = false;
+			mnstr_printf(toConsole, "\nnote: to disable dropping columns and/or truncating fields use \\w-1");
 		}
 	}
-	printf("\n");
+	mnstr_printf(toConsole, "\n");
 
 	free(len);
 	free(hdr);
@@ -1659,7 +1687,7 @@ setFormatter(const char *s)
 	if (separator)
 		free(separator);
 	separator = NULL;
-	csvheader = 0;
+	csvheader = false;
 #ifdef _TWO_DIGIT_EXPONENT
 	if (formatter == TESTformatter)
 		_set_output_format(0);
@@ -1685,22 +1713,19 @@ setFormatter(const char *s)
 				separator[strlen(separator) - 1] = 0;
 		} else
 			separator = strdup(s + 4);
-		csvheader = 1;
-	} else if (strcmp(s, "tsv") == 0) {
+		csvheader = true;
+	} else if (strcmp(s, "tab") == 0) {
 		formatter = CSVformatter;
 		separator = strdup("\t");
 	} else if (strcmp(s, "raw") == 0) {
 		formatter = RAWformatter;
 	} else if (strcmp(s, "xml") == 0) {
 		formatter = XMLformatter;
-	} else if (strcmp(s, "json") == 0) {
-		formatter = JSONformatter;
 	} else if (strcmp(s, "test") == 0) {
 #ifdef _TWO_DIGIT_EXPONENT
 		_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 		formatter = TESTformatter;
-		timermode = T_NONE;
 	} else if (strcmp(s, "trash") == 0) {
 		formatter = TRASHformatter;
 	} else if (strcmp(s, "sam") == 0) {
@@ -1723,11 +1748,13 @@ setWidth(void)
 			pagewidth = ws.ws_col;
 		else
 #endif
+		{
 #ifdef WIN32
 			pagewidth = 79;	 /* 80 columns minus 1 for the edge */
 #else
 			pagewidth = -1;
 #endif
+		}
 	}
 }
 
@@ -1753,10 +1780,19 @@ start_pager(stream **saveFD)
 		else {
 			*saveFD = toConsole;
 			/* put | in name to indicate that file should be closed with pclose */
-			toConsole = file_wastream(p, "|pager");
+			if ((toConsole = file_wastream(p, "|pager")) == NULL) {
+				toConsole = *saveFD;
+				*saveFD = NULL;
+				fprintf(stderr, "Starting '%s' failed\n", pager);
+			}
 #ifdef HAVE_ICONV
-			if (encoding != NULL)
-				toConsole = iconv_wstream(toConsole, encoding, "pager");
+			if (encoding != NULL) {
+				if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
+					toConsole = *saveFD;
+					*saveFD = NULL;
+					fprintf(stderr, "Starting '%s' failed\n", pager);
+				}
+			}
 #endif
 		}
 	}
@@ -1773,7 +1809,7 @@ end_pager(stream *saveFD)
 #endif
 
 static int
-format_result(Mapi mid, MapiHdl hdl, char singleinstr)
+format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 {
 	MapiMsg rc = MERROR;
 	int64_t aff, lid;
@@ -1789,24 +1825,26 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 
 	setWidth();
 
+	timerHumanCalled = false;
+
 	do {
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
-			if (formatter == TABLEformatter ) {
+			if (formatter == TABLEformatter) {
 				mapi_noexplain(mid, "");
 			} else {
 				mapi_noexplain(mid, NULL);
 			}
 			mapi_explain_result(hdl, stderr);
-			errseen = 1;
+			errseen = true;
 			/* don't need to print something like '0
 			 * tuples' if we got an error */
 			continue;
 		}
 
 		// get the timings as reported by the backend
-		sqloptimizer = 0;
+		sqloptimizer = mapi_get_sqloptimizertime(hdl);
 		maloptimizer = mapi_get_maloptimizertime(hdl);
 		querytime = mapi_get_querytime(hdl);
 		timerHumanStop();
@@ -1818,12 +1856,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		case Q_UPDATE:
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
-			    formatter == TESTformatter)
+			    formatter == TESTformatter) {
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
-			else if (formatter == TRASHformatter){
-				mapi_next_result(hdl);
-				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
-			} else {
+			} else if (formatter != TRASHformatter) {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
@@ -1836,24 +1871,16 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     "%" PRId64,
 						     lid);
 				}
-				if (singleinstr && formatter != TESTformatter)
-					mnstr_printf(toConsole, " (%s)",
-						     timerHuman(sqloptimizer, maloptimizer, querytime));
 				mnstr_printf(toConsole, "\n");
 			}
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
-				mnstr_printf(toConsole, "operation successful");
-				if (singleinstr &&  timermode != T_NONE)
-					mnstr_printf(toConsole, " (%s)",
-						     timerHuman(sqloptimizer, maloptimizer, querytime));
-				mnstr_printf(toConsole, "\n");
-			} else if (formatter == TRASHformatter){
-				mapi_next_result(hdl);
-				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
+				mnstr_printf(toConsole, "operation successful\n");
 			}
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1861,6 +1888,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				mnstr_printf(toConsole,
 					     "auto commit mode: %s\n",
 					     mapi_get_autocommit(mid) ? "on" : "off");
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
 			SQLqueryEcho(hdl);
@@ -1869,6 +1897,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					     "execute prepared statement "
 					     "using: EXEC %d(...)\n",
 					     mapi_get_tableid(hdl));
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			break;
 		case Q_TABLE:
 			break;
@@ -1907,8 +1936,11 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		if (debugMode())
 			RAWrenderer(hdl);
 		else {
-			char *s;
+			SQLqueryEcho(hdl);
+
 			switch (formatter) {
+			case TRASHformatter:
+				break;
 			case XMLformatter:
 				XMLrenderer(hdl);
 				break;
@@ -1924,7 +1956,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					SQLdebugRendering(hdl);
 					break;
 				default:
-					SQLrenderer(hdl, singleinstr);
+					SQLrenderer(hdl);
 					break;
 				}
 				break;
@@ -1934,19 +1966,25 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			case EXPANDEDformatter:
 				EXPANDEDrenderer(hdl);
 				break;
-			default: 
-				if ( formatter != TRASHformatter)
-					RAWrenderer(hdl);
+			default:
+				RAWrenderer(hdl);
+				break;
 			}
-			s= timerHuman(sqloptimizer, maloptimizer, querytime);
-			if (*s)
-				printf("%s\n", s);
+
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
+	/*
+	 * in case we called timerHuman() in the loop above with "total == false",
+	 * call is again with "total == true" to get the total wall-clock time
+	 * in case "singleinstr == false".
+	 */
+	if (timerHumanCalled)
+		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, true);
 	if (mnstr_errnr(toConsole)) {
 		mnstr_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
-		errseen = 1;
+		errseen = true;
 	}
 #ifdef HAVE_POPEN
 	end_pager(saveFD);
@@ -1963,70 +2001,71 @@ doRequest(Mapi mid, const char *buf)
 	if (mode == SQL)
 		SQLsetSpecial(buf);
 
-	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		if (formatter == TABLEformatter ) {
+	hdl = mapi_query(mid, buf);
+	if (hdl == NULL) {
+		if (formatter == TABLEformatter) {
 			mapi_noexplain(mid, "");
 		} else {
 			mapi_noexplain(mid, NULL);
 		}
 		mapi_explain(mid, stderr);
-		errseen = 1;
+		errseen = true;
 		return 1;
 	}
 
 	if (mapi_needmore(hdl) == MMORE)
 		return 0;
 
-	format_result(mid, hdl, 0);
+	format_result(mid, hdl, false);
 
 	if (mapi_get_active(mid) == NULL)
 		mapi_close_handle(hdl);
 	return 0;
 }
 
-#define CHECK_RESULT(mid, hdl, break_or_continue, buf, fp)		\
-		switch (mapi_error(mid)) {				\
-		case MOK:						\
-			/* everything A OK */				\
-			break;						\
-		case MERROR:						\
-			/* some error, but try to continue */		\
-			if (formatter == TABLEformatter ) {		\
-				mapi_noexplain(mid, "");		\
-			} else {					\
-				mapi_noexplain(mid, NULL);		\
-			}						\
-			if (hdl) {					\
-				mapi_explain_query(hdl, stderr);	\
-				mapi_close_handle(hdl);			\
-				hdl = NULL;				\
-			} else						\
-				mapi_explain(mid, stderr);		\
-			errseen = 1;					\
-			break_or_continue;				\
-		case MTIMEOUT:						\
-			/* lost contact with the server */		\
-			if (formatter == TABLEformatter ) {		\
-				mapi_noexplain(mid, "");		\
-			} else {					\
-				mapi_noexplain(mid, NULL);		\
-			}						\
-			if (hdl) {					\
-				mapi_explain_query(hdl, stderr);	\
-				mapi_close_handle(hdl);			\
-				hdl = NULL;				\
-			} else						\
-				mapi_explain(mid, stderr);		\
-			errseen = 1;					\
-			timerEnd();					\
-			if (buf)					\
-				free(buf);				\
-			if (fp)						\
-				close_stream(fp);			\
-			return 1;					\
-		}
+#define CHECK_RESULT(mid, hdl, break_or_continue, buf, fp)	\
+	switch (mapi_error(mid)) {				\
+	case MOK:						\
+		/* everything A OK */				\
+		break;						\
+	case MERROR:						\
+		/* some error, but try to continue */		\
+		if (formatter == TABLEformatter) {		\
+			mapi_noexplain(mid, "");		\
+		} else {					\
+			mapi_noexplain(mid, NULL);		\
+		}						\
+		if (hdl) {					\
+			mapi_explain_query(hdl, stderr);	\
+			mapi_close_handle(hdl);			\
+			hdl = NULL;				\
+		} else						\
+			mapi_explain(mid, stderr);		\
+		errseen = true;					\
+		break_or_continue;				\
+	case MTIMEOUT:						\
+		/* lost contact with the server */		\
+		if (formatter == TABLEformatter) {		\
+			mapi_noexplain(mid, "");		\
+		} else {					\
+			mapi_noexplain(mid, NULL);		\
+		}						\
+		if (hdl) {					\
+			mapi_explain_query(hdl, stderr);	\
+			mapi_close_handle(hdl);			\
+			hdl = NULL;				\
+		} else						\
+			mapi_explain(mid, stderr);		\
+		errseen = true;					\
+		timerEnd();					\
+		if (buf)					\
+			free(buf);				\
+		if (fp)						\
+			close_stream(fp);			\
+		return 1;					\
+	}
 
-static int
+static bool
 doFileBulk(Mapi mid, stream *fp)
 {
 	char *buf = NULL;
@@ -2041,7 +2080,7 @@ doFileBulk(Mapi mid, stream *fp)
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
 		if (fp)
 			close_stream(fp);
-		return 1;
+		return true;
 	}
 
 	timerStart();
@@ -2062,7 +2101,7 @@ doFileBulk(Mapi mid, stream *fp)
 			buf[length] = 0;
 			if (strlen(buf) < (size_t) length) {
 				fprintf(stderr, "NULL byte in input\n");
-				errseen = 1;
+				errseen = true;
 				break;
 			}
 		}
@@ -2090,12 +2129,12 @@ doFileBulk(Mapi mid, stream *fp)
 		 * continue).  The assertion at the end will then go
 		 * off. */
 		if (mapi_query_done(hdl) == MMORE &&
-				(length > 0 || mapi_query_done(hdl) == MMORE))
+		    (length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
 		CHECK_RESULT(mid, hdl, continue, buf, fp);
 
-		rc = format_result(mid, hdl, 0);
+		rc = format_result(mid, hdl, false);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
@@ -2144,7 +2183,7 @@ showCommands(void)
 		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
 	}
 	mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
-	mnstr_printf(toConsole, "\\t      - set the timer {clock,minutes,seconds,milliseconds,microseconds,none}\n");
+	mnstr_printf(toConsole, "\\t      - set the timer {none,clock,performance} (none is default)\n");
 	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml,trash}\n");
 	mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
@@ -2221,8 +2260,8 @@ mydestroy(void *private)
 }
 #endif
 
-static int
-doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
+static bool
+doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history)
 {
 	char *line = NULL;
 	char *buf = NULL;
@@ -2244,7 +2283,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	    && formatter != TESTformatter
 #endif
 		) {
-		interactive = 1;
+		interactive = true;
 		setPrompt();
 		prompt = promptbuf;
 		fromConsole = fp;
@@ -2252,12 +2291,19 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		init_readline(mid, language, save_history);
 		rl.s = fp;
 		rl.buf = NULL;
-		fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp));
+		if ((fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp))) == NULL) {
+			fprintf(stderr,"Malloc for doFile failed");
+			exit(2);
+		}
 #endif
 	}
 #ifdef HAVE_ICONV
-	if (encoding)
-		fp = iconv_rstream(fp, encoding, mnstr_name(fp));
+	if (encoding) {
+		if ((fp = iconv_rstream(fp, encoding, mnstr_name(fp))) == NULL) {
+			fprintf(stderr,"Malloc failure");
+			exit(2);
+		}
+	}
 #endif
 
 	if (!interactive && !echoquery)
@@ -2268,17 +2314,17 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	bufsiz = READBLOCK;
 	buf = malloc(bufsiz);
 
-	if (buf == NULL ){
+	if (buf == NULL) {
 		fprintf(stderr,"Malloc for doFile failed");
 		exit(2);
 	}
 	do {
-		int seen_null_byte = 0;
+		bool seen_null_byte = false;
 
 		if (prompt) {
 			char *p = hdl ? "more>" : prompt;
 			/* clear errors when interactive */
-			errseen = 0;
+			errseen = false;
 #ifdef HAVE_LIBREADLINE
 			rl.prompt = p;
 #else
@@ -2291,13 +2337,14 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		length = 0;
 		for (;;) {
 			ssize_t l;
+			char *newbuf;
 			l = mnstr_readline(fp, buf + length, bufsiz - length);
 			if (l <= 0)
 				break;
 			if (!seen_null_byte && strlen(buf + length) < (size_t) l) {
 				fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
-				seen_null_byte = 1;
-				errseen = 1;
+				seen_null_byte = true;
+				errseen = true;
 				if (hdl) {
 					mapi_close_handle(hdl);
 					hdl = NULL;
@@ -2306,7 +2353,19 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 			length += l;
 			if (buf[length - 1] == '\n')
 				break;
-			buf = realloc(buf, bufsiz += READBLOCK);
+			newbuf = realloc(buf, bufsiz += READBLOCK);
+			if (newbuf) {
+				buf = newbuf;
+			} else {
+				fprintf(stderr,"Malloc failure");
+				length = 0;
+				errseen = true;
+				if (hdl) {
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				}
+				break;
+			}
 		}
 		line = buf;
 		lineno++;
@@ -2377,12 +2436,12 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					rowsperpage = atoi(line + 2);
 					continue;
 				case 'd': {
-					char hasWildcard = 0;
-					char hasSchema = 0;
-					char wantsSystem = 0; 
+					bool hasWildcard = false;
+					bool hasSchema = false;
+					bool wantsSystem = false;
 					unsigned int x = 0;
 					char *p, *q;
-					char escaped = 0;
+					bool escaped = false;
 					if (mode != SQL)
 						break;
 					while (my_isspace(line[length - 1]))
@@ -2407,7 +2466,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 							x |= MD_SCHEMA;
 							break;
 						case 'S':
-							wantsSystem = 1;
+							wantsSystem = true;
 							break;
 						default:
 							fprintf(stderr, "unknown sub-command for \\d: %c\n", *line);
@@ -2432,22 +2491,22 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 									/* SQL escape */
 									*q++ = *p++;
 								} else {
-									escaped = 0;
+									escaped = false;
 								}
 							} else {
-								escaped = 1;
+								escaped = true;
 							}
 						} else {
 							if (!escaped) {
 								*q++ = tolower((int) *p);
 								if (*p == '*') {
 									*p = '%';
-									hasWildcard = 1;
+									hasWildcard = true;
 								} else if (*p == '?') {
 									*p = '_';
-									hasWildcard = 1;
+									hasWildcard = true;
 								} else if (*p == '.') {
-									hasSchema = 1;
+									hasSchema = true;
 								}
 							} else {
 								*q++ = *p;
@@ -2457,7 +2516,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					*q = '\0';
 					if (escaped) {
 						fprintf(stderr, "unexpected end of string while "
-								"looking for matching \"\n");
+							"looking for matching \"\n");
 						continue;
 					}
 
@@ -2472,7 +2531,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
-							dump_functions(mid, toConsole, NULL, line);
+							dump_functions(mid, toConsole, 0, NULL, line, NULL);
 						if (x & MD_SCHEMA)
 							describe_schema(mid, line, toConsole);
 #ifdef HAVE_POPEN
@@ -2480,126 +2539,120 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #endif
 					} else {
 						/* get all object names in current schema */
-						char *type, *name, *schema;
-						char q[4096];
-						char nameq[128];
-						char funcq[512];
+						char *with_clause = 
+							"WITH describe_all_objects AS (\n"
+							"  SELECT s.name AS sname,\n"
+							"      t.name,\n"
+							"      s.name || '.' || t.name AS fullname,\n"
+							"      CAST(CASE t.type\n"
+							"      WHEN 1 THEN 2 -- ntype for views\n"
+							"      ELSE 1\t  -- ntype for tables\n"
+							"      END AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
+							"      t.system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys._tables t\n"
+							"    LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
+							"    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
+							"  UNION ALL\n"
+							"  SELECT s.name AS sname,\n"
+							"      sq.name,\n"
+							"      s.name || '.' || sq.name AS fullname,\n"
+							"      CAST(4 AS SMALLINT) AS ntype,\n"
+							"      'SEQUENCE' AS type,\n"
+							"      false AS system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.sequences sq\n"
+							"    LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
+							"  UNION ALL\n"
+							"  SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
+							"      f.name,\n"
+							"      s.name || '.' || f.name AS fullname,\n"
+							"      CAST(8 AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || function_type_keyword AS type,\n"
+							"      sf.function_id IS NOT NULL AS system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.functions f\n"
+							"    LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
+							"    LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
+							"    LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
+							"  UNION ALL\n"
+							"  SELECT NULL AS sname,\n"
+							"      s.name,\n"
+							"      s.name AS fullname,\n"
+							"      CAST(16 AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,\n"
+							"      s.system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.schemas s\n"
+							"    LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
+							"  ORDER BY system, name, sname, ntype)\n"
+							;
+						size_t len = strlen(with_clause) + 500 + strlen(line);
+						char *query = malloc(len);
+						char *q = query, *endq = query + len;
+						char *name_column = hasSchema ? "fullname" : "name";
 
-						if (!*line) {
-							line = "%";
-							hasSchema = 0;
+						if (!query)
+							return true;
+
+						/*
+						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
+						 * |-----------------+---------------+-------------------------------|
+						 * | ""              | yes           | -                             |
+						 * | "my_table"      | yes           | name LIKE 'my_table'          |
+						 * | "my*"           | yes           | name LIKE 'my%'               |
+						 * | "data.my_table" | no            | fullname LIKE 'data.my_table' |
+						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
+						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
+						 */
+						q += snprintf(q, endq - q, "%s", with_clause);
+						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM describe_all_objects\n");
+						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);
+						if (!wantsSystem) {
+							q += snprintf(q, endq - q, "AND NOT system\n");
 						}
-						if (hasSchema) {
-							snprintf(nameq, sizeof(nameq),
-									"s.name || '.' || o.name LIKE '%s'",
-									line);
-						} else {
-							snprintf(nameq, sizeof(nameq),
-									"s.name = current_schema AND "
-									"o.name LIKE '%s'",
-									line);
+						if (!hasSchema) {
+							q += snprintf(q, endq - q, "AND (sname IS NULL OR sname = current_schema)\n");
 						}
-						snprintf(funcq, sizeof(funcq),
-							 "SELECT o.name, "
-								"(CASE WHEN sf.function_id IS NOT NULL "
-								      "THEN 'SYSTEM ' "
-								      "ELSE '' "
-								  "END || 'FUNCTION') AS type, "
-								 "CASE WHEN sf.function_id IS NULL "
-								      "THEN false "
-								      "ELSE true "
-								 "END AS system, "
-								 "s.name AS sname, "
-								 "%d AS ntype "
-							 "FROM sys.functions o "
-							       "LEFT JOIN sys.systemfunctions sf "
-								     "ON o.id = sf.function_id, "
-							       "sys.schemas s "
-							 "WHERE o.schema_id = s.id AND "
-							       "%s ",
-							 MD_FUNC,
-							 nameq);
-						snprintf(q, sizeof(q),
-							 "SELECT name, "
-								"CAST(type AS VARCHAR(30)) AS type, "
-								"system, "
-								"sname, "
-								"ntype "
-							 "FROM (SELECT o.name, "
-								      "(CASE o.system "
-									    "WHEN true THEN 'SYSTEM ' "
-									    "ELSE '' "
-								       "END || "
-								       "CASE o.type "
-									    "WHEN 0 THEN 'TABLE' "
-									    "WHEN 1 THEN 'VIEW' "
-									    "WHEN 3 THEN 'MERGE TABLE' "
-									    "WHEN 4 THEN 'STREAM TABLE' "
-									    "WHEN 5 THEN 'REMOTE TABLE' "
-									    "WHEN 6 THEN 'REPLICA TABLE' "
-									    "ELSE '' "
-								       "END) AS type, "
-								      "o.system, "
-								      "s.name AS sname, "
-								      "CASE o.type "
-									   "WHEN 0 THEN %d "
-									   "WHEN 1 THEN %d "
-									   "WHEN 3 THEN %d "
-									   "WHEN 4 THEN %d "
-									   "WHEN 5 THEN %d "
-									   "WHEN 6 THEN %d "
-									   "ELSE 0 "
-								      "END AS ntype "
-							       "FROM sys._tables o, "
-								    "sys.schemas s "
-							       "WHERE o.schema_id = s.id AND "
-								     "%s AND "
-								     "o.type IN (0, 1, 3, 4, 5, 6) "
-							       "UNION "
-							       "SELECT o.name, "
-								      "'SEQUENCE' AS type, "
-								      "false AS system, "
-								      "s.name AS sname, "
-								      "%d AS ntype "
-							       "FROM sys.sequences o, "
-								    "sys.schemas s "
-							       "WHERE o.schema_id = s.id AND "
-								     "%s "
-							       "UNION "
-							       "%s "
-							       "UNION "
-							       "SELECT NULL AS name, "
-								      "(CASE WHEN o.system THEN 'SYSTEM ' ELSE '' END || 'SCHEMA') AS type, "
-								      "o.system AS system, "
-								      "o.name AS sname, "
-								      "%d AS ntype "
-							       "FROM sys.schemas o "
-							       "WHERE o.name LIKE '%s'"
-							       ") AS \"all\" "
-							 "WHERE ntype & %u > 0 "
-							       "%s "
-							 "ORDER BY system, name, sname",
-							 MD_TABLE, MD_VIEW, MD_TABLE, MD_TABLE, MD_TABLE, MD_TABLE,
-							 nameq,
-							 MD_SEQ,
-							 nameq, funcq,
-							 MD_SCHEMA,
-							 line, x,
-							 (wantsSystem ?
-							   "" :
-							   "AND system = false"));
-						hdl = mapi_query(mid, q);
+						if (*line) {
+							q += snprintf(q, endq - q, "AND (%s LIKE '%s')\n", name_column, line);
+						}
+						q += snprintf(q, endq - q, "ORDER BY fullname, type, remark\n");
+						q += snprintf(q, endq - q, ";\n");
+
+						hdl = mapi_query(mid, query);
+						free(query);
 						CHECK_RESULT(mid, hdl, continue, buf, fp);
-						while (fetch_row(hdl) == 5) {
-							name = mapi_fetch_field(hdl, 0);
-							type = mapi_fetch_field(hdl, 1);
-							schema = mapi_fetch_field(hdl, 3);
+						while (fetch_row(hdl) == 3) {
+							char *type = mapi_fetch_field(hdl, 0);
+							char *name = mapi_fetch_field(hdl, 1);
+							char *remark = mapi_fetch_field(hdl, 2);
+							int type_width = mapi_get_len(hdl, 0);
+							int name_width = mapi_get_len(hdl, 1);
 							mnstr_printf(toConsole,
-									  "%-*s  %s%s%s\n",
-									  mapi_get_len(hdl, 1),
-									  type, schema,
-									  name != NULL ? "." : "",
-									  name != NULL ? name : "");
+								     "%-*s  %-*s",
+								     type_width, type,
+								     name_width * (remark != NULL), name);
+							if (remark) {
+								char *c;
+								mnstr_printf(toConsole, "  '");
+								for (c = remark; *c; c++) {
+									switch (*c) {
+									case '\'':
+										mnstr_printf(toConsole, "''");
+										break;
+									default:
+										mnstr_writeChr(toConsole, *c);
+									}
+								}
+								mnstr_printf(toConsole, "'");
+							}
+							mnstr_printf(toConsole, "\n");
+
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
@@ -2718,7 +2771,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					int h;
 					char *nl;
 
-					if( strcmp(line,"\\history") ==0){
+					if (strcmp(line,"\\history") == 0) {
 						for (h = 0; h < history_length; h++) {
 							nl = history_get(h) ? history_get(h)->line : 0;
 							if (nl)
@@ -2732,7 +2785,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					}
 					continue;
 				}
-/* for later
+#if 0 /* for later */
 #ifdef HAVE_LIBREADLINE
 				case '!':
 				{
@@ -2748,9 +2801,9 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 					continue;
 				}
 #endif
-*/
+#endif	/* 0 */
 				case 'e':
-					echoquery = 1;
+					echoquery = true;
 					continue;
 				case 'f':
 					while (my_isspace(line[length - 1]))
@@ -2792,21 +2845,21 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current time formatter: ");
-						if( timermode == T_PERF)
-							mnstr_printf(toConsole,"performance\n");
-						if( timermode == T_NONE)
+						if (timermode == T_NONE)
 							mnstr_printf(toConsole,"none\n");
-						if( timermode == T_CLOCK)
+						if (timermode == T_CLOCK)
 							mnstr_printf(toConsole,"clock\n");
-					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0  ) {
-						timermode = T_PERF;
-					} else if (strcmp(line,"none") == 0  ) {
+						if (timermode == T_PERF)
+							mnstr_printf(toConsole,"performance\n");
+					} else if (strcmp(line,"none") == 0) {
 						timermode = T_NONE;
-					} else if (strcmp(line,"clock") == 0  ) {
+					} else if (strcmp(line,"clock") == 0) {
 						timermode = T_CLOCK;
+					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0) {
+						timermode = T_PERF;
 					} else if (*line != '\0') {
 						fprintf(stderr, "warning: invalid argument to -t: %s\n",
-								line);
+							line);
 					}
 					continue;
 				default:
@@ -2853,7 +2906,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 			assert(prepno < 100);
 		}
 
-		rc = format_result(mid, hdl, interactive);
+		rc = format_result(mid, hdl, interactive || echoquery);
 
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
@@ -2932,13 +2985,13 @@ set_timezone(Mapi mid)
 			 "SET TIME ZONE INTERVAL '-%02d:%02d' HOUR TO MINUTE",
 			 tzone / 3600, (tzone % 3600) / 60);
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		if (formatter == TABLEformatter ) {
+		if (formatter == TABLEformatter) {
 			mapi_noexplain(mid, "");
 		} else {
 			mapi_noexplain(mid, NULL);
 		}
 		mapi_explain(mid, stderr);
-		errseen = 1;
+		errseen = true;
 		return;
 	}
 	mapi_close_handle(hdl);
@@ -2968,7 +3021,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive      interpret `\\' commands on stdin\n");
-	fprintf(stderr, " -t          | --timer=format     use time formatting {clock,minutes,seconds,milliseconds,microseconds,none}\n");
+	fprintf(stderr, " -t          | --timer=format     use time formatting {none,clock,performance} (none is default)\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
@@ -3006,17 +3059,18 @@ main(int argc, char **argv)
 	char *output = NULL;	/* output format as string */
 	FILE *fp = NULL;
 	int trace = 0;
-	int dump = 0;
-	int useinserts = 0;
+	bool dump = false;
+	bool useinserts = false;
 	int c = 0;
 	Mapi mid;
 	int save_history = 0;
-	int interactive = 0;
-	int has_fileargs = 0;
+	bool interactive = false;
+	bool has_fileargs = false;
 	int option_index = 0;
-	int settz = 1;
-	int autocommit = 1;	/* autocommit mode default on */
-	char user_set_as_flag = 0;
+	bool settz = true;
+	bool autocommit = true;	/* autocommit mode default on */
+	bool user_set_as_flag = false;
+	bool passwd_set_as_flag = false;
 	static struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
 		{"database", 1, 0, 'd'},
@@ -3031,7 +3085,7 @@ main(int argc, char **argv)
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
 		{"interactive", 0, 0, 'i'},
-		{"timer", 2, 0, 't'},
+		{"timer", 1, 0, 't'},
 		{"language", 1, 0, 'l'},
 		{"log", 1, 0, 'L'},
 		{"null", 1, 0, 'n'},
@@ -3073,15 +3127,15 @@ main(int argc, char **argv)
 		mode = SQL;
 	}
 
-	while ((c = getopt_long(argc, argv, "aDNd:e"
+	while ((c = getopt_long(argc, argv, "ad:De"
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:it:L:l:n:"
+				"f:h:Hil:L:n:Np:P:r:s:t:u:vw:Xz"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:p:s:Xu:vzHP?",
+				"?",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
@@ -3093,10 +3147,19 @@ main(int argc, char **argv)
 #endif
 			break;
 		case 'a':
-			autocommit = 0;
+			autocommit = false;
+			break;
+		case 'd':
+			assert(optarg);
+			if (dbname)
+				free(dbname);
+			dbname = strdup(optarg);
+			break;
+		case 'D':
+			dump = true;
 			break;
 		case 'e':
-			echoquery = 1;
+			echoquery = true;
 			break;
 #ifdef HAVE_ICONV
 		case 'E':
@@ -3104,9 +3167,21 @@ main(int argc, char **argv)
 			encoding = optarg;
 			break;
 #endif
-		case 'L':
+		case 'f':
 			assert(optarg);
-			logfile = strdup(optarg);
+			if (output != NULL)
+				free(output);
+			output = strdup(optarg);	/* output format */
+			break;
+		case 'h':
+			assert(optarg);
+			host = optarg;
+			break;
+		case 'H':
+			save_history = 1;
+			break;
+		case 'i':
+			interactive = true;
 			break;
 		case 'l':
 			assert(optarg);
@@ -3131,93 +3206,64 @@ main(int argc, char **argv)
 				exit(-1);
 			}
 			break;
+		case 'L':
+			assert(optarg);
+			logfile = strdup(optarg);
+			break;
 		case 'n':
 			assert(optarg);
 			nullstring = optarg;
+			break;
+		case 'N':
+			useinserts = true;
+			break;
+		case 'p':
+			assert(optarg);
+			port = atoi(optarg);
+			break;
+		case 'P':
+			assert(optarg);
+			if (passwd)
+				free(passwd);
+			passwd = strdup(optarg);
+			passwd_set_as_flag = true;
+			break;
+		case 'r':
+			assert(optarg);
+			rowsperpage = atoi(optarg);
+			break;
+		case 's':
+			assert(optarg);
+			command = optarg;
+			break;
+		case 't':
+			if (optarg != NULL) {
+				if (strcmp(optarg,"none") == 0) {
+					timermode = T_NONE;
+				} else if (strcmp(optarg,"clock") == 0) {
+					timermode = T_CLOCK;
+				} else if (strcmp(optarg, "perf") == 0 || strcmp(optarg, "performance") == 0) {
+					timermode = T_PERF;
+				} else if (*optarg != '\0') {
+					fprintf(stderr, "warning: invalid argument to -t: %s\n",
+						optarg);
+				}
+			}
 			break;
 		case 'u':
 			assert(optarg);
 			if (user)
 				free(user);
 			user = strdup(optarg);
-			user_set_as_flag = 1;
-			break;
-		case 'f':
-			assert(optarg);
-			if (output != NULL)
-				free(output);
-			output = strdup(optarg);	/* output format */
-			break;
-		case 'i':
-			interactive = 1;
-			break;
-		case 't':
-			showtiming = 1;
-			if (optarg != NULL) {
-				if (strncmp(optarg,"perf",4) == 0 || strcmp(optarg,"performance") == 0  ) {
-					timermode = T_PERF;
-				} else if (strcmp(optarg,"none") == 0  ) {
-					timermode = T_NONE;
-				} else if (strcmp(optarg,"clock") == 0  ) {
-					timermode = T_CLOCK;
-				} else if (*optarg != '\0') {
-					fprintf(stderr, "warning: invalid argument to -t: %s\n",
-							optarg);
-				} 
-			}
-			break;
-		case 'h':
-			assert(optarg);
-			host = optarg;
-			break;
-		case 'p':
-			assert(optarg);
-			port = atoi(optarg);
-			break;
-		case 'D':
-			dump = 1;
-			break;
-		case 'N':
-			useinserts = 1;
-			break;
-		case 'd':
-			assert(optarg);
-			if (dbname)
-				free(dbname);
-			dbname = strdup(optarg);
-			break;
-		case 's':
-			assert(optarg);
-			command = optarg;
-			break;
-		case 'w':
-			assert(optarg);
-			pagewidth = atoi(optarg);
-			pagewidthset = pagewidth != 0;
-			break;
-		case 'r':
-			assert(optarg);
-			rowsperpage = atoi(optarg);
-			break;
-#ifdef HAVE_POPEN
-		case '|':
-			assert(optarg);
-			pager = optarg;
-			break;
-#endif
-		case 'X':
-			trace = MAPI_TRACE;
-			break;
-		case 'H':
-			save_history = 1;
+			user_set_as_flag = true;
 			break;
 		case 'v':
 			mnstr_printf(toConsole,
-					"mclient, the MonetDB interactive terminal (%s)\n",
-					MONETDB_RELEASE);
+				     "mclient, the MonetDB interactive terminal (%s)\n",
+				     MONETDB_RELEASE);
 #ifdef HAVE_LIBREADLINE
 			mnstr_printf(toConsole,
-					"support for command-line editing compiled-in\n");
+				     "support for command-line editing compiled-in\n");
 #endif
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
@@ -3227,10 +3273,24 @@ main(int argc, char **argv)
 			mnstr_printf(toConsole,
 				     "character encoding: %s\n", encoding ? encoding : "utf-8 (default)");
 #endif
-			return(0);
-		case 'z':
-			settz = 0;
+			return 0;
+		case 'w':
+			assert(optarg);
+			pagewidth = atoi(optarg);
+			pagewidthset = pagewidth != 0;
 			break;
+		case 'X':
+			trace = MAPI_TRACE;
+			break;
+		case 'z':
+			settz = false;
+			break;
+#ifdef HAVE_POPEN
+		case '|':
+			assert(optarg);
+			pager = optarg;
+			break;
+#endif
 		case '?':
 			/* a bit of a hack: look at the option that the
 			 * current `c' is based on and see if we recognize
@@ -3242,6 +3302,12 @@ main(int argc, char **argv)
 			/* not reached */
 		}
 	}
+	if (passwd_set_as_flag &&
+	    (output == NULL || strcmp(output, "test") != 0)) {
+		usage(argv[0], -1);
+		/* not reached */
+	}
+
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
 	if (encoding == NULL)
@@ -3262,9 +3328,10 @@ main(int argc, char **argv)
 
 	/* when config file would provide defaults */
 	if (user_set_as_flag) {
-		if (passwd)
+		if (passwd && !passwd_set_as_flag) {
 			free(passwd);
-		passwd = NULL;
+			passwd = NULL;
+		}
 	}
 
 	if (user == NULL)
@@ -3379,7 +3446,7 @@ main(int argc, char **argv)
 			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
 
-			if( to == NULL){
+			if (to == NULL) {
 				fprintf(stderr,"Malloc in main failed");
 				exit(2);
 			}
@@ -3401,7 +3468,7 @@ main(int argc, char **argv)
 					tolen = factor * fromlen + 1;
 					free(command);
 					to = malloc(tolen);
-					if( to == NULL){
+					if (to == NULL) {
 						fprintf(stderr,"Malloc in main failed");
 						exit(2);
 					}

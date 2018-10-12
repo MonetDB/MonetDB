@@ -665,8 +665,10 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		m->scanner.log = NULL;
 	}
 
-	if (strcmp(filename, str_nil))
-		m->scanner.log = open_wastream(filename);
+	if (strcmp(filename, str_nil)) {
+		if((m->scanner.log = open_wastream(filename)) == NULL)
+			throw(SQL, "sql.logfile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -915,15 +917,18 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
+				if(bn == NULL)
+					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				BAThseqbase(bn, part_nr * psz);
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind(m, sname, tname, cname, 0);
-				if (c == NULL)
+				if (c == NULL) {
+					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
 					sname,tname,cname);
-
+				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -931,6 +936,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				h--;
 				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPunfix(c->batCacheid);
+				if(bn == NULL) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 			}
 			BBPunfix(b->batCacheid);
 			b = bn;
@@ -953,12 +962,12 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind(m, sname, tname, cname, RD_UPD_ID);
 				BAT *id;
 				BAT *vl;
-				if (ui == NULL)
+				if (ui == NULL || uv == NULL) {
+					bat_destroy(uv);
+					bat_destroy(ui);
 					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the insert column %s.%s.%s",
 						sname, tname, cname);
-				if (uv == NULL)
-					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
-						sname, tname, cname);
+				}
 				id = BATproject(b, ui);
 				vl = BATproject(b, uv);
 				bat_destroy(ui);
@@ -978,6 +987,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat(c->type.type->localtype);
+				if(*bid == BID_NIL || *uvl == BID_NIL)
+					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(b->batCacheid);
 		} else {
@@ -1022,13 +1033,17 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
+				if(bn == NULL)
+					throw(SQL, "sql.bindidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				BAThseqbase(bn, part_nr * psz);
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind_idxbat(m, sname, tname, iname, 0);
-				if ( c == NULL)
+				if ( c == NULL) {
+					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
+				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -1036,6 +1051,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				h--;
 				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPunfix(c->batCacheid);
+				if(bn == NULL) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.bindidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 			}
 			BBPunfix(b->batCacheid);
 			b = bn;
@@ -1055,10 +1074,11 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *uv = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_VAL);
 				BAT *ui = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_ID);
 				BAT *id, *vl;
-				if ( ui == NULL)
+				if ( ui == NULL || uv == NULL) {
+					bat_destroy(uv);
+					bat_destroy(ui);
 					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
-				if ( uv == NULL)
-					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
+				}
 				id = BATproject(b, ui);
 				vl = BATproject(b, uv);
 				bat_destroy(ui);
@@ -1077,6 +1097,8 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
+				if(*bid == BID_NIL || *uvl == BID_NIL)
+					throw(SQL, "sql.idxbind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(b->batCacheid);
 		} else {
@@ -1086,7 +1108,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (sname)
 		throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s.%s", iname, sname, tname);
-	throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Connot access column descriptor %s for %s", iname, tname);
+	throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s", iname, tname);
 }
 
 str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins) {
@@ -1409,7 +1431,11 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		BBPunfix(res->batCacheid);
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	u_id = BATdescriptor(*uid);
+	if ((u_id = BATdescriptor(*uid)) == NULL) {
+		BBPunfix(u_val->batCacheid);
+		BBPunfix(res->batCacheid);
+		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 	assert(BATcount(u_id) == BATcount(u_val));
 	if (BATcount(u_id) &&
 	    BATreplace(res, u_id, u_val, TRUE) != GDK_SUCCEED) {
@@ -1422,7 +1448,10 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	BBPunfix(u_val->batCacheid);
 
 	if (i && BATcount(i)) {
-		i = BATdescriptor(*ins);
+		if ((i = BATdescriptor(*ins)) == NULL) {
+			BBPunfix(res->batCacheid);
+			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
 		if (BATappend(res, i, NULL, TRUE) != GDK_SUCCEED) {
 			BBPunfix(res->batCacheid);
 			BBPunfix(i->batCacheid);
@@ -1492,46 +1521,50 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(u_id->batCacheid);
 			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		u = BATproject(u_val, u_id);
-		BBPunfix(u_val->batCacheid);
-		BBPunfix(u_id->batCacheid);
-		if (!u) {
-			BBPunfix(c->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		if (BATcount(u)) {	/* check selected updated values against candidates */
+		if (BATcount(u_val)) {
+			u = BATproject(u_val, u_id);
+			BBPunfix(u_val->batCacheid);
+			BBPunfix(u_id->batCacheid);
+			if (!u) {
+				BBPunfix(c->batCacheid);
+				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+
+			/* check selected updated values against candidates */
 			BAT *c_ids = BATdescriptor(*cid);
-			gdk_return rc;
 
 			if (!c_ids) {
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			rc = BATsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
+			ret = BATsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
-			if (rc != GDK_SUCCEED) {
+			if (ret != GDK_SUCCEED) {
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
-		}
-		ret = BATappend(res, u, cminu, TRUE);
-		BBPunfix(u->batCacheid);
-		if (cminu)
-			BBPunfix(cminu->batCacheid);
-		cminu = NULL;
-		if (ret != GDK_SUCCEED) {
-			BBPunfix(res->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(45000) "Internal error in delta processing");
-		}
+			ret = BATappend(res, u, cminu, TRUE);
+			BBPunfix(u->batCacheid);
+			if (cminu)
+				BBPunfix(cminu->batCacheid);
+			cminu = NULL;
+			if (ret != GDK_SUCCEED) {
+				BBPunfix(res->batCacheid);
+				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 
-		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
-		BBPunfix(res->batCacheid);
-		if (ret != GDK_SUCCEED) {
-			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
+			BBPunfix(res->batCacheid);
+			if (ret != GDK_SUCCEED) {
+				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+			res = u;
+		} else {
+			BBPunfix(u_val->batCacheid);
+			BBPunfix(u_id->batCacheid);
 		}
-		res = u;
 	}
 
 	if (i) {
@@ -1552,7 +1585,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			if (!cminu) {
 				BBPunfix(res->batCacheid);
 				BBPunfix(i->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 		if (isVIEW(res)) {
@@ -1563,7 +1596,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(i->batCacheid);
 				if (cminu)
 					BBPunfix(cminu->batCacheid);
-				throw(MAL, "sql.delta", SQLSTATE(45000) "Internal error in delta processing");
+				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 		ret = BATappend(res, i, cminu, TRUE);
@@ -1572,16 +1605,16 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(cminu->batCacheid);
 		if (ret != GDK_SUCCEED) {
 			BBPunfix(res->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(45000) "Internal error in delta processing");
+			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
 		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED)
-			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		res = u;
 	}
-	BATkey(res, TRUE);
+	BATkey(res, true);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1604,7 +1637,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		BBPunfix(s->batCacheid);
 		BBPunfix(i->batCacheid);
 		if (res == NULL)
-			throw(MAL, "sql.projectdelta", SQLSTATE(45000) "Internal error in delta processing");
+			throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 		BBPkeepref(*result = res->batCacheid);
 		return MAL_SUCCEED;
@@ -1628,13 +1661,13 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 				BBPunfix(s->batCacheid);
 				BBPunfix(i->batCacheid);
 				BBPunfix(c->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(45000) "Internal error in delta processing");
+				throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(c->batCacheid);
 			if (BATappend(res, i, NULL, FALSE) != GDK_SUCCEED) {
 				BBPunfix(s->batCacheid);
 				BBPunfix(i->batCacheid);
-				throw(MAL, "sql.projectdelta", SQLSTATE(45000) "Internal error in delta processing");
+				throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 	}
@@ -1645,7 +1678,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 	BBPunfix(res->batCacheid);
 	if (tres == NULL) {
 		BBPunfix(s->batCacheid);
-		throw(MAL, "sql.projectdelta", SQLSTATE(45000) "Internal error in delta processing");
+		throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	res = tres;
 
@@ -1677,7 +1710,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
 			BBPunfix(u_val->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		nu_id = BATproject(o, u_id);
 		nu_val = BATproject(o, u_val);
@@ -2112,6 +2145,8 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, NULL);
+	if (res < 0)
+		throw(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	tbl = BATdescriptor(tblId);
 	atr = BATdescriptor(atrId);
@@ -2449,7 +2484,8 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL);
+	if((res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL)) < 0)
+		throw(SQL, "sql.exportValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (mvc_result_value(b->mvc, tn, cn, type, digits, scale, p, mtype))
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
 	if (b->output_format == OFMT_NONE) {
@@ -2831,7 +2867,10 @@ zero_or_one(ptr ret, const bat *bid)
 		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
-		*(BAT **) ret = BATdescriptor(bid);
+		if((*(BAT **) ret = BATdescriptor(bid)) == NULL){
+			BBPunfix(b->batCacheid);
+			throw(SQL, "zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
 	} else if (_s == 4) {
 		*(int *) ret = *(int *) p;
 	} else if (_s == 1) {
@@ -2883,14 +2922,18 @@ SQLall(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
-		if(ret == NULL){
+		*(ptr *) ret = GDKmalloc(_s);
+		if(*(ptr *) ret == NULL){
 			BBPunfix(b->batCacheid);
 			throw(SQL, "SQLall", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
+		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
-		*(BAT **) ret = BATdescriptor(bid);
+		if ((*(BAT **) ret = BATdescriptor(bid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
 	} else if (_s == 4) {
 		*(int *) ret = *(int *) p;
 	} else if (_s == 1) {
@@ -3301,32 +3344,40 @@ str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = getArgReference_lng(stk, pci, 0), r;
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0, isnil = 0;
 
 	(void) cntxt;
 	if (pci->argc > 3)
 		scale = *getArgReference_int(stk, pci, 3);
+	*ret = lng_nil;
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
 		r = stk->stk[getArg(pci, 1)].val.btval;
+		isnil = (stk->stk[getArg(pci, 1)].val.btval == bte_nil);
 		break;
 	case TYPE_sht:
 		r = stk->stk[getArg(pci, 1)].val.shval;
+		isnil = (stk->stk[getArg(pci, 1)].val.shval == sht_nil);
 		break;
 	case TYPE_int:
 		r = stk->stk[getArg(pci, 1)].val.ival;
+		isnil = (stk->stk[getArg(pci, 1)].val.ival == int_nil);
 		break;
 	case TYPE_lng:
 		r = stk->stk[getArg(pci, 1)].val.lval;
+		isnil = (stk->stk[getArg(pci, 1)].val.lval == lng_nil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
+		isnil = (stk->stk[getArg(pci, 1)].val.hval == hge_nil);
 		break;
 #endif
 	default:
 		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
+	if (isnil) 
+		return MAL_SUCCEED;
 	switch (k) {
 	case iday:
 		r *= 24;
@@ -3776,9 +3827,13 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
 	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
+	if(s == NULL)
+		throw(SQL, "sql.argRecord", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
+	if(*ret == NULL)
+		throw(SQL, "sql.argRecord", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

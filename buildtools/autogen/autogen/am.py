@@ -4,6 +4,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
+from __future__ import print_function
+
 import os
 import posixpath
 import sys
@@ -206,6 +208,8 @@ def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
         if l[0] not in ("-", "$", "@"):
             l = am_translate_dir(l, am) + ".la"
         if c:
+            if c in ('NATIVE_WIN32', 'WIN32'):
+                continue
             global libno
             v = 'LIB%d' % libno
             libno = libno + 1
@@ -239,6 +243,8 @@ def am_additional_install_libs(name, sep, list, am):
                 l = l[3:]
             l = 'install-%sLTLIBRARIES' % l
             if c:
+                if c in ('NATIVE_WIN32', 'WIN32'):
+                    continue
                 global libno
                 v = 'LIB%d' % libno
                 libno = libno + 1

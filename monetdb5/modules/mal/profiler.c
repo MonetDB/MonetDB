@@ -83,7 +83,7 @@ CMDstartTrace(void *res)
 }
 
 // if you haven't started the stethoscope
-// then the output is saved in a file 
+// then the output is saved in a file
 str
 CMDstartTracePath(void *res, str *path)
 {

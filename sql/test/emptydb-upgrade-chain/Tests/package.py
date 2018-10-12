@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os, sys, zipfile
 
 dbfarm = os.environ['GDK_DBFARM']
@@ -6,7 +8,7 @@ archive = os.path.join(dbfarm, 'prevchainrelempty.zip')
 rev = os.getenv('REVISION')
 
 if not os.path.exists(db):
-    print >> sys.stderr, 'database directory %s does not exist' % db
+    print('database directory %s does not exist' % db, file=sys.stderr)
     sys.exit(1)
 
 try:

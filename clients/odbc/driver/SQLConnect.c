@@ -91,6 +91,14 @@ get_serverinfo(ODBCDbc *dbc)
 		}
 	}
 	mapi_close_handle(hdl);
+	if ((hdl = mapi_query(dbc->mid, "select id from sys._tables where name = 'comments' and schema_id = (select id from sys.schemas where name = 'sys')")) == NULL)
+		return;
+	n = NULL;
+	while (mapi_fetch_row(hdl)) {
+		n = mapi_fetch_field(hdl, 0);
+	}
+	dbc->has_comment = n != NULL;
+	mapi_close_handle(hdl);
 }
 
 SQLRETURN
@@ -231,7 +239,7 @@ MNDBConnect(ODBCDbc *dbc,
 			free(dsn);
 	} else {
 		/* store internal information and clean up buffers */
-		dbc->Connected = 1;
+		dbc->Connected = true;
 		dbc->mid = mid;
 		if (dbc->dsn != NULL)
 			free(dbc->dsn);
@@ -271,7 +279,7 @@ SQLConnect(SQLHDBC ConnectionHandle,
 	   SQLSMALLINT NameLength3)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLConnect %p\n", ConnectionHandle);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -315,7 +323,7 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnectW " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLConnectW %p\n", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))

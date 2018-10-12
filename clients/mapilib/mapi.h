@@ -134,10 +134,10 @@ mapi_export MapiMsg mapi_ping(Mapi mid);
 mapi_export MapiMsg mapi_error(Mapi mid);
 mapi_export const char *mapi_error_str(Mapi mid);
 mapi_export void mapi_noexplain(Mapi mid, char *errorprefix);
-mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
-mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
-mapi_export MapiMsg mapi_trace(Mapi mid, int flag);
+mapi_export void mapi_explain(Mapi mid, FILE *fd);
+mapi_export void mapi_explain_query(MapiHdl hdl, FILE *fd);
+mapi_export void mapi_explain_result(MapiHdl hdl, FILE *fd);
+mapi_export void mapi_trace(Mapi mid, int flag);
 #ifdef ST_READ			/* if stream.h was included */
 mapi_export stream *mapi_get_from(Mapi mid);
 mapi_export stream *mapi_get_to(Mapi mid);
@@ -192,6 +192,7 @@ mapi_export int64_t mapi_get_last_id(MapiHdl hdl);
 mapi_export int64_t mapi_rows_affected(MapiHdl hdl);
 mapi_export int64_t mapi_get_querytime(MapiHdl hdl);
 mapi_export int64_t mapi_get_maloptimizertime(MapiHdl hdl);
+mapi_export int64_t mapi_get_sqloptimizertime(MapiHdl hdl);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
 mapi_export size_t mapi_fetch_field_len(MapiHdl hdl, int fnr);

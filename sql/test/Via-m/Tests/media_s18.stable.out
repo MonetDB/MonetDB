@@ -1,32 +1,28 @@
 stdout of test 'media_s18` in directory 'sql/test/Via-m` itself:
 
 
-# 16:40:48 >  
-# 16:40:48 >   mserver5 "--config=/export/scratch0/rijke/monetdb20090623/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/export/scratch0/rijke/build/monetdb20090623/sql/src/backends/monet5/.libs:/export/scratch0/rijke/build/monetdb20090623/sql/src/backends/monet5:/export/scratch0/rijke/monetdb20090623/lib/MonetDB5:/export/scratch0/rijke/monetdb20090623/lib/MonetDB5/lib:/export/scratch0/rijke/monetdb20090623/lib/MonetDB5/bin" --set "gdk_dbfarm=/export/scratch0/rijke/build/monetdb20090623/sql/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=36631 --set xrpc_port=41660 --set monet_prompt= --trace  "--dbname=mTests_src_test_Via-m" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 16:40:48 >  
+# 10:49:46 >  
+# 10:49:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36838" "--set" "mapi_usock=/var/tmp/mtest-5263/.s.monetdb.36838" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_Via-m"
+# 10:49:46 >  
 
-# MonetDB server v5.13.0, based on kernel v1.31.0
-# Serving database 'mTests_src_test_Via-m', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://yngling.ins.cwi.nl:36631/
-# MonetDB/SQL module v2.31.0 loaded
+# MonetDB 5 server v11.27.12 (hg id: 9a05add39d7b)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Via-m', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:36838/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5263/.s.monetdb.36838
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
 
-
-# 16:40:48 >  
-# 16:40:48 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=36631 
-# 16:40:48 >  
-
-# 15:42:48 >  
-# 15:42:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29638" "--port=30099"
-# 15:42:48 >  
+# 10:49:46 >  
+# 10:49:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5263" "--port=36838"
+# 10:49:46 >  
 
 #declare id_event1 integer;
 #set id_event1 = -1234567890;
@@ -43,7 +39,7 @@ Ready.
 % 11 # length
 [ -1234567890	]
 
-# 16:40:48 >  
-# 16:40:48 >  Done.
-# 16:40:48 >  
+# 10:49:46 >  
+# 10:49:46 >  "Done."
+# 10:49:46 >  
 

@@ -24,7 +24,7 @@
  * ATOMIC_INC -- increment a variable's value, return new value;
  * ATOMIC_DEC -- decrement a variable's value, return new value;
  * These interfaces work on variables of type ATOMIC_TYPE
- * (int or lng depending on architecture).
+ * (int or int64_t depending on architecture).
  *
  * In addition, the following operations are defined:
  * ATOMIC_TAS -- test-and-set: set variable to "true" and return old value
@@ -67,9 +67,9 @@
 
 #include <intrin.h>
 
-#if SIZEOF_SSIZE_T == SIZEOF_LNG
+#if SIZEOF_SSIZE_T == 8
 
-#define ATOMIC_TYPE			lng
+#define ATOMIC_TYPE			int64_t
 
 #define ATOMIC_GET(var, lck)		var
 #define ATOMIC_SET(var, val, lck)	_InterlockedExchange64(&var, (val))
@@ -110,10 +110,10 @@
 #define ATOMIC_TAS(var, lck)		_InterlockedCompareExchange(&var, 1, 0)
 #pragma intrinsic(_InterlockedCompareExchange)
 
-#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == SIZEOF_LNG) && !defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == 8) && !defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
-#if SIZEOF_SSIZE_T == SIZEOF_LNG
-#define ATOMIC_TYPE			lng
+#if SIZEOF_SSIZE_T == 8
+#define ATOMIC_TYPE			int64_t
 #else
 #define ATOMIC_TYPE			int
 #endif
@@ -154,8 +154,8 @@
 
 #else
 
-#if SIZEOF_SSIZE_T == SIZEOF_LNG
-#define ATOMIC_TYPE			lng
+#if SIZEOF_SSIZE_T == 8
+#define ATOMIC_TYPE			int64_t
 #else
 #define ATOMIC_TYPE			int
 #endif

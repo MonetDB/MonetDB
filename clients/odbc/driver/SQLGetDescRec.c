@@ -105,12 +105,12 @@ SQLGetDescRec(SQLHDESC DescriptorHandle,
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescRec " PTRFMT " %d " PTRFMT " %d " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST DescriptorHandle, (int) RecNumber, PTRFMTCAST Name,
-		(int) BufferLength, PTRFMTCAST StringLengthPtr,
-		PTRFMTCAST TypePtr, PTRFMTCAST SubTypePtr,
-		PTRFMTCAST LengthPtr, PTRFMTCAST PrecisionPtr,
-		PTRFMTCAST ScalePtr, PTRFMTCAST NullablePtr);
+	ODBCLOG("SQLGetDescRec %p %d %p %d %p %p %p %p %p %p %p\n",
+		DescriptorHandle, (int) RecNumber, Name,
+		(int) BufferLength, StringLengthPtr,
+		TypePtr, SubTypePtr,
+		LengthPtr, PrecisionPtr,
+		ScalePtr, NullablePtr);
 #endif
 
 	if (!isValidDesc(desc))
@@ -174,12 +174,12 @@ SQLGetDescRecW(SQLHDESC DescriptorHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDescRecW " PTRFMT " %d " PTRFMT " %d " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST DescriptorHandle, (int) RecNumber, PTRFMTCAST Name,
-		(int) BufferLength, PTRFMTCAST StringLengthPtr,
-		PTRFMTCAST TypePtr, PTRFMTCAST SubTypePtr,
-		PTRFMTCAST LengthPtr, PTRFMTCAST PrecisionPtr,
-		PTRFMTCAST ScalePtr, PTRFMTCAST NullablePtr);
+	ODBCLOG("SQLGetDescRecW %p %d %p %d %p %p %p %p %p %p %p\n",
+		DescriptorHandle, (int) RecNumber, Name,
+		(int) BufferLength, StringLengthPtr,
+		TypePtr, SubTypePtr,
+		LengthPtr, PrecisionPtr,
+		ScalePtr, NullablePtr);
 #endif
 
 	if (!isValidDesc(desc))

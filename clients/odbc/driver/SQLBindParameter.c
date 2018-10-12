@@ -190,6 +190,7 @@ MNDBBindParameter(ODBCStmt *stmt,
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
+	case SQL_HUGEINT:
 	case SQL_GUID:
 		break;
 	default:
@@ -245,13 +246,13 @@ SQLBindParameter(SQLHSTMT StatementHandle,
 		 SQLLEN *StrLen_or_IndPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindParameter " PTRFMT " %u %d %s %s " ULENFMT " %d " PTRFMT " " LENFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
+	ODBCLOG("SQLBindParameter %p %u %d %s %s " ULENFMT " %d %p " LENFMT " %p\n",
+		StatementHandle, (unsigned int) ParameterNumber,
 		(int) InputOutputType, translateCType(ValueType),
 		translateSQLType(ParameterType),
 		ULENCAST ColumnSize, (int) DecimalDigits,
-		PTRFMTCAST ParameterValuePtr, LENCAST BufferLength,
-		PTRFMTCAST StrLen_or_IndPtr);
+		ParameterValuePtr, LENCAST BufferLength,
+		StrLen_or_IndPtr);
 #endif
 
 	return MNDBBindParameter((ODBCStmt *) StatementHandle, ParameterNumber,

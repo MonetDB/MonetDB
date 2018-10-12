@@ -105,7 +105,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	const oid *o;
 	oid rseq, rend;
 
-	assert(!is_oid_nil(r->tseqbase));
+	assert(BATtdense(r));
 	o = (const oid *) Tloc(l, 0);
 	bt = (oid *) Tloc(bn, 0);
 	bn->tsorted = l->tsorted;
@@ -226,9 +226,10 @@ BATproject(BAT *l, BAT *r)
 				  bn->tkey ? "-key" : "");
 		return bn;
 	}
+	/* if l has type void, it is either empty or not dense (i.e. nil) */
 	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
 	    (r->ttype == TYPE_void && is_oid_nil(r->tseqbase))) {
-		/* trivial: all values are nil */
+		/* trivial: all values are nil (includes no entries at all) */
 		const void *nil = ATOMnilptr(r->ttype);
 
 		bn = BATconstant(l->hseqbase, r->ttype == TYPE_oid ? TYPE_void : r->ttype,
@@ -237,7 +238,6 @@ BATproject(BAT *l, BAT *r)
 			return NULL;
 		if (ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
-			bn->tdense = 1;
 			BATtseqbase(bn, 0);
 		}
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
@@ -256,11 +256,11 @@ BATproject(BAT *l, BAT *r)
 	     lcount > (rcount >> 3) ||
 	     r->batRestricted == BAT_READ)) {
 		/* insert strings as ints, we need to copy the string
-		 * heap whole sale; we can not do this if there are
-		 * nils in the left column, and we will not do it if
-		 * the left is much smaller than the right and the
-		 * right is writable (meaning we have to actually copy
-		 * the right string heap) */
+		 * heap whole sale; we can't do this if there are nils
+		 * in the left column, and we won't do it if the left
+		 * is much smaller than the right and the right is
+		 * writable (meaning we have to actually copy the
+		 * right string heap) */
 		tpe = r->twidth == 1 ? TYPE_bte : (r->twidth == 2 ? TYPE_sht : (r->twidth == 4 ? TYPE_int : TYPE_lng));
 		/* int's nil representation is a valid offset, so
 		 * don't check for nils */
@@ -399,14 +399,15 @@ BATproject(BAT *l, BAT *r)
 
 /* Calculate a chain of BATproject calls.
  * The argument is a NULL-terminated array of BAT pointers.
- * This function is equivalent to a sequence of calls
+ * This function is equivalent (apart from reference counting) to a
+ * sequence of calls
  * bn = BATproject(bats[0], bats[1]);
  * bn = BATproject(bn, bats[2]);
  * ...
  * bn = BATproject(bn, bats[n-1]);
  * return bn;
  * where none of the intermediates are actually produced (and bats[n]==NULL).
- * Note that all BATs except the last must be oid/void tailed.
+ * Note that all BATs except the last must have type oid/void.
  */
 BAT *
 BATprojectchain(BAT **bats)
@@ -737,7 +738,7 @@ BATprojectchain(BAT **bats)
 		bn->tshift = b->tshift;
 	}
 	bn->tsorted = bn->trevsorted = cnt <= 1;
-	bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 	GDKfree(ba);
 	return bn;
 

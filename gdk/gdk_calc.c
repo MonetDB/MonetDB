@@ -19,6 +19,8 @@
  * (if available) for +, -, *.  For division the output type can be
  * either input type of flt or dbl. */
 
+#define FULL_IMPLEMENTATION
+
 /* Generally, the functions return a new BAT aligned with the input
  * BAT(s).  If there are multiple input BATs, they must be aligned.
  * If there is a candidate list, the calculations are only done for
@@ -841,14 +843,15 @@ BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	if (start == 0 && end == cnt && cand == NULL) {
-		if (b->tnonil ||
-		    (b->ttype == TYPE_void && !is_oid_nil(b->tseqbase))) {
+		if (b->tnonil || BATtdense(b)) {
 			bit zero = 0;
 
 			return BATconstant(b->hseqbase, TYPE_bit, &zero, cnt, TRANSIENT);
-		} else if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
+		} else if (b->ttype == TYPE_void) {
 			bit one = 1;
 
+			/* non-nil handled above */
+			assert(is_oid_nil(b->tseqbase));
 			return BATconstant(b->hseqbase, TYPE_bit, &one, cnt, TRANSIENT);
 		}
 	}
@@ -1009,14 +1012,12 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1094,14 +1095,12 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1174,14 +1173,12 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1264,14 +1261,12 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1351,14 +1346,12 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1436,14 +1429,12 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1516,14 +1507,12 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1606,14 +1595,12 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:

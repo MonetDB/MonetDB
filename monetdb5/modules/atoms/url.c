@@ -214,7 +214,7 @@ escape_str(str *retval, str s)
 			if (s[x] == ' ') {
 				res[y] = '+';
 			} else {
-				sprintf(res+y, "%%%2x", s[x]);
+				sprintf(res+y, "%%%2x", (uint8_t) s[x]);
 				y += 2;
 			}
 		} else {

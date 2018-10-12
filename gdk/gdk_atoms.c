@@ -221,7 +221,7 @@ ATOMname(int t)
 	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
 }
 
-int
+bool
 ATOMisdescendant(int tpe, int parent)
 {
 	int cur = -1;
@@ -229,21 +229,25 @@ ATOMisdescendant(int tpe, int parent)
 	while (cur != tpe) {
 		cur = tpe;
 		if (cur == parent)
-			return TRUE;
+			return true;
 		tpe = ATOMstorage(tpe);
 	}
-	return FALSE;
+	return false;
 }
 
 
 const bte bte_nil = GDK_bte_min-1;
 const sht sht_nil = GDK_sht_min-1;
 const int int_nil = GDK_int_min-1;
-#ifdef __INTEL_COMPILER
-/* stupid Intel compiler uses a value that cannot be used in an
- * initializer for NAN, so we have to initialize at run time */
-flt flt_nil;
-dbl dbl_nil;
+#ifdef NAN_CANNOT_BE_USED_AS_INITIALIZER
+/* Definition of NAN is seriously broken on Intel compiler (at least
+ * in some versions), so we work around it. */
+const union _flt_nil_t _flt_nil_ = {
+	.l = UINT32_C(0x7FC00000)
+};
+const union _dbl_nil_t _dbl_nil_ = {
+	.l = UINT64_C(0x7FF8000000000000)
+};
 #else
 const flt flt_nil = NAN;
 const dbl dbl_nil = NAN;
@@ -907,7 +911,7 @@ ptrFromStr(const char *src, size_t *len, ptr **dst)
 	return (ssize_t) (p - src);
 }
 
-atomtostr(ptr, PTRFMT, PTRFMTCAST)
+atomtostr(ptr, "%p", )
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 atom_io(ptr, Int, int)
@@ -1306,10 +1310,10 @@ strPut(Heap *h, var_t *dst, const char *v)
 		assert(newsize);
 
 		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
-			GDKerror("strPut: string heaps gets larger than " SZFMT "GiB.\n", (size_t) VAR_MAX >> 30);
+			GDKerror("strPut: string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
-		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
+		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
 		if (HEAPextend(h, newsize, TRUE) != GDK_SUCCEED) {
 			return 0;
 		}

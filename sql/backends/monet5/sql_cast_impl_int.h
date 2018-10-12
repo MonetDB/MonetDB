@@ -194,7 +194,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
-	BATkey(bn, FALSE);
+	BATkey(bn, false);
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);

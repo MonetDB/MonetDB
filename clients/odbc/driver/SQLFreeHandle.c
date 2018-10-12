@@ -185,9 +185,9 @@ SQLFreeHandle(SQLSMALLINT HandleType,
 	      SQLHANDLE Handle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeHandle %s " PTRFMT "\n",
+	ODBCLOG("SQLFreeHandle %s %p\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle);
+		Handle);
 #endif
 
 	return MNDBFreeHandle(HandleType, Handle);

@@ -1,33 +1,13 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Thu Dec  7 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Removed system function sys.environment(). It was a duplicate of system
-  function sys.env().
+* Tue Mar 13 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Implemented group_concat(X,Y) aggregate function which also
+  concatenates a column of strings X, but using a supplied string Y as
+  the separator. This function is also a SQL extension.
 
-* Thu Nov  9 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Implemented behavior for DROP SCHEMA my_schema RESTRICT command.
-  Previously the RESTRICT keyword was accepted but not obeyed. It would
-  always do a CASCADE operation.  Also the default behavior of DROP SCHEMA
-  my_schema command is now changed into RESTRICT behavior (was CASCADE).
-
-* Tue Nov  7 2017 Sjoerd Mullender <sjoerd@acm.org>
-- The internal NULL representation of the REAL (FLOAT) and DOUBLE
-  types was changed from the smallest representable finite value to NaN
-  (not-a-number).
-
-* Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
-- Lots of changes to streamline the internal error handling.
-  In principle, all errors should now include a SQLSTATE error code
-  (see the SQL standard).
-
-* Thu Jul 20 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Added support for extracting the quarter (number between 1 and 4)
-  of a date or a timestamp or a timestamp with timezone in SQL:
-   EXTRACT ( QUARTER FROM my_date_expr ).
-  Added support for extracting the week (number between 1 and 53)
-  of a date or a timestamp or a timestamp with timezone in SQL:
-   EXTRACT ( WEEK FROM my_date_expr ).
-  Added support for scalar functions: quarter(date_expr),
-  quarter(timestamp_expr) and quarter(timestamptz_expr).
+* Fri Mar  9 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Implemented group_concat(X) aggregate function which concatenates a
+  column of strings using a comma as a separator. This function is not
+  featured in the SQL standard.
 

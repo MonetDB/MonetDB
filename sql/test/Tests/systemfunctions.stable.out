@@ -55,7 +55,7 @@ Ready.
 # 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
-% sys.L14,	sys.L16,	sys.L20,	sys.L22,	sys.L24 # table_name
+% sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L16 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	35,	2,	14,	646 # length
@@ -720,6 +720,11 @@ Ready.
 [ "sys",	"getroboturl",	1,	"url",	""	]
 [ "sys",	"getuser",	0,	"clob",	"create function getuser(theurl url) returns string\n external name url.\"getUser\";"	]
 [ "sys",	"getuser",	1,	"url",	""	]
+[ "sys",	"group_concat",	0,	"clob",	"create aggregate sys.group_concat(str string) returns string external name \"aggr\".\"str_group_concat\";"	]
+[ "sys",	"group_concat",	1,	"clob",	""	]
+[ "sys",	"group_concat",	0,	"clob",	"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";"	]
+[ "sys",	"group_concat",	1,	"clob",	""	]
+[ "sys",	"group_concat",	2,	"clob",	""	]
 [ "sys",	"has_m",	0,	"int",	"create function has_m(info integer) returns integer external name geom.\"hasM\";"	]
 [ "sys",	"has_m",	1,	"int",	""	]
 [ "sys",	"has_z",	0,	"int",	"create function has_z(info integer) returns integer external name geom.\"hasZ\";"	]

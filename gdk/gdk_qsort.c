@@ -311,7 +311,7 @@ struct qsort_t {
 
 /* the interface functions */
 void
-GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 {
 	struct qsort_t buf;
 
@@ -365,7 +365,7 @@ GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 }
 
 void
-GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 {
 	struct qsort_t buf;
 

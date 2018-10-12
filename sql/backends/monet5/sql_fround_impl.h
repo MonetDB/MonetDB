@@ -68,7 +68,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -95,15 +95,13 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
-	/* result head is aligned with argument head */
-	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
-	res->tdense = FALSE;
+	res->tseqbase = oid_nil;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(res, FALSE);
+	BATkey(res, false);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);
@@ -180,7 +178,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -207,15 +205,13 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
-	/* result head is aligned with argument head */
-	ALIGNsetH(res, v);
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
-	res->tdense = FALSE;
+	res->tseqbase = oid_nil;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
-	BATkey(res, FALSE);
+	BATkey(res, false);
 
 	/* release argument BAT descriptors */
 	BBPunfix(v->batCacheid);

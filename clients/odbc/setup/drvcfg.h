@@ -44,8 +44,8 @@
  * CONSTANTS WHICH DO NOT EXIST ELSEWHERE
  ********************************************************/
 #ifndef TRUE
-#define FALSE 0;
-#define TRUE 1;
+#define FALSE 0
+#define TRUE 1
 #endif
 
 /*********************************

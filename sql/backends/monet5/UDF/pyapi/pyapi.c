@@ -25,7 +25,7 @@
 #endif
 
 const char *fork_disableflag = "disable_fork";
-static bool option_disable_fork = false;
+bool option_disable_fork = false;
 
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
@@ -435,7 +435,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					errno = 0;
 					msg = createException(
 						MAL, "waitpid",
-						SQLSTATE(PY000) "Error calling waitpid(" ULLFMT ", &status, WNOHANG): %s",
+						SQLSTATE(PY000) "Error calling waitpid(" LLFMT ", &status, WNOHANG): %s",
 						pid, err);
 					break;
 				}
@@ -1425,7 +1425,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 								lineinformation[pos++] = ' ';
 								lineinformation[pos++] = ' ';
 							}
-							snprintf(linenr, 32, SZFMT, nrpos);
+							snprintf(linenr, 32, "%zu", nrpos);
 							for (j = 0; j < strlen(linenr); j++) {
 								lineinformation[pos++] = linenr[j];
 							}

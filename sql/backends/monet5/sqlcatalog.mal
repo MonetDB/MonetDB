@@ -4,7 +4,7 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
-# All functions eturn a void and this are unsafe, having side effects.
+# All functions return a void and this are unsafe, having side effects.
 module sqlcatalog;
 
 pattern create_seq( sname:str, seqname:str, seq:ptr, action:int)
@@ -19,15 +19,11 @@ pattern drop_seq( sname:str, nme:str, action:int)
 address SQLdrop_seq 
 comment "Catalog operation drop_seq";
 
-pattern create_schema(sname:str, auth:str, action:int) 
+pattern create_schema(sname:str, auth:str, ifnotexists:int, action:int)
 address SQLcreate_schema 
 comment "Catalog operation create_schema";
 
-pattern drop_schema( sname:str, s:str, action:int, ifexists:int) 
-address SQLdrop_schema 
-comment "Catalog operation drop_schema";
-
-pattern drop_schema( sname:str, s:str, action:int) 
+pattern drop_schema( sname:str, s:str, ifexists:int, action:int)
 address SQLdrop_schema 
 comment "Catalog operation drop_schema";
 
@@ -39,23 +35,15 @@ pattern create_view(sname:str, vname:str, tbl:ptr, temp:int)
 address SQLcreate_view 
 comment "Catalog operation create_view";
 
-pattern drop_table( sname:str, name:str, action:int , ifexists:int)
+pattern drop_table( sname:str, name:str, action:int, ifexists:int)
 address SQLdrop_table 
 comment "Catalog operation drop_table";
 
-pattern drop_table( sname:str, name:str, action:int )
-address SQLdrop_table 
-comment "Catalog operation drop_table";
-
-pattern drop_view( sname:str, name:str, action:int, ifexists:int) 
+pattern drop_view( sname:str, name:str, action:int, ifexists:int)
 address SQLdrop_view 
 comment "Catalog operation drop_view";
 
-pattern drop_view( sname:str, name:str, action:int) 
-address SQLdrop_view 
-comment "Catalog operation drop_view";
-
-pattern drop_constraint( sname:str, name:str, action:int) 
+pattern drop_constraint( sname:str, name:str, action:int, ifexists:int)
 address SQLdrop_constraint 
 comment "Catalog operation drop_constraint";
 
@@ -131,7 +119,7 @@ pattern drop_index( sname:str, iname:str, action:int)
 address SQLdrop_index 
 comment "Catalog operation drop_index";
 
-pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int) 
+pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address SQLdrop_function 
 comment "Catalog operation drop_function";
 
@@ -143,7 +131,7 @@ pattern create_trigger( sname:str, tname:str, triggername:str, time:int, orienta
 address SQLcreate_trigger 
 comment "Catalog operation create_trigger";
 
-pattern drop_trigger(sname:str,nme:str ) 
+pattern drop_trigger(sname:str, nme:str, ifexists:int)
 address SQLdrop_trigger 
 comment "Catalog operation drop_trigger";
 
@@ -159,3 +147,6 @@ pattern alter_set_table( sname:str, tnme:str, access:int)
 address SQLalter_set_table 
 comment "Catalog operation alter_set_table";
 
+pattern comment_on(objid:int, remark:str)
+address SQLcomment_on
+comment "Catalog operation comment_on";

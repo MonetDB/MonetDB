@@ -26,7 +26,7 @@ lib__netcdf = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = netcdf.c netcdf_vault.h
-	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
+	LIBS = NATIVE_WIN32?../../../../../monetdb5/tools/libmonetdb5 \
 	       $(netcdf_LIBS)
 }
 

@@ -321,7 +321,7 @@ SQLPrepare(SQLHSTMT StatementHandle,
 	   SQLINTEGER TextLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrepare " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLPrepare %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -352,7 +352,7 @@ SQLPrepareW(SQLHSTMT StatementHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrepareW " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLPrepareW %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

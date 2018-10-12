@@ -1,0 +1,4 @@
+CREATE TABLE testlz4 (a bigint, b real, c clob, d varchar(64));
+COPY INTO testlz4 FROM '$TSTSRCDIR/testlz4.lz4' USING DELIMITERS ',','\n','"' NULL AS '';
+SELECT a, b, c, d FROM testlz4 limit 1024;
+DROP TABLE testlz4;

@@ -17,7 +17,7 @@ rows_affected.SF-1377180
 broken_join.SF-1373391
 insert_not_exists.SF-1380287
 HAVE_JDBCCLIENT_JAR?authorization.SF-1430616
-mapi_connect_errors_vanish.SF-1432134
+USER=invalid&PASSWD=invalid?mapi_connect_errors_vanish.SF-1432134
 create_column_name_data.SF-1440214
 connect_crash.SF-1436626
 HAVE_JDBCCLIENT_JAR?drop_schema_crash.SF-1504794

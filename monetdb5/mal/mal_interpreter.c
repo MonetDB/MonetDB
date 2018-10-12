@@ -792,8 +792,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				break;
 			}
 			w= instruction2str(mb, 0, pci, FALSE);
-			ret = createException(MAL,"interpreter", "unkown operation:%s", w);
-			GDKfree(w);
+			if(w) {
+				ret = createException(MAL,"interpreter", "unkown operation:%s", w);
+				GDKfree(w);
+			} else {
+				ret = createException(MAL,"interpreter", "failed instruction2str");
+			}
 			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
 				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				break;
@@ -953,8 +957,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (j = 0; j < l->retc; j++)
 						if (getArg(l, j) == exceptionVar)
 							break;
-						else if (getArgName(mb, l, j) ||
-								 strcmp(getArgName(mb, l, j), "ANYexception") == 0)
+						else if (strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 							break;
 					if (j < l->retc)
 						break;
@@ -1138,8 +1141,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (j = 0; j < l->retc; j++)
 						if (getArg(l, j) == exceptionVar)
 							break;
-						else if (getArgName(mb, l, j) ||
-								 strcmp(getArgName(mb, l, j), "ANYexception") == 0)
+						else if (strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 							break;
 					if (j < l->retc)
 						break;

@@ -1,3 +1,5 @@
+CREATE SCHEMA foo;
+SET SCHEMA foo;
 
 /* Relations */
 CREATE TABLE comments(
@@ -247,3 +249,5 @@ DROP TABLE places;
 DROP TABLE tags;
 DROP TABLE tagclasses;
 
+SET SCHEMA sys;
+DROP SCHEMA foo;

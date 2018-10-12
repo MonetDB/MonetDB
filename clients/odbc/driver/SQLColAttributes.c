@@ -99,12 +99,12 @@ SQLColAttributes(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributes " PTRFMT " %u %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLColAttributes %p %u %s %p %d %p %p\n",
+		StatementHandle,
 		(unsigned int) ColumnNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr, PTRFMTCAST NumericAttributePtr);
+		CharacterAttributePtr, (int) BufferLength,
+		StringLengthPtr, NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -154,12 +154,12 @@ SQLColAttributesW(SQLHSTMT StatementHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributesW " PTRFMT " %u %s " PTRFMT " %d " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLColAttributesW %p %u %s %p %d %p %p\n",
+		StatementHandle,
 		(unsigned int) ColumnNumber,
 		translateFieldIdentifier(FieldIdentifier),
-		PTRFMTCAST CharacterAttributePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr, PTRFMTCAST NumericAttributePtr);
+		CharacterAttributePtr, (int) BufferLength,
+		StringLengthPtr, NumericAttributePtr);
 #endif
 
 	if (!isValidStmt(stmt))

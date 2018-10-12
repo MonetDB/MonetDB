@@ -177,7 +177,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			mb->ssize = elements;
 		} else {
 			mb->stmt = ostmt;	/* reinstate old pointer */
-			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: "LLFMT" bytes)", (lng) elements * sizeof(InstrPtr));
+			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: %"PRIu64" bytes)", (uint64_t) elements * sizeof(InstrPtr));
 			return -1;
 		}
 	}
@@ -191,7 +191,7 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			mb->vsize = elements;
 		} else{
 			mb->var = ovar;
-			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: "LLFMT" bytes)", (lng) elements * sizeof(InstrPtr));
+			mb->errors = createMalException(mb,0, TYPE, "out of memory (requested: %"PRIu64" bytes)", (uint64_t) elements * sizeof(InstrPtr));
 			return -1;
 		}
 	}
@@ -389,6 +389,7 @@ getMalBlkOptimized(MalBlkPtr mb, str name)
 	if( name == 0)
 		return mb;
 	strncpy(buf,name, IDLENGTH);
+	buf[IDLENGTH - 1] = 0;
 	n = strchr(buf,']');
 	if( n) *n = 0;
 	

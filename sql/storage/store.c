@@ -565,7 +565,6 @@ load_part(sql_trans *tr, sql_table *t, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(objects, "nr"), rid);
 	id = *(sqlid*)v; _DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(objects, "name"), rid);
-	/* limitation, parts can only be within the same schema */
 	base_init(tr->sa, &pt->base, id, TR_OLD, v);	_DELETE(v);
 	cs_add(&t->members, pt, TR_OLD);
 }
@@ -1015,7 +1014,6 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
 		cs_add(&s->seqs, load_seq(tr, s, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
-	set_members(&s->tables);
 	return s;
 }
 
@@ -1054,7 +1052,7 @@ sql_trans_update_schemas(sql_trans* tr)
 	if (bs_debug)
 		fprintf(stderr, "#update schemas\n");
 
-	for(rid = table_funcs.rids_next(schemas); rid != oid_nil; rid = table_funcs.rids_next(schemas)) {
+	for(rid = table_funcs.rids_next(schemas); !is_oid_nil(rid); rid = table_funcs.rids_next(schemas)) {
 		sql_trans_update_schema(tr, rid);
 	}
 	table_funcs.rids_destroy(schemas);
@@ -1068,6 +1066,7 @@ load_trans(sql_trans* tr, sqlid id)
 	sql_column *sysschema_ids = find_sql_column(sysschema, "id");
 	rids *schemas = table_funcs.rids_select(tr, sysschema_ids, NULL, NULL);
 	oid rid;
+	node *n;
 	
 	if (bs_debug)
 		fprintf(stderr, "#load trans\n");
@@ -1076,6 +1075,12 @@ load_trans(sql_trans* tr, sqlid id)
 		sql_schema *ns = load_schema(tr, id, rid);
 		if (ns && ns->base.id > id)
 			cs_add(&tr->schemas, ns, TR_OLD);
+	}
+	/* members maybe from different schemas */
+	for (n = tr->schemas.set->h; n; n = n->next) {
+		sql_schema *s = n->data;
+
+		set_members(&s->tables);
 	}
 	table_funcs.rids_destroy(schemas);
 }
@@ -1647,7 +1652,10 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 
 	/* initialize empty bats */
 	if (store == store_bat) {
-		bat_utils_init();
+		if(bat_utils_init() == -1) {
+			MT_lock_unset(&bs_lock);
+			return -1;
+		}
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
 		bat_logger_init(&logger_funcs);
@@ -3156,7 +3164,7 @@ conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
 		} else if (ot->commit_action == CA_DROP) {
-			sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
+			(void) sql_trans_drop_table(tr, ot->s, ot->base.id, DROP_RESTRICT);
 		}
 	}
 	return NULL;
@@ -3181,7 +3189,8 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
 				} else if (t->commit_action == CA_DROP) {
-					sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT);
+					if(sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT))
+						ok = LOG_ERR;
 				}
 				n = nxt;
 			}
@@ -3465,7 +3474,8 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 				    t->commit_action == CA_DELETE) {
 					sql_trans_clear_table(tr, t);
 				} else if (t->commit_action == CA_DROP) {
-					sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT);
+					if(sql_trans_drop_table(tr, t->s, t->base.id, DROP_RESTRICT))
+						ok = LOG_ERR;
 				}
 				n = nxt;
 			}
@@ -3640,35 +3650,36 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 
 			switch (dep_type){
 				case SCHEMA_DEPENDENCY :
-							sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
+							//FIXME malloc failure scenario!
+							(void) sql_trans_drop_schema(tr, dep_id, DROP_CASCADE);
 							break;
 				case TABLE_DEPENDENCY :
-							sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case COLUMN_DEPENDENCY :
 							t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY);
 							t = find_sql_table_id(s, t_id);
-							sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_column(tr, t, dep_id, DROP_CASCADE);
 							t = NULL;
 							break;
 				case VIEW_DEPENDENCY :
-							sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE );
+							(void) sql_trans_drop_table(tr, s, dep_id, DROP_CASCADE );
 							break;
 				case TRIGGER_DEPENDENCY :
-							sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
-								break;
+							(void) sql_trans_drop_trigger(tr, s, dep_id, DROP_CASCADE);
+							break;
 				case KEY_DEPENDENCY :
-							sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case FKEY_DEPENDENCY :
-							sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_key(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case INDEX_DEPENDENCY :
-							sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_idx(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case PROC_DEPENDENCY :
 				case FUNC_DEPENDENCY :
-							sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
+							(void) sql_trans_drop_func(tr, s, dep_id, DROP_CASCADE);
 							break;
 				case TYPE_DEPENDENCY :
 							sql_trans_drop_type(tr, s, dep_id, DROP_CASCADE);
@@ -3725,6 +3736,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, sysidx, rid);
+	sql_trans_drop_any_comment(tr, i->base.id);
 
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *ic = n->data;
@@ -3833,10 +3845,11 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 		return ;
 	table_funcs.table_delete(tr, sysseqs, rid);
 	sql_trans_drop_dependencies(tr, seq->base.id);
+	sql_trans_drop_any_comment(tr, seq->base.id);
 
 	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, seq->s, seq->base.id, SEQ_DEPENDENCY);
-		
+
 }
 
 static void
@@ -3848,7 +3861,7 @@ sys_drop_statistics(sql_trans *tr, sql_column *col)
 
 		oid rid = table_funcs.column_find_row(tr, find_sql_column(sysstats, "column_id"), &col->base.id, NULL);
 
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return ;
 
 		table_funcs.table_delete(tr, sysstats, rid);
@@ -3869,6 +3882,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		return ;
 	table_funcs.table_delete(tr, syscolumn, rid);
 	sql_trans_drop_dependencies(tr, col->base.id);
+	sql_trans_drop_any_comment(tr, col->base.id);
 
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 		sql_sequence * seq = NULL;
@@ -3968,6 +3982,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	if (isMergeTable(t) || isReplicaTable(t))
 		sys_drop_parts(tr, t, drop_action);
 
+	sql_trans_drop_any_comment(tr, t->base.id);
 	sql_trans_drop_dependencies(tr, t->base.id);
 
 	if (isKindOfTable(t) || isView(t))
@@ -4026,6 +4041,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	table_funcs.table_delete(tr, sys_tab_func, rid_func);
 
 	sql_trans_drop_dependencies(tr, func->base.id);
+	sql_trans_drop_any_comment(tr, func->base.id);
 
 	tr->schema_updates ++;
 
@@ -4204,18 +4220,24 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 	return t;
 }
 
-void
+int
 sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = find_sql_func_node(s, id);
 	sql_func *func = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped)
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = func->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -4230,34 +4252,74 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
-void
+static void
+build_drop_func_list_item(sql_trans *tr, sql_schema *s, int id) {
+	node *n = find_sql_func_node(s, id);
+	sql_func *func = n->data;
+
+	sys_drop_func(tr, func, DROP_CASCADE);
+
+	func->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
+	tr->schema_updates ++;
+	cs_del(&s->funcs, n, func->base.flag);
+}
+
+int
 sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop_action)
 {
 	node *n = NULL;
 	sql_func *func = NULL;
+	list* to_drop = NULL;
 
-	if (!tr->dropped)
+	(void) drop_action;
+
+	if (!tr->dropped) {
 		tr->dropped = list_create((fdestroy) GDKfree);
+		if(!tr->dropped)
+			return -1;
+	}
 	for (n = list_func->h; n ; n = n->next ) {
 		func = (sql_func *) n->data;
 
 		if (! list_find_id(tr->dropped, func->base.id)){
-			// FIXME unchecked_malloc MNEW can return NULL
 			int *local_id = MNEW(int);
-
+			if(!local_id) {
+				list_destroy(tr->dropped);
+				tr->dropped = NULL;
+				if(to_drop)
+					list_destroy(to_drop);
+				return -1;
+			}
+			if(!to_drop) {
+				to_drop = list_create(NULL);
+				if(!to_drop) {
+					list_destroy(tr->dropped);
+					return -1;
+				}
+			}
 			*local_id = func->base.id;
 			list_append(tr->dropped, local_id);
-			sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
+			list_append(to_drop, func);
+			//sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
 		}
+	}
+
+	if(to_drop) {
+		for (n = to_drop->h; n ; n = n->next ) {
+			func = (sql_func *) n->data;
+			build_drop_func_list_item(tr, s, func->base.id);
+		}
+		list_destroy(to_drop);
 	}
 
 	if ( tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-
+	return 0;
 }
 
 sql_schema *
@@ -4286,7 +4348,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, int auth_id, int owner)
 	return s;
 }
 
-void
+int
 sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 {
 	node *n = find_sql_schema_node(tr, id);
@@ -4295,13 +4357,19 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 
 	if (is_oid_nil(rid))
-		return ;
+		return 0;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
-		int *local_id = MNEW(int);
+		int* local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = s->base.id;
 		list_append(tr->dropped, local_id);
 	} 
@@ -4311,6 +4379,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	sys_drop_tables(tr, s, drop_action);
 	sys_drop_types(tr, s, drop_action);
 	sys_drop_sequences(tr, s, drop_action);
+	sql_trans_drop_any_comment(tr, s->base.id);
 
 	s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
@@ -4320,7 +4389,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-		
+	return 0;
 }
 
 sql_table *
@@ -4529,7 +4598,7 @@ create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype
 	return col;
 }
 
-void
+int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = find_sql_table_node(s, id);
@@ -4537,14 +4606,20 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 
 	if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) && 
 	    tr->dropped && list_find_id(tr->dropped, t->base.id))
-		return;
+		return 0;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = t->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -4561,6 +4636,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
 BUN
@@ -4651,18 +4727,24 @@ drop_sql_key(sql_table *t, int id, int drop_action)
 	cs_del(&t->keys, n, TR_OLD);
 }
 
-void
+int
 sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 {
 	node *n = list_find_base_id(t->columns.set, id);
 	sql_column *col = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = col->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -4679,6 +4761,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
 sql_column *
@@ -5094,18 +5177,25 @@ sql_trans_key_done(sql_trans *tr, sql_key *k)
 	return k;
 }
 
-void
+int
 sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->keys, id);
 	sql_key *k = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id) {
+			return -1;
+		}
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = k->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -5129,7 +5219,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-
+	return 0;
 }
 
 sql_idx *
@@ -5205,22 +5295,29 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 	return i;
 }
 
-void
+int
 sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->idxs, id);
 	sql_idx *i;
-       
+
 	if (!n) /* already dropped */
-		return;
+		return 0;
 
 	i = n->data;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc NNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id) {
+			return -1;
+		}
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = i->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -5240,6 +5337,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
 sql_trigger *
@@ -5297,18 +5395,24 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c )
 	return i;
 }
 
-void
+int
 sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 {
 	node *n = list_find_base_id(s->triggers, id);
 	sql_trigger *i = n->data;
 	
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
+		if(!local_id)
+			return -1;
 
-		if (! tr->dropped) 
+		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
+		}
 		*local_id = i->base.id;
 		list_append(tr->dropped, local_id);
 	}
@@ -5325,6 +5429,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
+	return 0;
 }
 
 sql_sequence *
@@ -5555,4 +5660,27 @@ sql_trans_end(sql_session *s)
 	list_remove_data(active_sessions, s);
 	store_nr_active --;
 	assert(list_length(active_sessions) == store_nr_active);
+}
+
+void
+sql_trans_drop_any_comment(sql_trans *tr, int id) {
+	sql_schema *sys;
+	sql_column *id_col;
+	sql_table *comments;
+	oid row;
+
+	sys = find_sql_schema(tr, "sys");
+	assert(sys);
+
+	comments = find_sql_table(sys, "comments");
+	if (!comments) /* for example during upgrades */
+		return;
+
+	id_col = find_sql_column(comments, "id");
+	assert(id_col);
+
+	row = table_funcs.column_find_row(tr, id_col, &id, NULL);
+	if (!is_oid_nil(row)) {
+		table_funcs.table_delete(tr, comments, row);
+	}
 }

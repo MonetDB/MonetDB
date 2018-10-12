@@ -66,7 +66,8 @@ newODBCDbc(ODBCEnv *env)
 	dbc->port = 0;
 	dbc->dbname = NULL;
 
-	dbc->Connected = 0;
+	dbc->Connected = false;
+	dbc->has_comment = false;
 	dbc->sql_attr_autocommit = SQL_AUTOCOMMIT_ON;	/* default is autocommit */
 	dbc->sql_attr_metadata_id = SQL_FALSE;
 	dbc->sql_attr_connection_timeout = 0;
@@ -103,7 +104,7 @@ isValidDbc(ODBCDbc *dbc)
 {
 #ifdef ODBCDEBUG
 	if (!(dbc && dbc->Type == ODBC_DBC_MAGIC_NR))
-		ODBCLOG("dbc " PTRFMT ": not a valid connection handle\n", PTRFMTCAST dbc);
+		ODBCLOG("dbc %p: not a valid connection handle\n", dbc);
 #endif
 	return dbc && dbc->Type == ODBC_DBC_MAGIC_NR;
 }
@@ -124,7 +125,7 @@ addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nativeEr
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("addDbcError " PTRFMT " %s %s %d\n", PTRFMTCAST dbc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
+	ODBCLOG("addDbcError %p %s %s %d\n", dbc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidDbc(dbc));
 

@@ -33,7 +33,7 @@ SQLAllocConnect(SQLHENV EnvironmentHandle,
 		SQLHDBC *OutputHandlePtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocConnect " PTRFMT "\n", PTRFMTCAST EnvironmentHandle);
+	ODBCLOG("SQLAllocConnect %p\n", EnvironmentHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

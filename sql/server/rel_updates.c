@@ -30,7 +30,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 				return NULL;
 			return e;
 		} else {
-			return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+			return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
 		}
 	} else {
 		int is_last = 0;
@@ -435,7 +435,7 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
-	if (is_delete && !table_privs(sql, t, PRIV_DELETE)) 
+	if ((is_delete == 1 && !table_privs(sql, t, PRIV_DELETE)) || (is_delete == 2 && !table_privs(sql, t, PRIV_TRUNCATE)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
 	return t;
 }
@@ -973,6 +973,10 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				r = rel_logical_exp(sql, res, opt_where, sql_where);
 				if (!opt_from && r && is_join(r->op))
 					r->op = op_semi;
+				else if (r && res && r->nrcols != res->nrcols) {
+					list *exps = rel_projections(sql, res, NULL, 1, 1);
+					r = rel_project(sql->sa, r, exps);
+				}
 			}
 			if (!r) 
 				return NULL;
@@ -1004,7 +1008,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 					if (col->def) {
 						v = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", col->def, col->type.type->sqlname), sql->emode);
 					} else {
-						return sql_error(sql, 02, "UPDATE: column '%s' has no valid default value", col->base.name);
+						return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: column '%s' has no valid default value", col->base.name);
 					}
 				} else if (single) {
 					v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
@@ -1115,6 +1119,21 @@ rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
 	return r;
 }
 
+sql_rel *
+rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
+{
+	sql_rel *r = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	append(exps, exp_atom_int(sa, restart_sequences));
+	append(exps, exp_atom_int(sa, drop_action));
+	r->exps = exps;
+	r->op = op_truncate;
+	r->l = t;
+	r->r = NULL;
+	return r;
+}
+
 static sql_rel *
 delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 {
@@ -1171,6 +1190,35 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), NULL);
 		}
 		return r;
+	}
+	return NULL;
+}
+
+static sql_rel *
+truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
+{
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+	sql_schema *schema = NULL;
+	sql_table *t = NULL;
+
+	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "TRUNCATE: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!schema)
+		schema = cur_schema(sql);
+	t = mvc_bind_table(sql, schema, tname);
+	if (!t && !sname) {
+		schema = tmp_schema(sql);
+		t = mvc_bind_table(sql, schema, tname);
+		if (!t)
+			t = mvc_bind_table(sql, NULL, tname);
+		if (!t)
+			t = stack_find_table(sql, tname);
+	}
+	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL) {
+		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
 	}
 	return NULL;
 }
@@ -1822,9 +1870,19 @@ rel_updates(mvc *sql, symbol *s)
 		sql->type = Q_UPDATE;
 	}
 		break;
+	case SQL_TRUNCATE:
+	{
+		dlist *l = s->data.lval;
+
+		int restart_sequences = l->h->next->data.i_val;
+		int drop_action = l->h->next->next->data.i_val;
+		ret = truncate_table(sql, l->h->data.lval, restart_sequences, drop_action);
+		sql->type = Q_UPDATE;
+	}
+		break;
 	default:
 		sql->use_views = old;
-		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(%p)->token = %s", s, token2string(s->token));
 	}
 	sql->use_views = old;
 	return ret;

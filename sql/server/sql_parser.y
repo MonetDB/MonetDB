@@ -130,6 +130,8 @@ int yydebug=1;
 	create_statement
 	drop_statement
 	declare_statement
+	comment_on_statement
+	catalog_object
 	set_statement
 	sql
 	sqlstmt
@@ -140,6 +142,7 @@ int yydebug=1;
 	path_specification
 	schema_element
 	delete_stmt
+	truncate_stmt
 	copyfrom_stmt
 	table_def
 	view_def
@@ -428,6 +431,7 @@ int yydebug=1;
 	window_frame_extent
 	window_frame_between
 	routine_designator
+	drop_routine_designator
 
 %type <i_val>
 	any_all_some
@@ -435,6 +439,7 @@ int yydebug=1;
 	document_or_content
 	document_or_content_or_sequence
 	drop_action
+	check_identity
 	extract_datetime_field
 	grantor
 	intval
@@ -542,7 +547,7 @@ int yydebug=1;
 %token <operation> EXTRACT
 
 /* sequence operations */
-%token SEQUENCE INCREMENT RESTART
+%token SEQUENCE INCREMENT RESTART CONTINUE
 %token MAXVALUE MINVALUE CYCLE
 %token NOMAXVALUE NOMINVALUE NOCYCLE
 %token NEXT VALUE CACHE
@@ -588,11 +593,11 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
-%token CHECK CONSTRAINT CREATE
+%token CHECK CONSTRAINT CREATE COMMENT
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
-%token CALL LANGUAGE 
+%token CALL LANGUAGE
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
-%token DEFAULT DISTINCT DROP
+%token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
 %token IS KEY ON OPTION OPTIONS
@@ -752,6 +757,7 @@ sql:
 		append_int(l, $5);
 		$$ = _symbol_create_list( SQL_ANALYZE, l); }
  |  call_procedure_statement
+ |  comment_on_statement
  ;
 
 opt_minmax:
@@ -1019,6 +1025,7 @@ operation_commalist:
 operation:
     INSERT			    { $$ = _symbol_create(SQL_INSERT,NULL); }
  |  sqlDELETE			    { $$ = _symbol_create(SQL_DELETE,NULL); }
+ |  TRUNCATE			    { $$ = _symbol_create(SQL_TRUNCATE,NULL); }
  |  UPDATE opt_column_list          { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  SELECT opt_column_list	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_list 	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
@@ -1048,7 +1055,7 @@ alter_statement:
  | ALTER TABLE qname ADD TABLE qname
 	{ dlist *l = L();
 	  append_list(l, $3);
-	  append_symbol(l, _symbol_create_list( SQL_TABLE, $6));
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
 	{ dlist *l = L();
@@ -1161,11 +1168,12 @@ drop_table_element:
 	  append_string(l, $2 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_CONSTRAINT, l ); }
-  |  TABLE ident drop_action
+  |  TABLE qname drop_action
 	{ dlist *l = L();
-	  append_string(l, $2 );
+	  append_list(l, $2 );
 	  append_int(l, $3 );
 	  append_int(l, 0);
+	  append_int(l, FALSE ); /* no if exists check */
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
   ;
 
@@ -1177,7 +1185,7 @@ opt_column:
 create_statement:	
    create role_def 	{ $$ = $2; }
  | create table_def 	{ $$ = $2; }
- | create view_def 	{ $$ = $2; }
+ | view_def 	{ $$ = $1; }
  | type_def
  | func_def
  | index_def
@@ -1753,13 +1761,14 @@ like_table:
  ;
 
 view_def:
-    VIEW qname opt_column_list AS query_expression_def opt_with_check_option
+    create_or_replace VIEW qname opt_column_list AS query_expression_def opt_with_check_option
 	{  dlist *l = L();
-	  append_list(l, $2);
 	  append_list(l, $3);
-	  append_symbol(l, $5);
-	  append_int(l, $6);
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  append_int(l, $7);
 	  append_int(l, TRUE);	/* persistent view */
+	  append_int(l, $1);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
   ;
@@ -1851,20 +1860,19 @@ func_def:
 				// code does not get cleaner than this people
 				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY3;
-                } else if (strcasecmp($10, "PYTHON3") == 0) {
-                	lang = FUNC_LANG_PY3;
-                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY2;
-                } else if (strcasecmp($10, "PYTHON2") == 0) {
-                	lang = FUNC_LANG_PY2;
-                } else {
-                	lang = FUNC_LANG_PY;
-                }
-            }
-			else if (l == 'C' || l == 'c') {
-                if (strcasecmp($10, "CPP") == 0) {
+				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY3;
+				} else if (strcasecmp($10, "PYTHON3") == 0) {
+					lang = FUNC_LANG_PY3;
+				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY2;
+				} else if (strcasecmp($10, "PYTHON2") == 0) {
+					lang = FUNC_LANG_PY2;
+				} else {
+					lang = FUNC_LANG_PY;
+				}
+			} else if (l == 'C' || l == 'c') {
+				if (strcasecmp($10, "CPP") == 0) {
 					lang = FUNC_LANG_CPP;
 				} else {
 					lang = FUNC_LANG_C;
@@ -1930,20 +1938,19 @@ func_def:
 			else if (l == 'P' || l == 'p') {
 				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY3;
-                } else if (strcasecmp($10, "PYTHON3") == 0) {
-                	lang = FUNC_LANG_PY3;
-                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY2;
-                } else if (strcasecmp($10, "PYTHON2") == 0) {
-                	lang = FUNC_LANG_PY2;
-                } else {
-                	lang = FUNC_LANG_PY;
-                }
-            }
-            else if (l == 'C' || l == 'c') {
-                if (strcasecmp($10, "CPP") == 0) {
+				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY3;
+				} else if (strcasecmp($10, "PYTHON3") == 0) {
+					lang = FUNC_LANG_PY3;
+				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY2;
+				} else if (strcasecmp($10, "PYTHON2") == 0) {
+					lang = FUNC_LANG_PY2;
+				} else {
+					lang = FUNC_LANG_PY;
+				}
+			} else if (l == 'C' || l == 'c') {
+				if (strcasecmp($10, "CPP") == 0) {
 					lang = FUNC_LANG_CPP;
 				} else {
 					lang = FUNC_LANG_C;
@@ -2330,7 +2337,7 @@ Define triggered SQL-statements.
 */
 
 trigger_def:
-    create TRIGGER qname trigger_action_time trigger_event
+    create_or_replace TRIGGER qname trigger_action_time trigger_event
     ON qname opt_referencing_list triggered_action
 	{ dlist *l = L();
 	  append_list(l, $3);
@@ -2339,6 +2346,7 @@ trigger_def:
 	  append_list(l, $7);
 	  append_list(l, $8);
 	  append_list(l, $9);
+	  append_int(l, $1);
 	  $$ = _symbol_create_list(SQL_CREATE_TRIGGER, l); 
 	}
  ;
@@ -2351,7 +2359,8 @@ trigger_action_time:
 
 trigger_event:
     INSERT 			{ $$ = _symbol_create_list(SQL_INSERT, NULL); }
- |  sqlDELETE 			{ $$ = _symbol_create_list(SQL_DELETE, NULL); }
+ |  sqlDELETE 		{ $$ = _symbol_create_list(SQL_DELETE, NULL); }
+ |  TRUNCATE 		{ $$ = _symbol_create_list(SQL_TRUNCATE, NULL); }
  |  UPDATE 			{ $$ = _symbol_create_list(SQL_UPDATE, NULL); }
  |  UPDATE OF ident_commalist 	{ $$ = _symbol_create_list(SQL_UPDATE, $3); }
  ;
@@ -2449,14 +2458,52 @@ routine_designator:
 	  $$ = l; }
  ;
 
+drop_routine_designator:
+	FUNCTION if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_list(l, $4 );
+	  append_int(l, F_FUNC );
+	  append_int(l, $2 );
+	  $$ = l; }
+ |	FILTER FUNCTION if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_list(l, $5 );
+	  append_int(l, F_FILT );
+	  append_int(l, $3 );
+	  $$ = l; }
+ |	AGGREGATE if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_list(l, $4 );
+	  append_int(l, F_AGGR );
+	  append_int(l, $2 );
+	  $$ = l; }
+ |	PROCEDURE if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_list(l, $4 );
+	  append_int(l, F_PROC );
+	  append_int(l, $2 );
+	  $$ = l; }
+ |	sqlLOADER if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_list(l, $4 );
+	  append_int(l, F_LOADER );
+	  append_int(l, $2 );
+	  $$ = l; }
+ ;
+
 drop_statement:
    drop TABLE if_exists qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, $5 );
-	  append_int(l, $3);
+	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
- | drop routine_designator drop_action
+ | drop drop_routine_designator drop_action
 	{ dlist *l = $2;
 	  append_int(l, 0 ); /* not all */
 	  append_int(l, $3 );
@@ -2466,6 +2513,7 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_FUNC );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2474,6 +2522,7 @@ drop_statement:
 	  append_list(l, $5 );
 	  append_list(l, NULL );
 	  append_int(l, F_FILT );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $6 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2482,6 +2531,7 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_AGGR );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2490,6 +2540,7 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_PROC );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2498,6 +2549,7 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_LOADER );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2507,7 +2559,7 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_VIEW, l ); }
- |  drop TYPE qname drop_action	 
+ |  drop TYPE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, $4 );
@@ -2515,7 +2567,12 @@ drop_statement:
  |  drop ROLE ident	  { $$ = _symbol_create( SQL_DROP_ROLE, $3 ); }
  |  drop USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  drop INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
- |  drop TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
+ |  drop TRIGGER if_exists qname
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_int(l, $3 );
+	  $$ = _symbol_create_list( SQL_DROP_TRIGGER, l );
+	}
  ;
 
 opt_typelist:
@@ -2547,6 +2604,7 @@ sql:
 update_statement: 
 /* todo merge statement */
    delete_stmt
+ | truncate_stmt
  | insert_stmt
  | update_stmt
  | copyfrom_stmt
@@ -2796,6 +2854,27 @@ delete_stmt:
 	  append_list(l, $3);
 	  append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
+ ;
+
+check_identity:
+    /* empty */			{ $$ = 0; }
+ |  CONTINUE IDENTITY	{ $$ = 0; }
+ |  RESTART IDENTITY	{ $$ = 1; }
+ ;
+
+truncate_stmt:
+   TRUNCATE TABLE qname check_identity drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, $4 );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_TRUNCATE, l ); }
+ | TRUNCATE qname check_identity drop_action
+	{ dlist *l = L();
+	  append_list(l, $2 );
+	  append_int(l, $3 );
+	  append_int(l, $4 );
+	  $$ = _symbol_create_list( SQL_TRUNCATE, l ); }
  ;
 
 update_stmt:
@@ -3063,6 +3142,7 @@ with_list_element:
 	  append_symbol(l, $4);
 	  append_int(l, FALSE);	/* no with check */
 	  append_int(l, FALSE);	/* inlined view  (ie not persistent) */
+	  append_int(l, FALSE); /* no replace clause */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
  ;
@@ -5345,6 +5425,7 @@ non_reserved_word:
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 |  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 |  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
+|  COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 ;
 
 name_commalist:
@@ -5477,8 +5558,46 @@ path_specification:
 
 schema_name_list: name_commalist ;
 
+
+comment_on_statement:
+	COMMENT ON catalog_object IS string
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, $5);
+	  $$ = _symbol_create_list( SQL_COMMENT, l );
+	}
+	| COMMENT ON catalog_object IS sqlNULL
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_COMMENT, l );
+	}
+	;
+
+catalog_object:
+	  SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2 ); }
+	| TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2 ); }
+	| VIEW qname { $$ = _symbol_create_list( SQL_VIEW, $2 ); }
+	| COLUMN ident '.' ident
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, $4);
+	  $$ = _symbol_create_list( SQL_COLUMN, l );
+	}
+	| COLUMN ident '.' ident '.' ident
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, $4);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_COLUMN, l );
+	}
+	| INDEX qname { $$ = _symbol_create_list( SQL_INDEX, $2 ); }
+	| SEQUENCE qname { $$ = _symbol_create_list( SQL_SEQUENCE, $2 ); }
+	| routine_designator { $$ = _symbol_create_list( SQL_ROUTINE, $1 ); }
+	;
+
 XML_value_expression:
-  XML_primary	
+  XML_primary
   ;
 
 XML_value_expression_list:
@@ -6057,6 +6176,7 @@ char *token2string(int token)
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
 	SQL(DECLARE);
+	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);
 	SQL(PREPARE);
@@ -6066,7 +6186,10 @@ char *token2string(int token)
 	SQL(CHARSET);
 	SQL(SCHEMA);
 	SQL(TABLE);
+	SQL(VIEW);
+	SQL(INDEX);
 	SQL(TYPE);
+	SQL(SEQUENCE);
 	SQL(CASE);
 	SQL(CAST);
 	SQL(RETURN);
@@ -6139,6 +6262,7 @@ char *token2string(int token)
 	SQL(FRAME);
 	SQL(COMPARE);
 	SQL(FILTER);
+	SQL(ROUTINE);
 	SQL(TEMP_LOCAL);
 	SQL(TEMP_GLOBAL);
 	SQL(INT_VALUE);

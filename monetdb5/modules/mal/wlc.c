@@ -206,7 +206,8 @@ WLCgetConfig(void){
 	str l;
 	FILE *fd;
 
-	l = GDKfilepath(0,0,"wlc.config",0);
+	if((l = GDKfilepath(0,0,"wlc.config",0)) == NULL)
+		throw(MAL,"wlc.getConfig","Could not access wlc.config file\n");
 	fd = fopen(l,"r");
 	GDKfree(l);
 	if( fd == NULL)
@@ -221,7 +222,8 @@ str WLCsetConfig(void){
 	stream *fd;
 
 	/* be aware to be safe, on a failing fopen */
-	path = GDKfilepath(0,0,"wlc.config",0);
+	if((path = GDKfilepath(0,0,"wlc.config",0)) == NULL)
+		throw(MAL,"wlc.setConfig","Could not access wlc.config\n");
 	fd = open_wastream(path);
 	GDKfree(path);
 	if( fd == NULL)
@@ -322,11 +324,13 @@ WLClogger(void *arg)
  */
 str 
 WLCinit(void)
-{ str conf, msg= MAL_SUCCEED;
+{
+	str conf, msg= MAL_SUCCEED;
 
 	if( wlc_state == WLC_STARTUP){
 		// use default location for master configuration file
-		conf = GDKfilepath(0,0,"wlc.config",0);
+		if((conf = GDKfilepath(0,0,"wlc.config",0)) == NULL)
+			throw(MAL,"wlc.init","Could not access wlc.config\n");
 
 		if( access(conf,F_OK) ){
 			GDKfree(conf);
@@ -415,7 +419,8 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( pci->argc == 2)
 		strncpy(path, *getArgReference_str(stk, pci,1), FILENAME_MAX);
 	else{
-		l = GDKfilepath(0,0,"wlc_logs",0);
+		if((l = GDKfilepath(0,0,"wlc_logs",0)) == NULL)
+			throw(SQL,"wlc.master", MAL_MALLOC_FAIL);
 		snprintf(path,FILENAME_MAX,"%s%c",l, DIR_SEP);
 		GDKfree(l);
 	}
@@ -596,10 +601,14 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 {	BAT *b;
-	str sch,tbl,col, msg = MAL_SUCCEED;
+	str sch, tbl, col;
+	str msg = MAL_SUCCEED;
 	(void) mb;
-	b= BATdescriptor(bid);
-	assert(b);
+
+	b = BATdescriptor(bid);
+	if (b == NULL) {
+		throw(MAL, "wlc.datashipping", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
 // large BATs can also be re-created using the query.
 // Copy into should always be expanded, because the source may not
@@ -646,11 +655,12 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:
-	if(sch)
+	BBPunfix(b->batCacheid);
+	if (sch)
 		GDKfree(sch);
-	if(tbl)
+	if (tbl)
 		GDKfree(tbl);
-	if(col)
+	if (col)
 		GDKfree(col);
 	return msg;
 }
@@ -771,6 +781,13 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *b, *bval;
 		b= BATdescriptor(stk->stk[getArg(pci,4)].val.bval);
 		bval= BATdescriptor(stk->stk[getArg(pci,5)].val.bval);
+		if(b == NULL || bval == NULL) {
+			if(b)
+				BBPunfix(b->batCacheid);
+			if(bval)
+				BBPunfix(bval->batCacheid);
+			throw(MAL, "wlr.update", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
 		if( b->ttype == TYPE_void)
 			o = b->tseqbase;
 		else

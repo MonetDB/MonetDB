@@ -45,11 +45,15 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			c = b;
 			bid = getArgReference_bat(stk, pci, 2);
 			b = BATdescriptor(*bid);
+			if (!b) {
+				BBPunfix(c->batCacheid);
+				throw(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
 
-	       		cmp = ATOMcompare(b->ttype);
-	       		it = bat_iterator(b);
+			cmp = ATOMcompare(b->ttype);
+			it = bat_iterator(b);
 			v = BUNtail(it, 0);
-		       	bp = (bit*)Tloc(c, 0);
+			bp = (bit*)Tloc(c, 0);
 
 			for(i=0; i<cnt; i++, bp++, rp++) {
 				*rp = *bp;

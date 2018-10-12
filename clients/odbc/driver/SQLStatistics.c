@@ -291,7 +291,7 @@ SQLStatistics(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLStatistics " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLStatistics %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -342,7 +342,7 @@ SQLStatisticsW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLStatisticsW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLStatisticsW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

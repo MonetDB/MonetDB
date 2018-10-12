@@ -21,6 +21,14 @@
 #include "discoveryrunner.h"
 #include "multiplex-funnel.h"
 
+#ifndef HAVE_PIPE2
+#define pipe2(pipefd, flags)	pipe(pipefd)
+#endif
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC	0
+#endif
+
 typedef struct _multiplexlist {
 	multiplex *m;
 	struct _multiplexlist *next;
@@ -371,11 +379,13 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 		pthread_attr_setdetachstate(&detach, PTHREAD_CREATE_DETACHED);
 
 		/* create communication channel */
-		if (pipe(mfpipe) != 0)
+		if (pipe2(mfpipe, O_CLOEXEC) != 0)
 			Mfprintf(stderr, "failed to create mfpipe: %s\n", strerror(errno));
 		else {
-			fcntl(mfpipe[0], F_SETFD, FD_CLOEXEC);
-			fcntl(mfpipe[1], F_SETFD, FD_CLOEXEC);
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+			(void) fcntl(mfpipe[0], F_SETFD, FD_CLOEXEC);
+			(void) fcntl(mfpipe[1], F_SETFD, FD_CLOEXEC);
+#endif
 			Mfprintf(stdout, "starting multiplex-funnel connection manager\n");
 			if ((i = pthread_create(&mfmanager, &detach,
 									MFconnectionManager, NULL)) != 0) {

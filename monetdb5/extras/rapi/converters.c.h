@@ -1,3 +1,11 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ */
+
 #define RSTR(somestr) mkCharCE(somestr, CE_UTF8)
 
 
@@ -40,8 +48,9 @@
 		b = COLnew(0, TYPE_##tpe, cnt, TRANSIENT);						\
 		if (!b) break;                                                  \
 		b->tnil = 0; b->tnonil = 1; b->tkey = 0;						\
-		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
-		p = (tpe*) Tloc(b, 0);								\
+		b->tsorted = 1; b->trevsorted = 1;								\
+		b->tseqbase = oid_nil;											\
+		p = (tpe*) Tloc(b, 0);											\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = (tpe) access_fun(s)[j];							    \
 			if (na_check){ b->tnil = 1; 	b->tnonil = 0; 	*p= tpe##_nil;} \
@@ -62,7 +71,7 @@
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	// TODO: deal with SQL types (DECIMAL/DATE)
-	switch (ATOMstorage(getBatType(b->ttype))) {
+	switch (ATOMstorage(b->ttype)) {
 		case TYPE_void: {
 			size_t i = 0;
 			varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));

@@ -192,7 +192,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	char *dsn = NULL;
 	BOOL rc;
 
-	ODBCLOG("ConfigDSN %d %s %s 0x%I64x\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (unsigned __int64) (uintptr_t) &data);
+	ODBCLOG("ConfigDSN %d %s %s 0x%" PRIxPTR "\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)", (uintptr_t) &data);
 
 	if (strcmp(driver, DriverName) != 0) {
 		SQLPostInstallerError(ODBC_ERROR_INVALID_NAME,

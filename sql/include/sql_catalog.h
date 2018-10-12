@@ -35,6 +35,7 @@
 #define PRIV_DELETE 8
 #define PRIV_EXECUTE 16
 #define PRIV_GRANT 32
+#define PRIV_TRUNCATE 64
 /* global privs */
 #define PRIV_COPYFROMFILE 1
 #define PRIV_COPYINTOFILE 2
@@ -421,7 +422,7 @@ typedef struct sql_trigger {
 	sql_base base;
 	sht time;		/* before or after */
 	sht orientation; 	/* row or statement */
-	sht event;		/* insert, delete, update */
+	sht event;		/* insert, delete, update, truncate */
 	/* int action_order;	 TODO, order within the set of triggers */
 	struct list *columns;	/* update trigger on list of (sql_kc) columns */
 

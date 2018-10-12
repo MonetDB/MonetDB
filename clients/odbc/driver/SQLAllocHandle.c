@@ -44,7 +44,7 @@ MNDBAllocEnv(SQLHANDLE *OutputHandlePtr)
 	}
 	*OutputHandlePtr = (SQLHANDLE *) newODBCEnv();
 #ifdef ODBCDEBUG
-	ODBCLOG("new env " PTRFMT "\n", PTRFMTCAST *OutputHandlePtr);
+	ODBCLOG("new env %p\n", *OutputHandlePtr);
 #endif
 	return *OutputHandlePtr == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
@@ -64,7 +64,7 @@ MNDBAllocDbc(ODBCEnv *env, SQLHANDLE *OutputHandlePtr)
 	}
 	*OutputHandlePtr = (SQLHANDLE *) newODBCDbc(env);
 #ifdef ODBCDEBUG
-	ODBCLOG("new dbc " PTRFMT "\n", PTRFMTCAST *OutputHandlePtr);
+	ODBCLOG("new dbc %p\n", *OutputHandlePtr);
 #endif
 	return *OutputHandlePtr == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
@@ -84,7 +84,7 @@ MNDBAllocStmt(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
 	}
 	*OutputHandlePtr = (SQLHANDLE *) newODBCStmt(dbc);
 #ifdef ODBCDEBUG
-	ODBCLOG("new stmt " PTRFMT "\n", PTRFMTCAST *OutputHandlePtr);
+	ODBCLOG("new stmt %p\n", *OutputHandlePtr);
 #endif
 	return *OutputHandlePtr == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
@@ -104,7 +104,7 @@ MNDBAllocDesc(ODBCDbc *dbc, SQLHANDLE *OutputHandlePtr)
 	}
 	*OutputHandlePtr = (SQLHANDLE *) newODBCDesc(dbc);
 #ifdef ODBCDEBUG
-	ODBCLOG("new desc " PTRFMT "\n", PTRFMTCAST *OutputHandlePtr);
+	ODBCLOG("new desc %p\n", *OutputHandlePtr);
 #endif
 	return *OutputHandlePtr == NULL ? SQL_ERROR : SQL_SUCCESS;
 }
@@ -147,11 +147,11 @@ SQLAllocHandle(SQLSMALLINT HandleType,	/* type to be allocated */
 	       SQLHANDLE *OutputHandlePtr) /* ptr for allocated handle struct */
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocHandle %s " PTRFMT "\n",
+	ODBCLOG("SQLAllocHandle %s %p\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" :
 		    HandleType == SQL_HANDLE_DBC ? "Dbc" :
 		    HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST InputHandle);
+		InputHandle);
 #endif
 
 	return MNDBAllocHandle(HandleType, InputHandle, OutputHandlePtr);

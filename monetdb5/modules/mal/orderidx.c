@@ -31,7 +31,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	BUN cnt, step=0,o;
 	MalBlkPtr smb;
 	MalStkPtr newstk;
-	Symbol snew;
+	Symbol snew = NULL;
 	InstrPtr q, pack;
 	char name[IDLENGTH];
 	str msg= MAL_SUCCEED;
@@ -100,6 +100,10 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
 	snew = newFunction(putName("user"), putName(name),
 	       FUNCTIONsymbol);
+	if(snew == NULL) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
 	arg = newTmpVariable(smb, tpe);
@@ -110,6 +114,10 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	/* create the pack instruction first, as it will hold
 	 * intermediate variables */
 	pack = newInstruction(0, putName("bat"), putName("orderidx"));
+	if(pack == NULL) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	pack->argv[0] = newTmpVariable(smb, TYPE_void);
 	pack = pushArgument(smb, pack, arg);
 	setVarFixed(smb, getArg(pack, 0));
@@ -150,6 +158,10 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	/* finalize OID packing, check, and evaluate */
 	pushInstruction(smb,pack);
 	q = newAssignment(smb);
+	if(q == NULL) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	q->barrier = EXITsymbol;
 	q->argv[0] = loopvar;
 	pushEndInstruction(smb);
@@ -161,6 +173,10 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	} else {
 		/* evaluate MAL block and keep the ordered OID bat */
 		newstk = prepareMALstack(smb, smb->vsize);
+		if (newstk == NULL) {
+			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		newstk->up = 0;
 		newstk->stk[arg].vtype= TYPE_bat;
 		newstk->stk[arg].val.bval= b->batCacheid;
@@ -172,6 +188,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	fprintFunction(stderr, smb, 0, LIST_MAL_ALL);
 #endif
 	/* get rid of temporary MAL block */
+bailout:
 	freeSymbol(snew);
 	return msg;
 }

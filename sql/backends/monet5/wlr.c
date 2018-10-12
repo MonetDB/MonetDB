@@ -57,7 +57,8 @@ WLRgetConfig(void){
 	char line[MAXLINE];
 	FILE *fd;
 
-	path = GDKfilepath(0,0,"wlr.config",0);
+	if((path = GDKfilepath(0,0,"wlr.config",0)) == NULL)
+		throw(MAL,"wlr.getConfig","Could not access wlr.config file\n");
 	fd = fopen(path,"r");
 	GDKfree(path);
 	if( fd == NULL)
@@ -88,7 +89,8 @@ WLRsetConfig(void){
 	char *path;
 	stream *fd;
 
-	path = GDKfilepath(0,0,"wlr.config",0);
+	if((path = GDKfilepath(0,0,"wlr.config",0)) == NULL)
+		throw(MAL,"wlr.setMaster","Could not access wlr.config file\n");
 	fd = open_wastream(path);
 	GDKfree(path);
 	if( fd == NULL){
@@ -129,7 +131,8 @@ WLRgetMaster(void)
 
 	/* collect master properties */
 	snprintf(path,FILENAME_MAX,"..%c%s",DIR_SEP,wlr_master);
-	dir = GDKfilepath(0,path,"wlc.config",0);
+	if((dir = GDKfilepath(0,path,"wlc.config",0)) == NULL)
+		throw(MAL,"wlr.getMaster","Could not access wlc.config file\n");
 
 	fd = fopen(dir,"r");
 	GDKfree(dir);
@@ -179,7 +182,19 @@ WLRprocess(void *arg)
 	c->promptlength = 0;
 	c->listing = 0;
 	c->fdout = open_wastream(".wlr");
+	if(c->fdout == NULL) {
+		wlrprocessrunning =0;
+		MCcloseClient(c);
+		GDKerror("Could not create user for WLR process\n");
+		return;
+	}
 	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
+	if(prev == NULL) {
+		wlrprocessrunning =0;
+		MCcloseClient(c);
+		GDKerror("Could not create user for WLR process\n");
+		return;
+	}
 	c->curprg = prev;
 	mb = c->curprg->def;
 	setVarType(mb, 0, TYPE_void);
@@ -213,7 +228,11 @@ WLRprocess(void *arg)
 			mnstr_printf(GDKerr, "wlr.process File %s too large to process", path);
 			continue;
 		}
-		c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
+		if((c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz)) == NULL) {
+			close_stream(fd);
+			mnstr_printf(GDKerr, "wlr.process Failed to open stream for file %s", path);
+			continue;
+		}
 		if (bstream_next(c->fdin) < 0)
 			mnstr_printf(GDKerr, "!WARNING: could not read %s\n", path);
 
@@ -693,7 +712,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_oid: WLRcolumn(oid); break;
 	case TYPE_flt: WLRcolumn(flt); break;
 	case TYPE_dbl: WLRcolumn(dbl); break;
-#ifdef HAVE
+#ifdef HAVE_HGE
 	case TYPE_hge: WLRcolumn(hge); break;
 #endif
 	case TYPE_str:
@@ -837,7 +856,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_oid: WLRvalue(oid); break;
 	case TYPE_flt: WLRvalue(flt); break;
 	case TYPE_dbl: WLRvalue(dbl); break;
-#ifdef HAVE
+#ifdef HAVE_HGE
 	case TYPE_hge: WLRvalue(hge); break;
 #endif
 	case TYPE_str:
