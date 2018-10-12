@@ -15,7 +15,7 @@ savepoint sp1;
 
 insert into "anothername" values (4);
 select "something" from "anothername";
-alter table "anothername" alter column "something" rename to "somethingelse";
+alter table "anothername" rename column "something" to "somethingelse";
 select "somethingelse" from "anothername";
 select "name" from sys.columns where "table_id" in (select "id" from sys.tables where "name" = 'anothername');
 

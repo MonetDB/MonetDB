@@ -18,8 +18,8 @@ select * from "ichanged";
 select "name" from sys.columns where "table_id" in (select "id" from sys.tables where "name" = 'rename');
 select "name" from sys.columns where "table_id" in (select "id" from sys.tables where "name" = 'ichanged');
 
-alter table "rename" alter column "oneval" rename to "threeval"; --error
-alter table "ichanged" alter column "oneval" rename to "threeval";
+alter table "rename" rename column "oneval" to "threeval"; --error
+alter table "ichanged" rename column "oneval" to "threeval";
 
 insert into "rename" values (NULL, NULL), (5, 'five'); --error
 insert into "ichanged" values (NULL, NULL), (5, 'five');

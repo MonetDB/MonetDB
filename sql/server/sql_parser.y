@@ -1123,11 +1123,11 @@ alter_statement:
 	  append_string(l, $7);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_RENAME_TABLE, l ); }
- | ALTER TABLE if_exists qname ALTER opt_column ident RENAME TO ident
+ | ALTER TABLE if_exists qname RENAME opt_column ident TO ident
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_string(l, $7);
-	  append_string(l, $10);
+	  append_string(l, $9);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_RENAME_COLUMN, l); }
  | ALTER USER ident passwd_schema

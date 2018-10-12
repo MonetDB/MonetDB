@@ -8,7 +8,7 @@ drop schema "somethingelse";
 
 select "name" from sys.tables where "name" = 'thistableshouldnotexist'; --should be empty
 alter table if exists "thistableshouldnotexist" rename to "somethingelse";
-alter table if exists "thistableshouldnotexist" alter column "some" rename to "other";
+alter table if exists "thistableshouldnotexist" rename column "some" to "other";
 alter table if exists "thistableshouldnotexist" drop column "a";
 alter table "thistableshouldnotexist" add column "a" int; --error
 
@@ -20,8 +20,8 @@ insert into "other_table" values (2);
 select "a" from "other_table";
 
 alter table if exists "other_table" rename to "other_stuff";
-alter table if exists "other_stuff" alter column "a" rename to "b";
-alter table if exists "other_stuff" alter column "c" rename to "d"; --error, the "if exists" clauses verifies until the table
+alter table if exists "other_stuff" rename column "a" to "b";
+alter table if exists "other_stuff" rename column "c" to "d"; --error, the "if exists" clauses verifies until the table
 select "b" from "other_stuff";
 
 alter table "other_stuff" add column "b" int; --error
