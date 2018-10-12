@@ -35,6 +35,8 @@
 #include <sys/time.h>		/* gettimeofday */
 #endif
 
+#define YEAR_MAX		5867411
+
 typedef int date;
 #define date_nil		((date) int_nil)
 #define date_isnil(X)	((X) == date_nil)

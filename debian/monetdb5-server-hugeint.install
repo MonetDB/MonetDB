@@ -1,5 +1,5 @@
-# usr/lib/monetdb5/*_hge.mal EXCEPT: sql*_hge.mal
-debian/tmp/usr/lib/monetdb5/[!s]*_hge.mal usr/lib/monetdb5
+# usr/lib/x86_64-linux-gnu/monetdb5/*_hge.mal EXCEPT: sql*_hge.mal
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/[!s]*_hge.mal usr/lib/x86_64-linux-gnu/monetdb5
 
-# usr/lib/monetdb5/autoload/*_hge.mal EXCEPT: ??_sql_hge.mal
-debian/tmp/usr/lib/monetdb5/autoload/[0-9][0-9]_[!s]*_hge.mal
+# usr/lib/x86_64-linux-gnu/monetdb5/autoload/*_hge.mal EXCEPT: ??_sql_hge.mal
+debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/[0-9][0-9]_[!s]*_hge.mal

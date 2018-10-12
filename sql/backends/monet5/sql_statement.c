@@ -117,6 +117,31 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 		return pushNil(mb, q, TYPE_str);
 }
 
+void
+create_merge_partitions_accumulator(backend *be)
+{
+	sql_subtype tpe;
+
+	sql_find_subtype(&tpe, "bigint", 0, 0);
+	be->cur_append = constantAtom(be, be->mb, atom_int(be->mvc->sa, &tpe, 0));
+}
+
+int
+add_to_merge_partitions_accumulator(backend *be, int nr)
+{
+	MalBlkPtr mb = be->mb;
+	int help = be->cur_append;
+	InstrPtr q = newStmt(mb, calcRef, "+");
+
+	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_lng);
+	q = pushArgument(mb, q, help);
+	q = pushArgument(mb, q, nr);
+
+	be->first_statement_generated = true; /* set the first statement as generated */
+
+	return getDestVar(q);
+}
+
 int
 stmt_key(stmt *s)
 {
@@ -1116,7 +1141,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 }
 
 stmt *
-stmt_sample(backend *be, stmt *s, stmt *sample)
+stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1126,6 +1151,14 @@ stmt_sample(backend *be, stmt *s, stmt *sample)
 	q = newStmt(mb, sampleRef, subuniformRef);
 	q = pushArgument(mb, q, s->nr);
 	q = pushArgument(mb, q, sample->nr);
+
+	if (seed) {
+		if (seed->nr < 0)
+			return NULL;
+
+		q = pushArgument(mb, q, seed->nr);
+	}
+
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_sample);
 		if (ns == NULL) {
@@ -1135,6 +1168,11 @@ stmt_sample(backend *be, stmt *s, stmt *sample)
 
 		ns->op1 = s;
 		ns->op2 = sample;
+
+		if (seed) {
+			ns->op3 = seed;
+		}
+
 		ns->nrcols = s->nrcols;
 		ns->key = s->key;
 		ns->aggr = s->aggr;
@@ -1379,6 +1417,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		switch (cmptype) {
 		case cmp_equal:
+		case cmp_equal_nil:
 			op = "=";
 			break;
 		case cmp_notequal:
@@ -1418,35 +1457,47 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
-		q = newStmt(mb, algebraRef, thetaselectRef);
-		q = pushArgument(mb, q, l);
-		if (sub)
-			q = pushArgument(mb, q, sub->nr);
-		q = pushArgument(mb, q, r);
-		switch (cmptype) {
-		case cmp_equal:
-			q = pushStr(mb, q, "==");
-			break;
-		case cmp_notequal:
-			q = pushStr(mb, q, "!=");
-			break;
-		case cmp_lt:
-			q = pushStr(mb, q, "<");
-			break;
-		case cmp_lte:
-			q = pushStr(mb, q, "<=");
-			break;
-		case cmp_gt:
-			q = pushStr(mb, q, ">");
-			break;
-		case cmp_gte:
-			q = pushStr(mb, q, ">=");
-			break;
-		default:
-			showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
-			if (q)
-				freeInstruction(q);
-			q = NULL;
+		if (cmptype == cmp_equal_nil) {
+			q = newStmt(mb, algebraRef, selectRef);
+			q = pushArgument(mb, q, l);
+			if (sub)
+				q = pushArgument(mb, q, sub->nr);
+			q = pushArgument(mb, q, r);
+			q = pushArgument(mb, q, r);
+			q = pushBit(mb, q, TRUE);
+			q = pushBit(mb, q, TRUE);
+			q = pushBit(mb, q, anti);
+		} else {
+			q = newStmt(mb, algebraRef, thetaselectRef);
+			q = pushArgument(mb, q, l);
+			if (sub)
+				q = pushArgument(mb, q, sub->nr);
+			q = pushArgument(mb, q, r);
+			switch (cmptype) {
+			case cmp_equal:
+				q = pushStr(mb, q, anti?"!=":"==");
+				break;
+			case cmp_notequal:
+				q = pushStr(mb, q, anti?"==":"!=");
+				break;
+			case cmp_lt:
+				q = pushStr(mb, q, anti?">=":"<");
+				break;
+			case cmp_lte:
+				q = pushStr(mb, q, anti?">":"<=");
+				break;
+			case cmp_gt:
+				q = pushStr(mb, q, anti?"<=":">");
+				break;
+			case cmp_gte:
+				q = pushStr(mb, q, anti?"<":">=");
+				break;
+			default:
+				showException(GDKout, SQL, "sql", "SQL2MAL: error impossible select compare\n");
+				if (q)
+					freeInstruction(q);
+				q = NULL;
+			}
 		}
 		if (q == NULL)
 			return NULL;
@@ -2334,6 +2385,8 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_ALTER_TABLE_ADD_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
 	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
 	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
+	case DDL_ALTER_TABLE_ADD_RANGE_PARTITION:	q = newStmt(mb, sqlcatalogRef, alter_add_range_partitionRef); break;
+	case DDL_ALTER_TABLE_ADD_LIST_PARTITION:	q = newStmt(mb, sqlcatalogRef, alter_add_value_partitionRef); break;
 	case DDL_COMMENT_ON:	q = newStmt(mb, sqlcatalogRef, comment_onRef); break;
 	default:
 		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
@@ -2594,7 +2647,7 @@ stmt_table_clear(backend *be, sql_table *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-       
+
 	if (!t->s && t->data) { /* declared table */
 		int *l = t->data; 
 		int cnt = list_length(t->columns.set)+1, i;
@@ -2909,7 +2962,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	p = find_prop(rel->p, PROP_REMOTE);
 	if (p) 
 		rel->p = prop_remove(rel->p, p);
-	rel = rel_optimizer(be->mvc, rel);
+	rel = rel_optimizer(be->mvc, rel, 0);
 	if (p) {
 		p->p = rel->p;
 		rel->p = p;
@@ -2980,8 +3033,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 	char aggrF[64];
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
-	int complex_aggr = 0;
-	int abort_on_error, *stmt_nr = NULL;
+	bool complex_aggr = false;
+	bool abort_on_error;
+	int *stmt_nr = NULL;
 
 	if (op1->nr < 0)
 		return NULL;
@@ -2992,7 +3046,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 
 	if (strcmp(aggrfunc, "avg") == 0 || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
 		|| strcmp(aggrfunc, "str_group_concat") == 0)
-		complex_aggr = 1;
+		complex_aggr = true;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
 	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0;
 
@@ -3244,19 +3298,13 @@ func_name(sql_allocator *sa, const char *n1, const char *n2)
 		char *ns = SA_NEW_ARRAY(sa, char, l2 + 1);
 		if(!ns)
 			return NULL;
-		strncpy(ns, n2, l2);
-		ns[l2] = 0;
+		snprintf(ns, l2 + 1, "%s", n2);
 		return ns;
 	} else {
 		char *ns = SA_NEW_ARRAY(sa, char, l1 + l2 + 2), *s = ns;
 		if(!ns)
 			return NULL;
-		strncpy(ns, n1, l1);
-		ns += l1;
-		*ns++ = '_';
-		strncpy(ns, n2, l2);
-		ns += l2;
-		*ns = '\0';
+		snprintf(ns, l1 + l2 + 2, "%s_%s", n1, n2);
 		return s;
 	}
 }

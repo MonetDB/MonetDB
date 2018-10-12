@@ -27,7 +27,7 @@
 char *MOSfiltername[]={"raw","runlength","dictionary","delta","linear","frame","prefix","calendar","EOL"};
 BUN MOSblocklimit = 100000;
 
-str MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug);
+str MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug);
 
 static void
 MOSinit(MOStask task, BAT *b){
@@ -85,20 +85,20 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	// safe the general properties
 
 		snprintf(buf,BUFSIZ,"%g", task->hdr->ratio);
-		if( BUNappend(btech, "ratio", FALSE) != GDK_SUCCEED ||
-			BUNappend(bcount, &zero, FALSE) != GDK_SUCCEED ||
-			BUNappend(binput, &zero, FALSE) != GDK_SUCCEED ||
-			BUNappend(bproperties, buf, FALSE) != GDK_SUCCEED ||
-			BUNappend(boutput, &zero , FALSE) != GDK_SUCCEED)
+		if( BUNappend(btech, "ratio", false) != GDK_SUCCEED ||
+			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
+			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
+			BUNappend(bproperties, buf, false) != GDK_SUCCEED ||
+			BUNappend(boutput, &zero , false) != GDK_SUCCEED)
 				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	for(i=0; i < MOSAIC_METHODS-1; i++){
 		lng zero = 0;
 		snprintf(buf,BUFSIZ,"%s blocks", MOSfiltername[i]);
-		if( BUNappend(btech, buf, FALSE) != GDK_SUCCEED ||
-			BUNappend(bcount, &task->hdr->blks[i], FALSE) != GDK_SUCCEED ||
-			BUNappend(binput, &task->hdr->elms[i], FALSE) != GDK_SUCCEED ||
-			BUNappend(boutput, &zero , FALSE) != GDK_SUCCEED ||
-			BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
+			BUNappend(bcount, &task->hdr->blks[i], false) != GDK_SUCCEED ||
+			BUNappend(binput, &task->hdr->elms[i], false) != GDK_SUCCEED ||
+			BUNappend(boutput, &zero , false) != GDK_SUCCEED ||
+			BUNappend(bproperties, "", false) != GDK_SUCCEED)
 				throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 	}
 	if( task->hdr->blks[MOSAIC_FRAME])
@@ -108,11 +108,11 @@ MOSlayout(Client cntxt, BAT *b, BAT *btech, BAT *bcount, BAT *binput, BAT *boutp
 	if( task->hdr->blks[MOSAIC_CALENDAR])
 		MOSlayout_calendar(cntxt,task,btech,bcount,binput,boutput,bproperties);
 
-	if( BUNappend(btech, "========", FALSE) != GDK_SUCCEED ||
-		BUNappend(bcount, &zero, FALSE) != GDK_SUCCEED ||
-		BUNappend(binput, &zero, FALSE) != GDK_SUCCEED ||
-		BUNappend(boutput, &zero , FALSE) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+	if( BUNappend(btech, "========", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
+		BUNappend(binput, &zero, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &zero , false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED)
 			throw(MAL,"mosaic.layout", MAL_MALLOC_FAIL);
 
 	while(task->start< task->stop){
@@ -299,7 +299,7 @@ MOSoptimizerCost(Client cntxt, MOStask task, int typewidth)
 
 /* the source is extended with a BAT mosaic mirror */
 str
-MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug)
+MOScompressInternal(Client cntxt, bat *bid, MOStask task, bool debug)
 {
 	BAT *o = NULL, *bsrc;		// the BAT to be augmented with a compressed heap
 	str msg = MAL_SUCCEED;
@@ -505,7 +505,7 @@ MOScompressInternal(Client cntxt, bat *bid, MOStask task, int debug)
 	// if we couldnt compress well enough, ignore the result
 	// TODO
 
-	bsrc->batDirty = 1;
+	bsrc->batDirtydesc = true;
 	task->ratio = task->hdr->ratio = (flt)task->bsrc->theap.free/ task->bsrc->tmosaic->free;
 finalize:
 	MCexitMaintenance(cntxt);
@@ -694,7 +694,8 @@ MOSdecompressInternal(Client cntxt, bat *bid)
 	// remove the compressed mirror
 	GDKfree(task);
 	// continue with all work
-	bsrc->batDirty = 1;
+	// TODO Check if the heap structures are all set to dirty
+	bsrc->batDirtydesc = true;
 	MOSdestroy(bsrc);
 	BATsettrivprop(bsrc);
 	BBPunfix(bsrc->batCacheid);
@@ -1400,13 +1401,13 @@ MOSanalyseInternal(Client cntxt, int threshold, MOStask task, bat bid)
 #endif
 	case TYPE_str:
 		mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-		MOScompressInternal(cntxt, &bid, task,TRUE);
+		MOScompressInternal(cntxt, &bid, task, true);
 		MOSdestroy(BBPdescriptor(bid));
 		break;
 	default:
 		if( b->ttype == TYPE_timestamp || b->ttype == TYPE_date || b->ttype == TYPE_daytime){
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t", bid, BBP_physical(bid), type, BATcount(b));
-			MOScompressInternal(cntxt, &bid, task,TRUE);
+			MOScompressInternal(cntxt, &bid, task, true);
 			MOSdestroy(BBPdescriptor(bid));
 		} else
 			mnstr_printf(cntxt->fdout,"#%d\t%-8s\t%s\t"BUNFMT"\t illegal compression type %s\n", bid, BBP_logical(bid), type, BATcount(b), getTypeName(b->ttype));
@@ -1515,11 +1516,11 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 	// Collect the results in a table
 	for(i=0;i< CANDIDATES; i++){
 		if( pattern[i] && pat[i].xf >=0){
-			if( BUNappend(boutput,&pat[i].xsize,FALSE) != GDK_SUCCEED ||
-				BUNappend(btech,pat[i].technique,FALSE) != GDK_SUCCEED ||
-				BUNappend(bratio,&pat[i].xf,FALSE) != GDK_SUCCEED ||
-				BUNappend(bcompress,&pat[i].clk1,FALSE) != GDK_SUCCEED ||
-				BUNappend(bdecompress,&pat[i].clk2,FALSE) != GDK_SUCCEED )
+			if( BUNappend(boutput,&pat[i].xsize,false) != GDK_SUCCEED ||
+				BUNappend(btech,pat[i].technique,false) != GDK_SUCCEED ||
+				BUNappend(bratio,&pat[i].xf,false) != GDK_SUCCEED ||
+				BUNappend(bcompress,&pat[i].clk1,false) != GDK_SUCCEED ||
+				BUNappend(bdecompress,&pat[i].clk2,false) != GDK_SUCCEED )
 					return;
 		}
 		if( pat[i].technique) GDKfree(pat[i].technique);
@@ -1742,7 +1743,7 @@ MOSoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 		(void) cntxt;
 #endif
-		MOScompressInternal(cntxt, &bid, task, TRUE);
+		MOScompressInternal(cntxt, &bid, task,  true);
 		
 		// analyse result to detect a new combination
 		for(k=0, j=0, bit=1; j < MOSAIC_METHODS-1; j++){

@@ -46,6 +46,14 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 		return SQL_ERROR;
 	}
 
+	if (stmt->qtimeout != stmt->Dbc->qtimeout) {
+		char buf[48];
+		snprintf(buf, sizeof(buf), "call sys.settimeout(%" PRIu64 ")",
+			 (uint64_t) stmt->qtimeout);
+		if (mapi_query_handle(hdl, buf) == MOK)
+			stmt->Dbc->qtimeout = stmt->qtimeout;
+	}
+
 	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
 				 stmt->noScan);
 	if (query == NULL) {

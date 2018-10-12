@@ -51,6 +51,7 @@ mal_export str RMTepilogue(void *ret);
 mal_export str RMTresolve(bat *ret, str *pat);
 mal_export str RMTconnectScen( str *ret, str *ouri, str *user, str *passwd, str *scen);
 mal_export str RMTconnect( str *ret, str *uri, str *user, str *passwd);
+mal_export str RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 mal_export str RMTdisconnect(void *ret, str *conn);
 mal_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -63,6 +64,6 @@ mal_export str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 mal_export str RMTbincopyfrom(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTisalive(int *ret, str *conn);
+mal_export str RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid);
 #endif /* HAVE_MAPI */
 #endif /* _REMOTE_DEF */
-

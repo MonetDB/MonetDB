@@ -50,20 +50,13 @@ SQLtransaction_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int chain = *getArgReference_int(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	char buf[BUFSIZ];
-	int ret = 0;
 
 	initcontext();
 
 	(void) chain;
 	if (sql->session->auto_commit == 1)
 		throw(SQL, "sql.trans", SQLSTATE(3BM30) "RELEASE SAVEPOINT: not allowed in auto commit mode");
-	ret = mvc_release(sql, name);
-	if (ret < 0) {
-		snprintf(buf, BUFSIZ, SQLSTATE(3B000) "RELEASE SAVEPOINT: (%s) failed", name);
-		throw(SQL, "sql.trans", "%s", buf);
-	}
-	return MAL_SUCCEED;
+	return mvc_release(sql, name);
 }
 
 str
@@ -73,7 +66,6 @@ SQLtransaction_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int chain = *getArgReference_int(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int ret = 0;
 
 	initcontext();
 
@@ -83,12 +75,7 @@ SQLtransaction_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			throw(SQL, "sql.trans", SQLSTATE(2DM30) "COMMIT: not allowed in auto commit mode");
 	}
-	ret = mvc_commit(sql, chain, name);
-	if (ret < 0 && !name)
-		throw(SQL, "sql.trans", SQLSTATE(2D000) "COMMIT: failed");
-	if (ret < 0 && name)
-		throw(SQL, "sql.trans", SQLSTATE(3B000) "SAVEPOINT: (%s) failed", name);
-	return MAL_SUCCEED;
+	return mvc_commit(sql, chain, name, false);
 }
 
 str
@@ -98,17 +85,12 @@ SQLtransaction_rollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int chain = *getArgReference_int(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int ret = 0;
 
 	initcontext();
 
 	if (sql->session->auto_commit == 1)
 		throw(SQL, "sql.trans", SQLSTATE(2DM30) "ROLLBACK: not allowed in auto commit mode");
-	ret = mvc_rollback(sql, chain, name);
-	if (ret < 0 && name) {
-		throw(SQL, "sql.trans", SQLSTATE(3B000) "ROLLBACK TO SAVEPOINT: (%s) failed", name);
-	}
-	return MAL_SUCCEED;
+	return mvc_rollback(sql, chain, name, false);
 }
 
 str
@@ -118,18 +100,21 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int chain = *getArgReference_int(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
+	int ret = 0;
 
 	initcontext();
 
 	if (sql->session->auto_commit == 0)
 		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
-	if (sql->session->active) {
-		mvc_rollback(sql, 0, NULL);
-	}
+	if (sql->session->active)
+		msg = mvc_rollback(sql, 0, NULL, false);
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
 	sql->session->level = chain;
-	if(mvc_trans(sql) < 0)
+	ret = mvc_trans(sql);
+	if(msg)
+		return msg;
+	else if(ret < 0)
 		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -139,6 +124,7 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg;
+	int ret = 0;
 
 	(void) stk;
 	(void) pci;
@@ -149,14 +135,15 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (sql->session->auto_commit == 0)
 		throw(SQL, "sql.trans", SQLSTATE(25001) "START TRANSACTION: cannot start a transaction within a transaction");
-	if (sql->session->active) {
-		mvc_rollback(sql, 0, NULL);
-	}
+	if (sql->session->active)
+		msg = mvc_rollback(sql, 0, NULL, false);
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
 	sql->session->level = 0;
-	if(mvc_trans(sql) < 0)
+	ret = mvc_trans(sql);
+	if(msg)
+		return msg;
+	else if(ret < 0)
 		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	return msg;
+	return MAL_SUCCEED;
 }
-

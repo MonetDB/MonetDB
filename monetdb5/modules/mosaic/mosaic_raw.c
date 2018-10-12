@@ -51,11 +51,11 @@ MOSlayout_raw(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput, 
 		case 8: output = wordaligned( MosaicBlkSize + sizeof(lng)* MOSgetCnt(blk),lng); break ;
 		}
 	}
-	if( BUNappend(btech, "raw blk", FALSE) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
-		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+	if( BUNappend(btech, "raw blk", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED)
 		return;
 }
 
@@ -367,7 +367,7 @@ MOSselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *h
 		case 2: break ;
 		case 4: break ;
 		case 8: break ;
-		}
+		
 		default:
 			if( task->type == TYPE_date)
 				select_raw(date); 
@@ -440,6 +440,7 @@ MOSselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *h
 						}
 					}
 				}
+		}
 	}
 	MOSskip_raw(cntxt,task);
 	task->lb = o;
@@ -634,8 +635,8 @@ MOSprojection_raw(Client cntxt,  MOStask task)
 		w = (TPE*) task->src;\
 		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
 		if ( *w == *v){\
-			if( BUNappend(task->lbat, &oo, FALSE)!= GDK_SUCCEED ||\
-			BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED)\
+			if( BUNappend(task->lbat, &oo, false)!= GDK_SUCCEED ||\
+			BUNappend(task->rbat, &o, false) != GDK_SUCCEED)\
 			throw(MAL,"mosaic.raw",MAL_MALLOC_FAIL);\
 		}\
 	}\
@@ -669,8 +670,8 @@ MOSjoin_raw(Client cntxt,  MOStask task)
 				w = (int*) task->src;
 				for(n = task->elm, o = 0; n -- > 0; w++,o++)
 				if ( *w == *v){
-					if( BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||
-						BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED )
+					if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||
+						BUNappend(task->rbat, &o, false) != GDK_SUCCEED )
 						throw(MAL,"mosaic.raw",MAL_MALLOC_FAIL);
 				}
 			}

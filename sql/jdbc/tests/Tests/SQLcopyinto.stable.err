@@ -1,0 +1,42 @@
+stderr of test 'SQLcopyinto` in directory 'sql/jdbc/tests` itself:
+
+
+# 12:51:59 >  
+# 12:51:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33746" "--set" "mapi_usock=/var/tmp/mtest-12494/.s.monetdb.33746" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_jdbc_tests" "--set" "embedded_r=yes" "--set" "embedded_py=true" "--set" "embedded_c=true"
+# 12:51:59 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33746
+# cmdline opt 	mapi_usock = /var/tmp/mtest-12494/.s.monetdb.33746
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_jdbc_tests
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 12:52:00 >  
+# 12:52:00 >  "./SQLcopyinto.SQL.sh" "SQLcopyinto"
+# 12:52:00 >  
+
+
+# 12:52:00 >  
+# 12:52:00 >  java SQLcopyinto "jdbc:monetdb://catskill:33746/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 12:52:00 >  
+
+
+# 12:52:00 >  
+# 12:52:00 >  "Done."
+# 12:52:00 >  
+

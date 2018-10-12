@@ -11,12 +11,6 @@ bin_Mdiff = {
 	LIBS = $(MALLOC_LIBS)
 }
 
-bin_Mtimeout = {
-	SOURCES = Mtimeout.c
-	COND = NOT_WIN32
-	LIBS = $(PTHREAD_LIBS)
-}
-
 bin_Mapprove.py = bin_Mtest.py
 bin_Mapprove.py.bat = NATIVE_WIN32?bin_Mtest.py.bat
 
@@ -41,5 +35,5 @@ scripts_sh = {
 	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
-	SOURCES = Mlog.in MkillUsers.in
+	SOURCES = Mlog.in
 }

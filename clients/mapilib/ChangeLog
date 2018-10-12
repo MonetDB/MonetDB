@@ -1,3 +1,7 @@
 # ChangeLog file for mapilib
 # This file is updated with Maddlog
 
+* Wed Sep 12 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function mapi_cache_shuffle.
+- Removed function mapi_stream_query.
+

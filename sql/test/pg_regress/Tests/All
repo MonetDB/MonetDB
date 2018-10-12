@@ -79,7 +79,7 @@ random	#[MK] causes an non-displayed error and lost of information in the result
 arrays
 #btree_index	[MK]MonetDB does not support construction of btrees
 #hash_index		[MK]MonetDB does not support hash index management by the user
-#ToDo update
+update
 #ToDo namespace
 #ToDo privileges
 #ToDo rules

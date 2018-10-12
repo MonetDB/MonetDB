@@ -5,21 +5,20 @@ stdout of test 'schema_3_1_88` in directory 'sql/test/LSST` itself:
 # 14:45:00 >   mserver5 "--config=/ufs/mk/current//Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/mk/current//Linux/lib/MonetDB5:/ufs/mk/current//Linux/lib/MonetDB5/lib:/ufs/mk/current//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/current//Linux/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=38469 --set xrpc_port=48120 --set monet_prompt= --trace --forcemito --set mal_listing=2  "--dbname=mTests_src_test_LSST" --set mal_listing=0 ; echo ; echo Over..
 # 14:45:00 >  
 
-# MonetDB server v5.23.0, based on kernel v1.41.0
-# Not released
-# Serving database 'mTests_src_test_LSST', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 7.750 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:38469/
-# MonetDB/SQL module v2.41.0 loaded
-# MonetDB/GIS module v0.21.0 loaded
-
-Ready.
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_LSST', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:31345/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4412/.s.monetdb.31345
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 
+Ready.
 
 # 14:45:00 >  
 # 14:45:00 >  mclient -lsql -ftest -i -e --host=eir --port=38469 

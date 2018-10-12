@@ -188,9 +188,9 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	for( i= 0; codes[i].nme; i++){
-		if (BUNappend(n, codes[i].nme, FALSE) != GDK_SUCCEED ||
-			BUNappend(c, &codes[i].calls, FALSE) != GDK_SUCCEED ||
-			BUNappend(t, &codes[i].timing, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(n, codes[i].nme, false) != GDK_SUCCEED ||
+			BUNappend(c, &codes[i].calls, false) != GDK_SUCCEED ||
+			BUNappend(t, &codes[i].timing, false) != GDK_SUCCEED) {
 			BBPreclaim(n);
 			BBPreclaim(c);
 			BBPreclaim(t);

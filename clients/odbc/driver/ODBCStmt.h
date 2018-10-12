@@ -80,6 +80,8 @@ typedef struct tODBCDRIVERSTMT {
 
 	int querytype;		/* query type as returned by server */
 
+	SQLULEN qtimeout;	/* query timeout requested */
+
 	SQLUINTEGER cursorType;
 	SQLULEN cursorScrollable;
 	SQLULEN retrieveData;

@@ -12,11 +12,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 		(see below)
   + Mdiff	a C program to show the differences of two files as HTML document
   + Mapprove.py	a python script to approve recent test output (see below)
-  + Mtimeout	a C program to limit the resources of a program
-		(thanks to Tim Ruhl, tim@ddi.nl)
-  + MkillUsers	a bash script to kill test processes that are orphaned
-		(used "fuser" to detect such processes)
-  (Mtimeout and MkillUsers are currently available on Unix, only)
 
   When called with command-line option "--help", each of these tools
   provides the respective usage information.
@@ -34,14 +29,14 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 
 - Each test named TST consists of
   + a test script which is ONE of the following:
-    * an arbitrary executable (e.g., a shell script)        (TST.sh)        (~,^)
-       on Windows, executables must be ".(exe|com)"         (TST.(exe|com)) (~,^)
-                   and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (~,^)
-    * a Python script                                       (TST.py)        (~,^)
-    * a MAL script to be executed by mserver5               (TST.mal)  (',^,`)
-    * a MAL script to be executed by mclient -lmal          (TST.malC) (",^,`)
-    * a SQL script to be executed by mclient -lsql          (TST.sql)  (",^,`)
-   (~) In case the name of an arbitrary executable or Python script is
+    * an arbitrary executable (e.g., a shell script)        (TST.sh)        (1,4)
+       on Windows, executables must be ".(exe|com)"         (TST.(exe|com)) (1,4)
+                   and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (1,4)
+    * a Python script                                       (TST.py)        (1,4)
+    * a MAL script to be executed by mserver5               (TST.mal)  (2,4,5)
+    * a MAL script to be executed by mclient -lmal          (TST.malC) (3,4,5)
+    * a SQL script to be executed by mclient -lsql          (TST.sql)  (3,4,5)
+   (1) In case the name of an arbitrary executable or Python script is
         suffixed with ".MAL" (i.e., TST.MAL[.(sh|exe|com|bat|cmd|py)]),
         Mtest.py starts an mserver5 with a MAL-listerner on MAPIPORT
         in the background before executing the test. The test can then
@@ -51,45 +46,45 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
         MAPIPORT is started;
        In both cases, Mtest.py stops the mserver5 again, once the test has
         finished.
-   (') For mserver5, if several files are present named
+   (2) For mserver5, if several files are present named
         TST_sXX.mal (XX={00,01,...,99})
         these are executed by subsequently calling mserver5
-   (") For mclient, if several files are present named
+   (3) For mclient, if several files are present named
         (1) TST_sXX.(malC|sql) (XX={00,01,...,99})
             these are executed subsequently using the same mserver5
         (2) TST_pXX.(malC|sql) (XX={00,01,...,99})
             these are executed concurrently using the same mserver5
-   (^) For each test file TST[.*] involved,
+   (4) For each test file TST[.*] involved,
         if a file called
 	TST[.*].src  exists instead of  TST[.*],
 	TST[.*].src  is expected to contain a single line
 	giving the original location of the test file to be used.
-   (`) For each test file TST.* involved,
+   (5) For each test file TST.* involved,
         if a file called
 	TST.*.in  exists instead of  TST.*,  all environment variables in
 	TST.*.in  are replaced by their current value
 	when copying  $TSTSRCDIR/TST.*.in  to  $TSTTRGDIR/TST.* .
   + a MAL script to be used as prelude for mserver5
-     (optional)                                             (TST.prelude5) (^,`)
+     (optional)                                             (TST.prelude5) (4,5)
   + for frontend tests with MonetDB5 (mserver5), a MAL script to be executed
      by the server before stating the frontend
-     (optional)                                             (TST.dbinit5) (^,`)
+     (optional)                                             (TST.dbinit5)  (4,5)
   + for mclient tests, a MAL script to be used as
      prologue for mserver5, i.e., a script that is executed by mserver5 after
      dbinit is executed, but before (the first) mclient connects to mserver5
-     (optional)                                             (TST.prologue5)(^,`)
+     (optional)                                             (TST.prologue5)(4,5)
   + for mclient tests, a MAL script to be used as
      epilogue for mserver5, i.e., a script that is executed by mserver5 after
      (all) mclient(s) have finished
-     (optional)                                             (TST.epilogue5)(^,`)
+     (optional)                                             (TST.epilogue5)(4,5)
   + a file that contains a list of modules (one per line)
-     required by the test  (optional)                       (TST.modules)  (^,`)
+     required by the test  (optional)                       (TST.modules)  (4,5)
   + a file that contains a list of tests (one per line) that must
      have run successfully prior to the test (optional)     (TST.reqtests)
   + a file that if it exists indicates that the --forcemito flag
      must not be passed to the server                       (TST.nomito)
   + a set of files used by the arbitrary executable
-     (optional)                                              (TST.*)        (^,`)
+     (optional)                                              (TST.*)       (4,5)
   + stable (i.e. correct) versions of stdout and stderr
      of the test                                            (TST.stable.{out,err})
     operating system (OS) specific stable output can be
@@ -114,15 +109,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
          mclient -lsql < TST[_(s|p)XX].sql
      or  TST.SQL.(sh|exe|com|bat|cmd) TST
      or  python TST..SQL.py
-
-  (On Unix, all M<tool>'s are started with "Mtimeout -timeout TIMEOUT
-   M<tool> ..." to kill (probably) hanging M<tool>'s after a certain
-   timeout. The default TIMEOUT value is 60 seconds, i.e. 1 minute.
-   The TIMEOUT can be changed globally using Mtest.py's "-t" option.
-   The TIMEOUT for a single test can be extended be a factor provided
-   in a file TST.timeout (see above).
-   Additionally, MkillUsers is scheduled as at-job to kill orphaned
-   processes that Mtimeout cannot reach any more.)
 
   (mserver5 is called with "--debug=$GDK_DEBUG $setMONETDB_MOD_PATH --set monet_prompt=".
    See below and "mserver5 --help" for details.)
@@ -208,12 +194,11 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	HOST		hostname
 	SYST		`uname`
 	SYSTVER		`uname``uname -r`
-	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
-	MDIFF		"$MTIMEOUT Mdiff"
-	MSERVER		"$MTIMEOUT mserver5 --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set monet_prompt="
-	MAL_CLIENT	"$MTIMEOUT $MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
-	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
-	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
+	MDIFF		"Mdiff"
+	MSERVER		"mserver5 --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set monet_prompt="
+	MAL_CLIENT	"$MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
+	SQL_CLIENT	"$SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
+	SQL_DUMP	"$SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
 	MAPIPORT	the MAPI   port (random number between 30000 and 39999)
 	TST		name of the current test
   	TSTDB		name of default test database, unique for each directory

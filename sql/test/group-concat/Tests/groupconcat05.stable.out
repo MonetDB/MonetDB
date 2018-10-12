@@ -29,13 +29,13 @@ Ready.
 #insert into testmore values (1, 'another'), (1, 'testing'), (1, 'todo');
 [ 3	]
 #select a, group_concat(b, '!') from testmore group by a;
-% sys.testmore,	sys.L4 # table_name
+% sys.testmore,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	20 # length
 [ 1,	"another!testing!todo"	]
 #select group_concat(b, '!') from testmore;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % clob # type
 % 20 # length
@@ -43,7 +43,7 @@ Ready.
 #insert into testmore values (2, 'lets'), (3, 'get'), (2, 'harder');
 [ 3	]
 #select a, group_concat(b, '---') from testmore group by a;
-% sys.testmore,	sys.L4 # table_name
+% sys.testmore,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	24 # length
@@ -51,7 +51,7 @@ Ready.
 [ 2,	"lets---harder"	]
 [ 3,	"get"	]
 #select group_concat(b, '---') from testmore;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % clob # type
 % 46 # length
@@ -59,7 +59,7 @@ Ready.
 #insert into testmore values (3, 'even'), (2, 'more'), (1, '');
 [ 3	]
 #select a, group_concat(b, '') from testmore group by a;
-% sys.testmore,	sys.L4 # table_name
+% sys.testmore,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	18 # length
@@ -67,13 +67,13 @@ Ready.
 [ 2,	"letshardermore"	]
 [ 3,	"geteven"	]
 #select group_concat(b, '') from testmore;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % clob # type
 % 39 # length
 [ "anothertestingtodoletsgetharderevenmore"	]
 #select a, group_concat(b, '-') from testmore group by a;
-% sys.testmore,	sys.L4 # table_name
+% sys.testmore,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	21 # length
@@ -81,7 +81,7 @@ Ready.
 [ 2,	"lets-harder-more"	]
 [ 3,	"get-even"	]
 #select a, group_concat(b) from testmore group by a;
-% sys.testmore,	sys.L4 # table_name
+% sys.testmore,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	21 # length
@@ -91,7 +91,7 @@ Ready.
 #insert into testmore values (3, 'even'), (2, NULL), (1, '');
 [ 3	]
 #select a, group_concat(b, 'XyZ\n') from testmore group by a;
-% sys.testmore,	sys.L4 # table_name
+% sys.testmore,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	34 # length
@@ -99,7 +99,7 @@ Ready.
 [ 2,	NULL	]
 [ 3,	"getXyZ\nevenXyZ\neven"	]
 #select a, group_concat(b, NULL) from testmore group by a;
-% sys.testmore,	sys.L4 # table_name
+% sys.testmore,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	0 # length
@@ -107,7 +107,37 @@ Ready.
 [ 2,	NULL	]
 [ 3,	NULL	]
 #select group_concat(b, NULL) from testmore;
-% sys.L4 # table_name
+% sys.L3 # table_name
+% L3 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#select group_concat(a, NULL) from testmore;
+% sys.L3 # table_name
+% L3 # name
+% clob # type
+% 0 # length
+[ NULL	]
+#select group_concat(a, a) from testmore;
+% sys.L3 # table_name
+% L3 # name
+% clob # type
+% 23 # length
+[ "11111121312131211131211"	]
+#select group_concat(a, 8) from testmore;
+% sys.L3 # table_name
+% L3 # name
+% clob # type
+% 23 # length
+[ "18181828382838281838281"	]
+#select group_concat(a, b) from testmore;
+% sys.L3 # table_name
+% L3 # name
+% clob # type
+% 89 # length
+[ "1another1another1another2another3another2another3another2another1another3another2another1"	]
+#select group_concat(b, a) from testmore;
+% sys.L3 # table_name
 % L3 # name
 % clob # type
 % 0 # length

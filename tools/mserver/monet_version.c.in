@@ -15,10 +15,26 @@
 #include <pcre.h>
 #endif
 #ifdef HAVE_OPENSSL
+#include <openssl/opensslconf.h>
 #include <openssl/opensslv.h>
+#include <openssl/crypto.h>
 #endif
 #ifdef HAVE_LIBXML
 #include <libxml/xmlversion.h>
+#endif
+
+#define STRING(a)  # a
+#define XSTRING(s) STRING(s)
+
+#if defined(HAVE_LIBPCRE) || defined(HAVE_OPENSSL)
+static void
+print_libversion(const char *lib, const char *rtvers, const char *cmvers)
+{
+	printf("  %s: %s", lib, rtvers);
+	if (strcmp(rtvers, cmvers) != 0)
+		printf(" (compiled with %s)", cmvers);
+	printf("\n");
+}
 #endif
 
 void
@@ -31,7 +47,7 @@ monet_version(void)
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
 	cores = MT_check_nr_cores();
 
-	printf("MonetDB 5 server v" VERSION " ");
+	printf("MonetDB 5 server v%s ", VERSION);
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 		printf("\"%s\" ", MONETDB_RELEASE);
@@ -47,7 +63,7 @@ monet_version(void)
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993 - July 2008 CWI\n"
-			"Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved\n");
+	       "Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved\n");
 	printf("Visit https://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");
@@ -56,33 +72,30 @@ monet_version(void)
 			GDKnr_threads, GDKnr_threads != 1 ? "s" : ""); */
 	printf("Libraries:\n");
 #ifdef HAVE_LIBPCRE
-	{
-		char pcreversion[] = "@pcreversion@";
-		printf("  libpcre: %s", pcre_version());
-		if (*pcreversion)
-			printf(" (%s)", pcreversion);
-		printf("\n");
-	}
+	/* PCRE_PRERELEASE may be defined as an empty value.  In order
+	 * to get the proper amount of white space between various
+	 * parts of the version string on different compilers (none
+	 * between minor and prerelease, a single one between that
+	 * combination and the date), we need to resort to some
+	 * run-time trickery since we can't do it with the
+	 * preprocessor */
+	print_libversion("libpcre",
+			 pcre_version(),
+			 XSTRING(Z PCRE_PRERELEASE)[1] == 0
+			 ? XSTRING(PCRE_MAJOR.PCRE_MINOR PCRE_DATE)
+			 : XSTRING(PCRE_MAJOR.PCRE_MINOR)
+			   XSTRING(PCRE_PRERELEASE PCRE_DATE));
 #endif
 #ifdef HAVE_OPENSSL
-	{
-		char opensslversion[] = "@opensslversion@";
-		printf("  openssl: %s", OPENSSL_VERSION_TEXT);
-		if (*opensslversion)
-			printf(" (%s)", opensslversion);
-		printf("\n");
-	}
+	print_libversion("openssl",
+			 OpenSSL_version(OPENSSL_VERSION),
+			 OPENSSL_VERSION_TEXT);
 #endif
 #ifdef HAVE_LIBXML
-	{
-		char libxml2version[] = "@libxml2version@";
-		printf("  libxml2: %s", LIBXML_DOTTED_VERSION);
-		if (*libxml2version)
-			printf(" (%s)", libxml2version);
-		printf("\n");
-	}
+	/* no run-time version available, so only compile time */
+	printf("  libxml2: %s\n", LIBXML_DOTTED_VERSION);
 #endif
-	printf("Compiled by: %s (" HOST ")\n", "@builtby@");
+	printf("Compiled by: %s (%s)\n", "@builtby@", HOST);
 	printf("Compilation: %s\n", "@compilercall@");
 	printf("Linking    : %s\n", "@linkercall@");
 }

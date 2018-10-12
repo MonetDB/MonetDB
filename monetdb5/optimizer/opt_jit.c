@@ -83,7 +83,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	OPTDEBUGjit(
 		chkTypes(cntxt->usermodule,mb,TRUE);
-		GDKfree(msg);
+		freeException(msg);
 		msg = MAL_SUCCEED;
 		fprintf(stderr, "#Optimize JIT done\n");
 		fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG);

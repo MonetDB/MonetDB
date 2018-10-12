@@ -208,12 +208,19 @@ def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
         if l[0] not in ("-", "$", "@"):
             l = am_translate_dir(l, am) + ".la"
         if c:
-            if c in ('NATIVE_WIN32', 'WIN32'):
+            c = c.split('&')
+            if 'NATIVE_WIN32' in c:
                 continue
             global libno
             v = 'LIB%d' % libno
             libno = libno + 1
-            add = 'if %s\n%s = %s\nelse\n%s =\nendif\n%s' % (c, v, l, v, add)
+            s = ''
+            for x in c:
+                s += 'if %s\n' % x
+            s += '%s = %s\n' % (v, l)
+            for x in c:
+                s += 'else\n%s =\nendif\n' % v
+            add = s + add
             l = '$(%s)' % v
         add = add + " " + l
     return add + "\n"
@@ -715,6 +722,8 @@ def am_library(fd, var, libmap, am):
     cond = ''
     condname = ''
     if 'COND' in libmap:
+        if len(libmap['COND']) == 1 and libmap['COND'][0] in ('WIN32', 'NATIVE_WIN32'):
+            return
         for condname in libmap['COND']:
             fd.write("if %s\n" % condname)
         fd.write(" C_%s = %s\n" % (libname, libname))
@@ -753,6 +762,8 @@ def am_library(fd, var, libmap, am):
     if 'MODULE' in libmap:
         ldflags.append('-module')
         ldflags.append('-avoid-version')
+    if 'NOINST' not in libmap:
+        ldflags.append('@NO_UNDEFINED@')
     if "LDFLAGS" in libmap:
         for x in libmap["LDFLAGS"]:
             ldflags.append(x)

@@ -1,0 +1,31 @@
+stdout of test 'invalid_creds` in directory 'sql/test/remote` itself:
+
+
+# 12:15:45 >  
+# 12:15:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34190" "--set" "mapi_usock=/var/tmp/mtest-8733/.s.monetdb.34190" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/kutsurak/work/monet/sources/MonetDB/build/install/var/MonetDB/mTests_sql_test_remote" "--set" "embedded_c=true"
+# 12:15:45 >  
+
+# MonetDB 5 server v11.30.0 (git id: 3b50461604 br: remote_auth)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_remote', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.513 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://zarquon.zarniwoop.org:34190/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8733/.s.monetdb.34190
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:15:45 >  
+# 12:15:45 >  "/bin/python" "invalid_creds.SQL.py" "invalid_creds"
+# 12:15:45 >  
+
+
+# 12:15:48 >  
+# 12:15:48 >  "Done."
+# 12:15:48 >  
+

@@ -60,7 +60,7 @@ skip_scheme(const char *uri)
 		uri++;
 		while (('a' <= *uri && *uri <= 'z') ||
 			   ('A' <= *uri && *uri <= 'Z') ||
-			   ('0' <= *uri && *uri <= '9') ||
+			   isdigit((unsigned char) *uri) ||
 			   *uri == '+' || *uri == '-' || *uri == '.')
 			uri++;
 		if (*uri == ':')
@@ -69,16 +69,14 @@ skip_scheme(const char *uri)
 	return NULL;
 }
 
-#define ishex(c) (('0' <= (c) && (c) <= '9') || \
-				  ('a' <= (c) && (c) <= 'f') || \
-				  ('A' <= (c) && (c) <= 'F'))
+#define ishex(c)		isxdigit((unsigned char) (c))
 #define isreserved(c)	((c) == ';' || (c) == '/' || (c) == '?' || \
 						 (c) == ':' || (c) == '@' || (c) == '&' || \
 						 (c) == '=' || (c) == '+' || (c) == '$' || \
 						 (c) == ',')
 #define isunreserved(c) (('a' <= (c) && (c) <= 'z') || \
 						 ('A' <= (c) && (c) <= 'Z') || \
-						 ('0' <= (c) && (c) <= '9') || \
+						 isdigit((unsigned char) (c)) || \
 						 (c) == '-' || (c) == '_' || (c) == '.' || \
 						 (c) == '!' || (c) == '~' || (c) == '*' || \
 						 (c) == '\'' || (c) == '(' || (c) == ')')
@@ -408,7 +406,7 @@ URLgetContent(str *retval, url *Str1)
 	if (mnstr_errnr(f) != 0) {
 		str err = createException(MAL, "url.getContent",
 				"opening stream failed: %s", mnstr_error(f));
-		mnstr_destroy(f);
+		close_stream(f);
 		*retval = NULL;
 		return err;
 	}
@@ -424,14 +422,14 @@ URLgetContent(str *retval, url *Str1)
 		if (retbuf == NULL) {
 			if (oldbuf != NULL)
 				GDKfree(oldbuf);
-			mnstr_destroy(f);
+			close_stream(f);
 			throw(MAL, "url.getContent", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		oldbuf = NULL;
 		(void)memcpy(retbuf + rlen, buf, len);
 		rlen += len;
 	}
-	mnstr_destroy(f);
+	close_stream(f);
 	if (len < 0) {
 		GDKfree(retbuf);
 		throw(MAL, "url.getContent", "read error");

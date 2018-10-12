@@ -45,7 +45,6 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 		fprintf(stderr, "%s: %s, unexpected error from SQLGetDiagRec\n", func, pref);
 		break;
 	case SQL_NO_DATA:
-		fprintf(stderr, "%s: %s, no error message from driver\n", func, pref);
 		break;
 	default:
 		fprintf(stderr, "%s: %s, weird return value from SQLGetDiagRec\n", func, pref);
@@ -64,7 +63,7 @@ check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 		break;
 	case SQL_ERROR:
 		prerr(tpe, hnd, func, "Error");
-		exit(1);
+		break;
 	case SQL_INVALID_HANDLE:
 		fprintf(stderr, "%s: Error: invalid handle\n", func);
 		exit(1);
@@ -111,7 +110,7 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_ENV, env, "SQLSetEnvAttr");
 
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
-	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle 1");
+	check(ret, SQL_HANDLE_ENV, env, "SQLAllocHandle (DBC)");
 
 	ret = SQLConnect(dbc, (SQLCHAR *) dsn, SQL_NTS, (SQLCHAR *) user, SQL_NTS, (SQLCHAR *) pass, SQL_NTS);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLConnect");
@@ -121,8 +120,7 @@ main(int argc, char **argv)
 
 	/* create a test table to be filled with values */
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
-
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 2");
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT 1)");
 
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
 			    "CREATE TABLE odbcsampletest (\n"
@@ -259,7 +257,7 @@ main(int argc, char **argv)
 
 	/* now the handle for the odd entries */
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt2);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 3");
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT 2)");
 
 	ret = SQLPrepare(stmt2, (SQLCHAR *) "SELECT * FROM odbcsampletest WHERE 2*(i/2) <> i", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt2, "SQLPrepare 3");
@@ -304,23 +302,23 @@ main(int argc, char **argv)
 
 	/* cleanup and disconnect */
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt2);
-	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle 1");
+	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle (STMT 2)");
 
 	/* drop the test table */
 	ret = SQLExecDirect(stmt, (SQLCHAR *) "DROP TABLE odbcsampletest", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect 3");
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle (STMT 1)");
 
 	ret = SQLDisconnect(dbc);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLDisconnect");
 
 	ret = SQLFreeHandle(SQL_HANDLE_DBC, dbc);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLFreeHandle 3");
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLFreeHandle (DBC)");
 
 	ret = SQLFreeHandle(SQL_HANDLE_ENV, env);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle 4");
+	check(ret, SQL_HANDLE_ENV, env, "SQLFreeHandle (ENV)");
 
 	return 0;
 }

@@ -85,11 +85,11 @@ MOSlayout_delta(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput
 		case 8: output = wordaligned(sizeof(lng)+ MosaicBlkSize + MOSgetCnt(blk)-1,lng); break ;
 		}
 	}
-	if( BUNappend(btech, "delta", FALSE) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
-		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+	if( BUNappend(btech, "delta", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED)
 		return;
 }
 
@@ -713,8 +713,8 @@ MOSprojection_delta(Client cntxt,  MOStask task)
 		w = (TPE*) task->src;\
 		for(n = task->elm, o = 0; n -- > 0; w++,o++)\
 		if ( *w == base){\
-			if( BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||\
-			BUNappend(task->rbat, &o, FALSE) !=GDK_SUCCEED) \
+			if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
+			BUNappend(task->rbat, &o, false) !=GDK_SUCCEED) \
 			throw(MAL,"mosaic.delta",MAL_MALLOC_FAIL);\
 		}\
 	}\

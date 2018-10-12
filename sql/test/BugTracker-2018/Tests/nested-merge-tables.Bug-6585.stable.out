@@ -1,0 +1,114 @@
+stdout of test 'nested-merge-tables.Bug-6585` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 13:40:48 >  
+# 13:40:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36034" "--set" "mapi_usock=/var/tmp/mtest-7469/.s.monetdb.36034" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Mar2018/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_r=yes" "--set" "embedded_py=true" "--set" "embedded_c=true"
+# 13:40:48 >  
+
+# MonetDB 5 server v11.29.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-23.eduroam.cwi.nl:36034/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7469/.s.monetdb.36034
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 99_system.sql
+
+# 13:40:49 >  
+# 13:40:49 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7469" "--port=36034"
+# 13:40:49 >  
+
+#create merge table test1 (a int);
+#create merge table test2 (a int);
+#create table test3 (like test1);
+#insert into test3 values (1);
+[ 1	]
+#alter table test1 add table test2;
+#alter table test2 add table test3;
+#select a from test1;
+% sys.test1 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+#select a from test2;
+% sys.test2 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+#select a from test3;
+% sys.test3 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+#alter table test2 add table test4;
+#alter table test4 add table test5;
+#select a from test1;
+% .test1 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+#select a from test2;
+% .test2 # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+#alter table test1 drop table test2;
+#alter table test2 drop table test3;
+#drop table test1;
+#drop table test2;
+#drop table test3;
+
+# 13:40:49 >  
+# 13:40:49 >  "Done."
+# 13:40:49 >  
+

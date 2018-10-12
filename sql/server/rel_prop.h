@@ -24,6 +24,7 @@ typedef struct prop {
 #define PROP_FETCH	5	/* fetchjoin */
 #define PROP_REMOTE     6	/* uri for remote execution */
 #define PROP_USED	10	/* number of times exp is used */
+#define PROP_DISTRIBUTE	11	/* number of times exp is used */
 
 extern prop * prop_create( sql_allocator *sa, int kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);

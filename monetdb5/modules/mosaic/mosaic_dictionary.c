@@ -127,11 +127,11 @@ MOSlayout_dictionary_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BA
 	for(i=0; i< task->hdr->dictsize; i++){
 		snprintf(buf, BUFSIZ,"dictionary[%d]",i);
 		MOSdump_dictionaryInternal(bufv, BUFSIZ, task,i);
-		if( BUNappend(btech, buf, FALSE) != GDK_SUCCEED ||
-			BUNappend(bcount, &zero, FALSE) != GDK_SUCCEED ||
-			BUNappend(binput, &zero, FALSE) != GDK_SUCCEED ||
-			BUNappend(boutput, &task->hdr->dictfreq[i], FALSE) != GDK_SUCCEED ||
-			BUNappend(bproperties, bufv, FALSE) != GDK_SUCCEED)
+		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
+			BUNappend(bcount, &zero, false) != GDK_SUCCEED ||
+			BUNappend(binput, &zero, false) != GDK_SUCCEED ||
+			BUNappend(boutput, &task->hdr->dictfreq[i], false) != GDK_SUCCEED ||
+			BUNappend(bproperties, bufv, false) != GDK_SUCCEED)
 		return;
 	}
 }
@@ -146,11 +146,11 @@ MOSlayout_dictionary(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *b
 	(void) cntxt;
 	input = cnt * ATOMsize(task->type);
 	output =  MosaicBlkSize + (cnt * task->hdr->bits)/8 + (((cnt * task->hdr->bits) %8) != 0);
-	if( BUNappend(btech, "dictionary blk", FALSE) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
-		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+	if( BUNappend(btech, "dictionary blk", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED)
 		return;
 }
 
@@ -778,8 +778,8 @@ MOSprojection_dictionary(Client cntxt,  MOStask task)
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
 			j= getBitVector(base,i,(int) hdr->bits); \
 			if ( *w == task->hdr->dict.val##TPE[j]){\
-				if(BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED)\
+				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
+				BUNappend(task->rbat, &o, false) != GDK_SUCCEED)\
 				throw(MAL,"mosaic.dictionary",MAL_MALLOC_FAIL);\
 			}\
 		}\

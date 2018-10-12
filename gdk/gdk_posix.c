@@ -79,7 +79,7 @@ setenv(const char *name, const char *value, int overwrite)
 	int ret = 0;
 
 	if (overwrite || getenv(name) == NULL) {
-		char *p = (char *) GDKmalloc(2 + strlen(name) + strlen(value));
+		char *p = GDKmalloc(2 + strlen(name) + strlen(value));
 
 		if (p == NULL)
 			return -1;
@@ -1094,7 +1094,7 @@ win_mkdir(const char *pathname, const int mode)
 }
 #endif
 
-#ifndef WIN32
+#ifndef NATIVE_WIN32
 
 void
 MT_sleep_ms(unsigned int ms)

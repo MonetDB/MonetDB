@@ -12,9 +12,11 @@ INCLUDES = ../../common/options ../../common/stream ../../common/utils \
 lib_mapi = {
 	VERSION = $(MAPI_VERSION)
 	SOURCES = mapi.c mapi.rc
-	LIBS = $(SOCKET_LIBS) ../../common/stream/libstream \
-		../../common/options/libmoptions \
-		../../common/utils/libmcrypt $(openssl_LIBS)
+	LIBS = ../../common/options/libmoptions \
+		../../common/utils/libmcrypt \
+		WIN32?../../common/stream/libstream \
+		WIN32?$(SOCKET_LIBS) \
+		WIN32?$(openssl_LIBS)
 }
 
 headers_mapi = {

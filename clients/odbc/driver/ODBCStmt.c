@@ -76,6 +76,8 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->querytype = -1;
 	stmt->rowcount = 0;
 
+	stmt->qtimeout = dbc->qtimeout; /* inherit query timeout */
+
 	/* add this stmt to the administrative linked stmt list */
 	stmt->next = dbc->FirstStmt;
 	dbc->FirstStmt = stmt;

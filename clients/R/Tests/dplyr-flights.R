@@ -1,3 +1,5 @@
+cat("#~BeginProfilingOutput~#\n", file=stderr())
+
 ff <- textConnection("asdf", open="w")
 # hide output from connect and attach since it would blow up the test output
 # dangerous since it might hide useful warnings
@@ -118,5 +120,6 @@ so(flights %>%
   ) %>%
   filter(arr > 30 | dep > 30))
 
+cat("#~EndProfilingOutput~#\n", file=stderr())
 
 print("SUCCESS")

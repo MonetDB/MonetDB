@@ -102,11 +102,11 @@ MOSlayout_linear(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 		case 8: output = wordaligned( MosaicBlkSize + 2 *sizeof(lng),lng); break ;
 		}
 	}
-	if( BUNappend(btech, "linear blk", FALSE) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
-		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED )
+	if( BUNappend(btech, "linear blk", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED )
 		return;
 }
 
@@ -724,8 +724,8 @@ MOSprojection_linear(Client cntxt,  MOStask task)
 		TYPE val = *(TYPE*) linear_base(blk) ;\
 		for(oo= (oid) first; oo < (oid) last; val+=step, oo++)\
 			if ( *w == val){\
-				if(BUNappend(task->lbat, &oo, FALSE)!= GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, FALSE)!= GDK_SUCCEED)\
+				if(BUNappend(task->lbat, &oo, false)!= GDK_SUCCEED ||\
+				BUNappend(task->rbat, &o, false)!= GDK_SUCCEED)\
 				throw(MAL,"mosaic.linear",MAL_MALLOC_FAIL);;\
 			}\
 	}\
@@ -761,8 +761,8 @@ MOSjoin_linear(Client cntxt,  MOStask task)
 				int val = *(int*) linear_base(blk) ;
 				for(oo= (oid) first; oo < (oid) last; val+= step, oo++){
 					if ( *w == val){
-						if( BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||
-						BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED) 
+						if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||
+						BUNappend(task->rbat, &o, false) != GDK_SUCCEED) 
 							throw(MAL,"mosaic.linear",MAL_MALLOC_FAIL);
 					}
 				}

@@ -1,0 +1,87 @@
+stderr of test 'mergepart21` in directory 'sql/test/merge-partitions` itself:
+
+
+# 11:15:07 >  
+# 11:15:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34012" "--set" "mapi_usock=/var/tmp/mtest-9195/.s.monetdb.34012" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 11:15:07 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34012
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9195/.s.monetdb.34012
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 11:15:08 >  
+# 11:15:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9195" "--port=34012"
+# 11:15:08 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = ALTER TABLE trydropme ADD COLUMN failing int; --error
+ERROR = !ALTER TABLE: cannot add column to VIEW 'trydropme'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = ALTER TABLE trydropme DROP COLUMN cc; --error
+ERROR = !ALTER TABLE: cannot drop column 'cc': is the partitioned column on the table 'trydropme'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = ALTER TABLE nexttest ADD COLUMN failing int; --error
+ERROR = !ALTER TABLE: cannot add column to VIEW 'nexttest'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = ALTER TABLE nexttest DROP COLUMN a; --error
+ERROR = !ALTER TABLE: cannot drop column 'a': the expression used in 'nexttest' depends on it
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = DROP FUNCTION dosomething; --error
+ERROR = !DROP FUNCTION: there are database objects dependent on function dosomething;
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-28263/.s.monetdb.31060
+QUERY = ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN ('ups'); --error
+ERROR = !conversion of string 'ups' to type lng failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-4817/.s.monetdb.33584
+QUERY = ALTER TABLE nexttest DROP COLUMN dd; --error
+ERROR = !ALTER TABLE: cannot drop column from MERGE TABLE 'nexttest'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = ALTER TABLE nexttest ADD COLUMN again int; --error
+ERROR = !ALTER TABLE: cannot add column to MERGE TABLE 'nexttest'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = ALTER TABLE subtable1 DROP COLUMN dd; --error
+ERROR = !ALTER TABLE: cannot drop column from a PARTITION of a MERGE or REPLICA TABLE 'subtable1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = ALTER TABLE subtable1 ADD COLUMN again int; --error
+ERROR = !ALTER TABLE: cannot add column to a PARTITION of a MERGE or REPLICA TABLE 'subtable1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = CREATE MERGE TABLE nexttest (a int, dd real) PARTITION BY VALUES USING (dosomethingelse(a)); --error
+ERROR = !SELECT: no such unary operator 'dosomethingelse(int)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = ALTER TABLE nexttest ADD TABLE subtable3 AS PARTITION IN (1, 2, 10); --error
+ERROR = !ALTER TABLE: no such table 'nexttest' in schema 'sys'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-9195/.s.monetdb.34012
+QUERY = DROP TABLE nexttest; --error
+ERROR = !DROP TABLE: no such table 'nexttest'
+CODE  = 42S02
+
+# 11:15:08 >  
+# 11:15:08 >  "Done."
+# 11:15:08 >  
+

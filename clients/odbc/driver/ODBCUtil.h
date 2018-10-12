@@ -92,12 +92,12 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 			errfunc((hdl), "01004", NULL, 0);		\
 	} while (0)
 
-extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg);
-extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout);
+extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, const char **errmsg);
+extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout);
 
 #define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)			\
 	do {								\
-		char *e;						\
+		const char *e;						\
 		(s) = (t *) ODBCwchar2utf8((ws), (wsl), &e);		\
 		if (e) {						\
 			/* General error */				\
@@ -109,7 +109,8 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, 
 	} while (0)
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, cw, errfunc, hdl)		\
 	do {								\
-		char *e = ODBCutf82wchar((s), (sl), (ws), (wsl) / (cw), &(sl)); \
+		const char *e = ODBCutf82wchar((s), (sl), (ws),		\
+					       (wsl) / (cw), &(sl));	\
 		if (e) {						\
 			/* General error */				\
 			errfunc((hdl), "HY000", e, 0);			\

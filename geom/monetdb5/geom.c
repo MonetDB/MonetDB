@@ -1598,8 +1598,8 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		strncpy(newPath, path, pathLength);
 		newPath[pathLength] = '\0';
 	}
-	if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED ||
-	    BUNappend(geomBAT, singleWKB, TRUE) != GDK_SUCCEED)
+	if (BUNappend(idBAT, newPath, true) != GDK_SUCCEED ||
+	    BUNappend(geomBAT, singleWKB, true) != GDK_SUCCEED)
 		err = createException(MAL, "geom.Dump", SQLSTATE(38000) "Geos operation BUNappend failed");
 
 	GDKfree(newPath);
@@ -1756,8 +1756,8 @@ dumpPointsPoint(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, unsi
 	}
 	sprintf(newPath, "%s%u", path, *lvl);
 
-	if (BUNappend(idBAT, newPath, TRUE) != GDK_SUCCEED ||
-	    BUNappend(geomBAT, pointWKB, TRUE) != GDK_SUCCEED)
+	if (BUNappend(idBAT, newPath, false) != GDK_SUCCEED ||
+	    BUNappend(geomBAT, pointWKB, false) != GDK_SUCCEED)
 		err = createException(MAL, "geom.Dump", SQLSTATE(38000) "Geos operation BUNappend failed");
 
 	GDKfree(newPath);

@@ -86,11 +86,11 @@ MOSlayout_runlength(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 		}
 		break;
 	}
-	if( BUNappend(btech, "runlength blk", FALSE) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
-		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED )
+	if( BUNappend(btech, "runlength blk", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED )
 		return;
 }
 
@@ -682,8 +682,8 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 	for(n = task->elm, o = 0; n -- > 0; w++,o++)\
 	if ( *w == *v)\
 		for(oo= (oid) first; oo < (oid) last; v++, oo++){\
-			if(BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||\
-			BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED )\
+			if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
+			BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
 			throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);\
 		}\
 }
@@ -717,8 +717,8 @@ MOSjoin_runlength(Client cntxt,  MOStask task)
 				for(n = task->elm, o = 0; n -- > 0; w++,o++)
 				if ( *w == *v)
 					for(oo= (oid) first; oo < (oid) last; v++, oo++){
-						if( BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||
-						BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED )
+						if( BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||
+						BUNappend(task->rbat, &o, false) != GDK_SUCCEED )
 						throw(MAL,"mosaic.runlength",MAL_MALLOC_FAIL);
 					}
 			}

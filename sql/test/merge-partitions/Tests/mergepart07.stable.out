@@ -1,0 +1,57 @@
+stdout of test 'mergepart07` in directory 'sql/test/merge-partitions` itself:
+
+
+# 10:46:33 >  
+# 10:46:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37654" "--set" "mapi_usock=/var/tmp/mtest-2104/.s.monetdb.37654" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions"
+# 10:46:33 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-23.eduroam.cwi.nl:37654/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-2104/.s.monetdb.37654
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:46:33 >  
+# 10:46:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2104" "--port=37654"
+# 10:46:33 >  
+
+#CREATE MERGE TABLE listparts (a int, b varchar(32)) PARTITION BY RANGE (a);
+#CREATE TABLE subtable1 (a int, b varchar(32));
+#CREATE TABLE subtable2 (a int, b varchar(32));
+#INSERT INTO subtable1 VALUES (NULL, 'hello');
+[ 1	]
+#INSERT INTO subtable2 VALUES (102, 'hello');
+[ 1	]
+#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 10 AND 100 WITH NULL;
+#ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN 101 AND 110;
+#ALTER TABLE listparts DROP TABLE subtable1;
+#ALTER TABLE listparts DROP TABLE subtable2;
+#DROP TABLE listparts;
+#DROP TABLE subtable1;
+#DROP TABLE subtable2;
+#CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE (b);
+#CREATE TABLE othersub1 (a int, b varchar(32));
+#CREATE TABLE othersub2 (a int, b varchar(32));
+#INSERT INTO othersub1 VALUES (1, NULL);
+[ 1	]
+#ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION BETWEEN 'a' AND 'string' WITH NULL;
+#ALTER TABLE anothertest ADD TABLE othersub2 AS PARTITION BETWEEN 't' AND 'u';
+#ALTER TABLE anothertest DROP TABLE othersub1;
+#ALTER TABLE anothertest DROP TABLE othersub2;
+#DROP TABLE anothertest;
+#DROP TABLE othersub1;
+#DROP TABLE othersub2;
+
+# 10:46:33 >  
+# 10:46:33 >  "Done."
+# 10:46:33 >  
+

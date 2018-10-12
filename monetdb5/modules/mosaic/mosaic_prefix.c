@@ -115,11 +115,11 @@ MOSlayout_prefix(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binpu
 	}
 	output = wordaligned(bytes, int); 
 	snprintf(buf,32,"%d bits",bits);
-	if( BUNappend(btech, "prefix blk", FALSE) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
-		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
-		BUNappend(bproperties, buf, FALSE) != GDK_SUCCEED)
+	if( BUNappend(btech, "prefix blk", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, buf, false) != GDK_SUCCEED)
 		return;
 }
 
@@ -1048,8 +1048,8 @@ break;
 			v = val | decompress(base,i,bits);\
 			value =  (TPE) ((TPE2)val |(TPE2) v);\
 			if ( *w == value){\
-				if(BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, FALSE) != GDK_SUCCEED )\
+				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
+				BUNappend(task->rbat, &o, false) != GDK_SUCCEED )\
 				throw(MAL,"mosaic.prefix",MAL_MALLOC_FAIL);\
 			}\
 		}\

@@ -1,0 +1,43 @@
+stderr of test 'mergepart28` in directory 'sql/test/merge-partitions` itself:
+
+
+# 17:13:15 >  
+# 17:13:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36178" "--set" "mapi_usock=/var/tmp/mtest-28639/.s.monetdb.36178" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 17:13:15 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36178
+# cmdline opt 	mapi_usock = /var/tmp/mtest-28639/.s.monetdb.36178
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:13:17 >  
+# 17:13:17 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28639" "--port=36178"
+# 17:13:17 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-28639/.s.monetdb.36178
+QUERY = COPY 1347 RECORDS INTO ratings FROM '/home/ferreira/repositories/monetdb-test-data/netflix_data/movies.csv' USING DELIMITERS ',','\n','\"'; --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-28639/.s.monetdb.36178
+QUERY = COPY LOADER INTO ratings FROM tryaloader();
+ERROR = !COPY LOADER INTO: not possible for partitioned tables at the moment
+CODE  = 3F000
+
+# 17:13:18 >  
+# 17:13:18 >  "Done."
+# 17:13:18 >  
+

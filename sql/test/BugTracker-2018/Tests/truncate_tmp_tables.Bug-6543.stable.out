@@ -1,0 +1,105 @@
+stdout of test 'truncate_tmp_tables.Bug-6543` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 19:00:04 >  
+# 19:00:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32461" "--set" "mapi_usock=/var/tmp/mtest-11969/.s.monetdb.32461" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 19:00:04 >  
+
+# MonetDB 5 server v11.29.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.307 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:32461/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11969/.s.monetdb.32461
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 19:00:04 >  
+# 19:00:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11969" "--port=32461" "-utestuser" "-Ptestpassword"
+# 19:00:04 >  
+
+#CREATE TEMP TABLE tmptable6543 (id int NOT NULL PRIMARY KEY, name VARCHAR(99) NOT NULL);
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
+% tmp.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ true	]
+#DROP TABLE tmptable6543;
+
+# 19:00:04 >  
+# 19:00:04 >  "Done."
+# 19:00:04 >  
+

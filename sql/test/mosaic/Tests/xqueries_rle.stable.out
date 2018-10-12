@@ -43,13 +43,13 @@ Ready.
 [ 86	]
 #alter table xtmp3 set read only;
 #select sum(i) from xtmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
@@ -63,12 +63,12 @@ function user.s14_1():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i <4;":str, "sequential_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
-    C_73:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
-    X_6:bat[:oid] := mosaic.decompress(C_73:bat[:oid]);
+    C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s14_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -93,7 +93,7 @@ end user.s14_1;
 #garbagecollector     actions= 1 time=9 usec 
 #total                actions= 1 time=194 usec 
 #select count(*) from xtmp3 where i <4;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -107,12 +107,12 @@ function user.s16_1():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i = 7;":str, "sequential_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
-    C_72:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
-    X_6:bat[:oid] := mosaic.decompress(C_72:bat[:oid]);
+    C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s16_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
@@ -136,19 +136,19 @@ end user.s16_1;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions= 1 time=191 usec 
 #select count(*) from xtmp3 where i = 7;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from xtmp3 where f <0.316;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from xtmp3 where b = true;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -157,13 +157,13 @@ end user.s16_1;
 #alter table xtmp3 alter column b set storage 'runlength';
 #alter table xtmp3 alter column f set storage 'runlength';
 #select sum(i) from xtmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
@@ -177,12 +177,12 @@ function user.s32_1():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i <4;":str, "sequential_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
-    C_73:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
-    X_6:bat[:oid] := mosaic.decompress(C_73:bat[:oid]);
+    C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s32_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 
@@ -206,7 +206,7 @@ end user.s32_1;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions= 1 time=183 usec 
 #select count(*) from xtmp3 where i <4;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -220,12 +220,12 @@ function user.s34_1():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i = 7;":str, "sequential_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
-    C_72:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
-    X_6:bat[:oid] := mosaic.decompress(C_72:bat[:oid]);
+    C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s34_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -249,19 +249,19 @@ end user.s34_1;
 #garbagecollector     actions= 1 time=10 usec 
 #total                actions= 1 time=183 usec 
 #select count(*) from xtmp3 where i = 7;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from xtmp3 where f <0.316;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from xtmp3 where b = true;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -270,13 +270,13 @@ end user.s34_1;
 #alter table xtmp3 alter column b set storage NULL;
 #alter table xtmp3 alter column f set storage NULL;
 #select sum(i) from xtmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from xtmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
@@ -290,12 +290,12 @@ function user.s50_1():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i <4;":str, "sequential_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
-    C_73:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
-    X_6:bat[:oid] := mosaic.decompress(C_73:bat[:oid]);
+    C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s50_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=3 usec 
@@ -319,7 +319,7 @@ end user.s50_1;
 #garbagecollector     actions= 1 time=12 usec 
 #total                actions= 1 time=183 usec 
 #select count(*) from xtmp3 where i <4;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -333,12 +333,12 @@ function user.s52_1():void;
     X_2:void := querylog.define("explain select count(*) from xtmp3 where i = 7;":str, "sequential_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "xtmp3":str, "i":str, 0:int);
-    C_72:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
-    X_6:bat[:oid] := mosaic.decompress(C_72:bat[:oid]);
+    C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "xtmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_75:bat[:oid]);
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s52_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -362,19 +362,19 @@ end user.s52_1;
 #garbagecollector     actions= 1 time=11 usec 
 #total                actions= 1 time=183 usec 
 #select count(*) from xtmp3 where i = 7;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from xtmp3 where f <0.316;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from xtmp3 where b = true;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

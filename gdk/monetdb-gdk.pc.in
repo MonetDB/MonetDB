@@ -12,6 +12,7 @@ includedir=@includedir@
 Name: monetdb-gdk
 Description: MonetDB GDK libary
 Version: @PACKAGE_VERSION@
+Requires: monetdb-stream
 
-Libs: -L${libdir} -lbat
+Libs: -L${libdir} -lbat @MATH_LIBS@ @MALLOC_LIBS@ @PTHREAD_LIBS@ @DL_LIBS@ @KVM_LIBS@
 Cflags: -I${includedir}/monetdb

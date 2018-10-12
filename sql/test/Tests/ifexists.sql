@@ -47,7 +47,6 @@ CREATE SCHEMA IF NOT EXISTS hello;
 # verify that the schema exists
 # ('hello')
 SELECT name FROM schemas WHERE name='hello';
-# this statement should fail silently because the schema already exists
 CREATE SCHEMA IF NOT EXISTS hello;
 
 # use the schema to make sure it's there

@@ -94,11 +94,11 @@ MOSlayout_frame_hdr(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *bi
 	for(i=0; i< task->hdr->framesize; i++, j++){
 		snprintf(buf,BUFSIZ,"frame[%d]",i);
 		MOSdump_frameInternal(buf, BUFSIZ, task,i);
-		if( BUNappend(btech, buf, FALSE) != GDK_SUCCEED ||
-			BUNappend(bcount, &j, FALSE) != GDK_SUCCEED ||
-			BUNappend(binput, &cnt, FALSE) != GDK_SUCCEED ||
-			BUNappend(boutput, &task->hdr->framefreq[i], FALSE) != GDK_SUCCEED ||
-			BUNappend(bproperties, buf, FALSE) != GDK_SUCCEED )
+		if( BUNappend(btech, buf, false) != GDK_SUCCEED ||
+			BUNappend(bcount, &j, false) != GDK_SUCCEED ||
+			BUNappend(binput, &cnt, false) != GDK_SUCCEED ||
+			BUNappend(boutput, &task->hdr->framefreq[i], false) != GDK_SUCCEED ||
+			BUNappend(bproperties, buf, false) != GDK_SUCCEED )
 			return;
 	}
 }
@@ -112,11 +112,11 @@ MOSlayout_frame(Client cntxt, MOStask task, BAT *btech, BAT *bcount, BAT *binput
 	(void) cntxt;
 	input = cnt * ATOMsize(task->type);
 	output = chunk_size(task,cnt);
-	if( BUNappend(btech, "frame blk", FALSE) != GDK_SUCCEED ||
-		BUNappend(bcount, &cnt, FALSE) != GDK_SUCCEED ||
-		BUNappend(binput, &input, FALSE) != GDK_SUCCEED ||
-		BUNappend(boutput, &output, FALSE) != GDK_SUCCEED ||
-		BUNappend(bproperties, "", FALSE) != GDK_SUCCEED)
+	if( BUNappend(btech, "frame blk", false) != GDK_SUCCEED ||
+		BUNappend(bcount, &cnt, false) != GDK_SUCCEED ||
+		BUNappend(binput, &input, false) != GDK_SUCCEED ||
+		BUNappend(boutput, &output, false) != GDK_SUCCEED ||
+		BUNappend(bproperties, "", false) != GDK_SUCCEED)
 		return;
 }
 
@@ -609,8 +609,8 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 		for(oo = task->start,i=0; i < limit; i++,oo++){\
 			framedecompress(i);\
 			if ( *w == frame + task->hdr->frame.val##TPE [j]){\
-				if(BUNappend(task->lbat, &oo, FALSE) != GDK_SUCCEED ||\
-				BUNappend(task->rbat, &o, FALSE)!= GDK_SUCCEED)\
+				if(BUNappend(task->lbat, &oo, false) != GDK_SUCCEED ||\
+				BUNappend(task->rbat, &o, false)!= GDK_SUCCEED)\
 				throw(MAL,"mosaic.frame",MAL_MALLOC_FAIL);\
 			}\
 		}\

@@ -1,0 +1,47 @@
+stderr of test 'mergepart24` in directory 'sql/test/merge-partitions` itself:
+
+
+# 15:57:55 >  
+# 15:57:55 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39639" "--set" "mapi_usock=/var/tmp/mtest-2939/.s.monetdb.39639" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 15:57:55 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39639
+# cmdline opt 	mapi_usock = /var/tmp/mtest-2939/.s.monetdb.39639
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 15:57:56 >  
+# 15:57:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2939" "--port=39639"
+# 15:57:56 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-2939/.s.monetdb.39639
+QUERY = ALTER TABLE testagain ADD TABLE sublimits2 AS PARTITION IN (addone(10), addone(9) + 1); --error
+ERROR = !ALTER TABLE: there are duplicated values in the list
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2939/.s.monetdb.39639
+QUERY = ALTER TABLE testagain ADD TABLE sublimits2 AS PARTITION IN (50, '60', addone(0)); --error
+ERROR = !ALTER TABLE: the new partition is conflicting with the existing partition sys.sublimits1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2939/.s.monetdb.39639
+QUERY = ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION BETWEEN 100 - 30 AND 440 + 98; --error
+ERROR = !ALTER TABLE: conflicting partitions: 70 to 538 and 30 to 70 from table sys.sublimits1
+CODE  = 42000
+
+# 15:57:57 >  
+# 15:57:57 >  "Done."
+# 15:57:57 >  
+

@@ -43,13 +43,13 @@ Ready.
 [ 86	]
 #alter table tmp3 set read only;
 #select sum(i) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
@@ -68,7 +68,7 @@ function user.s14_1():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s14_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -93,7 +93,7 @@ end user.s14_1;
 #garbagecollector     actions= 1 time=8 usec 
 #total                actions= 1 time=163 usec 
 #select count(*) from tmp3 where i <4;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -112,7 +112,7 @@ function user.s16_1():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s16_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
@@ -136,19 +136,19 @@ end user.s16_1;
 #garbagecollector     actions= 1 time=13 usec 
 #total                actions= 1 time=237 usec 
 #select count(*) from tmp3 where i = 7;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from tmp3 where f <0.316;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from tmp3 where b = true;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -157,13 +157,13 @@ end user.s16_1;
 #alter table tmp3 alter column b set storage 'raw';
 #alter table tmp3 alter column f set storage 'raw';
 #select sum(i) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
@@ -182,7 +182,7 @@ function user.s32_1():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s32_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -206,7 +206,7 @@ end user.s32_1;
 #garbagecollector     actions= 1 time=12 usec 
 #total                actions= 1 time=214 usec 
 #select count(*) from tmp3 where i <4;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -225,7 +225,7 @@ function user.s34_1():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s34_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=3 usec 
@@ -249,19 +249,19 @@ end user.s34_1;
 #garbagecollector     actions= 1 time=13 usec 
 #total                actions= 1 time=217 usec 
 #select count(*) from tmp3 where i = 7;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from tmp3 where f <0.316;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from tmp3 where b = true;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -283,7 +283,7 @@ function user.s46_1():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s46_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -307,7 +307,7 @@ end user.s46_1;
 #garbagecollector     actions= 1 time=12 usec 
 #total                actions= 1 time=215 usec 
 #select count(*) from tmp3 where i <4;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -326,7 +326,7 @@ function user.s48_1():void;
     X_15:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
     X_17:bat[:int] := mosaic.projection(X_15:bat[:oid], X_9:bat[:int]);
     X_18:lng := aggr.count(X_17:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s48_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -350,19 +350,19 @@ end user.s48_1;
 #garbagecollector     actions= 1 time=13 usec 
 #total                actions= 1 time=212 usec 
 #select count(*) from tmp3 where i = 7;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from tmp3 where f <0.316;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 42	]
 #select count(*) from tmp3 where b = true;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

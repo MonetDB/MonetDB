@@ -94,8 +94,8 @@ ERROR = !Current transaction is aborted (please ROLLBACK)
 CODE  = 25005
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = COMMIT;
-ERROR = !COMMIT: failed
-CODE  = 2D000
+ERROR = !COMMIT: transaction is aborted, will ROLLBACK instead
+CODE  = 40000
 
 # 21:01:03 >  
 # 21:01:03 >  Done.

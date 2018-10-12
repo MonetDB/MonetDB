@@ -30,9 +30,7 @@
 
 #define hex(J)													\
 	do {														\
-		if ((*(J) >='0' && *(J) <='9') ||						\
-			(*(J) >='a' && *(J) <='f') ||						\
-			(*(J) >='A' && *(J) <='F'))							\
+		if (isxdigit((unsigned char) *(J)))						\
 			(J)++;												\
 		else													\
 			throw(MAL, "json.parser", "illegal escape char");	\
@@ -462,7 +460,7 @@ JSONcompile(char *expr, pattern terms[])
 			s++;
 			skipblancs(s);
 			if (*s != '*') {
-				if (*s >= '0' && *s <= '9') {
+				if (isdigit((unsigned char) *s)) {
 					terms[t].index = atoi(s);
 					terms[t].first = terms[t].last = atoi(s);
 				} else
@@ -525,16 +523,8 @@ JSONglue(str res, str r, char sep)
 		GDKfree(r);
 		return NULL;
 	}
-	strcpy(n, res);
+	snprintf(n, l + len + 3, "%s%s%s", res, sep ? "," : "", r);
 	GDKfree(res);
-	if (sep) {
-		n[l] = ',';
-		strncpy(n + l + 1, r, len);
-		n[l + 1 + len] = 0;
-	} else {
-		strncpy(n + l, r, len);
-		n[l + len] = 0;
-	}
 	GDKfree(r);
 	return n;
 }
@@ -752,12 +742,12 @@ JSONnumberParser(const char *j, const char **next)
 	if (*j == '-')
 		j++;
 	skipblancs(j);
-	if (*j < '0' || *j > '9') {
+	if (!isdigit((unsigned char) *j)) {
 		*next = j;
 		throw(MAL, "json.parser", "Number expected");
 	}
 	for (; *j; j++)
-		if (*j < '0' || *j > '9')
+		if (!isdigit((unsigned char) *j))
 			break;
 	backup = j;
 	skipblancs(j);
@@ -765,7 +755,7 @@ JSONnumberParser(const char *j, const char **next)
 		j++;
 		skipblancs(j);
 		for (; *j; j++)
-			if (*j < '0' || *j > '9')
+			if (!isdigit((unsigned char) *j))
 				break;
 		backup = j;
 	} else
@@ -778,7 +768,7 @@ JSONnumberParser(const char *j, const char **next)
 			j++;
 		skipblancs(j);
 		for (; *j; j++)
-			if (*j < '0' || *j > '9')
+			if (!isdigit((unsigned char) *j))
 				break;
 	} else
 		j = backup;
@@ -808,7 +798,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (jt->error)
 				return idx;
 			if (jt->elm[nxt].kind != JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "Syntax error : element expected");
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: element expected");
 				return idx;
 			}
 			JSONappend(jt, idx, nxt);
@@ -819,13 +809,13 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (*j == '}')
 				break;
 			if (*j != '}' && *j != ',') {
-				jt->error = createException(MAL, "json.parser", "Syntax error : ','  or '}' expected");
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: ','  or '}' expected");
 				return idx;
 			}
 			j++;
 		}
 		if (*j != '}') {
-			jt->error = createException(MAL, "json.parser", "Syntax error : '}' expected");
+			jt->error = createException(MAL, "json.parser", "JSON syntax error: '}' expected");
 			return idx;
 		} else
 			j++;
@@ -876,18 +866,18 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			if (*j == ']')
 				break;
 			if (jt->elm[nxt].kind == JSON_ELEMENT) {
-				jt->error = createException(MAL, "json.parser", "Syntax error : Array value expected");
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: Array value expected");
 				return idx;
 			}
 			if (*j != ']' && *j != ',') {
-				jt->error = createException(MAL, "json.parser", "Syntax error : ','  or ']' expected");
+				jt->error = createException(MAL, "json.parser", "JSON syntax error: ','  or ']' expected");
 				return idx;
 			}
 			j++;
 			skipblancs(j);
 		}
 		if (*j != ']') {
-			jt->error = createException(MAL, "json.parser", "Syntax error : ']' expected");
+			jt->error = createException(MAL, "json.parser", "JSON syntax error: ']' expected");
 		} else
 			j++;
 		*next = j;
@@ -924,7 +914,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "Syntax error: NULL expected");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: NULL expected");
 		return idx;
 	case 't':
 		if (strncmp("true", j, 4) == 0) {
@@ -934,7 +924,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "Syntax error: True expected");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: True expected");
 		return idx;
 	case 'f':
 		if (strncmp("false", j, 5) == 0) {
@@ -944,10 +934,10 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = 5;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "Syntax error: False expected");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: False expected");
 		return idx;
 	default:
-		if (*j == '-' || (*j >= '0' && *j <= '9')) {
+		if (*j == '-' || isdigit((unsigned char) *j)) {
 			jt->elm[idx].value = j;
 			msg = JSONnumberParser(j, next);
 			if (msg)
@@ -956,7 +946,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			jt->elm[idx].valuelen = *next - jt->elm[idx].value;
 			return idx;
 		}
-		jt->error = createException(MAL, "json.parser", "Syntax error: value expected");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: value expected");
 		return idx;
 	}
 }
@@ -971,7 +961,7 @@ JSONparse(const char *j)
 		return NULL;
 	skipblancs(j);
 	if (!*j || !(*j == '{' || *j == '[')) {
-		jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed, expecting '{', '['");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: json parse failed, expecting '{', '['");
 		return jt;
 	}
 	JSONtoken(jt, j, &j);
@@ -979,7 +969,7 @@ JSONparse(const char *j)
 		return jt;
 	skipblancs(j);
 	if (*j)
-		jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed");
+		jt->error = createException(MAL, "json.parser", "JSON syntax error: json parse failed");
 	return jt;
 }
 
@@ -1259,20 +1249,20 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next) {
 			if ((r = JSONgetValue(jt, i)) == NULL)
 				goto memfail;
-			if (BUNappend(bk, r, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(bk, r, false) != GDK_SUCCEED) {
 				GDKfree(r);
 				goto memfail;
 			}
 			GDKfree(r);
 			if ((r = JSONgetValue(jt, jt->elm[i].child)) == NULL)
 				goto memfail;
-			if (BUNappend(bv, r, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(bv, r, false) != GDK_SUCCEED) {
 				GDKfree(r);
 				goto memfail;
 			}
 			GDKfree(r);
 			if (bo) {
-				if (BUNappend(bo, o, FALSE) != GDK_SUCCEED)
+				if (BUNappend(bo, o, false) != GDK_SUCCEED)
 					goto memfail;
 			}
 			(*o)++;
@@ -1281,7 +1271,7 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 		}
 	} else if (jt->elm[idx].kind == JSON_ARRAY) {
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next) {
-			if (BUNappend(bk, str_nil, FALSE) != GDK_SUCCEED)
+			if (BUNappend(bk, str_nil, false) != GDK_SUCCEED)
 				goto memfail;
 			if (jt->elm[i].kind == JSON_VALUE)
 				r = JSONgetValue(jt, jt->elm[i].child);
@@ -1289,13 +1279,13 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 				r = JSONgetValue(jt, i);
 			if (r == NULL)
 				goto memfail;
-			if (BUNappend(bv, r, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(bv, r, false) != GDK_SUCCEED) {
 				GDKfree(r);
 				goto memfail;
 			}
 			GDKfree(r);
 			if (bo) {
-				if (BUNappend(bo, o, FALSE) != GDK_SUCCEED)
+				if (BUNappend(bo, o, false) != GDK_SUCCEED)
 					goto memfail;
 			}
 			(*o)++;
@@ -1394,7 +1384,7 @@ JSONkeyTable(bat *ret, json *js)
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		r = JSONgetValue(jt, i);
 		if (r == NULL ||
-			BUNappend(bn, r, FALSE) != GDK_SUCCEED) {
+			BUNappend(bn, r, false) != GDK_SUCCEED) {
 			GDKfree(r);
 			JSONfree(jt);
 			BBPreclaim(bn);
@@ -1484,7 +1474,7 @@ JSONvalueTable(bat *ret, json *js)
 		else
 			r = JSONgetValue(jt, i);
 		if (r == NULL ||
-			BUNappend(bn, r, FALSE) != GDK_SUCCEED) {
+			BUNappend(bn, r, false) != GDK_SUCCEED) {
 			GDKfree(r);
 			BBPreclaim(bn);
 			JSONfree(jt);
@@ -1741,6 +1731,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		snprintf(row + len, lim - len, "%s,", val ? val : "null");
 		len += l + 1;
 		GDKfree(val);
+		val = NULL;
 	}
 	if (row[1])
 		row[len - 1] = ']';
@@ -1752,6 +1743,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 
   memfail:
 	GDKfree(row);
+	GDKfree(val);
 	return NULL;
 }
 
@@ -2165,7 +2157,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bi = bat_iterator(b);
 	if (g) {
 		/* stable sort g */
-		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) != GDK_SUCCEED) {
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, true) != GDK_SUCCEED) {
 			err = "internal sort failed";
 			goto out;
 		}
@@ -2233,7 +2225,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						break;
 					}
 				}
-				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+				bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
 			}
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
@@ -2254,10 +2246,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				strncpy(buf + buflen, " ]", maxlen - buflen);
 				buflen += 2;
 				while (BATcount(bn) < prev - min) {
-					bunfastapp_nocheck(bn, BUNlast(bn), str_nil, Tsize(bn));
+					bunfastapp_nocheckVAR(bn, BUNlast(bn), str_nil, Tsize(bn));
 					nils++;
 				}
-				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+				bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
 				nils += strNil(buf);
 				strncpy(buf + buflen, str_nil, maxlen - buflen);
 				buflen = 0;
@@ -2379,7 +2371,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				break;
 			}
 		}
-		bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
+		bunfastapp_nocheckVAR(bn, BUNlast(bn), buf, Tsize(bn));
 	}
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
@@ -2388,6 +2380,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bn->tkey = BATcount(bn) <= 1;
 
   out:
+	bn->theap.dirty |= BATcount(bn) > 0;
 	if (t2)
 		BBPunfix(t2->batCacheid);
 	if (freeb)

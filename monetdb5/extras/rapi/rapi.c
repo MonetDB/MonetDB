@@ -51,7 +51,7 @@
 
 const char* rapi_enableflag = "embedded_r";
 
-int RAPIEnabled(void) {
+static bool RAPIEnabled(void) {
 	return (GDKgetenv_istrue(rapi_enableflag)
 			|| GDKgetenv_isyes(rapi_enableflag));
 }
@@ -316,22 +316,20 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				goto wrapup;
 			}
 			if ( getArgType(mb,pci,i) == TYPE_str) {
-				if (BUNappend(b, *getArgReference_str(stk, pci, i), FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, *getArgReference_str(stk, pci, i), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 					msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 			} else {
-				if (BUNappend(b, getArgReference(stk, pci, i), FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, getArgReference(stk, pci, i), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 					msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 			}
-			BATsetcount(b, 1);
-			BATsettrivprop(b);
 		} else {
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {

@@ -1,0 +1,43 @@
+stderr of test 'mergepart26` in directory 'sql/test/merge-partitions` itself:
+
+
+# 17:36:51 >  
+# 17:36:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36271" "--set" "mapi_usock=/var/tmp/mtest-11485/.s.monetdb.36271" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 17:36:51 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36271
+# cmdline opt 	mapi_usock = /var/tmp/mtest-11485/.s.monetdb.36271
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:36:52 >  
+# 17:36:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11485" "--port=36271"
+# 17:36:52 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-11485/.s.monetdb.36271
+QUERY = ALTER TABLE subnested1 ADD TABLE sub1 AS PARTITION IN (1, 3, 5, 7); --error
+ERROR = !ALTER TABLE: there are values in the expression outside the partition range
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-11485/.s.monetdb.36271
+QUERY = ALTER TABLE subnn ADD TABLE sub1 AS PARTITION BETWEEN 0 AND 8; --error
+ERROR = !ALTER TABLE: there are values in the expression outside the partition list of values
+CODE  = M0M29
+
+# 17:36:53 >  
+# 17:36:53 >  "Done."
+# 17:36:53 >  
+

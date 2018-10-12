@@ -15,6 +15,8 @@
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif
+#include "mtime.h"
+#include "blob.h"
 
 comp_type 
 swap_compare( comp_type t )
@@ -618,11 +620,24 @@ exp_rel(mvc *sql, sql_rel *rel)
 	if (e == NULL)
 		return NULL;
 	/*
-	rel = rel_optimizer(sql, rel);
+	rel = rel_optimizer(sql, rel, 0);
 	rel = rel_distribute(sql, rel);
 	*/
 	e->l = rel;
 	e->flag = PSM_REL;
+	return e;
+}
+
+sql_exp *
+exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	if (e == NULL)
+		return NULL;
+	e->l = cond;
+	e->r = sa_strdup(sa, error_message);
+	e->flag = PSM_EXCEPTION;
 	return e;
 }
 
@@ -1977,3 +1992,134 @@ exp_flatten(mvc *sql, sql_exp *e)
 	return NULL;
 }
 
+void
+exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
+{
+	sql_arg *ares = f->func->res->h->data;
+
+	if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
+		sql_subtype t;
+		sql_subtype *lt = exp_subtype(l);
+		sql_subtype *rt = exp_subtype(r);
+		sql_subtype *res = f->res->h->data;
+
+		res->scale = lt->scale + rt->scale;
+		res->digits = lt->digits + rt->digits;
+
+		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (have_hge) {
+			if (ares->type.type->radix == 10 && res->digits > 39)
+				res->digits = 39;
+			if (ares->type.type->radix == 2 && res->digits > 128)
+				res->digits = 128;
+		} else
+#endif
+		{
+
+			if (ares->type.type->radix == 10 && res->digits > 19)
+				res->digits = 19;
+			if (ares->type.type->radix == 2 && res->digits > 64)
+				res->digits = 64;
+		}
+
+		/* numeric types are fixed length */
+		if (ares->type.type->eclass == EC_NUM) {
+			sql_find_numeric(&t, ares->type.type->localtype, res->digits);
+		} else {
+			sql_find_subtype(&t, ares->type.type->sqlname, res->digits, res->scale);
+		}
+		*res = t;
+	}
+}
+
+sql_exp *
+create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
+{
+	str buf = NULL;
+	size_t len = 0;
+	sql_exp *res = NULL;
+
+	switch (tpe.type->eclass) {
+		case EC_BIT: {
+			bit bval = *((bit*) value);
+			return exp_atom_bool(sql->sa, bval ? 1 : 0);
+		}
+		case EC_POS:
+		case EC_NUM:
+		case EC_DEC:
+		case EC_SEC:
+		case EC_MONTH:
+			switch (tpe.type->localtype) {
+#ifdef HAVE_HGE
+				case TYPE_hge: {
+					hge hval = *((hge*) value);
+					return exp_atom_hge(sql->sa, hval);
+				}
+#endif
+				case TYPE_lng: {
+					lng lval = *((lng*) value);
+					return exp_atom_lng(sql->sa, lval);
+				}
+				case TYPE_int: {
+					int ival = *((int*) value);
+					return exp_atom_int(sql->sa, ival);
+				}
+				case TYPE_sht: {
+					sht sval = *((sht*) value);
+					return exp_atom_sht(sql->sa, sval);
+				}
+				case TYPE_bte: {
+					bte bbval = *((bte *) value);
+					return exp_atom_bte(sql->sa, bbval);
+				}
+				default:
+					return NULL;
+			}
+		case EC_FLT:
+			switch (tpe.type->localtype) {
+				case TYPE_flt: {
+					flt fval = *((flt*) value);
+					return exp_atom_flt(sql->sa, fval);
+				}
+				case TYPE_dbl: {
+					dbl dval = *((dbl*) value);
+					return exp_atom_dbl(sql->sa, dval);
+				}
+				default:
+					return NULL;
+			}
+		case EC_DATE: {
+			if(date_tostr(&buf, &len, (const date *)value) < 0)
+				return NULL;
+			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
+			break;
+		}
+		case EC_TIME: {
+			if(daytime_tostr(&buf, &len, (const daytime *)value) < 0)
+				return NULL;
+			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
+			break;
+		}
+		case EC_TIMESTAMP: {
+			if(timestamp_tostr(&buf, &len, (const timestamp *)value) < 0)
+				return NULL;
+			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
+			break;
+		}
+		case EC_BLOB: {
+			if(SQLBLOBtostr(&buf, &len, (const blob *)value) < 0)
+				return NULL;
+			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
+			break;
+		}
+		case EC_CHAR:
+		case EC_STRING:
+			return exp_atom_clob(sql->sa, sa_strdup(sql->sa, value));
+		default:
+			assert(0);
+	}
+	if(buf)
+		GDKfree(buf);
+	return res;
+}

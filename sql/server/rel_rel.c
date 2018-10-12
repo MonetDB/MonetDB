@@ -109,7 +109,7 @@ rel_create( sql_allocator *sa )
 }
 
 sql_rel *
-rel_copy( sql_allocator *sa, sql_rel *i )
+rel_copy( sql_allocator *sa, sql_rel *i, int deep )
 {
 	sql_rel *rel = rel_create(sa);
 	if(!rel)
@@ -129,9 +129,17 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 		rel->r = i->r;
 		break;
 	case op_groupby:
-		rel->l = rel_copy(sa, i->l);
-		if (i->r)
-			rel->r = (i->r)?list_dup(i->r, (fdup)NULL):NULL;
+		rel->l = rel_copy(sa, i->l, deep);
+		if (i->r) {
+			if (!deep) {
+				rel->r = list_dup(i->r, (fdup) NULL);
+			} else {
+				list* l = (list*)i->r;
+				rel->r = list_new(l->sa, l->destroy);
+				for(node *n = l->h ; n ; n = n->next)
+					list_append(rel->r, rel_copy(sa, (sql_rel *)n->data, deep));
+			}
+		}
 		break;
 	case op_join:
 	case op_left:
@@ -144,13 +152,13 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 	case op_select:
 	default:
 		if (i->l)
-			rel->l = rel_copy(sa, i->l);
+			rel->l = rel_copy(sa, i->l, deep);
 		if (i->r)
-			rel->r = rel_copy(sa, i->r);
+			rel->r = rel_copy(sa, i->r, deep);
 		break;
 	}
 	rel->op = i->op;
-	rel->exps = (i->exps)?list_dup(i->exps, (fdup)NULL):NULL;
+	rel->exps = (!i->exps)?NULL:deep?exps_copy(sa, i->exps):list_dup(i->exps, (fdup)NULL);
 	return rel;
 }
 
@@ -506,7 +514,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	return r;
 }
 
-void
+sql_exp *
 rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
@@ -523,8 +531,9 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 		if (e->card > rel->card)
 			rel->card = e->card;
 	} else if (rel->op == op_groupby) {
-		(void) rel_groupby_add_aggr(sql, rel, e);
+		return rel_groupby_add_aggr(sql, rel, e);
 	}
+	return e;
 }
 
 void
@@ -614,7 +623,6 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	sql_exp *m = NULL, *ne;
 	char name[16], *nme = NULL;
-	char *tname = NULL;
 
 	if ((m=exps_find_match_exp(rel->exps, e)) == NULL) {
 		if (!e->name) {
@@ -624,11 +632,8 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 		append(rel->exps, e);
 		m = e;
 	}
-	if (e->type == e_column)
-		tname = e->l;
-	ne = exp_column(sql->sa, tname, m->name, exp_subtype(m),
+	ne = exp_column(sql->sa, exp_relname(m), exp_name(m), exp_subtype(m),
 			rel->card, has_nil(m), is_intern(m));
-	exp_setname(sql->sa, ne, NULL, e->name);
 	return ne;
 }
 
@@ -811,6 +816,20 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	}
 	if (e && !list_empty(e))
 		set_processed(rel);
+	return rel;
+}
+
+sql_rel *
+rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
+{
+	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
+	rel->l = l;
+	rel->r = r;
+	rel->exps = exps;
+	rel->op = op_ddl;
+	rel->flag = DDL_EXCEPTION;
 	return rel;
 }
 
@@ -1286,7 +1305,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	set_intern(e);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);
-	rel_project_add_exp(sql, rel, e);
+	(void) rel_project_add_exp(sql, rel, e);
 	return rel;
 }
 

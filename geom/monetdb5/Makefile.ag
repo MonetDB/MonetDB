@@ -10,17 +10,17 @@ INCLUDES = ../lib \
            ../../common/stream \
            ../../common/options \
            ../../monetdb5/mal \
-           $(GEOS_INCS) $(PROJ_INCS)
+           $(GEOS_INCS) $(proj_CFLAGS)
 
 lib__geom = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = geom.h geom.c geomBulk.c geom_upgrade.c
 	LIBS = ../lib/libgeom \
-	       NATIVE_WIN32?../../gdk/libbat \
-	       NATIVE_WIN32?../../common/stream/libstream \
-	       NATIVE_WIN32?../../monetdb5/tools/libmonetdb5 \
-	       $(GEOS_LIBS) $(PROJ_LIBS)
+	       WIN32?../../gdk/libbat \
+	       WIN32?../../common/stream/libstream \
+	       WIN32?../../monetdb5/tools/libmonetdb5 \
+	       $(GEOS_LIBS) $(proj_LIBS)
 }
 
 headers_mal = {
