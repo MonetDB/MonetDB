@@ -11,7 +11,7 @@ INCLUDES = ../../../include \
 
 lib__test_rss = {
 	MODULE
-	CONDINST = HAVE_TESTING WIN32
+	CONDINST = HAVE_TESTING
 	DIR = libdir/monetdb5
 	SOURCES = test_rss.c
 	LIBS = WIN32?../../../../monetdb5/tools/libmonetdb5 \
