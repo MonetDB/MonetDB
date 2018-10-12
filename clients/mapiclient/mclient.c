@@ -2204,9 +2204,9 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\f       - format using renderer {csv,tab,raw,sql,xml,trash,rowcount,expanded,sam}\n");
 	mnstr_printf(toConsole, "\\w#      - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#      - set maximum rows per page (-1=raw)\n");
-	mnstr_printf(toConsole, "\\L file  - save client/server interaction\n");
+	mnstr_printf(toConsole, "\\L file  - save client-server interaction\n");
 	mnstr_printf(toConsole, "\\X       - trace mclient code\n");
-	mnstr_printf(toConsole, "\\q       - terminate session\n");
+	mnstr_printf(toConsole, "\\q       - terminate session and quit mclient\n");
 }
 
 #define MD_TABLE    1
@@ -2330,11 +2330,11 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 
 	bufsiz = READBLOCK;
 	buf = malloc(bufsiz);
-
 	if (buf == NULL) {
 		fprintf(stderr,"Malloc for doFile failed");
 		exit(2);
 	}
+
 	do {
 		bool seen_null_byte = false;
 
@@ -2392,7 +2392,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 			/* end of file */
 			if (hdl == NULL) {
 				/* nothing more to do */
-				free(buf);
 				goto bailout;
 			}
 
@@ -2425,11 +2424,18 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
 					line[6] = prepno % 10 + '0';
 				}
+				if (strcmp(line, "exit\n") == 0) {
+					goto bailout;
+				}
+				break;
+			case 'q':
+				if (strcmp(line, "quit\n") == 0) {
+					goto bailout;
+				}
 				break;
 			case '\\':
 				switch (line[1]) {
 				case 'q':
-					free(buf);
 					goto bailout;
 				case 'X':
 					/* toggle interaction trace */
@@ -2608,18 +2614,13 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							"    LEFT OUTER JOIN comments c ON s.id = c.id\n"
 							"  ORDER BY system, name, sname, ntype)\n"
 							;
-						size_t len = strlen(with_clause) + 1500 + strlen(line);
+						const char *comments_clause = get_comments_clause(mid);
+						size_t len = strlen(comments_clause) + strlen(with_clause) + 400 + strlen(line);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
-						char *name_column = hasSchema ? "fullname" : "name";
-						const char *comments_clause = get_comments_clause(mid);
 
 						if (query == NULL) {
 							fprintf(stderr, "memory allocation failure\n");
-							continue;
-						}
-						if (comments_clause == NULL) {
-							free(query);
 							continue;
 						}
 
@@ -2633,10 +2634,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq - q, "%s", comments_clause);
-						q += snprintf(q, endq - q, "%s", with_clause);
-						q += snprintf(q, endq - q, " SELECT type, fullname, remark FROM describe_all_objects");
-						q += snprintf(q, endq - q, " WHERE (ntype & %u) > 0", x);
+						q += snprintf(q, endq - q, "%s%s", comments_clause, with_clause);
+						q += snprintf(q, endq - q, " SELECT type, fullname, remark FROM describe_all_objects WHERE (ntype & %u) > 0", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, " AND NOT system");
 						}
@@ -2644,7 +2643,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							q += snprintf(q, endq - q, " AND (sname IS NULL OR sname = current_schema)");
 						}
 						if (*line) {
-							q += snprintf(q, endq - q, " AND (%s LIKE '%s')", name_column, line);
+							q += snprintf(q, endq - q, " AND (%s LIKE '%s')", (hasSchema ? "fullname" : "name"), line);
 						}
 						q += snprintf(q, endq - q, " ORDER BY fullname, type, remark");
 
@@ -2950,6 +2949,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 	/* reached on end of file */
 	assert(hdl == NULL);
   bailout:
+	free(buf);
 #ifdef HAVE_LIBREADLINE
 	if (prompt)
 		deinit_readline();

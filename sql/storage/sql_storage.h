@@ -306,7 +306,7 @@ typedef lng (*logger_get_transaction_drift_fptr)(void);
 typedef int (*logger_reload_fptr) (void);
 
 typedef int (*log_isnew_fptr)(void);
-typedef int (*log_needs_update_fptr)(void);
+typedef bool (*log_needs_update_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
 typedef int (*log_tend_fptr) (void);
 typedef int (*log_sequence_fptr) (int seq, lng id);

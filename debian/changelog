@@ -1,3 +1,17 @@
+monetdb (11.31.11) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6648: key property potentially wrong after type conversion
+  * BZ#6649: Projection inside within transaction gives wrong results
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 11 Oct 2018 09:48:25 +0200
+
+monetdb (11.31.11) unstable; urgency=low
+
+  * MonetDB: Some subtle dependencies between RPMs have been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 10 Oct 2018 09:48:25 +0200
+
 monetdb (11.31.9) unstable; urgency=low
 
   * Rebuilt.

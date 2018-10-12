@@ -1022,13 +1022,10 @@ bl_log_isnew(void)
 	return 1;
 }
 
-static int
+static bool
 bl_log_needs_update(void)
 {
-	if (bat_logger->with_ids) {
-		return 0;
-	}
-	return 1;
+	return !bat_logger->with_ids;
 }
 
 static int
