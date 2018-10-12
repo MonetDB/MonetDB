@@ -3055,6 +3055,8 @@ getfile(void *data, const char *filename, bool binary,
 	if (filename != NULL) {
 		if (binary) {
 			f = open_rstream(filename);
+			assert(offset <= 1);
+			offset = 0;
 		} else {
 			f = open_rastream(filename);
 #ifdef HAVE_ICONV

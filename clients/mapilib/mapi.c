@@ -2975,15 +2975,83 @@ mapi_disconnect(Mapi mid)
 	return MOK;
 }
 
-/* Set callback function to retrieve file content for COPY INTO queries.
+/* Set callback function to retrieve or send file content for COPY
+ * INTO queries.
  *
- * The first call to the function for a new file is done with a
- * filename filled in and an offset that gives the index of the first
- * line to be returned (base 1, i.e. start of file has offset 1); all
- * subsequent calls for the same file use a NULL pointer for the
- * filename and a value of 0 for the offset.  The function is called
- * until it returns NULL or sets the size value to 0.  This gives the
- * callback function the opportunity to free any resources.
+ * char *getfile(void *private, const char *filename, bool binary,
+ *               uint64_6 offset, size_t *size);
+ * Retrieve data from a file.
+ *
+ * The arguments are:
+ * private - the value of the filecontentprivate argument to
+ *           mapi_setfilecallback;
+ * filename - the file to read (the application is free to interpret
+ *            this any way it wants, including getting data over the
+ *            Internet);
+ * binary - if set, the file is expected to contain binary data and
+ *          should therefore be opened in binary mode, otherwise the
+ *          file is expected to contain data in the UTF-8 encoding (of
+ *          course, the application is free to transparently convert
+ *          from the actual encoding to UTF-8);
+ * offset - the line number of the first line to be retrieved (this is
+ *          one-based, i.e. the start of the file has line number one;
+ *          lines are terminated by '\n');
+ * size - pointer in which to return the size of the chunk that is
+ *        being returned.
+ *
+ * The callback function is expected to return data in chunks until it
+ * indicates to the caller that there is no more data or an error has
+ * occurred.  Chunks can be any size.  The caller does not modify or
+ * free the data returned.  The size of the chunk being returned is
+ * stored in the size argument.  Errors are indicated by returning a
+ * string containing an error message and setting *size to zero.  The
+ * error message should not contain any newlines.  Any call to the
+ * callback function is allowed to return an error.
+ *
+ * The first call to the callback function contains values for
+ * filename, binary, and offset.  These parameters are all 0 for all
+ * subsequent calls for continuation data from the same file.
+ *
+ * If the caller has retrieved enough data before the file is
+ * exhausted, it calls the callback function one more time with a NULL
+ * pointer for the size argument.  This gives the callback function
+ * the opportunity to free its resources (e.g. close the file).
+ *
+ * If there is no more data to be returned, the callback function
+ * returns a NULL pointer and sets *size to zero.  No more calls for
+ * the current file will be made.
+ *
+ * Note that if the file to be read is empty, or contains fewer lines
+ * than the requested offset, the first call to the callback function
+ * may return NULL.
+ *
+ * char *putfile(void *private, const char *filename,
+ *               const void *data, size_t size);
+ * Send data to a file.
+ *
+ * The arguments are:
+ * private - the value of the filecontentprivate argument to
+ *           mapi_setfilecallback;
+ * filename - the file to be written, files are always written as text
+ *            files;
+ * data - the data to be written;
+ * size - the size of the data to be written.
+ *
+ * The callback is called multiple time to write a single file.  The
+ * first time, a filename is specified, all subsequent times, the
+ * filename argument is NULL.  When all data has been written, the
+ * callback function is called one last time with NULL pointer for the
+ * data argument so that the callback function can free any resources.
+ *
+ * When an error occurs, the callback function returns a string
+ * containing an error message after which the callback will not be
+ * called again for the same file.  Otherwise, the callback function
+ * returns NULL.
+ *
+ * Note, there is no support for binary files.  All files written
+ * using this callback function are text files.  All data sent to the
+ * callback function is encoded in UTF-8.  Note also that multibyte
+ * sequences may be split over two calls.
  */
 void
 mapi_setfilecallback(Mapi mid,
@@ -3970,8 +4038,8 @@ read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
 	mnstr_printf(mid->to, "\n");
 	while (data != NULL && size != 0) {
 		if (flushsize >= MiB) {
-			/* after every MiB give the server opportunity
-			 * to stop reading more data */
+			/* after every MiB give the server the
+			 * opportunity to stop reading more data */
 			mnstr_flush(mid->to);
 			/* at this point we expect to get a PROMPT2 if
 			 * the server wants more data, or a PROMPT3 if
