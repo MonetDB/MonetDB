@@ -4505,8 +4505,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	dnode *dn = window_function->data.lval->h;
-	int distinct = 0, project_added = 0, aggr = (window_function->token != SQL_RANK), is_last, has_order_by, frame_type;
+	int distinct = 0, project_added = 0, is_last, has_order_by, frame_type;
 	dlist *window_specification = NULL;
+	bool is_nth_value, supports_frames;
 
 	if(l->h->next->type == type_list) {
 		window_specification = l->h->next->data.lval;
@@ -4526,6 +4527,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
+
+	is_nth_value = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "nth_value") == 0);
+	supports_frames = (window_function->token != SQL_RANK) || is_nth_value ||
+					  (strcmp(s->base.name, "sys") == 0 && ((strcmp(aname, "first_value") == 0) || strcmp(aname, "last_value") == 0));
 
 	if (f == sql_where) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -4597,10 +4602,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	fargs = sa_list(sql->sa);
-	if (!aggr) { //rank function call
+	if (window_function->token == SQL_RANK) { //rank function call
 		dlist* dnn = window_function->data.lval->h->next->data.lval;
-		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0),
-			 is_nth_value = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "nth_value") == 0);
+		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0);
 
 		if(!dnn || is_ntile) {
 			in = p->exps->h->data;
@@ -4735,8 +4739,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		frame_type = d->next->next->data.i_val;
 		sql_exp *ie = obe ? obe->t->data : in;
 
-		if(!aggr)
-			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation");
+		if(!supports_frames)
+			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation and first_value, last_value and nth_value functions");
 		if(!obe && frame_type == FRAME_GROUPS)
 			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
 		if(wstart->token == SQL_FOLLOWING && wend->token == SQL_PRECEDING)
@@ -4828,7 +4832,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
 								   wstart->token, wend->token) == NULL)
 			return NULL;
-	} else if (aggr) { //for aggregations with no frame clause, we use the standard default values
+	} else if (supports_frames) { //for aggregations with no frame clause, we use the standard default values
 		sql_exp *ie = obe ? obe->t->data : in;
 		sql_subtype *it = sql_bind_localtype("int"), *st = exp_subtype(ie);
 		unsigned char sclass = st->type->eclass;
@@ -4857,7 +4861,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (!pe || !oe)
 		return NULL;
 
-	if(!aggr) {
+	if(!supports_frames) {
 		append(fargs, pe);
 		append(fargs, oe);
 	}
@@ -4892,7 +4896,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	args = sa_list(sql->sa);
 	for(node *nn = fargs->h ; nn ; nn = nn->next)
 		append(args, (sql_exp*) nn->data);
-	if (aggr) {
+	if (supports_frames) {
 		append(args, start);
 		append(args, eend);
 	}

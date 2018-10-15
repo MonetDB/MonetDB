@@ -1460,7 +1460,7 @@ Ready.
 [ 3	]
 [ 3	]
 [ 3	]
-[ 4	]
+[ 3	]
 [ 4	]
 [ 4	]
 #select cast(sum(bb) over (partition by aa) as bigint) from stressme;
@@ -1516,7 +1516,7 @@ Ready.
 [ 7	]
 [ 10	]
 [ 13	]
-[ 20	]
+[ 14	]
 [ 20	]
 [ 20	]
 #select cast(prod(bb) over (partition by aa) as bigint) from stressme;
@@ -1572,7 +1572,7 @@ Ready.
 [ 6	]
 [ 18	]
 [ 54	]
-[ 432	]
+[ 54	]
 [ 432	]
 [ 432	]
 #select avg(bb) over (partition by aa) from stressme;
@@ -1628,7 +1628,7 @@ Ready.
 [ 1.75	]
 [ 2	]
 [ 2.166666667	]
-[ 2.222222222	]
+[ 2	]
 [ 2.222222222	]
 [ 2.222222222	]
 #select count(bb) over (partition by aa) from stressme;
@@ -1684,7 +1684,7 @@ Ready.
 [ 4	]
 [ 5	]
 [ 6	]
-[ 9	]
+[ 7	]
 [ 9	]
 [ 9	]
 #select count(*) over (partition by aa) from stressme;
@@ -1740,7 +1740,7 @@ Ready.
 [ 4	]
 [ 5	]
 [ 6	]
-[ 9	]
+[ 7	]
 [ 9	]
 [ 9	]
 #select min(2) over (partition by aa) from stressme;
@@ -2014,8 +2014,8 @@ Ready.
 #insert into overflowme values (2147483644), (2147483645), (2147483646);
 [ 3	]
 #select floor(avg(a) over ()) from overflowme;
-% sys.L4 # table_name
-% L4 # name
+% sys.L5 # table_name
+% L5 # name
 % double # type
 % 24 # length
 [ 2147483645	]

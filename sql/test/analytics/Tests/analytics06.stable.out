@@ -96,6 +96,22 @@ Ready.
 [ 6,	3,	5,	2,	3,	0	]
 [ 15,	3,	1,	2,	2,	2	]
 [ NULL,	4,	7,	0,	0,	0	]
+#select first_value(aa) over (partition by bb rows between 2 preceding and 1 following),
+#       last_value(aa) over (partition by bb rows between 1 preceding and 1 following) from testing;
+% sys.L4,	sys.L10 # table_name
+% L4,	L10 # name
+% int,	int # type
+% 2,	2 # length
+[ 3,	8	]
+[ 3,	NULL	]
+[ 3,	NULL	]
+[ 3,	3	]
+[ 3,	2	]
+[ 3,	2	]
+[ 15,	5	]
+[ 15,	15	]
+[ 15,	15	]
+[ NULL,	NULL	]
 #rollback;
 #drop table testing;
 

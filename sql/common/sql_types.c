@@ -1720,16 +1720,17 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic5(sa, "lead", "sql", "lead", ANY, HGE, ANY, BIT, BIT, ANY, SCALE_NONE);
 #endif
 
-	sql_create_analytic3(sa, "first_value", "sql", "first_value", ANY, BIT, BIT, ANY, SCALE_NONE);
-	sql_create_analytic3(sa, "last_value", "sql", "last_value", ANY, BIT, BIT, ANY, SCALE_NONE);
+	//these analytic functions support frames
+	sql_create_analytic(sa, "first_value", "sql", "first_value", ANY, ANY, SCALE_NONE);
+	sql_create_analytic(sa, "last_value", "sql", "last_value", ANY, ANY, SCALE_NONE);
 
-	sql_create_analytic4(sa, "nth_value", "sql", "nth_value", ANY, BTE, BIT, BIT, ANY, SCALE_NONE);
-	sql_create_analytic4(sa, "nth_value", "sql", "nth_value", ANY, SHT, BIT, BIT, ANY, SCALE_NONE);
-	sql_create_analytic4(sa, "nth_value", "sql", "nth_value", ANY, INT, BIT, BIT, ANY, SCALE_NONE);
-	sql_create_analytic4(sa, "nth_value", "sql", "nth_value", ANY, LNG, BIT, BIT, ANY, SCALE_NONE);
+	sql_create_analytic2(sa, "nth_value", "sql", "nth_value", ANY, BTE, ANY, SCALE_NONE);
+	sql_create_analytic2(sa, "nth_value", "sql", "nth_value", ANY, SHT, ANY, SCALE_NONE);
+	sql_create_analytic2(sa, "nth_value", "sql", "nth_value", ANY, INT, ANY, SCALE_NONE);
+	sql_create_analytic2(sa, "nth_value", "sql", "nth_value", ANY, LNG, ANY, SCALE_NONE);
 #ifdef HAVE_HGE
 	if (have_hge)
-		sql_create_analytic4(sa, "nth_value", "sql", "nth_value", ANY, HGE, BIT, BIT, ANY, SCALE_NONE);
+		sql_create_analytic2(sa, "nth_value", "sql", "nth_value", ANY, HGE, ANY, SCALE_NONE);
 #endif
 
 	sql_create_analytic2(sa, "count", "sql", "count", ANY, BIT, LNG, SCALE_NONE);

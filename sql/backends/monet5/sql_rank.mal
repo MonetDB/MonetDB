@@ -363,24 +363,6 @@ address SQLcume_dist
 comment "return the accumulated distribution of the number of rows per group to the total number of partition rows";
 
 
-pattern sql.first_value(b:any_1, p:bit, o:bit) :any_1
-address SQLfirst_value
-comment "return the first value of groups";
-
-pattern batsql.first_value(b:bat[:any_1], p:any_2, o:any_3) :bat[:any_1]
-address SQLfirst_value
-comment "return the first value of groups";
-
-
-pattern sql.last_value(b:any_1, p:bit, o:bit) :any_1
-address SQLlast_value
-comment "return the last value of groups";
-
-pattern batsql.last_value(b:bat[:any_1], p:any_2, o:any_3) :bat[:any_1]
-address SQLlast_value
-comment "return the last value of groups";
-
-
 pattern sql.lag(b:any_1, p:any_3, o:any_4) :any_1
 address SQLlag
 comment "return the value in the previous row in the partition or NULL if non existent";
@@ -516,19 +498,37 @@ address SQLntile
 comment "return the groups divided as equally as possible";
 
 
-pattern sql.nth_value(b:any_1, n:any_2, p:any_3, o:any_4) :any_1
+pattern sql.first_value(b:any_1, s:lng, e:lng) :any_1
+address SQLfirst_value
+comment "return the first value of groups";
+
+pattern batsql.first_value(b:bat[:any_1], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLfirst_value
+comment "return the first value of groups";
+
+
+pattern sql.last_value(b:any_1, s:lng, e:lng) :any_1
+address SQLlast_value
+comment "return the last value of groups";
+
+pattern batsql.last_value(b:bat[:any_1], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
+address SQLlast_value
+comment "return the last value of groups";
+
+
+pattern sql.nth_value(b:any_1, n:any_2, s:lng, e:lng) :any_1
 address SQLnth_value
 comment "return the nth value of each group";
 
-pattern batsql.nth_value(b:bat[:any_1], n:any_2, p:any_3, o:any_4) :bat[:any_1]
+pattern batsql.nth_value(b:bat[:any_1], n:any_2, s:bat[:lng], e:bat[:lng]) :bat[:any_1]
 address SQLnth_value
 comment "return the nth value of each group";
 
-pattern sql.nth_value(b:any_1, n:bat[:any_2], p:any_3, o:any_4) :any_1
+pattern sql.nth_value(b:any_1, n:bat[:any_2], s:lng, e:lng) :any_1
 address SQLnth_value
 comment "return the nth value of each group";
 
-pattern batsql.nth_value(b:bat[:any_1], n:bat[:any_2], p:any_3, o:any_4) :bat[:any_1]
+pattern batsql.nth_value(b:bat[:any_1], n:bat[:any_2], s:bat[:lng], e:bat[:lng]) :bat[:any_1]
 address SQLnth_value
 comment "return the nth value of each group";
 

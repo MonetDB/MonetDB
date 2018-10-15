@@ -42,18 +42,22 @@
 		for(; k<i; k++, rb++) {                    \
 			rlimit = (TPE2) LIMIT;                 \
 			v = bp[k];                             \
-			if(is_##TPE1##_nil(v))                 \
-				j = m;                             \
-			else                                   \
+			if(is_##TPE1##_nil(v)) {               \
+				for(j=k; j>m; j--) {               \
+					if(!is_##TPE1##_nil(bp[j]))    \
+						break;                     \
+				}                                  \
+			} else {                               \
 				for(j=k; j>m; j--) {               \
 					if(is_##TPE1##_nil(bp[j]))     \
-						continue;                  \
+						break;                     \
 					SUB_WITH_CHECK(TPE1, v, TPE1, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
 					if ((TPE2)(ABSOLUTE(calc)) > rlimit) { \
 						j++;                       \
 						break;                     \
 					}                              \
 				}                                  \
+			}                                      \
 			*rb = j;                               \
 		}                                          \
 	} while(0)
@@ -65,16 +69,20 @@
 		for(; k<i; k++, rb++) {                  \
 			rlimit = (TPE2) LIMIT;               \
 			v = bp[k];                           \
-			if(is_##TPE1##_nil(v))               \
-				j = i;                           \
-			else                                 \
+			if(is_##TPE1##_nil(v)) {             \
+				for(j=k+1; j<i; j++) {           \
+					if(!is_##TPE1##_nil(bp[j]))  \
+						break;                   \
+				}                                \
+			} else {                             \
 				for(j=k+1; j<i; j++) {           \
 					if(is_##TPE1##_nil(bp[j]))   \
-						continue;                \
+						break;                   \
 					SUB_WITH_CHECK(TPE1, v, TPE1, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
 					if ((TPE2)(ABSOLUTE(calc)) > rlimit) \
 						break;                   \
 				}                                \
+			}                                    \
 			*rb = j;                             \
 		}                                        \
 	} while(0)
@@ -85,12 +93,15 @@
 		for(; k<i; k++, rb++) {           \
 			TPE2 rlimit = (TPE2) LIMIT;   \
 			TPE1 v = bp[k];               \
-			if(is_##TPE1##_nil(v))        \
-				j = m;                    \
-			else                          \
+			if(is_##TPE1##_nil(v)) {      \
+				for(j=k; j>m; j--) {      \
+					if(!is_##TPE1##_nil(bp[j])) \
+						break;            \
+				}                         \
+			} else {                      \
 				for(j=k; j>m; j--) {      \
 					if(is_##TPE1##_nil(bp[j])) \
-						continue;         \
+						break;            \
 					if(v != bp[j]) {      \
 						if(rlimit == 0) { \
 							j++;          \
@@ -100,6 +111,7 @@
 						v = bp[j];        \
 					}                     \
 				}                         \
+			}                             \
 			*rb = j;                      \
 		}                                 \
 	} while(0)
@@ -109,12 +121,15 @@
 		for(; k<i; k++, rb++) {         \
 			TPE2 rlimit = (TPE2) LIMIT; \
 			TPE1 v = bp[k];             \
-			if(is_##TPE1##_nil(v))      \
-				j = i;                  \
-			else                        \
+			if(is_##TPE1##_nil(v)) {    \
+				for(j=k+1; j<i; j++) {  \
+					if(!is_##TPE1##_nil(bp[j])) \
+						break;          \
+				}                       \
+			} else {                    \
 				for(j=k+1; j<i; j++) {  \
 					if(is_##TPE1##_nil(bp[j])) \
-						continue;       \
+						break;           \
 					if(v != bp[j]) {    \
 						if(rlimit == 0) \
 							break;      \
@@ -122,6 +137,7 @@
 						v = bp[j];      \
 					}                   \
 				}                       \
+			}                           \
 			*rb = j;                    \
 		}                               \
 	} while(0)
@@ -151,18 +167,22 @@
 		lng m = k;                                \
 		for(; k<i; k++, rb++) {                   \
 			void *v = BUNtail(bpi, (BUN) k);      \
-			if(atomcmp(v, nil) == 0)              \
-				j = m;                            \
-			else                                  \
+			if(atomcmp(v, nil) == 0) {            \
+				for(j=k; j>m; j--) {              \
+					if(atomcmp(BUNtail(bpi, (BUN) j), nil) != 0) \
+						break;                    \
+				}                                 \
+			} else {                              \
 				for(j=k; j>m; j--) {              \
 					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
-						continue;                 \
+						break;                    \
 					if(ABSOLUTE(atomcmp(v, next)) > (int) LIMIT) { \
 						j++;                      \
 						break;                    \
 					}                             \
 				}                                 \
+			}                                     \
 			*rb = j;                              \
 		}                                         \
 	} while(0)
@@ -171,16 +191,20 @@
 	do {                                          \
 		for(; k<i; k++, rb++) {                   \
 			void *v = BUNtail(bpi, (BUN) k);      \
-			if(atomcmp(v, nil) == 0)              \
-				j = i;                            \
-			else                                  \
+			if(atomcmp(v, nil) == 0) {            \
+				for(j=k+1; j<i; j++) {            \
+					if(atomcmp(BUNtail(bpi, (BUN) j), nil) != 0) \
+						break;                    \
+				}                                 \
+			} else {                              \
 				for(j=k+1; j<i; j++) {            \
 					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
-						continue;                 \
+						break;                    \
 					if(ABSOLUTE(atomcmp(v, next)) > (int) LIMIT) \
 						break;                    \
 				}                                 \
+			}                                     \
 			*rb = j;                              \
 		}                                         \
 	} while(0)
@@ -191,13 +215,16 @@
 		for(; k<i; k++, rb++) {                   \
 			lng rlimit = (lng) LIMIT;             \
 			void *v = BUNtail(bpi, (BUN) k);      \
-			if(atomcmp(v, nil) == 0)              \
-				j = m;                            \
-			else                                  \
+			if(atomcmp(v, nil) == 0) {            \
+				for(j=k; j>m; j--) {              \
+					if(atomcmp(BUNtail(bpi, (BUN) j), nil) != 0) \
+						break;                    \
+				}                                 \
+			} else {                              \
 				for(j=k; j>m; j--) {              \
 					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
-						continue;                 \
+						break;                    \
 					if(atomcmp(v, next)) {        \
 						if(rlimit == 0) {         \
 							j++;                  \
@@ -207,6 +234,7 @@
 						v = next;                 \
 					}                             \
 				}                                 \
+			}                                     \
 			*rb = j;                              \
 		}                                         \
 	} while(0)
@@ -216,13 +244,16 @@
 		for(; k<i; k++, rb++) {                   \
 			lng rlimit = (lng) LIMIT;             \
 			void *v = BUNtail(bpi, (BUN) k);      \
-			if(atomcmp(v, nil) == 0)              \
-				j = i;                            \
-			else                                  \
+			if(atomcmp(v, nil) == 0) {            \
+				for(j=k+1; j<i; j++) {            \
+					if(atomcmp(BUNtail(bpi, (BUN) j), nil) != 0) \
+						break;                    \
+				}                                 \
+			} else {                              \
 				for(j=k+1; j<i; j++) {            \
 					void *next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
-						continue;                 \
+						break;                    \
 					if(atomcmp(v, next)) {        \
 						if(rlimit == 0)           \
 							break;                \
@@ -230,6 +261,7 @@
 						v = next;                 \
 					}                             \
 				}                                 \
+			}                                     \
 			*rb = j;                              \
 		}                                         \
 	} while(0)
@@ -388,7 +420,7 @@ GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 				if (*np) {
 					i += (np - pnp);
 					j = k;
-					for (; k < i; k++, rb++)
+					for (; k<i; k++, rb++)
 						*rb = j;
 					pnp = np;
 				}

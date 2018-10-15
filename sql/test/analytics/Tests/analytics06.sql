@@ -11,6 +11,9 @@ select aa, bb, dd,
        count(aa) over (partition by bb rows between dd preceding and dd following),
        count(aa) over (partition by bb rows between dd + 1 preceding and dd preceding) from relation;
 
+select first_value(aa) over (partition by bb rows between 2 preceding and 1 following),
+       last_value(aa) over (partition by bb rows between 1 preceding and 1 following) from testing;
+
 rollback;
 
 select max(aa) over (partition by bb rows 'something' preceding) from testing; --error
