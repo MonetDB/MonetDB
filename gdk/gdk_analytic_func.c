@@ -385,6 +385,9 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BUN nth, int tpe)
 	end = (lng*)Tloc(e, 0);
 
 	switch (tpe) {
+		case TYPE_bit:
+			ANALYTICAL_NTHVALUE_IMP(bit);
+			break;
 		case TYPE_bte:
 			ANALYTICAL_NTHVALUE_IMP(bte);
 			break;
@@ -514,6 +517,9 @@ GDKanalyticallag(BAT *r, BAT *b, BAT *p, BUN lag, const void* restrict default_v
 	assert(default_value);
 
 	switch (tpe) {
+		case TYPE_bit:
+			ANALYTICAL_LAG_IMP(bit);
+			break;
 		case TYPE_bte:
 			ANALYTICAL_LAG_IMP(bte);
 			break;
@@ -661,6 +667,9 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void* restrict default
 	assert(default_value);
 
 	switch (tpe) {
+		case TYPE_bit:
+			ANALYTICAL_LEAD_IMP(bit);
+			break;
 		case TYPE_bte:
 			ANALYTICAL_LEAD_IMP(bte);
 			break;
