@@ -8,7 +8,7 @@ class RSSTestConfig:
 
     sql_template = \
 """
-create function test_rss(bound big int)
+create function test_rss(bound bigint)
 returns bigint external name test_config_rss.run_test_config_rss;
 
 select test_rss({gdk_mem_maxsize});
