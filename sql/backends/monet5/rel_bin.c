@@ -4969,6 +4969,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	node *n;
 	const char *tsep, *rsep, *ssep, *ns;
 	const char *fn   = NULL;
+	int onclient = 0;
 	stmt *s = NULL, *fns = NULL;
 	list *slist = sa_list(sql->sa);
 
@@ -4988,8 +4989,9 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	if (n->next->next->next->next) {
 		fn = E_ATOM_STRING(n->next->next->next->next->data);
 		fns = stmt_atom_string(be, sa_strdup(sql->sa, fn));
+		onclient = E_ATOM_INT(n->next->next->next->next->next->data);
 	}
-	list_append(slist, stmt_export(be, s, tsep, rsep, ssep, ns, fns));
+	list_append(slist, stmt_export(be, s, tsep, rsep, ssep, ns, onclient, fns));
 	if (s->type == st_list && ((stmt*)s->op4.lval->h->data)->nrcols != 0) {
 		stmt *cnt = stmt_aggr(be, s->op4.lval->h->data, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0, 1);
 		return cnt;
