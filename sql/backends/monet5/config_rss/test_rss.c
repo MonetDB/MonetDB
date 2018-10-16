@@ -17,8 +17,11 @@
 
 #define TEST_FILE "test_file"
 
-mal_export str TESTrestricted_rss(lng* GDK_mem_maxsize /*in bytes*/)
+mal_export str TESTrestricted_rss(int* RetVal, lng* GDK_mem_maxsize /*in bytes*/)
 {
+	*RetVal = 0; // Use a dummy return value to make interfacing with sql/mal easy.
+
+
 	// We are going to try to allocate twice the maximum configured rss bound.
 	size_t rss_bound = (size_t) *GDK_mem_maxsize, to_be_allocated = 2 * rss_bound, allocated = 0;
 
