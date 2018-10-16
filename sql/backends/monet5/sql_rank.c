@@ -664,7 +664,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	tp1 = getArgType(mb, pci, 1), tp2 = getArgType(mb, pci, 2);
 	if (isaBatType(tp2))
-		throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile first argument must a single atom");
+		throw(SQL, "sql.ntile", SQLSTATE(42000) "ntile first argument must be a single atom");
 
 	if (isaBatType(tp1)) {
 		BUN cnt;
@@ -853,46 +853,58 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return do_limit_value(cntxt, mb, stk, pci, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:lng,:lng)", GDKanalyticallast);
 }
 
-#define NTH_VALUE_IMP(TPE)                                                                      \
-	do {                                                                                        \
-		TPE *nthvalue = getArgReference_##TPE(stk, pci, 2);                                     \
-		BUN cast_value;                                                                         \
-		if(!is_##TPE##_nil(*nthvalue) && *nthvalue < 1) {                                       \
-			BBPunfix(b->batCacheid);                                                            \
-			if (s) BBPunfix(s->batCacheid);                                                     \
-			if (e) BBPunfix(e->batCacheid);                                                     \
-			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
-		}                                                                                       \
-		cast_value = is_##TPE##_nil(*nthvalue) ? BUN_NONE : (BUN)(((TPE)*nthvalue) - 1);        \
-		gdk_res = GDKanalyticalnthvalue(r, b, s, e, cast_value, tp1);                           \
+#define NTH_VALUE_IMP(TPE) \
+	do { \
+		TPE *nth = NULL; \
+		if (is_a_bat) { \
+			bool is_non_positive = false; \
+			for(TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_non_positive; lp++) \
+				is_non_positive |= (!is_##TPE##_nil(*lp) && *lp < 1); \
+			if(is_non_positive) { \
+				BBPunfix(b->batCacheid); \
+				BBPunfix(s->batCacheid); \
+				BBPunfix(e->batCacheid); \
+				BBPunfix(l->batCacheid); \
+				throw(SQL, "sql.nth_value", SQLSTATE(42000) "All nth_values must be greater than zero"); \
+			} \
+		} else { \
+			nth = getArgReference_##TPE(stk, pci, 2); \
+			if(!is_##TPE##_nil(*nth) && *nth < 1) { \
+				BBPunfix(b->batCacheid); \
+				BBPunfix(s->batCacheid); \
+				BBPunfix(e->batCacheid); \
+				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
+			} \
+		} \
+		gdk_res = GDKanalyticalnthvalue(r, b, s, e, l, nth, tp1, tp2); \
 	} while(0);
 
-#define NTH_VALUE_SINGLE_IMP(TPE)                                                               \
-	do {                                                                                        \
-		TPE val = *(TPE*) VALget(nth), *toset;                                                  \
-		if(!VALisnil(nth) && val < 1)                                                           \
+#define NTH_VALUE_SINGLE_IMP(TPE) \
+	do { \
+		TPE val = *(TPE*) VALget(nth), *toset; \
+		if(!VALisnil(nth) && val < 1) \
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
-		toset = (VALisnil(nth) || val > 1) ? (TPE*) ATOMnilptr(tp1) : (TPE*) in;                \
-		VALset(res, tp1, toset);                                                                \
+		toset = (VALisnil(nth) || val > 1) ? (TPE*) ATOMnilptr(tp1) : (TPE*) in; \
+		VALset(res, tp1, toset); \
 	} while(0);
 
 str
 SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b = NULL, *r = NULL, *s = NULL, *e = NULL;
+	BAT *b = NULL, *r = NULL, *s = NULL, *e = NULL, *l = NULL;
 	int tp1, tp2;
 	gdk_return gdk_res;
+	bool is_a_bat;
 
 	(void) cntxt;
 	if (pci->argc != 5 || (getArgType(mb, pci, 3) != TYPE_lng && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
 		(getArgType(mb, pci, 4) != TYPE_lng && getBatType(getArgType(mb, pci, 4)) != TYPE_lng)) {
 		throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value(:any_1,:number,:lng,:lng)");
 	}
-	tp2 = getArgType(mb, pci, 2);
-	if (isaBatType(tp2))
-		throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value second argument must be a single atom");
 
 	tp1 = getArgType(mb, pci, 1);
+	tp2 = getArgType(mb, pci, 2);
+	is_a_bat = isaBatType(tp2);
 	if (isaBatType(tp1)) {
 		BUN cnt;
 		bat *res = getArgReference_bat(stk, pci, 0);
@@ -920,7 +932,19 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 		}
+		if (isaBatType(getArgType(mb, pci, 2))) {
+			l = BATdescriptor(*getArgReference_bat(stk, pci, 2));
+			if (!l) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(r->batCacheid);
+				if (s) BBPunfix(s->batCacheid);
+				if (e) BBPunfix(e->batCacheid);
+				throw(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+			}
+		}
 
+		if(is_a_bat)
+			tp2 = getBatType(tp2);
 		switch (tp2) {
 			case TYPE_bte:
 				NTH_VALUE_IMP(bte)
@@ -941,7 +965,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			default: {
 				BBPunfix(b->batCacheid);
-				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value not available for %s", ATOMname(tp2));
+				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value offset not available for type %s", ATOMname(tp2));
 			}
 		}
 
@@ -949,6 +973,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		if (s) BBPunfix(s->batCacheid);
 		if (e) BBPunfix(e->batCacheid);
+		if (l) BBPunfix(l->batCacheid);
 		if(gdk_res == GDK_SUCCEED)
 			BBPkeepref(*res = r->batCacheid);
 		else
@@ -977,7 +1002,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				break;
 #endif
 			default:
-				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value not available for %s", ATOMname(tp2));
+				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value offset not available for type %s", ATOMname(tp2));
 		}
 	}
 	return MAL_SUCCEED;
@@ -1006,7 +1031,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 	if (pci->argc > 4) { //contains (lag or lead) value;
 		tp2 = getArgType(mb, pci, 2);
 		if (isaBatType(tp2))
-			throw(SQL, op, SQLSTATE(42000) "%s second argument must a single atom", desc);
+			throw(SQL, op, SQLSTATE(42000) "%s second argument must be a single atom", desc);
 		switch (tp2) {
 			case TYPE_bte:
 				CHECK_L_VALUE(bte)
@@ -1035,7 +1060,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str o
 		ValRecord *vin = &(stk)->stk[(pci)->argv[3]];
 		tp3 = getArgType(mb, pci, 3);
 		if (isaBatType(tp3))
-			throw(SQL, op, SQLSTATE(42000) "%s third argument must a single atom", desc);
+			throw(SQL, op, SQLSTATE(42000) "%s third argument must be a single atom", desc);
 		default_value = VALget(vin);
 		base = 4;
 	} else {

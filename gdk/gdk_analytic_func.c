@@ -352,84 +352,208 @@ allocation_error:
 	return GDK_FAIL;
 }
 
-#define ANALYTICAL_NTHVALUE_IMP(TPE)             \
-	do {                                         \
-		TPE *bp, *bs, *be, curval, *restrict rb; \
-		bp = (TPE*)Tloc(b, 0);                   \
-		rb = (TPE*)Tloc(r, 0);                   \
-		if (nth == BUN_NONE) {                   \
-			has_nils = true;                     \
-			for(; i<cnt; i++, rb++)              \
-				*rb = TPE##_nil;                 \
-		} else {                                 \
-			for(; i<cnt; i++, rb++) {            \
-				bs = bp + start[i];              \
-				be = bp + end[i];                \
-				curval = (be > bs && nth < (BUN)(end[i] - start[i])) ? *(bs + nth) : TPE##_nil; \
-				*rb = curval;                    \
-				if (is_##TPE##_nil(curval))      \
-					has_nils = true;             \
-			}                                    \
-		}                                        \
+#define ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(TPE1) \
+	do { \
+		TPE1 *bp = (TPE1*)Tloc(b, 0), *bs, *be, curval, *restrict rb = (TPE1*)Tloc(r, 0); \
+		if (is_lng_nil(nth)) { \
+			has_nils = true; \
+			for (; i<cnt; i++, rb++) \
+				*rb = TPE1##_nil; \
+		} else { \
+			nth--; \
+			for (; i<cnt; i++, rb++) { \
+				bs = bp + start[i]; \
+				be = bp + end[i]; \
+				curval = (be > bs && nth < (end[i] - start[i])) ? *(bs + nth) : TPE1##_nil; \
+				*rb = curval; \
+				if (is_##TPE1##_nil(curval)) \
+					has_nils = true; \
+			} \
+		} \
+	} while(0)
+
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, TPE2) \
+	do { \
+		TPE2 *restrict lp = (TPE2*)Tloc(l, 0); \
+		for (; i<cnt; i++, rb++) { \
+			TPE2 lnth = lp[i]; \
+			bs = bp + start[i]; \
+			be = bp + end[i]; \
+			if (is_##TPE2##_nil(lnth) || be <= bs || (lng)(lnth - 1) > (end[i] - start[i])) \
+				curval = TPE1##_nil; \
+			else \
+				curval = *(bs + lnth - 1); \
+			*rb = curval; \
+			if (is_##TPE1##_nil(curval)) \
+				has_nils = true; \
+		} \
+	} while(0)
+
+#define ANALYTICAL_NTHVALUE_CALC_FIXED(TPE1) \
+	do { \
+		TPE1 *bp, *bs, *be, curval, *restrict rb; \
+		bp = (TPE1*)Tloc(b, 0); \
+		rb = (TPE1*)Tloc(r, 0); \
+		switch (tp2) { \
+			case TYPE_bte: \
+				ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, bte); \
+				break; \
+			case TYPE_sht: \
+				ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, sht); \
+				break; \
+			case TYPE_int: \
+				ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, int); \
+				break; \
+			case TYPE_lng: \
+				ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, lng); \
+				break; \
+			default: \
+				goto nosupport; \
+		} \
+	} while(0)
+
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(TPE2) \
+	do { \
+		TPE2 *restrict lp = (TPE2*)Tloc(l, 0); \
+		for (; i < cnt; i++) { \
+			TPE2 lnth = lp[i]; \
+			if (is_##TPE2##_nil(lnth) || end[i] <= start[i] || (lng)(lnth - 1) > (end[i] - start[i])) \
+				curval = (void *) nil; \
+			else \
+				curval = BUNtail(bpi, (BUN) start[i] + lnth - 1); \
+			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
+				goto allocation_error; \
+			if (atomcmp(curval, nil) == 0) \
+				has_nils = true; \
+		} \
 	} while(0)
 
 gdk_return
-GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BUN nth, int tpe)
+GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void* restrict bound, int tp1, int tp2)
 {
 	BUN i = 0, cnt = BATcount(b);
-	lng *restrict start, *restrict end;
+	lng *restrict start, *restrict end, nth = 0;
 	bool has_nils = false;
+	const void* restrict nil = ATOMnilptr(tp1);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp1);
+	void *curval;
 
-	assert(s && e);
+	assert(s && e && ((l && !bound) || (!l && bound)));
 	start = (lng*)Tloc(s, 0);
 	end = (lng*)Tloc(e, 0);
 
-	switch (tpe) {
-		case TYPE_bit:
-			ANALYTICAL_NTHVALUE_IMP(bit);
-			break;
-		case TYPE_bte:
-			ANALYTICAL_NTHVALUE_IMP(bte);
-			break;
-		case TYPE_sht:
-			ANALYTICAL_NTHVALUE_IMP(sht);
-			break;
-		case TYPE_int:
-			ANALYTICAL_NTHVALUE_IMP(int);
-			break;
-		case TYPE_lng:
-			ANALYTICAL_NTHVALUE_IMP(lng);
-			break;
+	if(bound) {
+		switch (tp2) {
+			case TYPE_bte: {
+				bte val = *(bte *) bound;
+				nth = !is_bte_nil(val) ? (lng) val : lng_nil;
+			} break;
+			case TYPE_sht: {
+				sht val = *(sht *) bound;
+				nth = !is_sht_nil(val) ? (lng) val : lng_nil;
+			} break;
+			case TYPE_int: {
+				int val = *(int *) bound;
+				nth = !is_int_nil(val) ? (lng) val : lng_nil;
+			} break;
+			case TYPE_lng: {
+				nth = *(lng *) bound;
+			} break;
+			default:
+				goto nosupport;
+		}
+		switch (tp1) {
+			case TYPE_bit:
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(bit);
+				break;
+			case TYPE_bte:
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(bte);
+				break;
+			case TYPE_sht:
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(sht);
+				break;
+			case TYPE_int:
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(int);
+				break;
+			case TYPE_lng:
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(lng);
+				break;
 #ifdef HAVE_HGE
-		case TYPE_hge:
-			ANALYTICAL_NTHVALUE_IMP(hge);
-			break;
+			case TYPE_hge:
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(hge);
+				break;
 #endif
-		case TYPE_flt:
-			ANALYTICAL_NTHVALUE_IMP(flt);
-			break;
-		case TYPE_dbl:
-			ANALYTICAL_NTHVALUE_IMP(dbl);
-			break;
-		default: {
-			const void* restrict nil = ATOMnilptr(tpe);
-			int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
-			BATiter bpi = bat_iterator(b);
-			void *curval;
-
-			if (nth == BUN_NONE) {
-				has_nils = true;
-				for(; i<cnt; i++)
-					if (BUNappend(r, nil, false) != GDK_SUCCEED)
-						goto allocation_error;
-			} else {
-				for (; i < cnt; i++) {
-					curval = (end[i] > start[i] && nth < (BUN) (end[i] - start[i])) ?
-							  BUNtail(bpi, (BUN) start[i] + nth) : (void *) nil;
-					if (BUNappend(r, curval, false) != GDK_SUCCEED)
-						goto allocation_error;
-					if (atomcmp(curval, nil) == 0)
-						has_nils = true;
+			case TYPE_flt:
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(flt);
+				break;
+			case TYPE_dbl:
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(dbl);
+				break;
+			default: {
+				BATiter bpi = bat_iterator(b);
+				if (is_lng_nil(nth)) {
+					has_nils = true;
+					for(; i<cnt; i++)
+						if (BUNappend(r, nil, false) != GDK_SUCCEED)
+							goto allocation_error;
+				} else {
+					nth--;
+					for (; i < cnt; i++) {
+						curval = (end[i] > start[i] && nth < (end[i] - start[i])) ?
+								 BUNtail(bpi, (BUN) start[i] + nth) : (void *) nil;
+						if (BUNappend(r, curval, false) != GDK_SUCCEED)
+							goto allocation_error;
+						if (atomcmp(curval, nil) == 0)
+							has_nils = true;
+					}
+				}
+			}
+		}
+	} else {
+		switch (tp1) {
+			case TYPE_bit:
+				ANALYTICAL_NTHVALUE_CALC_FIXED(bit);
+				break;
+			case TYPE_bte:
+				ANALYTICAL_NTHVALUE_CALC_FIXED(bte);
+				break;
+			case TYPE_sht:
+				ANALYTICAL_NTHVALUE_CALC_FIXED(sht);
+				break;
+			case TYPE_int:
+				ANALYTICAL_NTHVALUE_CALC_FIXED(int);
+				break;
+			case TYPE_lng:
+				ANALYTICAL_NTHVALUE_CALC_FIXED(lng);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				ANALYTICAL_NTHVALUE_CALC_FIXED(hge);
+				break;
+#endif
+			case TYPE_flt:
+				ANALYTICAL_NTHVALUE_CALC_FIXED(flt);
+				break;
+			case TYPE_dbl:
+				ANALYTICAL_NTHVALUE_CALC_FIXED(dbl);
+				break;
+			default: {
+				BATiter bpi = bat_iterator(b);
+				switch (tp2) {
+					case TYPE_bte:
+						ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(bte);
+						break;
+					case TYPE_sht:
+						ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(sht);
+						break;
+					case TYPE_int:
+						ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(int);
+						break;
+					case TYPE_lng:
+						ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(lng);
+						break;
+					default:
+						goto nosupport;
 				}
 			}
 		}
@@ -440,6 +564,9 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BUN nth, int tpe)
 	return GDK_SUCCEED;
 allocation_error:
 	GDKerror("GDKanalyticalnthvalue: malloc failure\n");
+	return GDK_FAIL;
+nosupport:
+	GDKerror("GDKanalyticalnthvalue: type %s not supported for the nth_value.\n", ATOMname(tp2));
 	return GDK_FAIL;
 }
 

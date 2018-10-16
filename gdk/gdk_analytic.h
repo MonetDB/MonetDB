@@ -27,7 +27,7 @@ gdk_export gdk_return GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, 
 
 gdk_export gdk_return GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
-gdk_export gdk_return GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BUN nth, int tpe);
+gdk_export gdk_return GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void* restrict bound, int tp1, int tp2);
 gdk_export gdk_return GDKanalyticalmin(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalyticalmax(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_nils, int tpe);

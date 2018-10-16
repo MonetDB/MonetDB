@@ -2461,6 +2461,36 @@ Ready.
 [ 4	]
 [ 2	]
 [ NULL	]
+#select nth_value(aa, aa) over () from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 1 # length
+[ NULL	]
+[ 2	]
+[ 3	]
+[ NULL	]
+[ NULL	]
+[ 2	]
+[ 5	]
+[ 3	]
+[ 6	]
+[ NULL	]
+#select nth_value(1, aa) over () from analytics;
+% .L4 # table_name
+% L4 # name
+% tinyint # type
+% 1 # length
+[ NULL	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ NULL	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ NULL	]
 #rollback;
 #drop table analytics;
 
