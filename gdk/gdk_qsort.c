@@ -273,21 +273,7 @@ struct qsort_t {
 
 #define GDKqsort_impl GDKqsort_impl_any
 #define INITIALIZER	int z
-#if SIZEOF_VAR_T == 8
-#define OFF(i)		(buf->base +					\
-			 (buf->hs == 1 ? ((unsigned char *) h)[i] :	\
-			  buf->hs == 2 ? ((unsigned short *) h)[i] :	\
-			  buf->hs == 4 ? ((unsigned int *) h)[i] :	\
-			  ((var_t *) h)[i]))
-#else
-#define OFF(i)		(buf->base +					\
-			 (buf->hs == 1 ? ((unsigned char *) h)[i] :	\
-			  buf->hs == 2 ? ((unsigned short *) h)[i] :	\
-			  ((var_t *) h)[i]))
-#endif
-#define CMP(i, j)	(buf->base ?					\
-			 (*buf->cmp)(OFF(i), OFF(j)) :			\
-			 (*buf->cmp)(h + (i) * buf->hs, h + (j) * buf->hs))
+#define CMP(i, j)	(*buf->cmp)(h + (i) * buf->hs, h + (j) * buf->hs)
 /* EQ is only ever called directly after LE with the same arguments */
 #define EQ(i, j)	(z == 0)
 #define LE(i, j)	((z = CMP(i, j)) <= 0)
@@ -329,8 +315,7 @@ GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n
 		GDKqsort_impl_var(&buf, h, t, n);
 		return;
 	}
-	if (base)
-		tpe = TYPE_str;	/* we need the default case */
+	assert(base == NULL);
 
 	tpe = ATOMbasetype(tpe);
 
@@ -383,8 +368,7 @@ GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size
 		GDKqsort_impl_var_rev(&buf, h, t, n);
 		return;
 	}
-	if (base)
-		tpe = TYPE_str;	/* we need the default case */
+	assert(base == NULL);
 
 	tpe = ATOMbasetype(tpe);
 
