@@ -420,7 +420,7 @@ allocation_error:
 			if (is_##TPE2##_nil(lnth) || end[i] <= start[i] || (lng)(lnth - 1) > (end[i] - start[i])) \
 				curval = (void *) nil; \
 			else \
-				curval = BUNtail(bpi, (BUN) start[i] + lnth - 1); \
+				curval = BUNtail(bpi, (BUN) (start[i] + lnth - 1)); \
 			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
 				goto allocation_error; \
 			if (atomcmp(curval, nil) == 0) \
@@ -500,7 +500,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void* restri
 					nth--;
 					for (; i < cnt; i++) {
 						curval = (end[i] > start[i] && nth < (end[i] - start[i])) ?
-								 BUNtail(bpi, (BUN) start[i] + nth) : (void *) nil;
+								 BUNtail(bpi, (BUN) (start[i] + nth)) : (void *) nil;
 						if (BUNappend(r, curval, false) != GDK_SUCCEED)
 							goto allocation_error;
 						if (atomcmp(curval, nil) == 0)
