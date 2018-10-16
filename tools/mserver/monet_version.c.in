@@ -88,7 +88,11 @@ monet_version(void)
 #endif
 #ifdef HAVE_OPENSSL
 	print_libversion("openssl",
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+			 OPENSSL_VERSION_TEXT,
+#else
 			 OpenSSL_version(OPENSSL_VERSION),
+#endif
 			 OPENSSL_VERSION_TEXT);
 #endif
 #ifdef HAVE_LIBXML
