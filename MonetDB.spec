@@ -1039,7 +1039,7 @@ done
 * Wed Oct  3 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
 - buildtools: On Ubuntu 18.10 (Cosmic Cuttlefish), the libmonetdb5-server-bam package
   cannot be built because of an incompatibility in the libbam library
-  (it cannot be used in a shared object.
+  (it cannot be used in a shared object).
 
 * Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.7-20180829
 - Rebuilt.
