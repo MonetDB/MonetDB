@@ -788,7 +788,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"window_aggregate_function",
 	 NULL,
-	 "{ AVG '(' query_expression ')' | COUNT '(' [ '*' | query_expression ] ')' | MAX '(' query_expression ')'\n"
+	 "{ AVG '(' query_expression ')' | COUNT '(' { '*' | query_expression } ')' | MAX '(' query_expression ')'\n"
 	 "| MIN '(' query_expression ')' | PROD '(' query_expression ')' | SUM '(' query_expression ')' }",
 	 "query_expression",
 	 NULL},
@@ -818,7 +818,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"window_specification",
 	 NULL,
-	 "[ PARTITION BY column_ref ... ]\n"
+	 "[ PARTITION BY column_ref [ ',' ... ] ]\n"
 	 "[ ORDER BY sort_spec ]\n"
 	 "[ { ROWS | RANGE | GROUPS } { window_frame_start | BETWEEN window_bound AND window_bound }\n"
 	 "  [ EXCLUDING { CURRENT ROW | GROUP | TIES | NO OTHERS } ] ]",

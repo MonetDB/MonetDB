@@ -104,19 +104,6 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 		is_a_bat = isaBatType(tpe);
 		if(is_a_bat)
 			tpe = getBatType(tpe);
-		if((unit == FRAME_ROWS || unit == FRAME_GROUPS) && (tpe == TYPE_flt || tpe == TYPE_dbl)) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, mod, SQLSTATE(42000) "Values on %s boundary on %s frame can't be a floating-point type",
-				  preceding ? "PRECEDING" : "FOLLOWING", (unit == FRAME_ROWS) ? "rows":"groups");
-		} else if(unit == FRAME_RANGE && (tpe == TYPE_flt || tpe == TYPE_dbl) && (tp1 != TYPE_flt && tp1 != TYPE_dbl)) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, mod, SQLSTATE(42000) "Values in the input column aren't floating-point while on %s boundary are",
-				  preceding ? "PRECEDING" : "FOLLOWING");
-		} else if(unit == FRAME_RANGE && (tp1 == TYPE_flt || tp1 == TYPE_dbl) && (tpe != TYPE_flt && tpe != TYPE_dbl)) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, mod, SQLSTATE(42000) "Values on %s boundary aren't floating-point while on input column are",
-				  preceding ? "PRECEDING" : "FOLLOWING");
-		}
 
 		voidresultBAT(r, TYPE_lng, BATcount(b), b, mod);
 		if(is_a_bat) {

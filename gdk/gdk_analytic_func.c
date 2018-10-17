@@ -258,7 +258,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			void *curval;
 
 			for(; i<cnt; i++) {
-				curval = (end[i] > start[i]) ? BUNtail(bpi, start[i]) : (void*) nil;
+				curval = (end[i] > start[i]) ? BUNtail(bpi, (BUN)start[i]) : (void*) nil;
 				if (BUNappend(r, curval, false) != GDK_SUCCEED)
 					goto allocation_error;
 				if (atomcmp(curval, nil) == 0)
@@ -335,7 +335,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			void *curval;
 
 			for(; i<cnt; i++) {
-				curval = (end[i] > start[i]) ? BUNtail(bpi, end[i] - 1) : (void*) nil;
+				curval = (end[i] > start[i]) ? BUNtail(bpi, (BUN)(end[i] - 1)) : (void*) nil;
 				if (BUNappend(r, curval, false) != GDK_SUCCEED)
 					goto allocation_error;
 				if (atomcmp(curval, nil) == 0)

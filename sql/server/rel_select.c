@@ -4429,7 +4429,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 
 /* window functions */
 static sql_exp*
-calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e,
+generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e,
 						sql_exp *start, sql_exp *fend, int frame_type, int excl, int t1, int t2)
 {
 	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs1 = sa_list(sql->sa), *targs2 = sa_list(sql->sa);
@@ -4475,6 +4475,68 @@ calculate_window_bounds(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *
 	*estart = exp_op(sql->sa, rargs1, dc1);
 	*eend = exp_op(sql->sa, rargs2, dc2);
 	return e; //return something to say there were no errors b:any_1, unit:int, excl:int, start:int
+}
+
+static sql_exp*
+calculate_window_bound(mvc *sql, sql_rel *p, int token, symbol *bound, sql_exp *ie, int frame_type, int f)
+{
+	sql_subtype *bt, *it = sql_bind_localtype("int"), *iet;
+	unsigned char bclass = 0;
+	sql_exp *res = NULL;
+
+	if((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
+		atom *a = NULL;
+		bt = exp_subtype(ie);
+		bclass = bt->type->eclass;
+
+		if((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
+			if(EC_NUMBER(bclass))
+				a = atom_absolute_max(sql->sa, exp_subtype(ie));
+			else
+				a = atom_absolute_max(sql->sa, it);
+		} else if(bound->data.i_val == CURRENT_ROW_BOUND) {
+			if(EC_NUMBER(bclass))
+				a = atom_zero_value(sql->sa, exp_subtype(ie));
+			else
+				a = atom_zero_value(sql->sa, it);
+		} else {
+			assert(0);
+		}
+		res = exp_atom(sql->sa, a);
+	} else { //arbitrary expression case
+		int is_last = 0;
+		exp_kind ek = {type_value, card_column, FALSE};
+		const char* bound_desc = (token == SQL_PRECEDING) ? "PRECEDING" : "FOLLOWING";
+		iet = exp_subtype(ie);
+
+		assert(token == SQL_PRECEDING || token == SQL_FOLLOWING);
+		res = rel_value_exp2(sql, &p, bound, f, ek, &is_last);
+		if(!res)
+			return NULL;
+		bt = exp_subtype(res);
+		if(bt)
+			bclass = bt->type->eclass;
+		if(!bt || !(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
+		if((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM)
+			return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type",
+							 bound_desc, (frame_type == FRAME_ROWS) ? "rows":"groups", subtype2string(bt));
+		if(frame_type == FRAME_RANGE) {
+			if(bclass == EC_FLT && iet->type->eclass != EC_FLT)
+				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't floating-point while on %s boundary are", bound_desc);
+			if(bclass != EC_FLT && iet->type->eclass == EC_FLT)
+				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't floating-point while on input are", bound_desc);
+			if(bclass == EC_DEC && iet->type->eclass != EC_DEC)
+				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't decimals while on %s boundary are", bound_desc);
+			if(bclass != EC_DEC && iet->type->eclass == EC_DEC)
+				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
+			if(bclass != EC_SEC && iet->type->eclass == EC_TIME)
+				return sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", subtype2string(iet), bound_desc);
+			if(EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass))
+				return sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", subtype2string(iet), bound_desc);
+		}
+	}
+	return res;
 }
 
 /*
@@ -4730,12 +4792,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	/* Frame */
 	if(window_specification->h->next->next->data.sym) {
 		dnode *d = window_specification->h->next->next->data.sym->data.lval->h;
-		exp_kind ek = {type_value, card_column, FALSE};
 		symbol *wstart = d->data.sym, *wend = d->next->data.sym, *rstart = wstart->data.lval->h->data.sym,
 			   *rend = wend->data.lval->h->data.sym;
 		int excl = d->next->next->next->data.i_val;
-		sql_subtype* st, *et, *it = sql_bind_localtype("int");
-		unsigned char sclass = 0, eclass = 0;
 		frame_type = d->next->next->data.i_val;
 		sql_exp *ie = obe ? obe->t->data : in;
 
@@ -4766,70 +4825,11 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			frame_type = FRAME_ALL; //special case, iterate the entire partition
 		}
 
-		//SQL keyword case
-		if((rstart->token == SQL_PRECEDING || rstart->token == SQL_FOLLOWING || rstart->token == SQL_CURRENT_ROW) && rstart->type == type_int) {
-			atom *a = NULL;
-			st = exp_subtype(ie);
-			sclass = st->type->eclass;
-
-			if((rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND || rstart->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-				if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass))
-					a = atom_absolute_max(sql->sa, exp_subtype(ie));
-				else
-					a = atom_absolute_max(sql->sa, it);
-			} else if(rstart->data.i_val == CURRENT_ROW_BOUND) {
-				if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass))
-					a = atom_zero_value(sql->sa, exp_subtype(ie));
-				else
-					a = atom_zero_value(sql->sa, it);
-			} else {
-				assert(0);
-			}
-			fstart = exp_atom(sql->sa, a);
-		} else { //arbitrary expression case
-			is_last = 0;
-			fstart = rel_value_exp2(sql, &p, rstart, f, ek, &is_last);
-			if(!fstart)
-				return NULL;
-			st = exp_subtype(fstart);
-			if(st)
-				sclass = st->type->eclass;
-			if(!st || !(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)))
-				return sql_error(sql, 02, SQLSTATE(42000) "PRECEDING offset must be of a countable SQL type");
-		}
-
-		if((rend->token == SQL_PRECEDING || rend->token == SQL_FOLLOWING || rend->token == SQL_CURRENT_ROW) && rend->type == type_int) {
-			atom *a = NULL;
-			et = exp_subtype(ie);
-			eclass = et->type->eclass;
-
-			if((rend->data.i_val == UNBOUNDED_PRECEDING_BOUND || rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-				if(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass))
-					a = atom_absolute_max(sql->sa, exp_subtype(ie));
-				else
-					a = atom_absolute_max(sql->sa, it);
-			} else if(rend->data.i_val == CURRENT_ROW_BOUND) {
-				if(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass))
-					a = atom_zero_value(sql->sa, exp_subtype(ie));
-				else
-					a = atom_zero_value(sql->sa, it);
-			} else {
-				assert(0);
-			}
-			fend = exp_atom(sql->sa, a);
-		} else {
-			is_last = 0;
-			fend = rel_value_exp2(sql, &p, rend, f, ek, &is_last);
-			if (!fend)
-				return NULL;
-			et = exp_subtype(fend);
-			if(et)
-				eclass = et->type->eclass;
-			if(!et || !(eclass == EC_POS || eclass == EC_NUM || eclass == EC_DEC || EC_INTERVAL(eclass)))
-				return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must be of a countable SQL type");
-		}
-
-		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
+		if((fstart = calculate_window_bound(sql, p, wstart->token, rstart, ie, frame_type, f)) == NULL)
+			return NULL;
+		if((fend = calculate_window_bound(sql, p, wend->token, rend, ie, frame_type, f)) == NULL)
+			return NULL;
+		if(generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
 								   wstart->token, wend->token) == NULL)
 			return NULL;
 	} else if (supports_frames) { //for aggregations with no frame clause, we use the standard default values
@@ -4853,8 +4853,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if(!obe)
 			frame_type = FRAME_ALL;
 
-		if(calculate_window_bounds(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
-								   SQL_PRECEDING, SQL_FOLLOWING) == NULL)
+		if(generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
+									  SQL_PRECEDING, SQL_FOLLOWING) == NULL)
 			return NULL;
 	}
 

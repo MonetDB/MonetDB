@@ -1656,6 +1656,31 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, DBL, LNG, SCALE_NONE);
 	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, DBL, LNG, SCALE_NONE);
 
+	t = decimals; /* BTE */
+	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	t++; /* SHT */
+	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	t++; /* INT */
+	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	t++; /* LNG */
+	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+#ifdef HAVE_HGE
+	if (have_hge) {
+		t++; /* HGE */
+		sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+		sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	}
+#endif
+
+	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, MONINT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, MONINT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, SECINT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, SECINT, LNG, SCALE_NONE);
+
 	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, BTE, LNG, SCALE_NONE);
 	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, BTE, LNG, SCALE_NONE);
 	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, SHT, LNG, SCALE_NONE);
@@ -1668,6 +1693,31 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, FLT, LNG, SCALE_NONE);
 	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, DBL, LNG, SCALE_NONE);
 	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, DBL, LNG, SCALE_NONE);
+
+	t = decimals; /* BTE */
+	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	t++; /* SHT */
+	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	t++; /* INT */
+	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	t++; /* LNG */
+	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+#ifdef HAVE_HGE
+	if (have_hge) {
+		t++; /* HGE */
+		sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+		sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	}
+#endif
+
+	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, MONINT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, MONINT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, SECINT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, SECINT, LNG, SCALE_NONE);
 
 	sql_create_analytic3(sa, "rank", "sql", "rank", ANY, BIT, BIT, INT, SCALE_NONE);
 	sql_create_analytic3(sa, "dense_rank", "sql", "dense_rank", ANY, BIT, BIT, INT, SCALE_NONE);
@@ -1803,6 +1853,22 @@ sqltypeinit( sql_allocator *sa)
 	if (have_hge)
 		sql_create_analytic(sa, "avg", "sql", "avg", HGE, DBL, SCALE_NONE);
 #endif
+
+	t = decimals; // BTE
+	sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
+	t++; // SHT
+	sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
+	t++; // INT
+	sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
+	t++; // LNG
+	sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
+#ifdef HAVE_HGE
+	if (have_hge) {
+		t++; // HGE
+		sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
+	}
+#endif
+
 	sql_create_analytic(sa, "avg", "sql", "avg", FLT, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", DBL, DBL, SCALE_NONE);
 
