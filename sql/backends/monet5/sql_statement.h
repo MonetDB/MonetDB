@@ -153,7 +153,7 @@ extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
 extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
-extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, stmt *file);
+extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
 extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
 extern stmt *stmt_catalog(backend *be, int type, stmt *args);
 

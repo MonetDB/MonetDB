@@ -2489,16 +2489,12 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 }
 
 static int
-mvc_export_file(backend *b, stream *s, res_table *t, lng starttime, lng maloptimizer)
+mvc_export_file(backend *b, stream *s, res_table *t)
 {
 	mvc *m = b->mvc;
 	int res = 0;
 	BUN count;
 	BAT *order = NULL;
-
-	if (m->scanner.ws == s)
-		/* need header */
-		mvc_export_head(b, s, t->id, TRUE, TRUE, starttime, maloptimizer);
 
 	if (!t->order) {
 		res = mvc_export_row(b, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
@@ -2516,7 +2512,7 @@ mvc_export_file(backend *b, stream *s, res_table *t, lng starttime, lng maloptim
 }
 
 int
-mvc_export_result(backend *b, stream *s, int res_id, lng starttime, lng maloptimizer)
+mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
 	int clean = 0, res = 0;
@@ -2534,8 +2530,13 @@ mvc_export_result(backend *b, stream *s, int res_id, lng starttime, lng maloptim
 	}
 	/* we shouldn't have anything else but Q_TABLE here */
 	assert(t->query_type == Q_TABLE);
-	if (t->tsep)
-		return mvc_export_file(b, s, t, starttime, maloptimizer);
+	if (t->tsep) {
+		if (header) {
+			/* need header */
+			mvc_export_head(b, s, t->id, TRUE, TRUE, starttime, maloptimizer);
+		}
+		return mvc_export_file(b, s, t);
+	}
 
 	if (!json) {
 		mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer);

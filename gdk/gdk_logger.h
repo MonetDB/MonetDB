@@ -101,14 +101,11 @@ typedef int log_bid;
  * each requested (block) of sequence numbers. This is done using the
  * log_sequence function. The logger_sequence function can be used to
  * return the last logged sequence number. Sequences identifiers
- * should be unique, and 2 are already used. The first LOG_SID is used
- * internally for the log files sequence. The second OBJ_SID is for
+ * should be unique. The first OBJ_SID is for
  * frontend objects, for example the sql objects have a global
  * sequence counter such that each table, trigger, sequence etc. has a
  * unique number.
  */
-/* the sequence identifier for the sequence of log files */
-#define LOG_SID	0
 /* the sequence identifier for frontend objects */
 #define OBJ_SID	1
 

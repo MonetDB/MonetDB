@@ -5413,6 +5413,7 @@ stream_blackhole_create(void)
 
 typedef struct {
 	stream *s;
+	bool eof;
 	/* config */
 	size_t num_fields;
 	size_t *widths;
@@ -5438,6 +5439,8 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 	if (fsd == NULL || elmsize != 1) {
 		return -1;
 	}
+	if (fsd->eof)
+		return 0;
 
 	while (to_write > 0) {
 		/* input conversion */
@@ -5448,6 +5451,7 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 				if (actually_read < 0) {
 					return actually_read;	/* this is an error */
 				}
+				fsd->eof = true;
 				return (ssize_t) buf_written;	/* skip last line */
 			}
 			/* consume to next newline */
@@ -5532,6 +5536,7 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 		.widths = widths,
 		.filler = filler,
 		.line_len = 0,
+		.eof = false,
 	};
 	for (size_t i = 0; i < num_fields; i++) {
 		fsd->line_len += widths[i];

@@ -19,7 +19,7 @@
 
 extern int mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer);
 extern int mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng maloptimizer);
-extern int mvc_export_result(backend *b, stream *s, int res_id, lng starttime, lng maloptimizer);
+extern int mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime, lng maloptimizer);
 extern int mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer);
 extern int mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr);
 

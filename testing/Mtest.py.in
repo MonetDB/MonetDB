@@ -2086,7 +2086,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                 except IOError as err:
                     if not env.get('NOCLEAN'):
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                               % (os.path.join(RELSRCDIR, f), f, os.getcwd(), IOerrNo, IOerrStr))
+                               % (os.path.join(RELSRCDIR, f), f, os.getcwd(), err.errno, err.strerror))
                 except OSError:
                     if not env.get('NOCLEAN'):
                         raise

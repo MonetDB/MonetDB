@@ -173,18 +173,18 @@
 
 
 
-#define SQL_COPY_INTO_FILES "COPY BINARY INTO bam.files FROM ('%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_SQ	"COPY BINARY INTO bam.sq	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_RG	"COPY BINARY INTO bam.rg	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_PG	"COPY BINARY INTO bam.pg	FROM ('%s', '%s', '%s', '%s', '%s', '%s');\n"
+#define SQL_COPY_INTO_FILES "COPY BINARY INTO bam.files FROM ('%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
+#define SQL_COPY_INTO_SQ	"COPY BINARY INTO bam.sq	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
+#define SQL_COPY_INTO_RG	"COPY BINARY INTO bam.rg	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
+#define SQL_COPY_INTO_PG	"COPY BINARY INTO bam.pg	FROM ('%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
 
 #define SQL_COPY_INTO_ALIGNMENTS	"COPY BINARY INTO bam.%salignments_"LLFMT" FROM \
-	('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
+	('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
 #define SQL_COPY_INTO_PAIRED_ALIGNMENTS "COPY BINARY INTO bam.paired_%s_alignments_"LLFMT" FROM \
 	('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', \
-	 '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
+	 '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
 
-#define SQL_COPY_INTO_ALIGNMENTS_EXTRA "COPY BINARY INTO bam.alignments_extra_"LLFMT" FROM ('%s', '%s', '%s', '%s');\n"
+#define SQL_COPY_INTO_ALIGNMENTS_EXTRA "COPY BINARY INTO bam.alignments_extra_"LLFMT" FROM ('%s', '%s', '%s', '%s') ON SERVER;\n"
 
 #define BUF_SIZE_CREATE_STORAGE_0 2048
 #define BUF_SIZE_CREATE_STORAGE_1 8192

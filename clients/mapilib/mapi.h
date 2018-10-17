@@ -51,6 +51,7 @@ typedef int MapiMsg;
 #define PROMPTBEG	'\001'	/* start prompt bracket */
 #define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
 #define PROMPT2		"\001\002\n"	/* prompt: more data needed */
+#define PROMPT3		"\001\003\n"	/* prompt: get file content */
 
 /*
  * The table field information is extracted from the table headers
@@ -124,6 +125,13 @@ mapi_export char **mapi_resolve(const char *host, int port, const char *pattern)
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_ping(Mapi mid);
+mapi_export void mapi_setfilecallback(
+	Mapi mid,
+	char *(*getfunc)(void *priv, const char *filename,
+			 bool binary, uint64_t offset, size_t *size),
+	char *(*putfunc)(void *priv, const char *filename,
+			 const void *data, size_t size),
+	void *priv);
 
 mapi_export MapiMsg mapi_error(Mapi mid);
 mapi_export const char *mapi_error_str(Mapi mid);
