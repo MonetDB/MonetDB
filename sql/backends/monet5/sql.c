@@ -2773,6 +2773,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(fn);
 				return msg;
 			}
+			GDKfree(fn);
 		}
 
 		if (fixed_widths && strcmp(fixed_widths, str_nil) != 0) {
@@ -3053,6 +3054,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				/* this code should be extended to
 				 * deal with larger text strings. */
 				FILE *f = fopen(fn, "r");
+				GDKfree(fn);
 				if (f == NULL) {
 					BBPreclaim(c);
 					msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to re-open file %s", fname);
@@ -3083,6 +3085,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				GDKfree(buf);
 			} else {
 				c = BATattach(tpe, fn, TRANSIENT);
+				GDKfree(fn);
 			}
 			if (c == NULL) {
 				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
