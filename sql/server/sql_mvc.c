@@ -1085,7 +1085,7 @@ mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, l
 	if (sa) {
 		f = create_sql_func(sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 		f->s = s;
-	} else 
+	} else
 		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 	return f;
 }
@@ -1946,6 +1946,18 @@ sql_idx *
 mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
 {
 	return sql_trans_copy_idx(m->session->tr, t, i);
+}
+
+sql_trigger *
+mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr)
+{
+	return sql_trans_copy_trigger(m->session->tr, t, tr);
+}
+
+sql_part *
+mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
+{
+	return sql_trans_copy_part(m->session->tr, t, pt);
 }
 
 sql_subquery *

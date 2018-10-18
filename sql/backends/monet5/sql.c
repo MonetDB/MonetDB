@@ -270,7 +270,7 @@ SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
+create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 {
 	sql_allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
@@ -278,13 +278,11 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	node *n;
 	int check = 0;
 
-	(void)tname;
 	if (STORE_READONLY)
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
 	if (!s)
 		return sql_message(SQLSTATE(3F000) "CREATE %s: schema '%s' doesn't exist", (t->query) ? "TABLE" : "VIEW", sname);
-
 	if (mvc_bind_table(sql, s, t->base.name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
 		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", cd, t->base.name);
@@ -297,7 +295,8 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	osa = sql->sa;
 	sql->sa = NULL;
 
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz, t->properties);
+	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
+								t->sz, t->properties);
 
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -408,7 +407,19 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 			mvc_copy_key(sql, nt, k);
 		}
 	}
-	/* also create dependencies */
+	if (t->members.set) {
+		for (n = t->members.set->h; n; n = n->next) {
+			sql_part *pt = n->data;
+			mvc_copy_part(sql, nt, pt);
+		}
+	}
+	if (t->triggers.set) {
+		for (n = t->triggers.set->h; n; n = n->next) {
+			sql_trigger *tr = n->data;
+			mvc_copy_trigger(sql, nt, tr);
+		}
+	}
+	/* also create dependencies when not renaming */
 	if (nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
@@ -1908,7 +1919,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	nr = store_funcs.count_col(tr, c, 1);
 
-	if (isTable(t) && t->access == TABLE_WRITABLE && (t->base.flag != TR_NEW /* alter */ ) &&
+	if (isTable(t) && t->access == TABLE_WRITABLE && (!isNew(t) /* alter */ ) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action)
 		inr = store_funcs.count_col(tr, c, 0);
 	nr -= inr;

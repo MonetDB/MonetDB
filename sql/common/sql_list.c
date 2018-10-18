@@ -706,6 +706,39 @@ list_dup(list *l, fdup dup)
 	return res ? list_merge(res, l, dup) : NULL;
 }
 
+void
+list_hash_delete(list *l, void *data, fcmp cmp)
+{
+	if (l && data) {
+		node *n = list_find(l, data, cmp);
+		if(n) {
+			MT_lock_set(&l->ht_lock);
+			if (l->ht && n->data)
+				hash_delete(l->ht, data);
+			MT_lock_unset(&l->ht_lock);
+		}
+	}
+}
+
+void*
+list_hash_add(list *l, void *data, fcmp cmp)
+{
+	if (l && data) {
+		node *n = list_find(l, data, cmp);
+		if(n) {
+			MT_lock_set(&l->ht_lock);
+			if (l->ht && n->data) {
+				int nkey = l->ht->key(data);
+				if (hash_add(l->ht, nkey, data) == NULL) {
+					MT_lock_unset(&l->ht_lock);
+					return NULL;
+				}
+			}
+			MT_lock_unset(&l->ht_lock);
+		}
+	}
+	return data;
+}
 
 #ifdef TEST
 #include <string.h>

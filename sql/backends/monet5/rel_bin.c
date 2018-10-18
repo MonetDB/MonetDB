@@ -864,7 +864,7 @@ stmt_col( backend *be, sql_column *c, stmt *del)
 	stmt *sc = stmt_bat(be, c, RDONLY, del?del->partition:0);
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
-	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
+	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(be, c, RD_INS, 0);
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, del?del->partition:0);
@@ -882,7 +882,7 @@ stmt_idx( backend *be, sql_idx *i, stmt *del)
 	stmt *sc = stmt_idxbat(be, i, RDONLY, del?del->partition:0);
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
-	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
+	   (!isNew(i) || !isNew(i->t) /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, del?del->partition:0);
@@ -5252,7 +5252,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	} else if (rel->flag <= DDL_ALTER_TABLE) {
 		s = rel2bin_catalog_table(be, rel, refs);
 		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_COMMENT_ON) {
+	} else if (rel->flag <= DDL_RENAME_COLUMN) {
 		s = rel2bin_catalog2(be, rel, refs);
 		sql->type = Q_SCHEMA;
 	}

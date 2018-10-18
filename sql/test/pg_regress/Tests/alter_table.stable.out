@@ -114,12 +114,22 @@ Ready.
 #CREATE TABLE tmp (regtable int);
 #CREATE TEMP TABLE tmp (tmptable int);
 #SELECT * FROM tmp;
-% sys.tmp # table_name
+% tmp.tmp # table_name
+% tmptable # name
+% int # type
+% 1 # length
+#SELECT * FROM tmp_new;
+% sys.tmp_new # table_name
 % regtable # name
 % int # type
 % 1 # length
 #SELECT * FROM tmp;		-- should fail
-% sys.tmp # table_name
+% tmp.tmp # table_name
+% tmptable # name
+% int # type
+% 1 # length
+#SELECT * FROM tmp_new;
+% sys.tmp_new # table_name
 % regtable # name
 % int # type
 % 1 # length

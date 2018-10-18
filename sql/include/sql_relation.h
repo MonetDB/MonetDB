@@ -139,6 +139,9 @@ typedef struct expression {
 #define DDL_ALTER_TABLE_SET_ACCESS				65
 
 #define DDL_COMMENT_ON			66
+#define DDL_RENAME_SCHEMA		67
+#define DDL_RENAME_TABLE		68
+#define DDL_RENAME_COLUMN		69
 
 #define DDL_EMPTY 100
 
