@@ -17,7 +17,7 @@
 
 #define TEST_FILE "test_file"
 
-mal_export str TESTrestricted_rss(int* RetVal, lng* GDK_mem_maxsize /*in bytes*/)
+mal_export str TESTrestricted_rss(lng* RetVal, lng* GDK_mem_maxsize /*in bytes*/)
 {
 	*RetVal = 0; // Use a dummy return value to make interfacing with sql/mal easy.
 

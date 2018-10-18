@@ -1,5 +1,5 @@
 module test_config_rss;
 
-command run_test_config_rss(GDK_mem_maxsize:lng):int 
+command run_test_config_rss(GDK_mem_maxsize:lng):lng
 address TESTrestricted_rss
 comment "C code will allocate memory and test whether the configured rss limit is violated.";
