@@ -94,7 +94,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
-	fprintf(stderr, "    --dbinit=<stmt>           Execute statement at startup\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --daemon=yes|no           Do not read commands from standard input [no]\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
@@ -234,7 +233,6 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
-	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 	char prmodpath[1024];
 	char *modpath = NULL;
@@ -246,7 +244,6 @@ main(int argc, char **av)
 		{ "config", 1, 0, 'c' },
 		{ "dbpath", 1, 0, 0 },
 		{ "dbextra", 1, 0, 0 },
-		{ "dbinit", 1, 0, 0 } ,
 		{ "daemon", 1, 0, 0 },
 		{ "debug", 2, 0, 'd' },
 		{ "help", 0, 0, '?' },
@@ -328,13 +325,6 @@ main(int argc, char **av)
 					fprintf(stderr, "#warning: ignoring multiple --dbextra arguments\n");
 				else
 					dbextra = optarg;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
-				if (dbinit)
-					fprintf(stderr, "#warning: ignoring multiple --dbinit argument\n");
-				else
-					dbinit = optarg;
 				break;
 			}
 #ifdef HAVE_CONSOLE
@@ -663,14 +653,6 @@ main(int argc, char **av)
 	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
 		msab_registerStop();
 		GDKfatal("%s", err);
-	}
-	if (dbinit == NULL)
-		dbinit = GDKgetenv("dbinit");
-	if (dbinit) {
-		if((err = callString(mal_clients, dbinit, listing)) != MAL_SUCCEED) {
-			msab_registerStop();
-			GDKfatal("%s", err);
-		}
 	}
 
 	emergencyBreakpoint();

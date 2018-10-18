@@ -2959,13 +2959,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntOut = open(ClntOutFile,"w")
             ClntErr = open(ClntErrFile,"w")
             PROLOGUE = []
-            DBINIT = []
             if os.path.isfile(TST + ".prologue5"):
                 PROLOGUE = [TST + ".prologue5"]
-            if os.path.isfile(TST + ".dbinit5"):
-                dbinit = open(TST + ".dbinit5").readline().strip()
-                if dbinit:
-                    DBINIT = ['--dbinit=%s' % dbinit]
 
             Srvr = splitcommand(exe['mserver5'][1]) + LOCAL_CONF
             if nomito:
@@ -2984,14 +2979,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+            if os.path.isfile(TST + '.options5'):
+                Srvr.extend(open(TST + '.options5').read().split())
             lang=""
 
             if SERVER == "MAL":
                 lang="mal"
-                Srvr.extend(DBINIT)
             if SERVER == "SQL":
                 lang="sql"
-                Srvr.extend(DBINIT)
             Srvr.extend(PROLOGUE)
 
             # enable r integration in server
