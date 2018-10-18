@@ -1,6 +1,15 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Oct 18 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added possibility to rename SQL schemas, tables and columns with ALTER
+  statements:
+  > ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident
+  > ALTER TABLE [ IF EXISTS ] qname RENAME TO ident
+  > ALTER TABLE [ IF EXISTS ] qname RENAME [ COLUMN ] ident TO ident
+  Also added optional IF EXISTS clause to other existing ALTER TABLE
+  statements.
+
 * Tue Okt  9 2018 Aris Koning <aris.koning@monetdbsolutions.com>
 - The sql SAMPLE syntax is extended to include an optional integral SEED
   parameter that sets the seed for the internal random number generator
@@ -8,6 +17,18 @@
   a reproducible sample set from a static dataset with the same sample
   query. The new syntax is
   SELECT ... FROM ... WHERE ... SAMPLE <expr> [SEED <integer>]
+
+* Tue Sep 25 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a version of COPY INTO that reads/writes files from/to
+  the client instead of doing it in the server.  This has the
+  advantage that COPY INTO is then no longer restricted to only the
+  "super user" monetdb, nor only to absolute file names.  The syntax
+  to have the server communicate with the client for file content is
+  COPY INTO table FROM file ON CLIENT ...; and COPY query INTO file ON
+  CLIENT ...;.  This also works for COPY BINARY INTO.  There is also
+  the possibility to specify that files are to be read/written by the
+  server by using ON SERVER.  This is also the default when ON CLIENT
+  or ON SERVER is not specified.
 
 * Fri Aug 10 2018 Sjoerd Mullender <sjoerd@acm.org>
 - The sys.functions table now has an extra column called "system" of

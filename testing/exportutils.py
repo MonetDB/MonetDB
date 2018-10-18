@@ -122,4 +122,5 @@ def normalize(decl):
                 .replace(')__attribute__', ') __attribute__')
     decl = strre.sub(r'\1 *', decl)
     decl = comre.sub(', ', decl)
+    decl = decl.replace('( *', ' (*').replace('* (*', '*(*')
     return decl

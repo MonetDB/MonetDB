@@ -1312,7 +1312,7 @@ table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths)
+rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths, int onclient)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -1320,7 +1320,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_subtype tpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 11, F_UNION, NULL);
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 12, F_UNION, NULL);
 	char *fwf_string = NULL;
 	
 	if (!f) /* we do expect copyfrom to be there */
@@ -1353,18 +1353,20 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	}
 
 	append( args, exp_atom_str(sql->sa, filename, &tpe)); 
-	import = exp_op(sql->sa,  
+	import = exp_op(sql->sa,
 	append(
 		append(
-			append( 
+			append(
 				append(
-					append( args,
-						exp_atom_lng(sql->sa, nr)),
-						exp_atom_lng(sql->sa, offset)),
-						exp_atom_int(sql->sa, locked)),
-						exp_atom_int(sql->sa, best_effort)),
-						exp_atom_str(sql->sa, fwf_string, &tpe)), f);
-	
+					append(
+						append( args,
+							exp_atom_lng(sql->sa, nr)),
+							exp_atom_lng(sql->sa, offset)),
+							exp_atom_int(sql->sa, locked)),
+							exp_atom_int(sql->sa, best_effort)),
+							exp_atom_str(sql->sa, fwf_string, &tpe)),
+							exp_atom_int(sql->sa, onclient)), f);
+
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -1376,7 +1378,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 }
 
 static sql_rel *
-copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint, dlist *fwf_widths)
+copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint, dlist *fwf_widths, int onclient)
 {
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
@@ -1485,20 +1487,23 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	if (files) {
 		dnode *n = files->h;
 
-		if (!copy_allowed(sql, 1))
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-					"COPY INTO from file(s) requires database administrator rights, "
-					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
+		if (!onclient && !copy_allowed(sql, 1)) {
+			return sql_error(sql, 02, SQLSTATE(42000)
+					 "COPY INTO: insufficient privileges: "
+					 "COPY INTO from file(s) requires database administrator rights, "
+					 "use 'COPY INTO \"%s\" FROM file ON CLIENT' instead", tname);
+		}
 
 		for (; n; n = n->next) {
 			char *fname = n->data.sval;
 			sql_rel *nrel;
 
-			if (fname && !MT_path_absolute(fname))
+			if (!onclient && fname && !MT_path_absolute(fname)) {
 				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
-						"have absolute path: %s", fname);
+						 "have absolute path: %s", fname);
+			}
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths, onclient);
 
 			if (!rel)
 				rel = nrel;
@@ -1510,7 +1515,8 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				return rel;
 		}
 	} else {
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL);
+		assert(onclient == 0);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL, onclient);
 	}
 	if (headers) {
 		dnode *n;
@@ -1573,7 +1579,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 }
 
 static sql_rel *
-bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint)
+bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint, int onclient)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1587,7 +1593,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 	sql_subtype strtpe;
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 2, F_UNION, NULL); 
+	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 3, F_UNION, NULL); 
 	list *collist;
 	int i;
 
@@ -1622,9 +1628,10 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&strtpe, "varchar", 0, 0);
-	args = append( append( new_exp_list(sql->sa),
+	args = append( append( append( new_exp_list(sql->sa),
 		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &strtpe)), 
-		exp_atom_str(sql->sa, t->base.name, &strtpe));
+		exp_atom_str(sql->sa, t->base.name, &strtpe)),
+		exp_atom_int(sql->sa, onclient));
 
 	// create the list of files that is passed to the function as parameter
 	for(i = 0; i < list_length(t->columns.set); i++) {
@@ -1718,7 +1725,7 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 
 
 static sql_rel *
-rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file) 
+rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql_exp *null_string, sql_exp *file, sql_exp *onclient) 
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -1729,8 +1736,10 @@ rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql
 	append(exps, rsep);
 	append(exps, ssep);
 	append(exps, null_string);
-	if (file)
+	if (file) {
 		append(exps, file);
+		append(exps, onclient);
+	}
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -1742,40 +1751,41 @@ rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql
 }
 
 static sql_rel *
-copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
+copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string, int onclient)
 {
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
 	char *ns = (null_string)?null_string:"null";
-	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e;
+	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e, *oncl_e;
 	exp_kind ek = {type_value, card_relation, TRUE};
 	sql_rel *r = rel_subquery(sql, NULL, sq, ek, APPLY_JOIN);
 
-	if (!r) 
+	if (!r)
 		return NULL;
 
 	tsep_e = exp_atom_clob(sql->sa, tsep);
 	rsep_e = exp_atom_clob(sql->sa, rsep);
 	ssep_e = exp_atom_clob(sql->sa, ssep);
 	ns_e = exp_atom_clob(sql->sa, ns);
+	oncl_e = exp_atom_int(sql->sa, onclient);
 	fname_e = filename?exp_atom_clob(sql->sa, filename):NULL;
 
-	if (filename) {
+	if (!onclient && filename) {
 		struct stat fs;
-		if (!copy_allowed(sql, 0)) 
+		if (!copy_allowed(sql, 0))
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-					"COPY INTO file requires database administrator rights, "
-					"use 'COPY ... INTO STDOUT' instead");
+					 "COPY INTO file requires database administrator rights, "
+					 "use 'COPY ... INTO file ON CLIENT' instead");
 		if (filename && !MT_path_absolute(filename))
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
-					"have absolute path: %s", filename);
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO ON SERVER: filename must "
+					 "have absolute path: %s", filename);
 		if (lstat(filename, &fs) == 0)
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: file already "
-					"exists: %s", filename);
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO ON SERVER: file already "
+					 "exists: %s", filename);
 	}
 
-	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e);
+	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e, oncl_e);
 }
 
 sql_exp *
@@ -1884,7 +1894,8 @@ rel_updates(mvc *sql, symbol *s)
 				l->h->next->next->next->next->next->next->next->data.i_val, 
 				l->h->next->next->next->next->next->next->next->next->data.i_val, 
 				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->data.lval);
+				l->h->next->next->next->next->next->next->next->next->next->next->data.lval, 
+				l->h->next->next->next->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1892,7 +1903,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val);
+		ret = bincopyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1910,7 +1921,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyto(sql, l->h->data.sym, l->h->next->data.sval, l->h->next->next->data.lval, l->h->next->next->next->data.sval);
+		ret = copyto(sql, l->h->data.sym, l->h->next->data.sval, l->h->next->next->data.lval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

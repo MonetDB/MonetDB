@@ -71,7 +71,7 @@ out, err = node1_proc.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
 
-out, err = node1_proc.communicate()
+out, err = node2_proc.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
 

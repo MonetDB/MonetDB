@@ -2178,7 +2178,7 @@ Id = getArg(p,0);
 
 
 static int
-dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * format, const char * sep,const char * rsep,const char * ssep,const char * ns)
+dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * format, const char * sep,const char * rsep,const char * ssep,const char * ns, int onclient)
 {
 	node *n;
 	InstrPtr q = NULL;
@@ -2190,12 +2190,13 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 	list = newInstruction(mb, sqlRef, export_tableRef);
 	getArg(list,0) = newTmpVariable(mb,TYPE_int);
 	if( file >= 0){
-		list  = pushArgument(mb, list, file);
-		list  = pushStr(mb, list, format);
-		list  = pushStr(mb, list, sep);
-		list  = pushStr(mb, list, rsep);
-		list  = pushStr(mb, list, ssep);
-		list  = pushStr(mb, list, ns);
+		list = pushArgument(mb, list, file);
+		list = pushStr(mb, list, format);
+		list = pushStr(mb, list, sep);
+		list = pushStr(mb, list, rsep);
+		list = pushStr(mb, list, ssep);
+		list = pushStr(mb, list, ns);
+		list = pushInt(mb, list, onclient);
 	}
 	k = list->argc;
 	meta(tblId,TYPE_str);
@@ -2251,7 +2252,7 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 
 
 stmt *
-stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, stmt *file)
+stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -2271,7 +2272,7 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 		fnr = getArg(q,0);
 	}
 	if (t->type == st_list) {
-		if (dump_export_header(be->mvc, mb, l, fnr, "csv", sep, rsep, ssep, null_string) < 0)
+		if (dump_export_header(be->mvc, mb, l, fnr, "csv", sep, rsep, ssep, null_string, onclient) < 0)
 			return NULL;
 	} else {
 		q = newStmt(mb, sqlRef, raiseRef);
@@ -2388,6 +2389,9 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_ALTER_TABLE_ADD_RANGE_PARTITION:	q = newStmt(mb, sqlcatalogRef, alter_add_range_partitionRef); break;
 	case DDL_ALTER_TABLE_ADD_LIST_PARTITION:	q = newStmt(mb, sqlcatalogRef, alter_add_value_partitionRef); break;
 	case DDL_COMMENT_ON:	q = newStmt(mb, sqlcatalogRef, comment_onRef); break;
+	case DDL_RENAME_SCHEMA: q = newStmt(mb, sqlcatalogRef, rename_schemaRef); break;
+	case DDL_RENAME_TABLE: q = newStmt(mb, sqlcatalogRef, rename_tableRef); break;
+	case DDL_RENAME_COLUMN: q = newStmt(mb, sqlcatalogRef, rename_columnRef); break;
 	default:
 		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
 	}

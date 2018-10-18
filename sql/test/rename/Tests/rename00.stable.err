@@ -1,0 +1,46 @@
+stderr of test 'rename00` in directory 'sql/test/rename` itself:
+
+
+# 10:29:39 >  
+# 10:29:39 >  "/usr/bin/python" "rename00.py" "rename00"
+# 10:29:39 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-rename-sql/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38500
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14386/.s.monetdb.38500
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-rename-sql/BUILD/var/MonetDB/mTests_sql_test_rename
+# cmdline opt 	gdk_debug = 553648138
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-rename-sql/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38500
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14386/.s.monetdb.38500
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-rename-sql/BUILD/var/MonetDB/mTests_sql_test_rename
+# cmdline opt 	gdk_debug = 553648138
+
+# 10:29:40 >  
+# 10:29:40 >  "Done."
+# 10:29:40 >  
+

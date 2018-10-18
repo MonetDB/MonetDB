@@ -65,7 +65,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 		if ( b == 0)
 			return -1;
 		cnt |= BATcount(b) > 0;
-		if (isTable(t) && t->access != TABLE_READONLY && (t->base.flag != TR_NEW /* alter */ ) &&
+		if (isTable(t) && t->access != TABLE_READONLY && (!isNew(t) /* alter */ ) &&
 		    t->persistence == SQL_PERSIST && !t->commit_action)
 			cnt |= store_funcs.count_col(tr, c, 0) > 0;
 		BBPunfix(b->batCacheid);
@@ -1051,12 +1051,12 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
-	str tname = *getArgReference_str(stk, pci, 2); 
+	//str tname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, tname, t, temp);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
 	return msg;
 }
 
@@ -1065,12 +1065,12 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
-	str vname = *getArgReference_str(stk, pci, 2); 
+	//str vname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, vname, t, temp);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
 	return msg;
 }
 
@@ -1552,4 +1552,105 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ok != LOG_OK)
 		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "operation failed");
 	return MAL_SUCCEED;
+}
+
+str
+SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str old_name = *getArgReference_str(stk, pci, 1);
+	str new_name = *getArgReference_str(stk, pci, 2);
+	sql_schema *s;
+
+	initcontext();
+	if (!(s = mvc_bind_schema(sql, old_name)))
+		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
+	if (s->system)
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
+	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
+		throw(SQL, "sql.rename_schema", SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
+	if (!new_name || strcmp(new_name, str_nil) == 0)
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
+	if (mvc_bind_schema(sql, new_name))
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+
+	if (!sql_trans_rename_schema(sql->session->tr, s->base.id, new_name))
+		throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (s == cur_schema(sql))
+		if(!mvc_set_schema(sql, new_name))
+			throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg;
+}
+
+str
+SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str schema_name = *getArgReference_str(stk, pci, 1);
+	str old_name = *getArgReference_str(stk, pci, 2);
+	str new_name = *getArgReference_str(stk, pci, 3);
+	sql_schema *s;
+	sql_table *t;
+
+	initcontext();
+	if (!(s = mvc_bind_schema(sql, schema_name)))
+		throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
+	if (!(t = mvc_bind_table(sql, s, old_name)))
+		throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", old_name, schema_name);
+	if (t->system)
+		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
+		throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table %s (there are database objects which depend on it)", old_name);
+	if (!new_name || strcmp(new_name, str_nil) == 0)
+		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
+	if (mvc_bind_table(sql, s, new_name))
+		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
+
+	if (!sql_trans_rename_table(sql->session->tr, s, t->base.id, new_name))
+		throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg;
+}
+
+str
+SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str schema_name = *getArgReference_str(stk, pci, 1);
+	str table_name = *getArgReference_str(stk, pci, 2);
+	str old_name = *getArgReference_str(stk, pci, 3);
+	str new_name = *getArgReference_str(stk, pci, 4);
+	sql_schema *s;
+	sql_table *t;
+	sql_column *col;
+
+	initcontext();
+	if (!(s = mvc_bind_schema(sql, schema_name)))
+		throw(SQL, "sql.rename_column", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
+	if (!(t = mvc_bind_table(sql, s, table_name)))
+		throw(SQL, "sql.rename_column", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", table_name, schema_name);
+	if (t->system)
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
+	if (isView(t))
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, table_name);
+	if (!(col = mvc_bind_column(sql, t, old_name)))
+		throw(SQL, "sql.rename_column", SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
+	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
+		throw(SQL, "sql.rename_column", SQLSTATE(2BM37) "ALTER TABLE: cannot rename column '%s' (there are database objects which depend on it)", old_name);
+	if (!new_name || strcmp(new_name, str_nil) == 0)
+		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: invalid new column name");
+	if (mvc_bind_column(sql, t, new_name))
+		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);
+
+	if (!sql_trans_rename_column(sql->session->tr, t, old_name, new_name))
+		throw(SQL, "sql.rename_column",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg;
 }

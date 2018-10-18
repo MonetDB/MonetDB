@@ -473,28 +473,27 @@ list_keysort(list *l, int *keys, fdup dup)
 {
 	list *res;
 	node *n = NULL;
-	int i, j, *pos, cnt = list_length(l);
+	int i, cnt = list_length(l);
+	void **data;
 
-	pos = (int*)GDKmalloc(cnt*sizeof(int));
-	if (pos == NULL) {
+	data = GDKmalloc(cnt*sizeof(void *));
+	if (data == NULL) {
 		return NULL;
 	}
 	res = list_new_(l);
 	if (res == NULL) {
-		GDKfree(pos);
+		GDKfree(data);
 		return NULL;
 	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
-		pos[i] = i;
+		data[i] = n->data;
 	}
 	/* sort descending */
-	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
-	for(j=0; j<cnt; j++) {
-		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
-			assert(n);
-		list_append(res, dup?dup(n->data):n->data);
+	GDKqsort_rev(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int);
+	for(i=0; i<cnt; i++) {
+		list_append(res, dup?dup(data[i]):data[i]);
 	}
-	GDKfree(pos);
+	GDKfree(data);
 	return res;
 }
 
@@ -503,36 +502,33 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 {
 	list *res;
 	node *n = NULL;
-	int i, j, *keys, *pos, cnt = list_length(l);
+	int i, *keys, cnt = list_length(l);
+	void **data;
 
-	keys = (int*)GDKmalloc(cnt*sizeof(int));
-	pos = (int*)GDKmalloc(cnt*sizeof(int));
-	if (keys == NULL || pos == NULL) {
-		if (keys)
-			GDKfree(keys);
-		if (pos)
-			GDKfree(pos);
+	keys = GDKmalloc(cnt*sizeof(int));
+	data = GDKmalloc(cnt*sizeof(void *));
+	if (keys == NULL || data == NULL) {
+		GDKfree(keys);
+		GDKfree(data);
 		return NULL;
 	}
 	res = list_new_(l);
 	if (res == NULL) {
 		GDKfree(keys);
-		GDKfree(pos);
+		GDKfree(data);
 		return NULL;
 	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		keys[i] = key(n->data);
-		pos[i] = i;
+		data[i] = n->data;
 	}
 	/* sort descending */
-	GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
-	for(j=0; j<cnt; j++) {
-		for(n = l->h, i = 0; i != pos[j]; n = n->next, i++) 
-			assert(n);
-		list_append(res, dup?dup(n->data):n->data);
+	GDKqsort_rev(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int);
+	for(i=0; i<cnt; i++) {
+		list_append(res, dup?dup(data[i]):data[i]);
 	}
 	GDKfree(keys);
-	GDKfree(pos);
+	GDKfree(data);
 	return res;
 }
 
@@ -710,6 +706,39 @@ list_dup(list *l, fdup dup)
 	return res ? list_merge(res, l, dup) : NULL;
 }
 
+void
+list_hash_delete(list *l, void *data, fcmp cmp)
+{
+	if (l && data) {
+		node *n = list_find(l, data, cmp);
+		if(n) {
+			MT_lock_set(&l->ht_lock);
+			if (l->ht && n->data)
+				hash_delete(l->ht, data);
+			MT_lock_unset(&l->ht_lock);
+		}
+	}
+}
+
+void*
+list_hash_add(list *l, void *data, fcmp cmp)
+{
+	if (l && data) {
+		node *n = list_find(l, data, cmp);
+		if(n) {
+			MT_lock_set(&l->ht_lock);
+			if (l->ht && n->data) {
+				int nkey = l->ht->key(data);
+				if (hash_add(l->ht, nkey, data) == NULL) {
+					MT_lock_unset(&l->ht_lock);
+					return NULL;
+				}
+			}
+			MT_lock_unset(&l->ht_lock);
+		}
+	}
+	return data;
+}
 
 #ifdef TEST
 #include <string.h>
