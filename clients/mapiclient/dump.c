@@ -685,16 +685,18 @@ static int
 dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, bool foreign, bool hashge)
 {
 	MapiHdl hdl = NULL;
-	char *query;
-	size_t maxquerylen;
+	char *query = NULL;
+	size_t maxquerylen = 1024;
 	int cnt;
 	int slen;
 	int cap;
 #define CAP(X) ((cap = (int) (X)) < 0 ? 0 : cap)
 
-	maxquerylen = 1024;
-	if (tid == NULL)
+	if (tid == NULL) {
+		if (tname == NULL || schema == NULL)
+			return 1;
 		maxquerylen += strlen(tname) + strlen(schema);
+	}
 	else
 		maxquerylen += strlen(tid);
 	if ((query = malloc(maxquerylen)) == NULL)
@@ -713,7 +715,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 				"c.number "		/* 6 */
 			 "FROM sys._columns c "
 			 "WHERE c.table_id = %s "
-			 "ORDER BY number", tid);
+			 "ORDER BY c.number", tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT c.name, "		/* 0 */
@@ -730,7 +732,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			       "'%s' = t.name AND "
 			       "t.schema_id = s.id AND "
 			       "s.name = '%s' "
-			 "ORDER BY number", tname, schema);
+			 "ORDER BY c.number", tname, schema);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
@@ -785,7 +787,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			 "WHERE kc.id = k.id AND "
 			       "k.table_id = %s AND "
 			       "k.type = 0 "
-			 "ORDER BY id, nr", tid);
+			 "ORDER BY k.id, kc.nr", tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT kc.name, "		/* 0 */
@@ -802,7 +804,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			       "t.schema_id = s.id AND "
 			       "s.name = '%s' AND "
 			       "t.name = '%s' "
-			 "ORDER BY id, nr", schema, tname);
+			 "ORDER BY k.id, kc.nr", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -844,7 +846,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			 "WHERE kc.id = k.id AND "
 			       "k.table_id = %s AND "
 			       "k.type = 1 "
-			 "ORDER BY id, nr", tid);
+			 "ORDER BY k.id, kc.nr", tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT kc.name, "		/* 0 */
@@ -861,7 +863,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			       "t.schema_id = s.id AND "
 			       "s.name = '%s' AND "
 			       "t.name = '%s' "
-			 "ORDER BY id, nr", schema, tname);
+			 "ORDER BY k.id, kc.nr", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -925,7 +927,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 {
 	int cnt, table_id = 0;
 	MapiHdl hdl = NULL;
-	char *query;
+	char *query = NULL;
 	char *view = NULL;
 	char *remark = NULL;
 	int type = 0;
@@ -939,6 +941,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			size_t len = sname - tname;
 
 			sname = malloc(len + 1);
+			if (sname == NULL)
+				return 1;
 			strncpy(sname, tname, len);
 			sname[len] = 0;
 			tname += len + 1;
@@ -951,8 +955,13 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	hashge = has_hugeint(mid);
 
 	maxquerylen = 5120 + strlen(tname) + strlen(schema);
-
 	query = malloc(maxquerylen);
+	if (query == NULL) {
+		if (sname != NULL)
+			free(sname);
+		return 1;
+	}
+
 	snprintf(query, maxquerylen,
 		 "%s "
 		 "SELECT t.name, t.query, t.type, t.id, c.remark "
@@ -1102,7 +1111,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 				"c.name, "		/* 3 */
 				"i.type "		/* 4 */
 			 "FROM sys.idxs AS i "
-			 	"LEFT JOIN sys.keys AS k ON i.name = k.name, "
+				"LEFT JOIN sys.keys AS k ON i.name = k.name, "
 			      "sys.objects AS kc, "
 			      "sys._columns AS c, "
 			      "sys.schemas s, "
@@ -1194,7 +1203,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		 "FROM sys._columns col, comments com "
 		 "WHERE col.id = com.id "
 		   "AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
-		 "ORDER BY number",
+		 "ORDER BY col.number",
 		 comments_clause,
 		 schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -1253,6 +1262,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 			size_t len = sname - tname;
 
 			sname = malloc(len + 1);
+			if (sname == NULL)
+				return 1;
 			strncpy(sname, tname, len);
 			sname[len] = 0;
 			tname += len + 1;
@@ -1265,6 +1276,12 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 	maxquerylen = 5120 + strlen(tname) + strlen(schema);
 
 	query = malloc(maxquerylen);
+	if (query == NULL) {
+		if (sname != NULL)
+			free(sname);
+		return 1;
+	}
+
 	snprintf(query, maxquerylen,
 		"%s "
 		"SELECT s.name, "
@@ -1473,11 +1490,12 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 	if (string == NULL)
 		goto bailout;
 	for (i = 0; i < cnt; i++) {
-		string[i] = (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "timestamp") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "timestamptz") == 0);
+		const char *tp = mapi_get_type(hdl, i);
+		string[i] = (strcmp(tp, "char") == 0 ||
+			     strcmp(tp, "varchar") == 0 ||
+			     strcmp(tp, "clob") == 0 ||
+			     strcmp(tp, "timestamp") == 0 ||
+			     strcmp(tp, "timestamptz") == 0);
 	}
 	while (mapi_fetch_row(hdl)) {
 		const char *s;
@@ -1807,6 +1825,8 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 				size_t len = dot - fname;
 
 				to_free = malloc(len + 1);
+				if (to_free == NULL)
+					return 1;
 				strncpy(to_free, fname, len);
 				to_free[len] = 0;
 				fname += len + 1;
@@ -1824,7 +1844,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	query_size = 5120 + (sname ? strlen(sname) : 0) + (fname ? strlen(fname) : 0);
 	query = malloc(query_size);
 	if (query == NULL) {
-		if (to_free)
+		if (to_free != NULL)
 			free(to_free);
 		return 1;
 	}
@@ -1899,7 +1919,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 int
 dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 {
-	const char *start = "START TRANSACTION";
+	const char *start_trx = "START TRANSACTION";
 	const char *end = "ROLLBACK";
 	const char *users =
 		"SELECT ui.name, "
@@ -2027,7 +2047,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id "
 		"ORDER BY s.name, seq.name";
-	/* we must dump tables, views, procedures and triggers in order of creation since they can refer to each other */
+	/* we must dump tables, views, functions/procedures and triggers in order of creation since they can refer to each other */
 	const char *tables_views_functions_triggers =
 		has_funcsys(mid) ?
 		", vft (sname, name, id, query, remark, type) AS ("
@@ -2035,7 +2055,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "t.name AS name, "
 			       "t.id AS id, "
 			       "NULL AS query, "
-			       "NULL AS remark, "
+			       "NULL AS remark, " /* emitted separately */
 			       "t.type AS type "
 			"FROM sys.schemas s, "
 			      "sys._tables t "
@@ -2043,7 +2063,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
-			"UNION "
+			"UNION ALL "
 			"SELECT s.name AS sname, " /* views */
 			       "t.name AS name, "
 			       "t.id AS id, "
@@ -2056,8 +2076,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
-			"UNION "
-			"SELECT s.name AS sname, " /* functions */
+			"UNION ALL "
+			"SELECT s.name AS sname, " /* functions and procedures */
 			       "f.name AS name, "
 			       "f.id AS id, "
 			       "NULL AS query, "
@@ -2067,7 +2087,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			     "sys.functions f "
 			"WHERE s.id = f.schema_id "
 			"AND NOT f.system "
-			"UNION "
+			"UNION ALL "
 			"SELECT s.name AS sname, " /* triggers */
 			       "tr.name AS name, "
 			       "tr.id AS id, "
@@ -2087,7 +2107,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "t.name AS name, "
 			       "t.id AS id, "
 			       "NULL AS query, "
-			       "NULL AS remark, "
+			       "NULL AS remark, " /* emitted separately */
 			       "t.type AS type "
 			"FROM sys.schemas s, "
 			      "sys._tables t "
@@ -2095,7 +2115,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
-			"UNION "
+			"UNION ALL "
 			"SELECT s.name AS sname, " /* views */
 			       "t.name AS name, "
 			       "t.id AS id, "
@@ -2109,7 +2129,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
 			"UNION ALL "
-			"SELECT s.name AS sname, " /* functions */
+			"SELECT s.name AS sname, " /* functions and procedures */
 			       "f.name AS name, "
 			       "f.id AS id, "
 			       "NULL AS query, "
@@ -2145,20 +2165,20 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
 	int rc = 0;
-	char *query;
+	char *query = NULL;
 	size_t query_size = 5120;
 	int query_len = 0;
 	const char *comments_clause = get_comments_clause(mid);
 
 	query = malloc(query_size);
-	if (!query)
+	if (query == NULL)
 		goto bailout;
 
 	/* start a transaction for the dump */
 	if (!describe)
-		mnstr_printf(toConsole, "START TRANSACTION;\n");
+		mnstr_printf(toConsole, "%s;\n", start_trx);
 
-	if ((hdl = mapi_query(mid, start)) == NULL || mapi_error(mid))
+	if ((hdl = mapi_query(mid, start_trx)) == NULL || mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
 	hdl = NULL;
