@@ -376,8 +376,10 @@
 */
 #define PARMASK		(1<<7)
 #define PARDEBUG	if (GDKdebug & PARMASK)
+/* HEADLESSMASK not used anymore
 #define HEADLESSMASK	(1<<8)
 #define HEADLESSDEBUG	if (GDKdebug & HEADLESSMASK)
+*/
 #define TMMASK		(1<<9)
 #define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)
