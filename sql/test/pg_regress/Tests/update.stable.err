@@ -29,9 +29,10 @@ stderr of test 'update` in directory 'sql/test/pg_regress` itself:
 # 17:11:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1142" "--port=38959"
 # 17:11:19 >  
 
-#--
-#-- UPDATE ... SET <col> = DEFAULT;
-#--
+MAPI  = (monetdb) /var/tmp/mtest-21763/.s.monetdb.39738
+QUERY = UPDATE update_test SET a = DEFAULT, b = DEFAULT;
+ERROR = !UPDATE: column 'b' has no valid default value
+CODE  = 42000
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

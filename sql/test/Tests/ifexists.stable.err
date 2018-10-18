@@ -29,10 +29,7 @@ stderr of test 'ifexists` in directory 'sql/test` itself:
 # 16:49:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-81010" "--port=38832"
 # 16:49:36 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
-QUERY = CREATE TABLE IF NOT EXISTS hello(i INTEGER);
-ERROR = !42000!
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-5376/.s.monetdb.35352
 QUERY = CREATE TABLE hello(i INTEGER);
 ERROR = !CREATE TABLE: name 'hello' already in use
 CODE  = 42S01
@@ -40,10 +37,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP TABLE hello;
 ERROR = !DROP TABLE: no such table 'hello'
 CODE  = 42S02
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = CREATE SCHEMA IF NOT EXISTS hello;
-ERROR = !42000!
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-5376/.s.monetdb.35352
 QUERY = CREATE SCHEMA hello;
 ERROR = !CREATE SCHEMA: name 'hello' already in use
 CODE  = 3F000

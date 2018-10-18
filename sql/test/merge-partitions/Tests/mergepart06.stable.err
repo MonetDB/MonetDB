@@ -1,0 +1,61 @@
+stderr of test 'mergepart06` in directory 'sql/test/merge-partitions` itself:
+
+
+# 15:49:30 >  
+# 15:49:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35425" "--set" "mapi_usock=/var/tmp/mtest-655/.s.monetdb.35425" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true" "--set" "embedded_c=true"
+# 15:49:30 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35425
+# cmdline opt 	mapi_usock = /var/tmp/mtest-655/.s.monetdb.35425
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 15:49:31 >  
+# 15:49:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-655" "--port=35425"
+# 15:49:31 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
+QUERY = INSERT INTO testrangelimits VALUES (1000, 'ups'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
+QUERY = INSERT INTO testrangelimits VALUES (201, 'oh no'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
+QUERY = INSERT INTO testrangelimits VALUES (444, 'another'), (305, 'error'), (4, 'happening'); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
+QUERY = INSERT INTO sublimits3 VALUES (2, 'will'); --error
+ERROR = !INSERT: table sys.sublimits3 is part of merge table sys.testrangelimits and the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
+QUERY = INSERT INTO sublimits1 VALUES (202, 'fail'); --error
+ERROR = !INSERT: table sys.sublimits1 is part of merge table sys.testrangelimits and the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-655/.s.monetdb.35425
+QUERY = INSERT INTO sublimits2 VALUES (NULL, 'again'); --error
+ERROR = !INSERT: table sys.sublimits2 is part of merge table sys.testrangelimits and the insert violates the partition range of values
+CODE  = M0M29
+
+# 15:49:31 >  
+# 15:49:31 >  "Done."
+# 15:49:31 >  
+

@@ -185,11 +185,12 @@ ATOMallocate(const char *id)
 			}
 			GDKatomcnt++;
 		}
-		memset(BATatoms + t, 0, sizeof(atomDesc));
+		BATatoms[t] = (atomDesc) {
+			.size = sizeof(int),	/* default */
+			.linear = true,		/* default */
+			.storage = t,		/* default */
+		};
 		strcpy(BATatoms[t].name, id);
-		BATatoms[t].size = sizeof(int);		/* default */
-		BATatoms[t].linear = true;		/* default */
-		BATatoms[t].storage = t;		/* default */
 	}
 	MT_lock_unset(&GDKthreadLock);
 	return t;
@@ -408,7 +409,7 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src)	\
 
 #define num08(x)	((x) >= '0' && (x) <= '7')
 #define num10(x)	GDKisdigit(x)
-#define num16(x)	(GDKisdigit(x) || ((x)  >= 'a' && (x)  <= 'f') || ((x)  >= 'A' && (x)  <= 'F'))
+#define num16(x)	isxdigit((unsigned char) (x))
 #define base10(x)	((x) - '0')
 #define base08(x)	((x) - '0')
 #define base16(x)	(((x) >= 'a' && (x) <= 'f') ? ((x) - 'a' + 10) : ((x) >= 'A' && (x) <= 'F') ? ((x) - 'A' + 10) : (x) - '0')
@@ -1144,7 +1145,7 @@ strHash(const char *s)
 }
 
 void
-strCleanHash(Heap *h, int rebuild)
+strCleanHash(Heap *h, bool rebuild)
 {
 	stridx_t newhash[GDK_STRHASHTABLE];
 	size_t pad, pos;
@@ -1314,7 +1315,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			return 0;
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		if (HEAPextend(h, newsize, TRUE) != GDK_SUCCEED) {
+		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
 			return 0;
 		}
 #ifndef NDEBUG

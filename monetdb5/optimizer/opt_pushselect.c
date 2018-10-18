@@ -138,12 +138,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	char buf[256];
 	lng usec = GDKusec();
 
-	memset(&subselects, 0, sizeof(subselects));
-	if( mb->errors) 
+	subselects = (subselect_t) {0};
+	if( mb->errors)
 		return MAL_SUCCEED;
 
 #ifdef DEBUG_OPT_PUSHSELECT
-		fprintf(stderr,"#Push select optimizer started\n");
+	fprintf(stderr,"#Push select optimizer started\n");
 #endif
 	(void) stk;
 	(void) pci;

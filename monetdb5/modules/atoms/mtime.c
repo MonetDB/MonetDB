@@ -193,7 +193,6 @@
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
-#include "strptime.c"
 #endif
 
 
@@ -246,12 +245,11 @@ static int CUMLEAPDAYS[13] = {
 
 static date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
-#define YEAR_MAX		5867411
 #define YEAR_MIN		(-YEAR_MAX)
 #define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : leapyear(y) ? 29 : 28)
 #define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
 #define DATE(d,m,y)		((m) > 0 && (m) <= 12 && (d) > 0 && (y) != 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= MONTHDAYS(m, y))
-#define TIME(h,m,s,x)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) < 60 && (x) >= 0 && (x) < 1000)
+#define TIME(h,m,s,x)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) <= 60 && (x) >= 0 && (x) < 1000)
 #define LOWER(c)		((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
 
 /*
@@ -1332,8 +1330,8 @@ union lng_tzone {
 		if ((err = MTIMEtzone_create(&ltz.tzval, &ticks)) != MAL_SUCCEED) \
 			return err;													\
 		vr.val.lval = ltz.lval;											\
-		if (BUNappend(tzbatnme, (X1), FALSE) != GDK_SUCCEED ||			\
-			BUNappend(tzbatdef, &vr.val.lval, FALSE) != GDK_SUCCEED)	\
+		if (BUNappend(tzbatnme, (X1), false) != GDK_SUCCEED ||			\
+			BUNappend(tzbatdef, &vr.val.lval, false) != GDK_SUCCEED)	\
 			goto bailout;												\
 	} while (0)
 
@@ -1344,8 +1342,8 @@ union lng_tzone {
 		if ((err = MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4))) != MAL_SUCCEED) \
 			return err;													\
 		vr.val.lval = ltz.lval;											\
-		if (BUNappend(tzbatnme, (X1), FALSE) != GDK_SUCCEED ||			\
-			BUNappend(tzbatdef, &vr.val.lval, FALSE) != GDK_SUCCEED)	\
+		if (BUNappend(tzbatnme, (X1), false) != GDK_SUCCEED ||			\
+			BUNappend(tzbatdef, &vr.val.lval, false) != GDK_SUCCEED)	\
 			goto bailout;												\
 	} while (0)
 
@@ -3605,7 +3603,7 @@ MTIMEstr_to_date(date *d, const char * const *s, const char * const *format)
 		*d = date_nil;
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'\n", *format, *s);
 	*d = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
@@ -3616,7 +3614,7 @@ str
 MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 {
 	struct tm t;
-	char buf[BUFSIZ + 1];
+	char buf[512];
 	size_t sz;
 	int mon, year;
 
@@ -3626,12 +3624,13 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 			throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	fromdate(*d, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
+	t.tm_isdst = -1;
 	(void)mktime(&t); /* corrects the tm_wday etc */
-	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+	if ((sz = strftime(buf, sizeof(buf), *format, &t)) == 0)
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
@@ -3649,7 +3648,7 @@ MTIMEstr_to_time(daytime *d, const char * const *s, const char * const *format)
 		*d = daytime_nil;
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_time", "format '%s', doesn't match time '%s'\n", *format, *s);
 	*d = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
@@ -3660,7 +3659,7 @@ str
 MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 {
 	struct tm t;
-	char buf[BUFSIZ + 1];
+	char buf[512];
 	size_t sz;
 	int msec;
 
@@ -3670,11 +3669,12 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 			throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	fromtime(*d, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
 	(void)msec;
+	t.tm_isdst = -1;
 	(void)mktime(&t); /* corrects the tm_wday etc */
-	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+	if ((sz = strftime(buf, sizeof(buf), *format, &t)) == 0)
 		throw(MAL, "mtime.time_to_str", "failed to convert time to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)
@@ -3692,7 +3692,7 @@ MTIMEstr_to_timestamp(timestamp *ts, const char * const *s, const char * const *
 		*ts = *timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_timestamp", "format '%s', doesn't match timestamp '%s'\n", *format, *s);
 	ts->days = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
@@ -3704,7 +3704,7 @@ str
 MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 {
 	struct tm t;
-	char buf[BUFSIZ + 1];
+	char buf[512];
 	size_t sz;
 	int mon, year, msec;
 
@@ -3714,14 +3714,15 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	memset(&t, 0, sizeof(struct tm));
+	t = (struct tm) {0};
 	fromdate(ts->days, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
 	fromtime(ts->msecs, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
+	t.tm_isdst = -1;
 	(void)mktime(&t); /* corrects the tm_wday etc */
 	(void)msec;
-	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
+	if ((sz = strftime(buf, sizeof(buf), *format, &t)) == 0)
 		throw(MAL, "mtime.timestamp_to_str", "failed to convert timestampt to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
 	if (*s == NULL)

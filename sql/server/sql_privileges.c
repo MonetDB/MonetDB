@@ -446,7 +446,7 @@ int
 table_privs(mvc *m, sql_table *t, int priv)
 {
 	/* temporary tables are owned by the session user */
-	if (t->persistence == SQL_DECLARED_TABLE || (priv == PRIV_SELECT && (t->persistence != SQL_PERSIST || t->commit_action)))
+	if (t->persistence == SQL_DECLARED_TABLE || (!t->system && t->persistence != SQL_PERSIST) || (priv == PRIV_SELECT && (t->persistence != SQL_PERSIST || t->commit_action)))
 		return 1;
 	if (admin_privs(m->user_id) || admin_privs(m->role_id) || (t->s && (m->user_id == t->s->auth_id || m->role_id == t->s->auth_id)) || sql_privilege(m, m->user_id, t->base.id, priv, 0) == priv || sql_privilege(m, m->role_id, t->base.id, priv, 0) == priv || sql_privilege(m, ROLE_PUBLIC, t->base.id, priv, 0) == priv) {
 		return 1;
@@ -823,17 +823,17 @@ sql_create_privileges(mvc *m, sql_schema *s)
 
 	backend_create_privileges(m, s);
 
-	t = mvc_create_table(m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "user_role", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(m, t, "login_id", "int", 32);
 	mvc_create_column_(m, t, "role_id", "int", 32);
 
 	/* all roles and users are in the auths table */
-	t = mvc_create_table(m, s, "auths", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "auths", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(m, t, "id", "int", 32);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "grantor", "int", 32);
 
-	t = mvc_create_table(m, s, "privileges", tt_table, 1, SQL_PERSIST, 0, -1);
+	t = mvc_create_table(m, s, "privileges", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(m, t, "obj_id", "int", 32);
 	mvc_create_column_(m, t, "auth_id", "int", 32);
 	mvc_create_column_(m, t, "privileges", "int", 32);
@@ -884,6 +884,12 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	t = find_sql_table(s, "auths");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "privileges");
+	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_sql_table(s, "table_partitions");
+	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_sql_table(s, "range_partitions");
+	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_sql_table(s, "value_partitions");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 
 	p = PRIV_EXECUTE;

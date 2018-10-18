@@ -23,11 +23,11 @@ TABLE 	(card MULTI)
  */
 DDL 	(card 0!, top of the tree always)
 	-> flags	/* OUTPUT, TRANSACTION-types, CREATE/DROP/ALTER* */ 
-	-> exps		For 'OUTPUT' is list of output options
+	-> exps		For 'OUTPUT' is list of output options, for DDL_EXCEPTION is a list of psm_exception
 			For 'transactions' simple flags
 			for CREATE etc full sql string.
-	-> l		only used for 'OUTPUT' relation to output
-	-> r		(only for DDL_LIST)
+	-> l		used in DDL_OUTPUT as the relation to output and DDL_EXCEPTION as a DDL_LIST
+	-> r		used in DDL_LIST and DDL_EXCEPTION
 
 SELECT 	(card MULTI or same ...?) 
 	-> exps		selection expressions (ie all e_cmp)
@@ -160,3 +160,5 @@ e_psm
 				->r loop_exp_list
 		psm_return	->l return_exp
 		psm_rel		->l relation
+		psm_exception ->l cond_exp
+					  ->r error_string

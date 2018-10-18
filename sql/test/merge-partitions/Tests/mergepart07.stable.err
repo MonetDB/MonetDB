@@ -1,0 +1,78 @@
+stderr of test 'mergepart07` in directory 'sql/test/merge-partitions` itself:
+
+
+# 10:46:33 >  
+# 10:46:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37654" "--set" "mapi_usock=/var/tmp/mtest-2104/.s.monetdb.37654" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions"
+# 10:46:33 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37654
+# cmdline opt 	mapi_usock = /var/tmp/mtest-2104/.s.monetdb.37654
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	gdk_debug = 553648138
+
+# 10:46:33 >  
+# 10:46:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2104" "--port=37654"
+# 10:46:33 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
+QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN NULL AND 110; --error
+ERROR = !ALTER TABLE: range bound cannot be null
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
+QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN 101 AND NULL; --error
+ERROR = !ALTER TABLE: range bound cannot be null
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
+QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN NULL AND NULL; --error
+ERROR = !ALTER TABLE: conflicting partitions: table sys.subtable1 stores null values and only one partition can store null values at the time
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
+QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN 101 AND 110 WITH NULL; --error
+ERROR = !ALTER TABLE: conflicting partitions: table sys.subtable1 stores null values and only one partition can store null values at the time
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
+QUERY = ALTER TABLE listparts DROP TABLE subtable1; --error
+ERROR = !ALTER TABLE: table 'sys.subtable1' isn't part of the MERGE TABLE 'sys.listparts'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
+QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 10 AND 100; --error
+ERROR = !ALTER TABLE: there are values in the column a outside the partition range
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-14313/.s.monetdb.34865
+QUERY = ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION BETWEEN NULL AND 'nono'; --error
+ERROR = !ALTER TABLE: table 'sys.othersub1' is already part of the MERGE TABLE 'sys.anothertest'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-20774/.s.monetdb.31597
+QUERY = ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION BETWEEN 'nono' AND NULL; --error
+ERROR = !ALTER TABLE: table 'sys.othersub1' is already part of the MERGE TABLE 'sys.anothertest'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-20774/.s.monetdb.31597
+QUERY = ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION BETWEEN NULL AND NULL; --error
+ERROR = !ALTER TABLE: table 'sys.othersub1' is already part of the MERGE TABLE 'sys.anothertest'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-20774/.s.monetdb.31597
+QUERY = ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION BETWEEN 'nono' AND 'wrong' WITH NULL; --error
+ERROR = !ALTER TABLE: table 'sys.othersub1' is already part of the MERGE TABLE 'sys.anothertest'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
+QUERY = ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION BETWEEN 'a' AND 'string'; --error
+ERROR = !ALTER TABLE: there are values in the column b outside the partition range
+CODE  = M0M29
+
+# 10:46:33 >  
+# 10:46:33 >  "Done."
+# 10:46:33 >  
+

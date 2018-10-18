@@ -9,7 +9,7 @@
 #ifndef _GDK_SYSTEM_H_
 #define _GDK_SYSTEM_H_
 
-#ifdef NATIVE_WIN32
+#ifdef WIN32
 #ifndef LIBGDK
 #define gdk_export extern __declspec(dllimport)
 #else
@@ -17,6 +17,54 @@
 #endif
 #else
 #define gdk_export extern
+#endif
+
+/* if __has_attribute is not known to the preprocessor, we ignore
+ * attributes completely; if it is known, use it to find out whether
+ * specific attributes that we use are known */
+#ifndef __has_attribute
+#ifndef __GNUC__
+#define __has_attribute(attr)	0
+#ifndef __attribute__
+#define __attribute__(attr)	/* empty */
+#endif
+#else
+/* older GCC does have attributes, but not __has_attribute and not all
+ * attributes that we use are known */
+#define __has_attribute__alloc_size__ 1
+#define __has_attribute__cold__ 1
+#define __has_attribute__format__ 1
+#define __has_attribute__malloc__ 1
+#define __has_attribute__noreturn__ 1
+#define __has_attribute__returns_nonnull__ 0
+#define __has_attribute__visibility__ 1
+#define __has_attribute__warn_unused_result__ 1
+#define __has_attribute(attr)	__has_attribute##attr
+#endif
+#endif
+#if !__has_attribute(__warn_unused_result__)
+#define __warn_unused_result__
+#endif
+#if !__has_attribute(__malloc__)
+#define __malloc__
+#endif
+#if !__has_attribute(__alloc_size__)
+#define __alloc_size__(a)
+#endif
+#if !__has_attribute(__format__)
+#define __format__(a,b,c)
+#endif
+#if !__has_attribute(__noreturn__)
+#define __noreturn__
+#endif
+/* these are used in some *private.h files */
+#if !__has_attribute(__visibility__)
+#define __visibility__(a)
+#elif defined(__CYGWIN__)
+#define __visibility__(a)
+#endif
+#if !__has_attribute(__cold__)
+#define __cold__
 #endif
 
 /*

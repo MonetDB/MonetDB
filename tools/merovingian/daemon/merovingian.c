@@ -324,6 +324,7 @@ main(int argc, char *argv[])
 	};
 	confkeyval *kv;
 	int retfd = -1;
+	int dup_err;
 
 	/* seed the randomiser for when we create a database, send responses
 	 * to HELO, etc */
@@ -472,11 +473,18 @@ main(int argc, char *argv[])
 				if (setsid() < 0)
 					Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
 							"continuing anyway\n");
-				retfd = open("/dev/null", O_RDONLY | O_CLOEXEC);
-				dup2(retfd, 0);
+				if((retfd = open("/dev/null", O_RDONLY | O_CLOEXEC)) < 0) {
+					Mfprintf(stderr, "unable to dup stdin\n");
+					return(1);
+				}
+				dup_err = dup2(retfd, 0);
 				close(retfd);
 				close(pfd[0]); /* close unused read end */
 				retfd = pfd[1]; /* store the write end */
+				if(dup_err == -1) {
+					Mfprintf(stderr, "unable to dup stdin\n");
+					return(1);
+				}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
 				(void) fcntl(retfd, F_SETFD, FD_CLOEXEC);
 #endif
@@ -674,7 +682,11 @@ main(int argc, char *argv[])
 #endif
 	_mero_topdp->err = _mero_topdp->out;
 
-	_mero_logfile = fdopen(_mero_topdp->out, "a");
+	if(!(_mero_logfile = fdopen(_mero_topdp->out, "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
 
 	d = _mero_topdp->next = &dpmero;
 
@@ -688,8 +700,12 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 #endif
 	d->out = pfd[0];
-	dup2(pfd[1], 1);
+	dup_err = dup2(pfd[1], 1);
 	close(pfd[1]);
+	if(dup_err == -1) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
 
 	/* redirect stderr */
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
@@ -719,8 +735,12 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 	d->err = pfd[0];
-	dup2(pfd[1], 2);
+	dup_err = dup2(pfd[1], 2);
 	close(pfd[1]);
+	if(dup_err == -1) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
 
 	d->pid = getpid();
 	d->type = MERO;
@@ -739,7 +759,11 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 #endif
 	d->out = pfd[0];
-	_mero_discout = fdopen(pfd[1], "a");
+	if(!(_mero_discout = fdopen(pfd[1], "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
@@ -750,7 +774,11 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 #endif
 	d->err = pfd[0];
-	_mero_discerr = fdopen(pfd[1], "a");
+	if(!(_mero_discerr = fdopen(pfd[1], "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
 	d->pid = getpid();
 	d->type = MERO;
 	d->dbname = "discovery";
@@ -769,7 +797,11 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 #endif
 	d->out = pfd[0];
-	_mero_ctlout = fdopen(pfd[1], "a");
+	if(!(_mero_ctlout = fdopen(pfd[1], "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
@@ -780,7 +812,11 @@ main(int argc, char *argv[])
 	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 #endif
 	d->err = pfd[0];
-	_mero_ctlerr = fdopen(pfd[1], "a");
+	if(!(_mero_ctlerr = fdopen(pfd[1], "a"))) {
+		Mfprintf(stderr, "unable to open file descriptor: %s\n",
+				 strerror(errno));
+		MERO_EXIT(1);
+	}
 	d->pid = getpid();
 	d->type = MERO;
 	d->dbname = "control";
@@ -793,43 +829,41 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = handler;
-	if (
-			sigaction(SIGINT, &sa, NULL) == -1 ||
-			sigaction(SIGQUIT, &sa, NULL) == -1 ||
-			sigaction(SIGTERM, &sa, NULL) == -1)
-	{
+	if (sigaction(SIGINT, &sa, NULL) == -1 ||
+		sigaction(SIGQUIT, &sa, NULL) == -1 ||
+		sigaction(SIGTERM, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
+				 argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = huphandler;
 	if (sigaction(SIGHUP, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
+				 argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = segvhandler;
 	if (sigaction(SIGSEGV, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
+				 argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				argv[0], strerror(errno));
+				 argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 

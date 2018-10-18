@@ -1,0 +1,3 @@
+SELECT type,COUNT(id) FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY COUNT(id) DESC;
+SELECT type,COUNT(id) FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY 2 DESC;
+SELECT type,COUNT(id) as cnt FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY cnt DESC;

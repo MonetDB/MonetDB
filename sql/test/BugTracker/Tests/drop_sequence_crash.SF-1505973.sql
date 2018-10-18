@@ -41,7 +41,7 @@ CREATE TABLE tapestry (
 	name varchar(20) UNIQUE,
 	rows_ integer,
 	columns_ integer,
-	seed integer,
+	"seed" integer,
 	comments varchar(30)
 );
 

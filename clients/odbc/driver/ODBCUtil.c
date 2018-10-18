@@ -69,16 +69,6 @@ dupODBCstring(const SQLCHAR *inStr, size_t length)
 	return tmp;
 }
 
-/* Conversion to and from SQLWCHAR */
-static int utf8chkmsk[] = {
-	0x0000007f,
-	0x00000780,
-	0x0000f800,
-	0x001f0000,
-	0x03e00000,
-	0x7c000000
-};
-
 /* Convert a SQLWCHAR (UTF-16 encoded string) to UTF-8.  On success,
    clears the location pointed to by errmsg and returns NULL or a
    newly allocated buffer.  On error, assigns a string with an error
@@ -87,161 +77,225 @@ static int utf8chkmsk[] = {
    ODBC fashion.
 */
 SQLCHAR *
-ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, char **errmsg)
+ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 {
-	const SQLWCHAR *s1, *e;
-	unsigned long c;
-	SQLCHAR *buf, *p;
-	int l, n;
+	size_t i = 0;
+	SQLLEN j = 0;
+	uint32_t c;
+	SQLCHAR *dest;
 
 	if (errmsg)
 		*errmsg = NULL;
-	if (s == NULL)
+	if (src == NULL || length == SQL_NULL_DATA)
 		return NULL;
-	if (length == SQL_NTS)
-		for (s1 = s, length = 0; *s1; s1++)
-			length++;
-	else if (length == SQL_NULL_DATA)
-		return NULL;
-	else if (length < 0) {
+	if (length == SQL_NTS) {
+		/* a very large (positive) number that fits in SQLLEN */
+		length = (SQLLEN) (~(SQLULEN)0 >> 1);
+	} else if (length < 0) {
 		if (errmsg)
 			*errmsg = "Invalid length parameter";
 		return NULL;
 	}
-	e = s + length;
-	/* count necessary length */
-	l = 1;			/* space for NULL byte */
-	for (s1 = s; s1 < e && *s1; s1++) {
-		c = *s1;
-		if (0xD800 <= c && c <= 0xDBFF) {
-			/* high surrogate, must be followed by low surrogate */
-			s1++;
-			if (s1 >= e || *s1 < 0xDC00 || *s1 > 0xDFFF) {
+	while (j < length && src[j]) {
+		if (src[j] <= 0x7F) {
+			i += 1;
+		} else if (src[j] <= 0x7FF) {
+			i += 2;
+		} else if (
+#if SIZEOF_SQLWCHAR == 2
+			(src[j] & 0xFC00) != 0xD800
+#else
+			src[j] <= 0xFFFF
+#endif
+			) {
+			if ((src[j] & 0xF800) == 0xD800) {
 				if (errmsg)
-					*errmsg = "High surrogate not followed by low surrogate";
+					*errmsg = "Illegal surrogate";
 				return NULL;
 			}
-			c = (((c & 0x03FF) << 10) | (*s1 & 0x3FF)) + 0x10000;
-		} else if (0xDC00 <= c && c <= 0xDFFF) {
-			/* low surrogate--illegal */
-			if (errmsg)
-				*errmsg = "Low surrogate not preceded by high surrogate";
-			return NULL;
+			i += 3;
+		} else {
+#if SIZEOF_SQLWCHAR == 2
+			/* (src[j] & 0xFC00) == 0xD800, i.e. high surrogate */
+			if ((src[j+1] & 0xFC00) != 0xDC00) {
+				if (errmsg)
+					*errmsg = "Illegal surrogate";
+				return NULL;
+			}
+			j++;
+#else
+			c = src[j+0];
+			if (c > 0x10FFFF || (c & 0x1FF800) == 0xD800) {
+				if (errmsg)
+					*errmsg = "Illegal wide character value";
+				return NULL;
+			}
+#endif
+			i += 4;
 		}
-		for (n = 5; n > 0; n--)
-			if (c & utf8chkmsk[n])
-				break;
-		l += n + 1;
+		j++;
 	}
-	/* convert */
-	buf = (SQLCHAR *) malloc(l);
-	if (buf == NULL) {
-		if (errmsg)
-			*errmsg = "Memory allocation error";
+	length = j;	/* figured out the real length (might not change) */
+	dest = malloc((i + 1) * sizeof(SQLCHAR));
+	if (dest == NULL)
 		return NULL;
-	}
-	for (s1 = s, p = buf; s1 < e && *s1; s1++) {
-		c = *s1;
-		if (0xD800 <= c && c <= 0xDBFF) {
-			/* high surrogate followed by low surrogate */
-			s1++;
-			c = (((c & 0x03FF) << 10) | (*s1 & 0x3FF)) + 0x10000;
+	i = 0;
+	j = 0;
+	while (j < length) {
+		if (src[j] <= 0x7F) {
+			dest[i++] = (SQLCHAR) src[j];
+		} else if (src[j] <= 0x7FF) {
+			dest[i++] = 0xC0 | (src[j] >> 6);
+			dest[i++] = 0x80 | (src[j] & 0x3F);
+		} else if (
+#if SIZEOF_SQLWCHAR == 2
+			(src[j] & 0xFC00) != 0xD800
+#else
+			src[j] <= 0xFFFF
+#endif
+			) {
+			dest[i++] = 0xE0 | (src[j] >> 12);
+			dest[i++] = 0x80 | ((src[j] >> 6) & 0x3F);
+			dest[i++] = 0x80 | (src[j] & 0x3F);
+		} else {
+#if SIZEOF_SQLWCHAR == 2
+			c = ((src[j+0] & 0x03FF) + 0x40) << 10
+				| (src[j+1] & 0x03FF);
+			j++;
+#else
+			c = src[j+0];
+#endif
+			dest[i++] = 0xF0 | (c >> 18);
+			dest[i++] = 0x80 | ((c >> 12) & 0x3F);
+			dest[i++] = 0x80 | ((c >> 6) & 0x3F);
+			dest[i++] = 0x80 | (c & 0x3F);
 		}
-		for (n = 5; n > 0; n--)
-			if (c & utf8chkmsk[n])
-				break;
-		if (n == 0)
-			*p++ = (SQLCHAR) c;
-		else {
-			*p++ = (SQLCHAR) (((c >> (n * 6)) | (0x1F80 >> n)) & 0xFF);
-			while (--n >= 0)
-				*p++ = (SQLCHAR) (((c >> (n * 6)) & 0x3F) | 0x80);
-		}
+		j++;
 	}
-	*p = 0;
-	return buf;
+	dest[i] = 0;
+	return dest;
 }
 
 /* Convert a UTF-8 encoded string to UTF-16 (SQLWCHAR).  On success
    returns NULL, on error returns a string with an error message.  The
    first two arguments describe the input, the last three arguments
    describe the output, both in the normal ODBC fashion. */
-char *
-ODBCutf82wchar(const SQLCHAR *s,
+const char *
+ODBCutf82wchar(const SQLCHAR *src,
 	       SQLINTEGER length,
 	       SQLWCHAR *buf,
 	       SQLLEN buflen,
 	       SQLSMALLINT *buflenout)
 {
-	SQLWCHAR *p;
-	const SQLCHAR *e;
-	int m, n;
-	unsigned int c;
-	SQLSMALLINT len = 0;
+	SQLLEN i = 0;
+	SQLINTEGER j = 0;
+	uint32_t c;
 
-	if (s == NULL || length == SQL_NULL_DATA) {
-		if (buf && buflen > 0)
-			*buf = 0;
+	if (buf == NULL)
+		buflen = 0;
+	else if (buflen == 0)
+		buf = NULL;
+
+	if (src == NULL || length == SQL_NULL_DATA) {
+		if (buflen > 0)
+			buf[0] = 0;
 		if (buflenout)
 			*buflenout = 0;
 		return NULL;
 	}
 	if (length == SQL_NTS)
-		length = (SQLINTEGER) strlen((const char *) s);
+		length = (SQLINTEGER) (~(SQLUINTEGER)0 >> 1);
 	else if (length < 0)
 		return "Invalid length parameter";
 
-	if (buf == NULL)
-		buflen = 0;
-
-	for (p = buf, e = s + length; s < e; ) {
-		c = *s++;
-		if ((c & 0x80) != 0) {
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-				;
-			/* n now is number of 10xxxxxx bytes that
-			 * should follow */
-			if (n == 0 || n >= 4)
-				return "Illegal UTF-8 sequence";
-			if (s + n > e)
-				return "Truncated UTF-8 sequence";
-			c &= ~(0xFFC0) >> n;
-			while (--n >= 0) {
-				c <<= 6;
-				c |= *s++ & 0x3F;
-			}
-		}
-		if (c > 0x10FFFF) {
-			/* cannot encode as UTF-16 */
-			return "Codepoint too large to be representable in UTF-16";
-		}
-		if ((c & 0x1FFF800) == 0xD800) {
-			/* UTF-8 encoded high or low surrogate */
+	while (j < length && i + 1 < buflen && src[j]) {
+		if ((src[j+0] & 0x80) == 0) {
+			buf[i++] = src[j+0];
+			j += 1;
+		} else if (j + 1 < length
+			   && (src[j+0] & 0xE0) == 0xC0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+0] & 0x1E) != 0) {
+			buf[i++] = (src[j+0] & 0x1F) << 6
+				| (src[j+1] & 0x3F);
+			j += 2;
+		} else if (j + 2 < length
+			   && (src[j+0] & 0xF0) == 0xE0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x0F) != 0
+			       || (src[j+1] & 0x20) != 0)) {
+			buf[i++] = (src[j+0] & 0x0F) << 12
+				| (src[j+1] & 0x3F) << 6
+				| (src[j+2] & 0x3F);
+			j += 3;
+		} else if (j + 3 < length
+			   && (src[j+0] & 0xF8) == 0xF0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && (src[j+3] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x07) != 0
+			       || (src[j+1] & 0x30) != 0)) {
+			c = (src[j+0] & 0x07) << 18
+				| (src[j+1] & 0x3F) << 12
+				| (src[j+2] & 0x3F) << 6
+				| (src[j+3] & 0x3F);
+			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
+				return "Illegal code point";
+#if SIZEOF_SQLWCHAR == 2
+				if (i + 2 >= buflen)
+					break;
+				buf[i++] = 0xD800 | ((c - 0x10000) >> 10);
+				buf[i++] = 0xDC00 | (c & 0x3FF);
+#else
+				buf[i++] = c;
+#endif
+			j += 4;
+		} else {
 			return "Illegal code point";
 		}
-		if (c <= 0xFFFF) {
-			if (--buflen > 0 && p != NULL)
-				*p++ = c;
-			len++;
+	}
+	if (buflen > 0)
+		buf[i] = 0;
+	while (j < length && src[j]) {
+		i++;
+		if ((src[j+0] & 0x80) == 0) {
+			j += 1;
+		} else if (j + 1 < length
+			   && (src[j+0] & 0xE0) == 0xC0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+0] & 0x1E) != 0) {
+			j += 2;
+		} else if (j + 2 < length
+			   && (src[j+0] & 0xF0) == 0xE0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x0F) != 0
+			       || (src[j+1] & 0x20) != 0)) {
+			j += 3;
+		} else if (j + 3 < length
+			   && (src[j+0] & 0xF8) == 0xF0
+			   && (src[j+1] & 0xC0) == 0x80
+			   && (src[j+2] & 0xC0) == 0x80
+			   && (src[j+3] & 0xC0) == 0x80
+			   && ((src[j+0] & 0x07) != 0
+			       || (src[j+1] & 0x30) != 0)) {
+			c = (src[j+0] & 0x07) << 18
+				| (src[j+1] & 0x3F) << 12
+				| (src[j+2] & 0x3F) << 6
+				| (src[j+3] & 0x3F);
+			if (c > 0x10FFFF || (c & 0x1FF800) == 0x00D800)
+				return "Illegal code point";
+#if SIZEOF_SQLWCHAR == 2
+			i++;
+#endif
+			j += 4;
 		} else {
-			/* 0x10000 <= c && c <= 0x10FFFF
-			 * U-00000000000uuuuuxxxxxxxxxxxxxxxx is encoded as
-			 * 110110wwwwxxxxxx 110111xxxxxxxxxx
-			 * where wwww = uuuuu - 1 (note, uuuuu >= 0x1
-			 * and uuuuu <= 0x10) */
-			if ((buflen -= 2) > 0 && p != NULL) {
-				/* high surrogate */
-				*p++ = 0xD800 + ((c - 0x10000) >> 10);
-				/* low surrogate */
-				*p++ = 0xDC00 + (c & 0x3FF);
-			}
-			len += 2;
+			return "Illegal code point";
 		}
 	}
-	if (p != NULL)
-		*p = 0;
 	if (buflenout)
-		*buflenout = len;
+		*buflenout = (SQLSMALLINT) i;
 	return NULL;
 }
 
@@ -271,82 +325,82 @@ static struct scalars {
 	int nargs;
 	const char *repl;
 } scalars[] = {
-	{"ascii", 1, "\"ascii\"(\1)", },
+	{"abs", 1, "sys.\"abs\"(\1)", },
+	{"acos", 1, "sys.\"acos\"(\1)", },
+	{"ascii", 1, "sys.\"ascii\"(\1)", },
+	{"asin", 1, "sys.\"asin\"(\1)", },
+	{"atan", 1, "sys.\"atan\"(\1)", },
+	{"atan2", 2, "sys.\"atan\"(\1,\2)", }, /* note: not atan2 */
 	{"bit_length", 1, NULL, },
-	{"char", 1, "\"code\"(\1)", },
-	{"char_length", 1, "\"char_length\"(\1)", },
-	{"character_length", 1, "\"character_length\"(\1)", },
-	{"concat", 2, "\"concat\"(\1,\2)", },
-	{"difference", 2, "\"difference\"(\1,\2)", },
-	{"insert", 4, "\"insert\"(\1,\2,\3,\4)", },
-	{"lcase", 1, "\"lcase\"(\1)", },
-	{"left", 2, "\"left\"(\1,\2)", },
-	{"length", 1, "\"length\"(\1)", },
-	{"locate", 2, "\"locate\"(\1,\2)", },
-	{"locate", 3, "\"locate\"(\1,\2,\3)", },
-	{"ltrim", 1, "\"ltrim\"(\1)", },
-	{"octet_length", 1, "\"octet_length\"(\1)", },
-	{"position", 1, "\"position\"(\1)", }, /* includes "IN" in argument */
-	{"repeat", 2, "\"repeat\"(\1,\2)", },
-	{"replace", 3, "\"replace\"(\1,\2,\3)", },
-	{"right", 2, "\"right\"(\1,\2)", },
-	{"rtrim", 1, "\"rtrim\"(\1)", },
-	{"soundex", 1, "\"soundex\"(\1)", },
-	{"space", 1, "\"space\"(\1)", },
-	{"substring", 3, "\"substring\"(\1,\2,\3)", },
-	{"ucase", 1, "\"ucase\"(\1)", },
-	{"abs", 1, "\"abs\"(\1)", },
-	{"acos", 1, "\"acos\"(\1)", },
-	{"asin", 1, "\"asin\"(\1)", },
-	{"atan", 1, "\"atan\"(\1)", },
-	{"atan2", 2, "\"atan\"(\1,\2)", }, /* note: not atan2 */
-	{"ceiling", 1, "\"ceiling\"(\1)", },
-	{"cos", 1, "\"cos\"(\1)", },
-	{"cot", 1, "\"cot\"(\1)", },
-	{"degrees", 1, "\"sys\".\"degrees\"(\1)", },
-	{"exp", 1, "\"exp\"(\1)", },
-	{"floor", 1, "\"floor\"(\1)", },
-	{"log", 1, "\"log\"(\1)", },
-	{"log10", 1, "\"log10\"(\1)", },
-	{"mod", 2, "\"mod\"(\1,\2)", },
-	{"pi", 0, "\"pi\"()", },
-	{"power", 2, "\"power\"(\1,\2)", },
-	{"radians", 1, "\"sys\".\"radians\"(\1)", },
-	{"rand", 0, "\"rand\"()", },
-	{"rand", 1, "\"rand\"(\1)", },
-	{"round", 2, "\"round\"(\1,\2)", },
-	{"sign", 1, "\"sign\"(\1)", },
-	{"sin", 1, "\"sin\"(\1)", },
-	{"sqrt", 1, "\"sqrt\"(\1)", },
-	{"tan", 1, "\"tan\"(\1)", },
-	{"truncate", 2, "\"ms_trunc\"(\1,\2)", },
-	{"current_date", 0, "\"current_date\"()", },
-	{"current_time", 0, "\"current_time\"()", },
+	{"ceiling", 1, "sys.\"ceiling\"(\1)", },
+	{"char", 1, "sys.\"code\"(\1)", },
+	{"character_length", 1, "sys.\"character_length\"(\1)", },
+	{"char_length", 1, "sys.\"char_length\"(\1)", },
+	{"concat", 2, "sys.\"concat\"(\1,\2)", },
+	{"convert", 2, NULL, },
+	{"cos", 1, "sys.\"cos\"(\1)", },
+	{"cot", 1, "sys.\"cot\"(\1)", },
+	{"curdate", 0, "sys.\"curdate\"()", },
+	{"current_date", 0, "sys.\"current_date\"()", },
+	{"current_time", 0, "sys.\"current_time\"()", },
 	{"current_time", 1, NULL, },
-	{"current_timestamp", 0, "\"current_timestamp\"()", },
+	{"current_timestamp", 0, "sys.\"current_timestamp\"()", },
 	{"current_timestamp", 1, NULL, },
-	{"curdate", 0, "\"curdate\"()", },
-	{"curtime", 0, "\"curtime\"()", },
+	{"curtime", 0, "sys.\"curtime\"()", },
+	{"database", 0, NULL, },
 	{"dayname", 1, NULL, },
-	{"dayofmonth", 1, "\"dayofmonth\"(\1)", },
-	{"dayofweek", 1, "\"dayofweek\"(\1)", },
-	{"dayofyear", 1, "\"dayofyear\"(\1)", },
-	{"extract", 1, "\"extract\"(\1)", }, /* include "X FROM " in argument */
-	{"hour", 1, "\"hour\"(\1)", },
-	{"minute", 1, "\"minute\"(\1)", },
-	{"month", 1, "\"month\"(\1)", },
+	{"dayofmonth", 1, "sys.\"dayofmonth\"(\1)", },
+	{"dayofweek", 1, "sys.\"dayofweek\"(\1)", },
+	{"dayofyear", 1, "sys.\"dayofyear\"(\1)", },
+	{"degrees", 1, "sys.\"sys\".\"degrees\"(\1)", },
+	{"difference", 2, "sys.\"difference\"(\1,\2)", },
+	{"exp", 1, "sys.\"exp\"(\1)", },
+	{"extract", 1, "sys.\"extract\"(\1)", }, /* include "X FROM " in argument */
+	{"floor", 1, "sys.\"floor\"(\1)", },
+	{"hour", 1, "sys.\"hour\"(\1)", },
+	{"ifnull", 2, "sys.\"coalesce\"(\1,\2)", },
+	{"insert", 4, "sys.\"insert\"(\1,\2,\3,\4)", },
+	{"lcase", 1, "sys.\"lcase\"(\1)", },
+	{"left", 2, "sys.\"left\"(\1,\2)", },
+	{"length", 1, "sys.\"length\"(\1)", },
+	{"locate", 2, "sys.\"locate\"(\1,\2)", },
+	{"locate", 3, "sys.\"locate\"(\1,\2,\3)", },
+	{"log10", 1, "sys.\"log10\"(\1)", },
+	{"log", 1, "sys.\"log\"(\1)", },
+	{"ltrim", 1, "sys.\"ltrim\"(\1)", },
+	{"minute", 1, "sys.\"minute\"(\1)", },
+	{"mod", 2, "sys.\"mod\"(\1,\2)", },
+	{"month", 1, "sys.\"month\"(\1)", },
 	{"monthname", 1, NULL, },
-	{"now", 0, "\"now\"()", },
-	{"quarter", 1, "\"quarter\"(\1)", },
-	{"second", 1, "\"second\"(\1)", },
+	{"now", 0, "sys.\"now\"()", },
+	{"octet_length", 1, "sys.\"octet_length\"(\1)", },
+	{"pi", 0, "sys.\"pi\"()", },
+	{"position", 1, "sys.\"position\"(\1)", }, /* includes "IN" in argument */
+	{"power", 2, "sys.\"power\"(\1,\2)", },
+	{"quarter", 1, "sys.\"quarter\"(\1)", },
+	{"radians", 1, "sys.\"sys\".\"radians\"(\1)", },
+	{"rand", 0, "sys.\"rand\"()", },
+	{"rand", 1, "sys.\"rand\"(\1)", },
+	{"repeat", 2, "sys.\"repeat\"(\1,\2)", },
+	{"replace", 3, "sys.\"replace\"(\1,\2,\3)", },
+	{"right", 2, "sys.\"right\"(\1,\2)", },
+	{"round", 2, "sys.\"round\"(\1,\2)", },
+	{"rtrim", 1, "sys.\"rtrim\"(\1)", },
+	{"second", 1, "sys.\"second\"(\1)", },
+	{"sign", 1, "sys.\"sign\"(\1)", },
+	{"sin", 1, "sys.\"sin\"(\1)", },
+	{"soundex", 1, "sys.\"soundex\"(\1)", },
+	{"space", 1, "sys.\"space\"(\1)", },
+	{"sqrt", 1, "sys.\"sqrt\"(\1)", },
+	{"substring", 3, "sys.\"substring\"(\1,\2,\3)", },
+	{"tan", 1, "sys.\"tan\"(\1)", },
 	{"timestampadd", 3, NULL, },
 	{"timestampdiff", 3, NULL, },
-	{"week", 1, "\"week\"(\1)", },
-	{"year", 1, "\"year\"(\1)", },
-	{"database", 0, NULL, },
-	{"ifnull", 2, "\"coalesce\"(\1,\2)", },
+	{"truncate", 2, "sys.\"ms_trunc\"(\1,\2)", },
+	{"ucase", 1, "sys.\"ucase\"(\1)", },
 	{"user", 0, NULL, },
-	{"convert", 2, NULL, },
+	{"week", 1, "sys.\"week\"(\1)", },
+	{"year", 1, "sys.\"year\"(\1)", },
 	{NULL, 0, NULL, },	/* sentinel */
 };
 

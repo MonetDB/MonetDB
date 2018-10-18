@@ -94,7 +94,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r'^(\[.*POLYGON.*\(59\.0{16} 18\.0{16}, )(59\.0{16} 13\.0{16})(, 67\.0{16} 13\.0{16}, )(67\.0{16} 18\.0{16})(, 59\.0{16} 18\.0{16}\).*)',   # 10: 5
     # test geom/BugTracker/Tests/X_crash.SF-1971632.* might produce different error messages, depending on evaluation order
     r'^(ERROR = !MALException:geom.wkbGetCoordinate:Geometry ")(.*)(" not a Point)\n',                                                          # 11: 3
-    r"^(QUERY = COPY BINARY INTO)( .*);\n",                     # 12: 3
+    r"^(QUERY = COPY\b.* INTO .* FROM  *(?:\( *)?)('.*')(.*)\n", # 12: 3
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
@@ -115,6 +115,9 @@ norm_out = (
 # match "table_name" SQL table header line to normalize "(sys)?.L[0-9]*" to "(sys)?."
 table_name = re.compile(r'^%.*[\t ](|sys)\.L[0-9]*[, ].*# table_name$')
 name = re.compile(r'^%.*[\t ]L[0-9]*[, ].*# name$')
+
+# match automatically generated sequence numbers
+seqre = re.compile(r'^.*\bseq_[0-9]+\b.*$')
 
 attrre = re.compile(r'\b[-:a-zA-Z_0-9]+\s*=\s*(?:\'[^\']*\'|"[^"]*")')
 elemre = re.compile(r'<[-:a-zA-Z_0-9]+(?P<attrs>(\s+' + attrre.pattern + r')+)\s*/?>')
@@ -209,6 +212,10 @@ def mFilter (FILE, IGNORE) :
             oline = re.sub(r'([ \t])L[0-9]*([, ])', r'\1L\2', iline)
             # keep original line for reference as comment (i.e., ignore diffs, if any)
             xline = iline.replace('%','#',1)
+        elif seqre.match(iline):
+            # normalize "seq_[0-9]+" to "seq_AUTO"
+            oline = re.sub(r'\bseq_[0-9]+\b', 'seq_AUTO', iline)
+            xline = norm_hint + iline
         else:
             oline = iline
         if iline == "#~EndVariableOutput~#\n" or iline == "[ \"~EndVariableOutput~\"\t]\n":

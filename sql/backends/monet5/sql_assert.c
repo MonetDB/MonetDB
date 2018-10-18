@@ -45,15 +45,15 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
-		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[1]) ||
 		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[2]) ||
 		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[3]) ||
 		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[4]) ||
 		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
 			sqlstate = "";
 		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
@@ -74,15 +74,15 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
-		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[1]) ||
 		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[2]) ||
 		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[3]) ||
 		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[4]) ||
 		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
 			sqlstate = "";
 		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
@@ -103,15 +103,15 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* mdbDump(mb,stk,pci); */
 		if (strlen(*msg) > 6 &&
 		    (*msg)[5] == '!' &&
-		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[1]) ||
 		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[2]) ||
 		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[3]) ||
 		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[4]) ||
 		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
 			sqlstate = "";
 		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);
@@ -131,15 +131,15 @@ SQLassertHge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		(void) sqlstate;
 		/* mdbDump(mb,stk,pci);*/
 		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
-		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[0]) ||
 		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
-		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[1]) ||
 		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
-		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[2]) ||
 		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
-		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[3]) ||
 		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
-		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		    (isdigit((unsigned char) (*msg)[4]) ||
 		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
 			sqlstate = "";
 		throw(SQL, "assert", SQLSTATE(M0M29) "%s", *msg);

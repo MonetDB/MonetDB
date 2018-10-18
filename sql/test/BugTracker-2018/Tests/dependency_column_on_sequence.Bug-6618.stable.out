@@ -1,0 +1,65 @@
+stdout of test 'dependency_column_on_sequence.Bug-6618` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 15:00:25 >  
+# 15:00:25 >  "/usr/local/opt/python@2/bin/python2.7" "dependency_column_on_sequence.Bug-6618.py" "dependency_column_on_sequence.Bug-6618"
+# 15:00:25 >  
+
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 15:49:24 >  
+# 15:49:24 >  "/usr/local/opt/python@2/bin/python2.7" "dependency_column_on_sequence.Bug-6618.SQL.py" "dependency_column_on_sequence.Bug-6618"
+# 15:49:24 >  
+
+create table t (i int auto_increment, val int)
+insert into t(val) values (10), (20)
+[(1, 10), (2, 20)]
+drop table t
+create sequence myseq as int
+create table t2 (i int default next value for myseq, val int)
+insert into t2(val) values (10), (20)
+drop sequence myseq
+[(1, 10), (2, 20)]
+drop table t2
+
+# 15:49:25 >  
+# 15:49:25 >  "Done."
+# 15:49:25 >  
+

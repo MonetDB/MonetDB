@@ -140,6 +140,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("TINYTEXT", sqlTEXT);
 	failed += keywords_insert("STRING", CLOB);	/* ? */
 	failed += keywords_insert("CHECK", CHECK);
+	failed += keywords_insert("CLIENT", CLIENT);
+	failed += keywords_insert("SERVER", SERVER);
 	failed += keywords_insert("COMMENT", COMMENT);
 	failed += keywords_insert("CONSTRAINT", CONSTRAINT);
 	failed += keywords_insert("CREATE", CREATE);
@@ -210,6 +212,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LIKE", LIKE);
 	failed += keywords_insert("LIMIT", LIMIT);
 	failed += keywords_insert("SAMPLE", SAMPLE);
+	failed += keywords_insert("SEED", SEED);
 	failed += keywords_insert("LOCAL", LOCAL);
 	failed += keywords_insert("LOCKED", LOCKED);
 	failed += keywords_insert("NATURAL", NATURAL);
@@ -592,7 +595,7 @@ static inline int
 scanner_read_more(struct scanner *lc, int n)
 {
 	bstream *b = lc->rs;
-	int more = 0;
+	bool more = false;
 
 
 	while (b->len < b->pos + lc->yycur + n) {
@@ -604,8 +607,8 @@ scanner_read_more(struct scanner *lc, int n)
 		if (b->eof || !isa_block_stream(b->s)) {
 			if (mnstr_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
 				mnstr_flush(lc->ws);
-			b->eof = 0;
-			more = 1;
+			b->eof = false;
+			more = true;
 		}
 		/* we need more query text */
 		if (bstream_next(b) < 0 ||

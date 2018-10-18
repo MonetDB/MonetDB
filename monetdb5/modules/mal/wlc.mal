@@ -222,6 +222,14 @@ pattern alter_set_table( sname:str, tnme:str, access:int)
 address WLCgeneric
 comment "Catalog operation alter_set_table";
 
+pattern alter_add_range_partition( sname:str, mtnme:str, psnme:str, ptnme:str, min:str, max:str, nills:int, update:int)
+address WLCgeneric
+comment "Catalog operation alter_add_range_partition";
+
+pattern comment_on(objid:int, remark:str)
+address WLCgeneric
+comment "Catalog operation comment_on";
+
 pattern transaction_release(chain:int,name:str):void
 address WLCgeneric
 comment "A transaction statement (type can be commit,release,rollback or start)";
@@ -241,3 +249,11 @@ comment "A transaction statement (type can be commit,release,rollback or start)"
 unsafe pattern transaction()
 address WLCgeneric
 comment "Start an autocommit transaction";
+
+pattern alter_add_value_partition( sname:str, mtnme:str, psnme:str, ptnme:str, nills:int, update:int)
+address WLCgeneric
+comment "Catalog operation alter_add_value_partition";
+
+pattern alter_add_value_partition( sname:str, mtnme:str, psnme:str, ptnme:str, nills:int, update:int, arg:str...)
+address WLCgeneric
+comment "Catalog operation alter_add_value_partition";

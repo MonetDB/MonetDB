@@ -1,0 +1,43 @@
+stdout of test 'sqlitelogictest-groupby-distinct-duplicate.Bug-6603` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 17:07:25 >  
+# 17:07:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31299" "--set" "mapi_usock=/var/tmp/mtest-5982/.s.monetdb.31299" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 17:07:25 >  
+
+# MonetDB 5 server v11.29.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:31299/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5982/.s.monetdb.31299
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:07:25 >  
+# 17:07:25 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5982" "--port=31299"
+# 17:07:25 >  
+
+#START TRANSACTION;
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES(83,0,38),(26,0,79),(43,81,24);
+[ 3	]
+#SELECT DISTINCT + + col1, col1 FROM tab0 AS cor0 GROUP BY col0, col1 HAVING NOT NULL IS NOT NULL;
+% sys.cor0,	sys.cor0 # table_name
+% col1,	col1 # name
+% int,	int # type
+% 2,	2 # length
+[ 0,	0	]
+[ 81,	81	]
+#ROLLBACK;
+
+# 17:07:25 >  
+# 17:07:25 >  "Done."
+# 17:07:25 >  
+

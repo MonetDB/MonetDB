@@ -1,0 +1,63 @@
+stderr of test 'mergepart13` in directory 'sql/test/merge-partitions` itself:
+
+
+# 16:26:03 >  
+# 16:26:03 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37724" "--set" "mapi_usock=/var/tmp/mtest-11073/.s.monetdb.37724" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
+# 16:26:03 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37724
+# cmdline opt 	mapi_usock = /var/tmp/mtest-11073/.s.monetdb.37724
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 16:26:03 >  
+# 16:26:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11073" "--port=37724"
+# 16:26:03 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-11073/.s.monetdb.37724
+QUERY = ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2005-02-13 01:08:10' AND timestamp '2006-12-12 23:59:59'; --error
+ERROR = !ALTER TABLE: conflicting partitions: 2005-02-13 01:08:10.000 to 2006-12-12 23:59:59.000 and 2000-01-01 00:00:00.000 to 2009-12-12 23:59:59.000 from table sys.onedecade
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11073/.s.monetdb.37724
+QUERY = ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '1999-01-01 14:06:01' AND timestamp '2021-07-31 13:09:56'; --error
+ERROR = !ALTER TABLE: conflicting partitions: 1999-01-01 14:06:01.000 to 2021-07-31 13:09:56.000 and 2000-01-01 00:00:00.000 to 2009-12-12 23:59:59.000 from table sys.onedecade
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11073/.s.monetdb.37724
+QUERY = ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2008-03-12 19:24:50' AND timestamp '2018-07-31 05:01:47'; --error
+ERROR = !ALTER TABLE: conflicting partitions: 2008-03-12 19:24:50.000 to 2018-07-31 05:01:47.000 and 2000-01-01 00:00:00.000 to 2009-12-12 23:59:59.000 from table sys.onedecade
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11073/.s.monetdb.37724
+QUERY = INSERT INTO onedecade VALUES (timestamp '1972-02-13 01:00:00', 1000), (timestamp '2005-02-13 01:00:00', 2000); --error
+ERROR = !INSERT: table sys.onedecade is part of merge table sys.testtime and the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-12037/.s.monetdb.34928
+QUERY = ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND RANGE MAXVALUE WITH NULL; --error
+ERROR = !ALTER TABLE: conflicting partitions: table sys.threedecades stores null values and only one partition can store null values at the time
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-11073/.s.monetdb.37724
+QUERY = INSERT INTO testtime VALUES (timestamp '1950-11-24 10:12:01', 1234); --error
+ERROR = !INSERT: the insert violates the partition range of values
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-11073/.s.monetdb.37724
+QUERY = INSERT INTO fourdecades VALUES (timestamp '2014-04-04 05:21:13', 1000); --error
+ERROR = !INSERT: table sys.fourdecades is part of merge table sys.testtime and the insert violates the partition range of values
+CODE  = M0M29
+
+# 16:26:03 >  
+# 16:26:03 >  "Done."
+# 16:26:03 >  
+

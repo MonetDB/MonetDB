@@ -124,6 +124,9 @@ typedef struct stmt {
 	InstrPtr q;
 } stmt;
 
+extern void create_merge_partitions_accumulator(backend *be);
+extern int add_to_merge_partitions_accumulator(backend *be, int nr);
+
 extern int stmt_key(stmt *s);
 
 extern stmt *stmt_none(backend *be);
@@ -150,7 +153,7 @@ extern stmt *stmt_delete(backend *be, sql_table *t, stmt *b);
 extern stmt *stmt_append(backend *be, stmt *c, stmt *values);
 extern stmt *stmt_table_clear(backend *be, sql_table *t);
 
-extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, stmt *file);
+extern stmt *stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char *ssep, const char *null_string, int onclient, stmt *file);
 extern stmt *stmt_trans(backend *b, int type, stmt *chain, stmt *name);
 extern stmt *stmt_catalog(backend *be, int type, stmt *args);
 
@@ -207,7 +210,7 @@ extern stmt *stmt_result(backend *be, stmt *s, int nr);
  * order:    is order important or not (firstn vs slice)
  */ 
 extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order);
-extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample);
+extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *orderby_grp);
 

@@ -243,6 +243,7 @@ int yydebug=1;
 	opt_limit
 	opt_offset
 	opt_sample
+	opt_seed
 	param
 	case_exp
 	case_scalar_exp
@@ -300,6 +301,14 @@ int yydebug=1;
 	XML_value_expression
 	XML_primary
 	opt_comma_string_value_expression
+	opt_partition_by
+	opt_as_partition
+	opt_partition_spec
+	partition_list_value
+	partition_range_from
+	partition_range_to
+	partition_on
+	partition_expression
 
 %type <type>
 	data_type
@@ -378,6 +387,7 @@ int yydebug=1;
 	column_def_opt_list
 	opt_column_def_opt_list
 	table_exp
+	with_opt_credentials
 	table_ref_commalist
 	table_element_list
 	table_opt_storage
@@ -432,6 +442,7 @@ int yydebug=1;
 	window_frame_between
 	routine_designator
 	drop_routine_designator
+	partition_list
 
 %type <i_val>
 	any_all_some
@@ -483,6 +494,7 @@ int yydebug=1;
 	window_frame_units
 	window_frame_exclusion
 	subgeometry_type
+	partition_type
 
 %type <l_val>
 	lngval
@@ -500,6 +512,8 @@ int yydebug=1;
 	opt_constraint
 	set_distinct
 	opt_with_check_option
+	opt_with_nulls
+	opt_on_location
 	create
 	create_or_replace
 	if_exists
@@ -578,8 +592,8 @@ int yydebug=1;
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
-%right UMINUS
 %left <operation> '*' '/' '%'
+%left UMINUS
 %left <operation> '~'
 
 %left <operation> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT
@@ -608,11 +622,11 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
-%token LIMIT OFFSET SAMPLE
+%token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
-%token COPY RECORDS DELIMITERS STDIN STDOUT FWF
+%token COPY RECORDS DELIMITERS STDIN STDOUT FWF CLIENT SERVER
 %token INDEX REPLACE
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
@@ -768,7 +782,7 @@ opt_minmax:
 declare_statement:
 	declare variable_list
 		{ $$ = _symbol_create_list( SQL_DECLARE, $2); }
-    |   declare table_def { $$ = $2; }
+    |   declare table_def { $$ = $2; if ($$) $$->token = SQL_DECLARE_TABLE; }
     ;
 
 variable_list:
@@ -1051,36 +1065,47 @@ alter_statement:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $6);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname ADD TABLE qname
-	{ dlist *l = L();
+ | ALTER TABLE qname ADD TABLE qname opt_as_partition
+	{ dlist *l = L(), *part;
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
+	  if($7) {
+	  	  part = $7->data.lval;
+	  	  append_int(part, FALSE);
+	  }
+	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname DROP drop_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET READ ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_readonly));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET INSERT ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_append));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET READ WRITE
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_writable));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
@@ -1102,6 +1127,14 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
+ | ALTER TABLE qname SET TABLE qname opt_as_partition
+	{ dlist *l = L(), *part;
+	  append_list(l, $3);
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
+	  part = $7->data.lval;
+	  append_int(part, TRUE);
+	  append_symbol(l, $7);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
 
 passwd_schema:
@@ -1342,7 +1375,7 @@ table_opt_storage:
  ;
 
 table_def:
-    TABLE if_not_exists qname table_content_source  table_opt_storage
+    TABLE if_not_exists qname table_content_source table_opt_storage
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
@@ -1351,8 +1384,10 @@ table_def:
 	  append_symbol(l, $4);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $2);
 	  append_list(l, $5);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  TABLE if_not_exists qname FROM sqlLOADER func_ref
     {
@@ -1370,9 +1405,11 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  MERGE TABLE if_not_exists qname table_content_source 
+ |  MERGE TABLE if_not_exists qname table_content_source opt_partition_by
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
 	  dlist *l = L();
 
@@ -1381,7 +1418,9 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  REPLICA TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_REPLICA_TABLE;
@@ -1392,12 +1431,14 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
     We assume the monetdb user with default password */
- |  REMOTE TABLE if_not_exists qname table_content_source ON STRING
+ |  REMOTE TABLE if_not_exists qname table_content_source ON STRING with_opt_credentials
 	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
 	  dlist *l = L();
 
@@ -1406,7 +1447,9 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, $7);
+	  append_list(l, $8);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
   | opt_temp TABLE if_not_exists qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
@@ -1419,9 +1462,116 @@ table_def:
 		commit_action = $6;
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
+
+partition_type:
+   RANGE	{ $$ = PARTITION_RANGE; }
+ | VALUES	{ $$ = PARTITION_LIST; }
+ ;
+
+partition_expression:
+   simple_scalar_exp 	{ $$ = $1; }
+ ;
+
+partition_on:
+   ON '(' ident ')'                   { $$ = _symbol_create_list( SQL_PARTITION_COLUMN, append_string(L(), $3) ); }
+ | USING '(' partition_expression ')' { $$ = _symbol_create_list( SQL_PARTITION_EXPRESSION, append_symbol(L(), $3) ); }
+ ;
+
+opt_partition_by:
+ /* empty */									 { $$ = NULL; }
+ | PARTITION BY partition_type partition_on
+   { dlist *l = L();
+     int properties = $3;
+     append_int(l, $3);
+     append_symbol(l, $4);
+
+     assert($3 == PARTITION_RANGE || $3 == PARTITION_LIST);
+     if($4->token == SQL_PARTITION_COLUMN) {
+        properties |= PARTITION_COLUMN;
+     } else if($4->token == SQL_PARTITION_EXPRESSION) {
+        properties |= PARTITION_EXPRESSION;
+     } else {
+        assert(0);
+     }
+     append_int(l, properties);
+
+     $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
+ ;
+
+partition_list_value:
+   simple_scalar_exp { $$ = $1; }
+ ;
+
+partition_range_from:
+   simple_scalar_exp { $$ = $1; }
+ | RANGE MINVALUE    { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
+ ;
+
+partition_range_to:
+   simple_scalar_exp { $$ = $1; }
+ | RANGE MAXVALUE    { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
+ ;
+
+partition_list:
+   partition_list_value						{ $$ = append_symbol(L(), $1 ); }
+ | partition_list ',' partition_list_value  { $$ = append_symbol($1, $3 ); }
+ ;
+
+opt_with_nulls:
+    /* empty */		{ $$ = FALSE; }
+ |  WITH sqlNULL	{ $$ = TRUE; }
+ ;
+
+opt_partition_spec:
+   sqlIN '(' partition_list ')' opt_with_nulls
+    { dlist *l = L();
+      append_list(l, $3);
+      append_int(l, $5);
+      $$ = _symbol_create_list( SQL_PARTITION_LIST, l ); }
+ | BETWEEN partition_range_from AND partition_range_to opt_with_nulls
+    { dlist *l = L();
+      append_symbol(l, $2);
+      append_symbol(l, $4);
+      append_int(l, $5);
+      $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
+ | WITH sqlNULL
+    { dlist *l = L();
+      append_symbol(l, NULL);
+      append_symbol(l, NULL);
+      append_int(l, TRUE);
+      $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
+ ;
+
+opt_as_partition:
+ /* empty */						 { $$ = NULL; }
+ | AS PARTITION opt_partition_spec	 { $$ = $3; }
+ ;
+
+with_opt_credentials:
+  /* empty */
+  {
+	  $$ = append_string(L(), NULL);
+	  append_int($$, SQL_PW_ENCRYPTED);
+	  append_string($$, NULL);
+  }
+  | WITH USER string opt_encrypted PASSWORD string
+  {
+	  $$ = append_string(L(), $3);
+	  append_int($$, $4);
+	  append_string($$, $6);
+  }
+  | WITH opt_encrypted PASSWORD string
+  {
+	  $$ = append_string(L(), NULL);
+	  append_int($$, $2);
+	  append_string($$, $4);
+  }
+  ;
 
 opt_temp:
     TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
@@ -2679,22 +2829,29 @@ opt_to_savepoint:
  |  TO SAVEPOINT ident  { $$ = $3; }
  ;
 
+opt_on_location:
+    /* empty */		{ $$ = 0; }
+  | ON CLIENT		{ $$ = 1; }
+  | ON SERVER		{ $$ = 0; }
+  ;
+
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
 	  append_list(l, $7);
 	  append_list(l, $8);
-	  append_list(l, $9);
+	  append_list(l, $10);
 	  append_list(l, $2);
-	  append_string(l, $10);
-	  append_int(l, $11);
+	  append_string(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
-	  append_list(l, $14);
+	  append_int(l, $14);
+	  append_list(l, $15);
+	  append_int(l, $9);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint 
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2707,29 +2864,28 @@ copyfrom_stmt:
 	  append_int(l, $12);
 	  append_int(l, $13);
 	  append_list(l, NULL);
+	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
   | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
-   | COPY opt_nr BINARY INTO qname opt_column_list FROM string_commalist /* binary copy from */ opt_constraint
+   | COPY BINARY INTO qname opt_column_list FROM string_commalist opt_on_location opt_constraint
 	{ dlist *l = L();
-	  if ($2 != NULL) {
-	  	yyerror(m, "COPY INTO: cannot pass number of records when using binary COPY INTO");
-		YYABORT;
-	  }
+	  append_list(l, $4);
 	  append_list(l, $5);
-	  append_list(l, $6);
-	  append_list(l, $8);
+	  append_list(l, $7);
 	  append_int(l, $9);
+	  append_int(l, $8);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
-  | COPY query_expression_def INTO string opt_seps opt_null_string 
+  | COPY query_expression_def INTO string opt_on_location opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
-	  append_list(l, $5);
-	  append_string(l, $6);
+	  append_list(l, $6);
+	  append_string(l, $7);
+	  append_int(l, $5);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   | COPY query_expression_def INTO STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
@@ -2737,6 +2893,7 @@ copyfrom_stmt:
 	  append_string(l, NULL);
 	  append_list(l, $5);
 	  append_string(l, $6);
+	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
   
@@ -3442,16 +3599,38 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poslng	{
-		  	  sql_subtype *t = sql_bind_localtype("lng");
-			  $$ = _newAtomNode( atom_int(SA, t, $2));
+ |  SAMPLE poslng opt_seed	{
+
+	 				dlist *l = L();
+
+					 append_symbol(l,
+					 	_newAtomNode( atom_int(SA, sql_bind_localtype("lng"), $2)) );
+
+					if ($3)
+						append_symbol(l,$3);
+
+			  $$ = _symbol_create_list(SQL_SAMPLE, l);
 			}
- |  SAMPLE INTNUM	{
-		  	  sql_subtype *t = sql_bind_localtype("dbl");
-			  $$ = _newAtomNode( atom_float(SA, t, strtod($2,NULL)));
+ |  SAMPLE INTNUM opt_seed	{
+
+	 				dlist *l = L();
+
+				append_symbol(l,
+					 	_newAtomNode( atom_float(SA, sql_bind_localtype("dbl"), strtod($2,NULL))) );
+				
+				if ($3)
+						append_symbol(l,$3);
+
+			  $$ = _symbol_create_list(SQL_SAMPLE, l);
 			}
  |  SAMPLE param	{ $$ = $2; }
  ;
+
+ opt_seed:
+	/* empty */	{ $$ = NULL; }
+ | SEED intval {
+			  $$ = _newAtomNode( atom_int(SA, sql_bind_localtype("int"), $2));
+ }
 
 sort_specification_list:
     ordering_spec	 { $$ = append_symbol(L(), $1); }
@@ -4489,7 +4668,7 @@ literal:
 		  	while (err == 0 && i < len)
 		  	{
 				res <<= 4;
-				if ('0'<= hexa[i] && hexa[i] <= '9')
+				if (isdigit((unsigned char) hexa[i]))
 					res = res + (hexa[i] - '0');
 				else if ('A' <= hexa[i] && hexa[i] <= 'F')
 					res = res + (hexa[i] - 'A' + 10);
@@ -5426,6 +5605,8 @@ non_reserved_word:
 |  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 |  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
 |  COMMENT	{ $$ = sa_strdup(SA, "comment"); }
+|  CLIENT	{ $$ = sa_strdup(SA, "client"); }
+|  SERVER	{ $$ = sa_strdup(SA, "server"); }
 ;
 
 name_commalist:
@@ -5496,8 +5677,13 @@ intval:
 		      tpe->type->localtype == TYPE_int ||
 		      tpe->type->localtype == TYPE_sht ||
 		      tpe->type->localtype == TYPE_bte ) {
+#ifdef HAVE_HGE
+			hge sgn = stack_get_number(m, name);
+			assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 			lng sgn = stack_get_number(m, name);
 			assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 			$$ = (int) sgn;
 		  } else {
 			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) has wrong type (number expected)", $1);
@@ -6176,6 +6362,7 @@ char *token2string(int token)
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
 	SQL(DECLARE);
+	SQL(DECLARE_TABLE);
 	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);
@@ -6218,6 +6405,7 @@ char *token2string(int token)
 	TR(MODE);
 	SQL(INSERT);
 	SQL(DELETE);
+	SQL(TRUNCATE);
 	SQL(UPDATE);
 	SQL(CROSS);
 	SQL(JOIN);
@@ -6289,6 +6477,11 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
+	SQL(MERGE_PARTITION);
+	SQL(PARTITION_LIST);
+	SQL(PARTITION_RANGE);
+	SQL(PARTITION_COLUMN);
+	SQL(PARTITION_EXPRESSION);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

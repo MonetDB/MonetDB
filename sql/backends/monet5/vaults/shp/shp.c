@@ -17,6 +17,9 @@
 #include "sql_mvc.h"
 #include "sql.h"
 #define HAVE_CXX11 0		/* stupid include file gdal/cpl_port.h */
+#ifndef __clang_major__		/* stupid include file gdal/cpl_port.h */
+#define __clang_major__ 0
+#endif
 #include "shp.h"
 #include <cpl_conv.h>		/* for CPLFree */
 #include "sql_execute.h"
@@ -500,19 +503,19 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 			hFieldDefn = OGR_FD_GetFieldDefn( featureDefn, i );
 			if( OGR_Fld_GetType(hFieldDefn) == OFTInteger ) {
 				int val = OGR_F_GetFieldAsInteger(feature, i);
-				rc = BUNappend(colsBAT[i], &val, TRUE);
+				rc = BUNappend(colsBAT[i], &val, true);
 			} else if( OGR_Fld_GetType(hFieldDefn) == OFTReal ) {
 				double val = OGR_F_GetFieldAsDouble(feature, i);
-				rc = BUNappend(colsBAT[i], &val, TRUE);
+				rc = BUNappend(colsBAT[i], &val, true);
 			} else {
-				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), true);
 			}
 			if (rc != GDK_SUCCEED) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		}
-		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE) != GDK_SUCCEED) {
+		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, true) != GDK_SUCCEED) {
 			msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto unfree4;
 		}
@@ -526,7 +529,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		geomWKB->len = len;
 		geomWKB->srid = 0; //FIXME: Add the real srid
 		OGR_G_ExportToWkb(geometry, wkbNDR, (unsigned char *)geomWKB->data);
-		rc = BUNappend(colsBAT[colsNum - 1], geomWKB, TRUE);
+		rc = BUNappend(colsBAT[colsNum - 1], geomWKB, true);
 		GDKfree(geomWKB);
 		OGR_F_Destroy(feature);
 		if (rc != GDK_SUCCEED)
@@ -727,14 +730,14 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			hFieldDefn = OGR_FD_GetFieldDefn( featureDefn, i );
 			if( OGR_Fld_GetType(hFieldDefn) == OFTInteger ) {
 				int val = OGR_F_GetFieldAsInteger(feature, i);
-				rc = BUNappend(colsBAT[i], &val, TRUE);
+				rc = BUNappend(colsBAT[i], &val, true);
 			} else if( OGR_Fld_GetType(hFieldDefn) == OFTReal ) {
 				double val = OGR_F_GetFieldAsDouble(feature, i);
-				rc = BUNappend(colsBAT[i], &val, TRUE);
+				rc = BUNappend(colsBAT[i], &val, true);
 			} else if( OGR_Fld_GetType(hFieldDefn) == OFTString ) {
-				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), true);
 			} else {
-				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
+				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), true);
 			}
 			if (rc != GDK_SUCCEED) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -742,7 +745,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			}
 		}
 	
-		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE) != GDK_SUCCEED) {
+		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, true) != GDK_SUCCEED) {
 			msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -753,7 +756,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		geomWKB->len = len;
 		geomWKB->srid = 0; //TODO: Add the real srid
 		OGR_G_ExportToWkb(geometry, wkbNDR, (unsigned char *)geomWKB->data);
-		if (BUNappend(colsBAT[colsNum - 1], geomWKB, TRUE) != GDK_SUCCEED) {
+		if (BUNappend(colsBAT[colsNum - 1], geomWKB, true) != GDK_SUCCEED) {
 			msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto bailout;
 		}

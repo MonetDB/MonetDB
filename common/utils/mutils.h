@@ -9,7 +9,7 @@
 #ifndef _MUTILS_H_
 #define _MUTILS_H_
 
-#ifdef NATIVE_WIN32
+#ifdef WIN32
 #if !defined(LIBMUTILS) && !defined(LIBGDK) && !defined(LIBMEROUTIL)
 #define mutils_export extern __declspec(dllimport)
 #else

@@ -122,13 +122,8 @@ VIEWcreate(oid seq, BAT *b)
 	if (tp)
 		bn->theap.parentid = tp;
 	BATinit_idents(bn);
-	/* Some bits must be copied individually. */
-	bn->batDirty = BATdirty(b);
 	bn->batRestricted = BAT_READ;
-	if (!tp || isVIEW(b))
-		bn->thash = NULL;
-	else
-		bn->thash = b->thash;
+	bn->thash = NULL;
 	/* imprints are shared, but the check is dynamic */
 	bn->timprints = NULL;
 	/* Order OID index */
@@ -141,6 +136,7 @@ VIEWcreate(oid seq, BAT *b)
 		GDKfree(bn);
 		return NULL;
 	}
+	ALGODEBUG fprintf(stderr, "#VIEWcreate(" ALGOBATFMT ")=" ALGOBATFMT "\n", ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
 }
 
@@ -167,7 +163,8 @@ BATmaterialize(BAT *b)
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
-	ALGODEBUG fprintf(stderr, "#BATmaterialize(%d);\n", (int) b->batCacheid);
+	ALGODEBUG fprintf(stderr, "#BATmaterialize(" ALGOBATFMT ")\n",
+			  ALGOBATPAR(b));
 
 	if (tt != TYPE_void) {
 		/* no voids */
@@ -189,7 +186,6 @@ BATmaterialize(BAT *b)
 	/* point of no return */
 	b->ttype = tt;
 	BATsetdims(b);
-	b->batDirty = TRUE;
 	b->batDirtydesc = TRUE;
 	b->theap.dirty = TRUE;
 
@@ -206,7 +202,7 @@ BATmaterialize(BAT *b)
 	BATsetcount(b, b->batCount);
 
 	/* cleanup the old heaps */
-	HEAPfree(&tail, 0);
+	HEAPfree(&tail, false);
 	return GDK_SUCCEED;
 }
 
@@ -243,10 +239,6 @@ VIEWunlink(BAT *b)
 		if (tpb && b->tprops && b->tprops == tpb->tprops)
 			b->tprops = NULL;
 
-		/* unlink hash accelerators shared with parent */
-		if (tpb && b->thash && b->thash == tpb->thash)
-			b->thash = NULL;
-
 		/* unlink imprints shared with parent */
 		if (tpb && b->timprints && b->timprints == tpb->timprints)
 			b->timprints = NULL;
@@ -274,7 +266,7 @@ VIEWreset(BAT *b)
 		const char *nme;
 
 		/* alloc heaps */
-		memset(&tail, 0, sizeof(Heap));
+		tail = (Heap) {0};
 
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
@@ -345,7 +337,7 @@ VIEWreset(BAT *b)
 		}
 		b->batSharecnt = 0;
 		b->batCopiedtodisk = 0;
-		b->batDirty = 1;
+		b->batDirtydesc = true;
 
 		b->tkey = BATtkey(v);
 		b->tunique = 0;
@@ -356,14 +348,14 @@ VIEWreset(BAT *b)
 		b->batCapacity = cnt;
 
 		/* insert all of v in b, and quit */
-		if (BATappend(b, v, NULL, FALSE) != GDK_SUCCEED)
+		if (BATappend(b, v, NULL, false) != GDK_SUCCEED)
 			goto bailout;
 		BBPreclaim(v);
 	}
 	return GDK_SUCCEED;
       bailout:
 	BBPreclaim(v);
-	HEAPfree(&tail, 0);
+	HEAPfree(&tail, false);
 	GDKfree(th);
 	return GDK_FAIL;
 }
@@ -407,9 +399,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	} else {
 		view->tnokey[0] = view->tnokey[1] = 0;
 	}
-	/* slices are unequal to their parents; cannot use accs */
-	if (b->thash == view->thash)
-		view->thash = NULL;
 }
 
 /*
@@ -427,7 +416,7 @@ VIEWdestroy(BAT *b)
 	VIEWunlink(b);
 
 	if (b->ttype && !b->theap.parentid) {
-		HEAPfree(&b->theap, 0);
+		HEAPfree(&b->theap, false);
 	} else {
 		b->theap.base = NULL;
 	}

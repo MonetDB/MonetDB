@@ -7,17 +7,15 @@ stdout of test 'update_crash.Bug-2655` in directory 'sql/test/BugTracker-2012` i
 
 # MonetDB 5 server v11.13.6
 # This is an unreleased version
-# Serving database 'mTests_test_BugTracker-2012', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.629 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://lyon.ins.cwi.nl:31477/
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
-
-Ready.
+# Serving database 'mTests_sql_test_BugTracker-2012', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.306 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:31682/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31807/.s.monetdb.31682
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -39,15 +37,17 @@ Ready.
 # loading sql script: 39_analytics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 16:26:37 >  
 # 16:26:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lyon" "--port=31477"
 # 16:26:37 >  
 
-#CREATE SEQUENCE sys.seq_5700 AS INTEGER;
+#CREATE SEQUENCE sys.myseq_5700 AS INTEGER;
 #CREATE TABLE kvk (
-#        id                INTEGER       NOT NULL       DEFAULT next value for
-#seq_5700,
+#        id                INTEGER       NOT NULL       DEFAULT next value for myseq_5700,
 #        kvk               BIGINT,
 #        bedrijfsnaam      VARCHAR(256),
 #        adres             VARCHAR(256),
@@ -114,9 +114,9 @@ Ready.
 % 1,	1,	6,	6,	6,	6,	6,	2,	2,	1,	1,	4 # length
 [ 1,	1,	"table1",	"table1",	"table1",	"table1",	"table1",	23,	24,	1,	1,	"test"	]
 [ 2,	1,	"table1",	"table1",	"table1",	"table1",	"table1",	23,	24,	1,	1,	"test"	]
-#drop SEQUENCE sys.seq_5700;
 #drop table kvk_extra_nieuw;
 #drop table  kvk;
+#drop SEQUENCE sys.myseq_5700;
 
 # 16:26:37 >  
 # 16:26:37 >  "Done."

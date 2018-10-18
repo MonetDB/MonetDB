@@ -700,6 +700,9 @@ MNDBGetInfo(ODBCDbc *dbc,
 	case SQL_MAX_CHAR_LITERAL_LEN:
 		break;
 	case SQL_MAX_COLUMN_NAME_LEN:
+		nValue = 1024;	/* max length of column sys._columns.name is defined as 1024 */
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_COLUMNS_IN_GROUP_BY:
 	case SQL_MAX_COLUMNS_IN_INDEX:
 	case SQL_MAX_COLUMNS_IN_ORDER_BY:
@@ -707,10 +710,22 @@ MNDBGetInfo(ODBCDbc *dbc,
 	case SQL_MAX_COLUMNS_IN_TABLE:
 	case SQL_MAX_CONCURRENT_ACTIVITIES:
 	case SQL_MAX_CURSOR_NAME_LEN:
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_DRIVER_CONNECTIONS:
+		nValue = 64;	/* default value of mserver5 */
+		/* TODO query the server for the actual value via SQL:
+		   SELECT value FROM sys.env() WHERE name = 'max_clients'; */
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_IDENTIFIER_LEN:
+		nValue = 1024;	/* max length of columns sys.*.name is defined as 1024 */
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_INDEX_SIZE:
+		break;
 	case SQL_MAX_PROCEDURE_NAME_LEN:
+		nValue = 256;	/* max length of column sys.functions.name is defined as 256 */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_ROW_SIZE:
@@ -719,13 +734,20 @@ MNDBGetInfo(ODBCDbc *dbc,
 		sValue = "Y";	/* "N" */
 		break;
 	case SQL_MAX_SCHEMA_NAME_LEN:
+		nValue = 1024;	/* max length of column sys.schemas.name is defined as 1024 */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MAX_STATEMENT_LEN:
 		break;
 	case SQL_MAX_TABLE_NAME_LEN:
+		nValue = 1024;	/* max length of column sys._tables.name is defined as 1024 */
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_TABLES_IN_SELECT:
+		len = sizeof(SQLUSMALLINT);
+		break;
 	case SQL_MAX_USER_NAME_LEN:
+		nValue = 1024;	/* max length of sys.db_user_info.name is defined as 1024 */
 		len = sizeof(SQLUSMALLINT);
 		break;
 	case SQL_MULT_RESULT_SETS:

@@ -26,7 +26,7 @@ str mnstr_open_rstreamwrap(Stream *S, str *filename)
 	if ((s = open_rstream(*filename)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
-			mnstr_destroy(s);
+			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
 				*filename, strerror(errnr));
 	} else {
@@ -42,7 +42,7 @@ str mnstr_open_wstreamwrap(Stream *S, str *filename)
 	if ((s = open_wstream(*filename)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
-			mnstr_destroy(s);
+			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
 				*filename, strerror(errnr));
 	} else {
@@ -59,7 +59,7 @@ str mnstr_open_rastreamwrap(Stream *S, str *filename)
 	if ((s = open_rastream(*filename)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
-			mnstr_destroy(s);
+			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
 				*filename, strerror(errnr));
 	} else {
@@ -76,7 +76,7 @@ str mnstr_open_wastreamwrap(Stream *S, str *filename)
 	if ((s = open_wastream(*filename)) == NULL || mnstr_errnr(s)) {
 		int errnr = mnstr_errnr(s);
 		if (s)
-			mnstr_destroy(s);
+			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
 				*filename, strerror(errnr));
 	} else {

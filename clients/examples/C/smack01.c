@@ -66,7 +66,7 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 
 		/* switch of autocommit */
-		if (lang==1 && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
+		if (lang==1 && (mapi_setAutocommit(dbh, false) != MOK || mapi_error(dbh)))
 			die(dbh,NULL);
 
 		if (lang==1)

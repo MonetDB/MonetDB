@@ -91,14 +91,14 @@ QLOGcatalog(BAT **r)
 	if( msg)
 		return msg;
 	MT_lock_set(&mal_profileLock);
-	r[0] = COLcopy(QLOG_cat_id, QLOG_cat_id->ttype, 0, TRANSIENT);
-	r[1] = COLcopy(QLOG_cat_user, QLOG_cat_user->ttype,0, TRANSIENT);
-	r[2] = COLcopy(QLOG_cat_defined, QLOG_cat_defined->ttype,0, TRANSIENT);
-	r[3] = COLcopy(QLOG_cat_query, QLOG_cat_query->ttype,0, TRANSIENT);
-	r[4] = COLcopy(QLOG_cat_pipe, QLOG_cat_pipe->ttype,0, TRANSIENT);
-	r[5] = COLcopy(QLOG_cat_plan, QLOG_cat_plan->ttype,0, TRANSIENT);
-	r[6] = COLcopy(QLOG_cat_mal, QLOG_cat_mal->ttype,0, TRANSIENT);
-	r[7] = COLcopy(QLOG_cat_optimize, QLOG_cat_optimize->ttype,0, TRANSIENT);
+	r[0] = COLcopy(QLOG_cat_id, QLOG_cat_id->ttype, false, TRANSIENT);
+	r[1] = COLcopy(QLOG_cat_user, QLOG_cat_user->ttype,false, TRANSIENT);
+	r[2] = COLcopy(QLOG_cat_defined, QLOG_cat_defined->ttype,false, TRANSIENT);
+	r[3] = COLcopy(QLOG_cat_query, QLOG_cat_query->ttype,false, TRANSIENT);
+	r[4] = COLcopy(QLOG_cat_pipe, QLOG_cat_pipe->ttype,false, TRANSIENT);
+	r[5] = COLcopy(QLOG_cat_plan, QLOG_cat_plan->ttype,false, TRANSIENT);
+	r[6] = COLcopy(QLOG_cat_mal, QLOG_cat_mal->ttype,false, TRANSIENT);
+	r[7] = COLcopy(QLOG_cat_optimize, QLOG_cat_optimize->ttype,false, TRANSIENT);
 	for ( i = 0; i< 8; i++)
 		cnt += r[i] != 0;
 	if( cnt != 8){
@@ -126,15 +126,15 @@ QLOGcalls(BAT **r)
 	if( msg)
 		return msg;
 	MT_lock_set(&mal_profileLock);
-	r[0] = COLcopy(QLOG_calls_id, QLOG_calls_id->ttype, 0, TRANSIENT);
-	r[1] = COLcopy(QLOG_calls_start, QLOG_calls_start->ttype,0, TRANSIENT);
-	r[2] = COLcopy(QLOG_calls_stop, QLOG_calls_stop->ttype,0, TRANSIENT);
-	r[3] = COLcopy(QLOG_calls_arguments, QLOG_calls_arguments->ttype,0, TRANSIENT);
-	r[4] = COLcopy(QLOG_calls_tuples, QLOG_calls_tuples->ttype,0, TRANSIENT);
-	r[5] = COLcopy(QLOG_calls_exec, QLOG_calls_exec->ttype,0, TRANSIENT);
-	r[6] = COLcopy(QLOG_calls_result, QLOG_calls_result->ttype,0, TRANSIENT);
-	r[7] = COLcopy(QLOG_calls_cpuload, QLOG_calls_cpuload->ttype,0, TRANSIENT);
-	r[8] = COLcopy(QLOG_calls_iowait, QLOG_calls_iowait->ttype,0, TRANSIENT);
+	r[0] = COLcopy(QLOG_calls_id, QLOG_calls_id->ttype, false, TRANSIENT);
+	r[1] = COLcopy(QLOG_calls_start, QLOG_calls_start->ttype,false, TRANSIENT);
+	r[2] = COLcopy(QLOG_calls_stop, QLOG_calls_stop->ttype,false, TRANSIENT);
+	r[3] = COLcopy(QLOG_calls_arguments, QLOG_calls_arguments->ttype,false, TRANSIENT);
+	r[4] = COLcopy(QLOG_calls_tuples, QLOG_calls_tuples->ttype,false, TRANSIENT);
+	r[5] = COLcopy(QLOG_calls_exec, QLOG_calls_exec->ttype,false, TRANSIENT);
+	r[6] = COLcopy(QLOG_calls_result, QLOG_calls_result->ttype,false, TRANSIENT);
+	r[7] = COLcopy(QLOG_calls_cpuload, QLOG_calls_cpuload->ttype,false, TRANSIENT);
+	r[8] = COLcopy(QLOG_calls_iowait, QLOG_calls_iowait->ttype,false, TRANSIENT);
 	for ( i = 0; i< 9; i++)
 		cnt += r[i] != 0;
 	if( cnt != 9){
@@ -305,24 +305,24 @@ QLOGempty(void *ret)
 	MT_lock_set(&mal_profileLock);
 	/* drop all querylog tables */
 
-	BATclear(QLOG_cat_id,TRUE);
-	BATclear(QLOG_cat_user,TRUE);
-	BATclear(QLOG_cat_defined,TRUE);
-	BATclear(QLOG_cat_query,TRUE);
-	BATclear(QLOG_cat_pipe,TRUE);
-	BATclear(QLOG_cat_plan,TRUE);
-	BATclear(QLOG_cat_mal,TRUE);
-	BATclear(QLOG_cat_optimize,TRUE);
+	BATclear(QLOG_cat_id,true);
+	BATclear(QLOG_cat_user,true);
+	BATclear(QLOG_cat_defined,true);
+	BATclear(QLOG_cat_query,true);
+	BATclear(QLOG_cat_pipe,true);
+	BATclear(QLOG_cat_plan,true);
+	BATclear(QLOG_cat_mal,true);
+	BATclear(QLOG_cat_optimize,true);
 	
-	BATclear(QLOG_calls_id,TRUE);
-	BATclear(QLOG_calls_start,TRUE);
-	BATclear(QLOG_calls_stop,TRUE);
-	BATclear(QLOG_calls_arguments,TRUE);
-	BATclear(QLOG_calls_tuples,TRUE);
-	BATclear(QLOG_calls_exec,TRUE);
-	BATclear(QLOG_calls_result,TRUE);
-	BATclear(QLOG_calls_cpuload,TRUE);
-	BATclear(QLOG_calls_iowait,TRUE);
+	BATclear(QLOG_calls_id,true);
+	BATclear(QLOG_calls_start,true);
+	BATclear(QLOG_calls_stop,true);
+	BATclear(QLOG_calls_arguments,true);
+	BATclear(QLOG_calls_tuples,true);
+	BATclear(QLOG_calls_exec,true);
+	BATclear(QLOG_calls_result,true);
+	BATclear(QLOG_calls_cpuload,true);
+	BATclear(QLOG_calls_iowait,true);
 
 	TMsubcommit_list(commitlist, committop);
 	MT_lock_unset(&mal_profileLock);
@@ -351,14 +351,14 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if ( o == BUN_NONE){
 		*ret = mb->tag;
-		if (BUNappend(QLOG_cat_id,&mb->tag,FALSE) != GDK_SUCCEED ||
-			BUNappend(QLOG_cat_query,*q,FALSE) != GDK_SUCCEED ||
-			BUNappend(QLOG_cat_pipe,*pipe,FALSE) != GDK_SUCCEED ||
-			BUNappend(QLOG_cat_plan,nme,FALSE) != GDK_SUCCEED ||
-			BUNappend(QLOG_cat_mal,&mb->stop,FALSE) != GDK_SUCCEED ||
-			BUNappend(QLOG_cat_optimize,&mb->optimize,FALSE) != GDK_SUCCEED ||
-			BUNappend(QLOG_cat_user,*usr,FALSE) != GDK_SUCCEED ||
-			BUNappend(QLOG_cat_defined,tick,FALSE) != GDK_SUCCEED) {
+		if (BUNappend(QLOG_cat_id,&mb->tag,false) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_query,*q,false) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_pipe,*pipe,false) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_plan,nme,false) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_mal,&mb->stop,false) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_optimize,&mb->optimize,false) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_user,*usr,false) != GDK_SUCCEED ||
+			BUNappend(QLOG_cat_defined,tick,false) != GDK_SUCCEED) {
 			MT_lock_unset(&mal_profileLock);
 			throw(MAL, "querylog.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -400,15 +400,15 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( *xtime + *rtime < QLOGthreshold)
 		return MAL_SUCCEED;
 	MT_lock_set(&mal_profileLock);
-	if (BUNappend(QLOG_calls_id,&mb->tag,FALSE) != GDK_SUCCEED ||
-		BUNappend(QLOG_calls_start,tick1,FALSE) != GDK_SUCCEED ||
-		BUNappend(QLOG_calls_stop,tick2,FALSE) != GDK_SUCCEED ||
-		BUNappend(QLOG_calls_arguments,*arg,FALSE) != GDK_SUCCEED ||
-		BUNappend(QLOG_calls_tuples,tuples,FALSE) != GDK_SUCCEED ||
-		BUNappend(QLOG_calls_exec,xtime,FALSE) != GDK_SUCCEED ||
-		BUNappend(QLOG_calls_result,rtime,FALSE) != GDK_SUCCEED ||
-		BUNappend(QLOG_calls_cpuload,cpu,FALSE) != GDK_SUCCEED ||
-		BUNappend(QLOG_calls_iowait,iowait,FALSE) != GDK_SUCCEED) {
+	if (BUNappend(QLOG_calls_id,&mb->tag,false) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_start,tick1,false) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_stop,tick2,false) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_arguments,*arg,false) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_tuples,tuples,false) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_exec,xtime,false) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_result,rtime,false) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_cpuload,cpu,false) != GDK_SUCCEED ||
+		BUNappend(QLOG_calls_iowait,iowait,false) != GDK_SUCCEED) {
 		MT_lock_unset(&mal_profileLock);
 		throw(MAL, "querylog.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}

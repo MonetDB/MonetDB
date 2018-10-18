@@ -158,7 +158,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -195,7 +195,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);

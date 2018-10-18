@@ -131,7 +131,7 @@ cleanODBCDescRec(ODBCDesc *desc, ODBCDescRec *rec)
 		free(rec->sql_desc_table_name);
 	if (rec->sql_desc_type_name)
 		free(rec->sql_desc_type_name);
-	memset(rec, 0, sizeof(*rec));
+	*rec = (ODBCDescRec) {0};
 	if (desc) {
 		if (isAD(desc)) {
 			rec->sql_desc_concise_type = SQL_C_DEFAULT;

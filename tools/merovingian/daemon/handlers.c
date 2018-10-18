@@ -235,7 +235,7 @@ segvhandler(int sig) {
 	(void)sig;
 
 	/* (try to) ignore any further segfaults */
-	sigemptyset(&sa.sa_mask);
+	(void) sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
 	sigaction(SIGSEGV, &sa, NULL);

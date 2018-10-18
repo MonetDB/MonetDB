@@ -27,17 +27,17 @@ Ready.
 #CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
 [ 3	]
-#SELECT - col0 - - - col0 * + CAST ( NULL AS INTEGER ) FROM tab0;
-% sys.L3 # table_name
+#SELECT CAST ( - col0 - - - col0 * + CAST ( NULL AS INTEGER ) AS BIGINT ) FROM tab0;
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ NULL	]
 [ NULL	]
 [ NULL	]
-#SELECT ALL - col1 * - 16 * + CAST ( NULL AS INTEGER ) FROM tab0 cor0;
-% sys.L3 # table_name
-% L3 # name
+#SELECT ALL - CAST ( col1 * - 16 * + CAST ( NULL AS INTEGER ) AS BIGINT ) FROM tab0 cor0;
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ NULL	]

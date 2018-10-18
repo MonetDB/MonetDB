@@ -226,7 +226,7 @@ findGeneratorDefinition(MalBlkPtr mb, InstrPtr pci, int target)
 			s = f<l? (TPE) 1: (TPE)-1;			\
 		else s = * getArgReference_##TPE(stk, p, 3);		\
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
-			throw(MAL, "generator.subselect",		\
+			throw(MAL, "generator.select",		\
 			      SQLSTATE(42000) "Illegal generator range"); \
 		n = (BUN) (((TPE2) l - (TPE2) f) / (TPE2) s);		\
 		if ((TPE)(n * s + f) != l)				\
@@ -306,7 +306,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	p = findGeneratorDefinition(mb, pci, pci->argv[1]);
 	if (p == NULL)
-		throw(MAL, "generator.subselect",
+		throw(MAL, "generator.select",
 		      SQLSTATE(42000) "Could not locate definition for object");
 
 	if (pci->argc == 8) {	/* candidate list included */
@@ -314,7 +314,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (candid) {
 			cand = BATdescriptor(candid);
 			if (cand == NULL)
-				throw(MAL, "generator.subselect",
+				throw(MAL, "generator.select",
 				      SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			cl = (oid *) Tloc(cand, 0);
 		}
@@ -356,7 +356,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				 (tss > 0 && (tsf.days > tsl.days || (tsf.days == tsl.days && tsf.msecs > tsl.msecs) )) ||
 				 (tss < 0 && (tsf.days < tsl.days || (tsf.days == tsl.days && tsf.msecs < tsl.msecs) )) 
 				)
-				throw(MAL, "generator.subselect",  SQLSTATE(42000) "Illegal generator range");
+				throw(MAL, "generator.select",  SQLSTATE(42000) "Illegal generator range");
 
 			tlow = *getArgReference_TYPE(stk,pci,i, timestamp);
 			thgh = *getArgReference_TYPE(stk,pci,i+1, timestamp);
@@ -378,7 +378,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			o2 = (BUN) ((((lng) tsl.days - tsf.days) * 24*60*60*1000 + tsl.msecs - tsf.msecs) / tss);
 			bn = COLnew(0, TYPE_oid, o2 + 1, TRANSIENT);
 			if (bn == NULL)
-				throw(MAL, "generator.subselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL, "generator.select", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 			// simply enumerate the sequence and filter it by predicate and candidate list
 			ol = (oid *) Tloc(bn, 0);
@@ -415,7 +415,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPkeepref(bn->batCacheid);
 			return MAL_SUCCEED;
 		} else
-			throw(MAL, "generator.subselect", SQLSTATE(42000) "Unsupported type in subselect");
+			throw(MAL, "generator.select", SQLSTATE(42000) "Unsupported type in select");
 	}
 	if (o1 > (oid) n)
 		o1 = (oid) n;
@@ -460,7 +460,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		BBPunfix(cand->batCacheid);
 		if (bn == NULL)
-			throw(MAL, "generator.subselect",
+			throw(MAL, "generator.select",
 			      SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		if (anti) {
@@ -469,7 +469,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			bn = COLnew(0, TYPE_oid, n - (o2 - o1), TRANSIENT);
 			if (bn == NULL)
-				throw(MAL, "generator.subselect",
+				throw(MAL, "generator.select",
 				      SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			BATsetcount(bn, n - (o2 - o1));
 			op = (oid *) Tloc(bn, 0);
@@ -485,7 +485,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			bn = BATdense(0, o1, (BUN) (o2 - o1));
 			if (bn == NULL)
-				throw(MAL, "generator.subselect",
+				throw(MAL, "generator.select",
 				      SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
@@ -527,11 +527,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = f<l? (TPE) 1: (TPE)-1;\
 	else s =  *getArgReference_##TPE(stk,p, 3);\
 	if( s == 0 || (f<l && s < 0) || (f>l && s> 0)) \
-		throw(MAL,"generator.thetasubselect", SQLSTATE(42000) "Illegal range");\
+		throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Illegal range");\
 	cap = (BUN)(ABS(l-f)/ABS(s));\
 	bn = COLnew(0, TYPE_oid, cap, TRANSIENT);\
 	if( bn == NULL)\
-		throw(MAL,"generator.thetasubselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.thetaselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
 	low= hgh = TPE##_nil;\
 	v = (oid*) Tloc(bn,0);\
 	if ( strcmp(oper,"<") == 0){\
@@ -555,7 +555,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){\
 		hgh= low= *getArgReference_##TPE(stk,pci,idx);\
 	} else\
-		throw(MAL,"generator.thetasubselect", SQLSTATE(42000) "Unknown operator");\
+		throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");\
 	if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }\
 	for(j=0;j<cap;j++, f+=s, o++)\
 		if( ((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){\
@@ -581,14 +581,14 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	(void) cntxt;
 	p = findGeneratorDefinition(mb,pci,pci->argv[1]);
 	if( p == NULL)
-		throw(MAL,"generator.thetasubselect",SQLSTATE(42000) "Could not locate definition for object");
+		throw(MAL,"generator.thetaselect",SQLSTATE(42000) "Could not locate definition for object");
 
 	if( pci->argc == 5){ // candidate list included
 		cndid = *getArgReference_bat(stk,pci, 2);
 		if( !is_bat_nil(cndid)){
 			cand = BATdescriptor(cndid);
 			if( cand == NULL)
-				throw(MAL,"generator.subselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+				throw(MAL,"generator.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			cl = (oid*) Tloc(cand,0);
 		} 
 		idx = 3;
@@ -628,7 +628,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				) {
 				if (cand)
 					BBPunfix(cand->batCacheid);
-				throw(MAL, "generator.subselect", SQLSTATE(42000) "Illegal generator range");
+				throw(MAL, "generator.select", SQLSTATE(42000) "Illegal generator range");
 			}
 
 			hgh = low = *timestamp_nil;
@@ -665,7 +665,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			} else {
 				if (cand)
 					BBPunfix(cand->batCacheid);
-				throw(MAL,"generator.thetasubselect", SQLSTATE(42000) "Unknown operator");
+				throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");
 			}
 
 			cap = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
@@ -673,7 +673,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if( bn == NULL) {
 				if (cand)
 					BBPunfix(cand->batCacheid);
-				throw(MAL,"generator.thetasubselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				throw(MAL,"generator.thetaselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			v = (oid*) Tloc(bn,0);
 
@@ -693,7 +693,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		} else {
 			if (cand)
 				BBPunfix(cand->batCacheid);
-			throw(MAL,"generator.thetasubselect", SQLSTATE(42000) "Illegal generator arguments");
+			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Illegal generator arguments");
 		}
 	}
 
@@ -730,7 +730,7 @@ wrapup:
 	v = (TPE*) Tloc(bn,0);\
 	for(; cnt-- > 0; ol ? *ol++ : o++){\
 		val = f + ((TPE) ( b->ttype == TYPE_void?o:*ol)) * s;\
-		if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val<l || val >=f))) \
+		if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val <= l || val > f))) \
 			continue;\
 		*v++ = val;\
 		c++;\
@@ -822,7 +822,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					continue;
 				if (s > 0 && ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  ) )
 					continue;
-				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs < l.msecs)) || ((val.days>f.days || (val.days== f.days && val.msecs >= f.msecs)))  ) )
+				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs <= l.msecs)) || ((val.days > f.days || (val.days == f.days && val.msecs > f.msecs)))  ) )
 					continue;
 				*v++ = val;
 				c++;

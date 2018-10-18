@@ -1,0 +1,29 @@
+stdout of test 'remote-table-where-is-null.Bug-6601` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 17:55:38 >  
+# 17:55:38 >  "/usr/local/opt/python@2/bin/python2.7" "remote-table-where-is-null.Bug-6601.py" "remote-table-where-is-null.Bug-6601"
+# 17:55:38 >  
+
+# node1: CREATE TABLE tbl (id INT, name TEXT)
+# node1: INSERT INTO tbl VALUES (1, '1')
+# node1: INSERT INTO tbl VALUES (2, '2')
+# node1: INSERT INTO tbl (id) VALUES (3)
+# node1: SELECT * FROM tbl
+[(1, u'1'), (2, u'2'), (3, None)]
+# node1: SELECT * FROM tbl WHERE NAME IS NULL
+[(3, None)]
+# node1: SELECT * FROM tbl
+[(1, u'1'), (2, u'2'), (3, None)]
+# node2: CREATE REMOTE TABLE tbl (id INT, name TEXT) on 'mapi:monetdb://localhost:50445/node1/sys/tbl'
+# node2: SELECT * FROM tbl
+[(1, u'1'), (2, u'2'), (3, None)]
+# node2: SELECT * FROM tbl WHERE NAME IS NULL
+[(3, None)]
+# node2: SELECT * FROM tbl
+[(1, u'1'), (2, u'2'), (3, None)]
+
+# 12:25:28 >  
+# 12:25:28 >  "Done."
+# 12:25:28 >  
+

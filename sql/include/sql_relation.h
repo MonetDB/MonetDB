@@ -81,6 +81,7 @@ typedef struct expression {
 #define PSM_WHILE 8
 #define PSM_IF 16
 #define PSM_REL 32
+#define PSM_EXCEPTION 64
 
 #define SET_PSM_LEVEL(level)	(level<<8)
 #define GET_PSM_LEVEL(level)	(level>>8)
@@ -90,10 +91,13 @@ typedef struct expression {
 #define DDL_OUTPUT			1
 #define DDL_LIST			2
 #define DDL_PSM				3
+#define DDL_EXCEPTION		4
 
 #define DDL_CREATE_SEQ			5
 #define DDL_ALTER_SEQ			6
 #define DDL_DROP_SEQ			7
+#define DDL_ALTER_TABLE_ADD_RANGE_PARTITION		8
+#define DDL_ALTER_TABLE_ADD_LIST_PARTITION		9
 
 #define DDL_RELEASE			11
 #define DDL_COMMIT			12
@@ -130,9 +134,9 @@ typedef struct expression {
 #define DDL_CREATE_ROLE			61
 #define DDL_DROP_ROLE			62
 
-#define DDL_ALTER_TABLE_ADD_TABLE	63
-#define DDL_ALTER_TABLE_DEL_TABLE	64
-#define DDL_ALTER_TABLE_SET_ACCESS	65
+#define DDL_ALTER_TABLE_ADD_TABLE				63
+#define DDL_ALTER_TABLE_DEL_TABLE				64
+#define DDL_ALTER_TABLE_SET_ACCESS				65
 
 #define DDL_COMMENT_ON			66
 
@@ -228,6 +232,14 @@ typedef enum operator_type {
 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) \
 	(op == op_sample)
+#define is_insert(op) \
+	(op == op_insert)
+#define is_update(op) \
+	(op == op_update)
+#define is_delete(op) \
+	(op == op_delete)
+#define is_truncate(op) \
+	(op == op_truncate)
 
 /* NO NIL semantics of aggr operations */
 #define need_no_nil(e) \

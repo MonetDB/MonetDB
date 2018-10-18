@@ -132,12 +132,30 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 			return SQL_ERROR;
 		}
 		break;
+	case SQL_ATTR_ENABLE_AUTO_IPD:		/* SQLULEN */
+		switch ((SQLULEN) (uintptr_t) ValuePtr) {
+		case SQL_TRUE:
+		case SQL_FALSE:
+			break;
+		default:
+			/* Invalid attribute value */
+			addStmtError(stmt, "HY024", NULL, 0);
+			return SQL_ERROR;
+		}
+		/* ignore value, always treat as SQL_TRUE */
+		break;
 	case SQL_ATTR_IMP_PARAM_DESC:		/* SQLHANDLE */
 	case SQL_ATTR_IMP_ROW_DESC:		/* SQLHANDLE */
 		/* Invalid use of an automatically allocated
 		   descriptor handle */
 		addStmtError(stmt, "HY017", NULL, 0);
 		return SQL_ERROR;
+	case SQL_ATTR_MAX_LENGTH:		/* SQLULEN */
+	case SQL_ATTR_MAX_ROWS:			/* SQLULEN */
+		if ((SQLULEN) (uintptr_t) ValuePtr != 0 &&
+		    (SQLULEN) (uintptr_t) ValuePtr != 2147483647)
+			addStmtError(stmt, "01S02", NULL, 0);
+		break;
 	case SQL_ATTR_NOSCAN:			/* SQLULEN */
 		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_NOSCAN_ON:
@@ -177,6 +195,14 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 		return MNDBSetDescField(stmt->ApplParamDescr, 0,
 					SQL_DESC_ARRAY_SIZE, ValuePtr,
 					StringLength);
+	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
+		if ((uintptr_t) ValuePtr > 0x7FFFFFFF) {
+			stmt->qtimeout = 0x7FFFFFFF;
+			addStmtError(stmt, "01S02", NULL, 0);
+		} else {
+			stmt->qtimeout = (SQLULEN) (uintptr_t) ValuePtr;
+		}
+		break;
 	case SQL_ATTR_RETRIEVE_DATA:		/* SQLULEN */
 		switch ((SQLULEN) (uintptr_t) ValuePtr) {
 		case SQL_RD_ON:
@@ -260,12 +286,8 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 	case SQL_ATTR_ASYNC_PCONTEXT:		/* SQLPOINTER */
 #endif
 	case SQL_ATTR_CURSOR_SENSITIVITY:	/* SQLULEN */
-	case SQL_ATTR_ENABLE_AUTO_IPD:		/* SQLULEN */
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:	/* SQLLEN* */
 	case SQL_ATTR_KEYSET_SIZE:		/* SQLULEN */
-	case SQL_ATTR_MAX_LENGTH:		/* SQLULEN */
-	case SQL_ATTR_MAX_ROWS:			/* SQLULEN */
-	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
 	case SQL_ATTR_SIMULATE_CURSOR:		/* SQLULEN */
 	case SQL_ATTR_USE_BOOKMARKS:		/* SQLULEN */
 		/* Optional feature not implemented */

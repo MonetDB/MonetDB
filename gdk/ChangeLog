@@ -1,7 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Tue Mar 20 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Removed the tdense property: it's function is completely replaced by
-  whether or not tseqbase is equal to oid_nil.
+* Tue Aug 21 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Function PROPdestroy now takes a BAT* parameter.
+
+* Wed Aug 15 2018 Sjoerd Mullender <sjoerd@acm.org>
+- A whole bunch of functions now take a bool argument instead of an
+  int argument.  Some functions now return a bool instead of an int.
+  In all these cases, the int was used as a Boolean value.
 

@@ -1,0 +1,49 @@
+stderr of test 'nested-merge-tables.Bug-6585` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 13:40:48 >  
+# 13:40:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36034" "--set" "mapi_usock=/var/tmp/mtest-7469/.s.monetdb.36034" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Mar2018/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_r=yes" "--set" "embedded_py=true" "--set" "embedded_c=true"
+# 13:40:48 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Mar2018/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36034
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7469/.s.monetdb.36034
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Mar2018/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 13:40:49 >  
+# 13:40:49 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7469" "--port=36034"
+# 13:40:49 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7469/.s.monetdb.36034
+QUERY = alter table test2 add table test1; --error
+ERROR = !ALTER MERGE TABLE: to be added table is a parent of the MERGE TABLE
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-7922/.s.monetdb.38298
+QUERY = alter table test4 add table test1; --error
+ERROR = !ALTER MERGE TABLE: to be added table is a parent of the MERGE TABLE
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-7922/.s.monetdb.38298
+QUERY = alter table test4 drop table test1; --error
+ERROR = !ALTER TABLE: table 'sys.test1' isn't part of the MERGE TABLE 'sys.test4'
+CODE  = 42S02
+
+# 13:40:49 >  
+# 13:40:49 >  "Done."
+# 13:40:49 >  
+

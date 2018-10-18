@@ -53,9 +53,6 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 			func, pref);
 		break;
 	case SQL_NO_DATA:
-		fprintf(stderr,
-			"%s: %s, no error message from driver\n",
-			func, pref);
 		break;
 	default:
 		fprintf(stderr,
@@ -76,7 +73,7 @@ check(SQLRETURN ret, SQLSMALLINT tpe, SQLHANDLE hnd, const char *func)
 		break;
 	case SQL_ERROR:
 		prerr(tpe, hnd, func, "Error");
-		exit(1);
+		break;
 	case SQL_INVALID_HANDLE:
 		fprintf(stderr, "%s: Error: invalid handle\n", func);
 		exit(1);
@@ -371,16 +368,16 @@ main(int argc, char **argv)
 	}
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle (STMT)");
 
 	ret = SQLDisconnect(dbc);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLDisconnect");
 
 	ret = SQLFreeHandle(SQL_HANDLE_DBC, dbc);
-	check(ret, SQL_HANDLE_DBC, dbc, "SQLFreeHandle 3");
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLFreeHandle (DBC)");
 
 	ret = SQLFreeHandle(SQL_HANDLE_ENV, env);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle 4");
+	check(ret, SQL_HANDLE_ENV, env, "SQLFreeHandle (ENV)");
 
 	return 0;
 }

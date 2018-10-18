@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 typedef void *(*malloc_function_ptr)(size_t);
+typedef void (*free_function_ptr)(void*);
 
 typedef struct {
 	unsigned char day;

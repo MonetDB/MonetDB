@@ -55,6 +55,9 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 		/* SQL_ASYNC_ENABLE */
 		WriteData(ValuePtr, SQL_ASYNC_ENABLE_OFF, SQLULEN);
 		break;
+	case SQL_ATTR_ENABLE_AUTO_IPD:		/* SQLULEN */
+		WriteData(ValuePtr, SQL_TRUE, SQLULEN);
+		break;
 	case SQL_ATTR_CONCURRENCY:		/* SQLULEN */
 		/* SQL_CONCURRENCY */
 		WriteData(ValuePtr, SQL_CONCUR_READ_ONLY, SQLULEN);
@@ -118,6 +121,10 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 		return MNDBGetDescField(stmt->ImplParamDescr, 0,
 					SQL_DESC_ARRAY_STATUS_PTR, ValuePtr,
 					BufferLength, StringLengthPtr);
+	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
+		/* SQL_QUERY_TIMEOUT */
+		WriteData(ValuePtr, stmt->qtimeout, SQLULEN);
+		break;
 	case SQL_ATTR_RETRIEVE_DATA:		/* SQLULEN */
 		/* SQL_RETRIEVE_DATA */
 		WriteData(ValuePtr, stmt->retrieveData, SQLULEN);
@@ -165,12 +172,9 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 #ifdef SQL_ATTR_ASYNC_STMT_PCONTEXT
 	case SQL_ATTR_ASYNC_PCONTEXT:		/* SQLPOINTER */
 #endif
-	case SQL_ATTR_ENABLE_AUTO_IPD:		/* SQLULEN */
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:	/* SQLLEN* */
 	case SQL_ATTR_KEYSET_SIZE:		/* SQLULEN */
 		/* SQL_KEYSET_SIZE */
-	case SQL_ATTR_QUERY_TIMEOUT:		/* SQLULEN */
-		/* SQL_QUERY_TIMEOUT */
 	case SQL_ATTR_SIMULATE_CURSOR:		/* SQLULEN */
 	case SQL_ATTR_USE_BOOKMARKS:		/* SQLULEN */
 		/* Optional feature not implemented */
