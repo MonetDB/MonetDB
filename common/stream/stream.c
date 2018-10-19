@@ -3720,7 +3720,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 {
 	bs *s;
 	size_t todo = cnt * elmsize;
-	int16_t blksize;
+	uint16_t blksize;
 
 	s = (bs *) ss->stream_data.p;
 	if (s == NULL)
@@ -3753,13 +3753,13 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 #endif
 			/* since the block is at max BLOCK (8K) - 2 size we can
 			 * store it in a two byte integer */
-			blksize = (int16_t) s->nr;
+			blksize = (uint16_t) s->nr;
 			s->bytes += s->nr;
 			/* the last bit tells whether a flush is in
 			 * there, it's not at this moment, so shift it
 			 * to the left */
-			blksize = (int16_t) (blksize << 1);
-			if (!mnstr_writeSht(s->s, blksize) ||
+			blksize <<= 1;
+			if (!mnstr_writeSht(s->s, (int16_t) blksize) ||
 			    s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = MNSTR_WRITE_ERROR;
 				return -1;
@@ -3779,7 +3779,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 static int
 bs_flush(stream *ss)
 {
-	int16_t blksize;
+	uint16_t blksize;
 	bs *s;
 
 	s = (bs *) ss->stream_data.p;
@@ -3804,13 +3804,13 @@ bs_flush(stream *ss)
 			fprintf(stderr, "W %s 0\n", ss->name);
 		}
 #endif
-		blksize = (int16_t) (s->nr << 1);
+		blksize = (uint16_t) (s->nr << 1);
 		s->bytes += s->nr;
 		/* indicate that this is the last buffer of a block by
 		 * setting the low-order bit */
-		blksize |= (int16_t) 1;
+		blksize |= 1;
 		/* allways flush (even empty blocks) needed for the protocol) */
-		if ((!mnstr_writeSht(s->s, blksize) ||
+		if ((!mnstr_writeSht(s->s, (int16_t) blksize) ||
 		     (s->nr > 0 &&
 		      s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
 			ss->errnr = MNSTR_WRITE_ERROR;
@@ -3870,17 +3870,17 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		case 1:
 			break;
 		}
-		if (blksize < 0) {
+		if ((uint16_t) blksize > (BLOCK << 1 | 1)) {
 			ss->errnr = MNSTR_READ_ERROR;
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
-		fprintf(stderr, "RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
-		fprintf(stderr, "RC %s %d\n", ss->name, blksize);
+		fprintf(stderr, "RC size: %u, final: %s\n", (uint16_t) blksize >> 1, (uint16_t) blksize & 1 ? "true" : "false");
+		fprintf(stderr, "RC %s %u\n", ss->name, (uint16_t) blksize);
 #endif
-		s->itotal = (unsigned) (blksize >> 1);	/* amount readable */
+		s->itotal = (uint16_t) blksize >> 1;	/* amount readable */
 		/* store whether this was the last block or not */
-		s->nr = blksize & 1;
+		s->nr = (uint16_t) blksize & 1;
 		s->bytes += s->itotal;
 		s->blks++;
 	}
@@ -3936,18 +3936,18 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			case 1:
 				break;
 			}
-			if (blksize < 0) {
+			if ((uint16_t) blksize > (BLOCK << 1 | 1)) {
 				ss->errnr = MNSTR_READ_ERROR;
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
-			fprintf(stderr, "RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
+			fprintf(stderr, "RC size: %d, final: %s\n", (uint16_t) blksize >> 1, (uint16_t) blksize & 1 ? "true" : "false");
 			fprintf(stderr, "RC %s %d\n", ss->name, s->nr);
 			fprintf(stderr, "RC %s %d\n", ss->name, blksize);
 #endif
-			s->itotal = (unsigned) (blksize >> 1);	/* amount readable */
+			s->itotal = (uint16_t) blksize >> 1;	/* amount readable */
 			/* store whether this was the last block or not */
-			s->nr = blksize & 1;
+			s->nr = (uint16_t) blksize & 1;
 			s->bytes += s->itotal;
 			s->blks++;
 		}

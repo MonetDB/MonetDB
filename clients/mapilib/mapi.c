@@ -1810,14 +1810,13 @@ mapi_new(void)
 		.redirmax = 10,
 		.blk.eos = false,
 		.blk.lim = BLOCK,
-		.blk.buf = malloc(BLOCK + 1),
 	};
-	if (mid->blk.buf == NULL) {
+	if ((mid->blk.buf = malloc(mid->blk.lim + 1)) == NULL) {
 		mapi_destroy(mid);
 		return NULL;
 	}
-	mid->blk.buf[BLOCK] = 0;
 	mid->blk.buf[0] = 0;
+	mid->blk.buf[mid->blk.lim] = 0;
 
 	return mid;
 }
@@ -2161,9 +2160,6 @@ mapi_reconnect(Mapi mid)
 
 		char *host;
 		int port;
-#ifdef HAVE_SYS_UN_H
-		char buf[1024];
-#endif
 
 		host = mid->hostname;
 		port = mid->port;
@@ -2300,7 +2296,6 @@ mapi_reconnect(Mapi mid)
 	if (mid->hostname && mid->hostname[0] == '/') {
 		struct msghdr msg;
 		struct iovec vec;
-		char buf[1];
 		struct sockaddr_un userver;
 		struct sockaddr *serv = (struct sockaddr *) &userver;
 
@@ -2348,7 +2343,7 @@ mapi_reconnect(Mapi mid)
 		/* send first byte, nothing special to happen */
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
-		*buf = '0';	/* normal */
+		buf[0] = '0';	/* normal */
 		vec.iov_base = buf;
 		vec.iov_len = 1;
 		msg.msg_iov = &vec;
@@ -2494,11 +2489,11 @@ mapi_reconnect(Mapi mid)
   try_again_after_redirect:
 
 	/* consume server challenge */
-	len = mnstr_read_block(mid->from, buf, 1, BLOCK);
+	len = mnstr_read_block(mid->from, buf, 1, sizeof(buf));
 
 	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_reconnect", (mid->blk.eos = true, mid->error));
 
-	assert(len < BLOCK);
+	assert(len < sizeof(buf));
 	buf[len] = 0;
 
 	if (len == 0) {
@@ -2638,7 +2633,7 @@ mapi_reconnect(Mapi mid)
 			} else
 #endif
 			{
-				snprintf(buf, BLOCK, "server requires unknown hash '%.100s'",
+				snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
 						serverhash);
 				close_connection(mid);
 				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
@@ -2673,7 +2668,7 @@ mapi_reconnect(Mapi mid)
 		}
 		if (hash == NULL) {
 			/* the server doesn't support what we can */
-			snprintf(buf, BLOCK, "unsupported hash algorithms: %.100s", hashes);
+			snprintf(buf, sizeof(buf), "unsupported hash algorithms: %.100s", hashes);
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 		}
@@ -2682,14 +2677,14 @@ mapi_reconnect(Mapi mid)
 
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
-		if (snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:FILETRANS:\n",
+		if (snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:FILETRANS:\n",
 #ifdef WORDS_BIGENDIAN
 			     "BIG",
 #else
 			     "LIT",
 #endif
 			     mid->username, hash, mid->language,
-			     mid->database == NULL ? "" : mid->database) >= BLOCK) {;
+			     mid->database == NULL ? "" : mid->database) >= (int) sizeof(buf)) {;
 			mapi_setError(mid, "combination of database name and user name too long", "mapi_reconnect", MERROR);
 			free(hash);
 			close_connection(mid);
@@ -2701,14 +2696,14 @@ mapi_reconnect(Mapi mid)
 		/* because the headers changed, and because it makes no sense to
 		 * try and be backwards (or forwards) compatible, we bail out
 		 * with a friendly message saying so */
-		snprintf(buf, BLOCK, "unsupported protocol version: %d, "
+		snprintf(buf, sizeof(buf), "unsupported protocol version: %d, "
 			 "this client only supports version 9", pversion);
 		mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 		close_connection(mid);
 		return mid->error;
 	}
 	if (mid->trace) {
-		printf("sending first request [%d]:%s", BLOCK, buf);
+		printf("sending first request [%zu]:%s", sizeof(buf), buf);
 		fflush(stdout);
 	}
 	len = strlen(buf);
