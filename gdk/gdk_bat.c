@@ -66,7 +66,7 @@ BATinit_idents(BAT *bn)
 }
 
 BAT *
-BATcreatedesc(oid hseq, int tt, int heapnames, int role)
+BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 {
 	BAT *bn;
 
@@ -217,7 +217,7 @@ COLnew(oid hseq, int tt, BUN cap, int role)
 		goto bailout;
 	}
 	DELTAinit(bn);
-	if (BBPcacheit(bn, 1) != GDK_SUCCEED) {
+	if (BBPcacheit(bn, true) != GDK_SUCCEED) {
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}

@@ -532,7 +532,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 	if (HEAPalloc(&h3, b->batCapacity, width) != GDK_SUCCEED)
 		GDKfatal("fixstroffheap: allocating new tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
-	h3.dirty = TRUE;
+	h3.dirty = true;
 	h3.free = h1.free;
 
 	switch (b->twidth) {
@@ -715,7 +715,7 @@ fixfltheap(BAT *b)
 	if (HEAPalloc(&h2, b->batCapacity, b->twidth) != GDK_SUCCEED)
 		GDKfatal("fixfltheap: allocating new tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
-	h2.dirty = TRUE;
+	h2.dirty = true;
 	h2.free = h1.free;
 
 	switch (b->ttype) {

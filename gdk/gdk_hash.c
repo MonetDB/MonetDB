@@ -222,7 +222,7 @@ BATcheckhash(BAT *b)
 					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
 					close(fd);
 					h->heap.parentid = b->batCacheid;
-					h->heap.dirty = FALSE;
+					h->heap.dirty = false;
 					b->thash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(b->batCacheid));
@@ -385,7 +385,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		GDKfree(h);
 		return NULL;
 	}
-	h->heap.dirty = TRUE;
+	h->heap.dirty = true;
 	snprintf(h->heap.filename, sizeof(h->heap.filename), "%s.%s", nme, ext);
 
 	/* determine hash mask size */

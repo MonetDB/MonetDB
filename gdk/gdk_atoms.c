@@ -1438,7 +1438,8 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 {
 	unsigned char *p = dst;
 	const unsigned char *cur = src, *end = src + len;
-	int escaped = FALSE, mask = 0, n, c, utf8char = 0;
+	bool escaped = false;
+	int mask = 0, n, c, utf8char = 0;
 
 	if (len >= 2 && strcmp((const char *) src, str_nil) == 0) {
 		strcpy((char *) dst, str_nil);
@@ -1524,9 +1525,9 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 				c = *cur;
 				break;
 			}
-			escaped = FALSE;
+			escaped = false;
 		} else if ((c = *cur) == '\\') {
-			escaped = TRUE;
+			escaped = true;
 			continue;
 		}
 
@@ -1595,7 +1596,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst)
 {
 	const char *cur = src, *start = NULL;
 	size_t l = 1;
-	int escaped = FALSE;
+	bool escaped = false;
 
 	if (GDK_STRNIL(src)) {
 		atommem(2);
@@ -1621,10 +1622,10 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst)
 		if (*cur == 0) {
 			GDKerror("no closing quotes\n");
 			return -1;
-		} else if (*cur == '\\' && escaped == FALSE) {
-			escaped = TRUE;
+		} else if (*cur == '\\' && !escaped) {
+			escaped = true;
 		} else {
-			escaped = FALSE;
+			escaped = false;
 			l++;
 		}
 	}

@@ -295,7 +295,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			HEAPfree(&bak, false);
 			/* and load heap back in via memory-mapped
 			 * file */
-			if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) == GDK_SUCCEED) {
+			if (HEAPload_intern(h, nme, ext, ".tmp", false) == GDK_SUCCEED) {
 				/* success! */
 				GDKclrerr();	/* don't leak errors from e.g. HEAPload */
 				return GDK_SUCCEED;

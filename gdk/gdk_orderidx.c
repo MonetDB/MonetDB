@@ -469,7 +469,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		ALGODEBUG fprintf(stderr, "#GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
 #endif
 
-	b->batDirtydesc = TRUE;
+	b->batDirtydesc = true;
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	return GDK_SUCCEED;
 }

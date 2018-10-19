@@ -86,7 +86,7 @@ VIEWcreate(oid seq, BAT *b)
 
 	BATcheck(b, "VIEWcreate", NULL);
 
-	bn = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
+	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -128,7 +128,7 @@ VIEWcreate(oid seq, BAT *b)
 	bn->timprints = NULL;
 	/* Order OID index */
 	bn->torderidx = NULL;
-	if (BBPcacheit(bn, 1) != GDK_SUCCEED) {	/* enter in BBP */
+	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp)
 			BBPunshare(tp);
 		if (bn->tvheap)
@@ -186,8 +186,8 @@ BATmaterialize(BAT *b)
 	/* point of no return */
 	b->ttype = tt;
 	BATsetdims(b);
-	b->batDirtydesc = TRUE;
-	b->theap.dirty = TRUE;
+	b->batDirtydesc = true;
+	b->theap.dirty = true;
 
 	/* So now generate [t..t+cnt-1] */
 	t = b->tseqbase;
