@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "sql_rank.h"
 #include "gdk_analytic.h"
+#include "mtime.h"
 
 #define voidresultBAT(r,tpe,cnt,b,err)				\
 	do {							\
@@ -77,6 +78,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 {
 	bool has_partitions = (pci->argc > 6);
 	lng first_half = *getArgReference_lng(stk, pci, has_partitions ? 5 : 4);
+	str msg = MAL_SUCCEED;
 
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -84,8 +86,9 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, has_partitions ? 2 : 1)), *p = NULL, *r, *l = NULL;
 		int unit = *getArgReference_int(stk, pci, has_partitions ? 3 : 2),
 			excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3),
-			limit_pos = has_partitions ? 6 : 5, tpe = getArgType(mb, pci, limit_pos),
-			tp1 = getBatType(getArgType(mb, pci, has_partitions ? 2 : 1));
+			limit_pos = has_partitions ? 6 : 5,
+			tp1 = getBatType(getArgType(mb, pci, has_partitions ? 2 : 1)),
+			tp2 = getArgType(mb, pci, limit_pos);
 		void* limit = NULL;
 		bool is_negative = false, is_null = false, is_a_bat;
 		gdk_return gdk_code;
@@ -101,9 +104,9 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 			throw(SQL, mod, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
 		}
 
-		is_a_bat = isaBatType(tpe);
+		is_a_bat = isaBatType(tp2);
 		if(is_a_bat)
-			tpe = getBatType(tpe);
+			tp2 = getBatType(tp2);
 
 		voidresultBAT(r, TYPE_lng, BATcount(b), b, mod);
 		if(is_a_bat) {
@@ -112,7 +115,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 				BBPunfix(b->batCacheid);
 				throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 			}
-			switch (tpe) {
+			switch (tp2) {
 				case TYPE_bte:
 					CHECK_NULLS_AND_NEGATIVES_COLUMN(bte)
 					break;
@@ -139,7 +142,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 				default: {
 					BBPunfix(b->batCacheid);
 					BBPunfix(l->batCacheid);
-					throw(SQL, mod, SQLSTATE(42000) "%s limit not available for %s", mod, ATOMname(tpe));
+					throw(SQL, mod, SQLSTATE(42000) "%s limit not available for %s", mod, ATOMname(tp2));
 				}
 			}
 			if(is_null || is_negative) {
@@ -152,7 +155,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 		} else {
 			ValRecord *vlimit = &(stk)->stk[(pci)->argv[limit_pos]];
 
-			switch (tpe) {
+			switch (tp2) {
 				case TYPE_bte:
 					CHECK_NULLS_AND_NEGATIVES_SINGLE(bte, btval)
 					break;
@@ -178,7 +181,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 #endif
 				default: {
 					BBPunfix(b->batCacheid);
-					throw(SQL, mod, SQLSTATE(42000) "%s limit is not available for %s", mod, ATOMname(tpe));
+					throw(SQL, mod, SQLSTATE(42000) "%s limit is not available for %s", mod, ATOMname(tp2));
 				}
 			}
 			if(is_null)
@@ -195,21 +198,26 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 			}
 		}
 
-		gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tpe, unit, preceding, first_half);
+		if((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && unit == 1) { //only for RANGE frame
+			msg = MTIMEanalyticalrangebounds(r, b, p, l, limit, tp1, tp2, preceding, first_half);
+			if(msg == MAL_SUCCEED)
+				BBPkeepref(*res = r->batCacheid);
+		} else {
+			gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, first_half);
+			if(gdk_code == GDK_SUCCEED)
+				BBPkeepref(*res = r->batCacheid);
+			else
+				msg = createException(SQL, mod, GDK_EXCEPTION);
+		}
 		if(l) BBPunfix(l->batCacheid);
 		if(p) BBPunfix(p->batCacheid);
 		BBPunfix(b->batCacheid);
-		if(gdk_code == GDK_SUCCEED) {
-			BBPkeepref(*res = r->batCacheid);
-		} else {
-			throw(SQL, mod, GDK_EXCEPTION);
-		}
 	} else {
 		lng *res = getArgReference_lng(stk, pci, 0);
 
 		*res = preceding ? -first_half : first_half;
 	}
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str

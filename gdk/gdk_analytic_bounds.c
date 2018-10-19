@@ -36,28 +36,31 @@
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_PRECEDING(TPE1, LIMIT, TPE2) \
 	do {                                           \
-		lng m = k;                                 \
+		lng m = k - 1;                             \
 		TPE1 v, calc;                              \
 		TPE2 rlimit;                               \
 		for(; k<i; k++, rb++) {                    \
 			rlimit = (TPE2) LIMIT;                 \
 			v = bp[k];                             \
 			if(is_##TPE1##_nil(v)) {               \
-				for(j=k; j>m; j--) {               \
+				for(j=k; ; j--) {                  \
+					if(j == m)                     \
+						break;                     \
 					if(!is_##TPE1##_nil(bp[j]))    \
 						break;                     \
 				}                                  \
 			} else {                               \
-				for(j=k; j>m; j--) {               \
+				for(j=k; ; j--) {                  \
+					if(j == m)                     \
+						break;                     \
 					if(is_##TPE1##_nil(bp[j]))     \
 						break;                     \
 					SUB_WITH_CHECK(TPE1, v, TPE1, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
-					if ((TPE2)(ABSOLUTE(calc)) > rlimit) { \
-						j++;                       \
+					if ((TPE2)(ABSOLUTE(calc)) > rlimit) \
 						break;                     \
-					}                              \
 				}                                  \
 			}                                      \
+			j++;                                   \
 			*rb = j;                               \
 		}                                          \
 	} while(0)
@@ -89,29 +92,32 @@
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_GROUPS_PRECEDING(TPE1, LIMIT, TPE2) \
 	do {                                  \
-		lng m = k;                        \
+		lng m = k - 1;                    \
 		for(; k<i; k++, rb++) {           \
 			TPE2 rlimit = (TPE2) LIMIT;   \
 			TPE1 v = bp[k];               \
 			if(is_##TPE1##_nil(v)) {      \
-				for(j=k; j>m; j--) {      \
+				for(j=k; ; j--) {         \
+					if(j == m)            \
+						break;            \
 					if(!is_##TPE1##_nil(bp[j])) \
 						break;            \
 				}                         \
 			} else {                      \
-				for(j=k; j>m; j--) {      \
+				for(j=k; ; j--) {         \
+					if(j == m)            \
+						break;            \
 					if(is_##TPE1##_nil(bp[j])) \
 						break;            \
 					if(v != bp[j]) {      \
-						if(rlimit == 0) { \
-							j++;          \
+						if(rlimit == 0)   \
 							break;        \
-						}                 \
 						rlimit--;         \
 						v = bp[j];        \
 					}                     \
 				}                         \
 			}                             \
+			j++;                          \
 			*rb = j;                      \
 		}                                 \
 	} while(0)
@@ -141,7 +147,7 @@
 			*rb = j;                    \
 		}                               \
 	} while(0)
-	
+
 #define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(TPE1, IMP, LIMIT, TPE2) \
 	do {                                        \
 		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);  \
@@ -164,25 +170,29 @@
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_PRECEDING(LIMIT) \
 	do {                                          \
-		lng m = k;                                \
+		lng m = k - 1;                            \
 		for(; k<i; k++, rb++) {                   \
 			void *v = BUNtail(bpi, (BUN) k);      \
 			if(atomcmp(v, nil) == 0) {            \
-				for(j=k; j>m; j--) {              \
+				for(j=k; ; j--) {                 \
+					if(j == m)                    \
+						break;                    \
 					if(atomcmp(BUNtail(bpi, (BUN) j), nil) != 0) \
 						break;                    \
 				}                                 \
 			} else {                              \
-				for(j=k; j>m; j--) {              \
-					void *next = BUNtail(bpi, (BUN) j); \
+				for(j=k; ; j--) {                 \
+					void *next;                   \
+					if(j == m)                    \
+						break;                    \
+					next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
 						break;                    \
-					if(ABSOLUTE(atomcmp(v, next)) > (int) LIMIT) { \
-						j++;                      \
+					if(ABSOLUTE(atomcmp(v, next)) > (int) LIMIT) \
 						break;                    \
-					}                             \
 				}                                 \
 			}                                     \
+			j++;                                  \
 			*rb = j;                              \
 		}                                         \
 	} while(0)
@@ -211,30 +221,34 @@
 
 #define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_GROUPS_PRECEDING(LIMIT) \
 	do {                                          \
-		lng m = k;                                \
+		lng m = k - 1;                            \
 		for(; k<i; k++, rb++) {                   \
 			lng rlimit = (lng) LIMIT;             \
 			void *v = BUNtail(bpi, (BUN) k);      \
 			if(atomcmp(v, nil) == 0) {            \
-				for(j=k; j>m; j--) {              \
+				for(j=k; ; j--) {                 \
+					if(j == m)                    \
+						break;                    \
 					if(atomcmp(BUNtail(bpi, (BUN) j), nil) != 0) \
 						break;                    \
 				}                                 \
 			} else {                              \
-				for(j=k; j>m; j--) {              \
-					void *next = BUNtail(bpi, (BUN) j); \
+				for(j=k; ; j--) {                 \
+					void *next;                   \
+					if(j == m)                    \
+						break;                    \
+					next = BUNtail(bpi, (BUN) j); \
 					if(atomcmp(next, nil) == 0)   \
 						break;                    \
 					if(atomcmp(v, next)) {        \
-						if(rlimit == 0) {         \
-							j++;                  \
+						if(rlimit == 0)           \
 							break;                \
-						}                         \
 						rlimit--;                 \
 						v = next;                 \
 					}                             \
 				}                                 \
 			}                                     \
+			j++;                                  \
 			*rb = j;                              \
 		}                                         \
 	} while(0)
@@ -796,6 +810,8 @@ gdk_return
 GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2, int unit,
 						  bool preceding, lng first_half)
 {
+	assert((l && !bound) || (!l && bound));
+
 	switch(unit) {
 		case 0:
 			return GDKanalyticalrowbounds(r, b, p, l, bound, tp2, preceding, first_half);

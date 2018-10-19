@@ -22,7 +22,7 @@ lib_atoms = {
 		inet.c \
 		json.c json.h \
 		mcurl.c \
-		mtime.c mtime.h \
+		mtime.c mtime_analytic.c mtime.h \
 		str.c str.h \
 		streams.c streams.h \
 		url.c url.h \
