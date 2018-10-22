@@ -60,11 +60,7 @@ FUN(,TP1,_num2dec_,TP2)(TP2 *res, const TP1 *v, const int *d2, const int *s2)
 		      inlen + scale, precision);
 
 #ifndef TRUNCATE_NUMBERS
-#if TPE(TP1) == TYPE_flt
-	*res = (TP2) roundf(val * scales[scale]);
-#else
-	*res = (TP2) round(val * scales[scale]);
-#endif
+	*res = (TP2) round_float(val * scales[scale]);
 #endif
 
 

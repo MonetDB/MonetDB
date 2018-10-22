@@ -464,24 +464,24 @@
 #define BATTINY_BITS	8
 #define BATTINY		((BUN)1<<BATTINY_BITS)	/* minimum allocation buncnt for a BAT */
 
-#define TYPE_void	0
-#define TYPE_bit	1
-#define TYPE_bte	2
-#define TYPE_sht	3
-#define TYPE_bat	4	/* BAT id: index in BBPcache */
-#define TYPE_int	5
-#define TYPE_oid	6
-#define TYPE_ptr	7	/* C pointer! */
-#define TYPE_flt	8
-#define TYPE_dbl	9
-#define TYPE_lng	10
+enum {
+	TYPE_void = 0,
+	TYPE_bit,
+	TYPE_bte,
+	TYPE_sht,
+	TYPE_bat,
+	TYPE_int,
+	TYPE_oid,
+	TYPE_ptr,
+	TYPE_flt,
+	TYPE_dbl,
+	TYPE_lng,
 #ifdef HAVE_HGE
-#define TYPE_hge	11
-#define TYPE_str	12
-#else
-#define TYPE_str	11
+	TYPE_hge,
 #endif
-#define TYPE_any	255	/* limit types to <255! */
+	TYPE_str,
+	TYPE_any = 255,		/* limit types to <255! */
+};
 
 typedef int8_t bit;
 typedef int8_t bte;
