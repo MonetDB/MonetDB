@@ -469,10 +469,10 @@ enum {
 	TYPE_bit,
 	TYPE_bte,
 	TYPE_sht,
-	TYPE_bat,
+	TYPE_bat,		/* BAT id: index in BBPcache */
 	TYPE_int,
 	TYPE_oid,
-	TYPE_ptr,
+	TYPE_ptr,		/* C pointer! */
 	TYPE_flt,
 	TYPE_dbl,
 	TYPE_lng,
