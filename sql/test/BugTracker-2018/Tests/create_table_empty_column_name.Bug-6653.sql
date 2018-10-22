@@ -1,0 +1,3 @@
+CREATE TABLE tbl ("" INT);
+
+CREATE TABLE "" (i INT);
