@@ -1000,13 +1000,20 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 		return GDK_SUCCEED;
 	}
 	short byteorder;
-	if (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1) < 1) {
+	switch (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1)) {
+	case -1:
 		close_stream(lg->log);
 		lg->log = NULL;
 		GDKdebug = dbg;
 		return GDK_FAIL;
+	case 0:
+		/* empty file is ok */
+		break;
+	case 1:
+		/* if not empty, must start with correct byte order mark */
+		assert(byteorder == 1234);
+		break;
 	}
-	assert(byteorder == 1234);
 	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		close_stream(lg->log);
