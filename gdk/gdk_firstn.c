@@ -208,7 +208,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, oid *lastp)
 		return bn;
 	}
 
-	assert(b->ttype != TYPE_void); /* tsorted above took care of this */
+	assert(!BATtvoid(b));	/* tsorted above took care of this */
 
 	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
 	if (bn == NULL)
@@ -492,22 +492,36 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, oid *lastp
 			goids[i] = gv[ci++];
 		}
 	}
-	if (asc) {
-		switch (tpe) {
-		case TYPE_void:
+	if (BATtvoid(b)) {
+		if (asc) {
 			heapify(LTvoidgrp, SWAP2);
 			while (cand ? cand < candend : start < end) {
 				i = cand ? *cand++ : start++ + b->hseqbase;
-				if (gv[ci] < goids[0] /* ||
-				    (gv[ci] == goids[0] &&
-				     i < oids[0]) -- always false */) {
+				if (gv[ci] < goids[0]
+				    /* || (gv[ci] == goids[0]
+					&& i < oids[0]) -- always false */) {
 					oids[0] = i;
 					goids[0] = gv[ci];
 					siftup(LTvoidgrp, 0, SWAP2);
 				}
 				ci++;
 			}
-			break;
+		} else {
+			heapify(GTvoidgrp, SWAP2);
+			while (cand ? cand < candend : start < end) {
+				i = cand ? *cand++ : start++ + b->hseqbase;
+				if (gv[ci] < goids[0]
+				    || (gv[ci] == goids[0]
+				        /* && i > oids[0] -- always true */)) {
+					oids[0] = i;
+					goids[0] = gv[ci];
+					siftup(GTvoidgrp, 0, SWAP2);
+				}
+				ci++;
+			}
+		}
+	} else if (asc) {
+		switch (tpe) {
 		case TYPE_bte:
 			shuffle_unique_with_groups(bte, LT);
 			break;
@@ -549,20 +563,6 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, oid *lastp
 		}
 	} else {
 		switch (tpe) {
-		case TYPE_void:
-			heapify(LTvoidgrp, SWAP2);
-			while (cand ? cand < candend : start < end) {
-				i = cand ? *cand++ : start++ + b->hseqbase;
-				if (gv[ci] < goids[0] ||
-				    (gv[ci] == goids[0] /* &&
-				     i > oids[0] -- always true */)) {
-					oids[0] = i;
-					goids[0] = gv[ci];
-					siftup(LTvoidgrp, 0, SWAP2);
-				}
-				ci++;
-			}
-			break;
 		case TYPE_bte:
 			shuffle_unique_with_groups(bte, GT);
 			break;

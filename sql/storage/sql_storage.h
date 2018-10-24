@@ -289,12 +289,11 @@ typedef struct store_functions {
 
 sqlstore_export store_functions store_funcs;
 
-typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version, int keep_persisted_log_files);
-typedef int (*logger_create_shared_fptr) (int debug, const char *logdir, int catalog_version, const char *slave_logdir);
+typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
 
 typedef void (*logger_destroy_fptr) (void);
 typedef int (*logger_restart_fptr) (void);
-typedef int (*logger_cleanup_fptr) (int keep_persisted_log_files);
+typedef int (*logger_cleanup_fptr) (void);
 typedef void (*logger_with_ids_fptr) (void);
 
 typedef int (*logger_changes_fptr)(void);
@@ -313,7 +312,6 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 typedef void *(*log_find_table_value_fptr)(const char *, const char *, const void *, ...);
 typedef struct logger_functions {
 	logger_create_fptr create;
-	logger_create_shared_fptr create_shared;
 	logger_destroy_fptr destroy;
 	logger_restart_fptr restart;
 	logger_cleanup_fptr cleanup;
@@ -347,7 +345,7 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 extern void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern int store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk);
+extern int store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk);
 extern void store_exit(void);
 
 extern void store_apply_deltas(void);

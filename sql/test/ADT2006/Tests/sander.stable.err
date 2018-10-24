@@ -15,7 +15,8 @@ QUERY = insert into suspect (name, picture_uri, notes,
         victim_name) values ("Dr. Thomas Neill Cream ",
         "http://blabla/toolong", "did commit murders, but by
         poisoning", "");
-ERROR = !SELECT: identifier 'Dr. Thomas Neill Cream ' unknown
+ERROR = !An identifier cannot be empty in: "insert into suspect (name, picture_uri, notes,
+        !victim_name) values ("Dr. Thomas "
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into suspect (name, picture_uri, notes,

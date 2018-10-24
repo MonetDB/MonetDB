@@ -602,6 +602,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* sql_cast_impl_down_from_flt */
 
+#define round_float(x)	roundf(x)
+
 #define TP1 flt
 #define TP2 bte
 #include "sql_cast_impl_down_from_flt.h"
@@ -633,6 +635,9 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 #endif
+
+#undef round_float
+#define round_float(x)	round(x)
 
 #define TP1 dbl
 #define TP2 bte

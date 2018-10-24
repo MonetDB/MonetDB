@@ -3219,16 +3219,21 @@ SQLall(ptr ret, const bat *bid)
 	c = BATcount(b);
 	if (c == 0) {
 		p = ATOMnilptr(b->ttype);
+	} else if (c == 1 || (b->tsorted && b->trevsorted)) {
+		BATiter bi = bat_iterator(b);
+		p = BUNtail(bi, 0);
+	} else if (b->tkey
+		   || (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
+		p = ATOMnilptr(b->ttype);
 	} else {
 		BUN q, r;
 		int (*ocmp) (const void *, const void *);
 		BATiter bi = bat_iterator(b);
-		q = 0;
 		r = BUNlast(b);
-		p = BUNtail(bi, q);
+		p = BUNtail(bi, 0);
 		ocmp = ATOMcompare(b->ttype);
-		for( ; (q+1) < r; q++) {
-			const void *c = BUNtail(bi, q+1);
+		for (q = 1; q < r; q++) {
+			const void *c = BUNtail(bi, q);
 			if (ocmp(p, c) != 0) {
 				p = ATOMnilptr(b->ttype);
 				break;
@@ -3552,18 +3557,18 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 }
 
 str
-SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
+SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 {
 	BAT *b, *bn;
-	BATiter bi;
 	BUN p, q;
 	dbl s, c1, c2, r;
 	char *msg = NULL;
+	dbl *thetas;
 
-	if ((b = BATdescriptor(*theta)) == NULL) {
+	if ((b = BATdescriptor(*thetabid)) == NULL) {
 		throw(SQL, "alpha", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	bi = bat_iterator(b);
+	thetas = (dbl *) Tloc(b, 0);
 	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
@@ -3571,16 +3576,16 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 	}
 	BATloop(b, p, q) {
 		dbl d = *decl;
-		dbl *theta = (dbl *) BUNtail(bi, p);
+		dbl theta = thetas[p];
 
 		if (is_dbl_nil(d))
 			r = dbl_nil;
-		else if (fabs(d) + *theta > 89.9)
+		else if (fabs(d) + theta > 89.9)
 			r = (dbl) 180.0;
 		else {
-			s = sin(radians(*theta));
-			c1 = cos(radians(d - *theta));
-			c2 = cos(radians(d + *theta));
+			s = sin(radians(theta));
+			c1 = cos(radians(d - theta));
+			c2 = cos(radians(d + theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
 		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {

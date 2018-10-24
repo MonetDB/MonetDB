@@ -597,6 +597,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		return GDK_SUCCEED;
 	}
+	assert(!BATtdense(b));
 	if (g) {
 		if (BATtdense(g))
 			maxgrp = g->tseqbase + BATcount(g);

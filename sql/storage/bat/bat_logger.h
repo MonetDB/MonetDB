@@ -15,6 +15,5 @@
 extern logger *bat_logger;
 
 extern void bat_logger_init( logger_functions *lf );
-extern void bat_logger_init_shared( logger_functions *lf );
 
 #endif /*BAT_LOGGER_H */

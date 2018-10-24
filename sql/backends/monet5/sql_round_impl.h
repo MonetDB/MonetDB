@@ -142,9 +142,6 @@ round_body_nonil(TYPE v, int d, int s, int r)
 			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
 			lres = ((v - rnd) / scales[dff]) * scales[dff];
-#if TPE(TYPE) != TYPE_lng && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
-		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
-#endif
 		res = (TYPE) lres;
 	} else if (r <= 0 && -r + s > 0) {
 		int dff = -r + s;
@@ -154,9 +151,6 @@ round_body_nonil(TYPE v, int d, int s, int r)
 			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
 			lres = ((v - rnd) / scales[dff]) * scales[dff];
-#if TPE(TYPE) != TYPE_lng && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
-		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
-#endif
 		res = (TYPE) lres;
 	} else {
 		res = v;
@@ -469,9 +463,6 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 		value += rnd;
 		value /= scales[d];
 	}
-#if defined(HAVE_HGE) && TPE(TYPE) == TYPE_hge
-	assert((hge) GDK_lng_min <= value && value <= (hge) GDK_lng_max);
-#endif
 	*res = value;
 	return MAL_SUCCEED;
 }

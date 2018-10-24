@@ -940,50 +940,6 @@ tr_commit(logger *lg, trans *tr)
 #define access(file, mode)	_access(file, mode)
 #endif
 
-/* Update the last transaction id written in the catalog file.
- * Only used by the shared logger. */
-static gdk_return
-logger_update_catalog_file(logger *lg, const char *dir, const char *filename, int role)
-{
-	FILE *fp;
-	int bak_exists;
-	int farmid = BBPselectfarm(role, 0, offheap);
-
-	bak_exists = 0;
-	/* check if an older file exists and move bak it up */
-	if (access(filename, 0) != -1) {
-		bak_exists = 1;
-		if (GDKmove(farmid, dir, filename, NULL, dir, filename, "bak") != GDK_SUCCEED) {
-			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
-			return GDK_FAIL;
-		}
-	}
-
-	if ((fp = GDKfileopen(farmid, dir, filename, NULL, "w")) != NULL) {
-		if (fprintf(fp, "%06d\n\n", lg->version) < 0 ||
-		    fprintf(fp, LLFMT "\n", lg->id) < 0) {
-			fprintf(stderr, "!ERROR: logger_update_catalog_file: write to %s failed\n", filename);
-			fclose(fp);
-			return GDK_FAIL;
-		}
-
-		if (fclose(fp) < 0) {
-			fprintf(stderr, "!ERROR: logger_update_catalog_file: write/flush to %s failed\n", filename);
-			return GDK_FAIL;
-		}
-
-		/* cleanup the bak file, if it exists*/
-		if (bak_exists) {
-			GDKunlink(farmid, dir, filename, "bak");
-		}
-	} else {
-		fprintf(stderr, "!ERROR: logger_update_catalog_file: could not create %s\n", filename);
-		GDKerror("logger_update_catalog_file: could not open %s\n", filename);
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
-
 static gdk_return
 logger_open(logger *lg)
 {
@@ -1044,13 +1000,20 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 		return GDK_SUCCEED;
 	}
 	short byteorder;
-	if (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1) < 1) {
+	switch (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1)) {
+	case -1:
 		close_stream(lg->log);
 		lg->log = NULL;
 		GDKdebug = dbg;
 		return GDK_FAIL;
+	case 0:
+		/* empty file is ok */
+		break;
+	case 1:
+		/* if not empty, must start with correct byte order mark */
+		assert(byteorder == 1234);
+		break;
 	}
-	assert(byteorder == 1234);
 	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		close_stream(lg->log);
@@ -1258,7 +1221,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			fprintf(stderr, "#logger_readlogs last logger id written in %s is " LLFMT "\n", filename, lid);
 		}
 
-		if (!lg->shared && lid >= lg->id) {
+		if (lid >= lg->id) {
 			bool filemissing = false;
 
 			lg->id = lid;
@@ -1272,18 +1235,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			bool filemissing = false;
 			while (lid >= lg->id && res == GDK_SUCCEED) {
 				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-				if ((res = logger_readlog(lg, log_filename, &filemissing)) != GDK_SUCCEED && lg->shared && lg->id > 1) {
-					/* The only special case is if
-					 * the file is missing
-					 * altogether and the logger
-					 * is a shared one, then we
-					 * have missing transactions
-					 * and we should abort.  Yeah,
-					 * and we also ignore the 1st
-					 * files it most likely never
-					 * exists. */
-					fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
-				}
+				res = logger_readlog(lg, log_filename, &filemissing);
 				/* Increment the id only at the end,
 				 * since we want to re-read the last
 				 * file.  That is because last time we
@@ -1294,11 +1246,6 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			}
 			if (lid < lg->id) {
 				lg->id = lid;
-			}
-			if (lg->shared) {
-				/* if this is a shared logger, write the id in
-				 * the shared file */
-				logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
 			}
 		}
 	}
@@ -1579,8 +1526,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
  * Returns the role of the dbfarm containing the logdir.
  */
 static int
-logger_set_logdir_path(char *filename, const char *fn,
-		       const char *logdir, bool shared)
+logger_set_logdir_path(char *filename, const char *fn, const char *logdir)
 {
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
@@ -1603,7 +1549,7 @@ logger_set_logdir_path(char *filename, const char *fn,
 			 * other than the default dbfarm, or at least
 			 * it appears so to (multi)dbfarm aware
 			 * functions */
-			role = shared ? SHARED_LOG_DIR : LOG_DIR;
+			role = LOG_DIR;
 			BBPaddfarm(logdir_parent_path, 1 << role);
 		} else {
 			fprintf(stderr, "logger_set_logdir_path: logdir path is not correct (%s).\n"
@@ -1678,9 +1624,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		goto error;
 	}
 
-	/* this is intentional - even if catalog_bid is 0, but the logger is shared,
-	 * force it to find the persistent catalog */
-	if (catalog_bid == 0 &&	!lg->shared) {
+	/* this is intentional - if catalog_bid is 0, force it to find
+	 * the persistent catalog */
+	if (catalog_bid == 0) {
 		/* catalog does not exist, so the log file also
 		 * shouldn't exist */
 		if (fp != NULL) {
@@ -1919,8 +1865,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		goto error;
 	}
 	snprintf(bak, sizeof(bak), "%s_freed", fn);
-	/* do not rename it if this is a shared logger */
-	if (!lg->shared && BBPrename(lg->freed->batCacheid, bak) < 0) {
+	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
 		goto error;
 	}
 	snapshots_bid = logger_find_bat(lg, "snapshots_bid", 0, 0);
@@ -2087,8 +2032,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		 * not what we expect, the conversion was apparently
 		 * done already, and so we can delete the file. */
 
-		/* Do not do conversion if logger is shared/read-only */
-		if (!lg->shared) {
+		{
 			FILE *fp1;
 			fpos_t off;
 			int curid;
@@ -2164,7 +2108,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		fclose(fp);
 		fp = NULL;
 #ifdef GDKLIBRARY_NIL_NAN
-		if (lg->convert_nil_nan && !lg->shared) {
+		if (lg->convert_nil_nan) {
 			/* we converted, remove versioned file and
 			 * reset conversion flag */
 			GDKunlink(0, NULL, cvfile, NULL);
@@ -2205,11 +2149,10 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, bool shared, const char *local_logdir)
+logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = GDKmalloc(sizeof(struct logger));
 	char filename[FILENAME_MAX];
-	char shared_log_filename[FILENAME_MAX];
 
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
@@ -2217,8 +2160,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 
 	lg->debug = debug;
-	lg->shared = shared;
-	lg->local_dbfarm_role = 0; /* only used if lg->shared */
 
 	lg->changes = 0;
 	lg->version = version;
@@ -2230,7 +2171,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->convert_nil_nan = false;
 #endif
 
-	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);;
+	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir);
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->bufsize = 64*1024;
@@ -2247,49 +2188,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
 	lg->local_dir = NULL;
-
-	if (shared) {
-		/* set the local logdir as well
-		 * here we pass 0 for the shared flag, since we want these file(s) to be stored in the default logdir */
-		lg->local_dbfarm_role = logger_set_logdir_path(filename, fn, local_logdir, 0);
-		if (lg->local_dbfarm_role < 0 ||
-		    (lg->local_dir = GDKstrdup(filename)) == NULL) {
-			fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
-			GDKfree(lg->fn);
-			GDKfree(lg->dir);
-			GDKfree(lg->buf);
-			GDKfree(lg);
-			return NULL;
-		}
-		if (lg->debug & 1) {
-			fprintf(stderr, "#logger_new local_dir set to %s\n", lg->local_dir);
-		}
-
-		/* get last shared logger id from the local log dir,
-		 * but first check if the file exists */
-		snprintf(shared_log_filename, sizeof(shared_log_filename), "%s%s", lg->local_dir, LOGFILE_SHARED);
-		if (access(shared_log_filename, 0) != -1) {
-			lng res = logger_read_last_transaction_id(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
-			if (res < 0) {
-				fprintf(stderr, "!ERROR: logger_new: failed to read previous shared logger id form %s\n", LOGFILE_SHARED);
-				GDKfree(lg->fn);
-				GDKfree(lg->dir);
-				GDKfree(lg->local_dir);
-				GDKfree(lg->buf);
-				GDKfree(lg);
-				return NULL;
-			}
-
-			lg->id = res;
-			if (lg->debug & 1) {
-				fprintf(stderr, "#logger_new last shared transactions is read form %s is " LLFMT "\n", shared_log_filename, lg->id);
-			}
-		} else {
-			if (lg->debug & 1) {
-				fprintf(stderr, "#logger_new no previous %s found\n", LOGFILE_SHARED);
-			}
-		}
-	}
 
 	lg->prefuncp = prefuncp;
 	lg->postfuncp = postfuncp;
@@ -2313,7 +2211,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	return NULL;
 }
 
-/* Reload (shared) logger
+/* Reload logger
  * It will load any data in the logdir and persist it in the BATs */
 gdk_return
 logger_reload(logger *lg)
@@ -2330,10 +2228,10 @@ logger_reload(logger *lg)
 
 /* Create a new logger */
 logger *
-logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files)
+logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg;
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, false, NULL);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
 	if (lg == NULL)
 		return NULL;
 	if (lg->debug & 1) {
@@ -2354,23 +2252,9 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	fflush(stdout);
 	if (lg->changes &&
 	    (logger_restart(lg) != GDK_SUCCEED ||
-	     logger_cleanup(lg, keep_persisted_log_files) != GDK_SUCCEED)) {
+	     logger_cleanup(lg) != GDK_SUCCEED)) {
 		logger_destroy(lg);
 		return NULL;
-	}
-	return lg;
-}
-
-/* Create a new shared logger, that is for slaves reading the master
- * log directory.  Assumed to be read-only */
-logger *
-logger_create_shared(int debug, const char *fn, const char *logdir, const char *local_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
-{
-	logger *lg;
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, true, local_logdir);
-	if (lg && lg->debug & 1) {
-		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
-		fflush(stdout);
 	}
 	return lg;
 }
@@ -2382,7 +2266,7 @@ logger_destroy(logger *lg)
 		BUN p, q;
 		BAT *b = lg->catalog_bid;
 
-		if (logger_cleanup(lg, 0) != GDK_SUCCEED)
+		if (logger_cleanup(lg) != GDK_SUCCEED)
 			fprintf(stderr, "#logger_destroy: logger_cleanup failed\n");
 
 		/* free resources */
@@ -2504,58 +2388,8 @@ logger_restart(logger *lg)
 /* Clean-up write-ahead log files already persisted in the BATs.
  * Update the LOGFILE and delete all bak- files as well.
  */
-static gdk_return
-logger_unlink(int farmid, const char *dir, const char *nme, const char *ext)
-{
-	char *path;
-	int u;
-
-	path = GDKfilepath(farmid, dir, nme, ext);
-	if (path == NULL)
-		return GDK_FAIL;
-	u = remove(path);
-	GDKfree(path);
-	return u != 0 ? GDK_FAIL : GDK_SUCCEED;
-}
-
-static void
-logger_cleanup_old(logger *lg, int keep_persisted_log_files)
-{
-	char buf[BUFSIZ];
-	lng id;
-	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
-	gdk_return cleanupResultLog = GDK_SUCCEED;
-	gdk_return cleanupResultBak = GDK_SUCCEED;
-
-	// Calculate offset based on the number of files to keep
-	id = lg->id - keep_persisted_log_files - 1;
-
-	// Stop cleaning up once bak- files are no longer found
-	while (id > 0 && (cleanupResultLog == GDK_SUCCEED || cleanupResultBak == GDK_SUCCEED)) {
-		// clean up the WAL file
-		if (lg->debug & 1) {
-			snprintf(buf, sizeof(buf), "%s%s." LLFMT, lg->dir, LOGFILE, id);
-			fprintf(stderr, "#logger_cleanup_old %s\n", buf);
-		}
-		snprintf(buf, sizeof(buf), LLFMT, id);
-		cleanupResultLog = logger_unlink(farmid, lg->dir, LOGFILE, buf);
-
-		// clean up the bak- WAL files
-		if (lg->debug & 1) {
-			snprintf(buf, sizeof(buf), "%s%s.bak-" LLFMT, lg->dir, LOGFILE, id);
-			fprintf(stderr, "#logger_cleanup_old %s\n", buf);
-		}
-		snprintf(buf, sizeof(buf), "bak-" LLFMT, id);
-		cleanupResultBak = logger_unlink(farmid, lg->dir, LOGFILE, buf);
-
-		id = id - 1;
-	}
-	/* we don't really care whether all files were properly
-	 * removed, so we don't return a status */
-}
-
 gdk_return
-logger_cleanup(logger *lg, int keep_persisted_log_files)
+logger_cleanup(logger *lg)
 {
 	char buf[BUFSIZ];
 	FILE *fp = NULL;
@@ -2564,32 +2398,28 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 	snprintf(buf, sizeof(buf), "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
 
 	if (lg->debug & 1) {
-		fprintf(stderr, "#logger_cleanup keeping %d WAL files\n", keep_persisted_log_files);
 		fprintf(stderr, "#logger_cleanup %s\n", buf);
 	}
 
-	if (keep_persisted_log_files == 0) {
-		lng lid = lg->id;
-		// If keep_persisted_log_files is 0, remove the last
-		// persisted WAL files as well to reduce the work for
-		// the logger_cleanup_old()
-		if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
-			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
-			return GDK_FAIL;
-		}
-
-		while (lid-- > 0) {
-			char log_id[FILENAME_MAX];
-
-			snprintf(log_id, sizeof(log_id), LLFMT, lid);
-			if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
-				/* not a disaster (yet?) if unlink fails */
-				fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
-				GDKclrerr();
-			}
-		}
-		fclose(fp);
+	lng lid = lg->id;
+	// remove the last persisted WAL files as well to reduce the
+	// work for the logger_cleanup_old()
+	if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
+		fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
+		return GDK_FAIL;
 	}
+
+	while (lid-- > 0) {
+		char log_id[FILENAME_MAX];
+
+		snprintf(log_id, sizeof(log_id), LLFMT, lid);
+		if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
+			/* not a disaster (yet?) if unlink fails */
+			fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
+			GDKclrerr();
+		}
+	}
+	fclose(fp);
 
 	snprintf(buf, sizeof(buf), "bak-" LLFMT, lg->id);
 
@@ -2597,11 +2427,6 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 		/* not a disaster (yet?) if unlink fails */
 		fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
 		GDKclrerr();
-	}
-
-	if (keep_persisted_log_files > 0) {
-		/* Clean up the old WAL files as well, if any */
-		logger_cleanup_old(lg, keep_persisted_log_files);
 	}
 
 	return GDK_SUCCEED;
@@ -2614,7 +2439,6 @@ logger_with_ids(logger *lg)
 }
 
 /* Clean-up write-ahead log files already persisted in the BATs, leaving only the most recent one.
- * Keeps only the number of files set in lg->keep_persisted_log_files.
  * Only the bak- files are deleted for the preserved WAL files.
  */
 lng

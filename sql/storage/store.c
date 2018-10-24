@@ -39,16 +39,11 @@ int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
 
-static int keep_persisted_log_files = 0;
-static int create_shared_logger = 0;
-static int shared_drift_threshold = -1;
-
 backend_stack backend_stk;
 
 store_functions store_funcs;
 table_functions table_funcs;
 logger_functions logger_funcs;
-logger_functions shared_logger_funcs;
 
 static int schema_number = 0; /* each committed schema change triggers a new
 				 schema number (session wise unique number) */
@@ -1755,9 +1750,8 @@ store_load(void) {
 	active_sessions = sa_list(sa);
 
 	if (first) {
-		/* cannot initialize database in readonly mode
-		 * unless this is a slave instance with a read-only/shared logger */
-		if (store_readonly && !create_shared_logger) {
+		/* cannot initialize database in readonly mode */
+		if (store_readonly) {
 			return -1;
 		}
 		tr = sql_trans_create(backend_stk, NULL, NULL);
@@ -1931,11 +1925,7 @@ store_load(void) {
 	}
 
 	id = store_oid; /* db objects up till id are already created */
-	if (!create_shared_logger) {
-		logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
-	} else {
-		shared_logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
-	}
+	logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
 	prev_oid = (sqlid)lng_store_oid;
 	if (store_oid < prev_oid)
 		store_oid = prev_oid;
@@ -1954,7 +1944,7 @@ store_load(void) {
 }
 
 int
-store_init(int debug, store_type store, int readonly, int singleuser, logger_settings *log_settings, backend_stack stk)
+store_init(int debug, store_type store, int readonly, int singleuser, backend_stack stk)
 {
 
 	int v = 1;
@@ -1964,22 +1954,11 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 	bs_debug = debug&2;
 	store_readonly = readonly;
 	store_singleuser = singleuser;
-	/* get the set shared_drift_threshold
-	 * we will need it later in store_manager */
-	shared_drift_threshold = log_settings->shared_drift_threshold;
-	/* get the set keep_persisted_log_files
-	 * we will need it later when calling logger_cleanup */
-	keep_persisted_log_files = log_settings->keep_persisted_log_files;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&bs_lock, "SQL_bs_lock");
 #endif
 	MT_lock_set(&bs_lock);
-
-	/* check if all parameters for a shared log are set */
-	if (store_readonly && log_settings->shared_logdir != NULL && log_settings->shared_drift_threshold >= 0) {
-		create_shared_logger = 1;
-	}
 
 	/* initialize empty bats */
 	if (store == store_bat) {
@@ -1990,26 +1969,12 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
 		bat_logger_init(&logger_funcs);
-		if (create_shared_logger) {
-			bat_logger_init_shared(&shared_logger_funcs);
-		}
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(debug, log_settings->logdir, CATALOG_VERSION*v, keep_persisted_log_files) != LOG_OK) {
+	    logger_funcs.create(debug, "sql_logs", CATALOG_VERSION*v) != LOG_OK) {
 		MT_lock_unset(&bs_lock);
 		return -1;
-	}
-
-	if (create_shared_logger) {
-		/* create a read-only logger for the shared directory */
-#ifdef STORE_DEBUG
-	fprintf(stderr, "#store_init creating shared logger\n");
-#endif
-		if (!shared_logger_funcs.create_shared || shared_logger_funcs.create_shared(debug, log_settings->shared_logdir, CATALOG_VERSION*v, log_settings->logdir) != LOG_OK) {
-			MT_lock_unset(&bs_lock);
-			return -1;
-		}
 	}
 
 	/* create the initial store structure or re-load previous data */
@@ -2043,9 +2008,6 @@ store_exit(void)
 		destroy_spare_transactions();
 
 	logger_funcs.destroy();
-	if (create_shared_logger) {
-		shared_logger_funcs.destroy();
-	}
 
 	/* Open transactions have a link to the global transaction therefore
 	   we need busy waiting until all transactions have ended or
@@ -2075,7 +2037,7 @@ store_apply_deltas(void)
 		store_funcs.gtrans_update(gtrans);
 	res = logger_funcs.restart();
 	if (logging && res == LOG_OK)
-		res = logger_funcs.cleanup(keep_persisted_log_files);
+		res = logger_funcs.cleanup();
 	logging = 0;
 }
 
@@ -2141,23 +2103,11 @@ store_manager(void)
 	while (!GDKexiting()) {
 		int res = LOG_OK;
 		int t;
-		lng shared_transactions_drift = -1;
 
 		for (t = timeout; t > 0 && !need_flush; t -= sleeptime) {
 			MT_sleep_ms(sleeptime);
 			if (GDKexiting())
 				return;
-		}
-		/* check if we have a shared logger as well */
-		if (create_shared_logger) {
-			/* get the shared transactions drift */
-			shared_transactions_drift = shared_logger_funcs.get_transaction_drift();
-#ifdef STORE_DEBUG
-	fprintf(stderr, "#store_manager shared_transactions_drift is " LLFMT "\n", shared_transactions_drift);
-#endif
-			if (shared_transactions_drift == -1) {
-				GDKfatal("shared write-ahead log last transaction read failure");
-			}
 		}
 
 		MT_lock_set(&bs_lock);
@@ -2165,7 +2115,7 @@ store_manager(void)
 			MT_lock_unset(&bs_lock);
 			return;
 		}
-		if ((!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
+		if (!need_flush && logger_funcs.changes() < 1000000) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
@@ -2175,29 +2125,6 @@ store_manager(void)
 			if (GDKexiting())
 				return;
 			MT_sleep_ms(sleeptime);
-			MT_lock_set(&bs_lock);
-		}
-
-		if (create_shared_logger) {
-			/* (re)load data from shared write-ahead log */
-			res = shared_logger_funcs.reload();
-			if (res != LOG_OK) {
-				MT_lock_unset(&bs_lock);
-				GDKfatal("shared write-ahead log loading failure");
-			}
-			/* destroy all global transactions
-			 * we will re-load the new later */
-			sql_trans_destroy(gtrans);
-			destroy_spare_transactions();
-
-			/* re-set the store_oid */
-			store_oid = 0;
-			/* reload the store and the global transactions */
-			MT_lock_unset(&bs_lock);
-			res = store_load();
-			if (res < 0) {
-				GDKfatal("shared write-ahead log store re-load failure");
-			}
 			MT_lock_set(&bs_lock);
 		}
 
@@ -2211,7 +2138,7 @@ store_manager(void)
 
 		MT_lock_unset(&bs_lock);
 		if (logging && res == LOG_OK) {
-			res = logger_funcs.cleanup(keep_persisted_log_files);
+			res = logger_funcs.cleanup();
 		}
 
 		MT_lock_set(&bs_lock);
