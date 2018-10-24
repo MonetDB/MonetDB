@@ -2113,17 +2113,6 @@ BATassertProps(BAT *b)
 	assert(b->tseqbase <= oid_nil);
 	/* only oid/void columns can be dense */
 	assert(is_oid_nil(b->tseqbase) || b->ttype == TYPE_oid || b->ttype == TYPE_void);
-	if (!is_oid_nil(b->tseqbase)) {
-		/* dense implies sorted and key */
-		assert(b->tsorted);
-		assert(b->tkey);
-		assert(b->tnonil);
-		if (b->ttype == TYPE_oid && b->batCount > 0) {
-			/* tseqbase must correspond to actual value */
-			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
-		}
-		assert(b->tseqbase + b->batCount <= GDK_oid_max);
-	}
 	/* a column cannot both have and not have NILs */
 	assert(!b->tnil || !b->tnonil);
 	if (b->ttype == TYPE_void) {
@@ -2135,9 +2124,25 @@ BATassertProps(BAT *b)
 			assert(BATcount(b) <= 1 || !b->tkey);
 			assert(b->trevsorted);
 		} else {
+			assert(b->tseqbase + b->batCount <= GDK_oid_max);
 			assert(BATcount(b) == 0 || !b->tnil);
 			assert(BATcount(b) <= 1 || !b->trevsorted);
 			assert(b->tkey);
+			assert(b->tnonil);
+		}
+		return;
+	}
+	if (BATtdense(b)) {
+		assert(b->tseqbase + b->batCount <= GDK_oid_max);
+		assert(b->ttype == TYPE_oid);
+		assert(b->tsorted);
+		assert(b->tkey);
+		assert(b->tnonil);
+		if ((q = b->batCount) != 0) {
+			const oid *o = (const oid *) Tloc(b, 0);
+			assert(*o == b->tseqbase);
+			for (p = 1; p < q; p++)
+				assert(o[p - 1] + 1 == o[p]);
 		}
 		return;
 	}
@@ -2220,7 +2225,6 @@ BATassertProps(BAT *b)
 					assert(!b->tsorted || cmp <= 0);
 					assert(!b->trevsorted || cmp >= 0);
 					assert(!b->tkey || cmp != 0);
-					assert(is_oid_nil(b->tseqbase) || * (oid *) prev + 1 == * (oid *) valp);
 				}
 				if (cmpnil) {
 					cmp = cmpf(valp, nilp);
