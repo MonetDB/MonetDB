@@ -3229,12 +3229,11 @@ SQLall(ptr ret, const bat *bid)
 		BUN q, r;
 		int (*ocmp) (const void *, const void *);
 		BATiter bi = bat_iterator(b);
-		q = 0;
 		r = BUNlast(b);
-		p = BUNtail(bi, q);
+		p = BUNtail(bi, 0);
 		ocmp = ATOMcompare(b->ttype);
-		for( ; (q+1) < r; q++) {
-			const void *c = BUNtail(bi, q+1);
+		for (q = 1; q < r; q++) {
+			const void *c = BUNtail(bi, q);
 			if (ocmp(p, c) != 0) {
 				p = ATOMnilptr(b->ttype);
 				break;
