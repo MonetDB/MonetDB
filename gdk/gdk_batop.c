@@ -1260,8 +1260,12 @@ BATordered_rev(BAT *b)
 
 	if (b == NULL)
 		return false;
+	if (BATcount(b) <= 1)
+		return true;
 	if (b->ttype == TYPE_void)
 		return is_oid_nil(b->tseqbase);
+	if (BATtdense(b))
+		return false;
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		BATiter bi = bat_iterator(b);

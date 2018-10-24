@@ -3219,6 +3219,12 @@ SQLall(ptr ret, const bat *bid)
 	c = BATcount(b);
 	if (c == 0) {
 		p = ATOMnilptr(b->ttype);
+	} else if (c == 1 || (b->tsorted && b->trevsorted)) {
+		BATiter bi = bat_iterator(b);
+		p = BUNtail(bi, 0);
+	} else if (b->tkey
+		   || (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
+		p = ATOMnilptr(b->ttype);
 	} else {
 		BUN q, r;
 		int (*ocmp) (const void *, const void *);
