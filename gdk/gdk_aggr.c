@@ -2621,6 +2621,7 @@ BATmin(BAT *b, void *aggr)
 	PROPrec *prop;
 	const void *res;
 	size_t s;
+	BATiter bi;
 
 	if (!ATOMlinear(b->ttype)) {
 		GDKerror("BATmin: non-linear type");
@@ -2632,7 +2633,6 @@ BATmin(BAT *b, void *aggr)
 		res = VALptr(&prop->v);
 	} else {
 		oid pos;
-		BATiter bi;
 		BAT *pb = NULL;
 
 		if (BATcheckorderidx(b) ||
@@ -2715,6 +2715,7 @@ BATmax(BAT *b, void *aggr)
 	PROPrec *prop;
 	const void *res;
 	size_t s;
+	BATiter bi;
 
 	if (!ATOMlinear(b->ttype)) {
 		GDKerror("BATmax: non-linear type");
@@ -2726,7 +2727,6 @@ BATmax(BAT *b, void *aggr)
 		res = VALptr(&prop->v);
 	} else {
 		oid pos;
-		BATiter bi;
 		BAT *pb = NULL;
 
 		if (BATcheckorderidx(b) ||
