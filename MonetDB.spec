@@ -107,6 +107,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
+BugURL: https://bugs.monetdb.org/
 Source: https://www.monetdb.org/downloads/sources/Aug2018-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
