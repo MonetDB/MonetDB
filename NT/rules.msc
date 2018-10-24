@@ -245,6 +245,7 @@ MV=copy
 DEL=del
 EDITBIN=editbin /nologo
 NATIVE_WIN32 = 1
+WIN32 = 1
 
 # we can't use the Windows utility find since it prints the file name
 # we could use the Unix utility grep, but we can also use the Windows
@@ -418,6 +419,11 @@ create_winconfig_conds_new_py:
 	$(ECHO) NATIVE_WIN32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
 	$(ECHO) NATIVE_WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
+!IFDEF WIN32
+	$(ECHO) WIN32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) WIN32_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF NOT_WIN32
 	$(ECHO) NOT_WIN32_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
