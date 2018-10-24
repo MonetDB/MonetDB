@@ -310,9 +310,11 @@ int yydebug=1;
 	opt_constraint_name
 	non_reserved_word
 	ident
+	calc_ident
 	authorization_identifier
 	func_ident
 	restricted_ident
+	calc_restricted_ident
 	column
 	authid
 	grantee
@@ -5346,7 +5348,7 @@ column:			ident ;
 
 authid: 		restricted_ident ;
 
-restricted_ident:
+calc_restricted_ident:
     IDENT	{ $$ = $1; }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
@@ -5355,7 +5357,20 @@ restricted_ident:
  |  RANK	{ $$ = $1; }	/* without '(' */
  ;
 
-ident:
+restricted_ident:
+	calc_restricted_ident
+	{
+		$$ = $1;
+		if (!$1 || _strlen($1) == 0) {
+			char *msg = sql_message(SQLSTATE(42000) "An identifier cannot be empty");
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		}
+	}
+ ;
+
+calc_ident:
     IDENT	{ $$ = $1; }
  |  aTYPE	{ $$ = $1; }
  |  FILTER_FUNC	{ $$ = $1; }
@@ -5364,6 +5379,19 @@ ident:
  |  AGGR2	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
+ ;
+
+ident:
+	calc_ident
+	{
+		$$ = $1;
+		if (!$1 || _strlen($1) == 0) {
+			char *msg = sql_message(SQLSTATE(42000) "An identifier cannot be empty");
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		}
+	}
  ;
 
 non_reserved_word: 
