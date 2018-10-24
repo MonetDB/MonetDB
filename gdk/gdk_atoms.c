@@ -1864,20 +1864,17 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 #if SIZEOF_OID == SIZEOF_INT
 		.atomNull = (ptr) &int_nil,
+		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
 #else
 		.atomNull = (ptr) &lng_nil,
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,
 		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,
 		.atomRead = (void *(*)(void *, stream *, size_t)) voidRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) voidWrite,
-#if SIZEOF_OID == SIZEOF_INT
-		.atomCmp = (int (*)(const void *, const void *)) intCmp,
-		.atomHash = (BUN (*)(const void *)) intHash,
-#else
-		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
-		.atomHash = (BUN (*)(const void *)) lngHash,
-#endif
 	},
 	[TYPE_bit] = {
 		.name = "bit",
@@ -1948,31 +1945,25 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	[TYPE_oid] = {
 		.name = "oid",
-#if SIZEOF_OID == SIZEOF_INT
-		.storage = TYPE_int,
-#else
-		.storage = TYPE_lng,
-#endif
 		.linear = true,
 		.size = sizeof(oid),
 #if SIZEOF_OID == SIZEOF_INT
+		.storage = TYPE_int,
 		.atomNull = (ptr) &int_nil,
-#else
-		.atomNull = (ptr) &lng_nil,
-#endif
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,
-		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,
-#if SIZEOF_OID == SIZEOF_INT
 		.atomRead = (void *(*)(void *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
 #else
+		.storage = TYPE_lng,
+		.atomNull = (ptr) &lng_nil,
 		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,
 	},
 	[TYPE_ptr] = {
 		.name = "ptr",
