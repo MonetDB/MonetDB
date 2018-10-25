@@ -81,7 +81,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	if (b == NULL)
 		return 0;
 	bi = bat_iterator(b);
-	id = * (const int *) BUNtail(bi, o - b->hseqbase);
+	id = * (const int *) BUNtloc(bi, o - b->hseqbase);
 	bat_destroy(b);
 	/* store id of schema "sys" */
 	*sid = id;
@@ -123,7 +123,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	if (b == NULL)
 		return 0;
 	bi = bat_iterator(b);
-	id = * (const int *) BUNtail(bi, o - b->hseqbase);
+	id = * (const int *) BUNtloc(bi, o - b->hseqbase);
 	bat_destroy(b);
 	return id;
 }
@@ -200,7 +200,7 @@ bl_postversion(void *lg)
 			return GDK_FAIL;
 		}
 		for (p = 0, q = BUNlast(te); p < q; p++) {
-			int eclass = *(int*)BUNtail(bi, p);
+			int eclass = *(int*)BUNtloc(bi, p);
 
 			if (eclass == EC_GEOM)		/* old EC_EXTERNAL */
 				eclass++;		/* shift up */
@@ -232,7 +232,7 @@ bl_postversion(void *lg)
 				return GDK_FAIL;
 			}
 			for (p = 0, q = BUNlast(te); p < q; p++) {
-				bte inout = (bte) *(bit*)BUNtail(bi, p);
+				bte inout = (bte) *(bit*)BUNtloc(bi, p);
 
 				if (BUNappend(tne, &inout, true) != GDK_SUCCEED) {
 					bat_destroy(tne);
@@ -257,7 +257,7 @@ bl_postversion(void *lg)
 			return GDK_FAIL;
 		bi = bat_iterator(b);
 		for (p = 0, q = BUNlast(b); p < q; p++) {
-			char *t = toLower(BUNtail(bi, p));
+			char *t = toLower(BUNtvar(bi, p));
 			if (t == NULL) {
 				bat_destroy(b);
 				return GDK_FAIL;
@@ -277,7 +277,7 @@ bl_postversion(void *lg)
 				return GDK_FAIL;
 			bi = bat_iterator(b);
 			for (p = 0, q = BUNlast(b); p < q; p++) {
-				char *t = toLower(BUNtail(bi, p));
+				char *t = toLower(BUNtvar(bi, p));
 				if (t == NULL) {
 					bat_destroy(b);
 					return GDK_FAIL;
@@ -476,9 +476,9 @@ bl_postversion(void *lg)
 				BUN p;
 				BUN q = *(const oid *) BUNtail(csi, 0) - cn->hseqbase;
 				for (p = 0; p < q; p++) {
-					if (BUNappend(cnn, BUNtail(cni, p), false) != GDK_SUCCEED ||
-					    BUNappend(cdn, BUNtail(cdi, p), false) != GDK_SUCCEED ||
-					    BUNappend(ctn, BUNtail(cti, p), false) != GDK_SUCCEED) {
+					if (BUNappend(cnn, BUNtvar(cni, p), false) != GDK_SUCCEED ||
+					    BUNappend(cdn, BUNtloc(cdi, p), false) != GDK_SUCCEED ||
+					    BUNappend(ctn, BUNtloc(cti, p), false) != GDK_SUCCEED) {
 						goto bailout1;
 					}
 				}
@@ -490,9 +490,9 @@ bl_postversion(void *lg)
 				}
 				q = *(const oid *) BUNtail(csi, 1) - cn->hseqbase;
 				for (p++; p < q; p++) {
-					if (BUNappend(cnn, BUNtail(cni, p), false) != GDK_SUCCEED ||
-					    BUNappend(cdn, BUNtail(cdi, p), false) != GDK_SUCCEED ||
-					    BUNappend(ctn, BUNtail(cti, p), false) != GDK_SUCCEED) {
+					if (BUNappend(cnn, BUNtvar(cni, p), false) != GDK_SUCCEED ||
+					    BUNappend(cdn, BUNtloc(cdi, p), false) != GDK_SUCCEED ||
+					    BUNappend(ctn, BUNtloc(cti, p), false) != GDK_SUCCEED) {
 						goto bailout1;
 					}
 				}
@@ -503,9 +503,9 @@ bl_postversion(void *lg)
 				}
 				q = BATcount(cn);
 				for (p++; p < q; p++) {
-					if (BUNappend(cnn, BUNtail(cni, p), false) != GDK_SUCCEED ||
-					    BUNappend(cdn, BUNtail(cdi, p), false) != GDK_SUCCEED ||
-					    BUNappend(ctn, BUNtail(cti, p), false) != GDK_SUCCEED) {
+					if (BUNappend(cnn, BUNtvar(cni, p), false) != GDK_SUCCEED ||
+					    BUNappend(cdn, BUNtloc(cdi, p), false) != GDK_SUCCEED ||
+					    BUNappend(ctn, BUNtloc(cti, p), false) != GDK_SUCCEED) {
 						goto bailout1;
 					}
 				}

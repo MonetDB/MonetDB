@@ -536,7 +536,7 @@ takeOid(oid id, str *val)
 	for (i = depth - 1; i >= 0; i--) {
 		BATiter bi = bat_iterator(tokenBAT[i].val);
 		biidx = bat_iterator(tokenBAT[i].idx);
-		parts[i] = (str) BUNtail(bi, id);
+		parts[i] = (str) BUNtvar(bi, id);
 		id = *(oid *) BUNtail(biidx, id);
 		lngth += strlen(parts[i]);
 	}

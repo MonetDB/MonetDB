@@ -515,7 +515,7 @@ subrids_next(subrids *r)
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
 		BATiter ri = bat_iterator((BAT *) r->rids);
-		int id = *(int*)BUNtail(ii, r->pos);
+		int id = *(int*)BUNtloc(ii, r->pos);
 		if (id == r->id)
 			return *(oid*)BUNtail(ri, r->pos++);
 	}
@@ -527,7 +527,7 @@ subrids_nextid(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		r->id = *(int*)BUNtail(ii, r->pos);
+		r->id = *(int*)BUNtloc(ii, r->pos);
 		return r->id;
 	}
 	return -1;

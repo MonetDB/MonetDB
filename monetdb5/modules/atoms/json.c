@@ -1866,7 +1866,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		}
 
 		if (bk) {
-			nme = (str) BUNtail(bki, i);
+			nme = (str) BUNtvar(bki, i);
 			l = strlen(nme);
 			while (l + 3 > lim - len)
 				lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
@@ -2042,11 +2042,11 @@ JSONgroupStr(str *ret, const bat *bid)
 
 		switch (b->ttype) {
 		case TYPE_str:
-			t = (const char *) BUNtail(bi, p);
+			t = (const char *) BUNtvar(bi, p);
 			nil = (strNil(t));
 			break;
 		case TYPE_dbl:
-			val = (const double *) BUNtail(bi, p);
+			val = (const double *) BUNtloc(bi, p);
 			nil = is_dbl_nil(*val);
 			if (!nil)
 				snprintf(temp, sizeof(temp), "%f", *val);
@@ -2175,10 +2175,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			for (p = 0, q = BATcount(g); p < q; p++) {
 				switch (b->ttype) {
 				case TYPE_str:
-					v = (const char *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
+					v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] : p + mapoff));
 					break;
 				case TYPE_dbl:
-					val = (const double *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
+					val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] : p + mapoff));
 					if (!is_dbl_nil(*val)) {
 						snprintf(temp, sizeof(temp), "%f", *val);
 						v = (const char *) temp;
@@ -2264,10 +2264,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				continue;
 			switch (b->ttype) {
 			case TYPE_str:
-				v = (const char *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
+				v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] : p + mapoff));
 				break;
 			case TYPE_dbl:
-				val = (const double *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
+				val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] : p + mapoff));
 				if (!is_dbl_nil(*val)) {
 					snprintf(temp, sizeof(temp), "%f", *val);
 					v = (const char *) temp;
@@ -2320,10 +2320,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		for (p = 0, q = p + BATcount(b); p < q; p++) {
 			switch (b->ttype) {
 			case TYPE_str:
-				v = (const char *) BUNtail(bi, p);
+				v = (const char *) BUNtvar(bi, p);
 				break;
 			case TYPE_dbl:
-				val = (const double *) BUNtail(bi, p);
+				val = (const double *) BUNtloc(bi, p);
 				if (!is_dbl_nil(*val)) {
 					snprintf(temp, sizeof(temp), "%f", *val);
 					v = (const char *) temp;

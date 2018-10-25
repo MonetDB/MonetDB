@@ -841,7 +841,7 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(sep->ttype == TYPE_str) { /* the separator bat */
 			next_argument = 3;
 			bi = bat_iterator(sep);
-			separator = BUNtail(bi, 0);
+			separator = BUNtvar(bi, 0);
 		}
 	}
 

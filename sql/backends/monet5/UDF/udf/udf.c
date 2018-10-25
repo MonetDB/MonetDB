@@ -99,7 +99,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	BATloop(src, p, q) {
 		char *tr = NULL, *err = NULL;
 
-		const char *t = (const char *) BUNtail(li, p);
+		const char *t = (const char *) BUNtvar(li, p);
 
 		/* revert tail value */
 		err = UDFreverse_(&tr, t);

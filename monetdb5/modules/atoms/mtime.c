@@ -1511,7 +1511,7 @@ MTIMEtimezone(tzone *ret, const char * const *name)
 	if ((p = BUNfnd(timezone_name, *name)) == BUN_NONE)
 		throw(MAL, "mtime.setTimezone", "unknown timezone");
 	tzi = bat_iterator(timezone_def);
-	z = (tzone *) BUNtail(tzi, p);
+	z = (tzone *) BUNtloc(tzi, p);
 	if ((s = tzone_set_local(z)) != MAL_SUCCEED)
 		return s;
 	*ret = *z;

@@ -3387,14 +3387,14 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 		if (cand == NULL) {
 			if(nonil) {
 				BATloop(b,p,q) {
-					s = BUNtail(bi, p);
+					s = BUNtvar(bi, p);
 					next_length = strlen(s);
 					single_length += next_length + separator_length;
 					single_oid = p;
 				}
 			} else {
 				BATloop(b,p,q) {
-					s = BUNtail(bi, p);
+					s = BUNtvar(bi, p);
 					if (*s != '\200') {
 						next_length = strlen(s);
 						single_length += next_length + separator_length;
@@ -3413,7 +3413,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					goto finish;
 				}
 				BATloop(b,p,q){
-					s = BUNtail(bi, p);
+					s = BUNtvar(bi, p);
 					next_length = strlen(s);
 					memcpy(single_str + offset, s, next_length);
 					offset += next_length;
@@ -3460,7 +3460,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					i = *cand++ - seqb;
 					if (i >= end)
 						break;
-					s = BUNtail(bi, i);
+					s = BUNtvar(bi, i);
 					next_length = strlen(s);
 					single_length += next_length + separator_length;
 					single_oid = i;
@@ -3470,7 +3470,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					i = *cand++ - seqb;
 					if (i >= end)
 						break;
-					s = BUNtail(bi, i);
+					s = BUNtvar(bi, i);
 					if (*s != '\200') {
 						next_length = strlen(s);
 						single_length += next_length + separator_length;
@@ -3493,7 +3493,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 					i = *cand++ - seqb;
 					if (i >= end)
 						break;
-					s = BUNtail(bi, i);
+					s = BUNtvar(bi, i);
 					next_length = strlen(s);
 					memcpy(single_str + offset, s, next_length);
 					offset += next_length;
@@ -3532,7 +3532,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
 					gid = gids ? gids[i] - min : (oid) i;
 					if (lastoid[gid] != BUN_NONE) {
-						s = BUNtail(bi, i);
+						s = BUNtvar(bi, i);
 						if (*s != '\200') {
 							next_length = strlen(s);
 							lengths[gid] += next_length + separator_length;
@@ -3558,7 +3558,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
 					gid = gids ? gids[i] - min : (oid) i;
 					if (lastoid[gid] < BUN_NONE) {
-						s = BUNtail(bi, i);
+						s = BUNtvar(bi, i);
 						next_length = strlen(s);
 						memcpy(astrings[gid] + lengths[gid], s, next_length);
 						lengths[gid] += next_length;
@@ -3592,7 +3592,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
 					gid = gids ? gids[i] - min : (oid) i;
 					if (lastoid[gid] != BUN_NONE) {
-						s = BUNtail(bi, i);
+						s = BUNtvar(bi, i);
 						if (*s != '\200') {
 							next_length = strlen(s);
 							lengths[gid] += next_length;
@@ -3622,7 +3622,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
 					gid = gids ? gids[i] - min : (oid) i;
 					if (lastoid[gid] < BUN_NONE) {
-						s = BUNtail(bi, i);
+						s = BUNtvar(bi, i);
 						next_length = strlen(s);
 						memcpy(astrings[gid] + lengths[gid], s, next_length);
 						lengths[gid] += next_length;

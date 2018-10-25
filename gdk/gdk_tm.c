@@ -229,10 +229,8 @@ TMsubcommit(BAT *b)
 	/* collect the list and save the new bats outside any
 	 * locking */
 	BATloop(b, p, q) {
-		bat bid = BBPindex((str) BUNtail(bi, p));
+		bat bid = BBPindex((str) BUNtvar(bi, p));
 
-		if (bid < 0)
-			bid = -bid;
 		if (bid)
 			subcommit[cnt++] = bid;
 	}

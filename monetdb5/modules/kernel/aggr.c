@@ -997,7 +997,7 @@ AGGRsubstr_group_concatcand(bat *retval, const bat *bid, const bat *gid, const b
 		if (sep == NULL)                                                         \
 			throw(MAL, MAL_FUNC, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);        \
 		bi = bat_iterator(sep);                                                  \
-		separator = BUNtail(bi, 0);                                              \
+		separator = BUNtvar(bi, 0);                                              \
 	} while (0);
 
 mal_export str AGGRstr_group_concat_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid);

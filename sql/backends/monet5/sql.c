@@ -814,7 +814,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		str sname = BUNtail(bi, 0);
+		str sname = BUNtvar(bi, 0);
 		lng l;
 
 		if (!s || strcmp(s->base.name, sname) != 0) {
@@ -2011,9 +2011,9 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
-		tblname = BUNtail(itertbl,o);
-		colname = BUNtail(iteratr,o);
-		tpename = BUNtail(itertpe,o);
+		tblname = BUNtvar(itertbl,o);
+		colname = BUNtvar(iteratr,o);
+		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor ");
@@ -2148,9 +2148,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i = 13; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
-		tblname = BUNtail(itertbl,o);
-		colname = BUNtail(iteratr,o);
-		tpename = BUNtail(itertpe,o);
+		tblname = BUNtvar(itertbl,o);
+		colname = BUNtvar(iteratr,o);
+		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg= createException(MAL,"sql.resultset",SQLSTATE(HY005) "Cannot access column descriptor");
@@ -2257,9 +2257,9 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
-		tblname = BUNtail(itertbl,o);
-		colname = BUNtail(iteratr,o);
-		tpename = BUNtail(itertpe,o);
+		tblname = BUNtvar(itertbl,o);
+		colname = BUNtvar(iteratr,o);
+		tpename = BUNtvar(itertpe,o);
 
 		v = getArgReference(stk, pci, i);
 		mtype = getArgType(mb, pci, i);
@@ -2390,9 +2390,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	scaledigits = (int*) Tloc(scale,0);
 
 	for( i = 13; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
-		tblname = BUNtail(itertbl,o);
-		colname = BUNtail(iteratr,o);
-		tpename = BUNtail(itertpe,o);
+		tblname = BUNtvar(itertbl,o);
+		colname = BUNtvar(iteratr,o);
+		tpename = BUNtvar(itertpe,o);
 
 		v = getArgReference(stk, pci, i);
 		mtype = getArgType(mb, pci, i);
@@ -3535,7 +3535,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	}
 	s = sin(radians(*theta));
 	BATloop(b, p, q) {
-		dbl d = *(dbl *) BUNtail(bi, p);
+		dbl d = *(dbl *) BUNtloc(bi, p);
 		if (is_dbl_nil(d))
 			r = dbl_nil;
 		else if (fabs(d) + *theta > 89.9)
@@ -4599,7 +4599,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (cnt1 > 512)
 										cnt1 = cnt2 = 512;
 									BATloop(bn, p, q) {
-										str s = BUNtail(bi, p);
+										str s = BUNtvar(bi, p);
 										if (s != NULL && strcmp(s, str_nil))
 											sum += (int) strlen(s);
 										if (--cnt1 <= 0)
@@ -4711,7 +4711,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										if (cnt1 > 512)
 											cnt1 = cnt2 = 512;
 										BATloop(bn, p, q) {
-											str s = BUNtail(bi, p);
+											str s = BUNtvar(bi, p);
 											if (s != NULL && strcmp(s, str_nil))
 												sum += (int) strlen(s);
 											if (--cnt1 <= 0)

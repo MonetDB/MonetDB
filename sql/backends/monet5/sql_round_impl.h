@@ -383,7 +383,7 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		TYPE r;
 		msg = str_2dec(&r, &v, d, sc);
 		if (msg) {
@@ -427,7 +427,7 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 		throw(SQL, "sql.num_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		TYPE r;
 		msg = str_2num(&r, &v, len);
 		if (msg) {
