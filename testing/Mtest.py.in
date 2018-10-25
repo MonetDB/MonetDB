@@ -2221,42 +2221,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
 
         t0 = time.time()
         tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests)
-        if tres == 'segfault':
-            # rename core file, if any -- might have to check
-            # /proc/sys/kernel/core_pattern in the future but hopefully
-            # this value is kept sane
-            corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'core')
-            if not os.path.exists(corefile):
-                corefile = None
-            # braindead engineers at RedHat decided to change the core
-            # dump name on their own (disregarding kernel settings)
-            if corefile is None:
-                corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'core.*')
-                corefile = glob.glob(corefile)
-                if corefile is not None and len(corefile) > 0 and os.path.exists(corefile[0]):
-                    corefile = corefile[0]
-                else:
-                    corefile = None
-            # FreeBSD uses processname.core
-            if corefile is None:
-                corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'mserver5.core')
-                if not os.path.exists(corefile):
-                    corefile = None
-            if corefile is not None:
-                try:
-                    os.rename(corefile, os.path.join(env['GDK_DBFARM'],
-                        env['TSTDB'], 'core-%s' % (TST)))
-                except:
-                    corefile = None
-            # leave a marker for TestTools
-            if corefile is None:
-                try:
-                    f = open(os.path.join(env['GDK_DBFARM'], env['TSTDB'],
-                        'crash-%s' % (TST)))
-                    f.write("crash without core file, or renaming it failed\n")
-                    f.close()
-                except:
-                    pass
 
         t1 = time.time()
         TX = t1 - t0
