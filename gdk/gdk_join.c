@@ -2538,7 +2538,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 	BUN rstart, rend, rcnt;
 	const oid *rcand = NULL, *rcandend = NULL;
 	oid lo, ro;
-	BATiter ri, sri;
+	BATiter ri;
 	BUN rb;
 	BUN rl, rh;
 	oid rseq;
@@ -2643,7 +2643,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 		hsh = r->thash;
 	}
 	ri = bat_iterator(r);
-	sri = bat_iterator(sr);
 	t = ATOMbasetype(r->ttype);
 
 	if (lcand) {
@@ -2662,7 +2661,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
 				     rb != HASHnil(hsh);
 				     rb = HASHgetlink(hsh, rb)) {
-					ro = * (const oid *) BUNtail(sri, rb);
+					ro = BUNtoid(sr, rb);
 					if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0)
 						continue;
 					if (only_misses) {
@@ -2793,7 +2792,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 					for (rb = HASHget(hsh, HASHprobe(hsh, v));
 					     rb != HASHnil(hsh);
 					     rb = HASHgetlink(hsh, rb)) {
-						ro = * (const oid *) BUNtail(sri, rb);
+						ro = BUNtoid(sr, rb);
 						if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0)
 							continue;
 						if (only_misses) {

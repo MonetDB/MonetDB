@@ -1807,7 +1807,7 @@ static str
 JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 {
 	BAT *bo = 0, *bk = 0, *bv;
-	BATiter boi, bki, bvi;
+	BATiter bki, bvi;
 	int tpe;
 	char *row, *val = 0, *nme = 0;
 	BUN i, cnt;
@@ -1851,17 +1851,15 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	row[1] = 0;
 	len = 1;
 	if (id) {
-		boi = bat_iterator(bo);
-		o = *(oid *) BUNtail(boi, 0);
+		o = BUNtoid(bo, 0);
 	}
 
 	for (i = 0; i < cnt; i++) {
 		if (id && bk) {
-			p = BUNtail(boi, i);
-			if (*(oid *) p != o) {
+			if (BUNtoid(bo, i) != o) {
 				snprintf(row + len, lim - len, ", ");
 				len += 2;
-				o = *(oid *) p;
+				o = BUNtoid(bo, i);
 			}
 		}
 

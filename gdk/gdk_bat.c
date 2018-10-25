@@ -1339,11 +1339,10 @@ gdk_return
 void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
 {
 	BUN r, s;
-	BATiter uii = bat_iterator(p);
 	BATiter uvi = bat_iterator(u);
 
 	BATloop(u, r, s) {
-		oid updid = *(oid *) BUNtail(uii, r);
+		oid updid = BUNtoid(p, r);
 		const void *val = BUNtail(uvi, r);
 
 		if (void_inplace(b, updid, val, force) != GDK_SUCCEED)

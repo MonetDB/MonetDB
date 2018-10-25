@@ -705,7 +705,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		if (b->ttype != TYPE_void && b->tsorted && BATtdense(b) &&
 		    (BATtdense(n) == 0 ||
 		     cand != NULL ||
-		     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, start))) {
+		     1 + *(oid *) BUNtloc(bi, last) != BUNtoid(n, start))) {
 			b->tseqbase = oid_nil;
 		}
 		b->tnonil &= n->tnonil;
@@ -2050,7 +2050,6 @@ BATmergecand(BAT *a, BAT *b)
 	const oid *restrict ap, *restrict bp, *ape, *bpe;
 	oid *restrict p, i;
 	oid af, al, bf, bl;
-	BATiter ai, bi;
 	bit ad, bd;
 
 	BATcheck(a, "BATmergecand", NULL);
@@ -2072,12 +2071,10 @@ BATmergecand(BAT *a, BAT *b)
 		return COLcopy(a, a->ttype, false, TRANSIENT);
 	}
 	/* we can return a if a fully covers b (and v.v) */
-	ai = bat_iterator(a);
-	bi = bat_iterator(b);
-	af = *(oid*) BUNtail(ai, 0);
-	bf = *(oid*) BUNtail(bi, 0);
-	al = *(oid*) BUNtail(ai, BUNlast(a) - 1);
-	bl = *(oid*) BUNtail(bi, BUNlast(b) - 1);
+	af = BUNtoid(a, 0);
+	bf = BUNtoid(b, 0);
+	al = BUNtoid(a, BUNlast(a) - 1);
+	bl = BUNtoid(b, BUNlast(b) - 1);
 	ad = (af + BATcount(a) - 1 == al); /* i.e., dense */
 	bd = (bf + BATcount(b) - 1 == bl); /* i.e., dense */
 	if (ad && bd) {
@@ -2181,7 +2178,6 @@ BATintersectcand(BAT *a, BAT *b)
 	const oid *restrict ap, *restrict bp, *ape, *bpe;
 	oid *restrict p;
 	oid af, al, bf, bl;
-	BATiter ai, bi;
 
 	BATcheck(a, "BATintersectcand", NULL);
 	BATcheck(b, "BATintersectcand", NULL);
@@ -2198,12 +2194,10 @@ BATintersectcand(BAT *a, BAT *b)
 		return newdensecand(0, 0);
 	}
 
-	ai = bat_iterator(a);
-	bi = bat_iterator(b);
-	af = *(oid*) BUNtail(ai, 0);
-	bf = *(oid*) BUNtail(bi, 0);
-	al = *(oid*) BUNtail(ai, BUNlast(a) - 1);
-	bl = *(oid*) BUNtail(bi, BUNlast(b) - 1);
+	af = BUNtoid(a, 0);
+	bf = BUNtoid(b, 0);
+	al = BUNtoid(a, BUNlast(a) - 1);
+	bl = BUNtoid(b, BUNlast(b) - 1);
 
 	if ((af + BATcount(a) - 1 == al) && (bf + BATcount(b) - 1 == bl)) {
 		/* both lists are VOID */

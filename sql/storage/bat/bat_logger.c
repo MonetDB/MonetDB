@@ -74,8 +74,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 		bat_destroy(s);
 		return 0;
 	}
-	bi = bat_iterator(s);
-	o = * (const oid *) BUNtail(bi, 0);
+	o = BUNtoid(s, 0);
 	bat_destroy(s);
 	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "id"), 0, 0));
 	if (b == NULL)
@@ -115,8 +114,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 		return 0;
 	}
 
-	bi = bat_iterator(s);
-	o = * (const oid *) BUNtail(bi, 0);
+	o = BUNtoid(s, 0);
 	bat_destroy(s);
 
 	b = temp_descriptor(logger_find_bat(lg, N("sys", "_tables", "id"), 0, 0));
@@ -469,12 +467,11 @@ bl_postversion(void *lg)
 					bat_destroy(cn);
 					return GDK_FAIL;
 				}
-				BATiter csi = bat_iterator(cs);
 				BATiter cti = bat_iterator(ct);
 				BATiter cdi = bat_iterator(cd);
 				BATiter cni = bat_iterator(cn);
 				BUN p;
-				BUN q = *(const oid *) BUNtail(csi, 0) - cn->hseqbase;
+				BUN q = BUNtoid(cs, 0) - cn->hseqbase;
 				for (p = 0; p < q; p++) {
 					if (BUNappend(cnn, BUNtvar(cni, p), false) != GDK_SUCCEED ||
 					    BUNappend(cdn, BUNtloc(cdi, p), false) != GDK_SUCCEED ||
@@ -488,7 +485,7 @@ bl_postversion(void *lg)
 				    BUNappend(ctn, "smallint", false) != GDK_SUCCEED) {
 					goto bailout1;
 				}
-				q = *(const oid *) BUNtail(csi, 1) - cn->hseqbase;
+				q = BUNtoid(cs, 1) - cn->hseqbase;
 				for (p++; p < q; p++) {
 					if (BUNappend(cnn, BUNtvar(cni, p), false) != GDK_SUCCEED ||
 					    BUNappend(cdn, BUNtloc(cdi, p), false) != GDK_SUCCEED ||
@@ -1020,14 +1017,13 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 		 (val = va_arg(va, const void *)) != NULL);
 	va_end(va);
 
-	BATiter bi = bat_iterator(s);
-	oid o = * (const oid *) BUNtail(bi, 0);
+	oid o = BUNtoid(s, 0);
 	bat_destroy(s);
 
 	b = temp_descriptor(logger_find_bat(bat_logger, tabnam, 0, 0));
 	if (b == NULL)
 		return NULL;
-	bi = bat_iterator(b);
+	BATiter bi = bat_iterator(b);
 	val = BUNtail(bi, o - b->hseqbase);
 	size_t sz = ATOMlen(b->ttype, val);
 	void *res = GDKmalloc(sz);
