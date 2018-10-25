@@ -265,9 +265,6 @@ unescape_str(str *retval, str s)
  * Utilities
  */
 
-#define LF 10
-#define CR 13
-
 static char
 x2c(char *what)
 {
