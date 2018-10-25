@@ -1,8 +1,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-#include<Psapi.h>
 #include<Windows.h>
+#include<Psapi.h>
 
 #include<mal.h>
 #include<mal_exception.h>
