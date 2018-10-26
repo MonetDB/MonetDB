@@ -29,7 +29,7 @@ Ready.
 #insert into testme values ('');
 [ 1	]
 #select group_concat(b) from testme;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % clob # type
 % 0 # length
@@ -37,7 +37,7 @@ Ready.
 #insert into testme values ('one'), ('two'), ('three');
 [ 3	]
 #select group_concat(b) from testme;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % clob # type
 % 14 # length
@@ -45,7 +45,7 @@ Ready.
 #insert into testme values ('');
 [ 1	]
 #select group_concat(b) from testme;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % clob # type
 % 15 # length
@@ -54,7 +54,7 @@ Ready.
 #insert into othertest values (1, 'test'), (1, ''), (1, 'me');
 [ 3	]
 #select a, group_concat(b) from othertest group by a;
-% sys.othertest,	sys.L4 # table_name
+% sys.othertest,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	8 # length
@@ -62,7 +62,7 @@ Ready.
 #insert into othertest values (2, 'other'), (2, 'test'), (2, '');
 [ 3	]
 #select a, group_concat(b) from othertest group by a;
-% sys.othertest,	sys.L4 # table_name
+% sys.othertest,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	11 # length
@@ -71,7 +71,7 @@ Ready.
 #insert into othertest values (3, ''), (2, 'i want to see the commas'), (3, ''), (4, '');
 [ 4	]
 #select a, group_concat(b) from othertest group by a;
-% sys.othertest,	sys.L4 # table_name
+% sys.othertest,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
 % 1,	36 # length
