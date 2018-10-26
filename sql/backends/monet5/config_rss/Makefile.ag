@@ -7,7 +7,8 @@
 INCLUDES = ../../../include \
 	   ../../../common \
 	   ../../../../monetdb5/mal \
-	   ../../../../monetdb5/modules/mal
+	   ../../../../monetdb5/modules/mal \
+	   ../../../../gdk
 
 lib__test_rss = {
 	MODULE
