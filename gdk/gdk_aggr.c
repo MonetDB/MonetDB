@@ -3359,7 +3359,7 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 static gdk_return
 concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN end, BUN ngrp, const oid *restrict cand,
-			   const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils, const str separator,
+			   const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils, const char *separator,
 			   const char *func, BUN *has_nils)
 {
 	oid gid;
@@ -3686,7 +3686,7 @@ finish:
 }
 
 gdk_return
-BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, const str separator)
+BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, const char *separator)
 {
 	oid min, max;
 	BUN ngrp, start, end;
@@ -3716,7 +3716,7 @@ BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_er
 }
 
 BAT *
-BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool abort_on_error, const str separator)
+BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool abort_on_error, const char *separator)
 {
 	const oid *restrict gids;
 	BAT *bn = NULL;
