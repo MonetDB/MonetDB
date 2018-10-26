@@ -41,7 +41,7 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 		throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		char *v = (char *) BUNtail(bi, p);
+		char *v = (char *) BUNtvar(bi, p);
 		union {
 			lng l;
 			timestamp r;
@@ -88,7 +88,7 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		timestamp *v = (timestamp *) BUNtail(bi, p);
+		timestamp *v = (timestamp *) BUNtloc(bi, p);
 		union {
 			lng l;
 			timestamp r;
@@ -168,7 +168,7 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 		throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		char *v = (char *) BUNtail(bi, p);
+		char *v = (char *) BUNtvar(bi, p);
 		union {
 			lng l;
 			daytime r;
@@ -215,7 +215,7 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		daytime *v = (daytime *) BUNtail(bi, p);
+		daytime *v = (daytime *) BUNtloc(bi, p);
 		union {
 			lng l;
 			daytime r;

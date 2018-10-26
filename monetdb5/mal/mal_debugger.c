@@ -1364,7 +1364,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 			p = BUNfnd(b[0], props);
 			if (p != BUN_NONE) {
 				BATiter bi = bat_iterator(b[1]);
-				mnstr_printf(f, " %s\n", (str) BUNtail(bi, p));
+				mnstr_printf(f, " %s\n", (str) BUNtvar(bi, p));
 			} else {
 				mnstr_printf(f, " not found\n");
 			}

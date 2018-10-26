@@ -343,7 +343,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	li = bat_iterator(input);											\
 																		\
 	BATloop(input, p, q) {												\
-		str t = (str) BUNtail(li, p);									\
+		str t = (str) BUNtvar(li, p);									\
 		str r, msg;														\
 																		\
 		if ((msg = transform_fn(&r, &t)) != MAL_SUCCEED) {				\
@@ -406,7 +406,7 @@ seq_length_bat(bat * ret, bat * bid)
 	li = bat_iterator(input);
 	cur_out = (int *) Tloc(output, 0);
 	BATloop(input, p, q) {
-		cur_in = (str) BUNtail(li, p);
+		cur_in = (str) BUNtvar(li, p);
 		if ((msg = seq_length(cur_out, &cur_in)) != MAL_SUCCEED) {
 			BBPunfix(input->batCacheid);
 			BBPunfix(output->batCacheid);
@@ -468,9 +468,9 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	cigar_it = bat_iterator(cigars);
 
 	while(seq < seq_end) {
-		str seq_val = (str) BUNtail(seq_it, seq);
-		int * pos_val = (int *) BUNtail(pos_it, pos);
-		str cigar_val = (str) BUNtail(cigar_it, cigar);
+		str seq_val = (str) BUNtvar(seq_it, seq);
+		int * pos_val = (int *) BUNtloc(pos_it, pos);
+		str cigar_val = (str) BUNtvar(cigar_it, cigar);
 		str r;
 		str msg;
 

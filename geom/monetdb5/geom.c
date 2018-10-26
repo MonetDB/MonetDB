@@ -3288,7 +3288,7 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 			throw(MAL, "geom.MakeLine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	aWKB = (wkb *) BUNtail(inBAT_iter, 0);
+	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
@@ -3298,14 +3298,14 @@ wkbMakeLineAggr(wkb **outWKB, bat *inBAT_id)
 		}
 		return MAL_SUCCEED;
 	}
-	bWKB = (wkb *) BUNtail(inBAT_iter, 1);
+	bWKB = (wkb *) BUNtvar(inBAT_iter, 1);
 	//create the first line using the first two geometries
 	err = wkbMakeLine(outWKB, &aWKB, &bWKB);
 
 	// add one more segment for each following row
 	for (i = 2; err == MAL_SUCCEED && i < BATcount(inBAT); i++) {
 		aWKB = *outWKB;
-		bWKB = (wkb *) BUNtail(inBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(inBAT_iter, i);
 		*outWKB = NULL;
 
 		err = wkbMakeLine(outWKB, &aWKB, &bWKB);
@@ -4239,7 +4239,7 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
 
-	aWKB = (wkb *) BUNtail(inBAT_iter, 0);
+	aWKB = (wkb *) BUNtvar(inBAT_iter, 0);
 	if (BATcount(inBAT) == 1) {
 		err = wkbFromWKB(outWKB, &aWKB);
 		BBPunfix(inBAT->batCacheid);
@@ -4249,12 +4249,12 @@ wkbUnionAggr(wkb **outWKB, bat *inBAT_id)
 		}
 		return MAL_SUCCEED;
 	}
-	bWKB = (wkb *) BUNtail(inBAT_iter, 1);
+	bWKB = (wkb *) BUNtvar(inBAT_iter, 1);
 	//create the first union using the first two geometries
 	err = wkbUnion(outWKB, &aWKB, &bWKB);
 	for (i = 2; err == MAL_SUCCEED && i < BATcount(inBAT); i++) {
 		aWKB = *outWKB;
-		bWKB = (wkb *) BUNtail(inBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(inBAT_iter, i);
 		*outWKB = NULL;
 
 		err = wkbUnion(outWKB, &aWKB, &bWKB);

@@ -1229,6 +1229,15 @@ typedef var_t stridx_t;
 #define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), Tbase((bi).b)+BUNtvaroff(bi,p))
 #define BUNtail(bi,p)	((bi).b->ttype?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
+/* return the oid value at BUN position p from the (v)oid bat b
+ * works with any TYPE_void or TYPE_oid bat */
+#define BUNtoid(b,p)	(assert(ATOMtype((b)->ttype) == TYPE_oid),	\
+			 (is_oid_nil((b)->tseqbase)			\
+			  ? ((b)->ttype == TYPE_void			\
+			     ? (void) (p), oid_nil			\
+			     : ((const oid *) (b)->T.heap.base)[p])	\
+			  : (oid) ((b)->tseqbase + (BUN) (p))))
+
 static inline BATiter
 bat_iterator(BAT *b)
 {

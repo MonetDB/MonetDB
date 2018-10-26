@@ -195,7 +195,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		data = PyArray_DATA((PyArrayObject *)vararray);
 		BATloop(b, p, q)
 		{
-			blob *t = (blob *)BUNtail(li, p);
+			blob *t = (blob *)BUNtvar(li, p);
 			if (t->nitems == ~(size_t)0) {
 				data[p] = Py_None;
 				Py_INCREF(Py_None);
@@ -235,7 +235,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				BATloop(b, p, q)
 				{
-					char *t = (char *)BUNtail(li, p);
+					char *t = (char *)BUNtvar(li, p);
 					for (; *t != 0; t++) {
 						if (*t & 0x80) {
 							unicode = true;
@@ -264,7 +264,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							}
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtail(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
 									if (strcmp(t, str_nil) == 0) {
@@ -294,7 +294,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtail(li, p);
+								char *t = (char *)BUNtvar(li, p);
 								if (strcmp(t, str_nil) == 0) {
 									// str_nil isn't a valid UTF-8 character
 									// (it's 0x80), so we can't decode it as
@@ -329,7 +329,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							}
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtail(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
 									pyptrs[offset] = PyString_FromString(t);
@@ -342,7 +342,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtail(li, p);
+								char *t = (char *)BUNtvar(li, p);
 								obj = PyString_FromString(t);
 								if (obj == NULL) {
 									msg = createException(
@@ -369,7 +369,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 					dbl *data = (dbl *)PyArray_DATA((PyArrayObject *)vararray);
 					BATloop(b, p, q)
 					{
-						const hge *t = (const hge *)BUNtail(li, p);
+						const hge *t = (const hge *)BUNtloc(li, p);
 						data[j++] = (dbl)*t;
 					}
 				}

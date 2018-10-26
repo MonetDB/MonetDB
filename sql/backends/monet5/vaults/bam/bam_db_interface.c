@@ -268,7 +268,7 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 
 		li = bat_iterator(b);
 		BATloop(b, p, q) {
-			lng t = *(lng *) BUNtail(li, p);
+			lng t = *(lng *) BUNtloc(li, p);
 			max_file_id = MAX(max_file_id, t);
 		}
 		BBPunfix(b->batCacheid);
@@ -512,7 +512,7 @@ drop_file(Client cntxt, str descr, lng file_id, sht dbschema)
 	 * if(b_file_id != NULL) {
 	 * iter_file_id = bat_iterator(b_file_id);
 	 * BATloop(b_file_id, p, q) {
-	 * lng t = *(lng *)BUNtail(iter_file_id, p);
+	 * lng t = *(lng *)BUNtloc(iter_file_id, p);
 	 * if(t == file_id) { */
 	/* We found the right file id, store oid */
 	/*tuple_oid = *(oid *)BUNhead(iter_file_id, q);

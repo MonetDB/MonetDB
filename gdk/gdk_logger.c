@@ -580,11 +580,10 @@ la_bat_updates(logger *lg, logaction *la)
 		}
 	} else if (la->type == LOG_UPDATE) {
 		BATiter vi = bat_iterator(la->b);
-		BATiter ii = bat_iterator(la->uid);
 		BUN p, q;
 
 		BATloop(la->b, p, q) {
-			oid h = * (const oid *) BUNtail(ii, p);
+			oid h = BUNtoid(la->uid, p);
 			const void *t = BUNtail(vi, p);
 
 			if (h < b->hseqbase || h >= b->hseqbase + BATcount(b)) {
@@ -1363,7 +1362,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		if (debug & 1)
 			fprintf(stderr, "#commit new %s (%d) %s\n",
 				BBPname(col), col,
-				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
+				(list_bid == catalog_bid) ? BUNtvar(iter, p) : "snapshot");
 		assert(col);
 		n[i++] = col;
 	}
@@ -2643,7 +2642,6 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 	lg->changes += l.nr;
 
 	if (l.nr) {
-		BATiter ii = bat_iterator(uid);
 		BATiter vi = bat_iterator(uval);
 		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[TYPE_oid].atomWrite;
 		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[uval->ttype].atomWrite;
@@ -2654,10 +2652,10 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 			return GDK_FAIL;
 
 		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
-			const void *id = BUNtail(ii, p);
+			const oid id = BUNtoid(uid, p);
 			const void *val = BUNtail(vi, p);
 
-			ok = wh(id, lg->log, 1);
+			ok = wh(&id, lg->log, 1);
 			if (ok == GDK_SUCCEED)
 				ok = wt(val, lg->log, 1);
 		}

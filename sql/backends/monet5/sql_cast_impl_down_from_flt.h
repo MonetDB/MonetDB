@@ -85,7 +85,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		TP1 *v = (TP1 *) BUNtail(bi, p);
+		TP1 *v = (TP1 *) BUNtloc(bi, p);
 		TP2 r;
 		msg = FUN(,TP1,_num2dec_,TP2) (&r, v, d2, s2);
 		if (msg) {

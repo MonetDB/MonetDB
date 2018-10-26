@@ -189,8 +189,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	}
 	va_end(va);
 	if (BATcount(s) == 1) {
-		BATiter ri = bat_iterator(s);
-		rid = *(oid *) BUNtail(ri, 0);
+		rid = BUNtoid(s, 0);
 	}
 	bat_destroy(s);
 	return rid;
@@ -372,8 +371,7 @@ static oid
 rids_next(rids *r)
 {
 	if (r->cur < BATcount((BAT *) r->data)) {
-		BATiter bi = bat_iterator((BAT *) r->data);
-		return *(oid*)BUNtail(bi, r->cur++);
+		return BUNtoid((BAT *) r->data, r->cur++);
 	}
 	return oid_nil;
 }
@@ -514,10 +512,9 @@ subrids_next(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		BATiter ri = bat_iterator((BAT *) r->rids);
-		int id = *(int*)BUNtail(ii, r->pos);
+		int id = *(int*)BUNtloc(ii, r->pos);
 		if (id == r->id)
-			return *(oid*)BUNtail(ri, r->pos++);
+			return BUNtoid((BAT *) r->rids, r->pos++);
 	}
 	return oid_nil;
 }
@@ -527,7 +524,7 @@ subrids_nextid(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		r->id = *(int*)BUNtail(ii, r->pos);
+		r->id = *(int*)BUNtloc(ii, r->pos);
 		return r->id;
 	}
 	return -1;

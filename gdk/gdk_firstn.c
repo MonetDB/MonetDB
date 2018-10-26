@@ -57,9 +57,9 @@
  * in-place.  We start off with a heap containing the first N elements
  * of the input, and then go over the rest of the input, replacing the
  * root of the heap with a new value if appropriate (if the new value
- * is among the first-N seen so far).  The siftup macro then restores
- * the heap property. */
-#define siftup(OPER, START, SWAP)					\
+ * is among the first-N seen so far).  The siftdown macro then
+ * restores the heap property. */
+#define siftdown(OPER, START, SWAP)					\
 	do {								\
 		pos = (START);						\
 		childpos = (pos << 1) + 1;				\
@@ -84,7 +84,7 @@
 #define heapify(OPER, SWAP)				\
 	do {						\
 		for (i = n / 2; i > 0; i--)		\
-			siftup(OPER, i - 1, SWAP);	\
+			siftdown(OPER, i - 1, SWAP);	\
 	} while (0)
 
 #define LTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase),	\
@@ -123,7 +123,7 @@
 			if (OP(vals[i - b->hseqbase],			\
 				 vals[oids[0] - b->hseqbase])) {	\
 				oids[0] = i;				\
-				siftup(OP##fix, 0, SWAP1);		\
+				siftdown(OP##fix, 0, SWAP1);		\
 			}						\
 		}							\
 	} while (0)
@@ -148,7 +148,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, oid *lastp)
 	const oid *restrict cand, *candend;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
-	/* variables used in heapify/siftup macros */
+	/* variables used in heapify/siftdown macros */
 	oid item;
 	BUN pos, childpos;
 
@@ -274,7 +274,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, oid *lastp)
 				if (cmp(BUNtail(bi, i - b->hseqbase),
 					BUNtail(bi, oids[0] - b->hseqbase)) < 0) {
 					oids[0] = i;
-					siftup(LTany, 0, SWAP1);
+					siftdown(LTany, 0, SWAP1);
 				}
 			}
 			break;
@@ -311,7 +311,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, oid *lastp)
 				if (cmp(BUNtail(bi, i - b->hseqbase),
 					BUNtail(bi, oids[0] - b->hseqbase)) > 0) {
 					oids[0] = i;
-					siftup(GTany, 0, SWAP1);
+					siftdown(GTany, 0, SWAP1);
 				}
 			}
 			break;
@@ -390,7 +390,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, bool asc, oid *lastp)
 				vals[oids[0] - b->hseqbase]))) {	\
 				oids[0] = i;				\
 				goids[0] = gv[ci];			\
-				siftup(OP##fixgrp, 0, SWAP2);		\
+				siftdown(OP##fixgrp, 0, SWAP2);		\
 			}						\
 			ci++;						\
 		}							\
@@ -418,7 +418,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, oid *lastp
 	const oid *restrict cand, *candend;
 	int tpe = b->ttype;
 	int (*cmp)(const void *, const void *);
-	/* variables used in heapify/siftup macros */
+	/* variables used in heapify/siftdown macros */
 	oid item;
 	BUN pos, childpos;
 
@@ -502,7 +502,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, oid *lastp
 					&& i < oids[0]) -- always false */) {
 					oids[0] = i;
 					goids[0] = gv[ci];
-					siftup(LTvoidgrp, 0, SWAP2);
+					siftdown(LTvoidgrp, 0, SWAP2);
 				}
 				ci++;
 			}
@@ -515,7 +515,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, oid *lastp
 				        /* && i > oids[0] -- always true */)) {
 					oids[0] = i;
 					goids[0] = gv[ci];
-					siftup(GTvoidgrp, 0, SWAP2);
+					siftdown(GTvoidgrp, 0, SWAP2);
 				}
 				ci++;
 			}
@@ -555,7 +555,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, oid *lastp
 					 BUNtail(bi, oids[0] - b->hseqbase)) < 0)) {
 					oids[0] = i;
 					goids[0] = gv[ci];
-					siftup(LTanygrp, 0, SWAP2);
+					siftdown(LTanygrp, 0, SWAP2);
 				}
 				ci++;
 			}
@@ -596,7 +596,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, bool asc, oid *lastp
 					 BUNtail(bi, oids[0] - b->hseqbase)) > 0)) {
 					oids[0] = i;
 					goids[0] = gv[ci];
-					siftup(GTanygrp, 0, SWAP2);
+					siftdown(GTanygrp, 0, SWAP2);
 				}
 				ci++;
 			}

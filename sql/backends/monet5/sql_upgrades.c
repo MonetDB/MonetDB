@@ -1578,8 +1578,8 @@ sql_update_remote_tables(Client c, mvc *sql)
 
 			/* This is probably not correct: offsets? */
 			for (BUN i = 0; i < cnt; i++) {
-				v = BUNtail(tbl_it, i);
-				u = BUNtail(uri_it, i);
+				v = BUNtvar(tbl_it, i);
+				u = BUNtvar(uri_it, i);
 				if (v == NULL || (*cmp)(v, nil) == 0 ||
 				    u == NULL || (*cmp)(u, nil) == 0) {
 					BBPunfix(tbl->batCacheid);

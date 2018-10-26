@@ -648,7 +648,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 					pci = pushStr(cntxt->wlc, pci, col);
 				}
 				k++;
-				pci = pushStr(cntxt->wlc, pci ,(str) BUNtail(bi,p));
+				pci = pushStr(cntxt->wlc, pci ,(str) BUNtvar(bi,p));
 		} }
 		break;
 	default:
@@ -815,7 +815,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = pushStr(cntxt->wlc, p, tbl);
 				p = pushStr(cntxt->wlc, p, col);
 				p = pushOid(cntxt->wlc, p, (ol? *ol++ : o++));
-				p = pushStr(cntxt->wlc, p , BUNtail(bi,x));
+				p = pushStr(cntxt->wlc, p , BUNtvar(bi,x));
 				k++;
 		} }
 		/* fall through */

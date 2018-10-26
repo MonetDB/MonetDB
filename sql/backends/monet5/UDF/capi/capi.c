@@ -1030,7 +1030,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
-				char *t = (char *)BUNtail(li, p);
+				char *t = (char *)BUNtvar(li, p);
 				if (strcmp(t, str_nil) == 0) {
 					bat_data->data[j] = NULL;
 				} else {
@@ -1130,7 +1130,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
-				blob *t = (blob *)BUNtail(li, p);
+				blob *t = (blob *)BUNtvar(li, p);
 				if (t->nitems == ~(size_t)0) {
 					bat_data->data[j].size = ~(size_t) 0;
 					bat_data->data[j].data = NULL;
