@@ -731,7 +731,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 SQLanalytics_args(BAT **r, BAT **b, BAT **s, BAT **e, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-				  InstrPtr pci, int rtype, const str mod, const str err)
+				  InstrPtr pci, int rtype, const char* mod, const char* err)
 {
 	*r = *b = *s = *e = NULL;
 
@@ -772,7 +772,7 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **s, BAT **e, Client cntxt, MalBlkPtr mb
 }
 
 static str
-do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
+do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
 			   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
 	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL;
@@ -1008,7 +1008,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while(0);
 
 static str /* the variable m is used to fix the multiplier */
-do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str desc,
+do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* desc,
 			gdk_return (*func)(BAT *, BAT *, BAT *, BUN, const void* restrict, int))
 {
 	int tp1, tp2, tp3, base = 2;
@@ -1119,7 +1119,7 @@ SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* we will keep the ordering bat here although is not needed, but maybe later with varied sized windows */
 static str
-SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
+SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
 				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
 	BAT *r, *b, *s, *e;
@@ -1234,7 +1234,7 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str op, const str err,
+do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
 					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int))
 {
 	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL;
