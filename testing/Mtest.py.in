@@ -1896,7 +1896,7 @@ def CategorizeResult(TST, SockTime, outmissing, errmissing):
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
+    if e in (F_ERROR, F_MISSING) and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
         e = SockTime
     return o, e
 
