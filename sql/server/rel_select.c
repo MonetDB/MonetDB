@@ -4543,7 +4543,7 @@ calculate_window_bound(mvc *sql, sql_rel *p, int token, symbol *bound, sql_exp *
 			if(bclass != EC_DEC && iet->type->eclass == EC_DEC)
 				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
 			if(bclass != EC_SEC && iet->type->eclass == EC_TIME)
-				return sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", subtype2string(iet), bound_desc);
+				return sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", subtype2string(iet), bound_desc);
 			if(EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass))
 				return sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", subtype2string(iet), bound_desc);
 		}
