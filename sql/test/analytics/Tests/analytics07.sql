@@ -9,14 +9,29 @@ insert into testintervals2 values (timestamp '2018-01-02 08:00:10', -1), (timest
 
 start transaction;
 
-select count(*) over (order by aa range between interval '0' month preceding and interval '0' month following) from testintervals;
-select count(*) over (order by aa range between interval '1' month preceding and interval '1' month following) from testintervals;
-select count(*) over (order by aa desc range between interval '1' month preceding and interval '1' month following) from testintervals;
+select count(*) over (order by aa range between interval '0' month preceding and interval '0' month following),
+       count(*) over (order by aa range between interval '1' month preceding and interval '1' month following),
+       count(*) over (order by aa range between interval '2' month preceding and interval '1' month following),
+       count(*) over (order by aa range between interval '0' second preceding and interval '0' second following),
+       count(*) over (order by aa range between interval '2629800' second preceding and interval '2629800' second following) from testintervals;
 
-select count(*) over (order by aa range between interval '2629800' second preceding and interval '2629800' second following) from testintervals;
+select count(*) over (order by aa desc range between interval '0' month preceding and interval '0' month following),
+       count(*) over (order by aa desc range between interval '1' month preceding and interval '1' month following),
+       count(*) over (order by aa desc range between interval '2' month preceding and interval '1' month following),
+       count(*) over (order by aa desc range between interval '0' second preceding and interval '0' second following),
+       count(*) over (order by aa desc range between interval '2629800' second preceding and interval '2629800' second following) from testintervals;
 
-select count(*) over (order by aa range between interval '1' month preceding and interval '1' month following) from testintervals2;
-select count(*) over (order by aa desc range between interval '1' month preceding and interval '1' month following) from testintervals2;
+select count(*) over (order by aa range between interval '0' month preceding and interval '0' month following),
+       count(*) over (order by aa range between interval '1' month preceding and interval '1' month following),
+       count(*) over (order by aa range between interval '2' month preceding and interval '1' month following),
+       count(*) over (order by aa range between interval '0' second preceding and interval '0' second following),
+       count(*) over (order by aa range between interval '2629800' second preceding and interval '2629800' second following) from testintervals2;
+
+select count(*) over (order by aa desc range between interval '0' month preceding and interval '0' month following),
+       count(*) over (order by aa desc range between interval '1' month preceding and interval '1' month following),
+       count(*) over (order by aa desc range between interval '2' month preceding and interval '1' month following),
+       count(*) over (order by aa desc range between interval '0' second preceding and interval '0' second following),
+       count(*) over (order by aa desc range between interval '2629800' second preceding and interval '2629800' second following) from testintervals2;
 
 rollback;
 

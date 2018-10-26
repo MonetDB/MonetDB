@@ -39,6 +39,7 @@
 		MTIME_SUB_WITH_CHECK(X, Y, date, R, date_max, goto calc_overflow); \
 		R = MABSOLUTE(R); \
 		R /= 30; /* days in a month */ \
+		R += (X != Y); /* in a '0' month interval, the rows don't belong to the same frame if the difference is less than one month */ \
 	} while (0)
 
 #define TIMESTAMP_RANGE_MONTH_DIFF(X,Y,R) \
@@ -46,6 +47,7 @@
 		MTIME_SUB_WITH_CHECK(X.days, Y.days, date, R, date_max, goto calc_overflow); \
 		R = MABSOLUTE(R); \
 		R /= 30; /* days in a month */ \
+		R += (X.days != Y.days); /* same reason as above */ \
 	} while (0)
 
 #define DAYTIME_RANGE_SEC_DIFF(X,Y,R) \
@@ -74,7 +76,7 @@
 		TPE1 v;                              \
 		TPE2 rlimit, calc;                   \
 		for(; k<i; k++, rb++) {              \
-			rlimit = (TPE2) LIMIT - 1;       \
+			rlimit = (TPE2) LIMIT;           \
 			v = bp[k];                       \
 			if(TPE1##_isnil(v)) {            \
 				for(j=k; ; j--) {            \
@@ -102,7 +104,7 @@
 		TPE1 v;                              \
 		TPE2 rlimit, calc;                   \
 		for(; k<i; k++, rb++) {              \
-			rlimit = (TPE2) LIMIT - 1;       \
+			rlimit = (TPE2) LIMIT;           \
 			v = bp[k];                       \
 			if(TPE1##_isnil(v)) {            \
 				for(j=k+1; j<i; j++) {       \
