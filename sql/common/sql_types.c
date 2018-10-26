@@ -1287,7 +1287,8 @@ sql_create_func3(sql_allocator *sa, const char *name, const char *mod, const cha
 }
 
 static sql_func *
-sql_create_analytic(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *res, int fix_scale)
+sql_create_analytic(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *res,
+					int fix_scale)
 {
 	list *l = sa_list(sa);
 	sql_arg *sres;
@@ -1298,7 +1299,8 @@ sql_create_analytic(sql_allocator *sa, const char *name, const char *mod, const 
 }
 
 static sql_func *
-sql_create_analytic2(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale)
+sql_create_analytic2(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1,
+					 sql_type *tpe2, sql_type *res, int fix_scale)
 {
 	list *l = sa_list(sa);
 	sql_arg *sres;
@@ -1310,7 +1312,8 @@ sql_create_analytic2(sql_allocator *sa, const char *name, const char *mod, const
 }
 
 static sql_func *
-sql_create_analytic3(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
+sql_create_analytic3(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1,
+					 sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
 {
 	list *l = sa_list(sa);
 	sql_arg *sres;
@@ -1323,7 +1326,8 @@ sql_create_analytic3(sql_allocator *sa, const char *name, const char *mod, const
 }
 
 static sql_func *
-sql_create_analytic4(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int fix_scale)
+sql_create_analytic4(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1,
+					 sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int fix_scale)
 {
 	list *l = sa_list(sa);
 	sql_arg *sres;
@@ -1338,7 +1342,8 @@ sql_create_analytic4(sql_allocator *sa, const char *name, const char *mod, const
 
 /* TODO maybe doing a varsized C function would be better :) */
 static sql_func *
-sql_create_analytic5(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *tpe5, sql_type *res, int fix_scale)
+sql_create_analytic5(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1,
+					 sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *tpe5, sql_type *res, int fix_scale)
 {
 	list *l = sa_list(sa);
 	sql_arg *sres;
@@ -1353,7 +1358,8 @@ sql_create_analytic5(sql_allocator *sa, const char *name, const char *mod, const
 }
 
 static sql_func *
-sql_create_analytic6(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *tpe5, sql_type *tpe6, sql_type *res, int fix_scale)
+sql_create_analytic6(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2,
+					 sql_type *tpe3, sql_type *tpe4, sql_type *tpe5, sql_type *tpe6, sql_type *res, int fix_scale)
 {
 	list *l = sa_list(sa);
 	sql_arg *sres;
@@ -1369,7 +1375,8 @@ sql_create_analytic6(sql_allocator *sa, const char *name, const char *mod, const
 }
 
 static sql_func *
-sql_create_func4(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int fix_scale)
+sql_create_func4(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2,
+				 sql_type *tpe3, sql_type *tpe4, sql_type *res, int fix_scale)
 {
 	list *l = sa_list(sa);
 	sql_arg *sres;
@@ -1643,81 +1650,43 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "diff", "sql", "diff", ANY, BIT, SCALE_NONE);
 	sql_create_analytic2(sa, "diff", "sql", "diff", BIT, ANY, BIT, SCALE_NONE);
 
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, BTE, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, BTE, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, SHT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, SHT, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, INT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, INT, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, LNG, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, LNG, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, FLT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, FLT, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, DBL, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, DBL, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, BTE, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, BTE, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, SHT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, SHT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, INT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, INT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, LNG, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, LNG, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, FLT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, FLT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, DBL, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, DBL, LNG, SCALE_NONE);
 
 	t = decimals; /* BTE */
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
 	t++; /* SHT */
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
 	t++; /* INT */
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
 	t++; /* LNG */
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
 #ifdef HAVE_HGE
 	if (have_hge) {
 		t++; /* HGE */
-		sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-		sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
+		sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
+		sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
 	}
 #endif
 
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, MONINT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, MONINT, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_preceding_bound", "sql", "window_preceding_bound", ANY, INT, INT, LNG, SECINT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_preceding_bound", "sql", "window_preceding_bound", BIT, ANY, INT, INT, LNG, SECINT, LNG, SCALE_NONE);
-
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, BTE, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, BTE, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, SHT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, SHT, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, INT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, INT, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, LNG, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, LNG, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, FLT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, FLT, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, DBL, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, DBL, LNG, SCALE_NONE);
-
-	t = decimals; /* BTE */
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	t++; /* SHT */
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	t++; /* INT */
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	t++; /* LNG */
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-#ifdef HAVE_HGE
-	if (have_hge) {
-		t++; /* HGE */
-		sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-		sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, *(t), LNG, SCALE_NONE);
-	}
-#endif
-
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, MONINT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, MONINT, LNG, SCALE_NONE);
-	sql_create_analytic5(sa, "window_following_bound", "sql", "window_following_bound", ANY, INT, INT, LNG, SECINT, LNG, SCALE_NONE);
-	sql_create_analytic6(sa, "window_following_bound", "sql", "window_following_bound", BIT, ANY, INT, INT, LNG, SECINT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, MONINT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, MONINT, LNG, SCALE_NONE);
+	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, SECINT, LNG, SCALE_NONE);
+	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, SECINT, LNG, SCALE_NONE);
 
 	sql_create_analytic3(sa, "rank", "sql", "rank", ANY, BIT, BIT, INT, SCALE_NONE);
 	sql_create_analytic3(sa, "dense_rank", "sql", "dense_rank", ANY, BIT, BIT, INT, SCALE_NONE);

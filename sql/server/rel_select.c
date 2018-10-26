@@ -4427,16 +4427,30 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 	return exps;
 }
 
+static int
+generate_window_bound(int sql_token, bool first_half)
+{
+	switch(sql_token) {
+		case SQL_PRECEDING:
+			return first_half ? BOUND_FIRST_HALF_PRECEDING : BOUND_SECOND_HALF_PRECEDING;
+		case SQL_FOLLOWING:
+			return first_half ? BOUND_FIRST_HALF_FOLLOWING : BOUND_SECOND_HALF_FOLLOWING;
+		case SQL_CURRENT_ROW:
+			return first_half ? CURRENT_ROW_PRECEDING : CURRENT_ROW_FOLLOWING;
+		default:
+			assert(0);
+	}
+	return 0;
+}
+
 /* window functions */
 static sql_exp*
 generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e,
-						sql_exp *start, sql_exp *fend, int frame_type, int excl, int t1, int t2)
+						   sql_exp *start, sql_exp *fend, int frame_type, int excl, int t1, int t2)
 {
 	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs1 = sa_list(sql->sa), *targs2 = sa_list(sql->sa);
 	sql_subfunc *dc1, *dc2;
-	sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng");
-	const char* f1 = (t1 != SQL_FOLLOWING) ? "window_preceding_bound" : "window_following_bound";
-	const char* f2 = (t2 != SQL_PRECEDING) ? "window_following_bound" : "window_preceding_bound";
+	sql_subtype *it = sql_bind_localtype("int");
 
 	if(pe) {
 		append(targs1, exp_subtype(pe));
@@ -4452,23 +4466,21 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 	append(targs2, it);
 	append(targs1, it);
 	append(targs2, it);
-	append(targs1, lon);
-	append(targs2, lon);
+	append(targs1, it);
+	append(targs2, it);
 	append(targs1, exp_subtype(start));
 	append(targs2, exp_subtype(fend));
 
-	dc1 = sql_bind_func_(sql->sa, s, f1, targs1, F_ANALYTIC);
-	dc2 = sql_bind_func_(sql->sa, s, f2, targs2, F_ANALYTIC);
-	if (!dc1)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", f1);
-	if (!dc2)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function '%s' not found", f2);
+	dc1 = sql_bind_func_(sql->sa, s, "window_bound", targs1, F_ANALYTIC);
+	dc2 = sql_bind_func_(sql->sa, s, "window_bound", targs2, F_ANALYTIC);
+	if (!dc1 || !dc2)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'window_bound' not found");
 	append(rargs1, exp_atom_int(sql->sa, frame_type));
 	append(rargs2, exp_atom_int(sql->sa, frame_type));
+	append(rargs1, exp_atom_int(sql->sa, generate_window_bound(t1, true)));
+	append(rargs2, exp_atom_int(sql->sa, generate_window_bound(t2, false)));
 	append(rargs1, exp_atom_int(sql->sa, excl));
 	append(rargs2, exp_atom_int(sql->sa, excl));
-	append(rargs1, exp_atom_lng(sql->sa, 1));
-	append(rargs2, exp_atom_lng(sql->sa, 0));
 	append(rargs1, start);
 	append(rargs2, fend);
 
@@ -4833,7 +4845,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if(generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
 								   wstart->token, wend->token) == NULL)
 			return NULL;
-	} else if (supports_frames) { //for aggregations with no frame clause, we use the standard default values
+	} else if (supports_frames) { //for analytic functions with no frame clause, we use the standard default values
 		sql_exp *ie = obe ? obe->t->data : in;
 		sql_subtype *it = sql_bind_localtype("int"), *st = exp_subtype(ie);
 		unsigned char sclass = st->type->eclass;

@@ -94,6 +94,7 @@
 #define RD_UPD_VAL 3
 #define QUICK  4
 
+/* the following list of macros are used by rel_rankop function */
 #define UNBOUNDED_PRECEDING_BOUND 0
 #define UNBOUNDED_FOLLOWING_BOUND 1
 #define CURRENT_ROW_BOUND         2
@@ -104,7 +105,15 @@
 				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING  
 				             AND INTERVAL '1' MONTH FOLLOWING */
 #define FRAME_GROUPS 2
-#define FRAME_ALL 3 /* special case, aggregate over the entire partition */
+#define FRAME_ALL 3 /* special case of FRAME_RANGE, cover the entire partition */
+
+/* the following list of macros are used by SQLwindow_bound function */
+#define BOUND_FIRST_HALF_PRECEDING  0
+#define BOUND_FIRST_HALF_FOLLOWING  1
+#define BOUND_SECOND_HALF_PRECEDING 2
+#define BOUND_SECOND_HALF_FOLLOWING 3
+#define CURRENT_ROW_PRECEDING       4
+#define CURRENT_ROW_FOLLOWING       5
 
 #define EXCLUDE_NONE 0		/* nothing excluded (also the default) */
 #define EXCLUDE_CURRENT_ROW 1	/* exclude the current row */

@@ -73,47 +73,56 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	is_negative = vlimit->val.MEMBER < 0; \
 	limit = &vlimit->val.MEMBER; \
 
-static str
-doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool preceding, const str mod)
+str
+SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	bool has_partitions = (pci->argc > 6);
-	lng first_half = *getArgReference_lng(stk, pci, has_partitions ? 5 : 4);
 	str msg = MAL_SUCCEED;
+	bool preceding;
+	lng first_half;
+	int unit, bound, excl, part_offset = (pci->argc > 6);
+
+	if ((pci->argc != 6 && pci->argc != 7) || getArgType(mb, pci, part_offset + 2) != TYPE_int ||
+		getArgType(mb, pci, part_offset + 3) != TYPE_int || getArgType(mb, pci, part_offset + 4) != TYPE_int) {
+		throw(SQL, "sql.window_bound", SQLSTATE(42000) "Invalid arguments");
+	}
+
+	unit = *getArgReference_int(stk, pci, part_offset + 2);
+	bound = *getArgReference_int(stk, pci, part_offset + 3);
+	excl = *getArgReference_int(stk, pci, part_offset + 4);
+
+	assert(unit >= 0 && unit <= 3);
+	assert(bound >= 0 && bound <= 5);
+	assert(excl >= 0 && excl <= 2);
+	preceding = (bound % 2 == 0);
+	first_half = (bound < 2 || bound == 4);
 
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, has_partitions ? 2 : 1)), *p = NULL, *r, *l = NULL;
-		int unit = *getArgReference_int(stk, pci, has_partitions ? 3 : 2),
-			excl = *getArgReference_int(stk, pci, has_partitions ? 4 : 3),
-			limit_pos = has_partitions ? 6 : 5,
-			tp1 = getBatType(getArgType(mb, pci, has_partitions ? 2 : 1)),
-			tp2 = getArgType(mb, pci, limit_pos);
+		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 1)), *p = NULL, *r, *l = NULL;
+		int tp1 = getBatType(getArgType(mb, pci, part_offset + 1)), tp2 = getArgType(mb, pci, part_offset + 5);
 		void* limit = NULL;
 		bool is_negative = false, is_null = false, is_a_bat;
 		gdk_return gdk_code;
 
-		assert(unit >= 0 && unit <= 3);
-		assert(excl >= 0 && excl <= 2);
-
 		if (!b)
-			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
 
 		if (excl != 0) {
 			BBPunfix(b->batCacheid);
-			throw(SQL, mod, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
+			throw(SQL, "sql.window_bound", SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
 		}
 
 		is_a_bat = isaBatType(tp2);
 		if(is_a_bat)
 			tp2 = getBatType(tp2);
 
-		voidresultBAT(r, TYPE_lng, BATcount(b), b, mod);
-		if(is_a_bat) {
-			l = BATdescriptor(*getArgReference_bat(stk, pci, limit_pos));
+		voidresultBAT(r, TYPE_lng, BATcount(b), b, "sql.window_bound");
+		if(is_a_bat) { //SQL_CURRENT_ROW shall never fall in limit validation
+			l = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 5));
 			if (!l) {
 				BBPunfix(b->batCacheid);
-				throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 			switch (tp2) {
 				case TYPE_bte:
@@ -142,18 +151,18 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 				default: {
 					BBPunfix(b->batCacheid);
 					BBPunfix(l->batCacheid);
-					throw(SQL, mod, SQLSTATE(42000) "%s limit not available for %s", mod, ATOMname(tp2));
+					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit not available for %s", "sql.window_bound", ATOMname(tp2));
 				}
 			}
 			if(is_null || is_negative) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(l->batCacheid);
 				if(is_null)
-					throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-null", preceding ? "PRECEDING" : "FOLLOWING");
-				throw(SQL, mod, SQLSTATE(HY005) "All values on %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
+					throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-null", preceding ? "PRECEDING" : "FOLLOWING");
+				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
 			}
 		} else {
-			ValRecord *vlimit = &(stk)->stk[(pci)->argv[limit_pos]];
+			ValRecord *vlimit = &(stk)->stk[(pci)->argv[part_offset + 5]];
 
 			switch (tp2) {
 				case TYPE_bte:
@@ -181,24 +190,25 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 #endif
 				default: {
 					BBPunfix(b->batCacheid);
-					throw(SQL, mod, SQLSTATE(42000) "%s limit is not available for %s", mod, ATOMname(tp2));
+					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit is not available for %s", "sql.window_bound", ATOMname(tp2));
 				}
 			}
 			if(is_null)
-				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-null", preceding ? "PRECEDING" : "FOLLOWING");
+				throw(SQL, "sql.window_bound", SQLSTATE(42000) "The %s boundary must be non-null", preceding ? "PRECEDING" : "FOLLOWING");
 			if(is_negative)
-				throw(SQL, mod, SQLSTATE(42000) "The %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
+				throw(SQL, "sql.window_bound", SQLSTATE(42000) "The %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
 		}
-		if (has_partitions) {
+		if (part_offset) {
 			p = BATdescriptor(*getArgReference_bat(stk, pci, 1));
 			if (!p) {
 				if(l) BBPunfix(l->batCacheid);
 				BBPunfix(b->batCacheid);
-				throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
 			}
 		}
 
-		if((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && unit == 1) { //only for RANGE frame
+		//On RANGE frame, when "CURRENT ROW" is not specified, the ranges are calculated with SQL intervals in mind
+		if((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && unit == 1 && bound < 4) {
 			msg = MTIMEanalyticalrangebounds(r, b, p, l, limit, tp1, tp2, preceding, first_half);
 			if(msg == MAL_SUCCEED)
 				BBPkeepref(*res = r->batCacheid);
@@ -207,7 +217,7 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 			if(gdk_code == GDK_SUCCEED)
 				BBPkeepref(*res = r->batCacheid);
 			else
-				msg = createException(SQL, mod, GDK_EXCEPTION);
+				msg = createException(SQL, "sql.window_bound", GDK_EXCEPTION);
 		}
 		if(l) BBPunfix(l->batCacheid);
 		if(p) BBPunfix(p->batCacheid);
@@ -218,18 +228,6 @@ doSQLwindowbound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool p
 		*res = preceding ? -first_half : first_half;
 	}
 	return msg;
-}
-
-str
-SQLwindow_preceding_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return doSQLwindowbound(cntxt, mb, stk, pci, true, "sql.window_preceding_bound");
-}
-
-str
-SQLwindow_following_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return doSQLwindowbound(cntxt, mb, stk, pci, false, "sql.window_following_bound");
 }
 
 str 
