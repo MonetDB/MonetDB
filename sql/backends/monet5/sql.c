@@ -2769,6 +2769,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				while (buf[len - 1] != '\n' &&
 				       (len = mnstr_readline(ss, buf, sizeof(buf))) > 0)
 					;
+				/* read until flush marker */
+				while (mnstr_read(ss, buf, 1, sizeof(buf)) > 0)
+					;
 				return msg;
 			}
 		} else {
