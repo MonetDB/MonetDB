@@ -2759,13 +2759,16 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			msg = MAL_SUCCEED;
 			mnstr_flush(be->mvc->scanner.ws);
-			GDKfree(fn);
 			while (!be->mvc->scanner.rs->eof)
 				bstream_next(be->mvc->scanner.rs);
 			ss = be->mvc->scanner.rs->s;
 			char buf[80];
 			if ((len = mnstr_readline(ss, buf, sizeof(buf))) > 1) {
-				msg = createException(IO, "sql.copy_from", "%s", buf);
+				if (buf[0] == '!' && buf[6] == '!')
+					msg = createException(IO, "sql.copy_from", "%.7s%s: %s", buf, fn, buf+7);
+				else
+					msg = createException(IO, "sql.copy_from", "%s: %s", fn, buf);
+				GDKfree(fn);
 				while (buf[len - 1] != '\n' &&
 				       (len = mnstr_readline(ss, buf, sizeof(buf))) > 0)
 					;
@@ -2787,8 +2790,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(fn);
 				return msg;
 			}
-			GDKfree(fn);
 		}
+		GDKfree(fn);
 
 		if (fixed_widths && strcmp(fixed_widths, str_nil) != 0) {
 			size_t ncol = 0, current_width_entry = 0, i;
