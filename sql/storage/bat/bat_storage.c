@@ -2357,15 +2357,11 @@ gtr_minmax_col( sql_trans *tr, sql_column *c)
 	cur = temp_descriptor(cbat->bid);
 	if (cur == NULL)
 		return LOG_ERR;
-	if (BATgetprop(cur, GDK_MIN_VALUE)) {
-		bat_destroy(cur);
-		return ok;
-	}
-
+	/* make sure min and max values are stored in the BAT
+	 * properties (BATmin and BATmax store them there if they're
+	 * not already there, and if they are, they're quick) */
 	BATmin(cur, &val);
-	BATsetprop(cur, GDK_MIN_VALUE, cur->ttype, &val);
 	BATmax(cur, &val);
-	BATsetprop(cur, GDK_MAX_VALUE, cur->ttype, &val);
 	bat_destroy(cur);
 	return ok;
 }

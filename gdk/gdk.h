@@ -2693,8 +2693,8 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * levels.
  */
 
-#define GDK_MIN_VALUE 3
-#define GDK_MAX_VALUE 4
+#define GDK_MIN_VALUE 3		/* smallest non-nil value in BAT */
+#define GDK_MAX_VALUE 4		/* largest non-nil value in BAT */
 
 gdk_export void PROPdestroy(BAT *b);
 gdk_export PROPrec *BATgetprop(BAT *b, int idx);

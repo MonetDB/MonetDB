@@ -2056,7 +2056,6 @@ BATassertProps(BAT *b)
 	int (*cmpf)(const void *, const void *);
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
-	bool seennil = false;
 
 	/* general BAT sanity */
 	assert(b != NULL);
@@ -2191,6 +2190,16 @@ BATassertProps(BAT *b)
 	}
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
+		PROPrec *prop;
+		const void *maxval = NULL;
+		const void *minval = NULL;
+		bool seenmax = false, seenmin = false;
+		bool seennil = false;
+
+		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
+			maxval = VALptr(&prop->v);
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
+			minval = VALptr(&prop->v);
 		if (b->tsorted || b->trevsorted || !b->tkey) {
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
@@ -2198,23 +2207,16 @@ BATassertProps(BAT *b)
 			/* only call compare function if we have to */
 			bool cmpprv = b->tsorted | b->trevsorted | b->tkey;
 			bool cmpnil = b->tnonil | b->tnil;
-			PROPrec *prop;
-			const void *maxval = NULL;
-			const void *minval = NULL;
-			bool seenmax = false, seenmin = false;
 
-			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
-				maxval = VALptr(&prop->v);
-			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
-				minval = VALptr(&prop->v);
 			BATloop(b, p, q) {
 				valp = BUNtail(bi, p);
-				if (maxval) {
+				bool isnil = cmpf(valp, nilp) == 0;
+				if (maxval && !isnil) {
 					cmp = cmpf(maxval, valp);
 					assert(cmp >= 0);
 					seenmax |= cmp == 0;
 				}
-				if (minval) {
+				if (minval && !isnil) {
 					cmp = cmpf(minval, valp);
 					assert(cmp <= 0);
 					seenmin |= cmp == 0;
@@ -2226,9 +2228,8 @@ BATassertProps(BAT *b)
 					assert(!b->tkey || cmp != 0);
 				}
 				if (cmpnil) {
-					cmp = cmpf(valp, nilp);
-					assert(!b->tnonil || cmp != 0);
-					if (cmp == 0) {
+					assert(!b->tnonil || !isnil);
+					if (isnil) {
 						/* we found a nil:
 						 * we're done checking
 						 * for them */
@@ -2248,23 +2249,12 @@ BATassertProps(BAT *b)
 				}
 				prev = valp;
 			}
-			assert(maxval == NULL || seenmax);
-			assert(minval == NULL || seenmin);
 		} else {	/* b->tkey && !b->tsorted && !b->trevsorted */
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
 			Hash *hs = NULL;
 			BUN mask;
-			PROPrec *prop;
-			const void *maxval = NULL;
-			const void *minval = NULL;
-			bool seenmax = false, seenmin = false;
-
-			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
-				maxval = VALptr(&prop->v);
-			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
-				minval = VALptr(&prop->v);
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				fprintf(stderr,
@@ -2294,12 +2284,13 @@ BATassertProps(BAT *b)
 				BUN hb;
 				BUN prb;
 				valp = BUNtail(bi, p);
-				if (maxval) {
+				bool isnil = cmpf(valp, nilp) == 0;
+				if (maxval && !isnil) {
 					cmp = cmpf(maxval, valp);
 					assert(cmp >= 0);
 					seenmax |= cmp == 0;
 				}
-				if (minval) {
+				if (minval && !isnil) {
 					cmp = cmpf(minval, valp);
 					assert(cmp <= 0);
 					seenmin |= cmp == 0;
@@ -2312,17 +2303,15 @@ BATassertProps(BAT *b)
 						assert(!b->tkey);
 				HASHputlink(hs,p, HASHget(hs,prb));
 				HASHput(hs,prb,p);
-				cmp = cmpf(valp, nilp);
-				assert(!b->tnonil || cmp != 0);
-				if (cmp == 0)
-					seennil = true;
+				assert(!b->tnonil || !isnil);
+				seennil |= isnil;
 			}
 			HEAPfree(&hs->heap, true);
 			GDKfree(hs);
-			assert(maxval == NULL || seenmax);
-			assert(minval == NULL || seenmin);
 		}
 	  abort_check:
+		assert(maxval == NULL || seenmax);
+		assert(minval == NULL || seenmin);
 		assert(!b->tnil || seennil);
 	}
 }

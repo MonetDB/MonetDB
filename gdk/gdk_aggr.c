@@ -2615,6 +2615,8 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			      do_groupmin, "BATgroupmin");
 }
 
+/* return pointer to smallest non-nil value in b, or pointer to nil if
+ * there is no such value (no values at all, or only nil) */
 void *
 BATmin(BAT *b, void *aggr)
 {
@@ -2624,6 +2626,8 @@ BATmin(BAT *b, void *aggr)
 	BATiter bi;
 
 	if (!ATOMlinear(b->ttype)) {
+		/* there is no such thing as a smallest value if you
+		 * can't compare values */
 		GDKerror("BATmin: non-linear type");
 		return NULL;
 	}
@@ -2686,8 +2690,7 @@ BATmin(BAT *b, void *aggr)
 		} else {
 			bi = bat_iterator(b);
 			res = BUNtail(bi, pos - b->hseqbase);
-			if (b->tnonil)
-				BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
+			BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
 		}
 	}
 	if (aggr == NULL) {
