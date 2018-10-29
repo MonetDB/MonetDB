@@ -528,6 +528,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	BUN start, end, cnt;
 	BUN r;
 	const oid *restrict cand = NULL, *candend = NULL;
+	PROPrec *prop, *nprop;
 
 	if (b == NULL || n == NULL || (cnt = BATcount(n)) == 0) {
 		return GDK_SUCCEED;
@@ -600,7 +601,40 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
-	PROPdestroy(b);
+	if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+		if ((nprop = BATgetprop(n, GDK_MAX_VALUE)) != NULL) {
+			if (ATOMcmp(b->ttype, VALptr(&prop->v), VALptr(&nprop->v)) < 0) {
+				if (s == NULL)
+					BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&nprop->v));
+				else
+					BATrmprop(b, GDK_MAX_VALUE);
+			}
+		} else {
+			BATrmprop(b, GDK_MAX_VALUE);
+		}
+	}
+	if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+		if ((nprop = BATgetprop(n, GDK_MIN_VALUE)) != NULL) {
+			if (ATOMcmp(b->ttype, VALptr(&prop->v), VALptr(&nprop->v)) > 0) {
+				if (s == NULL)
+					BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&nprop->v));
+				else
+					BATrmprop(b, GDK_MIN_VALUE);
+			}
+		} else {
+			BATrmprop(b, GDK_MIN_VALUE);
+		}
+	}
+#if 0		/* enable if we have more properties than just min/max */
+	do {
+		for (prop = b->tprops; prop; prop = prop->next)
+			if (prop->id != GDK_MAX_VALUE &&
+			    prop->id != GDK_MIN_VALUE) {
+				BATrmprop(b, prop->id);
+				break;
+			}
+	} while (prop);
+#endif
 	if (b->thash == (Hash *) 1 || BATcount(b) == 0 ||
 	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change

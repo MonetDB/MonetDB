@@ -1050,7 +1050,37 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	PROPdestroy(b);
+	if (b->ttype != TYPE_void
+	    && ATOMlinear(b->ttype)
+	    && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
+		PROPrec *prop;
+
+		if (b->batCount == 1) {
+			BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
+			BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
+		} else {
+			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
+			    ATOMcmp(b->ttype, VALptr(&prop->v), t) < 0) {
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
+			}
+			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
+			    ATOMcmp(b->ttype, VALptr(&prop->v), t) > 0) {
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
+			}
+		}
+#if 0		/* enable if we have more properties than just min/max */
+		do {
+			for (prop = b->tprops; prop; prop = prop->next)
+				if (prop->id != GDK_MAX_VALUE &&
+				    prop->id != GDK_MIN_VALUE) {
+					BATrmprop(b, prop->id);
+					break;
+				}
+		} while (prop);
+#endif
+	} else {
+		PROPdestroy(b);
+	}
 	if (b->thash == (Hash *) 1 ||
 	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
@@ -1072,6 +1102,8 @@ BUNdelete(BAT *b, oid o)
 {
 	BUN p;
 	BATiter bi = bat_iterator(b);
+	const void *val;
+	PROPrec *prop;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1085,7 +1117,16 @@ BUNdelete(BAT *b, oid o)
 		return GDK_FAIL;
 	}
 	b->batDirtydesc = true;
-	ATOMunfix(b->ttype, BUNtail(bi, p));
+	val = BUNtail(bi, p);
+	if (ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
+		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL
+		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) >= 0)
+			BATrmprop(b, GDK_MAX_VALUE);
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL
+		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0)
+			BATrmprop(b, GDK_MIN_VALUE);
+	}
+	ATOMunfix(b->ttype, val);
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BUNlast(b) - 1 &&
 	    (b->ttype != TYPE_void || BATtdense(b))) {
@@ -1117,7 +1158,16 @@ BUNdelete(BAT *b, oid o)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
-	PROPdestroy(b);
+#if 0		/* enable if we have more properties than just min/max */
+	do {
+		for (prop = b->tprops; prop; prop = prop->next)
+			if (prop->id != GDK_MAX_VALUE &&
+			    prop->id != GDK_MIN_VALUE) {
+				BATrmprop(b, prop->id);
+				break;
+			}
+	} while (prop);
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -1140,6 +1190,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 	BATiter bi = bat_iterator(b);
 	int tt;
 	BUN prv, nxt;
+	const void *val;
 
 	assert(p >= b->batInserted || force);
 
@@ -1151,8 +1202,9 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	val = BUNtail(bi, p);	/* old value */
 	if (b->tnil &&
-	    ATOMcmp(b->ttype, BUNtail(bi, p), ATOMnilptr(b->ttype)) == 0 &&
+	    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0 &&
 	    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
 		/* if old value is nil and new value isn't, we're not
 		 * sure anymore about the nil property, so we must
@@ -1160,7 +1212,52 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		b->tnil = false;
 	}
 	HASHdestroy(b);
-	PROPdestroy(b);
+	if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
+		PROPrec *prop;
+
+		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+			if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
+			    ATOMcmp(b->ttype, VALptr(&prop->v), t) < 0) {
+				/* new value is larger than previous
+				 * largest */
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
+			} else if (ATOMcmp(b->ttype, t, val) != 0 &&
+				   ATOMcmp(b->ttype, VALptr(&prop->v), val) == 0) {
+				/* old value is equal to largest and
+				 * new value is smaller (see above),
+				 * so we don't know anymore which is
+				 * the largest */
+				BATrmprop(b, GDK_MAX_VALUE);
+			}
+		}
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+			if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
+			    ATOMcmp(b->ttype, VALptr(&prop->v), t) > 0) {
+				/* new value is smaller than previous
+				 * smallest */
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
+			} else if (ATOMcmp(b->ttype, t, val) != 0 &&
+				   ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0) {
+				/* old value is equal to smallest and
+				 * new value is larger (see above), so
+				 * we don't know anymore which is the
+				 * smallest */
+				BATrmprop(b, GDK_MIN_VALUE);
+			}
+		}
+#if 0		/* enable if we have more properties than just min/max */
+		do {
+			for (prop = b->tprops; prop; prop = prop->next)
+				if (prop->id != GDK_MAX_VALUE &&
+				    prop->id != GDK_MIN_VALUE) {
+					BATrmprop(b, prop->id);
+					break;
+				}
+		} while (prop);
+#endif
+	} else {
+		PROPdestroy(b);
+	}
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	if (b->tvarsized && b->ttype) {
