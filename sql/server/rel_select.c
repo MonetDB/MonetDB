@@ -4724,6 +4724,12 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		}
 	}
 
+	if(!p->exps->h) { //no from clause, use a constant as the expression to project
+		sql_exp *exp = exp_atom_lng(sql->sa, 0);
+		exp_label(sql->sa, exp, ++sql->label);
+		append(p->exps, exp);
+	}
+
 	fargs = sa_list(sql->sa);
 	if (window_function->token == SQL_RANK) { //rank function call
 		dlist* dnn = window_function->data.lval->h->next->data.lval;
@@ -4765,15 +4771,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 		if (n) {
 			if (!n->next->data.sym) { /* count(*) */
-				if(!p->exps->h) { //no from clause, use a constant as the expression to project
-					in = exp_atom_lng(sql->sa, 0);
-					append(p->exps, in);
-				} else {
-					in = p->exps->h->data;
-					in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
-					if(!in)
-						return NULL;
-				}
+				in = p->exps->h->data;
+				in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
+				if(!in)
+					return NULL;
 				append(fargs, in);
 				append(fargs, exp_atom_bool(sql->sa, 0)); //don't ignore nills
 			} else {

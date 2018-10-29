@@ -40,7 +40,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-27127/.s.monetdb.39943
 QUERY = select first_value(aa) over (w1 order by bb),
                last_value(aa) over (w2 order by bb) from analytics window w1 as (w2), w2 as (w3), w3 as (w1); --error, cyclic definition
-ERROR = !SELECT: multiple references to window 'w1' found
+ERROR = !SELECT: cyclic references to window 'w1' found
 CODE  = 42000
 
 # 12:18:53 >  

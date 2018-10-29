@@ -1662,6 +1662,12 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, FLT, LNG, SCALE_NONE);
 	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, DBL, LNG, SCALE_NONE);
 	sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, DBL, LNG, SCALE_NONE);
+#ifdef HAVE_HGE
+	if (have_hge) {
+		sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, HGE, LNG, SCALE_NONE);
+		sql_create_analytic6(sa, "window_bound", "sql", "window_bound", BIT, ANY, INT, INT, INT, HGE, LNG, SCALE_NONE);
+	}
+#endif
 
 	t = decimals; /* BTE */
 	sql_create_analytic5(sa, "window_bound", "sql", "window_bound", ANY, INT, INT, INT, *(t), LNG, SCALE_NONE);
