@@ -459,6 +459,11 @@ in the CSV file.
 This, because otherwise the remainder of the file will be interpreted
 as SQL queries.
 .PP
+Another, easier method to have the client read the file content is as
+follows.
+.PP
+mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' ON CLIENT USING DELIMITERS ',','\e\en',\e\(dq'\(dq
+.PP
 See https://www.monetdb.org/Documentation/Manuals/SQLreference/CopyInto
 for more information about the COPY INTO query.
 .SH SEE ALSO
