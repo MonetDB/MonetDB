@@ -2692,14 +2692,15 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * properties. They can be used to improve query processing at higher
  * levels.
  */
-
-#define GDK_MIN_VALUE 3		/* smallest non-nil value in BAT */
-#define GDK_MAX_VALUE 4		/* largest non-nil value in BAT */
+enum prop_t {
+	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
+	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
+};
 
 gdk_export void PROPdestroy(BAT *b);
-gdk_export PROPrec *BATgetprop(BAT *b, int idx);
-gdk_export void BATsetprop(BAT *b, int idx, int type, const void *v);
-gdk_export void BATrmprop(BAT *b, int idx);
+gdk_export PROPrec *BATgetprop(BAT *b, enum prop_t idx);
+gdk_export void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
+gdk_export void BATrmprop(BAT *b, enum prop_t idx);
 
 /*
  * @- BAT relational operators

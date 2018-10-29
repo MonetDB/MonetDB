@@ -1905,7 +1905,7 @@ PROPdestroy(BAT *b)
 }
 
 PROPrec *
-BATgetprop(BAT *b, int idx)
+BATgetprop(BAT *b, enum prop_t idx)
 {
 	PROPrec *p = b->tprops;
 
@@ -1918,7 +1918,7 @@ BATgetprop(BAT *b, int idx)
 }
 
 void
-BATsetprop(BAT *b, int idx, int type, const void *v)
+BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 {
 	PROPrec *p = BATgetprop(b, idx);
 
@@ -1943,7 +1943,7 @@ BATsetprop(BAT *b, int idx, int type, const void *v)
 }
 
 void
-BATrmprop(BAT *b, int idx)
+BATrmprop(BAT *b, enum prop_t idx)
 {
 	PROPrec *prop = b->tprops, *prev = NULL;
 

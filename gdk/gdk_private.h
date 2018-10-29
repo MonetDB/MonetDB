@@ -266,7 +266,7 @@ __hidden void gdk_system_reset(void)
 #define BBP_THREADMASK	63
 
 struct PROPrec {
-	int id;
+	enum prop_t id;
 	ValRecord v;
 	struct PROPrec *next;	/* simple chain of properties */
 };
