@@ -348,6 +348,7 @@ int yydebug=1;
 	XML_namespace_prefix
 	XML_PI_target
 	function_body
+	window_ident_clause
 
 %type <l>
 	passwd_schema
@@ -4233,8 +4234,13 @@ window_function_type:
   ;
 
 window_specification:
-	window_partition_clause window_order_clause window_frame_clause
-	{ $$ = append_symbol(append_symbol(append_symbol(L(), $1), $2), $3); }
+	window_ident_clause window_partition_clause window_order_clause window_frame_clause
+	{ $$ = append_symbol(append_symbol(append_symbol(append_string(L(), $1), $2), $3), $4); }
+  ;
+
+window_ident_clause:
+	/* empty */ { $$ = NULL; }
+  |	ident       { $$ = $1; }
   ;
 
 window_partition_clause:

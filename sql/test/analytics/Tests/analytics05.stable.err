@@ -30,13 +30,13 @@ stderr of test 'analytics05` in directory 'sql/test/analytics` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-24969/.s.monetdb.34564
 QUERY = select count(*) over w, cast(sum(aa) over w as bigint)
-            from analytics window w as (rows between 5 preceding and 0 following), w as (range between 5 preceding and 0 following); --error
-ERROR = !SELECT: Duplicated definition of window 'w'
+            from analytics window w as (rows between 5 preceding and 0 following), w as (range between 5 preceding and 0 following); --error, redefinition of window w
+ERROR = !SELECT: Redefinition of window 'w'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-24969/.s.monetdb.34564
 QUERY = select count(*) over w, cast(sum(aa) over w as bigint)
-            from analytics; --error
-ERROR = !SELECT: window 'w' not found on WINDOW specification list
+            from analytics; --error, definition of w does not exist
+ERROR = !SELECT: window 'w' not found
 CODE  = 42000
 
 # 10:49:28 >  

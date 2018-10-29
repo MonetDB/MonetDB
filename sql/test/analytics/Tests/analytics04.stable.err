@@ -76,6 +76,10 @@ MAPI  = (monetdb) /var/tmp/mtest-4164/.s.monetdb.31254
 QUERY = select count(*) over (rows between 3 following and current row) from analytics; --error
 ERROR = !FOLLOWING offset must come after CURRENT ROW offset
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25136/.s.monetdb.39931
+QUERY = select count(distinct aa) over (rows between 1 preceding and current row) from analytics; --error, distinct not implemented
+ERROR = !SELECT: DISTINCT clause is not implemented for window functions
+CODE  = 42000
 
 # 14:06:28 >  
 # 14:06:28 >  "Done."

@@ -74,6 +74,7 @@ typedef struct sql_var {
 	dlist *wdef;
 	char view;
 	char frame;
+	char visited; //used for window definitions lookup
 } sql_var;
 
 typedef struct sql_subquery {
@@ -234,8 +235,12 @@ extern sql_var* stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql
 extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
 extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
 extern sql_var* stack_push_window_def(mvc *sql, const char *name, dlist *sym);
-extern dlist* stack_get_window_def(mvc *sql, const char *name);
+extern dlist* stack_get_window_def(mvc *sql, const char *name, int *pos);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
+
+extern char stack_check_var_visited(mvc *sql, int i);
+extern void stack_set_var_visited(mvc *sql, int i);
+extern void stack_clear_frame_visited_flag(mvc *sql);
 
 extern sql_var* stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);

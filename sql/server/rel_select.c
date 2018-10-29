@@ -4486,7 +4486,7 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 
 	*estart = exp_op(sql->sa, rargs1, dc1);
 	*eend = exp_op(sql->sa, rargs2, dc2);
-	return e; //return something to say there were no errors b:any_1, unit:int, excl:int, start:int
+	return e; //return something to say there were no errors
 }
 
 static sql_exp*
@@ -4551,6 +4551,47 @@ calculate_window_bound(mvc *sql, sql_rel *p, int token, symbol *bound, sql_exp *
 	return res;
 }
 
+static dlist*
+get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol **order_by_clause, symbol **frame_clause)
+{
+	dlist *window_specification = NULL;
+	char *window_ident;
+	int pos;
+
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested window definitions");
+
+	if((window_specification = stack_get_window_def(sql, ident, &pos)) == NULL)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", ident);
+
+	//avoid infinite lookups
+	if(stack_check_var_visited(sql, pos))
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cyclic references to window '%s' found", ident);
+	stack_set_var_visited(sql, pos);
+
+	if(window_specification->h->next->data.sym) {
+		if(*partition_by_clause)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: redefinition of PARTITION BY clause from window '%s'", ident);
+		*partition_by_clause = window_specification->h->next->data.sym;
+	}
+	if(window_specification->h->next->next->data.sym) {
+		if(*order_by_clause)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: redefinition of ORDER BY clause from window '%s'", ident);
+		*order_by_clause = window_specification->h->next->next->data.sym;
+	}
+	if(window_specification->h->next->next->next->data.sym) {
+		if(*frame_clause)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: redefinition of frame clause from window '%s'", ident);
+		*frame_clause = window_specification->h->next->next->next->data.sym;
+	}
+
+	window_ident = window_specification->h->data.sval;
+	if(window_ident && !get_window_clauses(sql, window_ident, partition_by_clause, order_by_clause, frame_clause))
+		return NULL; //the error was already set
+
+	return window_specification; //return something to say there were no errors
+}
+
 /*
  * select x, y, rank_op() over (partition by x order by y) as, ...
                 aggr_op(z) over (partition by y order by x) as, ...
@@ -4570,32 +4611,40 @@ static sql_exp *
 rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 {
 	node *n;
-	dlist *l = se->data.lval;
-	symbol *window_function = l->h->data.sym;
-	char *aname = NULL, *sname = NULL;
+	dlist *l = se->data.lval, *window_specification = NULL;
+	symbol *window_function = l->h->data.sym, *partition_by_clause = NULL, *order_by_clause = NULL, *frame_clause = NULL;
+	char *aname = NULL, *sname = NULL, *window_ident = NULL;
 	sql_subfunc *wf = NULL;
 	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL;
 	sql_rel *r = *rel, *p;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	dnode *dn = window_function->data.lval->h;
-	int distinct = 0, project_added = 0, is_last, has_order_by, frame_type;
-	dlist *window_specification = NULL;
+	int distinct = 0, project_added = 0, is_last, frame_type, pos;
 	bool is_nth_value, supports_frames;
+
+	stack_clear_frame_visited_flag(sql); //clear visited flags before iterating
 
 	if(l->h->next->type == type_list) {
 		window_specification = l->h->next->data.lval;
 	} else if (l->h->next->type == type_string) {
 		const char* window_alias = l->h->next->data.sval;
-		if((window_specification = stack_get_window_def(sql, window_alias)) == NULL)
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found on WINDOW specification list", window_alias);
+		if((window_specification = stack_get_window_def(sql, window_alias, &pos)) == NULL)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", window_alias);
+		stack_set_var_visited(sql, pos);
 	} else {
 		assert(0);
 	}
 
-	has_order_by = (window_specification->h->next->data.sym != NULL),
-	frame_type = has_order_by ? FRAME_RANGE : FRAME_ROWS;
+	window_ident = window_specification->h->data.sval;
+	partition_by_clause = window_specification->h->next->data.sym;
+	order_by_clause = window_specification->h->next->next->data.sym;
+	frame_clause = window_specification->h->next->next->next->data.sym;
 
+	if(window_ident && !get_window_clauses(sql, window_ident, &partition_by_clause, &order_by_clause, &frame_clause))
+		return NULL;
+
+	frame_type = order_by_clause ? FRAME_RANGE : FRAME_ROWS;
 	aname = qname_fname(dn->data.lval);
 	sname = qname_schema(dn->data.lval);
 
@@ -4629,8 +4678,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	reset_processed(p);
 
 	/* Partition By */
-	if (window_specification->h->data.sym) {
-		gbe = rel_group_by(sql, &p, window_specification->h->data.sym, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
+	if (partition_by_clause) {
+		gbe = rel_group_by(sql, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
 		if (!gbe)
 			return NULL;
 		for(n = gbe->h ; n ; n = n->next) {
@@ -4640,9 +4689,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		p->r = gbe;
 	}
 	/* Order By */
-	if (has_order_by) {
+	if (order_by_clause) {
 		sql_rel *g;
-		obe = rel_order_by(sql, &p, window_specification->h->next->data.sym, f);
+		obe = rel_order_by(sql, &p, order_by_clause, f);
 		if (!obe)
 			return NULL;
 		/* conditionally? */
@@ -4802,8 +4851,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	}
 
 	/* Frame */
-	if(window_specification->h->next->next->data.sym) {
-		dnode *d = window_specification->h->next->next->data.sym->data.lval->h;
+	if(frame_clause) {
+		dnode *d = frame_clause->data.lval->h;
 		symbol *wstart = d->data.sym, *wend = d->next->data.sym, *rstart = wstart->data.lval->h->data.sym,
 			   *rend = wend->data.lval->h->data.sym;
 		int excl = d->next->next->next->data.i_val;
@@ -4852,13 +4901,13 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 		if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
 			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, exp_subtype(ie)));
-			if(has_order_by)
+			if(order_by_clause)
 				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, exp_subtype(ie)));
 			else
 				fend = exp_atom(sql->sa, atom_absolute_max(sql->sa, exp_subtype(ie)));
 		} else {
 			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, it));
-			if(has_order_by)
+			if(order_by_clause)
 				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, it));
 			else
 				fend = exp_atom(sql->sa, atom_absolute_max(sql->sa, it));
@@ -5565,8 +5614,8 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 			dlist *wd = n->data.sym->data.lval;
 			const char *name = wd->h->data.sval;
 			dlist *wdef = wd->h->next->data.lval;
-			if(stack_get_window_def(sql, name)) {
-				return sql_error(sql, 01, SQLSTATE(42000) "SELECT: Duplicated definition of window '%s'", name);
+			if(stack_get_window_def(sql, name, NULL)) {
+				return sql_error(sql, 01, SQLSTATE(42000) "SELECT: Redefinition of window '%s'", name);
 			} else if(!stack_push_window_def(sql, name, wdef)) {
 				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}

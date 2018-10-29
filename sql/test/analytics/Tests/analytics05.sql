@@ -4,9 +4,9 @@ insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL
 select count(*) over w, cast(sum(aa) over w as bigint)
     from analytics window w as (rows between 5 preceding and 0 following);
 select count(*) over w, cast(sum(aa) over w as bigint)
-    from analytics window w as (rows between 5 preceding and 0 following), w as (range between 5 preceding and 0 following); --error
+    from analytics window w as (rows between 5 preceding and 0 following), w as (range between 5 preceding and 0 following); --error, redefinition of window w
 select count(*) over w, cast(sum(aa) over w as bigint)
-    from analytics; --error
+    from analytics; --error, definition of w does not exist
 
 select count(*) over w, cast(sum(aa) over z as bigint), avg(aa) over z
     from analytics window w as (rows between 5 preceding and 0 following), z as (order by bb range unbounded preceding);

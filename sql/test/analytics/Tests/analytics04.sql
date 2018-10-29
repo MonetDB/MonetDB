@@ -72,5 +72,6 @@ select cast(sum(aa) over (partition by bb order by bb groups between 3 preceding
 select count(*) over (rows between 3 following and 2 preceding) from analytics; --error
 select count(*) over (rows between current row and 2 preceding) from analytics; --error
 select count(*) over (rows between 3 following and current row) from analytics; --error
+select count(distinct aa) over (rows between 1 preceding and current row) from analytics; --error, distinct not implemented
 
 drop table analytics;
