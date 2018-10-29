@@ -825,6 +825,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"window_specification",
 	 NULL,
+	 "[ ident ]\n"
 	 "[ PARTITION BY column_ref [ ',' ... ] ]\n"
 	 "[ ORDER BY sort_spec ]\n"
 	 "[ { ROWS | RANGE | GROUPS } { window_frame_start | BETWEEN window_bound AND window_bound }\n"
