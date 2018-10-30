@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Oct 30 2018 Sjoerd Mullender <sjoerd@acm.org>
+- The BUNtail, BUNtvar, BUNtloc, and BUNtpos macros (and Tloc and Tpos)
+  now return a `void *' instead of a `char *'.
+
 * Tue Aug 21 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Function PROPdestroy now takes a BAT* parameter.
 

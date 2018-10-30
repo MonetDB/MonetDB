@@ -1203,7 +1203,7 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define tailsize(b,p)	((b)->ttype?((size_t)(p))<<(b)->tshift:0)
 
-#define Tloc(b,p)	((b)->theap.base+(((size_t)(p))<<(b)->tshift))
+#define Tloc(b,p)	((void *)((b)->theap.base+(((size_t)(p))<<(b)->tshift)))
 
 typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
@@ -1226,7 +1226,7 @@ typedef var_t stridx_t;
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), Tbase((bi).b)+BUNtvaroff(bi,p))
+#define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), (void *) (Tbase((bi).b)+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).b->ttype?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
 
 /* return the oid value at BUN position p from the (v)oid bat b
@@ -2370,13 +2370,13 @@ BATdescriptor(bat i)
 	return b;
 }
 
-static inline char *
+static inline void *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
 	if (!is_oid_nil(bi->tvid))
 		bi->tvid += p;
-	return (char*)&bi->tvid;
+	return (void*)&bi->tvid;
 }
 
 #endif

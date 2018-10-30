@@ -1364,7 +1364,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		if (debug & 1)
 			fprintf(stderr, "#commit new %s (%d) %s\n",
 				BBPname(col), col,
-				(list_bid == catalog_bid) ? BUNtvar(iter, p) : "snapshot");
+				(list_bid == catalog_bid) ? (char *) BUNtvar(iter, p) : "snapshot");
 		assert(col);
 		n[i++] = col;
 	}
@@ -1376,7 +1376,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			if (debug & 1)
 				fprintf(stderr, "#commit extra %s %s\n",
 					name,
-					(list_bid == catalog_bid) ? BUNtvar(iter, p) : "snapshot");
+					(list_bid == catalog_bid) ? (char *) BUNtvar(iter, p) : "snapshot");
 			assert(BBPindex(name));
 			n[i++] = BBPindex(name);
 		}
