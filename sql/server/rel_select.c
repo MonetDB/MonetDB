@@ -4634,7 +4634,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	char *aname = NULL, *sname = NULL, *window_ident = NULL;
 	sql_subfunc *wf = NULL;
 	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL;
-	sql_rel *r = *rel, *p;
+	sql_rel *r = *rel, *p, *pp;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	dnode *dn = window_function->data.lval->h;
@@ -4692,61 +4692,19 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return sql_error(sql, 02, SQLSTATE(42000) "OVER: only possible within the selection");
 
 	p = r->l;
-	p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
-	reset_processed(p);
-
-	/* Partition By */
-	if (partition_by_clause) {
-		gbe = rel_group_by(sql, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
-		if (!gbe)
-			return NULL;
-		for(n = gbe->h ; n ; n = n->next) {
-			sql_exp *en = n->data;
-			set_direction(en, 1);
-		}
-		p->r = gbe;
-	}
-	/* Order By */
-	if (order_by_clause) {
-		sql_rel *g;
-		obe = rel_order_by(sql, &p, order_by_clause, f);
-		if (!obe)
-			return NULL;
-		/* conditionally? */
-		g = p->l;
-		if (g->op == op_groupby) {
-			list_merge(p->exps, obe, (fdup)NULL);
-			p->exps = list_distinct(p->exps, (fcmp)exp_equal, (fdup)NULL);
-		}
-		if (p->r) {
-			p->r = list_merge(sa_list(sql->sa), p->r, (fdup)NULL);
-			for(n = obe->h ; n ; n = n->next) {
-				sql_exp *e1 = n->data;
-				bool found = false;
-				for(node *nn = ((list*)p->r)->h ; nn && !found ; nn = nn->next) {
-					sql_exp *e2 = nn->data;
-					//the partition expression order should be the same as the one in the order by clause (if it's in there as well)
-					if(!exp_equal(e1, e2)) {
-						if(is_ascending(e1))
-							e2->flag |= ASCENDING;
-						else
-							e2->flag &= ~ASCENDING;
-						found = true;
-					}
-				}
-				if(!found)
-					append(p->r, e1);
-			}
-		} else {
-			p->r = obe;
-		}
-	}
-
-	if(!p->exps->h) { //no from clause, use a constant as the expression to project
+	if(!p || !p->exps->h) { //no from clause, use a constant as the expression to project
 		sql_exp *exp = exp_atom_lng(sql->sa, 0);
 		exp_label(sql->sa, exp, ++sql->label);
+		if (!p) {
+			p = rel_project(sql->sa, NULL, sa_list(sql->sa));
+			set_processed(p);
+		}
 		append(p->exps, exp);
 	}
+
+	if (p && !is_project(p->op))
+		p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
+	p = rel_project(sql->sa, p, sa_list(sql->sa));
 
 	fargs = sa_list(sql->sa);
 	if (window_function->token == SQL_RANK) { //rank function call
@@ -4754,7 +4712,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0);
 
 		if(!dnn || is_ntile) {
-			in = p->exps->h->data;
+			sql_rel *lr = p->l;
+			in = lr->exps->h->data;
 			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 			if(!in)
 				return NULL;
@@ -4777,7 +4736,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				} else if(is_nth_value && dnn->h && nn == dnn->h->next) { /* corner case for nth_value */
 					sql_subtype *empty = sql_bind_localtype("void");
 					if(subtype_cmp(&(in->tpe), empty) == 0) {
-						sql_exp *ep = p->exps->h->data;
+						sql_rel *lr = p->l;
+						sql_exp *ep = lr->exps->h->data;
 						in = exp_convert(sql->sa, in, empty, &(ep->tpe));
 					}
 				}
@@ -4789,7 +4749,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 		if (n) {
 			if (!n->next->data.sym) { /* count(*) */
-				in = p->exps->h->data;
+				sql_rel *lr = p->l;
+				in = lr->exps->h->data;
 				in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 				if(!in)
 					return NULL;
@@ -4819,6 +4780,57 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			}
 		}
 	}
+
+	p->l = rel_project(sql->sa, p->l, rel_projections(sql, p->l, NULL, 1, 1));
+	pp = p->l;
+
+	/* Partition By */
+	if (partition_by_clause) {
+		gbe = rel_group_by(sql, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
+		if (!gbe)
+			return NULL;
+		for(n = gbe->h ; n ; n = n->next) {
+			sql_exp *en = n->data;
+			set_direction(en, 1);
+		}
+		pp->r = gbe;
+	}
+	/* Order By */
+	if (order_by_clause) {
+		sql_rel *g;
+		obe = rel_order_by(sql, &pp, order_by_clause, f);
+		if (!obe)
+			return NULL;
+		/* conditionally? */
+		g = pp->l;
+		if (g->op == op_groupby) {
+			list_merge(pp->exps, obe, (fdup)NULL);
+			pp->exps = list_distinct(pp->exps, (fcmp)exp_equal, (fdup)NULL);
+		}
+		if (pp->r) {
+			pp->r = list_merge(sa_list(sql->sa), pp->r, (fdup)NULL);
+			for(n = obe->h ; n ; n = n->next) {
+				sql_exp *e1 = n->data;
+				bool found = false;
+				for(node *nn = ((list*)pp->r)->h ; nn && !found ; nn = nn->next) {
+					sql_exp *e2 = nn->data;
+					//the partition expression order should be the same as the one in the order by clause (if it's in there as well)
+					if(!exp_equal(e1, e2)) {
+						if(is_ascending(e1))
+							e2->flag |= ASCENDING;
+						else
+							e2->flag &= ~ASCENDING;
+						found = true;
+					}
+				}
+				if(!found)
+					append(pp->r, e1);
+			}
+		} else {
+			pp->r = obe;
+		}
+	}
+
 	if(distinct)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: DISTINCT clause is not implemented for window functions");
 
@@ -4982,14 +4994,13 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		append(args, eend);
 	}
 	call = exp_op(sql->sa, args, wf);
-
-	r->l = p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
+	exp_label(sql->sa, call, ++sql->label);
+	r->l = p;
+	list_merge(p->exps, rel_projections(sql, p->l, NULL, 1, 1), NULL);
 	append(p->exps, call);
-	call = rel_lastexp(sql, p);
-	if (project_added) {
+	call = exp_column(sql->sa, exp_relname(call), exp_name(call), exp_subtype(call), exp_card(call), has_nil(call), is_intern(call));
+	if (project_added)
 		append(r->exps, call);
-		call = rel_lastexp(sql, r);
-	}
 	return call;
 }
 

@@ -17,12 +17,36 @@ select cast(sum(aa) * count(1 + aa) / avg(1) over () as bigint) from analytics;
 
 select avg(sum(aa)) over () from analytics;
 
-select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics; --error
+select avg(sum(aa)) over (rows unbounded preceding) from analytics;
 
-select cast(prod(sum(aa)) * count(1 + aa) / avg(null) over () as bigint) from analytics; --error
+select avg(sum(aa)) over (range unbounded preceding) from analytics;
 
-select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics; --error, we don't support expressions in partition by as well group by
+select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics;
 
-select rank() over (partition by sum(aa)) from analytics; --error, we don't support expressions in partition by as well group by
+select avg(sum(aa)) over (),
+       cast(sum(aa) * count(case when bb < 2 then bb - 1 else bb + 1 end) / avg(1) over (rows between current row and current row) as bigint),
+       avg(sum(aa)) over (rows unbounded preceding),
+       avg(sum(aa)) over (range unbounded preceding) from analytics;
+
+select avg(sum(aa)) over () from analytics group by aa;
+
+select avg(sum(aa)) over (),
+       avg(sum(aa)) over (rows unbounded preceding),
+       cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
+       avg(sum(aa)) over (range unbounded preceding) from analytics group by aa;
+
+select avg(sum(aa)) over (partition by bb) from analytics group by bb;
+
+select cast(sum(aa) * 100 / sum(sum(aa)) over () as bigint) from analytics;
+
+select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics group by bb;
+
+select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics; --error, nesting aggregation functions
+
+select cast(prod(sum(aa)) * count(1 + aa) / avg(null) over () as bigint) from analytics; --error, nesting aggregation functions
+
+select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics; --TODO we don't support expressions in partition by as well group by statements
+
+select rank() over (partition by sum(aa)) from analytics; --TODO we don't support expressions in partition by as well group by
 
 drop table analytics;
