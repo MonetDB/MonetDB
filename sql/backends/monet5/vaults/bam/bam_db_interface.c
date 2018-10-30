@@ -247,7 +247,6 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 {
 	sql_column *c;
 	BAT *b = NULL;
-	BATiter li;
 	BUN p = 0, q = 0;
 	lng max_file_id = 0;
 
@@ -266,9 +265,9 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 	for(i=0; i<3; ++i) {
 		b = store_funcs.bind_col(m->session->tr, c, i);
 
-		li = bat_iterator(b);
+		const lng *vals = (const lng *) Tloc(b, 0);
 		BATloop(b, p, q) {
-			lng t = *(lng *) BUNtloc(li, p);
+			lng t = vals[p];
 			max_file_id = MAX(max_file_id, t);
 		}
 		BBPunfix(b->batCacheid);

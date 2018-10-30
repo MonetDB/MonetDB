@@ -750,7 +750,7 @@ AC_SUBST([X_CFLAGS])
 AS_CASE([$CC_ver], [icc-*], [
 	AS_IF([test -f /usr/include/math.h && ! grep -q _LIB_VERSION_TYPE /usr/include/math.h],
 		[AC_DEFINE([INTEL_MATH_H_HACK], 1,
-			[Define if using Intel compiler with icompatible system math.h])])])
+			[Define if using Intel compiler with incompatible system math.h])])])
 
 AC_MSG_CHECKING([for ld -Bsymbolic-functions option])
 save_LDFLAGS="$LDFLAGS"

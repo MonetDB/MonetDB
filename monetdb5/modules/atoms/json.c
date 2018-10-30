@@ -1996,7 +1996,7 @@ JSONtextString(str *ret, bat *bid)
 {
 	(void) ret;
 	(void) bid;
-	throw(MAL, "json.text", PROGRAM_NYI);
+	throw(MAL, "json.text", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 
@@ -2008,7 +2008,7 @@ JSONtextGrouped(bat *ret, bat *bid, bat *gid, bat *ext, bit *flg)
 	(void) gid;
 	(void) ext;
 	(void) flg;
-	throw(MAL, "json.text", PROGRAM_NYI);
+	throw(MAL, "json.text", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str

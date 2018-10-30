@@ -76,6 +76,7 @@ static bool echoquery = false;
 static char *encoding;
 #endif
 static bool errseen = false;
+static bool allow_remote = false;
 
 #define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
@@ -3035,6 +3036,9 @@ struct privdata {
 #define READSIZE	(1 << 16)
 //#define READSIZE	(1 << 20)
 
+static char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	"abcdefghijklmnopqrstuvwxyz";
+
 static char *
 getfile(void *data, const char *filename, bool binary,
 	uint64_t offset, size_t *size)
@@ -3044,12 +3048,11 @@ getfile(void *data, const char *filename, bool binary,
 	struct privdata *priv = data;
 	ssize_t s;
 
+	*size = 0;		/* most returns require this */
 	if (priv->buf == NULL) {
 		priv->buf = malloc(READSIZE);
-		if (priv->buf == NULL) {
-			*size = 0;
-			return "allocation failed";
-		}
+		if (priv->buf == NULL)
+			return "allocation failed in client";
 	}
 	buf = priv->buf;
 	if (filename != NULL) {
@@ -3059,8 +3062,22 @@ getfile(void *data, const char *filename, bool binary,
 			offset = 0;
 		} else {
 			f = open_rastream(filename);
+			if (f == NULL) {
+				size_t x;
+				/* simplistic check for URL
+				 * (schema://...) */
+				if ((x = strspn(filename, alpha)) > 0
+				    && filename[x] == ':'
+				    && filename[x+1] == '/'
+				    && filename[x+2] == '/') {
+					if (allow_remote)
+						f = open_urlstream(filename);
+					else
+						return "client refuses to retrieve remote content";
+				}
+			}
 #ifdef HAVE_ICONV
-			if (encoding) {
+			else if (encoding) {
 				stream *tmpf = f;
 				f = iconv_rstream(f, encoding, mnstr_name(f));
 				if (f == NULL)
@@ -3068,21 +3085,17 @@ getfile(void *data, const char *filename, bool binary,
 			}
 #endif
 		}
-		if (f == NULL) {
-			*size = 0;	/* indicate error */
+		if (f == NULL)
 			return "cannot open file";
-		}
 		while (offset > 1) {
 			s = mnstr_readline(f, buf, READSIZE);
 			if (s < 0) {
 				close_stream(f);
-				*size = 0;
 				return "error reading file";
 			}
 			if (s == 0) {
 				/* reached EOF withing offset lines */
 				close_stream(f);
-				*size = 0;
 				return NULL;
 			}
 			if (buf[s - 1] == '\n')
@@ -3100,7 +3113,6 @@ getfile(void *data, const char *filename, bool binary,
 	}
 	s = mnstr_read(f, buf, 1, READSIZE);
 	if (s <= 0) {
-		*size = 0;
 		close_stream(f);
 		priv->f = NULL;
 		return s < 0 ? "error reading file" : NULL;
@@ -3183,6 +3195,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, "\nSQL specific opions \n");
 	fprintf(stderr, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
 	fprintf(stderr, " -a          | --autocommit       turn off autocommit mode\n");
+	fprintf(stderr, " -R          | --allow-remote     allow remote content\n");
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
@@ -3247,6 +3260,7 @@ main(int argc, char **argv)
 		{"width", 1, 0, 'w'},
 		{"Xdebug", 0, 0, 'X'},
 		{"timezone", 0, 0, 'z'},
+		{"allow-remote", 0, 0, 'R'},
 		{0, 0, 0, 0}
 	};
 
@@ -3289,7 +3303,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:Hil:L:n:Np:P:r:s:t:u:vw:Xz"
+				"f:h:Hil:L:n:Np:P:r:Rs:t:u:vw:Xz"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -3297,12 +3311,8 @@ main(int argc, char **argv)
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
-#ifdef HAVE_POPEN
-			if (strcmp(long_options[option_index].name, "pager") == 0) {
-				pager = optarg;
-				(void) pager;	/* will be further used later */
-			}
-#endif
+			/* only needed for options that only have a
+			 * long form */
 			break;
 		case 'a':
 			autocommit = false;
@@ -3389,6 +3399,9 @@ main(int argc, char **argv)
 		case 'r':
 			assert(optarg);
 			rowsperpage = atoi(optarg);
+			break;
+		case 'R':
+			allow_remote = true;
 			break;
 		case 's':
 			assert(optarg);

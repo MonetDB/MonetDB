@@ -814,7 +814,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		str sname = BUNtvar(bi, 0);
+		str sname = BUNtvar(bi, p);
 		lng l;
 
 		if (!s || strcmp(s->base.name, sname) != 0) {
@@ -2759,15 +2759,21 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			msg = MAL_SUCCEED;
 			mnstr_flush(be->mvc->scanner.ws);
-			GDKfree(fn);
 			while (!be->mvc->scanner.rs->eof)
 				bstream_next(be->mvc->scanner.rs);
 			ss = be->mvc->scanner.rs->s;
 			char buf[80];
 			if ((len = mnstr_readline(ss, buf, sizeof(buf))) > 1) {
-				msg = createException(IO, "sql.copy_from", "%s", buf);
+				if (buf[0] == '!' && buf[6] == '!')
+					msg = createException(IO, "sql.copy_from", "%.7s%s: %s", buf, fn, buf+7);
+				else
+					msg = createException(IO, "sql.copy_from", "%s: %s", fn, buf);
+				GDKfree(fn);
 				while (buf[len - 1] != '\n' &&
 				       (len = mnstr_readline(ss, buf, sizeof(buf))) > 0)
+					;
+				/* read until flush marker */
+				while (mnstr_read(ss, buf, 1, sizeof(buf)) > 0)
 					;
 				return msg;
 			}
@@ -2784,8 +2790,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(fn);
 				return msg;
 			}
-			GDKfree(fn);
 		}
+		GDKfree(fn);
 
 		if (fixed_widths && strcmp(fixed_widths, str_nil) != 0) {
 			size_t ncol = 0, current_width_entry = 0, i;
@@ -3516,7 +3522,6 @@ str
 SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 {
 	BAT *b, *bn;
-	BATiter bi;
 	BUN p, q;
 	dbl s, c1, c2, r;
 	char *msg = NULL;
@@ -3527,15 +3532,15 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	if ((b = BATdescriptor(*decl)) == NULL) {
 		throw(SQL, "alpha", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	bi = bat_iterator(b);
 	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	s = sin(radians(*theta));
+	const dbl *vals = (const dbl *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		dbl d = *(dbl *) BUNtloc(bi, p);
+		dbl d = vals[p];
 		if (is_dbl_nil(d))
 			r = dbl_nil;
 		else if (fabs(d) + *theta > 89.9)
@@ -4454,7 +4459,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* find the optimizer pipeline */
 	(void) stk;
 	(void) pci;
-	throw(SQL, "updateOptimizer", SQLSTATE(42000) PROGRAM_NYI);
+	throw(SQL, "updateOptimizer", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 /*

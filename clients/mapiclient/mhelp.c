@@ -115,16 +115,16 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"COPY BINARY",
 	 "Append binary representations into a table",
-	 "COPY [nrofrecords] BINARY INTO qname [column_list] FROM string [',' ...] [NO CONSTRAINT]",
+	 "COPY [nrofrecords] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }] [NO CONSTRAINT]",
 	 "nrofrecords",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"},
 	{"COPY INTO",
-	 "Parse a csv-file into a table",
-	 "COPY [nrofrecords] INTO qname [column_list] FROM string [',' ...] [headerlist] [ separators]\n"
+	 "Parse a csv file into a table or write a query result to a csv file",
+	 "COPY [nrofrecords] INTO qname [column_list] FROM string [',' ...] [headerlist] [ON { CLIENT | SERVER }] [ separators]\n"
 	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT] [FWF '(' integer [',' ...] ')'\n"
 	 "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
 	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT]\n"
-	 "COPY query_expression INTO [STDOUT | string] [seps] [NULL [AS] string]",
+	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [seps] [NULL [AS] string]",
 	 "nrofrecords,headerlist,separators",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData"},
 	{"COPY LOADER",

@@ -1050,7 +1050,37 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	PROPdestroy(b);
+	if (b->ttype != TYPE_void
+	    && ATOMlinear(b->ttype)
+	    && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
+		PROPrec *prop;
+
+		if (b->batCount == 1) {
+			BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
+			BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
+		} else {
+			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
+			    ATOMcmp(b->ttype, VALptr(&prop->v), t) < 0) {
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
+			}
+			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
+			    ATOMcmp(b->ttype, VALptr(&prop->v), t) > 0) {
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
+			}
+		}
+#if 0		/* enable if we have more properties than just min/max */
+		do {
+			for (prop = b->tprops; prop; prop = prop->next)
+				if (prop->id != GDK_MAX_VALUE &&
+				    prop->id != GDK_MIN_VALUE) {
+					BATrmprop(b, prop->id);
+					break;
+				}
+		} while (prop);
+#endif
+	} else {
+		PROPdestroy(b);
+	}
 	if (b->thash == (Hash *) 1 ||
 	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
@@ -1072,6 +1102,8 @@ BUNdelete(BAT *b, oid o)
 {
 	BUN p;
 	BATiter bi = bat_iterator(b);
+	const void *val;
+	PROPrec *prop;
 
 	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
@@ -1085,7 +1117,16 @@ BUNdelete(BAT *b, oid o)
 		return GDK_FAIL;
 	}
 	b->batDirtydesc = true;
-	ATOMunfix(b->ttype, BUNtail(bi, p));
+	val = BUNtail(bi, p);
+	if (ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
+		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL
+		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) >= 0)
+			BATrmprop(b, GDK_MAX_VALUE);
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL
+		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0)
+			BATrmprop(b, GDK_MIN_VALUE);
+	}
+	ATOMunfix(b->ttype, val);
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BUNlast(b) - 1 &&
 	    (b->ttype != TYPE_void || BATtdense(b))) {
@@ -1117,7 +1158,16 @@ BUNdelete(BAT *b, oid o)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
-	PROPdestroy(b);
+#if 0		/* enable if we have more properties than just min/max */
+	do {
+		for (prop = b->tprops; prop; prop = prop->next)
+			if (prop->id != GDK_MAX_VALUE &&
+			    prop->id != GDK_MIN_VALUE) {
+				BATrmprop(b, prop->id);
+				break;
+			}
+	} while (prop);
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -1140,6 +1190,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 	BATiter bi = bat_iterator(b);
 	int tt;
 	BUN prv, nxt;
+	const void *val;
 
 	assert(p >= b->batInserted || force);
 
@@ -1151,8 +1202,9 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 			 BATgetId(b));
 		return GDK_FAIL;
 	}
+	val = BUNtail(bi, p);	/* old value */
 	if (b->tnil &&
-	    ATOMcmp(b->ttype, BUNtail(bi, p), ATOMnilptr(b->ttype)) == 0 &&
+	    ATOMcmp(b->ttype, val, ATOMnilptr(b->ttype)) == 0 &&
 	    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
 		/* if old value is nil and new value isn't, we're not
 		 * sure anymore about the nil property, so we must
@@ -1160,7 +1212,52 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		b->tnil = false;
 	}
 	HASHdestroy(b);
-	PROPdestroy(b);
+	if (b->ttype != TYPE_void && ATOMlinear(b->ttype)) {
+		PROPrec *prop;
+
+		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+			if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
+			    ATOMcmp(b->ttype, VALptr(&prop->v), t) < 0) {
+				/* new value is larger than previous
+				 * largest */
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
+			} else if (ATOMcmp(b->ttype, t, val) != 0 &&
+				   ATOMcmp(b->ttype, VALptr(&prop->v), val) == 0) {
+				/* old value is equal to largest and
+				 * new value is smaller (see above),
+				 * so we don't know anymore which is
+				 * the largest */
+				BATrmprop(b, GDK_MAX_VALUE);
+			}
+		}
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+			if (ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0 &&
+			    ATOMcmp(b->ttype, VALptr(&prop->v), t) > 0) {
+				/* new value is smaller than previous
+				 * smallest */
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
+			} else if (ATOMcmp(b->ttype, t, val) != 0 &&
+				   ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0) {
+				/* old value is equal to smallest and
+				 * new value is larger (see above), so
+				 * we don't know anymore which is the
+				 * smallest */
+				BATrmprop(b, GDK_MIN_VALUE);
+			}
+		}
+#if 0		/* enable if we have more properties than just min/max */
+		do {
+			for (prop = b->tprops; prop; prop = prop->next)
+				if (prop->id != GDK_MAX_VALUE &&
+				    prop->id != GDK_MIN_VALUE) {
+					BATrmprop(b, prop->id);
+					break;
+				}
+		} while (prop);
+#endif
+	} else {
+		PROPdestroy(b);
+	}
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	if (b->tvarsized && b->ttype) {
@@ -2056,7 +2153,6 @@ BATassertProps(BAT *b)
 	int (*cmpf)(const void *, const void *);
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
-	bool seennil = false;
 
 	/* general BAT sanity */
 	assert(b != NULL);
@@ -2191,6 +2287,16 @@ BATassertProps(BAT *b)
 	}
 
 	PROPDEBUG { /* only do a scan if property checking is requested */
+		PROPrec *prop;
+		const void *maxval = NULL;
+		const void *minval = NULL;
+		bool seenmax = false, seenmin = false;
+		bool seennil = false;
+
+		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
+			maxval = VALptr(&prop->v);
+		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
+			minval = VALptr(&prop->v);
 		if (b->tsorted || b->trevsorted || !b->tkey) {
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
@@ -2198,23 +2304,16 @@ BATassertProps(BAT *b)
 			/* only call compare function if we have to */
 			bool cmpprv = b->tsorted | b->trevsorted | b->tkey;
 			bool cmpnil = b->tnonil | b->tnil;
-			PROPrec *prop;
-			const void *maxval = NULL;
-			const void *minval = NULL;
-			bool seenmax = false, seenmin = false;
 
-			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
-				maxval = VALptr(&prop->v);
-			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
-				minval = VALptr(&prop->v);
 			BATloop(b, p, q) {
 				valp = BUNtail(bi, p);
-				if (maxval) {
+				bool isnil = cmpf(valp, nilp) == 0;
+				if (maxval && !isnil) {
 					cmp = cmpf(maxval, valp);
 					assert(cmp >= 0);
 					seenmax |= cmp == 0;
 				}
-				if (minval) {
+				if (minval && !isnil) {
 					cmp = cmpf(minval, valp);
 					assert(cmp <= 0);
 					seenmin |= cmp == 0;
@@ -2226,9 +2325,8 @@ BATassertProps(BAT *b)
 					assert(!b->tkey || cmp != 0);
 				}
 				if (cmpnil) {
-					cmp = cmpf(valp, nilp);
-					assert(!b->tnonil || cmp != 0);
-					if (cmp == 0) {
+					assert(!b->tnonil || !isnil);
+					if (isnil) {
 						/* we found a nil:
 						 * we're done checking
 						 * for them */
@@ -2248,23 +2346,12 @@ BATassertProps(BAT *b)
 				}
 				prev = valp;
 			}
-			assert(maxval == NULL || seenmax);
-			assert(minval == NULL || seenmin);
 		} else {	/* b->tkey && !b->tsorted && !b->trevsorted */
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
 			Hash *hs = NULL;
 			BUN mask;
-			PROPrec *prop;
-			const void *maxval = NULL;
-			const void *minval = NULL;
-			bool seenmax = false, seenmin = false;
-
-			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL)
-				maxval = VALptr(&prop->v);
-			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
-				minval = VALptr(&prop->v);
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				fprintf(stderr,
@@ -2294,12 +2381,13 @@ BATassertProps(BAT *b)
 				BUN hb;
 				BUN prb;
 				valp = BUNtail(bi, p);
-				if (maxval) {
+				bool isnil = cmpf(valp, nilp) == 0;
+				if (maxval && !isnil) {
 					cmp = cmpf(maxval, valp);
 					assert(cmp >= 0);
 					seenmax |= cmp == 0;
 				}
-				if (minval) {
+				if (minval && !isnil) {
 					cmp = cmpf(minval, valp);
 					assert(cmp <= 0);
 					seenmin |= cmp == 0;
@@ -2312,17 +2400,15 @@ BATassertProps(BAT *b)
 						assert(!b->tkey);
 				HASHputlink(hs,p, HASHget(hs,prb));
 				HASHput(hs,prb,p);
-				cmp = cmpf(valp, nilp);
-				assert(!b->tnonil || cmp != 0);
-				if (cmp == 0)
-					seennil = true;
+				assert(!b->tnonil || !isnil);
+				seennil |= isnil;
 			}
 			HEAPfree(&hs->heap, true);
 			GDKfree(hs);
-			assert(maxval == NULL || seenmax);
-			assert(minval == NULL || seenmin);
 		}
 	  abort_check:
+		assert(maxval == NULL || seenmax);
+		assert(minval == NULL || seenmin);
 		assert(!b->tnil || seennil);
 	}
 }

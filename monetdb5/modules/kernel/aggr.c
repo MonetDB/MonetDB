@@ -923,8 +923,8 @@ AGGRsubquantilecand(bat *retval, const bat *bid, const bat *quantile, const bat 
 
 static str
 AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid, const bat *eid, const bat *sid, bool skip_nils,
-					 bool abort_on_error, BAT *(*str_func)(BAT *, BAT *, BAT *, BAT *, bool, bool, const str),
-					 const str separator, const char *malfunc)
+					 bool abort_on_error, BAT *(*str_func)(BAT *, BAT *, BAT *, BAT *, bool, bool, const char *),
+					 const char *separator, const char *malfunc)
 {
 	BAT *b, *g, *e, *s, *bn = NULL;
 

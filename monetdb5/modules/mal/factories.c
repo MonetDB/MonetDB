@@ -19,35 +19,35 @@ FCTgetPlants(bat *ret, bat *ret2)
 {
 	(void) ret;
 	(void) ret2;
-	throw(MAL, "factories.getPlants", PROGRAM_NYI);
+	throw(MAL, "factories.getPlants", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str
 FCTgetCaller(int *ret)
 {
 	(void) ret;
-	throw(MAL, "factories.getCaller", PROGRAM_NYI);
+	throw(MAL, "factories.getCaller", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str
 FCTgetOwners(bat *ret)
 {
 	(void) ret;
-	throw(MAL, "factories.getOwner", PROGRAM_NYI);
+	throw(MAL, "factories.getOwner", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str
 FCTgetArrival(bat *ret)
 {
 	(void) ret;
-	throw(MAL, "factories.getArrival", PROGRAM_NYI);
+	throw(MAL, "factories.getArrival", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str
 FCTgetDeparture(bat *ret)
 {
 	(void) ret;
-	throw(MAL, "factories.getDeparture", PROGRAM_NYI);
+	throw(MAL, "factories.getDeparture", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str

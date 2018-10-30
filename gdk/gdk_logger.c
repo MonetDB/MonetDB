@@ -1348,13 +1348,15 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	int i = 0;
 	BATiter iter = (list_nme)?bat_iterator(list_nme):bat_iterator(list_bid);
 	gdk_return res;
+	const log_bid *bids;
 
 	if (n == NULL)
 		return GDK_FAIL;
 
 	n[i++] = 0;		/* n[0] is not used */
+	bids = (const log_bid *) Tloc(list_bid, 0);
 	BATloop(list_bid, p, q) {
-		bat col = *(log_bid *) Tloc(list_bid, p);
+		bat col = bids[p];
 		oid pos = p;
 
 		if (list_bid == catalog_bid && BUNfnd(dcatalog, &pos) != BUN_NONE)
@@ -1362,7 +1364,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		if (debug & 1)
 			fprintf(stderr, "#commit new %s (%d) %s\n",
 				BBPname(col), col,
-				(list_bid == catalog_bid) ? BUNtvar(iter, p) : "snapshot");
+				(list_bid == catalog_bid) ? (char *) BUNtvar(iter, p) : "snapshot");
 		assert(col);
 		n[i++] = col;
 	}
@@ -1374,7 +1376,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			if (debug & 1)
 				fprintf(stderr, "#commit extra %s %s\n",
 					name,
-					(list_bid == catalog_bid) ? BUNtvar(iter, p) : "snapshot");
+					(list_bid == catalog_bid) ? (char *) BUNtvar(iter, p) : "snapshot");
 			assert(BBPindex(name));
 			n[i++] = BBPindex(name);
 		}
@@ -1848,8 +1850,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		BBPretain(lg->catalog_tpe->batCacheid);
 		BBPretain(lg->catalog_oid->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
+		const log_bid *bids = (const log_bid *) Tloc(b, 0);
 		BATloop(b, p, q) {
-			bat bid = *(log_bid *) Tloc(b, p);
+			bat bid = bids[p];
 			oid pos = p;
 
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE &&
@@ -2269,8 +2272,9 @@ logger_destroy(logger *lg)
 			fprintf(stderr, "#logger_destroy: logger_cleanup failed\n");
 
 		/* free resources */
+		const log_bid *bids = (const log_bid *) Tloc(b, 0);
 		BATloop(b, p, q) {
-			bat bid = *(log_bid *) Tloc(b, p);
+			bat bid = bids[p];
 			oid pos = p;
 
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
@@ -2909,13 +2913,15 @@ bm_commit(logger *lg)
 	BAT *b = lg->catalog_bid;
 	BAT *n = logbat_new(TYPE_str, BATcount(lg->freed), TRANSIENT);
 	gdk_return res;
+	const log_bid *bids;
 
 	if (n == NULL)
 		return GDK_FAIL;
 
 	/* subcommit the freed bats */
+	bids = (const log_bid *) Tloc(lg->freed, 0);
 	BATloop(lg->freed, p, q) {
-		bat bid = *(log_bid *) Tloc(lg->freed, p);
+		bat bid = bids[p];
 		BAT *lb = BATdescriptor(bid);
 		str name = BBPname(bid);
 
@@ -2938,8 +2944,9 @@ bm_commit(logger *lg)
 		BBPrelease(bid);
 	}
 
+	bids = (log_bid *) Tloc(b, 0);
 	for (p = b->batInserted; p < BUNlast(b); p++) {
-		log_bid bid = *(log_bid *) Tloc(b, p);
+		log_bid bid = bids[p];
 		BAT *lb;
 		oid pos = p;
 

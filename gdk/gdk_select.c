@@ -1404,10 +1404,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
 			c = ATOMcmp(t, tl, VALptr(&prop->v));
-			if (c > 0 || (li && c == 0)) {
+			if (c < 0 || (li && c == 0)) {
 				if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
 					c = ATOMcmp(t, th, VALptr(&prop->v));
-					if (c < 0 || (hi && c == 0)) {
+					if (c > 0 || (hi && c == 0)) {
 						/* tl..th range fully
 						 * inside MIN..MAX
 						 * range of values in

@@ -97,7 +97,7 @@ MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) mb;
 	(void) stk;
 	(void) p;
-	throw(MAL, "mal.assert", PROGRAM_NYI);
+	throw(MAL, "mal.assert", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 /*
@@ -245,5 +245,5 @@ CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	throw(MAL, "mal.call", PROGRAM_NYI);
+	throw(MAL, "mal.call", SQLSTATE(0A000) PROGRAM_NYI);
 }

@@ -136,21 +136,19 @@ str
 FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2)
 {
 	BAT *b, *dst;
-	BATiter bi;
 	BUN p, q;
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	const TP1 *v = (const TP1 *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		TP1 *v = (TP1 *) BUNtloc(bi, p);
 		TP2 r;
 		msg = FUN(,TP1,_dec2dec_,TP2)(&r, S1, v, d2, S2);
 		if (msg) {
@@ -163,6 +161,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
+		v++;
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -173,21 +172,19 @@ str
 FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *s2)
 {
 	BAT *b, *dst;
-	BATiter bi;
 	BUN p, q;
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	const TP1 *v = (const TP1 *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		TP1 *v = (TP1 *) BUNtloc(bi, p);
 		TP2 r;
 		msg = FUN(,TP1,_num2dec_,TP2)(&r, v, d2, s2);
 		if (msg) {
@@ -200,6 +197,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
+		v++;
 	}
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);

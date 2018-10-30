@@ -464,11 +464,11 @@ bat_max_btelength(BAT *b)
 	lng max = 0;
 	lng min = 0;
 	size_t ret = 0;
-	BATiter bi = bat_iterator(b);
+	const bte *vals = (const bte *) Tloc(b, 0);
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		bte l = *((bte *) BUNtloc(bi, p));
+		bte l = vals[p];
 
 		if (!is_bte_nil(l))
 			m = l;
@@ -495,11 +495,11 @@ bat_max_shtlength(BAT *b)
 	lng max = 0;
 	lng min = 0;
 	size_t ret = 0;
-	BATiter bi = bat_iterator(b);
+	const sht *vals = (const sht *) Tloc(b, 0);
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		sht l = *((sht *) BUNtloc(bi, p));
+		sht l = vals[p];
 
 		if (!is_sht_nil(l))
 			m = l;
@@ -526,11 +526,11 @@ bat_max_intlength(BAT *b)
 	lng max = 0;
 	lng min = 0;
 	size_t ret = 0;
-	BATiter bi = bat_iterator(b);
+	const int *vals = (const int *) Tloc(b, 0);
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		int l = *((int *) BUNtloc(bi, p));
+		int l = vals[p];
 
 		if (!is_int_nil(l))
 			m = l;
@@ -557,11 +557,11 @@ bat_max_lnglength(BAT *b)
 	lng max = 0;
 	lng min = 0;
 	size_t ret = 0;
-	BATiter bi = bat_iterator(b);
+	const lng *vals = (const lng *) Tloc(b, 0);
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		lng l = *((lng *) BUNtloc(bi, p));
+		lng l = vals[p];
 
 		if (!is_lng_nil(l))
 			m = l;
@@ -589,11 +589,11 @@ bat_max_hgelength(BAT *b)
 	hge max = 0;
 	hge min = 0;
 	size_t ret = 0;
-	BATiter bi = bat_iterator(b);
+	const hge *vals = (const hge *) Tloc(b, 0);
 
 	BATloop(b, p, q) {
 		hge m = 0;
-		hge l = *((hge *)BUNtloc(bi, p));
+		hge l = vals[p];
 
 		if (!is_hge_nil(l))
 			m = l;

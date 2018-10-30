@@ -173,7 +173,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			// FIXME: scalar SQL types
 			msg = createException(
 				MAL, "pyapi.eval",
-				SQLSTATE(PY000) "Scalar SQL types haven't been implemented yet... sorry");
+				SQLSTATE(0A000) "Scalar SQL types haven't been implemented yet... sorry");
 			goto wrapup;
 		} else {
 			BAT *ret_bat = NULL;
@@ -358,20 +358,16 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			} break;
 #ifdef HAVE_HGE
 			case TYPE_hge: {
-				li = bat_iterator(b);
 				// create a NPY_FLOAT64 array to hold the huge type
 				vararray = PyArray_New(&PyArray_Type, 1,
 									   (npy_intp[1]){t_end - t_start},
 									   NPY_FLOAT64, NULL, NULL, 0, 0, NULL);
 
 				j = 0;
-				{
-					dbl *data = (dbl *)PyArray_DATA((PyArrayObject *)vararray);
-					BATloop(b, p, q)
-					{
-						const hge *t = (const hge *)BUNtloc(li, p);
-						data[j++] = (dbl)*t;
-					}
+				npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)vararray);
+				const hge *vals = (const hge *) Tloc(b, 0);
+				BATloop(b, p, q) {
+					data[j++] = (npy_float64)vals[p];
 				}
 				break;
 			}

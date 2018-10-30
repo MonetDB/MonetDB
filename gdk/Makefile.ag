@@ -21,7 +21,7 @@ lib_gdk = {
 		gdk_orderidx.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
 		gdk_heap.c gdk_utils.c gdk_utils.h \
-		gdk_atoms.c gdk_atoms.h \
+		gdk_atoms.c gdk_atoms.h gdk_string.c \
 		gdk_qsort.c gdk_qsort_impl.h \
 		gdk_storage.c gdk_bat.c \
 		gdk_delta.c gdk_cross.c gdk_system.c gdk_value.c \
