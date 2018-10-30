@@ -814,7 +814,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
-		str sname = BUNtvar(bi, 0);
+		str sname = BUNtvar(bi, p);
 		lng l;
 
 		if (!s || strcmp(s->base.name, sname) != 0) {
