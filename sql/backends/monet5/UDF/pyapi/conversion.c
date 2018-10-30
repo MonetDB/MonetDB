@@ -173,7 +173,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			// FIXME: scalar SQL types
 			msg = createException(
 				MAL, "pyapi.eval",
-				SQLSTATE(PY000) "Scalar SQL types haven't been implemented yet... sorry");
+				SQLSTATE(0A000) "Scalar SQL types haven't been implemented yet... sorry");
 			goto wrapup;
 		} else {
 			BAT *ret_bat = NULL;
