@@ -74,7 +74,7 @@ VALset(ValPtr v, int t, ptr p)
 #endif
 	case TYPE_str:
 		v->val.sval = (str) p;
-		v->len = ATOMlen(t, p);
+		v->len = strLen((str) p);
 		break;
 	case TYPE_ptr:
 		v->val.pval = *(ptr *) p;
