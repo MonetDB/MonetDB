@@ -120,7 +120,7 @@ MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) mb;
 	(void) stk;
 	(void) p;
-		throw(MAL, "mdb.start", PROGRAM_NYI);
+		throw(MAL, "mdb.start", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str

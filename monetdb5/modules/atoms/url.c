@@ -390,51 +390,10 @@ URLgetBasename(str *retval, url *val)
 str
 URLgetContent(str *retval, url *Str1)
 {
-	stream *f;
-	str retbuf = NULL;
-	str oldbuf = NULL;
-	char *buf[8096];
-	ssize_t len;
-	size_t rlen;
+	(void) retval;
+	(void) Str1;
 
-	if ((f = open_urlstream(*Str1)) == NULL)
-		throw(MAL, "url.getContent", "failed to open urlstream");
-
-	if (mnstr_errnr(f) != 0) {
-		str err = createException(MAL, "url.getContent",
-				"opening stream failed: %s", mnstr_error(f));
-		close_stream(f);
-		*retval = NULL;
-		return err;
-	}
-
-	rlen = 0;
-	while ((len = mnstr_read(f, buf, 1, sizeof(buf))) > 0) {
-		if (retbuf != NULL) {
-			oldbuf = retbuf;
-			retbuf = GDKrealloc(retbuf, rlen + len + 1);
-		} else {
-			retbuf = GDKmalloc(len + 1);
-		}
-		if (retbuf == NULL) {
-			if (oldbuf != NULL)
-				GDKfree(oldbuf);
-			close_stream(f);
-			throw(MAL, "url.getContent", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		oldbuf = NULL;
-		(void)memcpy(retbuf + rlen, buf, len);
-		rlen += len;
-	}
-	close_stream(f);
-	if (len < 0) {
-		GDKfree(retbuf);
-		throw(MAL, "url.getContent", "read error");
-	}
-	retbuf[rlen] = '\0';
-
-	*retval = retbuf;
-	return MAL_SUCCEED;
+	throw(MAL, "url.getContent", SQLSTATE(0A000) "Feature not supported");
 }
 
 /* COMMAND "getContext": Extract the path context from the URL

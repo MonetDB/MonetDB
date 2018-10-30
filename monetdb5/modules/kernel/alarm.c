@@ -158,7 +158,7 @@ ALARMsetalarm(void *res, int *secs, str *action)
 	(void) res;
 	(void) secs;
 	(void) action;		/* foolc compiler */
-	throw(MAL, "alarm.setalarm", PROGRAM_NYI);
+	throw(MAL, "alarm.setalarm", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str
@@ -166,7 +166,7 @@ ALARMtimers(bat *res, bat *actions)
 {
 	(void) res;		/* fool compiler */
 	(void) actions;		/* fool compiler */
-	throw(MAL, "alarm.timers", PROGRAM_NYI);
+	throw(MAL, "alarm.timers", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str

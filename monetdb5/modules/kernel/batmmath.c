@@ -352,14 +352,14 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	scienceFcnImpl(Operator,dbl,)				\
 	scienceFcnImpl(Operator,flt,f)
 
-#define scienceNotImpl(FUNC)							\
-str CMDscience_bat_flt_##FUNC(bat *ret, const bat *bid)	\
-{														\
-	throw(MAL, "batmmath." #FUNC, PROGRAM_NYI);			\
-}														\
-str CMDscience_bat_dbl_##FUNC(bat *ret, const bat *bid)	\
-{														\
-	throw(MAL, "batmmath." #FUNC, PROGRAM_NYI);			\
+#define scienceNotImpl(FUNC)									\
+str CMDscience_bat_flt_##FUNC(bat *ret, const bat *bid)			\
+{																\
+	throw(MAL, "batmmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
+}																\
+str CMDscience_bat_dbl_##FUNC(bat *ret, const bat *bid)			\
+{																\
+	throw(MAL, "batmmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }
 
 scienceImpl(asin)

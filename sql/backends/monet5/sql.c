@@ -4459,7 +4459,7 @@ SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* find the optimizer pipeline */
 	(void) stk;
 	(void) pci;
-	throw(SQL, "updateOptimizer", SQLSTATE(42000) PROGRAM_NYI);
+	throw(SQL, "updateOptimizer", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 /*
