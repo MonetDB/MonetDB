@@ -4492,23 +4492,23 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 static sql_exp*
 calculate_window_bound(mvc *sql, sql_rel *p, int token, symbol *bound, sql_exp *ie, int frame_type, int f)
 {
-	sql_subtype *bt, *it = sql_bind_localtype("int"), *iet;
+	sql_subtype *bt, *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *iet;
 	unsigned char bclass = 0;
 	sql_exp *res = NULL;
 
 	if((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
 		atom *a = NULL;
-		bt = exp_subtype(ie);
+		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie); exp_subtype(ie);
 		bclass = bt->type->eclass;
 
 		if((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
 			if(EC_NUMBER(bclass))
-				a = atom_absolute_max(sql->sa, exp_subtype(ie));
+				a = atom_absolute_max(sql->sa, bt);
 			else
 				a = atom_absolute_max(sql->sa, it);
 		} else if(bound->data.i_val == CURRENT_ROW_BOUND) {
 			if(EC_NUMBER(bclass))
-				a = atom_zero_value(sql->sa, exp_subtype(ie));
+				a = atom_zero_value(sql->sa, bt);
 			else
 				a = atom_zero_value(sql->sa, it);
 		} else {
@@ -4923,19 +4923,21 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if((fend = calculate_window_bound(sql, p, wend->token, rend, ie, frame_type, f)) == NULL)
 			return NULL;
 		if(generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
-								   wstart->token, wend->token) == NULL)
+									  wstart->token, wend->token) == NULL)
 			return NULL;
 	} else if (supports_frames) { //for analytic functions with no frame clause, we use the standard default values
 		sql_exp *ie = obe ? obe->t->data : in;
-		sql_subtype *it = sql_bind_localtype("int"), *st = exp_subtype(ie);
-		unsigned char sclass = st->type->eclass;
+		sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *bt;
+		unsigned char sclass;
 
+		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
+		sclass = bt->type->eclass;
 		if(sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
-			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, exp_subtype(ie)));
+			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, bt));
 			if(order_by_clause)
-				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, exp_subtype(ie)));
+				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, bt));
 			else
-				fend = exp_atom(sql->sa, atom_absolute_max(sql->sa, exp_subtype(ie)));
+				fend = exp_atom(sql->sa, atom_absolute_max(sql->sa, bt));
 		} else {
 			fstart = exp_atom(sql->sa, atom_absolute_max(sql->sa, it));
 			if(order_by_clause)

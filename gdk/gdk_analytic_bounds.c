@@ -537,7 +537,9 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict boun
 			default:
 				goto bound_not_supported;
 		}
-		if(preceding) {
+		if (limit == GDK_lng_max) {
+			return GDKanalyticalallbounds(r, b, p, preceding);
+		} else if(preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, limit);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, limit);
@@ -791,7 +793,9 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict b
 			default:
 				goto bound_not_supported;
 		}
-		if(preceding) {
+		if (limit == GDK_lng_max) {
+			return GDKanalyticalallbounds(r, b, p, preceding);
+		} else if(preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_PRECEDING, limit);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_FOLLOWING, limit);

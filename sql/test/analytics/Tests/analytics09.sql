@@ -17,6 +17,14 @@ select cast(sum(aa) * count(1 + aa) / avg(1) over () as bigint) from analytics;
 
 select avg(sum(aa)) over () from analytics;
 
+select sum(cast(aa as double)) over (rows unbounded preceding) from analytics;
+
+select sum(cast(aa as double)) over (range unbounded preceding) from analytics;
+
+select avg(avg(aa)) over (rows unbounded preceding) from analytics;
+
+select avg(avg(aa)) over (range unbounded preceding) from analytics;
+
 select avg(sum(aa)) over (rows unbounded preceding) from analytics;
 
 select avg(sum(aa)) over (range unbounded preceding) from analytics;
