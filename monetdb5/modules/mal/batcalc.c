@@ -477,12 +477,12 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 			BBPunfix(b->batCacheid);
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, PROGRAM_NYI);
+			throw(MAL, malfunc, SQLSTATE(0A000) PROGRAM_NYI);
 		} else {
 			bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)], s);
 		}
 	} else if (batfunc2 == NULL) {
-		throw(MAL, malfunc, PROGRAM_NYI);
+		throw(MAL, malfunc, SQLSTATE(0A000) PROGRAM_NYI);
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
 		assert(tp2 == TYPE_bat || isaBatType(tp2));
