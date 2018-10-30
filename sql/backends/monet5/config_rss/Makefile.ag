@@ -6,6 +6,7 @@
 
 INCLUDES = ../../../include \
 	   ../../../common \
+	   ../../../../common/options \
 	   ../../../../common/stream \
 	   ../../../../monetdb5/mal \
 	   ../../../../monetdb5/modules/mal \
