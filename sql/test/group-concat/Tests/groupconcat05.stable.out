@@ -102,22 +102,22 @@ Ready.
 % sys.testmore,	sys.L3 # table_name
 % a,	L3 # name
 % int,	clob # type
-% 1,	18 # length
-[ 1,	"anothertestingtodo"	]
-[ 2,	"letshardermore"	]
-[ 3,	"geteveneven"	]
+% 1,	0 # length
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ 3,	NULL	]
 #select group_concat(b, NULL) from testmore;
 % sys.L3 # table_name
 % L3 # name
 % clob # type
-% 43 # length
-[ "anothertestingtodoletsgetharderevenmoreeven"	]
+% 0 # length
+[ NULL	]
 #select group_concat(a, NULL) from testmore;
 % sys.L3 # table_name
 % L3 # name
 % clob # type
-% 12 # length
-[ "111232321321"	]
+% 0 # length
+[ NULL	]
 #select group_concat(a, a) from testmore;
 % sys.L3 # table_name
 % L3 # name

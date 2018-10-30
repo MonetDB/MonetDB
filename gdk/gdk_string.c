@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "gdk_cand.h"
 
 /* String Atom Implementation
  *
@@ -263,7 +264,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			/* make room for hash link */
 			pad += GDK_VARALIGN;
 		}
-	} else if (extralen == 0) { /* i.e., h->hashash == FALSE */
+	} else if (extralen == 0) {	/* i.e., h->hashash == FALSE */
 		/* no VARSHIFT and no string hash value stored => no
 		 * padding/alignment needed */
 		pad = 0;
@@ -644,10 +645,10 @@ escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int 
 	sep1len = sep1 ? strlen(sep1) : 0;
 	sep2len = sep2 ? strlen(sep2) : 0;
 	for (end = 0; src[end]; end++)
-		if (src[end] == '\\' ||
-		    src[end] == quote ||
-		    (sep1len && strncmp(src + end, sep1, sep1len) == 0) ||
-		    (sep2len && strncmp(src + end, sep2, sep2len) == 0)) {
+		if (src[end] == '\\'
+		    || src[end] == quote
+		    || (sep1len && strncmp(src + end, sep1, sep1len) == 0)
+		    || (sep2len && strncmp(src + end, sep2, sep2len) == 0)) {
 			sz += 2;
 #ifndef ASCII_CHR
 		} else if (src[end] == (char) '\302' &&
@@ -681,13 +682,13 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 	for (; src[cur] && l < dstlen; cur++)
 		if (!printable_chr(src[cur])
 #ifndef ASCII_CHR
-		    || (src[cur] == '\302' &&
-			0200 <= (src[cur + 1] & 0377) &&
-			((int) src[cur + 1] & 0377) <= 0237)
-		    || (cur > 0 &&
-			src[cur - 1] == '\302' &&
-			0200 <= (src[cur] & 0377) &&
-			(src[cur] & 0377) <= 0237)
+		    || (src[cur] == '\302'
+			&& 0200 <= (src[cur + 1] & 0377)
+			&& ((int) src[cur + 1] & 0377) <= 0237)
+		    || (cur > 0
+			&& src[cur - 1] == '\302'
+			&& 0200 <= (src[cur] & 0377)
+			&& (src[cur] & 0377) <= 0237)
 #endif
 			) {
 			dst[l++] = '\\';
@@ -709,10 +710,10 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 				l += 3;
 				break;
 			}
-		} else if (src[cur] == '\\' ||
-			   src[cur] == quote ||
-			   (sep1len && strncmp(src + cur, sep1, sep1len) == 0) ||
-			   (sep2len && strncmp(src + cur, sep2, sep2len) == 0)) {
+		} else if (src[cur] == '\\'
+			   || src[cur] == quote
+			   || (sep1len && strncmp(src + cur, sep1, sep1len) == 0)
+			   || (sep2len && strncmp(src + cur, sep2, sep2len) == 0)) {
 			dst[l++] = '\\';
 			dst[l++] = src[cur];
 		} else {
@@ -774,296 +775,320 @@ strWrite(const char *a, stream *s, size_t cnt)
 		return GDK_FAIL;
 }
 
-
-#define IS_A_POINTER 0
-#define IS_A_BAT     1
-
 static gdk_return
-concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN end, BUN ngrp, const oid *restrict cand,
-			   const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils, const char *separator,
-			   const char *func, BUN *has_nils)
+concat_strings(BAT **bnp, ValPtr pt, BAT *b, bool nonil, oid seqb, BUN start,
+	       BUN end, BUN ngrp, const oid *restrict cand, const oid *candend,
+	       const oid *restrict gids, oid min, oid max, bool skip_nils,
+	       const char *separator, BUN *has_nils)
 {
 	oid gid;
 	BUN i, p, q, nils = 0;
-	const oid *aux;
-	size_t* lengths = NULL, separator_length = strlen(separator), next_length;
-	oid *lastoid = NULL;
-	str* astrings = NULL, s, single_str = NULL;
+	size_t *lengths = NULL, separator_length = strlen(separator), next_length;
+	str *astrings = NULL, s, single_str = NULL;
 	BATiter bi;
 	BAT *bn = NULL;
 	gdk_return rres = GDK_SUCCEED;
 
-	(void) skip_nils;
-
-	if (what == IS_A_BAT && (bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
-		rres = GDK_FAIL;
-		goto finish;
+	/* exactly one of bnp and pt must be NULL, the other non-NULL */
+	assert((bnp == NULL) != (pt == NULL));
+	/* if pt not NULL, only a single group allowed */
+	assert(pt == NULL || ngrp == 1);
+	if (bnp) {
+		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
+			rres = GDK_FAIL;
+			goto finish;
+		}
+		*bnp = bn;
 	}
 
 	bi = bat_iterator(b);
 
 	if (ngrp == 1) {
 		size_t offset = 0, single_length = 0;
-		oid single_oid = 0;
+		bool empty = true;
+
 		if (cand == NULL) {
-			if(nonil) {
-				BATloop(b,p,q) {
-					s = BUNtvar(bi, p);
-					next_length = strlen(s);
-					single_length += next_length + separator_length;
-					single_oid = p;
+			if (nonil) {
+				for (p = start; p < end; p++) {
+					single_length += strlen(BUNtvar(bi, p));
+					if (!empty)
+						single_length += separator_length;
+					empty = false;
 				}
 			} else {
-				BATloop(b,p,q) {
+				for (p = start; p < end; p++) {
 					s = BUNtvar(bi, p);
 					if (*s != '\200') {
-						next_length = strlen(s);
-						single_length += next_length + separator_length;
-						single_oid = p;
-					} else {
-						single_oid = BUN_NONE;
-						nils = 1;
-						break;
-					}
-				}
-			}
-			if(!nils) {
-				if ((single_str = GDKmalloc((single_length + 1 - separator_length) * sizeof(str))) == NULL) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-				BATloop(b,p,q){
-					s = BUNtvar(bi, p);
-					next_length = strlen(s);
-					memcpy(single_str + offset, s, next_length);
-					offset += next_length;
-					if(p != single_oid) {
-						memcpy(single_str + offset, separator, separator_length);
-						offset += separator_length;
-					}
-				}
-				single_str[offset] = '\0';
-				if(what == IS_A_BAT) {
-					if(BUNappend(bn, single_str, false) != GDK_SUCCEED) {
-						GDKerror("%s: malloc failure\n", func);
-						rres = GDK_FAIL;
-						goto finish;
-					}
-				} else {
-					ValPtr pt = (ValPtr) res;
-					pt->len = single_str[offset];
-					if((pt->val.sval = GDKstrdup(single_str)) == NULL) {
-						GDKerror("%s: malloc failure\n", func);
-						rres = GDK_FAIL;
-						goto finish;
-					}
-				}
-			} else if(what == IS_A_BAT) {
-				if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-			} else {
-				ValPtr pt = (ValPtr) res;
-				pt->len = 0;
-				if((pt->val.sval = GDKstrdup(str_nil)) == NULL) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-			}
-		} else { /* with candidate lists */
-			aux = cand;
-			if(nonil) {
-				while (cand < candend && nils == 0) {
-					i = *cand++ - seqb;
-					if (i >= end)
-						break;
-					s = BUNtvar(bi, i);
-					next_length = strlen(s);
-					single_length += next_length + separator_length;
-					single_oid = i;
-				}
-			} else {
-				while (cand < candend && nils == 0) {
-					i = *cand++ - seqb;
-					if (i >= end)
-						break;
-					s = BUNtvar(bi, i);
-					if (*s != '\200') {
-						next_length = strlen(s);
-						single_length += next_length + separator_length;
-						single_oid = i;
-					} else {
-						single_oid = BUN_NONE;
+						single_length += strlen(s);
+						if (!empty)
+							single_length += separator_length;
+						empty = false;
+					} else if (!skip_nils) {
 						nils = 1;
 						break;
 					}
 				}
 			}
 			if (!nils) {
-				if ((single_str = GDKmalloc((single_length + 1 - separator_length) * sizeof(str))) == NULL) {
-					GDKerror("%s: malloc failure\n", func);
+				if ((single_str = GDKmalloc(single_length + 1)) == NULL) {
 					rres = GDK_FAIL;
 					goto finish;
 				}
-				cand = aux;
-				while (cand < candend) {
-					i = *cand++ - seqb;
-					if (i >= end)
+				empty = true;
+				if (nonil) {
+					for (p = start; p < end; p++) {
+						s = BUNtvar(bi, p);
+						if (!empty) {
+							memcpy(single_str + offset, separator, separator_length);
+							offset += separator_length;
+						}
+						next_length = strlen(s);
+						memcpy(single_str + offset, s, next_length);
+						offset += next_length;
+						empty = false;
+					}
+				} else {
+					for (p = start; p < end; p++) {
+						s = BUNtvar(bi, p);
+						if (*s == '\200')
+							continue;
+						if (!empty) {
+							memcpy(single_str + offset, separator, separator_length);
+							offset += separator_length;
+						}
+						next_length = strlen(s);
+						memcpy(single_str + offset, s, next_length);
+						offset += next_length;
+						empty = false;
+					}
+				}
+				single_str[offset] = '\0';
+				if (bn) {
+					if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
+						rres = GDK_FAIL;
+						goto finish;
+					}
+				} else {
+					pt->len = offset + 1;
+					pt->val.sval = single_str;
+					single_str = NULL;	/* don't free */
+				}
+			} else if (bn) {
+				if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+					rres = GDK_FAIL;
+					goto finish;
+				}
+			} else {
+				if (VALinit(pt, TYPE_str, str_nil) == NULL) {
+					rres = GDK_FAIL;
+					goto finish;
+				}
+			}
+		} else {	/* with candidate lists */
+			q = (BUN) (candend - cand);
+			if (nonil) {
+				for (p = 0; p < q; p++) {
+					s = BUNtvar(bi, cand[p] - seqb);
+					single_length += strlen(s);
+					if (!empty)
+						single_length += separator_length;
+					empty = false;
+				}
+			} else {
+				for (p = 0; p < q; p++) {
+					s = BUNtvar(bi, cand[p] - seqb);
+					if (*s != '\200') {
+						single_length += strlen(s);
+						if (!empty)
+							single_length += separator_length;
+						empty = false;
+					} else if (!skip_nils) {
+						nils = 1;
 						break;
-					s = BUNtvar(bi, i);
-					next_length = strlen(s);
-					memcpy(single_str + offset, s, next_length);
-					offset += next_length;
-					if (i != single_oid) {
-						memcpy(single_str + offset, separator, separator_length);
-						offset += separator_length;
+					}
+				}
+			}
+			if (!nils) {
+				if ((single_str = GDKmalloc(single_length + 1)) == NULL) {
+					rres = GDK_FAIL;
+					goto finish;
+				}
+				empty = true;
+				if (nonil) {
+					for (p = 0; p < q; p++) {
+						s = BUNtvar(bi, cand[p] - seqb);
+						if (!empty) {
+							memcpy(single_str + offset, separator, separator_length);
+							offset += separator_length;
+						}
+						next_length = strlen(s);
+						memcpy(single_str + offset, s, next_length);
+						offset += next_length;
+						empty = false;
+					}
+				} else {
+					for (p = 0; p < q; p++) {
+						s = BUNtvar(bi, cand[p] - seqb);
+						if (*s == '\200')
+							continue;
+						if (!empty) {
+							memcpy(single_str + offset, separator, separator_length);
+							offset += separator_length;
+						}
+						next_length = strlen(s);
+						memcpy(single_str + offset, s, next_length);
+						offset += next_length;
+						empty = false;
 					}
 				}
 				single_str[offset] = '\0';
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
-					GDKerror("%s: malloc failure\n", func);
 					rres = GDK_FAIL;
 					goto finish;
 				}
-			} else if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-				GDKerror("%s: malloc failure\n", func);
-				rres = GDK_FAIL;
-				goto finish;
+			} else if (bn) {
+				if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
+					rres = GDK_FAIL;
+					goto finish;
+				}
+			} else {
+				if (VALinit(pt, TYPE_str, str_nil) == NULL) {
+					rres = GDK_FAIL;
+					goto finish;
+				}
 			}
 		}
 	} else {
-		if((lengths = GDKzalloc(ngrp * sizeof(*lengths))) == NULL) { /* first used to calculated the total length of*/
-			rres = GDK_FAIL;                                           /* each group, then the the total offset */
-			goto finish;
-		}
-		if((lastoid = (oid*) GDKzalloc(ngrp * sizeof(oid))) == NULL) {
+		/* first used to calculated the total length of
+		 * each group, then the the total offset */
+		if ((lengths = GDKzalloc(ngrp * sizeof(*lengths))) == NULL) {
 			rres = GDK_FAIL;
 			goto finish;
 		}
-		if((astrings = (str*) GDKzalloc(ngrp * sizeof(str))) == NULL) {
+		if ((astrings = GDKmalloc(ngrp * sizeof(str))) == NULL) {
 			rres = GDK_FAIL;
 			goto finish;
 		}
+		/* at first, set astrings[i] tp str_nil, then for each
+		 * non-empty group (even if all strings in the group
+		 * are empty), set to NULL */
+		for (i = 0; i < ngrp; i++)
+			astrings[i] = (str) str_nil;
 		if (cand == NULL) {
 			for (i = start; i < end; i++) {
-				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
-					gid = gids ? gids[i] - min : (oid) i;
-					if (lastoid[gid] != BUN_NONE) {
-						s = BUNtvar(bi, i);
-						if (*s != '\200') {
-							next_length = strlen(s);
-							lengths[gid] += next_length + separator_length;
-							lastoid[gid] = i;
-						} else {
-							lastoid[gid] = BUN_NONE;
-							nils++;
-						}
+				if (gids[i] >= min && gids[i] <= max) {
+					gid = gids[i] - min;
+					if (lengths[gid] == (size_t) -1)
+						continue;
+					s = BUNtvar(bi, i);
+					if (*s != '\200') {
+						lengths[gid] += strlen(s) + separator_length;
+						astrings[gid] = NULL;
+					} else if (!skip_nils) {
+						nils++;
+						lengths[gid] = (size_t) -1;
+						astrings[gid] = (str) str_nil;
 					}
 				}
 			}
 			for (i = 0; i < ngrp; i++) {
-				if(lastoid[i] != BUN_NONE) {
-					if((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
-						GDKerror("%s: malloc failure\n", func);
+				if (astrings[i] == NULL) {
+					if ((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
 						rres = GDK_FAIL;
 						goto finish;
 					}
+					astrings[i][0] = 0;
 					lengths[i] = 0;
-				}
+				} else
+					astrings[i] = NULL;
 			}
 			for (i = start; i < end; i++) {
-				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
-					gid = gids ? gids[i] - min : (oid) i;
-					if (lastoid[gid] < BUN_NONE) {
+				if (gids[i] >= min && gids[i] <= max) {
+					gid = gids[i] - min;
+					if (astrings[gid]) {
 						s = BUNtvar(bi, i);
-						next_length = strlen(s);
-						memcpy(astrings[gid] + lengths[gid], s, next_length);
-						lengths[gid] += next_length;
-						if (i != lastoid[gid]) {
+						if (*s == '\200')
+							continue;
+						if (astrings[gid][lengths[gid]]) {
 							memcpy(astrings[gid] + lengths[gid], separator, separator_length);
 							lengths[gid] += separator_length;
 						}
+						next_length = strlen(s);
+						memcpy(astrings[gid] + lengths[gid], s, next_length);
+						lengths[gid] += next_length;
+						astrings[gid][lengths[gid]] = 1;
 					}
 				}
 			}
 			for (i = 0; i < ngrp; i++) {
-				if (lastoid[i] < BUN_NONE) {
+				if (astrings[i]) {
 					astrings[i][lengths[i]] = '\0';
-					if(BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
-						GDKerror("%s: malloc failure\n", func);
+					if (BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
 						rres = GDK_FAIL;
 						goto finish;
 					}
-				} else if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-					GDKerror("%s: malloc failure\n", func);
+				} else if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 					rres = GDK_FAIL;
 					goto finish;
 				}
 			}
 		} else {
-			aux = cand;
-			while (cand < candend) {
-				i = *cand++ - seqb;
-				if (i >= end)
-					break;
-				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
-					gid = gids ? gids[i] - min : (oid) i;
-					if (lastoid[gid] != BUN_NONE) {
-						s = BUNtvar(bi, i);
-						if (*s != '\200') {
-							next_length = strlen(s);
-							lengths[gid] += next_length;
-							lastoid[gid] = i;
-						} else {
-							lastoid[gid] = BUN_NONE;
-							nils++;
-						}
+			q = (BUN) (candend - cand);
+			for (p = 0; p < q; p++) {
+				i = cand[p] - seqb;
+				if (gids[i] >= min && gids[i] <= max) {
+					gid = gids[i] - min;
+					if (lengths[gid] == (size_t) -1)
+						continue;
+					s = BUNtvar(bi, i);
+					if (*s != '\200') {
+						lengths[gid] += strlen(s) + separator_length;
+						astrings[gid] = NULL;
+					} else if (!skip_nils) {
+						nils++;
+						lengths[gid] = (size_t) -1;
+						astrings[gid] = (str) str_nil;
 					}
 				}
 			}
 			for (i = 0; i < ngrp; i++) {
-				if(lastoid[i] != BUN_NONE) {
-					if((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
-						GDKerror("%s: malloc failure\n", func);
+				if (astrings[i] == NULL) {
+					if ((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
 						rres = GDK_FAIL;
 						goto finish;
 					}
+					astrings[i][0] = 0;
 					lengths[i] = 0;
-				}
+				} else
+					astrings[i] = NULL;
 			}
-			cand = aux;
-			while (cand < candend) {
-				i = *cand++ - seqb;
-				if (i >= end)
-					break;
-				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
-					gid = gids ? gids[i] - min : (oid) i;
-					if (lastoid[gid] < BUN_NONE) {
+			for (p = 0; p < q; p++) {
+				i = cand[p] - seqb;
+				if (gids[i] >= min && gids[i] <= max) {
+					gid = gids[i] - min;
+					if (astrings[gid]) {
 						s = BUNtvar(bi, i);
-						next_length = strlen(s);
-						memcpy(astrings[gid] + lengths[gid], s, next_length);
-						lengths[gid] += next_length;
-						if (i != lastoid[gid]) {
+						if (*s == '\200')
+							continue;
+						if (astrings[gid][lengths[gid]]) {
 							memcpy(astrings[gid] + lengths[gid], separator, separator_length);
 							lengths[gid] += separator_length;
 						}
+						next_length = strlen(s);
+						memcpy(astrings[gid] + lengths[gid], s, next_length);
+						lengths[gid] += next_length;
+						astrings[gid][lengths[gid]] = 1;
 					}
 				}
 			}
 			for (i = 0; i < ngrp; i++) {
-				if (lastoid[i] < BUN_NONE) {
+				if (astrings[i]) {
 					astrings[i][lengths[i]] = '\0';
-					if(BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
-						GDKerror("%s: malloc failure\n", func);
+					if (BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
 						rres = GDK_FAIL;
 						goto finish;
 					}
-				} else if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-					GDKerror("%s: malloc failure\n", func);
+				} else if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 					rres = GDK_FAIL;
 					goto finish;
 				}
@@ -1071,75 +1096,52 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 		}
 	}
 
-finish:
-	if(has_nils)
+  finish:
+	if (has_nils)
 		*has_nils = nils;
-	if(lengths)
-		GDKfree(lengths);
-	if(astrings) {
-		for(i = 0 ; i < ngrp ; i++) {
-			if(astrings[i])
+	GDKfree(lengths);
+	if (astrings) {
+		for (i = 0; i < ngrp; i++) {
+			if (astrings[i] != str_nil)
 				GDKfree(astrings[i]);
 		}
 		GDKfree(astrings);
 	}
-	if(single_str)
-		GDKfree(single_str);
-	if(lastoid)
-		GDKfree(lastoid);
-	if(rres == GDK_FAIL) {
-		if(bn) {
-			BBPreclaim(bn);
-			bn = NULL;
-		} else {
-			ValPtr pt = (ValPtr) res;
-			if(pt->val.sval) {
-				GDKfree(pt->val.sval);
-				pt->val.sval = NULL;
-			}
-		}
-	}
-	if(what == IS_A_BAT) {
-		*((BAT**)res) = bn;
-	}
+	GDKfree(single_str);
+	if (rres == GDK_FAIL)
+		BBPreclaim(bn);
 
 	return rres;
 }
 
 gdk_return
-BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, const char *separator)
+BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils,
+		    bool abort_on_error, bool nil_if_empty,
+		    const char *separator)
 {
-	oid min, max;
-	BUN ngrp, start, end;
+	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
-	const char *err;
 
 	(void) abort_on_error;
 	assert(separator);
 	res->vtype = TYPE_str;
 
 	if (BATcount(b) == 0 || *separator == '\200') {
-		res->len = 0;
-		res->val.sval = nil_if_empty ? GDKstrdup(str_nil) : GDKstrdup("");
-		if(res->val.sval == NULL) {
-			GDKerror("BATstr_group_concat: malloc failure\n");
+		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			return GDK_FAIL;
-		}
 		return GDK_SUCCEED;
 	}
-	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &start, &end, &cand, &candend)) != NULL) {
-		GDKerror("BATstr_group_concat: %s\n", err);
-		return GDK_FAIL;
-	}
+	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	return concat_strings(res, IS_A_POINTER, b, b->tnonil, b->hseqbase, start, end, 1, cand, candend, &min, min, max,
-						  skip_nils, separator, "BATstr_group_concat", NULL);
+	return concat_strings(NULL, res, b, b->tnonil, b->hseqbase, start, end,
+			      1, cand, candend, NULL, 0, 0, skip_nils,
+			      separator, NULL);
 }
 
 BAT *
-BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool abort_on_error, const char *separator)
+BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils,
+			 bool abort_on_error, const char *separator)
 {
-	const oid *restrict gids;
 	BAT *bn = NULL;
 	oid min, max;
 	BUN ngrp, start, end;
@@ -1151,7 +1153,8 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool ab
 	assert(separator);
 	(void) skip_nils;
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end, &cand, &candend)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
+				    &start, &end, &cand, &candend)) !=NULL) {
 		GDKerror("BATgroupstr_group_concat: %s\n", err);
 		return NULL;
 	}
@@ -1161,32 +1164,22 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool ab
 	}
 
 	if (BATcount(b) == 0 || ngrp == 0 || *separator == '\200') {
-		/* trivial: no strings to concat, so return bat aligned with g with nil in the tail */
+		/* trivial: no strings to concat, so return bat
+		 * aligned with g with nil in the tail */
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
 	}
 
-	if ((e == NULL || (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
-		(BATtdense(g) || (g->tkey && g->tnonil))) {
-		/* trivial: singleton groups, so all results are equal to the inputs (but possibly a different type) */
+	if (BATtdense(g) || (g->tkey && g->tnonil)) {
+		/* trivial: singleton groups, so all results are equal
+		 * to the inputs (but possibly a different type) */
 		return BATconvert(b, s, TYPE_str, abort_on_error);
 	}
 
-	if (BATtdense(g))
-		gids = NULL;
-	else
-		gids = (const oid *) Tloc(g, start);
-
-	res = concat_strings(&bn, IS_A_BAT, b, b->tnonil, b->hseqbase, start, end, ngrp, cand, candend, gids, min,
-						  max, skip_nils, separator, "BATgroupstr_group_concat", &nils);
-
-	if (res == GDK_SUCCEED) {
-		BATsetcount(bn, ngrp);
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->tnil = nils != 0;
-		bn->tnonil = nils == 0;
-	}
+	res = concat_strings(&bn, NULL, b, b->tnonil, b->hseqbase, start, end,
+			     ngrp, cand, candend, (const oid *) Tloc(g, 0),
+			     min, max, skip_nils, separator, &nils);
+	if (res != GDK_SUCCEED)
+		return NULL;
 
 	return bn;
 }
