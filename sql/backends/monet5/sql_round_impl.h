@@ -352,8 +352,8 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	const TYPE r = NIL(TYPE);
 	BATloop(b, p, q) {
-		TYPE r = NIL(TYPE);
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);

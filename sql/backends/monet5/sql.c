@@ -3522,7 +3522,6 @@ str
 SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 {
 	BAT *b, *bn;
-	BATiter bi;
 	BUN p, q;
 	dbl s, c1, c2, r;
 	char *msg = NULL;
@@ -3533,15 +3532,15 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	if ((b = BATdescriptor(*decl)) == NULL) {
 		throw(SQL, "alpha", SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	bi = bat_iterator(b);
 	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.alpha", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	s = sin(radians(*theta));
+	const dbl *vals = (const dbl *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		dbl d = *(dbl *) BUNtloc(bi, p);
+		dbl d = vals[p];
 		if (is_dbl_nil(d))
 			r = dbl_nil;
 		else if (fabs(d) + *theta > 89.9)

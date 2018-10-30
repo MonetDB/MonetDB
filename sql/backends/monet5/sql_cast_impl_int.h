@@ -205,21 +205,20 @@ str
 FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2)
 {
 	BAT *b, *bn;
-	BATiter bi;
 	BUN p, q;
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) "Cannot access descriptor");
 	}
-	bi = bat_iterator(b);
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	const TP1 *vals = (const TP1 *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		TP1 val = * (TP1 *) BUNtloc(bi, p);
+		TP1 val = vals[p];
 		TP2 r;
 
 		/* shortcut nil */
@@ -250,21 +249,20 @@ str
 FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *s2)
 {
 	BAT *b, *bn;
-	BATiter bi;
 	BUN p, q;
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access descriptor");
 	}
-	bi = bat_iterator(b);
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	const TP1 *vals = (const TP1 *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		TP1 val = * (TP1 *) BUNtloc(bi, p);
+		TP1 val = vals[p];
 		TP2 r;
 		/* shortcut nil */
 		if (ISNIL(TP1)(val)) {
