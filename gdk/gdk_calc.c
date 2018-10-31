@@ -1654,8 +1654,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			ADD##IF##_WITH_CHECK(TYPE1, lft[i],		\
-					     TYPE2, rgt[j],		\
+			ADD##IF##_WITH_CHECK(lft[i], rgt[j],		\
 					     TYPE3, dst[k],		\
 					     max,			\
 					     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
@@ -1687,8 +1686,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				ADD##IF##_WITH_CHECK(TYPE1, lft[i],	\
-						     TYPE2, rgt[j],	\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
 						     TYPE3, dst[k],	\
 						     max,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
@@ -3724,8 +3722,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			SUB##IF##_WITH_CHECK(TYPE1, lft[i],		\
-					     TYPE2, rgt[j],		\
+			SUB##IF##_WITH_CHECK(lft[i], rgt[j],		\
 					     TYPE3, dst[k],		\
 					     max,			\
 					     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
@@ -3757,8 +3754,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				SUB##IF##_WITH_CHECK(TYPE1, lft[i],	\
-						     TYPE2, rgt[j],	\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
 						     TYPE3, dst[k],	\
 						     max,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
@@ -5647,8 +5643,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			MUL##IF##4_WITH_CHECK(TYPE1, lft[i],		\
-					      TYPE2, rgt[j],		\
+			MUL##IF##4_WITH_CHECK(lft[i], rgt[j],		\
 					      TYPE3, dst[k],		\
 					      max,			\
 					      TYPE4,			\
@@ -5681,8 +5676,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				MUL##IF##4_WITH_CHECK(TYPE1, lft[i],	\
-						      TYPE2, rgt[j],	\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
 						      TYPE3, dst[k],	\
 						      max,		\
 						      TYPE3,		\
@@ -5730,8 +5724,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			dst[k] = hge_nil;				\
 			nils++;						\
 		} else {						\
-			HGEMUL_CHECK(TYPE1, lft[i],			\
-				     TYPE2, rgt[j],			\
+			HGEMUL_CHECK(lft[i], rgt[j],			\
 				     dst[k],				\
 				     max,				\
 				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\
@@ -5764,8 +5757,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			dst[k] = lng_nil;				\
 			nils++;						\
 		} else {						\
-			LNGMUL_CHECK(TYPE1, lft[i],			\
-				     TYPE2, rgt[j],			\
+			LNGMUL_CHECK(lft[i], rgt[j],			\
 				     dst[k],				\
 				     max,				\
 				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\

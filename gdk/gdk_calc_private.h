@@ -47,7 +47,7 @@
 /* dst = lft + rgt with overflow check */
 
 /* generic version */
-#define ADD_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
+#define ADD_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
 	do {								\
 		if ((rgt) < 1) {					\
 			if (-(max) - (rgt) > (lft)) {			\
@@ -72,22 +72,22 @@
 
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
 /* integer version using Gnu CC builtin function for overflow check */
-#define ADDI_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
+#define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
 	OP_WITH_CHECK(lft, rgt, dst, add, TYPE3##_nil, max, on_overflow)
 #else
 /* integer version using generic version */
-#define ADDI_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
-	ADD_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow)
+#define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
+	ADD_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
 
 /* floating point version using generic version */
-#define ADDF_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
-	ADD_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow)
+#define ADDF_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
+	ADD_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)
 
 /* dst = lft - rgt with overflow check */
 
 /* generic version */
-#define SUB_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
+#define SUB_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
 	do {								\
 		if ((rgt) < 1) {					\
 			if ((max) + (rgt) < (lft)) {			\
@@ -112,22 +112,22 @@
 
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
 /* integer version using Gnu CC builtin function for overflow check */
-#define SUBI_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
+#define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
 	OP_WITH_CHECK(lft, rgt, dst, sub, TYPE3##_nil, max, on_overflow)
 #else
 /* integer version using generic version */
-#define SUBI_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
-	SUB_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow)
+#define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
+	SUB_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
 
 /* floating point version using generic version */
-#define SUBF_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
-	SUB_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow)
+#define SUBF_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
+	SUB_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)
 
 /* dst = lft * rgt with overflow check */
 
 /* generic version */
-#define MUL4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
+#define MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)	\
 	do {								\
 		TYPE4 c = (TYPE4) (lft) * (rgt);			\
 		if (c < (TYPE4) -(max) ||				\
@@ -143,22 +143,22 @@
 
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
 /* integer version using Gnu CC builtin function for overflow check */
-#define MULI4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
+#define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	OP_WITH_CHECK(lft, rgt, dst, mul, TYPE3##_nil, max, on_overflow)
-#define LNGMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, max, on_overflow)	\
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	OP_WITH_CHECK(lft, rgt, dst, mul, lng_nil, max, on_overflow)
 #else
 /* integer version using generic version */
-#define MULI4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
-	MUL4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, TYPE4, on_overflow)
+#define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
+	MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)
 #ifdef HAVE_HGE
-#define LNGMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, max, on_overflow)	\
-	MULI4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, lng, dst, max, hge, on_overflow)
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
+	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
 #else
 #if defined(HAVE__MUL128)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
-#define LNGMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, max, on_overflow)	\
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
 		lng clo, chi;						\
 		clo = _mul128((lng) (lft), (lng) (rgt), &chi);		\
@@ -173,7 +173,7 @@
 		}							\
 	} while (0)
 #else
-#define LNGMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, max, on_overflow)	\
+#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
 		lng a = (lft), b = (rgt);				\
 		unsigned int a1, a2, b1, b2;				\
@@ -208,15 +208,15 @@
 #endif
 #endif	/* HAVE_HGE */
 #endif
-#define MULF4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
-	MUL4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, TYPE4, on_overflow)
+#define MULF4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
+	MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)
 
 #ifdef HAVE_HGE
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
-#define HGEMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, max, on_overflow)	\
+#define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	OP_WITH_CHECK(lft, rgt, dst, mul, hge_nil, max, on_overflow)
 #else
-#define HGEMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, max, on_overflow)	\
+#define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
 		hge a = (lft), b = (rgt);				\
 		ulng a1, a2, b1, b2;					\
