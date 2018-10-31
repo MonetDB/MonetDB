@@ -34,10 +34,6 @@
 static inline str
 FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 {
-#ifndef DOWNCAST
-	TP2 r = (TP2) val;
-#endif
-
 #ifdef DOWNCAST
 	if (s2 > s1) {
 		if (val < GDKmin(TP2) / scales[s2 - s1] ||
@@ -81,6 +77,8 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 	}
 	*res = (TP2) val;
 #else
+	TP2 r = (TP2) val;
+
 	if (s2 > s1) {
 		r *= (TP2) scales[s2 - s1];
 	} else if (s2 < s1) {
@@ -93,14 +91,17 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 	*res = r;
 #endif
 	if (p) {
-		TP2 cpyval = *res;
-		int inlen = 1;
-
-		/* count the number of digits in the input */
-		while (cpyval /= 10)
-			inlen++;
-		/* rounding is allowed */
-		if (inlen > p) {
+		TP2 cpyval = *res < 0 ? -*res : *res;
+		if (cpyval >= scales[p]) {
+			int inlen;
+			for (inlen = p + 1; inlen <
+#ifdef HAVE_HGE
+				     39
+#else
+				     19
+#endif
+				     && cpyval >= scales[inlen]; inlen++)
+				;
 			throw(SQL, STRNG(FUN(,TP1,_2_,TP2)), SQLSTATE(22003) "Too many digits (%d > %d)", inlen, p);
 		}
 	}
