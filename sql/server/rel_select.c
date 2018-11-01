@@ -4692,7 +4692,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return sql_error(sql, 02, SQLSTATE(42000) "OVER: only possible within the selection");
 
 	p = r->l;
-	if(!p || !p->exps->h) { //no from clause, use a constant as the expression to project
+	if(!p || (!is_joinop(p->op) && !p->exps->h)) { //no from clause, use a constant as the expression to project
 		sql_exp *exp = exp_atom_lng(sql->sa, 0);
 		exp_label(sql->sa, exp, ++sql->label);
 		if (!p) {

@@ -122,13 +122,13 @@ project (
 | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "L43"."L43" ]
 | | | | ) [ "f"."id", "L43"."L43" ]
-| | | ) [ "f"."id" as "L6"."fid", "L43"."L43" as "L44"."line" ] [ "L44"."line" ASC ]
+| | | ) [ "f"."id" as "L6"."fid", "L43"."L43" as "L45"."line" ] [ "L45"."line" ASC ]
 | | ) [ "L6"."fid" as "commented_function_signatures_6542"."fid" ]
-| ) [  ] [ sys.count() NOT NULL as "L52"."L52" ]
-) [ "L52"."L52" NOT NULL ]
+| ) [  ] [ sys.count() NOT NULL as "L53"."L53" ]
+) [ "L53"."L53" NOT NULL ]
 #select count (*) from sys.commented_function_signatures_6542;
-% .L52 # table_name
-% L52 # name
+% .L53 # table_name
+% L53 # name
 % bigint # type
 % 1 # length
 [ 0	]
