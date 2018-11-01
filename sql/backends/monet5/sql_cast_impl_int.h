@@ -29,7 +29,9 @@
 #define SIZEOF_sht   2
 #define SIZEOF_int   4
 #define SIZEOF_lng   8
+#ifdef HAVE_HGE
 #define SIZEOF_hge   16
+#endif
 
 /* sizeof(scales)/sizeof(scales[0]), see sql_atom.c */
 #ifdef HAVE_HGE
@@ -107,14 +109,6 @@ FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
 {
 	return FUN(do_,TP1,_dec2dec_,TP2)(res, 0, *v, *d2, *s2);
 }
-
-#define SIZEOF_bte 1
-#define SIZEOF_sht 2
-#define SIZEOF_int 4
-#define SIZEOF_lng 8
-#ifdef HAVE_HGE
-#define SIZEOF_hge 16
-#endif
 
 str
 FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
