@@ -736,10 +736,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP1
 #endif
 
-/* down casting */
-
-#define DOWNCAST
-
 #define TP1 sht
 #define TP2 bte
 #include "sql_cast_impl_int.h"
