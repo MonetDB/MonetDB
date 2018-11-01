@@ -4578,7 +4578,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
 										goto bailout;
 								} else {
-									if (BUNappend(mode, 0, false) != GDK_SUCCEED)
+									if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
 										goto bailout;
 								}
 								if (BUNappend(type, c->type.type->sqlname, false) != GDK_SUCCEED)
@@ -4690,7 +4690,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
 											goto bailout;
 									} else {
-										if (BUNappend(mode, 0, false) != GDK_SUCCEED)
+										if (BUNappend(mode, str_nil, false) != GDK_SUCCEED)
 											goto bailout;
 									}
 									if (BUNappend(type, "oid", false) != GDK_SUCCEED)
