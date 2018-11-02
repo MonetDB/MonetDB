@@ -49,7 +49,7 @@ monet_version(void)
 	cores = MT_check_nr_cores();
 
 	const char *rev = mercurial_revision();
-	printf("MonetDB 5 server %s", VERSION);
+	printf("MonetDB 5 server %s", GDKversion());
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 		printf(" (%s)", MONETDB_RELEASE);

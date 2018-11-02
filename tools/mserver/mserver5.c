@@ -129,7 +129,6 @@ monet_hello(void)
 	dbl sz_mem_h;
 	char  *qc = " kMGTPE";
 	int qi = 0;
-	size_t len;
 
 	monet_memory = MT_npages() * MT_pagesize();
 	sz_mem_h = (dbl) monet_memory;
@@ -138,10 +137,10 @@ monet_hello(void)
 		qi++;
 	}
 
-	printf("# MonetDB 5 server v%s", VERSION);
+	printf("# MonetDB 5 server v%s", GDKversion());
 	{
 		const char *rev = mercurial_revision();
-		printf("# MonetDB5 server v%s", VERSION);
+		printf("# MonetDB5 server v%s", GDKversion());
 		/* coverity[pointless_string_compare] */
 		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 			printf(" (%s)", MONETDB_RELEASE);
@@ -173,18 +172,21 @@ monet_hello(void)
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
-	len = snprintf(monet_characteristics, sizeof(monet_characteristics)-1, "{\n\"version\":\"%s\",\n", VERSION);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"release\":\"%s\",\n", MONETDB_RELEASE);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"host\":\"%s\",\n", HOST);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"threads\":\"%d\",\n", GDKnr_threads);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"memory\":\"%.3f %cB\",\n", sz_mem_h, qc[qi]);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"oid\":\"%zu\",\n", sizeof(oid) *8);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"packages\":[");
-	// add the compiled in package names
+	(void) snprintf(monet_characteristics, sizeof(monet_characteristics),
+			"{\n"
+			"\"version\":\"%s\",\n"
+			"\"release\":\"%s\",\n"
+			"\"host\":\"%s\",\n"
+			"\"threads\":\"%d\",\n"
+			"\"memory\":\"%.3f %cB\",\n"
+			"\"oid\":\"%zu\",\n"
+			"\"packages\":["
 #ifdef HAVE_HGE
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"%s\"","huge");
+			"\"huge\""
 #endif
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "]\n}");
+			"]\n}",
+			GDKversion(), MONETDB_RELEASE, HOST, GDKnr_threads,
+			sz_mem_h, qc[qi], sizeof(oid) * 8);
 }
 
 static str
@@ -496,7 +498,7 @@ main(int argc, char **av)
 	}
 	mo_free_options(set, setlen);
 
-	if (GDKsetenv("monet_version", VERSION) != GDK_SUCCEED ||
+	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
 	    GDKsetenv("monet_release", MONETDB_RELEASE) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 		exit(1);
