@@ -649,7 +649,6 @@ exit 0
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_opt_sql_append.so
 %{_libdir}/monetdb5/lib_udf.so
-%{_libdir}/monetdb5/lib_vault.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
