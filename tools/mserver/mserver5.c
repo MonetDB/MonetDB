@@ -138,12 +138,19 @@ monet_hello(void)
 		qi++;
 	}
 
-	printf("# MonetDB 5 server v" VERSION);
+	printf("# MonetDB 5 server v%s", VERSION);
+	{
+		const char *rev = mercurial_revision();
+		printf("# MonetDB5 server v%s", VERSION);
+		/* coverity[pointless_string_compare] */
+		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+			printf(" (%s)", MONETDB_RELEASE);
+		else if (strcmp(rev, "Unknown") != 0)
+			printf(" (hg id: %s)", rev);
+	}
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("\n# This is an unreleased version");
-	else
-		printf(" \"%s\"", MONETDB_RELEASE);
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");

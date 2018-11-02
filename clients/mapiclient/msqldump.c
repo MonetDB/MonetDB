@@ -22,7 +22,9 @@
 
 #include "stream.h"
 #include "msqldump.h"
+#define LIBMUTILS 1
 #include "mprompt.h"
+#include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
 
 __declspec(noreturn) static void usage(const char *prog, int xit)
@@ -77,13 +79,14 @@ main(int argc, char **argv)
 		{"Xdebug", 0, 0, 'X'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
+		{"version", 0, 0, 'v'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
 
 	parse_dotmonetdb(&user, &passwd, &dbname, NULL, NULL, NULL, NULL);
 
-	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:q?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			if (user)
@@ -125,6 +128,18 @@ main(int argc, char **argv)
 		case 'X':
 			trace = true;
 			break;
+		case 'v': {
+			const char *rev = mercurial_revision();
+			printf("msqldump, the MonetDB interactive database "
+			       "dump tool, version %s", VERSION);
+			/* coverity[pointless_string_compare] */
+			if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+				printf(" (%s)", MONETDB_RELEASE);
+			else if (strcmp(rev, "Unknown") != 0)
+				printf(" (hg id: %s)", rev);
+			printf("\n");
+			return 0;
+		}
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
