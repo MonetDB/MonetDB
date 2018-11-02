@@ -19,8 +19,6 @@
  * primary goals of this tool.
  */
 
-#define TOOLKIT_VERSION   "1.1"
-
 #include "monetdb_config.h"
 #include "utils.h"
 #include "properties.h"
@@ -180,7 +178,7 @@ static void
 command_version(void)
 {
 	printf("MonetDB Database Server Toolkit v%s (%s)\n",
-			TOOLKIT_VERSION, MONETDB_RELEASE);
+			VERSION, MONETDB_RELEASE);
 }
 
 static int

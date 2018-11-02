@@ -884,7 +884,7 @@ main(int argc, char *argv[])
 	fclose(pidfile);
 
 	Mfprintf(stdout, "Merovingian %s (%s) starting\n",
-			MERO_VERSION, MONETDB_RELEASE);
+			VERSION, MONETDB_RELEASE);
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	/* open up connections */
@@ -1027,7 +1027,7 @@ shutdown:
 
 	/* need to do this here, since the logging thread is shut down as
 	 * next thing */
-	Mfprintf(stdout, "Merovingian %s stopped\n", MERO_VERSION);
+	Mfprintf(stdout, "Merovingian %s stopped\n", VERSION);
 
 	_mero_keep_logging = 0;
 	if (tid != 0 && (argp = pthread_join(tid, NULL)) != 0) {

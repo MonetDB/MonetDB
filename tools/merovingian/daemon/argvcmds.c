@@ -66,7 +66,7 @@ int
 command_version(void)
 {
 	printf("MonetDB Database Server v%s (%s)\n",
-			MERO_VERSION, MONETDB_RELEASE);
+			VERSION, MONETDB_RELEASE);
 	return(0);
 }
 
