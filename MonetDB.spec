@@ -780,7 +780,6 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
-%{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
