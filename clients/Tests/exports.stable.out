@@ -431,6 +431,7 @@ int logger_sequence(logger *lg, int seq, lng *id);
 gdk_return logger_upgrade_bat(logger *lg, const char *name, char tpe, oid id) __attribute__((__warn_unused_result__));
 void logger_with_ids(logger *lg);
 void *mdlopen(const char *library, int mode);
+const char *mercurial_revision(void);
 int mo_add_option(opt **Set, int setlen, opt_kind kind, const char *name, const char *value);
 int mo_builtin_settings(opt **Set);
 char *mo_find_option(opt *set, int setlen, const char *name);
