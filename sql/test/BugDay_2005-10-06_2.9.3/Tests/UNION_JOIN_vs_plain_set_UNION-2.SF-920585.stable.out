@@ -69,8 +69,8 @@ Ready.
 % name,	query,	istable,	system,	commit_action,	temporary # name
 % varchar,	varchar,	boolean,	boolean,	smallint,	tinyint # type
 % 12,	222,	5,	5,	1,	1 # length
-[ "_columns",	NULL,	true,	true,	2,	0	]
 [ "_columns",	NULL,	true,	true,	0,	0	]
+[ "_columns",	NULL,	true,	true,	2,	0	]
 [ "_tables",	NULL,	true,	true,	0,	0	]
 [ "_tables",	NULL,	true,	true,	2,	0	]
 [ "args",	NULL,	true,	true,	0,	0	]
@@ -85,8 +85,8 @@ Ready.
 [ "idxs",	NULL,	true,	true,	2,	0	]
 [ "keycolumns",	NULL,	true,	true,	0,	0	]
 [ "keycolumns",	NULL,	true,	true,	2,	0	]
-[ "keys",	NULL,	true,	true,	2,	0	]
 [ "keys",	NULL,	true,	true,	0,	0	]
+[ "keys",	NULL,	true,	true,	2,	0	]
 [ "modules",	NULL,	true,	true,	0,	0	]
 [ "privileges",	NULL,	true,	true,	0,	0	]
 [ "profile",	NULL,	true,	true,	2,	0	]
@@ -107,8 +107,8 @@ Ready.
 [ "null",	"sys",	"db_scens",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]
 [ "null",	"sys",	"db_users",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]
 [ "null",	"sys",	"tables",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]
-[ "null",	"sys",	"users",	"VIEW",	"SELECT u.\"t\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM \"sys\".\"db_users\" AS u, \"sys\".\"db_user_info\" AS ui WHERE u.\"h\" = ui.\"id\" AND u.\"h\" NOT IN (SELECT s.\"h\" FROM \"sys\".\"db_scens\" AS s WHERE s.\"t\" NOT LIKE 'sql');",	"null",	"null",	"null",	"id",	"SYSTEM"	]
 [ "null",	"sys",	"users",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]
+[ "null",	"sys",	"users",	"VIEW",	"SELECT u.\"t\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM \"sys\".\"db_users\" AS u, \"sys\".\"db_user_info\" AS ui WHERE u.\"h\" = ui.\"id\" AND u.\"h\" NOT IN (SELECT s.\"h\" FROM \"sys\".\"db_scens\" AS s WHERE s.\"t\" NOT LIKE 'sql');",	"null",	"null",	"null",	"id",	"SYSTEM"	]
 
 # 21:45:34 >  
 # 21:45:34 >  Done.

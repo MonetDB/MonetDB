@@ -24,7 +24,18 @@ Ready.
 # 11:55:31 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=35185  < innerjoin_multiple-bug-sf-943661.sql
 # 11:55:31 >  
 
-% sys.schemas,	.tables,	.columns # table_name
+#select schemas.name, tables.name, columns.name from 
+#	columns 
+#		inner join 
+#	tables 
+#		on (columns.table_id = tables.id) 
+#		inner join 
+#	schemas on (tables.schema_id = schemas.id)
+# where tables."system" = true 
+# 	and tables.name in ('args', 'columns', 'functions', 'idxs',
+#			'objects', 'keys', 'modules', 'sequences')
+# order by schemas.name, tables.name, columns.name;
+% .schemas,	.tables,	.columns # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
 % 3,	9,	11 # length
@@ -102,7 +113,7 @@ Ready.
 # 	and t.name in ('args', 'columns', 'functions', 'idxs',
 #			'objects', 'keys', 'modules', 'sequences')
 # order by s.name, t.name, c.name;
-% sys.s,	.t,	.c # table_name
+% .s,	.t,	.c # table_name
 % name,	name,	name # name
 % varchar,	varchar,	varchar # type
 % 3,	9,	11 # length

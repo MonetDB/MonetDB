@@ -68,7 +68,7 @@ select name, query, istable, system, commit_action, "temporary"
 			from tables
 			where tables.system = 1
 		) as a
-	order by name;
+	order by name, commit_action;
 
 select * from (
 SELECT 'null' AS TABLE_CAT,
@@ -116,4 +116,4 @@ FROM tables, schemas
 WHERE tables.schema_id = schemas.id
 	AND tables.istable = 0
 	AND (tables.name = '_tables' or tables.name = '_columns' or tables.name = 'users') 
-) as tables order by TABLE_NAME;
+) as tables order by TABLE_NAME, TABLE_TYPE;

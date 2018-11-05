@@ -29,17 +29,17 @@ Ready.
 % f_table_name # name
 % varchar # type
 % 14 # length
-[ "lakes"	]
-[ "road_segments"	]
+[ "bridges"	]
+[ "buildings"	]
+[ "buildings"	]
 [ "divided_routes"	]
 [ "forests"	]
-[ "bridges"	]
-[ "streams"	]
-[ "buildings"	]
-[ "buildings"	]
-[ "ponds"	]
-[ "named_places"	]
+[ "lakes"	]
 [ "map_neatlines"	]
+[ "named_places"	]
+[ "ponds"	]
+[ "road_segments"	]
+[ "streams"	]
 
 # 13:36:56 >  
 # 13:36:56 >  "Done."
