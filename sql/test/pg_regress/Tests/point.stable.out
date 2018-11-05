@@ -16,9 +16,6 @@ stdout of test 'point` in directory 'sql/test/pg_regress` itself:
 # Listening for connection requests on mapi:monetdb://essen.ins.cwi.nl:31786/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5174/.s.monetdb.31786
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -54,9 +51,11 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 18:36:57 >  
-# 18:36:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5174" "--port=31786"
-# 18:36:57 >  
+Ready.
+
+# 15:18:46 >  
+# 15:18:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13481" "--port=38041"
+# 15:18:46 >  
 
 #CREATE TABLE POINT_TBL(f1 GEOMETRY(POINT));
 #INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint(0.0,0.0));
@@ -262,8 +261,8 @@ Ready.
 [ "",	"POINT (-3 4)",	"POINT (0 0)",	5	]
 [ "",	"POINT (-10 0)",	"POINT (-3 4)",	8.062257748	]
 [ "",	"POINT (-10 0)",	"POINT (0 0)",	10	]
-[ "",	"POINT (-10 0)",	"POINT (-5 -12)",	13	]
 [ "",	"POINT (-5 -12)",	"POINT (0 0)",	13	]
+[ "",	"POINT (-10 0)",	"POINT (-5 -12)",	13	]
 [ "",	"POINT (-5 -12)",	"POINT (-3 4)",	16.1245155	]
 [ "",	"POINT (-3 4)",	"POINT (5.1 34.5)",	31.55724954	]
 [ "",	"POINT (0 0)",	"POINT (5.1 34.5)",	34.87491934	]
