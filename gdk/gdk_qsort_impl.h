@@ -49,19 +49,24 @@
  * SUCH DAMAGE.
  */
 
+/* when to switch to insertion sort */
+#ifndef INSERTSORT
+#define INSERTSORT     60      /* the original algorithm used 7 */
+#endif
+
 static void
 GDKqsort_impl(const struct qsort_t *restrict buf,
 	      char *restrict h, char *restrict t, size_t n)
 {
 	size_t a, b, c, d;
 	size_t r;
-	int swap_cnt;
+	bool swap_cnt;
 #ifdef INITIALIZER
 	INITIALIZER;
 #endif
 
   loop:
-	if (n < 7) {
+	if (n < INSERTSORT) {
 		/* insertion sort for very small chunks */
 		for (b = 1; b < n; b++) {
 			for (a = b; a > 0 && LT(a, a - 1); a--) {
@@ -73,12 +78,18 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 
 	/* determine pivot */
 	b = n >> 1;		/* small arrays: middle element */
-	if (n > 7) {
+#if INSERTSORT <= 7
+	if (n > 7)
+#endif
+	{
 		/* for larger arrays, take the middle value from the
 		 * first, middle, and last */
 		a = 0;
 		c = n - 1;
-		if (n > 40) {
+#if INSERTSORT <= 40
+		if (n > 40)
+#endif
+		{
 			/* for even larger arrays, take the middle
 			 * value of three middle values */
 			d = n >> 3;
@@ -96,11 +107,17 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 	 * National Flag Problem */
 	a = b = 1;
 	c = d = n - 1;
-	swap_cnt = 0;
+	swap_cnt = false;
 	for (;;) {
+		/* loop invariant:
+		 * [0..a): values equal to pivot (cannot be empty)
+		 * [a..b): values less than pivot (can be empty)
+		 * [c+1..d+1): values greater than pivot (can be empty)
+		 * [d+1..n): values equal to pivot (can be empty)
+		 */
 		while (b <= c && LE(b, 0)) {
 			if (EQ(b, 0)) {
-				swap_cnt = 1;
+				swap_cnt = true;
 				SWAP(a, b);
 				a++;
 			}
@@ -108,7 +125,7 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 		}
 		while (b <= c && LE(0, c)) {
 			if (EQ(0, c)) {
-				swap_cnt = 1;
+				swap_cnt = true;
 				SWAP(c, d);
 				d--;
 			}
@@ -117,16 +134,12 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 		if (b > c)
 			break;
 		SWAP(b, c);
-		swap_cnt = 1;
+		swap_cnt = true;
 		b++;
 		c--;
 	}
-	/* at this point we have:
+	/* in addition to the loop invariant we have:
 	 * b == c + 1
-	 * [0..a): values equal to pivot (cannot be empty)
-	 * [a..b): values less than pivot (can be empty)
-	 * [b..d+1): values greater than pivot (can be empty)
-	 * [d+1..n): values equal to pivot (can be empty)
 	 * i.e., there are b-a values less than the pivot and d-c
 	 * values greater than the pivot
 	 */

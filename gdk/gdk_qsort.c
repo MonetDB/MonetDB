@@ -39,7 +39,7 @@ struct qsort_t {
 #define multi_SWAP(i, j, n)						\
 	do {								\
 		SWAP1((i) * buf->hs, (j) * buf->hs, h, n * buf->hs);	\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, n * buf->ts); \
 	} while (0)
 
@@ -54,7 +54,7 @@ struct qsort_t {
 		bte _t = ((bte *) h)[i];				\
 		((bte *) h)[i] = ((bte *) h)[j];			\
 		((bte *) h)[j] = _t;					\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_bte
@@ -81,7 +81,7 @@ struct qsort_t {
 		sht _t = ((sht *) h)[i];				\
 		((sht *) h)[i] = ((sht *) h)[j];			\
 		((sht *) h)[j] = _t;					\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_sht
@@ -108,7 +108,7 @@ struct qsort_t {
 		int _t = ((int *) h)[i];				\
 		((int *) h)[i] = ((int *) h)[j];			\
 		((int *) h)[j] = _t;					\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_int
@@ -135,7 +135,7 @@ struct qsort_t {
 		lng _t = ((lng *) h)[i];				\
 		((lng *) h)[i] = ((lng *) h)[j];			\
 		((lng *) h)[j] = _t;					\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_lng
@@ -163,7 +163,7 @@ struct qsort_t {
 		hge _t = ((hge *) h)[i];				\
 		((hge *) h)[i] = ((hge *) h)[j];			\
 		((hge *) h)[j] = _t;					\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_hge
@@ -191,7 +191,7 @@ struct qsort_t {
 		flt _t = ((flt *) h)[i];				\
 		((flt *) h)[i] = ((flt *) h)[j];			\
 		((flt *) h)[j] = _t;					\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_flt
@@ -218,7 +218,7 @@ struct qsort_t {
 		dbl _t = ((dbl *) h)[i];				\
 		((dbl *) h)[i] = ((dbl *) h)[j];			\
 		((dbl *) h)[j] = _t;					\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_dbl
@@ -243,7 +243,7 @@ struct qsort_t {
 #define SWAP(i, j)							\
 	do {								\
 		SWAP1((i) * buf->hs, (j) * buf->hs, h, buf->hs);	\
-		if (t && buf->ts)					\
+		if (t)							\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 
@@ -304,6 +304,10 @@ GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n
 	assert(hs > 0);
 	assert(ts >= 0);
 	assert(tpe != TYPE_void);
+	assert((ts == 0) == (t == NULL));
+
+	if (n <= 1)
+		return;
 
 	buf.hs = (unsigned int) hs;
 	buf.ts = (unsigned int) ts;
@@ -357,6 +361,10 @@ GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size
 	assert(hs > 0);
 	assert(ts >= 0);
 	assert(tpe != TYPE_void);
+	assert((ts == 0) == (t == NULL));
+
+	if (n <= 1)
+		return;
 
 	buf.hs = (unsigned int) hs;
 	buf.ts = (unsigned int) ts;
