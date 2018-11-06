@@ -489,7 +489,7 @@ list_keysort(list *l, int *keys, fdup dup)
 		data[i] = n->data;
 	}
 	/* sort descending */
-	GDKqsort_rev(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int);
+	GDKqsort(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int, true, true);
 	for(i=0; i<cnt; i++) {
 		list_append(res, dup?dup(data[i]):data[i]);
 	}
@@ -523,7 +523,7 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 		data[i] = n->data;
 	}
 	/* sort descending */
-	GDKqsort_rev(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int);
+	GDKqsort(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int, true, true);
 	for(i=0; i<cnt; i++) {
 		list_append(res, dup?dup(data[i]):data[i]);
 	}

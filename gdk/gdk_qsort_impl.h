@@ -7,7 +7,7 @@
  */
 
 /* This file is included multiple times.  We expect the tokens SWAP,
- * GDKqsort_impl, LE, and LT to be redefined each time. */
+ * GDKqsort_impl, LE, LT, and EQ to be redefined each time. */
 
 /* This is an implementation of quicksort with a number of extra
  * tweaks and optimizations.  This function is an adaptation to fit
@@ -55,8 +55,8 @@
 #endif
 
 static void
-GDKqsort_impl(const struct qsort_t *restrict buf,
-	      char *restrict h, char *restrict t, size_t n)
+CONCAT3(GDKqsort_impl_, TPE, SUFF)(const struct qsort_t *restrict buf,
+				  char *restrict h, char *restrict t, size_t n)
 {
 	size_t a, b, c, d;
 	size_t r;
@@ -69,8 +69,8 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 	if (n < INSERTSORT) {
 		/* insertion sort for very small chunks */
 		for (b = 1; b < n; b++) {
-			for (a = b; a > 0 && LT(a, a - 1); a--) {
-				SWAP(a, a - 1);
+			for (a = b; a > 0 && LT(a, a - 1, TPE, SUFF); a--) {
+				SWAP(a, a - 1, TPE);
 			}
 		}
 		return;
@@ -93,15 +93,15 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 			/* for even larger arrays, take the middle
 			 * value of three middle values */
 			d = n >> 3;
-			a = MED3(a, a + d, a + 2 * d);
-			b = MED3(b - d, b, b + d);
-			c = MED3(c - 2 * d, c - d, c);
+			a = MED3(a, a + d, a + 2 * d, TPE, SUFF);
+			b = MED3(b - d, b, b + d, TPE, SUFF);
+			c = MED3(c - 2 * d, c - d, c, TPE, SUFF);
 		}
-		b = MED3(a, b, c);
+		b = MED3(a, b, c, TPE, SUFF);
 	}
 	/* move pivot to start */
 	if (b != 0)
-		SWAP(0, b);
+		SWAP(0, b, TPE);
 
 	/* Bentley and McIlroy's implementation of Dijkstra's Dutch
 	 * National Flag Problem */
@@ -115,25 +115,25 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 		 * [c+1..d+1): values greater than pivot (can be empty)
 		 * [d+1..n): values equal to pivot (can be empty)
 		 */
-		while (b <= c && LE(b, 0)) {
-			if (EQ(b, 0)) {
+		while (b <= c && LE(b, 0, TPE, SUFF)) {
+			if (EQ(b, 0, TPE)) {
 				swap_cnt = true;
-				SWAP(a, b);
+				SWAP(a, b, TPE);
 				a++;
 			}
 			b++;
 		}
-		while (b <= c && LE(0, c)) {
-			if (EQ(0, c)) {
+		while (b <= c && LE(0, c, TPE, SUFF)) {
+			if (EQ(0, c, TPE)) {
 				swap_cnt = true;
-				SWAP(c, d);
+				SWAP(c, d, TPE);
 				d--;
 			}
 			c--;
 		}
 		if (b > c)
 			break;
-		SWAP(b, c);
+		SWAP(b, c, TPE);
 		swap_cnt = true;
 		b++;
 		c--;
@@ -147,8 +147,8 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 	if (!swap_cnt && n < 1024) {
 		/* switch to insertion sort, but only for small chunks */
 		for (b = 1; b < n; b++) {
-			for (a = b; a > 0 && LT(a, a - 1); a--) {
-				SWAP(a, a - 1);
+			for (a = b; a > 0 && LT(a, a - 1, TPE, SUFF); a--) {
+				SWAP(a, a - 1, TPE);
 			}
 		}
 		return;
@@ -172,7 +172,7 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 	if (b - a < d - c) {
 		if ((r = b - a) > 1) {
 			/* sort values less than pivot */
-			GDKqsort_impl(buf, h, t, r);
+			CONCAT3(GDKqsort_impl_, TPE, SUFF)(buf, h, t, r);
 		}
 		if ((r = d - c) > 1) {
 			/* sort values greater than pivot
@@ -186,9 +186,9 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 	} else {
 		if ((r = d - c) > 1) {
 			/* sort values greater than pivot */
-			GDKqsort_impl(buf, h + (n - r) * buf->hs,
-				      t ? t + (n - r) * buf->ts : NULL,
-				      r);
+			CONCAT3(GDKqsort_impl_, TPE, SUFF)(
+				buf, h + (n - r) * buf->hs,
+				t ? t + (n - r) * buf->ts : NULL, r);
 		}
 		if ((r = b - a) > 1) {
 			/* sort values less than pivot

@@ -351,7 +351,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	b = full_column(tr, orderby_col);
 	s = BATproject(r->data, b);
 	full_destroy(orderby_col, b);
-	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false) != GDK_SUCCEED) {
+	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 		bat_destroy(s);
 		return NULL;
 	}
@@ -465,7 +465,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 
 	/* need id, obc */
 	ids = o = g = NULL;
-	ret = BATsort(&ids, &o, &g, lcb, NULL, NULL, false, false);
+	ret = BATsort(&ids, &o, &g, lcb, NULL, NULL, false, false, false);
 	bat_destroy(lcb);
 	if (ret != GDK_SUCCEED) {
 		bat_destroy(obb);
@@ -474,7 +474,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 	}
 
 	s = NULL;
-	ret = BATsort(NULL, &s, NULL, obb, o, g, false, false);
+	ret = BATsort(NULL, &s, NULL, obb, o, g, false, false, false);
 	bat_destroy(obb);
 	bat_destroy(o);
 	bat_destroy(g);

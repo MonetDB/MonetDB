@@ -1,6 +1,14 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Nov  6 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a nilslast option for BATsort.  This option should be
+  equal to the reverse option for stable sort (it is not implemented for
+  stable sort), but can be different from reverse for non-stable sort.
+  The functions BATsort and GDKqsort have extra parameters, the function
+  GDKqsort_rev has been removed (superseded by GDKqsort with the new
+  `reverse' parameter).
+
 * Tue Oct 30 2018 Sjoerd Mullender <sjoerd@acm.org>
 - The BUNtail, BUNtvar, BUNtloc, and BUNtpos macros (and Tloc and Tpos)
   now return a `void *' instead of a `char *'.

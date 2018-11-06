@@ -707,7 +707,7 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 	if (BATsort(result ? &bn : NULL,
 				   norder ? &on : NULL,
 				   ngroup ? &gn : NULL,
-				   b, o, g, *reverse, *stable) != GDK_SUCCEED) {
+				b, o, g, *reverse, *reverse, *stable) != GDK_SUCCEED) {
 		if (o)
 			BBPunfix(o->batCacheid);
 		if (g)

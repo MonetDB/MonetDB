@@ -1920,7 +1920,7 @@ store_load(void) {
 		}
 		sql_trans_destroy(tr);
 	} else {
-		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(int), 0, TYPE_int);
+		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(int), 0, TYPE_int, false, false);
 		store_oid = store_oids[nstore_oids - 1] + 1;
 	}
 
