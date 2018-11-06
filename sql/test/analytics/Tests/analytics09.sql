@@ -29,19 +29,19 @@ select avg(sum(aa)) over (rows unbounded preceding) from analytics;
 
 select avg(sum(aa)) over (range unbounded preceding) from analytics;
 
-select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics;
+select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics; --TODO support multiple aggregations within the same projection
 
 select avg(sum(aa)) over (),
        cast(sum(aa) * count(case when bb < 2 then bb - 1 else bb + 1 end) / avg(1) over (rows between current row and current row) as bigint),
        avg(sum(aa)) over (rows unbounded preceding),
-       avg(sum(aa)) over (range unbounded preceding) from analytics;
+       avg(sum(aa)) over (range unbounded preceding) from analytics; --TODO support multiple aggregations within the same projection
 
 select avg(sum(aa)) over () from analytics group by aa;
 
 select avg(sum(aa)) over (),
        avg(sum(aa)) over (rows unbounded preceding),
        cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
-       avg(sum(aa)) over (range unbounded preceding) from analytics group by aa;
+       avg(sum(aa)) over (range unbounded preceding) from analytics group by aa; --TODO support multiple aggregations within the same projection
 
 select avg(sum(aa)) over (partition by bb) from analytics group by bb;
 
