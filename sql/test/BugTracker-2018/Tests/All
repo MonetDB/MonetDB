@@ -89,3 +89,4 @@ prepared-statement-with-udf.Bug-6650
 in-subquery-having-Bug-6651
 create_table_empty_column_name.Bug-6653
 select_where_true.Bug-6654
+alter-sequence-subquery.Bug-6557
