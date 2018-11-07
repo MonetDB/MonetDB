@@ -854,11 +854,8 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 
 		if (tab->idxs.set && !v) 
 			v = exp_column(sql->sa, tab->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
-		if (v) {
-			v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
-			exp_setname(sql->sa, v, tab->base.name, c->base.name);
-			(void) rel_project_add_exp(sql, uprel, v);
-		}
+		if (v)
+			v = rel_project_add_exp(sql, uprel, v);
 	}
 
 	r->op = op_update;

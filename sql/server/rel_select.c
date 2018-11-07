@@ -5001,8 +5001,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	list_merge(p->exps, rel_projections(sql, p->l, NULL, 1, 1), NULL);
 	append(p->exps, call);
 	call = exp_column(sql->sa, exp_relname(call), exp_name(call), exp_subtype(call), exp_card(call), has_nil(call), is_intern(call));
-	if (project_added)
+	if (project_added) {
 		append(r->exps, call);
+		call = exp_column(sql->sa, exp_relname(call), exp_name(call), exp_subtype(call), exp_card(call), has_nil(call), is_intern(call));
+	}
 	return call;
 }
 
