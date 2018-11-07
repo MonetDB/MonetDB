@@ -64,7 +64,7 @@ virtualize(BAT *bn)
 	return bn;
 }
 
-static BAT *
+BAT *
 doublerange(oid l1, oid h1, oid l2, oid h2)
 {
 	BAT *bn;
@@ -93,7 +93,7 @@ doublerange(oid l1, oid h1, oid l2, oid h2)
 	return bn;
 }
 
-static BAT *
+BAT *
 doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 {
 	BAT *bn;
@@ -1697,7 +1697,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				BATsetcount(bn, cnt);
 
 				/* output must be sorted */
-				GDKqsort(Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid);
+				GDKqsort(Tloc(bn, 0), NULL, NULL, (size_t) bn->batCount, sizeof(oid), 0, TYPE_oid, false, false);
 				bn->tsorted = true;
 				bn->trevsorted = bn->batCount <= 1;
 				bn->tkey = true;

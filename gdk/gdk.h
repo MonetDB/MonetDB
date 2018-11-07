@@ -1422,12 +1422,11 @@ gdk_export gdk_return BATprint(BAT *b);
 gdk_export bool BATkeyed(BAT *b);
 gdk_export bool BATordered(BAT *b);
 gdk_export bool BATordered_rev(BAT *b);
-gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool stable)
+gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool nilslast, bool stable)
 	__attribute__((__warn_unused_result__));
 
 
-gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
-gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 
 #define BATtordered(b)	((b)->tsorted)
 #define BATtrevordered(b) ((b)->trevsorted)
@@ -2757,7 +2756,7 @@ gdk_export BAT *BATunique(BAT *b, BAT *s);
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 
-gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool distinct)
+gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));
 
 #include "gdk_calc.h"

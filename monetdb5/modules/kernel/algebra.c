@@ -563,7 +563,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	asc = * getArgReference_bit(stk, pci, pci->argc - 2);
 	distinct = * getArgReference_bit(stk, pci, pci->argc - 1);
-	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, distinct);
+	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, !asc, distinct);
 	BBPunfix(b->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
@@ -707,7 +707,7 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 	if (BATsort(result ? &bn : NULL,
 				   norder ? &on : NULL,
 				   ngroup ? &gn : NULL,
-				   b, o, g, *reverse, *stable) != GDK_SUCCEED) {
+				b, o, g, *reverse, *reverse, *stable) != GDK_SUCCEED) {
 		if (o)
 			BBPunfix(o->batCacheid);
 		if (g)
