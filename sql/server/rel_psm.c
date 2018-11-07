@@ -666,7 +666,8 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 		case SQL_INSERT:
 		case SQL_UPDATE:
 		case SQL_DELETE:
-		case SQL_TRUNCATE: {
+		case SQL_TRUNCATE:
+		case SQL_MERGE: {
 			sql_rel *r = rel_updates(sql, s);
 			if (!r)
 				return NULL;

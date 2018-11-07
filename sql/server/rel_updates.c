@@ -1975,6 +1975,7 @@ rel_updates(mvc *sql, symbol *s)
 		sql->type = Q_UPDATE;
 	}
 		break;
+	case SQL_MERGE:
 	default:
 		sql->use_views = old;
 		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(%p)->token = %s", s, token2string(s->token));

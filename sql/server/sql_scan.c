@@ -192,6 +192,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("UPDATE", UPDATE);
 	failed += keywords_insert("DELETE", sqlDELETE);
 	failed += keywords_insert("TRUNCATE", TRUNCATE);
+	failed += keywords_insert("MATCHED", MATCHED);
 
 	failed += keywords_insert("ACTION", ACTION);
 	failed += keywords_insert("CASCADE", CASCADE);
