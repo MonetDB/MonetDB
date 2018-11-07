@@ -886,7 +886,7 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 }
 
 static sql_rel *
-update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
+update_table(mvc *sql, dlist *qname, str alias, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -931,6 +931,10 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 			pcols = mt->part.pexp->cols;
 		}
 		res = bt;
+		if(alias) {
+			for(node *nn = res->exps->h ; nn ; nn = nn->next)
+				exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
+		}
 #if 0
 			dlist *selection = dlist_create(sql->sa);
 			dlist *from_list = dlist_create(sql->sa);
@@ -983,9 +987,16 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 
 			for (n = fl->h; n && res; n = n->next) {
 				fnd = table_ref(sql, NULL, n->data.sym, 0);
-				if (fnd)
+				if (fnd) {
+					if(alias) {
+						for(node *nn = fnd->exps->h ; nn ; nn = nn->next) {
+							sql_exp* ee = (sql_exp*) nn->data;
+							if(ee->rname && !strcmp(ee->rname, alias))
+								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: multiple references into table '%s'", alias);
+						}
+					}
 					res = rel_crossproduct(sql->sa, res, fnd, op_join);
-				else
+				} else
 					res = fnd;
 			}
 			if (!res) 
@@ -1196,7 +1207,7 @@ rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_acti
 }
 
 static sql_rel *
-delete_table(mvc *sql, dlist *qname, symbol *opt_where)
+delete_table(mvc *sql, dlist *qname, str alias, symbol *opt_where)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1236,6 +1247,10 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 				sql->errstr[0] = 0;
 				sql->session->status = status;
 				r = rel_basetable(sql, t, t->base.name );
+				if(alias) {
+					for(node *nn = r->exps->h ; nn ; nn = nn->next)
+						exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
+				}
 				r = rel_logical_exp(sql, r, opt_where, sql_where);
 			}
 			if (!r) {
@@ -1937,7 +1952,8 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sym);
+		ret = update_table(sql, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.lval,
+						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1945,7 +1961,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = delete_table(sql, l->h->data.lval, l->h->next->data.sym);
+		ret = delete_table(sql, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;

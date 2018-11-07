@@ -3028,11 +3028,12 @@ string_commalist_contents:
  ;
 
 delete_stmt:
-    sqlDELETE FROM qname opt_where_clause
+    sqlDELETE FROM qname opt_alias_name opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_string(l, $4);
+	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 
@@ -3058,13 +3059,14 @@ truncate_stmt:
  ;
 
 update_stmt:
-    UPDATE qname SET assignment_commalist opt_from_clause opt_where_clause
+    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $2);
-	  append_list(l, $4);
-	  append_symbol(l, $5);
+	  append_string(l, $3);
+	  append_list(l, $5);
 	  append_symbol(l, $6);
+	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
