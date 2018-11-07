@@ -20,7 +20,7 @@ sql_next_seq_name(mvc *m)
 	size_t len = 5 + 10;	/* max nr of digits of (4 bytes) int is 10 */
 	char *msg = sa_alloc(m->sa, len);
 
-	snprintf(msg, len, "seq_%d", id);
+	snprintf(msg, len, "seq" SQL_INTERNAL_SEPERATOR "%d", id);
 	return msg;
 }
 
