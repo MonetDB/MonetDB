@@ -17,8 +17,8 @@
 		j = k;                                      \
 		for(; k<i; k++, rb++) {                     \
 			lng rlimit = (lng) LIMIT;               \
-			SUB_WITH_CHECK(lng, k, lng, rlimit, lng, calc1, GDK_lng_max, goto calc_overflow); \
-			ADD_WITH_CHECK(lng, calc1, lng, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
+			SUB_WITH_CHECK(k, rlimit, lng, calc1, GDK_lng_max, goto calc_overflow); \
+			ADD_WITH_CHECK(calc1, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
 			*rb = MAX(calc2, j);                    \
 		}                                           \
 	} while(0)
@@ -28,8 +28,8 @@
 		lng calc1, calc2;                           \
 		for(; k<i; k++, rb++) {                     \
 			lng rlimit = (lng) LIMIT;               \
-			ADD_WITH_CHECK(lng, rlimit, lng, k, lng, calc1, GDK_lng_max, goto calc_overflow); \
-			ADD_WITH_CHECK(lng, calc1, lng, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
+			ADD_WITH_CHECK(rlimit, k, lng, calc1, GDK_lng_max, goto calc_overflow); \
+			ADD_WITH_CHECK(calc1, !first_half, lng, calc2, GDK_lng_max, goto calc_overflow); \
 			*rb = MIN(calc2, i);                    \
 		}                                           \
 	} while(0)
@@ -55,7 +55,7 @@
 						break;                     \
 					if(is_##TPE1##_nil(bp[j]))     \
 						break;                     \
-					SUB_WITH_CHECK(TPE1, v, TPE1, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
+					SUB_WITH_CHECK(v, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
 					if ((TPE2)(ABSOLUTE(calc)) > rlimit) \
 						break;                     \
 				}                                  \
@@ -81,7 +81,7 @@
 				for(j=k+1; j<i; j++) {           \
 					if(is_##TPE1##_nil(bp[j]))   \
 						break;                   \
-					SUB_WITH_CHECK(TPE1, v, TPE1, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
+					SUB_WITH_CHECK(v, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
 					if ((TPE2)(ABSOLUTE(calc)) > rlimit) \
 						break;                   \
 				}                                \

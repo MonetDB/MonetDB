@@ -1097,7 +1097,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 					if(is_##TPE2##_nil(curval)) \
 						curval = (TPE2) v;      \
 					else                        \
-						ADD_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+						ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 				}                               \
 			}                                   \
 			*rb = curval;                       \
@@ -1287,7 +1287,7 @@ calc_overflow:
 					if(is_##TPE2##_nil(curval))   \
 						curval = (TPE2) v;        \
 					else                          \
-						MUL4_WITH_CHECK(TPE1, v, TPE2, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, \
+						MUL4_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, \
 										goto calc_overflow); \
 				}                                 \
 			}                                     \
@@ -1313,7 +1313,7 @@ calc_overflow:
 					if(is_##TPE2##_nil(curval)) \
 						curval = (TPE2) v;      \
 					else                        \
-						REAL_IMP(TPE1, v, TPE2, curval, curval, GDK_##TPE2##_max, goto calc_overflow); \
+						REAL_IMP(v, curval, curval, GDK_##TPE2##_max, goto calc_overflow); \
 				}                               \
 			}                                   \
 			*rb = curval;                       \
@@ -1517,7 +1517,7 @@ calc_overflow:
 			for(; bs<be; bs++) {                      \
 				v = *bs;                              \
 				if (!is_##TPE##_nil(v)) {             \
-					ADD_WITH_CHECK(TPE, v, lng_hge, sum, lng_hge, sum, GDK_##lng_hge##_max, goto avg_overflow##TPE); \
+					ADD_WITH_CHECK(v, sum, lng_hge, sum, GDK_##lng_hge##_max, goto avg_overflow##TPE); \
 					/* count only when no overflow occurs */ \
 					n++;                              \
 				}                                     \
