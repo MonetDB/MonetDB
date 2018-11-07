@@ -4830,7 +4830,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
 	stmt *v, *ret = NULL, *other = NULL;
-	const char *next_value_for = "next value for \"sys\".\"seq_";
+	const char *next_value_for = "next value for \"sys\".\"seq" SQL_INTERNAL_SEPERATOR;
 	char *seq_name = NULL;
 	str seq_pos = NULL;
 	sql_column *col = NULL;
@@ -4862,7 +4862,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			for (n = next->columns.set->h; n; n = n->next) {
 				col = n->data;
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
-					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
+					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq" SQL_INTERNAL_SEPERATOR)));
 					if(!seq_name) {
 						sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						error = 1;

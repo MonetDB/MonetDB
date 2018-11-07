@@ -32,7 +32,7 @@ FROM (
     ON l.qname = r.qname
    AND l.rname = r.rname
 GROUP BY distance
-ORDER BY nr_alignments DESC;
+ORDER BY nr_alignments DESC, distance;
 
 SELECT     
     CASE WHEN l_pos < r_pos 
@@ -43,4 +43,4 @@ SELECT
 FROM bam.paired_primary_alignments_3
 WHERE l_rname = r_rname
 GROUP BY distance
-ORDER BY nr_alignments DESC;
+ORDER BY nr_alignments DESC, distance;

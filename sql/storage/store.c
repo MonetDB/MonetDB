@@ -1920,7 +1920,7 @@ store_load(void) {
 		}
 		sql_trans_destroy(tr);
 	} else {
-		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(int), 0, TYPE_int);
+		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(int), 0, TYPE_int, false, false);
 		store_oid = store_oids[nstore_oids - 1] + 1;
 	}
 
@@ -4336,7 +4336,7 @@ static void
 sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 {
 	str seq_pos = NULL;
-	const char *next_value_for = "next value for \"sys\".\"seq_";
+	const char *next_value_for = "next value for \"sys\".\"seq" SQL_INTERNAL_SEPERATOR;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
@@ -4350,7 +4350,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 		sql_sequence * seq = NULL;
-		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
+		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq" SQL_INTERNAL_SEPERATOR)));
 		node *n = NULL;
 		seq_name[strlen(seq_name)-1] = '\0';
 		n = cs_find_name(&syss->seqs, seq_name);

@@ -2807,14 +2807,14 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
-		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false) != GDK_SUCCEED)
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, false) != GDK_SUCCEED)
 			goto bunins_failed;
 		if (freeg)
 			BBPunfix(g->batCacheid);
 		g = t1;
 		freeg = true;
 
-		if (BATsort(&t1, NULL, NULL, b, t2, g, false, false) != GDK_SUCCEED) {
+		if (BATsort(&t1, NULL, NULL, b, t2, g, false, false, false) != GDK_SUCCEED) {
 			BBPunfix(t2->batCacheid);
 			goto bunins_failed;
 		}
@@ -2888,7 +2888,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		     BATcheckorderidx(pb))) {
 			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 		} else {
-			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false) != GDK_SUCCEED)
+			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false, false) != GDK_SUCCEED)
 				goto bunins_failed;
 			if (BATtdense(t1))
 				ords = NULL;

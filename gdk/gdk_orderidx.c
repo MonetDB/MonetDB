@@ -173,7 +173,7 @@ BATorderidx(BAT *b, bool stable)
 	if (!BATtdense(b)) {
 		BAT *on;
 		ALGODEBUG fprintf(stderr, "#BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
-		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, stable) != GDK_SUCCEED)
+		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, false, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
 		assert(BATcount(b) == BATcount(on));
 		if (BATtdense(on)) {

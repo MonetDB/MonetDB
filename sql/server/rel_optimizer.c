@@ -658,7 +658,7 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 		data[i] = n->data;
 	}
 	/* sort descending */
-	GDKqsort_rev(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int);
+	GDKqsort(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int, true, true);
 	for(i=0; i<cnt; i++) {
 		list_append(res, data[i]);
 	}

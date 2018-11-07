@@ -208,7 +208,6 @@ merge_getmem(MergeState *ms, ssize_t need, void **ap,
 	} while (0)
 
 #define ISLT_any(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + VarHeapVal(X,0,(ms)->hs), (ms)->heap + VarHeapVal(Y,0,(ms)->hs)) : (*(ms)->compare)((X), (Y))) < 0)
-#define ISLT_any_rev(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + VarHeapVal(X,0,(ms)->hs), (ms)->heap + VarHeapVal(Y,0,(ms)->hs)) : (*(ms)->compare)((X), (Y))) > 0)
 #define ISLT_bte(X, Y, ms)	(* (bte *) (X) < * (bte *) (Y))
 #define ISLT_sht(X, Y, ms)	(* (sht *) (X) < * (sht *) (Y))
 #define ISLT_int(X, Y, ms)	(* (int *) (X) < * (int *) (Y))
@@ -218,17 +217,24 @@ merge_getmem(MergeState *ms, ssize_t need, void **ap,
 #endif
 #define ISLT_flt(X, Y, ms)	(!is_flt_nil(*(flt*)(Y)) && (is_flt_nil(*(flt*)(X)) || *(flt*)(X) < *(flt*)(Y)))
 #define ISLT_dbl(X, Y, ms)	(!is_dbl_nil(*(dbl*)(Y)) && (is_dbl_nil(*(dbl*)(X)) || *(dbl*)(X) < *(dbl*)(Y)))
-#define ISLT_oid(X, Y, ms)	(* (oid *) (X) < * (oid *) (Y))
-#define ISLT_bte_rev(X, Y, ms)	(* (bte *) (X) > * (bte *) (Y))
-#define ISLT_sht_rev(X, Y, ms)	(* (sht *) (X) > * (sht *) (Y))
-#define ISLT_int_rev(X, Y, ms)	(* (int *) (X) > * (int *) (Y))
-#define ISLT_lng_rev(X, Y, ms)	(* (lng *) (X) > * (lng *) (Y))
-#ifdef HAVE_HGE
-#define ISLT_hge_rev(X, Y, ms)	(* (hge *) (X) > * (hge *) (Y))
+#if SIZEOF_OID == SIZEOF_LNG
+#define ISLT_oid(X, Y, ms)	ISLT_lng(X, Y, ms)
+#else
+#define ISLT_oid(X, Y, ms)	ISLT_int(X, Y, ms)
 #endif
-#define ISLT_flt_rev(X, Y, ms)	(!is_flt_nil(*(flt*)(X)) && (is_flt_nil(*(flt*)(Y)) || *(flt*)(X) > *(flt*)(Y)))
-#define ISLT_dbl_rev(X, Y, ms)	(!is_dbl_nil(*(dbl*)(X)) && (is_dbl_nil(*(dbl*)(Y)) || *(dbl*)(X) > *(dbl*)(Y)))
-#define ISLT_oid_rev(X, Y, ms)	(* (oid *) (X) > * (oid *) (Y))
+
+/* for reverse order, just reverse arguments */
+#define ISLT_any_rev(X, Y, ms)  ISLT_any(Y, X, ms)
+#define ISLT_bte_rev(X, Y, ms)	ISLT_bte(Y, X, ms)
+#define ISLT_sht_rev(X, Y, ms)	ISLT_sht(Y, X, ms)
+#define ISLT_int_rev(X, Y, ms)	ISLT_int(Y, X, ms)
+#define ISLT_lng_rev(X, Y, ms)	ISLT_lng(Y, X, ms)
+#ifdef HAVE_HGE
+#define ISLT_hge_rev(X, Y, ms)	ISLT_hge(Y, X, ms)
+#endif
+#define ISLT_flt_rev(X, Y, ms)	ISLT_flt(Y, X, ms)
+#define ISLT_dbl_rev(X, Y, ms)	ISLT_dbl(Y, X, ms)
+#define ISLT_oid_rev(X, Y, ms)	ISLT_oid(Y, X, ms)
 
 /* Reverse a slice of a list in place, from lo up to (exclusive) hi. */
 static void

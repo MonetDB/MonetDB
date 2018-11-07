@@ -268,7 +268,6 @@ str singleRef;
 str sinkRef;
 str sliceRef;
 str sortRef;
-str sortReverseRef;
 str sqlcatalogRef;
 str sqlRef;
 str startRef;
@@ -340,7 +339,6 @@ void optimizerInit(void)
 	alter_triggerRef = putName("alter_trigger");
 	alter_typeRef = putName("alter_type");
 	alter_userRef = putName("alter_user");
-	alter_userRef = putName("alter_user");
 	alter_viewRef = putName("alter_view");
 	andRef = putName("and");
 	antijoinRef = putName("antijoin");
@@ -399,7 +397,6 @@ void optimizerInit(void)
 	create_triggerRef = putName("create_trigger");
 	create_typeRef = putName("create_type");
 	create_userRef = putName("create_user");
-	create_userRef = putName("create_user");
 	create_viewRef = putName("create_view");
 	crossRef = putName("crossproduct");
 	cume_distRef = putName("cume_dist");
@@ -422,7 +419,6 @@ void optimizerInit(void)
 	drop_tableRef = putName("drop_table");
 	drop_triggerRef = putName("drop_trigger");
 	drop_typeRef = putName("drop_type");
-	drop_userRef = putName("drop_user");
 	drop_userRef = putName("drop_user");
 	drop_viewRef = putName("drop_view");
 	emptybindidxRef = putName("emptybindidx");
@@ -574,8 +570,6 @@ void optimizerInit(void)
 	sinkRef = putName("sink");
 	sliceRef = putName("slice");
 	sortRef = putName("sort");
-	sortRef = putName("sort");
-	sortReverseRef = putName("sortReverse");
 	sqlcatalogRef = putName("sqlcatalog");
 	sqlRef = putName("sql");
 	startRef = putName("start");
