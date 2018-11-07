@@ -334,7 +334,7 @@ handleMySQLClient(int sock)
 	/* Handshake Initialization Packet */
 	p = buf + 4;   /* skip bytes for package header */
 	*p++ = 0x10;   /* protocol_version */
-	p += sprintf(p, MERO_VERSION "-merovingian") + 1; /* server_version\0 */
+	p += sprintf(p, VERSION "-merovingian") + 1; /* server_version\0 */
 	le_int(p, 0);  /* thread_number */
 	p += sprintf(p, "voidvoid"); /* scramble_buff */
 	*p++ = 0x00;   /* filler */

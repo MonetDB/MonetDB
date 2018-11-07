@@ -11,6 +11,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "monet_version.h"
+#include "mutils.h"
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
 #endif
@@ -47,11 +48,14 @@ monet_version(void)
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
 	cores = MT_check_nr_cores();
 
-	printf("MonetDB 5 server v%s ", VERSION);
+	const char *rev = mercurial_revision();
+	printf("MonetDB 5 server %s", GDKversion());
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-		printf("\"%s\" ", MONETDB_RELEASE);
-	printf("(%zu-bit%s)\n",
+		printf(" (%s)", MONETDB_RELEASE);
+	else if (strcmp(rev, "Unknown") != 0)
+		printf(" (hg id: %s)", rev);
+	printf(" (%zu-bit%s)\n",
 			(size_t) (sizeof(ptr) * 8),
 #ifdef HAVE_HGE
 			", 128-bit integers"

@@ -19,7 +19,7 @@ all: _all
 
 !INCLUDE "$(NT)\rules.msc"
 
-_all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h .monetdb
+_all: update_winconfig_conds_py "$(srcdir)\Makefile.msc" monetdb_config.h unistd.h .monetdb monetdb_hgversion.h
 	$(MAKE) /nologo /f "$(srcdir)\Makefile.msc" "prefix=$(prefix)" "bits=$(bits)" all
 
 install: targetdirs all
@@ -33,6 +33,9 @@ $(srcdir)\Makefile.msc: "$(srcdir)\Makefile.ag"
 
 monetdb_config.h: "$(TOPDIR)\winconfig_conds.py" "$(NT)\monetdb_config.h.in"
 	$(CONFIGURE) "$(NT)\monetdb_config.h.in" > monetdb_config.h
+
+monetdb_hgversion.h:
+	$(ECHO) #undef MERCURIAL_ID > monetdb_hgversion.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h

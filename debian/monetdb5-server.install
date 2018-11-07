@@ -6,7 +6,6 @@ debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_capi.so usr/lib/x86_64-linux-gn
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_generator.so usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_opt_sql_append.so usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_udf.so usr/lib/x86_64-linux-gnu/monetdb5
-debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/lib_vault.so usr/lib/x86_64-linux-gnu/monetdb5
 
 # usr/lib/x86_64-linux-gnu/monetdb5/*.mal EXCEPT: {bam,geom,gsl,lidar,pyapi,rapi,sql*,*_hge}.mal
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/[!bglprsu]*.mal usr/lib/x86_64-linux-gnu/monetdb5
@@ -27,4 +26,3 @@ debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_calc.mal usr/lib/x86_64
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_generator.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_opt_sql_append.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_udf.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
-debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_vault.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload

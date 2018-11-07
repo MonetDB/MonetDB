@@ -3424,8 +3424,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 				if (is_lng_nil(*(const lng *)vr))
 					continue;
-				SUB_WITH_CHECK(lng, *(const lng *)vr,
-					       lng, *(const lng *)c1,
+				SUB_WITH_CHECK(*(const lng *)vr,
+					       *(const lng *)c1,
 					       lng, v1,
 					       GDK_lng_max,
 					       do{if(*(const lng*)c1<0)goto nolmatch;else goto lmatch1;}while(false));
@@ -3433,8 +3433,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				    (!li || *(const lng *)vl != v1))
 					continue;
 			  lmatch1:
-				ADD_WITH_CHECK(lng, *(const lng *)vr,
-					       lng, *(const lng *)c2,
+				ADD_WITH_CHECK(*(const lng *)vr,
+					       *(const lng *)c2,
 					       lng, v2,
 					       GDK_lng_max,
 					       do{if(*(const lng*)c2>0)goto nolmatch;else goto lmatch2;}while(false));
@@ -3455,8 +3455,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 				if (is_hge_nil(*(const hge *)vr))
 					continue;
-				SUB_WITH_CHECK(hge, *(const hge *)vr,
-					       hge, *(const hge *)c1,
+				SUB_WITH_CHECK(*(const hge *)vr,
+					       *(const hge *)c1,
 					       hge, v1,
 					       GDK_hge_max,
 					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(false));
@@ -3464,8 +3464,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				    (!li || *(const hge *)vl != v1))
 					continue;
 			  hmatch1:
-				ADD_WITH_CHECK(hge, *(const hge *)vr,
-					       hge, *(const hge *)c2,
+				ADD_WITH_CHECK(*(const hge *)vr,
+					       *(const hge *)c2,
 					       hge, v2,
 					       GDK_hge_max,
 					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(false));
@@ -3500,8 +3500,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 				if (is_dbl_nil(*(const dbl *)vr))
 					continue;
-				SUB_WITH_CHECK(dbl, *(const dbl *)vr,
-					       dbl, *(const dbl *)c1,
+				SUB_WITH_CHECK(*(const dbl *)vr,
+					       *(const dbl *)c1,
 					       dbl, v1,
 					       GDK_dbl_max,
 					       do{if(*(const dbl*)c1<0)goto nodmatch;else goto dmatch1;}while(false));
@@ -3509,8 +3509,8 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				    (!li || *(const dbl *)vl != v1))
 					continue;
 			  dmatch1:
-				ADD_WITH_CHECK(dbl, *(const dbl *)vr,
-					       dbl, *(const dbl *)c2,
+				ADD_WITH_CHECK(*(const dbl *)vr,
+					       *(const dbl *)c2,
 					       dbl, v2,
 					       GDK_dbl_max,
 					       do{if(*(const dbl*)c2>0)goto nodmatch;else goto dmatch2;}while(false));

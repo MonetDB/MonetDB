@@ -19,8 +19,6 @@
  * primary goals of this tool.
  */
 
-#define TOOLKIT_VERSION   "1.1"
-
 #include "monetdb_config.h"
 #include "utils.h"
 #include "properties.h"
@@ -179,8 +177,14 @@ command_help(int argc, char *argv[])
 static void
 command_version(void)
 {
-	printf("MonetDB Database Server Toolkit v%s (%s)\n",
-			TOOLKIT_VERSION, MONETDB_RELEASE);
+	const char *rev = mercurial_revision();
+	printf("MonetDB Database Server Toolkit v%s", VERSION);
+	/* coverity[pointless_string_compare] */
+	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+		printf(" (%s)", MONETDB_RELEASE);
+	else if (strcmp(rev, "Unknown") != 0)
+		printf(" (hg id: %s)", rev);
+	printf("\n");
 }
 
 static int

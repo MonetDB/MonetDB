@@ -64,7 +64,7 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 	if (n < 7) {
 		/* insertion sort for very small chunks */
 		for (b = 1; b < n; b++) {
-			for (a = b; a > 0 && LE(a, a - 1); a--) {
+			for (a = b; a > 0 && LT(a, a - 1); a--) {
 				SWAP(a, a - 1);
 			}
 		}
@@ -134,7 +134,7 @@ GDKqsort_impl(const struct qsort_t *restrict buf,
 	if (!swap_cnt && n < 1024) {
 		/* switch to insertion sort, but only for small chunks */
 		for (b = 1; b < n; b++) {
-			for (a = b; a > 0 && LE(a, a - 1); a--) {
+			for (a = b; a > 0 && LT(a, a - 1); a--) {
 				SWAP(a, a - 1);
 			}
 		}

@@ -1,0 +1,183 @@
+stdout of test 'check0` in directory 'sql/benchmarks/tpcds` itself:
+
+
+# 15:17:46 >  
+# 15:17:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39229" "--set" "mapi_usock=/var/tmp/mtest-12612/.s.monetdb.39229" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-default/BUILD/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 15:17:46 >  
+
+# MonetDB 5 server v11.32.0
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpcds', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:39229/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-12612/.s.monetdb.39229
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:17:46 >  
+# 15:17:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12612" "--port=39229"
+# 15:17:46 >  
+
+#start transaction;
+#select count(*) from dbgen_version;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from customer_address;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from customer_demographics;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from date_dim;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from warehouse;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from ship_mode;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from time_dim;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from reason;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from income_band;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from item;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from store;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from call_center;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from customer;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from web_site;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from store_returns;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from household_demographics;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from web_page;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from promotion;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from catalog_page;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from inventory;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from catalog_returns;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from web_returns;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from web_sales;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from catalog_sales;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from store_sales;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#rollback;
+
+# 15:17:46 >  
+# 15:17:46 >  "Done."
+# 15:17:46 >  
+

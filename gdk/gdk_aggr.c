@@ -470,8 +470,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				*seen = start < end;			\
 				for (i = start; i < end && nils == 0; i++) { \
 					x = vals[i];			\
-					ADD_WITH_CHECK(TYPE1, x,	\
-						       TYPE2, sum,	\
+					ADD_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
@@ -486,8 +485,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 							nils = 1;	\
 						}			\
 					} else {			\
-						ADD_WITH_CHECK(TYPE1, x, \
-							       TYPE2, sum, \
+						ADD_WITH_CHECK(x, sum,	\
 							       TYPE2, sum, \
 							       GDK_##TYPE2##_max, \
 							       goto overflow); \
@@ -519,8 +517,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 						nils = 1;		\
 					}				\
 				} else {				\
-					ADD_WITH_CHECK(TYPE1, x,	\
-						       TYPE2, sum,	\
+					ADD_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
@@ -554,9 +551,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 						}			\
 						if (!is_##TYPE2##_nil(sums[gid])) { \
 							ADD_WITH_CHECK(	\
-								TYPE1,	\
 								x,	\
-								TYPE2,	\
 								sums[gid], \
 								TYPE2,	\
 								sums[gid], \
@@ -594,9 +589,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 						}			\
 						if (!is_##TYPE2##_nil(sums[gid])) { \
 							ADD_WITH_CHECK(	\
-								TYPE1,	\
 								x,	\
-								TYPE2,	\
 								sums[gid], \
 								TYPE2,	\
 								sums[gid], \
@@ -982,8 +975,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 					}				\
 					if (!is_##TYPE2##_nil(prods[gid])) { \
 						MUL4_WITH_CHECK(	\
-							TYPE1, vals[i],	\
-							TYPE2, prods[gid], \
+							vals[i],	\
+							prods[gid],	\
 							TYPE2, prods[gid], \
 							GDK_##TYPE2##_max, \
 							TYPE3,		\
@@ -1030,8 +1023,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 						nils++;			\
 					}				\
 				} else if (!is_hge_nil(prods[gid])) {	\
-					HGEMUL_CHECK(TYPE, vals[i],	\
-						     hge, prods[gid],	\
+					HGEMUL_CHECK(vals[i],		\
+						     prods[gid],	\
 						     prods[gid],	\
 						     GDK_hge_max,	\
 						     goto overflow);	\
@@ -1077,8 +1070,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 					}				\
 					if (!is_lng_nil(prods[gid])) {	\
 						LNGMUL_CHECK(		\
-							TYPE, vals[i],	\
-							lng, prods[gid], \
+							vals[i],	\
+							prods[gid],	\
 							prods[gid],	\
 							GDK_lng_max,	\
 							goto overflow); \
@@ -1778,8 +1771,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 			x = ((const TYPE *) src)[i];			\
 			if (is_##TYPE##_nil(x))				\
 				continue;				\
-			ADD_WITH_CHECK(TYPE, x,				\
-				       lng_hge, sum,			\
+			ADD_WITH_CHECK(x, sum,				\
 				       lng_hge, sum,			\
 				       GDK_##lng_hge##_max,		\
 				       goto overflow##TYPE);		\

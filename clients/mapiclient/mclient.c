@@ -35,7 +35,9 @@
 #endif
 #include "stream.h"
 #include "msqldump.h"
+#define LIBMUTILS 1
 #include "mprompt.h"
+#include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
 
 #include <locale.h>
@@ -3428,13 +3430,22 @@ main(int argc, char **argv)
 			user = strdup(optarg);
 			user_set_as_flag = true;
 			break;
-		case 'v':
+		case 'v': {
+			const char *rev = mercurial_revision();
 			mnstr_printf(toConsole,
-				     "mclient, the MonetDB interactive terminal (%s)\n",
-				     MONETDB_RELEASE);
+				     "mclient, the MonetDB interactive "
+				     "terminal, version %s", VERSION);
+			/* coverity[pointless_string_compare] */
+			if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+				mnstr_printf(toConsole, " (%s)",
+					     MONETDB_RELEASE);
+			else if (strcmp(rev, "Unknown") != 0)
+				mnstr_printf(toConsole, " (hg id: %s)", rev);
+			mnstr_printf(toConsole, "\n");
 #ifdef HAVE_LIBREADLINE
 			mnstr_printf(toConsole,
-				     "support for command-line editing compiled-in\n");
+				     "support for command-line editing "
+				     "compiled-in\n");
 #endif
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
@@ -3442,9 +3453,11 @@ main(int argc, char **argv)
 				encoding = nl_langinfo(CODESET);
 #endif
 			mnstr_printf(toConsole,
-				     "character encoding: %s\n", encoding ? encoding : "utf-8 (default)");
+				     "character encoding: %s\n",
+				     encoding ? encoding : "utf-8 (default)");
 #endif
 			return 0;
+		}
 		case 'w':
 			assert(optarg);
 			pagewidth = atoi(optarg);

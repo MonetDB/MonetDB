@@ -690,7 +690,6 @@ exit 0
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_opt_sql_append.so
 %{_libdir}/monetdb5/lib_udf.so
-%{_libdir}/monetdb5/lib_vault.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
@@ -781,7 +780,6 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
-%{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
