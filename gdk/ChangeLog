@@ -1,6 +1,12 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Wed Nov  7 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a nilslast option for BATfirstn.  If set, NILs come
+  last in the ordering that BATfirstn simulates, so non-NIL values are
+  preferentially returned.  The old behavior can be obtained by setting
+  nilslast to !asc(ending).
+
 * Tue Nov  6 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented a nilslast option for BATsort.  This option should be
   equal to the reverse option for stable sort (it is not implemented for

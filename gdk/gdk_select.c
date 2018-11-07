@@ -64,7 +64,7 @@ virtualize(BAT *bn)
 	return bn;
 }
 
-static BAT *
+BAT *
 doublerange(oid l1, oid h1, oid l2, oid h2)
 {
 	BAT *bn;
@@ -93,7 +93,7 @@ doublerange(oid l1, oid h1, oid l2, oid h2)
 	return bn;
 }
 
-static BAT *
+BAT *
 doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 {
 	BAT *bn;
