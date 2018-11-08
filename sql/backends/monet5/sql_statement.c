@@ -1021,7 +1021,7 @@ stmt_result(backend *be, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order)
+stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1076,8 +1076,8 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (g)
 			q = pushArgument(mb, q, g);
 		q = pushArgument(mb, q, topn);
-		q = pushBit(mb, q, dir != 0);
-		q = pushBit(mb, q, dir == 0); /* nilslast */
+		q = pushBit(mb, q, dir);
+		q = pushBit(mb, q, nullslast);
 		q = pushBit(mb, q, distinct != 0);
 
 		if (q == NULL)
@@ -1187,9 +1187,8 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 
 
 stmt *
-stmt_order(backend *be, stmt *s, int direction)
+stmt_order(backend *be, stmt *s, int direction, int nullslast)
 {
-	int reverse = (direction <= 0);
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
@@ -1200,8 +1199,8 @@ stmt_order(backend *be, stmt *s, int direction)
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, s->nr);
-	q = pushBit(mb, q, reverse);
-	q = pushBit(mb, q, reverse); /* nilslast */
+	q = pushBit(mb, q, !direction);
+	q = pushBit(mb, q, nullslast);
 	q = pushBit(mb, q, FALSE);
 	if (q == NULL)
 		return NULL;
@@ -1226,9 +1225,8 @@ stmt_order(backend *be, stmt *s, int direction)
 }
 
 stmt *
-stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *orderby_grp)
+stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp)
 {
-	int reverse = (direction <= 0);
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
@@ -1241,8 +1239,8 @@ stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *order
 	q = pushArgument(mb, q, s->nr);
 	q = pushArgument(mb, q, orderby_ids->nr);
 	q = pushArgument(mb, q, orderby_grp->nr);
-	q = pushBit(mb, q, reverse);
-	q = pushBit(mb, q, reverse); /* nilslast */
+	q = pushBit(mb, q, !direction);
+	q = pushBit(mb, q, nullslast);
 	q = pushBit(mb, q, FALSE);
 	if (q == NULL)
 		return NULL;

@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Nov  8 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Imlemented the NULLS FIRST and NULLS LAST option to ORDER BY.  The
+  default is NULLS FIRST for ASC(ending) and NULLS LAST for DESC(ending).
+
 * Thu Oct 18 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added possibility to rename SQL schemas, tables and columns with ALTER
   statements:
