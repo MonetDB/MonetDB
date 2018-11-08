@@ -40,7 +40,7 @@ bat.append(e,0);
 
 k:= algebra.projection(g,te);
 io.print(k);
-l:= algebra.sort(k,false,false);
+l:= algebra.sort(k,false,false,false);
 io.print(l);
 
 ag:= xml.subaggr(te,g,e,true);

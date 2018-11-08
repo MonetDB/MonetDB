@@ -1077,6 +1077,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			q = pushArgument(mb, q, g);
 		q = pushArgument(mb, q, topn);
 		q = pushBit(mb, q, dir != 0);
+		q = pushBit(mb, q, dir == 0); /* nilslast */
 		q = pushBit(mb, q, distinct != 0);
 
 		if (q == NULL)
@@ -1200,6 +1201,7 @@ stmt_order(backend *be, stmt *s, int direction)
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, s->nr);
 	q = pushBit(mb, q, reverse);
+	q = pushBit(mb, q, reverse); /* nilslast */
 	q = pushBit(mb, q, FALSE);
 	if (q == NULL)
 		return NULL;
@@ -1240,6 +1242,7 @@ stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *order
 	q = pushArgument(mb, q, orderby_ids->nr);
 	q = pushArgument(mb, q, orderby_grp->nr);
 	q = pushBit(mb, q, reverse);
+	q = pushBit(mb, q, reverse); /* nilslast */
 	q = pushBit(mb, q, FALSE);
 	if (q == NULL)
 		return NULL;
