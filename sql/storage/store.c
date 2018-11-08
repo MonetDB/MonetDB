@@ -4336,7 +4336,7 @@ static void
 sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 {
 	str seq_pos = NULL;
-	const char *next_value_for = "next value for \"sys\".\"seq" SQL_INTERNAL_SEPERATOR;
+	const char *next_value_for = "next value for \"sys\".\"seq_";
 	sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp"); 
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(syscolumn, "id"),
@@ -4350,7 +4350,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 		sql_sequence * seq = NULL;
-		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq" SQL_INTERNAL_SEPERATOR)));
+		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 		node *n = NULL;
 		seq_name[strlen(seq_name)-1] = '\0';
 		n = cs_find_name(&syss->seqs, seq_name);

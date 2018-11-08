@@ -521,8 +521,6 @@ typedef enum table_types {
 #define TABLE_READONLY	1
 #define TABLE_APPENDONLY	2
 
-#define SQL_INTERNAL_SEPERATOR "\037"
-
 typedef struct sql_part_value {
 	sql_subtype tpe;
 	ptr value;
