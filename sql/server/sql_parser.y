@@ -4152,66 +4152,6 @@ param:
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); 
 	}
 
-/*
-<window function> ::= <window function type> OVER <window name or specification>
-
-<window function type> ::=
-		<rank function type> <left paren> <right paren>
-	|	ROW_NUMBER <left paren> <right paren>
-	|	<aggregate function>
-
-<rank function type> ::= RANK | DENSE_RANK | PERCENT_RANK | CUME_DIST
-
-<window name or specification> ::= <window name> | <in-line window specification>
-
-<in-line window specification> ::= <window specification>
-
-
-<window specification> ::= <left paren> <window specification details> <right paren>
-
-<window specification details> ::=
-                [ <existing window name> ] [ <window partition clause> ] [ <window order clause> ] [ <window frame clause> ]
-
-<existing window name> ::= <window name>
-
-<window partition clause> ::= PARTITION BY <window partition column reference list>
-
-<window partition column reference list> ::= <window partition column reference> [ { <comma> <window partition column reference> }... ]
-
-<window partition column reference> ::= <column reference> [ <collate clause> ]
-
-<window order clause> ::= ORDER BY <sort specification list>
-
-<window frame clause> ::= <window frame units> <window frame extent> [ <window frame exclusion> ]
-
-<window frame units> ::= ROWS | RANGE
-
-<window frame extent> ::= <window frame start> | <window frame between>
-
-<window frame start> ::= 
-		UNBOUNDED PRECEDING 
-	| 	<window frame preceding> 
-	| 	CURRENT ROW
-
-<window frame preceding> ::= <unsigned value specification> PRECEDING
-
-<window frame between> ::= BETWEEN <window frame start> AND <window frame end>
-
-<window frame end> ::=
-                UNBOUNDED FOLLOWING
-        |       <window frame following>
-	| 	CURRENT ROW
-
-<window frame following> ::= <unsigned value specification> FOLLOWING
-
-<window frame exclusion> ::=
-                EXCLUDE CURRENT ROW
-        |       EXCLUDE GROUP
-        |       EXCLUDE TIES
-        |       EXCLUDE NO OTHERS
-
-*/
-
 window_function:
 	window_function_type OVER '(' window_specification ')'
 	{ $$ = _symbol_create_list( SQL_RANK, append_list(append_symbol(L(), $1), $4)); }

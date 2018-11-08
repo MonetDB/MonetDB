@@ -100,12 +100,12 @@ Ready.
 [ 0,	1,	0,	0,	1,	1,	1	]
 [ 0,	0,	0,	0,	1,	1,	1	]
 [ 1,	0,	0,	0,	1,	1,	1	]
+[ 0,	1,	0,	0,	0,	0,	0	]
 [ 0,	0,	0,	0,	1,	1,	1	]
-[ 0,	0,	0,	0,	0,	0,	0	]
+[ 0,	0,	0,	0,	1,	1,	1	]
+[ 0,	1,	0,	0,	1,	1,	1	]
+[ 0,	0,	0,	0,	1,	1,	1	]
 [ 1,	0,	0,	0,	1,	1,	1	]
-[ 0,	0,	0,	0,	1,	1,	1	]
-[ 0,	0,	0,	0,	1,	1,	1	]
-[ 1,	1,	0,	0,	1,	1,	1	]
 [ 0,	0,	0,	0,	0,	0,	0	]
 #select cast(sum(aa) over (rows between 3 preceding and 2 preceding) as bigint),
 #       cast(sum(aa) over (rows between 2 following and 3 following) as bigint),
@@ -114,8 +114,8 @@ Ready.
 #       cast(sum(aa) over (rows between current row and current row) as bigint),
 #       cast(sum(aa) over (rows between 0 following and 0 following) as bigint),
 #       cast(sum(aa) over (rows between 0 preceding and 0 preceding) as bigint) from analytics;
-% sys.L5,	sys.L12,	sys.L17,	sys.L24,	sys.L31,	sys.L36,	sys.L43 # table_name
-% L5,	L12,	L17,	L24,	L31,	L36,	L43 # name
+% sys.L6,	sys.L13,	sys.L20,	sys.L25,	sys.L32,	sys.L37,	sys.L44 # table_name
+% L6,	L13,	L20,	L25,	L32,	L37,	L44 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	2,	1,	2,	2,	2 # length
 [ NULL,	7,	NULL,	NULL,	15,	15,	15	]
@@ -133,19 +133,19 @@ Ready.
 #       cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 3 preceding) as bigint),
 #       cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 9 preceding) as bigint),
 #       cast(sum(aa) over (partition by bb order by bb rows between current row and current row) as bigint),
-% sys.L5,	sys.L12,	sys.L17,	sys.L24,	sys.L31,	sys.L36,	sys.L43 # table_name
-% L5,	L12,	L17,	L24,	L31,	L36,	L43 # name
+% sys.L6,	sys.L13,	sys.L20,	sys.L25,	sys.L32,	sys.L37,	sys.L44 # table_name
+% L6,	L13,	L20,	L25,	L32,	L37,	L44 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
-% 2,	2,	1,	1,	2,	2,	2 # length
-[ NULL,	2,	NULL,	NULL,	3,	3,	3	]
+% 2,	1,	1,	1,	2,	2,	2 # length
+[ NULL,	4,	NULL,	NULL,	3,	3,	3	]
 [ NULL,	NULL,	NULL,	NULL,	2,	2,	2	]
 [ 3,	NULL,	NULL,	NULL,	4,	4,	4	]
+[ NULL,	8,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ NULL,	NULL,	NULL,	NULL,	3,	3,	3	]
-[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ 3,	NULL,	NULL,	NULL,	8,	8,	8	]
-[ NULL,	NULL,	NULL,	NULL,	15,	15,	15	]
+[ NULL,	NULL,	NULL,	NULL,	8,	8,	8	]
+[ NULL,	6,	NULL,	NULL,	15,	15,	15	]
 [ NULL,	NULL,	NULL,	NULL,	5,	5,	5	]
-[ 15,	15,	NULL,	NULL,	6,	6,	6	]
+[ 15,	NULL,	NULL,	NULL,	6,	6,	6	]
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #rollback;
 #drop table analytics;

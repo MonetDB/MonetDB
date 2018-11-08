@@ -36,9 +36,9 @@ Ready.
 [ 3	]
 [ 3	]
 [ 3	]
-[ 3	]
-[ 3	]
-[ 3	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
 [ 15	]
 [ 15	]
 [ 15	]
@@ -48,16 +48,16 @@ Ready.
 % sys.L4,	sys.L10 # table_name
 % L4,	L10 # name
 % int,	int # type
-% 1,	2 # length
-[ 3,	2	]
-[ 3,	2	]
-[ 3,	2	]
-[ 3,	NULL	]
-[ 3,	NULL	]
-[ 3,	NULL	]
-[ 3,	15	]
-[ 3,	15	]
-[ 3,	15	]
+% 1,	1 # length
+[ 3,	4	]
+[ 3,	4	]
+[ 3,	4	]
+[ 3,	8	]
+[ 3,	8	]
+[ 3,	8	]
+[ 3,	6	]
+[ 3,	6	]
+[ 3,	6	]
 [ 3,	NULL	]
 #select first_value(aa) over (w1 partition by bb),
 #       last_value(aa) over (w2 range unbounded preceding),
@@ -65,16 +65,16 @@ Ready.
 % sys.L4,	sys.L10,	sys.L14 # table_name
 % L4,	L10,	L14 # name
 % int,	int,	bigint # type
-% 2,	2,	1 # length
-[ 3,	2,	3	]
-[ 3,	2,	3	]
-[ 3,	2,	3	]
-[ 3,	NULL,	2	]
-[ 3,	NULL,	2	]
-[ 3,	NULL,	2	]
-[ 15,	15,	3	]
-[ 15,	15,	3	]
-[ 15,	15,	3	]
+% 2,	1,	1 # length
+[ 3,	4,	3	]
+[ 3,	4,	3	]
+[ 3,	4,	3	]
+[ NULL,	8,	2	]
+[ NULL,	8,	2	]
+[ NULL,	8,	2	]
+[ 15,	6,	3	]
+[ 15,	6,	3	]
+[ 15,	6,	3	]
 [ NULL,	NULL,	0	]
 #rollback;
 #drop table analytics;

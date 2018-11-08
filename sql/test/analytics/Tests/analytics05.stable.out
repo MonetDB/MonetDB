@@ -67,8 +67,8 @@ Ready.
 [ 10	]
 #select count(*) over w, cast(sum(aa) over w as bigint)
 #    from analytics window w as (rows between 5 preceding and 0 following);
-% sys.L4,	sys.L11 # table_name
-% L4,	L11 # name
+% sys.L4,	sys.L12 # table_name
+% L4,	L12 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ 1,	15	]
@@ -83,19 +83,19 @@ Ready.
 [ 6,	21	]
 #select count(*) over w, cast(sum(aa) over z as bigint), avg(aa) over z
 #    from analytics window w as (rows between 5 preceding and 0 following), z as (order by bb range unbounded preceding);
-% sys.L4,	sys.L11,	sys.L15 # table_name
-% L4,	L11,	L15 # name
+% sys.L4,	sys.L12,	sys.L15 # table_name
+% L4,	L12,	L15 # name
 % bigint,	bigint,	double # type
 % 1,	2,	24 # length
 [ 2,	9,	3	]
-[ 6,	9,	3	]
 [ 3,	9,	3	]
-[ 6,	20,	4	]
-[ 6,	20,	4	]
+[ 6,	9,	3	]
 [ 5,	20,	4	]
-[ 6,	46,	5.75	]
-[ 4,	46,	5.75	]
+[ 6,	20,	4	]
+[ 6,	20,	4	]
 [ 1,	46,	5.75	]
+[ 4,	46,	5.75	]
+[ 6,	46,	5.75	]
 [ 6,	46,	5.75	]
 #with helper as (select count(*) over w as counted from analytics window w as (order by bb))
 #    select count(*) over w from helper window w as (rows unbounded preceding);

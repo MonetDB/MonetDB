@@ -35,28 +35,28 @@ Ready.
 #       cast(sum(aa) over (order by aa groups unbounded preceding) as bigint),
 #       cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint),
 #       cast(sum(aa) over (partition by bb order by bb range unbounded preceding) as bigint),
-% sys.L5,	sys.L12,	sys.L17,	sys.L24,	sys.L31,	sys.L36,	sys.L43,	sys.L50 # table_name
-% L5,	L12,	L17,	L24,	L31,	L36,	L43,	L50 # name
+% sys.L6,	sys.L13,	sys.L20,	sys.L25,	sys.L32,	sys.L37,	sys.L44,	sys.L51 # table_name
+% L6,	L13,	L20,	L25,	L32,	L37,	L44,	L51 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	2,	2,	2,	2,	2,	2 # length
-[ 3,	20,	6,	10,	10,	2,	6,	6	]
-[ 6,	20,	16,	16,	16,	5,	6,	6	]
-[ 1,	20,	1,	4,	4,	6,	6,	6	]
-[ 18,	20,	20,	20,	20,	12,	14,	14	]
-[ 9,	20,	4,	4,	4,	13,	14,	14	]
-[ 8,	20,	3,	4,	4,	14,	14,	14	]
-[ 11,	20,	8,	10,	10,	2,	14,	14	]
-[ 20,	20,	10,	10,	10,	4,	14,	14	]
-[ 14,	20,	13,	16,	16,	7,	14,	14	]
-[ 7,	20,	2,	4,	4,	8,	14,	14	]
+[ 1,	20,	1,	4,	4,	1,	6,	6	]
+[ 3,	20,	6,	10,	10,	3,	6,	6	]
+[ 6,	20,	13,	16,	16,	6,	6,	6	]
+[ 7,	20,	2,	4,	4,	1,	14,	14	]
+[ 8,	20,	3,	4,	4,	2,	14,	14	]
+[ 9,	20,	4,	4,	4,	3,	14,	14	]
+[ 11,	20,	8,	10,	10,	5,	14,	14	]
+[ 20,	20,	10,	10,	10,	7,	14,	14	]
+[ 14,	20,	16,	16,	16,	10,	14,	14	]
+[ 18,	20,	20,	20,	20,	14,	14,	14	]
 #select cast(sum(aa) over (order by aa range between unbounded preceding and current row) as bigint),
 #       cast(sum(cc) over (order by aa range between unbounded preceding and current row) as bigint),
 #       count(*) over (order by aa range between unbounded preceding and current row),
 #       count(aa) over (order by aa range between unbounded preceding and current row),
 #       min(aa) over (order by aa range between unbounded preceding and current row),
 #       max(aa) over (order by aa range between unbounded preceding and current row),
-% sys.L5,	sys.L12,	sys.L16,	sys.L22,	sys.L26,	sys.L32,	sys.L36,	sys.L42 # table_name
-% L5,	L12,	L16,	L22,	L26,	L32,	L36,	L42 # name
+% sys.L6,	sys.L13,	sys.L16,	sys.L22,	sys.L26,	sys.L32,	sys.L36,	sys.L42 # table_name
+% L6,	L13,	L16,	L22,	L26,	L32,	L36,	L42 # name
 % bigint,	bigint,	bigint,	bigint,	int,	int,	double,	double # type
 % 2,	2,	2,	2,	1,	1,	24,	24 # length
 [ 4,	4,	4,	4,	1,	1,	1,	1	]
@@ -75,8 +75,8 @@ Ready.
 #       count(aa) over (order by aa groups between unbounded preceding and current row),
 #       min(aa) over (order by aa groups between unbounded preceding and current row),
 #       max(aa) over (order by aa groups between unbounded preceding and current row),
-% sys.L5,	sys.L12,	sys.L16,	sys.L22,	sys.L26,	sys.L32,	sys.L36,	sys.L42 # table_name
-% L5,	L12,	L16,	L22,	L26,	L32,	L36,	L42 # name
+% sys.L6,	sys.L13,	sys.L16,	sys.L22,	sys.L26,	sys.L32,	sys.L36,	sys.L42 # table_name
+% L6,	L13,	L16,	L22,	L26,	L32,	L36,	L42 # name
 % bigint,	bigint,	bigint,	bigint,	int,	int,	double,	double # type
 % 2,	2,	2,	2,	1,	1,	24,	24 # length
 [ 4,	4,	4,	4,	1,	1,	1,	1	]
@@ -91,8 +91,8 @@ Ready.
 [ 20,	20,	10,	10,	1,	4,	2,	2	]
 #select cast(sum(aa) over (order by aa groups between 1 preceding and current row) as bigint),
 #       avg(cc) over (order by aa groups between 1 preceding and current row) from rowsvsrangevsgroups;
-% sys.L5,	sys.L11 # table_name
-% L5,	L11 # name
+% sys.L6,	sys.L11 # table_name
+% L6,	L11 # name
 % bigint,	double # type
 % 2,	24 # length
 [ 4,	1	]
@@ -113,8 +113,8 @@ Ready.
 #       count(aa) over (order by aa range between unbounded preceding and current row),
 #       min(aa) over (order by aa range between unbounded preceding and current row),
 #       max(aa) over (order by aa range between unbounded preceding and current row),
-% sys.L5,	sys.L12,	sys.L16,	sys.L22,	sys.L26,	sys.L32,	sys.L36,	sys.L42 # table_name
-% L5,	L12,	L16,	L22,	L26,	L32,	L36,	L42 # name
+% sys.L6,	sys.L13,	sys.L16,	sys.L22,	sys.L26,	sys.L32,	sys.L36,	sys.L42 # table_name
+% L6,	L13,	L16,	L22,	L26,	L32,	L36,	L42 # name
 % bigint,	bigint,	bigint,	bigint,	int,	int,	double,	double # type
 % 2,	2,	1,	1,	1,	1,	24,	24 # length
 [ 4,	4,	4,	4,	1,	1,	1,	1	]
@@ -130,8 +130,8 @@ Ready.
 #       count(aa) over (order by aa groups between unbounded preceding and current row),
 #       min(aa) over (order by aa groups between unbounded preceding and current row),
 #       max(aa) over (order by aa groups between unbounded preceding and current row),
-% sys.L5,	sys.L12,	sys.L16,	sys.L22,	sys.L26,	sys.L32,	sys.L36,	sys.L42 # table_name
-% L5,	L12,	L16,	L22,	L26,	L32,	L36,	L42 # name
+% sys.L6,	sys.L13,	sys.L16,	sys.L22,	sys.L26,	sys.L32,	sys.L36,	sys.L42 # table_name
+% L6,	L13,	L16,	L22,	L26,	L32,	L36,	L42 # name
 % bigint,	bigint,	bigint,	bigint,	int,	int,	double,	double # type
 % 2,	2,	1,	1,	1,	1,	24,	24 # length
 [ 4,	4,	4,	4,	1,	1,	1,	1	]
@@ -143,8 +143,8 @@ Ready.
 [ 14,	14,	7,	7,	1,	4,	2,	2	]
 #select cast(sum(aa) over (order by aa groups between 1 preceding and current row) as bigint),
 #       avg(cc) over (order by aa groups between 1 preceding and current row) from rowsvsrangevsgroups;
-% sys.L5,	sys.L11 # table_name
-% L5,	L11 # name
+% sys.L6,	sys.L11 # table_name
+% L6,	L11 # name
 % bigint,	double # type
 % 2,	24 # length
 [ 4,	1	]
@@ -168,14 +168,14 @@ Ready.
 % L4,	L10,	L14,	L20,	L24,	L30,	L34,	L40 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1,	1,	1 # length
+[ 7,	7,	7,	7,	7,	1,	3,	3	]
 [ 6,	7,	6,	7,	7,	2,	3,	3	]
 [ 5,	7,	5,	7,	7,	3,	3,	3	]
-[ 7,	7,	7,	7,	7,	1,	3,	3	]
+[ 4,	7,	4,	4,	4,	0,	1,	1	]
 [ 4,	7,	4,	4,	4,	1,	1,	1	]
-[ 4,	7,	4,	4,	4,	1,	1,	1	]
-[ 1,	7,	1,	3,	3,	1,	3,	3	]
+[ 3,	7,	3,	3,	3,	1,	3,	3	]
 [ 2,	7,	2,	3,	3,	2,	3,	3	]
-[ 3,	7,	3,	3,	3,	3,	3,	3	]
+[ 1,	7,	1,	3,	3,	3,	3,	3	]
 [ 0,	7,	0,	0,	0,	0,	0,	0	]
 #select min(aa) over (rows between current row and unbounded following),
 #       min(aa) over (range between current row and unbounded following),
@@ -188,14 +188,14 @@ Ready.
 % L4,	L10,	L14,	L20,	L24,	L30,	L34,	L40 # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 7,	7,	7,	7,	7,	7,	7,	7 # length
+[ "another",	"another",	"another",	"another",	"another",	"one",	"another",	"another"	]
 [ "another",	"another",	"another",	"another",	"another",	"another",	"another",	"another"	]
 [ "check",	"another",	"check",	"another",	"another",	"another",	"another",	"another"	]
-[ "another",	"another",	"another",	"another",	"another",	"one",	"another",	"another"	]
+[ "check",	"another",	"check",	"check",	"check",	NULL,	"ok",	"ok"	]
 [ "check",	"another",	"check",	"check",	"check",	"ok",	"ok",	"ok"	]
-[ "check",	"another",	"check",	"check",	"check",	"ok",	"ok",	"ok"	]
-[ "please",	"another",	"please",	"check",	"check",	"please",	"check",	"check"	]
-[ "me",	"another",	"me",	"check",	"check",	"me",	"check",	"check"	]
 [ "check",	"another",	"check",	"check",	"check",	"check",	"check",	"check"	]
+[ "me",	"another",	"me",	"check",	"check",	"check",	"check",	"check"	]
+[ "please",	"another",	"please",	"check",	"check",	"check",	"check",	"check"	]
 [ NULL,	"another",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select max(aa) over (rows between current row and unbounded following),
 #       max(aa) over (range between current row and unbounded following),
@@ -209,12 +209,12 @@ Ready.
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 6,	6,	6,	6,	6,	6,	6,	6 # length
 [ "stress",	"stress",	"stress",	"stress",	"stress",	"one",	"stress",	"stress"	]
-[ "stress",	"stress",	"stress",	"stress",	"stress",	"stress",	"stress",	"stress"	]
 [ "stress",	"stress",	"stress",	"stress",	"stress",	"one",	"stress",	"stress"	]
+[ "stress",	"stress",	"stress",	"stress",	"stress",	"stress",	"stress",	"stress"	]
+[ "please",	"stress",	"please",	"please",	"please",	NULL,	"ok",	"ok"	]
 [ "please",	"stress",	"please",	"please",	"please",	"ok",	"ok",	"ok"	]
-[ "please",	"stress",	"please",	"please",	"please",	"ok",	"ok",	"ok"	]
-[ "please",	"stress",	"please",	"please",	"please",	"please",	"please",	"please"	]
-[ "please",	"stress",	"please",	"please",	"please",	"please",	"please",	"please"	]
+[ "please",	"stress",	"please",	"please",	"please",	"check",	"please",	"please"	]
+[ "please",	"stress",	"please",	"please",	"please",	"me",	"please",	"please"	]
 [ "please",	"stress",	"please",	"please",	"please",	"please",	"please",	"please"	]
 [ NULL,	"stress",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 #select max(aa) over (order by bb groups between 1 preceding and current row),
@@ -256,16 +256,16 @@ Ready.
 #       floor(avg(aa) over (order by bb range between current row and unbounded following)),
 #       floor(avg(aa) over (partition by bb order by bb rows unbounded preceding)),
 #       floor(avg(aa) over (partition by bb order by bb range unbounded preceding)) from overflowme;
-% sys.L5,	sys.L12,	sys.L17,	sys.L24,	sys.L31,	sys.L36 # table_name
-% L5,	L12,	L17,	L24,	L31,	L36 # name
+% sys.L6,	sys.L13,	sys.L20,	sys.L25,	sys.L32,	sys.L37 # table_name
+% L6,	L13,	L20,	L25,	L32,	L37 # name
 % double,	double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24,	24 # length
-[ 2147483645,	2147483645,	2147483644,	2147483645,	2147483645,	2147483645	]
+[ 2147483645,	2147483645,	2147483645,	2147483645,	2147483644,	2147483645	]
 [ 2147483645,	2147483645,	2147483645,	2147483645,	2147483645,	2147483645	]
 [ 2147483645,	2147483645,	2147483645,	2147483645,	2147483645,	2147483645	]
 [ 2147483645,	2147483645,	2147483645,	2147483645,	2147483645,	2147483645	]
-[ 2147483645,	2147483645,	2147483644,	2147483645,	2147483645,	2147483645	]
-[ 2147483646,	2147483645,	2147483645,	2147483645,	2147483646,	2147483645	]
+[ 2147483645,	2147483645,	2147483645,	2147483645,	2147483644,	2147483645	]
+[ 2147483646,	2147483645,	2147483646,	2147483645,	2147483645,	2147483645	]
 #rollback;
 #drop table rowsvsrangevsgroups;
 
