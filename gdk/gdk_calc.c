@@ -13686,11 +13686,14 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 					end = i + 1;
 			}
 			src = BUNtvar(bi, i);
-			if ((*atomtostr)(&dst, &len, src) < 0)
-				goto bunins_failed;
-			if ((*atomcmp)(src, nil) == 0)
+			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
+			} else {
+				if ((*atomtostr)(&dst, &len, src) < 0)
+					goto bunins_failed;
+				tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+			}
 		}
 	} else {
 		size_t size = ATOMsize(tp);
@@ -13707,11 +13710,14 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 				if (++cand == candend)
 					end = i + 1;
 			}
-			if ((*atomtostr)(&dst, &len, src) < 0)
-				goto bunins_failed;
-			if ((*atomcmp)(src, nil) == 0)
+			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
+			} else {
+				if ((*atomtostr)(&dst, &len, src) < 0)
+					goto bunins_failed;
+				tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+			}
 			src = (const void *) ((const char *) src + size);
 		}
 	}
