@@ -13844,7 +13844,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 					((bte *) dst)[i] = 1;
 				}
 			} else {
-				for (i = 0; i < end; i++, seq++) {
+				for (i = start; i < end; i++, seq++) {
 					CHECKCAND((bte *) dst, i, candoff,
 						  bte_nil);
 					((bte *) dst)[i] = (bte) seq;
@@ -13898,7 +13898,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 		case TYPE_str:
 			for (i = 0; i < start; i++)
 				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
-			for (i = 0; i < end; i++) {
+			for (; i < end; i++) {
 				if (cand) {
 					if (i < *cand - candoff) {
 						nils++;
@@ -13953,12 +13953,8 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			((dbl *) dst)[i] = dbl_nil;
 		break;
 	case TYPE_str:
-		seq = oid_nil;
-		if ((*atomtostr)(&s, &len, &seq) < 0)
-			goto bunins_failed;
-		for (; i < cnt; i++) {
-			tfastins_nocheckVAR(bn, i, s, bn->twidth);
-		}
+		for (; i < cnt; i++)
+			tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 		break;
 	default:
 		return BUN_NONE + 1;
