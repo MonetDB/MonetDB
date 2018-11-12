@@ -60,7 +60,7 @@ atomfunctypes = {
     'put': ('var_t', (('Heap *', False), ('var_t *', False), ('void *', True))),
     'read': ('void *', (('void *', False), ('stream *', False), ('size_t', False))),
     'storage': ('long', (('void', False),)),
-    'tostr': ('ssize_t', (('char **', False), ('size_t *', False), ('void *', True))),
+    'tostr': ('ssize_t', (('char **', False), ('size_t *', False), ('void *', True), ('bool', False))),
     'unfix': ('int', (('void *', True),)),
     'write': ('gdk_return', (('void *', True), ('stream *', False), ('size_t', False))),
     }

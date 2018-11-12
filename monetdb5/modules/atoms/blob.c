@@ -37,7 +37,7 @@ int TYPE_sqlblob;
 
 mal_export str BLOBprelude(void *ret);
 
-mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const blob *pin);
+mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const blob *pin, bool external);
 mal_export ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val);
 mal_export int BLOBcmp(const blob *l, const blob *r);
 mal_export BUN BLOBhash(const blob *b);
@@ -208,14 +208,14 @@ BLOBnitems(int *ret, blob *b)
 }
 
 ssize_t
-BLOBtostr(str *tostr, size_t *l, const blob *p)
+BLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 {
 	char *s;
 	size_t i;
 	size_t expectedlen;
 
 	if (p->nitems == ~(size_t) 0)
-		expectedlen = 4;
+		expectedlen = external ? 4 : 2;
 	else
 		expectedlen = 24 + (p->nitems * 3);
 	if (*l < expectedlen || *tostr == NULL) {
@@ -226,8 +226,12 @@ BLOBtostr(str *tostr, size_t *l, const blob *p)
 		*l = expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
-		strcpy(*tostr, "nil");
-		return 3;
+		if (external) {
+			strcpy(*tostr, "nil");
+			return 3;
+		}
+		strcpy(*tostr, str_nil);
+		return 1;
 	}
 
 	sprintf(*tostr, "(%zu:", p->nitems);
@@ -384,14 +388,14 @@ BLOBtoblob(blob **retval, str *s)
  * no brackets and no spaces in between the hexits
  */
 ssize_t
-SQLBLOBtostr(str *tostr, size_t *l, const blob *p)
+SQLBLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 {
 	char *s;
 	size_t i;
 	size_t expectedlen;
 
 	if (p->nitems == ~(size_t) 0)
-		expectedlen = 4;
+		expectedlen = external ? 4 : 2;
 	else
 		expectedlen = 24 + (p->nitems * 3);
 	if (*l < expectedlen || *tostr == NULL) {
@@ -402,8 +406,12 @@ SQLBLOBtostr(str *tostr, size_t *l, const blob *p)
 		*l = expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
-		strcpy(*tostr, "nil");
-		return 3;
+		if (external) {
+			strcpy(*tostr, "nil");
+			return 3;
+		}
+		strcpy(*tostr, str_nil);
+		return 1;
 	}
 
 	s = *tostr;

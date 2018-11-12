@@ -70,7 +70,7 @@ typedef struct _inet {
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
 mal_export ssize_t INETfromString(const char *src, size_t *len, inet **retval);
-mal_export ssize_t INETtoString(str *retval, size_t *len, const inet *handle);
+mal_export ssize_t INETtoString(str *retval, size_t *len, const inet *handle, bool external);
 mal_export int INETcompare(const inet *l, const inet *r);
 mal_export str INETnew(inet *retval, str *in);
 mal_export str INET_isnil(bit *retval, const inet *val);
@@ -229,7 +229,7 @@ INETfromString(const char *src, size_t *len, inet **retval)
  * Returns the length of the string
  */
 ssize_t
-INETtoString(str *retval, size_t *len, const inet *handle)
+INETtoString(str *retval, size_t *len, const inet *handle, bool external)
 {
 	const inet *value = (const inet *)handle;
 
@@ -240,7 +240,10 @@ INETtoString(str *retval, size_t *len, const inet *handle)
 			return -1;
 	}
 	if (in_isnil(value)) {
-		return snprintf(*retval, *len, "nil");
+		if (external)
+			return snprintf(*retval, *len, "nil");
+		strcpy(*retval, str_nil);
+		return 1;
 	} else if (value->mask == 32) {
 		return snprintf(*retval, *len, "%d.%d.%d.%d",
 						value->q1, value->q2, value->q3, value->q4);

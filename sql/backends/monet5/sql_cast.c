@@ -250,7 +250,7 @@ SQLdate_2_str(str *res, const date *val)
 {
 	char *p = NULL;
 	size_t len = 0;
-	if (date_tostr(&p, &len, val) < 0) {
+	if (date_tostr(&p, &len, val, false) < 0) {
 		GDKfree(p);
 		throw(SQL, "date", GDK_EXCEPTION);
 	}
@@ -346,7 +346,7 @@ SQLsqlblob_2_str(str *res, const sqlblob *val)
 {
 	char *p = NULL;
 	size_t len = 0;
-	if (SQLBLOBtostr(&p, &len, val) < 0) {
+	if (SQLBLOBtostr(&p, &len, val, false) < 0) {
 		GDKfree(p);
 		throw(SQL, "blob", GDK_EXCEPTION);
 	}

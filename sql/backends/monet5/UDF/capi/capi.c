@@ -1189,7 +1189,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				} else {
 					char *result = NULL;
 					size_t length = 0;
-					if (BATatoms[bat_type].atomToStr(&result, &length, t) ==
+					if (BATatoms[bat_type].atomToStr(&result, &length, t, false) ==
 						0) {
 						msg = createException(
 							MAL, "cudf.eval",

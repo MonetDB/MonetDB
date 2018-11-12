@@ -316,7 +316,7 @@ atom2string(sql_allocator *sa, atom *a)
 	case TYPE_hge:
 	{	char *_buf = buf;
 		size_t _bufsiz = BUFSIZ;
-		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval);
+		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
 		break;
 	}
 #endif
@@ -452,7 +452,7 @@ atom2sql(atom *a)
 		case TYPE_hge:
 		{	char *_buf = buf;
 			size_t _bufsiz = BUFSIZ;
-			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval);
+			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
 			break;
 		}
 #endif

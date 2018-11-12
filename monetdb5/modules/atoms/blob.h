@@ -26,6 +26,6 @@ mal_export int TYPE_sqlblob;
 
 mal_export var_t blobsize(size_t nitems);
 mal_export ssize_t SQLBLOBfromstr(const char *instr, size_t *l, blob **val);
-mal_export ssize_t SQLBLOBtostr(str *tostr, size_t *l, const blob *pin);
+mal_export ssize_t SQLBLOBtostr(str *tostr, size_t *l, const blob *pin, bool external);
 
 #endif /* __BLOB_H__ */

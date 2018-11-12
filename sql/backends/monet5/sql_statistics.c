@@ -33,10 +33,12 @@ analysis by optimizers.
 	} while (0)
 
 static ssize_t
-strToStrSQuote(char **dst, size_t *len, const void *src)
+strToStrSQuote(char **dst, size_t *len, const void *src, bool external)
 {
 	ssize_t l = 0;
 
+	(void) external;
+	assert(external);
 	if (GDK_STRNIL((str) src)) {
 		atommem(4);
 
@@ -125,7 +127,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BAT *bn, *br;
 						BAT *bsample;
 						lng sz;
-						ssize_t (*tostr)(str*,size_t*,const void*);
+						ssize_t (*tostr)(str*,size_t*,const void*,bool);
 						void *val=0;
 
 						if (col && strcmp(bc->name, col))
@@ -214,7 +216,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if ((val = BATmax(bn,0)) == NULL)
 								strcpy(maxval, "nil");
 							else {
-								if (tostr(&maxval, &maxlen, val) < 0) {
+								if (tostr(&maxval, &maxlen, val, true) < 0) {
 									GDKfree(val);
 									GDKfree(dquery);
 									GDKfree(minval);
@@ -226,7 +228,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if ((val = BATmin(bn,0)) == NULL)
 								strcpy(minval, "nil");
 							else {
-								if (tostr(&minval, &minlen, val) < 0) {
+								if (tostr(&minval, &minlen, val, true) < 0) {
 									GDKfree(val);
 									GDKfree(dquery);
 									GDKfree(minval);

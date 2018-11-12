@@ -26,7 +26,7 @@ typedef str identifier;
 mal_export int TYPE_identifier;
 mal_export str IDprelude(void *ret);
 mal_export ssize_t IDfromString(const char *src, size_t *len, identifier *retval);
-mal_export ssize_t IDtoString(str *retval, size_t *len, const char *handle);
+mal_export ssize_t IDtoString(str *retval, size_t *len, const char *handle, bool external);
 mal_export str IDentifier(identifier *retval, str *in);
 
 int TYPE_identifier;
@@ -65,9 +65,11 @@ IDfromString(const char *src, size_t *len, identifier *retval)
  * Returns the length of the string
  */
 ssize_t
-IDtoString(str *retval, size_t *len, const char *handle)
+IDtoString(str *retval, size_t *len, const char *handle, bool external)
 {
 	size_t hl = strlen(handle) + 1;
+	if (external && strcmp(handle, str_nil) == 0)
+		hl = 4;
 	if (*len < hl || *retval == NULL) {
 		GDKfree(*retval);
 		*retval = GDKmalloc(hl);
@@ -75,7 +77,10 @@ IDtoString(str *retval, size_t *len, const char *handle)
 			return -1;
 		*len = hl;
 	}
-	memcpy(*retval, handle, hl);
+	if (external && strcmp(handle, str_nil) == 0)
+		strcpy(*retval, "nil");
+	else
+		memcpy(*retval, handle, hl);
 	return (ssize_t) hl - 1;
 }
 /**

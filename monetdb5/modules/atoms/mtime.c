@@ -637,7 +637,7 @@ date_fromstr(const char *buf, size_t *len, date **d)
 }
 
 ssize_t
-date_tostr(str *buf, size_t *len, const date *val)
+date_tostr(str *buf, size_t *len, const date *val, bool external)
 {
 	int day, month, year;
 
@@ -651,8 +651,12 @@ date_tostr(str *buf, size_t *len, const date *val)
 			return -1;
 	}
 	if (date_isnil(*val) || !DATE(day, month, year)) {
-		strcpy(*buf, "nil");
-		return 3;
+		if (external) {
+			strcpy(*buf, "nil");
+			return 3;
+		}
+		strcpy(*buf, str_nil);
+		return 1;
 	}
 	sprintf(*buf, "%d-%02d-%02d", year, month, day);
 	return (ssize_t) strlen(*buf);
@@ -783,7 +787,7 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret)
 }
 
 ssize_t
-daytime_tostr(str *buf, size_t *len, const daytime *val)
+daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
 {
 	int hour, min, sec, msec;
 
@@ -795,8 +799,12 @@ daytime_tostr(str *buf, size_t *len, const daytime *val)
 			return -1;
 	}
 	if (daytime_isnil(*val) || !TIME(hour, min, sec, msec)) {
-		strcpy(*buf, "nil");
-		return 3;
+		if (external) {
+			strcpy(*buf, "nil");
+			return 3;
+		}
+		strcpy(*buf, str_nil);
+		return 1;
 	}
 	return sprintf(*buf, "%02d:%02d:%02d.%03d", hour, min, sec, msec);
 }
@@ -912,7 +920,7 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret)
 
 
 ssize_t
-timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *timezone)
+timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *timezone, bool external)
 {
 	ssize_t len1, len2;
 	size_t big = 128;
@@ -927,8 +935,8 @@ timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *tim
 			MTIMEtimestamp_add(&tmp, &tmp, &add);
 			/* off += 60; */
 		}
-		len1 = date_tostr(&s1, &big, &tmp.days);
-		len2 = daytime_tostr(&s2, &big, &tmp.msecs);
+		len1 = date_tostr(&s1, &big, &tmp.days, false);
+		len2 = daytime_tostr(&s2, &big, &tmp.msecs, false);
 		if (len1 < 0 || len2 < 0)
 			return -1;
 
@@ -940,8 +948,12 @@ timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *tim
 		}
 		s = *buf;
 		if (ts_isnil(tmp)) {
-			strcpy(s, "nil");
-			return 3;
+			if (external) {
+				strcpy(*buf, "nil");
+				return 3;
+			}
+			strcpy(*buf, str_nil);
+			return 1;
 		}
 		strcpy(s, buf1);
 		s += len1;
@@ -961,9 +973,9 @@ timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *tim
 }
 
 ssize_t
-timestamp_tostr(str *buf, size_t *len, const timestamp *val)
+timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external)
 {
-	return timestamp_tz_tostr(buf, len, val, &tzone_local);
+	return timestamp_tz_tostr(buf, len, val, &tzone_local, external);
 }
 
 static const char *
@@ -984,7 +996,7 @@ count1(int i)
  * @- rule
  */
 ssize_t
-rule_tostr(str *buf, size_t *len, const rule *r)
+rule_tostr(str *buf, size_t *len, const rule *r, bool external)
 {
 	int hours = r->s.minutes / 60;
 	int minutes = r->s.minutes % 60;
@@ -996,7 +1008,10 @@ rule_tostr(str *buf, size_t *len, const rule *r)
 			return -1;
 	}
 	if (is_int_nil(r->asint)) {
-		strcpy(*buf, "nil");
+		if (external)
+			strcpy(*buf, "nil");
+		else
+			strcpy(*buf, str_nil);
 	} else if (r->s.weekday == WEEKDAY_ZERO) {
 		sprintf(*buf, "%s %d@%02d:%02d",
 				MONTHS[r->s.month], r->s.day - DAY_ZERO, hours, minutes);
@@ -1210,7 +1225,7 @@ tzone_fromstr(const char *buf, size_t *len, tzone **d)
 }
 
 ssize_t
-tzone_tostr(str *buf, size_t *len, const tzone *z)
+tzone_tostr(str *buf, size_t *len, const tzone *z, bool external)
 {
 	str s;
 
@@ -1222,8 +1237,13 @@ tzone_tostr(str *buf, size_t *len, const tzone *z)
 	}
 	s = *buf;
 	if (tz_isnil(*z)) {
-		strcpy(s, "nil");
-		s += 3;
+		if (external) {
+			strcpy(s, "nil");
+			s += 3;
+		} else {
+			strcpy(s, str_nil);
+			s += 1;
+		}
 	} else {
 		rule dst_start, dst_end;
 		int mins = get_offset(z);
@@ -1231,7 +1251,7 @@ tzone_tostr(str *buf, size_t *len, const tzone *z)
 		set_rule(dst_start, z->dst_start);
 		set_rule(dst_end, z->dst_end);
 
-		if (z->dst)
+		if (external && z->dst)
 			*s++ = '"';
 		strcpy(s, "GMT");
 		s += 3;
@@ -1246,17 +1266,18 @@ tzone_tostr(str *buf, size_t *len, const tzone *z)
 			ssize_t l;
 			strcpy(s, "-DST[");
 			s += 5;
-			l = rule_tostr(&s, len, &dst_start);
+			l = rule_tostr(&s, len, &dst_start, false);
 			if (l < 0)
 				return -1;
 			s += l;
 			*s++ = ',';
-			l = rule_tostr(&s, len, &dst_end);
+			l = rule_tostr(&s, len, &dst_end, false);
 			if (l < 0)
 				return -1;
 			s += l;
 			*s++ = ']';
-			*s++ = '"';
+			if (external)
+				*s++ = '"';
 			*s = 0;
 		}
 	}
@@ -2564,7 +2585,7 @@ MTIMEtzone_tostr(str *s, const tzone *ret)
 	char *s1 = NULL;
 	size_t len = 0;
 
-	if (tzone_tostr(&s1, &len, ret) < 0) {
+	if (tzone_tostr(&s1, &len, ret, false) < 0) {
 		GDKfree(s1);
 		throw(MAL, "mtime,str", GDK_EXCEPTION);
 	}

@@ -42,6 +42,6 @@ mal_export str URLnew4(url *u, str *protocol, str *server,
 		int *port, str *file);
 mal_export str URLnew3(url *u, str *protocol, str *server, str *file);
 mal_export ssize_t URLfromString(const char *src, size_t *len, str *u);
-mal_export ssize_t URLtoString(str *s, size_t *len, const char *src);
+mal_export ssize_t URLtoString(str *s, size_t *len, const char *src, bool external);
 
 #endif /* URL_H */

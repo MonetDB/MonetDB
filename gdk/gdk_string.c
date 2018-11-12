@@ -725,8 +725,16 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 }
 
 ssize_t
-strToStr(char **restrict dst, size_t *restrict len, const char *restrict src)
+strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 {
+	size_t sz;
+
+	if (!external) {
+		sz = strLen(src);
+		atommem(sz);
+		strncpy(*dst, src, sz + 1);
+		return (ssize_t) sz;
+	}
 	if (GDK_STRNIL(src)) {
 		atommem(4);
 		return snprintf(*dst, *len, "nil");
