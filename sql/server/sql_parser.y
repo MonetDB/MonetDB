@@ -3077,20 +3077,30 @@ update_stmt:
  ;
 
 opt_search_condition:
-   AND search_condition { $$ = $2; }
+ /* empty */            { $$ = NULL; }
+ | AND search_condition { $$ = $2; }
  ;
 
 merge_update_or_delete:
-   UPDATE SET assignment_commalist { dlist *l = L();
-                                     append_list(l, $3);
-                                     $$ = _symbol_create_list( SQL_UPDATE, l ); }
- | sqlDELETE                       { $$ = _symbol_create_list( SQL_DELETE, NULL ); }
+   UPDATE SET assignment_commalist
+   { dlist *l = L();
+     append_list(l, $3);
+     $$ = _symbol_create_list( SQL_UPDATE, l ); }
+ | sqlDELETE
+   { $$ = _symbol_create_list( SQL_DELETE, NULL ); }
  ;
 
 merge_insert:
-   INSERT values_or_query_spec { dlist *l = L();
-                                 append_symbol(l, $2);
-                                 $$ = _symbol_create_list( SQL_INSERT, l ); }
+   INSERT values_or_query_spec
+   { dlist *l = L();
+     append_list(l, NULL);
+     append_symbol(l, $2);
+     $$ = _symbol_create_list( SQL_INSERT, l ); }
+ | INSERT column_commalist_parens values_or_query_spec
+   { dlist *l = L();
+     append_list(l, $2);
+     append_symbol(l, $3);
+     $$ = _symbol_create_list( SQL_INSERT, l ); }
  ;
 
 merge_match_clause:

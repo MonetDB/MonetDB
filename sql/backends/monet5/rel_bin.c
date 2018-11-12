@@ -4690,7 +4690,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if(be->cur_append && !be->first_statement_generated) {
 		for(sql_table *up = t->p ; up ; up = up->p) {
 			if (!sql_delete_triggers(be, up, v, 0, 1, 3))
-				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", up->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "DELETE: triggers failed for table '%s'", up->base.name);
 		}
 	}
 	if (!sql_delete_triggers(be, t, v, 0, 1, 3))
@@ -5008,6 +5008,10 @@ rel2bin_list(backend *be, sql_rel *rel, list *refs)
 	list *slist = sa_list(sql->sa);
 
 	(void)refs;
+
+	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
+		create_merge_partitions_accumulator(be);
+
 	if (rel->l)  /* first construct the sub relation */
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */
