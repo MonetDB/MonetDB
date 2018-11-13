@@ -1630,7 +1630,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 
-			ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false);
+			ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false, false);
 			BBPunfix(res->batCacheid);
 			if (ret != GDK_SUCCEED) {
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1683,7 +1683,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
-		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false);
+		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false, false);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);

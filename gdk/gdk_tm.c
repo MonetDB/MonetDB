@@ -183,7 +183,7 @@ TMsubcommit_list(bat *subcommit, int cnt)
 	assert(subcommit[0] == 0); /* BBP artifact: slot 0 in the array will be ignored */
 
 	/* sort the list on BAT id */
-	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat);
+	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat, false, false);
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
 	/* de-duplication of BAT ids in subcommit list

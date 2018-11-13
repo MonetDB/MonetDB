@@ -112,10 +112,14 @@ __hidden BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *res
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden Heap *createOIDXheap(BAT *b, bool stable)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+__hidden Heap *createOIDXheap(BAT *b, bool stable)
+	__attribute__((__visibility__("hidden")));
+__hidden BAT *doublerange(oid l1, oid h1, oid l2, oid h2)
+	__attribute__((__visibility__("hidden")));
+__hidden BAT *doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));

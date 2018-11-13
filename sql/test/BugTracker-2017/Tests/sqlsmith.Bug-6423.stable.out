@@ -44,7 +44,7 @@ Ready.
 #          on (true)
 % .L53,	.L55,	.L57,	.L61 # table_name
 % c0,	c1,	c2,	c3 # name
-% clob,	clob,	clob,	tinyint # type
+% clob,	varchar,	clob,	tinyint # type
 % 0,	0,	0,	1 # length
 
 # 13:47:16 >  

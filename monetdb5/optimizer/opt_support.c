@@ -573,8 +573,7 @@ isSample(InstrPtr p)
 
 int isOrderby(InstrPtr p){
 	return getModuleId(p) == algebraRef &&
-		(getFunctionId(p) == sortRef ||
-		 getFunctionId(p) == sortReverseRef);
+		getFunctionId(p) == sortRef;
 }
 
 int 

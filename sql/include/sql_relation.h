@@ -36,7 +36,7 @@ typedef struct expression {
 	void *r;
 	void *f;	/* func's and aggr's */
 			/* e_cmp may have have 2 arguments */
-	int flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, cmp types */
+	int flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
 	unsigned char card;	/* card
 				   (0 truth value!)
 				   (1 atoms)
@@ -67,6 +67,7 @@ typedef struct expression {
 #define ANTISEL	32
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
+#define NULLS_LAST	256
 
 #define UPD_COMP		1
 #define UPD_LOCKED		2
@@ -266,8 +267,10 @@ typedef enum operator_type {
 
 #define is_ascending(e) \
 	((e->flag&ASCENDING)==ASCENDING)
+#define nulls_last(e) \
+	((e->flag&NULLS_LAST)==NULLS_LAST)
 #define set_direction(e, dir) \
-	e->flag |= (dir?ASCENDING:0)
+	e->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
 
 #define is_anti(e) \
 	((e->flag&ANTISEL)==ANTISEL)
