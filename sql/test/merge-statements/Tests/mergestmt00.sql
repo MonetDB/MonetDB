@@ -1,5 +1,3 @@
-start transaction;
-
 create table merging (aa int, bb clob);
 insert into merging values (-100, 1);
 create table predata (aa int, bb int);
@@ -12,5 +10,12 @@ merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
 select aa, bb from predata order by bb;
 
 merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb when not matched then insert values (5, 5);
+select aa, bb from predata order by bb;
 
-rollback;
+merge into predata as othern using (select aa, bb from merging) sub on othern.bb = sub.bb when not matched then insert values (5, 5);
+
+merge into predata as othern using (select aa, bb from merging) sub on predata.bb = sub.bb when not matched then insert values (5, 5); --error, unknown relation predata
+merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb when not matched then insert values (1, 1), (2,2); --error, only one row allowed in insert
+
+drop table merging;
+drop table predata;

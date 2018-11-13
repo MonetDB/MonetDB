@@ -292,9 +292,8 @@ rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
 	return rel_insert(sql, rel_basetable(sql, t, name), inserts);
 }
 
-
 static list *
-check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tname)
+check_table_columns(mvc *sql, sql_table *t, dlist *columns, const char *op, char *tname)
 {
 	list *collist;
 
@@ -318,7 +317,7 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tnam
 }
 
 static list *
-rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, int copy)
+rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, int copy, const char* action)
 {
 	int len, i;
 	sql_exp **inserts = insert_exp_array(sql, t, &len);
@@ -364,13 +363,13 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 							_DELETE(typestr);
 							e = rel_parse_val(sql, q, sql->emode, NULL);
 							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-								return sql_error(sql, 02, SQLSTATE(HY005) "INSERT INTO: default expression could not be evaluated");
+								return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 						} else {
 							atom *a = atom_general(sql->sa, &c->type, NULL);
 							e = exp_atom(sql->sa, a);
 						}
 						if (!e) 
-							return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
+							return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 						if (exps) {
 							list *vals_list = exps->f;
 			
@@ -459,7 +458,7 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 }
 
 static sql_rel *
-insert_generate_inserts(mvc *sql, sql_table *t, dlist *columns, symbol *val_or_q, const str action)
+insert_generate_inserts(mvc *sql, size_t *nrows, sql_table *t, dlist *columns, symbol *val_or_q, const char* action)
 {
 	sql_rel *r = NULL;
 	size_t rowcount = 1;
@@ -555,9 +554,11 @@ insert_generate_inserts(mvc *sql, sql_table *t, dlist *columns, symbol *val_or_q
 		(!r->exps && collist))
 		return sql_error(sql, 02, SQLSTATE(21S01) "%s: query result doesn't match number of columns in table '%s'", action, t->base.name);
 
-	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0);
+	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0, action);
 	if(!r->exps)
 		return NULL;
+	if(nrows)
+		*nrows = rowcount;
 	return r;
 }
 
@@ -585,7 +586,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	}
 	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
 		return NULL;
-	r = insert_generate_inserts(sql, t, columns, val_or_q, "INSERT INTO");
+	r = insert_generate_inserts(sql, NULL, t, columns, val_or_q, "INSERT INTO");
 	if(!r)
 		return NULL;
 	return rel_insert_table(sql, t, t->base.name, r);
@@ -896,13 +897,12 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 }
 
 static sql_rel *
-update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, sql_rel *bt, dlist *assignmentlist, const str action)
+update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, const char *rname, sql_rel *bt, dlist *assignmentlist, const char * action)
 {
 	sql_table *mt = NULL;
 	sql_exp *e = NULL, **updates;
 	list *exps, *pcols = NULL;
 	dnode *n;
-	const char *rname = NULL;
 
 	if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
 		mt = t;
@@ -918,7 +918,7 @@ update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, sql_rel *bt, dli
 		pcols = mt->part.pexp->cols;
 	}
 	/* first create the project */
-	e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exps = new_exp_list(sql->sa);
 	append(exps, e);
 	updates = table_update_array(sql, t);
@@ -1187,7 +1187,7 @@ update_table(mvc *sql, dlist *qname, str alias, dlist *assignmentlist, symbol *o
 		} else {	/* update all */
 			r = res;
 		}
-		return update_generate_assignments(sql, t, r, bt, assignmentlist, "UPDATE");
+		return update_generate_assignments(sql, t, r, rel_name(r), bt, assignmentlist, "UPDATE");
 	}
 	return NULL;
 }
@@ -1375,7 +1375,6 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 	if (!join_rel)
 		return NULL;
 	set_processed(join_rel);
-	extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 0, 0));
 
 	for(dnode *m = merge_list->h; m; m = m->next) {
 		symbol *sym = m->data.sym, *opt_search, *action;
@@ -1385,7 +1384,8 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 		action = dl->h->next->data.sym;
 		sts = action->data.lval;
 
-		(void) opt_search;
+		if(opt_search)
+			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: search condition not yet supported");
 
 		if(token == SQL_MERGE_MATCH) {
 			int uptdel = action->token;
@@ -1401,9 +1401,13 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				if(!update_allowed(sql, t, tname, "MERGE", "merge", 0))
 					return NULL;
 				if((processed & MERGE_INSERT) == MERGE_INSERT)
-					extra_project = rel_dup(extra_project);
+					join_rel = rel_dup(join_rel);
 
-				for (node *n = extra_project->exps->h; n; n = n->next) {
+				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
+				e = exp_column(sql->sa, t->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				append(extra_project->exps, e);
+
+				for (node *n = extra_project->exps->h; n && n->next; n = n->next) { //don't iterate over TID
 					sql_exp *exp = (sql_exp*) n->data;
 					sql_exp *input = exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card,
 												has_nil(exp), is_intern(exp));
@@ -1413,14 +1417,18 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				}
 
 				to_upddel = rel_select_merge(sql->sa, extra_project, se_exps);
-				upd_del = update_generate_assignments(sql, t, to_upddel, rel_dup(bt), sts->h->data.lval, "MERGE");
+				upd_del = update_generate_assignments(sql, t, to_upddel, t->base.name, rel_dup(bt), sts->h->data.lval, "MERGE");
 			} else if(uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "merge", 1))
 					return NULL;
 				if((processed & MERGE_INSERT) == MERGE_INSERT)
-					extra_project = rel_dup(extra_project);
+					join_rel = rel_dup(join_rel);
 
-				for (node *n = extra_project->exps->h; n; n = n->next) {
+				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
+				e = exp_column(sql->sa, t->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				append(extra_project->exps, e);
+
+				for (node *n = extra_project->exps->h; n && n->next; n = n->next) { //don't iterate over TID
 					sql_exp *exp = (sql_exp*) n->data;
 					sql_exp *input = exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card,
 												has_nil(exp), is_intern(exp));
@@ -1430,8 +1438,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				}
 
 				upd_del = rel_select_merge(sql->sa, extra_project, se_exps);
-				e = exp_column(sql->sa, t->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-				upd_del = rel_project(sql->sa, upd_del, append(new_exp_list(sql->sa), e));
+				upd_del = rel_project(sql->sa, upd_del, append(new_exp_list(sql->sa), exp_copy(sql->sa, e)));
 				upd_del = rel_delete(sql->sa, rel_dup(bt), upd_del);
 			} else {
 				assert(0);
@@ -1441,6 +1448,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 		} else if(token == SQL_MERGE_NO_MATCH) {
 			sql_rel *to_ins = NULL;
 			list *se_exps = new_exp_list(sql->sa);
+			size_t rowcount = 0;
 
 			if((processed & MERGE_INSERT) == MERGE_INSERT)
 				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN NOT MATCHED clause is allowed");
@@ -1450,7 +1458,9 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			if (!insert_allowed(sql, t, tname, "MERGE", "merge"))
 				return NULL;
 			if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
-				extra_project = rel_dup(extra_project);
+				join_rel = rel_dup(join_rel);
+
+			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
 
 			for (node *n = extra_project->exps->h; n; n = n->next) {
 				sql_exp *exp = (sql_exp*) n->data;
@@ -1462,7 +1472,11 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			}
 
 			to_ins = rel_select_merge(sql->sa, extra_project, se_exps);
-			insert = insert_generate_inserts(sql, t, sts->h->data.lval, sts->h->next->data.sym, "MERGE");
+			insert = insert_generate_inserts(sql, &rowcount, t, sts->h->data.lval, sts->h->next->data.sym, "MERGE");
+			if(!insert)
+				return NULL;
+			if(rowcount != 2)
+				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: the insert values list must contain exactly one row");
 			insert->l = to_ins;
 			insert = rel_insert(sql, rel_dup(bt), insert);
 			if(!insert)
@@ -1607,12 +1621,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t) 
+		if (!t)
 			t = stack_find_table(sql, tname);
 	}
-	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
-	/* Only the MONETDB user is allowed copy into with 
+	/* Only the MONETDB user is allowed copy into with
 	   a lock and only on tables without idx */
 	if (locked && !copy_allowed(sql, 1)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
@@ -1629,7 +1643,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: only allowed in auto commit mode");
 	}
 	/* lock the store, for single user/transaction */
-	if (locked) { 
+	if (locked) {
 		if (headers)
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: not allowed with column lists");
 		store_lock();
@@ -1641,7 +1655,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		sql->emod |= mod_locked;
 		sql->caching = 0; 	/* do not cache this query */
 	}
-		 
+
 	collist = check_table_columns(sql, t, columns, "COPY INTO", tname);
 	if (!collist)
 		return NULL;
@@ -1649,7 +1663,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	 * column specification other then the default list we need to reorder
 	 */
 	nt = t;
-	if (headers || collist != t->columns.set) 
+	if (headers || collist != t->columns.set)
 		reorder = 1;
 	if (headers) {
 		int has_formats = 0;
@@ -1731,7 +1745,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 			char *cname = dn->data.sval;
 			sql_exp *e, *ne;
 
-			if (!list_find_name(collist, cname)) 
+			if (!list_find_name(collist, cname))
 				continue;
 		       	e = m->data;
 			if (dn->next) {
@@ -1746,7 +1760,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 
 				snprintf(fname, l+8, "str_to_%s", cs->type.type->sqlname);
 				sql_find_subtype(&st, "clob", 0, 0);
-				f = sql_bind_func_result(sql->sa, sys, fname, &st, &st, &cs->type); 
+				f = sql_bind_func_result(sql->sa, sys, fname, &st, &st, &cs->type);
 				if (!f)
 					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: '%s' missing for type %s", fname, cs->type.type->sqlname);
 				append(args, e);
@@ -1762,13 +1776,16 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		rel = rel_project(sql->sa, rel, nexps);
 		reorder = 0;
 	}
-	
+
 	if (!rel)
 		return rel;
-	if (reorder) 
-		rel = rel_project(sql->sa, rel, rel_inserts(sql, t, rel, collist, 1, 1));
-	else {
-		rel->exps = rel_inserts(sql, t, rel, collist, 1, 0);
+	if (reorder) {
+		list *exps = rel_inserts(sql, t, rel, collist, 1, 1, "COPY INTO");
+		if(!exps)
+			return NULL;
+		rel = rel_project(sql->sa, rel, exps);
+	} else {
+		rel->exps = rel_inserts(sql, t, rel, collist, 1, 0, "COPY INTO");
 		if(!rel->exps)
 			return NULL;
 	}
