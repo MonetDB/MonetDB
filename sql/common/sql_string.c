@@ -97,7 +97,7 @@ strip_extra_zeros(char *s)
 char *
 sql2str(char *s)
 {
-	int escaped = 0;
+	bool escaped = false;
 	char *cur, *p = s;
 
 	if (strcmp(str_nil, s) == 0)
@@ -107,7 +107,7 @@ sql2str(char *s)
 
 	if (!escaped)
 		return s;
-	escaped = 0;
+	escaped = false;
 	for (cur = s; *cur; cur++) {
 		if (escaped) {
 			if (*cur == 'n') {
@@ -128,14 +128,20 @@ sql2str(char *s)
 			} else if (*cur == '\\') {
 				*p++ = '\\';
 			} else if ((cur[0] >= '0' && cur[0] <= '7') && (cur[1] >= '0' && cur[1] <= '7') && (cur[2] >= '0' && cur[2] <= '7')) {
-				*p++ = (cur[2] & 7) | ((cur[1] & 7) << 3) | ((cur[0] & 7) << 6);
+				int v = (cur[2] & 7) | ((cur[1] & 7) << 3) | ((cur[0] & 7) << 6);
 				cur += 2;
+				if (v < 0x80)
+					*p++ = v;
+				else {
+					*p++ = 0xC0 | (v >> 6);
+					*p++ = 0x80 | (v & 0x3F);
+				}
 			} else {
 				*p++ = *cur;
 			}
-			escaped = FALSE;
+			escaped = false;
 		} else if (*cur == '\\') {
-			escaped = TRUE;
+			escaped = true;
 		} else {
 			*p++ = *cur;
 		}
