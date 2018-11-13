@@ -83,12 +83,12 @@ Ready.
 % aa,	bb # name
 % int,	int # type
 % 2,	1 # length
-[ 3,	1	]
 [ NULL,	1	]
+[ 3,	1	]
 [ 8,	1	]
 [ 15,	3	]
-[ 6,	3	]
 [ 5,	3	]
+[ 6,	3	]
 [ NULL,	4	]
 #merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb when not matched then insert values (5, 5);
 [ 7	]
@@ -98,11 +98,11 @@ Ready.
 % int,	int # type
 % 2,	1 # length
 [ NULL,	1	]
-[ 8,	1	]
 [ 3,	1	]
-[ 6,	3	]
-[ 5,	3	]
+[ 8,	1	]
 [ 15,	3	]
+[ 5,	3	]
+[ 6,	3	]
 [ NULL,	4	]
 [ 5,	5	]
 [ 5,	5	]

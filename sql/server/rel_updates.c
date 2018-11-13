@@ -20,7 +20,7 @@
 #include "rel_prop.h"
 
 static sql_exp *
-insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
+insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s, const char* action)
 {
 	if (s->token == SQL_NULL) {
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
@@ -33,10 +33,10 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode, NULL);
 			_DELETE(typestr);
 			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-				return sql_error(sql, 02, SQLSTATE(HY005) "INSERT INTO: default expression could not be evaluated");
+				return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 			return e;
 		} else {
-			return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 		}
 	} else {
 		int is_last = 0;
@@ -504,7 +504,7 @@ insert_generate_inserts(mvc *sql, size_t *nrows, sql_table *t, dlist *columns, s
 						list *vals_list = vals->f;
 						sql_column *c = m->data;
 						sql_rel *r = NULL;
-						sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
+						sql_exp *ins = insert_value(sql, c, &r, n->data.sym, action);
 						if (!ins)
 							return NULL;
 						if (r && inner)
@@ -522,7 +522,7 @@ insert_generate_inserts(mvc *sql, size_t *nrows, sql_table *t, dlist *columns, s
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 						sql_column *c = m->data;
 						sql_rel *r = NULL;
-						sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
+						sql_exp *ins = insert_value(sql, c, &r, n->data.sym, action);
 						if (!ins)
 							return NULL;
 						if (r && inner)
@@ -881,14 +881,14 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 }
 
 static sql_exp *
-update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname)
+update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname, const char *action)
 {
 	if (!c) {
 		rel_destroy(r);
-		return sql_error(sql, 02, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'", t->base.name, cname);
+		return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
 	}
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
-		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), t->base.name, cname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, stack_get_string(sql, "current_user"), t->base.name, cname);
 	if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
 		rel_destroy(r);
 		return NULL;
@@ -897,12 +897,13 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 }
 
 static sql_rel *
-update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, const char *rname, sql_rel *bt, dlist *assignmentlist, const char * action)
+update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, sql_rel *bt, dlist *assignmentlist, const char *action)
 {
 	sql_table *mt = NULL;
 	sql_exp *e = NULL, **updates;
 	list *exps, *pcols = NULL;
 	dnode *n;
+	const char *rname = NULL;
 
 	if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
 		mt = t;
@@ -918,7 +919,7 @@ update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, const char *rnam
 		pcols = mt->part.pexp->cols;
 	}
 	/* first create the project */
-	e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exps = new_exp_list(sql->sa);
 	append(exps, e);
 	updates = table_update_array(sql, t);
@@ -1025,7 +1026,7 @@ update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, const char *rnam
 				v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
 				if (!v) { /* check for NULL */
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				} else if ((v = update_check_column(sql, t, c, v, r, cname)) == NULL) {
+				} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
 					return NULL;
 				}
 				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
@@ -1051,7 +1052,7 @@ update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, const char *rnam
 			}
 			if (!v) {
 				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-			} else if ((v = update_check_column(sql, t, c, v, r, cname)) == NULL) {
+			} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
 				return NULL;
 			}
 			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
@@ -1187,7 +1188,7 @@ update_table(mvc *sql, dlist *qname, str alias, dlist *assignmentlist, symbol *o
 		} else {	/* update all */
 			r = res;
 		}
-		return update_generate_assignments(sql, t, r, rel_name(r), bt, assignmentlist, "UPDATE");
+		return update_generate_assignments(sql, t, r, bt, assignmentlist, "UPDATE");
 	}
 	return NULL;
 }
@@ -1389,7 +1390,6 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 
 		if(token == SQL_MERGE_MATCH) {
 			int uptdel = action->token;
-			sql_rel *to_upddel = NULL;
 			sql_exp *e;
 			list *se_exps = new_exp_list(sql->sa);
 
@@ -1416,8 +1416,12 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 					append(se_exps, null_values);
 				}
 
-				to_upddel = rel_select_merge(sql->sa, extra_project, se_exps);
-				upd_del = update_generate_assignments(sql, t, to_upddel, t->base.name, rel_dup(bt), sts->h->data.lval, "MERGE");
+				upd_del = rel_select_merge(sql->sa, extra_project, se_exps);
+				upd_del = rel_project(sql->sa, upd_del, rel_projections(sql, extra_project, NULL, 0, 0));
+				for (node *n = upd_del->exps->h; n ; n = n->next)
+					exp_setname(sql->sa, (sql_exp*) n->data, t->base.name, NULL); //the last parameter is optional, hence NULL
+				append(upd_del->exps, exp_copy(sql->sa, e));
+				upd_del = update_generate_assignments(sql, t, upd_del, rel_dup(bt), sts->h->data.lval, "MERGE");
 			} else if(uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "merge", 1))
 					return NULL;
