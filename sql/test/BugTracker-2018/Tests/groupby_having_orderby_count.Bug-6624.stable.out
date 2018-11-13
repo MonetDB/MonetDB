@@ -33,7 +33,7 @@ Ready.
 [ "varchar",	146	]
 [ "clob",	68	]
 [ "smallint",	55	]
-[ "bigint",	54	]
+[ "bigint",	53	]
 [ "boolean",	27	]
 [ "timestamp",	12	]
 #SELECT type,COUNT(id) FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY 2 DESC;
@@ -45,7 +45,7 @@ Ready.
 [ "varchar",	146	]
 [ "clob",	68	]
 [ "smallint",	55	]
-[ "bigint",	54	]
+[ "bigint",	53	]
 [ "boolean",	27	]
 [ "timestamp",	12	]
 #SELECT type,COUNT(id) as cnt FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY cnt DESC;
@@ -57,7 +57,7 @@ Ready.
 [ "varchar",	146	]
 [ "clob",	68	]
 [ "smallint",	55	]
-[ "bigint",	54	]
+[ "bigint",	53	]
 [ "boolean",	27	]
 [ "timestamp",	12	]
 

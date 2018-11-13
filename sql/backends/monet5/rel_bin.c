@@ -2619,9 +2619,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			/* handle constants */
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
 			} else { 	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
 			}
 			if (!limit) 
 				return NULL;
@@ -2677,9 +2677,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				break;
 			}
 			if (orderby_ids)
-				orderby = stmt_reorder(be, orderbycolstmt, is_ascending(orderbycole), orderby_ids, orderby_grp);
+				orderby = stmt_reorder(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole), orderby_ids, orderby_grp);
 			else
-				orderby = stmt_order(be, orderbycolstmt, is_ascending(orderbycole));
+				orderby = stmt_order(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole));
 			orderby_ids = stmt_result(be, orderby, 1);
 			orderby_grp = stmt_result(be, orderby, 2);
 		}
@@ -2911,7 +2911,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			o = stmt_atom_lng(be, 0);
 
 		sc = column(be, sc);
-		limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0);
+		limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0,0);
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
@@ -3175,9 +3175,9 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr); 
 
 				if (orderby_grp)
-					orderby = stmt_reorder(be, cs, 1, orderby_ids, orderby_grp);
+					orderby = stmt_reorder(be, cs, 1, 0, orderby_ids, orderby_grp);
 				else
-					orderby = stmt_order(be, cs, 1);
+					orderby = stmt_order(be, cs, 1, 0);
 				orderby_ids = stmt_result(be, orderby, 1);
 				orderby_grp = stmt_result(be, orderby, 2);
 			}
@@ -4830,7 +4830,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
 	stmt *v, *ret = NULL, *other = NULL;
-	const char *next_value_for = "next value for \"sys\".\"seq" SQL_INTERNAL_SEPERATOR;
+	const char *next_value_for = "next value for \"sys\".\"seq_";
 	char *seq_name = NULL;
 	str seq_pos = NULL;
 	sql_column *col = NULL;
@@ -4862,7 +4862,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			for (n = next->columns.set->h; n; n = n->next) {
 				col = n->data;
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
-					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq" SQL_INTERNAL_SEPERATOR)));
+					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 					if(!seq_name) {
 						sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						error = 1;

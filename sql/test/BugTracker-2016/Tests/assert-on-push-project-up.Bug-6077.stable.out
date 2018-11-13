@@ -97,7 +97,7 @@ Ready.
 #		on (ref_140.var_id = ref_185.default_schema )
 % .L47,	.L51,	.L53 # table_name
 % c0,	c1,	c2 # name
-% clob,	char,	clob # type
+% varchar,	char,	varchar # type
 % 0,	10,	0 # length
 #ROLLBACK;
 

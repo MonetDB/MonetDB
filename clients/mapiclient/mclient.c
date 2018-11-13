@@ -3723,5 +3723,8 @@ main(int argc, char **argv)
 	mapi_destroy(mid);
 	mnstr_destroy(stdout_stream);
 	mnstr_destroy(stderr_stream);
+	if (priv.buf != NULL)
+		free(priv.buf);
+
 	return c;
 }

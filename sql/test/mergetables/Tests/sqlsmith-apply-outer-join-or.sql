@@ -23,7 +23,7 @@ from
      on (ref_0.radix = ref_11.function_id )
 where EXISTS (
    select
-       case when ref_8.name is NULL then ref_7.orderidx else ref_7.orderidx end
+       case when ref_8.name is NULL then ref_7.orderidxsize else ref_7.orderidxsize end
           as c0
      from
        (select

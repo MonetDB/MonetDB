@@ -1032,9 +1032,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
-		(*pos)+= (int) strlen("NOT");
+		(*pos)+= (int) strlen("ASC");
 		skipWS(r, pos);
-		set_direction(exp, ASCENDING);
+		set_direction(exp, 1);
 	}
 	/* [ NOT ] NULL */
 	if (strncmp(r+*pos, "NOT",  strlen("NOT")) == 0) {

@@ -530,6 +530,7 @@ int yydebug=1;
 	opt_grant_for
 
 	opt_asc_desc
+	opt_nulls_first_last
 	tz
 
 %right <sval> STRING
@@ -612,7 +613,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
-%token CHECK CONSTRAINT CREATE COMMENT
+%token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
@@ -1810,7 +1811,7 @@ generated_column:
 		sql_find_subtype(&it, "int", 32, 0);
     		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
-		append_int(l, 1); /* to be dropped */
+		append_int(l, 0); /* to be dropped */
 		if (m->scanner.schema)
 			append_string(seqn2, m->scanner.schema);
 		append_string(seqn2, sn);
@@ -3683,10 +3684,10 @@ sort_specification_list:
  ;
 
 ordering_spec:
-    scalar_exp opt_asc_desc
+    scalar_exp opt_asc_desc opt_nulls_first_last
 	{ dlist *l = L();
 	  append_symbol(l, $1);
-	  append_int(l, $2);
+	  append_int(l, $2 | (($3 == -1 ? !$2 : $3) << 1));
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
 
  ;
@@ -3695,6 +3696,12 @@ opt_asc_desc:
     /* empty */ 	{ $$ = TRUE; }
  |  ASC			{ $$ = TRUE; }
  |  DESC		{ $$ = FALSE; }
+ ;
+
+opt_nulls_first_last:
+    /* empty */ 	{ $$ = -1; }
+ |  NULLS LAST		{ $$ = TRUE; }
+ |  NULLS FIRST		{ $$ = FALSE; }
  ;
 
 predicate:
@@ -5640,6 +5647,9 @@ non_reserved_word:
 |  COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 |  CLIENT	{ $$ = sa_strdup(SA, "client"); }
 |  SERVER	{ $$ = sa_strdup(SA, "server"); }
+|  NULLS	{ $$ = sa_strdup(SA, "nulls"); }
+|  LAST		{ $$ = sa_strdup(SA, "last"); }
+|  FIRST	{ $$ = sa_strdup(SA, "first"); }
 ;
 
 name_commalist:
