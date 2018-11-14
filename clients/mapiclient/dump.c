@@ -1069,8 +1069,8 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 					 "SELECT f.id, s.name, f.name "
 					 "FROM sys.schemas s, "
 					      "sys.functions f "
-					 "WHERE s.id = f.schema_id AND "
-					       "f.id IN (SELECT id FROM sys.dependencies WHERE depend_id = '%d')",
+					 "WHERE s.id = f.schema_id "
+					   "AND f.id IN (SELECT id FROM sys.dependencies WHERE depend_id = '%d')",
 					 table_id);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
@@ -2043,14 +2043,17 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			    "WHEN 8 THEN 'DELETE' "
 			    "WHEN 16 THEN 'EXECUTE' "
 			    "WHEN 32 THEN 'GRANT' END, "
-		       "g.name, p.grantable "
+		       "g.name, p.grantable, "
+		       "ft.function_type_keyword "
 		"FROM sys.schemas s, sys.functions f, "
-		     "sys.auths a, sys.privileges p, sys.auths g "
-		"WHERE s.id = f.schema_id AND "
-		      "f.id = p.obj_id AND "
-		      "p.auth_id = a.id AND "
-		      "p.grantor = g.id "
-		      "AND NOT f.system "
+		     "sys.auths a, sys.privileges p, sys.auths g, "
+		     "sys.function_types ft "
+		"WHERE s.id = f.schema_id "
+		  "AND f.id = p.obj_id "
+		  "AND p.auth_id = a.id "
+		  "AND p.grantor = g.id "
+		  "AND f.type = ft.function_type_id "
+		  "AND NOT f.system "
 		"ORDER BY s.name, f.name, a.name, g.name, p.grantable"
 		:
 		"SELECT s.name, f.name, a.name, "
