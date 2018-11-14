@@ -1892,14 +1892,17 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			    "WHEN 16 THEN 'EXECUTE' "
 			    "WHEN 32 THEN 'GRANT' "
 			    "WHEN 64 THEN 'TRUNCATE' END, "
-		       "g.name, p.grantable "
+		       "g.name, p.grantable, "
+		       "ft.function_type_keyword "
 		"FROM sys.schemas s, sys.functions f, "
-		     "sys.auths a, sys.privileges p, sys.auths g "
+		     "sys.auths a, sys.privileges p, sys.auths g, "
+		     "sys.function_types ft "
 		"WHERE s.id = f.schema_id "
 		  "AND f.id = p.obj_id "
 		  "AND p.auth_id = a.id "
 		  "AND p.grantor = g.id "
-		      "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
+		  "AND f.type = ft.function_type_id "
+		  "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
 		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
 	const char *schemas =
 		"SELECT s.name, a.name, rem.remark "
@@ -2439,18 +2442,12 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		const char *aname = mapi_fetch_field(hdl, 2);
 		const char *priv = mapi_fetch_field(hdl, 3);
 		const char *grantable = mapi_fetch_field(hdl, 5);
+		const char *ftype = mapi_fetch_field(hdl, 6);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
-		if (curschema == NULL || strcmp(schema, curschema) != 0) {
-			if (curschema)
-				free(curschema);
-			curschema = strdup(schema);
-			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
-				     curschema);
-		}
-		mnstr_printf(toConsole, "GRANT %s ON \"%s\" TO \"%s\"",
-			     priv, fname, aname);
+		mnstr_printf(toConsole, "GRANT %s ON %s \"%s\".\"%s\" TO \"%s\"",
+			     priv, ftype, schema, fname, aname);
 		if (strcmp(grantable, "1") == 0)
 			mnstr_printf(toConsole, " WITH GRANT OPTION");
 		mnstr_printf(toConsole, ";\n");
