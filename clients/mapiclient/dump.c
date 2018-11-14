@@ -912,7 +912,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	snprintf(query, maxquerylen,
 		 "%s "
 		 "SELECT t.name, t.query, t.type, c.remark "
-		 "FROM sys.schemas s, sys._tables t LEFT OUTER JOIN comments c ON t.id = c.id "
+		 "FROM sys.schemas s, sys._tables t LEFT OUTER JOIN sys.comments c ON t.id = c.id "
 		 "WHERE s.name = '%s' AND "
 		       "t.schema_id = s.id AND "
 		       "t.name = '%s'",
@@ -1072,7 +1072,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		snprintf(query, maxquerylen,
 			"%s "
 			 "SELECT i.name, c.remark "
-			 "FROM sys.idxs i, comments c "
+			 "FROM sys.idxs i, sys.comments c "
 			 "WHERE i.id = c.id "
 			   "AND i.table_id = (SELECT id FROM sys._tables WHERE schema_id = (select id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
 			 "ORDER BY i.name",
@@ -1092,7 +1092,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	snprintf(query, maxquerylen,
 		"%s "
 		 "SELECT col.name, com.remark "
-		 "FROM sys._columns col, comments com "
+		 "FROM sys._columns col, sys.comments com "
 		 "WHERE col.id = com.id "
 		   "AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
 		 "ORDER BY number",
@@ -1179,7 +1179,7 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 		       "seq.\"increment\", "
 		       "seq.\"cycle\", "
 		       "rem.\"remark\" "
-		"FROM sys.sequences seq LEFT OUTER JOIN comments rem ON seq.id = rem.id, "
+		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id AND "
 		      "s.name = '%s' AND "
@@ -1258,7 +1258,7 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 		"%s "
 		"SELECT s.name, a.name, c.remark "
 		"FROM sys.auths a, "
-		     "sys.schemas s LEFT OUTER JOIN comments c ON s.id = c.id "
+		     "sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id "
 		"WHERE s.\"authorization\" = a.id AND "
 		      "s.name = '%s' "
 		"ORDER BY s.name",
@@ -1527,9 +1527,9 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 		             "c.remark "
 		      "FROM sys.functions f "
 			   "JOIN sys.schemas s ON f.schema_id = s.id "
-			   "JOIN function_types ft ON f.type = ft.function_type_id "
-			   "LEFT OUTER JOIN function_languages fl ON f.language = fl.language_id "
-			   "LEFT OUTER JOIN comments c ON f.id = c.id "
+			   "JOIN sys.function_types ft ON f.type = ft.function_type_id "
+			   "LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id "
+			   "LEFT OUTER JOIN sys.comments c ON f.id = c.id "
 		      "WHERE f.id = %s",
 		      comments_clause, fid);
 	assert(query_len < (int) query_size);
@@ -1894,7 +1894,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
 	const char *schemas =
 		"SELECT s.name, a.name, rem.remark "
-		"FROM sys.schemas s LEFT OUTER JOIN comments rem ON s.id = rem.id, "
+		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
 		     "sys.auths a "
 		"WHERE s.\"authorization\" = a.id AND "
 		      "s.system = FALSE "
@@ -1902,7 +1902,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	const char *sequences1 =
 		"SELECT sch.name, seq.name, rem.remark "
 		"FROM sys.schemas sch, "
-		     "sys.sequences seq LEFT OUTER JOIN comments rem ON seq.id = rem.id "
+		     "sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
@@ -1939,7 +1939,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "t.query AS query, "
 			       "rem.remark AS remark "
 			"FROM sys.schemas s, "
-			     "sys._tables t LEFT OUTER JOIN comments rem ON t.id = rem.id "
+			     "sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id "
 			"WHERE t.type = 1 AND "
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
