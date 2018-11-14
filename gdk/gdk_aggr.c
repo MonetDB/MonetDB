@@ -2827,9 +2827,10 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		return NULL;
 	}
 
-	if (BATcount(b) == 0 || ngrp == 0) {
+	if (BATcount(b) == 0 || ngrp == 0 || is_dbl_nil(quantile)) {
 		/* trivial: no values, thus also no quantiles,
-		 * so return bat aligned with e with nil in the tail */
+		 * so return bat aligned with e with nil in the tail
+		 * The same happens for a NULL quantile */
 		return BATconstant(ngrp == 0 ? 0 : min, tp, nil, ngrp, TRANSIENT);
 	}
 
