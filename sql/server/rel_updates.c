@@ -458,7 +458,7 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 }
 
 static sql_rel *
-insert_generate_inserts(mvc *sql, size_t *nrows, sql_table *t, dlist *columns, symbol *val_or_q, const char* action)
+insert_generate_inserts(mvc *sql, sql_table *t, dlist *columns, symbol *val_or_q, const char* action)
 {
 	sql_rel *r = NULL;
 	size_t rowcount = 1;
@@ -557,9 +557,66 @@ insert_generate_inserts(mvc *sql, size_t *nrows, sql_table *t, dlist *columns, s
 	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0, action);
 	if(!r->exps)
 		return NULL;
-	if(nrows)
-		*nrows = rowcount;
 	return r;
+}
+
+static sql_rel *
+merge_generate_inserts(mvc *sql, sql_table *t, sql_rel *r, dlist *columns, symbol *val_or_q)
+{
+	sql_rel *res = NULL;
+	list *collist = check_table_columns(sql, t, columns, "MERGE", t->base.name);
+
+	if (!collist)
+		return NULL;
+
+	if (val_or_q->token == SQL_VALUES) {
+		list *exps = new_exp_list(sql->sa);
+		dlist *rowlist = val_or_q->data.lval;
+
+		if (!rowlist->h) {
+			res = rel_project(sql->sa, NULL, NULL);
+			if (!columns)
+				collist = NULL;
+		} else {
+			node *m;
+			dnode *n;
+			dlist *inserts = rowlist->h->data.lval;
+
+			if (dlist_length(rowlist) != 1)
+				return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: number of insert rows must be exactly one in a merge statement");
+			if (dlist_length(inserts) != list_length(collist))
+				return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: number of values doesn't match number of columns of table '%s'", t->base.name);
+
+			for (n = inserts->h, m = collist->h; n && m; n = n->next, m = m->next) {
+				sql_column *c = m->data;
+				sql_exp *ins = insert_value(sql, c, &r, n->data.sym, "MERGE");
+				if (!ins)
+					return NULL;
+				if (!ins->name)
+					exp_label(sql->sa, ins, ++sql->label);
+				list_append(exps, ins);
+			}
+		}
+		if (collist)
+			res = rel_project(sql->sa, r, exps);
+	} else {
+		exp_kind ek = {type_value, card_relation, TRUE};
+		res = rel_subquery(sql, r, val_or_q, ek, APPLY_JOIN);
+		if (!res)
+			return NULL;
+		if (res->op != op_project || res->r || need_distinct(res))
+			res = rel_project(sql->sa, res, rel_projections(sql, res, NULL, 1, 0));
+	}
+	if (!res)
+		return NULL;
+	if ((res->exps && list_length(res->exps) != list_length(collist)) || !res->exps)
+		return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: query result doesn't match number of columns in table '%s'", t->base.name);
+
+	res->l = r;
+	res->exps = rel_inserts(sql, t, res, collist, 2, 0, "MERGE");
+	if(!res->exps)
+		return NULL;
+	return res;
 }
 
 static sql_rel *
@@ -586,7 +643,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	}
 	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
 		return NULL;
-	r = insert_generate_inserts(sql, NULL, t, columns, val_or_q, "INSERT INTO");
+	r = insert_generate_inserts(sql, t, columns, val_or_q, "INSERT INTO");
 	if(!r)
 		return NULL;
 	return rel_insert_table(sql, t, t->base.name, r);
@@ -1335,7 +1392,7 @@ rel_select_merge(sql_allocator *sa, sql_rel *l, list *exps)
 static sql_rel *
 merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search_cond, dlist *merge_list)
 {
-	char *sname = qname_schema(qname), *tname = qname_table(qname);
+	char *sname = qname_schema(qname), *tname = qname_table(qname), *alias_name;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_rel *bt, *joined, *join_rel = NULL, *extra_project = NULL, *insert = NULL, *upd_del = NULL, *res = NULL;
@@ -1368,6 +1425,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 		for(node *nn = bt->exps->h ; nn ; nn = nn->next)
 			exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 	}
+	alias_name = alias ? alias : t->base.name;
 	if (rel_name(bt) && rel_name(joined) && strcmp(rel_name(bt), rel_name(joined)) == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", rel_name(bt));
 
@@ -1403,11 +1461,9 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				if((processed & MERGE_INSERT) == MERGE_INSERT)
 					join_rel = rel_dup(join_rel);
 
-				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
-				e = exp_column(sql->sa, t->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-				append(extra_project->exps, e);
+				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 0, 0));
 
-				for (node *n = extra_project->exps->h; n && n->next; n = n->next) { //don't iterate over TID
+				for (node *n = extra_project->exps->h; n ; n = n->next) {
 					sql_exp *exp = (sql_exp*) n->data;
 					sql_exp *input = exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card,
 												has_nil(exp), is_intern(exp));
@@ -1416,11 +1472,16 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 					append(se_exps, null_values);
 				}
 
+				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, bt, NULL, 1, 0), (fdup)NULL);
+				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
+				e = exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				append(extra_project->exps, e);
+
 				upd_del = rel_select_merge(sql->sa, extra_project, se_exps);
-				upd_del = rel_project(sql->sa, upd_del, rel_projections(sql, extra_project, NULL, 0, 0));
-				for (node *n = upd_del->exps->h; n ; n = n->next)
-					exp_setname(sql->sa, (sql_exp*) n->data, t->base.name, NULL); //the last parameter is optional, hence NULL
+				upd_del = rel_project(sql->sa, upd_del, rel_projections(sql, bt, NULL, 1, 0));
+				upd_del->exps = list_merge(upd_del->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 				append(upd_del->exps, exp_copy(sql->sa, e));
+
 				upd_del = update_generate_assignments(sql, t, upd_del, rel_dup(bt), sts->h->data.lval, "MERGE");
 			} else if(uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "merge", 1))
@@ -1428,11 +1489,9 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				if((processed & MERGE_INSERT) == MERGE_INSERT)
 					join_rel = rel_dup(join_rel);
 
-				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
-				e = exp_column(sql->sa, t->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-				append(extra_project->exps, e);
+				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 0, 0));
 
-				for (node *n = extra_project->exps->h; n && n->next; n = n->next) { //don't iterate over TID
+				for (node *n = extra_project->exps->h; n ; n = n->next) {
 					sql_exp *exp = (sql_exp*) n->data;
 					sql_exp *input = exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card,
 												has_nil(exp), is_intern(exp));
@@ -1440,6 +1499,9 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 					sql_exp *null_values = exp_compare(sql->sa, is_null, exp_atom_bool(sql->sa, 0), cmp_equal);
 					append(se_exps, null_values);
 				}
+
+				e = exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				append(extra_project->exps, e);
 
 				upd_del = rel_select_merge(sql->sa, extra_project, se_exps);
 				upd_del = rel_project(sql->sa, upd_del, append(new_exp_list(sql->sa), exp_copy(sql->sa, e)));
@@ -1452,7 +1514,6 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 		} else if(token == SQL_MERGE_NO_MATCH) {
 			sql_rel *to_ins = NULL;
 			list *se_exps = new_exp_list(sql->sa);
-			size_t rowcount = 0;
 
 			if((processed & MERGE_INSERT) == MERGE_INSERT)
 				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN NOT MATCHED clause is allowed");
@@ -1464,7 +1525,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
 				join_rel = rel_dup(join_rel);
 
-			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
+			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 0, 0));
 
 			for (node *n = extra_project->exps->h; n; n = n->next) {
 				sql_exp *exp = (sql_exp*) n->data;
@@ -1475,13 +1536,16 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				append(se_exps, null_values);
 			}
 
+			extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, bt, NULL, 1, 0), (fdup)NULL);
+			extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
+
 			to_ins = rel_select_merge(sql->sa, extra_project, se_exps);
-			insert = insert_generate_inserts(sql, &rowcount, t, sts->h->data.lval, sts->h->next->data.sym, "MERGE");
+			to_ins = rel_project(sql->sa, to_ins, rel_projections(sql, bt, NULL, 1, 0));
+			to_ins->exps = list_merge(to_ins->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
+
+			insert = merge_generate_inserts(sql, t, to_ins, sts->h->data.lval, sts->h->next->data.sym);
 			if(!insert)
 				return NULL;
-			if(rowcount != 2)
-				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: the insert values list must contain exactly one row");
-			insert->l = to_ins;
 			insert = rel_insert(sql, rel_dup(bt), insert);
 			if(!insert)
 				return NULL;

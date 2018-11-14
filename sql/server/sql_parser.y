@@ -3092,12 +3092,7 @@ merge_update_or_delete:
  ;
 
 merge_insert:
-   INSERT values_or_query_spec
-   { dlist *l = L();
-     append_list(l, NULL);
-     append_symbol(l, $2);
-     $$ = _symbol_create_list( SQL_INSERT, l ); }
- | INSERT column_commalist_parens values_or_query_spec
+   INSERT opt_column_list values_or_query_spec
    { dlist *l = L();
      append_list(l, $2);
      append_symbol(l, $3);

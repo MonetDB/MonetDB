@@ -1,0 +1,56 @@
+create table merging (aa int, bb clob);
+create table predata (aa int, bb int);
+
+start transaction;
+
+insert into merging values (-100, 1);
+insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2);
+
+merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
+      when matched then delete when not matched then insert values (6, 6);
+select aa, bb from predata;
+
+delete from predata;
+insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (4, 1), (6, 3);
+
+merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
+      when not matched then insert values (null, null) when matched then update set bb = 3;
+select aa, bb from predata;
+
+delete from predata;
+insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (8, 2), (NULL, 4);
+
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then update set bb = predata.bb + 1;
+merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
+      when matched then update set bb = othertt.bb + sub.bb;
+select aa, bb from predata;
+
+delete from predata;
+insert into predata values (15, 1), (3, 1), (6, 3), (8, 2);
+
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when not matched then insert values (sub.aa, 2);
+select aa, bb from predata;
+
+merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
+      when not matched then insert values (sub.aa + 5, othertt.bb - 1);
+select aa, bb from predata;
+
+delete from predata;
+insert into predata values (2, 2);
+
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when not matched then insert select 41, -12;
+select aa, bb from predata;
+
+rollback;
+
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then update set bb = bb - 1; --error, bb is ambiguous
+
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when not matched then insert select 1, 2, 3; --error, cardinality mismatch between select stmt and table
+
+drop table merging;
+drop table predata;

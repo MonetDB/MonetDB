@@ -34,8 +34,8 @@ ERROR = !SELECT: no such column 'predata.bb'
 CODE  = 42S22
 MAPI  = (monetdb) /var/tmp/mtest-27206/.s.monetdb.34138
 QUERY = merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb when not matched then insert values (1, 1), (2,2); --error, only one row allowed in insert
-ERROR = !MERGE: the insert values list must contain exactly one row
-CODE  = 42000
+ERROR = !MERGE: number of insert rows must be exactly one in a merge statement
+CODE  = 21S01
 
 # 12:58:53 >  
 # 12:58:53 >  "Done."
