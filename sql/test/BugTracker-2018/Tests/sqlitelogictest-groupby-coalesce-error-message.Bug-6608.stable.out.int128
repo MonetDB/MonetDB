@@ -8,7 +8,7 @@ stdout of test 'sqlitelogictest-groupby-coalesce-error-message.Bug-6608` in dire
 # MonetDB 5 server v11.29.4
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
-# Compiled for x86_64-pc-linux-gnu/64bit
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
 # Found 15.492 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
@@ -88,7 +88,7 @@ Ready.
 #SELECT ALL + COALESCE ( - cor0.col1, cor0.col1, 63, - cor0.col2 ) * - cor0.col1 AS col1 FROM tab0 cor0;
 % sys.L2 # table_name
 % col1 # name
-% bigint # type
+% hugeint # type
 % 4 # length
 [ 0	]
 [ 0	]
@@ -96,7 +96,7 @@ Ready.
 #SELECT - 38 + - tab1.col1 - tab1.col1 / COALESCE ( + 20, - tab1.col0 ) FROM tab1;
 % sys.L2 # table_name
 % L2 # name
-% bigint # type
+% hugeint # type
 % 3 # length
 [ -44	]
 [ -97	]
