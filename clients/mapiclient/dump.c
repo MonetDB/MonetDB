@@ -316,17 +316,17 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			      "sys.keys pkk, "
 			      "sys.schemas ps, "
 			      "sys.schemas fs "
-			 "WHERE fkt.id = fkk.table_id AND "
-			       "pkt.id = pkk.table_id AND "
-			       "fkk.id = fkkc.id AND "
-			       "pkk.id = pkkc.id AND "
-			       "fkk.rkey = pkk.id AND "
-			       "fkkc.nr = pkkc.nr AND "
-			       "pkt.schema_id = ps.id AND "
-			       "fkt.schema_id = fs.id AND "
-			       "fs.name = '%s' AND "
-			       "fkt.name = '%s' "
-			 "ORDER BY fkk.name, nr", schema, tname);
+			 "WHERE fkt.id = fkk.table_id "
+			   "AND pkt.id = pkk.table_id "
+			   "AND fkk.id = fkkc.id "
+			   "AND pkk.id = pkkc.id "
+			   "AND fkk.rkey = pkk.id "
+			   "AND fkkc.nr = pkkc.nr "
+			   "AND pkt.schema_id = ps.id "
+			   "AND fkt.schema_id = fs.id "
+			   "AND fs.name = '%s' "
+			   "AND fkt.name = '%s' "
+			 "ORDER BY fkk.name, fkkc.nr", schema, tname);
 	} else if (tid != NULL) {
 		maxquerylen = 1024 + strlen(tid);
 		query = malloc(maxquerylen);
@@ -349,15 +349,15 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			      "sys.objects pkkc, "
 			      "sys.keys pkk, "
 			      "sys.schemas ps "
-			 "WHERE fkt.id = fkk.table_id AND "
-			       "pkt.id = pkk.table_id AND "
-			       "fkk.id = fkkc.id AND "
-			       "pkk.id = pkkc.id AND "
-			       "fkk.rkey = pkk.id AND "
-			       "fkkc.nr = pkkc.nr AND "
-			       "pkt.schema_id = ps.id AND "
-			       "fkt.id = %s "
-			 "ORDER BY fkk.name, nr", tid);
+			 "WHERE fkt.id = fkk.table_id "
+			   "AND pkt.id = pkk.table_id "
+			   "AND fkk.id = fkkc.id "
+			   "AND pkk.id = pkkc.id "
+			   "AND fkk.rkey = pkk.id "
+			   "AND fkkc.nr = pkkc.nr "
+			   "AND pkt.schema_id = ps.id "
+			   "AND fkt.id = %s "
+			 "ORDER BY fkk.name, fkkc.nr", tid);
 	} else {
 		query = "SELECT ps.name, "		/* 0 */
 			       "pkt.name, "		/* 1 */
@@ -376,17 +376,17 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			     "sys.keys pkk, "
 			     "sys.schemas ps, "
 			     "sys.schemas fs "
-			"WHERE fkt.id = fkk.table_id AND "
-			      "pkt.id = pkk.table_id AND "
-			      "fkk.id = fkkc.id AND "
-			      "pkk.id = pkkc.id AND "
-			      "fkk.rkey = pkk.id AND "
-			      "fkkc.nr = pkkc.nr AND "
-			      "pkt.schema_id = ps.id AND "
-			      "fkt.schema_id = fs.id AND "
-			      "fkt.system = FALSE "
+			"WHERE fkt.id = fkk.table_id "
+			  "AND pkt.id = pkk.table_id "
+			  "AND fkk.id = fkkc.id "
+			  "AND pkk.id = pkkc.id "
+			  "AND fkk.rkey = pkk.id "
+			  "AND fkkc.nr = pkkc.nr "
+			  "AND pkt.schema_id = ps.id "
+			  "AND fkt.schema_id = fs.id "
+			  "AND fkt.system = FALSE "
 			"ORDER BY fs.name, fkt.name, "
-			      "fkk.name, nr";
+			         "fkk.name, fkkc.nr";
 	}
 	hdl = mapi_query(mid, query);
 	if (query != NULL && maxquerylen != 0)
@@ -682,7 +682,8 @@ dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_di
 }
 
 static int
-dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, bool foreign, bool hashge)
+dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
+		       const char *tname, const char *tid, bool foreign, bool hashge)
 {
 	MapiHdl hdl = NULL;
 	char *query = NULL;
@@ -728,10 +729,10 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			 "FROM sys._columns c, "
 			      "sys._tables t, "
 			      "sys.schemas s "
-			 "WHERE c.table_id = t.id AND "
-			       "'%s' = t.name AND "
-			       "t.schema_id = s.id AND "
-			       "s.name = '%s' "
+			 "WHERE c.table_id = t.id "
+			   "AND '%s' = t.name "
+			   "AND t.schema_id = s.id "
+			   "AND s.name = '%s' "
 			 "ORDER BY c.number", tname, schema);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -781,30 +782,30 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "		/* 1 */
 				"k.name, "		/* 2 */
-				"k.id "			/* 3 */
+				"kc.id "		/* 3 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k "
-			 "WHERE kc.id = k.id AND "
-			       "k.table_id = %s AND "
-			       "k.type = 0 "
-			 "ORDER BY k.id, kc.nr", tid);
+			 "WHERE kc.id = k.id "
+			   "AND k.table_id = %s "
+			   "AND k.type = 0 "
+			 "ORDER BY kc.id, kc.nr", tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "		/* 1 */
 				"k.name, "		/* 2 */
-				"k.id "			/* 3 */
+				"kc.id "		/* 3 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k, "
 			      "sys.schemas s, "
 			      "sys._tables t "
-			 "WHERE kc.id = k.id AND "
-			       "k.table_id = t.id AND "
-			       "k.type = 0 AND "
-			       "t.schema_id = s.id AND "
-			       "s.name = '%s' AND "
-			       "t.name = '%s' "
-			 "ORDER BY k.id, kc.nr", schema, tname);
+			 "WHERE kc.id = k.id "
+			   "AND k.table_id = t.id "
+			   "AND k.type = 0 "
+			   "AND t.schema_id = s.id "
+			   "AND s.name = '%s' "
+			   "AND t.name = '%s' "
+			 "ORDER BY kc.id, kc.nr", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -840,30 +841,30 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "		/* 1 */
 				"k.name, "		/* 2 */
-				"k.id "			/* 3 */
+				"kc.id "		/* 3 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k "
-			 "WHERE kc.id = k.id AND "
-			       "k.table_id = %s AND "
-			       "k.type = 1 "
-			 "ORDER BY k.id, kc.nr", tid);
+			 "WHERE kc.id = k.id "
+			   "AND k.table_id = %s "
+			   "AND k.type = 1 "
+			 "ORDER BY kc.id, kc.nr", tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "		/* 1 */
 				"k.name, "		/* 2 */
-				"k.id "			/* 3 */
+				"kc.id "		/* 3 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k, "
 			      "sys.schemas s, "
 			      "sys._tables t "
-			 "WHERE kc.id = k.id AND "
-			       "k.table_id = t.id AND "
-			       "k.type = 1 AND "
-			       "t.schema_id = s.id AND "
-			       "s.name = '%s' AND "
-			       "t.name = '%s' "
-			 "ORDER BY k.id, kc.nr", schema, tname);
+			 "WHERE kc.id = k.id "
+			   "AND k.table_id = t.id "
+			   "AND k.type = 1 "
+			   "AND t.schema_id = s.id "
+			   "AND s.name = '%s' "
+			   "AND t.name = '%s' "
+			 "ORDER BY kc.id, kc.nr", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -923,7 +924,8 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 }
 
 int
-describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int foreign, bool databaseDump)
+describe_table(Mapi mid, const char *schema, const char *tname,
+	       stream *toConsole, int foreign, bool databaseDump)
 {
 	int cnt, table_id = 0;
 	MapiHdl hdl = NULL;
@@ -965,10 +967,11 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	snprintf(query, maxquerylen,
 		 "%s "
 		 "SELECT t.name, t.query, t.type, t.id, c.remark "
-		 "FROM sys.schemas s, sys._tables t LEFT OUTER JOIN comments c ON t.id = c.id "
-		 "WHERE s.name = '%s' AND "
-		       "t.schema_id = s.id AND "
-		       "t.name = '%s'",
+		 "FROM sys.schemas s, sys._tables t "
+			"LEFT OUTER JOIN sys.comments c ON t.id = c.id "
+		 "WHERE s.name = '%s' "
+		   "AND t.schema_id = s.id "
+		   "AND t.name = '%s'",
 		 comments_clause,
 		 schema, tname);
 
@@ -1054,7 +1057,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			char *rt_user = NULL;
 			char *rt_hash = NULL;
 			snprintf(query, maxquerylen,
-				 "SELECT username, hash FROM sys.remote_table_credentials('%s.%s')",
+				 "SELECT username, hash "
+				 "FROM sys.remote_table_credentials('%s.%s')",
 				 schema, tname);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
@@ -1116,15 +1120,15 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			      "sys._columns AS c, "
 			      "sys.schemas s, "
 			      "sys._tables AS t "
-			 "WHERE i.table_id = t.id AND "
-			       "i.id = kc.id AND "
-			       "t.id = c.table_id AND "
-			       "kc.name = c.name AND "
-			       "(k.type IS NULL OR k.type = 1) AND "
-			       "t.schema_id = s.id AND "
-			       "s.name = '%s' AND "
-			       "t.name = '%s' AND "
-			       "i.type in (0, 4, 5) "
+			 "WHERE i.table_id = t.id "
+			   "AND i.id = kc.id "
+			   "AND t.id = c.table_id "
+			   "AND kc.name = c.name "
+			   "AND (k.type IS NULL OR k.type = 1) "
+			   "AND t.schema_id = s.id "
+			   "AND s.name = '%s' "
+			   "AND t.name = '%s' "
+			   "AND i.type in (0, 4, 5) "
 			 "ORDER BY i.name, kc.nr", schema, tname);
 		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 			goto bailout;
@@ -1180,7 +1184,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		snprintf(query, maxquerylen,
 			"%s "
 			 "SELECT i.name, c.remark "
-			 "FROM sys.idxs i, comments c "
+			 "FROM sys.idxs i, sys.comments c "
 			 "WHERE i.id = c.id "
 			   "AND i.table_id = (SELECT id FROM sys._tables WHERE schema_id = (select id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
 			 "ORDER BY i.name",
@@ -1200,7 +1204,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	snprintf(query, maxquerylen,
 		"%s "
 		 "SELECT col.name, com.remark "
-		 "FROM sys._columns col, comments com "
+		 "FROM sys._columns col, sys.comments com "
 		 "WHERE col.id = com.id "
 		   "AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
 		 "ORDER BY col.number",
@@ -1292,11 +1296,11 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 		       "seq.\"increment\", "
 		       "seq.\"cycle\", "
 		       "rem.\"remark\" "
-		"FROM sys.sequences seq LEFT OUTER JOIN comments rem ON seq.id = rem.id, "
+		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
-		"WHERE s.id = seq.schema_id AND "
-		      "s.name = '%s' AND "
-		      "seq.name = '%s' "
+		"WHERE s.id = seq.schema_id "
+		  "AND s.name = '%s' "
+		  "AND seq.name = '%s' "
 		"ORDER BY s.name, seq.name",
 		comments_clause,
 		schema, tname);
@@ -1368,9 +1372,9 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 		"%s "
 		"SELECT s.name, a.name, c.remark "
 		"FROM sys.auths a, "
-		     "sys.schemas s LEFT OUTER JOIN comments c ON s.id = c.id "
-		"WHERE s.\"authorization\" = a.id AND "
-		      "s.name = '%s' "
+		     "sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id "
+		"WHERE s.\"authorization\" = a.id "
+		  "AND s.name = '%s' "
 		"ORDER BY s.name",
 		comments_clause,
 		sname);
@@ -1441,9 +1445,9 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 	snprintf(query, maxquerylen,
 		 "SELECT t.name, t.query, t.type "
 		 "FROM sys._tables t, sys.schemas s "
-		 "WHERE s.name = '%s' AND "
-		       "t.schema_id = s.id AND "
-		       "t.name = '%s'",
+		 "WHERE s.name = '%s' "
+		   "AND t.schema_id = s.id "
+		   "AND t.name = '%s'",
 		 schema, tname);
 
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -1596,8 +1600,8 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 }
 
 int
-dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign,
-		   bool useInserts, bool databaseDump)
+dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
+	   int describe, int foreign, bool useInserts, bool databaseDump)
 {
 	int rc;
 
@@ -1637,9 +1641,9 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 		             "c.remark "
 		      "FROM sys.functions f "
 			   "JOIN sys.schemas s ON f.schema_id = s.id "
-			   "JOIN function_types ft ON f.type = ft.function_type_id "
-			   "LEFT OUTER JOIN function_languages fl ON f.language = fl.language_id "
-			   "LEFT OUTER JOIN comments c ON f.id = c.id "
+			   "JOIN sys.function_types ft ON f.type = ft.function_type_id "
+			   "LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id "
+			   "LEFT OUTER JOIN sys.comments c ON f.id = c.id "
 		      "WHERE f.id = %s",
 		      comments_clause, fid);
 	assert(query_len < (int) query_size);
@@ -1695,7 +1699,12 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	ffunc = strdup(ffunc);
 	if (flkey)
 		flkey = strdup(flkey);
-	query_len = snprintf(query, query_size, "SELECT a.name, a.type, a.type_digits, a.type_scale, a.inout FROM sys.args a, sys.functions f WHERE a.func_id = f.id AND f.id = %s ORDER BY a.inout DESC, a.number", fid);
+	query_len = snprintf(query, query_size,
+			     "SELECT a.name, a.type, a.type_digits, "
+				    "a.type_scale, a.inout "
+			     "FROM sys.args a, sys.functions f "
+			     "WHERE a.func_id = f.id AND f.id = %s "
+			     "ORDER BY a.inout DESC, a.number", fid);
 	assert(query_len < (int) query_size);
 	if (query_len < 0 || query_len >= (int) query_size) {
 		free(ffunc);
@@ -1928,15 +1937,14 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		       "s.name "
 		"FROM sys.db_user_info ui, "
 		     "sys.schemas s "
-		"WHERE ui.default_schema = s.id AND "
-		      "ui.name <> 'monetdb' "
+		"WHERE ui.default_schema = s.id "
+		  "AND ui.name <> 'monetdb' "
 		"ORDER BY ui.name";
 	const char *roles =
 		"SELECT name "
 		"FROM sys.auths "
-		"WHERE name NOT IN (SELECT name "
-				       "FROM sys.db_user_info) AND "
-		      "grantor <> 0 "
+		"WHERE name NOT IN (SELECT name FROM sys.db_user_info) "
+		  "AND grantor <> 0 "
 		"ORDER BY name";
 	const char *grants =
 		"SELECT a1.name, "
@@ -1944,8 +1952,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		"FROM sys.auths a1, "
 		     "sys.auths a2, "
 		     "sys.user_role ur "
-		"WHERE a1.id = ur.login_id AND "
-		      "a2.id = ur.role_id "
+		"WHERE a1.id = ur.login_id "
+		  "AND a2.id = ur.role_id "
 		"ORDER BY a1.name, a2.name";
 	const char *table_grants =
 		"SELECT s.name, t.name, "
@@ -1955,11 +1963,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		"FROM sys.schemas s, sys.tables t, "
 		     "sys.auths a, sys.privileges p, "
 		     "sys.auths g "
-		"WHERE p.obj_id = t.id AND "
-		      "p.auth_id = a.id AND "
-		      "t.schema_id = s.id AND "
-		      "t.system = FALSE AND "
-		      "p.grantor = g.id "
+		"WHERE p.obj_id = t.id "
+		  "AND p.auth_id = a.id "
+		  "AND t.schema_id = s.id "
+		  "AND t.system = FALSE "
+		  "AND p.grantor = g.id "
 		"GROUP BY s.name, t.name, a.name, g.name, p.grantable "
 		"ORDER BY s.name, t.name, a.name, g.name, p.grantable";
 	const char *column_grants =
@@ -1977,12 +1985,12 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		"FROM sys.schemas s, sys.tables t, "
 		     "sys.columns c, sys.auths a, "
 		     "sys.privileges p, sys.auths g "
-		"WHERE p.obj_id = c.id AND "
-		      "c.table_id = t.id AND "
-		      "p.auth_id = a.id AND "
-		      "t.schema_id = s.id AND "
-		      "t.system = FALSE AND "
-		      "p.grantor = g.id "
+		"WHERE p.obj_id = c.id "
+		  "AND c.table_id = t.id "
+		  "AND p.auth_id = a.id "
+		  "AND t.schema_id = s.id "
+		  "AND t.system = FALSE "
+		  "AND p.grantor = g.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
 	const char *function_grants =
 		has_funcsys(mid) ?
@@ -2013,26 +2021,29 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			    "WHEN 16 THEN 'EXECUTE' "
 			    "WHEN 32 THEN 'GRANT' "
 			    "WHEN 64 THEN 'TRUNCATE' END, "
-		       "g.name, p.grantable "
+		       "g.name, p.grantable, "
+		       "ft.function_type_keyword "
 		"FROM sys.schemas s, sys.functions f, "
-		     "sys.auths a, sys.privileges p, sys.auths g "
-		"WHERE s.id = f.schema_id AND "
-		      "f.id = p.obj_id AND "
-		      "p.auth_id = a.id AND "
-		      "p.grantor = g.id "
-		      "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
+		     "sys.auths a, sys.privileges p, sys.auths g, "
+		     "sys.function_types ft "
+		"WHERE s.id = f.schema_id "
+		  "AND f.id = p.obj_id "
+		  "AND p.auth_id = a.id "
+		  "AND p.grantor = g.id "
+		  "AND f.type = ft.function_type_id "
+		  "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
 		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
 	const char *schemas =
 		"SELECT s.name, a.name, rem.remark "
-		"FROM sys.schemas s LEFT OUTER JOIN comments rem ON s.id = rem.id, "
+		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
 		     "sys.auths a "
-		"WHERE s.\"authorization\" = a.id AND "
-		      "s.system = FALSE "
+		"WHERE s.\"authorization\" = a.id "
+		  "AND s.system = FALSE "
 		"ORDER BY s.name";
 	const char *sequences1 =
 		"SELECT sch.name, seq.name, rem.remark "
 		"FROM sys.schemas sch, "
-		     "sys.sequences seq LEFT OUTER JOIN comments rem ON seq.id = rem.id "
+		     "sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
@@ -2059,10 +2070,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "t.type AS type "
 			"FROM sys.schemas s, "
 			      "sys._tables t "
-			"WHERE t.type IN (0, 3, 4, 5, 6) AND "
-			      "t.system = FALSE AND "
-			      "s.id = t.schema_id AND "
-			      "s.name <> 'tmp' "
+			"WHERE t.type IN (0, 3, 4, 5, 6) "
+			  "AND t.system = FALSE "
+			  "AND s.id = t.schema_id "
+			  "AND s.name <> 'tmp' "
 			"UNION ALL "
 			"SELECT s.name AS sname, " /* views */
 			       "t.name AS name, "
@@ -2072,10 +2083,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "NULL AS type "
 			"FROM sys.schemas s, "
 			     "sys._tables t LEFT OUTER JOIN comments rem ON t.id = rem.id "
-			"WHERE t.type = 1 AND "
-			      "t.system = FALSE AND "
-			      "s.id = t.schema_id AND "
-			      "s.name <> 'tmp' "
+			"WHERE t.type = 1 "
+			  "AND t.system = FALSE "
+			  "AND s.id = t.schema_id "
+			  "AND s.name <> 'tmp' "
 			"UNION ALL "
 			"SELECT s.name AS sname, " /* functions and procedures */
 			       "f.name AS name, "
@@ -2097,8 +2108,9 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			"FROM sys.triggers tr, "
 			     "sys.schemas s, "
 			     "sys._tables t "
-			"WHERE s.id = t.schema_id AND "
-			      "t.id = tr.table_id AND t.system = FALSE"
+			"WHERE s.id = t.schema_id "
+			  "AND t.id = tr.table_id "
+			  "AND t.system = FALSE"
 		") "
 		"SELECT id, sname, name, query, remark, type FROM vft ORDER BY id"
 		:
@@ -2111,10 +2123,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "t.type AS type "
 			"FROM sys.schemas s, "
 			      "sys._tables t "
-			"WHERE t.type IN (0, 3, 4, 5, 6) AND "
-			      "t.system = FALSE AND "
-			      "s.id = t.schema_id AND "
-			      "s.name <> 'tmp' "
+			"WHERE t.type IN (0, 3, 4, 5, 6) "
+			  "AND t.system = FALSE "
+			  "AND s.id = t.schema_id "
+			  "AND s.name <> 'tmp' "
 			"UNION ALL "
 			"SELECT s.name AS sname, " /* views */
 			       "t.name AS name, "
@@ -2123,11 +2135,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "rem.remark AS remark, "
 			       "NULL AS type "
 			"FROM sys.schemas s, "
-			     "sys._tables t LEFT OUTER JOIN comments rem ON t.id = rem.id "
-			"WHERE t.type = 1 AND "
-			      "t.system = FALSE AND "
-			      "s.id = t.schema_id AND "
-			      "s.name <> 'tmp' "
+			     "sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id "
+			"WHERE t.type = 1 "
+			  "AND t.system = FALSE "
+			  "AND s.id = t.schema_id "
+			  "AND s.name <> 'tmp' "
 			"UNION ALL "
 			"SELECT s.name AS sname, " /* functions and procedures */
 			       "f.name AS name, "
@@ -2149,8 +2161,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			"FROM sys.triggers tr, "
 			     "sys.schemas s, "
 			     "sys._tables t "
-			"WHERE s.id = t.schema_id AND "
-			      "t.id = tr.table_id AND t.system = FALSE"
+			"WHERE s.id = t.schema_id "
+			  "AND t.id = tr.table_id AND t.system = FALSE"
 		") "
 		"SELECT id, sname, name, query, remark, type FROM vft ORDER BY id";
 	const char *mergetables = "SELECT subq.s1name, subq.t1name, subq.s2name, subq.t2name, "
@@ -2639,18 +2651,12 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		const char *aname = mapi_fetch_field(hdl, 2);
 		const char *priv = mapi_fetch_field(hdl, 3);
 		const char *grantable = mapi_fetch_field(hdl, 5);
+		const char *ftype = mapi_fetch_field(hdl, 6);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
-		if (curschema == NULL || strcmp(schema, curschema) != 0) {
-			if (curschema)
-				free(curschema);
-			curschema = strdup(schema);
-			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
-				     curschema);
-		}
-		mnstr_printf(toConsole, "GRANT %s ON \"%s\" TO \"%s\"",
-			     priv, fname, aname);
+		mnstr_printf(toConsole, "GRANT %s ON %s \"%s\".\"%s\" TO \"%s\"",
+			     priv, ftype, schema, fname, aname);
 		if (strcmp(grantable, "1") == 0)
 			mnstr_printf(toConsole, " WITH GRANT OPTION");
 		mnstr_printf(toConsole, ";\n");
