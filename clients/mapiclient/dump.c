@@ -279,7 +279,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			   "AND fkt.schema_id = fs.id "
 			   "AND fs.name = '%s' "
 			   "AND fkt.name = '%s' "
-			 "ORDER BY fkk.name, nr", schema, tname);
+			 "ORDER BY fkk.name, fkkc.nr", schema, tname);
 	} else if (tid != NULL) {
 		maxquerylen = 1024 + strlen(tid);
 		query = malloc(maxquerylen);
@@ -310,7 +310,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			   "AND fkkc.nr = pkkc.nr "
 			   "AND pkt.schema_id = ps.id "
 			   "AND fkt.id = %s "
-			 "ORDER BY fkk.name, nr", tid);
+			 "ORDER BY fkk.name, fkkc.nr", tid);
 	} else {
 		query = "SELECT ps.name, "		/* 0 */
 			       "pkt.name, "		/* 1 */
@@ -339,7 +339,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			  "AND fkt.schema_id = fs.id "
 			  "AND fkt.system = FALSE "
 			"ORDER BY fs.name, fkt.name, "
-			      "fkk.name, nr";
+			         "fkk.name, fkkc.nr";
 	}
 	hdl = mapi_query(mid, query);
 	if (query != NULL && maxquerylen != 0)
@@ -667,7 +667,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 				"c.number "		/* 6 */
 			 "FROM sys._columns c "
 			 "WHERE c.table_id = %s "
-			 "ORDER BY number", tid);
+			 "ORDER BY c.number", tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT c.name, "		/* 0 */
@@ -684,7 +684,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 			   "AND '%s' = t.name "
 			   "AND t.schema_id = s.id "
 			   "AND s.name = '%s' "
-			 "ORDER BY number", tname, schema);
+			 "ORDER BY c.number", tname, schema);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
@@ -733,19 +733,19 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "		/* 1 */
 				"k.name, "		/* 2 */
-				"k.id "			/* 3 */
+				"kc.id "		/* 3 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k "
 			 "WHERE kc.id = k.id "
 			   "AND k.table_id = %s "
 			   "AND k.type = 0 "
-			 "ORDER BY id, nr", tid);
+			 "ORDER BY kc.id, kc.nr", tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "		/* 1 */
 				"k.name, "		/* 2 */
-				"k.id "			/* 3 */
+				"kc.id "		/* 3 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k, "
 			      "sys.schemas s, "
@@ -756,7 +756,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 			   "AND t.schema_id = s.id "
 			   "AND s.name = '%s' "
 			   "AND t.name = '%s' "
-			 "ORDER BY id, nr", schema, tname);
+			 "ORDER BY kc.id, kc.nr", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -792,19 +792,19 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "		/* 1 */
 				"k.name, "		/* 2 */
-				"k.id "			/* 3 */
+				"kc.id "		/* 3 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k "
 			 "WHERE kc.id = k.id "
 			   "AND k.table_id = %s "
 			   "AND k.type = 1 "
-			 "ORDER BY id, nr", tid);
+			 "ORDER BY kc.id, kc.nr", tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "		/* 1 */
 				"k.name, "		/* 2 */
-				"k.id "			/* 3 */
+				"kc.id "		/* 3 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k, "
 			      "sys.schemas s, "
@@ -815,7 +815,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 			   "AND t.schema_id = s.id "
 			   "AND s.name = '%s' "
 			   "AND t.name = '%s' "
-			 "ORDER BY id, nr", schema, tname);
+			 "ORDER BY kc.id, kc.nr", schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -1099,7 +1099,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		 "FROM sys._columns col, sys.comments com "
 		 "WHERE col.id = com.id "
 		   "AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
-		 "ORDER BY number",
+		 "ORDER BY col.number",
 		 comments_clause,
 		 schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
