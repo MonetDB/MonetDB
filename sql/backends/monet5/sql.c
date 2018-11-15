@@ -582,13 +582,8 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 		lng sgn = val_get_number(src);
 #endif
-		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL) {
-			snprintf(buf, BUFSIZ, "%s", msg);
-			if (strlen(msg) > 6 && msg[5] == '!')
-				return msg;
-			_DELETE(msg);
-			throw(SQL, "sql.setVariable", SQLSTATE(42100) "%s", buf);
-		}
+		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL)
+			return msg;
 		if(!stack_set_var(m, varname, src))
 			throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
