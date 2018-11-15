@@ -4,8 +4,11 @@ CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 INSERT INTO tab0 VALUES (83,0,38), (26,0,79), (43,81,24);
 INSERT INTO tab1 VALUES (22,6,8), (28,57,45), (82,44,71);
 
+-- query without groupby (works ok)
 SELECT DISTINCT - COALESCE ( - 86, + cor0.col1, cor0.col1, - cor0.col0 ) AS col2 FROM tab0 AS cor0;
+-- query with groupby giving error, but error msg "no such aggregate 'sql_neg'" is not useful
 SELECT DISTINCT - COALESCE ( - 86, + cor0.col1, cor0.col1, - cor0.col0 ) AS col2 FROM tab0 AS cor0 GROUP BY cor0.col2, cor0.col0;
+-- instead it should give error as reported by next query:
 SELECT COALESCE ( - 86, + cor0.col1, cor0.col1, - cor0.col0 ) AS col2 FROM tab0 AS cor0 GROUP BY cor0.col2, cor0.col0;
 
 SELECT ALL + 33 * - COALESCE ( - 86, tab1.col2 ) + + col1 FROM tab1;
