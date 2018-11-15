@@ -34,12 +34,24 @@ SELECT T1.C1, T1.C2, T1.C3
  WHERE T1.C1 = X.C1 AND T1.C2 = X.C2;
 
 -- 5. Let us write the same logic in (4) as a subquery. (results
--- incorrect, the last row should not be there).
+-- incorrect, the last row (1, 3, 6) should not be there).
 SELECT C1, C2, C3
   FROM T1
  WHERE (C1, C2) IN
        (
 	 SELECT C1, C2
+	   FROM T1
+	  GROUP BY C1, C2
+	 HAVING COUNT(*) > 1
+       );
+
+-- 6. Another IN query variant (swapped C1 and C2) which produces wrong results.
+-- (the last row (2, 2, 5) should not be there).
+SELECT C1, C2, C3
+  FROM T1
+ WHERE (C2, C1) IN
+       (
+	 SELECT C2, C1
 	   FROM T1
 	  GROUP BY C1, C2
 	 HAVING COUNT(*) > 1

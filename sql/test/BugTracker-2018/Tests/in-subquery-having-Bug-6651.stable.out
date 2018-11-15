@@ -115,6 +115,21 @@ Ready.
 % 1,	1,	1 # length
 [ 1,	2,	3	]
 [ 1,	2,	4	]
+#SELECT C1, C2, C3
+#  FROM T1
+# WHERE (C2, C1) IN
+#       (
+#	 SELECT C2, C2
+#	   FROM T1
+#	  GROUP BY C1, C2
+#	 HAVING COUNT(*) > 1
+#       );
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	2,	3	]
+[ 1,	2,	4	]
 #ROLLBACK;
 
 # 11:21:55 >  
