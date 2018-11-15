@@ -203,7 +203,7 @@ queries = glob.glob(os.path.join(ssbmpath, '[0-1][0-9].sql'))
 queries.sort()
 for q in queries:
     print('# Running Q %s' % os.path.basename(q).replace('.sql',''))
-    mc = process.client('sql', stdin=open(q), dbname='master', host='localhost', port=masterport, stdout=process.PIPE, stderr=process.PIPE, log=1)
+    mc = process.client('sql', server=masterproc, stdin=open(q), stdout=process.PIPE, stderr=process.PIPE, log=1)
     out, err = mc.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)

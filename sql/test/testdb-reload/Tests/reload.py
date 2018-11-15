@@ -35,6 +35,7 @@ s1 = process.server(stdin=process.PIPE,
                     stderr=process.PIPE)
 # load data into the first server's database
 c1 = process.client(lang='sql',
+                    server=s1,
                     args=[os.path.join(tstsrcdir, os.pardir, os.pardir, 'testdb', 'Tests', 'load.sql')],
                     stdin=process.PIPE,
                     stdout=process.PIPE,
@@ -48,13 +49,13 @@ s2 = process.server(dbname=tstdb2,
                     stderr=process.PIPE)
 # dump the first server's database
 d1 = process.client(lang='sqldump',
+                    server=s1,
                     stdin=process.PIPE,
                     stdout='PIPE',
                     stderr=process.PIPE)
 # and pipe it straight into the second server
 c2 = process.client(lang='sql',
-                    dbname=tstdb2,
-                    port=port2,
+                    server=s2,
                     stdin=d1.stdout,
                     stdout=process.PIPE,
                     stderr=process.PIPE)
@@ -67,8 +68,7 @@ sys.stdout.write(s1out)
 sys.stderr.write(s1err)
 # dump the second server's database
 d2 = process.client(lang='sqldump',
-                    dbname=tstdb2,
-                    port=port2)
+                    server=s2)
 d2out, d2err = d2.communicate()
 s2out, s2err = s2.communicate()
 sys.stdout.write(s2out)
