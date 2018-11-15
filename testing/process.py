@@ -13,7 +13,7 @@ import tempfile
 import copy
 import atexit
 import threading
-if sys.version[:1] == '2':
+if sys.version.startswith('2'):
     import Queue as queue
 else:
     import queue
@@ -108,11 +108,11 @@ class _BufferedPipe:
                     else:
                         j = 0
                         while j < s:
-                            if skip[j:s] + c != skip[:s-j+1]:
+                            if not skip.startswith(skip[j:s] + c):
                                 skipqueue.append(skip[j])
                                 j += 1
                             else:
-                                s = s-j+1
+                                s -= j - 1
                                 break
                         else:
                             if c == skip[0]:
@@ -131,7 +131,7 @@ class _BufferedPipe:
                 else:
                     j = 0
                     while j < w:
-                        if waitfor[j:w] + c != waitfor[:w-j+1]:
+                        if not waitfor.startswith(waitfor[j:w] + c):
                             queue.put(waitfor[j])
                             j += 1
                         else:
@@ -269,7 +269,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
 
     if port is not None:
         for i in range(len(cmd)):
-            if cmd[i][:7] == '--port=':
+            if cmd[i].startswith('--port='):
                 del cmd[i]
                 break
         cmd.append('--port=%d' % int(port))
@@ -288,7 +288,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         env['DOTMONETDBFILE'] = fnam
     if host is not None:
         for i in range(len(cmd)):
-            if cmd[i][:7] == '--host=':
+            if cmd[i].startswith('--host='):
                 del cmd[i]
                 break
         cmd.append('--host=%s' % host)
@@ -357,13 +357,13 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
         cmd.append(dbinit)
     if mapiport is not None:
         for i in range(len(cmd)):
-            if cmd[i][:10] == 'mapi_port=':
+            if cmd[i].startswith('mapi_port='):
                 del cmd[i]
                 del cmd[i - 1]
                 break
         usock = None
         for i in range(len(cmd)):
-            if cmd[i][:11] == 'mapi_usock=':
+            if cmd[i].startswith('mapi_usock='):
                 usock = cmd[i][11:cmd[i].rfind('.')]
                 del cmd[i]
                 del cmd[i - 1]
@@ -374,7 +374,7 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
             cmd.append('--set')
             cmd.append('mapi_usock=%s.%d' % (usock, int(mapiport)))
     for i in range(len(cmd)):
-        if cmd[i][:9] == '--dbpath=':
+        if cmd[i].startswith('--dbpath='):
             dbpath = cmd[i][9:]
             del cmd[i]
             break
@@ -395,7 +395,7 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
     if dbpath is not None:
         cmd.append('--dbpath=%s' % dbpath)
     for i in range(len(cmd)):
-        if cmd[i][:10] == '--dbextra=':
+        if cmd[i].startswith('--dbextra='):
             dbextra_path = cmd[i][10:]
             del cmd[i]
             break
