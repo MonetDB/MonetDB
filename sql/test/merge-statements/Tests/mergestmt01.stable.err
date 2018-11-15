@@ -28,16 +28,21 @@ stderr of test 'mergestmt01` in directory 'sql/test/merge-statements` itself:
 # 14:42:45 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2774" "--port=35532"
 # 14:42:45 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-19990/.s.monetdb.30279
+MAPI  = (monetdb) /var/tmp/mtest-25830/.s.monetdb.34955
+QUERY = merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+              when not matched then insert select 41, -12; --error, not supported
+ERROR = !MERGE: sub-queries not yet supported in INSERT clauses inside MERGE statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-31827/.s.monetdb.35750
+QUERY = merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+              when not matched then insert select aa, bb from predata; --error, not supported
+ERROR = !MERGE: sub-queries not yet supported in INSERT clauses inside MERGE statements
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-31827/.s.monetdb.35750
 QUERY = merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
               when matched then update set bb = bb - 1; --error, bb is ambiguous
 ERROR = !SELECT: identifier 'bb' ambiguous
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-20607/.s.monetdb.32504
-QUERY = merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
-              when not matched then insert select 1, 2, 3; --error, cardinality mismatch between select stmt and table
-ERROR = !MERGE: query result doesn't match number of columns in table 'predata'
-CODE  = 21S01
 
 # 14:42:45 >  
 # 14:42:45 >  "Done."

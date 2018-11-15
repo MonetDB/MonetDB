@@ -583,7 +583,7 @@ merge_generate_inserts(mvc *sql, sql_table *t, sql_rel *r, dlist *columns, symbo
 			dlist *inserts = rowlist->h->data.lval;
 
 			if (dlist_length(rowlist) != 1)
-				return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: number of insert rows must be exactly one in a merge statement");
+				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: number of insert rows must be exactly one in a merge statement");
 			if (dlist_length(inserts) != list_length(collist))
 				return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: number of values doesn't match number of columns of table '%s'", t->base.name);
 
@@ -600,16 +600,11 @@ merge_generate_inserts(mvc *sql, sql_table *t, sql_rel *r, dlist *columns, symbo
 		if (collist)
 			res = rel_project(sql->sa, r, exps);
 	} else {
-		exp_kind ek = {type_value, card_relation, TRUE};
-		res = rel_subquery(sql, r, val_or_q, ek, APPLY_JOIN);
-		if (!res)
-			return NULL;
-		if (res->op != op_project || res->r || need_distinct(res))
-			res = rel_project(sql->sa, res, rel_projections(sql, res, NULL, 1, 0));
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: sub-queries not yet supported in INSERT clauses inside MERGE statements");
 	}
 	if (!res)
 		return NULL;
-	if ((res->exps && list_length(res->exps) != list_length(collist)) || !res->exps)
+	if ((res->exps && list_length(res->exps) != list_length(collist)) || (!res->exps && collist))
 		return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: query result doesn't match number of columns in table '%s'", t->base.name);
 
 	res->l = r;

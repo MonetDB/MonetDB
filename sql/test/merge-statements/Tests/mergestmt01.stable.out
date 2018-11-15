@@ -129,16 +129,16 @@ Ready.
 [ 10	]
 #insert into predata values (2, 2);
 [ 1	]
-#merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
-#      when not matched then insert select 41, -12;
+#merge into predata using (select aa, bb from merging) thee on predata.bb = thee.bb
+#      when not matched then insert;
 [ 1	]
 #select aa, bb from predata;
 % sys.predata,	sys.predata # table_name
 % aa,	bb # name
 % int,	int # type
-% 2,	3 # length
+% 1,	1 # length
 [ 2,	2	]
-[ 41,	-12	]
+[ NULL,	NULL	]
 #rollback;
 #drop table merging;
 #drop table predata;

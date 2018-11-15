@@ -40,17 +40,20 @@ select aa, bb from predata;
 delete from predata;
 insert into predata values (2, 2);
 
-merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
-      when not matched then insert select 41, -12;
+merge into predata using (select aa, bb from merging) thee on predata.bb = thee.bb
+      when not matched then insert;
 select aa, bb from predata;
 
 rollback;
 
 merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
-      when matched then update set bb = bb - 1; --error, bb is ambiguous
+      when not matched then insert select 41, -12; --error, not supported
 
 merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
-      when not matched then insert select 1, 2, 3; --error, cardinality mismatch between select stmt and table
+      when not matched then insert select aa, bb from predata; --error, not supported
+
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then update set bb = bb - 1; --error, bb is ambiguous
 
 drop table merging;
 drop table predata;
