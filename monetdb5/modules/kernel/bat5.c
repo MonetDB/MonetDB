@@ -1053,7 +1053,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrink", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1149,7 +1149,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1227,7 +1227,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1331,7 +1331,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);

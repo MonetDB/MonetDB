@@ -112,6 +112,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
+BugURL: https://bugs.monetdb.org/
 Source: https://www.monetdb.org/downloads/sources/Aug2018-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
@@ -689,7 +690,6 @@ exit 0
 %{_libdir}/monetdb5/lib_generator.so
 %{_libdir}/monetdb5/lib_opt_sql_append.so
 %{_libdir}/monetdb5/lib_udf.so
-%{_libdir}/monetdb5/lib_vault.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
@@ -780,7 +780,6 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
-%{_libdir}/monetdb5/*.sql
 %dir %{_libdir}/monetdb5/createdb
 %if %{with geos}
 %exclude %{_libdir}/monetdb5/createdb/*_geom.sql
@@ -878,10 +877,10 @@ Group: Applications/Databases
 %if "%{?_selinux_policy_version}" != ""
 Requires:       selinux-policy >= %{?_selinux_policy_version}
 %endif
-Requires(post):   MonetDB5-server = %{version}-%{release}
-Requires(postun): MonetDB5-server
-Requires(post):   %{name}-SQL-server5 = %{version}-%{release}
-Requires(postun): %{name}-SQL-server5
+Requires(post):   MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires(postun): MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires(post):   %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires(postun): %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
 Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles
 BuildArch: noarch
@@ -1080,7 +1079,7 @@ done
 * Wed Oct  3 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.9-20181005
 - buildtools: On Ubuntu 18.10 (Cosmic Cuttlefish), the libmonetdb5-server-bam package
   cannot be built because of an incompatibility in the libbam library
-  (it cannot be used in a shared object.
+  (it cannot be used in a shared object).
 
 * Wed Aug 29 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.7-20180829
 - Rebuilt.

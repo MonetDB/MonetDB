@@ -864,7 +864,7 @@ stmt_col( backend *be, sql_column *c, stmt *del)
 	stmt *sc = stmt_bat(be, c, RDONLY, del?del->partition:0);
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
-	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
+	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->persistence == SQL_DECLARED_TABLE) && !c->t->commit_action) {
 		stmt *i = stmt_bat(be, c, RD_INS, 0);
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, del?del->partition:0);
@@ -882,7 +882,7 @@ stmt_idx( backend *be, sql_idx *i, stmt *del)
 	stmt *sc = stmt_idxbat(be, i, RDONLY, del?del->partition:0);
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
-	   (i->base.flag != TR_NEW || i->t->base.flag != TR_NEW /* alter */) &&
+	   (!isNew(i) || !isNew(i->t) /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->persistence == SQL_DECLARED_TABLE) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, del?del->partition:0);
@@ -2612,9 +2612,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			/* handle constants */
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
 			} else { 	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
 			}
 			if (!limit) 
 				return NULL;
@@ -2670,9 +2670,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				break;
 			}
 			if (orderby_ids)
-				orderby = stmt_reorder(be, orderbycolstmt, is_ascending(orderbycole), orderby_ids, orderby_grp);
+				orderby = stmt_reorder(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole), orderby_ids, orderby_grp);
 			else
-				orderby = stmt_order(be, orderbycolstmt, is_ascending(orderbycole));
+				orderby = stmt_order(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole));
 			orderby_ids = stmt_result(be, orderby, 1);
 			orderby_grp = stmt_result(be, orderby, 2);
 		}
@@ -2904,7 +2904,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			o = stmt_atom_lng(be, 0);
 
 		sc = column(be, sc);
-		limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0);
+		limit = stmt_limit(be, stmt_alias(be, sc, tname, cname), NULL, NULL, o, l, 0,0,0,0,0);
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
@@ -3168,9 +3168,9 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 				stmt *cs = list_fetch(inserts, c->c->colnr); 
 
 				if (orderby_grp)
-					orderby = stmt_reorder(be, cs, 1, orderby_ids, orderby_grp);
+					orderby = stmt_reorder(be, cs, 1, 0, orderby_ids, orderby_grp);
 				else
-					orderby = stmt_order(be, cs, 1);
+					orderby = stmt_order(be, cs, 1, 0);
 				orderby_ids = stmt_result(be, orderby, 1);
 				orderby_grp = stmt_result(be, orderby, 2);
 			}
@@ -4969,6 +4969,7 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	node *n;
 	const char *tsep, *rsep, *ssep, *ns;
 	const char *fn   = NULL;
+	int onclient = 0;
 	stmt *s = NULL, *fns = NULL;
 	list *slist = sa_list(sql->sa);
 
@@ -4988,8 +4989,9 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	if (n->next->next->next->next) {
 		fn = E_ATOM_STRING(n->next->next->next->next->data);
 		fns = stmt_atom_string(be, sa_strdup(sql->sa, fn));
+		onclient = E_ATOM_INT(n->next->next->next->next->next->data);
 	}
-	list_append(slist, stmt_export(be, s, tsep, rsep, ssep, ns, fns));
+	list_append(slist, stmt_export(be, s, tsep, rsep, ssep, ns, onclient, fns));
 	if (s->type == st_list && ((stmt*)s->op4.lval->h->data)->nrcols != 0) {
 		stmt *cnt = stmt_aggr(be, s->op4.lval->h->data, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0, 1);
 		return cnt;
@@ -5250,7 +5252,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	} else if (rel->flag <= DDL_ALTER_TABLE) {
 		s = rel2bin_catalog_table(be, rel, refs);
 		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_COMMENT_ON) {
+	} else if (rel->flag <= DDL_RENAME_COLUMN) {
 		s = rel2bin_catalog2(be, rel, refs);
 		sql->type = Q_SCHEMA;
 	}

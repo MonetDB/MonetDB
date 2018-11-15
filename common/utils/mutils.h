@@ -72,4 +72,7 @@ mutils_export void print_trace(void);
  * this function. */
 mutils_export char *get_bin_path(void);
 
+/* Returns the Mercurial changeset of the current checkout, if available */
+mutils_export const char *mercurial_revision(void);
+
 #endif	/* _MUTILS_H_ */

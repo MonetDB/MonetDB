@@ -883,8 +883,16 @@ main(int argc, char *argv[])
 	Mfprintf(pidfile, "%d\n", (int)d->pid);
 	fclose(pidfile);
 
-	Mfprintf(stdout, "Merovingian %s (%s) starting\n",
-			MERO_VERSION, MONETDB_RELEASE);
+	{
+		const char *rev = mercurial_revision();
+		Mfprintf(stdout, "Merovingian %s", VERSION);
+		/* coverity[pointless_string_compare] */
+		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+			Mfprintf(stdout, " (%s)", MONETDB_RELEASE);
+		else if (strcmp(rev, "Unknown") != 0)
+			Mfprintf(stdout, " (hg id: %s)", rev);
+		Mfprintf(stdout, " starting\n");
+	}
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	/* open up connections */
@@ -1027,7 +1035,7 @@ shutdown:
 
 	/* need to do this here, since the logging thread is shut down as
 	 * next thing */
-	Mfprintf(stdout, "Merovingian %s stopped\n", MERO_VERSION);
+	Mfprintf(stdout, "Merovingian %s stopped\n", VERSION);
 
 	_mero_keep_logging = 0;
 	if (tid != 0 && (argp = pthread_join(tid, NULL)) != 0) {

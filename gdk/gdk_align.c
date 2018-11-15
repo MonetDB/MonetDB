@@ -187,8 +187,8 @@ BATmaterialize(BAT *b)
 	/* point of no return */
 	b->ttype = tt;
 	BATsetdims(b);
-	b->batDirtydesc = TRUE;
-	b->theap.dirty = TRUE;
+	b->batDirtydesc = true;
+	b->theap.dirty = true;
 
 	/* So now generate [t..t+cnt-1] */
 	t = b->tseqbase;

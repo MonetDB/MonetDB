@@ -98,17 +98,14 @@ BATundo(BAT *b)
 		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		if (tunfix || tatmdel || b->thash) {
+		if (b->thash)
 			HASHdestroy(b);
+		if (tunfix || tatmdel) {
 			for (p = bunfirst; p <= bunlast; p++, i++) {
-				ptr t = BUNtail(bi, p);
-
-				if (tunfix) {
-					(*tunfix) (t);
-				}
-				if (tatmdel) {
+				if (tunfix)
+					(*tunfix) (BUNtail(bi, p));
+				if (tatmdel)
 					(*tatmdel) (b->tvheap, (var_t *) BUNtloc(bi, p));
-				}
 			}
 		}
 	}

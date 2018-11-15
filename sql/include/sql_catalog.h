@@ -85,8 +85,8 @@
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 #define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
-#define TR_OLD 0
 #define TR_NEW 1
+#define TR_RENAMED 2
 
 #define RDONLY 0
 #define RD_INS 1
@@ -176,15 +176,21 @@ typedef struct sql_base {
 	int wtime;
 	int rtime;
 	int allocated;
-	int flag;
+	int flags;
 	int refcnt;
 	sqlid id;
 	char *name;
 } sql_base;
 
-extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, const char *name);
-extern void base_set_name(sql_base * b, const char *name);
-extern void base_destroy(sql_base * b);
+#define newFlagSet(x)     ((x & TR_NEW) == TR_NEW)
+#define removeNewFlag(x)  ((x)->base.flags &= ~TR_NEW)
+#define isNew(x)          (newFlagSet((x)->base.flags))
+
+#define setRenamedFlag(x)    ((x)->base.flags |= TR_RENAMED)
+#define removeRenamedFlag(x) ((x)->base.flags &= ~TR_RENAMED)
+#define isRenamed(x)         (((x)->base.flags & TR_RENAMED) == TR_RENAMED)
+
+extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name);
 
 typedef struct changeset {
 	sql_allocator *sa;

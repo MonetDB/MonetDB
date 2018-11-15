@@ -245,24 +245,24 @@ Ready.
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% .L10,	.storage,	.storage,	.storage # table_name
+% .L11,	.storage,	.storage,	.storage # table_name
 % duplicates,	schema,	table,	column # name
-% bigint,	clob,	clob,	clob # type
+% bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodel GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% .L10,	.storagemodel,	.storagemodel,	.storagemodel # table_name
+% sys.L31,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
 % duplicates,	schema,	table,	column # name
-% bigint,	clob,	clob,	clob # type
+% bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodelinput GROUP BY schema, table, column HAVING COUNT(*) > 1;
 % sys.L3,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
 % duplicates,	schema,	table,	column # name
-% bigint,	clob,	clob,	clob # type
+% bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestoragemodel GROUP BY schema, table HAVING COUNT(*) > 1;
-% .L32,	.tablestoragemodel,	.tablestoragemodel # table_name
+% sys.L42,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
 % duplicates,	schema,	table # name
-% bigint,	clob,	clob # type
+% bigint,	varchar,	varchar # type
 % 1,	0,	0 # length
 
 # 16:31:35 >  

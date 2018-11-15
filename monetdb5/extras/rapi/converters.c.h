@@ -121,7 +121,7 @@ static SEXP bat_to_sexp(BAT* b) {
 					return NULL;
 				}
 				BATloop(b, p, q) {
-					const char *t = (const char *) BUNtail(li, p);
+					const char *t = (const char *) BUNtvar(li, p);
 					ptrdiff_t offset = t - b->tvheap->base;
 					if (!sexp_ptrs[offset]) {
 						if (strcmp(t, str_nil) == 0) {
@@ -138,12 +138,12 @@ static SEXP bat_to_sexp(BAT* b) {
 				if (b->tnonil) {
 					BATloop(b, p, q) {
 						SET_STRING_ELT(varvalue, j++, RSTR(
-							(const char *) BUNtail(li, p)));
+							(const char *) BUNtvar(li, p)));
 					}
 				}
 				else {
 					BATloop(b, p, q) {
-						const char *t = (const char *) BUNtail(li, p);
+						const char *t = (const char *) BUNtvar(li, p);
 						if (strcmp(t, str_nil) == 0) {
 							SET_STRING_ELT(varvalue, j++, NA_STRING);
 						} else {

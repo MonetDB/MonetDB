@@ -1,17 +1,16 @@
 select 
-        case when EXISTS ( select hashes from sys.tablestoragemodel )
+        case when EXISTS ( select hashsize from sys.tablestoragemodel )
                 then (true)
                 else (false)
         end
 from sys.table_types limit 3;
 
 select 
-        case when EXISTS ( select count(hashes) from sys.tablestoragemodel )
+        case when EXISTS ( select count(hashsize) from sys.tablestoragemodel )
                 then (true)
                 else (false)
         end
 from sys.table_types limit 3;
-
 
 insert into sys.privileges values (
         1,
@@ -22,7 +21,7 @@ insert into sys.privileges values (
               from
                 sys.rejects as ref_0
               where ref_0.fldid is NULL) 
-			then 56 else 56 end ,
+        then 56 else 56 end ,
         case when (select dependency_type_name from sys.dependency_types)
                is not NULL then 7 else 7 end
           );

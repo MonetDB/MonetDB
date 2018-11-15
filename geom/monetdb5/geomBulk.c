@@ -41,8 +41,8 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 	BATloop(inBAT, p, q) {	//iterate over all valid elements
 		str err = NULL;
 
-		//if for used --> inWKB = (wkb *) BUNtail(inBATi, i);
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		//if for used --> inWKB = (wkb *) BUNtvar(inBATi, i);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED) {	//check type
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -90,7 +90,7 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 		str err = NULL;
 		wkb *outSingle;
 
-		inWKB = (char *) BUNtail(inBAT_iter, p);
+		inWKB = (char *) BUNtvar(inBAT_iter, p);
 		if ((err = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -143,7 +143,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 	BATloop(inBAT, p, q) {	//iterate over all valid elements
 		str err = NULL;
 
-		inMBR = (mbr *) BUNtail(inBAT_iter, p);
+		inMBR = (mbr *) BUNtloc(inBAT_iter, p);
 		if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -190,7 +190,7 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 		str err = NULL;
 		char *outSingle;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -257,7 +257,7 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 		str err = NULL;
 		wkb *outSingle;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -318,7 +318,7 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 		str err = NULL;
 		wkb *outSingle;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -378,7 +378,7 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 		str err = NULL;
 		bit outSingle;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -461,7 +461,7 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 		str err = NULL;
 		int outSingle;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -525,7 +525,7 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 		str err = NULL;
 		int outSingle;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -589,7 +589,7 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 		str err = NULL;
 		double outSingle;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = wkbGetCoordinate(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -647,8 +647,8 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	for (i = 0; i < BATcount(aBAT); i++) {
 		mbr *outSingle;
 
-		wkb *aWKB = (wkb *) BUNtail(aBAT_iter, i);
-		wkb *bWKB = (wkb *) BUNtail(bBAT_iter, i);
+		wkb *aWKB = (wkb *) BUNtvar(aBAT_iter, i);
+		wkb *bWKB = (wkb *) BUNtvar(bBAT_iter, i);
 
 		if ((ret = wkbBox2D(&outSingle, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			BBPreclaim(outBAT);
@@ -705,8 +705,8 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	for (i = 0; i < BATcount(aBAT); i++) {
 		bit outBIT;
 
-		wkb *aWKB = (wkb *) BUNtail(aBAT_iter, i);
-		wkb *bWKB = (wkb *) BUNtail(bBAT_iter, i);
+		wkb *aWKB = (wkb *) BUNtvar(aBAT_iter, i);
+		wkb *bWKB = (wkb *) BUNtvar(bBAT_iter, i);
 
 		if ((ret = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			BBPreclaim(outBAT);
@@ -754,7 +754,7 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 		str err = NULL;
 		bit outBIT;
 
-		wkb *inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		wkb *inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 
 		if ((err = wkbContains(&outBIT, geomWKB, &inWKB)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
@@ -799,7 +799,7 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 		str err = NULL;
 		bit outBIT;
 
-		wkb *inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		wkb *inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 
 		if ((err = wkbContains(&outBIT, &inWKB, geomWKB)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
@@ -912,15 +912,15 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	for (i = 0; i < BATcount(xBAT); i++) {
 		wkb *pointWKB = NULL;
 
-		double x = *((double *) BUNtail(xBAT_iter, i));
-		double y = *((double *) BUNtail(yBAT_iter, i));
+		double x = *((double *) BUNtloc(xBAT_iter, i));
+		double y = *((double *) BUNtloc(yBAT_iter, i));
 		double z = 0.0;
 		double m = 0.0;
 
 		if (zBAT)
-			z = *((double *) BUNtail(zBAT_iter, i));
+			z = *((double *) BUNtloc(zBAT_iter, i));
 		if (mBAT)
-			m = *((double *) BUNtail(mBAT_iter, i));
+			m = *((double *) BUNtloc(mBAT_iter, i));
 
 		if ((ret = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) {	//check
 
@@ -977,7 +977,7 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 		str err = NULL;
 		wkb *outWKB = NULL;
 
-		wkb *inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		wkb *inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 
 		if ((err = wkbSetSRID(&outWKB, &inWKB, srid)) != MAL_SUCCEED) {	//set SRID
 			BBPunfix(inBAT->batCacheid);
@@ -1031,8 +1031,8 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	for (i = 0; i < BATcount(aBAT); i++) {
 		double distanceVal = 0;
 
-		wkb *aWKB = (wkb *) BUNtail(aBAT_iter, i);
-		wkb *bWKB = (wkb *) BUNtail(bBAT_iter, i);
+		wkb *aWKB = (wkb *) BUNtvar(aBAT_iter, i);
+		wkb *bWKB = (wkb *) BUNtvar(bBAT_iter, i);
 
 		if ((ret = wkbDistance(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
 
@@ -1082,7 +1082,7 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 		str err = NULL;
 		double distanceVal = 0;
 
-		wkb *inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		wkb *inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 
 		if ((err = wkbDistance(&distanceVal, geomWKB, &inWKB)) != MAL_SUCCEED) {	//check
 			BBPunfix(inBAT->batCacheid);
@@ -1155,8 +1155,8 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 
 	for (i = 0; i < BATcount(aBAT); i++) {
 		str err = NULL;
-		aWKB = (wkb *) BUNtail(aBAT_iter, i);
-		bWKB = (wkb *) BUNtail(bBAT_iter, i);
+		aWKB = (wkb *) BUNtvar(aBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(bBAT_iter, i);
 
 		//check the containment of the MBRs
 		if ((err = mbrOverlaps_wkb(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
@@ -1230,7 +1230,7 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 		mbr *MBRoriginal;
 		bit outBIT = 0;
 
-		WKBoriginal = (wkb *) BUNtail(BAToriginal_iter, i);
+		WKBoriginal = (wkb *) BUNtvar(BAToriginal_iter, i);
 
 		//create the MBR for each geometry in the BAT
 		if ((err = wkbMBR(&MBRoriginal, &WKBoriginal)) != MAL_SUCCEED) {
@@ -1304,7 +1304,7 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	BATloop(inBAT, p, q) {	//iterate over all valid elements
 		str err = NULL;
 
-		inWKB = (wkb *) BUNtail(inBAT_iter, p);
+		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
 		if ((err = wkbMBR(&outMBR, &inWKB)) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1377,8 +1377,8 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		str err = NULL;
 		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
 
-		aWKB = (wkb *) BUNtail(aBAT_iter, i);
-		bWKB = (wkb *) BUNtail(bBAT_iter, i);
+		aWKB = (wkb *) BUNtvar(aBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(bBAT_iter, i);
 
 		if ((err = wkbMakeLine(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
 			BBPunfix(outBAT->batCacheid);
@@ -1442,8 +1442,8 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		str err = NULL;
 		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
 
-		aWKB = (wkb *) BUNtail(aBAT_iter, i);
-		bWKB = (wkb *) BUNtail(bBAT_iter, i);
+		aWKB = (wkb *) BUNtvar(aBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(bBAT_iter, i);
 
 		if ((err = wkbUnion(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
 			BBPunfix(outBAT->batCacheid);

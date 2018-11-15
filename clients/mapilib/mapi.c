@@ -839,6 +839,9 @@ struct MapiStruct {
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
 	uint32_t index;		/* to mark the log records */
+	void *filecontentprivate;
+	char *(*getfilecontent)(void *, const char *, bool, uint64_t, size_t *);
+	char *(*putfilecontent)(void *, const char *, const void *, size_t);
 };
 
 struct MapiResultSet {
@@ -1807,14 +1810,13 @@ mapi_new(void)
 		.redirmax = 10,
 		.blk.eos = false,
 		.blk.lim = BLOCK,
-		.blk.buf = malloc(BLOCK + 1),
 	};
-	if (mid->blk.buf == NULL) {
+	if ((mid->blk.buf = malloc(mid->blk.lim + 1)) == NULL) {
 		mapi_destroy(mid);
 		return NULL;
 	}
-	mid->blk.buf[BLOCK] = 0;
 	mid->blk.buf[0] = 0;
+	mid->blk.buf[mid->blk.lim] = 0;
 
 	return mid;
 }
@@ -2158,9 +2160,6 @@ mapi_reconnect(Mapi mid)
 
 		char *host;
 		int port;
-#ifdef HAVE_SYS_UN_H
-		char buf[1024];
-#endif
 
 		host = mid->hostname;
 		port = mid->port;
@@ -2297,7 +2296,6 @@ mapi_reconnect(Mapi mid)
 	if (mid->hostname && mid->hostname[0] == '/') {
 		struct msghdr msg;
 		struct iovec vec;
-		char buf[1];
 		struct sockaddr_un userver;
 		struct sockaddr *serv = (struct sockaddr *) &userver;
 
@@ -2345,7 +2343,7 @@ mapi_reconnect(Mapi mid)
 		/* send first byte, nothing special to happen */
 		msg.msg_name = NULL;
 		msg.msg_namelen = 0;
-		*buf = '0';	/* normal */
+		buf[0] = '0';	/* normal */
 		vec.iov_base = buf;
 		vec.iov_len = 1;
 		msg.msg_iov = &vec;
@@ -2491,11 +2489,11 @@ mapi_reconnect(Mapi mid)
   try_again_after_redirect:
 
 	/* consume server challenge */
-	len = mnstr_read_block(mid->from, buf, 1, BLOCK);
+	len = mnstr_read_block(mid->from, buf, 1, sizeof(buf));
 
 	check_stream(mid, mid->from, "Connection terminated while starting", "mapi_reconnect", (mid->blk.eos = true, mid->error));
 
-	assert(len < BLOCK);
+	assert(len < sizeof(buf));
 	buf[len] = 0;
 
 	if (len == 0) {
@@ -2635,7 +2633,7 @@ mapi_reconnect(Mapi mid)
 			} else
 #endif
 			{
-				snprintf(buf, BLOCK, "server requires unknown hash '%.100s'",
+				snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
 						serverhash);
 				close_connection(mid);
 				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
@@ -2670,7 +2668,7 @@ mapi_reconnect(Mapi mid)
 		}
 		if (hash == NULL) {
 			/* the server doesn't support what we can */
-			snprintf(buf, BLOCK, "unsupported hash algorithms: %.100s", hashes);
+			snprintf(buf, sizeof(buf), "unsupported hash algorithms: %.100s", hashes);
 			close_connection(mid);
 			return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 		}
@@ -2679,14 +2677,14 @@ mapi_reconnect(Mapi mid)
 
 		/* note: if we make the database field an empty string, it
 		 * means we want the default.  However, it *should* be there. */
-		if (snprintf(buf, BLOCK, "%s:%s:%s:%s:%s:\n",
+		if (snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:FILETRANS:\n",
 #ifdef WORDS_BIGENDIAN
 			     "BIG",
 #else
 			     "LIT",
 #endif
 			     mid->username, hash, mid->language,
-			     mid->database == NULL ? "" : mid->database) >= BLOCK) {;
+			     mid->database == NULL ? "" : mid->database) >= (int) sizeof(buf)) {;
 			mapi_setError(mid, "combination of database name and user name too long", "mapi_reconnect", MERROR);
 			free(hash);
 			close_connection(mid);
@@ -2698,14 +2696,14 @@ mapi_reconnect(Mapi mid)
 		/* because the headers changed, and because it makes no sense to
 		 * try and be backwards (or forwards) compatible, we bail out
 		 * with a friendly message saying so */
-		snprintf(buf, BLOCK, "unsupported protocol version: %d, "
+		snprintf(buf, sizeof(buf), "unsupported protocol version: %d, "
 			 "this client only supports version 9", pversion);
 		mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 		close_connection(mid);
 		return mid->error;
 	}
 	if (mid->trace) {
-		printf("sending first request [%d]:%s", BLOCK, buf);
+		printf("sending first request [%zu]:%s", sizeof(buf), buf);
 		fflush(stdout);
 	}
 	len = strlen(buf);
@@ -2970,6 +2968,99 @@ mapi_disconnect(Mapi mid)
 
 	close_connection(mid);
 	return MOK;
+}
+
+/* Set callback function to retrieve or send file content for COPY
+ * INTO queries.
+ *
+ * char *getfile(void *private, const char *filename, bool binary,
+ *               uint64_6 offset, size_t *size);
+ * Retrieve data from a file.
+ *
+ * The arguments are:
+ * private - the value of the filecontentprivate argument to
+ *           mapi_setfilecallback;
+ * filename - the file to read (the application is free to interpret
+ *            this any way it wants, including getting data over the
+ *            Internet);
+ * binary - if set, the file is expected to contain binary data and
+ *          should therefore be opened in binary mode, otherwise the
+ *          file is expected to contain data in the UTF-8 encoding (of
+ *          course, the application is free to transparently convert
+ *          from the actual encoding to UTF-8);
+ * offset - the line number of the first line to be retrieved (this is
+ *          one-based, i.e. the start of the file has line number one;
+ *          lines are terminated by '\n');
+ * size - pointer in which to return the size of the chunk that is
+ *        being returned.
+ *
+ * The callback function is expected to return data in chunks until it
+ * indicates to the caller that there is no more data or an error has
+ * occurred.  Chunks can be any size.  The caller does not modify or
+ * free the data returned.  The size of the chunk being returned is
+ * stored in the size argument.  Errors are indicated by returning a
+ * string containing an error message and setting *size to zero.  The
+ * error message should not contain any newlines.  Any call to the
+ * callback function is allowed to return an error.
+ *
+ * The first call to the callback function contains values for
+ * filename, binary, and offset.  These parameters are all 0 for all
+ * subsequent calls for continuation data from the same file.
+ *
+ * If the caller has retrieved enough data before the file is
+ * exhausted, it calls the callback function one more time with a NULL
+ * pointer for the size argument.  This gives the callback function
+ * the opportunity to free its resources (e.g. close the file).
+ *
+ * If there is no more data to be returned, the callback function
+ * returns a NULL pointer and sets *size to zero.  No more calls for
+ * the current file will be made.
+ *
+ * Note that if the file to be read is empty, or contains fewer lines
+ * than the requested offset, the first call to the callback function
+ * may return NULL.
+ *
+ * char *putfile(void *private, const char *filename,
+ *               const void *data, size_t size);
+ * Send data to a file.
+ *
+ * The arguments are:
+ * private - the value of the filecontentprivate argument to
+ *           mapi_setfilecallback;
+ * filename - the file to be written, files are always written as text
+ *            files;
+ * data - the data to be written;
+ * size - the size of the data to be written.
+ *
+ * The callback is called multiple time to write a single file.  The
+ * first time, a filename is specified, all subsequent times, the
+ * filename argument is NULL.  When all data has been written, the
+ * callback function is called one last time with NULL pointer for the
+ * data argument so that the callback function can free any resources.
+ *
+ * When an error occurs, the callback function returns a string
+ * containing an error message after which the callback will not be
+ * called again for the same file.  Otherwise, the callback function
+ * returns NULL.
+ *
+ * Note, there is no support for binary files.  All files written
+ * using this callback function are text files.  All data sent to the
+ * callback function is encoded in UTF-8.  Note also that multibyte
+ * sequences may be split over two calls.
+ */
+void
+mapi_setfilecallback(Mapi mid,
+		     char *(*getfilecontent)(void *,
+					     const char *, bool,
+					     uint64_t, size_t *),
+		     char *(*putfilecontent)(void *,
+					     const char *,
+					     const void *, size_t),
+		     void *filecontentprivate)
+{
+	mid->getfilecontent = getfilecontent;
+	mid->putfilecontent = putfilecontent;
+	mid->filecontentprivate = filecontentprivate;
 }
 
 #define testBinding(hdl,fnr,funcname)					\
@@ -3862,6 +3953,162 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	return result;
 }
 
+static void
+write_file(MapiHdl hdl, char *filename)
+{
+	Mapi mid = hdl->mid;
+	char *line;
+	char data[BLOCK];
+	ssize_t len;
+
+	(void) read_line(mid);	/* read flush marker */
+	if (filename == NULL) {
+		/* malloc failure */
+		mnstr_printf(mid->to, "!HY001!allocation failure\n");
+		mnstr_flush(mid->to);
+		return;
+	}
+	if (mid->putfilecontent == NULL) {
+		free(filename);
+		mnstr_printf(mid->to, "!HY000!cannot send files\n");
+		mnstr_flush(mid->to);
+		return;
+	}
+	line = mid->putfilecontent(mid->filecontentprivate, filename, NULL, 0);
+	free(filename);
+	if (line != NULL) {
+		if (strchr(line, '\n'))
+			line = "incorrect response from application";
+		mnstr_printf(mid->to, "!HY000!%.64s\n", line);
+		mnstr_flush(mid->to);
+		return;
+	}
+	mnstr_flush(mid->to);
+	while ((len = mnstr_read(mid->from, data, 1, sizeof(data))) > 0) {
+		if (line == NULL)
+			line = mid->putfilecontent(mid->filecontentprivate,
+						   NULL, data, len);
+	}
+	if (line == NULL)
+		line = mid->putfilecontent(mid->filecontentprivate,
+					   NULL, NULL, 0);
+	if (line && strchr(line, '\n'))
+		line = "incorrect response from application";
+	mnstr_printf(mid->to, "%s\n", line ? line : "");
+	mnstr_flush(mid->to);
+}
+
+#define MiB	(1 << 20)	/* a megabyte */
+
+static void
+read_file(MapiHdl hdl, uint64_t off, char *filename, bool binary)
+{
+	Mapi mid = hdl->mid;
+	size_t size = 0, flushsize = 0;
+	char *data, *line;
+
+	(void) read_line(mid);	/* read flush marker */
+	if (filename == NULL) {
+		/* malloc failure */
+		mnstr_printf(mid->to, "!HY001!allocation failure\n");
+		mnstr_flush(mid->to);
+		return;
+	}
+	if (mid->getfilecontent == NULL) {
+		free(filename);
+		mnstr_printf(mid->to, "!HY000!cannot retrieve files\n");
+		mnstr_flush(mid->to);
+		return;
+	}
+	data = mid->getfilecontent(mid->filecontentprivate, filename, binary,
+				   off, &size);
+	free(filename);
+	if (data != NULL && size == 0) {
+		if (strchr(data, '\n'))
+			data = "incorrect response from application";
+		mnstr_printf(mid->to, "!HY000!%.64s\n", data);
+		mnstr_flush(mid->to);
+		return;
+	}
+	mnstr_printf(mid->to, "\n");
+	while (data != NULL && size != 0) {
+		if (flushsize >= MiB) {
+			/* after every MiB give the server the
+			 * opportunity to stop reading more data */
+			mnstr_flush(mid->to);
+			/* at this point we expect to get a PROMPT2 if
+			 * the server wants more data, or a PROMPT3 if
+			 * the server had enough; anything else is a
+			 * protocol violation */
+			line = read_line(mid);
+			if (line == NULL) {
+				/* error */
+				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
+				return;
+			}
+			assert(line[0] == PROMPTBEG);
+			if (line[0] != PROMPTBEG) {
+				/* error in protocol */
+				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
+				return;
+			}
+			if (line[1] == PROMPT3[1]) {
+				/* done reading: close file */
+				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
+				(void) read_line(mid);
+				return;
+			}
+			assert(line[1] == PROMPT2[1]);
+			if (line[1] != PROMPT2[1]) {
+				/* error  in protocol */
+				(void) mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, NULL);
+				return;
+			}
+			/* clear the flush marker */
+			(void) read_line(mid);
+			flushsize = 0;
+		}
+		if (size > MiB) {
+			if (mnstr_write(mid->to, data, 1, MiB) != MiB) {
+				mnstr_flush(mid->to);
+				return;
+			}
+			size -= MiB;
+			data += MiB;
+			flushsize += MiB;
+		} else {
+			if (mnstr_write(mid->to, data, 1, size) != (ssize_t) size) {
+				mnstr_flush(mid->to);
+				return;
+			}
+			flushsize += size;
+			data = mid->getfilecontent(mid->filecontentprivate, NULL, false, 0, &size);
+		}
+	}
+	mnstr_flush(mid->to);
+	line = read_line(mid);
+	if (line == NULL)
+		return;
+	assert(line[0] == PROMPTBEG);
+	if (line[0] != PROMPTBEG)
+		return;
+	if (line[1] == PROMPT3[1]) {
+		(void) read_line(mid);
+		return;
+	}
+	assert(line[1] == PROMPT2[1]);
+	if (line[1] != PROMPT2[1])
+		return;
+	(void) read_line(mid);
+	mnstr_flush(mid->to);
+	line = read_line(mid);
+	if (line == NULL)
+		return;
+	assert(line[0] == PROMPTBEG);
+	assert(line[1] == PROMPT3[1]);
+	(void) read_line(mid);
+}
+
 /* Read ahead and cache data read.  Depending on the second argument,
    reading may stop at the first non-header and non-error line, or at
    a prompt.
@@ -3907,6 +4154,34 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				(void) read_line(mid);
 				hdl->needmore = true;
 				mid->active = hdl;
+			} else if (line[1] == PROMPT3[1] && line[2] == '\0') {
+				mid->active = hdl;
+				line = read_line(mid);
+				/* rb FILE
+				 * r OFF FILE
+				 * w ???
+				 */
+				switch (*line++) {
+				case 'r': {
+					bool binary = false;
+					uint64_t off = 0;
+					if (*line == 'b') {
+						line++;
+						binary = true;
+					} else {
+						off = strtoul(line, &line, 10);
+					}
+					assert(*line == ' ');
+					line++; /* skip one space */
+					read_file(hdl, off, strdup(line), binary);
+					break;
+				}
+				case 'w':
+					line++; /* skip one space */
+					write_file(hdl, strdup(line));
+					break;
+				}
+				continue;
 			}
 			return mid->error;
 		case '!':

@@ -83,6 +83,7 @@ static struct SQLStateMsg {
 	{"08004", "Server rejected the connection"},
 	{"08007", "Connection failure during transaction"},
 	{"08S01", "Communication link failure"},
+	{"0A000", "Feature not supported"},
 	{"21S01", "Insert value list does not match column list"},
 	{"21S02", "Degree of derived table does not match column list"},
 	{"22001", "String data, right truncated"},

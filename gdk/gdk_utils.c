@@ -99,7 +99,7 @@ GDKgetenv(const char *name)
 
 	if (b != BUN_NONE) {
 		BATiter GDKenvi = bat_iterator(GDKval);
-		return BUNtail(GDKenvi, b);
+		return BUNtvar(GDKenvi, b);
 	}
 	return NULL;
 }

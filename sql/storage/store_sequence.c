@@ -62,8 +62,7 @@ sql_create_sequence(sql_sequence *seq )
 	s -> cur = seq->start; 	  
 	s -> cached = seq->start;
 
-	if (seq->base.flag == TR_OLD && 
-	    logger_funcs.get_sequence(seq->base.id, &id )) 
+	if (!isNew(seq) && logger_funcs.get_sequence(seq->base.id, &id ))
 		s->cached = id;
 	s -> cur = s->cached;
 	return s;

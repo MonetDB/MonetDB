@@ -258,7 +258,6 @@ const lng lng_nil = GDK_lng_min-1;
 const hge hge_nil = GDK_hge_min-1;
 #endif
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
-const char str_nil[2] = { '\200', 0 };
 const ptr ptr_nil = NULL;
 
 ptr
@@ -407,13 +406,11 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src)	\
 	return snprintf(*dst, *len, FMT, FMTCAST *src);	\
 }
 
-#define num08(x)	((x) >= '0' && (x) <= '7')
 #define num10(x)	GDKisdigit(x)
-#define num16(x)	isxdigit((unsigned char) (x))
 #define base10(x)	((x) - '0')
-#define base08(x)	((x) - '0')
+
+#define num16(x)	isxdigit((unsigned char) (x))
 #define base16(x)	(((x) >= 'a' && (x) <= 'f') ? ((x) - 'a' + 10) : ((x) >= 'A' && (x) <= 'F') ? ((x) - 'A' + 10) : (x) - '0')
-#define mult08(x)	((x) << 3)
 #define mult16(x)	((x) << 4)
 
 static void *
@@ -1056,745 +1053,6 @@ fltToStr(char **dst, size_t *len, const flt *src)
 atom_io(flt, Int, int)
 
 
-/* String Atom Implementation
- *
- * Strings are stored in two parts.  The first part is the normal tail
- * heap which contains a list of offsets.  The second part is the
- * theap which contains the actual strings.  The offsets in the tail
- * heap (a.k.a. offset heap) point into the theap (a.k.a. string
- * heap).  Strings are NULL-terminated and are stored without any
- * escape sequec=nces.  Strings are encoded using the UTF-8 encoding
- * of Unicode.  This means that individual "characters" (really,
- * Unicode code points) can be between one and four bytes long.
- *
- * Because in many typical situations there are lots of duplicated
- * string values that are being stored in a table, but also in many
- * (other) typical situations there are very few duplicated string
- * values stored, a scheme has been introduced to cater to both
- * situations.
- *
- * When the string heap is "small" (defined as less than 64KiB), the
- * string heap is fully duplicate eliminated.  When the string heap
- * grows beyond this size, the heap is not kept free of duplicate
- * strings, but there is then a heuristic that tries to limit the
- * number of duplicates.
- *
- * This is done by having a fixed sized hash table at the start of the
- * string heap, and allocating space for collision lists in the first
- * 64KiB of the string heap.  After the first 64KiB no extra space is
- * allocated for lists, so hash collisions cannot be resolved.
- */
-
-int
-strNil(const char *s)
-{
-	return GDK_STRNIL(s);
-}
-
-size_t
-strLen(const char *s)
-{
-	return GDK_STRLEN(s);
-}
-
-static int
-strCmp(const char *l, const char *r)
-{
-	return GDK_STRCMP(l, r);
-}
-
-int
-strCmpNoNil(const unsigned char *l, const unsigned char *r)
-{
-	while (*l == *r) {
-		if (*l == 0)
-			return 0;
-		l++;
-		r++;
-	}
-	return (*l < *r) ? -1 : 1;
-}
-
-static void
-strHeap(Heap *d, size_t cap)
-{
-	size_t size;
-
-	cap = MAX(cap, BATTINY);
-	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1) == GDK_SUCCEED) {
-		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-		d->dirty = 1;
-		memset(d->base, 0, d->free);
-		d->hashash = 0;
-#ifndef NDEBUG
-		/* fill should solve initialization problems within valgrind */
-		memset(d->base + d->free, 0, d->size - d->free);
-#endif
-	}
-}
-
-
-BUN
-strHash(const char *s)
-{
-	BUN res;
-
-	GDK_STRHASH(s, res);
-	return res;
-}
-
-void
-strCleanHash(Heap *h, bool rebuild)
-{
-	stridx_t newhash[GDK_STRHASHTABLE];
-	size_t pad, pos;
-	const size_t extralen = h->hashash ? EXTRALEN : 0;
-	BUN off, strhash;
-	const char *s;
-
-	(void) rebuild;
-	if (!h->cleanhash)
-		return;
-	/* rebuild hash table for double elimination
-	 *
-	 * If appending strings to the BAT was aborted, if the heap
-	 * was memory mapped, the hash in the string heap may well be
-	 * incorrect.  Therefore we don't trust it when we read in a
-	 * string heap and we rebuild the complete table (it is small,
-	 * so this won't take any time at all).
-	 * Note that we will only do this the first time the heap is
-	 * loaded, and only for heaps that existed when the server was
-	 * started. */
-	memset(newhash, 0, sizeof(newhash));
-	pos = GDK_STRHASHSIZE;
-	while (pos < h->free && pos < GDK_ELIMLIMIT) {
-		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-		if (pad < sizeof(stridx_t))
-			pad += GDK_VARALIGN;
-		pos += pad + extralen;
-		s = h->base + pos;
-		if (h->hashash)
-			strhash = ((const BUN *) s)[-1];
-		else
-			GDK_STRHASH(s, strhash);
-		off = strhash & GDK_STRHASHMASK;
-		newhash[off] = (stridx_t) (pos - extralen - sizeof(stridx_t));
-		pos += GDK_STRLEN(s);
-	}
-	/* only set dirty flag if the hash table actually changed */
-	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
-		memcpy(h->base, newhash, sizeof(newhash));
-		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
-				(void) MT_msync(h->base, GDK_STRHASHSIZE);
-		} else
-			h->dirty = 1;
-	}
-#ifndef NDEBUG
-	if (GDK_ELIMDOUBLES(h)) {
-		pos = GDK_STRHASHSIZE;
-		while (pos < h->free) {
-			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
-				pad += GDK_VARALIGN;
-			pos += pad + extralen;
-			s = h->base + pos;
-			assert(strLocate(h, s) != 0);
-			pos += GDK_STRLEN(s);
-		}
-	}
-#endif
-	h->cleanhash = 0;
-}
-
-/*
- * The strPut routine. The routine strLocate can be used to identify
- * the location of a string in the heap if it exists. Otherwise it
- * returns zero.
- */
-var_t
-strLocate(Heap *h, const char *v)
-{
-	stridx_t *ref, *next;
-	const size_t extralen = h->hashash ? EXTRALEN : 0;
-
-	/* search hash-table, if double-elimination is still in place */
-	BUN off;
-	GDK_STRHASH(v, off);
-	off &= GDK_STRHASHMASK;
-
-	/* should only use strLocate iff fully double eliminated */
-	assert(GDK_ELIMBASE(h->free) == 0);
-
-	/* search the linked list */
-	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
-		next = (stridx_t *) (h->base + *ref);
-		if (GDK_STRCMP(v, (str) (next + 1) + extralen) == 0)
-			return (var_t) ((sizeof(stridx_t) + *ref + extralen));	/* found */
-	}
-	return 0;
-}
-
-static var_t
-strPut(Heap *h, var_t *dst, const char *v)
-{
-	size_t elimbase = GDK_ELIMBASE(h->free);
-	size_t pad;
-	size_t pos, len = GDK_STRLEN(v);
-	const size_t extralen = h->hashash ? EXTRALEN : 0;
-	stridx_t *bucket;
-	BUN off, strhash;
-
-	GDK_STRHASH(v, off);
-	strhash = off;
-	off &= GDK_STRHASHMASK;
-	bucket = ((stridx_t *) h->base) + off;
-
-	if (*bucket) {
-		/* the hash list is not empty */
-		if (*bucket < GDK_ELIMLIMIT) {
-			/* small string heap (<64KiB) -- fully double
-			 * eliminated: search the linked list */
-			const stridx_t *ref = bucket;
-
-			do {
-				pos = *ref + sizeof(stridx_t) + extralen;
-				if (GDK_STRCMP(v, h->base + pos) == 0) {
-					/* found */
-					return *dst = (var_t) pos;
-				}
-				ref = (stridx_t *) (h->base + *ref);
-			} while (*ref);
-		} else {
-			/* large string heap (>=64KiB) -- there is no
-			 * linked list, so only look at single
-			 * entry */
-			pos = *bucket + extralen;
-			if (GDK_STRCMP(v, h->base + pos) == 0) {
-				/* already in heap: reuse */
-				return *dst = (var_t) pos;
-			}
-		}
-	}
-	/* the string was not found in the heap, we need to enter it */
-
-	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
-	if (elimbase == 0) {	/* i.e. h->free < GDK_ELIMLIMIT */
-		if (pad < sizeof(stridx_t)) {
-			/* make room for hash link */
-			pad += GDK_VARALIGN;
-		}
-	} else if (extralen == 0) { /* i.e., h->hashash == FALSE */
-		/* no VARSHIFT and no string hash value stored => no
-		 * padding/alignment needed */
-		pad = 0;
-	} else {
-		/* pad to align on VARALIGN for VARSHIFT and/or string
-		 * hash value */
-		pad &= (GDK_VARALIGN - 1);
-	}
-
-	/* check heap for space (limited to a certain maximum after
-	 * which nils are inserted) */
-	if (h->free + pad + len + extralen >= h->size) {
-		size_t newsize = MAX(h->size, 4096);
-
-		/* double the heap size until we have enough space */
-		do {
-			if (newsize < 4 * 1024 * 1024)
-				newsize <<= 1;
-			else
-				newsize += 4 * 1024 * 1024;
-		} while (newsize <= h->free + pad + len + extralen);
-
-		assert(newsize);
-
-		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
-			GDKerror("strPut: string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
-			return 0;
-		}
-		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
-			return 0;
-		}
-#ifndef NDEBUG
-		/* fill should solve initialization problems within
-		 * valgrind */
-		memset(h->base + h->free, 0, h->size - h->free);
-#endif
-
-		/* make bucket point into the new heap */
-		bucket = ((stridx_t *) h->base) + off;
-	}
-
-	/* insert string */
-	pos = h->free + pad + extralen;
-	*dst = (var_t) pos;
-#ifndef NDEBUG
-	/* just before inserting into the heap, make sure that the
-	 * string is actually UTF-8 (if we encountered a return
-	 * statement before this, the string was already in the heap,
-	 * and hence already checked) */
-	if (v[0] != '\200' || v[1] != '\0') {
-		/* not str_nil, must be UTF-8 */
-		size_t i;
-
-		for (i = 0; v[i] != '\0'; i++) {
-			/* check that v[i] is the start of a validly
-			 * coded UTF-8 sequence: this involves
-			 * checking that the first byte is a valid
-			 * start byte and is followed by the correct
-			 * number of follow-up bytes, but also that
-			 * the sequence cannot be shorter */
-			if ((v[i] & 0x80) == 0) {
-				/* 0aaaaaaa */
-				continue;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				/* 110bbbba 10aaaaaa
-				 * one of the b's must be set*/
-				assert(v[i] & 0x4D);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				/* 1110cccc 10cbbbba 10aaaaaa
-				 * one of the c's must be set*/
-				assert(v[i] & 0x0F || v[i + 1] & 0x20);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-			} else if ((v[i] & 0xF8) == 0xF0) {
-				/* 11110ddd 10ddcccc 10cbbbba 10aaaaaa
-				 * one of the d's must be set */
-				assert(v[i] & 0x07 || v[i + 1] & 0x30);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-				i++;
-				assert((v[i] & 0xC0) == 0x80);
-			} else {
-				/* this will fail */
-				assert((v[i] & 0x80) == 0);
-			}
-		}
-	}
-#endif
-	memcpy(h->base + pos, v, len);
-	if (h->hashash) {
-		((BUN *) (h->base + pos))[-1] = strhash;
-#if EXTRALEN > SIZEOF_BUN
-		((BUN *) (h->base + pos))[-2] = (BUN) len;
-#endif
-	}
-	h->free += pad + len + extralen;
-	h->dirty = 1;
-
-	/* maintain hash table */
-	pos -= extralen;
-	if (elimbase == 0) {	/* small string heap: link the next pointer */
-		/* the stridx_t next pointer directly precedes the
-		 * string and optional (depending on hashash) hash
-		 * value */
-		pos -= sizeof(stridx_t);
-		*(stridx_t *) (h->base + pos) = *bucket;
-	}
-	*bucket = (stridx_t) pos;	/* set bucket to the new string */
-
-	return *dst;
-}
-
-/*
- * Convert an "" separated string to a GDK string value, checking that
- * the input is correct UTF-8.
- */
-
-/*
-   UTF-8 encoding is as follows:
-U-00000000 - U-0000007F: 0xxxxxxx
-U-00000080 - U-000007FF: 110xxxxx 10xxxxxx
-U-00000800 - U-0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
-U-00010000 - U-001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-*/
-/* To be correctly coded UTF-8, the sequence should be the shortest
- * possible encoding of the value being encoded.  This means that for
- * an encoding of length n+1 (1 <= n <= 5), at least one of the bits
- * in utf8chkmsk[n] should be non-zero (else the encoding could be
- * shorter). */
-static int utf8chkmsk[] = {
-	0x0000007f,
-	0x00000780,
-	0x0000f800,
-	0x001f0000,
-	0x03e00000,
-	0x7c000000,
-};
-
-ssize_t
-GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
-{
-	unsigned char *p = dst;
-	const unsigned char *cur = src, *end = src + len;
-	int escaped = FALSE, mask = 0, n, c, utf8char = 0;
-
-	if (len >= 2 && strcmp((const char *) src, str_nil) == 0) {
-		strcpy((char *) dst, str_nil);
-		return 1;
-	}
-
-	/* copy it in, while performing the correct escapes */
-	/* n is the number of follow-on bytes left in a multi-byte
-	 * UTF-8 sequence */
-	for (cur = src, n = 0; cur < end || escaped; cur++) {
-		/* first convert any \ escapes and store value in c */
-		if (escaped) {
-			switch (*cur) {
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-				/* \ with up to three octal digits */
-				c = base08(*cur);
-				if (num08(cur[1])) {
-					cur++;
-					c = mult08(c) + base08(*cur);
-					if (num08(cur[1])) {
-						if (c > 037) {
-							/* octal
-							 * escape
-							 * sequence
-							 * out or
-							 * range */
-							GDKerror("not an octal number\n");
-							return -1;
-						}
-						cur++;
-						c = mult08(c) + base08(*cur);
-						assert(c >= 0 && c <= 0377);
-					}
-				}
-				break;
-			case 'x':
-				/* \x with one or two hexadecimal digits */
-				if (num16(cur[1])) {
-					cur++;
-					c = base16(*cur);
-					if (num16(cur[1])) {
-						cur++;
-						c = mult16(c) + base16(*cur);
-					}
-				} else
-					c = 'x';
-				break;
-			case 'a':
-				c = '\a';
-				break;
-			case 'b':
-				c = '\b';
-				break;
-			case 'f':
-				c = '\f';
-				break;
-			case 'n':
-				c = '\n';
-				break;
-			case 'r':
-				c = '\r';
-				break;
-			case 't':
-				c = '\t';
-				break;
-			case '\0':
-				c = '\\';
-				break;
-			case '\'':
-			case '\\':
-				/* \' and \\ can be handled by the
-				 * default case */
-			default:
-				/* unrecognized \ escape, just copy
-				 * the backslashed character */
-				c = *cur;
-				break;
-			}
-			escaped = FALSE;
-		} else if ((c = *cur) == '\\') {
-			escaped = TRUE;
-			continue;
-		}
-
-		if (n > 0) {
-			/* we're still expecting follow-up bytes in a
-			 * UTF-8 sequence */
-			if ((c & 0xC0) != 0x80) {
-				/* incorrect UTF-8 sequence: byte is
-				 * not 10xxxxxx */
-				goto notutf8;
-			}
-			utf8char = (utf8char << 6) | (c & 0x3F);
-			n--;
-			if (n == 0) {
-				/* this was the last byte in the sequence */
-				if ((utf8char & mask) == 0) {
-					/* incorrect UTF-8 sequence:
-					 * not shortest possible */
-					goto notutf8;
-				}
-				if (utf8char > 0x10FFFF) {
-					/* incorrect UTF-8 sequence:
-					 * value too large */
-					goto notutf8;
-				}
-				if ((utf8char & 0x1FFF800) == 0xD800) {
-					/* incorrect UTF-8 sequence:
-					 * low or high surrogate
-					 * encoded as UTF-8 */
-					goto notutf8;
-				}
-			}
-		} else if (c >= 0x80) {
-			int m;
-
-			/* start of multi-byte UTF-8 character */
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-				;
-			/* n now is number of 10xxxxxx bytes that
-			 * should follow */
-			if (n == 0 || n >= 4) {
-				/* incorrect UTF-8 sequence */
-				/* n==0: c == 10xxxxxx */
-				/* n>=4: c == 11111xxx */
-				goto notutf8;
-			}
-			mask = utf8chkmsk[n];
-			/* collect the Unicode code point in utf8char */
-			utf8char = c & ~(0xFFC0 >> n);	/* remove non-x bits */
-		}
-		*p++ = c;
-	}
-	if (n > 0) {
-		/* incomplete UTF-8 sequence */
-		goto notutf8;
-	}
-	*p++ = 0;
-	return len;
-  notutf8:
-	GDKerror("not a proper UTF-8 sequence\n");
-	return -1;
-}
-
-ssize_t
-strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst)
-{
-	const char *cur = src, *start = NULL;
-	size_t l = 1;
-	int escaped = FALSE;
-
-	if (GDK_STRNIL(src)) {
-		atommem(2);
-		strcpy(*dst, str_nil);
-		return 1;
-	}
-
-	while (GDKisspace(*cur))
-		cur++;
-	if (*cur != '"') {
-		if (strncmp(cur, "nil", 3) == 0) {
-			atommem(2);
-			strcpy(*dst, str_nil);
-			return (ssize_t) (cur - src) + 3;
-		}
-		GDKerror("not a quoted string\n");
-		return -1;
-	}
-
-	/* scout the string to find out its length and whether it was
-	 * properly quoted */
-	for (start = ++cur; *cur != '"' || escaped; cur++) {
-		if (*cur == 0) {
-			GDKerror("no closing quotes\n");
-			return -1;
-		} else if (*cur == '\\' && escaped == FALSE) {
-			escaped = TRUE;
-		} else {
-			escaped = FALSE;
-			l++;
-		}
-	}
-
-	/* alloc new memory */
-	if (*dst == NULL || *len < l) {
-		GDKfree(*dst);
-		*dst = GDKmalloc(*len = l);
-		if (*dst == NULL) {
-			*len = 0;
-			return -1;
-		}
-	}
-
-	return GDKstrFromStr((unsigned char *) *dst,
-			     (const unsigned char *) start,
-			     (ssize_t) (cur - start));
-}
-
-/*
- * Convert a GDK string value to something printable.
- */
-/* all but control characters (in range 0 to 31) and DEL */
-#ifdef ASCII_CHR
-/* ASCII printable characters */
-#define printable_chr(ch)	(' ' <= (ch) && (ch) <= '~')
-#else
-/* everything except ASCII control characters */
-#define printable_chr(ch)	((' ' <= (ch) && (ch) <= '~') || ((ch) & 0x80) != 0)
-#endif
-
-size_t
-escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote)
-{
-	size_t end, sz = 0;
-	size_t sep1len, sep2len;
-
-	sep1len = sep1 ? strlen(sep1) : 0;
-	sep2len = sep2 ? strlen(sep2) : 0;
-	for (end = 0; src[end]; end++)
-		if (src[end] == '\\' ||
-		    src[end] == quote ||
-		    (sep1len && strncmp(src + end, sep1, sep1len) == 0) ||
-		    (sep2len && strncmp(src + end, sep2, sep2len) == 0)) {
-			sz += 2;
-#ifndef ASCII_CHR
-		} else if (src[end] == (char) '\302' &&
-			   0200 <= ((int) src[end + 1] & 0377) &&
-			   ((int) src[end + 1] & 0377) <= 0237) {
-			/* Unicode control character (code point range
-			 * U-00000080 through U-0000009F encoded in
-			 * UTF-8 */
-			/* for the first one of the two UTF-8 bytes we
-			 * count a width of 7 and for the second one
-			 * 1, together that's 8, i.e. the width of two
-			 * backslash-escaped octal coded characters */
-			sz += 7;
-#endif
-		} else if (!printable_chr(src[end])) {
-			sz += 4;
-		} else {
-			sz++;
-		}
-	return sz;
-}
-
-size_t
-escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote)
-{
-	size_t cur = 0, l = 0;
-	size_t sep1len, sep2len;
-
-	sep1len = sep1 ? strlen(sep1) : 0;
-	sep2len = sep2 ? strlen(sep2) : 0;
-	for (; src[cur] && l < dstlen; cur++)
-		if (!printable_chr(src[cur])
-#ifndef ASCII_CHR
-		    || (src[cur] == '\302' &&
-			0200 <= (src[cur + 1] & 0377) &&
-			((int) src[cur + 1] & 0377) <= 0237)
-		    || (cur > 0 &&
-			src[cur - 1] == '\302' &&
-			0200 <= (src[cur] & 0377) &&
-			(src[cur] & 0377) <= 0237)
-#endif
-			) {
-			dst[l++] = '\\';
-			switch (src[cur]) {
-			case '\t':
-				dst[l++] = 't';
-				break;
-			case '\n':
-				dst[l++] = 'n';
-				break;
-			case '\r':
-				dst[l++] = 'r';
-				break;
-			case '\f':
-				dst[l++] = 'f';
-				break;
-			default:
-				snprintf(dst + l, dstlen - l, "%03o", (unsigned char) src[cur]);
-				l += 3;
-				break;
-			}
-		} else if (src[cur] == '\\' ||
-			   src[cur] == quote ||
-			   (sep1len && strncmp(src + cur, sep1, sep1len) == 0) ||
-			   (sep2len && strncmp(src + cur, sep2, sep2len) == 0)) {
-			dst[l++] = '\\';
-			dst[l++] = src[cur];
-		} else {
-			dst[l++] = src[cur];
-		}
-	assert(l < dstlen);
-	dst[l] = 0;
-	return l;
-}
-
-static ssize_t
-strToStr(char **restrict dst, size_t *restrict len, const char *restrict src)
-{
-	if (GDK_STRNIL(src)) {
-		atommem(4);
-		return snprintf(*dst, *len, "nil");
-	} else {
-		ssize_t l = 0;
-		size_t sz = escapedStrlen(src, NULL, NULL, '"');
-
-		atommem(sz + 3);
-		l = (ssize_t) escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '"');
-		l++;
-		(*dst)[0] = (*dst)[l++] = '"';
-		(*dst)[l] = 0;
-		return l;
-	}
-}
-
-static str
-strRead(str a, stream *s, size_t cnt)
-{
-	int len;
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1)
-		return NULL;
-	if ((a = GDKmalloc(len + 1)) == NULL)
-		return NULL;
-	if (len && mnstr_read(s, a, len, 1) != 1) {
-		GDKfree(a);
-		return NULL;
-	}
-	a[len] = 0;
-	return a;
-}
-
-static gdk_return
-strWrite(const char *a, stream *s, size_t cnt)
-{
-	size_t len = strlen(a);
-
-	(void) cnt;
-	assert(cnt == 1);
-	if (mnstr_writeInt(s, (int) len) && mnstr_write(s, a, len, 1) == 1)
-		return GDK_SUCCEED;
-	else
-		return GDK_FAIL;
-}
-
 /*
  * String conversion routines.
  */
@@ -1857,270 +1115,200 @@ OIDtoStr(char **dst, size_t *len, const oid *src)
 }
 
 atomDesc BATatoms[MAXATOMS] = {
-	{"void",		/* name */
-	 TYPE_void,		/* storage */
-	 true,			/* linear */
-	 0,			/* size */
+	[TYPE_void] = {
+		.name = "void",
+		.storage = TYPE_void,
+		.linear = true,
 #if SIZEOF_OID == SIZEOF_INT
-	 (ptr) &int_nil,	/* atomNull */
+		.atomNull = (ptr) &int_nil,
+		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
 #else
-	 (ptr) &lng_nil,	/* atomNull */
+		.atomNull = (ptr) &lng_nil,
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
-	 (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,    /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,      /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) voidRead,      /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) voidWrite, /* atomWrite */
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) voidRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) voidWrite,
+	},
+	[TYPE_bit] = {
+		.name = "bit",
+		.storage = TYPE_bte,
+		.linear = true,
+		.size = sizeof(bit),
+		.atomNull = (ptr) &bte_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) bitFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) bitToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) bitRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bitWrite,
+		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
+		.atomHash = (BUN (*)(const void *)) bteHash,
+	},
+	[TYPE_bte] = {
+		.name = "bte",
+		.storage = TYPE_bte,
+		.linear = true,
+		.size = sizeof(bte),
+		.atomNull = (ptr) &bte_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) bteFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) bteToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) bteRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bteWrite,
+		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
+		.atomHash = (BUN (*)(const void *)) bteHash,
+	},
+	[TYPE_sht] = {
+		.name = "sht",
+		.storage = TYPE_sht,
+		.linear = true,
+		.size = sizeof(sht),
+		.atomNull = (ptr) &sht_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) shtFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) shtToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) shtRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) shtWrite,
+		.atomCmp = (int (*)(const void *, const void *)) shtCmp,
+		.atomHash = (BUN (*)(const void *)) shtHash,
+	},
+	[TYPE_bat] = {
+		.name = "BAT",
+		.storage = TYPE_int,
+		.linear = true,
+		.size = sizeof(bat),
+		.atomNull = (ptr) &int_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) batFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) batToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) batRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) batWrite,
+		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
+		.atomFix = (int (*)(const void *)) batFix,
+		.atomUnfix = (int (*)(const void *)) batUnfix,
+	},
+	[TYPE_int] = {
+		.name = "int",
+		.storage = TYPE_int,
+		.linear = true,
+		.size = sizeof(int),
+		.atomNull = (ptr) &int_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) intFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) intToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) intRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
+		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
+	},
+	[TYPE_oid] = {
+		.name = "oid",
+		.linear = true,
+		.size = sizeof(oid),
 #if SIZEOF_OID == SIZEOF_INT
-	 (int (*)(const void *, const void *)) intCmp,	      /* atomCmp */
-	 (BUN (*)(const void *)) intHash,		      /* atomHash */
+		.storage = TYPE_int,
+		.atomNull = (ptr) &int_nil,
+		.atomRead = (void *(*)(void *, stream *, size_t)) intRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
+		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
 #else
-	 (int (*)(const void *, const void *)) lngCmp,	      /* atomCmp */
-	 (BUN (*)(const void *)) lngHash,		      /* atomHash */
+		.storage = TYPE_lng,
+		.atomNull = (ptr) &lng_nil,
+		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,
 	},
-	{"bit",			/* name */
-	 TYPE_bte,		/* storage */
-	 true,			/* linear */
-	 sizeof(bit),		/* size */
-	 (ptr) &bte_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) bitFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) bitToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) bitRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) bitWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) bteCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) bteHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
-	},
-	{"bte",			/* name */
-	 TYPE_bte,		/* storage */
-	 true,			/* linear */
-	 sizeof(bte),		/* size */
-	 (ptr) &bte_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) bteFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) bteToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) bteRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) bteWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) bteCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) bteHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
-	},
-	{"sht",			/* name */
-	 TYPE_sht,		/* storage */
-	 true,			/* linear */
-	 sizeof(sht),		/* size */
-	 (ptr) &sht_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) shtFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) shtToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) shtRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) shtWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) shtCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) shtHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
-	},
-	{"BAT",			/* name */
-	 TYPE_int,		/* storage */
-	 true,			/* linear */
-	 sizeof(bat),		/* size */
-	 (ptr) &int_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) batFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) batToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) batRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) batWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) intHash,		     /* atomHash */
-	 (int (*)(const void *)) batFix,		     /* atomFix */
-	 (int (*)(const void *)) batUnfix,		     /* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
-	},
-	{"int",			/* name */
-	 TYPE_int,		/* storage */
-	 true,			/* linear */
-	 sizeof(int),		/* size */
-	 (ptr) &int_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) intFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) intToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) intRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) intWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) intHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
-	},
-	{"oid",			/* name */
-#if SIZEOF_OID == SIZEOF_INT
-	 TYPE_int,		/* storage */
-#else
-	 TYPE_lng,		/* storage */
-#endif
-	 true,			/* linear */
-	 sizeof(oid),		/* size */
-#if SIZEOF_OID == SIZEOF_INT
-	 (ptr) &int_nil,	/* atomNull */
-#else
-	 (ptr) &lng_nil,	/* atomNull */
-#endif
-	 (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,     /* atomToStr */
-#if SIZEOF_OID == SIZEOF_INT
-	 (void *(*)(void *, stream *, size_t)) intRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) intWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) intHash,		     /* atomHash */
-#else
-	 (void *(*)(void *, stream *, size_t)) lngRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) lngWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
-#endif
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
-	},
-	{"ptr",			/* name */
-	 TYPE_ptr,		/* storage */
-	 true,			/* linear */
-	 sizeof(ptr),		/* size */
-	 (ptr) &ptr_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) ptrFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) ptrToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) ptrRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) ptrWrite, /* atomWrite */
+	[TYPE_ptr] = {
+		.name = "ptr",
+		.storage = TYPE_ptr,
+		.linear = true,
+		.size = sizeof(ptr),
+		.atomNull = (ptr) &ptr_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) ptrFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) ptrToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) ptrRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) ptrWrite,
 #if SIZEOF_VOID_P == SIZEOF_INT
-	 (int (*)(const void *, const void *)) intCmp,       /* atomCmp */
-	 (BUN (*)(const void *)) intHash,		     /* atomHash */
+		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
-	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
 	},
-	{"flt",			/* name */
-	 TYPE_flt,		/* storage */
-	 true,			/* linear */
-	 sizeof(flt),		/* size */
-	 (ptr) &flt_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) fltFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) fltToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) fltRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) fltWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) fltCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) intHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
+	[TYPE_flt] = {
+		.name = "flt",
+		.storage = TYPE_flt,
+		.linear = true,
+		.size = sizeof(flt),
+		.atomNull = (ptr) &flt_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) fltFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) fltToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) fltRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) fltWrite,
+		.atomCmp = (int (*)(const void *, const void *)) fltCmp,
+		.atomHash = (BUN (*)(const void *)) intHash,
 	},
-	{"dbl",			/* name */
-	 TYPE_dbl,		/* storage */
-	 true,			/* linear */
-	 sizeof(dbl),		/* size */
-	 (ptr) &dbl_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) dblFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) dblToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) dblRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) dblWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) dblCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
+	[TYPE_dbl] = {
+		.name = "dbl",
+		.storage = TYPE_dbl,
+		.linear = true,
+		.size = sizeof(dbl),
+		.atomNull = (ptr) &dbl_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) dblFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) dblToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) dblRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) dblWrite,
+		.atomCmp = (int (*)(const void *, const void *)) dblCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
-	{"lng",			/* name */
-	 TYPE_lng,		/* storage */
-	 true,			/* linear */
-	 sizeof(lng),		/* size */
-	 (ptr) &lng_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) lngFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) lngToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) lngRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) lngWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) lngHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
+	[TYPE_lng] = {
+		.name = "lng",
+		.storage = TYPE_lng,
+		.linear = true,
+		.size = sizeof(lng),
+		.atomNull = (ptr) &lng_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) lngFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) lngToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
+		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 #ifdef HAVE_HGE
-	{"hge",			/* name */
-	 TYPE_hge,		/* storage */
-	 true,			/* linear */
-	 sizeof(hge),		/* size */
-	 (ptr) &hge_nil,	/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) hgeFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) hgeToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) hgeRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) hgeWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) hgeCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) hgeHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 0,			/* atomPut */
-	 0,			/* atomDel */
-	 0,			/* atomLen */
-	 0,			/* atomHeap */
+	[TYPE_hge] = {
+		.name = "hge",
+		.storage = TYPE_hge,
+		.linear = true,
+		.size = sizeof(hge),
+		.atomNull = (ptr) &hge_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) hgeFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) hgeToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) hgeRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) hgeWrite,
+		.atomCmp = (int (*)(const void *, const void *)) hgeCmp,
+		.atomHash = (BUN (*)(const void *)) hgeHash,
 	},
 #endif
-	{"str",			/* name */
-	 TYPE_str,		/* storage */
-	 true,			/* linear */
-	 sizeof(var_t),		/* size */
-	 (ptr) str_nil,		/* atomNull */
-	 (ssize_t (*)(const char *, size_t *, ptr *)) strFromStr,   /* atomFromStr */
-	 (ssize_t (*)(str *, size_t *, const void *)) strToStr,     /* atomToStr */
-	 (void *(*)(void *, stream *, size_t)) strRead,	     /* atomRead */
-	 (gdk_return (*)(const void *, stream *, size_t)) strWrite, /* atomWrite */
-	 (int (*)(const void *, const void *)) strCmp,	     /* atomCmp */
-	 (BUN (*)(const void *)) strHash,		     /* atomHash */
-	 0,			/* atomFix */
-	 0,			/* atomUnfix */
-	 (var_t (*)(Heap *, var_t *, const void *)) strPut,  /* atomPut */
-	 0,			/* atomDel */
-	 (size_t (*)(const void *)) strLen,		     /* atomLen */
-	 strHeap,		/* atomHeap */
+	[TYPE_str] = {
+		.name = "str",
+		.storage = TYPE_str,
+		.linear = true,
+		.size = sizeof(var_t),
+		.atomNull = (ptr) str_nil,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *)) strFromStr,
+		.atomToStr = (ssize_t (*)(str *, size_t *, const void *)) strToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) strRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) strWrite,
+		.atomCmp = (int (*)(const void *, const void *)) strCmp,
+		.atomHash = (BUN (*)(const void *)) strHash,
+		.atomPut = (var_t (*)(Heap *, var_t *, const void *)) strPut,
+		.atomLen = (size_t (*)(const void *)) strLen,
+		.atomHeap = strHeap,
 	},
 };
 

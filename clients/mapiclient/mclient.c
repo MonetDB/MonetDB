@@ -35,7 +35,9 @@
 #endif
 #include "stream.h"
 #include "msqldump.h"
+#define LIBMUTILS 1
 #include "mprompt.h"
+#include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
 
 #include <locale.h>
@@ -76,6 +78,7 @@ static bool echoquery = false;
 static char *encoding;
 #endif
 static bool errseen = false;
+static bool allow_remote = false;
 
 #define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
@@ -3027,6 +3030,134 @@ set_timezone(Mapi mid)
 	mapi_close_handle(hdl);
 }
 
+struct privdata {
+	stream *f;
+	char *buf;
+};
+
+#define READSIZE	(1 << 16)
+//#define READSIZE	(1 << 20)
+
+static char alpha[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	"abcdefghijklmnopqrstuvwxyz";
+
+static char *
+getfile(void *data, const char *filename, bool binary,
+	uint64_t offset, size_t *size)
+{
+	stream *f;
+	char *buf;
+	struct privdata *priv = data;
+	ssize_t s;
+
+	*size = 0;		/* most returns require this */
+	if (priv->buf == NULL) {
+		priv->buf = malloc(READSIZE);
+		if (priv->buf == NULL)
+			return "allocation failed in client";
+	}
+	buf = priv->buf;
+	if (filename != NULL) {
+		if (binary) {
+			f = open_rstream(filename);
+			assert(offset <= 1);
+			offset = 0;
+		} else {
+			f = open_rastream(filename);
+			if (f == NULL) {
+				size_t x;
+				/* simplistic check for URL
+				 * (schema://...) */
+				if ((x = strspn(filename, alpha)) > 0
+				    && filename[x] == ':'
+				    && filename[x+1] == '/'
+				    && filename[x+2] == '/') {
+					if (allow_remote)
+						f = open_urlstream(filename);
+					else
+						return "client refuses to retrieve remote content";
+				}
+			}
+#ifdef HAVE_ICONV
+			else if (encoding) {
+				stream *tmpf = f;
+				f = iconv_rstream(f, encoding, mnstr_name(f));
+				if (f == NULL)
+					close_stream(tmpf);
+			}
+#endif
+		}
+		if (f == NULL)
+			return "cannot open file";
+		while (offset > 1) {
+			s = mnstr_readline(f, buf, READSIZE);
+			if (s < 0) {
+				close_stream(f);
+				return "error reading file";
+			}
+			if (s == 0) {
+				/* reached EOF withing offset lines */
+				close_stream(f);
+				return NULL;
+			}
+			if (buf[s - 1] == '\n')
+				offset--;
+		}
+		priv->f = f;
+	} else {
+		f = priv->f;
+		if (size == NULL) {
+			/* done reading before reaching EOF */
+			close_stream(f);
+			priv->f = NULL;
+			return NULL;
+		}
+	}
+	s = mnstr_read(f, buf, 1, READSIZE);
+	if (s <= 0) {
+		close_stream(f);
+		priv->f = NULL;
+		return s < 0 ? "error reading file" : NULL;
+	}
+	*size = (size_t) s;
+	return buf;
+}
+
+static char *
+putfile(void *data, const char *filename, const void *buf, size_t bufsize)
+{
+	struct privdata *priv = data;
+
+	if (filename != NULL) {
+		if ((priv->f = open_wastream(filename)) == NULL)
+			return "cannot open file";
+#ifdef HAVE_ICONV
+		if (encoding) {
+			stream *f = priv->f;
+			priv->f = iconv_wstream(f, encoding, mnstr_name(f));
+			if (priv->f == NULL) {
+				close_stream(f);
+				return "cannot open file";
+			}
+		}
+#endif
+		if (buf == NULL || bufsize == 0)
+			return NULL; /* successfully opened file */
+	} else if (buf == NULL) {
+		/* done writing */
+		int flush = mnstr_flush(priv->f);
+		close_stream(priv->f);
+		priv->f = NULL;
+		return flush < 0 ? "error writing output" : NULL;
+	}
+	if (mnstr_write(priv->f, buf, 1, bufsize) < (ssize_t) bufsize) {
+		close_stream(priv->f);
+		priv->f = NULL;
+		return "error writing output";
+	}
+	return NULL;		/* success */
+}
+
 __declspec(noreturn) static void usage(const char *prog, int xit)
 	__attribute__((__noreturn__));
 
@@ -3066,6 +3197,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, "\nSQL specific opions \n");
 	fprintf(stderr, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
 	fprintf(stderr, " -a          | --autocommit       turn off autocommit mode\n");
+	fprintf(stderr, " -R          | --allow-remote     allow remote content\n");
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
@@ -3130,6 +3262,7 @@ main(int argc, char **argv)
 		{"width", 1, 0, 'w'},
 		{"Xdebug", 0, 0, 'X'},
 		{"timezone", 0, 0, 'z'},
+		{"allow-remote", 0, 0, 'R'},
 		{0, 0, 0, 0}
 	};
 
@@ -3172,7 +3305,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:Hil:L:n:Np:P:r:s:t:u:vw:Xz"
+				"f:h:Hil:L:n:Np:P:r:Rs:t:u:vw:Xz"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -3180,12 +3313,8 @@ main(int argc, char **argv)
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
-#ifdef HAVE_POPEN
-			if (strcmp(long_options[option_index].name, "pager") == 0) {
-				pager = optarg;
-				(void) pager;	/* will be further used later */
-			}
-#endif
+			/* only needed for options that only have a
+			 * long form */
 			break;
 		case 'a':
 			autocommit = false;
@@ -3273,6 +3402,9 @@ main(int argc, char **argv)
 			assert(optarg);
 			rowsperpage = atoi(optarg);
 			break;
+		case 'R':
+			allow_remote = true;
+			break;
 		case 's':
 			assert(optarg);
 			command = optarg;
@@ -3298,13 +3430,22 @@ main(int argc, char **argv)
 			user = strdup(optarg);
 			user_set_as_flag = true;
 			break;
-		case 'v':
+		case 'v': {
+			const char *rev = mercurial_revision();
 			mnstr_printf(toConsole,
-				     "mclient, the MonetDB interactive terminal (%s)\n",
-				     MONETDB_RELEASE);
+				     "mclient, the MonetDB interactive "
+				     "terminal, version %s", VERSION);
+			/* coverity[pointless_string_compare] */
+			if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+				mnstr_printf(toConsole, " (%s)",
+					     MONETDB_RELEASE);
+			else if (strcmp(rev, "Unknown") != 0)
+				mnstr_printf(toConsole, " (hg id: %s)", rev);
+			mnstr_printf(toConsole, "\n");
 #ifdef HAVE_LIBREADLINE
 			mnstr_printf(toConsole,
-				     "support for command-line editing compiled-in\n");
+				     "support for command-line editing "
+				     "compiled-in\n");
 #endif
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
@@ -3312,9 +3453,11 @@ main(int argc, char **argv)
 				encoding = nl_langinfo(CODESET);
 #endif
 			mnstr_printf(toConsole,
-				     "character encoding: %s\n", encoding ? encoding : "utf-8 (default)");
+				     "character encoding: %s\n",
+				     encoding ? encoding : "utf-8 (default)");
 #endif
 			return 0;
+		}
 		case 'w':
 			assert(optarg);
 			pagewidth = atoi(optarg);
@@ -3428,6 +3571,10 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
+
+	struct privdata priv;
+	priv = (struct privdata) {0};
+	mapi_setfilecallback(mid, getfile, putfile, &priv);
 
 	if (!autocommit)
 		mapi_setAutocommit(mid, autocommit);
@@ -3576,5 +3723,8 @@ main(int argc, char **argv)
 	mapi_destroy(mid);
 	mnstr_destroy(stdout_stream);
 	mnstr_destroy(stderr_stream);
+	if (priv.buf != NULL)
+		free(priv.buf);
+
 	return c;
 }

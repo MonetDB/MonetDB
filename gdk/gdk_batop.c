@@ -1261,8 +1261,12 @@ BATordered_rev(BAT *b)
 
 	if (b == NULL)
 		return false;
+	if (BATcount(b) <= 1)
+		return true;
 	if (b->ttype == TYPE_void)
 		return is_oid_nil(b->tseqbase);
+	if (BATtdense(b))
+		return false;
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		BATiter bi = bat_iterator(b);
@@ -1289,22 +1293,18 @@ BATordered_rev(BAT *b)
  * "quick" sort does not produce errors */
 static gdk_return
 do_sort(void *restrict h, void *restrict t, const void *restrict base,
-	size_t n, int hs, int ts, int tpe, bool reverse, bool stable)
+	size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast,
+	bool stable)
 {
 	if (n <= 1)		/* trivially sorted */
 		return GDK_SUCCEED;
-	if (reverse) {
-		if (stable) {
+	if (stable) {
+		if (reverse)
 			return GDKssort_rev(h, t, base, n, hs, ts, tpe);
-		} else {
-			GDKqsort_rev(h, t, base, n, hs, ts, tpe);
-		}
-	} else {
-		if (stable) {
+		else
 			return GDKssort(h, t, base, n, hs, ts, tpe);
-		} else {
-			GDKqsort(h, t, base, n, hs, ts, tpe);
-		}
+	} else {
+		GDKqsort(h, t, base, n, hs, ts, tpe, reverse, nilslast);
 	}
 	return GDK_SUCCEED;
 }
@@ -1339,14 +1339,14 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
  * Apart from error checking and maintaining reference counts, sorting
  * three columns (col1, col2, col3) could look like this with the
  * sorted results in (col1s, col2s, col3s):
- *	BATsort(&col1s, &ord1, &grp1, col1, NULL, NULL, false, false);
- *	BATsort(&col2s, &ord2, &grp2, col2, ord1, grp1, false, false);
- *	BATsort(&col3s,  NULL,  NULL, col3, ord2, grp2, false, false);
+ *	BATsort(&col1s, &ord1, &grp1, col1, NULL, NULL, false, false, false);
+ *	BATsort(&col2s, &ord2, &grp2, col2, ord1, grp1, false, false, false);
+ *	BATsort(&col3s,  NULL,  NULL, col3, ord2, grp2, false, false, false);
  * Note that the "reverse" parameter can be different for each call.
  */
 gdk_return
 BATsort(BAT **sorted, BAT **order, BAT **groups,
-	   BAT *b, BAT *o, BAT *g, bool reverse, bool stable)
+	BAT *b, BAT *o, BAT *g, bool reverse, bool nilslast, bool stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL, *pb = NULL;
 	oid *restrict grps, *restrict ords, prev;
@@ -1355,8 +1355,18 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 
 	ALGODEBUG t0 = GDKusec();
 
+	/* we haven't implemented NILs as largest value for stable
+	 * sort, so NILs come first for ascending and last for
+	 * descending */
+	assert(!stable || reverse == nilslast);
+
 	if (b == NULL) {
 		GDKerror("BATsort: b must exist\n");
+		return GDK_FAIL;
+	}
+	if (stable && reverse != nilslast) {
+		GDKerror("BATsort: stable sort cannot have "
+			 "reverse != nilslast\n");
 		return GDK_FAIL;
 	}
 	if (!ATOMlinear(b->ttype)) {
@@ -1399,7 +1409,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
 	      is_oid_nil(g->tseqbase)))) {
-		GDKerror("BATsort: g must have type oid, sorted on the tail, and same size as b\n");
+		GDKerror("BATsort: g must have type oid, sorted on the tail, "
+			 "and same size as b\n");
 		return GDK_FAIL;
 	}
 	if (sorted == NULL && order == NULL) {
@@ -1412,8 +1423,15 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		 * subsorting and the sort is not stable */
 		o = NULL;
 	}
+	if (b->tnonil) {
+		/* if there are no nils, placement of nils doesn't
+		 * matter, so set nilslast such that ordered bits can
+		 * be used */
+		nilslast = reverse;
+	}
 	if (BATcount(b) <= 1 ||
-	    ((reverse ? BATtrevordered(b) : BATtordered(b)) &&
+	    (reverse == nilslast &&
+	     (reverse ? BATtrevordered(b) : BATtordered(b)) &&
 	     o == NULL && g == NULL &&
 	     (groups == NULL || BATtkey(b) ||
 	      (reverse ? BATtordered(b) : BATtrevordered(b))))) {
@@ -1451,11 +1469,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o="
 				  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
-				  ",reverse=%d,stable=%d) = (" ALGOOPTBATFMT
-				  "," ALGOOPTBATFMT "," ALGOOPTBATFMT
-				  ") -- trivial (" LLFMT " usec)\n",
+				  ",reverse=%d,nilslast=%d,stable=%d) = ("
+				  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
+				  ALGOOPTBATFMT ") -- trivial (" LLFMT
+				  " usec)\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(o),
-				  ALGOOPTBATPAR(g), reverse, stable,
+				  ALGOOPTBATPAR(g), reverse, nilslast, stable,
 				  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
 				  ALGOOPTBATPAR(on), GDKusec() - t0);
 		return GDK_SUCCEED;
@@ -1470,7 +1489,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	} else {
 		pb = b;
 	}
-	if (g == NULL && o == NULL && !reverse &&
+	if (g == NULL && o == NULL && !reverse && !nilslast &&
 	    pb != NULL && BATcheckorderidx(pb) &&
 	    /* if we want a stable sort, the order index must be
 	     * stable, if we don't want stable, we don't care */
@@ -1519,11 +1538,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o="
 				  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
-				  ",reverse=%d,stable=%d) = (" ALGOOPTBATFMT
-				  "," ALGOOPTBATFMT "," ALGOOPTBATFMT
-				  ") -- orderidx (" LLFMT " usec)\n",
+				  ",reverse=%d,nilslast=%d,stable=%d) = ("
+				  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
+				  ALGOOPTBATFMT ") -- orderidx (" LLFMT
+				  " usec)\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(o),
-				  ALGOOPTBATPAR(g), reverse, stable,
+				  ALGOOPTBATPAR(g), reverse, nilslast, stable,
 				  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
 				  ALGOOPTBATPAR(on), GDKusec() - t0);
 		return GDK_SUCCEED;
@@ -1620,12 +1640,13 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			}
 			ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT
 					  ",o=" ALGOOPTBATFMT ",g=" ALGOBATFMT
-					  ",reverse=%d,stable=%d) = ("
-					  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
-					  ALGOOPTBATFMT ") -- key group (" LLFMT
-					  " usec)\n", ALGOBATPAR(b),
-					  ALGOOPTBATPAR(o), ALGOBATPAR(g),
-					  reverse, stable, ALGOOPTBATPAR(bn),
+					  ",reverse=%d,nilslast=%d,stable=%d"
+					  ") = (" ALGOOPTBATFMT ","
+					  ALGOOPTBATFMT "," ALGOOPTBATFMT
+					  ") -- key group (" LLFMT " usec)\n",
+					  ALGOBATPAR(b), ALGOOPTBATPAR(o),
+					  ALGOBATPAR(g), reverse, nilslast,
+					  stable, ALGOOPTBATPAR(bn),
 					  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
 					  GDKusec() - t0);
 			return GDK_SUCCEED;
@@ -1642,7 +1663,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 					    ords ? ords + r : NULL,
 					    bn->tvheap ? bn->tvheap->base : NULL,
 					    p - r, Tsize(bn), ords ? sizeof(oid) : 0,
-					    bn->ttype, reverse, stable) != GDK_SUCCEED)
+					    bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)
 					goto error;
 				r = p;
 				prev = grps[p];
@@ -1653,17 +1674,18 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			    ords ? ords + r : NULL,
 			    bn->tvheap ? bn->tvheap->base : NULL,
 			    p - r, Tsize(bn), ords ? sizeof(oid) : 0,
-			    bn->ttype, reverse, stable) != GDK_SUCCEED)
+			    bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)
 			goto error;
 		/* if single group (r==0) the result is (rev)sorted,
 		 * otherwise (maybe) not */
-		bn->tsorted = r == 0 && !reverse;
-		bn->trevsorted = r == 0 && reverse;
+		bn->tsorted = r == 0 && !reverse && !nilslast;
+		bn->trevsorted = r == 0 && reverse && nilslast;
 	} else {
 		Heap *m = NULL;
 		/* only invest in creating an order index if the BAT
 		 * is persistent */
 		if (!reverse &&
+		    !nilslast &&
 		    pb != NULL &&
 		    (ords != NULL || pb->batPersistence == PERSISTENT) &&
 		    (m = createOIDXheap(pb, stable)) != NULL) {
@@ -1679,21 +1701,22 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 						ords[p] = p + b->hseqbase;
 			}
 		}
-		if (!(reverse ? bn->trevsorted : bn->tsorted) &&
+		if ((reverse != nilslast ||
+		     (reverse ? !bn->trevsorted : !bn->tsorted)) &&
 		    (BATmaterialize(bn) != GDK_SUCCEED ||
 		     do_sort(Tloc(bn, 0),
 			     ords,
 			     bn->tvheap ? bn->tvheap->base : NULL,
 			     BATcount(bn), Tsize(bn), ords ? sizeof(oid) : 0,
-			     bn->ttype, reverse, stable) != GDK_SUCCEED)) {
+			     bn->ttype, reverse, nilslast, stable) != GDK_SUCCEED)) {
 			if (m != NULL) {
 				HEAPfree(m, true);
 				GDKfree(m);
 			}
 			goto error;
 		}
-		bn->tsorted = !reverse;
-		bn->trevsorted = reverse;
+		bn->tsorted = !reverse && !nilslast;
+		bn->trevsorted = reverse && nilslast;
 		if (m != NULL) {
 			MT_lock_set(&GDKhashLock(pb->batCacheid));
 			if (pb->torderidx == NULL) {
@@ -1737,13 +1760,13 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 
 	ALGODEBUG fprintf(stderr, "#BATsort(b=" ALGOBATFMT ",o=" ALGOOPTBATFMT
-			  ",g=" ALGOOPTBATFMT ",reverse=%d,stable=%d) = ("
-			  ALGOOPTBATFMT "," ALGOOPTBATFMT "," ALGOOPTBATFMT
-			  ") -- %ssort (" LLFMT " usec)\n", ALGOBATPAR(b),
-			  ALGOOPTBATPAR(o), ALGOOPTBATPAR(g), reverse, stable,
-			  ALGOOPTBATPAR(bn), ALGOOPTBATPAR(gn),
-			  ALGOOPTBATPAR(on), g ? "grouped " : "",
-			  GDKusec() - t0);
+			  ",g=" ALGOOPTBATFMT ",reverse=%d,nilslast=%d,"
+			  "stable=%d) = (" ALGOOPTBATFMT "," ALGOOPTBATFMT ","
+			  ALGOOPTBATFMT ") -- %ssort (" LLFMT " usec)\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(o), ALGOOPTBATPAR(g),
+			  reverse, nilslast, stable, ALGOOPTBATPAR(bn),
+			  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),
+			  g ? "grouped " : "", GDKusec() - t0);
 	return GDK_SUCCEED;
 
   error:
@@ -1868,7 +1891,7 @@ PROPdestroy(BAT *b)
 }
 
 PROPrec *
-BATgetprop(BAT *b, int idx)
+BATgetprop(BAT *b, enum prop_t idx)
 {
 	PROPrec *p = b->tprops;
 
@@ -1881,7 +1904,7 @@ BATgetprop(BAT *b, int idx)
 }
 
 void
-BATsetprop(BAT *b, int idx, int type, const void *v)
+BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 {
 	PROPrec *p = BATgetprop(b, idx);
 
@@ -1906,7 +1929,7 @@ BATsetprop(BAT *b, int idx, int type, const void *v)
 }
 
 void
-BATrmprop(BAT *b, int idx)
+BATrmprop(BAT *b, enum prop_t idx)
 {
 	PROPrec *prop = b->tprops, *prev = NULL;
 

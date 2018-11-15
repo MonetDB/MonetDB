@@ -92,60 +92,60 @@ command selectNotNil(b:bat[:any_2]):bat[:any_2]
 address ALGselectNotNil
 comment "Select all not-nil values";
 
-command sort(b:bat[:any_1], reverse:bit, stable:bit) :bat[:any_1]
+command sort(b:bat[:any_1], reverse:bit, nilslast:bit, stable:bit) :bat[:any_1]
 address ALGsort11
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command sort(b:bat[:any_1], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
+command sort(b:bat[:any_1], reverse:bit, nilslast:bit, stable:bit) (:bat[:any_1], :bat[:oid])
 address ALGsort12
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command sort(b:bat[:any_1], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
+command sort(b:bat[:any_1], reverse:bit, nilslast:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
 address ALGsort13
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) :bat[:any_1]
+command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, nilslast:bit, stable:bit) :bat[:any_1]
 address ALGsort21
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
+command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, nilslast:bit, stable:bit) (:bat[:any_1], :bat[:oid])
 address ALGsort22
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
+command sort(b:bat[:any_1], o:bat[:oid], reverse:bit, nilslast:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
 address ALGsort23
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) :bat[:any_1]
+command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, nilslast:bit, stable:bit) :bat[:any_1]
 address ALGsort31
 comment "Returns a copy of the BAT sorted on tail values.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid])
+command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, nilslast:bit, stable:bit) (:bat[:any_1], :bat[:oid])
 address ALGsort32
 comment "Returns a copy of the BAT sorted on tail values and a BAT that
          specifies how the input was reordered.
          The input and output are (must be) dense headed.
          The order is descending if the reverse bit is set.
 		 This is a stable sort if the stable bit is set.";
-command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
+command sort(b:bat[:any_1], o:bat[:oid], g:bat[:oid], reverse:bit, nilslast:bit, stable:bit) (:bat[:any_1], :bat[:oid], :bat[:oid])
 address ALGsort33
 comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
          how the input was reordered, and a BAT with group information.
@@ -222,22 +222,22 @@ address ALGintersect
 comment "Intersection of l and r with candidate lists (i.e. half of semi-join)";
 
 # @+ Projection operations
-pattern firstn(b:bat[:any], n:lng, asc:bit, distinct:bit) :bat[:oid]
+pattern firstn(b:bat[:any], n:lng, asc:bit, nilslast:bit, distinct:bit) :bat[:oid]
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, distinct:bit) :bat[:oid]
+pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) :bat[:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, distinct:bit) :bat[:oid]
+pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) :bat[:oid]
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:any], n:lng, asc:bit, distinct:bit) (:bat[:oid],:bat[:oid])
+pattern firstn(b:bat[:any], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn
 comment "Calculate first N values of B";
-pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, distinct:bit) (:bat[:oid],:bat[:oid])
+pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
-pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, distinct:bit) (:bat[:oid],:bat[:oid])
+pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 

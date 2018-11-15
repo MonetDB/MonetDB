@@ -580,11 +580,10 @@ la_bat_updates(logger *lg, logaction *la)
 		}
 	} else if (la->type == LOG_UPDATE) {
 		BATiter vi = bat_iterator(la->b);
-		BATiter ii = bat_iterator(la->uid);
 		BUN p, q;
 
 		BATloop(la->b, p, q) {
-			oid h = * (const oid *) BUNtail(ii, p);
+			oid h = BUNtoid(la->uid, p);
 			const void *t = BUNtail(vi, p);
 
 			if (h < b->hseqbase || h >= b->hseqbase + BATcount(b)) {
@@ -936,62 +935,15 @@ tr_commit(logger *lg, trans *tr)
 	return tr_destroy(tr);
 }
 
-static gdk_return log_sequence_nrs(logger *lg);
-
 #ifdef _MSC_VER
 #define access(file, mode)	_access(file, mode)
 #endif
-
-/* Update the last transaction id written in the catalog file.
- * Only used by the shared logger. */
-static gdk_return
-logger_update_catalog_file(logger *lg, const char *dir, const char *filename, int role)
-{
-	FILE *fp;
-	int bak_exists;
-	int farmid = BBPselectfarm(role, 0, offheap);
-
-	bak_exists = 0;
-	/* check if an older file exists and move bak it up */
-	if (access(filename, 0) != -1) {
-		bak_exists = 1;
-		if (GDKmove(farmid, dir, filename, NULL, dir, filename, "bak") != GDK_SUCCEED) {
-			fprintf(stderr, "!ERROR: logger_update_catalog_file: rename %s to %s.bak in %s failed\n", filename, filename, dir);
-			return GDK_FAIL;
-		}
-	}
-
-	if ((fp = GDKfileopen(farmid, dir, filename, NULL, "w")) != NULL) {
-		if (fprintf(fp, "%06d\n\n", lg->version) < 0 ||
-		    fprintf(fp, LLFMT "\n", lg->id) < 0) {
-			fprintf(stderr, "!ERROR: logger_update_catalog_file: write to %s failed\n", filename);
-			fclose(fp);
-			return GDK_FAIL;
-		}
-
-		if (fclose(fp) < 0) {
-			fprintf(stderr, "!ERROR: logger_update_catalog_file: write/flush to %s failed\n", filename);
-			return GDK_FAIL;
-		}
-
-		/* cleanup the bak file, if it exists*/
-		if (bak_exists) {
-			GDKunlink(farmid, dir, filename, "bak");
-		}
-	} else {
-		fprintf(stderr, "!ERROR: logger_update_catalog_file: could not create %s\n", filename);
-		GDKerror("logger_update_catalog_file: could not open %s\n", filename);
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
 
 static gdk_return
 logger_open(logger *lg)
 {
 	char id[BUFSIZ];
 	char *filename;
-	bat bid;
 
 	snprintf(id, sizeof(id), LLFMT, lg->id);
 	filename = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
@@ -1003,36 +955,12 @@ logger_open(logger *lg)
 	}
 	lg->end = 0;
 
-	if (lg->log == NULL || mnstr_errnr(lg->log) || log_sequence_nrs(lg) != GDK_SUCCEED) {
+	if (lg->log == NULL || mnstr_errnr(lg->log)) {
 		fprintf(stderr, "!ERROR: logger_open: creating %s failed\n", filename);
 		GDKfree(filename);
 		return GDK_FAIL;
 	}
 	GDKfree(filename);
-	if ((bid = logger_find_bat(lg, "seqs_id", 0, 0)) != 0) {
-		int dbg = GDKdebug;
-		BAT *b;
-		GDKdebug &= ~CHECKMASK;
-		if ((b = BATdescriptor(bid)) == NULL ||
-		    BATmode(b, TRANSIENT) != GDK_SUCCEED ||
-		    logger_del_bat(lg, bid) != GDK_SUCCEED) {
-			logbat_destroy(b);
-			return GDK_FAIL;
-		}
-		logbat_destroy(b);
-		b = NULL;
-		if ((bid = logger_find_bat(lg, "seqs_val", 0, 0)) == 0 ||
-		    (b = BATdescriptor(bid)) == NULL ||
-		    BATmode(b, TRANSIENT) != GDK_SUCCEED ||
-		    logger_del_bat(lg, bid) != GDK_SUCCEED) {
-			logbat_destroy(b);
-			return GDK_FAIL;
-		}
-		logbat_destroy(b);
-		GDKdebug = dbg;
-		if (bm_commit(lg) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
 	return GDK_SUCCEED;
 }
 
@@ -1044,7 +972,7 @@ logger_close(logger *lg)
 }
 
 static gdk_return
-logger_readlog(logger *lg, char *filename)
+logger_readlog(logger *lg, char *filename, bool *filemissing)
 {
 	trans *tr = NULL;
 	logformat l;
@@ -1067,16 +995,24 @@ logger_readlog(logger *lg, char *filename)
 		close_stream(lg->log);
 		lg->log = NULL;
 		GDKdebug = dbg;
+		*filemissing = true;
 		return GDK_SUCCEED;
 	}
 	short byteorder;
-	if (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1) < 1) {
+	switch (mnstr_read(lg->log, &byteorder, sizeof(byteorder), 1)) {
+	case -1:
 		close_stream(lg->log);
 		lg->log = NULL;
 		GDKdebug = dbg;
 		return GDK_FAIL;
+	case 0:
+		/* empty file is ok */
+		break;
+	case 1:
+		/* if not empty, must start with correct byte order mark */
+		assert(byteorder == 1234);
+		break;
 	}
-	assert(byteorder == 1234);
 	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		close_stream(lg->log);
@@ -1276,7 +1212,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		fprintf(stderr, "#logger_readlogs logger id is " LLFMT "\n", lg->id);
 	}
 
-	while (fgets(id, sizeof(id), fp) != NULL) {
+	if (fgets(id, sizeof(id), fp) != NULL) {
 		char log_filename[FILENAME_MAX];
 		lng lid = strtoll(id, NULL, 10);
 
@@ -1284,25 +1220,21 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			fprintf(stderr, "#logger_readlogs last logger id written in %s is " LLFMT "\n", filename, lid);
 		}
 
-		if (!lg->shared && lid >= lg->id) {
+		if (lid >= lg->id) {
+			bool filemissing = false;
+
 			lg->id = lid;
-			snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-			res = logger_readlog(lg, log_filename);
+			while (res == GDK_SUCCEED && !filemissing) {
+				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+				res = logger_readlog(lg, log_filename, &filemissing);
+				if (!filemissing)
+					lg->id++;
+			}
 		} else {
+			bool filemissing = false;
 			while (lid >= lg->id && res == GDK_SUCCEED) {
 				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-				if ((res = logger_readlog(lg, log_filename)) != GDK_SUCCEED && lg->shared && lg->id > 1) {
-					/* The only special case is if
-					 * the file is missing
-					 * altogether and the logger
-					 * is a shared one, then we
-					 * have missing transactions
-					 * and we should abort.  Yeah,
-					 * and we also ignore the 1st
-					 * files it most likely never
-					 * exists. */
-					fprintf(stderr, "#logger_readlogs missing shared logger file %s. Aborting\n", log_filename);
-				}
+				res = logger_readlog(lg, log_filename, &filemissing);
 				/* Increment the id only at the end,
 				 * since we want to re-read the last
 				 * file.  That is because last time we
@@ -1314,11 +1246,6 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 			if (lid < lg->id) {
 				lg->id = lid;
 			}
-			if (lg->shared) {
-				/* if this is a shared logger, write the id in
-				 * the shared file */
-				logger_update_catalog_file(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
-			}
 		}
 	}
 	return res;
@@ -1327,23 +1254,8 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 static gdk_return
 logger_commit(logger *lg)
 {
-	int id = LOG_SID;
-	BUN p;
-
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger_commit\n");
-
-	p = log_find(lg->seqs_id, lg->dseqs, id);
-	if (p >= lg->seqs_val->batInserted) {
-		if (BUNinplace(lg->seqs_val, p, &lg->id, false) != GDK_SUCCEED)
-			return GDK_FAIL;
-	} else {
-		oid pos = p;
-		if (BUNappend(lg->dseqs, &pos, false) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_id, &id, false) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &lg->id, false) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
 
 	/* cleanup old snapshots */
 	if (BATcount(lg->snapshots_bid)) {
@@ -1431,18 +1343,20 @@ static gdk_return
 bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *catalog_nme, BAT *catalog_tpe, BAT *catalog_oid, BAT *dcatalog, BAT *extra, int debug)
 {
 	BUN p, q;
-	BUN nn = 10 + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
+	BUN nn = 13 + BATcount(list_bid) + (extra ? BATcount(extra) : 0);
 	bat *n = GDKmalloc(sizeof(bat) * nn);
 	int i = 0;
 	BATiter iter = (list_nme)?bat_iterator(list_nme):bat_iterator(list_bid);
 	gdk_return res;
+	const log_bid *bids;
 
 	if (n == NULL)
 		return GDK_FAIL;
 
 	n[i++] = 0;		/* n[0] is not used */
+	bids = (const log_bid *) Tloc(list_bid, 0);
 	BATloop(list_bid, p, q) {
-		bat col = *(log_bid *) Tloc(list_bid, p);
+		bat col = bids[p];
 		oid pos = p;
 
 		if (list_bid == catalog_bid && BUNfnd(dcatalog, &pos) != BUN_NONE)
@@ -1450,7 +1364,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		if (debug & 1)
 			fprintf(stderr, "#commit new %s (%d) %s\n",
 				BBPname(col), col,
-				(list_bid == catalog_bid) ? BUNtail(iter, p) : "snapshot");
+				(list_bid == catalog_bid) ? (char *) BUNtvar(iter, p) : "snapshot");
 		assert(col);
 		n[i++] = col;
 	}
@@ -1462,7 +1376,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			if (debug & 1)
 				fprintf(stderr, "#commit extra %s %s\n",
 					name,
-					(list_bid == catalog_bid) ? BUNtvar(iter, p) : "snapshot");
+					(list_bid == catalog_bid) ? (char *) BUNtvar(iter, p) : "snapshot");
 			assert(BBPindex(name));
 			n[i++] = BBPindex(name);
 		}
@@ -1475,6 +1389,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		n[i++] = catalog_oid->batCacheid;
 	}
 	n[i++] = dcatalog->batCacheid;
+
 	if (BATcount(dcatalog) > (BATcount(catalog_nme)/2) &&
 	    catalog_bid == list_bid &&
 	    catalog_nme == list_nme &&
@@ -1540,6 +1455,59 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		lg->catalog_tpe = catalog_tpe = tpes;
 		lg->catalog_oid = catalog_oid = oids;
 	}
+	if (lg->seqs_id && list_nme) {
+		n[i++] = lg->seqs_id->batCacheid;
+		n[i++] = lg->seqs_val->batCacheid;
+		n[i++] = lg->dseqs->batCacheid;
+	}
+	if (list_nme && lg->seqs_id && BATcount(lg->dseqs) > (BATcount(lg->seqs_id)/2)) {
+		BAT *tids, *ids, *vals;
+
+		tids = bm_tids(lg->seqs_id, lg->dseqs);
+		if (tids == NULL) {
+			GDKfree(n);
+			return GDK_FAIL;
+		}
+		ids = logbat_new(TYPE_int, BATcount(tids), PERSISTENT);
+		vals = logbat_new(TYPE_lng, BATcount(tids), PERSISTENT);
+
+		if (ids == NULL || vals == NULL) {
+			logbat_destroy(tids);
+			logbat_destroy(ids);
+			logbat_destroy(vals);
+			GDKfree(n);
+			return GDK_FAIL;
+		}
+
+		if (BATappend(ids, lg->seqs_id, tids, true) != GDK_SUCCEED ||
+		    BATappend(vals, lg->seqs_val, tids, true) != GDK_SUCCEED) { 
+			logbat_destroy(tids);
+			logbat_destroy(ids);
+			logbat_destroy(vals);
+			GDKfree(n);
+			return GDK_FAIL;
+		}
+		logbat_destroy(tids);
+		BATclear(lg->dseqs, true);
+
+		if (logger_switch_bat(lg->seqs_id, ids, lg->fn, "seqs_id") != GDK_SUCCEED ||
+		    logger_switch_bat(lg->seqs_val, vals, lg->fn, "seqs_val") != GDK_SUCCEED) {
+			logbat_destroy(ids);
+			logbat_destroy(vals);
+			GDKfree(n);
+			return GDK_FAIL;
+		}
+		n[i++] = ids->batCacheid;
+		n[i++] = vals->batCacheid;
+		n[i++] = lg->dseqs->batCacheid;
+
+		logbat_destroy(lg->seqs_id);
+		logbat_destroy(lg->seqs_val);
+
+		lg->seqs_id = ids;
+		lg->seqs_val = vals;
+	}
+
 	assert((BUN) i <= nn);
 	BATcommit(catalog_bid);
 	BATcommit(catalog_nme);
@@ -1559,8 +1527,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
  * Returns the role of the dbfarm containing the logdir.
  */
 static int
-logger_set_logdir_path(char *filename, const char *fn,
-		       const char *logdir, bool shared)
+logger_set_logdir_path(char *filename, const char *fn, const char *logdir)
 {
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
@@ -1583,7 +1550,7 @@ logger_set_logdir_path(char *filename, const char *fn,
 			 * other than the default dbfarm, or at least
 			 * it appears so to (multi)dbfarm aware
 			 * functions */
-			role = shared ? SHARED_LOG_DIR : LOG_DIR;
+			role = LOG_DIR;
 			BBPaddfarm(logdir_parent_path, 1 << role);
 		} else {
 			fprintf(stderr, "logger_set_logdir_path: logdir path is not correct (%s).\n"
@@ -1606,13 +1573,14 @@ logger_set_logdir_path(char *filename, const char *fn,
 static gdk_return
 logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 {
-	int id = LOG_SID;
 	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
 	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, catalog_tpe, catalog_oid, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
+	bool needcommit = false;
+	int dbg = GDKdebug;
 
 	if(!(filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL)))
 		goto error;
@@ -1657,9 +1625,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		goto error;
 	}
 
-	/* this is intentional - even if catalog_bid is 0, but the logger is shared,
-	 * force it to find the persistent catalog */
-	if (catalog_bid == 0 &&	!lg->shared) {
+	/* this is intentional - if catalog_bid is 0, force it to find
+	 * the persistent catalog */
+	if (catalog_bid == 0) {
 		/* catalog does not exist, so the log file also
 		 * shouldn't exist */
 		if (fp != NULL) {
@@ -1882,8 +1850,9 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		BBPretain(lg->catalog_tpe->batCacheid);
 		BBPretain(lg->catalog_oid->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
+		const log_bid *bids = (const log_bid *) Tloc(b, 0);
 		BATloop(b, p, q) {
-			bat bid = *(log_bid *) Tloc(b, p);
+			bat bid = bids[p];
 			oid pos = p;
 
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE &&
@@ -1898,30 +1867,11 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		goto error;
 	}
 	snprintf(bak, sizeof(bak), "%s_freed", fn);
-	/* do not rename it if this is a shared logger */
-	if (!lg->shared && BBPrename(lg->freed->batCacheid, bak) < 0) {
+	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
 		goto error;
 	}
 	snapshots_bid = logger_find_bat(lg, "snapshots_bid", 0, 0);
 	if (snapshots_bid == 0) {
-		lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
-		lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
-		lg->dseqs = logbat_new(TYPE_oid, 1, TRANSIENT);
-		if (lg->seqs_id == NULL ||
-		    lg->seqs_val == NULL ||
-		    lg->dseqs == NULL) {
-			GDKerror("Logger_new: cannot create seqs bats");
-			goto error;
-		}
-
-		/* create LOG_SID sequence number */
-		if (BUNappend(lg->seqs_id, &id, false) != GDK_SUCCEED ||
-		    BUNappend(lg->seqs_val, &lg->id, false) != GDK_SUCCEED) {
-			GDKerror("logger_load: failed to append value to "
-				 "sequences bat");
-			goto error;
-		}
-
 		lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
 		lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
 		lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
@@ -1968,47 +1918,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 	} else {
-		bat seqs_id = logger_find_bat(lg, "seqs_id", 0, 0);
-		bat seqs_val = logger_find_bat(lg, "seqs_val", 0, 0);
 		bat snapshots_tid = logger_find_bat(lg, "snapshots_tid", 0, 0);
 		bat dsnapshots = logger_find_bat(lg, "dsnapshots", 0, 0);
-		bool needcommit = false;
-		int dbg = GDKdebug;
-
-		if (seqs_id) {
-			BAT *o_id;
-			BAT *o_val;
-
-			/* don't check these bats since they will be fixed */
-			GDKdebug &= ~CHECKMASK;
-			o_id = BATdescriptor(seqs_id);
-			o_val = BATdescriptor(seqs_val);
-			GDKdebug = dbg;
-
-			if (o_id == NULL || o_val == NULL) {
-				GDKerror("Logger_new: inconsistent database: cannot find seqs bats");
-				logbat_destroy(o_id);
-				logbat_destroy(o_val);
-				goto error;
-			}
-
-			lg->seqs_id = COLcopy(o_id, TYPE_int, true, TRANSIENT);
-			lg->seqs_val = COLcopy(o_val, TYPE_lng, true, TRANSIENT);
-			BBPunfix(o_id->batCacheid);
-			BBPunfix(o_val->batCacheid);
-			BAThseqbase(lg->seqs_id, 0);
-			BAThseqbase(lg->seqs_val, 0);
-		} else {
-			lg->seqs_id = logbat_new(TYPE_int, 1, TRANSIENT);
-			lg->seqs_val = logbat_new(TYPE_lng, 1, TRANSIENT);
-		}
-		lg->dseqs = logbat_new(TYPE_oid, 1, TRANSIENT);
-		if (lg->seqs_id == NULL ||
-		    lg->seqs_val == NULL ||
-		    lg->dseqs == NULL) {
-			GDKerror("Logger_new: cannot create seqs bats");
-			goto error;
-		}
 
 		GDKdebug &= ~CHECKMASK;
 		lg->snapshots_bid = BATdescriptor(snapshots_bid);
@@ -2046,13 +1957,47 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			}
 			needcommit = true;
 		}
-		GDKdebug &= ~CHECKMASK;
-		if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
-			GDKerror("Logger_new: commit failed");
+	}
+	snprintf(bak, sizeof(bak), "%s_seqs_id", fn);
+	if (BBPindex(bak)) {
+		lg->seqs_id = BATdescriptor(BBPindex(bak));
+		snprintf(bak, sizeof(bak), "%s_seqs_val", fn);
+		lg->seqs_val = BATdescriptor(BBPindex(bak));
+		snprintf(bak, sizeof(bak), "%s_dseqs", fn);
+		lg->dseqs = BATdescriptor(BBPindex(bak));
+	} else {
+		lg->seqs_id = logbat_new(TYPE_int, 1, PERSISTENT);
+		lg->seqs_val = logbat_new(TYPE_lng, 1, PERSISTENT);
+		lg->dseqs = logbat_new(TYPE_oid, 1, PERSISTENT);
+		if (lg->seqs_id == NULL ||
+		    lg->seqs_val == NULL ||
+		    lg->dseqs == NULL) {
+			GDKerror("Logger_new: cannot create seqs bats");
 			goto error;
 		}
-		GDKdebug = dbg;
+
+		snprintf(bak, sizeof(bak), "%s_seqs_id", fn);
+		if (BBPrename(lg->seqs_id->batCacheid, bak) < 0) {
+			goto error;
+		}
+
+		snprintf(bak, sizeof(bak), "%s_seqs_val", fn);
+		if (BBPrename(lg->seqs_val->batCacheid, bak) < 0) {
+			goto error;
+		}
+
+		snprintf(bak, sizeof(bak), "%s_dseqs", fn);
+		if (BBPrename(lg->dseqs->batCacheid, bak) < 0) {
+			goto error;
+		}
+		needcommit = true;
 	}
+	GDKdebug &= ~CHECKMASK;
+	if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
+		GDKerror("Logger_new: commit failed");
+		goto error;
+	}
+	GDKdebug = dbg;
 
 	if (fp != NULL) {
 #ifdef GDKLIBRARY_NIL_NAN
@@ -2089,8 +2034,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		 * not what we expect, the conversion was apparently
 		 * done already, and so we can delete the file. */
 
-		/* Do not do conversion if logger is shared/read-only */
-		if (!lg->shared) {
+		{
 			FILE *fp1;
 			fpos_t off;
 			int curid;
@@ -2166,7 +2110,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		fclose(fp);
 		fp = NULL;
 #ifdef GDKLIBRARY_NIL_NAN
-		if (lg->convert_nil_nan && !lg->shared) {
+		if (lg->convert_nil_nan) {
 			/* we converted, remove versioned file and
 			 * reset conversion flag */
 			GDKunlink(0, NULL, cvfile, NULL);
@@ -2207,11 +2151,10 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, bool shared, const char *local_logdir)
+logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg = GDKmalloc(sizeof(struct logger));
 	char filename[FILENAME_MAX];
-	char shared_log_filename[FILENAME_MAX];
 
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
@@ -2219,8 +2162,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	}
 
 	lg->debug = debug;
-	lg->shared = shared;
-	lg->local_dbfarm_role = 0; /* only used if lg->shared */
 
 	lg->changes = 0;
 	lg->version = version;
@@ -2232,7 +2173,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->convert_nil_nan = false;
 #endif
 
-	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);;
+	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir);
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->bufsize = 64*1024;
@@ -2249,49 +2190,6 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
 	lg->local_dir = NULL;
-
-	if (shared) {
-		/* set the local logdir as well
-		 * here we pass 0 for the shared flag, since we want these file(s) to be stored in the default logdir */
-		lg->local_dbfarm_role = logger_set_logdir_path(filename, fn, local_logdir, 0);
-		if (lg->local_dbfarm_role < 0 ||
-		    (lg->local_dir = GDKstrdup(filename)) == NULL) {
-			fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
-			GDKfree(lg->fn);
-			GDKfree(lg->dir);
-			GDKfree(lg->buf);
-			GDKfree(lg);
-			return NULL;
-		}
-		if (lg->debug & 1) {
-			fprintf(stderr, "#logger_new local_dir set to %s\n", lg->local_dir);
-		}
-
-		/* get last shared logger id from the local log dir,
-		 * but first check if the file exists */
-		snprintf(shared_log_filename, sizeof(shared_log_filename), "%s%s", lg->local_dir, LOGFILE_SHARED);
-		if (access(shared_log_filename, 0) != -1) {
-			lng res = logger_read_last_transaction_id(lg, lg->local_dir, LOGFILE_SHARED, lg->local_dbfarm_role);
-			if (res < 0) {
-				fprintf(stderr, "!ERROR: logger_new: failed to read previous shared logger id form %s\n", LOGFILE_SHARED);
-				GDKfree(lg->fn);
-				GDKfree(lg->dir);
-				GDKfree(lg->local_dir);
-				GDKfree(lg->buf);
-				GDKfree(lg);
-				return NULL;
-			}
-
-			lg->id = res;
-			if (lg->debug & 1) {
-				fprintf(stderr, "#logger_new last shared transactions is read form %s is " LLFMT "\n", shared_log_filename, lg->id);
-			}
-		} else {
-			if (lg->debug & 1) {
-				fprintf(stderr, "#logger_new no previous %s found\n", LOGFILE_SHARED);
-			}
-		}
-	}
 
 	lg->prefuncp = prefuncp;
 	lg->postfuncp = postfuncp;
@@ -2315,7 +2213,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	return NULL;
 }
 
-/* Reload (shared) logger
+/* Reload logger
  * It will load any data in the logdir and persist it in the BATs */
 gdk_return
 logger_reload(logger *lg)
@@ -2332,10 +2230,10 @@ logger_reload(logger *lg)
 
 /* Create a new logger */
 logger *
-logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files)
+logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	logger *lg;
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, false, NULL);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
 	if (lg == NULL)
 		return NULL;
 	if (lg->debug & 1) {
@@ -2356,23 +2254,9 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	fflush(stdout);
 	if (lg->changes &&
 	    (logger_restart(lg) != GDK_SUCCEED ||
-	     logger_cleanup(lg, keep_persisted_log_files) != GDK_SUCCEED)) {
+	     logger_cleanup(lg) != GDK_SUCCEED)) {
 		logger_destroy(lg);
 		return NULL;
-	}
-	return lg;
-}
-
-/* Create a new shared logger, that is for slaves reading the master
- * log directory.  Assumed to be read-only */
-logger *
-logger_create_shared(int debug, const char *fn, const char *logdir, const char *local_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
-{
-	logger *lg;
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, true, local_logdir);
-	if (lg && lg->debug & 1) {
-		printf("# Started processing logs %s/%s version %d\n",fn,logdir,version);
-		fflush(stdout);
 	}
 	return lg;
 }
@@ -2384,12 +2268,13 @@ logger_destroy(logger *lg)
 		BUN p, q;
 		BAT *b = lg->catalog_bid;
 
-		if (logger_cleanup(lg, 0) != GDK_SUCCEED)
+		if (logger_cleanup(lg) != GDK_SUCCEED)
 			fprintf(stderr, "#logger_destroy: logger_cleanup failed\n");
 
 		/* free resources */
+		const log_bid *bids = (const log_bid *) Tloc(b, 0);
 		BATloop(b, p, q) {
-			bat bid = *(log_bid *) Tloc(b, p);
+			bat bid = bids[p];
 			oid pos = p;
 
 			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
@@ -2506,58 +2391,8 @@ logger_restart(logger *lg)
 /* Clean-up write-ahead log files already persisted in the BATs.
  * Update the LOGFILE and delete all bak- files as well.
  */
-static gdk_return
-logger_unlink(int farmid, const char *dir, const char *nme, const char *ext)
-{
-	char *path;
-	int u;
-
-	path = GDKfilepath(farmid, dir, nme, ext);
-	if (path == NULL)
-		return GDK_FAIL;
-	u = remove(path);
-	GDKfree(path);
-	return u != 0 ? GDK_FAIL : GDK_SUCCEED;
-}
-
-static void
-logger_cleanup_old(logger *lg, int keep_persisted_log_files)
-{
-	char buf[BUFSIZ];
-	lng id;
-	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
-	gdk_return cleanupResultLog = GDK_SUCCEED;
-	gdk_return cleanupResultBak = GDK_SUCCEED;
-
-	// Calculate offset based on the number of files to keep
-	id = lg->id - keep_persisted_log_files - 1;
-
-	// Stop cleaning up once bak- files are no longer found
-	while (id > 0 && (cleanupResultLog == GDK_SUCCEED || cleanupResultBak == GDK_SUCCEED)) {
-		// clean up the WAL file
-		if (lg->debug & 1) {
-			snprintf(buf, sizeof(buf), "%s%s." LLFMT, lg->dir, LOGFILE, id);
-			fprintf(stderr, "#logger_cleanup_old %s\n", buf);
-		}
-		snprintf(buf, sizeof(buf), LLFMT, id);
-		cleanupResultLog = logger_unlink(farmid, lg->dir, LOGFILE, buf);
-
-		// clean up the bak- WAL files
-		if (lg->debug & 1) {
-			snprintf(buf, sizeof(buf), "%s%s.bak-" LLFMT, lg->dir, LOGFILE, id);
-			fprintf(stderr, "#logger_cleanup_old %s\n", buf);
-		}
-		snprintf(buf, sizeof(buf), "bak-" LLFMT, id);
-		cleanupResultBak = logger_unlink(farmid, lg->dir, LOGFILE, buf);
-
-		id = id - 1;
-	}
-	/* we don't really care whether all files were properly
-	 * removed, so we don't return a status */
-}
-
 gdk_return
-logger_cleanup(logger *lg, int keep_persisted_log_files)
+logger_cleanup(logger *lg)
 {
 	char buf[BUFSIZ];
 	FILE *fp = NULL;
@@ -2566,36 +2401,28 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 	snprintf(buf, sizeof(buf), "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
 
 	if (lg->debug & 1) {
-		fprintf(stderr, "#logger_cleanup keeping %d WAL files\n", keep_persisted_log_files);
 		fprintf(stderr, "#logger_cleanup %s\n", buf);
 	}
 
-	if (keep_persisted_log_files == 0) {
-		// If keep_persisted_log_files is 0, remove the last
-		// persisted WAL files as well to reduce the work for
-		// the logger_cleanup_old()
-		if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
-			fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
-			return GDK_FAIL;
-		}
-
-		/* skip catalog */
-		while (fgets(buf, sizeof(buf), fp) != NULL && buf[0] != '\n')
-			;
-
-		while (fgets(buf, sizeof(buf), fp) != NULL) {
-			char *e = strchr(buf, '\n');
-
-			if (e)
-				*e = 0;
-			if (GDKunlink(farmid, lg->dir, LOGFILE, buf) != GDK_SUCCEED) {
-				/* not a disaster (yet?) if unlink fails */
-				fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
-				GDKclrerr();
-			}
-		}
-		fclose(fp);
+	lng lid = lg->id;
+	// remove the last persisted WAL files as well to reduce the
+	// work for the logger_cleanup_old()
+	if ((fp = GDKfileopen(farmid, NULL, buf, NULL, "r")) == NULL) {
+		fprintf(stderr, "!ERROR: logger_cleanup: cannot open file %s\n", buf);
+		return GDK_FAIL;
 	}
+
+	while (lid-- > 0) {
+		char log_id[FILENAME_MAX];
+
+		snprintf(log_id, sizeof(log_id), LLFMT, lid);
+		if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
+			/* not a disaster (yet?) if unlink fails */
+			fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
+			GDKclrerr();
+		}
+	}
+	fclose(fp);
 
 	snprintf(buf, sizeof(buf), "bak-" LLFMT, lg->id);
 
@@ -2603,11 +2430,6 @@ logger_cleanup(logger *lg, int keep_persisted_log_files)
 		/* not a disaster (yet?) if unlink fails */
 		fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, buf);
 		GDKclrerr();
-	}
-
-	if (keep_persisted_log_files > 0) {
-		/* Clean up the old WAL files as well, if any */
-		logger_cleanup_old(lg, keep_persisted_log_files);
 	}
 
 	return GDK_SUCCEED;
@@ -2620,7 +2442,6 @@ logger_with_ids(logger *lg)
 }
 
 /* Clean-up write-ahead log files already persisted in the BATs, leaving only the most recent one.
- * Keeps only the number of files set in lg->keep_persisted_log_files.
  * Only the bak- files are deleted for the preserved WAL files.
  */
 lng
@@ -2825,7 +2646,6 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 	lg->changes += l.nr;
 
 	if (l.nr) {
-		BATiter ii = bat_iterator(uid);
 		BATiter vi = bat_iterator(uval);
 		gdk_return (*wh) (const void *, stream *, size_t) = BATatoms[TYPE_oid].atomWrite;
 		gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[uval->ttype].atomWrite;
@@ -2836,10 +2656,10 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 			return GDK_FAIL;
 
 		for (p = 0; p < BUNlast(uid) && ok == GDK_SUCCEED; p++) {
-			const void *id = BUNtail(ii, p);
+			const oid id = BUNtoid(uid, p);
 			const void *val = BUNtail(vi, p);
 
-			ok = wh(id, lg->log, 1);
+			ok = wh(&id, lg->log, 1);
 			if (ok == GDK_SUCCEED)
 				ok = wt(val, lg->log, 1);
 		}
@@ -2943,6 +2763,8 @@ log_tstart(logger *lg)
 #define DBLKSZ		8192
 #define SEGSZ		(64*DBLKSZ)
 
+#define LOG_LARGE 	LL_CONSTANT(2)*1024*1024*1024
+
 static gdk_return
 pre_allocate(logger *lg)
 {
@@ -2952,6 +2774,8 @@ pre_allocate(logger *lg)
 	p = (lng) getfilepos(getFile(lg->log));
 	if (p == -1)
 		return GDK_FAIL;
+	if (p > LOG_LARGE)
+		return logger_open(lg);
 	if (p + DBLKSZ > lg->end) {
 		p &= ~(DBLKSZ - 1);
 		p += SEGSZ;
@@ -3056,32 +2880,6 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
-log_sequence_nrs(logger *lg)
-{
-	BATiter sii = bat_iterator(lg->seqs_id);
-	BATiter svi = bat_iterator(lg->seqs_val);
-	BUN p, q;
-	gdk_return ok = GDK_SUCCEED;
-
-	BATloop(lg->seqs_id, p, q) {
-		const int *id = (const int *) BUNtloc(sii, p);
-		const lng *val = (const lng *) BUNtloc(svi, p);
-		oid pos = p;
-
-		if (BUNfnd(lg->dseqs, &pos) == BUN_NONE &&
-		    log_sequence_(lg, *id, *val, 0) != GDK_SUCCEED)
-			ok = GDK_FAIL;
-	}
-	if (ok != GDK_SUCCEED ||
-	    mnstr_flush(lg->log) ||
-	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log))) {
-		fprintf(stderr, "!ERROR: log_sequence_nrs: write failed\n");
-		return GDK_FAIL;
-	}
-	return ok;
-}
-
 /* a transaction in it self */
 gdk_return
 log_sequence(logger *lg, int seq, lng val)
@@ -3115,13 +2913,15 @@ bm_commit(logger *lg)
 	BAT *b = lg->catalog_bid;
 	BAT *n = logbat_new(TYPE_str, BATcount(lg->freed), TRANSIENT);
 	gdk_return res;
+	const log_bid *bids;
 
 	if (n == NULL)
 		return GDK_FAIL;
 
 	/* subcommit the freed bats */
+	bids = (const log_bid *) Tloc(lg->freed, 0);
 	BATloop(lg->freed, p, q) {
-		bat bid = *(log_bid *) Tloc(lg->freed, p);
+		bat bid = bids[p];
 		BAT *lb = BATdescriptor(bid);
 		str name = BBPname(bid);
 
@@ -3144,8 +2944,9 @@ bm_commit(logger *lg)
 		BBPrelease(bid);
 	}
 
+	bids = (log_bid *) Tloc(b, 0);
 	for (p = b->batInserted; p < BUNlast(b); p++) {
-		log_bid bid = *(log_bid *) Tloc(b, p);
+		log_bid bid = bids[p];
 		BAT *lb;
 		oid pos = p;
 

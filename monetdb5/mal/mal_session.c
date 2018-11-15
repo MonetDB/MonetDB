@@ -200,6 +200,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s, *dbname;
 	str msg = MAL_SUCCEED;
+	bool filetrans = false;
 	Client c;
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
@@ -266,7 +267,12 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		/* we can have stuff following, make it void */
 		s = strchr(database, ':');
 		if (s)
-			*s = 0;
+			*s++ = 0;
+	}
+
+	if (s && strncmp(s, "FILETRANS:", 10) == 0) {
+		s += 10;
+		filetrans = true;
 	}
 
 	dbname = GDKgetenv("gdk_dbname");
@@ -337,6 +343,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			GDKfree(command);
 			return;
 		}
+		c->filetrans = filetrans;
 		/* move this back !! */
 		if (c->usermodule == 0) {
 			c->curmodule = c->usermodule = userModule();

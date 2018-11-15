@@ -443,7 +443,7 @@ AUTHcheckCredentials(
 
 	/* find the corresponding password to the user */
 	passi = bat_iterator(pass);
-	tmp = (str)BUNtail(passi, p);
+	tmp = (str)BUNtvar(passi, p);
 	assert (tmp != NULL);
 	/* decypher the password (we lose the original tmp here) */
 	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, tmp));
@@ -609,7 +609,7 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 	p = id;
 	assert(p != BUN_NONE);
 	passi = bat_iterator(pass);
-	tmp = BUNtail(passi, p);
+	tmp = BUNtvar(passi, p);
 	assert (tmp != NULL);
 	/* decypher the password */
 	msg = AUTHdecypherValue(&hash, tmp);
@@ -666,7 +666,7 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	p = id;
 	assert (p != BUN_NONE);
 	useri = bat_iterator(user);
-	tmp = BUNtail(useri, p);
+	tmp = BUNtvar(useri, p);
 	assert (tmp != NULL);
 	if (strcmp(tmp, username) == 0)
 		throw(INVCRED, "setPassword", "The administrator cannot set its own password, use changePassword instead");
@@ -709,7 +709,7 @@ AUTHresolveUser(str *username, oid uid)
 
 	assert(username != NULL);
 	useri = bat_iterator(user);
-	if ((*username = GDKstrdup((str)(BUNtail(useri, p)))) == NULL)
+	if ((*username = GDKstrdup((str)(BUNtvar(useri, p)))) == NULL)
 		throw(MAL, "resolveUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
@@ -734,7 +734,7 @@ AUTHgetUsername(str *username, Client cntxt)
 		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, cntxt->user);
 
 	useri = bat_iterator(user);
-	if ((*username = GDKstrdup( BUNtail(useri, p))) == NULL)
+	if ((*username = GDKstrdup( BUNtvar(useri, p))) == NULL)
 		throw(MAL, "getUsername", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
@@ -794,7 +794,7 @@ AUTHgetPasswordHash(str *ret, Client cntxt, const char *username)
 	i = bat_iterator(user);
 	assert(p != BUN_NONE);
 	i = bat_iterator(pass);
-	tmp = BUNtail(i, p);
+	tmp = BUNtvar(i, p);
 	assert (tmp != NULL);
 	/* decypher the password */
 	rethrow("changePassword", tmp, AUTHdecypherValue(&passwd, tmp));
@@ -1011,13 +1011,13 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 
 	assert(p != BUN_NONE);
 	i = bat_iterator(rt_uri);
-	*uri = BUNtail(i, p);
+	*uri = BUNtvar(i, p);
 
 	i = bat_iterator(rt_remoteuser);
-	*username = BUNtail(i, p);
+	*username = BUNtvar(i, p);
 
 	i = bat_iterator(rt_hashedpwd);
-	tmp = BUNtail(i, p);
+	tmp = BUNtvar(i, p);
 	rethrow("getRemoteTableCredentials", tmp, AUTHdecypherValue(&pwhash, tmp));
 
 	*password = pwhash;

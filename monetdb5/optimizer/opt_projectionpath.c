@@ -236,8 +236,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				
 				/* inject the complete sub-path */
 #ifdef DEBUG_OPT_PROJECTIONPATH
-				fprintf(stderr,"#inject ");
-				fprintInstruction(stderr,mb, 0, r, LIST_MAL_ALL);
+				if (r) {
+					fprintf(stderr,"#inject ");
+					fprintInstruction(stderr,mb, 0, r, LIST_MAL_ALL);
+				}
 #endif
 				if ( getFunctionId(p) == projectionRef){
 					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== projectionRef  || getFunctionId(r)== projectionpathRef) ){

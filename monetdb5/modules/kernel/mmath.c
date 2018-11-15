@@ -100,16 +100,16 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 	return MAL_SUCCEED;												\
 }
 
-#define unopM5NOT(NAME, FUNC)					\
-str												\
-MATHunary##NAME##dbl(dbl *res , const dbl *a)	\
-{												\
-	throw(MAL, "mmath." #FUNC, PROGRAM_NYI);	\
-}												\
-str												\
-MATHunary##NAME##flt(flt *res , const flt *a)	\
-{												\
-	throw(MAL, "mmath." #FUNC, PROGRAM_NYI);	\
+#define unopM5NOT(NAME, FUNC)									\
+str																\
+MATHunary##NAME##dbl(dbl *res , const dbl *a)					\
+{																\
+	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
+}																\
+str																\
+MATHunary##NAME##flt(flt *res , const flt *a)					\
+{																\
+	throw(MAL, "mmath." #FUNC, SQLSTATE(0A000) PROGRAM_NYI);	\
 }
 
 #define binopM5(NAME, FUNC)						\

@@ -622,22 +622,23 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 {
 	list *res;
 	node *n = NULL;
-	int i, j, *keys, *pos, cnt = list_length(dje);
+	int i, *keys, cnt = list_length(dje);
+	void **data;
 	int debug = mvc_debug_on(sql, 16);
 
-	keys = (int*)malloc(cnt*sizeof(int));
-	pos = (int*)malloc(cnt*sizeof(int));
-	if (keys == NULL || pos == NULL) {
+	keys = malloc(cnt*sizeof(int));
+	data = malloc(cnt*sizeof(void *));
+	if (keys == NULL || data == NULL) {
 		if (keys)
 			free(keys);
-		if (pos)
-			free(pos);
+		if (data)
+			free(data);
 		return NULL;
 	}
 	res = sa_list(sql->sa);
 	if (res == NULL) {
 		free(keys);
-		free(pos);
+		free(data);
 		return NULL;
 	}
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
@@ -654,18 +655,15 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 			if (r && is_select(r->op) && r->exps)
 				keys[i] += list_length(r->exps)*10 + exps_count(r->exps)*debug;
 		}
-		pos[i] = i;
+		data[i] = n->data;
 	}
 	/* sort descending */
-	if (cnt > 1) 
-		GDKqsort_rev(keys, pos, NULL, cnt, sizeof(int), sizeof(int), TYPE_int);
-	for(j=0; j<cnt; j++) {
-		for(n = dje->h, i = 0; i != pos[j]; n = n->next, i++) 
-			;
-		list_append(res, n->data);
+	GDKqsort(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int, true, true);
+	for(i=0; i<cnt; i++) {
+		list_append(res, data[i]);
 	}
 	free(keys);
-	free(pos);
+	free(data);
 	return res;
 }
 
@@ -6970,7 +6968,7 @@ rel_simplify_predicates(int *changes, mvc *sql, sql_rel *rel)
 				/* remove simple select true expressions */
 				if (flag) {
 					sql->caching = 0;
-					break;
+					continue;
 				}
 			}
 			if (e->type == e_cmp && get_cmp(e) == cmp_equal) {
@@ -9455,7 +9453,7 @@ optimize(mvc *sql, sql_rel *rel, int value_based_opt)
 	int level = 0, changes = 1;
 
 	rel_reset_subquery(rel);
-	for( ;rel && level < 20 && changes; level++) 
+	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
 	return rel;
 }

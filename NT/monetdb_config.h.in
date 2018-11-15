@@ -910,5 +910,6 @@ typedef __uint128_t uhge;
 
 #define PROMPT1		"\001\001\n"	/* prompt: ready for new query */
 #define PROMPT2		"\001\002\n"	/* prompt: more data needed */
+#define PROMPT3		"\001\003\n"	/* prompt: get file content */
 
 #endif /* _SEEN_MONETDB_CONFIG_H */

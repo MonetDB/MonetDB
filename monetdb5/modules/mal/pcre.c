@@ -541,7 +541,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 		while (p < q) {													\
 			o = *candlist++;											\
 			r = (BUN) (o - off);										\
-			v = BUNtail(bi, r);											\
+			v = BUNtvar(bi, r);											\
 			if (TEST)													\
 				bunfastappTYPE(oid, bn, &o);							\
 			p++;														\
@@ -556,7 +556,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 						  "scanselect %s\n", BATgetId(b), BATcount(b),	\
 						  s ? BATgetId(s) : "NULL", anti, #TEST);		\
 		while (p < q) {													\
-			v = BUNtail(bi, p-off);										\
+			v = BUNtvar(bi, p-off);										\
 			if (TEST) {													\
 				o = (oid) p;											\
 				bunfastappTYPE(oid, bn, &o);							\
@@ -1182,7 +1182,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(origin_strs, p, q) {
-		origin_str = BUNtail(origin_strsi, p);
+		origin_str = BUNtvar(origin_strsi, p);
 		tmpres = single_replace(pcre_code, extra, origin_str,
 								(int) strlen(origin_str), exec_options,
 								ovector, ovecsize, replacement,
@@ -1724,7 +1724,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 
 		if (strcmp(ppat, str_nil) == 0) {
 			BATloop(strs, p, q) {
-				const char *s = (str)BUNtail(strsi, p);
+				const char *s = (str)BUNtvar(strsi, p);
 
 				if (strcmp(s, *pat) == 0)
 					br[i] = TRUE;
@@ -1776,7 +1776,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 			}
 
 			BATloop(strs, p, q) {
-				const char *s = (str)BUNtail(strsi, p);
+				const char *s = (str)BUNtvar(strsi, p);
 
 				if (*s == '\200') {
 					br[i] = bit_nil;

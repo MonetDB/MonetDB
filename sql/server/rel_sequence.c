@@ -246,12 +246,15 @@ rel_alter_seq(
 		sql_subtype *lng_t = sql_bind_localtype("lng");
 
 		val = rel_value_exp2(sql, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
-		(void)is_last;
 		if (!val || !(val = rel_check_type(sql, lng_t, val, type_equal)))
 			return NULL;
 	} else if (start_type == 2) {
 		assert (start_list->h->next->type == type_lng);
 		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
+	}
+	if (val && val->card > CARD_ATOM) {
+		sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val));
+		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, 0);
 	}
 	return rel_seq(sql->sa, DDL_ALTER_SEQ, s->base.name, seq, r, val);
 }

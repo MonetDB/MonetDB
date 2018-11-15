@@ -71,8 +71,7 @@ batnil_2_timestamp(bat *res, const bat *bid)
 		throw(SQL, "sql.2_timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		timestamp r = *timestamp_nil;
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, timestamp_nil, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -101,7 +100,7 @@ batstr_2_timestamp(bat *res, const bat *bid)
 		throw(SQL, "sql.2_timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		timestamp r;
 		msg = str_2_timestamp(&r, &v);
 		if (msg) {
@@ -165,8 +164,8 @@ batnil_2_daytime(bat *res, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	daytime r = daytime_nil;
 	BATloop(b, p, q) {
-		daytime r = daytime_nil;
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
@@ -196,7 +195,7 @@ batstr_2_daytime(bat *res, const bat *bid)
 		throw(SQL, "sql.2_daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		daytime r;
 		msg = str_2_daytime(&r, &v);
 		if (msg) {
@@ -273,8 +272,8 @@ batnil_2_date(bat *res, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.2_date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	date r = date_nil;
 	BATloop(b, p, q) {
-		date r = date_nil;
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
@@ -304,7 +303,7 @@ batstr_2_date(bat *res, const bat *bid)
 		throw(SQL, "sql.2_date", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		date r;
 		msg = str_2_date(&r, &v);
 		if (msg) {
@@ -373,7 +372,7 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 		throw(SQL, "sql.2_sqlblob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		sqlblob *r;
 		msg = str_2_sqlblob(&r, &v);
 		if (msg) {
@@ -602,6 +601,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* sql_cast_impl_down_from_flt */
 
+#define round_float(x)	roundf(x)
+
 #define TP1 flt
 #define TP2 bte
 #include "sql_cast_impl_down_from_flt.h"
@@ -633,6 +634,9 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 #endif
+
+#undef round_float
+#define round_float(x)	round(x)
 
 #define TP1 dbl
 #define TP2 bte
@@ -731,10 +735,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #undef TP2
 #undef TP1
 #endif
-
-/* down casting */
-
-#define DOWNCAST
 
 #define TP1 sht
 #define TP2 bte

@@ -140,6 +140,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("TINYTEXT", sqlTEXT);
 	failed += keywords_insert("STRING", CLOB);	/* ? */
 	failed += keywords_insert("CHECK", CHECK);
+	failed += keywords_insert("CLIENT", CLIENT);
+	failed += keywords_insert("SERVER", SERVER);
 	failed += keywords_insert("COMMENT", COMMENT);
 	failed += keywords_insert("CONSTRAINT", CONSTRAINT);
 	failed += keywords_insert("CREATE", CREATE);
@@ -194,6 +196,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("ACTION", ACTION);
 	failed += keywords_insert("CASCADE", CASCADE);
 	failed += keywords_insert("RESTRICT", RESTRICT);
+	failed += keywords_insert("FIRST", FIRST);
 	failed += keywords_insert("GLOBAL", GLOBAL);
 	failed += keywords_insert("GROUP", sqlGROUP);
 	failed += keywords_insert("HAVING", HAVING);
@@ -211,11 +214,13 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LIMIT", LIMIT);
 	failed += keywords_insert("SAMPLE", SAMPLE);
 	failed += keywords_insert("SEED", SEED);
+	failed += keywords_insert("LAST", LAST);
 	failed += keywords_insert("LOCAL", LOCAL);
 	failed += keywords_insert("LOCKED", LOCKED);
 	failed += keywords_insert("NATURAL", NATURAL);
 	failed += keywords_insert("NOT", NOT);
 	failed += keywords_insert("NULL", sqlNULL);
+	failed += keywords_insert("NULLS", NULLS);
 	failed += keywords_insert("OFFSET", OFFSET);
 	failed += keywords_insert("ON", ON);
 	failed += keywords_insert("OPTIONS", OPTIONS);

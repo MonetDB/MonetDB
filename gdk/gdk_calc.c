@@ -1654,8 +1654,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			ADD##IF##_WITH_CHECK(TYPE1, lft[i],		\
-					     TYPE2, rgt[j],		\
+			ADD##IF##_WITH_CHECK(lft[i], rgt[j],		\
 					     TYPE3, dst[k],		\
 					     max,			\
 					     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
@@ -1687,8 +1686,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				ADD##IF##_WITH_CHECK(TYPE1, lft[i],	\
-						     TYPE2, rgt[j],	\
+				ADD##IF##_WITH_CHECK(lft[i], rgt[j],	\
 						     TYPE3, dst[k],	\
 						     max,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "+")); \
@@ -3724,8 +3722,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			SUB##IF##_WITH_CHECK(TYPE1, lft[i],		\
-					     TYPE2, rgt[j],		\
+			SUB##IF##_WITH_CHECK(lft[i], rgt[j],		\
 					     TYPE3, dst[k],		\
 					     max,			\
 					     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
@@ -3757,8 +3754,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				SUB##IF##_WITH_CHECK(TYPE1, lft[i],	\
-						     TYPE2, rgt[j],	\
+				SUB##IF##_WITH_CHECK(lft[i], rgt[j],	\
 						     TYPE3, dst[k],	\
 						     max,		\
 						     ON_OVERFLOW(TYPE1, TYPE2, "-")); \
@@ -5647,8 +5643,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			MUL##IF##4_WITH_CHECK(TYPE1, lft[i],		\
-					      TYPE2, rgt[j],		\
+			MUL##IF##4_WITH_CHECK(lft[i], rgt[j],		\
 					      TYPE3, dst[k],		\
 					      max,			\
 					      TYPE4,			\
@@ -5681,8 +5676,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				MUL##IF##4_WITH_CHECK(TYPE1, lft[i],	\
-						      TYPE2, rgt[j],	\
+				MUL##IF##4_WITH_CHECK(lft[i], rgt[j],	\
 						      TYPE3, dst[k],	\
 						      max,		\
 						      TYPE3,		\
@@ -5730,8 +5724,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *lft, int incr1,		\
 			dst[k] = hge_nil;				\
 			nils++;						\
 		} else {						\
-			HGEMUL_CHECK(TYPE1, lft[i],			\
-				     TYPE2, rgt[j],			\
+			HGEMUL_CHECK(lft[i], rgt[j],			\
 				     dst[k],				\
 				     max,				\
 				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\
@@ -5764,8 +5757,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
 			dst[k] = lng_nil;				\
 			nils++;						\
 		} else {						\
-			LNGMUL_CHECK(TYPE1, lft[i],			\
-				     TYPE2, rgt[j],			\
+			LNGMUL_CHECK(lft[i], rgt[j],			\
 				     dst[k],				\
 				     max,				\
 				     ON_OVERFLOW(TYPE1, TYPE2, "*"));	\
@@ -13694,11 +13686,14 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 					end = i + 1;
 			}
 			src = BUNtvar(bi, i);
-			if ((*atomtostr)(&dst, &len, src) < 0)
-				goto bunins_failed;
-			if ((*atomcmp)(src, nil) == 0)
+			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
+			} else {
+				if ((*atomtostr)(&dst, &len, src) < 0)
+					goto bunins_failed;
+				tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+			}
 		}
 	} else {
 		size_t size = ATOMsize(tp);
@@ -13715,11 +13710,14 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 				if (++cand == candend)
 					end = i + 1;
 			}
-			if ((*atomtostr)(&dst, &len, src) < 0)
-				goto bunins_failed;
-			if ((*atomcmp)(src, nil) == 0)
+			if ((*atomcmp)(src, nil) == 0) {
 				nils++;
-			tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
+			} else {
+				if ((*atomtostr)(&dst, &len, src) < 0)
+					goto bunins_failed;
+				tfastins_nocheckVAR(bn, i, dst, bn->twidth);
+			}
 			src = (const void *) ((const char *) src + size);
 		}
 	}
@@ -13844,7 +13842,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 					((bte *) dst)[i] = 1;
 				}
 			} else {
-				for (i = 0; i < end; i++, seq++) {
+				for (i = start; i < end; i++, seq++) {
 					CHECKCAND((bte *) dst, i, candoff,
 						  bte_nil);
 					((bte *) dst)[i] = (bte) seq;
@@ -13898,7 +13896,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 		case TYPE_str:
 			for (i = 0; i < start; i++)
 				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
-			for (i = 0; i < end; i++) {
+			for (; i < end; i++) {
 				if (cand) {
 					if (i < *cand - candoff) {
 						nils++;
@@ -13953,12 +13951,8 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 			((dbl *) dst)[i] = dbl_nil;
 		break;
 	case TYPE_str:
-		seq = oid_nil;
-		if ((*atomtostr)(&s, &len, &seq) < 0)
-			goto bunins_failed;
-		for (; i < cnt; i++) {
-			tfastins_nocheckVAR(bn, i, s, bn->twidth);
-		}
+		for (; i < cnt; i++)
+			tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 		break;
 	default:
 		return BUN_NONE + 1;

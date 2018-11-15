@@ -1,6 +1,5 @@
 debian/tmp/usr/bin/monetdbd usr/bin
 debian/tmp/usr/bin/monetdb usr/bin
-debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/*.sql usr/lib/x86_64-linux-gnu/monetdb5
 debian/tmp/usr/lib/x86_64-linux-gnu/monetdb5/autoload/??_sql.mal usr/lib/x86_64-linux-gnu/monetdb5/autoload
 debian/tmp/usr/lib/systemd/system/monetdbd.service lib/systemd/system
 debian/tmp/etc/logrotate.d/monetdbd etc/logrotate.d

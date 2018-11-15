@@ -376,8 +376,10 @@
 */
 #define PARMASK		(1<<7)
 #define PARDEBUG	if (GDKdebug & PARMASK)
+/* HEADLESSMASK not used anymore
 #define HEADLESSMASK	(1<<8)
 #define HEADLESSDEBUG	if (GDKdebug & HEADLESSMASK)
+*/
 #define TMMASK		(1<<9)
 #define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)
@@ -462,24 +464,24 @@
 #define BATTINY_BITS	8
 #define BATTINY		((BUN)1<<BATTINY_BITS)	/* minimum allocation buncnt for a BAT */
 
-#define TYPE_void	0
-#define TYPE_bit	1
-#define TYPE_bte	2
-#define TYPE_sht	3
-#define TYPE_bat	4	/* BAT id: index in BBPcache */
-#define TYPE_int	5
-#define TYPE_oid	6
-#define TYPE_ptr	7	/* C pointer! */
-#define TYPE_flt	8
-#define TYPE_dbl	9
-#define TYPE_lng	10
+enum {
+	TYPE_void = 0,
+	TYPE_bit,
+	TYPE_bte,
+	TYPE_sht,
+	TYPE_bat,		/* BAT id: index in BBPcache */
+	TYPE_int,
+	TYPE_oid,
+	TYPE_ptr,		/* C pointer! */
+	TYPE_flt,
+	TYPE_dbl,
+	TYPE_lng,
 #ifdef HAVE_HGE
-#define TYPE_hge	11
-#define TYPE_str	12
-#else
-#define TYPE_str	11
+	TYPE_hge,
 #endif
-#define TYPE_any	255	/* limit types to <255! */
+	TYPE_str,
+	TYPE_any = 255,		/* limit types to <255! */
+};
 
 typedef int8_t bit;
 typedef int8_t bte;
@@ -1204,7 +1206,7 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define tailsize(b,p)	((b)->ttype?((size_t)(p))<<(b)->tshift:0)
 
-#define Tloc(b,p)	((b)->theap.base+(((size_t)(p))<<(b)->tshift))
+#define Tloc(b,p)	((void *)((b)->theap.base+(((size_t)(p))<<(b)->tshift)))
 
 typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
@@ -1227,8 +1229,17 @@ typedef var_t stridx_t;
 
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
-#define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), Tbase((bi).b)+BUNtvaroff(bi,p))
+#define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), (void *) (Tbase((bi).b)+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).b->ttype?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
+
+/* return the oid value at BUN position p from the (v)oid bat b
+ * works with any TYPE_void or TYPE_oid bat */
+#define BUNtoid(b,p)	(assert(ATOMtype((b)->ttype) == TYPE_oid),	\
+			 (is_oid_nil((b)->tseqbase)			\
+			  ? ((b)->ttype == TYPE_void			\
+			     ? (void) (p), oid_nil			\
+			     : ((const oid *) (b)->T.heap.base)[p])	\
+			  : (oid) ((b)->tseqbase + (BUN) (p))))
 
 static inline BATiter
 bat_iterator(BAT *b)
@@ -1313,7 +1324,6 @@ gdk_export int BATgetaccess(BAT *b);
 #define PERSISTENT		0
 #define TRANSIENT		1
 #define LOG_DIR			2
-#define SHARED_LOG_DIR		3
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
 #define BAT_READ		1	/* only read-access allowed */
@@ -1415,12 +1425,11 @@ gdk_export gdk_return BATprint(BAT *b);
 gdk_export bool BATkeyed(BAT *b);
 gdk_export bool BATordered(BAT *b);
 gdk_export bool BATordered_rev(BAT *b);
-gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool stable)
+gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool nilslast, bool stable)
 	__attribute__((__warn_unused_result__));
 
 
-gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
-gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 
 #define BATtordered(b)	((b)->tsorted)
 #define BATtrevordered(b) ((b)->trevsorted)
@@ -2369,13 +2378,13 @@ BATdescriptor(bat i)
 	return b;
 }
 
-static inline char *
+static inline void *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
 	if (!is_oid_nil(bi->tvid))
 		bi->tvid += p;
-	return (char*)&bi->tvid;
+	return (void*)&bi->tvid;
 }
 
 #endif
@@ -2691,14 +2700,15 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  * properties. They can be used to improve query processing at higher
  * levels.
  */
-
-#define GDK_MIN_VALUE 3
-#define GDK_MAX_VALUE 4
+enum prop_t {
+	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
+	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
+};
 
 gdk_export void PROPdestroy(BAT *b);
-gdk_export PROPrec *BATgetprop(BAT *b, int idx);
-gdk_export void BATsetprop(BAT *b, int idx, int type, const void *v);
-gdk_export void BATrmprop(BAT *b, int idx);
+gdk_export PROPrec *BATgetprop(BAT *b, enum prop_t idx);
+gdk_export void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v);
+gdk_export void BATrmprop(BAT *b, enum prop_t idx);
 
 /*
  * @- BAT relational operators
@@ -2755,7 +2765,7 @@ gdk_export BAT *BATunique(BAT *b, BAT *s);
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 
-gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool distinct)
+gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));
 
 #include "gdk_calc.h"

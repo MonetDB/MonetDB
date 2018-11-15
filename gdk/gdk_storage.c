@@ -630,7 +630,7 @@ DESCload(int i)
 void
 DESCclean(BAT *b)
 {
-	b->batDirtyflushed = DELTAdirty(b) ? TRUE : FALSE;
+	b->batDirtyflushed = DELTAdirty(b);
 	b->batDirtydesc = 0;
 	b->theap.dirty = 0;
 	if (b->tvheap)
@@ -833,7 +833,7 @@ BATload_intern(bat bid, bool lock)
 	}
 
 	/* initialize descriptor */
-	b->batDirtydesc = FALSE;
+	b->batDirtydesc = false;
 	b->theap.parentid = 0;
 
 	/* load succeeded; register it in BBP */
@@ -893,7 +893,7 @@ BATdelete(BAT *b)
 			HEAPfree(b->tvheap, true);
 		}
 	}
-	b->batCopiedtodisk = FALSE;
+	b->batCopiedtodisk = false;
 }
 
 /*

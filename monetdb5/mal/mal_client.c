@@ -262,6 +262,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 #endif
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
+
+	c->filetrans = false;
+
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }

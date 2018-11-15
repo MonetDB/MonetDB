@@ -16,11 +16,6 @@ stdout of test 'create_view_order_by.Bug-3465` in directory 'sql/test/BugTracker
 # Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:36688/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18988/.s.monetdb.36688
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Python module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -61,9 +56,11 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 14:47:02 >  
-# 14:47:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18988" "--port=36688"
-# 14:47:02 >  
+Ready.
+
+# 14:53:41 >  
+# 14:53:41 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11584" "--port=31415"
+# 14:53:41 >  
 
 #CREATE TABLE test10 (id int NOT NULL, name varchar(100) NOT NULL);
 #CREATE TABLE my_tables    AS SELECT name, schema_id, query, type, system, commit_action, access, temporary FROM sys.tables WHERE name IN ('table_types', 'dependency_types', 'optimizers', 'environment', 'test10');
@@ -248,8 +245,8 @@ Ready.
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 13,	4,	177,	1,	5,	1,	1,	1 # length
-[ "test10",	2000,	NULL,	0,	false,	0,	0,	0	]
 [ "my_tables",	2000,	NULL,	0,	false,	0,	0,	0	]
+[ "test10",	2000,	NULL,	0,	false,	0,	0,	0	]
 [ "all_tables",	2000,	"create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "all_tbl_objs",	2000,	"create view all_tbl_objs as select * from all_tables union select * from all_views order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "all_views",	2000,	"create view all_views as select * from user_views union select * from system_views order by schema_id, name;",	1,	false,	0,	0,	0	]
@@ -266,7 +263,7 @@ Ready.
 #select * from system_tables
 #ORDER BY system, query, name DESC
 #LIMIT 10;
-% .L67,	.L67,	.L67,	.L67,	.L67,	.L67,	.L67,	.L67 # table_name
+% .L57,	.L57,	.L57,	.L57,	.L57,	.L57,	.L57,	.L57 # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 13,	4,	177,	2,	5,	1,	1,	1 # length
@@ -284,7 +281,7 @@ Ready.
 #INTERSECT
 #(select * from system_tables UNION select * from system_views)
 #ORDER BY name DESC;
-% .L67,	.L67,	.L67,	.L67,	.L67,	.L67,	.L67,	.L67 # table_name
+% .L57,	.L57,	.L57,	.L57,	.L57,	.L57,	.L57,	.L57 # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	0,	1,	5,	1,	1,	1 # length

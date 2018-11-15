@@ -369,7 +369,7 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd, BUN nr_attr
 		Column *f = fmt + i;
 
 		if (f->c) {
-			char *p = BUNtail(f->ci, id - f->c->hseqbase);
+			const void *p = BUNtail(f->ci, id - f->c->hseqbase);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 				size_t l = strlen(f->nullstr);
