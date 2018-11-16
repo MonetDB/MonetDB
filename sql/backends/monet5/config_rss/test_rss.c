@@ -54,8 +54,8 @@ str TESTrestricted_rss(lng* RetVal, lng* GDK_mem_maxsize /*in bytes*/)
 		PROCESS_MEMORY_COUNTERS_EX psmemCounters;
 		GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *) &psmemCounters, sizeof(PROCESS_MEMORY_COUNTERS_EX));
 		
-		printf("Working Set:\t%lld MB\t", psmemCounters.WorkingSetSize >> 20);
-		printf("Total Memory:\t%lld MB\n", psmemCounters.PrivateUsage >> 20);
+		printf("Working Set:\t%ld MB\t", psmemCounters.WorkingSetSize >> 20);
+		printf("Total Memory:\t%ld MB\n", psmemCounters.PrivateUsage >> 20);
 
 		if (psmemCounters.WorkingSetSize > rss_bound) {
 			fclose(pfile);
