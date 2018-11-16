@@ -1411,7 +1411,8 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 }
 
 static sql_rel*
-create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall) {
+create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall)
+{
 	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
