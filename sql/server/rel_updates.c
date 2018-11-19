@@ -1391,6 +1391,8 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 		if (!t)
 			t = stack_find_table(sql, tname);
 	}
+	if (!t)
+		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
 	if (!table_privs(sql, t, PRIV_SELECT))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
 
@@ -1427,7 +1429,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			processed |= MERGE_UPDATE_DELETE;
 
 			if(uptdel == SQL_UPDATE) {
-				if(!update_allowed(sql, t, tname, "MERGE", "merge", 0))
+				if(!update_allowed(sql, t, tname, "MERGE", "update", 0))
 					return NULL;
 				if((processed & MERGE_INSERT) == MERGE_INSERT)
 					joined = rel_dup(joined);
@@ -1445,7 +1447,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 
 				upd_del = update_generate_assignments(sql, t, extra_project, bt, sts->h->data.lval, "MERGE");
 			} else if(uptdel == SQL_DELETE) {
-				if (!update_allowed(sql, t, tname, "MERGE", "merge", 1))
+				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
 				if((processed & MERGE_INSERT) == MERGE_INSERT)
 					joined = rel_dup(joined);
@@ -1472,7 +1474,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			processed |= MERGE_INSERT;
 
 			assert(action->token == SQL_INSERT);
-			if (!insert_allowed(sql, t, tname, "MERGE", "merge"))
+			if (!insert_allowed(sql, t, tname, "MERGE", "insert"))
 				return NULL;
 			if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
 				joined = rel_dup(joined);
