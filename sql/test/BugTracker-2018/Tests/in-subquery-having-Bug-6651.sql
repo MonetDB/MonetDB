@@ -57,4 +57,83 @@ SELECT C1, C2, C3
 	 HAVING COUNT(*) > 1
        );
 
+-- 7. Same query as 5 but using qualified column names in subquery.
+-- (produces incorrect results, same as 5)
+SELECT C1, C2, C3
+  FROM T1
+ WHERE (C1, C2) IN
+       (
+	 SELECT T1.C1, T1.C2
+	   FROM T1
+	  GROUP BY T1.C1, T1.C2
+	 HAVING COUNT(*) > 1
+       );
+
+-- 8. Same query as 5 but using alias for table and qualified column names
+-- in subquery. (produces correct result, so can be used as a workaround)
+SELECT C1, C2, C3
+  FROM T1
+ WHERE (C1, C2) IN
+       (
+	 SELECT T.C1, T.C2
+	   FROM T1 AS T
+	  GROUP BY T.C1, T.C2
+	 HAVING COUNT(*) > 1
+       );
+
+-- 9. Query using NOT IN instead of IN (and change COUNT(*) = 1)
+-- (produces correct result, so can be used as a workaround)
+SELECT C1, C2, C3
+  FROM T1
+ WHERE (C1, C2) NOT IN
+       (
+	 SELECT C1, C2
+	   FROM T1
+	  GROUP BY C1, C2
+	 HAVING COUNT(*) = 1
+       );
+
+
+-- add more data to test whether the data influences the processing
+INSERT INTO T1 
+VALUES (21, 22, 3),
+       (21, 22, 4),
+       (22, 22, 5),
+       (21, 23, 6);
+
+-- only repeat the queries which produced wrong results
+
+-- query 5. results are incorrect, two rows (1, 3, 6) (21, 23, 6) should not be there.
+SELECT C1, C2, C3
+  FROM T1
+ WHERE (C1, C2) IN
+       (
+	 SELECT C1, C2
+	   FROM T1
+	  GROUP BY C1, C2
+	 HAVING COUNT(*) > 1
+       );
+
+-- query 6. results are incorrect, two rows (2, 2, 5) (22, 22, 5) should not be there.
+SELECT C1, C2, C3
+  FROM T1
+ WHERE (C2, C1) IN
+       (
+	 SELECT C2, C1
+	   FROM T1
+	  GROUP BY C1, C2
+	 HAVING COUNT(*) > 1
+       );
+
+-- query 7. results are incorrect, two rows (1, 3, 6) (21, 23, 6) should not be there.
+SELECT C1, C2, C3
+  FROM T1
+ WHERE (C1, C2) IN
+       (
+	 SELECT T1.C1, T1.C2
+	   FROM T1
+	  GROUP BY T1.C1, T1.C2
+	 HAVING COUNT(*) > 1
+       );
+
 ROLLBACK;
