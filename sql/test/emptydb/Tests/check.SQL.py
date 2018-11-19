@@ -4,8 +4,8 @@ try:
 except ImportError:
     import process
 
-clt = process.client('sql', format = 'csv', echo = False,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+clt = process.client('sql', format='csv', echo=False,
+                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 
 for c in 'ntvsf':
     clt.stdin.write("select '\\\\d%s';\n" % c)
@@ -22,26 +22,26 @@ clt.stdin.write("select '\\\\dSv ' || s.name || '.' || t.name from sys._tables t
 clt.stdin.write("select distinct '\\\\dSf ' || s.name || '.\"' || f.name || '\"' from sys.functions f, sys.schemas s where f.language between 1 and 2 and f.schema_id = s.id and s.name = 'sys' order by s.name, f.name;\n")
 
 out, err = clt.communicate()
-out = out.replace('"\n', '\n').replace('\n"', '\n').replace('""', '"').replace(r'\\', '\\')
+out = re.sub('^"(.*)"$', r'\1', out, flags=re.MULTILINE).replace('"\n', '\n').replace('\n"', '\n').replace('""', '"').replace(r'\\', '\\')
 
 sys.stdout.write(out)
 sys.stderr.write(err)
 
-clt = process.client('sql', interactive = True,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+clt = process.client('sql', interactive=True,
+                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 
 out, err = clt.communicate(out)
 
 # do some normalization of the output:
 # remove SQL comments and empty lines
-out = re.sub('^[ \t]*(?:--.*)?\n', '', out, flags = re.M)
+out = re.sub('^[ \t]*(?:--.*)?\n', '', out, flags=re.MULTILINE)
 out = re.sub('[\t ]*--.*', '', out)
-out = re.sub(r'/\*.*?\*/[\n\t ]*', '', out, flags = re.DOTALL)
+out = re.sub(r'/\*.*?\*/[\n\t ]*', '', out, flags=re.DOTALL)
 
 wsre = re.compile('[\n\t ]+')
 pos = 0
 nout = ''
-for res in re.finditer(r'\bbegin\b.*?\bend\b[\n\t ]*;', out, flags = re.DOTALL | re.IGNORECASE):
+for res in re.finditer(r'\bbegin\b.*?\bend\b[\n\t ]*;', out, flags=re.DOTALL | re.IGNORECASE):
     nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
     pos = res.end(0)
 nout += out[pos:]
@@ -49,7 +49,7 @@ out = nout
 
 pos = 0
 nout = ''
-for res in re.finditer(r'(?<=\n)(?:create|select)\b.*?;', out, flags = re.DOTALL | re.IGNORECASE):
+for res in re.finditer(r'(?<=\n)(?:create|select)\b.*?;', out, flags=re.DOTALL | re.IGNORECASE):
     nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
     pos = res.end(0)
 nout += out[pos:]
@@ -166,8 +166,8 @@ drop function pcre_replace(string, string, string, string);
 
 sys.stdout.write(out)
 
-clt = process.client('sql', interactive = True,
-                   stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+clt = process.client('sql', interactive=True,
+                     stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 
 out, err = clt.communicate(out)
 

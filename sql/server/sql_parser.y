@@ -819,7 +819,7 @@ set_statement:
 	        sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($4))) );
+			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set SCHEMA ident
 		{ dlist *l = L();
@@ -827,7 +827,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0 );
 		append_string(l, sa_strdup(SA, "current_schema"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($3))) );
+			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set user '=' ident
 		{ dlist *l = L();
@@ -835,7 +835,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($4))) );
+			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set ROLE ident
 		{ dlist *l = L();
@@ -843,7 +843,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0);
 		append_string(l, sa_strdup(SA, "current_role"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($3))) );
+			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
@@ -2962,12 +2962,12 @@ opt_seps:
     /* empty */
 				{ dlist *l = L();
 				  append_string(l, sa_strdup(SA, "|"));
-				  append_string(l, sa_strdup(SA, "\\n"));
+				  append_string(l, sa_strdup(SA, "\n"));
 				  $$ = l; }
  |  opt_using DELIMITERS string
 				{ dlist *l = L();
 				  append_string(l, $3);
-				  append_string(l, sa_strdup(SA, "\\n"));
+				  append_string(l, sa_strdup(SA, "\n"));
 				  $$ = l; }
  |  opt_using DELIMITERS string ',' string
 				{ dlist *l = L();
@@ -2978,7 +2978,7 @@ opt_seps:
 				{ dlist *l = L();
 				  append_string(l, $3);
 				  append_string(l, $5);
-				  append_string(l, sql2str($7));
+				  append_string(l, $7);
 				  $$ = l; }
  ;
 
@@ -3793,7 +3793,7 @@ like_exp:
 	  append_symbol(l, $1);
 	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  |  scalar_exp ESCAPE string
- 	{ const char *s = sql2str($3);
+ 	{ const char *s = $3;
 	  if (_strlen(s) != 1) {
 		yyerror(m, SQLSTATE(22019) "ESCAPE must be one character");
 		$$ = NULL;
@@ -4672,7 +4672,7 @@ user:
  ;
 
 literal:
-    string 	{ const char *s = sql2str($1);
+    string 	{ const char *s = $1;
 		  int len = UTF8_strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );

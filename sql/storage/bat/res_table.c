@@ -137,14 +137,6 @@ res_table_destroy(res_table *t)
 	if (t->order)
 		bat_decref(t->order);
 	_DELETE(t->cols);
-	if (t->tsep)
-		_DELETE(t->tsep);
-	if (t->rsep)
-		_DELETE(t->rsep);
-	if (t->ssep)
-		_DELETE(t->ssep);
-	if (t->ns)
-		_DELETE(t->ns);
 	_DELETE(t);
 }
 

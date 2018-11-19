@@ -1312,7 +1312,7 @@ table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns, char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths, int onclient)
+rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths, int onclient)
 {
 	sql_rel *res;
 	list *exps, *args;
@@ -1385,10 +1385,10 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
 	sql_table *t = NULL, *nt = NULL;
-	char *tsep = seps->h->data.sval;
-	char *rsep = seps->h->next->data.sval;
-	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
-	char *ns = (null_string)?null_string:"null";
+	const char *tsep = seps->h->data.sval;
+	const char *rsep = seps->h->next->data.sval;
+	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
+	const char *ns = (null_string)?null_string:"null";
 	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
 	list *collist;
@@ -1495,12 +1495,15 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		}
 
 		for (; n; n = n->next) {
-			char *fname = n->data.sval;
+			const char *fname = n->data.sval;
 			sql_rel *nrel;
 
 			if (!onclient && fname && !MT_path_absolute(fname)) {
-				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
-						 "have absolute path: %s", fname);
+				char *fn = ATOMformat(TYPE_str, fname);
+				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
+					  "have absolute path: %s", fn);
+				GDKfree(fn);
+				return NULL;
 			}
 
 			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths, onclient);
@@ -1751,12 +1754,12 @@ rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql
 }
 
 static sql_rel *
-copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string, int onclient)
+copyto(mvc *sql, symbol *sq, const char *filename, dlist *seps, const char *null_string, int onclient)
 {
-	char *tsep = seps->h->data.sval;
-	char *rsep = seps->h->next->data.sval;
-	char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
-	char *ns = (null_string)?null_string:"null";
+	const char *tsep = seps->h->data.sval;
+	const char *rsep = seps->h->next->data.sval;
+	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:"\"";
+	const char *ns = (null_string)?null_string:"null";
 	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e, *oncl_e;
 	exp_kind ek = {type_value, card_relation, TRUE};
 	sql_rel *r = rel_subquery(sql, NULL, sq, ek, APPLY_JOIN);

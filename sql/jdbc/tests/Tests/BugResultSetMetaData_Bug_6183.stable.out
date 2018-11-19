@@ -85,7 +85,7 @@ Data rows:
 4	my	tab	varchar
 5	my	,tab_comma	varchar
 6	my,	comma_tab	varchar
-7	my\"double_doublequote	varchar
+7	my"double_doublequote	varchar
 8	Abc	varchar
 9	 	varchar
 10	123	varchar
@@ -163,7 +163,7 @@ Listed 2 rows
 12. show content of column(s): "my""double_doublequote"
 Resultset with 1 columns
 	Column Name, Column Label:
-1	my\\\"double_doublequote	my\\\"double_doublequote
+1	my\"double_doublequote	my\"double_doublequote
 Data rows:
 "my""double_doublequote"
 my""double_doublequote
@@ -206,7 +206,7 @@ Resultset with 11 columns
 5	my	tab	my	tab
 6	my	,tab_comma	my	,tab_comma
 7	my,	comma_tab	my,	comma_tab
-8	my\\\"double_doublequote	my\\\"double_doublequote
+8	my\"double_doublequote	my\"double_doublequote
 9	Abc	Abc
 10	 	 
 11	123	123

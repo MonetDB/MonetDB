@@ -473,6 +473,47 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 				} else
 					c = 'x';
 				break;
+			case 'u':
+			case 'U':
+				/* \u with four hexadecimal digits or
+				 * \U with eight hexadecimal digits */
+				if (n > 0) {
+					/* not when in the middle of a
+					 * UTF-8 sequence */
+					goto notutf8;
+				}
+				c = 0;
+				for (n = *cur == 'U' ? 8 : 4; n > 0; n--) {
+					cur++;
+					if (!num16(*cur)) {
+						GDKerror("not a Unicode code point escape\n");
+						return -1;
+					}
+					c = c << 4 | base16(*cur);
+				}
+				/* n == 0 now */
+				if (c == 0 || c > 0x10FFFF ||
+				    (c & 0xFFF800) == 0xD800) {
+					GDKerror("illegal Unicode code point\n");
+					return -1;
+				}
+				if (c < 0x80) {
+					*p++ = (unsigned char) c;
+				} else {
+					if (c < 0x800) {
+						*p++ = 0xC0 | (c >> 6);
+					} else {
+						if (c < 0x10000) {
+							*p++ = 0xE0 | (c >> 12);
+						} else {
+							*p++ = 0xF0 | (c >> 18);
+							*p++ = 0x80 | ((c >> 12) & 0x3F);
+						}
+						*p++ = 0x80 | ((c >> 6) & 0x3F);
+					}
+					*p++ = 0x80 | (c & 0x3F);
+				}
+				continue;
 			case 'a':
 				c = '\a';
 				break;

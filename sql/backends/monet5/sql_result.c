@@ -875,7 +875,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int locked, int best)
 {
 	int i = 0, j;
 	node *n;
@@ -1349,7 +1349,7 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 }
 
 static int
-export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, str ns)
+export_value(mvc *m, stream *s, int eclass, const char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, const char *ns)
 {
 	int ok = 0;
 	ssize_t l = 0;
@@ -1410,7 +1410,7 @@ export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p,
 }
 
 static int
-mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep, str ssep, str ns)
+mvc_export_row(backend *b, stream *s, res_table *t, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
 	mvc *m = b->mvc;
 	size_t seplen = strlen(sep);
@@ -1792,7 +1792,7 @@ cleanup:
 }
 
 static int
-mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns)
+mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
 	mvc *m = b->mvc;
 	Tablet as;

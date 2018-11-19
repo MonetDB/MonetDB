@@ -1018,7 +1018,7 @@ SQLload_parse_line(READERtask *task, int idx)
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
 				errline = SQLload_error(task, idx, i+1);
-				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing ", i+1);
+				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing", i+1);
 				tablet_error(task, idx, (int) i, errmsg, errline);
 				GDKfree(errline);
 				error = true;
