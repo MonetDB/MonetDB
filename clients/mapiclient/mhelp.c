@@ -41,7 +41,7 @@ typedef struct {
 	const char *comments;
 } SQLhelp;
 
-#define NUMBER_MAJOR_COMMANDS 75 // The number of major commands to show in case of no query
+#define NUMBER_MAJOR_COMMANDS 76 // The number of major commands to show in case of no query
 
 SQLhelp sqlhelp[] = {
 	// major commands
@@ -356,7 +356,7 @@ SQLhelp sqlhelp[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"INSERT",
 	 "",
-	 "[ WITH with_list ] INSERT INTO qname [ column_list ] { DEFAULT VALUES | VALUES row_values | query_expression }",
+	 "[ WITH with_list ] INSERT INTO qname [ column_list ] [ { DEFAULT VALUES | VALUES row_values | query_expression } ]",
 	 "with_list,column_list,row_values,query_expression",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Updates"},
 	{"GRANT",
@@ -365,6 +365,11 @@ SQLhelp sqlhelp[] = {
 	 "GRANT role [',' ...] TO grantee [',' ...] [ WITH ADMIN OPTION]",
 	 "privileges,role,grantee",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Permissions"},
+	{"MERGE",
+	 "",
+	 "[ WITH with_list ] MERGE INTO qname [ [AS] ident ] USING table_ref ON search_condition merge_list",
+	 "with_list,table_ref,search_condition,merge_list",
+	 NULL},
 	{"RELEASE SAVEPOINT",
 	 "",
 	 "RELEASE SAVEPOINT ident",
@@ -629,6 +634,17 @@ SQLhelp sqlhelp[] = {
 	 "READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE ",
 	 NULL,
 	 NULL},
+	{"merge_clause",
+	 NULL,
+	 "{ WHEN MATCHED [ AND search_condition ] THEN { UPDATE SET assignment_list | DELETE } } |\n"
+	 "{ WHEN NOT MATCHED [ AND search_condition ] THEN INSERT [ column_list ] [ { DEFAULT VALUES | VALUES row_values } ] }",
+	 "search_condition,assignment_list,column_list,row_values",
+	 NULL},
+	{"merge_list",
+	 NULL,
+	 "merge_clause [ ',' ... ]",
+	 "merge_clause",
+	 NULL},
 	{"nrofrecords",
 	 "",
 	 "OFFSET integer | integer RECORDS | integer OFFSET integer RECORDS | integer RECORDS OFFSET integer",
@@ -780,8 +796,8 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"update_statement",
 	 NULL,
-	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | copyfrom_stmt",
-	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | copyfrom_stmt",
+	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | merge_stmt | copyfrom_stmt",
+	 "delete_stmt,truncate_stmt,insert_stmt,update_stmt,merge_stmt,copyfrom_stmt",
 	 NULL},
 	{"triggered_action",
 	 NULL,
