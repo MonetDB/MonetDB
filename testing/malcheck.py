@@ -51,7 +51,7 @@ atomfunctypes = {
     'cmp': ('int', (('void *', True), ('void *', True))),
     'del': ('void', (('Heap *', False), ('var_t *', False))),
     'fix': ('int', (('void *', True),)),
-    'fromstr': ('ssize_t', (('char *', True), ('size_t *', False), ('void **', False))),
+    'fromstr': ('ssize_t', (('char *', True), ('size_t *', False), ('void **', False), ('bool', False))),
     'hash': ('BUN', (('void *', True),)),
     'heap': ('void', (('Heap *', False), ('size_t', False))),
     'length': ('size_t', (('void *', True),)),

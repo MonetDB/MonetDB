@@ -52,7 +52,7 @@ typedef union {
 
 mal_export str UUIDprelude(void *ret);
 mal_export int UUIDcompare(const uuid *l, const uuid *r);
-mal_export ssize_t UUIDfromString(const char *svalue, size_t *len, uuid **retval);
+mal_export ssize_t UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external);
 mal_export BUN UUIDhash(const void *u);
 mal_export const uuid *UUIDnull(void);
 mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
@@ -125,7 +125,7 @@ UUIDtoString(str *retval, size_t *len, const uuid *value, bool external)
 }
 
 ssize_t
-UUIDfromString(const char *svalue, size_t *len, uuid **retval)
+UUIDfromString(const char *svalue, size_t *len, uuid **retval, bool external)
 {
 	const char *s = svalue;
 	int i, j;
@@ -136,7 +136,7 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval)
 			return -1;
 		*len = UUID_SIZE;
 	}
-	if (strcmp(svalue, "nil") == 0) {
+	if (external && strcmp(svalue, "nil") == 0) {
 		**retval = uuid_nil;
 		return 3;
 	}
@@ -222,7 +222,7 @@ UUIDisaUUID(bit *retval, str *s)
 	uuid u;
 	uuid *pu = &u;
 	size_t l = UUID_SIZE;
-	*retval = UUIDfromString(*s, &l, &pu) == UUID_STRLEN;
+	*retval = UUIDfromString(*s, &l, &pu, false) == UUID_STRLEN;
 	return MAL_SUCCEED;
 }
 
@@ -231,7 +231,7 @@ UUIDstr2uuid(uuid **retval, str *s)
 {
 	size_t l = *retval ? UUID_SIZE : 0;
 
-	if (UUIDfromString(*s, &l, retval) == UUID_STRLEN) {
+	if (UUIDfromString(*s, &l, retval, false) == UUID_STRLEN) {
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "uuid.uuid", "Not a UUID");

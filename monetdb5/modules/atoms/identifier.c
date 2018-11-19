@@ -25,7 +25,7 @@ typedef str identifier;
 
 mal_export int TYPE_identifier;
 mal_export str IDprelude(void *ret);
-mal_export ssize_t IDfromString(const char *src, size_t *len, identifier *retval);
+mal_export ssize_t IDfromString(const char *src, size_t *len, identifier *retval, bool external);
 mal_export ssize_t IDtoString(str *retval, size_t *len, const char *handle, bool external);
 mal_export str IDentifier(identifier *retval, str *in);
 
@@ -45,7 +45,7 @@ str IDprelude(void *ret)
  * Returns the number of chars read
  */
 ssize_t
-IDfromString(const char *src, size_t *len, identifier *retval)
+IDfromString(const char *src, size_t *len, identifier *retval, bool external)
 {
 	size_t l = strlen(src) + 1;
 	if (*retval == NULL || *len < l) {
@@ -54,6 +54,10 @@ IDfromString(const char *src, size_t *len, identifier *retval)
 		if (*retval == NULL)
 			return -1;
 		*len = l;
+	}
+	if (external && strncmp(src, "nil", 3) == 0) {
+		memcpy(*retval, str_nil, 2);
+		return 3;
 	}
 	memcpy(*retval, src, l);
 	return (ssize_t) l - 1;
@@ -92,7 +96,7 @@ IDentifier(identifier *retval, str *in)
 {
 	size_t len = 0;
 
-	if (IDfromString(*in, &len, retval) < 0)
+	if (IDfromString(*in, &len, retval, false) < 0)
 		throw(PARSE, "identifier.identifier", "Error while parsing %s", *in);
 
 	return (MAL_SUCCEED);

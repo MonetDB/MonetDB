@@ -65,7 +65,7 @@ CLRhextoint(char h, char l)
 }
 
 ssize_t
-color_fromstr(const char *colorStr, size_t *len, color **c)
+color_fromstr(const char *colorStr, size_t *len, color **c, bool external)
 {
 	const char *p = colorStr;
 
@@ -84,23 +84,24 @@ color_fromstr(const char *colorStr, size_t *len, color **c)
 
 	while (GDKisspace(*p))
 		p++;
-	if (strncmp(p, "nil", 3) == 0) {
+	if (external && strncmp(p, "nil", 3) == 0) {
 		**c = color_nil;
 		p += 3;
-	} else {
-		if (strncmp(p, "0x00", 4) == 0) {
-			int r, g, b;
+	} else if (strncmp(p, "0x00", 4) == 0) {
+		int r, g, b;
 
-			if ((r = CLRhextoint(p[4], p[5])) == -1 ||
-				(g = CLRhextoint(p[6], p[7])) == -1 ||
-				(b = CLRhextoint(p[8], p[9])) == -1) {
-				**c = color_nil;
-				return 0;
-			}
-			**c = (color) (r << 16 | g << 8 | b);
-			p += 10;
-		} else
+		if ((r = CLRhextoint(p[4], p[5])) == -1 ||
+			(g = CLRhextoint(p[6], p[7])) == -1 ||
+			(b = CLRhextoint(p[8], p[9])) == -1) {
 			**c = color_nil;
+			return 0;
+		}
+		**c = (color) (r << 16 | g << 8 | b);
+		p += 10;
+	} else {
+		**c = color_nil;
+		GDKerror("not a color\n");
+		return -1;
 	}
 	return (ssize_t) (p - colorStr);
 }
@@ -390,7 +391,7 @@ CLRcolor(color *c, const char **val)
 {
 	size_t len = sizeof(color);
 
-	if (color_fromstr(*val, &len, &c) < 0)
+	if (color_fromstr(*val, &len, &c, false) < 0)
 		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

@@ -635,7 +635,7 @@ str
 IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
-	ssize_t (*tconvert) (const char *, size_t *, ptr *);
+	ssize_t (*tconvert) (const char *, size_t *, ptr *, bool);
 	ssize_t n;
 	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
@@ -776,7 +776,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
-		n = tconvert(p, &lt, (ptr*)&t);
+		n = tconvert(p, &lt, (ptr*)&t, true);
 		if (n < 0) {
 			BBPunfix(b->batCacheid);
 			snprintf(msg,sizeof(msg),"error in input %s",buf);

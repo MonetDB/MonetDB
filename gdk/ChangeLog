@@ -2,9 +2,10 @@
 # This file is updated with Maddlog
 
 * Mon Nov 12 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Added an extra argument of type `bool' to the atom to string methods
-  to indicate whether the string is for internal use (converting the
-  value to a string to be put into a BAT) of external use (to be printed).
+- Added an extra argument of type `bool' to the atom to string and
+  string to atom methods to indicate whether the string is for
+  internal use (casting the value to or from a string) of external use
+  (to be printed).
 
 * Wed Nov  7 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented a nilslast option for BATfirstn.  If set, NILs come

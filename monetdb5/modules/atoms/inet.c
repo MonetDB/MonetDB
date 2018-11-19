@@ -69,7 +69,7 @@ typedef struct _inet {
 #endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
-mal_export ssize_t INETfromString(const char *src, size_t *len, inet **retval);
+mal_export ssize_t INETfromString(const char *src, size_t *len, inet **retval, bool external);
 mal_export ssize_t INETtoString(str *retval, size_t *len, const inet *handle, bool external);
 mal_export int INETcompare(const inet *l, const inet *r);
 mal_export str INETnew(inet *retval, str *in);
@@ -106,7 +106,7 @@ static inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
  * Returns the number of chars read
  */
 ssize_t
-INETfromString(const char *src, size_t *len, inet **retval)
+INETfromString(const char *src, size_t *len, inet **retval, bool external)
 {
 	int i, last, type;
 	long parse; /* type long returned by strtol() */
@@ -129,7 +129,7 @@ INETfromString(const char *src, size_t *len, inet **retval)
 	}
 
 	/* handle the nil string */
-	if (strcmp(src, "nil") == 0) {
+	if (external && strcmp(src, "nil") == 0) {
 		in_setnil(*retval);
 		return 3;
 	}
@@ -263,7 +263,7 @@ INETnew(inet *retval, str *in)
 	ssize_t pos;
 	size_t len = sizeof(inet);
 
-	pos = INETfromString(*in, &len, &retval);
+	pos = INETfromString(*in, &len, &retval, false);
 	if (pos < 0)
 		throw(PARSE, "inet.new", GDK_EXCEPTION);
 
@@ -797,7 +797,7 @@ str
 INET_fromstr(inet *ret, str *s)
 {
 	size_t len = sizeof(inet);
-	if (INETfromString(*s, &len, &ret) < 0)
+	if (INETfromString(*s, &len, &ret, false) < 0)
 		throw(MAL, "inet.inet",  GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

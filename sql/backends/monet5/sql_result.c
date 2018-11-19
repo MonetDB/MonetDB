@@ -707,8 +707,6 @@ sec_frstr(Column *c, int type, const char *s)
 	(void) type;
 	assert(type == TYPE_lng);
 
-	if( strcmp(s,"nil")== 0)
-		return NULL;
 	if (*s == '-') {
 		neg = 1;
 		s++;
@@ -717,32 +715,28 @@ sec_frstr(Column *c, int type, const char *s)
 		s++;
 	}
 	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
-		if (!*s || !isdigit((unsigned char) *s))
+		if (!isdigit((unsigned char) *s))
 			return NULL;
 		res *= 10;
 		res += (*s - '0');
 	}
-	if (!*s) {
-		for (i = 0; i < 3; i++) {
-			res *= 10;
-		}
-	}
+	i = 0;
 	if (*s) {
 		if (*s != '.')
 			return NULL;
 		s++;
-		for (i = 0; *s && i < 3; i++, s++) {
+		for (; *s && i < 3; i++, s++) {
 			if (!isdigit((unsigned char) *s))
 				return NULL;
 			res *= 10;
 			res += (*s - '0');
 		}
-		for (; i < 3; i++) {
-			res *= 10;
-		}
 	}
 	if (*s)
 		return NULL;
+	for (; i < 3; i++) {
+		res *= 10;
+	}
 	r = c->data;
 	if (r == NULL && (r = (lng *) GDKzalloc(sizeof(lng))) == NULL)
 		return NULL;
@@ -801,7 +795,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 	if( strcmp(s,"nil")== 0)
 		return NULL;
 
-	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data);
+	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, true);
 	if (len < 0)
 		return NULL;
 	if (len == 0 || s[len]) {

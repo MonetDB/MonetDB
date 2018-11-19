@@ -29,7 +29,11 @@ stderr of test 'oid` in directory 'sql/test/pg_regress` itself:
 # 15:18:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7372" "--port=31804"
 # 15:18:43 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+MAPI  = (monetdb) /var/tmp/mtest-7336/.s.monetdb.35559
+QUERY = INSERT INTO OID_TBL(f1) VALUES ('    ');  -- in MonetDB this one is not accepted
+ERROR = !conversion of string '    ' to type oid failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-7336/.s.monetdb.35559
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('asdfasd');
 ERROR = !conversion of string 'asdfasd' to type oid failed.
 CODE  = 22018

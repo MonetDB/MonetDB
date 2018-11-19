@@ -109,12 +109,12 @@ JSONfree(JSON *c)
 }
 
 ssize_t
-JSONfromString(const char *src, size_t *len, json *j)
+JSONfromString(const char *src, size_t *len, json *j, bool external)
 {
 	size_t slen = strlen(src);
 	JSON *jt;
 
-	if (GDK_STRNIL(src)) {
+	if (GDK_STRNIL(src) || (external && strncmp(src, "nil", 3) == 0)) {
 		if (*len < 2 || *j == NULL) {
 			GDKfree(*j);
 			if ((*j = GDKmalloc(2)) == NULL)
@@ -122,10 +122,24 @@ JSONfromString(const char *src, size_t *len, json *j)
 			*len = 2;
 		}
 		strcpy(*j, str_nil);
-		return 1;
+		return GDK_STRNIL(src) ? 1 : 3;
 	}
-
-	if ((jt = JSONparse(src)) == NULL)
+	if (*len <= slen || *j == NULL) {
+		GDKfree(*j);
+		if ((*j = GDKmalloc(slen + 1)) == NULL)
+			return -1;
+		*len = slen + 1;
+	}
+	if (external) {
+		if (GDKstrFromStr((unsigned char *) *j,
+						  (const unsigned char *) src, (ssize_t) slen) < 0)
+			return -1;
+		src = *j;
+	} else {
+		strcpy(*j, src);
+	}
+	jt = JSONparse(*j);
+	if (jt == NULL)
 		return -1;
 	if (jt->error) {
 		GDKerror("%s", getExceptionMessageAndState(jt->error));
@@ -134,17 +148,7 @@ JSONfromString(const char *src, size_t *len, json *j)
 	}
 	JSONfree(jt);
 
-	if (*len <= slen || *j == NULL) {
-		GDKfree(*j);
-		if ((*j = GDKmalloc(slen + 1)) == NULL)
-			return -1;
-		*len = slen + 1;
-	}
-	if (GDKstrFromStr((unsigned char *) *j,
-					  (const unsigned char *) src, (ssize_t) slen) < 0)
-		return -1;
-
-	return (ssize_t) strlen(*j);
+	return (ssize_t) slen;
 }
 
 ssize_t

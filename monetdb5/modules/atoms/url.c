@@ -282,7 +282,7 @@ x2c(char *what)
  */
 
 ssize_t
-URLfromString(const char *src, size_t *len, str *u)
+URLfromString(const char *src, size_t *len, str *u, bool external)
 {
 	size_t l = strlen(src) + 1;
 
@@ -296,7 +296,7 @@ URLfromString(const char *src, size_t *len, str *u)
 
 	/* actually parse the message for valid url */
 
-	if (strcmp(src, "nil") == 0)
+	if (external && strcmp(src, "nil") == 0)
 		strcpy(*u, str_nil);
 	else
 		memcpy(*u, src, l);

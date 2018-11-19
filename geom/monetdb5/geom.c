@@ -5011,7 +5011,7 @@ mbrFromString(mbr **w, const char **src)
 	char *errbuf;
 	str ex;
 
-	if (mbrFROMSTR(*src, &len, w) >= 0)
+	if (mbrFROMSTR(*src, &len, w, false) >= 0)
 		return MAL_SUCCEED;
 	GDKfree(*w);
 	*w = NULL;
@@ -5123,11 +5123,17 @@ wkbTOSTR(char **geomWKT, size_t *len, const wkb *geomWKB, bool external)
 }
 
 ssize_t
-wkbFROMSTR(const char *geomWKT, size_t *len, wkb **geomWKB)
+wkbFROMSTR(const char *geomWKT, size_t *len, wkb **geomWKB, bool external)
 {
 	size_t parsedBytes;
 	str err;
 
+	if (external && strncmp(geomWKT, "nil", 3) == 0) {
+		*geomWKB = wkbNULLcopy();
+		if (*geomWKB == NULL)
+			return -1;
+		return 3;
+	}
 	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
 		GDKerror("%s", getExceptionMessageAndState(err));
@@ -5295,18 +5301,30 @@ mbrTOSTR(char **dst, size_t *len, const mbr *atom, bool external)
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
 ssize_t
-mbrFROMSTR(const char *src, size_t *len, mbr **atom)
+mbrFROMSTR(const char *src, size_t *len, mbr **atom, bool external)
 {
-	int nil = 0;
 	size_t nchars = 0;	/* The number of characters parsed; the return value. */
 	GEOSGeom geosMbr = NULL;	/* The geometry object that is parsed from the src string. */
 	double xmin = 0, ymin = 0, xmax = 0, ymax = 0;
-	char *c;
+	const char *c;
 
-	if (strcmp(src, str_nil) == 0)
-		nil = 1;
+	if (*len < sizeof(mbr) || *atom == NULL) {
+		GDKfree(*atom);
+		if ((*atom = GDKmalloc(*len = sizeof(mbr))) == NULL)
+			return -1;
+	}
+	if (external && strncmp(src, "nil", 3) == 0) {
+		**atom = *mbrNULL();
+		return 3;
+	}
+	if (strcmp(src, str_nil) == 0) {
+		**atom = *mbrNULL();
+		return 1;
+	}
 
-	if (!nil && (strstr(src, "mbr") == src || strstr(src, "MBR") == src || strstr(src, "box") == src || strstr(src, "BOX") == src) && (c = strstr(src, "(")) != NULL) {
+	if ((strstr(src, "mbr") == src || strstr(src, "MBR") == src
+	     || strstr(src, "box") == src || strstr(src, "BOX") == src)
+	    && (c = strstr(src, "(")) != NULL) {
 		/* Parse the mbr */
 		if ((c - src) != 3 && (c - src) != 4) {
 			GDKerror("ParseException: Expected a string like 'MBR(0 0,1 1)' or 'MBR (0 0,1 1)'\n");
@@ -5317,20 +5335,12 @@ mbrFROMSTR(const char *src, size_t *len, mbr **atom)
 			GDKerror("ParseException: Not enough coordinates.\n");
 			return -1;
 		}
-	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL) {
+	} else if ((geosMbr = GEOSGeomFromWKT(src)) == NULL) {
 		GDKerror("GEOSGeomFromWKT failed\n");
 		return -1;
 	}
 
-	if (*len < sizeof(mbr) || *atom == NULL) {
-		GDKfree(*atom);
-		if ((*atom = GDKmalloc(*len = sizeof(mbr))) == NULL)
-			return -1;
-	}
-	if (nil) {
-		nchars = 3;
-		**atom = *mbrNULL();
-	} else if (geosMbr == NULL) {
+	if (geosMbr == NULL) {
 		assert(GDK_flt_min <= xmin && xmin <= GDK_flt_max);
 		assert(GDK_flt_min <= xmax && xmax <= GDK_flt_max);
 		assert(GDK_flt_min <= ymin && ymin <= GDK_flt_max);
@@ -5542,8 +5552,16 @@ wkbaTOSTR(char **toStr, size_t *len, const wkba *fromArray, bool external)
 
 /* return number of parsed characters. */
 ssize_t
-wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray)
+wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray, bool external)
 {
+	if (external && strncmp(fromStr, "nil", 3) == 0) {
+		size_t sz = wkba_size(~0);
+		if ((*len < sz || *toArray == NULL)
+		    && (*toArray = GDKmalloc(sz)) == NULL)
+			return -1;
+		**toArray = *wkbaNULL();
+		return 3;
+	}
 	return wkbaFROMSTR_withSRID(fromStr, len, toArray, 0);
 }
 
@@ -5551,7 +5569,7 @@ wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray)
 const wkba *
 wkbaNULL(void)
 {
-	static wkba nullval = {~0};
+	static wkba nullval = {.itemsNum = ~0};
 
 	return &nullval;
 }

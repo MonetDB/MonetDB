@@ -508,6 +508,15 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 		} else if ((c = *cur) == '\\') {
 			escaped = true;
 			continue;
+#if 0
+		} else if (c == quote && cur[1] == quote) {
+			assert(c != 0);
+			if (n > 0)
+				goto notutf8;
+			*p++ = quote;
+			cur++;
+			continue;
+#endif
 		}
 
 		if (n > 0) {
@@ -571,11 +580,18 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 }
 
 ssize_t
-strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst)
+strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, bool external)
 {
 	const char *cur = src, *start = NULL;
 	size_t l = 1;
 	bool escaped = false;
+
+	if (!external) {
+		size_t sz = strLen(src);
+		atommem(sz);
+		strncpy(*dst, src, sz + 1);
+		return (ssize_t) sz;
+	}
 
 	if (GDK_STRNIL(src)) {
 		atommem(2);

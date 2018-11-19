@@ -3407,9 +3407,9 @@ str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 		return MAL_SUCCEED;
 	}
 	if (*tz)
-		pos = daytime_tz_fromstr(*v, &len, &res);
+		pos = daytime_tz_fromstr(*v, &len, &res, false);
 	else
-		pos = daytime_fromstr(*v, &len, &res);
+		pos = daytime_fromstr(*v, &len, &res, false);
 	if (pos < (ssize_t) strlen(*v) || /* includes pos < 0 */
 	    ATOMcmp(TYPE_daytime, res, ATOMnilptr(TYPE_daytime)) == 0)
 		throw(SQL, "daytime", SQLSTATE(22007) "Daytime (%s) has incorrect format", *v);
@@ -3485,9 +3485,9 @@ str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 		return MAL_SUCCEED;
 	}
 	if (*tz)
-		pos = timestamp_tz_fromstr(*v, &len, &res);
+		pos = timestamp_tz_fromstr(*v, &len, &res, false);
 	else
-		pos = timestamp_fromstr(*v, &len, &res);
+		pos = timestamp_fromstr(*v, &len, &res, false);
 	if (!pos || pos < (ssize_t) strlen(*v) || ATOMcmp(TYPE_timestamp, res, ATOMnilptr(TYPE_timestamp)) == 0)
 		throw(SQL, "timestamp", SQLSTATE(22007) "Timestamp (%s) has incorrect format", *v);
 	return timestamp_2time_timestamp(res, res, digits);

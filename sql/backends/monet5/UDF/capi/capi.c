@@ -1474,7 +1474,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (!ptr || strcmp(ptr, str_nil) == 0) {
 						appended_element = (void *)BATatoms[bat_type].atomNull;
 					} else {
-						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element) ==
+						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element, false) ==
 							0) {
 							msg = createException(MAL, "cudf.eval",
 												  "Failed to convert output "

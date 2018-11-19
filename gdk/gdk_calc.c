@@ -13744,7 +13744,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	void *d;
 	size_t len = ATOMsize(tp);
 	ssize_t l;
-	ssize_t (*atomfromstr)(const char *, size_t *, ptr *) = BATatoms[tp].atomFromStr;
+	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
 
 	for (i = 0; i < start; i++) {
@@ -13769,7 +13769,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			nils++;
 		} else {
 			d = dst;
-			if ((l = (*atomfromstr)(s, &len, &d)) < 0 ||
+			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
 					GDKclrerr();
@@ -14511,7 +14511,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 				len = ATOMsize(ret->vtype);
 			}
 			if ((l = (*BATatoms[ret->vtype].atomFromStr)(
-				     v->val.sval, &len, &p)) < 0 ||
+				     v->val.sval, &len, &p, false)) < 0 ||
 			    l < (ssize_t) strlen(v->val.sval)) {
 				if (ATOMextern(ret->vtype))
 					GDKfree(p);

@@ -38,7 +38,7 @@ int TYPE_sqlblob;
 mal_export str BLOBprelude(void *ret);
 
 mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const blob *pin, bool external);
-mal_export ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val);
+mal_export ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val, bool external);
 mal_export int BLOBcmp(const blob *l, const blob *r);
 mal_export BUN BLOBhash(const blob *b);
 mal_export const blob *BLOBnull(void);
@@ -251,7 +251,7 @@ BLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 }
 
 ssize_t
-BLOBfromstr(const char *instr, size_t *l, blob **val)
+BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 {
 	size_t i;
 	size_t nitems;
@@ -260,7 +260,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val)
 	const char *s = instr;
 	char *e;
 
-	if (GDK_STRNIL(instr) || strncmp(instr, "nil", 3) == 0) {
+	if (GDK_STRNIL(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
 			GDKfree(*val);
@@ -432,7 +432,7 @@ SQLBLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
  * no brackets and no spaces in between the hexits
  */
 ssize_t
-SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
+SQLBLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 {
 	size_t i;
 	size_t nitems;
@@ -440,7 +440,7 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 	blob *result;
 	const char *s = instr;
 
-	if (GDK_STRNIL(instr) || strncmp(instr, "nil", 3) == 0) {
+	if (GDK_STRNIL(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
 			GDKfree(*val);
@@ -528,7 +528,7 @@ BLOBblob_fromstr(blob **b, const char **s)
 {
 	size_t len = 0;
 
-	if (BLOBfromstr(*s, &len, b) < 0)
+	if (BLOBfromstr(*s, &len, b, false) < 0)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -539,7 +539,7 @@ BLOBsqlblob_fromstr(sqlblob **b, const char **s)
 {
 	size_t len = 0;
 
-	if (SQLBLOBfromstr(*s, &len, b) < 0)
+	if (SQLBLOBfromstr(*s, &len, b, false) < 0)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
