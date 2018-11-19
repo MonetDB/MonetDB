@@ -28,7 +28,12 @@ stderr of test 'mergestmt01` in directory 'sql/test/merge-statements` itself:
 # 14:42:45 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2774" "--port=35532"
 # 14:42:45 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-25830/.s.monetdb.34955
+MAPI  = (monetdb) /var/tmp/mtest-11874/.s.monetdb.35844
+QUERY = merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
+              when not matched then insert values (othertt.aa, othertt.bb); --error there was no match for the merged table, so it shouldn't appear in the insert clause
+ERROR = !SELECT: no such column 'othertt.aa'
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-11874/.s.monetdb.35844
 QUERY = merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
               when not matched then insert select 41, -12; --error, not supported
 ERROR = !MERGE: sub-queries not yet supported in INSERT clauses inside MERGE statements

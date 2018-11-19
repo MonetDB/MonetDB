@@ -91,7 +91,7 @@ Ready.
 [ 6,	3	]
 [ NULL,	4	]
 #merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb when not matched then insert values (5, 5);
-[ 7	]
+[ 1	]
 #select aa, bb from predata order by bb;
 % sys.predata,	sys.predata # table_name
 % aa,	bb # name
@@ -105,14 +105,8 @@ Ready.
 [ 6,	3	]
 [ NULL,	4	]
 [ 5,	5	]
-[ 5,	5	]
-[ 5,	5	]
-[ 5,	5	]
-[ 5,	5	]
-[ 5,	5	]
-[ 5,	5	]
 #merge into predata as othern using (select aa, bb from merging) sub on othern.bb = sub.bb when not matched then insert values (5, 5);
-[ 14	]
+[ 1	]
 #drop table merging;
 #drop table predata;
 

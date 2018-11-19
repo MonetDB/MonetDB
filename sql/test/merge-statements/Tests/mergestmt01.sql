@@ -28,13 +28,16 @@ select aa, bb from predata;
 
 delete from predata;
 insert into predata values (15, 1), (3, 1), (6, 3), (8, 2);
+insert into merging values (-500, -300);
 
 merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
       when not matched then insert values (sub.aa, 2);
 select aa, bb from predata;
 
+insert into merging values (1900, 2);
+
 merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
-      when not matched then insert values (sub.aa + 5, othertt.bb - 1);
+      when not matched then insert values (sub.aa + 5, sub.bb * 2);
 select aa, bb from predata;
 
 delete from predata;
@@ -45,6 +48,9 @@ merge into predata using (select aa, bb from merging) thee on predata.bb = thee.
 select aa, bb from predata;
 
 rollback;
+
+merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
+      when not matched then insert values (othertt.aa, othertt.bb); --error there was no match for the merged table, so it shouldn't appear in the insert clause
 
 merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
       when not matched then insert select 41, -12; --error, not supported
