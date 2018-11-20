@@ -1776,7 +1776,7 @@ generated_column:
 
 		/* finally all the options */
 		append_list(l, $5);
-		append_int(l, 0); /* to be dropped */
+		append_int(l, 1); /* to be dropped */
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create_list(SQL_NEXT, append_string(L(), sn)));
 
 		if (m->sym) {
@@ -1808,7 +1808,7 @@ generated_column:
 		sql_find_subtype(&it, "int", 32, 0);
     		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
-		append_int(l, 0); /* to be dropped */
+		append_int(l, 1); /* to be dropped */
 		if (m->scanner.schema)
 			append_string(seqn2, m->scanner.schema);
 		append_string(seqn2, sn);

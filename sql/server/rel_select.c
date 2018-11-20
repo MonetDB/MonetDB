@@ -2556,7 +2556,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			/* first remove the NULLs */
 			if (!l_is_value && sc->token == SQL_NOT_IN &&
 		    	    l->card != CARD_ATOM && has_nil(l)) {
-				sql_exp *ol;
+				sql_exp *ol = NULL;
 
 				if (l->type != e_column) {
 					pexps = rel_projections(sql, rel, NULL, 1, 1);
@@ -2570,7 +2570,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				e = rel_unop_(sql, l, NULL, "isnull", card_value);
 				e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal);
 				rel_select_add_exp(sql->sa, select, e);
-				if (pexps)
+				if (pexps && ol)
 					l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
 			}
 			rel = left = select;
@@ -2622,8 +2622,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					int r_is_rel = 0;
 
 					r = rel_value_exp(sql, &z, sval, f, ek);
-					if (z)
+					if (z) {
+						for(node *nn = z->exps->h ; nn ; nn = nn->next)
+							exp_label(sql->sa, (sql_exp*)nn->data, ++sql->label);
 						r_is_rel = 1;
+					}
 					if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 						/* reset error */
 						sql->session->status = 0;

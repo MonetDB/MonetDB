@@ -1150,26 +1150,30 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		comment_on(toConsole, "TABLE", schema, tname, NULL, remark);
 
 		snprintf(query, maxquerylen,
-			 "SELECT i.name, "		/* 0 */
-				"k.name, "		/* 1 */
-				"kc.nr, "		/* 2 */
-				"c.name, "		/* 3 */
-				"i.type "		/* 4 */
-			 "FROM sys.idxs AS i "
-				"LEFT JOIN sys.keys AS k ON i.name = k.name, "
-			      "sys.objects AS kc, "
-			      "sys._columns AS c, "
-			      "sys.schemas s, "
-			      "sys._tables AS t "
-			 "WHERE i.table_id = t.id "
-			   "AND i.id = kc.id "
-			   "AND t.id = c.table_id "
-			   "AND kc.name = c.name "
-			   "AND (k.type IS NULL OR k.type = 1) "
-			   "AND t.schema_id = s.id "
-			   "AND s.name = '%s' "
-			   "AND t.name = '%s' "
-			   "AND i.type in (0, 4, 5) "
+			 "SELECT i.name, " /* 0 */
+				"k.name, " /* 1 */
+				"kc.nr, "  /* 2 */
+				"c.name, " /* 3 */
+				"it.idx "  /* 4 */
+			   "FROM sys.idxs AS i "
+				  "LEFT JOIN sys.keys AS k ON i.name = k.name, "
+				"sys.objects AS kc, "
+				"sys._columns AS c, "
+				"sys.schemas s, "
+				"sys._tables AS t, "
+				"(VALUES (0, 'INDEX'), "
+					"(4, 'IMPRINTS INDEX'), "
+					"(5, 'ORDERED INDEX')) AS it (id, idx) "
+			  "WHERE i.table_id = t.id "
+			    "AND i.id = kc.id "
+			    "AND t.id = c.table_id "
+			    "AND kc.name = c.name "
+			    "AND (k.type IS NULL OR k.type = 1) "
+			    "AND t.schema_id = s.id "
+			    "AND s.name = '%s' "
+			    "AND t.name = '%s' "
+			    "AND i.type in (0, 4, 5) "
+			    "AND i.type = it.id "
 			 "ORDER BY i.name, kc.nr", schema, tname);
 		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 			goto bailout;
@@ -1191,26 +1195,9 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 			if (strcmp(kc_nr, "0") == 0) {
 				if (cnt)
 					mnstr_printf(toConsole, ");\n");
-				switch (atoi(i_type)) {
-				case 0: /* hash_idx */
-					mnstr_printf(toConsole,
-						     "CREATE INDEX \"%s\" ON \"%s\".\"%s\" (",
-						     i_name, schema, tname);
-					break;
-				case 5: /* ordered_idx */
-					mnstr_printf(toConsole,
-						     "CREATE ORDERED INDEX \"%s\" ON \"%s\".\"%s\" (",
-						     i_name, schema, tname);
-					break;
-				case 4: /* imprints_idx */
-					mnstr_printf(toConsole,
-						     "CREATE IMPRINTS INDEX \"%s\" ON \"%s\".\"%s\" (",
-						     i_name, schema, tname);
-					break;
-				default:
-					/* cannot happen due to WHERE clause */
-					goto bailout;
-				}
+				mnstr_printf(toConsole,
+					     "CREATE %s \"%s\" ON \"%s\".\"%s\" (",
+					     i_type, i_name, schema, tname);
 				cnt = 1;
 			} else
 				mnstr_printf(toConsole, ", ");
