@@ -3871,7 +3871,7 @@ sys_drop_statistics(sql_trans *tr, sql_column *col)
 	}
 }
 
-static void
+static int
 sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 {
 	str seq_pos = NULL;
@@ -3882,7 +3882,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 				  &col->base.id, NULL);
 
 	if (is_oid_nil(rid))
-		return ;
+		return 0;
 	table_funcs.table_delete(tr, syscolumn, rid);
 	sql_trans_drop_dependencies(tr, col->base.id);
 	sql_trans_drop_any_comment(tr, col->base.id);
@@ -3891,6 +3891,9 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		sql_sequence * seq = NULL;
 		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 		node *n = NULL;
+
+		if(!seq_name)
+			return -1;
 		seq_name[strlen(seq_name)-1] = '\0';
 		n = cs_find_name(&syss->seqs, seq_name);
 		seq = find_sql_sequence(syss, seq_name);
@@ -3910,6 +3913,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		sql_trans_drop_all_dependencies(tr, col->t->s, col->base.id, COLUMN_DEPENDENCY);
 	if (col->type.type->s) 
 		sql_trans_drop_dependency(tr, col->base.id, col->type.type->base.id, TYPE_DEPENDENCY);
+	return 0;
 }
 
 static void
@@ -3938,7 +3942,7 @@ sys_drop_idxs(sql_trans *tr, sql_table *t, int drop_action)
 		}
 }
 
-static void
+static int
 sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
@@ -3947,8 +3951,10 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 		for (n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
 
-			sys_drop_column(tr, c, drop_action);
+			if(sys_drop_column(tr, c, drop_action))
+				return -1;
 		}
+	return 0;
 }
 
 static void
@@ -3968,7 +3974,7 @@ sys_drop_parts(sql_trans *tr, sql_table *t, int drop_action)
 }
 
 
-static void
+static int
 sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
@@ -3977,7 +3983,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	oid rid = table_funcs.column_find_row(tr, syscol, &t->base.id, NULL);
 
 	if (is_oid_nil(rid))
-		return ;
+		return 0;
 	table_funcs.table_delete(tr, systable, rid);
 	sys_drop_keys(tr, t, drop_action);
 	sys_drop_idxs(tr, t, drop_action);
@@ -3989,13 +3995,15 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	sql_trans_drop_dependencies(tr, t->base.id);
 
 	if (isKindOfTable(t) || isView(t))
-		sys_drop_columns(tr, t, drop_action);
+		if(sys_drop_columns(tr, t, drop_action))
+			return -1;
 
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 
 	if (drop_action) 
 		sql_trans_drop_all_dependencies(tr, t->s, t->base.id, !isView(t) ? TABLE_DEPENDENCY : VIEW_DEPENDENCY);
+	return 0;
 }
 
 static void
@@ -4065,7 +4073,7 @@ sys_drop_types(sql_trans *tr, sql_schema *s, int drop_action)
 		}
 }
 
-static void
+static int
 sys_drop_tables(sql_trans *tr, sql_schema *s, int drop_action)
 {
 	node *n;
@@ -4074,8 +4082,10 @@ sys_drop_tables(sql_trans *tr, sql_schema *s, int drop_action)
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
 
-			sys_drop_table(tr, t, drop_action);
+			if(sys_drop_table(tr, t, drop_action))
+				return -1;
 		}
+	return 0;
 }
 
 static void
@@ -4379,7 +4389,8 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 
 	table_funcs.table_delete(tr, sysschema, rid);
 	sys_drop_funcs(tr, s, drop_action);
-	sys_drop_tables(tr, s, drop_action);
+	if(sys_drop_tables(tr, s, drop_action))
+		return -1;
 	sys_drop_types(tr, s, drop_action);
 	sys_drop_sequences(tr, s, drop_action);
 	sql_trans_drop_any_comment(tr, s->base.id);
@@ -4626,9 +4637,10 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		*local_id = t->base.id;
 		list_append(tr->dropped, local_id);
 	}
-		
+
 	if (!isDeclaredTable(t))
-		sys_drop_table(tr, t, drop_action);
+		if(sys_drop_table(tr, t, drop_action))
+			return -1;
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t) || (t->commit_action != CA_DROP)) 
@@ -4753,7 +4765,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
 	}
 	
 	if (isKindOfTable(t))
-		sys_drop_column(tr, col, drop_action);
+		if(sys_drop_column(tr, col, drop_action))
+			return -1;
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	cs_del(&t->columns, n, col->base.flag);
