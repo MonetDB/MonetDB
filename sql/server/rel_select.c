@@ -5235,6 +5235,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 		if (sample_parameters->cnt == 2) {
 			sql_exp *seed_value = rel_value_exp( sql, NULL, sample_parameters->h->next->data.sym, 0, ek);
+			if (!seed_value)
+				return NULL;
 			append(exps, seed_value);
 		}
 
