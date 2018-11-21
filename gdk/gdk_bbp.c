@@ -2653,7 +2653,7 @@ getBBPdescriptor(bat i, bool lock)
 			if (b == NULL) {
 				load = true;
 				BATDEBUG {
-					fprintf(stderr, "#BBPdescriptor set to unloading BAT %d\n", i);
+					fprintf(stderr, "#BBPdescriptor set to loading BAT %d\n", i);
 				}
 				BBP_status_on(i, BBPLOADING, "BBPdescriptor");
 			}

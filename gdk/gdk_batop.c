@@ -1015,8 +1015,10 @@ BATslice(BAT *b, BUN l, BUN h)
 		bn->trevsorted = b->trevsorted;
 		BATkey(bn, BATtkey(b));
 	}
-	ALGODEBUG fprintf(stderr, "#BATslice()=" ALGOBATFMT "\n",
-			  ALGOBATPAR(bn));
+	ALGODEBUG fprintf(stderr,
+			  "#BATslice(" ALGOBATFMT "," BUNFMT "," BUNFMT ")"
+			  "=" ALGOBATFMT "\n",
+			  ALGOBATPAR(b), l, h, ALGOBATPAR(bn));
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
