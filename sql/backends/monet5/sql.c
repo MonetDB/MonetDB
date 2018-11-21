@@ -908,8 +908,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = mvc_bind(m, sname, tname, cname, access);
-	if (b && b->ttype != coltype)
+	if (b && b->ttype != coltype) {
+		BBPunfix(b->batCacheid);
 		throw(SQL,"sql.bind",SQLSTATE(42000) "Column type mismatch");
+	}
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
@@ -920,8 +922,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
-				if(bn == NULL)
+				if(bn == NULL) {
+					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 				BAThseqbase(bn, part_nr * psz);
 			} else {
 				/* BAT b holds the UPD_ID bat */
@@ -930,7 +934,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (c == NULL) {
 					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
-					sname,tname,cname);
+					      sname,tname,cname);
 				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
@@ -950,9 +954,11 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BAT *uv = mvc_bind(m, sname, tname, cname, RD_UPD_VAL);
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
-			if (uv == NULL)
+			if (uv == NULL) {
+				BBPunfix(b->batCacheid);
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
 					sname,tname,cname);
+			}
 			BBPkeepref(*bid = b->batCacheid);
 			BBPkeepref(*uvl = uv->batCacheid);
 			return MAL_SUCCEED;
@@ -968,6 +974,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (ui == NULL || uv == NULL) {
 					bat_destroy(uv);
 					bat_destroy(ui);
+					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the insert column %s.%s.%s",
 						sname, tname, cname);
 				}
@@ -976,6 +983,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bat_destroy(ui);
 				bat_destroy(uv);
 				if (id == NULL || vl == NULL) {
+					BBPunfix(b->batCacheid);
 					bat_destroy(id);
 					bat_destroy(vl);
 					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -990,8 +998,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat(c->type.type->localtype);
-				if(*bid == BID_NIL || *uvl == BID_NIL)
+				if(*bid == BID_NIL || *uvl == BID_NIL) {
+					BBPunfix(b->batCacheid);
 					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 			}
 			BBPunfix(b->batCacheid);
 		} else {
