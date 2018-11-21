@@ -2798,7 +2798,7 @@ void
 dump_version(Mapi mid, stream *toConsole, const char *prefix)
 {
 	MapiHdl hdl;
-	char *dbname = NULL, *uri = NULL, *dbver = NULL, *dbrel = NULL;
+	char *dbname = NULL, *uri = NULL, *dbver = NULL, *dbrel = NULL, *dbrev = NULL;
 	const char *name, *val;
 
 	if ((hdl = mapi_query(mid,
@@ -2807,7 +2807,8 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 			      "WHERE name IN ('gdk_dbname', "
 					"'monet_version', "
 					"'monet_release', "
-					"'merovingian_uri')")) == NULL ||
+					"'merovingian_uri', "
+					"'revision')")) == NULL ||
 			mapi_error(mid))
 		goto cleanup;
 
@@ -2831,6 +2832,9 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 			} else if (strcmp(name, "merovingian_uri") == 0) {
 				assert(uri == NULL);
 				uri = strdup(val);
+			} else if (strcmp(name, "revision") == 0) {
+				assert(dbrev == NULL);
+				dbrev = strdup(val);
 			}
 		}
 	}
@@ -2840,15 +2844,16 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 		dbname = uri;
 		uri = NULL;
 	}
-	if (dbname != NULL && dbver != NULL) {
-		mnstr_printf(toConsole, "%s MonetDB v%s%s%s%s, '%s'\n",
-			     prefix,
-				 dbver,
-				 dbrel != NULL ? " (" : "",
-				 dbrel != NULL ? dbrel : "",
-				 dbrel != NULL ? ")" : "",
-				 dbname);
-	}
+	mnstr_printf(toConsole, "%s MonetDB", prefix);
+	if (dbver)
+		mnstr_printf(toConsole, " v%s", dbver);
+	if (dbrel && strcmp(dbrel, "unreleased") != 0)
+		mnstr_printf(toConsole, " (%s)", dbrel);
+	else if (dbrev && strcmp(dbrev, "Unknown") != 0)
+		mnstr_printf(toConsole, " (hg id: %s)", dbrev);
+	if (dbname)
+		mnstr_printf(toConsole, ", '%s'", dbname);
+	mnstr_printf(toConsole, "\n");
 
   cleanup:
 	if (dbname != NULL)
@@ -2859,6 +2864,8 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 		free(dbrel);
 	if (uri != NULL)
 		free(uri);
+	if (dbrev != NULL)
+		free(dbrev);
 	if (hdl)
 		mapi_close_handle(hdl);
 }
