@@ -111,7 +111,7 @@ newMalBlk(int elements)
 	if (mb == NULL)
 		return NULL;
 
-	/* each MAL instruction implies at least on variable 
+	/* each MAL instruction implies at least one variable 
  	 * we reserve some extra for constants */
 	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * (elements + 8) );
 	if (v == NULL) {

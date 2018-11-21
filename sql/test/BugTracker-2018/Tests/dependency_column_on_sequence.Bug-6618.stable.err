@@ -28,7 +28,7 @@ stderr of test 'dependency_column_on_sequence.Bug-6618` in directory 'sql/test/B
 # 16:44:25 >  "/usr/bin/python" "dependency_column_on_sequence.Bug-6618.SQL.py" "dependency_column_on_sequence.Bug-6618"
 # 16:44:25 >  
 
-2B000!DROP SEQUENCE: unable to drop sequence seq_7622 (there are database objects which depend on it)
+2B000!DROP SEQUENCE: unable to drop sequence seq_8831 (there are database objects which depend on it)
 
 2B000!DROP SEQUENCE: unable to drop sequence myseq (there are database objects which depend on it)
 
