@@ -167,7 +167,7 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select "schema", "table", "column", "type", typewidth, "count", 0, typewidth, FALSE, sorted, revsorted, "unique", orderidx
+	select "schema", "table", "column", "type", typewidth, "count", 0, typewidth, FALSE, sorted, revsorted, "unique", orderidx, compressed
 	  from sys."storage"()
 	-- exclude system tables (those are not useful to be modeled for storagesize for application users)
 	 where ("schema", "table") in (

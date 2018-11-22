@@ -7,17 +7,14 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 
 # MonetDB 5 server v11.8.0
 # This is an unreleased version
-# Serving database 'mTests_extras_mal_optimizer_template', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.630 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:36275/
-# MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
+# Serving database 'mTests_monetdb5_extras_mal_optimizer_template', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.551 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://aris-MonetDB:30128/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28319/.s.monetdb.30128
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -39,6 +36,9 @@ Ready.
 # loading sql script: 40_geom.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 22:58:57 >  
 # 22:58:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36275"
@@ -56,7 +56,7 @@ Ready.
 % def # name
 % clob # type
 % 579 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.mosaic();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();"	]
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.mosaic();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -115,7 +115,7 @@ end user.s10_1;
 % def # name
 % clob # type
 % 602 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.mosaic();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.mosaic();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
