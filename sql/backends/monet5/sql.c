@@ -4512,6 +4512,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									}
 									if (cnt2)
 										w = (int) (sum / cnt2);
+								} else if (ATOMvarsized(bn->ttype)) {
+									sz = BATcount(bn);
+									if (sz > 0)
+										w = (bn->tvheap->free + sz / 2) / sz;
+									else
+										w = 0;
 								}
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;
