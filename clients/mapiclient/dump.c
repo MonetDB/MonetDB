@@ -1644,7 +1644,6 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			     strcmp(tp, "clob") == 0 ||
 			     strcmp(tp, "timestamp") == 0 ||
 			     strcmp(tp, "timestamptz") == 0 ||
-			     strcmp(tp, "timestamptz") == 0 ||
 			     strcmp(tp, "json") == 0 ||
 			     strcmp(tp, "url") == 0 ||
 			     strcmp(tp, "xml") == 0);
