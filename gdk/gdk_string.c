@@ -513,6 +513,7 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 					}
 					*p++ = 0x80 | (c & 0x3F);
 				}
+				escaped = false;
 				continue;
 			case 'a':
 				c = '\a';
