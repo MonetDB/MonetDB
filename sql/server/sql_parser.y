@@ -393,6 +393,7 @@ int yydebug=1;
 	string
 	sstring
 	ustring
+	blobstring
 	type_alias
 	varchar
 	clob
@@ -592,7 +593,7 @@ int yydebug=1;
 	opt_nulls_first_last
 	tz
 
-%right <sval> STRING USTRING
+%right <sval> STRING USTRING XSTRING
 %right <sval> X_BODY
 
 /* sql prefixes to avoid name clashes on various architectures */
@@ -5018,6 +5019,23 @@ literal:
 			YYABORT;
 		  }
 		}
+ |  blobstring
+		{ sql_subtype t;
+		  atom *a= 0;
+		  int r;
+
+		  $$ = NULL;
+ 		  r = sql_find_subtype(&t, "blob", 0, 0);
+	          if (r && (a = atom_general(SA, &t, $1)) != NULL)
+			$$ = _newAtomNode(a);
+		  if (!$$) {
+			char *msg = sql_message(SQLSTATE(22M28) "incorrect blob %s", $1);
+
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		  }
+		}
  |  aTYPE string
 		{ sql_subtype t;
 		  atom *a= 0;
@@ -5844,6 +5862,16 @@ ustring:
     USTRING
 		{ $$ = $1; }
  |  USTRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
+		  _DELETE(s);
+		}
+ ;
+
+blobstring:
+    XSTRING	/* X'<hexit>...' */
+		{ $$ = $1; }
+ |  XSTRING sstring
 		{ char *s = strconcat($1,$2);
 	 	  $$ = sa_strdup(SA, s);
 		  _DELETE(s);
