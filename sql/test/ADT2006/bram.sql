@@ -110,13 +110,13 @@ INSERT INTO suspect VALUES ('George Hutchinson (Br.)', 'http://www.casebook.org/
 INSERT INTO suspect VALUES ('Mrs. Mary Pearcey', 'http://www.casebook.org/images/suspect_jill.jpg', 'Not very likely "Jill the Ripper"-theory, first published in 1939');
 INSERT INTO suspect VALUES ('James Kelly', 'http://www.casebook.org/images/suspect_jkell.jpg', 'there are some reasons in favour of and some against suspecting him');
 INSERT INTO suspect VALUES ('Severin Klosowski (George Chapman)', 'http://www.casebook.org/images/suspect_klos.jpg', 'there are some reasons in favour of and some against suspecting him');
-INSERT INTO suspect VALUES ('Aaron Kosminski', 'http://www.casebook.org/images/suspect_kosm.jpg', 'According to Anderson and Swanson, identified by a witness as the Ripper, but no charges were brought against him due to the witness\'s reluctance to testify against "a fellow Jew." Known to have been insane.');
+INSERT INTO suspect VALUES ('Aaron Kosminski', 'http://www.casebook.org/images/suspect_kosm.jpg', 'According to Anderson and Swanson, identified by a witness as the Ripper, but no charges were brought against him due to the witness''s reluctance to testify against "a fellow Jew." Known to have been insane.');
 INSERT INTO suspect VALUES ('Jacob Levy', 'http://www.casebook.org/images/suspect_lodge.jpg', 'a butcher, and the cuts inflicted upon Catharine Eddowes were suggestive of a butcher');
 INSERT INTO suspect VALUES ('The Lodger (Frances Tumblety)', 'http://www.casebook.org/images/suspect_lodge.jpg', 'a very strong suspect');
 INSERT INTO suspect VALUES ('James Maybrick', 'http://www.casebook.org/images/suspect_may.jpg', 'The mysterious emergence of the so-called Maybrick journal in 1992 however, immediately thrust him to the forefront of credible Ripper suspects.');
 INSERT INTO suspect VALUES ('Michael Ostrog', 'http://www.casebook.org/images/suspect_ost.jpg', 'Mentioned for the first time as a suspect in 1894,in 1994 a lot of information was published making him a prime suspect');
 INSERT INTO suspect VALUES ('Dr. Alexander Pedachenko', 'http://www.casebook.org/images/suspect_lodge.jpg', 'may never have existed');
-INSERT INTO suspect VALUES ('The Royal Conspiracy', 'http://www.casebook.org/images/suspec\'_royal.jpg', 'a fascinating tapestry of conspiracy involving virtually every person who has ever been a Ripper suspect plus a few new ones');
+INSERT INTO suspect VALUES ('The Royal Conspiracy', 'http://www.casebook.org/images/suspec''_royal.jpg', 'a fascinating tapestry of conspiracy involving virtually every person who has ever been a Ripper suspect plus a few new ones');
 INSERT INTO suspect VALUES ('Walter Sickert', 'http://www.casebook.org/images/suspect_sickert.jpg', 'a valid suspect since the 1990s');
 INSERT INTO suspect VALUES ('James Kenneth Stephen', 'http://www.casebook.org/images/suspect_jkstep.jpg', 'Known misogynist and lunatic but no connections with the East End');
 INSERT INTO suspect VALUES ('R. D´Onston Stephenson', 'http://www.casebook.org/images/suspect_dons.jpg', 'Known to have had an extraordinary interest in the murders. Wrote numerous articles and letters on the matter. Resided in the East End.');
@@ -127,7 +127,7 @@ INSERT INTO suspect VALUES ('Nikolay Vasiliev', 'http://www.casebook.org/images/
 INSERT INTO suspect VALUES ('Dr. John Williams', 'http://www.casebook.org/images/dr-john-williams.jpg', 'there is very little to suggest that he was Jack the Ripper');
 
 
-INSERT INTO victim VALUES ('Mary Ann Walker', NULL, '5\'12"', 'brown', 'brown hair turning grey', '1888-08-31', 'Buck\'s Row by Charles Cross', 'http://www.casebook.org/images/victims_nichols.jpg', '
+INSERT INTO victim VALUES ('Mary Ann Walker', NULL, '5''12"', 'brown', 'brown hair turning grey', '1888-08-31', 'Buck''s Row by Charles Cross', 'http://www.casebook.org/images/victims_nichols.jpg', '
 				five front teeth missing (Rumbelow); two bottom-one top
 				front (Fido), her teeth are slightly discoloured. She is
 				described as having small, delicate features with high
@@ -138,21 +138,21 @@ INSERT INTO victim VALUES ('Mary Ann Walker', NULL, '5\'12"', 'brown', 'brown ha
 				remarked on the cleanliness of her thighs.  She is also
 				an alcoholic. 
 			', NULL);
-INSERT INTO victim VALUES ('Annie Chapman', NULL, '5\'', 'blue', 'dark brown, wavy', '1888-09-08', '29 Hanbury Street', 'http://www.casebook.org/images/victims_chapman.jpg', 'Pallid complexion, excellent teeth (possibly two missing in lower jaw), strongly built (stout), thick nose', NULL);
-INSERT INTO victim VALUES ('Elisabeth Stride', NULL, '5\'5"', 'light gray', 'curly dark brown', '1888-09-30', 'Berner Street (Henriques Street today)', 'http://www.casebook.org/images/victims_stride.jpg', 'pale complexion, all the teeth in her lower left jaw were missing
+INSERT INTO victim VALUES ('Annie Chapman', NULL, '5''', 'blue', 'dark brown, wavy', '1888-09-08', '29 Hanbury Street', 'http://www.casebook.org/images/victims_chapman.jpg', 'Pallid complexion, excellent teeth (possibly two missing in lower jaw), strongly built (stout), thick nose', NULL);
+INSERT INTO victim VALUES ('Elisabeth Stride', NULL, '5''5"', 'light gray', 'curly dark brown', '1888-09-30', 'Berner Street (Henriques Street today)', 'http://www.casebook.org/images/victims_stride.jpg', 'pale complexion, all the teeth in her lower left jaw were missing
 			', NULL);
-INSERT INTO victim VALUES ('Catherine Eddowes', NULL, '5\'', 'hazel', 'dark auburn', '1888-09-30', 'Mitre Square', 'http://www.casebook.org/images/eddowes1.jpg', 'She has a tattoo in blue ink on her left forearm "TC."', NULL);
-INSERT INTO victim VALUES ('Mary Jane Kelly', NULL, '5\'7"', 'blue', 'blonde', '1888-11-09', '13 Miller\'s Court', 'http://www.casebook.org/images/victims_kelly.jpg', 'a fair complexion. "Said to have been possessed of considerable personal attractions." (McNaughten) She was last seen wearing a linsey frock and a red shawl pulled around her shoulders. She was bare headed. Detective Constable Walter Dew claimed to know Kelly well by sight and says that she was attractive and paraded around, usually in the company of two or three friends. He says she always wore a spotlessly clean white apron.
+INSERT INTO victim VALUES ('Catherine Eddowes', NULL, '5''', 'hazel', 'dark auburn', '1888-09-30', 'Mitre Square', 'http://www.casebook.org/images/eddowes1.jpg', 'She has a tattoo in blue ink on her left forearm "TC."', NULL);
+INSERT INTO victim VALUES ('Mary Jane Kelly', NULL, '5''7"', 'blue', 'blonde', '1888-11-09', '13 Miller''s Court', 'http://www.casebook.org/images/victims_kelly.jpg', 'a fair complexion. "Said to have been possessed of considerable personal attractions." (McNaughten) She was last seen wearing a linsey frock and a red shawl pulled around her shoulders. She was bare headed. Detective Constable Walter Dew claimed to know Kelly well by sight and says that she was attractive and paraded around, usually in the company of two or three friends. He says she always wore a spotlessly clean white apron.
 				Maria Harvey, a friend, says that she was "much superior to that of most persons in her position in life."', NULL);
 INSERT INTO victim VALUES ('"Fairy Fay"', NULL, 'unknown', 'unknown', 'unknown', '1887-12-26', 'the alleys of Commercial Road', 'http://www.casebook.org/images/victims_fairy.jpg', 'not recorded
 			', NULL);
-INSERT INTO victim VALUES ('Annie Millwood', NULL, NULL, NULL, NULL, '1888-02-15', 'White\'s Row, Spitalfields', 'http://www.casebook.org/images/victims_millwood.jpg', NULL, NULL);
+INSERT INTO victim VALUES ('Annie Millwood', NULL, NULL, NULL, NULL, '1888-02-15', 'White''s Row, Spitalfields', 'http://www.casebook.org/images/victims_millwood.jpg', NULL, NULL);
 INSERT INTO victim VALUES ('Ada Wilson', NULL, NULL, NULL, NULL, '1888-03-28', '19 Maidman Street', 'http://www.casebook.org/images/victims_wilson.jpg', NULL, NULL);
 INSERT INTO victim VALUES ('Emma Smith', NULL, NULL, NULL, NULL, '1888-03-03', 'just outside Taylor Brothers Mustard and Cocoa Mill which was on the north-east corner of the Wentworth/Old Montague Street crossroads', 'http://www.casebook.org/images/victims_smith.jpg', NULL, NULL);
 INSERT INTO victim VALUES ('Martha Tabram', NULL, NULL, NULL, NULL, '1888-08-07', 'George Yard, a narrow north-south alley connecting Wentworth Street and Whitechapel High Street', 'http://www.casebook.org/images/victims_tabram.jpg', NULL, NULL);
 INSERT INTO victim VALUES ('Whitehall Mystery', NULL, NULL, NULL, NULL, '1888-10-03', 'a vault soon to become a section of the cellar of New Scotland Yard', 'http://www.casebook.org/images/victims_whitehall.jpg', 'the headless and limbless torso of a woman', NULL);
 INSERT INTO victim VALUES ('Annie Farmer', NULL, NULL, NULL, NULL, '1888-11-20', NULL, 'http://www.casebook.org/images/victims_farmer.jpg', NULL, NULL);
-INSERT INTO victim VALUES ('Rose Mylett', NULL, NULL, NULL, NULL, '1888-12-20', 'the yard between 184 and 186 Poplar High Street, in Clarke\'s Yard', 'http://www.casebook.org/images/victims_mylett.jpg', NULL, NULL);
+INSERT INTO victim VALUES ('Rose Mylett', NULL, NULL, NULL, NULL, '1888-12-20', 'the yard between 184 and 186 Poplar High Street, in Clarke''s Yard', 'http://www.casebook.org/images/victims_mylett.jpg', NULL, NULL);
 
 
 INSERT INTO victim VALUES ('Elisabeth Jackson', NULL, NULL, NULL, NULL, '1889-06-01', 'the Thames', 'http://www.casebook.org/images/victims_jackson.jpg', NULL, NULL);
@@ -163,22 +163,22 @@ INSERT INTO victim VALUES ('Pinchin Street Murder, possibly Lydia Hart', NULL, N
 			', NULL);
 INSERT INTO victim VALUES ('Frances Coles', NULL, NULL, NULL, NULL, '1891-02-13', 'Swallow Gardens', 'http://www.casebook.org/images/victims_coles.jpg', 'is often heralded as the prettiest of all the murder victims
 			', NULL);
-INSERT INTO victim VALUES ('Carrie Brown', NULL, '5\'8"', NULL, NULL, '1891-04-24', 'the room of the East River Hotel on the Manhattan waterfront of New York, U.S.A.', 'http://www.casebook.org/images/victims_brown.jpg', NULL, NULL);
+INSERT INTO victim VALUES ('Carrie Brown', NULL, '5''8"', NULL, NULL, '1891-04-24', 'the room of the East River Hotel on the Manhattan waterfront of New York, U.S.A.', 'http://www.casebook.org/images/victims_brown.jpg', NULL, NULL);
 
 
 INSERT INTO witness VALUES ('Patrick Mulshaw', 'Mary Ann Walker', '4:00AM', 'suspicious', 'Watchman, old man, I believe somebody is murdered down the street.');
 INSERT INTO witness VALUES ('Emily Walter', 'Annie Chapman', '2:00 A.M.', 'Foreigner aged 37, dark beard and moustache. Wearing short dark jacket, dark vest and trousers, black scarf and black felt hat.', 'Asked witness to enter the backyard of 29 Hanbury Street.');
 INSERT INTO witness VALUES ('Elizabeth Long', 'Annie Chapman', '5:30 A.M.', 'Dark complexion, brown deerstalker hat, possibly a dark overcoat. Aged over 40, somewhat taller than Chapman. A foreigner of "shabby genteel."', '"Will you?"');
-INSERT INTO witness VALUES ('J. Best and John Gardner', 'Elisabeth Stride', '11 P.M.', '5\'5" tall, English, black moustache, sandy eyelashes, weak, wearing a morning suit and a billycock hat.', '(none)');
-INSERT INTO witness VALUES ('William Marshall', 'Elisabeth Stride', '11:45 P.M.', 'Small, black coat, dark trousers, middle aged, round cap with a small sailor-like peak. 5\'6", stout, appearance of a clerk. No moustache, no gloves, with a cutaway coat.', '"You would say anything but your prayers." Spoken mildly, with an English accent, and in an educated manner.');
-INSERT INTO witness VALUES ('Matthew Packer', 'Elisabeth Stride', '12:00 - 12:30 P.M.', 'Aged 25-30, 5\'7", long black coat buttoned up, soft felt hawker hat, broad shoulders. Maybe a young clerk, frock coat, no gloves.', 'Quiet in speaking, with a rough voice');
-INSERT INTO witness VALUES ('P.C. William Smith', 'Elisabeth Stride', '12:30 A.M.', 'Aged 28, cleanshaven and respectable appearance, 5\'7", hard dark felt deerstalker hat, dark clothes. Carrying a newspaper parcel 18 x 7 inches.', '(none)');
-INSERT INTO witness VALUES ('James Brown', 'Elisabeth Stride', '12:45 A.M.', '5\'7", stout, long black diagonal coat which reached almost to his heels.', '(none)');
-INSERT INTO witness VALUES ('Israel Schwartz', 'Elisabeth Stride', '12:45 A.M.', 'First man: Aged 30, 5\'5", brown haired, fair complexion, small brown moustache, full face, broad shoulders, dark jacket and trousers, black cap with peak. Second man: Aged 35, 5\'11", fresh complexion, light brown hair, dark overcoat, old black hard felt hat with a wide brim, clay pipe.', '"Lipski!"');
-INSERT INTO witness VALUES ('Joseph Lawende', 'Catherine Eddowes', '1:30 A.M', 'Aged 30, 5\'7", fair complexion, brown moustache, salt-and-pepper coat, red neckerchief, grey peaked cloth cap. Sailor-like.', '(none)');
+INSERT INTO witness VALUES ('J. Best and John Gardner', 'Elisabeth Stride', '11 P.M.', '5''5" tall, English, black moustache, sandy eyelashes, weak, wearing a morning suit and a billycock hat.', '(none)');
+INSERT INTO witness VALUES ('William Marshall', 'Elisabeth Stride', '11:45 P.M.', 'Small, black coat, dark trousers, middle aged, round cap with a small sailor-like peak. 5''6", stout, appearance of a clerk. No moustache, no gloves, with a cutaway coat.', '"You would say anything but your prayers." Spoken mildly, with an English accent, and in an educated manner.');
+INSERT INTO witness VALUES ('Matthew Packer', 'Elisabeth Stride', '12:00 - 12:30 P.M.', 'Aged 25-30, 5''7", long black coat buttoned up, soft felt hawker hat, broad shoulders. Maybe a young clerk, frock coat, no gloves.', 'Quiet in speaking, with a rough voice');
+INSERT INTO witness VALUES ('P.C. William Smith', 'Elisabeth Stride', '12:30 A.M.', 'Aged 28, cleanshaven and respectable appearance, 5''7", hard dark felt deerstalker hat, dark clothes. Carrying a newspaper parcel 18 x 7 inches.', '(none)');
+INSERT INTO witness VALUES ('James Brown', 'Elisabeth Stride', '12:45 A.M.', '5''7", stout, long black diagonal coat which reached almost to his heels.', '(none)');
+INSERT INTO witness VALUES ('Israel Schwartz', 'Elisabeth Stride', '12:45 A.M.', 'First man: Aged 30, 5''5", brown haired, fair complexion, small brown moustache, full face, broad shoulders, dark jacket and trousers, black cap with peak. Second man: Aged 35, 5''11", fresh complexion, light brown hair, dark overcoat, old black hard felt hat with a wide brim, clay pipe.', '"Lipski!"');
+INSERT INTO witness VALUES ('Joseph Lawende', 'Catherine Eddowes', '1:30 A.M', 'Aged 30, 5''7", fair complexion, brown moustache, salt-and-pepper coat, red neckerchief, grey peaked cloth cap. Sailor-like.', '(none)');
 INSERT INTO witness VALUES ('James Blenkinsop', 'Catherine Eddowes', '1:30 A.M.', 'Well-dressed.', '"Have you seen a man and a woman go through here?"');
 INSERT INTO witness VALUES ('Mary Ann Cox', 'Mary Jane Kelly', '11:45 P.M.', 'Short, stout man, shabbily dressed. Billycock hat, blotchy face, carroty moustache, holding quart can of beer', '(none)');
-INSERT INTO witness VALUES ('George Hutchinson', 'Mary Jane Kelly', '2:00 A.M.', 'Aged 34-35, 5\'6", pale complexion, dark hair, slight moustached curled at each end, long dark coat, collar cuffs of astrakhan, dark jacket underneath. Light waistcoat, thick gold chain with a red stone seal, dark trousers an\' button boots, gaiters, white buttons. White shirt, black tie fastened with a horseshoe pin. Dark hat, turned down in middle. Red kerchief. Jewish and respectable in appearance.', '(none)');
+INSERT INTO witness VALUES ('George Hutchinson', 'Mary Jane Kelly', '2:00 A.M.', 'Aged 34-35, 5''6", pale complexion, dark hair, slight moustached curled at each end, long dark coat, collar cuffs of astrakhan, dark jacket underneath. Light waistcoat, thick gold chain with a red stone seal, dark trousers an'' button boots, gaiters, white buttons. White shirt, black tie fastened with a horseshoe pin. Dark hat, turned down in middle. Red kerchief. Jewish and respectable in appearance.', '(none)');
 INSERT INTO witness VALUES ('Ada Wilson herself', 'Ada Wilson', NULL, 'a man of about 30 years of age, 5ft 6ins in height, with a sunburnt face and a fair moustache. He was wearing a dark coat, light trousers and a wideawake hat.', '.');
 INSERT INTO witness VALUES ('Rose Bierman', 'Ada Wilson', NULL, 'a young fair man with a light coat on', NULL);
 INSERT INTO witness VALUES ('"Jumbo" Friday', 'Frances Coles', NULL, NULL, '.');
@@ -223,8 +223,8 @@ INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '1:20 or
 					She is told by the deputy to leave the kitchen of
 					the lodging house because she could not produce her
 					doss money. Polly, on leaving, asks him to save a
-					bed for her. "Never Mind!" She says, "I\'ll soon get
-					my doss money. See what a jolly bonnet I\'ve got
+					bed for her. "Never Mind!" She says, "I''ll soon get
+					my doss money. See what a jolly bonnet I''ve got
 					now." She indicates a little black bonnet which no
 					one had seen before.
 				');
@@ -232,7 +232,7 @@ INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '2:30 AM
 					
 					She meets Emily Holland, who was returning from
 					watching the Shadwell Dry Dock fire, outside of a
-					grocer\'s shop on the corner of Whitechapel Road and
+					grocer''s shop on the corner of Whitechapel Road and
 					Osborn Street. Polly had come down Osborn Street.
 					Holland describes her as "very drunk and staggered
 					against the wall." Holland calls attention to the
@@ -241,8 +241,8 @@ INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '2:30 AM
 					had drunk it away. She says she will return to
 					Flower and Dean Street where she could share a bed
 					with a man after one more attempt to find trade.
-					"I\'ve had my doss money three times today and spent
-					it." She says, "It won\'t be long before I\'m back."
+					"I''ve had my doss money three times today and spent
+					it." She says, "It won''t be long before I''m back."
 					The two women talk for seven or eight minutes. Polly
 					leaves walking east down Whitechapel Road.
 					At the time, the services of a destitute prostitute
@@ -252,22 +252,22 @@ INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '2:30 AM
 				');
 INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '3:15 AM', '
 					
-					P.C. John Thain, 96J, passes down Buck\'s Row on his
+					P.C. John Thain, 96J, passes down Buck''s Row on his
 					beat. He sees nothing unusual. At approximately the
 					same time Sgt. Kerby passes down Bucks Row and
 					reports the same.
 				');
 INSERT INTO event(victim, time, description) VALUES ('Mary Ann Walker', '3:40 or 3:45 AM', '
 					
-					Polly Nichols\' body is discovered in Buck\'s Row by
+					Polly Nichols'' body is discovered in Buck''s Row by
 					Charles Cross, a carman, on his way to work at
 					Pickfords in the City Road., and Robert Paul who
 					joins him at his request. "Come and look over here,
-					there\'s a woman." Cross calls to Paul. Cross
+					there''s a woman." Cross calls to Paul. Cross
 believes she is dead. Her hands and face are cold
 					but the arms above the elbow and legs are still
 					warm. Paul believes he feels a faint heartbeat. "I
-					think she\'s breathing," he says "but it is little if
+					think she''s breathing," he says "but it is little if
 					she is." 
 				');
 
@@ -350,30 +350,30 @@ GROUP BY i.name HAVING count(v.victim) > 1 order by i.name;
     WHERE name LIKE '%Major%');
 
 
-(select 'blonde', (cast(cast(floor(avg(h.height)/12) as integer) as char) || '\''
+(select 'blonde', (cast(cast(floor(avg(h.height)/12) as integer) as char) || ''''
 || cast(cast(avg(h.height) as integer) % 12 as char) || '"') AS average_height from
-((select name, 12*cast(substring(length from 0 for (position('\'' in length) - 1)) as integer) as height from victim v
+((select name, 12*cast(substring(length from 0 for (position('''' in length) - 1)) as integer) as height from victim v
 where
-    length is not NULL and length like '%\'' and hair like '%blonde%')
+    length is not NULL and length like '%''' and hair like '%blonde%')
 UNION ALL
-(select name, (12*cast(substring(length from 0 for (position('\'' in length) - 1)) AS integer)
-    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) - position('\'' in length) - 1)) AS integer)) as height from victim v
+(select name, (12*cast(substring(length from 0 for (position('''' in length) - 1)) AS integer)
+    + cast(substring(length from (position('''' in length) + 1) for (position('"' in length) - position('''' in length) - 1)) AS integer)) as height from victim v
     where
-    length is not NULL and length like '%\'%"' and hair like '%blonde%')) AS h
+    length is not NULL and length like '%''%"' and hair like '%blonde%')) AS h
 )
 UNION ALL
 
 (
-select 'brown', (cast(cast(floor(avg(h.height)/12) as integer) as char) || '\''
+select 'brown', (cast(cast(floor(avg(h.height)/12) as integer) as char) || ''''
 || cast(cast(avg(h.height) as integer) % 12 as char) || '"') AS average_height from
-((select name, 12*cast(substring(length from 0 for (position('\'' in length) - 1)) as integer) as height from victim v
+((select name, 12*cast(substring(length from 0 for (position('''' in length) - 1)) as integer) as height from victim v
 where
-    length is not NULL and length like '%\'' and hair like '%brown%')
+    length is not NULL and length like '%''' and hair like '%brown%')
 UNION ALL
-(select name, (12*cast(substring(length from 0 for (position('\'' in length) - 1)) AS integer)
-    + cast(substring(length from (position('\'' in length) + 1) for (position('"' in length) - position('\'' in length) - 1)) AS integer)) as height from victim v
+(select name, (12*cast(substring(length from 0 for (position('''' in length) - 1)) AS integer)
+    + cast(substring(length from (position('''' in length) + 1) for (position('"' in length) - position('''' in length) - 1)) AS integer)) as height from victim v
     where
-    length is not NULL and length like '%\'%"' and hair like '%brown%')) AS h
+    length is not NULL and length like '%''%"' and hair like '%brown%')) AS h
 );
 
 
