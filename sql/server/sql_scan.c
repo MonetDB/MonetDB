@@ -969,7 +969,13 @@ int scanner_symbol(mvc * c, int cur)
 		return tokenize(c, cur);
 	case '\'':
 	case '"':
-		return scanner_string(c, cur, cur == '\'');
+		return scanner_string(c, cur,
+#if 0
+				      false
+#else
+				      cur == '\''
+#endif
+			);
 	case '{':
 		return scanner_body(c);
 	case '-':
@@ -1136,6 +1142,10 @@ tokenize(mvc * c, int cur)
 		} else if (iswdigit(cur)) {
 			return number(c, cur);
 		} else if (iswalpha(cur) || cur == '_') {
+			if (cur == 'E' &&
+			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
+				return scanner_string(c, scanner_getc(lc), true);
+			}
 			return keyword_or_ident(c, cur);
 		} else if (iswpunct(cur)) {
 			return scanner_symbol(c, cur);
@@ -1220,9 +1230,9 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
-		assert(quote == '"' || quote == '\'');
+		assert(quote == '"' || quote == '\'' || quote == 'E');
 
-		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0;
+		lc->rs->buf[lc->rs->pos + lc->yycur - 1] = 0;
 		if (quote == '"') {
 			if (valid_ident(yylval->sval+1,str)) {
 				token = IDENT;
@@ -1230,10 +1240,24 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 				sql_error(c, 1, SQLSTATE(42000) "Invalid identifier '%s'", yylval->sval+1);
 				return LEX_ERROR;
 			}
+		} else if (quote == 'E') {
+			assert(yylval->sval[1] == '\'');
+			GDKstrFromStr((unsigned char *) str,
+				      (unsigned char *) yylval->sval + 2,
+				      lc->yycur-lc->yysval - 2);
+			quote = '\'';
 		} else {
+#if 0
+			char *dst = str;
+			for (char *src = yylval->sval + 1; *src; dst++)
+				if ((*dst = *src++) == '\'' && *src == '\'')
+					src++;
+			*dst = 0;
+#else
 			GDKstrFromStr((unsigned char *) str,
 				      (unsigned char *) yylval->sval + 1,
 				      lc->yycur-lc->yysval - 1);
+#endif
 		}
 		yylval->sval = str;
 

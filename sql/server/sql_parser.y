@@ -1200,7 +1200,7 @@ alter_table_element:
 	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
  |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
- |	opt_column ident SET STORAGE STRING
+ |	opt_column ident SET STORAGE string
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  if (!strlen($5))
@@ -1395,7 +1395,7 @@ opt_encrypted:
 
 table_opt_storage:
     /* empty */		 { $$ = NULL; }
- |  STORAGE ident STRING { $$ = append_string(append_string(L(), $2), $3); } 
+ |  STORAGE ident string { $$ = append_string(append_string(L(), $2), $3); } 
  ;
 
 table_def:
@@ -1462,7 +1462,7 @@ table_def:
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
     We assume the monetdb user with default password */
- |  REMOTE TABLE if_not_exists qname table_content_source ON STRING with_opt_credentials
+ |  REMOTE TABLE if_not_exists qname table_content_source ON string with_opt_credentials
 	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
 	  dlist *l = L();
 
@@ -2951,7 +2951,7 @@ header:
 			{ dlist *l = L();
 			  append_string(l, $1 );
 			  $$ = l; }
- |	ident STRING
+ |	ident string
 			{ dlist *l = L();
 			  append_string(l, $1 );
 			  append_string(l, $2 );
@@ -6589,4 +6589,3 @@ int sqlerror(mvc * c, const char *err)
 				sqlstate, err, QUERY(c->scanner));
 	return 1;
 }
-

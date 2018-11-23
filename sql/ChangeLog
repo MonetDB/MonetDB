@@ -1,6 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Nov 23 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented PostgreSQL-like E'...' strings.  The strings can contain
+  C-style backslash escapes.  The old format strings '...' currently
+  still also accept C-style escapes, but that feature will be removed
+  in a future release.
+
 * Thu Nov  8 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Imlemented the NULLS FIRST and NULLS LAST option to ORDER BY.  The
   default is NULLS FIRST for ASC(ending) and NULLS LAST for DESC(ending).
