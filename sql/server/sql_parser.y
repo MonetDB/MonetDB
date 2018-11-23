@@ -93,6 +93,64 @@ UTF8_strlen(const char *val)
 	return pos;
 }
 
+
+static char *
+uescape_xform(char *restrict s, const char *restrict esc)
+{
+	size_t i, j;
+
+	for (i = j = 0; s[i]; i++) {
+		if (s[i] == *esc) {
+			if (s[i + 1] == *esc) {
+				s[j++] = *esc;
+				i++;
+			} else {
+				int c = 0;
+				int n;
+				if (s[i + 1] == '+') {
+					n = 6;
+					i++;
+				} else {
+					n = 4;
+				}
+				do {
+					i++;
+					c <<= 4;
+					if ('0' <= s[i] && s[i] <= '9')
+						c |= s[i] - '0';
+					else if ('a' <= s[i] && s[i] <= 'f')
+						c |= s[i] - 'a' + 10;
+					else if ('A' <= s[i] && s[i] <= 'F')
+						c |= s[i] - 'A' + 10;
+					else
+						return NULL;
+				} while (--n > 0);
+				if (c == 0 || c > 0x10FFFF || (c & 0xFFF800) == 0xD800)
+					return NULL;
+				if (c < 0x80) {
+					s[j++] = c;
+				} else {
+					if (c < 0x800) {
+						s[j++] = 0xC0 | (c >> 6);
+					} else {
+						if (c < 0x10000) {
+							s[j++] = 0xE0 | (c >> 12);
+						} else {
+							s[j++] = 0xF0 | (c >> 18);
+							s[j++] = 0x80 | ((c >> 12) & 0x3F);
+						}
+						s[j++] = 0x80 | ((c >> 6) & 0x3F);
+					}
+					s[j++] = 0x80 | (c & 0x3F);
+				}
+			}
+		} else {
+			s[j++] = s[i];
+		}
+	}
+	s[j] = 0;
+	return s;
+}
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -319,6 +377,7 @@ int yydebug=1;
 	opt_constraint_name
 	non_reserved_word
 	ident
+	ident_or_uident
 	calc_ident
 	authorization_identifier
 	func_ident
@@ -332,6 +391,8 @@ int yydebug=1;
 	opt_using
 	opt_null_string
 	string
+	sstring
+	ustring
 	type_alias
 	varchar
 	clob
@@ -347,6 +408,7 @@ int yydebug=1;
 	XML_namespace_prefix
 	XML_PI_target
 	function_body
+	opt_uescape
 
 %type <l>
 	passwd_schema
@@ -530,12 +592,12 @@ int yydebug=1;
 	opt_nulls_first_last
 	tz
 
-%right <sval> STRING
+%right <sval> STRING USTRING
 %right <sval> X_BODY
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
+	IDENT UIDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
 	USING 
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -558,7 +620,7 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
-%token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
+%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -4990,7 +5052,7 @@ literal:
 			YYABORT;
 		  }
 		}
- | IDENT string
+ | ident_or_uident string
 		{
 		  sql_type *t = mvc_bind_type(m, $1);
 		  atom *a;
@@ -5363,7 +5425,7 @@ data_type:
 			 	sql_find_subtype(&$$, $1, $3, $5);
 			  }
 			}
- | IDENT		{
+ | ident_or_uident	{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
 				char *msg = sql_message(SQLSTATE(22000) "Type (%s) unknown", $1);
@@ -5377,7 +5439,7 @@ data_type:
 			  }
 			}
 
- | IDENT '(' nonzero ')'
+ | ident_or_uident '(' nonzero ')'
 			{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
@@ -5533,6 +5595,8 @@ authid: 		restricted_ident ;
 
 calc_restricted_ident:
     IDENT	{ $$ = $1; }
+ |  UIDENT opt_uescape
+		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
@@ -5555,6 +5619,8 @@ restricted_ident:
 
 calc_ident:
     IDENT	{ $$ = $1; }
+ |  UIDENT opt_uescape
+		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
  |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
@@ -5666,6 +5732,7 @@ non_reserved_word:
 |  NULLS	{ $$ = sa_strdup(SA, "nulls"); }
 |  LAST		{ $$ = sa_strdup(SA, "last"); }
 |  FIRST	{ $$ = sa_strdup(SA, "first"); }
+|  UESCAPE	{ $$ = sa_strdup(SA, "uescape"); }
 ;
 
 name_commalist:
@@ -5697,6 +5764,11 @@ lngval:
 		  }
 		}
 
+ident_or_uident:
+	IDENT			{ $$ = $1; }
+    |	UIDENT opt_uescape	{ $$ = uescape_xform($1, $2); }
+    ;
+
 intval:
 	sqlINT	
  		{
@@ -5719,7 +5791,7 @@ intval:
 			YYABORT;
 		  }
 		}
- |	IDENT	{
+ |	ident_or_uident	{
 		  char *name = $1;
 		  sql_subtype *tpe;
 
@@ -5755,13 +5827,47 @@ intval:
 		}
  ;
 
-string:
+opt_uescape:
+/* empty */	{ $$ = "\\"; }
+| UESCAPE string
+		{ char *s = $2;
+		  if (strlen(s) != 1 || strchr("\"'0123456789abcdefABCDEF+ \t\n\r\f", *s) != NULL) {
+			yyerror(m, SQLSTATE(22019) "UESCAPE must be one character");
+			$$ = NULL;
+			YYABORT;
+		  } else {
+			$$ = s;
+		  }
+		}
+
+ustring:
+    USTRING
+		{ $$ = $1; }
+ |  USTRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
+		  _DELETE(s);
+		}
+ ;
+
+sstring:
     STRING
 		{ $$ = $1; }
- |  STRING string
-		{ char *s = strconcat($1,$2); 
-	 	  $$ = sa_strdup(SA, s);	
+ |  STRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
 		  _DELETE(s);
+		}
+ ;
+
+string:
+   sstring	{ $$ = $1; }
+ | ustring opt_uescape
+		{ $$ = uescape_xform($1, $2);
+		  if ($$ == NULL) {
+			yyerror(m, SQLSTATE(22019) "Bad Unicode string");
+			YYABORT;
+		  }
 		}
  ;
 

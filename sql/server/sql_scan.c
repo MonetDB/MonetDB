@@ -174,6 +174,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("DROP", DROP);
 	failed += keywords_insert("ESCAPE", ESCAPE);
 	failed += keywords_insert("EXISTS", EXISTS);
+	failed += keywords_insert("UESCAPE", UESCAPE);
 	failed += keywords_insert("EXTRACT", EXTRACT);
 	failed += keywords_insert("FLOAT", sqlFLOAT);
 	failed += keywords_insert("FOR", FOR);
@@ -1142,9 +1143,16 @@ tokenize(mvc * c, int cur)
 		} else if (iswdigit(cur)) {
 			return number(c, cur);
 		} else if (iswalpha(cur) || cur == '_') {
-			if (cur == 'E' &&
+			if ((cur == 'E' || cur == 'e') &&
 			    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
 				return scanner_string(c, scanner_getc(lc), true);
+			}
+			if ((cur == 'U' || cur == 'u') &&
+			    lc->rs->buf[lc->rs->pos + lc->yycur] == '&' &&
+			    (lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '\'' ||
+			     lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '"')) {
+				cur = scanner_getc(lc); /* '&' */
+				return scanner_string(c, scanner_getc(lc), false);
 			}
 			return keyword_or_ident(c, cur);
 		} else if (iswpunct(cur)) {
@@ -1230,7 +1238,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
-		assert(quote == '"' || quote == '\'' || quote == 'E');
+		assert(quote == '"' || quote == '\'' || quote == 'E' || quote == 'e' || quote == 'U' || quote == 'u');
 
 		lc->rs->buf[lc->rs->pos + lc->yycur - 1] = 0;
 		if (quote == '"') {
@@ -1240,12 +1248,18 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 				sql_error(c, 1, SQLSTATE(42000) "Invalid identifier '%s'", yylval->sval+1);
 				return LEX_ERROR;
 			}
-		} else if (quote == 'E') {
+		} else if (quote == 'E' || quote == 'e') {
 			assert(yylval->sval[1] == '\'');
 			GDKstrFromStr((unsigned char *) str,
 				      (unsigned char *) yylval->sval + 2,
 				      lc->yycur-lc->yysval - 2);
 			quote = '\'';
+		} else if (quote == 'U' || quote == 'u') {
+			assert(yylval->sval[1] == '&');
+			assert(yylval->sval[2] == '\'' || yylval->sval[2] == '"');
+			strcpy(str, yylval->sval + 3);
+			token = yylval->sval[2] == '\'' ? USTRING : UIDENT;
+			quote = yylval->sval[2];
 		} else {
 #if 0
 			char *dst = str;
@@ -1343,7 +1357,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 		mnstr_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	/* Don't include literals in the calculation of the key */
-	if (token != STRING && token != sqlINT && token != OIDNUM && token != INTNUM && token != APPROXNUM && token != sqlNULL)
+	if (token != STRING && token != USTRING && token != sqlINT && token != OIDNUM && token != INTNUM && token != APPROXNUM && token != sqlNULL)
 		lc->key ^= token;
 	lc->started += (token != EOF);
 	return token;

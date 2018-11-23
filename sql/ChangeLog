@@ -2,6 +2,12 @@
 # This file is updated with Maddlog
 
 * Fri Nov 23 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented U&'...' Unicode character string literals and
+  U&"..." Unicode delimited identifiers, including UESCAPE.  For the
+  string literals, you can have U&'...' '...' '...' UESCAPE '...' where
+  the escape must be as single character and the other '...' strings
+  are also Unicode character string literals.  For now, these latter
+  strings also undergo C-style backslash interpretation.
 - Implemented PostgreSQL-like E'...' strings.  The strings can contain
   C-style backslash escapes.  The old format strings '...' currently
   still also accept C-style escapes, but that feature will be removed
