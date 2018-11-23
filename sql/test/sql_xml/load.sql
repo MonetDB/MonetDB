@@ -15,11 +15,11 @@ create table victim(
 insert into victim values(
 	'Mary Ann Walker',
 	'1845-08-26',
-	'5\'12"',
+	'5''12"',
 	'brown',
 	'brown hair turning grey',
 	'1999-08-31',
-	'Buck\'s Row by Charles Cross',
+	'Buck''s Row by Charles Cross',
 	'http://www.casebook.org/images/victims_nichols.jpg',
 	'five front teeth missing (Rumbelow); two bottom-one top '
 	'front (Fido), her teeth are slightly discoloured. She is '
@@ -33,7 +33,7 @@ insert into victim values(
 insert into victim values(
 	'Annie Chapman',
 	'1841-09',
-	'5\'',
+	'5''',
 	'blue',
 	'dark brown, wavy',
 	'1888-09-08',
@@ -44,7 +44,7 @@ insert into victim values(
 insert into victim values(
 	'Elisabeth Stride',
 	'1843-11-27',
-	'5\'5"',
+	'5''5"',
 	'light gray',
 	'curly dark brown',
 	'1888-09-30',
@@ -56,7 +56,7 @@ insert into victim values(
 insert into victim values(
 	'Catherine Eddowes',
 	'1842-04-14',
-	'5\'',
+	'5''',
 	'hazel',
 	'dark auburn',
 	'1888-09-30',
@@ -67,11 +67,11 @@ insert into victim values(
 insert into victim values(
 	'Mary Jane Kelly',
 	'around 1863',
-	'5\'7"',
+	'5''7"',
 	'blue',
 	'blonde',
 	'1888-11-09',
-	'13 Miller\'s Court',
+	'13 Miller''s Court',
 	'http://www.casebook.org/images/victims_kelly.jpg',
 	'a fair complexion. "Said to have been possessed of considerable '
 	'personal attractions." (McNaughten) She was last seen wearing a '
@@ -101,7 +101,7 @@ insert into victim values(
 	null,
 	null,
 	'1888-02-15',
-	'White\'s Row, Spitalfields',
+	'White''s Row, Spitalfields',
 	'http://www.casebook.org/images/victims_millwood.jpg',
 	null);
 
@@ -172,7 +172,7 @@ insert into victim values(
 	null,
 	null,
 	'1888-12-20',
-	'the yard between 184 and 186 Poplar High Street, in Clarke\'s Yard',
+	'the yard between 184 and 186 Poplar High Street, in Clarke''s Yard',
 	'http://www.casebook.org/images/victims_mylett.jpg',
 	null);
 
@@ -225,7 +225,7 @@ insert into victim values(
 insert into victim values(
 	'Carrie Brown',
 	null,
-	'5\'8"',
+	'5''8"',
 	null,
 	null,
 	'1891-04-24',

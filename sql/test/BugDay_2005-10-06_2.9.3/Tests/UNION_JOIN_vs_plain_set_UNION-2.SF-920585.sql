@@ -38,7 +38,7 @@ INSERT INTO "_tables" VALUES (4611, 'env', 4457, NULL, true, true, 0);
 INSERT INTO "_tables" VALUES (4614, 'db_user_info', 4457, NULL, true, true, 0);
 INSERT INTO "_tables" VALUES (4618, 'db_users', 4457, ';CREATE VIEW "db_users" ([system BAT]) AS BATS', false, true, 0);
 INSERT INTO "_tables" VALUES (4621, 'db_scens', 4457, ';CREATE VIEW "db_scens" ([system BAT]) AS BATS', false, true, 0);
-INSERT INTO "_tables" VALUES (4624, 'users', 4457, 'SELECT u."t" AS "name", ui."fullname", ui."default_schema" FROM "sys"."db_users" AS u, "sys"."db_user_info" AS ui WHERE u."h" = ui."id" AND u."h" NOT IN (SELECT s."h" FROM "sys"."db_scens" AS s WHERE s."t" NOT LIKE \'sql\');', false, true, 0);
+INSERT INTO "_tables" VALUES (4624, 'users', 4457, 'SELECT u."t" AS "name", ui."fullname", ui."default_schema" FROM "sys"."db_users" AS u, "sys"."db_user_info" AS ui WHERE u."h" = ui."id" AND u."h" NOT IN (SELECT s."h" FROM "sys"."db_scens" AS s WHERE s."t" NOT LIKE ''sql'');', false, true, 0);
 INSERT INTO "_tables" VALUES (4628, 'user_role', 4457, NULL, true, true, 0);
 INSERT INTO "_tables" VALUES (4631, 'auths', 4457, NULL, true, true, 0);
 INSERT INTO "_tables" VALUES (4635, 'privileges', 4457, NULL, true, true, 0);
