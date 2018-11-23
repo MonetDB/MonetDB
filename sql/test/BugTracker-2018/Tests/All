@@ -91,3 +91,4 @@ create_table_empty_column_name.Bug-6653
 select_where_true.Bug-6654
 alter-sequence-subquery.Bug-6657
 quantile-crash.Bug-6658
+grant-role-not-idempotent.Bug-6660

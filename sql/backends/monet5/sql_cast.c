@@ -41,7 +41,7 @@ str_2_timestamp(timestamp *res, const str *val)
 	ssize_t e;
 	char buf[BUFSIZ];
 
-	e = ATOMfromstr(TYPE_timestamp, &p, &len, *val);
+	e = ATOMfromstr(TYPE_timestamp, &p, &len, *val, false);
 	if (e < 0 || !p || (ATOMcmp(TYPE_timestamp, p, ATOMnilptr(TYPE_timestamp)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
@@ -135,7 +135,7 @@ str_2_daytime(daytime *res, const str *val)
 	ssize_t e;
 	char buf[BUFSIZ];
 
-	e = ATOMfromstr(TYPE_daytime, &p, &len, *val);
+	e = ATOMfromstr(TYPE_daytime, &p, &len, *val, false);
 	if (e < 0 || !p || (ATOMcmp(TYPE_daytime, p, ATOMnilptr(TYPE_daytime)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
@@ -230,7 +230,7 @@ str_2_date(date *res, const str *val)
 	ssize_t e;
 	char buf[BUFSIZ];
 
-	e = ATOMfromstr(TYPE_date, &p, &len, *val);
+	e = ATOMfromstr(TYPE_date, &p, &len, *val, false);
 	if (e < 0 || !p || (ATOMcmp(TYPE_date, p, ATOMnilptr(TYPE_date)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
@@ -250,7 +250,7 @@ SQLdate_2_str(str *res, const date *val)
 {
 	char *p = NULL;
 	size_t len = 0;
-	if (date_tostr(&p, &len, val) < 0) {
+	if (date_tostr(&p, &len, val, false) < 0) {
 		GDKfree(p);
 		throw(SQL, "date", GDK_EXCEPTION);
 	}
@@ -330,7 +330,7 @@ str_2_sqlblob(sqlblob **res, const str *val)
 	ssize_t e;
 	char buf[BUFSIZ];
 
-	e = ATOMfromstr(TYPE_sqlblob, &p, &len, *val);
+	e = ATOMfromstr(TYPE_sqlblob, &p, &len, *val, false);
 	if (e < 0 || !p || (ATOMcmp(TYPE_sqlblob, p, ATOMnilptr(TYPE_sqlblob)) == 0 && ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0)) {
 		if (p)
 			GDKfree(p);
@@ -346,7 +346,7 @@ SQLsqlblob_2_str(str *res, const sqlblob *val)
 {
 	char *p = NULL;
 	size_t len = 0;
-	if (SQLBLOBtostr(&p, &len, val) < 0) {
+	if (SQLBLOBtostr(&p, &len, val, false) < 0) {
 		GDKfree(p);
 		throw(SQL, "blob", GDK_EXCEPTION);
 	}

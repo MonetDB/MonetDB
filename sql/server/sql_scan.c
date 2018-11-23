@@ -693,28 +693,29 @@ scanner_token(struct scanner *lc, int token)
 }
 
 static int
-scanner_string(mvc *c, int quote)
+scanner_string(mvc *c, int quote, bool escapes)
 {
 	struct scanner *lc = &c->scanner;
 	bstream *rs = lc->rs;
 	int cur = quote;
-	int escape = 0;
+	bool escape = false;
 
 	lc->started = 1;
 	while (cur != EOF) {
 		unsigned int pos = (int)rs->pos + lc->yycur;
 
 		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (cur != quote || escape)) {
-			if (cur != '\\')
-				escape = 0;
-			else
+			if (escapes && cur == '\\')
 				escape = !escape;
+			else
+				escape = false;
 		}
 		lc->yycur = pos - (int)rs->pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		/* TODO also handle double "" */
 		if (cur == quote && rs->buf[pos] == quote) {
-			rs->buf[pos - 1] = '\\';
+			if (escapes)
+				rs->buf[pos - 1] = '\\';
 			lc->yycur++;
 			continue;
 		}
@@ -749,7 +750,7 @@ scanner_body(mvc *c)
 	bstream *rs = lc->rs;
 	int cur = (int) 'x';
 	int blk = 1;
-	int escape = 0;
+	bool escape = false;
 
 	lc->started = 1;
 	assert(rs->buf[(int)rs->pos + lc->yycur-1] == '{');
@@ -758,7 +759,7 @@ scanner_body(mvc *c)
 
 		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (blk || escape)) {
 			if (cur != '\\')
-				escape = 0;
+				escape = false;
 			else
 				escape = !escape;
 			blk += cur =='{';
@@ -819,14 +820,14 @@ keyword_or_ident(mvc * c, int cur)
 	return lc->yyval;
 }
 
-static int 
+static int
 skip_white_space(struct scanner * lc)
 {
 	int cur;
 
-	lc->yysval = lc->yycur;
-	while ((cur = scanner_getc(lc)) != EOF && iswspace(cur))
+	do {
 		lc->yysval = lc->yycur;
+	} while ((cur = scanner_getc(lc)) != EOF && iswspace(cur));
 	return cur;
 }
 
@@ -968,7 +969,7 @@ int scanner_symbol(mvc * c, int cur)
 		return tokenize(c, cur);
 	case '\'':
 	case '"':
-		return scanner_string(c, cur);
+		return scanner_string(c, cur, cur == '\'');
 	case '{':
 		return scanner_body(c);
 	case '-':
@@ -1154,37 +1155,24 @@ tokenize(mvc * c, int cur)
  *
  * MonetDB has 2 restrictions:
  * 	1 we disallow '%' as the first character.
- * 	2 the length is reduced to 1024 characters 
+ * 	2 the length is limited to 1024 characters 
  */
-static int
-valid_ident(char *s, char *dst)
+static bool
+valid_ident(const char *restrict s, char *restrict dst)
 {
-	int escaped = 0;
 	int p = 0;
-	
-	if (*s == '%')
-		return 0;
 
-	while (*s && (*s != '"' || escaped)) {
-		if (*s == '\\' && s[1] == '"') {
-			escaped = !escaped;
-			if (escaped) 
-				dst[p++] = *s;
-		} else if (*s == '"' && escaped) {
-			escaped = 0;
-			dst[p++] = *s;
-		} else {
-			escaped = 0;
-			dst[p++] = *s;
-		}
-		s++;
+	if (*s == '%')
+		return false;
+
+	while (*s) {
+		if ((dst[p++] = *s++) == '"' && *s == '"')
+			s++;
 		if (p >= 1024)
-			return 0;
+			return false;
 	}
-	if (*s)
-		return 0;
 	dst[p] = '\0';
-	return 1;
+	return true;
 }
 
 static inline int
@@ -1207,7 +1195,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 		lc->rs->buf[lc->rs->pos + lc->yycur] = lc->yybak;
 		lc->yybak = 0;
 	}
-	
+
 	lc->yysval = lc->yycur;
 	lc->yylast = lc->yyval;
 	cur = scanner_getc(lc);
@@ -1225,14 +1213,16 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	if (token == KW_TYPE)
 		token = aTYPE;
 
-	if (token == IDENT || token == COMPARISON || token == FILTER_FUNC || token == AGGR || token == AGGR2 || token == RANK || token == aTYPE || token == ALIAS)
+	if (token == IDENT || token == COMPARISON || token == FILTER_FUNC ||
+	    token == AGGR || token == AGGR2 || token == RANK ||
+	    token == aTYPE || token == ALIAS)
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 	else if (token == STRING) {
 		char quote = *yylval->sval;
 		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 + 1 );
 		assert(quote == '"' || quote == '\'');
 
-		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0; 
+		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0;
 		if (quote == '"') {
 			if (valid_ident(yylval->sval+1,str)) {
 				token = IDENT;
@@ -1241,12 +1231,14 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 				return LEX_ERROR;
 			}
 		} else {
-			memcpy(str, yylval->sval+1, lc->yycur-lc->yysval - 1);
+			GDKstrFromStr((unsigned char *) str,
+				      (unsigned char *) yylval->sval + 1,
+				      lc->yycur-lc->yysval - 1);
 		}
 		yylval->sval = str;
 
 		/* reset original */
-		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote; 
+		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote;
 	}
 
 	return(token);

@@ -63,6 +63,7 @@ except Exception, e:
   print(e, file=sys.stderr)
 print(query(c1, 'select * from t2'))
 run(c1, 'drop table t2')
+run(c1, 'drop sequence myseq')
 
 # clean up
 c1.close()

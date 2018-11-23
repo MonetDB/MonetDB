@@ -36,7 +36,7 @@ bool string_copy(const char *source, char *dest, size_t max_size, bool allow_uni
 int hge_to_string(char *str, hge x)
 {
 	size_t len = 256; /* assume str is large enough */
-	hgeToStr(&str, &len, &x);
+	hgeToStr(&str, &len, &x, false);
 	return TRUE;
 }
 
@@ -219,7 +219,7 @@ wrapup:
 				return GDKstrdup("string too long to convert.");               \
 			ptr = buf;                                                         \
 		}                                                                      \
-		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value) < 0)  \
+		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value, false) < 0) \
 			return GDKstrdup("Error converting string.");                      \
 		return MAL_SUCCEED;                                                    \
 	}

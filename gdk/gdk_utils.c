@@ -642,6 +642,8 @@ GDKinit(opt *set, int setlen)
 		if (GDKsetenv("monet_pid", buf) != GDK_SUCCEED)
 			GDKfatal("GDKinit: GDKsetenv failed");
 	}
+	if (GDKsetenv("revision", mercurial_revision()) != GDK_SUCCEED)
+		GDKfatal("GDKinit: GDKsetenv failed");
 
 	return 1;
 }

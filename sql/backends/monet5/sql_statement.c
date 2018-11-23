@@ -154,7 +154,7 @@ stmt_key(stmt *s)
 stmt *
 stmt_atom_string(backend *be, const char *S)
 {
-	const char *s = sql2str(sa_strdup(be->mvc->sa, S));
+	const char *s = sa_strdup(be->mvc->sa, S);
 	sql_subtype t;
 
 	sql_find_subtype(&t, "varchar", _strlen(s), 0);

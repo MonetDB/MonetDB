@@ -473,6 +473,48 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 				} else
 					c = 'x';
 				break;
+			case 'u':
+			case 'U':
+				/* \u with four hexadecimal digits or
+				 * \U with eight hexadecimal digits */
+				if (n > 0) {
+					/* not when in the middle of a
+					 * UTF-8 sequence */
+					goto notutf8;
+				}
+				c = 0;
+				for (n = *cur == 'U' ? 8 : 4; n > 0; n--) {
+					cur++;
+					if (!num16(*cur)) {
+						GDKerror("not a Unicode code point escape\n");
+						return -1;
+					}
+					c = c << 4 | base16(*cur);
+				}
+				/* n == 0 now */
+				if (c == 0 || c > 0x10FFFF ||
+				    (c & 0xFFF800) == 0xD800) {
+					GDKerror("illegal Unicode code point\n");
+					return -1;
+				}
+				if (c < 0x80) {
+					*p++ = (unsigned char) c;
+				} else {
+					if (c < 0x800) {
+						*p++ = 0xC0 | (c >> 6);
+					} else {
+						if (c < 0x10000) {
+							*p++ = 0xE0 | (c >> 12);
+						} else {
+							*p++ = 0xF0 | (c >> 18);
+							*p++ = 0x80 | ((c >> 12) & 0x3F);
+						}
+						*p++ = 0x80 | ((c >> 6) & 0x3F);
+					}
+					*p++ = 0x80 | (c & 0x3F);
+				}
+				escaped = false;
+				continue;
 			case 'a':
 				c = '\a';
 				break;
@@ -508,6 +550,15 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 		} else if ((c = *cur) == '\\') {
 			escaped = true;
 			continue;
+#if 0
+		} else if (c == quote && cur[1] == quote) {
+			assert(c != 0);
+			if (n > 0)
+				goto notutf8;
+			*p++ = quote;
+			cur++;
+			continue;
+#endif
 		}
 
 		if (n > 0) {
@@ -571,11 +622,18 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 }
 
 ssize_t
-strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst)
+strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, bool external)
 {
 	const char *cur = src, *start = NULL;
 	size_t l = 1;
 	bool escaped = false;
+
+	if (!external) {
+		size_t sz = strLen(src);
+		atommem(sz);
+		strncpy(*dst, src, sz + 1);
+		return (ssize_t) sz;
+	}
 
 	if (GDK_STRNIL(src)) {
 		atommem(2);
@@ -725,8 +783,16 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 }
 
 ssize_t
-strToStr(char **restrict dst, size_t *restrict len, const char *restrict src)
+strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 {
+	size_t sz;
+
+	if (!external) {
+		sz = strLen(src);
+		atommem(sz);
+		strncpy(*dst, src, sz + 1);
+		return (ssize_t) sz;
+	}
 	if (GDK_STRNIL(src)) {
 		atommem(4);
 		return snprintf(*dst, *len, "nil");

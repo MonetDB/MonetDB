@@ -31,6 +31,7 @@ Ready.
 #	CONSTRAINT "x_id_pkey" PRIMARY KEY ("id")
 #);
 #DROP TABLE x;
+#DROP SEQUENCE "seq_2184";
 #ROLLBACK;
 
 # 14:55:13 >  

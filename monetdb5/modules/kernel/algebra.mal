@@ -229,7 +229,7 @@ pattern firstn(b:bat[:any], s:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:
 address ALGfirstn
 comment "Calculate first N values of B with candidate list S";
 pattern firstn(b:bat[:any], s:bat[:oid], g:bat[:oid], n:lng, asc:bit, nilslast:bit, distinct:bit) :bat[:oid]
-address ALGfirstn
+address ALGfirstnMa
 comment "Calculate first N values of B with candidate list S";
 pattern firstn(b:bat[:any], n:lng, asc:bit, nilslast:bit, distinct:bit) (:bat[:oid],:bat[:oid])
 address ALGfirstn

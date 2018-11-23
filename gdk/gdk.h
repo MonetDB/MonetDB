@@ -672,13 +672,13 @@ typedef struct {
 } *ValPtr, ValRecord;
 
 /* interface definitions */
-gdk_export ptr VALconvert(int typ, ValPtr t);
+gdk_export void *VALconvert(int typ, ValPtr t);
 gdk_export char *VALformat(const ValRecord *res);
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
 gdk_export void VALclear(ValPtr v);
-gdk_export ValPtr VALset(ValPtr v, int t, ptr p);
+gdk_export ValPtr VALset(ValPtr v, int t, void *p);
 gdk_export void *VALget(ValPtr v);
 gdk_export int VALcmp(const ValRecord *p, const ValRecord *q);
 gdk_export int VALisnil(const ValRecord *v);
@@ -1021,7 +1021,7 @@ gdk_export bte ATOMelmshift(int sz);
 	do {								\
 		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
-			ptr _ptr;					\
+			void *_ptr;					\
 			ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);	\
 			if ((b)->twidth < SIZEOF_VAR_T &&		\
 			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
@@ -1053,7 +1053,7 @@ gdk_export bte ATOMelmshift(int sz);
 	do {								\
 		if ((b)->tvarsized && (b)->ttype) {			\
 			var_t _d;					\
-			ptr _ptr;					\
+			void *_ptr;					\
 			ATOMputVAR((b)->ttype, (b)->tvheap, &_d, v);	\
 			if ((b)->twidth < SIZEOF_VAR_T &&		\
 			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
@@ -1760,7 +1760,7 @@ gdk_export BAT *BBPquickdesc(bat b, bool delaccess);
  * were processed.  atomToStr returns the length of the string
  * produced.  Both functions return -1 on (any kind of) failure.  If
  * *dst is not NULL, *len specifies the available space.  If there is
- * not enough space, of if *dst is NULL, *dst will be freed (if not
+ * not enough space, or if *dst is NULL, *dst will be freed (if not
  * NULL) and a new buffer will be allocated and returned in *dst.
  * *len will be set to reflect the actual size allocated.  If
  * allocation fails, *dst will be NULL on return and *len is
@@ -1779,8 +1779,8 @@ typedef struct {
 	const void *atomNull;	/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
-	ssize_t (*atomFromStr) (const char *src, size_t *len, ptr *dst);
-	ssize_t (*atomToStr) (str *dst, size_t *len, const void *src);
+	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
+	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
 	void *(*atomRead) (void *dst, stream *s, size_t cnt);
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
@@ -1804,11 +1804,11 @@ gdk_export int ATOMindex(const char *nme);
 
 gdk_export str ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
-gdk_export ptr ATOMnil(int id);
+gdk_export void *ATOMnil(int id);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export char *ATOMformat(int id, const void *val);
 
-gdk_export ptr ATOMdup(int id, const void *val);
+gdk_export void *ATOMdup(int id, const void *val);
 
 /*
  * @- Built-in Accelerator Functions
@@ -2326,7 +2326,7 @@ gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);
 gdk_export Thread THRnew(const char *name);
 gdk_export void THRdel(Thread t);
-gdk_export void THRsetdata(int, ptr);
+gdk_export void THRsetdata(int, void *);
 gdk_export void *THRgetdata(int);
 gdk_export int THRhighwater(void);
 gdk_export int THRprintf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...)
@@ -2340,7 +2340,7 @@ gdk_export void *THRdata[THREADDATA];
 #define GDKout		((stream*)THRgetdata(0))
 #define GDKin		((stream*)THRgetdata(1))
 #define GDKerrbuf	((char*)THRgetdata(2))
-#define GDKsetbuf(x)	THRsetdata(2,(ptr)(x))
+#define GDKsetbuf(x)	THRsetdata(2,(void *)(x))
 #define GDKerr		GDKout
 
 #define THRget_errbuf(t)	((char*)t->data[2])

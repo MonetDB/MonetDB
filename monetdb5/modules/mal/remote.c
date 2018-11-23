@@ -610,7 +610,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					var = "nil";
 				s = 0;
 				r = NULL;
-				if (ATOMfromstr(t, &r, &s, var) < 0 ||
+				if (ATOMfromstr(t, &r, &s, var, true) < 0 ||
 					BUNappend(b, r, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					GDKfree(r);
@@ -693,7 +693,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			if (p == NULL)
 				throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			VALset(v, rtype, p);
-		} else if (ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val) < 0) {
+		} else if (ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val, true) < 0) {
 			char *msg;
 			msg = createException(MAL, "remote.get",
 								  "unable to parse value: %s",
@@ -1116,7 +1116,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		s = 0;
 		r = NULL;
-		if (ATOMfromstr(t, &r, &s, var) < 0 ||
+		if (ATOMfromstr(t, &r, &s, var, true) < 0 ||
 			BUNappend(b, r, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			GDKfree(r);
@@ -1264,7 +1264,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 				} else {
 					/* all values should be non-negative, so we check that
 					 * here as well */
-					if (lngFromStr(val, &len, &lvp) < 0 ||
+					if (lngFromStr(val, &len, &lvp, true) < 0 ||
 						lv < 0 /* includes lng_nil */)
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);

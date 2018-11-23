@@ -35,7 +35,7 @@ c = process.client(lang = 'sqldump',
                    stdin = process.PIPE,
                    stdout = process.PIPE,
                    stderr = process.PIPE,
-                   dbname = dbname)
+                   server = s)
 out, err = c.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)

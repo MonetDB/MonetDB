@@ -26,11 +26,11 @@ Ready.
 # 15:05:52 >  
 
 #SELECT ST_AsText(ST_Centroid(shores)) FROM ponds WHERE fid = 120;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 15 # length
-[ "\"POINT (25 42)\""	]
+% 13 # length
+[ "POINT (25 42)"	]
 
 # 15:05:53 >  
 # 15:05:53 >  "Done."
