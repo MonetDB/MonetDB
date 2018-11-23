@@ -5719,7 +5719,7 @@ non_reserved_word:
 | QUARTER	{ $$ = sa_strdup(SA, "quarter"); }
 | REPLACE	{ $$ = sa_strdup(SA, "replace"); }
 | ROLE		{ $$ = sa_strdup(SA, "role"); }
-| SCHEMA	{ $$ = sa_strdup(SA, "schema");
+| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }
 | SERVER	{ $$ = sa_strdup(SA, "server"); }
 | sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
 | sqlSIZE	{ $$ = sa_strdup(SA, "size"); }
