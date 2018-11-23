@@ -76,14 +76,55 @@ Ready.
 % a # name
 % int # type
 % 1 # length
-[ 1	]
+#select "ss"."name" from "sys"."tables" "tt" inner join "sys"."schemas" "ss" on "tt"."schema_id" = "ss"."id" where "tt"."name" = 'atable';
+% .ss # table_name
+% name # name
+% varchar # type
+% 9 # length
+[ "oldtables"	]
 #alter table "oldtables"."atable" set schema "newtables";
-#select "a" from "newtables"."atable";
+#select "ss"."name" from "sys"."tables" "tt" inner join "sys"."schemas" "ss" on "tt"."schema_id" = "ss"."id" where "tt"."name" = 'atable';
+% .ss # table_name
+% name # name
+% varchar # type
+% 9 # length
+[ "newtables"	]
+#select "a" from "newtables"."atable" where false;
 % newtables.atable # table_name
 % a # name
 % int # type
 % 1 # length
-[ 1	]
+#start transaction;
+#select "ss"."name" from "sys"."tables" "tt" inner join "sys"."schemas" "ss" on "tt"."schema_id" = "ss"."id" where "tt"."name" = 'atable';
+% .ss # table_name
+% name # name
+% varchar # type
+% 9 # length
+[ "newtables"	]
+#alter table "newtables"."atable" set schema "oldtables";
+#select "ss"."name" from "sys"."tables" "tt" inner join "sys"."schemas" "ss" on "tt"."schema_id" = "ss"."id" where "tt"."name" = 'atable';
+% .ss # table_name
+% name # name
+% varchar # type
+% 9 # length
+[ "oldtables"	]
+#select "a" from "oldtables"."atable" where false;
+% oldtables.atable # table_name
+% a # name
+% int # type
+% 1 # length
+#rollback;
+#select "ss"."name" from "sys"."tables" "tt" inner join "sys"."schemas" "ss" on "tt"."schema_id" = "ss"."id" where "tt"."name" = 'atable';
+% .ss # table_name
+% name # name
+% varchar # type
+% 9 # length
+[ "newtables"	]
+#select "a" from "newtables"."atable" where false;
+% newtables.atable # table_name
+% a # name
+% int # type
+% 1 # length
 #drop table "newtables"."atable";
 #drop schema "oldtables";
 #drop schema "newtables";
