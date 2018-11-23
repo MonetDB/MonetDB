@@ -4515,7 +4515,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								} else if (ATOMvarsized(bn->ttype)) {
 									sz = BATcount(bn);
 									if (sz > 0)
-										w = (bn->tvheap->free + sz / 2) / sz;
+										w = (int) ((bn->tvheap->free + sz / 2) / sz);
 									else
 										w = 0;
 								}
