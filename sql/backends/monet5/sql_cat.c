@@ -187,7 +187,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, conflict_err_min = NULL, conflict_err_max = NULL;
 	int tp1 = 0, errcode = 0, min_null = 0, max_null = 0;
 	size_t length = 0;
-	ssize_t (*atomtostr)(str *, size_t *, const void *);
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool);
 	sql_subtype tpe;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname,
@@ -246,13 +246,13 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 										"one partition can store null values at the time", err->t->s->base.name, err->t->base.name);
 			} else {
 				atomtostr = BATatoms[tp1].atomToStr;
-				if(atomtostr(&conflict_err_min, &length, err->part.range.minvalue) < 0) {
+				if(atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				} else if(atomtostr(&conflict_err_max, &length, err->part.range.maxvalue) < 0) {
+				} else if(atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				} else if(atomtostr(&err_min, &length, min) < 0) {
+				} else if(atomtostr(&err_min, &length, min, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				} else if(atomtostr(&err_max, &length, max) < 0) {
+				} else if(atomtostr(&err_max, &length, max, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				} else {
 					sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);

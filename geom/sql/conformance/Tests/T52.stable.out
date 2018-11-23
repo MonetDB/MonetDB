@@ -26,11 +26,11 @@ Ready.
 # 15:20:22 >  
 
 #SELECT ST_AsText(ST_ConvexHull(shore)) FROM lakes WHERE lakes.name = 'Blue Lake';
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 44 # length
-[ "\"POLYGON ((48 6, 52 18, 66 23, 73 9, 48 6))\""	]
+% 42 # length
+[ "POLYGON ((48 6, 52 18, 66 23, 73 9, 48 6))"	]
 
 # 15:20:22 >  
 # 15:20:22 >  "Done."

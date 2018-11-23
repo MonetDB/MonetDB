@@ -26,11 +26,11 @@ Ready.
 # 14:52:43 >  
 
 #SELECT ST_AsText(ST_Centroid(boundary)) FROM named_places WHERE name = 'Goose Island';
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 17 # length
-[ "\"POINT (63 15.5)\""	]
+% 15 # length
+[ "POINT (63 15.5)"	]
 
 # 14:52:43 >  
 # 14:52:43 >  "Done."

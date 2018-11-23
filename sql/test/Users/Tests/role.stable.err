@@ -36,12 +36,12 @@ ERROR = !DROP ROLE: no such role 'bankadmin3'
 CODE  = 0P000
 MAPI  = (april) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET ROLE bankAdmin; -- role revoked
-ERROR = !SQLException:sql.update_var:42000!Role (bankadmin) missing
-CODE  = 42100
-MAPI  = (april) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !Role (bankadmin) missing
+CODE  = 42000
+MAPI  = (april) /var/tmp/mtest-12671/.s.monetdb.35429
 QUERY = SET ROLE bankAdmin2; -- role no longer exists
-ERROR = !SQLException:sql.update_var:42000!Role (bankadmin2) missing
-CODE  = 42100
+ERROR = !Role (bankadmin2) missing
+CODE  = 42000
 
 # 23:01:34 >  
 # 23:01:34 >  "Done."

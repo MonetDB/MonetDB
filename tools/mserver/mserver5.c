@@ -140,7 +140,6 @@ monet_hello(void)
 	printf("# MonetDB 5 server v%s", GDKversion());
 	{
 		const char *rev = mercurial_revision();
-		printf("# MonetDB5 server v%s", GDKversion());
 		/* coverity[pointless_string_compare] */
 		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 			printf(" (%s)", MONETDB_RELEASE);

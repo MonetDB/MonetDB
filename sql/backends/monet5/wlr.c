@@ -466,7 +466,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp){
-		if (timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local) < 0)
+		if (timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local, true) < 0)
 			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
 		mnstr_printf(cntxt->fdout,"#time limit %s\n",timelimit);
 	} else

@@ -3,7 +3,7 @@ select 'bla';
 select '"'||'bla';
 select '"bla"' '"blah"';
 select 'blah''s nork';
-select 'blah\'nork';
+-- select 'blah\'nork';
 select 'blah\,blah';
 select 'blah \tthe \n black';
 select 'blah \t the \\n black';

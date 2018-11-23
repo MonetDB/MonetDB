@@ -13644,7 +13644,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 	BUN i;
 	const void *nil = ATOMnilptr(tp);
 	const void *restrict src;
-	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tp].atomToStr;
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[tp].atomToStr;
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 
 	for (i = 0; i < start; i++)
@@ -13690,7 +13690,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 				nils++;
 				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 			} else {
-				if ((*atomtostr)(&dst, &len, src) < 0)
+				if ((*atomtostr)(&dst, &len, src, false) < 0)
 					goto bunins_failed;
 				tfastins_nocheckVAR(bn, i, dst, bn->twidth);
 			}
@@ -13714,7 +13714,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 				nils++;
 				tfastins_nocheckVAR(bn, i, str_nil, bn->twidth);
 			} else {
-				if ((*atomtostr)(&dst, &len, src) < 0)
+				if ((*atomtostr)(&dst, &len, src, false) < 0)
 					goto bunins_failed;
 				tfastins_nocheckVAR(bn, i, dst, bn->twidth);
 			}
@@ -13744,7 +13744,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	void *d;
 	size_t len = ATOMsize(tp);
 	ssize_t l;
-	ssize_t (*atomfromstr)(const char *, size_t *, ptr *) = BATatoms[tp].atomFromStr;
+	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
 
 	for (i = 0; i < start; i++) {
@@ -13769,7 +13769,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			nils++;
 		} else {
 			d = dst;
-			if ((l = (*atomfromstr)(s, &len, &d)) < 0 ||
+			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
 					GDKclrerr();
@@ -13803,7 +13803,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 	BUN i = 0;
 	int tp = bn->ttype;
 	void *restrict dst = Tloc(bn, 0);
-	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[TYPE_oid].atomToStr;
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool) = BATatoms[TYPE_oid].atomToStr;
 	str s = 0;
 	size_t len = 0;
 
@@ -13908,7 +13908,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 					if (++cand == candend)
 						end = i + 1;
 				}
-				if ((*atomtostr)(&s, &len, &seq) < 0)
+				if ((*atomtostr)(&s, &len, &seq, false) < 0)
 					goto bunins_failed;
 				tfastins_nocheckVAR(bn, i, s, bn->twidth);
 				seq++;
@@ -14472,7 +14472,8 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 			ret->val.sval = NULL;
 			if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
 							    &ret->len,
-							    VALptr(v)) < 0) {
+							    VALptr(v),
+							    false) < 0) {
 				GDKfree(ret->val.sval);
 				ret->val.sval = NULL;
 				ret->len = 0;
@@ -14489,10 +14490,8 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 		}
 		ret->val.oval = oid_nil;
 	} else if (v->vtype == TYPE_void) {
-		nils = convert_typeswitchloop(&oid_nil, TYPE_oid,
-					      VALget(ret), ret->vtype,
-					      1, 0, 1, NULL, NULL, 0,
-					      abort_on_error, &reduce);
+		if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
+			nils = BUN_NONE;
 	} else if (v->vtype == TYPE_str) {
 		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
@@ -14512,7 +14511,7 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error)
 				len = ATOMsize(ret->vtype);
 			}
 			if ((l = (*BATatoms[ret->vtype].atomFromStr)(
-				     v->val.sval, &len, &p)) < 0 ||
+				     v->val.sval, &len, &p, false)) < 0 ||
 			    l < (ssize_t) strlen(v->val.sval)) {
 				if (ATOMextern(ret->vtype))
 					GDKfree(p);

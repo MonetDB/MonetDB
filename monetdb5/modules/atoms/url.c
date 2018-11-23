@@ -282,7 +282,7 @@ x2c(char *what)
  */
 
 ssize_t
-URLfromString(const char *src, size_t *len, str *u)
+URLfromString(const char *src, size_t *len, str *u, bool external)
 {
 	size_t l = strlen(src) + 1;
 
@@ -296,7 +296,7 @@ URLfromString(const char *src, size_t *len, str *u)
 
 	/* actually parse the message for valid url */
 
-	if (strcmp(src, "nil") == 0)
+	if (external && strcmp(src, "nil") == 0)
 		strcpy(*u, str_nil);
 	else
 		memcpy(*u, src, l);
@@ -304,26 +304,30 @@ URLfromString(const char *src, size_t *len, str *u)
 }
 
 ssize_t
-URLtoString(str *s, size_t *len, const char *src)
+URLtoString(str *s, size_t *len, const char *src, bool external)
 {
-	size_t l;
+	size_t l = strlen(src);
 
-	if (GDK_STRNIL(src)) {
-		*s = GDKstrdup("nil");
-		return *s ? 1 : -1;
-	}
-	l = strlen(src) + 3;
-	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
-
+	if (external)
+		l += 2;
 	if (l >= *len || *s == NULL) {
 		GDKfree(*s);
-		*s = (str) GDKmalloc(l);
+		*s = GDKmalloc(l + 1);
 		if (*s == NULL)
 			return -1;
+		*len = l + 1;
 	}
-	snprintf(*s, l, "\"%s\"", src);
-	*len = l - 1;
-	return (ssize_t) *len;
+
+	if (external) {
+		if (GDK_STRNIL(src)) {
+			strcpy(*s, "nil");
+			return 3;
+		}
+		snprintf(*s, l + 1, "\"%s\"", src);
+	} else {
+		strcpy(*s, src);
+	}
+	return (ssize_t) l;
 }
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL

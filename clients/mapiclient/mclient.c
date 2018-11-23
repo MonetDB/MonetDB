@@ -898,8 +898,8 @@ static void
 CSVrenderer(MapiHdl hdl)
 {
 	int fields;
-	char *s;
-	char *sep = separator;
+	const char *s;
+	const char specials[] = {'"', '\\', '\n', '\r', '\t', *separator, '\0'};
 	int i;
 
 	if (csvheader) {
@@ -908,20 +908,16 @@ CSVrenderer(MapiHdl hdl)
 			s = mapi_get_name(hdl, i);
 			if (s == NULL)
 				s = "";
-			mnstr_printf(toConsole, "%s%s", i == 0 ? "" : sep, s);
+			mnstr_printf(toConsole, "%s%s", i == 0 ? "" : separator, s);
 		}
 		mnstr_printf(toConsole, "\n");
 	}
 	while (!mnstr_errnr(toConsole) && (fields = fetch_row(hdl)) != 0) {
 		for (i = 0; i < fields; i++) {
 			s = mapi_fetch_field(hdl, i);
-			if (s == NULL)
-				s = nullstring == default_nullstring ? "" : nullstring;
-			if (strchr(s, *sep) != NULL ||
-			    strchr(s, '\n') != NULL ||
-			    strchr(s, '"') != NULL) {
+			if (s != NULL && s[strcspn(s, specials)] != '\0') {
 				mnstr_printf(toConsole, "%s\"",
-					     i == 0 ? "" : sep);
+					     i == 0 ? "" : separator);
 				while (*s) {
 					switch (*s) {
 					case '\n':
@@ -946,9 +942,12 @@ CSVrenderer(MapiHdl hdl)
 					s++;
 				}
 				mnstr_write(toConsole, "\"", 1, 1);
-			} else
+			} else {
+				if (s == NULL)
+					s = nullstring == default_nullstring ? "" : nullstring;
 				mnstr_printf(toConsole, "%s%s",
-					     i == 0 ? "" : sep, s);
+					     i == 0 ? "" : separator, s);
+			}
 		}
 		mnstr_printf(toConsole, "\n");
 	}

@@ -122,8 +122,16 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 					t->base.name);
 			} else {
 				char *t = sql_subtype_string(atom_type(a));
-				char *s = atom2string(sql->sa, a);
-				mnstr_printf(fout, "%s \"%s\"", t, s);
+				if (a->isnull)
+					mnstr_printf(fout, "%s \"NULL\"", t);
+				else {
+					char *s = ATOMformat(a->data.vtype, VALptr(&a->data));
+					if (s && *s == '"')
+						mnstr_printf(fout, "%s %s", t, s);
+					else if (s)
+						mnstr_printf(fout, "%s \"%s\"", t, s);
+					GDKfree(s);
+				}
 				_DELETE(t);
 			}
 		} else { /* variables */

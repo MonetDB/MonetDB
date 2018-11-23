@@ -8,7 +8,9 @@ insert into  nosql values
 	('[1,"f2", 2]');
 select * from nosql;
 
-select cast (j as string) from nosql;
+create table nosql_string as (select cast (j as string) as j from nosql);
+select * from nosql_string;
+select cast (j as json) as j from nosql_string;
 
 -- consider them as initial strings
 create table tmpsql(j string);
@@ -21,7 +23,11 @@ insert into  tmpsql values
 	('[1,"f2", 2]');
 select * from tmpsql;
 
-select cast (j as json) from nosql;
+create table tmpsql_json as (select cast (j as json) as j from tmpsql);
+select * from tmpsql_json;
+select cast (j as string) as j from tmpsql_json;
 
 drop table tmpsql;
 drop table nosql;
+drop table tmpsql_json;
+drop table nosql_string;

@@ -45,13 +45,13 @@ geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
 
 /* the len argument is needed for correct storage and retrieval */
-geom_export ssize_t wkbTOSTR(char **geomWKT, size_t *len, const wkb *geomWKB);
-geom_export ssize_t mbrTOSTR(char **dst, size_t *len, const mbr *atom);
-geom_export ssize_t wkbaTOSTR(char **toStr, size_t* len, const wkba *fromArray);
+geom_export ssize_t wkbTOSTR(char **geomWKT, size_t *len, const wkb *geomWKB, bool external);
+geom_export ssize_t mbrTOSTR(char **dst, size_t *len, const mbr *atom, bool external);
+geom_export ssize_t wkbaTOSTR(char **toStr, size_t* len, const wkba *fromArray, bool external);
 
-geom_export ssize_t wkbFROMSTR(const char* geomWKT, size_t *len, wkb** geomWKB);
-geom_export ssize_t mbrFROMSTR(const char *src, size_t *len, mbr **atom);
-geom_export ssize_t wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray);
+geom_export ssize_t wkbFROMSTR(const char* geomWKT, size_t *len, wkb** geomWKB, bool external);
+geom_export ssize_t mbrFROMSTR(const char *src, size_t *len, mbr **atom, bool external);
+geom_export ssize_t wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray, bool external);
 
 geom_export const wkb *wkbNULL(void);
 geom_export const mbr *mbrNULL(void);
