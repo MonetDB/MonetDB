@@ -101,7 +101,7 @@ static volatile ATOMIC_TYPE BBPsize = 0; /* current used size of BBP array */
 
 struct BBPfarm_t BBPfarms[MAXFARMS];
 
-#define KITTENNAP 4 	/* used to suspend processing */
+#define KITTENNAP 1		/* used to suspend processing */
 #define BBPNONAME "."		/* filler for no name in BBP.dir */
 /*
  * The hash index uses a bucket index (int array) of size mask that is
@@ -2499,7 +2499,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	    (BBP_lrefs(i) > 0 &&
 	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT)))) {
 		/* bat cannot be swapped out */
-	} else if (b || (BBP_status(i) & BBPTMP)) {
+	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
 		 * while locked so no other thread thinks it's
 		 * available anymore */
@@ -2653,7 +2653,7 @@ getBBPdescriptor(bat i, bool lock)
 			if (b == NULL) {
 				load = true;
 				BATDEBUG {
-					fprintf(stderr, "#BBPdescriptor set to unloading BAT %d\n", i);
+					fprintf(stderr, "#BBPdescriptor set to loading BAT %d\n", i);
 				}
 				BBP_status_on(i, BBPLOADING, "BBPdescriptor");
 			}

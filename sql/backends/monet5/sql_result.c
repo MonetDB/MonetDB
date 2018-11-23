@@ -170,7 +170,7 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 		val = val - mtime;
 	tmp = (daytime) val;
 
-	len1 = daytime_tostr(&s1, &big, &tmp);
+	len1 = daytime_tostr(&s1, &big, &tmp, true);
 	if (len1 < 0)
 		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
@@ -231,11 +231,11 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	(void) type;
 	if (ts_res->has_tz) {
 		MTIMEtimestamp_add(&tmp, a, &timezone);
-		len1 = date_tostr(&s1, &big, &tmp.days);
-		len2 = daytime_tostr(&s2, &big, &tmp.msecs);
+		len1 = date_tostr(&s1, &big, &tmp.days, true);
+		len2 = daytime_tostr(&s2, &big, &tmp.msecs, true);
 	} else {
-		len1 = date_tostr(&s1, &big, &a->days);
-		len2 = daytime_tostr(&s2, &big, &a->msecs);
+		len1 = date_tostr(&s1, &big, &a->days, true);
+		len2 = daytime_tostr(&s2, &big, &a->msecs, true);
 	}
 	if (len1 < 0 || len2 < 0) {
 		GDKfree(s1);
@@ -707,8 +707,6 @@ sec_frstr(Column *c, int type, const char *s)
 	(void) type;
 	assert(type == TYPE_lng);
 
-	if( strcmp(s,"nil")== 0)
-		return NULL;
 	if (*s == '-') {
 		neg = 1;
 		s++;
@@ -717,32 +715,28 @@ sec_frstr(Column *c, int type, const char *s)
 		s++;
 	}
 	for (i = 0; i < (19 - 3) && *s && *s != '.'; i++, s++) {
-		if (!*s || !isdigit((unsigned char) *s))
+		if (!isdigit((unsigned char) *s))
 			return NULL;
 		res *= 10;
 		res += (*s - '0');
 	}
-	if (!*s) {
-		for (i = 0; i < 3; i++) {
-			res *= 10;
-		}
-	}
+	i = 0;
 	if (*s) {
 		if (*s != '.')
 			return NULL;
 		s++;
-		for (i = 0; *s && i < 3; i++, s++) {
+		for (; *s && i < 3; i++, s++) {
 			if (!isdigit((unsigned char) *s))
 				return NULL;
 			res *= 10;
 			res += (*s - '0');
 		}
-		for (; i < 3; i++) {
-			res *= 10;
-		}
 	}
 	if (*s)
 		return NULL;
+	for (; i < 3; i++) {
+		res *= 10;
+	}
 	r = c->data;
 	if (r == NULL && (r = (lng *) GDKzalloc(sizeof(lng))) == NULL)
 		return NULL;
@@ -801,7 +795,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 	if( strcmp(s,"nil")== 0)
 		return NULL;
 
-	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data);
+	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data, true);
 	if (len < 0)
 		return NULL;
 	if (len == 0 || s[len]) {
@@ -862,7 +856,7 @@ _ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
 		dst[l + l2] = 0;
 		return l + l2;
 	} else {
-		return (*BATatoms[type].atomToStr) (buf, len, a);
+		return (*BATatoms[type].atomToStr) (buf, len, a, true);
 	}
 }
 
@@ -881,7 +875,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int locked, int best)
 {
 	int i = 0, j;
 	node *n;
@@ -1349,13 +1343,13 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 			(*buf)[1] = 0;
 		}
 	} else {
-		l = (*BATatoms[mtype].atomToStr) (buf, &len2, p);
+		l = (*BATatoms[mtype].atomToStr) (buf, &len2, p, false);
 	}
 	return (int) l;
 }
 
 static int
-export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, str ns)
+export_value(mvc *m, stream *s, int eclass, const char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, const char *ns)
 {
 	int ok = 0;
 	ssize_t l = 0;
@@ -1407,7 +1401,7 @@ export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p,
 			break;
 #endif
 		default:
-			l = (*BATatoms[mtype].atomToStr) (buf, len, p);
+			l = (*BATatoms[mtype].atomToStr) (buf, len, p, true);
 			if (l >= 0)
 				ok = (mnstr_write(s, *buf, l, 1) == 1);
 		}
@@ -1416,7 +1410,7 @@ export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p,
 }
 
 static int
-mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep, str ssep, str ns)
+mvc_export_row(backend *b, stream *s, res_table *t, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
 	mvc *m = b->mvc;
 	size_t seplen = strlen(sep);
@@ -1584,7 +1578,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 							ssize_t slen = 0;
 							if (convert_to_string) {
 								void *element = (void*) BUNtail(iterators[i], crow);
-								if ((slen = BATatoms[mtype].atomToStr(&result, &length, element)) < 0) {
+								if ((slen = BATatoms[mtype].atomToStr(&result, &length, element, false)) < 0) {
 									fres = -1;
 									goto cleanup;
 								}
@@ -1676,21 +1670,11 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 							if (BATatoms[mtype].atomCmp(element, BATatoms[mtype].atomNull) == 0) {
 								str = str_nil;
 							} else {
-								if (BATatoms[mtype].atomToStr(&result, &length, element) < 0) {
+								if (BATatoms[mtype].atomToStr(&result, &length, element, false) < 0) {
 									fres = -1;
 									goto cleanup;
 								}
-								// string conversion functions add quotes for the old protocol
-								// because obviously adding quotes in the string conversion function
-								// makes total sense, rather than adding the quotes in the protocol
-								// thus because of this totally, 100% sensical implementation
-								// we remove the quotes again here
-								if (result[0] == '"') {
-									result[strlen(result) - 1] = '\0';
-									str = result + 1;
-								} else {
-									str = result;
-								}
+								str = result;
 							}
 						} else {
 							str = (char*) element;
@@ -1808,7 +1792,7 @@ cleanup:
 }
 
 static int
-mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, char *btag, char *sep, char *rsep, char *ssep, char *ns)
+mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
 	mvc *m = b->mvc;
 	Tablet as;

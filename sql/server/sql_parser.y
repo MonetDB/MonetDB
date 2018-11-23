@@ -93,6 +93,64 @@ UTF8_strlen(const char *val)
 	return pos;
 }
 
+
+static char *
+uescape_xform(char *restrict s, const char *restrict esc)
+{
+	size_t i, j;
+
+	for (i = j = 0; s[i]; i++) {
+		if (s[i] == *esc) {
+			if (s[i + 1] == *esc) {
+				s[j++] = *esc;
+				i++;
+			} else {
+				int c = 0;
+				int n;
+				if (s[i + 1] == '+') {
+					n = 6;
+					i++;
+				} else {
+					n = 4;
+				}
+				do {
+					i++;
+					c <<= 4;
+					if ('0' <= s[i] && s[i] <= '9')
+						c |= s[i] - '0';
+					else if ('a' <= s[i] && s[i] <= 'f')
+						c |= s[i] - 'a' + 10;
+					else if ('A' <= s[i] && s[i] <= 'F')
+						c |= s[i] - 'A' + 10;
+					else
+						return NULL;
+				} while (--n > 0);
+				if (c == 0 || c > 0x10FFFF || (c & 0xFFF800) == 0xD800)
+					return NULL;
+				if (c < 0x80) {
+					s[j++] = c;
+				} else {
+					if (c < 0x800) {
+						s[j++] = 0xC0 | (c >> 6);
+					} else {
+						if (c < 0x10000) {
+							s[j++] = 0xE0 | (c >> 12);
+						} else {
+							s[j++] = 0xF0 | (c >> 18);
+							s[j++] = 0x80 | ((c >> 12) & 0x3F);
+						}
+						s[j++] = 0x80 | ((c >> 6) & 0x3F);
+					}
+					s[j++] = 0x80 | (c & 0x3F);
+				}
+			}
+		} else {
+			s[j++] = s[i];
+		}
+	}
+	s[j] = 0;
+	return s;
+}
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -324,6 +382,7 @@ int yydebug=1;
 	opt_constraint_name
 	non_reserved_word
 	ident
+	ident_or_uident
 	calc_ident
 	authorization_identifier
 	func_ident
@@ -337,6 +396,9 @@ int yydebug=1;
 	opt_using
 	opt_null_string
 	string
+	sstring
+	ustring
+	blobstring
 	type_alias
 	varchar
 	clob
@@ -352,6 +414,7 @@ int yydebug=1;
 	XML_namespace_prefix
 	XML_PI_target
 	function_body
+	opt_uescape
 
 %type <l>
 	passwd_schema
@@ -536,12 +599,12 @@ int yydebug=1;
 	opt_nulls_first_last
 	tz
 
-%right <sval> STRING
+%right <sval> STRING USTRING XSTRING
 %right <sval> X_BODY
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
+	IDENT UIDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
 	USING 
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -564,7 +627,7 @@ int yydebug=1;
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
-%token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
+%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -825,7 +888,7 @@ set_statement:
 	        sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($4))) );
+			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set SCHEMA ident
 		{ dlist *l = L();
@@ -833,7 +896,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0 );
 		append_string(l, sa_strdup(SA, "current_schema"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($3))) );
+			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set user '=' ident
 		{ dlist *l = L();
@@ -841,7 +904,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($4))) );
+			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set ROLE ident
 		{ dlist *l = L();
@@ -849,7 +912,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0);
 		append_string(l, sa_strdup(SA, "current_role"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($3))) );
+			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
@@ -1212,7 +1275,7 @@ alter_table_element:
 	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
  |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
- |	opt_column ident SET STORAGE STRING
+ |	opt_column ident SET STORAGE string
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  if (!strlen($5))
@@ -1407,7 +1470,7 @@ opt_encrypted:
 
 table_opt_storage:
     /* empty */		 { $$ = NULL; }
- |  STORAGE ident STRING { $$ = append_string(append_string(L(), $2), $3); } 
+ |  STORAGE ident string { $$ = append_string(append_string(L(), $2), $3); } 
  ;
 
 table_def:
@@ -1474,7 +1537,7 @@ table_def:
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
     We assume the monetdb user with default password */
- |  REMOTE TABLE if_not_exists qname table_content_source ON STRING with_opt_credentials
+ |  REMOTE TABLE if_not_exists qname table_content_source ON string with_opt_credentials
 	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
 	  dlist *l = L();
 
@@ -1788,7 +1851,7 @@ generated_column:
 
 		/* finally all the options */
 		append_list(l, $5);
-		append_int(l, 0); /* to be dropped */
+		append_int(l, 1); /* to be dropped */
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create_list(SQL_NEXT, append_string(L(), sn)));
 
 		if (m->sym) {
@@ -1820,7 +1883,7 @@ generated_column:
 		sql_find_subtype(&it, "int", 32, 0);
     		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
-		append_int(l, 0); /* to be dropped */
+		append_int(l, 1); /* to be dropped */
 		if (m->scanner.schema)
 			append_string(seqn2, m->scanner.schema);
 		append_string(seqn2, sn);
@@ -2963,7 +3026,7 @@ header:
 			{ dlist *l = L();
 			  append_string(l, $1 );
 			  $$ = l; }
- |	ident STRING
+ |	ident string
 			{ dlist *l = L();
 			  append_string(l, $1 );
 			  append_string(l, $2 );
@@ -2974,12 +3037,12 @@ opt_seps:
     /* empty */
 				{ dlist *l = L();
 				  append_string(l, sa_strdup(SA, "|"));
-				  append_string(l, sa_strdup(SA, "\\n"));
+				  append_string(l, sa_strdup(SA, "\n"));
 				  $$ = l; }
  |  opt_using DELIMITERS string
 				{ dlist *l = L();
 				  append_string(l, $3);
-				  append_string(l, sa_strdup(SA, "\\n"));
+				  append_string(l, sa_strdup(SA, "\n"));
 				  $$ = l; }
  |  opt_using DELIMITERS string ',' string
 				{ dlist *l = L();
@@ -2990,7 +3053,7 @@ opt_seps:
 				{ dlist *l = L();
 				  append_string(l, $3);
 				  append_string(l, $5);
-				  append_string(l, sql2str($7));
+				  append_string(l, $7);
 				  $$ = l; }
  ;
 
@@ -3827,7 +3890,7 @@ like_exp:
 	  append_symbol(l, $1);
 	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  |  scalar_exp ESCAPE string
- 	{ const char *s = sql2str($3);
+ 	{ const char *s = $3;
 	  if (_strlen(s) != 1) {
 		yyerror(m, SQLSTATE(22019) "ESCAPE must be one character");
 		$$ = NULL;
@@ -4706,7 +4769,7 @@ user:
  ;
 
 literal:
-    string 	{ const char *s = sql2str($1);
+    string 	{ const char *s = $1;
 		  int len = UTF8_strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
@@ -4782,7 +4845,7 @@ literal:
 		  lng value, *p = &value;
 		  sql_subtype t;
 
-		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
+		  if (lngFromStr($1, &len, &p, false) < 0 || is_lng_nil(value))
 		  	err = 2;
 
 		  if (!err) {
@@ -4821,10 +4884,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr($1, &len, &p) < 0 || is_hge_nil(value))
+		  if (hgeFromStr($1, &len, &p, false) < 0 || is_hge_nil(value))
 		  	err = 2;
 #else
-		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
+		  if (lngFromStr($1, &len, &p, false) < 0 || is_lng_nil(value))
 		  	err = 2;
 #endif
 
@@ -4990,6 +5053,23 @@ literal:
 			YYABORT;
 		  }
 		}
+ |  blobstring
+		{ sql_subtype t;
+		  atom *a= 0;
+		  int r;
+
+		  $$ = NULL;
+ 		  r = sql_find_subtype(&t, "blob", 0, 0);
+	          if (r && (a = atom_general(SA, &t, $1)) != NULL)
+			$$ = _newAtomNode(a);
+		  if (!$$) {
+			char *msg = sql_message(SQLSTATE(22M28) "incorrect blob %s", $1);
+
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		  }
+		}
  |  aTYPE string
 		{ sql_subtype t;
 		  atom *a= 0;
@@ -5024,7 +5104,7 @@ literal:
 			YYABORT;
 		  }
 		}
- | IDENT string
+ | ident_or_uident string
 		{
 		  sql_type *t = mvc_bind_type(m, $1);
 		  atom *a;
@@ -5397,7 +5477,7 @@ data_type:
 			 	sql_find_subtype(&$$, $1, $3, $5);
 			  }
 			}
- | IDENT		{
+ | ident_or_uident	{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
 				char *msg = sql_message(SQLSTATE(22000) "Type (%s) unknown", $1);
@@ -5411,7 +5491,7 @@ data_type:
 			  }
 			}
 
- | IDENT '(' nonzero ')'
+ | ident_or_uident '(' nonzero ')'
 			{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
@@ -5567,6 +5647,8 @@ authid: 		restricted_ident ;
 
 calc_restricted_ident:
     IDENT	{ $$ = $1; }
+ |  UIDENT opt_uescape
+		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
@@ -5589,6 +5671,8 @@ restricted_ident:
 
 calc_ident:
     IDENT	{ $$ = $1; }
+ |  UIDENT opt_uescape
+		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
  |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
@@ -5611,95 +5695,95 @@ ident:
 	}
  ;
 
-non_reserved_word: 
-  LARGE		{ $$ = sa_strdup(SA, "large"); }	/* sloppy: officially reserved */
-| sqlNAME	{ $$ = sa_strdup(SA, "name"); }
-| OBJECT	{ $$ = sa_strdup(SA, "object"); }	/* sloppy: officially reserved */
-| PASSWORD	{ $$ = sa_strdup(SA, "password"); }	/* neither reserved nor non-reserv. */
-| PATH		{ $$ = sa_strdup(SA, "path"); }		/* sloppy: officially reserved */
-| PRECISION 	{ $$ = sa_strdup(SA, "precision"); }	/* sloppy: officially reserved */
-| PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }	/* sloppy: officially reserved */
-| ROLE		{ $$ = sa_strdup(SA, "role"); }	 	/* neither reserved nor non-reserv. */
-| sqlSIZE	{ $$ = sa_strdup(SA, "size"); }		/* sloppy: officially reserved */
-| TYPE		{ $$ = sa_strdup(SA, "type"); }
-| RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
-| VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
-| ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
-
-| ACTION	{ $$ = sa_strdup(SA, "action"); }	/* sloppy: officially reserved */
-| AS		{ $$ = sa_strdup(SA, "as"); }		/* sloppy: officially reserved */
+non_reserved_word:
+  AS		{ $$ = sa_strdup(SA, "as"); }		/* sloppy: officially reserved */
 | AUTHORIZATION	{ $$ = sa_strdup(SA, "authorization"); }/* sloppy: officially reserved */
 | COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
 | CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
+| sqlDATE	{ $$ = sa_strdup(SA, "date"); }		/* sloppy: officially reserved */
 | DISTINCT	{ $$ = sa_strdup(SA, "distinct"); }	/* sloppy: officially reserved */
-| INCREMENT	{ $$ = sa_strdup(SA, "increment"); }	/* sloppy: officially reserved */
-| MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }	/* sloppy: officially reserved */
-| MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }	/* sloppy: officially reserved */
-| SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); } 	/* sloppy: officially reserved */
-| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
+| EXEC		{ $$ = sa_strdup(SA, "exec"); }		/* sloppy: officially reserved */
+| EXECUTE	{ $$ = sa_strdup(SA, "execute"); }	/* sloppy: officially reserved */
+| FILTER	{ $$ = sa_strdup(SA, "filter"); }	/* sloppy: officially reserved */
+| INTERVAL	{ $$ = sa_strdup(SA, "interval"); }	/* sloppy: officially reserved */
+| LANGUAGE	{ $$ = sa_strdup(SA, "language"); }	/* sloppy: officially reserved */
+| LARGE		{ $$ = sa_strdup(SA, "large"); }	/* sloppy: officially reserved */
+| MATCH		{ $$ = sa_strdup(SA, "match"); }	/* sloppy: officially reserved */
+| NO		{ $$ = sa_strdup(SA, "no"); }		/* sloppy: officially reserved */
+| PRECISION 	{ $$ = sa_strdup(SA, "precision"); }	/* sloppy: officially reserved */
+| PREPARE	{ $$ = sa_strdup(SA, "prepare"); }	/* sloppy: officially reserved */
+| RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
+| ROW		{ $$ = sa_strdup(SA, "row"); }		/* sloppy: officially reserved */
 | START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
-| STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
 | TABLE		{ $$ = sa_strdup(SA, "table"); } 	/* sloppy: officially reserved */
+| TIME 		{ $$ = sa_strdup(SA, "time"); }		/* sloppy: officially reserved */
+| TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }	/* sloppy: officially reserved */
+| UESCAPE	{ $$ = sa_strdup(SA, "uescape"); }	/* sloppy: officially reserved */
+| VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
 
-|  CACHE	{ $$ = sa_strdup(SA, "cache"); }
-|  DATA 	{ $$ = sa_strdup(SA, "data"); }
-|  DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
-|  MATCH	{ $$ = sa_strdup(SA, "match"); }
-|  OPTIONS	{ $$ = sa_strdup(SA, "options"); }
-|  ROW		{ $$ = sa_strdup(SA, "row"); }
-|  KEY		{ $$ = sa_strdup(SA, "key"); }
-|  LANGUAGE	{ $$ = sa_strdup(SA, "language"); }
-|  LEVEL	{ $$ = sa_strdup(SA, "level"); }
-|  sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
-|  sqlDATE	{ $$ = sa_strdup(SA, "date"); }
-|  TIME 	{ $$ = sa_strdup(SA, "time"); }
-|  TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }
-|  INTERVAL	{ $$ = sa_strdup(SA, "interval"); }
-|  QUARTER	{ $$ = sa_strdup(SA, "quarter"); }
-|  WEEK 	{ $$ = sa_strdup(SA, "week"); }
-|  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
+| ACTION	{ $$ = sa_strdup(SA, "action"); }
+| ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+| AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
+| CACHE		{ $$ = sa_strdup(SA, "cache"); }
+| CLIENT	{ $$ = sa_strdup(SA, "client"); }
+| COMMENT	{ $$ = sa_strdup(SA, "comment"); }
+| DATA 		{ $$ = sa_strdup(SA, "data"); }
+| SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
+| DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
+| SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
+| FIRST		{ $$ = sa_strdup(SA, "first"); }
+| GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
+| IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
+| INCREMENT	{ $$ = sa_strdup(SA, "increment"); }
+| KEY		{ $$ = sa_strdup(SA, "key"); }
+| LAST		{ $$ = sa_strdup(SA, "last"); }
+| LEVEL		{ $$ = sa_strdup(SA, "level"); }
+| MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }
+| MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
+| MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }
+| sqlNAME	{ $$ = sa_strdup(SA, "name"); }
+| NULLS		{ $$ = sa_strdup(SA, "nulls"); }
+| OBJECT	{ $$ = sa_strdup(SA, "object"); }
+| OPTIONS	{ $$ = sa_strdup(SA, "options"); }
+| PASSWORD	{ $$ = sa_strdup(SA, "password"); }
+| PATH		{ $$ = sa_strdup(SA, "path"); }
+| SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); }
+| PREP		{ $$ = sa_strdup(SA, "prep"); }
+| PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }
+| QUARTER	{ $$ = sa_strdup(SA, "quarter"); }
+| REPLACE	{ $$ = sa_strdup(SA, "replace"); }
+| ROLE		{ $$ = sa_strdup(SA, "role"); }
+| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }
+| SERVER	{ $$ = sa_strdup(SA, "server"); }
+| sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
+| sqlSIZE	{ $$ = sa_strdup(SA, "size"); }
+| STATEMENT	{ $$ = sa_strdup(SA, "statement"); }
+| STORAGE	{ $$ = sa_strdup(SA, "storage"); }
+| TEMP		{ $$ = sa_strdup(SA, "temp"); }
+| TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
+| sqlTEXT	{ $$ = sa_strdup(SA, "text"); }
+| SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
+| TYPE		{ $$ = sa_strdup(SA, "type"); }
+| WEEK 		{ $$ = sa_strdup(SA, "week"); }
+| ZONE		{ $$ = sa_strdup(SA, "zone"); }
 
-|  PREP		{ $$ = sa_strdup(SA, "prep"); }
-|  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
-|  EXEC		{ $$ = sa_strdup(SA, "exec"); }
-|  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
-|  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
-|  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
-|  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
-|  sqlTEXT     	{ $$ = sa_strdup(SA, "text"); }
-|  AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
-|  NO		{ $$ = sa_strdup(SA, "no"); }
 /* SQL/XML non reserved words */
-|  STRIP	{ $$ = sa_strdup(SA, "strip"); }
-|  WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
-|  PASSING	{ $$ = sa_strdup(SA, "passing"); }
-|  NIL		{ $$ = sa_strdup(SA, "nil"); }
-|  REF		{ $$ = sa_strdup(SA, "ref"); }
-|  ABSENT	{ $$ = sa_strdup(SA, "absent"); }
-|  EMPTY	{ $$ = sa_strdup(SA, "empty"); }
-|  DOCUMENT	{ $$ = sa_strdup(SA, "document"); }
-|  ELEMENT	{ $$ = sa_strdup(SA, "element"); }
-|  CONTENT	{ $$ = sa_strdup(SA, "content"); }
-|  NAMESPACE	{ $$ = sa_strdup(SA, "namespace"); }
-|  RETURNING	{ $$ = sa_strdup(SA, "returning"); }
-|  LOCATION	{ $$ = sa_strdup(SA, "location"); }
-|  ID		{ $$ = sa_strdup(SA, "id"); }
-|  ACCORDING	{ $$ = sa_strdup(SA, "according"); }
-|  URI		{ $$ = sa_strdup(SA, "uri"); }
-|  FILTER	{ $$ = sa_strdup(SA, "filter"); }
-|  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
-|  TEMP		{ $$ = sa_strdup(SA, "temp"); }
-|  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
-|  MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
-|  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
-|  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
-|  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
-|  COMMENT	{ $$ = sa_strdup(SA, "comment"); }
-|  CLIENT	{ $$ = sa_strdup(SA, "client"); }
-|  SERVER	{ $$ = sa_strdup(SA, "server"); }
-|  NULLS	{ $$ = sa_strdup(SA, "nulls"); }
-|  LAST		{ $$ = sa_strdup(SA, "last"); }
-|  FIRST	{ $$ = sa_strdup(SA, "first"); }
+| ABSENT	{ $$ = sa_strdup(SA, "absent"); }
+| ACCORDING	{ $$ = sa_strdup(SA, "according"); }
+| CONTENT	{ $$ = sa_strdup(SA, "content"); }
+| DOCUMENT	{ $$ = sa_strdup(SA, "document"); }
+| ELEMENT	{ $$ = sa_strdup(SA, "element"); }
+| EMPTY		{ $$ = sa_strdup(SA, "empty"); }
+| ID		{ $$ = sa_strdup(SA, "id"); }
+| LOCATION	{ $$ = sa_strdup(SA, "location"); }
+| NAMESPACE	{ $$ = sa_strdup(SA, "namespace"); }
+| NIL		{ $$ = sa_strdup(SA, "nil"); }
+| PASSING	{ $$ = sa_strdup(SA, "passing"); }
+| REF		{ $$ = sa_strdup(SA, "ref"); }
+| RETURNING	{ $$ = sa_strdup(SA, "returning"); }
+| STRIP		{ $$ = sa_strdup(SA, "strip"); }
+| URI		{ $$ = sa_strdup(SA, "uri"); }
+| WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
 ;
 
 name_commalist:
@@ -5731,6 +5815,11 @@ lngval:
 		  }
 		}
 
+ident_or_uident:
+	IDENT			{ $$ = $1; }
+    |	UIDENT opt_uescape	{ $$ = uescape_xform($1, $2); }
+    ;
+
 intval:
 	sqlINT	
  		{
@@ -5753,7 +5842,7 @@ intval:
 			YYABORT;
 		  }
 		}
- |	IDENT	{
+ |	ident_or_uident	{
 		  char *name = $1;
 		  sql_subtype *tpe;
 
@@ -5789,13 +5878,57 @@ intval:
 		}
  ;
 
-string:
+opt_uescape:
+/* empty */	{ $$ = "\\"; }
+| UESCAPE string
+		{ char *s = $2;
+		  if (strlen(s) != 1 || strchr("\"'0123456789abcdefABCDEF+ \t\n\r\f", *s) != NULL) {
+			yyerror(m, SQLSTATE(22019) "UESCAPE must be one character");
+			$$ = NULL;
+			YYABORT;
+		  } else {
+			$$ = s;
+		  }
+		}
+
+ustring:
+    USTRING
+		{ $$ = $1; }
+ |  USTRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
+		  _DELETE(s);
+		}
+ ;
+
+blobstring:
+    XSTRING	/* X'<hexit>...' */
+		{ $$ = $1; }
+ |  XSTRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
+		  _DELETE(s);
+		}
+ ;
+
+sstring:
     STRING
 		{ $$ = $1; }
- |  STRING string
-		{ char *s = strconcat($1,$2); 
-	 	  $$ = sa_strdup(SA, s);	
+ |  STRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
 		  _DELETE(s);
+		}
+ ;
+
+string:
+   sstring	{ $$ = $1; }
+ | ustring opt_uescape
+		{ $$ = uescape_xform($1, $2);
+		  if ($$ == NULL) {
+			yyerror(m, SQLSTATE(22019) "Bad Unicode string");
+			YYABORT;
+		  }
 		}
  ;
 
@@ -6627,4 +6760,3 @@ int sqlerror(mvc * c, const char *err)
 				sqlstate, err, QUERY(c->scanner));
 	return 1;
 }
-

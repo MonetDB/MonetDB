@@ -33,7 +33,11 @@ stderr of test 'oid` in directory 'sql/test/pg_regress` itself:
 QUERY = INSERT INTO OID_TBL(f1) VALUES (12345678901);
 ERROR = !overflow in conversion of 12345678901 to oid.
 CODE  = 22003
-#~ MAPI  = monetdb@LAB03:33951
+MAPI  = (monetdb) /var/tmp/mtest-3435/.s.monetdb.37147
+QUERY = INSERT INTO OID_TBL(f1) VALUES ('    ');  -- in MonetDB this one is not accepted
+ERROR = !conversion of string '    ' to type oid failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-3435/.s.monetdb.37147
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('asdfasd');
 ERROR = !conversion of string 'asdfasd' to type oid failed.
 CODE  = 22018
@@ -76,8 +80,7 @@ CODE  = 22018
 #~ MAPI  = monetdb@LAB03:33951
 QUERY = INSERT INTO OID_TBL(f1) VALUES (32958209582039852935);
 ERROR = !integer value too large or not a number (32958209582039852935) in: "insert into oid_tbl(f1) values (32958209582039852935"
-        !syntax/parse error, 
-# the original non-normalized output was:         !syntax error, unexpected ')' in: ")"
+        !syntax error, unexpected ')' in: ")"
 CODE  = 22003
 #~ MAPI  = monetdb@LAB03:33951
 QUERY = INSERT INTO OID_TBL(f1) VALUES ('-23582358720398502385');
@@ -86,8 +89,7 @@ CODE  = 22018
 #~ MAPI  = monetdb@LAB03:33951
 QUERY = INSERT INTO OID_TBL(f1) VALUES (-23582358720398502385);
 ERROR = !integer value too large or not a number (23582358720398502385) in: "insert into oid_tbl(f1) values (-23582358720398502385"
-        !syntax/parse error, 
-# the original non-normalized output was:         !syntax error, unexpected ')' in: ")"
+        !syntax error, unexpected ')' in: ")"
 CODE  = 22003
 
 # 16:41:57 >  

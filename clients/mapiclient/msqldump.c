@@ -197,6 +197,7 @@ main(int argc, char **argv)
 		char buf[27];
 		time_t t = time(0);
 		char *p;
+		const char *rev = mercurial_revision();
 
 #ifdef HAVE_CTIME_R3
 		ctime_r(&t, buf, sizeof(buf));
@@ -209,11 +210,21 @@ main(int argc, char **argv)
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)
 			*p = 0;
-		mnstr_printf(out, "-- msqldump %s %s%s %s\n",
+
+		mnstr_printf(out,
+			     "-- msqldump version %s", VERSION);
+		/* coverity[pointless_string_compare] */
+		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+			mnstr_printf(out, " (%s)",
+				     MONETDB_RELEASE);
+		else if (strcmp(rev, "Unknown") != 0)
+			mnstr_printf(out, " (hg id: %s)", rev);
+		mnstr_printf(out, " %s %s%s\n",
 			     describe ? "describe" : "dump",
 			     functions ? "functions" : table ? "table " : "database",
-			     table ? table : "", buf);
-		dump_version(mid, out, "--");
+			     table ? table : "");
+		dump_version(mid, out, "-- server:");
+		mnstr_printf(out, "-- %s\n", buf);
 	}
 	if (functions)
 		c = dump_functions(mid, out, true, NULL, NULL, NULL);

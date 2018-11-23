@@ -149,7 +149,7 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 static inline char *
 oidtostr(oid i, char *p, size_t len)
 {
-	if (OIDtoStr(&p, &len, &i) < 0)
+	if (OIDtoStr(&p, &len, &i, false) < 0)
 		return NULL;
 	return p;
 }

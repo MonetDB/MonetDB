@@ -111,7 +111,7 @@ newMalBlk(int elements)
 	if (mb == NULL)
 		return NULL;
 
-	/* each MAL instruction implies at least on variable 
+	/* each MAL instruction implies at least one variable 
  	 * we reserve some extra for constants */
 	v = (VarRecord *) GDKzalloc(sizeof(VarRecord) * (elements + 8) );
 	if (v == NULL) {
@@ -987,180 +987,36 @@ convertConstant(int type, ValPtr vr)
 		throw(SYNTAX, "convertConstant", "type index out of bound");
 	if (vr->vtype == type)
 		return MAL_SUCCEED;
-	if (vr->vtype == TYPE_str) {
-		size_t ll = 0;
-		ptr d = NULL;
-		char *s = vr->val.sval;
-
-		if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
-			GDKfree(d);
-			VALinit(vr, type, ATOMnilptr(type));
-			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
-		}
-		if (strncmp(vr->val.sval, "nil", 3) != 0 && ATOMcmp(type, d, ATOMnilptr(type)) == 0) {
-			GDKfree(d);
-			VALinit(vr, type, ATOMnilptr(type));
-			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
-		}
-		VALset(vr, type, d);
-		if (ATOMextern(type) == 0)
-			GDKfree(d);
-		if (vr->vtype != type)
-			throw(SYNTAX, "convertConstant", "coercion failed in '%s'", s);
-	}
-
 	if (type == TYPE_bat || isaBatType(type)) {
 		/* BAT variables can only be set to nil */
+		VALclear(vr);
 		vr->vtype = type;
 		vr->val.bval = bat_nil;
 		return MAL_SUCCEED;
 	}
-	switch (ATOMstorage(type)) {
-	case TYPE_any:
-		/* In case *DEBUG*_MAL_INSTR is not defined and assertions are
-		 * disabled, this will fall-through to the type cases below,
-		 * rather than triggering an exception.
-		 * Is this correct/intended like this??
-		 */
-#ifdef DEBUG_MAL_INSTR
-		throw(SYNTAX, "convertConstant", "missing type");
-#else
-		assert(0);
-#endif
-	case TYPE_bit:
-	case TYPE_bte:
-	case TYPE_sht:
-	case TYPE_int:
-	case TYPE_void:
-	case TYPE_oid:
-	case TYPE_flt:
-	case TYPE_dbl:
-	case TYPE_lng:
-#ifdef HAVE_HGE
-	case TYPE_hge:
-#endif
-		if (VALconvert(type, vr) == NULL)
-			throw(SYNTAX, "convertConstant", "coercion failed");
-		return MAL_SUCCEED;
-	case TYPE_str:
-	{
-		str w;
-		if (vr->vtype == TYPE_void || ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-			vr->vtype = type;
-			if ((vr->val.sval = GDKstrdup(str_nil)) == NULL)
-				throw(SYNTAX, "convertConstant", SQLSTATE(HY001) GDK_EXCEPTION);
-			vr->len = (int) strlen(vr->val.sval);
-			return MAL_SUCCEED;
-		}
-		w = ATOMformat(vr->vtype, VALptr(vr));
-		if (w == NULL)
-			throw(SYNTAX, "convertConstant", GDK_EXCEPTION);
-		vr->vtype = TYPE_str;
-		vr->len = (int) strlen(w);
-		vr->val.sval = w;
-		/* VALset(vr, type, w); does not use TYPE-str */
-		if (vr->vtype != type)
-			throw(SYNTAX, "convertConstant", "coercion failed");
-		return MAL_SUCCEED;
-	}
-
-	case TYPE_bat:
-		/* BAT variables can only be set to nil */
-		vr->vtype = type;
-		vr->val.bval = bat_nil;
-		return MAL_SUCCEED;
-	case TYPE_ptr:
+	if (type == TYPE_ptr) {
 		/* all coercions should be avoided to protect against memory probing */
 		if (vr->vtype == TYPE_void) {
+			VALclear(vr);
 			vr->vtype = type;
 			vr->val.pval = 0;
 			return MAL_SUCCEED;
 		}
-		/*
-		   if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-		   vr->vtype = type;
-		   vr->val.pval = 0;
-		   return MAL_SUCCEED;
-		   }
-		   if (vr->vtype == TYPE_int) {
-		   char buf[BUFSIZ];
-		   size_t ll = 0;
-		   ptr d = NULL;
-
-		   snprintf(buf, BUFSIZ, "%d", vr->val.ival);
-		   (*BATatoms[type].atomFromStr) (buf, &ll, &d);
-		   if( d==0 ){
-		   VALinit(vr, type, ATOMnilptr(type));
-		   throw(SYNTAX, "convertConstant", "conversion error");
-		   }
-		   VALset(vr, type, d);
-		   if (ATOMextern(type) == 0 )
-		   GDKfree(d);
-		   }
-		 */
 		if (vr->vtype != type)
 			throw(SYNTAX, "convertConstant", "pointer conversion error");
 		return MAL_SUCCEED;
-		/* Extended types are always represented as string literals
-		 * and converted to the internal storage structure. Beware
-		 * that the typeFromStr routines generate storage space for
-		 * the new value. This should be garbage collected at the
-		 * end. */
-	default:{
-		size_t ll = 0;
-		ptr d = NULL;
-
-		if (isaBatType(type)) {
-			if (VALinit(vr, TYPE_bat, ATOMnilptr(TYPE_bat)) == NULL)
-				throw(MAL, "convertConstant", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			break;
-		}
-		/* see if an atomFromStr() function is available */
-		if (BATatoms[type].atomFromStr == 0)
-			throw(SYNTAX, "convertConstant", "no conversion operator defined");
-
-		/* if the value we're converting from is nil, the to
-		 * convert to value will also be nil */
-		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-			if (VALinit(vr, type, ATOMnilptr(type)) == NULL)
-				throw(MAL, "convertConstant", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			break;
-		}
-
-		/* if what we're converting from is not a string */
-		if (vr->vtype != TYPE_str) {
-			/* an extern type */
-			str w;
-
-			/* dump the non-string atom as string in w */
-			if ((w = ATOMformat(vr->vtype, VALptr(vr))) == NULL ||
-				/* and try to parse it from string as the desired type */
-				ATOMfromstr(type, &d, &ll, w) < 0 ||
-				d == NULL) {
-				GDKfree(d);
-				GDKfree(w);
-				VALinit(vr, type, ATOMnilptr(type));
-				throw(SYNTAX, "convertConstant", "conversion error");
-			}
-			GDKfree(w);
-			*vr = (ValRecord) {.vtype = type,};
-			VALset(vr, type, d);
-			if (ATOMextern(type) == 0)
-				GDKfree(d);
-		} else {				/* what we're converting from is a string */
-			if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
-				GDKfree(d);
-				VALinit(vr, type, ATOMnilptr(type));
-				throw(SYNTAX, "convertConstant", "conversion error");
-			}
-			VALset(vr, type, d);
-			if (ATOMextern(type) == 0)
-				GDKfree(d);
-		}
 	}
+	if (type == TYPE_any) {
+#ifndef DEBUG_MAL_INSTR
+		assert(0);
+#endif
+		throw(SYNTAX, "convertConstant", "missing type");
 	}
-	if (vr->vtype != type)
-		throw(SYNTAX, "convertConstant", "conversion error");
+	if (VALconvert(type, vr) == NULL) {
+		if (vr->vtype == TYPE_str)
+			throw(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
+		throw(SYNTAX, "convertConstant", "coercion failed");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1210,7 +1066,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		cst->vtype = TYPE_bat;
 		cst->val.bval = bat_nil;
 	} else if (cst->vtype != type && !isaBatType(type) && !isPolyType(type)) {
-		ValRecord vr = *cst;
 		int otype = cst->vtype;
 		assert(type != TYPE_any);	/* help Coverity */
 		msg = convertConstant(type, cst);
@@ -1227,7 +1082,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		} else {
 			assert(cst->vtype == type);
 		}
-		VALclear(&vr);
 	}
 	k = fndConstant(mb, cst, MAL_VAR_WINDOW);
 	if (k >= 0) {

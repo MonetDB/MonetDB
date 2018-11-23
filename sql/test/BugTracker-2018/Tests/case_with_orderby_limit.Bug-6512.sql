@@ -22,7 +22,7 @@ CREATE TABLE "sys"."BondPricesWithNulls" (
 	"Field 19"              BIGINT,
 	"Market Spread (Swaps)" BIGINT,
 	"_visokio_row_id_"      BIGINT        NOT NULL,
-	CONSTRAINT "\"BondPricesWithNulls\"_PK" PRIMARY KEY ("_visokio_row_id_")
+	CONSTRAINT "BondPricesWithNulls_PK" PRIMARY KEY ("_visokio_row_id_")
 );
 INSERT INTO "sys"."BondPricesWithNulls" VALUES ('Subordinated', '1997-05-13 00:00:00.000000', 'XS0076061927', 'ABBEY', NULL, 'N', '8.75', NULL, NULL, NULL, '4.5  07', 'BBB-', 'BB+', 'Y', 5, 105.855, 5.252, NULL, NULL, 88, 0);
 INSERT INTO "sys"."BondPricesWithNulls" VALUES ('Subordinated', NULL, NULL, 'HBOS', 'BANK OF SCOTLAND', 'N', '8.375', 'Y', '30-Oct-2006 00:00:00', 'UT2', '7.5  06', NULL, 'BBB+', 'Y', 5, 104.635, 4.565, NULL, NULL, 18, 1);

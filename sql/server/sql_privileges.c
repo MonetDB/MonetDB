@@ -505,7 +505,7 @@ sql_grant_role(mvc *m, str grantee, str role, int grantor, int admin)
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (is_oid_nil(rid)) 
-		throw(SQL,  "sql.grant_role", SQLSTATE(M1M05) "Cannot grant ROLE '%s' to ROLE '%s'", role, grantee);
+		throw(SQL, "sql.grant_role", SQLSTATE(M1M05) "GRANT: Cannot grant ROLE '%s' to user '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	role_id = *(int*)val; 
 	_DELETE(val);
@@ -513,13 +513,16 @@ sql_grant_role(mvc *m, str grantee, str role, int grantor, int admin)
 	if (backend_find_user(m, role) >= 0) 
 		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: '%s' is a USER not a ROLE", role);
 	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor)) 
-		throw(SQL,"sql.grant_role", SQLSTATE(0P000) "Insufficient privileges to grant ROLE '%s'", role);
+		throw(SQL,"sql.grant_role", SQLSTATE(0P000) "GRANT: Insufficient privileges to grant ROLE '%s'", role);
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (is_oid_nil(rid))
-		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "Cannot grant ROLE '%s' to ROLE '%s'", role, grantee);
+		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: Cannot grant ROLE '%s' to user '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	grantee_id = *(int*)val; 
 	_DELETE(val);
+	rid = table_funcs.column_find_row(m->session->tr, find_sql_column(roles, "login_id"), &grantee_id, find_sql_column(roles, "role_id"), &role_id, NULL);
+	if (!is_oid_nil(rid))
+		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: User '%s' already has ROLE '%s'", grantee, role);
 
 	table_funcs.table_insert(m->session->tr, roles, &grantee_id, &role_id);
 	if (admin) { 
@@ -567,10 +570,14 @@ sql_revoke_role(mvc *m, str grantee, str role, int grantor, int admin)
 		rid = table_funcs.column_find_row(m->session->tr, roles_login_id, &grantee_id, roles_role_id, &role_id, NULL);
 		if (!is_oid_nil(rid)) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
+		else
+			throw(SQL,"sql.revoke_role", SQLSTATE(42M32) "REVOKE: User '%s' does not have ROLE '%s'", grantee, role);
 	} else {
 		rid = sql_privilege_rid(m, grantee_id, role_id, PRIV_ROLE_ADMIN, 0);
 		if (!is_oid_nil(rid)) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
+		else
+			throw(SQL,"sql.revoke_role", SQLSTATE(42M32) "REVOKE: User '%s' does not have ROLE '%s'", grantee, role);
 	}
 	m->session->tr->schema_updates++;
 	return NULL;

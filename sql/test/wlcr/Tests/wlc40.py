@@ -17,7 +17,7 @@ dbname = tstdb
 
 s = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
-c = process.client('sql', dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+c = process.client('sql', server = s, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 
 cout, cerr = c.communicate('''\
 select * from tmp;

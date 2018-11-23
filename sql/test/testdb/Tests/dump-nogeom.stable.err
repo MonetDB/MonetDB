@@ -1,0 +1,47 @@
+stderr of test 'dump-nogeom` in directory 'sql/test/testdb` itself:
+
+
+# 14:28:43 >  
+# 14:28:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36999" "--set" "mapi_usock=/var/tmp/mtest-22828/.s.monetdb.36999" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_testdb" "--set" "embedded_c=true"
+# 14:28:43 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36999
+# cmdline opt 	mapi_usock = /var/tmp/mtest-22828/.s.monetdb.36999
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_testdb
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_309:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_267:bat[:str], X_279:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_310:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_268:bat[:str], X_280:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_311:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_269:bat[:str], X_281:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_312:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_270:bat[:str], X_282:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_313:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_271:bat[:str], X_283:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_314:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_272:bat[:str], X_284:bat[:str]);
+
+# 14:28:43 >  
+# 14:28:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22828" "--port=36999"
+# 14:28:43 >  
+
+
+# 14:28:45 >  
+# 14:28:45 >  "Done."
+# 14:28:45 >  
+

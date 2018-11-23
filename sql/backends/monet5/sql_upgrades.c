@@ -211,12 +211,12 @@ sql_update_hugeint(Client c, mvc *sql)
 			"external name udf.fuse;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.generate_series(first hugeint, last hugeint)\n"
+			"create function sys.generate_series(first hugeint, \"limit\" hugeint)\n"
 			"returns table (value hugeint)\n"
 			"external name generator.series;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)\n"
+			"create function sys.generate_series(first hugeint, \"limit\" hugeint, stepsize hugeint)\n"
 			"returns table (value hugeint)\n"
 			"external name generator.series;\n");
 

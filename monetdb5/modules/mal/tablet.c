@@ -967,7 +967,7 @@ SQLload_parse_line(READERtask *task, int idx)
 	char *line = task->lines[task->cur][idx];
 	Tablet *as = task->as;
 	Column *fmt = as->format;
-	int error = 0;
+	bool error = false;
 	str errline = 0;
 
 #ifdef _DEBUG_TABLET_
@@ -980,11 +980,11 @@ SQLload_parse_line(READERtask *task, int idx)
 
 	if (task->quote || task->seplen != 1) {
 		for (i = 0; i < as->nr_attrs; i++) {
-			int quote = 0;
+			bool quote = false;
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
 			if (*line && *line == task->quote) {
-				quote = 1;
+				quote = true;
 #ifdef _DEBUG_TABLET_
 				mnstr_printf(GDKout, "before #1 %s\n", s = line);
 #endif
@@ -998,7 +998,7 @@ SQLload_parse_line(READERtask *task, int idx)
 					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
 					tablet_error(task, idx, (int) i, errmsg, errline);
 					GDKfree(errline);
-					error++;
+					error = true;
 					goto errors1;
 				} else
 					*line++ = 0;
@@ -1018,10 +1018,10 @@ SQLload_parse_line(READERtask *task, int idx)
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
 				errline = SQLload_error(task, idx, i+1);
-				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing ", i+1);
+				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing", i+1);
 				tablet_error(task, idx, (int) i, errmsg, errline);
 				GDKfree(errline);
-				error++;
+				error = true;
 			  errors1:
 				/* we save all errors detected  as NULL values */
 				for (; i < as->nr_attrs; i++)
@@ -1061,7 +1061,7 @@ SQLload_parse_line(READERtask *task, int idx)
 				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing",i+1);
 				tablet_error(task, idx, (int) i, errmsg, errline);
 				GDKfree(errline);
-				error++;
+				error = true;
 				/* we save all errors detected */
 				for (; i < as->nr_attrs; i++)
 					task->fields[i][idx] = NULL;
@@ -1081,7 +1081,7 @@ SQLload_parse_line(READERtask *task, int idx)
 		snprintf(errmsg, BUFSIZ, "Leftover data '%s'",line);
 		tablet_error(task, idx, (int) i, errmsg, errline);
 		GDKfree(errline);
-		error++;
+		error = true;
 	}
 #ifdef _DEBUG_TABLET_
 	if (error)

@@ -593,14 +593,14 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 	node *en;
 	sql_schema *s = sql->session->schema;
 	sql_subtype *oid = sql_bind_localtype("oid");
-		
+
 	tl = sa_list(sql->sa);
 	exps = new_exp_list(sql->sa);
 	if (l->next) { /* table call with subquery */
 		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
 			if (l->next->next != NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
-	       		sq = rel_subquery(sql, NULL, l->next->data.sym, ek, 0 /*apply*/);
+			sq = rel_subquery(sql, NULL, l->next->data.sym, ek, 0 /*apply*/);
 		} else if (l->next->type == type_symbol || l->next->type == type_list) {
 			dnode *n;
 			exp_kind iek = {type_value, card_column, TRUE};
@@ -732,6 +732,20 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 	if (e->type != e_func || sf->func->type != F_UNION) {
 		(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' does not return a table", exp_func_name(e));
 		return NULL;
+	}
+
+	if(sql->emode == m_prepare && rel && rel->exps && sql->params) {
+		int i = 0;
+		//for prepared statements set possible missing parameter SQL types from
+		for (m = sf->func->ops->h; m; m = m->next, i++) {
+			sql_arg *func_arg = m->data;
+			sql_exp *proj_parameter = (sql_exp*) list_fetch(rel->exps, i);
+			if(proj_parameter) {
+				sql_arg *prep_arg = (sql_arg*) list_fetch(sql->params, proj_parameter->flag);
+				if(prep_arg && !prep_arg->type.type)
+					prep_arg->type = func_arg->type;
+			}
+		}
 	}
 
 	/* for each column add table.column name */
@@ -2542,7 +2556,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			/* first remove the NULLs */
 			if (!l_is_value && sc->token == SQL_NOT_IN &&
 		    	    l->card != CARD_ATOM && has_nil(l)) {
-				sql_exp *ol;
+				sql_exp *ol = NULL;
 
 				if (l->type != e_column) {
 					pexps = rel_projections(sql, rel, NULL, 1, 1);
@@ -2556,7 +2570,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				e = rel_unop_(sql, l, NULL, "isnull", card_value);
 				e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal);
 				rel_select_add_exp(sql->sa, select, e);
-				if (pexps)
+				if (pexps && ol)
 					l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
 			}
 			rel = left = select;
@@ -2608,8 +2622,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					int r_is_rel = 0;
 
 					r = rel_value_exp(sql, &z, sval, f, ek);
-					if (z)
+					if (z) {
+						for(node *nn = z->exps->h ; nn ; nn = nn->next)
+							exp_label(sql->sa, (sql_exp*)nn->data, ++sql->label);
 						r_is_rel = 1;
+					}
 					if (!r && sql->session->status != -ERR_AMBIGUOUS) {
 						/* reset error */
 						sql->session->status = 0;
@@ -5218,6 +5235,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 
 		if (sample_parameters->cnt == 2) {
 			sql_exp *seed_value = rel_value_exp( sql, NULL, sample_parameters->h->next->data.sym, 0, ek);
+			if (!seed_value)
+				return NULL;
 			append(exps, seed_value);
 		}
 
@@ -5784,7 +5803,8 @@ schema_selects(mvc *sql, sql_schema *schema, symbol *s)
 }
 
 sql_rel *
-rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_function) {
+rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_function)
+{
 	list *exps = NULL, *tl;
 	exp_kind ek = { type_value, card_relation, TRUE };
 	sql_rel *sq = NULL;
@@ -5798,14 +5818,13 @@ rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_f
 	sql_schema *s = sql->session->schema;
 	sql_subfunc* sf;
 
-		
 	tl = sa_list(sql->sa);
 	exps = new_exp_list(sql->sa);
 	if (l->next) { /* table call with subquery */
 		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
 			if (l->next->next != NULL)
-				return sql_error(sql, 02, "SELECT: '%s' requires a single sub query", fname);
-	       		sq = rel_subquery(sql, NULL, l->next->data.sym, ek, 0 /*apply*/);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
+			sq = rel_subquery(sql, NULL, l->next->data.sym, ek, 0 /*apply*/);
 		} else if (l->next->type == type_symbol || l->next->type == type_list) {
 			dnode *n;
 			exp_kind iek = {type_value, card_column, TRUE};
@@ -5829,7 +5848,7 @@ rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_f
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 		if (!sq)
-			return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 		for (en = sq->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 
@@ -5840,16 +5859,12 @@ rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_f
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 
-
 	e = find_table_function_type(sql, s, fname, exps, tl, F_LOADER, &sf);
-	if (!e || !sf) {
-		return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
-	}
+	if (!e || !sf)
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 
-	if (loader_function) {
+	if (loader_function)
 		*loader_function = sf;
-	}
 
 	return rel_table_func(sql->sa, sq, e, fexps, (sq != NULL));
 }
-

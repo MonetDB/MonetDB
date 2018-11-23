@@ -26,11 +26,11 @@ Ready.
 # 15:15:54 >  
 
 #SELECT ST_AsText(ST_Intersection(centerline, shore)) FROM streams, lakes WHERE streams.name = 'Cam Stream' AND lakes.name = 'Blue Lake';
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 15 # length
-[ "\"POINT (52 18)\""	]
+% 13 # length
+[ "POINT (52 18)"	]
 
 # 15:15:54 >  
 # 15:15:54 >  "Done."

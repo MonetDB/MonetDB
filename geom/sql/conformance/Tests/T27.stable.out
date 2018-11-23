@@ -26,11 +26,11 @@ Ready.
 # 14:52:44 >  
 
 #SELECT ST_AsText(ST_ExteriorRing(shore)) FROM lakes WHERE name = 'Blue Lake';
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 46 # length
-[ "\"LINESTRING (52 18, 66 23, 73 9, 48 6, 52 18)\""	]
+% 44 # length
+[ "LINESTRING (52 18, 66 23, 73 9, 48 6, 52 18)"	]
 
 # 14:52:44 >  
 # 14:52:44 >  "Done."

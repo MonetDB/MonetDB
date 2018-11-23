@@ -16,10 +16,6 @@ stdout of test 'coercions` in directory 'sql/test/json` itself:
 # Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:31474/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11121/.s.monetdb.31474
 # MonetDB/GIS module loaded
-# MonetDB/JAQL module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -43,9 +39,11 @@ Ready.
 # loading sql script: 40_geom.sql
 # loading sql script: 40_json.sql
 
-# 10:13:31 >  
-# 10:13:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11121" "--port=31474"
-# 10:13:31 >  
+Ready.
+
+# 10:31:00 >  
+# 10:31:00 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-627" "--port=34922"
+# 10:31:00 >  
 
 #create table nosql(j json);
 #insert into  nosql values
@@ -67,17 +65,29 @@ Ready.
 [ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
-#select cast (j as string) from nosql;
-% sys.L2 # table_name
-% L2 # name
+#create table nosql_string as (select cast (j as string) as j from nosql);
+#select * from nosql_string;
+% sys.nosql_string # table_name
+% j # name
 % clob # type
-% 37 # length
-[ "\"{}\""	]
-[ "\"{\\\"f1\\\":1}\""	]
-[ "\"{\\\"f1\\\":1,\\\"f2\\\":2}\""	]
-[ "\"{\\\"f1\\\":1,\\\"f2\\\":2,\\\"f1\\\":3}\""	]
-[ "\"{\\\"f1\\\":{\\\"f12\\\":3},\\\"f2\\\":[2,3,4]}\""	]
-[ "\"[1,\\\"f2\\\", 2]\""	]
+% 29 # length
+[ "{}"	]
+[ "{\"f1\":1}"	]
+[ "{\"f1\":1,\"f2\":2}"	]
+[ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
+[ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
+[ "[1,\"f2\", 2]"	]
+#select cast (j as json) as j from nosql_string;
+% sys.L3 # table_name
+% j # name
+% json # type
+% 29 # length
+[ "{}"	]
+[ "{\"f1\":1}"	]
+[ "{\"f1\":1,\"f2\":2}"	]
+[ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
+[ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
+[ "[1,\"f2\", 2]"	]
 #create table tmpsql(j string);
 #insert into  tmpsql values
 #	('{}'),
@@ -98,10 +108,22 @@ Ready.
 [ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
-#select cast (j as json) from nosql;
-% sys.L2 # table_name
-% L2 # name
+#create table tmpsql_json as (select cast (j as json) as j from tmpsql);
+#select * from tmpsql_json;
+% sys.tmpsql_json # table_name
+% j # name
 % json # type
+% 29 # length
+[ "{}"	]
+[ "{\"f1\":1}"	]
+[ "{\"f1\":1,\"f2\":2}"	]
+[ "{\"f1\":1,\"f2\":2,\"f1\":3}"	]
+[ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
+[ "[1,\"f2\", 2]"	]
+#select cast (j as string) as j from tmpsql_json;
+% sys.L3 # table_name
+% j # name
+% clob # type
 % 29 # length
 [ "{}"	]
 [ "{\"f1\":1}"	]

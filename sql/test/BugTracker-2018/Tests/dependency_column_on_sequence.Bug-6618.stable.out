@@ -58,6 +58,7 @@ insert into t2(val) values (10), (20)
 drop sequence myseq
 [(1, 10), (2, 20)]
 drop table t2
+drop sequence myseq
 
 # 15:49:25 >  
 # 15:49:25 >  "Done."

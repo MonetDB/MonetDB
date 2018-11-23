@@ -26,11 +26,11 @@ Ready.
 # 15:05:52 >  
 
 #SELECT ST_AsText(ST_GeometryN(centerlines, 2)) FROM divided_routes WHERE name = 'Route 75';
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
-% 33 # length
-[ "\"LINESTRING (16 0, 16 23, 16 48)\""	]
+% 31 # length
+[ "LINESTRING (16 0, 16 23, 16 48)"	]
 
 # 15:05:52 >  
 # 15:05:52 >  "Done."

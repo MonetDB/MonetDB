@@ -8,7 +8,7 @@ stdout of test 'sqlitelogictest-groupby-coalesce-error-message.Bug-6608` in dire
 # MonetDB 5 server v11.29.4
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
-# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Compiled for x86_64-pc-linux-gnu/64bit
 # Found 15.492 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
@@ -16,9 +16,6 @@ stdout of test 'sqlitelogictest-groupby-coalesce-error-message.Bug-6608` in dire
 # Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:34045/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13348/.s.monetdb.34045
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -60,6 +57,9 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+Ready.
 
 # 09:40:19 >  
 # 09:40:19 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13348" "--port=34045"
@@ -71,6 +71,42 @@ Ready.
 [ 3	]
 #INSERT INTO tab1 VALUES (22,6,8), (28,57,45), (82,44,71);
 [ 3	]
+#SELECT DISTINCT - COALESCE ( - 86, + cor0.col1, cor0.col1, - cor0.col0 ) AS col2 FROM tab0 AS cor0;
+% .L2 # table_name
+% col2 # name
+% int # type
+% 2 # length
+[ 86	]
+#SELECT ALL + 33 * - COALESCE ( - 86, tab1.col2 ) + + col1 FROM tab1;
+% .L2 # table_name
+% L2 # name
+% bigint # type
+% 4 # length
+[ 2844	]
+[ 2895	]
+[ 2882	]
+#SELECT ALL + COALESCE ( - cor0.col1, cor0.col1, 63, - cor0.col2 ) * - cor0.col1 AS col1 FROM tab0 cor0;
+% sys.L2 # table_name
+% col1 # name
+% bigint # type
+% 4 # length
+[ 0	]
+[ 0	]
+[ 6561	]
+#SELECT - 38 + - tab1.col1 - tab1.col1 / COALESCE ( + 20, - tab1.col0 ) FROM tab1;
+% sys.L2 # table_name
+% L2 # name
+% bigint # type
+% 3 # length
+[ -44	]
+[ -97	]
+[ -84	]
+#SELECT DISTINCT COALESCE ( - 82, - cor0.col0, - CAST ( NULL AS INTEGER ) ) / - 70 FROM tab0 AS cor0;
+% .L3 # table_name
+% L3 # name
+% int # type
+% 1 # length
+[ 1	]
 #DROP TABLE tab0;
 #DROP TABLE tab1;
 

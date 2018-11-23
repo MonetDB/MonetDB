@@ -596,10 +596,10 @@ typedef struct res_table {
 	int query_type;
 	int nr_cols;
 	int cur_col;
-	char *tsep;
-	char *rsep;
-	char *ssep;
-	char *ns;
+	const char *tsep;
+	const char *rsep;
+	const char *ssep;
+	const char *ns;
 	res_col *cols;
 	bat order;
 	struct res_table *next;

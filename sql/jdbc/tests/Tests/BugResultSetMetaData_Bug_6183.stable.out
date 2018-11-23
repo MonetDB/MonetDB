@@ -16,11 +16,6 @@ stdout of test 'BugResultSetMetaData_Bug_6183` in directory 'sql/jdbc/tests` its
 # Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:31087/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23856/.s.monetdb.31087
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/Python module loaded
-# MonetDB/R   module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -62,9 +57,11 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 14:03:02 >  
-# 14:03:02 >  "./BugResultSetMetaData_Bug_6183.SQL.sh" "BugResultSetMetaData_Bug_6183"
-# 14:03:02 >  
+Ready.
+
+# 15:30:24 >  
+# 15:30:24 >  "./BugResultSetMetaData_Bug_6183.SQL.sh" "BugResultSetMetaData_Bug_6183"
+# 15:30:24 >  
 
 
 # 14:03:02 >  
@@ -88,7 +85,7 @@ Data rows:
 4	my	tab	varchar
 5	my	,tab_comma	varchar
 6	my,	comma_tab	varchar
-7	my\"backslash_doublequote	varchar
+7	my"double_doublequote	varchar
 8	Abc	varchar
 9	 	varchar
 10	123	varchar
@@ -163,13 +160,13 @@ Data rows:
 my,	comma_tab
 Listed 2 rows
 
-12. show content of column(s): "my\"backslash_doublequote"
+12. show content of column(s): "my""double_doublequote"
 Resultset with 1 columns
 	Column Name, Column Label:
-1	my\\\"backslash_doublequote	my\\\"backslash_doublequote
+1	my\"double_doublequote	my\"double_doublequote
 Data rows:
-"my\"backslash_doublequote"
-my\"backslash_doublequote
+"my""double_doublequote"
+my""double_doublequote
 Listed 2 rows
 
 13. show content of column(s): "Abc"
@@ -209,13 +206,13 @@ Resultset with 11 columns
 5	my	tab	my	tab
 6	my	,tab_comma	my	,tab_comma
 7	my,	comma_tab	my,	comma_tab
-8	my\\\"backslash_doublequote	my\\\"backslash_doublequote
+8	my\"double_doublequote	my\"double_doublequote
 9	Abc	Abc
 10	 	 
 11	123	123
 Data rows:
-"my space"	"my, comma_space"	"my$dollar"	"my#hash"	"my	tab"	"my	,tab_comma"	"my,	comma_tab"	"my\"backslash_doublequote"	"Abc"	" "	"123"
-my space	my, comma_space	my$dollar	my#hash	my	tab	my	,tab_comma	my,	comma_tab	my\"backslash_doublequote	Abc	 	123
+"my space"	"my, comma_space"	"my$dollar"	"my#hash"	"my	tab"	"my	,tab_comma"	"my,	comma_tab"	"my""double_doublequote"	"Abc"	" "	"123"
+my space	my, comma_space	my$dollar	my#hash	my	tab	my	,tab_comma	my,	comma_tab	my""double_doublequote	Abc	 	123
 Listed 2 rows
 
 Finally drop table "my dq_table"

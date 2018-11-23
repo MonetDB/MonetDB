@@ -34,7 +34,7 @@ CREATE TABLE "sys"."lineitem_denormalized_first1k_sanitised" (
 	"Line_Margin"            DOUBLE,
 	"Line_Margin_Percent"    DOUBLE,
 	"_visokio_row_id_"       BIGINT        NOT NULL,
-	CONSTRAINT "\"lineitem_denormalized_first1k_sanitised\"_PK" PRIMARY KEY ("_visokio_row_id_")
+	CONSTRAINT "lineitem_denormalized_first1k_sanitised_PK" PRIMARY KEY ("_visokio_row_id_")
 );
 
 SELECT "t4jdu"."c4jdd_store_phone_number_8958366756", 
