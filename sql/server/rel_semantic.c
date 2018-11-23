@@ -157,6 +157,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_RENAME_SCHEMA:
 	case SQL_RENAME_TABLE:
 	case SQL_RENAME_USER:
+	case SQL_SET_TABLE_SCHEMA:
 
 	case SQL_CREATE_TYPE:
 	case SQL_DROP_TYPE:

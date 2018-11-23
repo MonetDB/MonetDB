@@ -1140,6 +1140,12 @@ alter_statement:
 	  append_string(l, $9);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_RENAME_COLUMN, l); }
+ | ALTER TABLE if_exists qname SET SCHEMA ident
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_string(l, $7);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -6573,6 +6579,7 @@ char *token2string(int token)
 	SQL(RENAME_SCHEMA);
 	SQL(RENAME_TABLE);
 	SQL(RENAME_COLUMN);
+	SQL(SET_TABLE_SCHEMA);
 	SQL(MERGE_MATCH);
 	SQL(MERGE_NO_MATCH);
 	}
