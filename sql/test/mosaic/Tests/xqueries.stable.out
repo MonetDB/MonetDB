@@ -58,9 +58,9 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 116 # length
+% 112 # length
 function user.s14_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "sequential_pipe":str, 13:int);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
@@ -102,9 +102,9 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 117 # length
+% 113 # length
 function user.s16_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "sequential_pipe":str, 13:int);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
@@ -172,9 +172,9 @@ end user.s16_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 116 # length
+% 112 # length
 function user.s32_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "sequential_pipe":str, 13:int);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
@@ -215,9 +215,9 @@ end user.s32_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 117 # length
+% 113 # length
 function user.s34_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "sequential_pipe":str, 13:int);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
@@ -273,9 +273,9 @@ end user.s34_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 116 # length
+% 112 # length
 function user.s46_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "sequential_pipe":str, 13:int);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
@@ -316,9 +316,9 @@ end user.s46_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 117 # length
+% 113 # length
 function user.s48_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "sequential_pipe":str, 13:int);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "mosaic_pipe":str, 13:int);
     X_5:int := sql.mvc();
     X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
     C_75:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);

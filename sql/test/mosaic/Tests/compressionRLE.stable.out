@@ -60,7 +60,7 @@ Ready.
 % clob # type
 % 168 # length
 function user.s14_1():void;
-    X_1:void := querylog.define("explain select * from tmp3rle;":str, "sequential_pipe":str, 39:int);
+    X_1:void := querylog.define("explain select * from tmp3rle;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
     X_26:bat[:int] := bat.new(nil:int);
@@ -151,7 +151,7 @@ end user.s14_1;
 % clob # type
 % 114 # length
 function user.s32_1():void;
-    X_1:void := querylog.define("explain select i from tmp3rle;":str, "sequential_pipe":str, 18:int);
+    X_1:void := querylog.define("explain select i from tmp3rle;":str, "mosaic_pipe":str, 18:int);
     X_13:bat[:str] := bat.new(nil:str);
     X_19:bat[:int] := bat.new(nil:int);
     X_17:bat[:int] := bat.new(nil:int);
@@ -197,7 +197,7 @@ end user.s32_1;
 % clob # type
 % 114 # length
 function user.s34_1():void;
-    X_1:void := querylog.define("explain select b from tmp3rle;":str, "sequential_pipe":str, 18:int);
+    X_1:void := querylog.define("explain select b from tmp3rle;":str, "mosaic_pipe":str, 18:int);
     X_13:bat[:str] := bat.new(nil:str);
     X_19:bat[:int] := bat.new(nil:int);
     X_17:bat[:int] := bat.new(nil:int);
@@ -243,7 +243,7 @@ end user.s34_1;
 % clob # type
 % 114 # length
 function user.s36_1():void;
-    X_1:void := querylog.define("explain select f from tmp3rle;":str, "sequential_pipe":str, 18:int);
+    X_1:void := querylog.define("explain select f from tmp3rle;":str, "mosaic_pipe":str, 18:int);
     X_13:bat[:str] := bat.new(nil:str);
     X_19:bat[:int] := bat.new(nil:int);
     X_17:bat[:int] := bat.new(nil:int);
@@ -289,7 +289,7 @@ end user.s36_1;
 % clob # type
 % 120 # length
 function user.s38_1():void;
-    X_1:void := querylog.define("explain select t from tmp3rle;":str, "sequential_pipe":str, 18:int);
+    X_1:void := querylog.define("explain select t from tmp3rle;":str, "mosaic_pipe":str, 18:int);
     X_13:bat[:str] := bat.new(nil:str);
     X_19:bat[:int] := bat.new(nil:int);
     X_17:bat[:int] := bat.new(nil:int);

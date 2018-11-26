@@ -122,7 +122,7 @@ Ready.
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select count(*) from tmp3RLE;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -137,7 +137,7 @@ Ready.
 % clob # type
 % 168 # length
 function user.s16_1():void;
-    X_1:void := querylog.define("explain select * from tmp3rle;":str, "sequential_pipe":str, 39:int);
+    X_1:void := querylog.define("explain select * from tmp3rle;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
     X_26:bat[:int] := bat.new(nil:int);

@@ -36,7 +36,7 @@ Ready.
 % clob # type
 % 168 # length
 function user.s4_1():void;
-    X_1:void := querylog.define("explain select * from tmp3;":str, "sequential_pipe":str, 39:int);
+    X_1:void := querylog.define("explain select * from tmp3;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
     X_26:bat[:int] := bat.new(nil:int);
@@ -197,7 +197,7 @@ end user.s4_1;
 % clob # type
 % 168 # length
 function user.s12_1():void;
-    X_1:void := querylog.define("explain select * from tmp3;":str, "sequential_pipe":str, 39:int);
+    X_1:void := querylog.define("explain select * from tmp3;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
     X_26:bat[:int] := bat.new(nil:int);
@@ -349,19 +349,19 @@ end user.s12_1;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select sum(i) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
 [ 27.104	]
 #select count(*) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -375,7 +375,7 @@ end user.s12_1;
 % clob # type
 % 168 # length
 function user.s26_1():void;
-    X_1:void := querylog.define("explain select * from tmp3;":str, "sequential_pipe":str, 39:int);
+    X_1:void := querylog.define("explain select * from tmp3;":str, "mosaic_pipe":str, 39:int);
     X_22:bat[:str] := bat.new(nil:str);
     X_28:bat[:int] := bat.new(nil:int);
     X_26:bat[:int] := bat.new(nil:int);
@@ -527,13 +527,13 @@ end user.s26_1;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select sum(i) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
