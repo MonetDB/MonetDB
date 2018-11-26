@@ -4726,15 +4726,19 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	fargs = sa_list(sql->sa);
 	if (window_function->token == SQL_RANK) { //rank function call
 		dlist* dnn = window_function->data.lval->h->next->data.lval;
-		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0);
+		bool is_ntile = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "ntile") == 0),
+			 is_lag = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lag") == 0),
+			 is_lead = (strcmp(s->base.name, "sys") == 0 && strcmp(aname, "lead") == 0);
+		int nfargs = 0;
 
-		if(!dnn || is_ntile) {
+		if(!dnn || is_ntile) { //pass an input column for analytic functions that don't require it
 			sql_rel *lr = p->l;
 			in = lr->exps->h->data;
 			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 			if(!in)
 				return NULL;
 			append(fargs, in);
+			nfargs++;
 		}
 		if(dnn) {
 			for(dnode *nn = dnn->h ; nn ; nn = nn->next) {
@@ -4743,22 +4747,26 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				in = rel_value_exp2(sql, &p, nn->data.sym, f, ek, &is_last);
 				if(!in)
 					return NULL;
-
-				if(is_ntile) { /* ntile only has one argument and in null case this cast should be done */
+				if(is_ntile && nfargs == 1) { //ntile first argument null handling case
 					sql_subtype *empty = sql_bind_localtype("void");
 					if(subtype_cmp(&(in->tpe), empty) == 0) {
 						sql_subtype *to = sql_bind_localtype("bte");
 						in = exp_convert(sql->sa, in, empty, to);
 					}
-				} else if(is_nth_value && dnn->h && nn == dnn->h->next) { /* corner case for nth_value */
+				} else if(is_nth_value && nfargs == 1) { //nth_value second argument null handling case
 					sql_subtype *empty = sql_bind_localtype("void");
 					if(subtype_cmp(&(in->tpe), empty) == 0) {
 						sql_rel *lr = p->l;
 						sql_exp *ep = lr->exps->h->data;
 						in = exp_convert(sql->sa, in, empty, &(ep->tpe));
 					}
+				} else if((is_lag || is_lead) && nfargs == 2) { //lag and lead 3rd arg must have same type as 1st arg
+					sql_exp *first = (sql_exp*) fargs->h->data;
+					if(!(in = rel_check_type(sql, &first->tpe, in, type_equal)))
+						return NULL;
 				}
 				append(fargs, in);
+				nfargs++;
 			}
 		}
 	} else { //aggregation function call

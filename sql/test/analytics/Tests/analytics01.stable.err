@@ -48,6 +48,10 @@ MAPI  = (monetdb) /var/tmp/mtest-1980/.s.monetdb.31134
 QUERY = select lead(null, null, aa) over () from analytics; --error
 ERROR = !types int(32,0) and any(0,0) are not equal for column 'aa'
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-21352/.s.monetdb.32874
+QUERY = select lead(aa, 34, 1000000000000) over (partition by bb) from analytics; --error
+ERROR = !overflow in conversion of 1000000000000 to int.
+CODE  = 22003
 
 # 16:22:53 >  
 # 16:22:53 >  "Done."

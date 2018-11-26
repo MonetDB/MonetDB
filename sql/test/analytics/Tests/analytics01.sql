@@ -202,6 +202,8 @@ select lead(bb) over (partition by aa order by aa desc) from stressme;
 select lead(bb) over (order by aa) from stressme;
 select lead(bb) over (order by aa desc) from stressme;
 
+select aa, bb, lead(aa, 2, 100) over (partition by bb), lead(aa, 1, '100') over (partition by bb) from analytics;
+
 select nth_value(aa, aa) over () from analytics;
 select nth_value(1, aa) over () from analytics;
 
@@ -212,5 +214,6 @@ select lag(null, aa) over () from analytics; --error
 select lag(null, null, aa) over () from analytics; --error
 select lead(null, aa) over () from analytics; --error
 select lead(null, null, aa) over () from analytics; --error
+select lead(aa, 34, 1000000000000) over (partition by bb) from analytics; --error
 
 drop table analytics;
