@@ -43,13 +43,13 @@ Ready.
 [ 86	]
 #alter table tmp3RLE set read only;
 #select sum(i) from tmp3RLE;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3RLE;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
@@ -67,8 +67,8 @@ function user.s14_1():void;
     X_25:bat[:str] := bat.new(nil:str);
     X_24:bat[:str] := bat.new(nil:str);
     X_4:int := sql.mvc();
-    C_104:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_5:bat[:oid] := mosaic.decompress(C_104:bat[:oid]);
+    C_106:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
+    X_5:bat[:oid] := mosaic.decompress(C_106:bat[:oid]);
     X_18:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
     X_20:bat[:timestamp] := mosaic.projection(X_5:bat[:oid], X_18:bat[:timestamp]);
     X_15:bat[:flt] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "f":str, 0:int);
@@ -122,9 +122,29 @@ end user.s14_1;
 #garbagecollector     actions= 1 time=18 usec 
 #total                actions= 1 time=274 usec 
 #alter table tmp3RLE alter column i set storage 'runlength';
+#select * from mosaic.layout('sys','tmp3RLE','i') limit 25;
+% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties # name
+% clob,	bigint,	bigint,	bigint,	clob # type
+% 0,	1,	1,	1,	0 # length
 #alter table tmp3RLE alter column b set storage 'runlength';
+#select * from mosaic.layout('sys','tmp3RLE','b') limit 25;
+% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties # name
+% clob,	bigint,	bigint,	bigint,	clob # type
+% 0,	1,	1,	1,	0 # length
 #alter table tmp3RLE alter column f set storage 'runlength';
+#select * from mosaic.layout('sys','tmp3RLE','f') limit 25;
+% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties # name
+% clob,	bigint,	bigint,	bigint,	clob # type
+% 0,	1,	1,	1,	0 # length
 #alter table tmp3RLE alter column t set storage 'runlength';
+#select * from mosaic.layout('sys','tmp3RLE','t') limit 25;
+% .L4,	.L4,	.L4,	.L4,	.L4 # table_name
+% technique,	count,	inputsize,	outputsize,	properties # name
+% clob,	bigint,	bigint,	bigint,	clob # type
+% 0,	1,	1,	1,	0 # length
 #explain select i from tmp3RLE;
 % .explain # table_name
 % mal # name
@@ -138,8 +158,8 @@ function user.s32_1():void;
     X_16:bat[:str] := bat.new(nil:str);
     X_15:bat[:str] := bat.new(nil:str);
     X_4:int := sql.mvc();
-    C_72:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_5:bat[:oid] := mosaic.decompress(C_72:bat[:oid]);
+    C_74:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
+    X_5:bat[:oid] := mosaic.decompress(C_74:bat[:oid]);
     X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "i":str, 0:int);
     X_11:bat[:int] := mosaic.projection(X_5:bat[:oid], X_8:bat[:int]);
     X_20:bat[:str] := bat.append(X_13:bat[:str], "sys.tmp3rle":str);
@@ -184,8 +204,8 @@ function user.s34_1():void;
     X_16:bat[:str] := bat.new(nil:str);
     X_15:bat[:str] := bat.new(nil:str);
     X_4:int := sql.mvc();
-    C_72:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_5:bat[:oid] := mosaic.decompress(C_72:bat[:oid]);
+    C_74:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
+    X_5:bat[:oid] := mosaic.decompress(C_74:bat[:oid]);
     X_8:bat[:bit] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "b":str, 0:int);
     X_11:bat[:bit] := mosaic.projection(X_5:bat[:oid], X_8:bat[:bit]);
     X_20:bat[:str] := bat.append(X_13:bat[:str], "sys.tmp3rle":str);
@@ -230,8 +250,8 @@ function user.s36_1():void;
     X_16:bat[:str] := bat.new(nil:str);
     X_15:bat[:str] := bat.new(nil:str);
     X_4:int := sql.mvc();
-    C_72:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_5:bat[:oid] := mosaic.decompress(C_72:bat[:oid]);
+    C_74:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
+    X_5:bat[:oid] := mosaic.decompress(C_74:bat[:oid]);
     X_8:bat[:flt] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "f":str, 0:int);
     X_11:bat[:flt] := mosaic.projection(X_5:bat[:oid], X_8:bat[:flt]);
     X_20:bat[:str] := bat.append(X_13:bat[:str], "sys.tmp3rle":str);
@@ -276,8 +296,8 @@ function user.s38_1():void;
     X_16:bat[:str] := bat.new(nil:str);
     X_15:bat[:str] := bat.new(nil:str);
     X_4:int := sql.mvc();
-    C_72:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
-    X_5:bat[:oid] := mosaic.decompress(C_72:bat[:oid]);
+    C_74:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
+    X_5:bat[:oid] := mosaic.decompress(C_74:bat[:oid]);
     X_8:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
     X_11:bat[:timestamp] := mosaic.projection(X_5:bat[:oid], X_8:bat[:timestamp]);
     X_20:bat[:str] := bat.append(X_13:bat[:str], "sys.tmp3rle":str);
@@ -401,13 +421,13 @@ end user.s38_1;
 [ 9,	false,	0.317,	2014-08-23 11:34:54.000000	]
 [ 10,	false,	0.317,	2014-08-23 11:34:54.000000	]
 #select sum(i) from tmp3RLE;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 3 # length
 [ 270	]
 #select sum(f) from tmp3RLE;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % real # type
 % 15 # length
