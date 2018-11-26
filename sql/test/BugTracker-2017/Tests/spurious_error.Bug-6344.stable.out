@@ -24,6 +24,33 @@ Ready.
 # 13:47:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7389" "--port=39137"
 # 13:47:14 >  
 
+#START TRANSACTION;
+#CREATE TABLE sys.objcts (
+#	"id"   INTEGER,
+#	"name" VARCHAR(1024),
+#	"nr"   INTEGER
+#);
+#COPY 54 RECORDS INTO sys.objcts FROM stdin USING DELIMITERS '\t','\n','"';
+#6965	"srid"	0
+#6964	"srid"	0
+#7676	"keyword"	0
+#7675	"keyword"	0
+#7681	"table_type_id"	0
+#7684	"table_type_name"	0
+#7680	"table_type_id"	0
+#7683	"table_type_name"	0
+#7689	"dependency_type_id"	0
+#7692	"dependency_type_name"	0
+#7688	"dependency_type_id"	0
+#7691	"dependency_type_name"	0
+#7697	"function_type_id"	0
+#7700	"function_type_name"	0
+#7696	"function_type_id"	0
+#7699	"function_type_name"	0
+#7709	"language_id"	0
+#7712	"language_name"	0
+#7708	"language_id"	0
+[ 54	]
 #select  
 #  sample_2.name as c0, 
 #  sample_2.id as c1, 
@@ -41,67 +68,61 @@ Ready.
 % c0,	c1,	c2,	c3,	c4,	c5,	c6 # name
 % varchar,	int,	varchar,	int,	int,	tinyint,	int # type
 % 20,	4,	20,	4,	4,	2,	4 # length
-[ "srid",	6969,	"srid",	6969,	6969,	11,	6969	]
-[ "srid",	6968,	"srid",	6968,	6968,	11,	6968	]
-[ "keyword",	7678,	"keyword",	7678,	7678,	11,	7678	]
-[ "keyword",	7677,	"keyword",	7677,	7677,	11,	7677	]
-[ "table_type_id",	7683,	"table_type_id",	7683,	7683,	11,	7683	]
-[ "table_type_name",	7686,	"table_type_name",	7686,	7686,	11,	7686	]
-[ "table_type_id",	7682,	"table_type_id",	7682,	7682,	11,	7682	]
-[ "table_type_name",	7685,	"table_type_name",	7685,	7685,	11,	7685	]
-[ "dependency_type_id",	7691,	"dependency_type_id",	7691,	7691,	11,	7691	]
-[ "dependency_type_name",	7694,	"dependency_type_name",	7694,	7694,	11,	7694	]
-[ "dependency_type_id",	7690,	"dependency_type_id",	7690,	7690,	11,	7690	]
-[ "dependency_type_name",	7693,	"dependency_type_name",	7693,	7693,	11,	7693	]
-[ "function_type_id",	7699,	"function_type_id",	7699,	7699,	11,	7699	]
-[ "function_type_name",	7702,	"function_type_name",	7702,	7702,	11,	7702	]
-[ "function_type_id",	7698,	"function_type_id",	7698,	7698,	11,	7698	]
-[ "function_type_name",	7701,	"function_type_name",	7701,	7701,	11,	7701	]
-[ "language_id",	7707,	"language_id",	7707,	7707,	11,	7707	]
-[ "language_name",	7710,	"language_name",	7710,	7710,	11,	7710	]
-[ "language_id",	7706,	"language_id",	7706,	7706,	11,	7706	]
-[ "language_name",	7709,	"language_name",	7709,	7709,	11,	7709	]
-[ "key_type_id",	7715,	"key_type_id",	7715,	7715,	11,	7715	]
-[ "key_type_name",	7718,	"key_type_name",	7718,	7718,	11,	7718	]
-[ "key_type_id",	7714,	"key_type_id",	7714,	7714,	11,	7714	]
-[ "key_type_name",	7717,	"key_type_name",	7717,	7717,	11,	7717	]
-[ "index_type_id",	7723,	"index_type_id",	7723,	7723,	11,	7723	]
-[ "index_type_name",	7726,	"index_type_name",	7726,	7726,	11,	7726	]
-[ "index_type_id",	7722,	"index_type_id",	7722,	7722,	11,	7722	]
-[ "index_type_name",	7725,	"index_type_name",	7725,	7725,	11,	7725	]
-[ "privilege_code_id",	7731,	"privilege_code_id",	7731,	7731,	11,	7731	]
-[ "privilege_code_name",	7734,	"privilege_code_name",	7734,	7734,	11,	7734	]
-[ "privilege_code_id",	7730,	"privilege_code_id",	7730,	7730,	11,	7730	]
-[ "privilege_code_name",	7733,	"privilege_code_name",	7733,	7733,	11,	7733	]
-[ "file_id",	8197,	"file_id",	8197,	8197,	11,	8197	]
-[ "file_id",	8196,	"file_id",	8196,	8196,	11,	8196	]
-[ "sn",	8208,	"sn",	8208,	8208,	11,	8208	]
-[ "file_id",	8208,	"file_id",	8208,	8208,	11,	8208	]
-[ "file_id",	8210,	"file_id",	8210,	8210,	11,	8210	]
-[ "sn",	8207,	"sn",	8207,	8207,	11,	8207	]
-[ "file_id",	8207,	"file_id",	8207,	8207,	11,	8207	]
-[ "file_id",	8209,	"file_id",	8209,	8209,	11,	8209	]
-[ "id",	8227,	"id",	8227,	8227,	11,	8227	]
-[ "file_id",	8227,	"file_id",	8227,	8227,	11,	8227	]
-[ "file_id",	8229,	"file_id",	8229,	8229,	11,	8229	]
-[ "id",	8226,	"id",	8226,	8226,	11,	8226	]
-[ "file_id",	8226,	"file_id",	8226,	8226,	11,	8226	]
-[ "file_id",	8228,	"file_id",	8228,	8228,	11,	8228	]
-[ "id",	8239,	"id",	8239,	8239,	11,	8239	]
-[ "file_id",	8239,	"file_id",	8239,	8239,	11,	8239	]
-[ "file_id",	8241,	"file_id",	8241,	8241,	11,	8241	]
-[ "id",	8238,	"id",	8238,	8238,	11,	8238	]
-[ "file_id",	8238,	"file_id",	8238,	8238,	11,	8238	]
-[ "file_id",	8240,	"file_id",	8240,	8240,	11,	8240	]
-[ "width",	8838,	"width",	8838,	8838,	11,	8838	]
-[ "p_partkey",	8945,	"p_partkey",	8945,	8945,	11,	8945	]
-[ "p_partkey",	8944,	"p_partkey",	8944,	8944,	11,	8944	]
-[ "ps_partkey",	8954,	"ps_partkey",	8954,	8954,	11,	8954	]
-[ "ps_suppkey",	8954,	"ps_suppkey",	8954,	8954,	11,	8954	]
-[ "ps_partkey",	8956,	"ps_partkey",	8956,	8956,	11,	8956	]
-[ "ps_partkey",	8953,	"ps_partkey",	8953,	8953,	11,	8953	]
-[ "ps_suppkey",	8953,	"ps_suppkey",	8953,	8953,	11,	8953	]
-[ "ps_partkey",	8955,	"ps_partkey",	8955,	8955,	11,	8955	]
+[ "srid",	6965,	"srid",	6965,	6965,	11,	6965	]
+[ "srid",	6964,	"srid",	6964,	6964,	11,	6964	]
+[ "keyword",	7676,	"keyword",	7676,	7676,	11,	7676	]
+[ "keyword",	7675,	"keyword",	7675,	7675,	11,	7675	]
+[ "table_type_id",	7681,	"table_type_id",	7681,	7681,	11,	7681	]
+[ "table_type_name",	7684,	"table_type_name",	7684,	7684,	11,	7684	]
+[ "table_type_id",	7680,	"table_type_id",	7680,	7680,	11,	7680	]
+[ "table_type_name",	7683,	"table_type_name",	7683,	7683,	11,	7683	]
+[ "dependency_type_id",	7689,	"dependency_type_id",	7689,	7689,	11,	7689	]
+[ "dependency_type_name",	7692,	"dependency_type_name",	7692,	7692,	11,	7692	]
+[ "dependency_type_id",	7688,	"dependency_type_id",	7688,	7688,	11,	7688	]
+[ "dependency_type_name",	7691,	"dependency_type_name",	7691,	7691,	11,	7691	]
+[ "function_type_id",	7697,	"function_type_id",	7697,	7697,	11,	7697	]
+[ "function_type_name",	7700,	"function_type_name",	7700,	7700,	11,	7700	]
+[ "function_type_id",	7696,	"function_type_id",	7696,	7696,	11,	7696	]
+[ "function_type_name",	7699,	"function_type_name",	7699,	7699,	11,	7699	]
+[ "language_id",	7709,	"language_id",	7709,	7709,	11,	7709	]
+[ "language_name",	7712,	"language_name",	7712,	7712,	11,	7712	]
+[ "language_id",	7708,	"language_id",	7708,	7708,	11,	7708	]
+[ "language_name",	7711,	"language_name",	7711,	7711,	11,	7711	]
+[ "key_type_id",	7717,	"key_type_id",	7717,	7717,	11,	7717	]
+[ "key_type_name",	7720,	"key_type_name",	7720,	7720,	11,	7720	]
+[ "key_type_id",	7716,	"key_type_id",	7716,	7716,	11,	7716	]
+[ "key_type_name",	7719,	"key_type_name",	7719,	7719,	11,	7719	]
+[ "index_type_id",	7725,	"index_type_id",	7725,	7725,	11,	7725	]
+[ "index_type_name",	7728,	"index_type_name",	7728,	7728,	11,	7728	]
+[ "index_type_id",	7724,	"index_type_id",	7724,	7724,	11,	7724	]
+[ "index_type_name",	7727,	"index_type_name",	7727,	7727,	11,	7727	]
+[ "privilege_code_id",	7733,	"privilege_code_id",	7733,	7733,	11,	7733	]
+[ "privilege_code_name",	7736,	"privilege_code_name",	7736,	7736,	11,	7736	]
+[ "privilege_code_id",	7732,	"privilege_code_id",	7732,	7732,	11,	7732	]
+[ "privilege_code_name",	7735,	"privilege_code_name",	7735,	7735,	11,	7735	]
+[ "file_id",	8159,	"file_id",	8159,	8159,	11,	8159	]
+[ "file_id",	8158,	"file_id",	8158,	8158,	11,	8158	]
+[ "sn",	8170,	"sn",	8170,	8170,	11,	8170	]
+[ "file_id",	8170,	"file_id",	8170,	8170,	11,	8170	]
+[ "file_id",	8172,	"file_id",	8172,	8172,	11,	8172	]
+[ "sn",	8169,	"sn",	8169,	8169,	11,	8169	]
+[ "file_id",	8169,	"file_id",	8169,	8169,	11,	8169	]
+[ "file_id",	8171,	"file_id",	8171,	8171,	11,	8171	]
+[ "id",	8189,	"id",	8189,	8189,	11,	8189	]
+[ "file_id",	8189,	"file_id",	8189,	8189,	11,	8189	]
+[ "file_id",	8191,	"file_id",	8191,	8191,	11,	8191	]
+[ "id",	8188,	"id",	8188,	8188,	11,	8188	]
+[ "file_id",	8188,	"file_id",	8188,	8188,	11,	8188	]
+[ "file_id",	8190,	"file_id",	8190,	8190,	11,	8190	]
+[ "id",	8201,	"id",	8201,	8201,	11,	8201	]
+[ "file_id",	8201,	"file_id",	8201,	8201,	11,	8201	]
+[ "file_id",	8203,	"file_id",	8203,	8203,	11,	8203	]
+[ "id",	8200,	"id",	8200,	8200,	11,	8200	]
+[ "file_id",	8200,	"file_id",	8200,	8200,	11,	8200	]
+[ "file_id",	8202,	"file_id",	8202,	8202,	11,	8202	]
+[ "id",	8300,	"id",	8300,	8300,	11,	8300	]
+[ "id",	8299,	"id",	8299,	8299,	11,	8299	]
+#ROLLBACK;
 
 # 13:47:14 >  
 # 13:47:14 >  "Done."
