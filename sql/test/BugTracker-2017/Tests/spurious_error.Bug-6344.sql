@@ -4,7 +4,7 @@ CREATE TABLE sys.objcts (
 	"name" VARCHAR(1024),
 	"nr"   INTEGER
 );
-COPY 54 RECORDS INTO sys.objcts FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 54 RECORDS INTO sys.objcts FROM stdin USING DELIMITERS E'\t',E'\n','"';
 6965	"srid"	0
 6964	"srid"	0
 7676	"keyword"	0

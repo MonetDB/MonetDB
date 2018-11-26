@@ -1,5 +1,5 @@
 create table ranktest ( id int, k string);
-COPY 27 RECORDS INTO ranktest FROM stdin USING DELIMITERS '|','\n';
+COPY 27 RECORDS INTO ranktest FROM stdin USING DELIMITERS '|',E'\n';
 1061|varchar
 1061|int
 1061|varchar

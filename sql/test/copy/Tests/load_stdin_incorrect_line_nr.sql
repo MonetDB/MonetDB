@@ -1,7 +1,7 @@
 CREATE TABLE "sys"."number" (
         "isanumber" int
 );
-COPY 2 RECORDS INTO "number" FROM stdin USING DELIMITERS ';', '\n';
+COPY 2 RECORDS INTO "number" FROM stdin USING DELIMITERS ';', E'\n';
 1
 bla
 

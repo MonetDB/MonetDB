@@ -3,7 +3,7 @@ CREATE TABLE countries (
 	cty_name VARCHAR(256),
 	cty_code VARCHAR(32)
 );
-COPY INTO countries FROM STDIN USING DELIMITERS '\t','\n','"' NULL AS '';
+COPY INTO countries FROM STDIN USING DELIMITERS E'\t',E'\n','"' NULL AS '';
 AFGHANISTAN	.af
 ÅLAND ISLANDS	.ax
 ALBANIA	.al

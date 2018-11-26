@@ -12,7 +12,7 @@ START TRANSACTION;
 COPY 1 RECORDS
     INTO user_record_insertion
     FROM STDIN
-    USING DELIMITERS ',','\n';
+    USING DELIMITERS ',',E'\n';
 Jane Doe,e37722e7
 ;
 INSERT

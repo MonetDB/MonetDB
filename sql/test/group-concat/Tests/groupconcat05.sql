@@ -18,7 +18,7 @@ select a, group_concat(b, '-') from testmore group by a;
 select a, group_concat(b) from testmore group by a;
 
 insert into testmore values (3, 'even'), (2, NULL), (1, '');
-select a, group_concat(b, 'XyZ\n') from testmore group by a;
+select a, group_concat(b, E'XyZ\n') from testmore group by a;
 
 select a, group_concat(b, NULL) from testmore group by a;
 select group_concat(b, NULL) from testmore;

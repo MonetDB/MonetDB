@@ -50,7 +50,7 @@ delete from d2774;
 select * from f2774;
 select * from d2774;
 
-copy 18 records into f2774 from stdin using delimiters ',','\n';
+copy 18 records into f2774 from stdin using delimiters ',',E'\n';
 300,1e-300
 302,1e-302
 304,1e-304
@@ -69,7 +69,7 @@ copy 18 records into f2774 from stdin using delimiters ',','\n';
 326,1e-326
 328,1e-328
 330,1e-330
-copy 18 records into d2774 from stdin using delimiters ',','\n';
+copy 18 records into d2774 from stdin using delimiters ',',E'\n';
 300,1e-300
 302,1e-302
 304,1e-304
@@ -98,7 +98,7 @@ delete from d2774;
 select * from f2774;
 select * from d2774;
 
-copy 9 records into f2774 from stdin using delimiters ',','\n';
+copy 9 records into f2774 from stdin using delimiters ',',E'\n';
 300,1e-300
 302,1e-302
 304,1e-304
@@ -108,7 +108,7 @@ copy 9 records into f2774 from stdin using delimiters ',','\n';
 326,1e-326
 328,1e-328
 330,1e-330
-copy 9 records into d2774 from stdin using delimiters ',','\n';
+copy 9 records into d2774 from stdin using delimiters ',',E'\n';
 300,1e-300
 302,1e-302
 304,1e-304

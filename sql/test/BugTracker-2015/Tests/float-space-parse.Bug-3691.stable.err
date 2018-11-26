@@ -34,17 +34,17 @@ MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
 QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES (' ');
 ERROR = !conversion of string ' ' to type dbl failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES ('\t');
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES (E'\t');
 ERROR = !conversion of string '	' to type dbl failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES ('\n');
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES (E'\n');
 ERROR = !conversion of string '
         !' to type dbl failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES ('  \t  \t\t \n ');
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES (E'  \t  \t\t \n ');
 ERROR = !conversion of string '  	  		 
         ! ' to type dbl failed.
 CODE  = 22018
@@ -56,17 +56,17 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO FLOAT_TBL(f1) VALUES (' ');
 ERROR = !conversion of string ' ' to type dbl failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = INSERT INTO FLOAT_TBL(f1) VALUES ('\t');
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = INSERT INTO FLOAT_TBL(f1) VALUES (E'\t');
 ERROR = !conversion of string '	' to type dbl failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = INSERT INTO FLOAT_TBL(f1) VALUES ('\n');
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = INSERT INTO FLOAT_TBL(f1) VALUES (E'\n');
 ERROR = !conversion of string '
         !' to type dbl failed.
 CODE  = 22018
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = INSERT INTO FLOAT_TBL(f1) VALUES ('  \t  \t\t \n ');
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = INSERT INTO FLOAT_TBL(f1) VALUES (E'  \t  \t\t \n ');
 ERROR = !conversion of string '  	  		 
         ! ' to type dbl failed.
 CODE  = 22018

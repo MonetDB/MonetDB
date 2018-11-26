@@ -1,7 +1,7 @@
 -- The values denoted as (-)1.7976931348623157E+308 (with capital E) are
 -- originally inf (infinity)
 create table t (val double, gid int);
-copy 3131 records into t from stdin using delimiters ' ','\n' null as 'nan';
+copy 3131 records into t from stdin using delimiters ' ',E'\n' null as 'nan';
 -1.7976931348623157E+308 23
 9007199254740992.0 9
 -5e-324 38

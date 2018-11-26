@@ -7,7 +7,7 @@ create table two (
 	count int
 );
 
-copy 6 records into two from stdin using delimiters ',','\n';
+copy 6 records into two from stdin using delimiters ',',E'\n';
 1,null,false,2017-12-08,2014-06-30 14:05:31.000000,2
 2,vijay,false,2017-12-08,2014-06-30 14:05:59.000000,3
 3,krish,true,2017-12-08,2014-06-30 14:06:17.000000,5

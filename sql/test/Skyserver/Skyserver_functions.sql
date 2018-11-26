@@ -1570,7 +1570,7 @@ BEGIN
 	SET z2 = substring('00',1,2-LENGTH(z2)) || z2;
 	SET c1   = cast(camcol as char(1));
 	--
-	SET TheName = c1 || '\\' || 'fpCi-' || run6 ||'-'|| c1||'-'||cast(rerun as varchar(4))||'-'
+	SET TheName = c1 || E'\\' || 'fpCi-' || run6 ||'-'|| c1||'-'||cast(rerun as varchar(4))||'-'
 			|| field4 ||'-z'||z2|| '.jpeg';
 	RETURN TheName;
 END;

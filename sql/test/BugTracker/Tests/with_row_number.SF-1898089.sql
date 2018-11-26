@@ -1,6 +1,6 @@
 CREATE TABLE tradeDate(date int not null constraint pk_tradeDate primary key);
 
-COPY 32605 RECORDS INTO tradeDate FROM STDIN USING DELIMITERS '\t';
+COPY 32605 RECORDS INTO tradeDate FROM STDIN USING DELIMITERS E'\t';
 19251231
 19260102
 19260104

@@ -10,7 +10,7 @@ create table doc(
 	nameid integer references names(nameid),
 	value varchar(100));
 
-copy 77 RECORDS into names from stdin DELIMITERS ',','\n','"'; 
+copy 77 RECORDS into names from stdin DELIMITERS ',',E'\n','"'; 
 0,"site"
 1,"regions"
 2,"africa"
@@ -89,7 +89,7 @@ copy 77 RECORDS into names from stdin DELIMITERS ',','\n','"';
 75,"buyer"
 76,"price"
 
-copy 156690 RECORDS into doc from stdin DELIMITERS ',','\n','"' NULL as '';
+copy 156690 RECORDS into doc from stdin DELIMITERS ',',E'\n','"' NULL as '';
 2,0,2,3,," "
 4,0,3,3,," "
 6,0,4,3,," "

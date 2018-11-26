@@ -333,8 +333,8 @@ QUERY = SELECT '' AS to_char_5, to_char(d1, 'HH HH12 HH24 MI SS SSSS')
            FROM TIMESTAMP_TBL;
 ERROR = !SELECT: no such binary operator 'to_char(timestamp,char)'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = SELECT '' AS to_char_6, to_char(d1, '"HH:MI:SS is" HH:MI:SS "\\"text between quote marks\\""') 
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = SELECT '' AS to_char_6, to_char(d1, E'"HH:MI:SS is" HH:MI:SS "\\"text between quote marks\\""') 
            FROM TIMESTAMP_TBL;
 ERROR = !SELECT: no such binary operator 'to_char(timestamp,char)'
 CODE  = 42000
@@ -376,7 +376,7 @@ ERROR = !SELECT: no such binary operator 'to_timestamp(char,char)'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS to_timestamp_6, to_timestamp('15 "text between quote marks" 98 54 45', 
-                                                  'HH "\\text between quote marks\\"" YY MI SS');
+                                                  E'HH "\\text between quote marks\\"" YY MI SS');
 ERROR = !SELECT: no such binary operator 'to_timestamp(char,char)'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685

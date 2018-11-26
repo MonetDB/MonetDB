@@ -42,7 +42,7 @@ from test order by dataownercode, lineplanningnumber, journeypatterncode,
 timinglinkorder limit 20;
 
 
-COPY 10 RECORDS INTO "test" FROM STDIN USING DELIMITERS ',', '\n';
+COPY 10 RECORDS INTO "test" FROM STDIN USING DELIMITERS ',', E'\n';
 1,true,CXX,A001,0,0,40000010,40004015,santro,A00100998,true,,34
 1,true,CXX,A001,0,1,40004015,40004021,santro,A00100998,false,,34
 1,true,CXX,A001,0,2,40004021,40002570,santro,A00100998,false,,34

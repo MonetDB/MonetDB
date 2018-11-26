@@ -2,7 +2,7 @@
 CREATE TABLE day1 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 CREATE TABLE day1stage ( clk bigint, currency string, ts bigint, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 
-COPY 10 RECORDS INTO day1stage FROM STDIN USING DELIMITERS '|','\n';
+COPY 10 RECORDS INTO day1stage FROM STDIN USING DELIMITERS '|',E'\n';
 1413267171000|EUR/USD|1413267158643|1.271810|1.271890|0.000080
 1413267171000|USD/JPY|1413267171225|107.121000|107.127000|0.006000
 1413267171000|GBP/USD|1413267161304|1.606820|1.606930|0.000110
@@ -28,7 +28,7 @@ ALTER TABLE day1 SET READ ONLY;
 CREATE TABLE day2 ( clk timestamp, currency string, ts timestamp, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 CREATE TABLE day2stage ( clk bigint, currency string, ts bigint, bid decimal(12,6), offer decimal(12,6), spread decimal(12,6) );
 
-COPY 10 RECORDS INTO day2stage FROM STDIN USING DELIMITERS '|','\n';
+COPY 10 RECORDS INTO day2stage FROM STDIN USING DELIMITERS '|',E'\n';
 1413267176000|EUR/USD|1413267177168|1.271780|1.271880|0.000100
 1413267176000|USD/JPY|1413267177168|107.120000|107.125000|0.005000
 1413267176000|GBP/USD|1413267175356|1.606820|1.606950|0.000130
