@@ -5184,8 +5184,8 @@ Ready.
 % L2,	L4,	L11,	L14,	L16,	d # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	int # type
 % 4,	2,	2,	4,	1,	3 # length
-[ NULL,	NULL,	0,	NULL,	NULL,	203	]
 [ NULL,	NULL,	0,	NULL,	NULL,	101	]
+[ NULL,	NULL,	0,	NULL,	NULL,	203	]
 [ NULL,	NULL,	1,	NULL,	1,	114	]
 [ NULL,	NULL,	18,	NULL,	2,	207	]
 [ NULL,	1,	9,	940,	3,	NULL	]
@@ -10290,16 +10290,16 @@ Ready.
 % L7,	L11,	L16,	L21,	L23 # name
 % smallint,	smallint,	bigint,	bigint,	bigint # type
 % 3,	3,	1,	3,	1 # length
-[ 222,	111,	0,	142,	1	]
 [ 222,	111,	0,	137,	1	]
+[ 222,	111,	0,	142,	1	]
 [ 333,	222,	0,	212,	2	]
 [ 222,	333,	0,	NULL,	1	]
 [ 333,	333,	0,	182,	1	]
-[ 222,	444,	0,	222,	2	]
-[ 333,	444,	0,	187,	2	]
 [ 333,	444,	0,	132,	1	]
-[ 444,	555,	0,	NULL,	1	]
+[ 333,	444,	0,	187,	2	]
+[ 222,	444,	0,	222,	2	]
 [ 444,	555,	0,	172,	1	]
+[ 444,	555,	0,	NULL,	1	]
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
 #        WHEN a<b+3 THEN 333 ELSE 444 END,
 #       CASE a+1 WHEN b THEN 111 WHEN c THEN 222
@@ -17542,10 +17542,10 @@ Ready.
 % L6,	d,	L15,	L21,	e # name
 % bigint,	int,	bigint,	bigint,	int # type
 % 4,	3,	2,	4,	3 # length
-[ NULL,	207,	18,	NULL,	NULL	]
-[ NULL,	101,	0,	NULL,	NULL	]
 [ 1510,	NULL,	8,	NULL,	NULL	]
+[ NULL,	207,	18,	NULL,	NULL	]
 [ 486,	NULL,	25,	NULL,	NULL	]
+[ NULL,	101,	0,	NULL,	NULL	]
 [ 1120,	114,	1,	NULL,	110	]
 [ NULL,	116,	0,	NULL,	117	]
 [ 1450,	NULL,	7,	NULL,	146	]
@@ -22008,8 +22008,8 @@ Ready.
 % L2,	d,	L5,	L12,	L15 # name
 % bigint,	int,	bigint,	bigint,	bigint # type
 % 1,	3,	4,	2,	4 # length
-[ NULL,	203,	NULL,	0,	NULL	]
 [ NULL,	101,	NULL,	0,	NULL	]
+[ NULL,	203,	NULL,	0,	NULL	]
 [ NULL,	238,	NULL,	24,	NULL	]
 [ 1,	NULL,	NULL,	11,	NULL	]
 [ 2,	207,	NULL,	18,	NULL	]
@@ -27418,10 +27418,10 @@ Ready.
 % L2,	L10,	L12,	L14,	e,	L17 # name
 % bigint,	bigint,	bigint,	smallint,	int,	bigint # type
 % 2,	4,	2,	3,	3,	4 # length
-[ NULL,	402,	-1,	222,	204,	NULL	]
+[ NULL,	NULL,	NULL,	555,	NULL,	NULL	]
 [ NULL,	1120,	4,	555,	110,	NULL	]
 [ NULL,	NULL,	-1,	333,	117,	NULL	]
-[ NULL,	NULL,	NULL,	555,	NULL,	NULL	]
+[ NULL,	402,	-1,	222,	204,	NULL	]
 [ NULL,	NULL,	NULL,	555,	NULL,	NULL	]
 [ 3,	2360,	1,	555,	237,	NULL	]
 [ 2,	1050,	-1,	333,	109,	635	]
@@ -30074,15 +30074,15 @@ Ready.
 % L21,	d,	L24 # name
 % bigint,	int,	bigint # type
 % 3,	3,	1 # length
-[ NULL,	203,	NULL	]
 [ NULL,	238,	NULL	]
-[ NULL,	NULL,	1	]
+[ NULL,	203,	NULL	]
 [ NULL,	114,	1	]
-[ NULL,	NULL,	1	]
-[ NULL,	NULL,	1	]
 [ NULL,	122,	1	]
-[ NULL,	207,	2	]
+[ NULL,	NULL,	1	]
+[ NULL,	NULL,	1	]
+[ NULL,	NULL,	1	]
 [ NULL,	NULL,	2	]
+[ NULL,	207,	2	]
 [ NULL,	NULL,	3	]
 [ NULL,	NULL,	4	]
 [ 107,	108,	1	]
@@ -30236,12 +30236,12 @@ Ready.
 % L14,	d,	L17 # name
 % bigint,	int,	bigint # type
 % 3,	3,	1 # length
-[ NULL,	NULL,	4	]
 [ NULL,	NULL,	2	]
 [ NULL,	NULL,	1	]
 [ NULL,	NULL,	3	]
 [ NULL,	NULL,	1	]
 [ NULL,	NULL,	1	]
+[ NULL,	NULL,	4	]
 [ 107,	108,	1	]
 [ NULL,	114,	1	]
 [ NULL,	122,	1	]
@@ -32080,21 +32080,21 @@ Ready.
 [ NULL,	0,	-3,	1226	]
 [ 2878,	0,	-3,	1918	]
 [ 3331,	0,	-3,	2226	]
-[ 3260,	0,	-2,	2165	]
 [ 1902,	0,	-2,	1272	]
-[ 2131,	0,	-1,	1411	]
+[ 3260,	0,	-2,	2165	]
 [ 2046,	0,	-1,	1371	]
+[ 2131,	0,	-1,	1411	]
+[ 1985,	0,	1,	1325	]
+[ NULL,	0,	1,	NULL	]
 [ NULL,	0,	1,	NULL	]
 [ 2728,	0,	1,	1828	]
 [ 2949,	0,	1,	1964	]
-[ NULL,	0,	1,	NULL	]
 [ 3399,	0,	1,	2264	]
-[ 1985,	0,	1,	1325	]
 [ NULL,	0,	2,	NULL	]
 [ 3175,	0,	2,	2125	]
 [ 3473,	0,	2,	2323	]
-[ NULL,	0,	3,	NULL	]
 [ 2432,	0,	3,	1622	]
+[ NULL,	0,	3,	NULL	]
 #SELECT a+b*2+c*3+d*4+e*5,
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d),
 #       a-b,
@@ -33181,17 +33181,17 @@ Ready.
 [ 112,	0,	NULL,	NULL,	NULL,	NULL,	1	]
 [ 249,	0,	1484,	-4,	247,	2476,	2	]
 [ 124,	0,	738,	-3,	NULL,	1226,	1	]
-[ 223,	0,	1338,	-3,	222,	2226,	1	]
 [ 194,	0,	1158,	-3,	192,	1918,	1	]
+[ 223,	0,	1338,	-3,	222,	2226,	1	]
 [ 218,	0,	1297,	-2,	217,	2165,	3	]
 [ 129,	0,	760,	-2,	127,	1272,	4	]
-[ 143,	0,	851,	-1,	142,	1411,	2	]
 [ 139,	0,	827,	-1,	137,	1371,	2	]
+[ 143,	0,	851,	-1,	142,	1411,	2	]
 [ 167,	0,	1000,	1,	NULL,	NULL,	1	]
-[ 228,	0,	1360,	1,	227,	2264,	3	]
+[ 158,	0,	940,	1,	NULL,	NULL,	3	]
 [ 181,	0,	1096,	1,	182,	1828,	3	]
 [ 198,	0,	1180,	1,	197,	1964,	3	]
-[ 158,	0,	940,	1,	NULL,	NULL,	3	]
+[ 228,	0,	1360,	1,	227,	2264,	3	]
 [ 130,	0,	793,	1,	132,	1325,	4	]
 [ 105,	0,	635,	2,	107,	1067,	1	]
 [ 151,	0,	905,	2,	NULL,	NULL,	1	]
@@ -43848,10 +43848,10 @@ Ready.
 % L2,	L7,	L12,	L14,	L16 # name
 % bigint,	bigint,	bigint,	smallint,	bigint # type
 % 3,	1,	1,	3,	2 # length
+[ NULL,	0,	NULL,	555,	NULL	]
 [ NULL,	0,	NULL,	333,	NULL	]
-[ NULL,	0,	NULL,	555,	NULL	]
-[ NULL,	0,	NULL,	555,	NULL	]
 [ NULL,	0,	NULL,	222,	NULL	]
+[ NULL,	0,	NULL,	555,	NULL	]
 [ NULL,	0,	1,	555,	-1	]
 [ NULL,	0,	1,	555,	-1	]
 [ NULL,	0,	1,	333,	1	]
@@ -47622,12 +47622,12 @@ Ready.
 % L14,	c,	d,	L23,	L26 # name
 % bigint,	int,	int,	bigint,	bigint # type
 % 3,	3,	3,	1,	2 # length
-[ NULL,	147,	NULL,	0,	-2	]
 [ NULL,	155,	NULL,	0,	3	]
 [ NULL,	166,	NULL,	0,	1	]
-[ NULL,	244,	NULL,	0,	-4	]
-[ NULL,	176,	NULL,	0,	-1	]
+[ NULL,	147,	NULL,	0,	-2	]
 [ NULL,	150,	NULL,	0,	1	]
+[ NULL,	176,	NULL,	0,	-1	]
+[ NULL,	244,	NULL,	0,	-4	]
 [ NULL,	102,	101,	0,	NULL	]
 [ NULL,	113,	114,	0,	-1	]
 [ NULL,	123,	122,	0,	1	]
@@ -62547,9 +62547,9 @@ Ready.
 % L5,	e,	L10,	a # name
 % bigint,	int,	bigint,	int # type
 % 2,	3,	4,	3 # length
-[ 25,	NULL,	NULL,	243	]
 [ 8,	NULL,	NULL,	153	]
 [ 18,	NULL,	NULL,	NULL	]
+[ 25,	NULL,	NULL,	243	]
 [ 0,	NULL,	NULL,	104	]
 [ 2,	NULL,	1226,	121	]
 [ 0,	109,	1067,	107	]
@@ -63245,12 +63245,12 @@ Ready.
 % 4,	1,	2,	4,	3,	3 # length
 [ NULL,	0,	NULL,	1580,	555,	159	]
 [ NULL,	0,	NULL,	1670,	555,	168	]
-[ 2264,	0,	-1,	458,	555,	229	]
 [ 1964,	0,	-1,	398,	555,	199	]
-[ 1371,	0,	1,	1390,	111,	138	]
-[ 1828,	0,	1,	364,	333,	182	]
+[ 2264,	0,	-1,	458,	555,	229	]
 [ 1325,	0,	1,	1300,	444,	131	]
+[ 1371,	0,	1,	1390,	111,	138	]
 [ 1411,	0,	1,	1430,	111,	142	]
+[ 1828,	0,	1,	364,	333,	182	]
 #SELECT a,
 #       CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
 #        WHEN a<b+3 THEN 333 ELSE 444 END,
@@ -65623,9 +65623,9 @@ Ready.
 [ 247,	490,	111	]
 [ 192,	382,	222	]
 [ 222,	440,	222	]
+[ NULL,	1510,	333	]
 [ NULL,	1580,	333	]
 [ NULL,	1670,	333	]
-[ NULL,	1510,	333	]
 [ 107,	1050,	333	]
 [ 132,	1300,	333	]
 [ 182,	364,	333	]
@@ -71150,8 +71150,8 @@ Ready.
 % bigint,	bigint,	int,	bigint,	bigint,	int # type
 % 4,	4,	3,	4,	2,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	0,	104	]
-[ 402,	NULL,	NULL,	NULL,	0,	201	]
 [ NULL,	NULL,	NULL,	NULL,	0,	115	]
+[ 402,	NULL,	NULL,	NULL,	0,	201	]
 [ 1050,	1612,	105,	635,	0,	107	]
 [ 1120,	NULL,	112,	NULL,	1,	NULL	]
 [ 1240,	NULL,	124,	738,	2,	121	]
@@ -75792,9 +75792,9 @@ Ready.
 % L6,	L14,	L20,	L22,	L24 # name
 % bigint,	bigint,	bigint,	smallint,	bigint # type
 % 4,	2,	4,	3,	3 # length
-[ NULL,	0,	NULL,	444,	NULL	]
-[ NULL,	0,	NULL,	444,	NULL	]
 [ NULL,	18,	NULL,	444,	NULL	]
+[ NULL,	0,	NULL,	444,	NULL	]
+[ NULL,	0,	NULL,	444,	NULL	]
 [ 358,	13,	NULL,	444,	NULL	]
 [ 402,	0,	NULL,	444,	NULL	]
 [ 486,	25,	NULL,	444,	NULL	]
@@ -78816,9 +78816,9 @@ Ready.
 % L2,	L7,	L12,	L14,	c,	L17 # name
 % smallint,	bigint,	bigint,	bigint,	int,	bigint # type
 % 3,	1,	4,	4,	3,	3 # length
-[ 555,	0,	NULL,	NULL,	NULL,	NULL	]
 [ 555,	0,	NULL,	NULL,	113,	NULL	]
 [ 333,	0,	NULL,	NULL,	119,	NULL	]
+[ 555,	0,	NULL,	NULL,	NULL,	NULL	]
 [ 333,	0,	1067,	635,	106,	107	]
 [ 333,	0,	1272,	760,	125,	127	]
 [ 444,	0,	1325,	793,	134,	132	]
@@ -78947,8 +78947,8 @@ Ready.
 % smallint,	bigint,	bigint,	bigint,	int,	bigint # type
 % 3,	1,	4,	4,	3,	3 # length
 [ 333,	0,	NULL,	NULL,	119,	NULL	]
-[ 555,	0,	NULL,	NULL,	NULL,	NULL	]
 [ 555,	0,	NULL,	NULL,	113,	NULL	]
+[ 555,	0,	NULL,	NULL,	NULL,	NULL	]
 [ 333,	0,	1067,	635,	106,	107	]
 [ 333,	0,	1272,	760,	125,	127	]
 [ 444,	0,	1325,	793,	134,	132	]
@@ -82235,8 +82235,8 @@ Ready.
 % bigint,	bigint,	bigint,	int # type
 % 2,	2,	4,	3 # length
 [ NULL,	0,	NULL,	104	]
-[ -1,	0,	NULL,	201	]
 [ -1,	0,	NULL,	115	]
+[ -1,	0,	NULL,	201	]
 [ -1,	0,	635,	107	]
 [ 4,	1,	NULL,	NULL	]
 [ NULL,	2,	738,	121	]
@@ -84202,31 +84202,31 @@ Ready.
 [ 111,	136,	1,	827,	0	]
 [ 111,	140,	-4,	851,	0	]
 [ 222,	203,	-1,	NULL,	0	]
-[ 222,	NULL,	NULL,	1455,	0	]
 [ 222,	212,	2,	1277,	0	]
-[ 333,	116,	-1,	NULL,	0	]
-[ 333,	183,	3,	1096,	0	]
-[ 333,	164,	2,	966,	0	]
-[ 333,	217,	-2,	1297,	0	]
-[ 333,	122,	NULL,	738,	0	]
+[ 222,	NULL,	NULL,	1455,	0	]
 [ 333,	108,	-1,	635,	0	]
-[ 444,	248,	2,	1484,	0	]
+[ 333,	116,	-1,	NULL,	0	]
+[ 333,	122,	NULL,	738,	0	]
+[ 333,	164,	2,	966,	0	]
+[ 333,	183,	3,	1096,	0	]
+[ 333,	217,	-2,	1297,	0	]
 [ 444,	133,	1,	793,	0	]
 [ 444,	185,	-4,	1121,	0	]
 [ 444,	190,	-2,	1158,	0	]
 [ 444,	222,	1,	1338,	0	]
-[ 555,	238,	1,	NULL,	0	]
-[ 555,	196,	-1,	1180,	0	]
-[ 555,	NULL,	NULL,	1000,	0	]
-[ 555,	207,	NULL,	NULL,	0	]
-[ 555,	NULL,	NULL,	940,	0	]
-[ 555,	NULL,	NULL,	905,	0	]
+[ 444,	248,	2,	1484,	0	]
 [ 555,	101,	NULL,	NULL,	0	]
+[ 555,	NULL,	NULL,	880,	0	]
+[ 555,	NULL,	NULL,	905,	0	]
+[ 555,	NULL,	NULL,	940,	0	]
+[ 555,	NULL,	NULL,	1000,	0	]
+[ 555,	171,	-2,	1030,	0	]
+[ 555,	NULL,	NULL,	1057,	0	]
+[ 555,	196,	-1,	1180,	0	]
+[ 555,	207,	NULL,	NULL,	0	]
 [ 555,	226,	-1,	1360,	0	]
 [ 555,	233,	3,	1391,	0	]
-[ 555,	NULL,	NULL,	1057,	0	]
-[ 555,	171,	-2,	1030,	0	]
-[ 555,	NULL,	NULL,	880,	0	]
+[ 555,	238,	1,	NULL,	0	]
 #SELECT CASE a+1 WHEN b THEN 111 WHEN c THEN 222
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END,
 #       d,
@@ -85440,20 +85440,20 @@ Ready.
 % smallint,	bigint,	bigint,	bigint,	bigint,	smallint # type
 % 3,	4,	1,	3,	2,	3 # length
 [ 444,	966,	0,	162,	-3,	333	]
-[ 333,	1391,	0,	232,	-2,	555	]
 [ 333,	635,	0,	107,	-2,	333	]
-[ 111,	1484,	0,	247,	-1,	444	]
+[ 333,	1391,	0,	232,	-2,	555	]
 [ 444,	NULL,	0,	NULL,	-1,	555	]
-[ 333,	1096,	0,	182,	1,	333	]
-[ 222,	827,	0,	137,	1,	111	]
-[ 444,	1030,	0,	172,	1,	555	]
+[ 111,	1484,	0,	247,	-1,	444	]
 [ 222,	738,	0,	NULL,	1,	333	]
-[ 444,	NULL,	0,	NULL,	1,	555	]
 [ 333,	793,	0,	132,	1,	444	]
+[ 222,	827,	0,	137,	1,	111	]
 [ 222,	851,	0,	142,	1,	111	]
+[ 444,	1030,	0,	172,	1,	555	]
+[ 333,	1096,	0,	182,	1,	333	]
+[ 444,	NULL,	0,	NULL,	1,	555	]
 [ 333,	1121,	0,	187,	2,	444	]
-[ 222,	1338,	0,	222,	2,	444	]
 [ 333,	1277,	0,	212,	2,	222	]
+[ 222,	1338,	0,	222,	2,	444	]
 #SELECT a+b*2+c*3+d*4+e*5,
 #       (a+b+c+d+e)/5,
 #       abs(b-c),
@@ -90218,9 +90218,9 @@ Ready.
 % L5,	L7,	L16,	c,	L21 # name
 % bigint,	bigint,	bigint,	int,	bigint # type
 % 1,	2,	4,	3,	4 # length
-[ 0,	-2,	NULL,	208,	NULL	]
-[ 0,	NULL,	NULL,	119,	NULL	]
 [ 0,	NULL,	NULL,	102,	NULL	]
+[ 0,	NULL,	NULL,	119,	NULL	]
+[ 0,	-2,	NULL,	208,	NULL	]
 [ 0,	-1,	1120,	113,	NULL	]
 [ 0,	NULL,	2360,	NULL,	NULL	]
 [ 0,	1,	1240,	123,	738	]
@@ -91922,10 +91922,10 @@ Ready.
 [ 1,	NULL,	NULL,	NULL,	NULL,	555,	0	]
 [ 1,	NULL,	206,	NULL,	NULL,	555,	0	]
 [ 1,	-3,	124,	NULL,	738,	333,	0	]
-[ 2,	-3,	223,	1,	1338,	444,	0	]
 [ 3,	-3,	194,	-2,	1158,	444,	0	]
-[ 1,	-1,	143,	-4,	851,	111,	0	]
+[ 2,	-3,	223,	1,	1338,	444,	0	]
 [ 1,	-1,	139,	1,	827,	111,	0	]
+[ 1,	-1,	143,	-4,	851,	111,	0	]
 [ 1,	1,	181,	3,	1096,	333,	0	]
 [ 1,	1,	130,	1,	793,	444,	0	]
 [ 2,	2,	211,	2,	1277,	222,	0	]
@@ -92173,16 +92173,16 @@ Ready.
 % int,	bigint,	smallint,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	2,	2,	4,	3 # length
 [ 239,	3,	444,	24,	NULL,	NULL,	NULL	]
-[ 201,	NULL,	444,	0,	NULL,	NULL,	202	]
 [ 104,	NULL,	444,	0,	NULL,	NULL,	102	]
 [ 115,	NULL,	444,	0,	NULL,	NULL,	119	]
+[ 201,	NULL,	444,	0,	NULL,	NULL,	202	]
 [ 131,	1,	333,	4,	-4,	1985,	134	]
 [ 243,	3,	444,	25,	-4,	NULL,	244	]
-[ 213,	2,	333,	19,	-3,	3175,	214	]
 [ 182,	1,	333,	14,	-3,	2728,	184	]
-[ NULL,	NULL,	444,	18,	-2,	NULL,	208	]
+[ 213,	2,	333,	19,	-3,	3175,	214	]
 [ 149,	4,	444,	7,	-2,	NULL,	147	]
 [ 174,	4,	444,	12,	-2,	2579,	172	]
+[ NULL,	NULL,	444,	18,	-2,	NULL,	208	]
 [ 220,	-3,	222,	21,	-1,	3331,	224	]
 [ 188,	2,	333,	15,	-1,	2806,	187	]
 [ 107,	2,	333,	0,	-1,	1612,	106	]
@@ -92191,16 +92191,16 @@ Ready.
 [ 179,	4,	444,	13,	-1,	NULL,	176	]
 [ 121,	-3,	222,	2,	1,	NULL,	123	]
 [ 191,	-3,	222,	16,	1,	2878,	193	]
+[ 153,	2,	333,	8,	1,	NULL,	150	]
 [ 168,	1,	333,	11,	1,	NULL,	166	]
 [ 234,	2,	333,	23,	1,	3473,	231	]
-[ 153,	2,	333,	8,	1,	NULL,	150	]
 [ 245,	-4,	111,	26,	2,	3706,	247	]
-[ 142,	-1,	222,	6,	2,	2131,	141	]
 [ 138,	-1,	222,	5,	2,	2046,	137	]
+[ 142,	-1,	222,	6,	2,	2131,	141	]
 [ 216,	-2,	222,	20,	3,	3260,	215	]
-[ 229,	1,	333,	22,	3,	3399,	225	]
-[ 199,	1,	333,	17,	3,	2949,	195	]
 [ 159,	1,	333,	9,	3,	NULL,	155	]
+[ 199,	1,	333,	17,	3,	2949,	195	]
+[ 229,	1,	333,	22,	3,	3399,	225	]
 [ 127,	-2,	222,	3,	4,	1902,	125	]
 #SELECT abs(b-c)
 #  FROM t1
