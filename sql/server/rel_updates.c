@@ -969,7 +969,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				dlist_append_symbol(sql->sa, selection, a);
 			}
 		       
-			sym = newSelectNode(sql->sa, 0, selection, NULL, symbol_create_list(sql->sa, SQL_FROM, from_list), opt_where, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+			sym = newSelectNode(sql->sa, 0, selection, NULL, symbol_create_list(sql->sa, SQL_FROM, from_list), opt_where, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 			sq = rel_selects(sql, sym);
 			if (sq)
 				sq = rel_optimizer(sql, sq, 0);

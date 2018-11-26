@@ -220,6 +220,7 @@ int yydebug=1;
 	between_predicate
 	comparison_predicate
 	opt_from_clause
+	opt_window_clause
 	existence_test
 	in_predicate
 	insert_stmt
@@ -322,15 +323,15 @@ int yydebug=1;
 	if_opt_else
 	func_data_type
 	with_list_element
+	window_definition
 	window_function
 	window_function_type
 	window_partition_clause
 	window_order_clause
 	window_frame_clause
+	window_bound
 	window_frame_start
-	window_frame_end
-	window_frame_preceding
-	window_frame_following
+	window_following_bound
 	XML_value_function
 	XML_comment
   	XML_concatenation
@@ -410,6 +411,7 @@ int yydebug=1;
 	XML_PI_target
 	function_body
 	opt_uescape
+	window_ident_clause
 
 %type <l>
 	passwd_schema
@@ -503,6 +505,7 @@ int yydebug=1;
 	forest_element_list
 	forest_element
 	XML_value_expression_list
+	window_definition_list
 	window_frame_extent
 	window_frame_between
 	routine_designator
@@ -598,7 +601,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT UIDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
+	IDENT UIDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
 	USING 
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -696,7 +699,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token INDEX REPLACE
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
-%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED
+%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW
 
 %token X_BODY 
 %%
@@ -3409,7 +3412,8 @@ simple_select:
 		$4->h->next->data.sym,
 		$4->h->next->next->data.sym,
 		$4->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, NULL, NULL,
+		$4->h->next->next->next->next->data.sym);
 	}
     ;
 
@@ -3420,7 +3424,8 @@ select_statement_single_row:
 		$6->h->next->data.sym,
 		$6->h->next->next->data.sym,
 		$6->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, NULL, NULL,
+		$6->h->next->next->next->next->data.sym);
 	}
     ;
 
@@ -3445,7 +3450,7 @@ select_no_parens_orderby:
 				$$ = newSelectNode( 
 					SA, 0, 
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5, NULL);
 			}
 	  	} else {
 			yyerror(m, "missing SELECT operator");
@@ -3516,13 +3521,29 @@ selection:
  ;
 
 table_exp:
-    opt_from_clause opt_where_clause opt_group_by_clause opt_having_clause
+    opt_from_clause opt_window_clause opt_where_clause opt_group_by_clause opt_having_clause
 
 	{ $$ = L();
 	  append_symbol($$, $1);
-	  append_symbol($$, $2);
 	  append_symbol($$, $3);
-	  append_symbol($$, $4); }
+	  append_symbol($$, $4);
+	  append_symbol($$, $5);
+	  append_symbol($$, $2); }
+ ;
+
+window_definition:
+    ident AS '(' window_specification ')' { dlist *l = L(); append_string(l, $1); append_list(l, $4);
+                                            $$ = _symbol_create_list(SQL_NAME, l); }
+ ;
+
+window_definition_list:
+    window_definition                            { $$ = append_symbol(L(), $1); }
+ |  window_definition_list ',' window_definition { $$ = append_symbol($1, $3); }
+ ;
+
+opt_window_clause:
+    /* empty */                   { $$ = NULL; }
+ |  WINDOW window_definition_list { $$ = _symbol_create_list( SQL_WINDOW, $2); }
  ;
 
 opt_from_clause:
@@ -4201,81 +4222,35 @@ param:
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); 
 	}
 
-/*
-<window function> ::= <window function type> OVER <window name or specification>
-
-<window function type> ::=
-		<rank function type> <left paren> <right paren>
-	|	ROW_NUMBER <left paren> <right paren>
-	|	<aggregate function>
-
-<rank function type> ::= RANK | DENSE_RANK | PERCENT_RANK | CUME_DIST
-
-<window name or specification> ::= <window name> | <in-line window specification>
-
-<in-line window specification> ::= <window specification>
-
-
-<window specification> ::= <left paren> <window specification details> <right paren>
-
-<window specification details> ::=
-                [ <existing window name> ] [ <window partition clause> ] [ <window order clause> ] [ <window frame clause> ]
-
-<existing window name> ::= <window name>
-
-<window partition clause> ::= PARTITION BY <window partition column reference list>
-
-<window partition column reference list> ::= <window partition column reference> [ { <comma> <window partition column reference> }... ]
-
-<window partition column reference> ::= <column reference> [ <collate clause> ]
-
-<window order clause> ::= ORDER BY <sort specification list>
-
-<window frame clause> ::= <window frame units> <window frame extent> [ <window frame exclusion> ]
-
-<window frame units> ::= ROWS | RANGE
-
-<window frame extent> ::= <window frame start> | <window frame between>
-
-<window frame start> ::= UNBOUNDED PRECEDING | <window frame preceding> | CURRENT ROW
-
-<window frame preceding> ::= <unsigned value specification> PRECEDING
-
-<window frame between> ::= BETWEEN <window frame bound 1> AND <window frame bound 2>
-
-<window frame bound 1> ::= <window frame bound>
-
-<window frame bound 2> ::= <window frame bound>
-
-<window frame bound> ::=
-                <window frame start>
-        |       UNBOUNDED FOLLOWING
-        |       <window frame following>
-
-<window frame following> ::= <unsigned value specification> FOLLOWING
-
-<window frame exclusion> ::=
-                EXCLUDE CURRENT ROW
-        |       EXCLUDE GROUP
-        |       EXCLUDE TIES
-        |       EXCLUDE NO OTHERS
-
-*/
-
-window_function: 
+window_function:
 	window_function_type OVER '(' window_specification ')'
-	{ $$ = _symbol_create_list( SQL_RANK, 
-		append_list(append_symbol(L(), $1), $4)); }
+	{ $$ = _symbol_create_list( SQL_RANK, append_list(append_symbol(L(), $1), $4)); }
+  | window_function_type OVER ident
+	{ $$ = _symbol_create_list( SQL_RANK, append_string(append_symbol(L(), $1), $3)); }
   ;
 
 window_function_type:
-	qrank '(' ')' 	{ $$ = _symbol_create_list( SQL_RANK, $1 ); }
+	qrank '(' ')'
+	{ dlist *l = L();
+	  append_list(l, $1);
+	  append_list(l, NULL);
+	  $$ = _symbol_create_list( SQL_RANK, l ); }
+  | qrank '(' scalar_exp_list ')'
+	{ dlist *l = L();
+	  append_list(l, $1);
+	  append_list(l, $3);
+	  $$ = _symbol_create_list( SQL_RANK, l ); }
   |	aggr_ref
   ;
 
 window_specification:
-	window_partition_clause window_order_clause window_frame_clause
-	{ $$ = append_symbol(append_symbol(append_symbol(L(), $1), $2), $3); }
+	window_ident_clause window_partition_clause window_order_clause window_frame_clause
+	{ $$ = append_symbol(append_symbol(append_symbol(append_string(L(), $1), $2), $3), $4); }
+  ;
+
+window_ident_clause:
+	/* empty */ { $$ = NULL; }
+  |	ident       { $$ = $1; }
   ;
 
 window_partition_clause:
@@ -4299,46 +4274,55 @@ window_frame_clause:
 window_frame_units:
 	ROWS		{ $$ = FRAME_ROWS; }
   |	RANGE		{ $$ = FRAME_RANGE; }
+  |	GROUPS		{ $$ = FRAME_GROUPS; }
   ;
 
 window_frame_extent:
-	window_frame_start	{ $$ = append_symbol(append_symbol(L(), $1), _symbol_create_int(SQL_FRAME, -1)); }
-  |	window_frame_between	{ $$ = $1; }
+	window_frame_start    { dlist *l = L(); append_symbol(l, $1);
+                            symbol *s = _symbol_create_int( SQL_FOLLOWING, CURRENT_ROW_BOUND);
+                            dlist *l2 = append_symbol(L(), s);
+                            symbol *sym = _symbol_create_list( SQL_CURRENT_ROW, l2);
+                            append_symbol(l, sym);
+                            $$ = l; }
+  | window_frame_between  { $$ = $1; }
   ;
 
 window_frame_start:
-	UNBOUNDED PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME, -1); }
-  |	window_frame_preceding  { $$ = $1; }
-  |	CURRENT ROW		{ $$ = _symbol_create_int(SQL_FRAME, 0); }
+	UNBOUNDED PRECEDING   { symbol *s = _symbol_create_int( SQL_PRECEDING, UNBOUNDED_PRECEDING_BOUND);
+                            dlist *l2 = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_PRECEDING, l2); }
+  | simple_atom PRECEDING { dlist *l2 = append_symbol(L(), $1);
+                            $$ = _symbol_create_list( SQL_PRECEDING, l2); }
+  | CURRENT ROW           { symbol *s = _symbol_create_int( SQL_PRECEDING, CURRENT_ROW_BOUND);
+                            dlist *l = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_CURRENT_ROW, l); }
   ;
 
-window_frame_preceding:
-	value_exp PRECEDING	{ $$ = $1; }
+window_bound:
+	window_frame_start
+  | window_following_bound
   ;
-	
+
 window_frame_between:
-	BETWEEN window_frame_start AND window_frame_end
-				{ $$ = append_symbol(append_symbol(L(), $2), $4); }
+	BETWEEN window_bound AND window_bound { $$ = append_symbol(append_symbol(L(), $2), $4); }
   ;
 
-window_frame_end:
-	UNBOUNDED FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME, -1); }
-  | 	window_frame_following	{ $$ = $1; }
-  |	CURRENT ROW		{ $$ = _symbol_create_int(SQL_FRAME, 0); }
-  ;
-
-window_frame_following:
-	value_exp FOLLOWING	{ $$ = $1; }
+window_following_bound:
+	UNBOUNDED FOLLOWING   { symbol *s = _symbol_create_int( SQL_FOLLOWING, UNBOUNDED_FOLLOWING_BOUND);
+                            dlist *l2 = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
+  | simple_atom FOLLOWING { dlist *l2 = append_symbol(L(), $1);
+                            $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
   ;
 
 window_frame_exclusion:
- 	/* empty */		{ $$ = EXCLUDE_NONE; }
- |      EXCLUDE CURRENT ROW	{ $$ = EXCLUDE_CURRENT_ROW; }
- |      EXCLUDE sqlGROUP	{ $$ = EXCLUDE_GROUP; }
- |      EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
- |      EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NO_OTHERS; }
- ;
-	
+	/* empty */			{ $$ = EXCLUDE_NONE; }
+  |	EXCLUDE CURRENT ROW	{ $$ = EXCLUDE_CURRENT_ROW; }
+  |	EXCLUDE sqlGROUP	{ $$ = EXCLUDE_GROUP; }
+  |	EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
+  |	EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NONE; }
+  ;
+
 var_ref:
 	AT ident 	{ $$ = _symbol_create( SQL_NAME, $2 ); }
  ;
@@ -6677,6 +6661,10 @@ char *token2string(int token)
 	SQL(RENAME_SCHEMA);
 	SQL(RENAME_TABLE);
 	SQL(RENAME_COLUMN);
+	SQL(PRECEDING);
+	SQL(FOLLOWING);
+	SQL(CURRENT_ROW);
+	SQL(WINDOW);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

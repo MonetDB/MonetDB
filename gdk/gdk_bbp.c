@@ -2392,7 +2392,11 @@ incref(bat i, bool logical, bool lock)
 		 * to the correct values */
 		assert(!logical);
 		if (tp) {
-			assert(pb != NULL);
+			BAT *pb;
+			incref(tp, 0, lock);
+			pb = getBBPdescriptor(tp, lock);
+			if (!pb) 
+				return 0;
 			b->theap.base = pb->theap.base + (size_t) b->theap.base;
 		}
 		/* done loading, release descriptor */

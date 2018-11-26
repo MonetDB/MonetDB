@@ -1,0 +1,183 @@
+stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
+
+
+# 13:13:17 >  
+# 13:13:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37694" "--set" "mapi_usock=/var/tmp/mtest-1389/.s.monetdb.37694" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-analytics/BUILD/var/MonetDB/mTests_sql_test_analytics" "--set" "embedded_c=true"
+# 13:13:17 >  
+
+# MonetDB 5 server v11.32.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_analytics', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:37694/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1389/.s.monetdb.37694
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:13:17 >  
+# 13:13:17 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1389" "--port=37694"
+# 13:13:17 >  
+
+#create table analytics (aa int, bb int);
+#insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
+[ 10	]
+#select cast(sum(1) over () as bigint), rank() over (), nth_value(1, 1) over ();
+% .L6,	.L11,	.L15 # table_name
+% L6,	L11,	L15 # name
+% bigint,	int,	tinyint # type
+% 1,	1,	1 # length
+[ 1,	1,	1	]
+#select avg(sum(aa) over ()) from analytics;
+% sys.L10 # table_name
+% L10 # name
+% double # type
+% 24 # length
+[ 46	]
+#select cast(sum(1) * count(*) over () as bigint);
+% .L7 # table_name
+% L7 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#select cast(sum(aa) * count(*) over () as bigint) from analytics;
+% sys.L7 # table_name
+% L7 # name
+% bigint # type
+% 2 # length
+[ 46	]
+#select cast(aa * count(1) over () as bigint) from analytics;
+% sys.L6 # table_name
+% L6 # name
+% bigint # type
+% 3 # length
+[ 150	]
+[ 30	]
+[ 20	]
+[ 50	]
+[ NULL	]
+[ 30	]
+[ 40	]
+[ 60	]
+[ 80	]
+[ NULL	]
+#select cast(sum(aa) * count(1) over () as bigint) from analytics;
+% sys.L7 # table_name
+% L7 # name
+% bigint # type
+% 2 # length
+[ 46	]
+#select cast(sum(aa) * count(1 + aa) / avg(1) over () as bigint) from analytics;
+% sys.L10 # table_name
+% L10 # name
+% bigint # type
+% 3 # length
+[ 368	]
+#select avg(sum(aa)) over () from analytics;
+% sys.L6 # table_name
+% L6 # name
+% double # type
+% 24 # length
+[ 46	]
+#select sum(cast(aa as double)) over (rows unbounded preceding) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% double # type
+% 24 # length
+[ 15	]
+[ 18	]
+[ 20	]
+[ 25	]
+[ 25	]
+[ 28	]
+[ 32	]
+[ 38	]
+[ 46	]
+[ 46	]
+#select sum(cast(aa as double)) over (range unbounded preceding) from analytics;
+% sys.L5 # table_name
+% L5 # name
+% double # type
+% 24 # length
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+[ 46	]
+#select avg(avg(aa)) over (rows unbounded preceding) from analytics;
+% sys.L6 # table_name
+% L6 # name
+% double # type
+% 24 # length
+[ 5.75	]
+#select avg(avg(aa)) over (range unbounded preceding) from analytics;
+% sys.L6 # table_name
+% L6 # name
+% double # type
+% 24 # length
+[ 5.75	]
+#select avg(sum(aa)) over (rows unbounded preceding) from analytics;
+% sys.L6 # table_name
+% L6 # name
+% double # type
+% 24 # length
+[ 46	]
+#select avg(sum(aa)) over (range unbounded preceding) from analytics;
+% sys.L6 # table_name
+% L6 # name
+% double # type
+% 24 # length
+[ 46	]
+#select avg(sum(aa)) over () from analytics group by aa;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 6.571428571	]
+[ 6.571428571	]
+[ 6.571428571	]
+[ 6.571428571	]
+[ 6.571428571	]
+[ 6.571428571	]
+[ 6.571428571	]
+[ 6.571428571	]
+#select avg(sum(aa)) over (partition by bb) from analytics group by bb;
+% sys.L4 # table_name
+% L4 # name
+% double # type
+% 24 # length
+[ 9	]
+[ 11	]
+[ 26	]
+[ NULL	]
+#select cast(sum(aa) * 100 / sum(sum(aa)) over () as bigint) from analytics;
+% sys.L10 # table_name
+% L10 # name
+% bigint # type
+% 3 # length
+[ 100	]
+#select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics group by bb;
+% sys.L7 # table_name
+% L7 # name
+% bigint # type
+% 3 # length
+[ 100	]
+[ 100	]
+[ 100	]
+[ NULL	]
+#drop table analytics;
+
+# 13:13:17 >  
+# 13:13:17 >  "Done."
+# 13:13:17 >  
+

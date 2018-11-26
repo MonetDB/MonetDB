@@ -94,14 +94,31 @@
 #define RD_UPD_VAL 3
 #define QUICK  4
 
-#define FRAME_ROWS  0 
-#define FRAME_RANGE 1
+/* the following list of macros are used by rel_rankop function */
+#define UNBOUNDED_PRECEDING_BOUND 0
+#define UNBOUNDED_FOLLOWING_BOUND 1
+#define CURRENT_ROW_BOUND         2
 
-#define EXCLUDE_NONE 0
-#define EXCLUDE_CURRENT_ROW 1
-#define EXCLUDE_GROUP 2
-#define EXCLUDE_TIES 3
-#define EXCLUDE_NO_OTHERS 4
+#define FRAME_ROWS  0 		/* number of rows (preceding/following) */
+#define FRAME_RANGE 1		/* logical range (based on the ordering column).
+				   Example:
+				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING  
+				             AND INTERVAL '1' MONTH FOLLOWING */
+#define FRAME_GROUPS 2
+#define FRAME_ALL 3 /* special case of FRAME_RANGE, cover the entire partition */
+
+/* the following list of macros are used by SQLwindow_bound function */
+#define BOUND_FIRST_HALF_PRECEDING  0
+#define BOUND_FIRST_HALF_FOLLOWING  1
+#define BOUND_SECOND_HALF_PRECEDING 2
+#define BOUND_SECOND_HALF_FOLLOWING 3
+#define CURRENT_ROW_PRECEDING       4
+#define CURRENT_ROW_FOLLOWING       5
+
+#define EXCLUDE_NONE 0		/* nothing excluded (also the default) */
+#define EXCLUDE_CURRENT_ROW 1	/* exclude the current row */
+#define EXCLUDE_GROUP 2		/* exclude group */
+#define EXCLUDE_TIES 3		/* exclude group but not the current row */
 
 /* The following macros are used in properties field of sql_table */
 #define PARTITION_RANGE       1

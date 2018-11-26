@@ -67,3 +67,4 @@ comment "cast hge to a second_interval and check for overflow";
 
 include sql_decimal_hge;
 include sql_aggr_hge;
+include sql_rank_hge;
