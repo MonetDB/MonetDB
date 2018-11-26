@@ -29,7 +29,7 @@ Ready.
 # 16:53:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27036" "--port=39906"
 # 16:53:27 >  
 
-#set optimizer='sequential_pipe';
+#set optimizer='mosaic_pipe';
 #create table tmp3( i integer, b boolean, f real,t timestamp);
 #insert into tmp3 values
 #(1, true, 0.314,'2014-08-23 11:34:54.000000'),

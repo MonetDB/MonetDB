@@ -1,4 +1,4 @@
-set optimizer='sequential_pipe';
+set optimizer='mosaic_pipe';
 
 explain select * from tmp3;
 select * from tmp3;

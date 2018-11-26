@@ -1,4 +1,4 @@
-set optimizer='sequential_pipe';
+set optimizer='mosaic_pipe';
 
 select * from tmp3RLE;
 

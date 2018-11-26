@@ -29,7 +29,7 @@ Ready.
 # 10:18:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10846" "--port=36017"
 # 10:18:13 >  
 
-#set optimizer='sequential_pipe';
+#set optimizer='mosaic_pipe';
 #select * from tmp3RLE;
 % sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle,	sys.tmp3rle # table_name
 % i,	b,	f,	t # name

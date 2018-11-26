@@ -23,7 +23,7 @@ Ready.
 # 12:53:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21664" "--port=35122"
 # 12:53:32 >  
 
-#set optimizer='sequential_pipe';
+#set optimizer='mosaic_pipe';
 #create table tmpPrefix( i integer);
 #insert into tmpPrefix values (1), (1), (1), (1), (1), (1), (2), (2);
 [ 8	]

@@ -29,7 +29,7 @@ Ready.
 # 16:53:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27036" "--port=39906"
 # 16:53:28 >  
 
-#set optimizer='sequential_pipe';
+#set optimizer='mosaic_pipe';
 #explain select * from tmp3;
 % .explain # table_name
 % mal # name

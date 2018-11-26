@@ -1,4 +1,4 @@
-set optimizer='sequential_pipe';
+set optimizer='mosaic_pipe';
 
 create table tmp3( i integer, b boolean, f real,t timestamp);
 insert into tmp3 values
