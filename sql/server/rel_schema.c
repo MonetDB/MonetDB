@@ -2499,7 +2499,7 @@ rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name, in
 	if (t->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to rename table %s (there are database objects which depend on it)", old_name);
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", old_name);
 	if (!new_name || strcmp(new_name, str_nil) == 0)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
 	if (mvc_bind_table(sql, s, new_name))
@@ -2564,9 +2564,12 @@ rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name,
 	return rel;
 }
 
+extern list *rel_dependencies(mvc *sql, sql_rel *r);
+
 static sql_rel *
 rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, int if_exists)
 {
+	node *n;
 	sql_schema *os, *ns;
 	sql_table *ot, *nt;
 	sql_rel *l, *r, *inserts;
@@ -2589,12 +2592,16 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot set schema of a system table");
 	if (isTempSchema(os) || isTempTable(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
+	if (isView(ot))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
+	if (isMergeTable(ot))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a merge table");
 	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL))
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table %s (there are database objects which depend on it)", tname);
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
 	if (!mvc_schema_privs(sql, ns))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), new_schema);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for '%s' to schema '%s'", stack_get_string(sql, "current_user"), new_schema);
 	if (isTempSchema(ns))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: not possible to change table's schema to temporary");
 	if (mvc_bind_table(sql, ns, tname))
@@ -2602,13 +2609,25 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 
 	if ((nt = mvc_create_table(sql, ns, tname, ot->type, 0, SQL_DECLARED_TABLE, ot->commit_action, -1, ot->properties)) == NULL)
 		return NULL;
-	for (node *cn = ot->columns.set->h; cn; cn = cn->next) {
-		sql_column *col = (sql_column*) cn->data;
-		if (!mvc_create_column(sql, nt, col->base.name, &col->type))
-			return NULL;
-	}
-	l = rel_table(sql, DDL_CREATE_TABLE, new_schema, nt, 0);
 
+	for (n = ot->columns.set->h; n; n = n->next) {
+		sql_column *oc = (sql_column*) n->data;
+		if (!mvc_copy_column(sql, nt, oc))
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s_%s_%s conflicts", ns->base.name, nt->base.name, oc->base.name);
+	}
+
+	if (ot->idxs.set)
+		for (n = ot->idxs.set->h; n; n = n->next)
+			mvc_copy_idx(sql, nt, (sql_idx*) n->data);
+
+	if (ot->keys.set)
+		for (n = ot->keys.set->h; n; n = n->next)
+			mvc_copy_key(sql, nt, (sql_key*) n->data);
+
+	if (ot->members.set || ot->triggers.set)
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
+
+	l = rel_table(sql, DDL_CREATE_TABLE, new_schema, nt, 0);
 	inserts = rel_basetable(sql, ot, tname);
 	inserts = rel_project(sql->sa, inserts, rel_projections(sql, inserts, NULL, 1, 0));
 	l = rel_insert(sql, l, inserts);

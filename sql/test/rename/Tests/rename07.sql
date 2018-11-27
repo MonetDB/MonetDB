@@ -24,6 +24,5 @@ rollback;
 select "ss"."name" from "sys"."tables" "tt" inner join "sys"."schemas" "ss" on "tt"."schema_id" = "ss"."id" where "tt"."name" = 'atable';
 select "a" from "newtables"."atable" where false;
 
-drop table "newtables"."atable";
-drop schema "oldtables";
-drop schema "newtables";
+drop schema "oldtables" cascade;
+drop schema "newtables" cascade;

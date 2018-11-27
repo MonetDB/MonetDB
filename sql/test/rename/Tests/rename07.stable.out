@@ -125,9 +125,8 @@ Ready.
 % a # name
 % int # type
 % 1 # length
-#drop table "newtables"."atable";
-#drop schema "oldtables";
-#drop schema "newtables";
+#drop schema "oldtables" cascade;
+#drop schema "newtables" cascade;
 
 # 17:01:59 >  
 # 17:01:59 >  "Done."
