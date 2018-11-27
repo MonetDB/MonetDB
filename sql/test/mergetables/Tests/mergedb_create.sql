@@ -1,21 +1,21 @@
 -- create a small database with Partitioned data
 -- used in sqlsmith testing
 CREATE TABLE R1 ( x integer primary key, y integer, z string);
-COPY 4 RECORDS INTO R1 FROM stdin USING DELIMITERS ' ','\n';
+COPY 4 RECORDS INTO R1 FROM stdin USING DELIMITERS ' ',E'\n';
 0 0 hello
 1 0 hello
 2 1 world 
 3 1 world 
 
 CREATE TABLE R2 ( x integer primary key, y integer, z string);
-COPY 4 RECORDS INTO R2 FROM stdin USING DELIMITERS ' ','\n';
+COPY 4 RECORDS INTO R2 FROM stdin USING DELIMITERS ' ',E'\n';
 5 0 hello
 6 0 hello
 7 1 world 
 8 1 world 
 
 CREATE TABLE R3 ( x integer primary key, y integer, z string);
-COPY 4 RECORDS INTO R3 FROM stdin USING DELIMITERS ' ','\n';
+COPY 4 RECORDS INTO R3 FROM stdin USING DELIMITERS ' ',E'\n';
 10 0 hello
 11 0 hello
 12 1 world 
@@ -29,7 +29,7 @@ ALTER TABLE R ADD TABLE R3;
 SELECT * FROM R;
 
 CREATE TABLE S1 ( x integer primary key, y integer, z string);
-COPY 7 RECORDS INTO S1 FROM stdin USING DELIMITERS ' ','\n';
+COPY 7 RECORDS INTO S1 FROM stdin USING DELIMITERS ' ',E'\n';
 0 0 hello
 1 0 hello
 2 1 world 
@@ -39,7 +39,7 @@ COPY 7 RECORDS INTO S1 FROM stdin USING DELIMITERS ' ','\n';
 6 0 hello
 
 CREATE TABLE S2 ( x integer primary key, y integer, z string);
-COPY 7 RECORDS INTO S2 FROM stdin USING DELIMITERS ' ','\n';
+COPY 7 RECORDS INTO S2 FROM stdin USING DELIMITERS ' ',E'\n';
 7 1 world 
 8 1 world 
 9 1 bye 

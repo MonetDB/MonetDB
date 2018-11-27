@@ -107,14 +107,18 @@ scanner_init_keywords(void)
 	failed += keywords_insert("PROD", AGGR);
 	failed += keywords_insert("COUNT", AGGR);
 
-	failed += keywords_insert("LAG", AGGR2);
-	failed += keywords_insert("LEAD", AGGR2);
-
 	failed += keywords_insert("RANK", RANK);
 	failed += keywords_insert("DENSE_RANK", RANK);
 	failed += keywords_insert("PERCENT_RANK", RANK);
 	failed += keywords_insert("CUME_DIST", RANK);
 	failed += keywords_insert("ROW_NUMBER", RANK);
+	failed += keywords_insert("NTILE", RANK);
+	failed += keywords_insert("LAG", RANK);
+	failed += keywords_insert("LEAD", RANK);
+	failed += keywords_insert("FIRST_VALUE", RANK);
+	failed += keywords_insert("LAST_VALUE", RANK);
+	failed += keywords_insert("NTH_VALUE", RANK);
+
 	failed += keywords_insert("BEST", BEST);
 	failed += keywords_insert("EFFORT", EFFORT);
 
@@ -417,6 +421,8 @@ scanner_init_keywords(void)
 	failed += keywords_insert("EXCLUDE", EXCLUDE);
 	failed += keywords_insert("OTHERS", OTHERS);
 	failed += keywords_insert("TIES", TIES);
+	failed += keywords_insert("GROUPS", GROUPS);
+	failed += keywords_insert("WINDOW", WINDOW);
 
 	/* special SQL/XML keywords */
 	failed += keywords_insert("XMLCOMMENT", XMLCOMMENT);

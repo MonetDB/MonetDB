@@ -5,8 +5,8 @@ select optimizer;
 select def from optimizers() where name = optimizer;
 
 explain copy into ttt from '/tmp/xyz';
-explain copy into ttt from '\tmp/xyz';
-explain copy into ttt from 'a:\tmp/xyz';
+explain copy into ttt from E'\\tmp/xyz';
+explain copy into ttt from E'a:\\tmp/xyz';
 
 declare opt_pipe_name string;
 set opt_pipe_name = ( select optimizer );
@@ -19,6 +19,6 @@ select optimizer;
 
 select def from optimizers() where name = optimizer;
 explain copy into ttt from '/tmp/xyz';
-explain copy into ttt from '\tmp/xyz';
+explain copy into ttt from E'\\tmp/xyz';
 explain copy into ttt from 'Z:/tmp/xyz';
 drop table ttt;

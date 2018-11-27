@@ -4,7 +4,7 @@ column1 VARCHAR(32),
 column2 VARCHAR(32)
 );
 
-COPY 2 RECORDS INTO copy_into_without_schema FROM STDIN USING DELIMITERS ',', '\n';
+COPY 2 RECORDS INTO copy_into_without_schema FROM STDIN USING DELIMITERS ',', E'\n';
 test,test
 test,test
 
@@ -15,7 +15,7 @@ column1 VARCHAR(32),
 column2 VARCHAR(32)
 );
 
-COPY 2 RECORDS INTO abc.copy_into_with_schema FROM STDIN USING DELIMITERS ',', '\n';
+COPY 2 RECORDS INTO abc.copy_into_with_schema FROM STDIN USING DELIMITERS ',', E'\n';
 test,test
 test,test
 

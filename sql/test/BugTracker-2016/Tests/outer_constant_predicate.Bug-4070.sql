@@ -8,7 +8,7 @@ CREATE TABLE CUSTOMER ( C_CUSTKEY     INTEGER NOT NULL,
                              C_COMMENT     VARCHAR(117) NOT NULL,
                              PRIMARY KEY   (C_CUSTKEY));
 
-COPY 1500 RECORDS INTO customer from STDIN USING DELIMITERS '|', '|\n';
+COPY 1500 RECORDS INTO customer from STDIN USING DELIMITERS '|', E'|\n';
 1|Customer#000000001|IVhzIApeRb ot,c,E|15|25-989-741-2988|711.56|BUILDING|to the even, regular platelets. regular, ironic epitaphs nag e|
 2|Customer#000000002|XSTf4,NCwDVaWNe6tEgvwfmRchLXak|13|23-768-687-3665|121.65|AUTOMOBILE|l accounts. blithely ironic theodolites integrate boldly: caref|
 3|Customer#000000003|MG9kdTD2WBHm|1|11-719-748-3364|7498.12|AUTOMOBILE| deposits eat slyly ironic, even instructions. express foxes detect slyly. blithely even accounts abov|
@@ -1514,7 +1514,7 @@ CREATE TABLE orders (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_ordersta
                            PRIMARY KEY      (O_ORDERKEY),
                            FOREIGN KEY (O_CUSTKEY) references CUSTOMER);
 
-COPY 150 RECORDS INTO orders from STDIN USING DELIMITERS '|', '|\n';
+COPY 150 RECORDS INTO orders from STDIN USING DELIMITERS '|', E'|\n';
 1|370|O|172799.49|1996-01-02|5-LOW|Clerk#000000951|0|blithely final dolphins solve-- blithely blithe packages nag blith|
 2|781|O|38426.09|1996-12-01|1-URGENT|Clerk#000000880|0|quickly regular depend|
 3|1234|F|205654.30|1993-10-14|5-LOW|Clerk#000000955|0|deposits alongside of the dependencies are slowly about |

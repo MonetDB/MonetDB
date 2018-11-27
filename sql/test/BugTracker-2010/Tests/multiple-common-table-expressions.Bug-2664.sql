@@ -8,7 +8,7 @@ CREATE TABLE "t2664" (
 	"commit_action" SMALLINT,
 	"readonly"      BOOLEAN
 );
-COPY 30 RECORDS INTO "t2664" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 30 RECORDS INTO "t2664" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 2001	"schemas"	2000	NULL	0	true	0	false
 2006	"types"	2000	NULL	0	true	0	false
 2015	"functions"	2000	NULL	0	true	0	false

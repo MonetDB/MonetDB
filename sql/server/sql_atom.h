@@ -75,6 +75,7 @@ extern lng scales[19];
 
 extern atom* atom_absolute_min(sql_allocator *sa, sql_subtype* tpe);
 extern atom* atom_absolute_max(sql_allocator *sa, sql_subtype* tpe);
+extern atom* atom_zero_value(sql_allocator *sa, sql_subtype* tpe);
 
 #endif /* _SQL_ATOM_H_ */
 

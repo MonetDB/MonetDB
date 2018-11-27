@@ -1,6 +1,29 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Nov 26 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Extended windowing functions catalog with SQL standard semantics.
+  Standard aggregation functions can now be used in windowing
+  functions: (avg,max,min,sum,prod,count). Other windowing specific
+  functions were also implemented: (percent_rank,cume_dist,ntile,
+  lag,lead,first_value,last_value,nth_value).
+- The standard frame specification was implemented for aggregation
+  functions as well as first_value, last_value and nth_value
+  functions. The available frames are rows, range and groups.
+  Bounds can be unbounded (partition limit), the current row, a fixed
+  number of rows (constant), or variable (column as input).
+  (e.g SELECT COUNT(col1) OVER (PARTITION BY col2 ORDER BY col3 RANGE
+  BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM t1;).
+- Added WINDOW keyword which is optionally provided after the FROM
+  clause, with window specifications used in the projection
+  (e.g SELECT SUM(col1) OVER w1, LAST_VALUE(col2) OVER w2 FROM t1
+  WINDOW w1 AS (ROWS BETWEEN 5 PRECEDING AND 0 FOLLOWING),
+  w2 AS (w1);).
+- Our previous partitioning implementation didn’t impose order in the
+  input. With this reexamination, partitioning now imposes ascending
+  order by default, thus pairing with the industry standard
+  implementation.
+
 * Fri Nov 23 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented X'...' style binary string literals.
 - Implemented U&'...' Unicode character string literals and
@@ -15,7 +38,7 @@
   in a future release.
 
 * Thu Nov  8 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Imlemented the NULLS FIRST and NULLS LAST option to ORDER BY.  The
+- Implemented the NULLS FIRST and NULLS LAST option to ORDER BY.  The
   default is NULLS FIRST for ASC(ending) and NULLS LAST for DESC(ending).
 
 * Thu Oct 18 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>

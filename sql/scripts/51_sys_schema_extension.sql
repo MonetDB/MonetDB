@@ -215,6 +215,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('WHEN'),
   ('WHERE'),
   ('WHILE'),
+  ('WINDOW'),
   ('WITH'),
   ('WORK'),
   ('WRITE'),

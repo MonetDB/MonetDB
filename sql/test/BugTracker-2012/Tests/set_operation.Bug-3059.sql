@@ -6,7 +6,7 @@ CREATE TABLE "sys"."r" (
         "v" INTEGER       NOT NULL,
         "r" INTEGER       NOT NULL
 );
-COPY 10 RECORDS INTO "sys"."r" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 10 RECORDS INTO "sys"."r" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0	1	3
 0	2	3
 3	2	2
@@ -23,7 +23,7 @@ CREATE TABLE "sys"."s" (
         "v" INTEGER NOT NULL,
         "r" INTEGER NOT NULL
 );
-COPY 12 RECORDS INTO "sys"."s" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 12 RECORDS INTO "sys"."s" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 2	1	28
 3	1	16
 1	2	100

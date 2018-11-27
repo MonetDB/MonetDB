@@ -264,7 +264,7 @@ dlist_append_type(sql_allocator *sa, dlist *l, sql_subtype *data)
 }
 
 symbol *
-newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample)
+newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *window)
 {
 	SelectNode *sn = SA_NEW(sa, SelectNode);
 	symbol *s = (symbol *) sn;
@@ -284,6 +284,7 @@ newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct d
 		sn->having = having;
 		sn->orderby = orderby;
 		sn->name = name;
+		sn->window = window;
 	}
 	return s;
 }
@@ -389,6 +390,7 @@ SelectNodeCmp(SelectNode *s1, SelectNode *s2)
 			symbol_cmp(s1->groupby, s2->groupby) == 0 &&
 			symbol_cmp(s1->where, s2->where) == 0 &&
 			symbol_cmp(s1->from, s2->from) == 0 &&
+			symbol_cmp(s1->window, s2->window) == 0 &&
 			dlist_cmp(s1->selection, s2->selection) == 0)
 		return 0;
 	return -1;

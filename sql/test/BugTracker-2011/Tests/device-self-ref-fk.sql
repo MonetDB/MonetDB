@@ -5,7 +5,7 @@ CREATE TABLE "device" (
 	"parentdeviceid"  int,
 	CONSTRAINT "device_pk" PRIMARY KEY ("deviceid")
 );
-COPY 2 RECORDS INTO "device" FROM stdin USING DELIMITERS ',','\n','"';
+COPY 2 RECORDS INTO "device" FROM stdin USING DELIMITERS ',',E'\n','"';
 2,NULL
 23,2
 ALTER TABLE "device" ADD CONSTRAINT "device_device_fk" FOREIGN KEY ("parentdeviceid") REFERENCES "device" ("deviceid");
