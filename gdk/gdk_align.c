@@ -176,6 +176,7 @@ BATmaterialize(BAT *b)
 	/* cleanup possible ACC's */
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	MOSdestroy(b);
 	OIDXdestroy(b);
 
 	snprintf(b->theap.filename, sizeof(b->theap.filename), "%s.tail", BBP_physical(b->batCacheid));
@@ -417,6 +418,7 @@ VIEWdestroy(BAT *b)
 	/* remove any leftover private hash structures */
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	MOSdestroy(b);
 	OIDXdestroy(b);
 	VIEWunlink(b);
 

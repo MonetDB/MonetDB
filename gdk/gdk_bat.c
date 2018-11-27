@@ -464,8 +464,8 @@ BATextend(BAT *b, BUN newcap)
 		return GDK_FAIL;
 	HASHdestroy(b);
 	IMPSdestroy(b);
-	OIDXdestroy(b);
 	MOSdestroy(b);
+	OIDXdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -496,6 +496,7 @@ BATclear(BAT *b, bool force)
 	/* kill all search accelerators */
 	HASHdestroy(b);
 	IMPSdestroy(b);
+	MOSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
 
@@ -1050,6 +1051,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
+	MOSdestroy(b);
 	OIDXdestroy(b);
 	if (b->ttype != TYPE_void
 	    && ATOMlinear(b->ttype)
@@ -1157,6 +1159,7 @@ BUNdelete(BAT *b, oid o)
 		}
 	}
 	IMPSdestroy(b);
+	MOSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
 #if 0		/* enable if we have more properties than just min/max */
@@ -1261,6 +1264,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 	}
 	OIDXdestroy(b);
 	IMPSdestroy(b);
+	MOSdestroy(b);
 	if (b->tvarsized && b->ttype) {
 		var_t _d;
 		ptr _ptr;

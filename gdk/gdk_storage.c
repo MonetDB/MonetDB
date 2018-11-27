@@ -873,6 +873,7 @@ BATdelete(BAT *b)
 		b = loaded;
 		HASHdestroy(b);
 		IMPSdestroy(b);
+		MOSdestroy(b);
 		OIDXdestroy(b);
 	}
 	if (b->batCopiedtodisk || (b->theap.storage != STORE_MEM)) {
