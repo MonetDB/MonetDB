@@ -128,7 +128,7 @@ typedef struct MOSAICBLK{
 
 // alignment is focused on mosaichdr size
 #define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),sizeof(struct MOSAICBLK))
-#define MosaicBlkSize  sizeof(MosaicBlk *)
+#define MosaicBlkSize  sizeof(MosaicBlkRec)
 
 
 /* The (de) compression task descriptor */
