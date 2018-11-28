@@ -1057,7 +1057,6 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 
 	/* Now we have found a block which is big enough in block.
 	 * The predecessor of this block is in trail. */
-	trailp = HEAP_index(heap, trail, CHUNK);
 	blockp = HEAP_index(heap, block, CHUNK);
 
 	/* If selected block is bigger than block needed split block
