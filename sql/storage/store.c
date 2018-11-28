@@ -22,11 +22,11 @@
 int catalog_version = 0;
 
 static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
-static int store_oid = 0;
-static int prev_oid = 0;
+static sqlid store_oid = 0;
+static sqlid prev_oid = 0;
 static int nr_sessions = 0;
 static int transactions = 0;
-static int *store_oids = NULL;
+static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
@@ -72,7 +72,7 @@ static int timestamp (void) {
 }
 
 static inline bool
-instore(int id, int maxid)
+instore(sqlid id, sqlid maxid)
 {
 	if (store_oids == NULL)
 		return id < maxid;
@@ -1320,7 +1320,7 @@ next_oid(void)
 	return id;
 }
 
-int
+sqlid
 store_next_oid(void)
 {
 	return next_oid();
@@ -1483,7 +1483,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 		fprintf(stderr, "#bootstrap_create_column %s\n", name );
 
 	if (store_oids) {
-		int *idp = logger_funcs.log_find_table_value("sys__columns_id", "sys__columns_name", name, "sys__columns_table_id", &t->base.id, NULL, NULL);
+		sqlid *idp = logger_funcs.log_find_table_value("sys__columns_id", "sys__columns_name", name, "sys__columns_table_id", &t->base.id, NULL, NULL);
 		base_init(tr->sa, &col->base, *idp, t->base.flags, name);
 		store_oids[nstore_oids++] = *idp;
 		GDKfree(idp);
@@ -1648,7 +1648,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
 	sql_table *t;
 	if (store_oids) {
-		int *idp = logger_funcs.log_find_table_value("sys__tables_id", "sys__tables_name", name, "sys__tables_schema_id", &s->base.id, NULL, NULL);
+		sqlid *idp = logger_funcs.log_find_table_value("sys__tables_id", "sys__tables_name", name, "sys__tables_schema_id", &s->base.id, NULL, NULL);
 		t = create_sql_table_with_id(tr->sa, *idp, name, tt_table, 1, persistence, commit_action, 0);
 		store_oids[nstore_oids++] = *idp;
 		GDKfree(idp);
@@ -1681,11 +1681,11 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 		fprintf(stderr, "#bootstrap_create_schema %s %d %d\n", name, auth_id, owner);
 
 	if (store_oids) {
-		int *idp = logger_funcs.log_find_table_value("sys_schemas_id", "sys_schemas_name", name, NULL, NULL);
+		sqlid *idp = logger_funcs.log_find_table_value("sys_schemas_id", "sys_schemas_name", name, NULL, NULL);
 		if (idp == NULL && strcmp(name, dt_schema) == 0)
 			base_init(tr->sa, &s->base, (sqlid) FUNC_OIDS - 1, TR_NEW, name);
 		else {
-			base_init(tr->sa, &s->base, (sqlid) *idp, TR_NEW, name);
+			base_init(tr->sa, &s->base, *idp, TR_NEW, name);
 			store_oids[nstore_oids++] = *idp;
 			GDKfree(idp);
 		}
@@ -1758,7 +1758,7 @@ store_load(void) {
 		if(!tr)
 			return -1;
 	} else {
-		store_oids = GDKzalloc(300 * sizeof(int)); /* 150 suffices */
+		store_oids = GDKzalloc(300 * sizeof(sqlid)); /* 150 suffices */
 	}
 
 	s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN, USER_MONETDB);
@@ -1920,7 +1920,7 @@ store_load(void) {
 		}
 		sql_trans_destroy(tr);
 	} else {
-		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(int), 0, TYPE_int, false, false);
+		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(sqlid), 0, TYPE_int, false, false);
 		store_oid = store_oids[nstore_oids - 1] + 1;
 	}
 
@@ -4095,10 +4095,10 @@ sql_trans_commit(sql_trans *tr)
 
 
 static int
-sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type)
+sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, sqlid id, sht type)
 {
-	int dep_id=0, t_id = -1;
-	short dep_type = 0;
+	sqlid dep_id=0, t_id = -1;
+	sht dep_type = 0;
 	sql_table *t = NULL;
 
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
@@ -4110,8 +4110,8 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 	n = dep->h;
 
 	while (n) {
-		dep_id = *(int*) n->data;
-		dep_type = *(short*) n->next->data;
+		dep_id = *(sqlid*) n->data;
+		dep_type = *(sht*) n->next->data;
 
 		if (! list_find_id(tr->dropped, dep_id)) {
 
@@ -4615,7 +4615,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, const char *sqlname, int di
 }
 
 int
-sql_trans_drop_type(sql_trans *tr, sql_schema *s, int id, int drop_action)
+sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
 	node *n = find_sql_type_node(s, id);
 	sql_type *t = n->data;
@@ -4707,7 +4707,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 }
 
 int
-sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
+sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
 	node *n = find_sql_func_node(s, id);
 	sql_func *func = n->data;
@@ -4742,7 +4742,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 }
 
 static void
-build_drop_func_list_item(sql_trans *tr, sql_schema *s, int id)
+build_drop_func_list_item(sql_trans *tr, sql_schema *s, sqlid id)
 {
 	node *n = find_sql_func_node(s, id);
 	sql_func *func = n->data;
@@ -4810,7 +4810,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 }
 
 sql_schema *
-sql_trans_create_schema(sql_trans *tr, const char *name, int auth_id, int owner)
+sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, int owner)
 {
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
@@ -4836,7 +4836,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, int auth_id, int owner)
 }
 
 sql_schema*
-sql_trans_rename_schema(sql_trans *tr, int id, const char *new_name)
+sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 {
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 	node *n = find_sql_schema_node(tr, id);
@@ -4861,7 +4861,7 @@ sql_trans_rename_schema(sql_trans *tr, int id, const char *new_name)
 }
 
 int
-sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
+sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 {
 	node *n = find_sql_schema_node(tr, id);
 	sql_schema *s = n->data;
@@ -5133,7 +5133,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 }
 
 sql_table*
-sql_trans_rename_table(sql_trans *tr, sql_schema *s, int id, const char *new_name)
+sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name)
 {
 	sql_table *systable = find_sql_table(find_sql_schema(tr, "sys"), "_tables");
 	node *n = find_sql_table_node(s, id);
@@ -5391,7 +5391,7 @@ create_sql_column(sql_allocator *sa, sql_table *t, const char *name, sql_subtype
 }
 
 int
-sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
+sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
 	node *n = find_sql_table_node(s, id);
 	sql_table *t = n->data;
@@ -5493,7 +5493,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 }
 
 void 
-drop_sql_column(sql_table *t, int id, int drop_action)
+drop_sql_column(sql_table *t, sqlid id, int drop_action)
 {
 	node *n = list_find_base_id(t->columns.set, id);
 	sql_column *col = n->data;
@@ -5503,7 +5503,7 @@ drop_sql_column(sql_table *t, int id, int drop_action)
 }
 
 void 
-drop_sql_idx(sql_table *t, int id)
+drop_sql_idx(sql_table *t, sqlid id)
 {
 	node *n = list_find_base_id(t->idxs.set, id);
 
@@ -5511,7 +5511,7 @@ drop_sql_idx(sql_table *t, int id)
 }
 
 void 
-drop_sql_key(sql_table *t, int id, int drop_action)
+drop_sql_key(sql_table *t, sqlid id, int drop_action)
 {
 	node *n = list_find_base_id(t->keys.set, id);
 	sql_key *k = n->data;
@@ -5545,7 +5545,7 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 }
 
 int
-sql_trans_drop_column(sql_trans *tr, sql_table *t, int id, int drop_action)
+sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 {
 	node *n = list_find_base_id(t->columns.set, id);
 	sql_column *col = n->data;
@@ -5996,7 +5996,7 @@ sql_trans_key_done(sql_trans *tr, sql_key *k)
 }
 
 int
-sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
+sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
 	node *n = list_find_base_id(s->keys, id);
 	sql_key *k = n->data;
@@ -6114,7 +6114,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 }
 
 int
-sql_trans_drop_idx(sql_trans *tr, sql_schema *s, int id, int drop_action)
+sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
 	node *n = list_find_base_id(s->idxs, id);
 	sql_idx *i;
@@ -6215,7 +6215,7 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c )
 }
 
 int
-sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, int id, int drop_action)
+sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
 	node *n = list_find_base_id(s->triggers, id);
 	sql_trigger *i = n->data;
@@ -6485,7 +6485,7 @@ sql_trans_end(sql_session *s)
 }
 
 void
-sql_trans_drop_any_comment(sql_trans *tr, int id) {
+sql_trans_drop_any_comment(sql_trans *tr, sqlid id) {
 	sql_schema *sys;
 	sql_column *id_col;
 	sql_table *comments;

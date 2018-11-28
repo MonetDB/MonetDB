@@ -1087,7 +1087,7 @@ mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 }
 
 sql_schema *
-mvc_create_schema(mvc *m, const char *name, int auth_id, int owner)
+mvc_create_schema(mvc *m, const char *name, sqlid auth_id, int owner)
 {
 	sql_schema *s = NULL;
 
@@ -1381,34 +1381,32 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 }
 
 void
-mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
+mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sht depend_type)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
 	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
-	
 }
 
 void
-mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type)
+mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type)
 {
 	node *n = id_l->h;
 	int i;
-	
+
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_dependencies on %d of type %d\n", depend_id, dep_type);
 
 	for (i = 0; i < list_length(id_l); i++)
 	{
-		mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
+		mvc_create_dependency(m, *(sqlid *) n->data, depend_id, dep_type);
 		n = n->next;
 	}
-
 }
 
 int
-mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
+mvc_check_dependency(mvc * m, sqlid id, sht type, list *ignore_ids)
 {
 	list *dep_list = NULL;
 

@@ -1351,7 +1351,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int if_not
 {
 	char *name = dlist_get_schema_name(auth_name);
 	char *auth = schema_auth(auth_name);
-	int auth_id = sql->role_id;
+	sqlid auth_id = sql->role_id;
 
 	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0) {
 		sql_error(sql, 02, SQLSTATE(28000) "CREATE SCHEMA: no such authorization '%s'", auth);

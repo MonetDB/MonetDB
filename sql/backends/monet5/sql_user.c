@@ -89,7 +89,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	oid uid = 0;
 	bat bid = 0;
 	str ret;
-	int user_id;
+	sqlid user_id;
 	str pwd;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info, *auths;
@@ -204,7 +204,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	sql_table *t, *uinfo;
 	mvc *m = (mvc *) _mvc;
 	char *err = NULL;
-	int schema_id = 0;
+	sqlid schema_id = 0;
 	str monetdbuser = "monetdb";
 	list *res, *ops;
 

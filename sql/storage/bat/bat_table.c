@@ -512,7 +512,7 @@ subrids_next(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		int id = *(int*)BUNtloc(ii, r->pos);
+		sqlid id = *(sqlid*)BUNtloc(ii, r->pos);
 		if (id == r->id)
 			return BUNtoid((BAT *) r->rids, r->pos++);
 	}
@@ -524,7 +524,7 @@ subrids_nextid(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		r->id = *(int*)BUNtloc(ii, r->pos);
+		r->id = *(sqlid*)BUNtloc(ii, r->pos);
 		return r->id;
 	}
 	return -1;
