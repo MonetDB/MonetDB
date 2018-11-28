@@ -29,9 +29,3 @@ lib_msabaoth = {
 	NOINST
 	SOURCES = msabaoth.h msabaoth.c
 }
-
-lib_strptime = {
-	NOINST
-	SOURCES = strptime.cpp
-	COND = NATIVE_WIN32
-}

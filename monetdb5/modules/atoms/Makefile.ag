@@ -30,6 +30,12 @@ lib_atoms = {
 		xml.c xml.h
 }
 
+lib_strptime = {
+	NOINST
+	SOURCES = strptime.c
+	COND = NATIVE_WIN32
+}
+
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
