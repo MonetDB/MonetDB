@@ -358,13 +358,13 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 #define select_calendar(TPE,BITS,MASK) {\
 	base = (BitVector) MOScodevector(task);\
 	if( !*anti){\
-		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) low == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) low) ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				j= getBitVector(base,i,(int) hdr->bits); \
@@ -373,7 +373,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 					*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) hgh == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) hgh) ){\
 			for(i=0; first < last; first++, i++){\
 				MOSskipit();\
 				j= getBitVector(base,i,(int) hdr->bits ); \
@@ -392,10 +392,10 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 			}\
 		}\
 	} else {\
-		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			/* nothing is matching */\
 		} else\
-		if( *(TPE*) low == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) low) ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				j= getBitVector(base,i,(int) hdr->bits ); \
@@ -404,7 +404,7 @@ MOSdecompress_calendar(Client cntxt, MOStask task)
 					*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) hgh == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) hgh) ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				j= getBitVector(base,i,(int) hdr->bits); \
@@ -486,8 +486,8 @@ MOSselect_calendar(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, b
 	for( ; first < last; first++){\
 		MOSskipit();\
 		j= getBitVector(base,first,(int) hdr->bits ); \
-		if( (low == TPE##_nil || (task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | (j & MASKDAY)) >= low) && \
-			((task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | (j & MASKDAY))  <= hgh || hgh == TPE##_nil) ){\
+		if( (is_nil(TPE, low) || (task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | (j & MASKDAY)) >= low) && \
+			((task->hdr->dict.val##TPE[(j>>MASKBITS) & task->hdr->mask] | (j & MASKDAY))  <= hgh || is_nil(TPE, hgh)) ){\
 			if ( !anti) {\
 				*o++ = (oid) first;\
 			}\

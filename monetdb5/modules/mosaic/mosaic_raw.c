@@ -204,13 +204,13 @@ MOSdecompress_raw(Client cntxt, MOStask task)
 #define select_raw(TPE) {\
 		TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 		if( !*anti){\
-			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+			if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 				for( ; first < last; first++){\
 					MOSskipit();\
 					*o++ = (oid) first;\
 				}\
 			} else\
-			if( *(TPE*) low == TPE##_nil ){\
+			if( is_nil(TPE, *(TPE*) low) ){\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
 					cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
@@ -218,7 +218,7 @@ MOSdecompress_raw(Client cntxt, MOStask task)
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( *(TPE*) hgh == TPE##_nil ){\
+			if( is_nil(TPE, *(TPE*) hgh) ){\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
 					cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
@@ -235,10 +235,10 @@ MOSdecompress_raw(Client cntxt, MOStask task)
 				}\
 			}\
 		} else {\
-			if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+			if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 				/* nothing is matching */\
 			} else\
-			if( *(TPE*) low == TPE##_nil ){\
+			if( is_nil(TPE, *(TPE*) low) ){\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
 					cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
@@ -246,7 +246,7 @@ MOSdecompress_raw(Client cntxt, MOStask task)
 						*o++ = (oid) first;\
 				}\
 			} else\
-			if( *(TPE*) hgh == TPE##_nil ){\
+			if( is_nil(TPE, *(TPE*) hgh) ){\
 				for( ; first < last; first++, val++){\
 					MOSskipit();\
 					cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
@@ -473,7 +473,7 @@ MOSselect_raw(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit *h
 	} \
 	v = (TPE*) (((char*)task->blk) + MosaicBlkSize);\
 	for( ; first < last; first++, v++){\
-		if( (low == TPE##_nil || * v >= low) && (* v <= hgh || hgh == TPE##_nil) ){\
+		if( (is_nil(TPE, low) || * v >= low) && (is_nil(TPE, hgh)  || * v <= hgh) ){\
 			if ( !anti) {\
 				MOSskipit();\
 				*o++ = (oid) first;\
@@ -543,7 +543,7 @@ MOSthetaselect_raw(Client cntxt,  MOStask task, void *val, str oper)
 			} 
 			v = (int*) (((char*)task->blk) + MosaicBlkSize);
 			for( ; first < last; first++, v++){
-				if( (low == int_nil || * v >= low) && (* v <= hgh || hgh == int_nil) ){
+				if( (is_nil(int, low) || * v >= low) && (is_nil(int, hgh) || * v <= hgh) ){
 					if ( !anti) {
 						MOSskipit();
 						*o++ = (oid) first;

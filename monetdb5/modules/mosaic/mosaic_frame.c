@@ -374,13 +374,13 @@ MOSdecompress_frame(Client cntxt, MOStask task)
     TPE frame = *(TPE*)MOScodevector(task);\
 	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
 	if( !*anti){\
-		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) low == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) low) ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
@@ -389,7 +389,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 					*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) hgh == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) hgh) ){\
 			for(i=0; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
@@ -408,10 +408,10 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 			}\
 		}\
 	} else {\
-		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			/* nothing is matching */\
 		} else\
-		if( *(TPE*) low == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) low) ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
@@ -420,7 +420,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 					*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) hgh == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) hgh) ){\
 			for(i=0 ; first < last; first++, i++){\
 				MOSskipit();\
 				framedecompress(i); \
@@ -508,7 +508,7 @@ MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 	for( ; first < last; first++){\
 		MOSskipit();\
 		framedecompress(first); \
-		if( (low == TPE##_nil || frame + task->hdr->frame.val##TPE[j] >= low) && (frame + task->hdr->frame.val##TPE[j] <= hgh || hgh == TPE##_nil) ){\
+		if( (is_nil(TPE, low) || frame + task->hdr->frame.val##TPE[j] >= low) && (frame + task->hdr->frame.val##TPE[j] <= hgh || is_nil(TPE, hgh)) ){\
 			if ( !anti) {\
 				*o++ = (oid) first;\
 			}\

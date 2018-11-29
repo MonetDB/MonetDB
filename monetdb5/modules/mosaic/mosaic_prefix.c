@@ -759,13 +759,13 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 	bits = (int) (val & (~mask));\
 	val = val & mask;\
 	if( !*anti){\
-		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) low == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) low) ){\
 			for( ; first < last; first++,i++){\
 				MOSskipit();\
 				v = val | decompress(base,i,bits);\
@@ -775,7 +775,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 					*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) hgh == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) hgh) ){\
 			for( ; first < last; first++,i++){\
 				MOSskipit();\
 				v = val | decompress(base,i,bits);\
@@ -796,10 +796,10 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 			}\
 		}\
 	} else {\
-		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			/* nothing is matching */\
 		} else\
-		if( *(TPE*) low == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) low) ){\
 			for( ; first < last; first++,i++){\
 				MOSskipit();\
 				v = val | decompress(base,i,bits);\
@@ -809,7 +809,7 @@ MOSdecompress_prefix(Client cntxt, MOStask task)
 					*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) hgh == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) hgh) ){\
 			for( ; first < last; first++, val++,i++){\
 				MOSskipit();\
 				v = val | decompress(base,i,bits);\
@@ -908,7 +908,7 @@ MOSselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit
 			MOSskipit();\
 			v = val | decompress(base,i,bits);\
 			value =  (TPE) ((TPE2)val |(TPE2) v);\
-			if( (low == TPE##_nil || value >= low) && (value <= hgh || hgh == TPE##_nil) )\
+			if( (is_nil(TPE, low) || value >= low) && (value <= hgh || is_nil(TPE, hgh)) )\
 			*o++ = (oid) first;\
 		}\
 	else\
@@ -916,7 +916,7 @@ MOSselect_prefix(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit
 			MOSskipit();\
 			v = val | decompress(base,i,bits);\
 			value =  (TPE) ((TPE2)val |(TPE2) v);\
-			if( !( (low == TPE##_nil || value >= low) && (value <= hgh || hgh == TPE##_nil) ))\
+			if( !( (is_nil(TPE, low) || value >= low) && (value <= hgh || is_nil(TPE, hgh)) ))\
 				*o++ = (oid) first;\
 		}\
 }

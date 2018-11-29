@@ -313,13 +313,13 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 { 	TPE *val= (TPE*) (((char*) task->blk) + MosaicBlkSize);\
 \
 	if( !*anti){\
-		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			for( ; first < last; first++){\
 				MOSskipit();\
 				*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) low == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) low) ){\
 			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
 			if (cmp )\
 			for( ; first < last; first++){\
@@ -327,7 +327,7 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 				*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) hgh == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) hgh) ){\
 			cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
 			if (cmp )\
 			for( ; first < last; first++){\
@@ -344,10 +344,10 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 			}\
 		}\
 	} else {\
-		if( *(TPE*) low == TPE##_nil && *(TPE*) hgh == TPE##_nil){\
+		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			/* nothing is matching */\
 		} else\
-		if( *(TPE*) low == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) low) ){\
 			cmp  =  ((*hi && *(TPE*)val <= * (TPE*)hgh ) || (!*hi && *(TPE*)val < *(TPE*)hgh ));\
 			if ( !cmp )\
 			for( ; first < last; first++){\
@@ -355,7 +355,7 @@ MOSdecompress_runlength(Client cntxt, MOStask task)
 				*o++ = (oid) first;\
 			}\
 		} else\
-		if( *(TPE*) hgh == TPE##_nil ){\
+		if( is_nil(TPE, *(TPE*) hgh) ){\
 			cmp  =  ((*li && *(TPE*)val >= * (TPE*)low ) || (!*li && *(TPE*)val > *(TPE*)low ));\
 			if ( !cmp )\
 			for( ; first < last; first++, val++){\
@@ -515,7 +515,7 @@ MOSselect_runlength(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, 
 		hgh= low= *(TPE*) val;\
 	} \
 	v = (TPE*) (((char*)task->blk) + MosaicBlkSize);\
-	if( (low == TPE##_nil || * v >= low) && (* v <= hgh || hgh == TPE##_nil) ){\
+	if( (is_nil(TPE, low) || * v >= low) && (* v <= hgh || is_nil(TPE, hgh)) ){\
 			if ( !anti) {\
 				for( ; first < last; first++){\
 					MOSskipit();\

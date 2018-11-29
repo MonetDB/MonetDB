@@ -130,6 +130,9 @@ typedef struct MOSAICBLK{
 #define MosaicHdrSize  wordaligned(sizeof(struct MOSAICHEADER),sizeof(struct MOSAICBLK))
 #define MosaicBlkSize  sizeof(MosaicBlkRec)
 
+// helper function to check if a value is equal to the nil value of its type.
+// TODO: check if this function can be added to gdk_atoms.h
+#define is_nil(TPE, v) (ATOMcmp( TYPE_##TPE , (void*) &(v), (void*) ATOMnilptr(TYPE_##TPE) ) == 0)
 
 /* The (de) compression task descriptor */
 typedef struct MOSTASK{
