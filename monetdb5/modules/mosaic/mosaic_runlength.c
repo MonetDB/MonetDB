@@ -656,9 +656,9 @@ MOSprojection_runlength(Client cntxt,  MOStask task)
 				MOSskipit();
 				*v++ = val;
 				task->n--;
+				task->cnt++;
 			}
 			task->src = (char*) v;
-			task->cnt++;
 		}
 		break;
 	case  TYPE_str:
