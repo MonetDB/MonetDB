@@ -35,6 +35,9 @@
 #include "rel_remote.h"
 #include "orderidx.h"
 
+
+#include "mosaic.h"
+
 #define initcontext() \
     if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
         return msg;\
@@ -872,9 +875,53 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			mvc_default(sql, nc, c->def);
 
 		if (c->storage_type != nc->storage_type) {
+			bat bid = 0;
+			BAT *b;
+			size_t cnt;
+			sql_delta *d;
+			char *msg;
+			MOStask task;
+/* no restriction
 			if (c->t->access == TABLE_WRITABLE)
-				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
+				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
+*/
 			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
+			b = store_funcs.bind_col(sql->session->tr, nc, 0);
+			assert(b);
+			cnt = BATcount(b);
+			if (cnt < MOSAIC_THRESHOLD){
+				BBPunfix(b->batCacheid);
+				continue;
+			}
+
+			// TODO check where this task is cleaned up.
+			task = (MOStask) GDKzalloc(sizeof(*task));
+			if( c->storage_type && !strstr(c->storage_type,"mosaic")) {
+				if( task == NULL)
+					throw(MAL, "sql.alter", MAL_MALLOC_FAIL);
+
+				for(int i = 0; i< MOSAIC_METHODS; i++)
+					task->filter[i]= strstr(c->storage_type,MOSfiltername[i]) != 0;
+			}
+			else
+				for(int i = 0; i< MOSAIC_METHODS; i++)
+					task->filter[i]= 1;
+
+			if( c->storage_type)
+				msg = MOScompressInternal(cntxt, &b->batCacheid, task, 0);
+			else
+				msg = MOSdecompressInternal(cntxt, &b->batCacheid);
+
+			BBPunfix(b->batCacheid);
+
+			if (msg)
+				return msg;
+
+			store_funcs.clear_col(sql->session->tr, nc);
+			assert(nc->base.allocated == 1);
+			d = nc->data;
+			d->bid = bid;
+			d->cnt = cnt;
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}
