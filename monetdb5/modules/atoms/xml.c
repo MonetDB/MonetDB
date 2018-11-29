@@ -691,6 +691,7 @@ ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external) {
 	(void) src;
 	(void) len;
 	(void) x;
+	(void) external;
 	GDKerror("not implemented\n");
 	return -1;
 }
