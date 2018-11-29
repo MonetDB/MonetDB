@@ -54,10 +54,10 @@ Ready.
 # 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
-% sys.L16,	sys.L20,	sys.L22,	sys.L24,	sys.L26 # table_name
+% sys.L17,	sys.L21,	sys.L23,	sys.L25,	sys.L27 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
-% 8,	24,	2,	14,	902 # length
+% 8,	24,	2,	14,	705 # length
 [ "bam",	"bam_drop_file",	0,	"bigint",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint)\nexternal name bam.bam_drop_file;"	]
 [ "bam",	"bam_drop_file",	1,	"smallint",	""	]
 [ "bam",	"bam_export",	0,	"clob",	"create procedure bam.bam_export(output_path string)\nexternal name bam.bam_export;"	]
@@ -417,11 +417,9 @@ Ready.
 [ "sys",	"code",	1,	"int",	""	]
 [ "sys",	"code",	0,	"clob",	"unicode"	]
 [ "sys",	"code",	1,	"int",	""	]
-[ "sys",	"columnsize",	0,	"bigint",	"create function sys.columnsize(tpe varchar(1024), count bigint, _distinct bigint, avgwidth int)\nreturns bigint\nbegin\n \n if tpe = 'tinyint' or tpe = 'boolean'\n then\n return count;\n end if;\n if tpe = 'smallint'\n then\n return 2 * count;\n end if;\n if tpe = 'int' or tpe = 'real' or tpe = 'date' or tpe = 'time' or tpe = 'timetz' or tpe = 'sec_interval' or tpe = 'month_interval'\n then\n return 4 * count;\n end if;\n if tpe = 'bigint' or tpe = 'decimal' or tpe = 'double' or tpe = 'timestamp' or tpe = 'timestamptz' or tpe = 'inet' or tpe = 'oid'\n then\n return 8 * count;\n end if;\n if tpe = 'hugeint' or tpe = 'uuid'\n then\n return 16 * count;\n end if;\n \n if tpe = 'varchar' or tpe = 'char' or tpe = 'clob' or tpe = 'json' or tpe = 'url'\n then\n return sys.sql_max(4 * count, 8192 + ((avgwidth + 8) * _distinct));\n end if;\n if tpe = 'blob'\n then\n return (avgwidth + 8) * count;\n end if;\n return 16 * count;\nend;"	]
+[ "sys",	"columnsize",	0,	"bigint",	"create function sys.columnsize(tpe varchar(1024), count bigint)\nreturns bigint\nbegin\n \n if tpe in ('tinyint', 'boolean')\n then return count;\n end if;\n if tpe = 'smallint'\n then return 2 * count;\n end if;\n if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\n then return 4 * count;\n end if;\n if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n then return 8 * count;\n end if;\n if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')\n then return 16 * count;\n end if;\n \n if tpe in ('varchar', 'char', 'clob', 'json', 'url')\n then return 4 * count;\n end if;\n if tpe in ('blob', 'geometry', 'geometrya')\n then return 8 * count;\n end if;\n return 8 * count;\nend;"	]
 [ "sys",	"columnsize",	1,	"varchar",	""	]
 [ "sys",	"columnsize",	2,	"bigint",	""	]
-[ "sys",	"columnsize",	3,	"bigint",	""	]
-[ "sys",	"columnsize",	4,	"int",	""	]
 [ "sys",	"concat",	0,	"char",	"+"	]
 [ "sys",	"concat",	1,	"char",	""	]
 [ "sys",	"concat",	2,	"char",	""	]
@@ -686,10 +684,10 @@ Ready.
 [ "sys",	"has_z",	1,	"int",	""	]
 [ "sys",	"hash",	0,	"bigint",	"hash"	]
 [ "sys",	"hash",	1,	"any",	""	]
-[ "sys",	"hashsize",	0,	"bigint",	"create function sys.hashsize(b boolean, count bigint)\nreturns bigint\nbegin\n \n if b = true\n then\n return 8 * count;\n end if;\n return 0;\nend;"	]
+[ "sys",	"hashsize",	0,	"bigint",	"create function sys.hashsize(b boolean, count bigint)\nreturns bigint\nbegin\n \n if b = true\n then return 8 * count;\n end if;\n return 0;\nend;"	]
 [ "sys",	"hashsize",	1,	"boolean",	""	]
 [ "sys",	"hashsize",	2,	"bigint",	""	]
-[ "sys",	"heapsize",	0,	"bigint",	"create function sys.heapsize(tpe varchar(1024), count bigint, _distinct bigint, avgwidth int)\nreturns bigint\nbegin\n if tpe = 'varchar' or tpe = 'char' or tpe = 'clob' or tpe = 'json' or tpe = 'url'\n then\n return 8192 + ((avgwidth + 8) * _distinct);\n end if;\n if tpe = 'blob'\n then\n return (avgwidth + 8) * count;\n end if;\n return 0;\nend;"	]
+[ "sys",	"heapsize",	0,	"bigint",	"create function sys.heapsize(tpe varchar(1024), count bigint, distincts bigint, avgwidth int)\nreturns bigint\nbegin\n \n if tpe in ('varchar', 'char', 'clob', 'json', 'url')\n then return 8192 + ((avgwidth + 8) * distincts);\n end if;\n if tpe in ('blob', 'geometry', 'geometrya')\n then return avgwidth * count;\n end if;\n return 0;\nend;"	]
 [ "sys",	"heapsize",	1,	"varchar",	""	]
 [ "sys",	"heapsize",	2,	"bigint",	""	]
 [ "sys",	"heapsize",	3,	"bigint",	""	]
@@ -719,7 +717,7 @@ Ready.
 [ "sys",	"ilike",	2,	"clob",	""	]
 [ "sys",	"ilike",	0,	"clob",	"create filter function \"ilike\"(val string, pat string) external name algebra.\"ilike\";"	]
 [ "sys",	"ilike",	1,	"clob",	""	]
-[ "sys",	"imprintsize",	0,	"bigint",	"create function sys.imprintsize(tpe varchar(1024), count bigint)\nreturns bigint\nbegin\n \n if tpe = 'tinyint' or tpe = 'boolean'\n then\n return cast(0.2 * count as bigint);\n end if;\n if tpe = 'smallint'\n then\n return cast(0.4 * count as bigint);\n end if;\n if tpe = 'int' or tpe = 'real' or tpe = 'date' or tpe = 'time' or tpe = 'timetz' or tpe = 'sec_interval' or tpe = 'month_interval'\n then\n return cast(0.8 * count as bigint);\n end if;\n if tpe = 'bigint' or tpe = 'double' or tpe = 'timestamp' or tpe = 'timestamptz' or tpe = 'oid'\n then\n return cast(1.6 * count as bigint);\n end if;\n \n if tpe = 'hugeint' or tpe = 'decimal'\n then\n return cast(3.2 * count as bigint);\n end if;\n \n return 0;\nend;"	]
+[ "sys",	"imprintsize",	0,	"bigint",	"create function sys.imprintsize(tpe varchar(1024), count bigint)\nreturns bigint\nbegin\n \n if tpe in ('tinyint', 'boolean')\n then return cast(0.2 * count as bigint);\n end if;\n if tpe = 'smallint'\n then return cast(0.4 * count as bigint);\n end if;\n if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\n then return cast(0.8 * count as bigint);\n end if;\n if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n then return cast(1.6 * count as bigint);\n end if;\n \n if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')\n then return cast(3.2 * count as bigint);\n end if;\n \n return 0;\nend;"	]
 [ "sys",	"imprintsize",	1,	"varchar",	""	]
 [ "sys",	"imprintsize",	2,	"bigint",	""	]
 [ "sys",	"in",	0,	"boolean",	"in"	]
