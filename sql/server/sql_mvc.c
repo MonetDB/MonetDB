@@ -1087,7 +1087,7 @@ mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 }
 
 sql_schema *
-mvc_create_schema(mvc *m, const char *name, sqlid auth_id, int owner)
+mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
 	sql_schema *s = NULL;
 

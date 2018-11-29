@@ -1717,7 +1717,7 @@ store_schema_number(void)
 
 static int
 store_load(void) {
-	bool first;
+	int first;
 
 	sql_allocator *sa;
 	sql_trans *tr;
@@ -4713,7 +4713,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	sql_func *func = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = MNEW(int);
+		sqlid *local_id = MNEW(sqlid);
 		if(!local_id)
 			return -1;
 
@@ -4772,7 +4772,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 		func = (sql_func *) n->data;
 
 		if (! list_find_id(tr->dropped, func->base.id)){
-			int *local_id = MNEW(int);
+			sqlid *local_id = MNEW(sqlid);
 			if(!local_id) {
 				list_destroy(tr->dropped);
 				tr->dropped = NULL;
@@ -4810,7 +4810,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 }
 
 sql_schema *
-sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, int owner)
+sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner)
 {
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
@@ -4871,7 +4871,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 	if (is_oid_nil(rid))
 		return 0;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int* local_id = MNEW(int);
+		sqlid* local_id = MNEW(sqlid);
 		if(!local_id)
 			return -1;
 
@@ -4932,12 +4932,13 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	sql_table *partitions = find_sql_table(syss, "table_partitions");
 	sql_table *ranges = find_sql_table(syss, "range_partitions");
 	sql_part *p;
-	int localtype = tpe.type->localtype, *v, res = 0;
+	int localtype = tpe.type->localtype, res = 0;
 	ValRecord vmin, vmax;
 	size_t smin, smax;
 	bit to_insert = (bit) with_nills;
 	oid rid;
 	ptr ok;
+	sqlid *v;
 
 	assert(isGlobal(mt));
 	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
@@ -5013,7 +5014,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 		/* add merge table dependency */
 		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
-		v = (int*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
+		v = (sqlid*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
 		table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
 		table_funcs.table_insert(tr, ranges, &pt->base.id, v, VALget(&vmin), VALget(&vmax), &to_insert);
 		_DELETE(v);
@@ -5049,7 +5050,8 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	sql_table *values = find_sql_table(syss, "value_partitions");
 	sql_part *p;
 	oid rid;
-	int localtype = tpe.type->localtype, *v, i = 0;
+	int localtype = tpe.type->localtype, i = 0;
+	sqlid *v;
 
 	assert(isGlobal(mt));
 	if(!update) {
@@ -5073,7 +5075,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
 	assert(!is_oid_nil(rid));
 
-	v = (int*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
+	v = (sqlid*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
 
 	if(with_nills) { /* store the null value first */
 		ValRecord vnnil;
@@ -5401,7 +5403,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		return 0;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = MNEW(int);
+		sqlid *local_id = MNEW(sqlid);
 		if(!local_id)
 			return -1;
 
@@ -5551,7 +5553,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 	sql_column *col = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = MNEW(int);
+		sqlid *local_id = MNEW(sqlid);
 		if(!local_id)
 			return -1;
 
@@ -6002,7 +6004,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	sql_key *k = n->data;
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = MNEW(int);
+		sqlid *local_id = MNEW(sqlid);
 		if(!local_id) {
 			return -1;
 		}
@@ -6124,7 +6126,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	i = n->data;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = MNEW(int);
+		sqlid *local_id = MNEW(sqlid);
 		if(!local_id) {
 			return -1;
 		}
@@ -6221,7 +6223,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	sql_trigger *i = n->data;
 	
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
-		int *local_id = MNEW(int);
+		sqlid *local_id = MNEW(sqlid);
 		if(!local_id)
 			return -1;
 
