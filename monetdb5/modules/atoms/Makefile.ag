@@ -9,7 +9,7 @@ INCLUDES = ../../mal \
 		   ../../../common/stream \
 		   ../../../common/utils \
 		   ../../../gdk \
-		   $(libxml2_CFLAGS) $(curl_CFLAGS) $(openssl_CFLAGS)
+		   $(libxml2_CFLAGS) $(openssl_CFLAGS)
 MTSAFE
 
 lib_atoms = {
@@ -27,6 +27,12 @@ lib_atoms = {
 		url.c url.h \
 		uuid.c \
 		xml.c xml.h
+}
+
+lib_strptime = {
+	NOINST
+	SOURCES = strptime.c
+	COND = NATIVE_WIN32
 }
 
 headers_mal = {

@@ -5096,7 +5096,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 				/* in the selection phase we should have project/groupbys, unless 
 				 * this is the value (column) for the aggregation then the 
 				 * crossproduct is pushed under the project/groupby.  */ 
-				if (f == sql_sel && r->op == op_project && list_length(r->exps) == 1 && exps_are_atoms(r->exps)) {
+				if (f == sql_sel && r->op == op_project && list_length(r->exps) == 1 && exps_are_atoms(r->exps) && !r->l) {
 					sql_exp *ne = r->exps->h->data;
 
 					exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
@@ -5305,7 +5305,11 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int d
 	if (!selection)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: the selection or from part is missing");
 	if (where) {
-		sql_rel *r = rel_logical_exp(sql, rel, where, sql_where);
+		sql_rel *r;
+
+		if(!rel)
+			rel = rel_project(sql->sa, NULL, list_append(new_exp_list(sql->sa), exp_atom_bool(sql->sa, 1)));
+		r = rel_logical_exp(sql, rel, where, sql_where);
 		if (!r)
 			return NULL;
 		rel = r;

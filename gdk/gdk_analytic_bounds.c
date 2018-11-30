@@ -434,38 +434,38 @@ GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 				if (*np) {
 					i += (np - pnp);
 					j = k;
-					for (; k<i; k++, rb++)
-						*rb = j;
+					for (; k<i; k++)
+						rb[k] = j;
 					pnp = np;
 				}
 			}
 			i += (np - pnp);
 			j = k;
-			for(; k<i; k++, rb++)
-				*rb = j;
+			for(; k<i; k++)
+				rb[k] = j;
 		} else {
 			i += (lng) cnt;
 			j = k;
-			for(; k<i; k++, rb++)
-				*rb = j;
+			for(; k<i; k++)
+				rb[k] = j;
 		}
 	} else if(np) { /* following */
 		nend += cnt;
 		for(; np<nend; np++) {
 			if (*np) {
 				i += (np - pnp);
-				for(; k<i; k++, rb++)
-					*rb = i;
+				for(; k<i; k++)
+					rb[k] = i;
 				pnp = np;
 			}
 		}
 		i += (np - pnp);
-		for(; k<i; k++, rb++)
-			*rb = i;
+		for(; k<i; k++)
+			rb[k] = i;
 	} else {
 		i += (lng) cnt;
-		for(; k<i; k++, rb++)
-			*rb = i;
+		for(; k<i; k++)
+			rb[k] = i;
 	}
 
 	BATsetcount(r, cnt);

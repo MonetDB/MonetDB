@@ -109,8 +109,8 @@ typedef struct mvc {
 	struct symbol *sym;
 	int no_mitosis;		/* run query without mitosis */
 
-	int user_id;
-	int role_id;
+	sqlid user_id;
+	sqlid role_id;
 	lng last_id;
 	lng rowcnt;
 
@@ -189,7 +189,7 @@ extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
 extern int mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
-extern sql_schema *mvc_create_schema(mvc *m, const char *name, int auth_id, int owner);
+extern sql_schema *mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner);
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern str mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
@@ -225,9 +225,9 @@ extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
 
 /*dependency control*/
-extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
-extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
-extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
+extern void mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sht depend_type);
+extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type);
+extern int mvc_check_dependency(mvc * m, sqlid id, sht type, list *ignore_ids);
 
 /* variable management */
 extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);

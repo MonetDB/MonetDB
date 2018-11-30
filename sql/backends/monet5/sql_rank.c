@@ -745,7 +745,7 @@ SQLanalytics_args(BAT **r, BAT **b, BAT **s, BAT **e, Client cntxt, MalBlkPtr mb
 		if (!*b)
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 	}
-	if (b) {
+	if (*b) {
 		BUN cnt = BATcount(*b);
 		voidresultBAT((*r), rtype ? rtype : (*b)->ttype, cnt, (*b), mod);
 		if (!*r && *b)
