@@ -138,7 +138,13 @@ zlib_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 !IFNDEF LIBBZIP2
 LIBBZIP2 = C:\bzip2-1.0.5.win$(bits)
 !ENDIF
-bzip2_LIBS = "$(LIBBZIP2)\lib\libbz2.lib"
+!IFDEF DEBUG
+# in a debug build of MonetDB, we need to use a debug build of libbz2
+# since it seems that the FILE pointer cannot be carried over from a
+# debug build to a non-debug build.
+BZIPDEBUGEXT = d
+!endif
+bzip2_LIBS = "$(LIBBZIP2)\lib\libbz2$(BZIPDEBUGEXT).lib"
 bzip2_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !ENDIF
 
