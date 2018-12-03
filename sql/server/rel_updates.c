@@ -1395,6 +1395,8 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
 	if (!table_privs(sql, t, PRIV_SELECT))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+	if (isMergeTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
 	bt = rel_basetable(sql, t, t->base.name);
 	joined = table_ref(sql, NULL, tref, 0);
