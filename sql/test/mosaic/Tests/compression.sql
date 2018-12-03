@@ -115,6 +115,13 @@ select * from tmp3;
 select sum(i) from tmp3;
 select sum(f) from tmp3;
 
+alter table tmp3 alter column i set storage 'runlength,dictionary';
+alter table tmp3 alter column b set storage 'mosaic';
+--explain select * from tmp3;
+--select * from tmp3;
+--select sum(i) from tmp3;
+--select sum(f) from tmp3;
+
 alter table tmp3 set read write;
 select * from tmp3;
 
