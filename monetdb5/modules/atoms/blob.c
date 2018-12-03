@@ -428,8 +428,8 @@ SQLBLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 }
 
 /* SQL 99 compatible BLOB input string
- * differs from the MonetDB BLOB input in that it does not start with a size
- * no brackets and no spaces in between the hexits
+ * differs from the MonetDB BLOB input in that it does not start with
+ * a size and no brackets
  */
 ssize_t
 SQLBLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
@@ -451,15 +451,21 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 		return GDK_STRNIL(instr) ? 1 : 3;
 	}
 
-	/* since the string is built of (only) hexits the number of bytes
-	 * required for it is the length of the string divided by two
+	/* count hexits and check for hexits/space
 	 */
-	i = strlen(instr);
-	if (i % 2 == 1) {
-		GDKerror("sqlblob_fromstr: Illegal blob length '%zu' (should be even)\n", i);
+	for (i = nitems = 0; instr[i]; i++) {
+		if (isxdigit((unsigned char) instr[i]))
+			nitems++;
+		else if (!isspace((unsigned char) instr[i])) {
+			GDKerror("sqlblob_fromstr: Illegal char in blob\n");
+			return -1;
+		}
+	}
+	if (nitems % 2 != 0) {
+		GDKerror("sqlblob_fromstr: Illegal blob length '%zu' (should be even)\n", nitems);
 		return -1;
 	}
-	nitems = i / 2;
+	nitems /= 2;
 	nbytes = blobsize(nitems);
 
 	if (*l < nbytes || *val == NULL) {
@@ -478,27 +484,35 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 	for (i = 0; i < nitems; ++i) {
 		char res = 0;
 
-		if (isdigit((unsigned char) *s)) {
-			res = *s - '0';
-		} else if (*s >= 'A' && *s <= 'F') {
-			res = 10 + *s - 'A';
-		} else if (*s >= 'a' && *s <= 'f') {
-			res = 10 + *s - 'a';
-		} else {
-			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
-			return -1;
+		for (;;) {
+			if (isdigit((unsigned char) *s)) {
+				res = *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res = 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res = 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
 		}
 		s++;
 		res <<= 4;
-		if (isdigit((unsigned char) *s)) {
-			res += *s - '0';
-		} else if (*s >= 'A' && *s <= 'F') {
-			res += 10 + *s - 'A';
-		} else if (*s >= 'a' && *s <= 'f') {
-			res += 10 + *s - 'a';
-		} else {
-			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
-			return -1;
+		for (;;) {
+			if (isdigit((unsigned char) *s)) {
+				res += *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res += 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res += 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
 		}
 		s++;
 

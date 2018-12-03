@@ -35,7 +35,7 @@ CREATE TABLE lineitem_denormalized_first1k
 	   line_margin_percent decimal(12,8) NOT NULL
 );
 
-COPY 1000 RECORDS INTO lineitem_denormalized_first1k FROM STDIN USING DELIMITERS ',','\n','\"';
+COPY 1000 RECORDS INTO lineitem_denormalized_first1k FROM STDIN USING DELIMITERS ',',E'\n','"';
 F,APAC,People's Republic of China,Sichuan,Yibin,1957-09-19,99425,Non-consumables,Clothing,Clothing,Croft & Barrow Velour Separates,1757,30,-3.20000000,55.95000000,"Edinburgh, United Kingdom",Melody J. Hambard,+44-875-777-1712,EUROPE,United Kingdom,Scotland,Edinburgh,2010-11-03,2010-01-01,2010-10-01,2010-11-01,201011,20101103,03NOV2010,482.70,354.87,127.83,26.482
 F,APAC,People's Republic of China,Sichuan,Yibin,1957-09-19,99425,Non-consumables,Clothing,Clothing,Men's Beanies,2951,30,-3.20000000,55.95000000,"Edinburgh, United Kingdom",Melody J. Hambard,+44-875-777-1712,EUROPE,United Kingdom,Scotland,Edinburgh,2010-11-03,2010-01-01,2010-10-01,2010-11-01,201011,20101103,03NOV2010,260.20,72.76,187.44,72.036
 F,APAC,People's Republic of China,Sichuan,Yibin,1957-09-19,99425,Non-consumables,Clothing,Clothing,Smartwool Ski Socks,3502,30,-3.20000000,55.95000000,"Edinburgh, United Kingdom",Melody J. Hambard,+44-875-777-1712,EUROPE,United Kingdom,Scotland,Edinburgh,2010-11-03,2010-01-01,2010-10-01,2010-11-01,201011,20101103,03NOV2010,384.87,287.16,97.71,25.387

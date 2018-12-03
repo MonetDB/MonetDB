@@ -79,32 +79,32 @@ stderr of test 'copy-format.SF-2468513` in directory 'sql/test/BugTracker-2008` 
 # 09:34:56 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=34345 
 # 09:34:56 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|',E'\n'
         NULL as '';
         123|1.01||a|b
 ERROR = !Failed to import table 'my_copytest', line 1 field col2 'int' expected in '1.01'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|',E'\n'
         NULL as '';
         553|.02||a|b
 ERROR = !Failed to import table 'my_copytest', line 1 field col2 'int' expected in '.02'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|',E'\n'
         NULL as '';
         223|2.03||a|b
 ERROR = !Failed to import table 'my_copytest', line 1 field col2 'int' expected in '2.03'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|',E'\n'
         NULL as '';
         223|2||aaa|b
 ERROR = !Failed to import table 'my_copytest', line 1 field col4 'varchar(1)' expected in 'aaa'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|','\n'
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = COPY 1 RECORDS INTO my_copytest FROM stdin USING DELIMITERS '|',E'\n'
         NULL as '';
         223|3||a|bbb
 ERROR = !Failed to import table 'my_copytest', line 1 field col5 'varchar(1)' expected in 'bbb'

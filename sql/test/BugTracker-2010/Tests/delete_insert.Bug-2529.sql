@@ -15,7 +15,7 @@ COMMIT;
 START TRANSACTION;
 DELETE
     FROM user_record_insertion;
-COPY 10 RECORDS INTO user_record_insertion FROM STDIN USING DELIMITERS ',','\n';
+COPY 10 RECORDS INTO user_record_insertion FROM STDIN USING DELIMITERS ',',E'\n';
 Steven Teague,d5329b8f
 Chrystal Whitman,20cbc561
 Elisabeth Luetten,4e0bfbea

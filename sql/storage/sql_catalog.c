@@ -100,7 +100,7 @@ list_find_name(list *l, const char *name)
 }
 
 node *
-cs_find_id(changeset * cs, int id)
+cs_find_id(changeset * cs, sqlid id)
 {
 	node *n;
 	list *l = cs->set;
@@ -129,7 +129,7 @@ cs_find_id(changeset * cs, int id)
 }
 
 node *
-list_find_id(list *l, int id)
+list_find_id(list *l, sqlid id)
 {
 	if (l) {
 		node *n;
@@ -145,7 +145,7 @@ list_find_id(list *l, int id)
 }
 
 node *
-list_find_base_id(list *l, int id)
+list_find_base_id(list *l, sqlid id)
 {
 	if (l) {
 		node *n;
@@ -191,7 +191,7 @@ find_sql_table(sql_schema *s, const char *tname)
 }
 
 sql_table *
-find_sql_table_id(sql_schema *s, int id)
+find_sql_table_id(sql_schema *s, sqlid id)
 {
 	node *n = cs_find_id(&s->tables, id);
 
@@ -201,7 +201,7 @@ find_sql_table_id(sql_schema *s, int id)
 }
 
 node *
-find_sql_table_node(sql_schema *s, int id)
+find_sql_table_node(sql_schema *s, sqlid id)
 {
 	return cs_find_id(&s->tables, id);
 }
@@ -219,7 +219,7 @@ find_sql_schema(sql_trans *t, const char *sname)
 }
 
 sql_schema *
-find_sql_schema_id(sql_trans *t, int id)
+find_sql_schema_id(sql_trans *t, sqlid id)
 {
 	node *n = cs_find_id(&t->schemas, id);
 
@@ -229,7 +229,7 @@ find_sql_schema_id(sql_trans *t, int id)
 }
 
 node *
-find_sql_schema_node(sql_trans *t, int id)
+find_sql_schema_node(sql_trans *t, sqlid id)
 {
 	return cs_find_id(&t->schemas, id);
 }
@@ -251,7 +251,7 @@ find_sqlname(list *l, const char *name)
 }
 
 node *
-find_sql_type_node(sql_schema * s, int id)
+find_sql_type_node(sql_schema * s, sqlid id)
 {
 	return cs_find_id(&s->types, id);
 }
@@ -281,7 +281,7 @@ sql_trans_bind_type(sql_trans *tr, sql_schema *c, const char *name)
 }
 
 node *
-find_sql_func_node(sql_schema * s, int id)
+find_sql_func_node(sql_schema * s, sqlid id)
 {
 	return cs_find_id(&s->funcs, id);
 }
@@ -335,7 +335,7 @@ sql_trans_bind_func(sql_trans *tr, const char *name)
 }
 
 sql_func *
-sql_trans_find_func(sql_trans *tr, int id)
+sql_trans_find_func(sql_trans *tr, sqlid id)
 {
 	node *n, *m;
 	sql_func *t = NULL;

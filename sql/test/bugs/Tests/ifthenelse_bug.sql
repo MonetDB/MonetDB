@@ -17,7 +17,7 @@ CREATE TABLE my_table7 (
 --
 ) ;
 
-COPY 9 RECORDS INTO my_table6 FROM STDIN DELIMITERS '|','\n','' ;
+COPY 9 RECORDS INTO my_table6 FROM STDIN DELIMITERS '|',E'\n','' ;
 10|aa||aaa
 20|ab|NULL|aab
 30|ac||aac

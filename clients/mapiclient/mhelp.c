@@ -257,7 +257,7 @@ SQLhelp sqlhelp[] = {
 	 "Give execution plan details",
 	 "EXPLAIN statement",
 	 NULL,
-	 "See alsp https://www.monetdb.org/Documentation/Manuals/SQLreference/Explain"},
+	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Explain"},
 	{"LOCAL_TIMESTAMP",
 	 "Built-in function",
 	 "LOCAL_TIMESTAMP [ '(' ')']",
@@ -397,6 +397,7 @@ SQLhelp sqlhelp[] = {
 	 "SELECT [ ALL | DISTINCT [ ON ( expression [',' ...] ) ] ]\n"
 	 "[ '*' | expression [ [ AS ] output_name ] [',' ...] ]\n"
 	 "[ FROM from_item [',' ...] ]\n"
+	 "[ WINDOW window_definition [',' ...] ]\n"
 	 "[ WHERE condition ]\n"
 	 "[ GROUP BY grouping_element ',', ...] ]\n"
 	 "[ HAVING condition [',' ...] ]\n"
@@ -405,7 +406,7 @@ SQLhelp sqlhelp[] = {
 	 "[ LIMIT { count | param } ]\n"
 	 "[ OFFSET { count | param } ]\n"
 	 "[ SAMPLE size ]",
-	 "with_list,expression",
+	 "with_list,expression,window_definition",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"},
 	{"SET",
 	 "Assign a value to a variable or column",
@@ -486,17 +487,10 @@ SQLhelp sqlhelp[] = {
 	 "[ident ':'] WHILE search_condition DO procedure_statement ... END WHILE [ident]",
 	 "search_condition,procedure_statement",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
-	{"WINDOW",
+	{"WINDOW FUNCTIONS",
 	 "",
-	 "{ RANK | DENSE_RANK | PERCENT_RANK | CUME_DIST } OVER window_name |\n"
-	 "{ RANK | DENSE_RANK | PERCENT_RANK | CUME_DIST } OVER '('\n"
-	 "[ window_name ] [ PARTITION BY column_ref ... ]\n"
-	 "[ ORDER BY sort_spec]\n"
-	 "{ ROWS | RANGE } { UNBOUNDED PRECEDING | value PRECEDING | CURRENT ROW }\n"
-	 "[ BETWEEN { UNBOUNDED FOLLOWING | value FOLLOWING | UNBOUNDED PRECEDING | value PRECEDING | CURRENT ROW }\n"
-	 " AND { UNBOUNDED FOLLOWING | value FOLLOWING | UNBOUNDED PRECEDING | value PRECEDING | CURRENT ROW } ]\n"
-	 "[ EXCLUDING {CURRENT ROW | GROUP | TIES | NO OTHERS} ]",
-	 NULL,
+	 "{ window_aggregate_function | window_rank_function } OVER { ident | '(' window_specification ')' }",
+	 "window_aggregate_function,window_rank_function,window_specification",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/WindowFunctions"},
 
 // The subgrammar rules
@@ -798,6 +792,45 @@ SQLhelp sqlhelp[] = {
 	 NULL,
 	 "WHEN scalar_expression THEN procedure_statement ...",
 	 "procedure_statement",
+	 NULL},
+	{"window_aggregate_function",
+	 NULL,
+	 "{ AVG '(' query_expression ')' | COUNT '(' { '*' | query_expression } ')' | MAX '(' query_expression ')'\n"
+	 "| MIN '(' query_expression ')' | PROD '(' query_expression ')' | SUM '(' query_expression ')' }",
+	 "query_expression",
+	 NULL},
+	{"window_bound",
+	 NULL,
+	 "{ UNBOUNDED FOLLOWING | query_expression FOLLOWING | UNBOUNDED PRECEDING | query_expression PRECEDING | CURRENT ROW }",
+	 "query_expression",
+	 NULL},
+	{"window_definition",
+	 NULL,
+	 "ident AS '(' window_specification ')'",
+	 "window_specification",
+	 NULL},
+	{"window_frame_start",
+	 NULL,
+	 "{ UNBOUNDED PRECEDING | query_expression PRECEDING | CURRENT ROW }",
+	 "query_expression",
+	 NULL},
+	{"window_rank_function",
+	 NULL,
+	 "{ CUME_DIST '(' ')' | DENSE_RANK '(' ')' | FIRST_VALUE '(' query_expression ')'\n"
+	 "| LAG '(' query_expression [ ',' query_expression [ ',' query_expression ] ] ')' | LAST_VALUE '(' query_expression ')'\n"
+	 "| LEAD '(' query_expression [ ',' query_expression [ ',' query_expression ] ] ')'\n"
+	 "| NTH_VALUE '(' query_expression ',' query_expression ')' | NTILE '(' query_expression ')'\n"
+	 "| PERCENT_RANK '(' ')' | RANK '(' ')' | ROW_NUMBER '(' ')' }",
+	 "query_expression",
+	 NULL},
+	{"window_specification",
+	 NULL,
+	 "[ ident ]\n"
+	 "[ PARTITION BY column_ref [ ',' ... ] ]\n"
+	 "[ ORDER BY sort_spec ]\n"
+	 "[ { ROWS | RANGE | GROUPS } { window_frame_start | BETWEEN window_bound AND window_bound }\n"
+	 "  [ EXCLUDING { CURRENT ROW | GROUP | TIES | NO OTHERS } ] ]",
+	 "window_bound,window_frame_start",
 	 NULL},
 	{"with_list",
 	 NULL,

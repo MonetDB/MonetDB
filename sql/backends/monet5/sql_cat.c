@@ -689,7 +689,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 }
 
 static str
-drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
+drop_func(mvc *sql, char *sname, char *name, sqlid fid, int type, int action)
 {
 	sql_schema *s = NULL;
 	char is_aggr = (type == F_AGGR);
@@ -1041,7 +1041,7 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1);
 	str name = SaveArgReference(stk, pci, 2);
-	int auth_id;
+	sqlid auth_id;
 
 	initcontext();
 	auth_id = sql->role_id;
@@ -1226,7 +1226,7 @@ SQLgrant_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *auth = SaveArgReference(stk, pci, 2);
-	int grantor = *getArgReference_int(stk, pci, 3);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 3);
 	int admin = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
@@ -1240,7 +1240,7 @@ SQLrevoke_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *auth = SaveArgReference(stk, pci, 2);
-	int grantor = *getArgReference_int(stk, pci, 3);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 3);
 	int admin = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
@@ -1258,7 +1258,7 @@ SQLgrant(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int privs = *getArgReference_int(stk, pci, 4);
 	char *cname = SaveArgReference(stk, pci, 5);
 	int grant = *getArgReference_int(stk, pci, 6);
-	int grantor = *getArgReference_int(stk, pci, 7);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 7);
 
 	initcontext();
 	if (!tname || strcmp(tname, str_nil) == 0)
@@ -1277,7 +1277,7 @@ str SQLrevoke(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int privs = *getArgReference_int(stk, pci, 4);
 	char *cname = SaveArgReference(stk, pci, 5);
 	int grant = *getArgReference_int(stk, pci, 6);
-	int grantor = *getArgReference_int(stk, pci, 7);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 7);
 
 	initcontext();
 	if (!tname || strcmp(tname, str_nil) == 0)
@@ -1291,12 +1291,12 @@ str
 SQLgrant_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
-	int func_id = *getArgReference_int(stk, pci, 2);
+	str sname = *getArgReference_str(stk, pci, 1);
+	sqlid func_id = (sqlid) *getArgReference_int(stk, pci, 2);
 	char *grantee = *getArgReference_str(stk, pci, 3);
 	int privs = *getArgReference_int(stk, pci, 4);
 	int grant = *getArgReference_int(stk, pci, 5);
-	int grantor = *getArgReference_int(stk, pci, 6);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 6);
 
 	initcontext();
 	msg = sql_grant_func_privs(sql, grantee, privs, sname, func_id, grant, grantor);
@@ -1307,12 +1307,12 @@ str
 SQLrevoke_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
-	int func_id = *getArgReference_int(stk, pci, 2);
+	str sname = *getArgReference_str(stk, pci, 1);
+	sqlid func_id = (sqlid) *getArgReference_int(stk, pci, 2);
 	char *grantee = *getArgReference_str(stk, pci, 3);
 	int privs = *getArgReference_int(stk, pci, 4);
 	int grant = *getArgReference_int(stk, pci, 5);
-	int grantor = *getArgReference_int(stk, pci, 6);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 6);
 
 	initcontext();
 	msg = sql_revoke_func_privs(sql, grantee, privs, sname, func_id, grant, grantor);
@@ -1379,7 +1379,7 @@ SQLcreate_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *role = sname;
-	int grantor = *getArgReference_int(stk, pci, 3);
+	sqlid grantor = (sqlid)*getArgReference_int(stk, pci, 3);
 
 	initcontext();
 	msg = sql_create_role(sql, role, grantor);
@@ -1416,7 +1416,7 @@ SQLdrop_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *fname = *getArgReference_str(stk, pci, 2);
-	int fid = *getArgReference_int(stk, pci, 3);
+	sqlid fid = (sqlid)*getArgReference_int(stk, pci, 3);
 	int type = *getArgReference_int(stk, pci, 4);
 	int action = *getArgReference_int(stk, pci, 5);
 
@@ -1556,7 +1556,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg;
-	int objid = *getArgReference_int(stk, pci, 1);
+	sqlid objid = (sqlid) *getArgReference_int(stk, pci, 1);
 	char *remark = *getArgReference_str(stk, pci, 2);
 	sql_trans *tx;
 	sql_schema *sys;
@@ -1620,7 +1620,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
 	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
 		throw(SQL, "sql.rename_schema", SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0)
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
 	if (mvc_bind_schema(sql, new_name))
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
@@ -1655,7 +1655,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 		throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table %s (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0)
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
 		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
 	if (mvc_bind_table(sql, s, new_name))
 		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
@@ -1693,7 +1693,7 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_column", SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
 	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
 		throw(SQL, "sql.rename_column", SQLSTATE(2BM37) "ALTER TABLE: cannot rename column '%s' (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0)
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: invalid new column name");
 	if (mvc_bind_column(sql, t, new_name))
 		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);

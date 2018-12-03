@@ -99,7 +99,7 @@ backend_rename_user(ptr mvc, str olduser, str newuser)
 }
 
 void*
-backend_schema_user_dependencies(ptr trans, int schema_id)
+backend_schema_user_dependencies(ptr trans, sqlid schema_id)
 {
 	if (be_funcs.fschuserdep != NULL)
 		return(be_funcs.fschuserdep(trans, schema_id));

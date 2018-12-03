@@ -4,11 +4,11 @@ CREATE TABLE subt2 (movie_id BIGINT, release_year INT, title VARCHAR(200));
 
 ALTER TABLE ratings ADD TABLE subt1 AS PARTITION BETWEEN 1950 AND 2005;
 
-COPY 1347 RECORDS INTO ratings FROM '$TSTDATAPATH/netflix_data/movies.csv' USING DELIMITERS ',','\n','\"'; --error
+COPY 1347 RECORDS INTO ratings FROM E'$QTSTDATAPATH/netflix_data/movies.csv' USING DELIMITERS ',',E'\n','"'; --error
 
 ALTER TABLE ratings ADD TABLE subt2 AS PARTITION BETWEEN 1925 AND 1949;
 
-COPY 1347 RECORDS INTO ratings FROM '$TSTDATAPATH/netflix_data/movies.csv' USING DELIMITERS ',','\n','\"';
+COPY 1347 RECORDS INTO ratings FROM E'$QTSTDATAPATH/netflix_data/movies.csv' USING DELIMITERS ',',E'\n','"';
 
 CREATE LOADER tryaloader() LANGUAGE PYTHON {
     _emit.emit({'movie_id': 1, 'release_year': 1926, 'title': 'A horror movie'});

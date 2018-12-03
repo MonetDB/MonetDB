@@ -28,8 +28,8 @@ stderr of test 'columns` in directory 'sql/test/copy` itself:
 # 09:30:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15100" "--port=36199"
 # 09:30:19 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-15100/.s.monetdb.36199
-QUERY = copy 3 records into tbl (i, d) from stdin delimiters ',','\n';
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = copy 3 records into tbl (i, d) from stdin delimiters ',',E'\n';
         1,2.0
 ERROR = !Failed to import table 'tbl', Column value 2 missing
 CODE  = 42000

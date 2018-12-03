@@ -53,7 +53,7 @@ extern void backend_create_privileges(ptr mvc, sql_schema *s);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
 extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd);
 extern int	backend_rename_user(ptr mvc, str olduser, str newuser);
-extern void*	backend_schema_user_dependencies(ptr trans, int schema_id);
+extern void*	backend_schema_user_dependencies(ptr trans, sqlid schema_id);
 extern int	backend_resolve_function(ptr trans, sql_func *f);
 
 extern backend_functions be_funcs;

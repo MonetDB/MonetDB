@@ -50,7 +50,9 @@ bla
 """bla"
 """bla""""blah"""
 blah's nork
+#select E'blah\'nork';
 blah'nork
+#select E'blah\,blah';
 "blah,blah"
 "blah \tthe \n black"
 #select 'blah \t the \\n black';

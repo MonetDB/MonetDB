@@ -9,7 +9,7 @@ CREATE TABLE SALESMART (
     COUNTRY VARCHAR(100)
 );
 
-COPY 1000 RECORDS INTO SALESMART FROM STDIN USING DELIMITERS ';', '\n', '"';
+COPY 1000 RECORDS INTO SALESMART FROM STDIN USING DELIMITERS ';', E'\n', '"';
 L'Oven Fresh white bread;Baked goods;0.59;San Francisco;California;United States
 Texas cheese toast;Frozen;1.49;Paris;Ile-De-France;France
 Broccoli stir fry mixture;Frozen;0.89;Bluff City;Kansas;United States

@@ -1632,7 +1632,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		dquoted_print(toConsole, schema, ".");
 		dquoted_print(toConsole, tname,
 			      " FROM stdin USING DELIMITERS "
-			      "'\\t','\\n','\"';\n");
+			      "E'\\t',E'\\n','\"';\n");
 	}
 	string = malloc(sizeof(unsigned char) * cnt);
 	if (string == NULL)

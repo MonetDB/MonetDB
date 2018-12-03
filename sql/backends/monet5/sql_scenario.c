@@ -1109,8 +1109,8 @@ SQLparser(Client c)
 			if (m->session->active) {
 				if (commit) {
 					msg = mvc_commit(m, 0, NULL, true);
-				} else if (!commit && (msg = mvc_rollback(m, 0, NULL, true)) != MAL_SUCCEED) {
-					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
+				} else {
+					msg = mvc_rollback(m, 0, NULL, true);
 				}
 			}
 			in->pos = in->len;	/* HACK: should use parsed length */

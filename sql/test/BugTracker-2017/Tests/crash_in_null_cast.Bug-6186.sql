@@ -4,7 +4,7 @@ CREATE TABLE "sys"."unitTestDontDelete" (
 	"C" DOUBLE,
 	"D" TIMESTAMP
 );
-COPY 10 RECORDS INTO "sys"."unitTestDontDelete" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 10 RECORDS INTO "sys"."unitTestDontDelete" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 NULL	NULL	NULL	NULL
 "Cat1"	0	0.5	2013-06-10 11:10:10.000000
 "Cat2"	1	1.5	2013-06-11 12:11:11.000000
@@ -22,7 +22,7 @@ CREATE TABLE "sys"."test_join_left_table" (
 	"b"   VARCHAR(255),
 	"l_c" VARCHAR(255)
 );
-COPY 4 RECORDS INTO "sys"."test_join_left_table" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 4 RECORDS INTO "sys"."test_join_left_table" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 "a1"	"b1"	"c1"
 "a2"	"b2"	"c2"
 "a3"	"b3"	"c3"

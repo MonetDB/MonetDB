@@ -1,6 +1,6 @@
 
 CREATE TABLE x (a CLOB);
-COPY 3 RECORDS INTO x FROM STDIN USING DELIMITERS ',', '\n', '\'';
+COPY 3 RECORDS INTO x FROM STDIN USING DELIMITERS ',', E'\n', '''';
 'null'
 'aap'
 'beer'

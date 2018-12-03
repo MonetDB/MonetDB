@@ -2260,11 +2260,10 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *res_id= getArgReference_int(stk, pci,0);
 	str filename = * getArgReference_str(stk,pci,1);
 	const char *format = *getArgReference_str(stk,pci,2);
-	unsigned char *tsep = NULL, *rsep = NULL, *ssep = NULL, *ns = NULL;
-	unsigned char *T = (unsigned char *) *getArgReference_str(stk, pci, 3);
-	unsigned char *R = (unsigned char *) *getArgReference_str(stk, pci, 4);
-	unsigned char *S = (unsigned char *) *getArgReference_str(stk, pci, 5);
-	unsigned char *N = (unsigned char *) *getArgReference_str(stk, pci, 6);
+	const char *tsep = *getArgReference_str(stk, pci, 3);
+	const char *rsep = *getArgReference_str(stk, pci, 4);
+	const char *ssep = *getArgReference_str(stk, pci, 5);
+	const char *ns = *getArgReference_str(stk, pci, 6);
 	int onclient = *getArgReference_int(stk, pci, 7);
 
 	bat tblId= *getArgReference_bat(stk, pci,8);
@@ -2273,7 +2272,6 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat lenId= *getArgReference_bat(stk, pci,11);
 	bat scaleId= *getArgReference_bat(stk, pci,12);
 
-	size_t l;
 	int i, res;
 	stream *s;
 	str tblname, colname, tpename, msg= MAL_SUCCEED;
@@ -2306,47 +2304,10 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup_result_set;
 	}
 
-	l = strlen((char *) T);
-	tsep = GDKmalloc(l + 1);
-	if(tsep == 0){
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto wrapup_result_set;
-	}
-	GDKstrFromStr(tsep, T, l);
-	l = 0;
-	l = strlen((char *) R);
-	rsep = GDKmalloc(l + 1);
-	if(rsep == 0){
-		GDKfree(tsep);
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto wrapup_result_set;
-	}
-	GDKstrFromStr(rsep, R, l);
-	l = 0;
-	l = strlen((char *) S);
-	ssep = GDKmalloc(l + 1);
-	if(ssep == 0){
-		GDKfree(tsep);
-		GDKfree(rsep);
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto wrapup_result_set;
-	}
-	GDKstrFromStr(ssep, S, l);
-	l = 0;
-	l = strlen((char *) N);
-	ns = GDKmalloc(l + 1);
-	if(ns == 0){
-		GDKfree(tsep);
-		GDKfree(rsep);
-		GDKfree(ssep);
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto wrapup_result_set;
-	}
-	GDKstrFromStr(ns, N, l);
-	t->tsep = (char *) tsep;
-	t->rsep = (char *) rsep;
-	t->ssep = (char *) ssep;
-	t->ns = (char *) ns;
+	t->tsep = tsep;
+	t->rsep = rsep;
+	t->ssep = ssep;
+	t->ns = ns;
 
 	tbl = BATdescriptor(tblId);
 	atr = BATdescriptor(atrId);
@@ -2932,20 +2893,11 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 
 		if (tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			size_t flen =  strlen(fname);
-			char *fn = GDKmalloc(flen + 1);
-
-			if (fn == NULL) {
-				msg = createException(SQL, "sql.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				goto bailout;
-			}
-			GDKstrFromStr((unsigned char *) fn, (const unsigned char *) fname, flen);
 			if (onclient) {
 				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fn);
+				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fname);
 				msg = MAL_SUCCEED;
 				mnstr_flush(be->mvc->scanner.ws);
-				GDKfree(fn);
 				while (!be->mvc->scanner.rs->eof)
 					bstream_next(be->mvc->scanner.rs);
 				stream *ss = be->mvc->scanner.rs->s;
@@ -2971,8 +2923,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				}
 				/* this code should be extended to
 				 * deal with larger text strings. */
-				FILE *f = fopen(fn, "r");
-				GDKfree(fn);
+				FILE *f = fopen(fname, "r");
 				if (f == NULL) {
 					BBPreclaim(c);
 					msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to re-open file %s", fname);
@@ -3002,8 +2953,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				fclose(f);
 				GDKfree(buf);
 			} else {
-				c = BATattach(tpe, fn, TRANSIENT);
-				GDKfree(fn);
+				c = BATattach(tpe, fname, TRANSIENT);
 			}
 			if (c == NULL) {
 				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
@@ -4515,6 +4465,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									}
 									if (cnt2)
 										w = (int) (sum / cnt2);
+								} else if (ATOMvarsized(bn->ttype)) {
+									sz = BATcount(bn);
+									if (sz > 0)
+										w = (int) ((bn->tvheap->free + sz / 2) / sz);
+									else
+										w = 0;
 								}
 								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;

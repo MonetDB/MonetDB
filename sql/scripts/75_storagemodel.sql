@@ -42,6 +42,11 @@ external name sql."storage";
 
 create view sys."storage" as
 select * from sys."storage"()
+-- exclude system tables
+ where ("schema", "table") in (
+	SELECT sch."name", tbl."name"
+	  FROM sys."tables" AS tbl JOIN sys."schemas" AS sch ON tbl.schema_id = sch.id
+	 WHERE tbl."system" = FALSE)
 order by "schema", "table", "column";
 
 create view sys."tablestorage" as
@@ -53,7 +58,7 @@ select "schema", "table",
 	sum(hashes) as hashsize,
 	sum("imprints") as imprintsize,
 	sum(orderidx) as orderidxsize
- from sys."storage"()
+ from sys."storage"
 group by "schema", "table"
 order by "schema", "table";
 
@@ -65,11 +70,11 @@ select "schema",
 	sum(hashes) as hashsize,
 	sum("imprints") as imprintsize,
 	sum(orderidx) as orderidxsize
- from sys."storage"()
+ from sys."storage"
 group by "schema"
 order by "schema";
 
--- refinements for schemas, tables, and individual columns
+-- refinements for specific schemas, tables, and individual columns
 create function sys."storage"(sname varchar(1024))
 returns table (
 	"schema" varchar(1024),
@@ -167,19 +172,23 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select "schema", "table", "column", "type", typewidth, "count", 0, typewidth, FALSE, sorted, revsorted, "unique", orderidx, compressed
-	  from sys."storage"()
-	-- exclude system tables (those are not useful to be modeled for storagesize for application users)
-	 where ("schema", "table") in (
-		SELECT sch."name", tbl."name"
-		  FROM sys."_tables" AS tbl JOIN sys."schemas" AS sch ON tbl.schema_id = sch.id
-		 WHERE tbl."system" = FALSE)
+	select "schema", "table", "column", "type", typewidth, "count", 0,
+		case when "count" > 0 and heapsize >= 8192 and "type" in ('varchar', 'char', 'clob', 'json', 'url')
+			-- string heaps have a header of 8192
+			then cast((heapsize - 8192) / "count" as bigint)
+		when "count" > 0 and heapsize >= 32 and "type" in ('blob', 'geometry', 'geometrya')
+			-- binary data heaps have a header of 32
+			then cast((heapsize - 32) / "count" as bigint)
+		else typewidth end,
+		FALSE, sorted, revsorted, "unique", orderidx, compressed
+	  from sys."storage"  -- view sys."storage" excludes system tables (as those are not useful to be modeled for storagesize by application users)
 	order by "schema", "table", "column";
 
 	update sys.storagemodelinput
 	   set "distinct" = "count"
 	 where "unique" = TRUE
-	    or "type" IN ('varchar', 'char', 'clob', 'blob', 'json', 'url'); -- assume all strings are distinct
+		-- assume all variable size types contain distinct values
+	    or "type" IN ('varchar', 'char', 'clob', 'json', 'url', 'blob', 'geometry', 'geometrya');
 
 	update sys.storagemodelinput
 	   set reference = TRUE
@@ -201,55 +210,48 @@ end;
 -- and the upperbound when all possible index structures are created.
 -- The storage requirement for foreign key joins is split amongst the participants.
 
-create function sys.columnsize(tpe varchar(1024), count bigint, _distinct bigint, avgwidth int)
+create function sys.columnsize(tpe varchar(1024), count bigint)
 returns bigint
 begin
 	-- for fixed size types: typewidth_inbytes * count
-	if tpe = 'tinyint' or tpe = 'boolean'
-	then
-		return count;
+	if tpe in ('tinyint', 'boolean')
+		then return count;
 	end if;
 	if tpe = 'smallint'
-	then
-		return 2 * count;
+		then return 2 * count;
 	end if;
-	if tpe = 'int' or tpe = 'real' or tpe = 'date' or tpe = 'time' or tpe = 'timetz' or tpe = 'sec_interval' or tpe = 'month_interval'
-	then
-		return 4 * count;
+	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')
+		then return 4 * count;
 	end if;
-	if tpe = 'bigint' or tpe = 'decimal' or tpe = 'double' or tpe = 'timestamp' or tpe = 'timestamptz' or tpe = 'inet' or tpe = 'oid'
-	then
-		return 8 * count;
+	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')
+		then return 8 * count;
 	end if;
-	if tpe = 'hugeint' or tpe = 'uuid'
-	then
-		return 16 * count;
+	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')
+		then return 16 * count;
 	end if;
 
-	-- for variable size types it is more complicated
-	if tpe = 'varchar' or tpe = 'char' or tpe = 'clob' or tpe = 'json' or tpe = 'url'
-	then
-		return sys.sql_max(4 * count, 8192 + ((avgwidth + 8) * _distinct));
+	-- for variable size types we compute the columnsize as refs (assume 4 bytes each for char strings) to the heap, excluding data in the var heap
+	if tpe in ('varchar', 'char', 'clob', 'json', 'url')
+		then return 4 * count;
 	end if;
-	if tpe = 'blob'
-	then
-		return (avgwidth + 8) * count;
+	if tpe in ('blob', 'geometry', 'geometrya')
+		then return 8 * count;
 	end if;
 
-	return 16 * count;
+	return 8 * count;
 end;
 
-create function sys.heapsize(tpe varchar(1024), count bigint, _distinct bigint, avgwidth int)
+create function sys.heapsize(tpe varchar(1024), count bigint, distincts bigint, avgwidth int)
 returns bigint
 begin
-	if tpe = 'varchar' or tpe = 'char' or tpe = 'clob' or tpe = 'json' or tpe = 'url'
-	then
-		return 8192 + ((avgwidth + 8) * _distinct);
+	-- only variable size types have a heap
+	if tpe in ('varchar', 'char', 'clob', 'json', 'url')
+		then return 8192 + ((avgwidth + 8) * distincts);
 	end if;
-	if tpe = 'blob'
-	then
-		return (avgwidth + 8) * count;
+	if tpe in ('blob', 'geometry', 'geometrya')
+		then return avgwidth * count;
 	end if;
+
 	return 0;
 end;
 
@@ -258,8 +260,7 @@ returns bigint
 begin
 	-- assume non-compound keys
 	if b = true
-	then
-		return 8 * count;
+		then return 8 * count;
 	end if;
 	return 0;
 end;
@@ -268,26 +269,21 @@ create function sys.imprintsize(tpe varchar(1024), count bigint)
 returns bigint
 begin
 	-- for fixed size types: typewidth_inbytes * 0.2 * count
-	if tpe = 'tinyint' or tpe = 'boolean'
-	then
-		return cast(0.2 * count as bigint);
+	if tpe in ('tinyint', 'boolean')
+		then return cast(0.2 * count as bigint);
 	end if;
 	if tpe = 'smallint'
-	then
-		return cast(0.4 * count as bigint);
+		then return cast(0.4 * count as bigint);
 	end if;
-	if tpe = 'int' or tpe = 'real' or tpe = 'date' or tpe = 'time' or tpe = 'timetz' or tpe = 'sec_interval' or tpe = 'month_interval'
-	then
-		return cast(0.8 * count as bigint);
+	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')
+		then return cast(0.8 * count as bigint);
 	end if;
-	if tpe = 'bigint' or tpe = 'double' or tpe = 'timestamp' or tpe = 'timestamptz' or tpe = 'oid'
-	then
-		return cast(1.6 * count as bigint);
+	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')
+		then return cast(1.6 * count as bigint);
 	end if;
-	-- decimal can be mapped to tinyint or smallint or int or bigint or hugeint depending on precision. For the estimate we assume hugeint mapping.
-	if tpe = 'hugeint' or tpe = 'decimal'
-	then
-		return cast(3.2 * count as bigint);
+	-- a decimal can be mapped to tinyint or smallint or int or bigint or hugeint depending on precision. For the estimate we assume mapping to hugeint.
+	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')
+		then return cast(3.2 * count as bigint);
 	end if;
 
 	-- imprints are not supported on other types
@@ -296,7 +292,7 @@ end;
 
 create view sys.storagemodel as
 select "schema", "table", "column", "type", "count",
-	columnsize("type", "count", "distinct", "atomwidth") as columnsize,
+	columnsize("type", "count") as columnsize,
 	heapsize("type", "count", "distinct", "atomwidth") as heapsize,
 	hashsize("reference", "count") as hashsize,
 	imprintsize("type", "count") as imprintsize,
@@ -312,7 +308,7 @@ create view sys.tablestoragemodel as
 select "schema", "table",
 	max("count") as "rowcount",
 	count(*) as "storages",
-	sum(columnsize("type", "count", "distinct", "atomwidth")) as columnsize,
+	sum(columnsize("type", "count")) as columnsize,
 	sum(heapsize("type", "count", "distinct", "atomwidth")) as heapsize,
 	sum(hashsize("reference", "count")) as hashsize,
 	sum(imprintsize("type", "count")) as imprintsize,
