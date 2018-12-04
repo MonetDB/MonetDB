@@ -587,7 +587,7 @@ MOSdecompressInternal(Client cntxt, bat *bid)
 		BBPunfix(bsrc->batCacheid);
 		return MAL_SUCCEED;
 	}
-	if (!bsrc->tmosaic) {
+	if (!bsrc->tmosaic) {// TODO: Check if this is actually possible.
 #ifdef _DEBUG_MOSAIC_
 		mnstr_printf(cntxt->fdout,"#decompress tmosaic == 0\n");
 #endif
