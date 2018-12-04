@@ -1316,7 +1316,6 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 
 #define PERSISTENT		0
 #define TRANSIENT		1
-#define LOG_DIR			2
 
 #define BATcapacity(b)	(b)->batCapacity
 /*
