@@ -897,6 +897,11 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			// TODO check where this task is cleaned up.
 			task = (MOStask) GDKzalloc(sizeof(*task));
 			if( c->storage_type) {
+
+				if (strstr(c->storage_type,"mosaic") != 0)
+							throw(SQL,
+								"sql.alter", MOSAIC_STRATEGY_NOT_ALLOWED);
+
 				if( task == NULL)
 					throw(SQL, "sql.alter", MAL_MALLOC_FAIL);
 

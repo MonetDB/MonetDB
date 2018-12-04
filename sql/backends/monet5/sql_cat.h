@@ -22,6 +22,8 @@
 #define sql5_export extern
 #endif
 
+#define MOSAIC_STRATEGY_NOT_ALLOWED "Currently MonetDB does not support the mosaic storage strategy."
+
 #include "sql.h"
 #include "mal_backend.h"
 #include "sql_atom.h"
