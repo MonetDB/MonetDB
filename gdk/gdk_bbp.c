@@ -884,7 +884,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 #endif
 
 static int
-heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpversion, bat bid, const char *filename)
+heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, const char *filename)
 {
 	int t;
 	char type[11];
@@ -938,7 +938,7 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpvers
 		if ((t = ATOMunknown_find(type)) == 0)
 			GDKfatal("BBPinit: no space for atom %s", type);
 	} else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL))
-		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.varsized mismatch for BAT %d\n", HT, (int) bid);
+		GDKfatal("BBPinit: inconsistent entry in BBP.dir: tvarsized mismatch for BAT %d\n", (int) bid);
 	else if (var && t != 0 ?
 		 ATOMsize(t) < width ||
 		 (width != 1 && width != 2 && width != 4
@@ -947,7 +947,7 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpvers
 #endif
 			 ) :
 		 ATOMsize(t) != width)
-		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.size mismatch for BAT %d\n", HT, (int) bid);
+		GDKfatal("BBPinit: inconsistent entry in BBP.dir: tsize mismatch for BAT %d\n", (int) bid);
 	b->ttype = t;
 	b->twidth = width;
 	b->tvarsized = var != 0;
@@ -1117,7 +1117,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 				GDKfatal("BBPinit: head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ").", batid, base);
 			bn->hseqbase = (oid) base;
 		}
-		nread += heapinit(bn, buf + nread, &Thashash, "T", bbpversion, bid, filename);
+		nread += heapinit(bn, buf + nread, &Thashash, bbpversion, bid, filename);
 		nread += vheapinit(bn, buf + nread, Thashash, bid, filename);
 
 		if (bbpversion <= GDKLIBRARY_NOKEY &&
