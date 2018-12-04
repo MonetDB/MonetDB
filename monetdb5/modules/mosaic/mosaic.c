@@ -595,7 +595,7 @@ MOSdecompressInternal(Client cntxt, bat *bid)
 		return MAL_SUCCEED;
 	}
 
-	if (bsrc->tmosaic && VIEWtparent(bsrc)) {
+	if (bsrc->tmosaic && VIEWtparent(bsrc)) {// TODO: the check on bsrc->tmosaic DEFINITELY doesn't make sense.
 		BBPunfix(bsrc->batCacheid);
 		throw(MAL, "mosaic.decompress", "cannot decompress tail-VIEW");
 	}
