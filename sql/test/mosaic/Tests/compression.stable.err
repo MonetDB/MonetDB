@@ -30,6 +30,12 @@ stderr of test 'compression` in directory 'sql/test/mosaic` itself:
 # 14:00:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19726" "--port=38313"
 # 14:00:27 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-15770/.s.monetdb.33013
+QUERY = alter table tmp3 alter column i set storage 'runlength,dictionary';
+
+MAPI  = (monetdb) /var/tmp/mtest-15770/.s.monetdb.33013
+QUERY = alter table tmp3 alter column b set storage 'mosaic';
+
 
 
 # 14:00:27 >  
