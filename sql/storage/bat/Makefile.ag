@@ -15,13 +15,14 @@ INCLUDES = .. ../../include ../../common \
 		   ../../../monetdb5/mal \
 		   ../../../monetdb5/modules/mal \
 		   ../../../monetdb5/optimizer \
-		   ../../../monetdb5/scheduler 
+		   ../../../monetdb5/scheduler
 
 lib_batstore = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
 		bat_table.c bat_storage.c bat_logger.c bat_utils.c \
+		nop_logger.c nop_logger.h \
 		res_table.c \
 		bat_logger.h bat_storage.h bat_table.h bat_utils.h res_table.h
 }

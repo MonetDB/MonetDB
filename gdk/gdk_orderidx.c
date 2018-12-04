@@ -80,6 +80,7 @@ BATcheckorderidx(BAT *b)
 		const char *nme = BBP_physical(b->batCacheid);
 		int fd;
 
+		assert(!GDKinmemory());
 		b->torderidx = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0) {
@@ -129,7 +130,7 @@ createOIDXheap(BAT *b, bool stable)
 	oid *restrict mv;
 	const char *nme;
 
-	nme = BBP_physical(b->batCacheid);
+	nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
 	    snprintf(m->filename, sizeof(m->filename), "%s.torderidx", nme) < 0 ||
@@ -153,7 +154,8 @@ persistOIDX(BAT *b)
 #ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount &&
-	    !b->theap.dirty) {
+	    !b->theap.dirty &&
+	    !GDKinmemory()) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
 		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
@@ -482,8 +484,13 @@ OIDXfree(BAT *b)
 
 		MT_lock_set(&GDKhashLock(b->batCacheid));
 		if ((hp = b->torderidx) != NULL && hp != (Heap *) 1) {
-			b->torderidx = (Heap *) 1;
-			HEAPfree(hp, false);
+			if (GDKinmemory()) {
+				b->torderidx = NULL;
+				HEAPfree(hp, true);
+			} else {
+				b->torderidx = (Heap *) 1;
+				HEAPfree(hp, false);
+			}
 			GDKfree(hp);
 		}
 		MT_lock_unset(&GDKhashLock(b->batCacheid));

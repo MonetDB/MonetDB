@@ -257,6 +257,7 @@ gdk_return GDKgetsem(int sem_id, int count, int *semid, str *msg);
 gdk_return GDKgetsemval(int sem_id, int number, int *semval, str *msg);
 bool GDKinit(opt *set, int setlen);
 gdk_return GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str *msg);
+bool GDKinmemory(void);
 BAT *GDKkey;
 ATOMIC_TYPE volatile GDKlockcnt;
 ATOMIC_TYPE volatile GDKlockcontentioncnt;

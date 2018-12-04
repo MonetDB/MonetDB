@@ -1057,7 +1057,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
-		nme = BBP_physical(b->batCacheid);
+		nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 		mask = MAX(HASHmask(cnt), 1 << 16);
 		/* mask is a power of two, so pop(mask - 1) tells us
 		 * which power of two */
