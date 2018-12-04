@@ -737,13 +737,12 @@ typedef struct {
 	MT_Id tid;		/* which thread created it */
 	uint32_t
 	 copiedtodisk:1,	/* once written */
-	 dirty:1,		/* dirty wrt disk? */
 	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 restricted:2,		/* access privileges */
 	 persistence:1,		/* should the BAT persist on disk? */
 	 role:8,		/* role of the bat */
-	 unused:17;		/* value=0 for now (sneakily used by mat.c) */
+	 unused:18;		/* value=0 for now (sneakily used by mat.c) */
 	int sharecnt;		/* incoming view count */
 
 	/* delta status administration */
