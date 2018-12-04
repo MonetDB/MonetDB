@@ -1171,7 +1171,6 @@ BBPheader(FILE *fp)
 	char buf[BUFSIZ];
 	int sz, ptrsize, oidsize, intsize;
 	unsigned bbpversion;
-	char *s;
 
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: BBP.dir is empty");
@@ -1212,14 +1211,22 @@ BBPheader(FILE *fp)
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: short BBP");
 	}
-	/* when removing GDKLIBRARY_TALIGN, also remove the strstr
-	 * call and just sscanf from buf */
+#ifdef GDKLIBRARY_TALIGN
+	char *s;
 	if ((s = strstr(buf, "BBPsize")) != NULL) {
-		sscanf(s, "BBPsize=%d", &sz);
+		if (sscanf(s, "BBPsize=%d", &sz) != 1)
+			GDKfatal("BBPinit: no BBPsize value found\n");
 		sz = (int) (sz * BATMARGIN);
 		if (sz > (bat) ATOMIC_GET(BBPsize, BBPsizeLock))
 			ATOMIC_SET(BBPsize, sz, BBPsizeLock);
 	}
+#else
+	if (sscanf(buf, "BBPsize=%d", &sz) != 1)
+		GDKfatal("BBPinit: no BBPsize value found\n");
+	sz = (int) (sz * BATMARGIN);
+	if (sz > (bat) ATOMIC_GET(BBPsize, BBPsizeLock))
+		ATOMIC_SET(BBPsize, sz, BBPsizeLock);
+#endif
 	return bbpversion;
 }
 
