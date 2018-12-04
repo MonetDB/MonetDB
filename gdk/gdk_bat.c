@@ -680,8 +680,9 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 	/* first try case (1); create a view, possibly with different
 	 * atom-types */
 	if (role == b->batRole &&
-	    BAThrestricted(b) == BAT_READ &&
-	    BATtrestricted(b) == BAT_READ &&
+	    b->batRestricted == BAT_READ &&
+	    (!VIEWtparent(b) ||
+	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ) &&
 	    !writable) {
 		bn = VIEWcreate(b->hseqbase, b);
 		if (bn == NULL)
@@ -1934,9 +1935,11 @@ BATcheckmodes(BAT *b, bool existing)
 }
 
 gdk_return
-BATsetaccess(BAT *b, int newmode)
+BATsetaccess(BAT *b, restrict_t newmode)
 {
-	int bakmode, bakdirty;
+	restrict_t bakmode;
+	bool bakdirty;
+
 	BATcheck(b, "BATsetaccess", GDK_FAIL);
 	if (isVIEW(b) && newmode != BAT_READ) {
 		if (VIEWreset(b) != GDK_SUCCEED)
@@ -1988,11 +1991,12 @@ BATsetaccess(BAT *b, int newmode)
 	return GDK_SUCCEED;
 }
 
-int
+restrict_t
 BATgetaccess(BAT *b)
 {
 	BATcheck(b, "BATgetaccess", 0);
-	return b->batRestricted;
+	assert(b->batRestricted != 3); /* only valid restrict_t values */
+	return (restrict_t) b->batRestricted;
 }
 
 /*

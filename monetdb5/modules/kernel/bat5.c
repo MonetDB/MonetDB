@@ -34,7 +34,7 @@
 
 /* set access mode to bat, replacing input with output */
 static BAT *
-setaccess(BAT *b, int mode)
+setaccess(BAT *b, restrict_t mode)
 {
 	BAT *bn = b;
 
@@ -613,7 +613,7 @@ str
 BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 {
 	BAT *b;
-	int m;
+	restrict_t m;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setAccess", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -654,10 +654,6 @@ BKCgetAccess(str *res, const bat *bid)
 		break;
 	case BAT_WRITE:
 		*res = GDKstrdup("write");
-		break;
-	default:
-		/* cannot happen, just here to help analysis tools */
-		*res = GDKstrdup(str_nil);
 		break;
 	}
 	BBPunfix(b->batCacheid);

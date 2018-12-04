@@ -1249,10 +1249,10 @@ bat_iterator(BAT *b)
  * @item BAT *
  * @tab BATmode (BAT *b, int mode)
  * @item BAT *
- * @tab BATsetaccess (BAT *b, int mode)
+ * @tab BATsetaccess (BAT *b, restrict_t mode)
  * @item int
  * @tab BATdirty (BAT *b)
- * @item int
+ * @item restrict_t
  * @tab BATgetaccess (BAT *b)
  * @end multitable
  *
@@ -1292,8 +1292,21 @@ gdk_export gdk_return BATmode(BAT *b, int mode);
 gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
-gdk_export gdk_return BATsetaccess(BAT *b, int mode);
-gdk_export int BATgetaccess(BAT *b);
+
+/* The batRestricted field indicates whether a BAT is readonly.
+ * we have modes: BAT_WRITE  = all permitted
+ *                BAT_APPEND = append-only
+ *                BAT_READ   = read-only
+ * VIEW bats are always mapped read-only.
+ */
+typedef enum {
+	BAT_WRITE,		  /* all kinds of access allowed */
+	BAT_READ,		  /* only read-access allowed */
+	BAT_APPEND,		  /* only reads and appends allowed */
+} restrict_t;
+
+gdk_export gdk_return BATsetaccess(BAT *b, restrict_t mode);
+gdk_export restrict_t BATgetaccess(BAT *b);
 
 
 #define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
@@ -1304,10 +1317,6 @@ gdk_export int BATgetaccess(BAT *b);
 #define PERSISTENT		0
 #define TRANSIENT		1
 #define LOG_DIR			2
-
-#define BAT_WRITE		0	/* all kinds of access allowed */
-#define BAT_READ		1	/* only read-access allowed */
-#define BAT_APPEND		2	/* only reads and appends allowed */
 
 #define BATcapacity(b)	(b)->batCapacity
 /*
@@ -2532,16 +2541,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 			return (e);					\
 		}							\
 	} while (false)
-
-/* The batRestricted field indicates whether a BAT is readonly.
- * we have modes: BAT_WRITE  = all permitted
- *                BAT_APPEND = append-only
- *                BAT_READ   = read-only
- * VIEW bats are always mapped read-only.
- */
-
-#define BAThrestricted(b) ((b)->batRestricted)
-#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
 
 /* the parentid in a VIEW is correct for the normal view. We must
  * correct for the reversed view.

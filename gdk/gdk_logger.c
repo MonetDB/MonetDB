@@ -296,7 +296,7 @@ la_bat_clear(logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		int access = b->batRestricted;
+		restrict_t access = b->batRestricted;
 		b->batRestricted = BAT_WRITE;
 		BATclear(b, true);
 		b->batRestricted = access;
@@ -2986,7 +2986,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
 	lng lid = (lng) id;
 
-	assert(b->batRestricted > 0 ||
+	assert(b->batRestricted != BAT_WRITE ||
 	       b == lg->snapshots_bid ||
 	       b == lg->snapshots_tid ||
 	       b == lg->dsnapshots ||
