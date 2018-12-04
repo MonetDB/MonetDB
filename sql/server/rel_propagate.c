@@ -881,21 +881,25 @@ rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 				propagate = rel->l;
 			}
 		}
-		if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+		if(isMergeTable(t)) {
 			assert(list_length(t->members.set) > 0);
 			if(is_delete(propagate->op) || is_truncate(propagate->op)) { //propagate deletions to the partitions
 				sql->caching = 0;
 				rel = rel_propagate_delete(sql, rel, t, changes);
-			} else if(is_insert(propagate->op)) { //on inserts create a selection for each partition
-				sql->caching = 0;
-				if(isSubtable) {
-					rel->l = rel_propagate_insert(sql, propagate, t, changes);
+			} else if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+				if(is_insert(propagate->op)) { //on inserts create a selection for each partition
+					sql->caching = 0;
+					if(isSubtable) {
+						rel->l = rel_propagate_insert(sql, propagate, t, changes);
+					} else {
+						rel = rel_propagate_insert(sql, rel, t, changes);
+					}
+				} else if(is_update(propagate->op)) { //for updates propagate like in deletions
+					sql->caching = 0;
+					rel = rel_propagate_update(sql, rel, t, changes);
 				} else {
-					rel = rel_propagate_insert(sql, rel, t, changes);
+					assert(0);
 				}
-			} else if(is_update(propagate->op)) { //for updates propagate like in deletions
-				sql->caching = 0;
-				rel = rel_propagate_update(sql, rel, t, changes);
 			} else {
 				assert(0);
 			}
