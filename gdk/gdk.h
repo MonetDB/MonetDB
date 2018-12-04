@@ -732,25 +732,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *  @c image{http://monetdb.cwi.nl/projects/monetdb-mk/imgs/bat2,,,,feps}
  */
 
-typedef struct {
-	/* dynamic bat properties */
-	MT_Id tid;		/* which thread created it */
-	uint32_t
-	 copiedtodisk:1,	/* once written */
-	 dirtyflushed:1,	/* was dirty before commit started? */
-	 descdirty:1,		/* bat descriptor dirty marker */
-	 restricted:2,		/* access privileges */
-	 persistence:1,		/* should the BAT persist on disk? */
-	 role:8,		/* role of the bat */
-	 unused:18;		/* value=0 for now (sneakily used by mat.c) */
-	int sharecnt;		/* incoming view count */
-
-	/* delta status administration */
-	BUN inserted;		/* start of inserted elements */
-	BUN count;		/* tuple count */
-	BUN capacity;		/* tuple capacity */
-} BATrec;
-
 typedef struct PROPrec PROPrec;
 
 /* see also comment near BATassertProps() for more information about
@@ -799,10 +780,25 @@ typedef struct BAT {
 	bat batCacheid;		/* index into BBP */
 	oid hseqbase;		/* head seq base */
 
+	/* dynamic bat properties */
+	MT_Id creator_tid;	/* which thread created it */
+	uint32_t
+	 batCopiedtodisk:1,	/* once written */
+	 batDirtyflushed:1,	/* was dirty before commit started? */
+	 batDirtydesc:1,	/* bat descriptor dirty marker */
+	 batRestricted:2,	/* access privileges */
+	 batPersistence:1,	/* should the BAT persist on disk? */
+	 batRole:8,		/* role of the bat */
+	 unused:18;		/* value=0 for now (sneakily used by mat.c) */
+	int batSharecnt;	/* incoming view count */
+
+	/* delta status administration */
+	BUN batInserted;	/* start of inserted elements */
+	BUN batCount;		/* tuple count */
+	BUN batCapacity;	/* tuple capacity */
+
 	/* dynamic column properties */
 	COLrec T;		/* column info */
-
-	BATrec S;		/* the BAT properties */
 } BAT;
 
 typedef struct BATiter {
@@ -811,18 +807,6 @@ typedef struct BATiter {
 } BATiter;
 
 /* macros to hide complexity of the BAT structure */
-#define batPersistence	S.persistence
-#define batCopiedtodisk	S.copiedtodisk
-#define batConvert	S.convert
-#define batDirtyflushed	S.dirtyflushed
-#define batDirtydesc	S.descdirty
-#define batInserted	S.inserted
-#define batCount	S.count
-#define batCapacity	S.capacity
-#define batSharecnt	S.sharecnt
-#define batRestricted	S.restricted
-#define batRole		S.role
-#define creator_tid	S.tid
 #define ttype		T.type
 #define tkey		T.key
 #define tunique		T.unique
