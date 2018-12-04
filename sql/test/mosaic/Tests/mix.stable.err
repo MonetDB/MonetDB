@@ -33,6 +33,7 @@ ERROR = !SELECT: no such operator 'mosaic_analysis'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-15770/.s.monetdb.33013
 QUERY = alter table mix0 alter column i set storage 'mosaic';
+ERROR = !Currently MonetDB does not support the mosaic storage strategy.
 
 
 # 21:39:24 >  

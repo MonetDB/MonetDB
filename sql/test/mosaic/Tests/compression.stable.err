@@ -32,9 +32,11 @@ stderr of test 'compression` in directory 'sql/test/mosaic` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-15770/.s.monetdb.33013
 QUERY = alter table tmp3 alter column i set storage 'runlength,dictionary';
-
-MAPI  = (monetdb) /var/tmp/mtest-15770/.s.monetdb.33013
+ERROR = !Currently only one non-trivial compression strategy is allowed.
+MAPI  = (monetdb) /var/tmp/mtest-27676/.s.monetdb.30479
 QUERY = alter table tmp3 alter column b set storage 'mosaic';
+ERROR = !Currently MonetDB does not support the mosaic storage strategy.
+
 
 
 
