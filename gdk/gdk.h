@@ -9,7 +9,7 @@
 /*
  * @t The Goblin Database Kernel
  * @v Version 3.05
- * @a Martin L. Kersten, Peter Boncz, Niels Nes
+ * @a Martin L. Kersten, Peter Boncz, Niels Nes, Sjoerd Mullender
  *
  * @+ The Inner Core
  * The innermost library of the MonetDB database system is formed by
@@ -1234,7 +1234,7 @@ typedef var_t stridx_t;
 			 (is_oid_nil((b)->tseqbase)			\
 			  ? ((b)->ttype == TYPE_void			\
 			     ? (void) (p), oid_nil			\
-			     : ((const oid *) (b)->T.heap.base)[p])	\
+			     : ((const oid *) (b)->theap.base)[p])	\
 			  : (oid) ((b)->tseqbase + (BUN) (p))))
 
 static inline BATiter

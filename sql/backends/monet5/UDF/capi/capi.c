@@ -309,7 +309,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 		bat_data->null_value = tpe##_nil;                                      \
 		if (BATtdense(b)) {					\
 			size_t it = 0;                                                     \
-			tpe val = b->T.seq;                                                \
+			tpe val = b->tseqbase;                                             \
 			/* bat is dense, materialize it */                                 \
 			bat_data->data = wrapped_GDK_malloc_nojump(                        \
 				bat_data->count * sizeof(bat_data->null_value));               \

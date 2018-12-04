@@ -2334,7 +2334,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			 * be that the next value added isn't
 			 * consecutive with the last one */
 			if (lskipped ||
-			    (lcand && ((oid *) r1->T.heap.base)[r1->batCount - 1] + 1 != lcand[-(ssize_t)nl]))
+			    (lcand && ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != lcand[-(ssize_t)nl]))
 				r1->tseqbase = oid_nil;
 		}
 
