@@ -380,8 +380,8 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 gdk_return
 GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 {
-	bte shift = b->tshift;
-	unsigned short width = b->twidth;
+	uint8_t shift = b->tshift;
+	uint16_t width = b->twidth;
 	unsigned char *pc;
 	unsigned short *ps;
 	unsigned int *pi;

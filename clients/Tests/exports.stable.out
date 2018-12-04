@@ -9,7 +9,7 @@ stdout of test 'exports` in directory 'clients` itself:
 int ALIGNsynced(BAT *b1, BAT *b2);
 int ATOMallocate(const char *nme);
 void *ATOMdup(int id, const void *val);
-bte ATOMelmshift(int sz);
+uint8_t ATOMelmshift(int sz);
 char *ATOMformat(int id, const void *val);
 int ATOMindex(const char *nme);
 size_t ATOMlen(int id, const void *v);

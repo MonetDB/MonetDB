@@ -141,10 +141,10 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 	return NULL;
 }
 
-bte
+uint8_t
 ATOMelmshift(int sz)
 {
-	bte sh;
+	uint8_t sh;
 	int i = sz >> 1;
 
 	for (sh = 0; i != 0; sh++) {

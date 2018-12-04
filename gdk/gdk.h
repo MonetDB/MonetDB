@@ -740,8 +740,8 @@ typedef struct {
 	str id;			/* label for column */
 
 	uint16_t width;		/* byte-width of the atom array */
-	bte type;		/* type id. */
-	bte shift;		/* log2 of bun width */
+	int8_t type;		/* type id. */
+	uint8_t shift;		/* log2 of bun width */
 	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
 		key:1,		/* no duplicate values present */
 		unique:1,	/* no duplicate values allowed */
@@ -941,7 +941,7 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 	__attribute__((__warn_unused_result__));
 
 /* internal */
-gdk_export bte ATOMelmshift(int sz);
+gdk_export uint8_t ATOMelmshift(int sz);
 
 /*
  * @- BUN manipulation
