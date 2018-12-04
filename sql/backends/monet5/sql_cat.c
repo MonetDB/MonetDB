@@ -908,8 +908,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				for(int i = 0, nr_strategies = 0; i< MOSAIC_METHODS; i++){
 					if ( (task->filter[i] = strstr(c->storage_type,MOSfiltername[i]) != 0) )
 					{
-						if (++nr_strategies > 1)
-							throw(SQL, "sql.alter", "Illegal additional compression strategy: %s.", MOSfiltername[i]);
+						if (strstr(c->storage_type,"raw") == 0 && ++nr_strategies > 1)
+							throw(SQL, "sql.alter", NON_TRIVIAL_MIX_NOT_ALLOWED);
 					}
 				}
 

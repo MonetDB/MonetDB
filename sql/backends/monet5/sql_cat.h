@@ -23,6 +23,7 @@
 #endif
 
 #define MOSAIC_STRATEGY_NOT_ALLOWED "Currently MonetDB does not support the mosaic storage strategy."
+#define NON_TRIVIAL_MIX_NOT_ALLOWED "Currently only one non-trivial compression strategy is allowed."
 
 #include "sql.h"
 #include "mal_backend.h"
