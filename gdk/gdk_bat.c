@@ -2204,7 +2204,6 @@ BATassertProps(BAT *b)
 	    ATOMstorage(b->ttype) < TYPE_str)
 		assert(!b->tvarsized);
 	/* shift and width have a particular relationship */
-	assert(b->tshift >= 0);
 	if (ATOMstorage(b->ttype) == TYPE_str)
 		assert(b->twidth >= 1 && b->twidth <= ATOMsize(b->ttype));
 	else
