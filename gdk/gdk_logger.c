@@ -2113,7 +2113,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	logger *lg;
 	char filename[FILENAME_MAX];
 
-	if (!MT_path_absolute(logdir)) {
+	if (MT_path_absolute(logdir)) {
 		fprintf(stderr, "!ERROR: logger_new: logdir must be relative path\n");
 		return NULL;
 	}
