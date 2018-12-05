@@ -274,7 +274,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
 			if (fd >= 0) {
 				close(fd);
-				h->storage = h->newstorage == STORE_MMAP && existing && !h->forcemap && !mayshare ? STORE_PRIV : h->newstorage;
+				h->storage = h->newstorage == STORE_MMAP && existing && !mayshare ? STORE_PRIV : h->newstorage;
 				/* make sure we really MMAP */
 				if (must_mmap && h->newstorage == STORE_MEM)
 					h->storage = STORE_MMAP;
