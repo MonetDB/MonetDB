@@ -3697,7 +3697,9 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		return mergejoin_void(r1, r2, l, r, sl, sr,
 				      nil_on_miss, only_misses, t0, false);
 	} else if ((BATordered(r) || BATordered_rev(r)) &&
-		   (BATtdense(r) ||
+		   (BATordered(l) ||
+		    BATordered_rev(l) ||
+		    BATtdense(r) ||
 		    lcount < 1024 ||
 		    BATcount(r) * (Tsize(r) + (r->tvheap ? r->tvheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches,
