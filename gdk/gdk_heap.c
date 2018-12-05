@@ -98,11 +98,11 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
 	h->base = NULL;
 	h->size = 1;
-	h->copied = 0;
+	h->copied = false;
 	if (itemsize)
 		h->size = MAX(1, nitems) * itemsize;
 	h->free = 0;
-	h->cleanhash = 0;
+	h->cleanhash = false;
 
 	/* check for overflow */
 	if (itemsize && nitems > (h->size / itemsize)) {
@@ -279,7 +279,6 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				if (must_mmap && h->newstorage == STORE_MEM)
 					h->storage = STORE_MMAP;
 				h->newstorage = h->storage;
-				h->forcemap = 0;
 
 				h->base = NULL;
 				HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
@@ -389,8 +388,8 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 gdk_return
 GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 {
-	bte shift = b->tshift;
-	unsigned short width = b->twidth;
+	uint8_t shift = b->tshift;
+	uint16_t width = b->twidth;
 	unsigned char *pc;
 	unsigned short *ps;
 	unsigned int *pi;
@@ -1275,12 +1274,12 @@ HEAP_recover(Heap *h, const var_t *offsets, BUN noffsets)
 			}
 		}
 	}
-	h->cleanhash = 0;
+	h->cleanhash = false;
 	if (dirty) {
 		if (h->storage == STORE_MMAP) {
 			if (!(GDKdebug & NOSYNCMASK))
 				(void) MT_msync(h->base, dirty);
 		} else
-			h->dirty = 1;
+			h->dirty = true;
 	}
 }

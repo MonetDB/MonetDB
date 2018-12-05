@@ -1072,8 +1072,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else {
 			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
 			BATsetcount(tmp, rows);
-			tmp->tsorted = 0;
-			tmp->trevsorted = 0;
+			tmp->tsorted = false;
+			tmp->trevsorted = false;
 		}
 
 		if (status) {

@@ -1715,11 +1715,11 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 	}
 	d = (const date *) Tloc(b, 0);
 	t = (timestamp *) Tloc(bn, 0);
-	bn->tnil = 0;
+	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, d++) {
 		if (date_isnil(*d)) {
 			*t = *timestamp_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			t->days = *d;
 			t->msecs = dt;
@@ -1728,7 +1728,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 				*t = tmp;
 			MTIMEtimestamp_add(t, t, &add);
 			if (ts_isnil(*t))
-				bn->tnil = 1;
+				bn->tnil = true;
 		}
 	}
 	BATsetcount(bn, BATcount(b));
@@ -1959,17 +1959,17 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 	}
 	t = (const timestamp *) Tloc(b, 0);
 	dt = (daytime *) Tloc(bn, 0);
-	bn->tnil = 0;
+	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, dt++) {
 		if (ts_isnil(*t)) {
 			*dt = daytime_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			if (timestamp_inside(&tmp, t, &tzone_local, (lng) 0))
 				MTIMEtimestamp_add(&tmp, &tmp, &add);
 			if (ts_isnil(tmp)) {
 				*dt = daytime_nil;
-				bn->tnil = 1;
+				bn->tnil = true;
 			} else {
 				*dt = tmp.msecs;
 			}
@@ -2034,17 +2034,17 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 	}
 	t = (const timestamp *) Tloc(b, 0);
 	d = (date *) Tloc(bn, 0);
-	bn->tnil = 0;
+	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, d++) {
 		if (ts_isnil(*t)) {
 			*d = date_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			if (timestamp_inside(&tmp, t, &tzone_local, (lng) 0))
 				MTIMEtimestamp_add(&tmp, &tmp, &add);
 			if (ts_isnil(tmp)) {
 				*d = date_nil;
-				bn->tnil = 1;
+				bn->tnil = true;
 			} else {
 				*d = tmp.days;
 			}
@@ -2192,13 +2192,13 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	t1 = (const date *) Tloc(b1, 0);
 	t2 = (const date *) Tloc(b2, 0);
 	tn = (int *) Tloc(bn, 0);
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t1) || date_isnil(*t2)) {
 			*tn = int_nil;
-			bn->tnonil = 0;
-			bn->tnil = 1;
+			bn->tnonil = false;
+			bn->tnil = true;
 		} else {
 			*tn = (int) (*t1 - *t2);
 		}
@@ -2271,13 +2271,13 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	t1 = (const timestamp *) Tloc(b1, 0);
 	t2 = (const timestamp *) Tloc(b2, 0);
 	tn = (lng *) Tloc(bn, 0);
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 	for (i = 0; i < n; i++) {
 		if (ts_isnil(*t1) || ts_isnil(*t2)) {
 			*tn = lng_nil;
-			bn->tnonil = 0;
-			bn->tnil = 1;
+			bn->tnonil = false;
+			bn->tnil = true;
 		} else {
 			*tn = ((lng) (t1->days - t2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (t1->msecs - t2->msecs));
 		}
@@ -2678,13 +2678,13 @@ MTIMEsecs2daytime_bulk(bat *ret, bat *bid)
 	}
 	s = (const lng *) Tloc(b, 0);
 	dt = (daytime *) Tloc(bn, 0);
-	bn->tnil = 0;
+	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, s++, dt++) {
 		if (is_lng_nil(*s) ||
 			*s > GDK_int_max / 1000 ||
 			*s < GDK_int_min / 1000) {
 			*dt = daytime_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			*dt = (daytime) (*s * 1000);
 		}
@@ -2792,13 +2792,13 @@ MTIMEepoch_bulk(bat *ret, bat *bid)
 	}
 	t = (const timestamp *) Tloc(b, 0);
 	tn = (lng *) Tloc(bn, 0);
-	bn->tnonil = 1;
-	b->tnil = 0;
+	bn->tnonil = true;
+	b->tnil = false;
 	for (i = 0; i < n; i++) {
 		if (ts_isnil(*t)) {
 			*tn = lng_nil;
-			bn->tnonil = 0;
-			bn->tnil = 1;
+			bn->tnonil = false;
+			bn->tnil = true;
 		} else {
 			*tn = ((lng) (t->days - epoch.days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (t->msecs - epoch.msecs));
 		}
@@ -2869,11 +2869,11 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 	}
 	s = (const int *) Tloc(b, 0);
 	t = (timestamp *) Tloc(bn, 0);
-	bn->tnil = 0;
+	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, s++) {
 		if (is_int_nil(*s)) {
 			*t = *timestamp_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			ms = ((lng)*s) * 1000;
 			if ((msg = MTIMEtimestamp_add(t, &e, &ms)) != MAL_SUCCEED) {
@@ -2882,7 +2882,7 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 				return msg;
 			}
 			if (ts_isnil(*t))
-				bn->tnil = 1;
+				bn->tnil = true;
 		}
 	}
 	BATsetcount(bn, BATcount(b));
@@ -2927,11 +2927,11 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 	}
 	ms = (const lng *) Tloc(b, 0);
 	t = (timestamp *) Tloc(bn, 0);
-	bn->tnil = 0;
+	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, ms++) {
 		if (is_lng_nil(*ms)) {
 			*t = *timestamp_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			if ((msg = MTIMEtimestamp_add(t, &e, ms)) != MAL_SUCCEED) {
 				BBPreclaim(bn);
@@ -2939,7 +2939,7 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 				return msg;
 			}
 			if (ts_isnil(*t))
-				bn->tnil = 1;
+				bn->tnil = true;
 		}
 	}
 	BATsetcount(bn, BATcount(b));
@@ -3222,19 +3222,19 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.year", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	y = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*y = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdate_extract_year(y, t);
 			if (is_int_nil(*y)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		y++;
@@ -3269,19 +3269,19 @@ MTIMEdate_extract_quarter_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.quarter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	q = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*q = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdate_extract_quarter(q, t);
 			if (is_int_nil(*q)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		q++;
@@ -3315,19 +3315,19 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.month", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	m = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*m = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdate_extract_month(m, t);
 			if (is_int_nil(*m)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		m++;
@@ -3361,19 +3361,19 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.day", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	d = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*d = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdate_extract_day(d, t);
 			if (is_int_nil(*d)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		d++;
@@ -3408,19 +3408,19 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.hours", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	h = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*h = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdaytime_extract_hours(h, t);
 			if (is_int_nil(*h)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		h++;
@@ -3454,19 +3454,19 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.minutes", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	m = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*m = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdaytime_extract_minutes(m, t);
 			if (is_int_nil(*m)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		m++;
@@ -3500,19 +3500,19 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.seconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*s = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdaytime_extract_seconds(s, t);
 			if (is_int_nil(*s)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		s++;
@@ -3546,19 +3546,19 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*s = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdaytime_extract_sql_seconds(s, t);
 			if (is_int_nil(*s)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		s++;
@@ -3593,19 +3593,19 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.milliseconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	bn->tnonil = 1;
-	bn->tnil = 0;
+	bn->tnonil = true;
+	bn->tnil = false;
 
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (date_isnil(*t)) {
 			*s = int_nil;
-			bn->tnil = 1;
+			bn->tnil = true;
 		} else {
 			MTIMEdaytime_extract_milliseconds(s, t);
 			if (is_int_nil(*s)) {
-				bn->tnil = 1;
+				bn->tnil = true;
 			}
 		}
 		s++;

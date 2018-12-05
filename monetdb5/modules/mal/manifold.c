@@ -333,9 +333,9 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		msg= createException(MAL,"mal.manifold", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
-	mat[0].b->tnonil=0;
-	mat[0].b->tsorted=0;
-	mat[0].b->trevsorted=0;
+	mat[0].b->tnonil=false;
+	mat[0].b->tsorted=false;
+	mat[0].b->trevsorted=false;
 	mat[0].bi = bat_iterator(mat[0].b);
 	mat[0].first = (void *)  Tloc(mat[0].b, 0);
 	mat[0].last = (void *)  Tloc(mat[0].b, BUNlast(mat[0].b));

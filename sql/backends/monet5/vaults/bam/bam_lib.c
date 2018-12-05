@@ -259,8 +259,8 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 }
 
 #define init_props() { \
-	output->tsorted = TRUE; \
-	output->trevsorted = TRUE; \
+	output->tsorted = true; \
+	output->trevsorted = true; \
 }
 
 #define update_props(TPE) { \
@@ -274,7 +274,7 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 
 #define finish_props() { \
 	BATsetcount(output, BATcount(input)); \
-	output->tkey = FALSE; /* Tail values are not unique */ \
+	output->tkey = false; /* Tail values are not unique */ \
 }
 
 str

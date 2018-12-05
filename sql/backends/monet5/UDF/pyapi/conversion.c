@@ -108,7 +108,7 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	// element is NULL, and 'False' otherwise
 	// if we know for sure that the BAT has no NULL values, we can skip the construction
 	// of this masked array. Otherwise, we create it.
-	if (!(b->tnil == 0 && b->tnonil == 1)) {
+	if (b->tnil || !b->tnonil) {
 		PyObject *mask;
 		PyObject *mafunc = PyObject_GetAttrString(
 			PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
@@ -855,11 +855,11 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		data = (char *)ret->array_data;
 		data += (index_offset * ret->count) * ret->memory_size;
 		b = COLnew(seqbase, TYPE_sqlblob, (BUN)ret->count, TRANSIENT);
-		b->tnil = 0;
-		b->tnonil = 1;
-		b->tkey = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
+		b->tnil = false;
+		b->tnonil = true;
+		b->tkey = false;
+		b->tsorted = false;
+		b->trevsorted = false;
 		for (iu = 0; iu < ret->count; iu++) {
 
 			char* memcpy_data;
@@ -978,11 +978,11 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				}
 
 				b = COLnew(seqbase, TYPE_str, (BUN)ret->count, TRANSIENT);
-				b->tnil = 0;
-				b->tnonil = 1;
-				b->tkey = 0;
-				b->tsorted = 0;
-				b->trevsorted = 0;
+				b->tnil = false;
+				b->tnonil = true;
+				b->tkey = false;
+				b->tsorted = false;
+				b->trevsorted = false;
 				NP_INSERT_STRING_BAT(b);
 				if (utf8_string)
 					GDKfree(utf8_string);

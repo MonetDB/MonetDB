@@ -186,8 +186,8 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			cols[i].b =
 				COLnew(0, tpe->type->localtype, 0, TRANSIENT);
 			n2 = n2->next;
-			cols[i].b->tnil = 0;
-			cols[i].b->tnonil = 0;
+			cols[i].b->tnil = false;
+			cols[i].b->tnonil = false;
 			i++;
 		}
 	} else {
@@ -292,9 +292,9 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 0; i < ncols; i++) {
 		BAT *b = cols[i].b;
 		BATsetcount(b, nval);
-		b->tkey = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
+		b->tkey = false;
+		b->tsorted = false;
+		b->trevsorted = false;
 	}
 	if (!create_table) {
 		msg = _connection_append_to_table(cntxt, sqlmorefun->sname,

@@ -1878,11 +1878,11 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 		for(i=0;i<cnt; i++) 
 			p[lp[i]] = rp[i];
 	}
-	res->tsorted = 0;
-	res->trevsorted = 0;
-	res->tnil = 0;
-	res->tnonil = 0;
-	res->tkey = 0;
+	res->tsorted = false;
+	res->trevsorted = false;
+	res->tnil = false;
+	res->tnonil = false;
+	res->tkey = false;
 	BBPunfix(c->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -4761,7 +4761,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_int;
-		r->tvarsized = 0;
+		r->tvarsized = false;
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
@@ -4819,7 +4819,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_sht;
-		r->tvarsized = 0;
+		r->tvarsized = false;
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
@@ -4878,7 +4878,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_bte;
-		r->tvarsized = 0;
+		r->tvarsized = false;
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);

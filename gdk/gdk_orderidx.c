@@ -181,11 +181,11 @@ BATorderidx(BAT *b, bool stable)
 		if (BATtdense(on)) {
 			/* if the order bat is dense, the input was
 			 * sorted and we don't need an order index */
-			assert(b->tnosorted == 0);
+			assert(!b->tnosorted);
 			if (!b->tsorted) {
-				b->tsorted = 1;
-				b->tnosorted = 0;
-				b->batDirtydesc = 1;
+				b->tsorted = true;
+				b->tnosorted = false;
+				b->batDirtydesc = true;
 			}
 		} else {
 			/* BATsort quite possibly already created the
@@ -199,7 +199,7 @@ BATorderidx(BAT *b, bool stable)
 				}
 				memcpy((oid *) m->base + ORDERIDXOFF, Tloc(on, 0), BATcount(on) * sizeof(oid));
 				b->torderidx = m;
-				b->batDirtydesc = 1;
+				b->batDirtydesc = true;
 				persistOIDX(b);
 			}
 			MT_lock_unset(&GDKhashLock(b->batCacheid));

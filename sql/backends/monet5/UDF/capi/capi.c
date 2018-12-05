@@ -309,7 +309,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 		bat_data->null_value = tpe##_nil;                                      \
 		if (BATtdense(b)) {					\
 			size_t it = 0;                                                     \
-			tpe val = b->T.seq;                                                \
+			tpe val = b->tseqbase;                                             \
 			/* bat is dense, materialize it */                                 \
 			bat_data->data = wrapped_GDK_malloc_nojump(                        \
 				bat_data->count * sizeof(bat_data->null_value));               \
@@ -1498,11 +1498,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				GDKfree(data);
 			}
 		}
-		b->tnil = 0;
-		b->tnonil = 0;
-		b->tkey = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
+		b->tnil = false;
+		b->tnonil = false;
+		b->tkey = false;
+		b->tsorted = false;
+		b->trevsorted = false;
 
 		// free the output value right now to prevent the internal data from
 		// being freed later

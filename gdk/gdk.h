@@ -9,7 +9,7 @@
 /*
  * @t The Goblin Database Kernel
  * @v Version 3.05
- * @a Martin L. Kersten, Peter Boncz, Niels Nes
+ * @a Martin L. Kersten, Peter Boncz, Niels Nes, Sjoerd Mullender
  *
  * @+ The Inner Core
  * The innermost library of the MonetDB database system is formed by
@@ -573,14 +573,13 @@ typedef struct {
 	char *base;		/* base pointer in memory. */
 	char filename[32];	/* file containing image of the heap */
 
+	bte farmid;		/* id of farm where heap is located */
 	bool copied:1,		/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */
-		forcemap:1,	/* force STORE_MMAP even if heap exists */
 		cleanhash:1,	/* string heaps must clean hash */
 		dirty:1;	/* specific heap dirty marker */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
-	bte farmid;		/* id of farm where heap is located */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
@@ -732,26 +731,6 @@ gdk_export int VALisnil(const ValRecord *v);
  *  @c image{http://monetdb.cwi.nl/projects/monetdb-mk/imgs/bat2,,,,feps}
  */
 
-typedef struct {
-	/* dynamic bat properties */
-	MT_Id tid;		/* which thread created it */
-	uint32_t
-	 copiedtodisk:1,	/* once written */
-	 dirty:1,		/* dirty wrt disk? */
-	 dirtyflushed:1,	/* was dirty before commit started? */
-	 descdirty:1,		/* bat descriptor dirty marker */
-	 restricted:2,		/* access privileges */
-	 persistence:1,		/* should the BAT persist on disk? */
-	 role:8,		/* role of the bat */
-	 unused:17;		/* value=0 for now (sneakily used by mat.c) */
-	int sharecnt;		/* incoming view count */
-
-	/* delta status administration */
-	BUN inserted;		/* start of inserted elements */
-	BUN count;		/* tuple count */
-	BUN capacity;		/* tuple capacity */
-} BATrec;
-
 typedef struct PROPrec PROPrec;
 
 /* see also comment near BATassertProps() for more information about
@@ -760,8 +739,8 @@ typedef struct {
 	str id;			/* label for column */
 
 	uint16_t width;		/* byte-width of the atom array */
-	bte type;		/* type id. */
-	bte shift;		/* log2 of bun width */
+	int8_t type;		/* type id. */
+	uint8_t shift;		/* log2 of bun width */
 	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
 		key:1,		/* no duplicate values present */
 		unique:1,	/* no duplicate values allowed */
@@ -800,10 +779,26 @@ typedef struct BAT {
 	bat batCacheid;		/* index into BBP */
 	oid hseqbase;		/* head seq base */
 
+	/* dynamic bat properties */
+	MT_Id creator_tid;	/* which thread created it */
+	bool
+	 batCopiedtodisk:1,	/* once written */
+	 batDirtyflushed:1,	/* was dirty before commit started? */
+	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	uint8_t	/* adjacent bit fields are packed together (if they fit) */
+	 batRestricted:2,	/* access privileges */
+	 batPersistence:1;	/* should the BAT persist on disk? */
+	uint8_t batRole;	/* role of the bat */
+	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
+	int batSharecnt;	/* incoming view count */
+
+	/* delta status administration */
+	BUN batInserted;	/* start of inserted elements */
+	BUN batCount;		/* tuple count */
+	BUN batCapacity;	/* tuple capacity */
+
 	/* dynamic column properties */
 	COLrec T;		/* column info */
-
-	BATrec S;		/* the BAT properties */
 } BAT;
 
 typedef struct BATiter {
@@ -812,18 +807,6 @@ typedef struct BATiter {
 } BATiter;
 
 /* macros to hide complexity of the BAT structure */
-#define batPersistence	S.persistence
-#define batCopiedtodisk	S.copiedtodisk
-#define batConvert	S.convert
-#define batDirtyflushed	S.dirtyflushed
-#define batDirtydesc	S.descdirty
-#define batInserted	S.inserted
-#define batCount	S.count
-#define batCapacity	S.capacity
-#define batSharecnt	S.sharecnt
-#define batRestricted	S.restricted
-#define batRole		S.role
-#define creator_tid	S.tid
 #define ttype		T.type
 #define tkey		T.key
 #define tunique		T.unique
@@ -958,7 +941,7 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 	__attribute__((__warn_unused_result__));
 
 /* internal */
-gdk_export bte ATOMelmshift(int sz);
+gdk_export uint8_t ATOMelmshift(int sz);
 
 /*
  * @- BUN manipulation
@@ -1235,7 +1218,7 @@ typedef var_t stridx_t;
 			 (is_oid_nil((b)->tseqbase)			\
 			  ? ((b)->ttype == TYPE_void			\
 			     ? (void) (p), oid_nil			\
-			     : ((const oid *) (b)->T.heap.base)[p])	\
+			     : ((const oid *) (b)->theap.base)[p])	\
 			  : (oid) ((b)->tseqbase + (BUN) (p))))
 
 static inline BATiter
@@ -1266,10 +1249,10 @@ bat_iterator(BAT *b)
  * @item BAT *
  * @tab BATmode (BAT *b, int mode)
  * @item BAT *
- * @tab BATsetaccess (BAT *b, int mode)
+ * @tab BATsetaccess (BAT *b, restrict_t mode)
  * @item int
  * @tab BATdirty (BAT *b)
- * @item int
+ * @item restrict_t
  * @tab BATgetaccess (BAT *b)
  * @end multitable
  *
@@ -1309,8 +1292,21 @@ gdk_export gdk_return BATmode(BAT *b, int mode);
 gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
-gdk_export gdk_return BATsetaccess(BAT *b, int mode);
-gdk_export int BATgetaccess(BAT *b);
+
+/* The batRestricted field indicates whether a BAT is readonly.
+ * we have modes: BAT_WRITE  = all permitted
+ *                BAT_APPEND = append-only
+ *                BAT_READ   = read-only
+ * VIEW bats are always mapped read-only.
+ */
+typedef enum {
+	BAT_WRITE,		  /* all kinds of access allowed */
+	BAT_READ,		  /* only read-access allowed */
+	BAT_APPEND,		  /* only reads and appends allowed */
+} restrict_t;
+
+gdk_export gdk_return BATsetaccess(BAT *b, restrict_t mode);
+gdk_export restrict_t BATgetaccess(BAT *b);
 
 
 #define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
@@ -1320,11 +1316,6 @@ gdk_export int BATgetaccess(BAT *b);
 
 #define PERSISTENT		0
 #define TRANSIENT		1
-#define LOG_DIR			2
-
-#define BAT_WRITE		0	/* all kinds of access allowed */
-#define BAT_READ		1	/* only read-access allowed */
-#define BAT_APPEND		2	/* only reads and appends allowed */
 
 #define BATcapacity(b)	(b)->batCapacity
 /*
@@ -2550,16 +2541,6 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 			return (e);					\
 		}							\
 	} while (false)
-
-/* The batRestricted field indicates whether a BAT is readonly.
- * we have modes: BAT_WRITE  = all permitted
- *                BAT_APPEND = append-only
- *                BAT_READ   = read-only
- * VIEW bats are always mapped read-only.
- */
-
-#define BAThrestricted(b) ((b)->batRestricted)
-#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
 
 /* the parentid in a VIEW is correct for the normal view. We must
  * correct for the reversed view.

@@ -671,9 +671,9 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 #endif
 	BATsetcount(bn, BATcount(bn)); /* set some properties */
 	bn->theap.dirty |= BATcount(bn) > 0;
-	bn->tsorted = 1;
+	bn->tsorted = true;
 	bn->trevsorted = bn->batCount <= 1;
-	bn->tkey = 1;
+	bn->tkey = true;
 	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
 	*bnp = bn;
 	return MAL_SUCCEED;
@@ -817,9 +817,9 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, bool 
 		}
 	}
 	BATsetcount(bn, BATcount(bn)); /* set some properties */
-	bn->tsorted = 1;
+	bn->tsorted = true;
 	bn->trevsorted = bn->batCount <= 1;
-	bn->tkey = 1;
+	bn->tkey = true;
 	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
 	*bnp = bn;
 	re_destroy(re);
@@ -1780,8 +1780,8 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 
 				if (*s == '\200') {
 					br[i] = bit_nil;
-					r->tnonil = 0;
-					r->tnil = 1;
+					r->tnonil = false;
+					r->tnil = true;
 				} else {
 #ifdef HAVE_LIBPCRE
 					pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
@@ -1811,8 +1811,8 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 #endif
 		}
 		BATsetcount(r, i);
-		r->tsorted = 0;
-		r->trevsorted = 0;
+		r->tsorted = false;
+		r->trevsorted = false;
 		BATkey(r, false);
 
 		BBPkeepref(*ret = r->batCacheid);
@@ -2071,12 +2071,12 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	lwidth = l->twidth;
 	rwidth = r->twidth;
 
-	r1->tkey = 1;
-	r1->tsorted = 1;
-	r1->trevsorted = 1;
-	r2->tkey = 1;
-	r2->tsorted = 1;
-	r2->trevsorted = 1;
+	r1->tkey = true;
+	r1->tsorted = true;
+	r1->trevsorted = true;
+	r2->tkey = true;
+	r2->tsorted = true;
+	r2->trevsorted = true;
 
 	/* nested loop implementation for PCRE join */
 	for (;;) {
@@ -2203,14 +2203,14 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (lastl + 1 != lo)
 					r1->tseqbase = oid_nil;
 				if (nl == 0) {
-					r2->trevsorted = 0;
+					r2->trevsorted = false;
 					if (lastl > lo) {
-						r1->tsorted = 0;
-						r1->tkey = 0;
+						r1->tsorted = false;
+						r1->tkey = false;
 					} else if (lastl < lo) {
-						r1->trevsorted = 0;
+						r1->trevsorted = false;
 					} else {
-						r1->tkey = 0;
+						r1->tkey = false;
 					}
 				}
 			}
@@ -2235,9 +2235,9 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #endif
 		}
 		if (nl > 1) {
-			r2->tkey = 0;
+			r2->tkey = false;
 			r2->tseqbase = oid_nil;
-			r1->trevsorted = 0;
+			r1->trevsorted = false;
 		} else if (nl == 0) {
 			rskipped = BATcount(r2) > 0;
 		} else if (rskipped) {
@@ -2307,17 +2307,17 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto fail;
 	}
-	result1->tnil = 0;
-	result1->tnonil = 1;
-	result1->tkey = 1;
-	result1->tsorted = 1;
-	result1->trevsorted = 1;
+	result1->tnil = false;
+	result1->tnonil = true;
+	result1->tkey = true;
+	result1->tsorted = true;
+	result1->trevsorted = true;
 	result1->tseqbase = 0;
-	result2->tnil = 0;
-	result2->tnonil = 1;
-	result2->tkey = 1;
-	result2->tsorted = 1;
-	result2->trevsorted = 1;
+	result2->tnil = false;
+	result2->tnonil = true;
+	result2->tkey = true;
+	result2->tsorted = true;
+	result2->trevsorted = true;
 	result2->tseqbase = 0;
 	msg = pcrejoin(result1, result2, left, right, candleft, candright,
 				   esc, caseignore);
