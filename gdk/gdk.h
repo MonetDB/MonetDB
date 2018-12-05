@@ -573,13 +573,13 @@ typedef struct {
 	char *base;		/* base pointer in memory. */
 	char filename[32];	/* file containing image of the heap */
 
+	bte farmid;		/* id of farm where heap is located */
 	bool copied:1,		/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */
 		cleanhash:1,	/* string heaps must clean hash */
 		dirty:1;	/* specific heap dirty marker */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
-	bte farmid;		/* id of farm where heap is located */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
