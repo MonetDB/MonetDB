@@ -770,7 +770,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			BBPunfix(r->batCacheid);
 			seqbulk_destroy(sb);
-			throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next seuqnce value %s.%s", sname, seqname);
+			throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 		}
 		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
