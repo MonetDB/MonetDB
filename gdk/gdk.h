@@ -575,7 +575,6 @@ typedef struct {
 
 	bool copied:1,		/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */
-		forcemap:1,	/* force STORE_MMAP even if heap exists */
 		cleanhash:1,	/* string heaps must clean hash */
 		dirty:1;	/* specific heap dirty marker */
 	storage_t storage;	/* storage mode (mmap/malloc). */
