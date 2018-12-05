@@ -1147,11 +1147,13 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	*res = 0;
 	if ((tid = BATdescriptor(Tid)) == NULL)
-		throw(SQL, "sql.grow", "Cannot access descriptor");
+		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) Ins)) == NULL)
-		throw(SQL, "sql.append", "Cannot access descriptor");
+	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) Ins)) == NULL) {
+		BBPunfix(Tid);
+		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
+	}
 	if (ins) {
 		cnt = BATcount(ins);
 		BBPunfix(ins->batCacheid);

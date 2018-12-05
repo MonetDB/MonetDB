@@ -3234,7 +3234,7 @@ MTIMEdate_extract_quarter_bulk(bat *ret, const bat *bid)
 	const date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.quarter", "Cannot access descriptor");
+		throw(MAL, "batmtime.quarter", SQLSTATE(HY005) "Cannot access descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
