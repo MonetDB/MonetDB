@@ -664,7 +664,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (i > 0) {
 					r2->tnil = true;
 					r2->tnonil = false;
-					r2->tkey = i > 1;
+					r2->tkey = i == 1;
 				}
 			} else {
 				i = binsearch_oid(NULL, 0, lvals, 0, cnt - 1, lo, 1, 0);
@@ -674,13 +674,11 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (r2)
 					APPEND(r2, lvals[i] - l->hseqbase + l->tseqbase - r->tseqbase + r->hseqbase);
 			}
-			if (nil_on_miss) {
-				if (i < cnt) {
-					r2->tkey = r2->tnil || (cnt - i > 1);
-					r2->tnil = true;
-					r2->tnonil = false;
-					r2->tsorted = false;
-				}
+			if (nil_on_miss && i < cnt) {
+				r2->tkey = !r2->tnil && cnt - i == 1;
+				r2->tnil = true;
+				r2->tnonil = false;
+				r2->tsorted = false;
 				for (; i < cnt; i++) {
 					APPEND(r1, lvals[i]);
 					APPEND(r2, oid_nil);
@@ -3698,7 +3696,9 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		return mergejoin_void(r1, r2, l, r, sl, sr,
 				      nil_on_miss, only_misses, t0, false);
 	} else if ((BATordered(r) || BATordered_rev(r)) &&
-		   (BATtdense(r) ||
+		   (BATordered(l) ||
+		    BATordered_rev(l) ||
+		    BATtdense(r) ||
 		    lcount < 1024 ||
 		    BATcount(r) * (Tsize(r) + (r->tvheap ? r->tvheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches,
