@@ -92,7 +92,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
-	if (v->tnonil == TRUE) {
+	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
@@ -185,7 +185,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	BAT *res, *v;
 	TYPE *src, *dst;
 	BUN i, cnt;
-	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
+	bool nonil;		/* TRUE: we know there are no NIL (NULL) values */
 
 	/* basic sanity checks */
 	assert(_res && _v && r && d && s);
@@ -212,14 +212,14 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	src = (TYPE *) Tloc(v, 0);
 	dst = (TYPE *) Tloc(res, 0);
 
-	nonil = TRUE;
-	if (v->tnonil == TRUE) {
+	nonil = true;
+	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = round_body_nonil(src[i], *d, *s, *r);
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (ISNIL(TYPE)(src[i])) {
-				nonil = FALSE;
+				nonil = false;
 				dst[i] = NIL(TYPE);
 			} else {
 				dst[i] = round_body_nonil(src[i], *d, *s, *r);

@@ -208,7 +208,7 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 	BATsetcount(bn, cnt);
 	bn->tsorted = (cnt <= 1 || (series == 1 && step > 0));
 	bn->trevsorted = (cnt <= 1 || (series == 1 && step < 0));
-	bn->tnonil = TRUE;
+	bn->tnonil = true;
 	BBPkeepref(*bid= bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -661,10 +661,10 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	}
 
 	BATsetcount(res, sz);
-	res->tnonil = TRUE;
-	res->tnil = FALSE;
-	res->tsorted = FALSE;
-	res->trevsorted = FALSE;
+	res->tnonil = true;
+	res->tnil = false;
+	res->tsorted = false;
+	res->trevsorted = false;
 	BATkey(res, false);
 	BBPkeepref(vbid = res->batCacheid);
 

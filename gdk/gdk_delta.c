@@ -41,10 +41,10 @@ BATcommit(BAT *b)
 			   b->batInserted,
 			   b->theap.base);
 	if (!BATdirty(b)) {
-		b->batDirtyflushed = 0;
+		b->batDirtyflushed = false;
 	}
 	if (DELTAdirty(b)) {
-		b->batDirtydesc = 1;
+		b->batDirtydesc = true;
 	}
 	b->batInserted = BUNlast(b);
 	DELTADEBUG fprintf(stderr, "#BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
@@ -63,9 +63,9 @@ BATfakeCommit(BAT *b)
 {
 	if (b) {
 		BATcommit(b);
-		b->batDirtydesc = b->theap.dirty = 0;
+		b->batDirtydesc = b->theap.dirty = false;
 		if (b->tvheap)
-			b->tvheap->dirty = 0;
+			b->tvheap->dirty = false;
 	}
 }
 
@@ -85,11 +85,11 @@ BATundo(BAT *b)
 		return;
 	DELTADEBUG fprintf(stderr, "#BATundo %s \n", BATgetId(b));
 	if (b->batDirtyflushed) {
-		b->batDirtydesc = b->theap.dirty = 1;
+		b->batDirtydesc = b->theap.dirty = true;
 	} else {
-		b->batDirtydesc = b->theap.dirty = 0;
+		b->batDirtydesc = b->theap.dirty = false;
 		if (b->tvheap)
-			b->tvheap->dirty = 0;
+			b->tvheap->dirty = false;
 	}
 	bunfirst = b->batInserted;
 	bunlast = BUNlast(b) - 1;

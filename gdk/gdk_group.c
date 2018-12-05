@@ -217,7 +217,7 @@
 						cnts[grp]++;		\
 					if (gn->tsorted &&		\
 					    grp != ngrp - 1)		\
-						gn->tsorted = 0;	\
+						gn->tsorted = false;	\
 					/* we found the value/group */	\
 					/* combination, go to next */	\
 					/* value */			\
@@ -313,7 +313,7 @@
 						cnts[grp]++;		\
 					if (gn->tsorted &&		\
 					    grp != ngrp - 1)		\
-						gn->tsorted = 0;	\
+						gn->tsorted = false;	\
 					break;				\
 				}					\
 			}						\
@@ -413,7 +413,7 @@ pop(oid x)
 							cnts[grp]++;	\
 						if (gn->tsorted &&	\
 						    grp != ngrp - 1)	\
-							gn->tsorted = 0; \
+							gn->tsorted = false; \
 						break;			\
 					}				\
 				}					\
@@ -442,7 +442,7 @@ pop(oid x)
 							cnts[grp]++;	\
 						if (gn->tsorted &&	\
 						    grp != ngrp - 1)	\
-							gn->tsorted = 0; \
+							gn->tsorted = false; \
 						break;			\
 					}				\
 				}					\
@@ -574,11 +574,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 					goto error;
 				BATsetcount(en, cnt);
 				memcpy(Tloc(en, 0), cand, cnt * sizeof(oid));
-				en->tsorted = 1;
+				en->tsorted = true;
 				en->trevsorted = cnt <= 1;
-				en->tkey = 1;
-				en->tnil = 0;
-				en->tnonil = 1;
+				en->tkey = true;
+				en->tnil = false;
+				en->tnonil = true;
 				en->tseqbase = oid_nil;
 			} else {
 				en = BATdense(0, b->hseqbase + start, cnt);
@@ -806,7 +806,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		}
 
-		gn->tsorted = 1;
+		gn->tsorted = true;
 		*groups = gn;
 	} else if (BATordered(b) || BATordered_rev(b)) {
 		BUN i, j;
@@ -852,7 +852,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* initialize to impossible position */
 		memset(pgrp, ~0, sizeof(BUN) * j);
 
-		gn->tsorted = 1; /* be optimistic */
+		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
 		case TYPE_bte:
@@ -899,7 +899,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
-		gn->tsorted = 1;
+		gn->tsorted = true;
 		r = 0;
 		for (;;) {
 			if (cand) {
@@ -918,7 +918,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			ngrps[r] = v;
 			if (r > 0 && v < ngrps[r - 1])
-				gn->tsorted = 0;
+				gn->tsorted = false;
 			if (histo)
 				cnts[v]++;
 			r++;
@@ -939,7 +939,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (histo)
 			memset(cnts, 0, maxgrps * sizeof(lng));
 		ngrp = 0;
-		gn->tsorted = 1;
+		gn->tsorted = true;
 		r = 0;
 		for (;;) {
 			if (cand) {
@@ -958,7 +958,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			ngrps[r] = v;
 			if (r > 0 && v < ngrps[r - 1])
-				gn->tsorted = 0;
+				gn->tsorted = false;
 			if (histo)
 				cnts[v]++;
 			r++;
@@ -1001,7 +1001,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			end += lo;
 		}
 		hs = b->thash;
-		gn->tsorted = 1; /* be optimistic */
+		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
 		case TYPE_bte:
@@ -1073,7 +1073,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
-		gn->tsorted = 1; /* be optimistic */
+		gn->tsorted = true; /* be optimistic */
 
 		switch (t) {
 		case TYPE_bte:
@@ -1162,32 +1162,32 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
-		en->tkey = 1;
-		en->tsorted = 1;
+		en->tkey = true;
+		en->tsorted = true;
 		en->trevsorted = ngrp == 1;
-		en->tnonil = 1;
-		en->tnil = 0;
+		en->tnonil = true;
+		en->tnil = false;
 		*extents = virtualize(en);
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
 		if (ngrp == cnt || ngrp == 1) {
 			hn->tkey = ngrp == 1;
-			hn->tsorted = 1;
-			hn->trevsorted = 1;
+			hn->tsorted = true;
+			hn->trevsorted = true;
 		} else {
-			hn->tkey = 0;
-			hn->tsorted = 0;
-			hn->trevsorted = 0;
+			hn->tkey = false;
+			hn->tsorted = false;
+			hn->trevsorted = false;
 		}
-		hn->tnonil = 1;
-		hn->tnil = 0;
+		hn->tnonil = true;
+		hn->tnil = false;
 		*histo = hn;
 	}
 	gn->tkey = ngrp == BATcount(gn);
 	gn->trevsorted = ngrp == 1 || BATcount(gn) <= 1;
-	gn->tnonil = 1;
-	gn->tnil = 0;
+	gn->tnonil = true;
+	gn->tnil = false;
 	ngrp--;	     /* max value is one less than number of values */
 	BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &ngrp);
 	*groups = gn;

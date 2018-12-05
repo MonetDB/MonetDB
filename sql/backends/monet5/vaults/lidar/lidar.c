@@ -1037,12 +1037,12 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(y, rows);
 	BATsetcount(z, rows);
 
-	x->tsorted = 0;
-	x->trevsorted = 0;
-	y->tsorted = 0;
-	y->trevsorted = 0;
-	z->tsorted = 0;
-	z->trevsorted = 0;
+	x->tsorted = false;
+	x->trevsorted = false;
+	y->tsorted = false;
+	y->trevsorted = false;
+	z->tsorted = false;
+	z->trevsorted = false;
 #ifndef NDEBUG
 	fprintf(stderr,"#File loaded in %d ms\t", GDKms() - time0);
 #endif

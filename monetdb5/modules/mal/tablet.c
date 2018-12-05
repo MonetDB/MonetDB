@@ -67,12 +67,12 @@ void_bat_create(int adt, BUN nr)
 	}
 
 	/* disable all properties here */
-	b->tsorted = FALSE;
-	b->trevsorted = FALSE;
+	b->tsorted = false;
+	b->trevsorted = false;
 	b->tnosorted = 0;
 	b->tnorevsorted = 0;
 	b->tseqbase = oid_nil;
-	b->tkey = FALSE;
+	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
 	return b;
@@ -171,8 +171,8 @@ TABLETcollect(BAT **bats, Tablet *as)
 		bats[j] = fmt[i].c;
 		BBPfix(bats[j]->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
-		fmt[i].c->tsorted = fmt[i].c->trevsorted = 0;
-		fmt[i].c->tkey = 0;
+		fmt[i].c->tsorted = fmt[i].c->trevsorted = false;
+		fmt[i].c->tkey = false;
 		BATsettrivprop(fmt[i].c);
 
 		if (cnt != BATcount(fmt[i].c))
@@ -197,8 +197,8 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		if (fmt[i].skip)
 			continue;
 		b = fmt[i].c;
-		b->tsorted = b->trevsorted = 0;
-		b->tkey = 0;
+		b->tsorted = b->trevsorted = false;
+		b->tkey = false;
 		BATsettrivprop(b);
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
@@ -207,11 +207,11 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b->tkey = (offset > 0) ? FALSE : bv->tkey;
 		b->tnonil &= bv->tnonil;
 		if (b->tsorted != bv->tsorted)
-			b->tsorted = 0;
+			b->tsorted = false;
 		if (b->trevsorted != bv->trevsorted)
-			b->trevsorted = 0;
+			b->trevsorted = false;
 		if (BATtdense(b))
-			b->tkey = TRUE;
+			b->tkey = true;
 		b->batDirtydesc = true;
 
 		if (offset > 0) {
@@ -837,7 +837,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	/* include testing on the terminating null byte !! */
 	if (s == 0) {
 		adt = fmt->nildata;
-		fmt->c->tnonil = 0;
+		fmt->c->tnonil = false;
 	} else
 		adt = fmt->frstr(fmt, fmt->adt, s);
 
@@ -896,7 +896,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		freeException(err);
 		/* replace it with a nil */
 		adt = fmt->nildata;
-		fmt->c->tnonil = 0;
+		fmt->c->tnonil = false;
 	}
 	bunfastapp(fmt->c, adt);
 	return ret;

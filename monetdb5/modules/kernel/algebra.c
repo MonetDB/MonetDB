@@ -87,7 +87,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 			id++;
 		}
 	}
-	r -> tkey = FALSE;
+	r -> tkey = false;
 	r -> tseqbase = oid_nil;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
@@ -1105,8 +1105,8 @@ str ALGreuse(bat *ret, const bat *bid)
 				throw(MAL, "algebra.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BATsetcount(bn,BATcount(b));
-			bn->tsorted = FALSE;
-			bn->trevsorted = FALSE;
+			bn->tsorted = false;
+			bn->trevsorted = false;
 			BATkey(bn, false);
 		}
 		BBPkeepref(*ret= bn->batCacheid);

@@ -782,14 +782,15 @@ typedef struct BAT {
 
 	/* dynamic bat properties */
 	MT_Id creator_tid;	/* which thread created it */
-	uint32_t
+	bool
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1,	/* bat descriptor dirty marker */
+	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	uint8_t	/* adjacent bit fields are packed together (if they fit) */
 	 batRestricted:2,	/* access privileges */
-	 batPersistence:1,	/* should the BAT persist on disk? */
-	 batRole:8,		/* role of the bat */
-	 unused:18;		/* value=0 for now (sneakily used by mat.c) */
+	 batPersistence:1;	/* should the BAT persist on disk? */
+	uint8_t batRole;	/* role of the bat */
+	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
 
 	/* delta status administration */

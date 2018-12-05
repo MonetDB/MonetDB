@@ -497,12 +497,12 @@ BKCsetkey(bat *res, const bat *bid, const bit *param)
 			throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
 		}
 		BATkey(b, true);
-		b->tunique = 1;
+		b->tunique = true;
 	} else {
-		b->tunique = 0;
+		b->tunique = false;
 	}
 	if (b->tunique != unique)
-		b->batDirtydesc = 1;
+		b->batDirtydesc = true;
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1108,8 +1108,8 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
 	BATsetcount(bn, cnt);
-	bn->tsorted = 0;
-	bn->trevsorted = 0;
+	bn->tsorted = false;
+	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 	bn->tnonil = b->tnonil;
@@ -1168,8 +1168,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 
 
@@ -1294,8 +1294,8 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b) - BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 
@@ -1356,8 +1356,8 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 
 

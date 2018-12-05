@@ -1498,11 +1498,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				GDKfree(data);
 			}
 		}
-		b->tnil = 0;
-		b->tnonil = 0;
-		b->tkey = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
+		b->tnil = false;
+		b->tnonil = false;
+		b->tkey = false;
+		b->tsorted = false;
+		b->trevsorted = false;
 
 		// free the output value right now to prevent the internal data from
 		// being freed later

@@ -47,19 +47,19 @@
 		tpe *p, prev = tpe##_nil; size_t j;								\
 		b = COLnew(0, TYPE_##tpe, cnt, TRANSIENT);						\
 		if (!b) break;                                                  \
-		b->tnil = 0; b->tnonil = 1; b->tkey = 0;						\
-		b->tsorted = 1; b->trevsorted = 1;								\
+		b->tnil = false; b->tnonil = true; b->tkey = false;				\
+		b->tsorted = true; b->trevsorted = true;						\
 		b->tseqbase = oid_nil;											\
 		p = (tpe*) Tloc(b, 0);											\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = (tpe) access_fun(s)[j];							    \
-			if (na_check){ b->tnil = 1; 	b->tnonil = 0; 	*p= tpe##_nil;} \
+			if (na_check){ b->tnil = true; 	b->tnonil = false; 	*p= tpe##_nil;} \
 			if (j > 0){													\
 				if (b->trevsorted && !is_##tpe##_nil(*p) && (is_##tpe##_nil(prev) || *p > prev)){						\
-					b->trevsorted = 0;									\
+					b->trevsorted = false;								\
 				} else													\
 					if (b->tsorted && !is_##tpe##_nil(prev) && (is_##tpe##_nil(*p) || *p < prev)){ \
-						b->tsorted = 0;									\
+						b->tsorted = false;								\
 					}													\
 			}															\
 			prev = *p;													\
@@ -207,11 +207,11 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 		}
 		b = COLnew(0, TYPE_str, cnt, TRANSIENT);
 		if (!b) return NULL;
-		b->tnil = 0;
-		b->tnonil = 1;
-		b->tkey = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
+		b->tnil = false;
+		b->tnonil = true;
+		b->tkey = false;
+		b->tsorted = false;
+		b->trevsorted = false;
 		/* get levels once, since this is a function call */
 		levels = GET_LEVELS(s);
 
@@ -228,8 +228,8 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 				rse = STRING_ELT(s, j);
 			}
 			if (rse == NA_STRING) {
-				b->tnil = 1;
-				b->tnonil = 0;
+				b->tnil = true;
+				b->tnonil = false;
 				if (BUNappend(b, str_nil, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
