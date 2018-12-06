@@ -1994,7 +1994,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 restrict_t
 BATgetaccess(BAT *b)
 {
-	BATcheck(b, "BATgetaccess", 0);
+	BATcheck(b, "BATgetaccess", BAT_WRITE /* 0 */);
 	assert(b->batRestricted != 3); /* only valid restrict_t values */
 	return (restrict_t) b->batRestricted;
 }
