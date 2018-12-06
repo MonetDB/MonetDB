@@ -104,21 +104,37 @@ SELECT * FROM sys.sessions WHERE "user" NOT IN (SELECT name FROM sys.users);
 SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns);
 SELECT * FROM sys.statistics WHERE type NOT IN (SELECT sqlname FROM sys.types);
 
+SELECT * FROM sys.storage() WHERE schema NOT IN (SELECT name FROM sys.schemas);
+SELECT * FROM sys.storage() WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
+SELECT * FROM sys.storage() WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
+SELECT * FROM sys.storage() WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs);
+SELECT * FROM sys.storage() WHERE type NOT IN (SELECT sqlname FROM sys.types);
+
 SELECT * FROM sys.storage WHERE schema NOT IN (SELECT name FROM sys.schemas);
 SELECT * FROM sys.storage WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
+SELECT * FROM sys.storage WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
 SELECT * FROM sys.storage WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs);
 SELECT * FROM sys.storage WHERE type NOT IN (SELECT sqlname FROM sys.types);
 
+SELECT * FROM sys.tablestorage WHERE schema NOT IN (SELECT name FROM sys.schemas);
+SELECT * FROM sys.tablestorage WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
+SELECT * FROM sys.tablestorage WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
+
+SELECT * FROM sys.schemastorage WHERE schema NOT IN (SELECT name FROM sys.schemas);
+
 SELECT * FROM sys.storagemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
 SELECT * FROM sys.storagemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
+SELECT * FROM sys.storagemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
 SELECT * FROM sys.storagemodel WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs);
 SELECT * FROM sys.storagemodel WHERE type NOT IN (SELECT sqlname FROM sys.types);
 
 SELECT * FROM sys.storagemodelinput WHERE schema NOT IN (SELECT name FROM sys.schemas);
 SELECT * FROM sys.storagemodelinput WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
+SELECT * FROM sys.storagemodelinput WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
 SELECT * FROM sys.storagemodelinput WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs);
 SELECT * FROM sys.storagemodelinput WHERE type NOT IN (SELECT sqlname FROM sys.types);
 
-SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, auxiliary FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
-SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, auxiliary FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
+SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
+SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
+SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
 

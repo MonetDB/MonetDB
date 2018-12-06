@@ -82,10 +82,10 @@ Ready.
 [ 1	]
 #select * from storagemodel where "table" = 'bug3923';
 % sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
-% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	revsorted,	unique # name
+% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
-% 3,	7,	1,	3,	5,	5,	1,	1,	4,	5,	5,	5,	5 # length
-[ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	8000,	80000,	true,	true,	NULL	]
+% 3,	7,	1,	3,	5,	5,	1,	1,	4,	1,	5,	5,	5 # length
+[ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	8000,	0,	true,	NULL,	true	]
 #drop table bug3923;
 #create table bug3923(i integer);
 #select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from sys.storage('sys','_tables');
@@ -107,10 +107,10 @@ Ready.
 [ 1	]
 #select * from sys.storagemodel where "table" = 'bug3923';
 % sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel,	sys.storagemodel # table_name
-% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	revsorted,	unique # name
+% schema,	table,	column,	type,	count,	columnsize,	heapsize,	hashsize,	imprintsize,	orderidxsize,	sorted,	unique,	isacolumn # name
 % varchar,	varchar,	varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean,	boolean # type
-% 13,	7,	1,	3,	5,	5,	1,	1,	4,	5,	5,	5,	5 # length
-[ "bug3923schema",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	8000,	80000,	true,	true,	NULL	]
+% 13,	7,	1,	3,	5,	5,	1,	1,	4,	1,	5,	5,	5 # length
+[ "bug3923schema",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	8000,	0,	true,	NULL,	true	]
 #drop table bug3923;
 
 # 23:38:44 >  
