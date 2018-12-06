@@ -6313,30 +6313,30 @@ sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng
 
 	if (is_oid_nil(rid))
 		return NULL;
-	if (min >= 0 && seq->minvalue != min) {
+	if (!is_lng_nil(min) && seq->minvalue != min) {
 		seq->minvalue = min; 
 		c = find_sql_column(seqs, "minvalue");
 		table_funcs.column_update_value(tr, c, rid, &seq->minvalue);
 	}
-	if (max >= 0 && seq->maxvalue != max) {
+	if (!is_lng_nil(max) && seq->maxvalue != max) {
 		seq->maxvalue = max; 
 		changed = 1;
 		c = find_sql_column(seqs, "maxvalue");
 		table_funcs.column_update_value(tr, c, rid, &seq->maxvalue);
 	}
-	if (inc >= 0 && seq->increment != inc) {
+	if (!is_lng_nil(inc) && seq->increment != inc) {
 		seq->increment = inc; 
 		changed = 1;
 		c = find_sql_column(seqs, "increment");
 		table_funcs.column_update_value(tr, c, rid, &seq->increment);
 	}
-	if (cache >= 0 && seq->cacheinc != cache) {
+	if (!is_lng_nil(cache) && seq->cacheinc != cache) {
 		seq->cacheinc = cache; 
 		changed = 1;
 		c = find_sql_column(seqs, "cacheinc");
 		table_funcs.column_update_value(tr, c, rid, &seq->cacheinc);
 	}
-	if (seq->cycle != cycle) {
+	if (!is_lng_nil(cycle) && seq->cycle != cycle) {
 		seq->cycle = cycle != 0; 
 		changed = 1;
 		c = find_sql_column(seqs, "cycle");
