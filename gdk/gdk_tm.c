@@ -261,7 +261,7 @@ TMabort(void)
 				if (b->batPersistence == PERSISTENT)
 					BBPrelease(i);
 				b->batPersistence = TRANSIENT;
-				b->batDirtydesc = 1;
+				b->batDirtydesc = true;
 			}
 		}
 	}
@@ -298,7 +298,7 @@ TMabort(void)
 				if (b->batPersistence != PERSISTENT)
 					BBPretain(i);
 				b->batPersistence = PERSISTENT;
-				b->batDirtydesc = 1;
+				b->batDirtydesc = true;
 			}
 			BBPunfix(i);
 		}

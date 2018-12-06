@@ -31,16 +31,16 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	char *msg = MAL_SUCCEED;											\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
-		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING); \
 	bn= COLnew(b->hseqbase,TPE,BATcount(b), TRANSIENT);					\
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
 	}																	\
-	bn->tsorted=0;														\
-	bn->trevsorted=0;													\
-	bn->tnil = 0;														\
-	bn->tnonil = 1;														\
+	bn->tsorted=false;													\
+	bn->trevsorted=false;												\
+	bn->tnil = false;													\
+	bn->tnonil = true;													\
 																		\
 	bi = bat_iterator(b);												\
 																		\
@@ -48,8 +48,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 		x= (const TYPE1 *) BUNtail(bi,p);								\
 		if (x== 0 || ISNIL(*x)) {										\
 			y = (TYPE2) TYPE2##_nil;									\
-			bn->tnonil = 0;												\
-			bn->tnil = 1;												\
+			bn->tnonil = false;											\
+			bn->tnil = true;											\
 		} else if ((msg = FUNC(&y,x)) != MAL_SUCCEED)					\
 			goto bunins_failed;											\
 		APP;															\
@@ -106,7 +106,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			BBPunfix(b2->batCacheid);									\
 		if (b3)															\
 			BBPunfix(b3->batCacheid);									\
-		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING); \
 	}																	\
 	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
@@ -115,10 +115,10 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 		BBPunfix(b3->batCacheid);										\
 		throw(MAL, "batcolor." #NAME, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
 	}																	\
-	bn->tsorted=0;														\
-	bn->trevsorted=0;													\
-	bn->tnil = 0;														\
-	bn->tnonil = 1;														\
+	bn->tsorted=false;													\
+	bn->trevsorted=false;												\
+	bn->tnil = false;													\
+	bn->tnonil = true;													\
 																		\
 	bi = bat_iterator(b);												\
 	b2i = bat_iterator(b2);												\
@@ -132,8 +132,8 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			x2== 0 || is_##TYPE##_nil(*x2) ||							\
 			x3== 0 || is_##TYPE##_nil(*x3)) {							\
 			y = color_nil;												\
-			bn->tnonil = 0;												\
-			bn->tnil = 1;												\
+			bn->tnonil = false;											\
+			bn->tnil = true;											\
 		} else if ((msg = FUNC(&y,x,x2,x3)) != MAL_SUCCEED)				\
 			goto bunins_failed;											\
 		bunfastappTYPE(color, bn, &y);									\

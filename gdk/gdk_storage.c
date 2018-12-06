@@ -622,7 +622,7 @@ DESCload(int i)
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
 	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
-	b->batCopiedtodisk = 1;
+	b->batCopiedtodisk = true;
 	DESCclean(b);
 	return b;
 }
@@ -631,10 +631,10 @@ void
 DESCclean(BAT *b)
 {
 	b->batDirtyflushed = DELTAdirty(b);
-	b->batDirtydesc = 0;
-	b->theap.dirty = 0;
+	b->batDirtydesc = false;
+	b->theap.dirty = false;
 	if (b->tvheap)
-		b->tvheap->dirty = 0;
+		b->tvheap->dirty = false;
 }
 
 /* spawning the background msync should be done carefully 
@@ -766,10 +766,10 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->batCopiedtodisk == 0 || b->batDirtydesc || b->theap.dirty)
+	if (!b->batCopiedtodisk || b->batDirtydesc || b->theap.dirty)
 		if (err == GDK_SUCCEED && b->ttype)
 			err = HEAPsave(&b->theap, nme, "tail");
-	if (b->tvheap && (b->batCopiedtodisk == 0 || b->batDirtydesc || b->tvheap->dirty))
+	if (b->tvheap && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty))
 		if (b->ttype && b->tvarsized) {
 			if (err == GDK_SUCCEED)
 				err = HEAPsave(b->tvheap, nme, "theap");
@@ -779,7 +779,7 @@ BATsave(BAT *bd)
 		GDKfree(b->tvheap);
 
 	if (err == GDK_SUCCEED) {
-		bd->batCopiedtodisk = 1;
+		bd->batCopiedtodisk = true;
 		DESCclean(bd);
 		return GDK_SUCCEED;
 	}

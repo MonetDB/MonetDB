@@ -210,8 +210,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							goto wrapup;
 						}
 					}
-					self->cols[self->ncols].b->tnil = 1;
-					self->cols[self->ncols].b->tnonil = 0;
+					self->cols[self->ncols].b->tnil = true;
+					self->cols[self->ncols].b->tnonil = false;
 					BATsetcount(self->cols[self->ncols].b, self->nvals);
 				}
 				self->ncols++;
@@ -353,7 +353,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 						GDKfree(utf8_string);
 					}
 				}
-				self->cols[i].b->tnonil = 1 - self->cols[i].b->tnil;
+				self->cols[i].b->tnonil = !self->cols[i].b->tnil;
 			}
 		} else {
 			if (self->cols[i].def != NULL) {
@@ -367,8 +367,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					goto wrapup;
 				}
 			}
-			self->cols[i].b->tnil = 1;
-			self->cols[i].b->tnonil = 0;
+			self->cols[i].b->tnil = true;
+			self->cols[i].b->tnonil = false;
 		}
 		BATsetcount(self->cols[i].b, self->nvals + el_count);
 	}

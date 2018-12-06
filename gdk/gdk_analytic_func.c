@@ -1000,7 +1000,7 @@ GDKanalyticalcount(BAT *r, BAT *b, BAT *s, BAT *e, const bit* restrict ignore_ni
 	start = (lng*)Tloc(s, 0);
 	end = (lng*)Tloc(e, 0);
 
-	if(!*ignore_nils || b->T.nonil) {
+	if(!*ignore_nils || b->tnonil) {
 		for(; i<cnt; i++, rb++)
 			*rb = (end[i] > start[i]) ? (end[i] - start[i]) : 0;
 	} else {

@@ -691,7 +691,7 @@ MT_msync(void *p, size_t len)
 	return ret;
 }
 
-int
+bool
 MT_path_absolute(const char *pathname)
 {
 	return (*pathname == DIR_SEP);
@@ -891,7 +891,7 @@ MT_msync(void *p, size_t len)
 	return 0;
 }
 
-int
+bool
 MT_path_absolute(const char *pathname)
 {
 	/* drive letter, colon, directory separator */

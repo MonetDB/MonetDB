@@ -994,9 +994,12 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 
 	if (temp != SQL_DECLARED_TABLE) {
 		if (temp != SQL_PERSIST && tt == tt_table) {
-			s = mvc_bind_schema(sql, "tmp");
-			if (temp == SQL_LOCAL_TEMP && sname && strcmp(sname, s->base.name) != 0)
-				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: local temporary tables should be stored in the '%s' schema", s->base.name);
+			if (temp == SQL_LOCAL_TEMP || temp == SQL_GLOBAL_TEMP) {
+				if (sname && strcmp(sname, "tmp") != 0)
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: %s temporary tables should be stored in the 'tmp' schema",
+									 (temp == SQL_LOCAL_TEMP) ? "local" : "global");
+				s = mvc_bind_schema(sql, "tmp");
+			}
 		} else if (s == NULL) {
 			s = ss;
 		}
@@ -2459,7 +2462,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
 	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0)
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
 	if (mvc_bind_schema(sql, new_name))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
@@ -2500,7 +2503,7 @@ rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name, in
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0)
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
 	if (mvc_bind_table(sql, s, new_name))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
@@ -2547,7 +2550,7 @@ rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name,
 		return sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
 	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: cannot rename column '%s' (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0)
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: invalid new column name");
 	if (mvc_bind_column(sql, t, new_name))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);

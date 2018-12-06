@@ -52,7 +52,6 @@ typedef struct logger {
 	char *fn;
 	char *dir;
 	char *local_dir; /* the directory in which the log is written */
-	int dbfarm_role; /* role for the dbfarm used for the logdir, PERSISTENT by default */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	stream *log;

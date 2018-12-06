@@ -458,8 +458,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 	/* for some reason we don't have an allocator here, so make one */
 	sql->sa = sa_create();
-	if(!sql->sa)
-		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (!sql->sa) {
+		msg = sql_error(sql, 02, SQLSTATE(HY001) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 
 	if (!sname)
 		sname = "sys";
@@ -512,14 +514,16 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		}
 	}
 
-  cleanup:
-	sa_destroy(sql->sa);
-	sql->sa = NULL;
+cleanup:
+	if(sql->sa) {
+		sa_destroy(sql->sa);
+		sql->sa = NULL;
+	}
 	return msg;
 }
 
 str 
-append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols) 
+append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols)
 {
 	size_t i;
 	sql_table *t;
@@ -534,8 +538,12 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 
 	/* for some reason we don't have an allocator here, so make one */
 	sql->sa = sa_create();
+	if (!sql->sa) {
+		msg = sql_error(sql, 02, SQLSTATE(HY001) "CREATE TABLE: %s", MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 
-	if (!sname) 
+	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname))) {
 		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
@@ -561,9 +569,11 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 		}
 	}
 
-  cleanup:
-	sa_destroy(sql->sa);
-	sql->sa = NULL;
+cleanup:
+	if(sql->sa) {
+		sa_destroy(sql->sa);
+		sql->sa = NULL;
+	}
 	return msg;
 }
 
@@ -827,7 +837,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 			BBPunfix(r->batCacheid);
 			seqbulk_destroy(sb);
-			throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next seuqnce value %s.%s", sname, seqname);
+			throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 		}
 		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
@@ -1214,11 +1224,13 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt;
 	*res = 0;
 	if ((tid = BATdescriptor(Tid)) == NULL)
-		throw(SQL, "sql.grow", "Cannot access descriptor");
+		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) Ins)) == NULL)
-		throw(SQL, "sql.append", "Cannot access descriptor");
+	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) Ins)) == NULL) {
+		BBPunfix(Tid);
+		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
+	}
 	if (ins) {
 		cnt = BATcount(ins);
 		BBPunfix(ins->batCacheid);
@@ -1878,11 +1890,11 @@ BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
 		for(i=0;i<cnt; i++) 
 			p[lp[i]] = rp[i];
 	}
-	res->tsorted = 0;
-	res->trevsorted = 0;
-	res->tnil = 0;
-	res->tnonil = 0;
-	res->tkey = 0;
+	res->tsorted = false;
+	res->trevsorted = false;
+	res->tnil = false;
+	res->tnonil = false;
+	res->tkey = false;
 	BBPunfix(c->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -4761,7 +4773,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_int;
-		r->tvarsized = 0;
+		r->tvarsized = false;
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
@@ -4819,7 +4831,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_sht;
-		r->tvarsized = 0;
+		r->tvarsized = false;
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);
@@ -4878,7 +4890,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		r->ttype = TYPE_bte;
-		r->tvarsized = 0;
+		r->tvarsized = false;
 		r->tvheap = NULL;
 	}
 	BBPunfix(s->batCacheid);

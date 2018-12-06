@@ -1338,14 +1338,14 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		if (HEAPextend(&b->theap, bb.tailsize, true) != GDK_SUCCEED ||
 			mnstr_read(in, b->theap.base, bb.tailsize, 1) < 0)
 			goto bailout;
-		b->theap.dirty = TRUE;
+		b->theap.dirty = true;
 	}
 	if (bb.theapsize > 0) {
 		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
 			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
 		b->tvheap->free = bb.theapsize;
-		b->tvheap->dirty = TRUE;
+		b->tvheap->dirty = true;
 	}
 
 	/* set properties */

@@ -5231,7 +5231,7 @@ wkbPUT(Heap *h, var_t *bun, const wkb *val)
 	base = h->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, wkb_size(val->len));
-		h->dirty = 1;
+		h->dirty = true;
 	}
 	return *bun;
 }
@@ -5662,7 +5662,7 @@ wkbaPUT(Heap *h, var_t *bun, const wkba *val)
 	base = h->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
-		h->dirty = 1;
+		h->dirty = true;
 	}
 	return *bun;
 }
@@ -5753,8 +5753,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		*cs++ = wn & 1;
 	}
 
-	bo->tsorted = bo->trevsorted = 0;
-	bo->tkey = 0;
+	bo->tsorted = bo->trevsorted = false;
+	bo->tkey = false;
 	BATsetcount(bo, cnt);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
@@ -5841,8 +5841,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		}
 		*cs++ = wn & 1;
 	}
-	bo->tsorted = bo->trevsorted = 0;
-	bo->tkey = 0;
+	bo->tsorted = bo->trevsorted = false;
+	bo->tkey = false;
 	BATsetcount(bo, cnt);
 	BBPunfix(bpx->batCacheid);
 	BBPunfix(bpy->batCacheid);
