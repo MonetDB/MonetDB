@@ -95,3 +95,4 @@ alter-sequence-subquery.Bug-6657
 quantile-crash.Bug-6658
 grant-role-not-idempotent.Bug-6660
 negative-sequences.Bug-6665
+copy-into-doubled.Bug-6666

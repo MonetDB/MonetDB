@@ -1227,7 +1227,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) Ins)) == NULL) {
+	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) Ins)) == NULL) {
 		BBPunfix(Tid);
 		throw(SQL, "sql.grow", SQLSTATE(HY005) "Cannot access descriptor");
 	}
@@ -1273,7 +1273,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (tpe > GDKatomcnt)
 		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) ins)) == NULL)
+	if (tpe == TYPE_bat && (ins = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.append", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
 			sname,tname,cname);
 	if (ATOMextern(tpe))
@@ -1335,7 +1335,7 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		assert(0);
 	if (tpe != TYPE_bat)
-		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriotor %s.%s.%s",
+		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
 		sname,tname,cname);
 	if ((tids = BATdescriptor(Tids)) == NULL)
 		throw(SQL, "sql.update", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
@@ -1422,7 +1422,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (tpe > TYPE_any)
 		tpe = TYPE_bat;
-	if (tpe == TYPE_bat && (b = BATdescriptor(*(int *) ins)) == NULL)
+	if (tpe == TYPE_bat && (b = BATdescriptor(*(bat *) ins)) == NULL)
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
 	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void)) {
 		if (b)
@@ -1547,7 +1547,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		if (BATappend(res, i, NULL, true) != GDK_SUCCEED) {
 			BBPunfix(res->batCacheid);
 			BBPunfix(i->batCacheid);
-			throw(MAL, "sql.delta", SQLSTATE(45002) "Cannot access delta structuren");
+			throw(MAL, "sql.delta", SQLSTATE(45002) "Cannot access delta structure");
 		}
 		BBPunfix(i->batCacheid);
 	}
