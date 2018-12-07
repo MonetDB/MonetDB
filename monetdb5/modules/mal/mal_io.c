@@ -567,7 +567,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(piv[i]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
 		}
-		if ((piv[i] = BATdescriptor(*(int *) val)) == NULL) {
+		if ((piv[i] = BATdescriptor(*(bat *) val)) == NULL) {
 			while (--i >= 1)
 				BBPunfix(piv[i]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " null BAT encountered");
