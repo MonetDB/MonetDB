@@ -1945,7 +1945,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		if (VIEWreset(b) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
-	bakmode = b->batRestricted;
+	bakmode = (restrict_t) b->batRestricted;
 	bakdirty = b->batDirtydesc;
 	if (bakmode != newmode || (b->batSharecnt && newmode != BAT_READ)) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
@@ -1972,7 +1972,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			return GDK_FAIL;
 
 		/* set new access mode and mmap modes */
-		b->batRestricted = newmode;
+		b->batRestricted = (unsigned int) newmode;
 		b->batDirtydesc = true;
 		b->theap.newstorage = m1;
 		if (b->tvheap)
@@ -1980,7 +1980,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 
 		if (existing && BBPsave(b) != GDK_SUCCEED) {
 			/* roll back all changes */
-			b->batRestricted = bakmode;
+			b->batRestricted = (unsigned int) bakmode;
 			b->batDirtydesc = bakdirty;
 			b->theap.newstorage = b1;
 			if (b->tvheap)
@@ -1994,7 +1994,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 restrict_t
 BATgetaccess(BAT *b)
 {
-	BATcheck(b, "BATgetaccess", 0);
+	BATcheck(b, "BATgetaccess", BAT_WRITE /* 0 */);
 	assert(b->batRestricted != 3); /* only valid restrict_t values */
 	return (restrict_t) b->batRestricted;
 }

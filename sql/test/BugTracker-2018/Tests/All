@@ -68,6 +68,7 @@ procedure-create-table.Bug-6604
 sqlitelogictest-cast-null-not-in.Bug-6605
 sqlitelogictest-groupby-coalesce-error-message.Bug-6608
 sqlitelogictest-algebra-rangejoin-undefined.Bug-6610
+lateral-join-crash.Bug-6613
 dependency_column_on_sequence.Bug-6618
 local_replica_table_not_detected.Bug-6620
 remote-table-where-not-equal.Bug-6621
@@ -81,8 +82,9 @@ ilike-foreign-characters.Bug-6633
 multi-column-hash-wrongly-NIL.Bug-6638
 comment-on-table-is-null.Bug-6639
 crash-after-call-non-existing-loader
-timestamp-as-boolean.Bug-6642
 timestamp-roundtrip.Bug-6640
+timestamp-as-boolean.Bug-6642
+global-temp-tables.Bug-6643
 convert-key.Bug-6648
 update-transaction-select.Bug-6649
 prepared-statement-with-udf.Bug-6650
@@ -92,3 +94,5 @@ select_where_true.Bug-6654
 alter-sequence-subquery.Bug-6657
 quantile-crash.Bug-6658
 grant-role-not-idempotent.Bug-6660
+negative-sequences.Bug-6665
+copy-into-doubled.Bug-6666

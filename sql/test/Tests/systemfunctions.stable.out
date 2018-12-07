@@ -687,7 +687,7 @@ Ready.
 [ "sys",	"hashsize",	0,	"bigint",	"create function sys.hashsize(b boolean, count bigint)\nreturns bigint\nbegin\n \n if b = true\n then return 8 * count;\n end if;\n return 0;\nend;"	]
 [ "sys",	"hashsize",	1,	"boolean",	""	]
 [ "sys",	"hashsize",	2,	"bigint",	""	]
-[ "sys",	"heapsize",	0,	"bigint",	"create function sys.heapsize(tpe varchar(1024), count bigint, distincts bigint, avgwidth int)\nreturns bigint\nbegin\n \n if tpe in ('varchar', 'char', 'clob', 'json', 'url')\n then return 8192 + ((avgwidth + 8) * distincts);\n end if;\n if tpe in ('blob', 'geometry', 'geometrya')\n then return avgwidth * count;\n end if;\n return 0;\nend;"	]
+[ "sys",	"heapsize",	0,	"bigint",	"create function sys.heapsize(tpe varchar(1024), count bigint, distincts bigint, avgwidth int)\nreturns bigint\nbegin\n \n if tpe in ('varchar', 'char', 'clob', 'json', 'url')\n then return 8192 + ((avgwidth + 8) * distincts);\n end if;\n if tpe in ('blob', 'geometry', 'geometrya')\n then return 32 + (avgwidth * count);\n end if;\n return 0;\nend;"	]
 [ "sys",	"heapsize",	1,	"varchar",	""	]
 [ "sys",	"heapsize",	2,	"bigint",	""	]
 [ "sys",	"heapsize",	3,	"bigint",	""	]
