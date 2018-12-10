@@ -368,10 +368,10 @@ BATunique(BAT *b, BAT *s)
 	}
 	bn = virtualize(bn);
 	ALGODEBUG fprintf(stderr, "#BATunique(b=" ALGOBATFMT ","
-			  "s=" ALGOBATFMT ")="
-			  ALGOOPTBATFMT "\n",
-			  ALGOBATPAR(b), ALGOBATPAR(s),
-			  ALGOOPTBATPAR(bn));
+			  "s=" ALGOOPTBATFMT ")="
+			  ALGOBATFMT "\n",
+			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+			  ALGOBATPAR(bn));
 	return bn;
 
   bunins_failed:

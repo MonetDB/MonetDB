@@ -296,7 +296,7 @@ la_bat_clear(logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		restrict_t access = b->batRestricted;
+		restrict_t access = (restrict_t) b->batRestricted;
 		b->batRestricted = BAT_WRITE;
 		BATclear(b, true);
 		b->batRestricted = access;
