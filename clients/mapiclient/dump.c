@@ -88,27 +88,37 @@ get_comments_clause(Mapi mid)
 static int
 dquoted_print(stream *f, const char *s, const char *suff)
 {
-	size_t n;
+	int space = 0;
+
 	if (mnstr_write(f, "\"", 1, 1) < 0)
 		return -1;
+	space++;
 	while (*s) {
+		size_t n;
 		if ((n = strcspn(s, "\"")) > 0) {
 			if (mnstr_write(f, s, 1, n) < 0)
 				return -1;
+			space += (int) n;
 			s += n;
 		}
 		if (*s) {
 			assert(*s == '"');
 			if (mnstr_write(f, "\"\"", 1, 2) < 0)
 				return -1;
+			space += 2;
 			s++;
 		}
 	}
 	if (mnstr_write(f, "\"", 1, 1) < 0)
 		return -1;
-	if (suff != NULL && mnstr_printf(f, "%s", suff) < 0)
-		return -1;
-	return 0;
+	space++;
+	if (suff != NULL) {
+		int n;
+		if ((n = mnstr_printf(f, "%s", suff)) < 0)
+			return -1;
+		space += n;
+	}
+	return space;
 }
 
 static int
@@ -812,6 +822,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 	char *s, *t;
 	size_t maxquerylen = 1024;
 	int cnt;
+	int slen;
 	int cap;
 #define CAP(X) ((cap = (int) (X)) < 0 ? 0 : cap)
 
@@ -861,6 +872,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
+	slen = mapi_get_len(hdl, 0) + 3; /* add quotes and space */
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		const char *c_name = mapi_fetch_field(hdl, 0);
@@ -877,7 +889,8 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 			mnstr_printf(toConsole, ",\n");
 
 		mnstr_printf(toConsole, "\t");
-		dquoted_print(toConsole, c_name, " ");
+		space = dquoted_print(toConsole, c_name, " ");
+		mnstr_printf(toConsole, "%*s", CAP(slen - space), "");
 		space = dump_type(mid, toConsole, c_type, c_type_digits, c_type_scale, hashge);
 		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(toConsole, "%*s NOT NULL",
