@@ -568,7 +568,6 @@ int yydebug=1;
 	lngval
 	poslng
 	nonzerolng
-	signedlng
 
 %type <bval>
 	opt_brackets
@@ -1378,28 +1377,28 @@ opt_alt_seq_params:
   ;
 
 opt_seq_param:
-    	AS data_type 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	START WITH signedlng 	{ $$ = _symbol_create_lng(SQL_START, $3); }
-  |	opt_seq_common_param	{ $$ = $1; }
+    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($3) ? $3 : $3 * $4); }
+  |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_alt_seq_param:
-    	AS data_type 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	RESTART 				{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
-  |	RESTART WITH signedlng 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), $3));  }
-  |	RESTART WITH subquery 	{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
-  |	opt_seq_common_param	{ $$ = $1; }
+    	AS data_type 				{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	RESTART 						{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
+  |	RESTART WITH opt_sign lngval 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), is_lng_nil($4) ? $4 : $3 * $4));  }
+  |	RESTART WITH subquery 			{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
+  |	opt_seq_common_param			{ $$ = $1; }
   ;
 
 opt_seq_common_param:
-  	INCREMENT BY signedlng	{ $$ = _symbol_create_lng(SQL_INC, $3); }
-  |	MINVALUE signedlng		{ $$ = _symbol_create_lng(SQL_MINVALUE, $2); }
-  |	NOMINVALUE				{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
-  |	MAXVALUE signedlng		{ $$ = _symbol_create_lng(SQL_MAXVALUE, $2); }
-  |	NOMAXVALUE				{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
-  |	CACHE nonzerolng		{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
-  |	CYCLE					{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
-  |	NOCYCLE					{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
+  	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
+  |	MINVALUE opt_sign lngval		{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NOMINVALUE						{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
+  |	MAXVALUE opt_sign lngval		{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NOMAXVALUE						{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
+  |	CACHE nonzerolng				{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
+  |	CYCLE							{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
+  |	NOCYCLE							{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
   ;
 
 /*=== END SEQUENCES ===*/
@@ -5289,12 +5288,6 @@ poslng:
 		  }
 		}
 	;
-
-signedlng:
-	lngval     { $$ = $1; }
-  | '+' lngval { $$ = $2; }
-  | '-' lngval { $$ = is_lng_nil($2) ? $2 : -1 * $2; }
-  ;
 
 posint:
 	intval 	{ $$ = $1;
