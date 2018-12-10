@@ -3119,6 +3119,12 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_subtype *t = NULL;
 	int type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:F_FUNC);
 
+	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
+		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		if (exp)
+			return exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card, has_nil(exp), is_intern(exp));
+	}
+
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 
@@ -3424,6 +3430,12 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (!s)
 		return NULL;
 
+	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
+		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		if (exp)
+			return exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card, has_nil(exp), is_intern(exp));
+	}
+
 	l = rel_value_exp(sql, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(sql, rel, dl->next->next->data.sym, f, iek);
 	if (!l || !r)
@@ -3498,6 +3510,12 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
 	int err = 0;
+
+	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
+		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		if (exp)
+			return exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card, has_nil(exp), is_intern(exp));
+	}
 
 	for (; ops; ops = ops->next, nr_args++) {
 		sql_exp *e = rel_value_exp(sql, rel, ops->data.sym, fs, iek);
@@ -3794,6 +3812,17 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 		distinct = l->h->next->data.i_val;
 		d = l->h->next->next;
 	}
+
+	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
+		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		if (exp) {
+			sql_exp *res = exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card, has_nil(exp), is_intern(exp));
+			if (distinct)
+				set_distinct(res);
+			return res;
+		}
+	}
+
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 	return _rel_aggr( sql, rel, distinct, s, aname, d, f);
@@ -4087,7 +4116,9 @@ rel_group_by(mvc *sql, sql_rel **rel, symbol *groupby, dlist *selection, int f )
 
 	for (; o; o = o->next) {
 		symbol *grp = o->data.sym;
-		sql_exp *e = rel_column_ref(sql, rel, grp, f);
+		int is_last = 1;
+		exp_kind ek = {type_value, card_value, TRUE};
+		sql_exp *e = rel_value_exp2(sql, rel, grp, f, ek, &is_last);
 
 		if (!e) {
 			char buf[ERRSIZE];
@@ -4100,6 +4131,12 @@ rel_group_by(mvc *sql, sql_rel **rel, symbol *groupby, dlist *selection, int f )
 			if (!e) {
 				if (sql->errstr[0] == 0)
 					strcpy(sql->errstr, buf);
+				return NULL;
+			}
+		}
+		if(e->type != e_column) {
+			if(!stack_push_groupby_expression(sql, grp, e)) {
+				(void) sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				return NULL;
 			}
 		}

@@ -496,6 +496,7 @@ int yydebug=1;
 	routine_body
 	table_function_column_list
 	select_target_list
+	simple_scalar_exp_commalist
 	external_function_name
 	with_list
 	window_specification
@@ -3647,7 +3648,12 @@ opt_table_name:
 
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
- |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ |  sqlGROUP BY simple_scalar_exp_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ ;
+
+simple_scalar_exp_commalist:
+    simple_scalar_exp                                 { $$ = append_symbol(L(), $1); }
+ |  simple_scalar_exp_commalist ',' simple_scalar_exp { $$ = append_symbol($1, $3); }
  ;
 
 column_ref_commalist:

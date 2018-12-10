@@ -1525,7 +1525,7 @@ mvc_is_sorted(mvc *m, sql_column *col)
 
 /* variable management */
 static sql_var*
-stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, dlist *wdef, int view, int frame)
+stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, dlist *wdef, sql_groupby_expression *exp, int view, int frame)
 {
 	sql_var *v, *nvars;
 	int nextsize = sql->sizevars;
@@ -1549,6 +1549,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	v->frame = frame;
 	v->visited = 0;
 	v->wdef = wdef;
+	v->exp = exp;
 	if (type) {
 		int tpe = type->type->localtype;
 		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
@@ -1565,7 +1566,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 sql_var*
 stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1574,7 +1575,7 @@ stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 sql_var*
 stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1583,7 +1584,7 @@ stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 sql_var*
 stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1592,7 +1593,7 @@ stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 sql_var*
 stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, NULL, 1, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, NULL, NULL, 1, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1601,7 +1602,7 @@ stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 sql_var*
 stack_push_window_def(mvc *sql, const char *name, dlist *wdef)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, wdef, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, wdef, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1611,10 +1612,49 @@ dlist *
 stack_get_window_def(mvc *sql, const char *name, int *pos)
 {
 	for (int i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && sql->vars[i].wdef && strcmp(sql->vars[i].name, name)==0) {
+		if (!sql->vars[i].frame && sql->vars[i].wdef && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			if(pos)
 				*pos = i;
 			return sql->vars[i].wdef;
+		}
+	}
+	return NULL;
+}
+
+sql_var*
+stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
+{
+	sql_var* res = NULL;
+	char *err = NULL;
+	sql_groupby_expression* sge = MNEW(sql_groupby_expression);
+
+	if(sge) {
+		sge->sdef = symbol2string(sql, def, 1, &err);
+		if (!sge->sdef) {
+			if (err) _DELETE(err);
+			return NULL;
+		}
+		sge->token = def->token;
+		sge->exp = exp;
+
+		res = stack_set(sql, sql->topvars, NULL, NULL, NULL, NULL, NULL, sge, 0, 0);
+		if(res)
+			sql->topvars++;
+	}
+	return res;
+}
+
+sql_exp*
+stack_get_groupby_expression(mvc *sql, symbol *def)
+{
+	char *err = NULL, *sdef = symbol2string(sql, def, 1, &err);
+	if (!sdef) {
+		if (err) _DELETE(err);
+		return NULL;
+	}
+	for (int i = sql->topvars-1; i >= 0; i--) {
+		if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && strcmp(sql->vars[i].exp->sdef, sdef)==0) {
+			return sql->vars[i].exp->exp;
 		}
 	}
 	return NULL;
@@ -1652,7 +1692,7 @@ stack_set_var(mvc *sql, const char *name, ValRecord *v)
 	atom *res = NULL;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
+		if (!sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			VALclear(&sql->vars[i].a.data);
 			if(VALcopy(&sql->vars[i].a.data, v) == NULL)
 				return NULL;
@@ -1673,7 +1713,7 @@ stack_get_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
+		if (!sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			return &sql->vars[i].a;
 		}
 	}
@@ -1683,7 +1723,7 @@ stack_get_var(mvc *sql, const char *name)
 sql_var*
 stack_push_frame(mvc *sql, const char *name)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, NULL, 0, 1);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, NULL, NULL, 0, 1);
 	if(res) {
 		sql->topvars++;
 		sql->frame++;
@@ -1700,6 +1740,10 @@ stack_pop_until(mvc *sql, int top)
 		c_delete(v->name);
 		VALclear(&v->a.data);
 		v->a.data.vtype = 0;
+		if(v->exp) {
+			_DELETE(v->exp->sdef);
+			_DELETE(v->exp);
+		}
 		v->wdef = NULL;
 	}
 }
@@ -1717,6 +1761,10 @@ stack_pop_frame(mvc *sql)
 			table_destroy(v->t);
 		else if (v->rel)
 			rel_destroy(v->rel);
+		else if(v->exp) {
+			_DELETE(v->exp->sdef);
+			_DELETE(v->exp);
+		}
 		v->wdef = NULL;
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
@@ -1730,8 +1778,7 @@ stack_find_type(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-			strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return &sql->vars[i].a.tpe;
 	}
 	return NULL;
@@ -1743,8 +1790,8 @@ stack_find_table(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    sql->vars[i].t && strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].t
+			&& sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return sql->vars[i].t;
 	}
 	return NULL;
@@ -1757,7 +1804,7 @@ stack_find_rel_view(mvc *sql, const char *name)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0)
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return rel_dup(sql->vars[i].rel);
 	}
 	return NULL;
@@ -1770,7 +1817,7 @@ stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0) {
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			rel_destroy(sql->vars[i].rel);
 			sql->vars[i].rel = view;
 		}
@@ -1783,8 +1830,7 @@ stack_find_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;
@@ -1797,7 +1843,7 @@ stack_find_rel_var(mvc *sql, const char *name)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0)
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return rel_dup(sql->vars[i].rel);
 	}
 	return NULL;
@@ -1809,7 +1855,7 @@ frame_find_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0 && !sql->vars[i].frame; i--) {
-		if (strcmp(sql->vars[i].name, name)==0)
+		if (sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;
@@ -1835,8 +1881,7 @@ stack_has_frame(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (sql->vars[i].frame && sql->vars[i].name && 
-		    strcmp(sql->vars[i].name, name)==0)
+		if (sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;

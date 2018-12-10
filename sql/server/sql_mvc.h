@@ -66,12 +66,19 @@
 /* locked needs unlocking */
 #define mod_locked 	16 
 
+typedef struct sql_groupby_expression {
+	char *sdef;
+	int token;
+	sql_exp *exp;
+} sql_groupby_expression;
+
 typedef struct sql_var {
 	const char *name;
 	atom a;
 	sql_table *t;
 	sql_rel *rel;
 	dlist *wdef;
+	sql_groupby_expression *exp;
 	char view;
 	char frame;
 	char visited; //used for window definitions lookup
@@ -236,6 +243,8 @@ extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_t
 extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
 extern sql_var* stack_push_window_def(mvc *sql, const char *name, dlist *sym);
 extern dlist* stack_get_window_def(mvc *sql, const char *name, int *pos);
+extern sql_var* stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp);
+extern sql_exp* stack_get_groupby_expression(mvc *sql, symbol *def);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
 extern char stack_check_var_visited(mvc *sql, int i);
