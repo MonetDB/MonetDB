@@ -1258,7 +1258,7 @@ opt_alt_seq_params:
 
 opt_seq_param:
     	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($3) ? $3 : $3 * $4); }
+  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($4) ? $4 : $3 * $4); }
   |	opt_seq_common_param		{ $$ = $1; }
   ;
 
