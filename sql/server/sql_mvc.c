@@ -1631,7 +1631,11 @@ stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 	if(sge) {
 		sge->sdef = symbol2string(sql, def, 1, &err);
 		if (!sge->sdef) {
-			if (err) _DELETE(err);
+			if (err) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: incorrect expression '%s'", err);
+				_DELETE(err);
+				return NULL;
+			}
 			return NULL;
 		}
 		sge->token = def->token;
@@ -1648,8 +1652,13 @@ sql_exp*
 stack_get_groupby_expression(mvc *sql, symbol *def)
 {
 	char *err = NULL, *sdef = symbol2string(sql, def, 1, &err);
+
 	if (!sdef) {
-		if (err) _DELETE(err);
+		if (err) {
+			(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: incorrect expression '%s'", err);
+			_DELETE(err);
+			return NULL;
+		}
 		return NULL;
 	}
 	for (int i = sql->topvars-1; i >= 0; i--) {

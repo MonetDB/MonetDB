@@ -3121,6 +3121,8 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
 		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		if (sql->errstr[0] != '\0')
+			return NULL;
 		if (exp)
 			return exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card, has_nil(exp), is_intern(exp));
 	}
@@ -3142,6 +3144,8 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
        	e = rel_value_exp(sql, rel, l->next->data.sym, fs, iek);
 	if (!e) {
 		if (!f && *rel && (*rel)->card == CARD_AGGR) {
+			if (fs == sql_having)
+				return NULL;
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
@@ -3432,6 +3436,8 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
 		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		if (sql->errstr[0] != '\0')
+			return NULL;
 		if (exp)
 			return exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card, has_nil(exp), is_intern(exp));
 	}
@@ -3441,6 +3447,8 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (!l || !r)
 		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
 	if (!sf && (!l || !r) && *rel && (*rel)->card == CARD_AGGR) {
+		if (f == sql_having)
+			return NULL;
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
@@ -3513,6 +3521,8 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
 		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		if (sql->errstr[0] != '\0')
+			return NULL;
 		if (exp)
 			return exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card, has_nil(exp), is_intern(exp));
 	}
@@ -3537,6 +3547,8 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	/* first try aggregate */
 	f = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
 	if (!f && err && *rel && (*rel)->card == CARD_AGGR) {
+		if (fs == sql_having)
+			return NULL;
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
@@ -3815,6 +3827,8 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
 		sql_exp *exp = stack_get_groupby_expression(sql, se);
+		if (sql->errstr[0] != '\0')
+			return NULL;
 		if (exp) {
 			sql_exp *res = exp_column(sql->sa, exp_relname(exp), exp_name(exp), exp_subtype(exp), exp->card, has_nil(exp), is_intern(exp));
 			if (distinct)
@@ -4134,11 +4148,9 @@ rel_group_by(mvc *sql, sql_rel **rel, symbol *groupby, dlist *selection, int f )
 				return NULL;
 			}
 		}
-		if(e->type != e_column) {
-			if(!stack_push_groupby_expression(sql, grp, e)) {
-				(void) sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		if(e->type != e_column) { //store group by expressions in the stack
+			if(!stack_push_groupby_expression(sql, grp, e))
 				return NULL;
-			}
 		}
 		append(exps, e);
 	}

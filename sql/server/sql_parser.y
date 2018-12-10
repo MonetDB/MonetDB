@@ -4262,7 +4262,7 @@ window_ident_clause:
 
 window_partition_clause:
 	/* empty */ 	{ $$ = NULL; }
-  |	PARTITION BY column_ref_commalist
+  |	PARTITION BY simple_scalar_exp_commalist
 	{ $$ = _symbol_create_list( SQL_GROUPBY, $3 ); }
   ;
 
