@@ -879,7 +879,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			BAT *b;
 			size_t cnt;
 			sql_delta *d;
-			char *msg;
+			char *msg = MAL_SUCCEED;
 			MOStask task;
 /* no restriction
 			if (c->t->access == TABLE_WRITABLE)
@@ -912,11 +912,10 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 							throw(SQL, "sql.alter", NON_TRIVIAL_MIX_NOT_ALLOWED);
 					}
 				}
+				// TODO: check if there should be something like "else {remove_mosaic_index()}".
 
 				msg = MOScompressInternal(cntxt, &b->batCacheid, task, 0);
 			}
-			else
-				msg = MOSdecompressInternal(cntxt, &b->batCacheid);
 
 			BBPunfix(b->batCacheid);
 
