@@ -584,6 +584,7 @@ void optimizerInit(void)
 	subeval_aggrRef = putName("subeval_aggr");
 	subgroupdoneRef= putName("subgroupdone");
 	subgroupRef = putName("subgroup");
+	subinterRef = putName("subinterRef");
 	submaxRef = putName("submax");
 	submedianRef = putName("submedian");
 	subminRef = putName("submin");
