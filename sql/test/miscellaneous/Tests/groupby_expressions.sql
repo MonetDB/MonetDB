@@ -13,8 +13,14 @@ select cast(sum(("aa"+1) + ("bb"+2)) as bigint) from "groupings" group by ("aa"+
 
 select cast("aa"+1 as bigint) from "groupings" group by "aa"+1 having "aa"+1 > 2;
 select cast("aa"+1 as bigint) from "groupings" group by "aa"+1 order by "aa"+1;
+
+--select count(*) from "groupings" group by case when "aa" > 1 then "aa" else "aa" + 10 end;
+--select (case when "aa" > 1 then "aa" else "aa" * 4 end) from "groupings" group by (case when "aa" > 1 then "aa" else "aa" * 4 end);
 rollback;
 
+select count(*) from "groupings" group by rank() over (); --error
+select count(*) from "groupings" having rank() over (); --error
+select count(*) from "groupings" order by rank() over (); --error TODO?
 select cast("aa"+1 as bigint) from "groupings" group by "aa"+1 having "bb"+1 > 2; --error
 select cast("aa"+1 as bigint) from "groupings" group by "aa"+1 order by "bb"+1; --error
 

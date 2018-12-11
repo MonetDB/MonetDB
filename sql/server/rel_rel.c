@@ -261,7 +261,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 {
 	sql_rel *p = NULL;
 
-	if (f == sql_sel && rel && is_project(rel->op) && !is_processed(rel))
+	if (is_sql_sel(f) && rel && is_project(rel->op) && !is_processed(rel))
 		rel = rel->l;
 
 	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
