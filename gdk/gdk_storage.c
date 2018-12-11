@@ -668,8 +668,7 @@ BATmsyncImplementation(void *arg)
 void
 BATmsync(BAT *b)
 {
-	/* we don't sync views or if we're told not to */
-	if (isVIEW(b) || (GDKdebug & NOSYNCMASK))
+	if (isShared(b) || (GDKdebug & NOSYNCMASK))
 		return;
 	/* we don't sync transients */
 	if (b->theap.farmid != 0 ||
@@ -738,13 +737,6 @@ BATsave(BAT *bd)
 	BATcheck(b, "BATsave", GDK_FAIL);
 
 	assert(b->batCacheid > 0);
-	/* views cannot be saved, but make an exception for
-	 * force-remapped views */
-	if (isVIEW(b) &&
-	    !(b->theap.copied && b->theap.storage == STORE_MMAP)) {
-		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWtparent(b)));
-		return GDK_FAIL;
-	}
 	if (!BATdirty(b)) {
 		return GDK_SUCCEED;
 	}
@@ -834,7 +826,6 @@ BATload_intern(bat bid, bool lock)
 
 	/* initialize descriptor */
 	b->batDirtydesc = FALSE;
-	b->theap.parentid = 0;
 
 	/* load succeeded; register it in BBP */
 	if (BBPcacheit(b, lock) != GDK_SUCCEED) {
@@ -884,7 +875,7 @@ BATdelete(BAT *b)
 		HEAPfree(&b->theap, true);
 	}
 	if (b->tvheap) {
-		assert(b->tvheap->parentid == bid);
+		assert(b->tvheap->sharevheapid == bid);
 		if (b->batCopiedtodisk || (b->tvheap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->tvheap, o, "theap") != GDK_SUCCEED &&
 			    b->batCopiedtodisk)

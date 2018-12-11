@@ -664,7 +664,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		bat->cached = NULL;
 	}
 	assert(!c || BATcount(c) == bat->ibase);
-	if (BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isVIEW(i) && i->ttype && i->batRole == PERSISTENT){
+	if (BATcount(b) == 0 && BBP_refs(id) == 1 && BBP_lrefs(id) == 1 && !isShared(i) && i->ttype && i->batRole == PERSISTENT){
 		temp_destroy(bat->ibid);
 		bat->ibid = id;
 		temp_dup(id);
@@ -684,7 +684,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 				return LOG_ERR;
 			}
 		}
-		if (isVIEW(i) && b->batCacheid == VIEWtparent(i)) {
+		if (isShared(i) && b->batCacheid == SHAREvheap(i)) {
 			BAT *ic = COLcopy(i, i->ttype, true, TRANSIENT);
 			if (ic == NULL || BATappend(b, ic, NULL, true) != GDK_SUCCEED) {
 				if(ic)

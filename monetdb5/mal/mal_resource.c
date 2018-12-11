@@ -61,7 +61,7 @@ mal_resource_reset(void)
  * Views are consider cheap and ignored
  */
 lng
-getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
+getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i)
 {
 	lng total = 0;
 	BAT *b;
@@ -71,10 +71,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		b = BATdescriptor( stk->stk[getArg(pci, i)].val.bval);
 		if (b == NULL)
 			return 0;
-		if (flag && isVIEW(b)) {
-			BBPunfix(b->batCacheid);
-			return 0;
-		}
 
 		total += BATcount(b) * b->twidth;
 		// string heaps can be shared, consider them as space-less views

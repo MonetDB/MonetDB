@@ -63,7 +63,6 @@ prelude(int cnt, bat *subcommit)
 					return GDK_FAIL;
 			}
 			if (b) {
-				assert(!isVIEW(b));
 				assert(b->batRole == PERSISTENT);
 				BATcommit(b);
 			}

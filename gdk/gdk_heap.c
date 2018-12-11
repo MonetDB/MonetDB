@@ -393,7 +393,6 @@ GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
 	const char *filename;
 	bat bid = b->batCacheid;
 
-	assert(b->theap.parentid == 0);
 	assert(width != 0);
 	assert(v >= GDK_VAROFFSET);
 	assert(width < SIZEOF_VAR_T && (width <= 2 ? v - GDK_VAROFFSET : v) >= ((var_t) 1 << (8 * width)));

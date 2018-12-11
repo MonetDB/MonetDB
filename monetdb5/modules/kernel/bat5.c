@@ -39,7 +39,7 @@ setaccess(BAT *b, int mode)
 	BAT *bn = b;
 
 	if (BATsetaccess(b, mode) != GDK_SUCCEED) {
-		if (b->batSharecnt && mode != BAT_READ) {
+		if (b->vHeapSharecnt && mode != BAT_READ) {
 			bn = COLcopy(b, b->ttype, true, TRANSIENT);
 			if (bn != NULL &&
 				BATsetaccess(bn, mode) != GDK_SUCCEED) {
@@ -718,10 +718,10 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, BATgetId(b), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCacheid", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)(b->batCacheid)), false) != GDK_SUCCEED ||
-	    BUNappend(bk, "tparentid", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->theap.parentid)), false) != GDK_SUCCEED ||
-	    BUNappend(bk, "batSharecnt", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(b->batSharecnt)), false) != GDK_SUCCEED ||
+	    BUNappend(bk, "tvheapshareid", false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t)(b->tvheap->sharevheapid)), false) != GDK_SUCCEED ||
+	    BUNappend(bk, "vHeapSharecnt", false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t)(b->vHeapSharecnt)), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCount", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa((size_t)b->batCount), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCapacity", false) != GDK_SUCCEED ||
@@ -811,6 +811,7 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 str
 BKCgetSize(lng *tot, const bat *bid){
 	BAT *b;
+	BUN cnt;
 	lng size = 0;
 	lng blksize = (lng) MT_pagesize();
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -818,15 +819,13 @@ BKCgetSize(lng *tot, const bat *bid){
 	}
 
 	size = sizeof (bat);
-	if ( !isVIEW(b)) {
-		BUN cnt = BATcapacity(b);
-		size += ROUND_UP(b->theap.free, blksize);
-		if (b->tvheap)
-			size += ROUND_UP(b->tvheap->free, blksize);
-		if (b->thash)
-			size += ROUND_UP(sizeof(BUN) * cnt, blksize);
-		size += IMPSimprintsize(b);
-	} 
+	cnt = BATcapacity(b);
+	size += ROUND_UP(b->theap.free, blksize);
+	if (b->tvheap && !isShared(b))
+		size += ROUND_UP(b->tvheap->free, blksize);
+	if (b->thash)
+		size += ROUND_UP(sizeof(BUN) * cnt, blksize);
+	size += IMPSimprintsize(b);
 	*tot = size;
 	BBPunfix(*bid);
 	return MAL_SUCCEED;

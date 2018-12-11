@@ -2663,9 +2663,7 @@ log_bat(logger *lg, BAT *b, const char *name)
 		    log_write_string(lg, name) != GDK_SUCCEED)
 			return GDK_FAIL;
 
-		if (b->ttype > TYPE_void &&
-		    b->ttype < TYPE_str &&
-		    !isVIEW(b)) {
+		if (b->ttype > TYPE_void && b->ttype < TYPE_str) {
 			const void *t = BUNtail(bi, b->batInserted);
 
 			ok = wt(t, lg->log, (size_t)l.nr);

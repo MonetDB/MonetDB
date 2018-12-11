@@ -335,15 +335,15 @@ BATproject(BAT *l, BAT *r)
 	if (stringtrick) {
 		if (r->batRestricted == BAT_READ) {
 			/* really share string heap */
-			assert(r->tvheap->parentid > 0);
-			BBPshare(r->tvheap->parentid);
+			assert(r->tvheap->sharevheapid > 0);
+			BBPshare(r->tvheap->sharevheapid);
 			bn->tvheap = r->tvheap;
 		} else {
 			/* make copy of string heap */
 			bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap));
 			if (bn->tvheap == NULL)
 				goto bailout;
-			bn->tvheap->parentid = bn->batCacheid;
+			bn->tvheap->sharevheapid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
 			snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename), "%s.theap", BBP_physical(bn->batCacheid));
 			if (HEAPcopy(bn->tvheap, r->tvheap) != GDK_SUCCEED)
@@ -739,7 +739,7 @@ BATprojectchain(BAT **bats)
 		bn->tnil = false;
 		bn->tnonil = nonil;
 		bn->tkey = false;
-		BBPshare(b->tvheap->parentid);
+		BBPshare(b->tvheap->sharevheapid);
 		bn->tvheap = b->tvheap;
 		bn->ttype = b->ttype;
 		bn->tvarsized = true;

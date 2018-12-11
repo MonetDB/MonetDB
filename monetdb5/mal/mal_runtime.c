@@ -265,12 +265,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 			if (b == NULL)
 				continue;
 			cnt = BATcount(b);
-			/* Usually reading views cost as much as full bats.
-			   But when we output a slice that is not the case. */
-			if( rd)
-				vol += (!isVIEW(b) && !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
-			else
-			if( !isVIEW(b))
+			if (rd)
 				vol += tailsize(b, cnt);
 		}
 	}

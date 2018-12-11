@@ -451,7 +451,7 @@ DFLOWworker(void *T)
 
 		for (i = 0; i < p->retc; i++){
 			lng footprint;
-			footprint = getMemoryClaim(flow->mb, flow->stk, p, i, FALSE);
+			footprint = getMemoryClaim(flow->mb, flow->stk, p, i);
 			fe->hotclaim += footprint;
 			if( footprint > fe->maxclaim) fe->maxclaim = footprint;
 		}
@@ -751,7 +751,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 				throw(MAL, "dataflow", "DFLOWscheduler(): getInstrPtr(flow->mb,fe[i].pc) returned NULL");
 			}
 			for (j = p->retc; j < p->argc; j++)
-				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j, FALSE);
+				fe[i].argclaim = getMemoryClaim(fe[0].flow->mb, fe[0].flow->stk, p, j);
 #endif
 			q_enqueue(todo, flow->status + i);
 			flow->status[i].state = DFLOWrunning;

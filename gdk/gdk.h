@@ -582,7 +582,7 @@ typedef struct {
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte farmid;		/* id of farm where heap is located */
-	bat parentid;		/* cache id of VIEW parent bat */
+	bat sharevheapid;	/* cache id of bat that share a vheap*/
 } Heap;
 
 typedef struct {
@@ -745,7 +745,7 @@ typedef struct {
 	 persistence:1,		/* should the BAT persist on disk? */
 	 role:8,		/* role of the bat */
 	 unused:17;		/* value=0 for now (sneakily used by mat.c) */
-	int sharecnt;		/* incoming view count */
+	int sharevheapcnt;	/* incoming share vheap count */
 
 	/* delta status administration */
 	BUN inserted;		/* start of inserted elements */
@@ -821,7 +821,7 @@ typedef struct BATiter {
 #define batInserted	S.inserted
 #define batCount	S.count
 #define batCapacity	S.capacity
-#define batSharecnt	S.sharecnt
+#define vHeapSharecnt	S.sharevheapcnt
 #define batRestricted	S.restricted
 #define batRole		S.role
 #define creator_tid	S.tid
@@ -2531,40 +2531,19 @@ gdk_export void BATassertProps(BAT *b);
 #define BATPROPS_ALL	1	/* derive all possible properties; no matter what cost (key=hash) */
 #define BATPROPS_CHECK  3	/* BATPROPS_ALL, but start from scratch and report illegally set properties */
 
-gdk_export BAT *VIEWcreate(oid seq, BAT *b);
-gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
-
-#define ALIGNapp(x, y, f, e)						\
-	do {								\
-		if (!(f) && ((x)->batRestricted == BAT_READ ||		\
-			     (x)->batSharecnt > 0)) {			\
-			GDKerror("%s: access denied to %s, aborting.\n", \
-				 (y), BATgetId(x));			\
-			return (e);					\
-		}							\
-	} while (false)
-
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
  *                BAT_APPEND = append-only
  *                BAT_READ   = read-only
- * VIEW bats are always mapped read-only.
  */
 
-#define BAThrestricted(b) ((b)->batRestricted)
-#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
+#define BATrestricted(b) ((b)->batRestricted)
 
-/* the parentid in a VIEW is correct for the normal view. We must
- * correct for the reversed view.
+/* 
+ * checks if the vheap is shared under the hood
  */
-#define isVIEW(x)							\
-	(assert((x)->batCacheid > 0),					\
-	 ((x)->theap.parentid ||					\
-	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid)))
-
-#define viewless(x) (!VIEWtparent(x) && !VIEWvtparent(x))
-#define VIEWtparent(x)	((x)->theap.parentid)
-#define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
+#define isShared(x)     ((x)->tvheap && (x)->tvheap->sharevheapid != (x)->batCacheid)
+#define SHAREvheap(x)	(((x)->tvheap == NULL || (x)->tvheap->sharevheapid == (x)->batCacheid) ? 0 : (x)->tvheap->sharevheapid)
 
 /*
  * @+ BAT Iterators

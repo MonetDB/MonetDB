@@ -197,11 +197,6 @@ BATcheckimprints(BAT *b)
 {
 	bool ret;
 
-	if (VIEWtparent(b)) {
-		assert(b->timprints == NULL);
-		b = BBPdescriptor(VIEWtparent(b));
-	}
-
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	if (b->timprints == (Imprints *) 1) {
 		Imprints *imprints;
@@ -245,7 +240,6 @@ BATcheckimprints(BAT *b)
 					imprints->imps = (void *) (imprints->stats + 64 * 3);
 					imprints->dict = (void *) ((uintptr_t) ((char *) imprints->imps + pages * (imprints->bits / 8) + sizeof(uint64_t)) & ~(sizeof(uint64_t) - 1));
 					close(fd);
-					imprints->imprints.parentid = b->batCacheid;
 					b->timprints = imprints;
 					ALGODEBUG fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
 					MT_lock_unset(&GDKimprintsLock(b->batCacheid));
@@ -353,16 +347,6 @@ BATimprints(BAT *b)
 		return GDK_SUCCEED;
 	assert(b->timprints == NULL);
 
-	if (VIEWtparent(b)) {
-		/* views always keep null pointer and need to obtain
-		 * the latest imprint from the parent at query time */
-		s2 = b;		/* remember for ALGODEBUG print */
-		b = BBPdescriptor(VIEWtparent(b));
-		assert(b);
-		if (BATcheckimprints(b))
-			return GDK_SUCCEED;
-		assert(b->timprints == NULL);
-	}
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	ALGODEBUG t0 = GDKusec();
 	if (b->timprints == NULL) {
@@ -515,7 +499,6 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints.base)[1] = (size_t) imprints->impcnt;
 		((size_t *) imprints->imprints.base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints.base)[3] = (size_t) BATcount(b);
-		imprints->imprints.parentid = b->batCacheid;
 		b->timprints = imprints;
 		if (BBP_status(b->batCacheid) & BBPEXISTING &&
 		    !b->theap.dirty) {
@@ -621,7 +604,6 @@ IMPSremove(BAT *b)
 	Imprints *imprints;
 
 	assert(b->timprints != NULL);
-	assert(!VIEWtparent(b));
 
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	if ((imprints = b->timprints) != NULL) {
@@ -650,7 +632,7 @@ IMPSdestroy(BAT *b)
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
 				  "timprints");
-		} else if (b->timprints != NULL && !VIEWtparent(b))
+		} else if (b->timprints != NULL)
 			IMPSremove(b);
 	}
 }
@@ -669,10 +651,8 @@ IMPSfree(BAT *b)
 		imprints = b->timprints;
 		if (imprints != NULL && imprints != (Imprints *) 1) {
 			b->timprints = (Imprints *) 1;
-			if (!VIEWtparent(b)) {
-				HEAPfree(&imprints->imprints, false);
-				GDKfree(imprints);
-			}
+			HEAPfree(&imprints->imprints, false);
+			GDKfree(imprints);
 		}
 		MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 	}

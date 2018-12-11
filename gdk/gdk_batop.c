@@ -24,11 +24,11 @@ unshare_string_heap(BAT *b)
 {
 	assert(b->batCacheid > 0);
 	if (b->ttype == TYPE_str &&
-	    b->tvheap->parentid != b->batCacheid) {
+	    b->tvheap->sharevheapid != b->batCacheid) {
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
-		h->parentid = b->batCacheid;
+		h->sharevheapid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
 		snprintf(h->filename, sizeof(h->filename),
 			 "%s.theap", BBP_physical(b->batCacheid));
@@ -37,7 +37,7 @@ unshare_string_heap(BAT *b)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		BBPunshare(b->tvheap->parentid);
+		BBPunshare(b->tvheap->sharevheapid);
 		b->tvheap = h;
 	}
 	return GDK_SUCCEED;
@@ -68,7 +68,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 
 	assert(b->ttype == TYPE_str);
 	/* only transient bats can use some other bat's string heap */
-	assert(b->batRole == TRANSIENT || b->tvheap->parentid == b->batCacheid);
+	assert(b->batRole == TRANSIENT || b->tvheap->sharevheapid == b->batCacheid);
 	if (n->batCount == 0 || (s && s->batCount == 0))
 		return GDK_SUCCEED;
 	ni = bat_iterator(n);
@@ -103,20 +103,20 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, bool force)
 			if (b->batCount == 0 &&
 			    b->tvheap != n->tvheap &&
 			    cand == NULL) {
-				if (b->tvheap->parentid != bid) {
-					BBPunshare(b->tvheap->parentid);
+				if (b->tvheap->sharevheapid != bid) {
+					BBPunshare(b->tvheap->sharevheapid);
 				} else {
 					HEAPfree(b->tvheap, true);
 					GDKfree(b->tvheap);
 				}
-				BBPshare(n->tvheap->parentid);
+				BBPshare(n->tvheap->sharevheapid);
 				b->tvheap = n->tvheap;
 				b->batDirtydesc = true;
 				toff = 0;
-			} else if (b->tvheap->parentid == n->tvheap->parentid &&
+			} else if (b->tvheap->sharevheapid == n->tvheap->sharevheapid &&
 				   cand == NULL) {
 				toff = 0;
-			} else if (b->tvheap->parentid != bid &&
+			} else if (b->tvheap->sharevheapid != bid &&
 				   unshare_string_heap(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
@@ -423,7 +423,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 	const oid *restrict cand = NULL, *candend = NULL;
 
 	/* only transient bats can use some other bat's vheap */
-	assert(b->batRole == TRANSIENT || b->tvheap->parentid == b->batCacheid);
+	assert(b->batRole == TRANSIENT || b->tvheap->sharevheapid == b->batCacheid);
 	/* make sure the bats use var_t */
 	assert(b->twidth == n->twidth);
 	assert(b->twidth == SIZEOF_VAR_T);
@@ -440,13 +440,13 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		/* if b is still empty, in the transient farm, and n
 		 * is read-only, we replace b's vheap with a reference
 		 * to n's */
-		if (b->tvheap->parentid != b->batCacheid) {
-			BBPunshare(b->tvheap->parentid);
+		if (b->tvheap->sharevheapid != b->batCacheid) {
+			BBPunshare(b->tvheap->sharevheapid);
 		} else {
 			HEAPfree(b->tvheap, true);
 			GDKfree(b->tvheap);
 		}
-		BBPshare(n->tvheap->parentid);
+		BBPshare(n->tvheap->sharevheapid);
 		b->tvheap = n->tvheap;
 		b->batDirtydesc = true;
 	}
@@ -472,12 +472,12 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 		return GDK_SUCCEED;
 	}
 	/* b and n do not share their vheap, so we need to copy data */
-	if (b->tvheap->parentid != b->batCacheid) {
+	if (b->tvheap->sharevheapid != b->batCacheid) {
 		/* if b shares its vheap with some other bat, unshare it */
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
-		h->parentid = b->batCacheid;
+		h->sharevheapid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
 		snprintf(h->filename, sizeof(h->filename),
 			 "%s.theap", BBP_physical(b->batCacheid));
@@ -486,7 +486,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 			GDKfree(h);
 			return GDK_FAIL;
 		}
-		BBPunshare(b->tvheap->parentid);
+		BBPunshare(b->tvheap->sharevheapid);
 		b->tvheap = h;
 	}
 	/* copy data from n to b */
@@ -533,9 +533,11 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		return GDK_SUCCEED;
 	}
 	assert(b->batCacheid > 0);
-	assert(b->theap.parentid == 0);
 
-	ALIGNapp(b, "BATappend", force, GDK_FAIL);
+	if (!(force) && (b)->batRestricted == BAT_READ) {
+		GDKerror("BATappend: access denied to %s, aborting.\n", BATgetId(b));
+		return GDK_FAIL;
+	}
 
 	if (ATOMstorage(ATOMtype(b->ttype)) != ATOMstorage(ATOMtype(n->ttype))) {
 		GDKerror("Incompatible operands.\n");
@@ -1049,21 +1051,12 @@ BATkeyed(BAT *b)
 			b->tkey = true;
 		} else if (BATcheckhash(b) ||
 			   (b->batPersistence == PERSISTENT &&
-			    BAThash(b) == GDK_SUCCEED) ||
-			   (VIEWtparent(b) != 0 &&
-			    BATcheckhash(BBPdescriptor(VIEWtparent(b))))) {
+			    BAThash(b) == GDK_SUCCEED)) {
 			/* we already have a hash table on b, or b is
-			 * persistent and we could create a hash
-			 * table, or b is a view on a bat that already
-			 * has a hash table */
+			 * persistent and we could create a hash table 
+			 */
 			BUN lo = 0;
-
 			hs = b->thash;
-			if (hs == NULL && VIEWtparent(b) != 0) {
-				BAT *b2 = BBPdescriptor(VIEWtparent(b));
-				lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
-				hs = b2->thash;
-			}
 			for (q = BUNlast(b), p = 0; p < q; p++) {
 				const void *v = BUNtail(bi, p);
 				for (hb = HASHgetlink(hs, p + lo);
@@ -1327,7 +1320,7 @@ gdk_return
 BATsort(BAT **sorted, BAT **order, BAT **groups,
 	   BAT *b, BAT *o, BAT *g, bool reverse, bool stable)
 {
-	BAT *bn = NULL, *on = NULL, *gn = NULL, *pb = NULL;
+	BAT *bn = NULL, *on = NULL, *gn = NULL;
 	oid *restrict grps, *restrict ords, prev;
 	BUN p, q, r;
 	lng t0 = 0;
@@ -1439,26 +1432,16 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				  ALGOOPTBATPAR(on), GDKusec() - t0);
 		return GDK_SUCCEED;
 	}
-	if (VIEWtparent(b)) {
-		pb = BBPdescriptor(VIEWtparent(b));
-		if (b->theap.base != pb->theap.base ||
-		    BATcount(b) != BATcount(pb) ||
-		    b->hseqbase != pb->hseqbase ||
-		    BATatoms[b->ttype].atomCmp != BATatoms[pb->ttype].atomCmp)
-			pb = NULL;
-	} else {
-		pb = b;
-	}
 	if (g == NULL && o == NULL && !reverse &&
-	    pb != NULL && BATcheckorderidx(pb) &&
+	    BATcheckorderidx(b) &&
 	    /* if we want a stable sort, the order index must be
 	     * stable, if we don't want stable, we don't care */
-	    (!stable || ((oid *) pb->torderidx->base)[2])) {
+	    (!stable || ((oid *) b->torderidx->base)[2])) {
 		/* there is an order index that we can use */
-		on = COLnew(pb->hseqbase, TYPE_oid, BATcount(pb), TRANSIENT);
+		on = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 		if (on == NULL)
 			goto error;
-		memcpy(Tloc(on, 0), (oid *) pb->torderidx->base + ORDERIDXOFF, BATcount(pb) * sizeof(oid));
+		memcpy(Tloc(on, 0), (oid *) b->torderidx->base + ORDERIDXOFF, BATcount(b) * sizeof(oid));
 		BATsetcount(on, BATcount(b));
 		on->tkey = true;
 		on->tnil = false;
@@ -1511,12 +1494,6 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		bn = BATproject(o, b);
 		if (bn == NULL)
 			goto error;
-		if (bn->ttype == TYPE_void || isVIEW(bn)) {
-			BAT *b2 = COLcopy(bn, ATOMtype(bn->ttype), true, TRANSIENT);
-			BBPunfix(bn->batCacheid);
-			bn = b2;
-		}
-		pb = NULL;
 	} else {
 		bn = COLcopy(b, b->ttype, true, TRANSIENT);
 	}
@@ -1643,9 +1620,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		/* only invest in creating an order index if the BAT
 		 * is persistent */
 		if (!reverse &&
-		    pb != NULL &&
-		    (ords != NULL || pb->batPersistence == PERSISTENT) &&
-		    (m = createOIDXheap(pb, stable)) != NULL) {
+		    (ords != NULL || b->batPersistence == PERSISTENT) &&
+		    (m = createOIDXheap(b, stable)) != NULL) {
 			if (ords == NULL) {
 				ords = (oid *) m->base + ORDERIDXOFF;
 				if (o && o->ttype != TYPE_void)
@@ -1674,21 +1650,21 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		bn->tsorted = !reverse;
 		bn->trevsorted = reverse;
 		if (m != NULL) {
-			MT_lock_set(&GDKhashLock(pb->batCacheid));
-			if (pb->torderidx == NULL) {
-				pb->batDirtydesc = true;
-				pb->torderidx = m;
+			MT_lock_set(&GDKhashLock(b->batCacheid));
+			if (b->torderidx == NULL) {
+				b->batDirtydesc = true;
+				b->torderidx = m;
 				if (ords != (oid *) m->base + ORDERIDXOFF) {
 					memcpy((oid *) m->base + ORDERIDXOFF,
 					       ords,
-					       BATcount(pb) * sizeof(oid));
+					       BATcount(b) * sizeof(oid));
 				}
-				persistOIDX(pb);
+				persistOIDX(b);
 			} else {
 				HEAPfree(m, true);
 				GDKfree(m);
 			}
-			MT_lock_unset(&GDKhashLock(pb->batCacheid));
+			MT_lock_unset(&GDKhashLock(b->batCacheid));
 		}
 	}
 	bn->theap.dirty = true;

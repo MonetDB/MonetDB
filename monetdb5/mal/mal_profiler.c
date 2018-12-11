@@ -319,17 +319,8 @@ This information can be used to determine memory footprint and variable life tim
 					tname = getTypeName(getBatType(tpe));
 					logadd("\"type\":\"bat[:%s]\",%s", tname,pret);
 					if( d) {
-						BAT *v;
 						cnt = BATcount(d);
-						if( isVIEW(d)){
-							logadd("\"view\":\"true\",%s", pret);
-							logadd("\"parent\":%d,%s", VIEWtparent(d), pret);
-							logadd("\"seqbase\":"BUNFMT",%s", d->hseqbase, pret);
-							logadd("\"hghbase\":"BUNFMT",%s", d->hseqbase + cnt, pret);
-							v= BBPquickdesc(VIEWtparent(d), false);
-							logadd("\"kind\":\"%s\",%s", (v &&  v->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
-						} else
-							logadd("\"kind\":\"%s\",%s", ( d->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
+						logadd("\"kind\":\"%s\",%s", ( d->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						total += cnt * d->twidth;
 						total += heapinfo(d->tvheap, d->batCacheid);
 						total += hashinfo(d->thash, d->batCacheid);
@@ -997,16 +988,15 @@ getDiskSpace(void)
 			b = BATdescriptor(i);
 			if (b) {
 				size += sizeof(BAT);
-				if (!isVIEW(b)) {
-					BUN cnt = BATcount(b);
+				BUN cnt = BATcount(b);
 
-					size += tailsize(b, cnt);
-					/* the upperbound is used for the heaps */
-					if (b->tvheap)
-						size += b->tvheap->size;
-					if (b->thash)
-						size += sizeof(BUN) * cnt;
-				}
+				size += tailsize(b, cnt);
+				/* the upperbound is used for the heaps */
+				if (b->tvheap && !isShared(b))
+					size += b->tvheap->size;
+				if (b->thash)
+					size += sizeof(BUN) * cnt;
+				
 				BBPunfix(i);
 			}
 		}

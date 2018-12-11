@@ -289,7 +289,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 		}
 		tot += (lng) sz;
 
-		if (c == NULL || isVIEW(c)) {
+		if (c == NULL) {
 			continue;
 		}
 		heap(1,&c->theap,tbuns,"tbuns");
@@ -388,7 +388,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 
 		s = BBPname(i);
  		c = BBP_cache(i);
-		if (c == NULL || isVIEW(c)) {
+		if (c == NULL) {
 			continue;
 		}
 		heapvm(1,&c->theap,tbuns,"tcuns");

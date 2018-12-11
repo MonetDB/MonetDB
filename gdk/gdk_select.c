@@ -149,7 +149,7 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 		     (*cmp)(v, BUNtail(bi, hb)) == 0))
 
 static BAT *
-hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
+hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 {
 	BATiter bi;
 	BUN i, cnt;
@@ -162,19 +162,6 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 	seq = b->hseqbase;
 	l = 0;
 	h = BUNlast(b);
-
-	if (phash) {
-		BAT *b2 = BBPdescriptor(VIEWtparent(b));
-		ALGODEBUG
-			fprintf(stderr, "#hashselect(" ALGOBATFMT "): "
-				"using parent(" ALGOBATFMT ") "
-				"for hash\n",
-				ALGOBATPAR(b),
-				ALGOBATPAR(b2));
-		l = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
-		h = l + BATcount(b);
-		b = b2;
-	}
 
 	if (s && BATtdense(s)) {
 		/* no need for binary search in s, we just adjust the
@@ -529,17 +516,8 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 	assert(hi == !anti);						\
 	assert(lval);							\
 	assert(hval);							\
-	if (use_imprints && VIEWtparent(b)) {				\
-		BAT *parent = BBPdescriptor(VIEWtparent(b));		\
-		assert(parent);						\
-		basesrc = (const TYPE *) Tloc(parent, 0);		\
-		imprints = parent->timprints;				\
-		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
-				(TYPE *)Tloc(parent,0));		\
-	} else {							\
-		imprints = b->timprints;				\
-		basesrc = (const TYPE *) Tloc(b, 0);			\
-	}								\
+	imprints = b->timprints;					\
+	basesrc = (const TYPE *) Tloc(b, 0);				\
 	END;								\
 	if (equi) {							\
 		assert(!use_imprints);					\
@@ -998,45 +976,6 @@ scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	return bn;
 }
 
-/* calculate the integer 2 logarithm (i.e. position of highest set
- * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
- * 0x8 to 0xF give 4, etc.) */
-static unsigned
-ilog2(BUN x)
-{
-	unsigned n = 0;
-	BUN y;
-
-	/* use a "binary search" method */
-#if SIZEOF_BUN == 8
-	if ((y = x >> 32) != 0) {
-		x = y;
-		n += 32;
-	}
-#endif
-	if ((y = x >> 16) != 0) {
-		x = y;
-		n += 16;
-	}
-	if ((y = x >> 8) != 0) {
-		x = y;
-		n += 8;
-	}
-	if ((y = x >> 4) != 0) {
-		x = y;
-		n += 4;
-	}
-	if ((y = x >> 2) != 0) {
-		x = y;
-		n += 2;
-	}
-	if ((y = x >> 1) != 0) {
-		x = y;
-		n += 1;
-	}
-	return n + (x != 0);
-}
-
 /* Normalize the variables li, hi, lval, hval, possibly changing anti
  * in the process.  This works for all (and only) numeric types.
  *
@@ -1222,13 +1161,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	bool hval;		/* high value used for comparison */
 	bool equi;		/* select for single value (not range) */
 	bool hash;		/* use hash (equi must be true) */
-	bool phash = false;	/* use hash on parent BAT (if view) */
 	int t;			/* data type */
-	bat parent;		/* b's parent bat (if b is a view) */
 	const void *nil;
-	BAT *bn, *tmp;
+	BAT *bn;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
-	oid vwl = 0, vwh = 0;
 	bool use_orderidx = false;
 	union {
 		bte v_bte;
@@ -1500,39 +1436,20 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	/* If there is an order index or it is a view and the parent has an ordered
-	 * index, and the bat is not tsorted or trevstorted then use the order
-	 * index.
+	/* If there is an order inde and the bat is not tsorted
+	 * or trevstorted then use the order index.
 	 * And there is no cand list or if there is one, it is dense.
 	 * TODO: we do not support anti-select with order index */
 	if (!anti &&
 	    !(b->tsorted || b->trevsorted) &&
 	    (!s || (s && BATtdense(s)))    &&
-	    (BATcheckorderidx(b) ||
-	     (VIEWtparent(b) &&
-	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), false))))) {
-		BAT *view = NULL;
-		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
-			view = b;
-			b = BBPdescriptor(VIEWtparent(b));
-		}
+	    BATcheckorderidx(b)) {
 		/* Is query selective enough to use the ordered index ? */
 		/* TODO: Test if this heuristic works in practice */
 		/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < b->batCount/1000 ? (BUN)1000: b->batCount/1000))*/
 		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3) {
 			use_orderidx = true;
-			if (view) {
-				vwl = view->hseqbase;
-				vwh = vwl + view->batCount;
-			} else {
-				vwl = b->hseqbase;
-				vwh = vwl + b->batCount;
-			}
-		} else {
-			if (view) {
-				b = view;
-			}
-		}
+		} 
 	}
 
 	if (BATordered(b) || BATordered_rev(b) || use_orderidx) {
@@ -1691,9 +1608,13 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				BUN cnt = 0;
 				const oid *rs;
 				oid *rbn;
+				oid l,h;
 
 				rs = (const oid *) b->torderidx->base + ORDERIDXOFF;
 				rs += low;
+				l = b->hseqbase;
+				h = l + b->batCount;
+
 				bn = COLnew(0, TYPE_oid, high-low, TRANSIENT);
 				if (bn == NULL)
 					return NULL;
@@ -1701,7 +1622,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				rbn = (oid *) Tloc((bn), 0);
 
 				for (i = low; i < high; i++) {
-					if (vwl <= *rs && *rs < vwh) {
+					if (l <= *rs && *rs < h) {
 						*rbn++ = *rs;
 						cnt++;
 					}
@@ -1794,34 +1715,15 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	/* refine upper limit by exact size (if known) */
 	maximum = MIN(maximum, estimate);
-	parent = VIEWtparent(b);
-	assert(parent >= 0);
-	/* use hash only for equi-join, and then only if b or its
-	 * parent already has a hash, or if b or its parent is
-	 * persistent and the total size wouldn't be too large; check
+	/* use hash only for equi-join, and then only if b has a hash,
+	 * or if b is persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	hash = equi &&
 		((b->batPersistence == PERSISTENT &&
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
 		 BATcheckhash(b));
-	if (equi && !hash && parent != 0) {
-		/* use parent hash if it already exists and if either
-		 * a quick check shows the value we're looking for
-		 * does not occur, or if it is cheaper to check the
-		 * candidate list for each value in the hash chain
-		 * than to scan (cost for probe is average length of
-		 * hash chain (count divided by #slots) times the cost
-		 * to do a binary search on the candidate list (or 1
-		 * if no need for search)) */
-		tmp = BBPquickdesc(parent, false);
-		hash = phash = BATcheckhash(tmp) &&
-			(BATcount(tmp) == BATcount(b) ||
-			 BATcount(tmp) / ((size_t *) tmp->thash->heap.base)[5] * (s && !BATtdense(s) ? ilog2(BATcount(s)) : 1) < (s ? BATcount(s) : BATcount(b)) ||
-			 HASHget(tmp->thash, HASHprobe(tmp->thash, tl)) == HASHnil(tmp->thash));
-	}
 	if (hash &&
-	    !phash && /* phash implies there is a hash table already */
 	    estimate == BUN_NONE &&
 	    !BATcheckhash(b)) {
 		/* no exact result size, but we need estimate to
@@ -1884,19 +1786,16 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  ",s=" ALGOOPTBATFMT "): "
 				  "hash select\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
-		bn = hashselect(b, s, bn, tl, maximum, phash);
+		bn = hashselect(b, s, bn, tl, maximum);
 	} else {
 		/* use imprints if
-		 *   i) bat is persistent, or parent is persistent
+		 *   i) bat is persistent,
 		 *  ii) it is not an equi-select, and
 		 * iii) is not var-sized.
 		 */
 		bool use_imprints = !equi &&
 			!b->tvarsized &&
-			(b->batPersistence == PERSISTENT ||
-			 (parent != 0 &&
-			  (tmp = BBPquickdesc(parent, false)) != NULL &&
-			  tmp->batPersistence == PERSISTENT));
+			b->batPersistence == PERSISTENT;
 		bn = scanselect(b, s, bn, tl, th, li, hi, equi, anti,
 				lval, hval, lnil, maximum, use_imprints);
 	}
@@ -1998,7 +1897,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 	lng off = 0;
 	oid rlval = oid_nil, rhval = oid_nil;
 	int sorted = 0;		/* which column is sorted */
-	BAT *tmp;
 	bool use_orderidx = false;
 	oid ll, lh;
 
@@ -2066,12 +1964,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 
 	ll = l->hseqbase;
 	lh = ll + l->batCount;
-	if ((!sl || (sl && BATtdense(sl))) &&
-	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
+	if ((!sl || (sl && BATtdense(sl))) && BATcheckorderidx(l)) {
 		use_orderidx = true;
-		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
-			l = BBPdescriptor(VIEWtparent(l));
-		}
 	}
 
 	if (BATordered(l) || BATordered_rev(l) || use_orderidx) {
@@ -2234,9 +2128,6 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		assert(BATcount(r1) == BATcount(r2));
 	} else if ((BATcount(rl) > 2 ||
 		    l->batPersistence == PERSISTENT ||
-		    (VIEWtparent(l) != 0 &&
-		     (tmp = BBPquickdesc(VIEWtparent(l), false)) != NULL &&
-		     tmp->batPersistence == PERSISTENT) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column

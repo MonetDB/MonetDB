@@ -1430,7 +1430,7 @@ setwritable(BAT *b)
 	BAT *bn = b;
 
 	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
-		if (b->batSharecnt) {
+		if (b->vHeapSharecnt) {
 			bn = COLcopy(b, b->ttype, true, TRANSIENT);
 			if (bn != NULL)
 				BATsetaccess(bn, BAT_WRITE);
@@ -1655,7 +1655,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
-		if (isVIEW(res)) {
+		if (isShared(res)) {
 			BAT *n = COLcopy(res, res->ttype, true, TRANSIENT);
 			BBPunfix(res->batCacheid);
 			res = n;

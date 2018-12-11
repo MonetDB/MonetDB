@@ -221,7 +221,7 @@ BATcheckhash(BAT *b)
 					h->Link = h->heap.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 					h->Hash = (void *) ((char *) h->Link + h->lim * h->width);
 					close(fd);
-					h->heap.parentid = b->batCacheid;
+					h->heap.sharevheapid = b->batCacheid;
 					h->heap.dirty = FALSE;
 					b->thash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
@@ -550,7 +550,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	/* clear unused part of Link array */
 	memset((char *) h->Link + cnt * h->width, 0, (h->lim - cnt) * h->width);
 #endif
-	h->heap.parentid = b->batCacheid;
+	h->heap.sharevheapid = b->batCacheid;
 	/* if the number of occupied slots is equal to the bat count,
 	 * all values are necessarily distinct */
 	if (nslots == BATcount(b) && !b->tkey) {
@@ -650,19 +650,11 @@ HASHdestroy(BAT *b)
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
 				  "thash");
-		} else if (hs) {
-			bat p = VIEWtparent(b);
-			BAT *hp = NULL;
-
-			if (p)
-				hp = BBP_cache(p);
-
-			if (!hp || hs != hp->thash) {
-				ALGODEBUG if (*(size_t *) hs->heap.base & (1 << 24))
-					fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
-				HEAPfree(&hs->heap, true);
-				GDKfree(hs);
-			}
+		} else if (hs != NULL) {
+			ALGODEBUG if (*(size_t *) hs->heap.base & (1 << 24))
+				fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
+			HEAPfree(&hs->heap, true);
+			GDKfree(hs);
 		}
 	}
 }

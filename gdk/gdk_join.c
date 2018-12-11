@@ -2531,7 +2531,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 static gdk_return
 hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 	 bool nil_on_miss, bool semi, bool only_misses, BUN maxsize, lng t0,
-	 bool swapped, bool phash, const char *reason)
+	 bool swapped, const char *reason)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
@@ -2605,15 +2605,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 			       nil_on_miss, only_misses, "hashjoin", t0);
 
 	rl = 0;
-	if (phash) {
-		BAT *b = BBPdescriptor(VIEWtparent(r));
-		assert(sr == NULL);
-		ALGODEBUG fprintf(stderr, "#hashjoin(%s): using "
-				  "parent(" ALGOBATFMT ") for hash\n",
-				  BATgetId(r), ALGOBATPAR(b));
-		rl = (BUN) ((r->theap.base - b->theap.base) >> r->tshift);
-		r = b;
-	}
 	rh = rl + rend;
 	rl += rstart;
 	rseq += rstart;
@@ -2629,7 +2620,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 			sr = NULL;
 		} else {
 			char ext[32];
-			assert(!phash);
 			ALGODEBUG fprintf(stderr, "#hashjoin(%s): creating "
 					  "hash for candidate list\n",
 					  BATgetId(r));
@@ -3641,7 +3631,6 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 {
 	BAT *r1, *r2 = NULL;
 	BUN lcount, rcount, maxsize;
-	bool phash = false;
 
 	/* only_misses implies left output only */
 	assert(!only_misses || r2p == NULL);
@@ -3707,11 +3696,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 false);
 	if (BATtdense(l) && ATOMtype(l->ttype) == TYPE_oid && sl == NULL && sr == NULL && !semi && !nil_matches && !only_misses && (rcount * 1024) < lcount && BATordered(r))
 		return fetchjoin(r1, r2, l, r, t0);
-	phash = sr == NULL &&
-		VIEWtparent(r) != 0 &&
-		BATcount(BBPquickdesc(VIEWtparent(r), false)) == BATcount(r);
 	return hashjoin(r1, r2, l, r, sl, sr, nil_matches, nil_on_miss, semi,
-			only_misses, maxsize, t0, false, phash, "leftjoin");
+			only_misses, maxsize, t0, false, "leftjoin");
 }
 
 /* Perform an equi-join over l and r.  Returns two new, aligned, bats
@@ -3839,10 +3825,8 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	BUN lsize, rsize;
 	BUN maxsize;
 	bool lhash = false, rhash = false;
-	bool plhash = false, prhash = false;
 	BUN lslots = 0, rslots = 0;
 	bool swap;
-	bat parent;
 	size_t mem_size;
 	lng t0 = 0;
 	const char *reason = "";
@@ -3926,18 +3910,6 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		lhash = BATcheckhash(l);
 		if (lhash) {
 			lslots = ((size_t *) l->thash->heap.base)[5];
-		} else if ((parent = VIEWtparent(l)) != 0) {
-			BAT *b = BBPdescriptor(parent);
-			/* use hash on parent if the average chain
-			 * length times the number of required probes
-			 * is less than the cost for creating and
-			 * probing a new hash on the view */
-			if (BATcheckhash(b)) {
-				lslots = ((size_t *) b->thash->heap.base)[5];
-				lhash = (BATcount(b) == BATcount(l) ||
-					 BATcount(b) / lslots * rcount < lcount + rcount);
-			}
-			plhash = lhash;
 		}
 	} else if (BATtdense(sl) && BATcheckhash(l)) {
 		lslots = ((size_t *) l->thash->heap.base)[5];
@@ -3947,18 +3919,6 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		rhash = BATcheckhash(r);
 		if (rhash) {
 			rslots = ((size_t *) r->thash->heap.base)[5];
-		} else if ((parent = VIEWtparent(r)) != 0) {
-			BAT *b = BBPdescriptor(parent);
-			/* use hash on parent if the average chain
-			 * length times the number of required probes
-			 * is less than the cost for creating and
-			 * probing a new hash on the view */
-			if (BATcheckhash(b)) {
-				rslots = ((size_t *) b->thash->heap.base)[5];
-				rhash = (BATcount(b) == BATcount(r) ||
-					 BATcount(b) / rslots * lcount < lcount + rcount);
-			}
-			prhash = rhash;
 		}
 	} else if (BATtdense(sr) && BATcheckhash(r)) {
 		rslots = ((size_t *) r->thash->heap.base)[5];
@@ -4017,10 +3977,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	}
 	if (swap) {
 		return hashjoin(r2, r1, r, l, sr, sl, nil_matches, false, false,
-				false, maxsize, t0, true, plhash, reason);
+				false, maxsize, t0, true, reason);
 	} else {
 		return hashjoin(r1, r2, l, r, sl, sr, nil_matches, false, false,
-				false, maxsize, t0, false, prhash, reason);
+				false, maxsize, t0, false, reason);
 	}
 }
 

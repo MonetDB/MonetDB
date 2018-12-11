@@ -316,10 +316,10 @@ printBATproperties(stream *f, BAT *b)
 			BATcount(b), BBP_lrefs(b->batCacheid));
 	if (BBP_refs(b->batCacheid) - 1)
 		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
-	if (b->batSharecnt)
-		mnstr_printf(f, " views=%d", b->batSharecnt);
-	if (b->theap.parentid)
-		mnstr_printf(f, "view on %s ", BBPname(b->theap.parentid));
+	if (b->vHeapSharecnt)
+		mnstr_printf(f, " vheap.shares=%d", b->vHeapSharecnt);
+	if (b->tvheap->sharevheapid != b->batCacheid)
+		mnstr_printf(f, "shared vheap from %s ", BBPname(b->tvheap->sharevheapid));
 }
 /* MAL debugger parser
  * The debugger structure is inherited from GDB.

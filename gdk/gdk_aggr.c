@@ -2633,16 +2633,9 @@ BATmin(BAT *b, void *aggr)
 	} else {
 		oid pos;
 		BATiter bi;
-		BAT *pb = NULL;
 
-		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
-		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
-		     BATcount(pb) == BATcount(b) &&
-		     pb->hseqbase == b->hseqbase &&
-		     BATcheckorderidx(pb))) {
-			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+		if (BATcheckorderidx(b)) {
+			const oid *ords = (const oid *) (b->torderidx->base) + ORDERIDXOFF;
 			BUN r;
 			if (!b->tnonil) {
 				r = binsearch(ords, 0, b->ttype, Tloc(b, 0),
@@ -2662,10 +2655,8 @@ BATmin(BAT *b, void *aggr)
 			} else {
 				pos = ords[r];
 			}
-		} else if ((VIEWtparent(b) == 0 ||
-			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
-			   BATcheckimprints(b)) {
-			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+		} else if (BATcheckimprints(b)) {
+			Imprints *imprints = b->timprints;
 			int i;
 
 			pos = oid_nil;
@@ -2727,22 +2718,13 @@ BATmax(BAT *b, void *aggr)
 	} else {
 		oid pos;
 		BATiter bi;
-		BAT *pb = NULL;
 
-		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
-		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
-		     BATcount(pb) == BATcount(b) &&
-		     pb->hseqbase == b->hseqbase &&
-		     BATcheckorderidx(pb))) {
-			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+		if (BATcheckorderidx(b)) {
+			const oid *ords = (const oid *) (b->torderidx->base) + ORDERIDXOFF;
 
 			pos = ords[BATcount(b) - 1];
-		} else if ((VIEWtparent(b) == 0 ||
-			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
-			   BATcheckimprints(b)) {
-			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+		} else if (BATcheckimprints(b)) {
+			Imprints *imprints = b->timprints;
 			int i;
 
 			pos = oid_nil;
@@ -2935,7 +2917,6 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		BBPunfix(g->batCacheid);
 	} else {
 		BUN index, r, p = BATcount(b);
-		BAT *pb = NULL;
 		const oid *ords;
 
 		bn = COLnew(0, tp, 1, TRANSIENT);
@@ -2944,14 +2925,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 
 		t1 = NULL;
 
-		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
-		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
-		     pb->theap.base == b->theap.base &&
-		     BATcount(pb) == BATcount(b) &&
-		     pb->hseqbase == b->hseqbase &&
-		     BATcheckorderidx(pb))) {
-			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
+		if (BATcheckorderidx(b)) {
+			ords = (const oid *) (b->torderidx->base) + ORDERIDXOFF;
 		} else {
 			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false) != GDK_SUCCEED)
 				goto bunins_failed;

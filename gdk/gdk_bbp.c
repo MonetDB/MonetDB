@@ -1006,7 +1006,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
 		b->tvheap->cleanhash = 1;
 		b->tvheap->newstorage = (storage_t) storage;
 		b->tvheap->dirty = 0;
-		b->tvheap->parentid = bid;
+		b->tvheap->sharevheapid = bid;
 		b->tvheap->farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap);
 		if (b->tvheap->free > b->tvheap->size)
 			GDKfatal("BBPinit: \"free\" value larger than \"size\" in var heap of bat %d\n", (int) bid);
@@ -1437,28 +1437,15 @@ BBPexit(void)
 				BAT *b = BBP_desc(i);
 
 				if (b) {
-					if (b->batSharecnt > 0) {
+					if (b->vHeapSharecnt > 0) {
 						skipped = true;
 						continue;
 					}
-					if (isVIEW(b)) {
-						/* "manually"
-						 * decrement parent
-						 * references, since
-						 * VIEWdestroy doesn't
-						 * (and can't here due
-						 * to locks) do it */
-						bat tp = VIEWtparent(b);
-						bat vtp = VIEWvtparent(b);
-						if (tp) {
-							BBP_desc(tp)->batSharecnt--;
-							--BBP_lrefs(tp);
-						}
-						if (vtp) {
-							BBP_desc(vtp)->batSharecnt--;
-							--BBP_lrefs(vtp);
-						}
-						VIEWdestroy(b);
+					if (b->tvheap && b->tvheap->sharevheapid != b->batCacheid) {
+						/* "manually" decrement heap parent id */
+						bat vth = b->tvheap->sharevheapid;
+						BBP_desc(vth)->vHeapSharecnt--;
+						--BBP_lrefs(vth);
 					} else {
 						BATfree(b);
 					}
@@ -1772,33 +1759,29 @@ BBPdump(void)
 			BBP_lrefs(i),
 			BBP_status(i),
 			b->batCount);
-		if (b->batSharecnt > 0)
-			fprintf(stderr, " shares=%d", b->batSharecnt);
+		if (b->vHeapSharecnt > 0)
+			fprintf(stderr, " vheap_shares=%d", b->vHeapSharecnt);
 		if (b->batDirtydesc)
 			fprintf(stderr, " DirtyDesc");
-		if (b->theap.parentid) {
-			fprintf(stderr, " Theap -> %d", b->theap.parentid);
+		fprintf(stderr,
+			" Theap=[%zu,%zu]%s",
+			HEAPmemsize(&b->theap),
+			HEAPvmsize(&b->theap),
+			b->theap.dirty ? "(Dirty)" : "");
+		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
+			cmem += HEAPmemsize(&b->theap);
+			cvm += HEAPvmsize(&b->theap);
+			nc++;
 		} else {
-			fprintf(stderr,
-				" Theap=[%zu,%zu]%s",
-				HEAPmemsize(&b->theap),
-				HEAPvmsize(&b->theap),
-				b->theap.dirty ? "(Dirty)" : "");
-			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(&b->theap);
-				cvm += HEAPvmsize(&b->theap);
-				nc++;
-			} else {
-				mem += HEAPmemsize(&b->theap);
-				vm += HEAPvmsize(&b->theap);
-				n++;
-			}
+			mem += HEAPmemsize(&b->theap);
+			vm += HEAPvmsize(&b->theap);
+			n++;
 		}
 		if (b->tvheap) {
-			if (b->tvheap->parentid != b->batCacheid) {
+			if (b->tvheap->sharevheapid != b->batCacheid) {
 				fprintf(stderr,
 					" Tvheap -> %d",
-					b->tvheap->parentid);
+					b->tvheap->sharevheapid);
 			} else {
 				fprintf(stderr,
 					" Tvheap=[%zu,%zu]%s",
@@ -2099,7 +2082,7 @@ BBPcacheit(BAT *bn, bool lock)
 		if (i == 0)
 			return GDK_FAIL;
 		if (bn->tvheap)
-			bn->tvheap->parentid = i;
+			bn->tvheap->sharevheapid = i;
 	}
 	assert(bn->batCacheid > 0);
 
@@ -2314,8 +2297,8 @@ static inline int
 incref(bat i, bool logical, bool lock)
 {
 	int refs;
-	bat tp, tvp;
-	BAT *b, *pb = NULL, *pvb = NULL;
+	bat tvh;
+	BAT *b, *svh = NULL;
 	bool load = false;
 
 	if (!BBPcheck(i, logical ? "BBPretain" : "BBPfix"))
@@ -2328,16 +2311,9 @@ incref(bat i, bool logical, bool lock)
 	 * reference, getting the parent BAT descriptor is
 	 * superfluous, but not too expensive, so we do it anyway. */
 	if (!logical && (b = BBP_desc(i)) != NULL) {
-		if (b->theap.parentid) {
-			pb = BATdescriptor(b->theap.parentid);
-			if (pb == NULL)
-				return 0;
-		}
-		if (b->tvheap && b->tvheap->parentid != i) {
-			pvb = BATdescriptor(b->tvheap->parentid);
-			if (pvb == NULL) {
-				if (pb)
-					BBPunfix(pb->batCacheid);
+		if (b->tvheap && b->tvheap->sharevheapid != i) {
+			svh = BATdescriptor(b->tvheap->sharevheapid);
+			if (svh == NULL) {
 				return 0;
 			}
 		}
@@ -2367,19 +2343,16 @@ incref(bat i, bool logical, bool lock)
 	       BBP_status(i) & (BBPDELETED | BBPSWAPPED));
 	if (logical) {
 		/* parent BATs are not relevant for logical refs */
-		tp = tvp = 0;
+		tvh = 0;
 		refs = ++BBP_lrefs(i);
 	} else {
-		tp = b->theap.parentid;
-		assert(tp >= 0);
-		tvp = b->tvheap == 0 || b->tvheap->parentid == i ? 0 : b->tvheap->parentid;
+		tvh = b->tvheap == 0 || b->tvheap->sharevheapid == i ? 0 : b->tvheap->sharevheapid;
 		refs = ++BBP_refs(i);
-		if (refs == 1 && (tp || tvp)) {
-			/* If this is a view, we must load the parent
-			 * BATs, but we must do that outside of the
-			 * lock.  Set the BBPLOADING flag so that
-			 * other threads will wait until we're
-			 * done. */
+		if (refs == 1 && tvh) {
+			/* If this is a shared heap bat, we must load the
+			 * share vheap BAT, but we must do that outside of the
+			 * lock.  Set the BBPLOADING flag so that other threads
+			 * will wait until we're done. */
 			BBP_status_on(i, BBPLOADING, "BBPfix");
 			load = true;
 		}
@@ -2388,22 +2361,14 @@ incref(bat i, bool logical, bool lock)
 		MT_lock_unset(&GDKswapLock(i));
 
 	if (load) {
-		/* load the parent BATs and set the heap base pointers
-		 * to the correct values */
 		assert(!logical);
-		if (tp) {
-			assert(pb != NULL);
-			b->theap.base = pb->theap.base + (size_t) b->theap.base;
-		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING, "BBPfix");
 	} else if (!logical) {
 		/* this wasn't the first physical reference, so undo
 		 * the fixes on the parent bats */
-		if (pb)
-			BBPunfix(pb->batCacheid);
-		if (pvb)
-			BBPunfix(pvb->batCacheid);
+		if (svh)
+			BBPunfix(svh->batCacheid);
 	}
 	return refs;
 }
@@ -2426,19 +2391,19 @@ BBPretain(bat i)
 }
 
 void
-BBPshare(bat parent)
+BBPshare(bat sharebat)
 {
 	bool lock = locked_by == 0 || locked_by != MT_getpid();
 
-	assert(parent > 0);
-	(void) incref(parent, true, lock);
+	assert(sharebat > 0);
+	(void) incref(sharebat, true, lock);
 	if (lock)
-		MT_lock_set(&GDKswapLock(parent));
-	++BBP_cache(parent)->batSharecnt;
-	assert(BBP_refs(parent) > 0);
+		MT_lock_set(&GDKswapLock(sharebat));
+	++BBP_cache(sharebat)->vHeapSharecnt;
+	assert(BBP_refs(sharebat) > 0);
 	if (lock)
-		MT_lock_unset(&GDKswapLock(parent));
-	(void) incref(parent, false, lock);
+		MT_lock_unset(&GDKswapLock(sharebat));
+	(void) incref(sharebat, false, lock);
 }
 
 static inline int
@@ -2446,14 +2411,14 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 {
 	int refs = 0;
 	bool swap = false;
-	bat tp = 0, tvp = 0;
+	bat svp = 0;
 	BAT *b;
 
 	assert(i > 0);
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
-		--BBP_desc(i)->batSharecnt;
+		--BBP_desc(i)->vHeapSharecnt;
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
 		return refs;
@@ -2482,13 +2447,10 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			GDKerror("%s: %s does not have pointer fixes.\n", func, BBPname(i));
 			assert(0);
 		} else {
-			assert(b == NULL || b->theap.parentid == 0 || BBP_refs(b->theap.parentid) > 0);
-			assert(b == NULL || b->tvheap == NULL || b->tvheap->parentid == 0 || BBP_refs(b->tvheap->parentid) > 0);
+			assert(b == NULL || b->tvheap == NULL || b->tvheap->sharevheapid == i || BBP_refs(b->tvheap->sharevheapid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((tp = b->theap.parentid) != 0)
-					b->theap.base = (char *) (b->theap.base - BBP_cache(tp)->theap.base);
-				tvp = VIEWvtparent(b);
+				svp = SHAREvheap(b);
 			}
 		}
 	}
@@ -2531,10 +2493,8 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 				return -1;	/* indicate failure */
 		}
 	}
-	if (tp)
-		decref(tp, false, false, lock, func);
-	if (tvp)
-		decref(tvp, false, false, lock, func);
+	if (svp)
+		decref(svp, false, false, lock, func);
 	return refs;
 }
 
@@ -2695,7 +2655,7 @@ BBPsave(BAT *b)
 	bat bid = b->batCacheid;
 	gdk_return ret = GDK_SUCCEED;
 
-	if (BBP_lrefs(bid) == 0 || isVIEW(b) || !BATdirty(b))
+	if (BBP_lrefs(bid) == 0 || !BATdirty(b))
 		/* do nothing */
 		return GDK_SUCCEED;
 
@@ -2745,38 +2705,30 @@ BBPsave(BAT *b)
 static void
 BBPdestroy(BAT *b)
 {
-	bat tp = b->theap.parentid;
-	bat vtp = VIEWvtparent(b);
+	bat svp = SHAREvheap(b);
 
-	if (isVIEW(b)) {	/* a physical view */
-		VIEWdestroy(b);
-	} else {
-		/* bats that get destroyed must unfix their atoms */
-		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
-		BUN p, q;
-		BATiter bi = bat_iterator(b);
+	/* bats that get destroyed must unfix their atoms */
+	int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
+	BUN p, q;
+	BATiter bi = bat_iterator(b);
 
-		assert(b->batSharecnt == 0);
-		if (tunfix) {
-			BATloop(b, p, q) {
-				(*tunfix) (BUNtail(bi, p));
-			}
+	assert(b->vHeapSharecnt == 0);
+	if (tunfix) {
+		BATloop(b, p, q) {
+			(*tunfix) (BUNtail(bi, p));
 		}
-		BATdelete(b);	/* handles persistent case also (file deletes) */
 	}
+	BATdelete(b);	/* handles persistent case also (file deletes) */
 	BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
 
-	/* parent released when completely done with child */
-	if (tp)
-		GDKunshare(tp);
-	if (vtp)
-		GDKunshare(vtp);
+	if (svp)
+		GDKunshare(svp);
 }
 
 static gdk_return
 BBPfree(BAT *b, const char *calledFrom)
 {
-	bat bid = b->batCacheid, tp = VIEWtparent(b), vtp = VIEWvtparent(b);
+	bat bid = b->batCacheid, svp = SHAREvheap(b);
 	gdk_return ret;
 
 	assert(bid > 0);
@@ -2786,12 +2738,8 @@ BBPfree(BAT *b, const char *calledFrom)
 	/* write dirty BATs before being unloaded */
 	ret = BBPsave(b);
 	if (ret == GDK_SUCCEED) {
-		if (isVIEW(b)) {	/* physical view */
-			VIEWdestroy(b);
-		} else {
-			if (BBP_cache(bid))
-				BATfree(b);	/* free memory */
-		}
+		if (BBP_cache(bid))
+			BATfree(b);	/* free memory */
 		BBPuncacheit(bid, false);
 	}
 	/* clearing bits can be done without the lock */
@@ -2802,10 +2750,8 @@ BBPfree(BAT *b, const char *calledFrom)
 	BBP_unload_dec(bid, calledFrom);
 
 	/* parent released when completely done with child */
-	if (ret == GDK_SUCCEED && tp)
-		GDKunshare(tp);
-	if (ret == GDK_SUCCEED && vtp)
-		GDKunshare(vtp);
+	if (ret == GDK_SUCCEED && svp)
+		GDKunshare(svp);
 	return ret;
 }
 

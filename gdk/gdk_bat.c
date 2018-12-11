@@ -124,7 +124,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 			goto bailout;
 		snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename),
 			 "%s.theap", nme);
-		bn->tvheap->parentid = bn->batCacheid;
+		bn->tvheap->sharevheapid = bn->batCacheid;
 		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
 	bn->batDirtydesc = true;
@@ -500,7 +500,7 @@ BATclear(BAT *b, bool force)
 
 	/* we must dispose of all inserted atoms */
 	if (force && BATatoms[b->ttype].atomDel == NULL) {
-		assert(b->tvheap == NULL || b->tvheap->parentid == b->batCacheid);
+		assert(b->tvheap == NULL || b->tvheap->sharevheapid == b->batCacheid);
 		/* no stable elements: we do a quick heap clean */
 		/* need to clean heap which keeps data even though the
 		   BUNs got removed. This means reinitialize when
@@ -515,7 +515,7 @@ BATclear(BAT *b, bool force)
 			strncpy(th.filename, b->tvheap->filename, sizeof(th.filename));
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
-			th.parentid = b->tvheap->parentid;
+			th.sharevheapid = b->tvheap->sharevheapid;
 			th.dirty = true;
 			HEAPfree(b->tvheap, false);
 			*b->tvheap = th;
@@ -569,7 +569,7 @@ BATfree(BAT *b)
 	else
 		assert(!b->theap.base);
 	if (b->tvheap) {
-		assert(b->tvheap->parentid == b->batCacheid);
+		assert(b->tvheap->sharevheapid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
 	}
 }
@@ -726,7 +726,7 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 		/* succeeded; replace dummy small heaps by the
 		 * real ones */
 		heapmove(&bn->theap, &bthp);
-		thp.parentid = bn->batCacheid;
+		thp.sharevheapid = bn->batCacheid;
 		if (bn->tvheap)
 			heapmove(bn->tvheap, &thp);
 
@@ -983,7 +983,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	BATcheck(b, "BUNappend", GDK_FAIL);
 
-	assert(!isVIEW(b));
+	assert(!isShared(b));
 	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
 		return GDK_SUCCEED;
 	}
@@ -994,7 +994,11 @@ BUNappend(BAT *b, const void *t, bool force)
 		return GDK_FAIL;
 	}
 
-	ALIGNapp(b, "BUNappend", force, GDK_FAIL);
+	if (!(force) && (b)->batRestricted == BAT_READ) {
+		GDKerror("BUNappend: access denied to %s, aborting.\n", BATgetId(b));
+		return GDK_FAIL;
+	}
+
 	b->batDirtydesc = true;
 	if (b->thash && b->tvheap)
 		tsize = b->tvheap->size;
@@ -1121,7 +1125,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 	/* uncommitted BUN elements */
 
 	/* zap alignment info */
-	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
+	if (!force && (b->batRestricted != BAT_WRITE || b->vHeapSharecnt > 0)) {
 		GDKerror("BUNinplace: access denied to %s, aborting.\n",
 			 BATgetId(b));
 		return GDK_FAIL;
@@ -1491,17 +1495,6 @@ BATkey(BAT *b, bool flag)
 		b->tseqbase = oid_nil;
 	} else
 		b->tnokey[0] = b->tnokey[1] = 0;
-	if (flag && VIEWtparent(b)) {
-		/* if a view is key, then so is the parent if the two
-		 * are aligned */
-		BAT *bp = BBP_cache(VIEWtparent(b));
-		if (BATcount(b) == BATcount(bp) &&
-		    ATOMtype(BATttype(b)) == ATOMtype(BATttype(bp)) &&
-		    !BATtkey(bp) &&
-		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
-		     BATcount(b) == 0))
-			return BATkey(bp, true);
-	}
 	return GDK_SUCCEED;
 }
 
@@ -1817,23 +1810,19 @@ BATsetaccess(BAT *b, int newmode)
 {
 	int bakmode, bakdirty;
 	BATcheck(b, "BATsetaccess", GDK_FAIL);
-	if (isVIEW(b) && newmode != BAT_READ) {
-		if (VIEWreset(b) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
 	bakmode = b->batRestricted;
 	bakdirty = b->batDirtydesc;
-	if (bakmode != newmode || (b->batSharecnt && newmode != BAT_READ)) {
+	if (bakmode != newmode || (b->vHeapSharecnt && newmode != BAT_READ)) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
 		bool wr = (newmode == BAT_WRITE);
 		bool rd = (bakmode == BAT_WRITE);
 		storage_t m1, m3 = STORE_MEM;
 		storage_t b1, b3 = STORE_MEM;
 
-		if (b->batSharecnt && newmode != BAT_READ) {
-			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
-			GDKerror("BATsetaccess: %s has %d views\n",
-				 BATgetId(b), b->batSharecnt);
+		if (b->vHeapSharecnt && newmode != BAT_READ) {
+			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d heap shares; try creating a copy\n", BATgetId(b), b->vHeapSharecnt);
+			GDKerror("BATsetaccess: %s has %d vheap shares\n",
+				 BATgetId(b), b->vHeapSharecnt);
 			return GDK_FAIL;
 		}
 
@@ -1932,10 +1921,8 @@ BATmode(BAT *b, int mode)
 		}
 		BBP_dirty = true;
 
-		if (mode == PERSISTENT && isVIEW(b)) {
-			if (VIEWreset(b) != GDK_SUCCEED) {
-				return GDK_FAIL;
-			}
+		if (mode == PERSISTENT && isShared(b)) {
+			assert("materialize vheap share\n");
 		}
 		/* persistent BATs get a logical reference */
 		if (mode == PERSISTENT) {
@@ -2040,8 +2027,6 @@ BATassertProps(BAT *b)
 	assert(b->batCount >= b->batInserted);
 
 
-	VIEWLESSDEBUG assert(viewless(b));
-
 	/* headless */
 	assert(b->hseqbase <= GDK_oid_max); /* non-nil seqbase */
 	assert(b->hseqbase + BATcount(b) <= GDK_oid_max);
@@ -2057,11 +2042,9 @@ BATassertProps(BAT *b)
 	assert(b->ttype < GDKatomcnt);
 	assert(b->ttype != TYPE_bat);
 	assert(!b->tunique || b->tkey); /* if unique, then key */
-	assert(isVIEW(b) ||
-	       b->ttype == TYPE_void ||
+	assert( b->ttype == TYPE_void ||
 	       BBPfarms[b->theap.farmid].roles & (1 << b->batRole));
-	assert(isVIEW(b) ||
-	       b->tvheap == NULL ||
+	assert( b->tvheap == NULL ||
 	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->batRole)));
 
 	cmpf = ATOMcompare(b->ttype);
