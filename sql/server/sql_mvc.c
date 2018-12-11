@@ -207,6 +207,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 					if((err = initialize_sql_parts(m, tt)) != NULL) {
 						fprintf(stderr, "!mvc_init: unable to start partitioned table: %s.%s: %s\n",
 								ss->base.name, tt->base.name, err);
+						freeException(err);
 						return -1;
 					}
 				}
