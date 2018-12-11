@@ -385,9 +385,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MAXVALUE", MAXVALUE);
 	failed += keywords_insert("MINVALUE", MINVALUE);
 	failed += keywords_insert("CYCLE", CYCLE);
-	failed += keywords_insert("NOMAXVALUE", NOMAXVALUE);
-	failed += keywords_insert("NOMINVALUE", NOMINVALUE);
-	failed += keywords_insert("NOCYCLE", NOCYCLE);
 	failed += keywords_insert("CACHE", CACHE);
 	failed += keywords_insert("NEXT", NEXT);
 	failed += keywords_insert("VALUE", VALUE);
@@ -1340,23 +1337,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 			token = UNIONJOIN;
 		} else {
 			lc->yynext = next;
-		}
-	} else if (token == NO) {
-		int next = sqllex(yylval, parm);
-
-		switch (next) {
-			case MAXVALUE:
-				token = NOMAXVALUE;
-			break;
-			case MINVALUE:
-				token = NOMINVALUE;
-			break;
-			case CYCLE:
-				token = NOCYCLE;
-			break;
-			default:
-				lc->yynext = next;
-			break;
 		}
 	} else if (token == SCOLON) {
 		/* ignore semi-colon(s) following a semi-colon */

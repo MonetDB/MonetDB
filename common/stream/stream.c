@@ -1011,14 +1011,6 @@ stream_gzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, siz
 	return size == 0 ? -1 : (ssize_t) size;
 }
 
-static void
-stream_gzclose(stream *s)
-{
-	if (s->stream_data.p)
-		gzclose((gzFile) s->stream_data.p);
-	s->stream_data.p = NULL;
-}
-
 static int
 stream_gzflush(stream *s)
 {
@@ -1028,6 +1020,15 @@ stream_gzflush(stream *s)
 	    gzflush((gzFile) s->stream_data.p, Z_SYNC_FLUSH) != Z_OK)
 		return -1;
 	return 0;
+}
+
+static void
+stream_gzclose(stream *s)
+{
+	stream_gzflush(s);
+	if (s->stream_data.p)
+		gzclose((gzFile) s->stream_data.p);
+	s->stream_data.p = NULL;
 }
 
 static stream *
@@ -3996,6 +3997,8 @@ bs_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
+	if (!ss->readonly && s->nr > 0)
+		bs_flush(ss);
 	if (s->s)
 		s->s->close(s->s);
 }
@@ -4613,6 +4616,8 @@ bs2_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
+	if (!ss->readonly && s->nr > 0)
+		bs2_flush(ss);
 	assert(s->s);
 	if (s->s)
 		s->s->close(s->s);
