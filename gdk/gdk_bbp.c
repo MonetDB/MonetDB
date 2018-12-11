@@ -3653,6 +3653,9 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tvheap || b->batCopiedtodisk == 0);
+			} else if (strncmp(p + 1, "mosaic", 6) == 0) {
+				BAT *b = getdesc(bid);
+				delete = (b == NULL || !b->tmosaic || b->batCopiedtodisk == 0);
 			} else if (strncmp(p + 1, "thash", 5) == 0) {
 #ifdef PERSISTENTHASH
 				BAT *b = getdesc(bid);
