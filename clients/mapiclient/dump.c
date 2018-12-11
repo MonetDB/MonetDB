@@ -876,7 +876,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 
 int
 describe_table(Mapi mid, const char *schema, const char *tname,
-	       stream *toConsole, int foreign)
+	       stream *toConsole, bool foreign)
 {
 	int cnt;
 	MapiHdl hdl = NULL;
@@ -1481,7 +1481,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 
 int
 dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
-	   int describe, int foreign, bool useInserts)
+	   bool describe, bool foreign, bool useInserts)
 {
 	int rc;
 
@@ -1807,7 +1807,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 }
 
 int
-dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
+dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "ROLLBACK";
@@ -2039,17 +2039,12 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			const char *pwhash = mapi_fetch_field(hdl, 2);
 			const char *sname = mapi_fetch_field(hdl, 3);
 
-			mnstr_printf(toConsole, "CREATE USER \"%s\" ", uname);
-			if (describe)
-				mnstr_printf(toConsole,
-					     "WITH ENCRYPTED PASSWORD '%s' "
-					     "NAME '%s' SCHEMA \"%s\";\n",
-					     pwhash, fullname, sname);
-			else
-				mnstr_printf(toConsole,
-					     "WITH ENCRYPTED PASSWORD '%s' "
-					     "NAME '%s' SCHEMA \"sys\";\n",
-					     pwhash, fullname);
+			mnstr_printf(toConsole,
+				     "CREATE USER \"%s\" "
+				     "WITH ENCRYPTED PASSWORD '%s' "
+				     "NAME '%s' SCHEMA \"%s\";\n",
+				     uname, pwhash, fullname,
+				     describe ? sname : "sys");
 		}
 		if (mapi_error(mid))
 			goto bailout;
@@ -2187,7 +2182,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		}
 		schema = strdup(schema);
 		tname = strdup(tname);
-		rc = dump_table(mid, schema, tname, toConsole, type == 3 || type == 5 ? 1 : describe, describe, useInserts);
+		rc = dump_table(mid, schema, tname, toConsole, type == 3 || type == 5 || describe, describe, useInserts);
 		free(schema);
 		free(tname);
 	}
