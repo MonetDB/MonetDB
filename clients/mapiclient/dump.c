@@ -1162,14 +1162,15 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
 		"%s "
-		"SELECT s.name, "
-		       "seq.name, "
-		       "get_value_for(s.name, seq.name), "
-		       "seq.\"minvalue\", "
-		       "seq.\"maxvalue\", "
-		       "seq.\"increment\", "
-		       "seq.\"cycle\", "
-		       "rem.\"remark\" "
+		"SELECT s.name, "				/* 0 */
+		       "seq.name, "				/* 1 */
+		       "get_value_for(s.name, seq.name), "	/* 2 */
+		       "seq.\"minvalue\", "			/* 3 */
+		       "seq.\"maxvalue\", "			/* 4 */
+		       "seq.\"increment\", "			/* 5 */
+		       "seq.\"cycle\", "			/* 6 */
+		       "seq.\"cacheinc\", "			/* 7 */
+		       "rem.\"remark\" "			/* 8 */
 		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id "
@@ -1190,7 +1191,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 		const char *maxvalue = mapi_fetch_field(hdl, 4);
 		const char *increment = mapi_fetch_field(hdl, 5);
 		const char *cycle = mapi_fetch_field(hdl, 6);
-		const char *remark = mapi_fetch_field(hdl, 7);
+		const char *cacheinc = mapi_fetch_field(hdl, 7);
+		const char *remark = mapi_fetch_field(hdl, 8);
 
 		mnstr_printf(toConsole,
 				 "CREATE SEQUENCE \"%s\".\"%s\" START WITH %s",
@@ -1201,6 +1203,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 			mnstr_printf(toConsole, " MINVALUE %s", minvalue);
 		if (strcmp(maxvalue, "0") != 0)
 			mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
+		if (strcmp(cacheinc, "1") != 0)
+			mnstr_printf(toConsole, " CACHE %s", cacheinc);
 		mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 		comment_on(toConsole, "SEQUENCE", schema, name, NULL, remark);
 		if (mnstr_errnr(toConsole)) {
