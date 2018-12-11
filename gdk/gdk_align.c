@@ -121,3 +121,4 @@ BATmaterialize(BAT *b)
 	HEAPfree(&tail, false);
 	return GDK_SUCCEED;
 }
+
