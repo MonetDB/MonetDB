@@ -1,0 +1,41 @@
+stderr of test 'grant-role-not-idempotent.Bug-6660` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 17:35:19 >  
+# 17:35:19 >  "/usr/bin/python2" "grant-role-not-idempotent.Bug-6660.py" "grant-role-not-idempotent.Bug-6660"
+# 17:35:19 >  
+
+MAPI  = (mydummyuser) /var/tmp/mtest-4265/.s.monetdb.32462
+QUERY = set role "sysadmin"; --error
+ERROR = !Role (sysadmin) missing
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30651/.s.monetdb.34282
+QUERY = grant "sysadmin" to "mydummyuser"; --error
+ERROR = !GRANT: User 'mydummyuser' already has ROLE 'sysadmin'
+CODE  = M1M05
+MAPI  = (monetdb) /var/tmp/mtest-30651/.s.monetdb.34282
+QUERY = revoke "sysadmin" from "mydummyuser"; --error
+ERROR = !REVOKE: User 'mydummyuser' does not have ROLE 'sysadmin'
+CODE  = 42M32
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Aug2018/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34282
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30651/.s.monetdb.34282
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Aug2018/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:35:20 >  
+# 17:35:20 >  "Done."
+# 17:35:20 >  
+

@@ -1,0 +1,102 @@
+stdout of test 'rename00` in directory 'sql/test/rename` itself:
+
+
+# 10:29:39 >  
+# 10:29:39 >  "/usr/bin/python" "rename00.py" "rename00"
+# 10:29:39 >  
+
+#create table "something" (a int);alter table "something" rename to "newname";insert into "newname" values (1);select "a" from "newname";
+#create table "something" (a int);alter table "something" rename to "newname";insert into "newname" values (1);select "a" from "newname";
+#create table "something" (a int);alter table "something" rename to "newname";insert into "newname" values (1);select "a" from "newname";
+[ 1	]
+#create table "something" (a int);alter table "something" rename to "newname";insert into "newname" values (1);select "a" from "newname";
+% sys.newname # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+# MonetDB 5 server v11.32.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_rename', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:38500/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14386/.s.monetdb.38500
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+#select "name" from sys.tables where "name" = 'newname';insert into "newname" values (2);select "a" from "newname";drop table "newname";
+% .tables # table_name
+% name # name
+% varchar # type
+% 7 # length
+[ "newname"	]
+#select "name" from sys.tables where "name" = 'newname';insert into "newname" values (2);select "a" from "newname";drop table "newname";
+[ 1	]
+#select "name" from sys.tables where "name" = 'newname';insert into "newname" values (2);select "a" from "newname";drop table "newname";
+% sys.newname # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+#select "name" from sys.tables where "name" = 'newname';insert into "newname" values (2);select "a" from "newname";drop table "newname";
+# MonetDB 5 server v11.32.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_rename', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:38500/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14386/.s.monetdb.38500
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 10:29:40 >  
+# 10:29:40 >  "Done."
+# 10:29:40 >  
+
