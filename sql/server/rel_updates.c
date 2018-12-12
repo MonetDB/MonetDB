@@ -1524,8 +1524,11 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 			return NULL;
 	}
 	rel = rel_insert_table(sql, t, tname, rel);
-	if (rel && locked)
+	if (rel && locked) {
 		rel->flag |= UPD_LOCKED;
+		if (rel->flag & UPD_COMP)
+			((sql_rel *) rel->r)->flag |= UPD_LOCKED;
+	}
 	if (rel && !constraint)
 		rel->flag |= UPD_NO_CONSTRAINT;
 	return rel;
