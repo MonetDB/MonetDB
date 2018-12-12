@@ -694,6 +694,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
 	m->type = Q_PARSE;
 	m->pushdown = 1;
+	m->has_groupby_expressions = false;
 
 	m->result_id = 0;
 	m->results = NULL;
@@ -763,6 +764,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->cascade_action = NULL;
 	m->type = Q_PARSE;
 	m->pushdown = 1;
+	m->has_groupby_expressions = false;
 
 	for(i=0;i<MAXSTATS;i++)
 		m->opt_stats[i] = 0;
@@ -1645,6 +1647,7 @@ stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 		if(res)
 			sql->topvars++;
 	}
+	sql->has_groupby_expressions = true;
 	return res;
 }
 
@@ -1653,17 +1656,19 @@ stack_get_groupby_expression(mvc *sql, symbol *def)
 {
 	char *err = NULL, *sdef = symbol2string(sql, def, 1, &err);
 
-	if (!sdef) {
-		if (err) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: incorrect expression '%s'", err);
-			_DELETE(err);
+	if(sql->has_groupby_expressions) {
+		if (!sdef) {
+			if (err) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: incorrect expression '%s'", err);
+				_DELETE(err);
+				return NULL;
+			}
 			return NULL;
 		}
-		return NULL;
-	}
-	for (int i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && strcmp(sql->vars[i].exp->sdef, sdef)==0) {
-			return sql->vars[i].exp->exp;
+		for (int i = sql->topvars-1; i >= 0; i--) {
+			if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && strcmp(sql->vars[i].exp->sdef, sdef)==0) {
+				return sql->vars[i].exp->exp;
+			}
 		}
 	}
 	return NULL;
