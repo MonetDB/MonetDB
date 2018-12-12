@@ -372,7 +372,7 @@ MOSdecompress_frame(Client cntxt, MOStask task)
 
 #define select_frame(TPE) {\
     TPE frame = *(TPE*)MOScodevector(task);\
-	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
 	if( !*anti){\
 		if( is_nil(TPE, *(TPE*) low) && is_nil(TPE, *(TPE*) hgh)){\
 			for( ; first < last; first++){\
@@ -447,7 +447,7 @@ MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 	oid *o;
 	BUN i, first,last;
 	MosaicHdr hdr = task->hdr;
-	int cmp;
+	bool cmp;
 	bte j;
 	BitVector base;
 	(void) cntxt;
@@ -482,7 +482,7 @@ MOSselect_frame(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 #define thetaselect_frame(TPE)\
 { 	TPE low,hgh;\
 	TPE frame = *(TPE*) MOScodevector(task);\
-	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
 	low= hgh = TPE##_nil;\
 	if ( strcmp(oper,"<") == 0){\
 		hgh= *(TPE*) val;\
@@ -560,15 +560,15 @@ MOSthetaselect_frame(Client cntxt,  MOStask task, void *val, str oper)
 #define projection_frame(TPE)\
 {	TPE *v;\
 	TPE frame = *(TPE*) MOScodevector(task);\
-	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
 	v= (TPE*) task->src;\
 	for(i=0; first < last; first++,i++){\
 		MOSskipit();\
 		framedecompress(i);\
 		*v++ = frame + task->hdr->frame.val##TPE[j];\
 		task->n--;\
+		task->cnt++;\
 	}\
-	task->src = (char*) v;\
 }
 
 str
@@ -602,7 +602,7 @@ MOSprojection_frame(Client cntxt,  MOStask task)
 #define join_frame(TPE)\
 {	TPE *w;\
 	TPE frame = *(TPE*) MOScodevector(task);\
-	base = (BitVector) (((char*) task->blk) +  2 * MosaicBlkSize);\
+	base = (BitVector) (((char*) task->blk) + MosaicBlkSize + wordaligned(sizeof(TPE),lng));\
 	w = (TPE*) task->src;\
 	limit= MOSgetCnt(task->blk);\
 	for( o=0, n= task->elm; n-- > 0; o++,w++ ){\
