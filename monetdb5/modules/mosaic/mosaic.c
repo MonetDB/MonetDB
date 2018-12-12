@@ -1145,7 +1145,7 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			stopblk  =  startblk + task->hdr->top/nrofparts;
 		else
 			stopblk  =  task->hdr->top;
-	} else{
+	} else {
 		startblk =0;
 		stopblk = task->hdr->top;
 	}
@@ -1534,7 +1534,6 @@ MOSanalyseReport(Client cntxt, BAT *b, BAT *btech, BAT *boutput, BAT *bratio, BA
 		pat[i].clk2 = GDKms();
 		MOSdecompressInternal(cntxt, &bid, &bid);
 		pat[i].clk2 = GDKms()- pat[i].clk2;
-
 
 		// get rid of mosaic heap
 		MOSdestroy(BBPdescriptor(bid));

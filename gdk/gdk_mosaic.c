@@ -114,13 +114,13 @@ MOSdestroy(BAT *bn)
 	// TODO: Check if this is correct.
 	if( bn && bn->tmosaic && !VIEWtparent(bn) && !VIEWmosaictparent(bn)){
 		h= bn->tmosaic;
-		bn->tmosaic = NULL;
 		if( HEAPdelete(h, BBP_physical(bn->batCacheid), "mosaic"))
 			IODEBUG fprintf(stderr,"#MOSdestroy (%s) failed", BATgetId(bn));
 		bn->tmosaic = NULL;
 		GDKfree(h);
 	}
 }
+
 /* return TRUE if we have a mosaic on the tail, even if we need to read
  * one from disk */
 int
