@@ -179,7 +179,7 @@ exchange(double *x, double *y)
 }
 
 /* this function was adapted from https://bugs.python.org/file10357/msum4.py */
-static BUN
+BUN
 dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
        void *restrict results, BUN ngrp, int tp1, int tp2,
        const oid *restrict cand, const oid *candend, const oid *restrict gids,
@@ -470,8 +470,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				*seen = start < end;			\
 				for (i = start; i < end && nils == 0; i++) { \
 					x = vals[i];			\
-					ADD_WITH_CHECK(TYPE1, x,	\
-						       TYPE2, sum,	\
+					ADD_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
@@ -486,8 +485,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 							nils = 1;	\
 						}			\
 					} else {			\
-						ADD_WITH_CHECK(TYPE1, x, \
-							       TYPE2, sum, \
+						ADD_WITH_CHECK(x, sum,	\
 							       TYPE2, sum, \
 							       GDK_##TYPE2##_max, \
 							       goto overflow); \
@@ -519,8 +517,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 						nils = 1;		\
 					}				\
 				} else {				\
-					ADD_WITH_CHECK(TYPE1, x,	\
-						       TYPE2, sum,	\
+					ADD_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
@@ -554,9 +551,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 						}			\
 						if (!is_##TYPE2##_nil(sums[gid])) { \
 							ADD_WITH_CHECK(	\
-								TYPE1,	\
 								x,	\
-								TYPE2,	\
 								sums[gid], \
 								TYPE2,	\
 								sums[gid], \
@@ -594,9 +589,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 						}			\
 						if (!is_##TYPE2##_nil(sums[gid])) { \
 							ADD_WITH_CHECK(	\
-								TYPE1,	\
 								x,	\
-								TYPE2,	\
 								sums[gid], \
 								TYPE2,	\
 								sums[gid], \
@@ -982,8 +975,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 					}				\
 					if (!is_##TYPE2##_nil(prods[gid])) { \
 						MUL4_WITH_CHECK(	\
-							TYPE1, vals[i],	\
-							TYPE2, prods[gid], \
+							vals[i],	\
+							prods[gid],	\
 							TYPE2, prods[gid], \
 							GDK_##TYPE2##_max, \
 							TYPE3,		\
@@ -1030,8 +1023,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 						nils++;			\
 					}				\
 				} else if (!is_hge_nil(prods[gid])) {	\
-					HGEMUL_CHECK(TYPE, vals[i],	\
-						     hge, prods[gid],	\
+					HGEMUL_CHECK(vals[i],		\
+						     prods[gid],	\
 						     prods[gid],	\
 						     GDK_hge_max,	\
 						     goto overflow);	\
@@ -1077,8 +1070,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 					}				\
 					if (!is_lng_nil(prods[gid])) {	\
 						LNGMUL_CHECK(		\
-							TYPE, vals[i],	\
-							lng, prods[gid], \
+							vals[i],	\
+							prods[gid],	\
 							prods[gid],	\
 							GDK_lng_max,	\
 							goto overflow); \
@@ -1482,66 +1475,6 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, 
 /* ---------------------------------------------------------------------- */
 /* average */
 
-#define AVERAGE_ITER(TYPE, x, a, r, n)					\
-	do {								\
-		TYPE an, xn, z1;					\
-		BUN z2;							\
-		(n)++;							\
-		/* calculate z1 = (x - a) / n, rounded down (towards */	\
-		/* negative infinity), and calculate z2 = remainder */	\
-		/* of the division (i.e. 0 <= z2 < n); do this */	\
-		/* without causing overflow */				\
-		an = (TYPE) ((a) / (SBUN) (n));				\
-		xn = (TYPE) ((x) / (SBUN) (n));				\
-		/* z1 will be (x - a) / n rounded towards -INF */	\
-		z1 = xn - an;						\
-		xn = (x) - (TYPE) (xn * (SBUN) (n));			\
-		an = (a) - (TYPE) (an * (SBUN) (n));			\
-		/* z2 will be remainder of above division */		\
-		if (xn >= an) {						\
-			z2 = (BUN) (xn - an);				\
-			/* loop invariant: */				\
-			/* (x - a) - z1 * n == z2 */			\
-			while (z2 >= (BUN) (n)) {			\
-				z2 -= (BUN) (n);			\
-				z1++;					\
-			}						\
-		} else {						\
-			z2 = (BUN) (an - xn);				\
-			/* loop invariant (until we break): */		\
-			/* (x - a) - z1 * n == -z2 */			\
-			for (;;) {					\
-				z1--;					\
-				if (z2 < (BUN) (n)) {			\
-					/* proper remainder */		\
-					z2 = (BUN) ((n) - z2);		\
-					break;				\
-				}					\
-				z2 -= (BUN) (n);			\
-			}						\
-		}							\
-		(a) += z1;						\
-		(r) += z2;						\
-		if ((r) >= (BUN) (n)) {					\
-			(r) -= (BUN) (n);				\
-			(a)++;						\
-		}							\
-	} while (0)
-
-#define AVERAGE_ITER_FLOAT(TYPE, x, a, n)				\
-	do {								\
-		(n)++;							\
-		if (((a) > 0) == ((x) > 0)) {				\
-			/* same sign */					\
-			(a) += ((x) - (a)) / (SBUN) (n);		\
-		} else {						\
-			/* no overflow at the cost of an */		\
-			/* extra division and slight loss of */		\
-			/* precision */					\
-			(a) = (a) - (a) / (SBUN) (n) + (x) / (SBUN) (n); \
-		}							\
-	} while (0)
-
 #define AGGR_AVG(TYPE)							\
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
@@ -1838,8 +1771,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 			x = ((const TYPE *) src)[i];			\
 			if (is_##TYPE##_nil(x))				\
 				continue;				\
-			ADD_WITH_CHECK(TYPE, x,				\
-				       lng_hge, sum,			\
+			ADD_WITH_CHECK(x, sum,				\
 				       lng_hge, sum,			\
 				       GDK_##lng_hge##_max,		\
 				       goto overflow##TYPE);		\
@@ -2615,14 +2547,19 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			      do_groupmin, "BATgroupmin");
 }
 
+/* return pointer to smallest non-nil value in b, or pointer to nil if
+ * there is no such value (no values at all, or only nil) */
 void *
 BATmin(BAT *b, void *aggr)
 {
 	PROPrec *prop;
 	const void *res;
 	size_t s;
+	BATiter bi;
 
 	if (!ATOMlinear(b->ttype)) {
+		/* there is no such thing as a smallest value if you
+		 * can't compare values */
 		GDKerror("BATmin: non-linear type");
 		return NULL;
 	}
@@ -2632,7 +2569,6 @@ BATmin(BAT *b, void *aggr)
 		res = VALptr(&prop->v);
 	} else {
 		oid pos;
-		BATiter bi;
 		BAT *pb = NULL;
 
 		if (BATcheckorderidx(b) ||
@@ -2686,8 +2622,7 @@ BATmin(BAT *b, void *aggr)
 		} else {
 			bi = bat_iterator(b);
 			res = BUNtail(bi, pos - b->hseqbase);
-			if (b->tnonil)
-				BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
+			BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
 		}
 	}
 	if (aggr == NULL) {
@@ -2715,6 +2650,7 @@ BATmax(BAT *b, void *aggr)
 	PROPrec *prop;
 	const void *res;
 	size_t s;
+	BATiter bi;
 
 	if (!ATOMlinear(b->ttype)) {
 		GDKerror("BATmax: non-linear type");
@@ -2726,7 +2662,6 @@ BATmax(BAT *b, void *aggr)
 		res = VALptr(&prop->v);
 	} else {
 		oid pos;
-		BATiter bi;
 		BAT *pb = NULL;
 
 		if (BATcheckorderidx(b) ||
@@ -2832,9 +2767,10 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		return NULL;
 	}
 
-	if (BATcount(b) == 0 || ngrp == 0) {
+	if (BATcount(b) == 0 || ngrp == 0 || is_dbl_nil(quantile)) {
 		/* trivial: no values, thus also no quantiles,
-		 * so return bat aligned with e with nil in the tail */
+		 * so return bat aligned with e with nil in the tail
+		 * The same happens for a NULL quantile */
 		return BATconstant(ngrp == 0 ? 0 : min, tp, nil, ngrp, TRANSIENT);
 	}
 
@@ -2872,14 +2808,14 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				BBPunfix(g->batCacheid);
 			return bn;
 		}
-		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false) != GDK_SUCCEED)
+		if (BATsort(&t1, &t2, NULL, g, NULL, NULL, false, false, false) != GDK_SUCCEED)
 			goto bunins_failed;
 		if (freeg)
 			BBPunfix(g->batCacheid);
 		g = t1;
 		freeg = true;
 
-		if (BATsort(&t1, NULL, NULL, b, t2, g, false, false) != GDK_SUCCEED) {
+		if (BATsort(&t1, NULL, NULL, b, t2, g, false, false, false) != GDK_SUCCEED) {
 			BBPunfix(t2->batCacheid);
 			goto bunins_failed;
 		}
@@ -2953,7 +2889,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		     BATcheckorderidx(pb))) {
 			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 		} else {
-			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false) != GDK_SUCCEED)
+			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false, false) != GDK_SUCCEED)
 				goto bunins_failed;
 			if (BATtdense(t1))
 				ords = NULL;
@@ -3353,422 +3289,3 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, false, true,
 			    "BATgroupvariance_population");
 }
-
-#define IS_A_POINTER 0
-#define IS_A_BAT     1
-
-static gdk_return
-concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN end, BUN ngrp, const oid *restrict cand,
-			   const oid *candend, const oid *restrict gids, oid min, oid max, bool skip_nils, const str separator,
-			   const char *func, BUN *has_nils)
-{
-	oid gid;
-	BUN i, p, q, nils = 0;
-	const oid *aux;
-	size_t* lengths = NULL, separator_length = strlen(separator), next_length;
-	oid *lastoid = NULL;
-	str* astrings = NULL, s, single_str = NULL;
-	BATiter bi;
-	BAT *bn = NULL;
-	gdk_return rres = GDK_SUCCEED;
-
-	(void) skip_nils;
-
-	if (what == IS_A_BAT && (bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
-		rres = GDK_FAIL;
-		goto finish;
-	}
-
-	bi = bat_iterator(b);
-
-	if (ngrp == 1) {
-		size_t offset = 0, single_length = 0;
-		oid single_oid = 0;
-		if (cand == NULL) {
-			if(nonil) {
-				BATloop(b,p,q) {
-					s = BUNtail(bi, p);
-					next_length = strlen(s);
-					single_length += next_length + separator_length;
-					single_oid = p;
-				}
-			} else {
-				BATloop(b,p,q) {
-					s = BUNtail(bi, p);
-					if (*s != '\200') {
-						next_length = strlen(s);
-						single_length += next_length + separator_length;
-						single_oid = p;
-					} else {
-						single_oid = BUN_NONE;
-						nils = 1;
-						break;
-					}
-				}
-			}
-			if(!nils) {
-				if ((single_str = GDKmalloc((single_length + 1 - separator_length) * sizeof(str))) == NULL) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-				BATloop(b,p,q){
-					s = BUNtail(bi, p);
-					next_length = strlen(s);
-					memcpy(single_str + offset, s, next_length);
-					offset += next_length;
-					if(p != single_oid) {
-						memcpy(single_str + offset, separator, separator_length);
-						offset += separator_length;
-					}
-				}
-				single_str[offset] = '\0';
-				if(what == IS_A_BAT) {
-					if(BUNappend(bn, single_str, false) != GDK_SUCCEED) {
-						GDKerror("%s: malloc failure\n", func);
-						rres = GDK_FAIL;
-						goto finish;
-					}
-				} else {
-					ValPtr pt = (ValPtr) res;
-					pt->len = single_str[offset];
-					if((pt->val.sval = GDKstrdup(single_str)) == NULL) {
-						GDKerror("%s: malloc failure\n", func);
-						rres = GDK_FAIL;
-						goto finish;
-					}
-				}
-			} else if(what == IS_A_BAT) {
-				if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-			} else {
-				ValPtr pt = (ValPtr) res;
-				pt->len = 0;
-				if((pt->val.sval = GDKstrdup(str_nil)) == NULL) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-			}
-		} else { /* with candidate lists */
-			aux = cand;
-			if(nonil) {
-				while (cand < candend && nils == 0) {
-					i = *cand++ - seqb;
-					if (i >= end)
-						break;
-					s = BUNtail(bi, i);
-					next_length = strlen(s);
-					single_length += next_length + separator_length;
-					single_oid = i;
-				}
-			} else {
-				while (cand < candend && nils == 0) {
-					i = *cand++ - seqb;
-					if (i >= end)
-						break;
-					s = BUNtail(bi, i);
-					if (*s != '\200') {
-						next_length = strlen(s);
-						single_length += next_length + separator_length;
-						single_oid = i;
-					} else {
-						single_oid = BUN_NONE;
-						nils = 1;
-						break;
-					}
-				}
-			}
-			if (!nils) {
-				if ((single_str = GDKmalloc((single_length + 1 - separator_length) * sizeof(str))) == NULL) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-				cand = aux;
-				while (cand < candend) {
-					i = *cand++ - seqb;
-					if (i >= end)
-						break;
-					s = BUNtail(bi, i);
-					next_length = strlen(s);
-					memcpy(single_str + offset, s, next_length);
-					offset += next_length;
-					if (i != single_oid) {
-						memcpy(single_str + offset, separator, separator_length);
-						offset += separator_length;
-					}
-				}
-				single_str[offset] = '\0';
-				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-			} else if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-				GDKerror("%s: malloc failure\n", func);
-				rres = GDK_FAIL;
-				goto finish;
-			}
-		}
-	} else {
-		if((lengths = GDKzalloc(ngrp * sizeof(*lengths))) == NULL) { /* first used to calculated the total length of*/
-			rres = GDK_FAIL;                                           /* each group, then the the total offset */
-			goto finish;
-		}
-		if((lastoid = (oid*) GDKzalloc(ngrp * sizeof(oid))) == NULL) {
-			rres = GDK_FAIL;
-			goto finish;
-		}
-		if((astrings = (str*) GDKzalloc(ngrp * sizeof(str))) == NULL) {
-			rres = GDK_FAIL;
-			goto finish;
-		}
-		if (cand == NULL) {
-			for (i = start; i < end; i++) {
-				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
-					gid = gids ? gids[i] - min : (oid) i;
-					if (lastoid[gid] != BUN_NONE) {
-						s = BUNtail(bi, i);
-						if (*s != '\200') {
-							next_length = strlen(s);
-							lengths[gid] += next_length + separator_length;
-							lastoid[gid] = i;
-						} else {
-							lastoid[gid] = BUN_NONE;
-							nils++;
-						}
-					}
-				}
-			}
-			for (i = 0; i < ngrp; i++) {
-				if(lastoid[i] != BUN_NONE) {
-					if((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
-						GDKerror("%s: malloc failure\n", func);
-						rres = GDK_FAIL;
-						goto finish;
-					}
-					lengths[i] = 0;
-				}
-			}
-			for (i = start; i < end; i++) {
-				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
-					gid = gids ? gids[i] - min : (oid) i;
-					if (lastoid[gid] < BUN_NONE) {
-						s = BUNtail(bi, i);
-						next_length = strlen(s);
-						memcpy(astrings[gid] + lengths[gid], s, next_length);
-						lengths[gid] += next_length;
-						if (i != lastoid[gid]) {
-							memcpy(astrings[gid] + lengths[gid], separator, separator_length);
-							lengths[gid] += separator_length;
-						}
-					}
-				}
-			}
-			for (i = 0; i < ngrp; i++) {
-				if (lastoid[i] < BUN_NONE) {
-					astrings[i][lengths[i]] = '\0';
-					if(BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
-						GDKerror("%s: malloc failure\n", func);
-						rres = GDK_FAIL;
-						goto finish;
-					}
-				} else if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-			}
-		} else {
-			aux = cand;
-			while (cand < candend) {
-				i = *cand++ - seqb;
-				if (i >= end)
-					break;
-				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
-					gid = gids ? gids[i] - min : (oid) i;
-					if (lastoid[gid] != BUN_NONE) {
-						s = BUNtail(bi, i);
-						if (*s != '\200') {
-							next_length = strlen(s);
-							lengths[gid] += next_length;
-							lastoid[gid] = i;
-						} else {
-							lastoid[gid] = BUN_NONE;
-							nils++;
-						}
-					}
-				}
-			}
-			for (i = 0; i < ngrp; i++) {
-				if(lastoid[i] != BUN_NONE) {
-					if((astrings[i] = GDKmalloc((lengths[i] + 1 - separator_length) * sizeof(str))) == NULL) {
-						GDKerror("%s: malloc failure\n", func);
-						rres = GDK_FAIL;
-						goto finish;
-					}
-					lengths[i] = 0;
-				}
-			}
-			cand = aux;
-			while (cand < candend) {
-				i = *cand++ - seqb;
-				if (i >= end)
-					break;
-				if (gids == NULL || (gids[i] >= min && gids[i] <= max)) {
-					gid = gids ? gids[i] - min : (oid) i;
-					if (lastoid[gid] < BUN_NONE) {
-						s = BUNtail(bi, i);
-						next_length = strlen(s);
-						memcpy(astrings[gid] + lengths[gid], s, next_length);
-						lengths[gid] += next_length;
-						if (i != lastoid[gid]) {
-							memcpy(astrings[gid] + lengths[gid], separator, separator_length);
-							lengths[gid] += separator_length;
-						}
-					}
-				}
-			}
-			for (i = 0; i < ngrp; i++) {
-				if (lastoid[i] < BUN_NONE) {
-					astrings[i][lengths[i]] = '\0';
-					if(BUNappend(bn, astrings[i], false) != GDK_SUCCEED) {
-						GDKerror("%s: malloc failure\n", func);
-						rres = GDK_FAIL;
-						goto finish;
-					}
-				} else if(BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
-					GDKerror("%s: malloc failure\n", func);
-					rres = GDK_FAIL;
-					goto finish;
-				}
-			}
-		}
-	}
-
-finish:
-	if(has_nils)
-		*has_nils = nils;
-	if(lengths)
-		GDKfree(lengths);
-	if(astrings) {
-		for(i = 0 ; i < ngrp ; i++) {
-			if(astrings[i])
-				GDKfree(astrings[i]);
-		}
-		GDKfree(astrings);
-	}
-	if(single_str)
-		GDKfree(single_str);
-	if(lastoid)
-		GDKfree(lastoid);
-	if(rres == GDK_FAIL) {
-		if(bn) {
-			BBPreclaim(bn);
-			bn = NULL;
-		} else {
-			ValPtr pt = (ValPtr) res;
-			if(pt->val.sval) {
-				GDKfree(pt->val.sval);
-				pt->val.sval = NULL;
-			}
-		}
-	}
-	if(what == IS_A_BAT) {
-		*((BAT**)res) = bn;
-	}
-
-	return rres;
-}
-
-gdk_return
-BATstr_group_concat(ValPtr res, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, bool nil_if_empty, const str separator)
-{
-	oid min, max;
-	BUN ngrp, start, end;
-	const oid *cand = NULL, *candend = NULL;
-	const char *err;
-
-	(void) abort_on_error;
-	assert(separator);
-	res->vtype = TYPE_str;
-
-	if (BATcount(b) == 0 || *separator == '\200') {
-		res->len = 0;
-		res->val.sval = nil_if_empty ? GDKstrdup(str_nil) : GDKstrdup("");
-		if(res->val.sval == NULL) {
-			GDKerror("BATstr_group_concat: malloc failure\n");
-			return GDK_FAIL;
-		}
-		return GDK_SUCCEED;
-	}
-	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp, &start, &end, &cand, &candend)) != NULL) {
-		GDKerror("BATstr_group_concat: %s\n", err);
-		return GDK_FAIL;
-	}
-
-	return concat_strings(res, IS_A_POINTER, b, b->tnonil, b->hseqbase, start, end, 1, cand, candend, &min, min, max,
-						  skip_nils, separator, "BATstr_group_concat", NULL);
-}
-
-BAT *
-BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils, bool abort_on_error, const str separator)
-{
-	const oid *restrict gids;
-	BAT *bn = NULL;
-	oid min, max;
-	BUN ngrp, start, end;
-	const oid *cand = NULL, *candend = NULL;
-	const char *err;
-	BUN nils = 0;
-	gdk_return res;
-
-	assert(separator);
-	(void) skip_nils;
-
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end, &cand, &candend)) != NULL) {
-		GDKerror("BATgroupstr_group_concat: %s\n", err);
-		return NULL;
-	}
-	if (g == NULL) {
-		GDKerror("BATgroupstr_group_concat: b and g must be aligned\n");
-		return NULL;
-	}
-
-	if (BATcount(b) == 0 || ngrp == 0 || *separator == '\200') {
-		/* trivial: no strings to concat, so return bat aligned with g with nil in the tail */
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
-	}
-
-	if ((e == NULL || (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
-		(BATtdense(g) || (g->tkey && g->tnonil))) {
-		/* trivial: singleton groups, so all results are equal to the inputs (but possibly a different type) */
-		return BATconvert(b, s, TYPE_str, abort_on_error);
-	}
-
-	if (BATtdense(g))
-		gids = NULL;
-	else
-		gids = (const oid *) Tloc(g, start);
-
-	res = concat_strings(&bn, IS_A_BAT, b, b->tnonil, b->hseqbase, start, end, ngrp, cand, candend, gids, min,
-						  max, skip_nils, separator, "BATgroupstr_group_concat", &nils);
-
-	if (res == GDK_SUCCEED) {
-		BATsetcount(bn, ngrp);
-		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = BATcount(bn) <= 1;
-		bn->trevsorted = BATcount(bn) <= 1;
-		bn->tnil = nils != 0;
-		bn->tnonil = nils == 0;
-	}
-
-	return bn;
-}
-
-#undef IS_A_POINTER
-#undef IS_A_BAT

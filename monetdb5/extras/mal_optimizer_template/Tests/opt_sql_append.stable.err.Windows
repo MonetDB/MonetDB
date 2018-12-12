@@ -32,19 +32,19 @@ stderr of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 
 MAPI  = monetdb@LAB03:37903
 QUERY = explain copy into ttt from '/tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: /tmp/xyz
+ERROR = !COPY INTO: filename must have absolute path: "/tmp/xyz"
 CODE  = 42000
-MAPI  = monetdb@LAB03:37903
-QUERY = explain copy into ttt from '\tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: \tmp/xyz
+MAPI  = monetdb@WIN2K12R2:34268
+QUERY = explain copy into ttt from E'\\tmp/xyz';
+ERROR = !COPY INTO: filename must have absolute path: "\\tmp/xyz"
 CODE  = 42000
 MAPI  = monetdb@LAB03:37903
 QUERY = explain copy into ttt from '/tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: /tmp/xyz
+ERROR = !COPY INTO: filename must have absolute path: "/tmp/xyz"
 CODE  = 42000
-MAPI  = monetdb@LAB03:37903
-QUERY = explain copy into ttt from '\tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: \tmp/xyz
+MAPI  = monetdb@WIN2K12R2:34268
+QUERY = explain copy into ttt from E'\\tmp/xyz';
+ERROR = !COPY INTO: filename must have absolute path: "\\tmp/xyz"
 CODE  = 42000
 
 # 22:58:58 >  

@@ -22,7 +22,9 @@
 
 #include "stream.h"
 #include "msqldump.h"
+#define LIBMUTILS 1
 #include "mprompt.h"
+#include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
 
 __declspec(noreturn) static void usage(const char *prog, int xit)
@@ -77,13 +79,14 @@ main(int argc, char **argv)
 		{"Xdebug", 0, 0, 'X'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
+		{"version", 0, 0, 'v'},
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
 
 	parse_dotmonetdb(&user, &passwd, &dbname, NULL, NULL, NULL, NULL);
 
-	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:q?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:qv?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			if (user)
@@ -125,6 +128,18 @@ main(int argc, char **argv)
 		case 'X':
 			trace = true;
 			break;
+		case 'v': {
+			const char *rev = mercurial_revision();
+			printf("msqldump, the MonetDB interactive database "
+			       "dump tool, version %s", VERSION);
+			/* coverity[pointless_string_compare] */
+			if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+				printf(" (%s)", MONETDB_RELEASE);
+			else if (strcmp(rev, "Unknown") != 0)
+				printf(" (hg id: %s)", rev);
+			printf("\n");
+			return 0;
+		}
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -182,6 +197,7 @@ main(int argc, char **argv)
 		char buf[27];
 		time_t t = time(0);
 		char *p;
+		const char *rev = mercurial_revision();
 
 #ifdef HAVE_CTIME_R3
 		ctime_r(&t, buf, sizeof(buf));
@@ -194,11 +210,21 @@ main(int argc, char **argv)
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)
 			*p = 0;
-		mnstr_printf(out, "-- msqldump %s %s%s %s\n",
+
+		mnstr_printf(out,
+			     "-- msqldump version %s", VERSION);
+		/* coverity[pointless_string_compare] */
+		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+			mnstr_printf(out, " (%s)",
+				     MONETDB_RELEASE);
+		else if (strcmp(rev, "Unknown") != 0)
+			mnstr_printf(out, " (hg id: %s)", rev);
+		mnstr_printf(out, " %s %s%s\n",
 			     describe ? "describe" : "dump",
 			     functions ? "functions" : table ? "table " : "database",
-			     table ? table : "", buf);
-		dump_version(mid, out, "--");
+			     table ? table : "");
+		dump_version(mid, out, "-- server:");
+		mnstr_printf(out, "-- %s\n", buf);
 	}
 	if (functions)
 		c = dump_functions(mid, out, true, NULL, NULL, NULL);

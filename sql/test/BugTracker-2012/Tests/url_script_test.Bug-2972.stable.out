@@ -181,13 +181,7 @@ Ready.
 #create table t2972(u url);
 #insert into t2972 values ('file:///export/home/fabian/monetdb/Apr2012/hgrepo/sql/test/BugTracker-2012/Tests/url_script_test.Bug-2972.txt');
 [ 1	]
-#select getContent(u) from t2972;
-% sys.L2 # table_name
-% L2 # name
-% clob # type
-% 141 # length
-[ "This file is read by the url_script_test.Bug-2972 test.\nIf you change this, you likely want to change the stable output of the\ntest as well.\n"	]
-#drop table t2972;
+#rollback;
 
 # 06:50:55 >  
 # 06:50:55 >  "Done."

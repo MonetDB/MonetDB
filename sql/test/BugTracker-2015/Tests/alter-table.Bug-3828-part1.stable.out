@@ -97,7 +97,7 @@ Ready.
 #select tables.name, columns.name, location from tables inner join columns on tables.id=columns.table_id left join storage on tables.name=storage.table and columns.name=storage.column where location is null and tables.name like 'hmda%';
 % .tables,	.columns,	.storage # table_name
 % name,	name,	location # name
-% varchar,	varchar,	clob # type
+% varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
 
 # 14:20:07 >  

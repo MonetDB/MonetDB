@@ -173,17 +173,17 @@ BATorderidx(BAT *b, bool stable)
 	if (!BATtdense(b)) {
 		BAT *on;
 		ALGODEBUG fprintf(stderr, "#BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
-		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, stable) != GDK_SUCCEED)
+		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, false, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
 		assert(BATcount(b) == BATcount(on));
 		if (BATtdense(on)) {
 			/* if the order bat is dense, the input was
 			 * sorted and we don't need an order index */
-			assert(b->tnosorted == 0);
+			assert(!b->tnosorted);
 			if (!b->tsorted) {
-				b->tsorted = 1;
-				b->tnosorted = 0;
-				b->batDirtydesc = 1;
+				b->tsorted = true;
+				b->tnosorted = false;
+				b->batDirtydesc = true;
 			}
 		} else {
 			/* BATsort quite possibly already created the
@@ -197,7 +197,7 @@ BATorderidx(BAT *b, bool stable)
 				}
 				memcpy((oid *) m->base + ORDERIDXOFF, Tloc(on, 0), BATcount(on) * sizeof(oid));
 				b->torderidx = m;
-				b->batDirtydesc = 1;
+				b->batDirtydesc = true;
 				persistOIDX(b);
 			}
 			MT_lock_unset(&GDKhashLock(b->batCacheid));
@@ -469,7 +469,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		ALGODEBUG fprintf(stderr, "#GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
 #endif
 
-	b->batDirtydesc = TRUE;
+	b->batDirtydesc = true;
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	return GDK_SUCCEED;
 }

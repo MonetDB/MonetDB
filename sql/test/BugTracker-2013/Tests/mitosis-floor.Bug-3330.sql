@@ -1,5 +1,5 @@
 create table error (x int, y int, intensity int);
-copy 2 records into error from stdin delimiters ',','\n';
+copy 2 records into error from stdin delimiters ',',E'\n';
 1,2,3
 4,5,6
 

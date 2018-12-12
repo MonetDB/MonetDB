@@ -2,7 +2,7 @@ start transaction;
 
 create table "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea" ("Consumer Number" INTEGER,"1-Disloyalty" varchar(250),"2-Age" varchar(250),"3-Amount transferred" INTEGER,"4-Gender" varchar(250),"5-Citiz enship" varchar(250),"6- Profession" varchar(250),"7-City" varchar(250),"8-1 NC Billboard" varchar(250),"8-2 NC Friends" varchar(250),"8-3 NC Magazine" varchar(250),"8-4 NC Others" varchar(250),"9-Score" decimal(18,3),"10- Type of operation" varchar(250),"11-1 Welcoming" INTEGER,"11-2 Waiting time" INTEGER,"11-3 Time to finish request" INTEGER,"11-4 Fees" INTEGER,"11-5 Courtesy of employees" INTEGER,"11-6 Branch layout" INTEGER,"11-7 Attention to special requests" INTEGER,"12- Total time for service" decimal(18,3),"13- Distance from POS" decimal(18,3),"14- Weight" INTEGER);
 
-COPY 233 offset 2 records INTO "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea" FROM stdin USING DELIMITERS ',','\n','"' null as '';
+COPY 233 offset 2 records INTO "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea" FROM stdin USING DELIMITERS ',',E'\n','"' null as '';
 ,,,,Female ,Citizen,Employee,Suburbs,No,No,No,No,,International,6,5,3,6,6,2,2,10.27,1.5,75,
 2,Loyal,[21-30],3,Male ,Resident,Employee,Cities,No,Yes,No,No,9.51,Local,2,6,8,2,2,1,4,10.44,1.8,78,
 3,Loyal,[21-30],3,Male,Resident,Employee,Suburbs,Yes,No,Yes,No,6.67,Local,5,2,8,4,7,8,3,14.34,2.2,75,

@@ -64,31 +64,9 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	mvc *m;
 	str msg;
 
-	logger_settings log_settings;
-	/* Set the default WAL directory. "sql_logs" by default */
-	log_settings.logdir = "sql_logs";
-	/* Get and pass on the WAL directory location, if set */
-	if (GDKgetenv("gdk_logdir") != NULL) {
-		log_settings.logdir = GDKgetenv("gdk_logdir");
-	}
-	/* Get and pass on the shared WAL directory location, if set */
-	log_settings.shared_logdir = GDKgetenv("gdk_shared_logdir");
-	/* Get and pass on the shared WAL drift threshold, if set.
-	 * -1 by default, meaning it should be ignored, since it is not set */
-	log_settings.shared_drift_threshold = GDKgetenv_int("gdk_shared_drift_threshold", -1);
-
-	/* Get and pass on the flag how many WAL files should be preserved.
-	 * 0 by default - keeps only the current WAL file. */
-	log_settings.keep_persisted_log_files = GDKgetenv_int("gdk_keep_persisted_log_files", 0);
-
 	mvc_debug = debug&4;
 	if (mvc_debug) {
-		fprintf(stderr, "#mvc_init logdir %s\n", log_settings.logdir);
-		fprintf(stderr, "#mvc_init keep_persisted_log_files %d\n", log_settings.keep_persisted_log_files);
-		if (log_settings.shared_logdir != NULL) {
-			fprintf(stderr, "#mvc_init shared_logdir %s\n", log_settings.shared_logdir);
-		}
-		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings.shared_drift_threshold);
+		fprintf(stderr, "#mvc_init\n");
 	}
 	keyword_init();
 	if(scanner_init_keywords() != 0) {
@@ -96,7 +74,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		return -1;
 	}
 
-	if ((first = store_init(debug, store, ro, su, &log_settings, stk)) < 0) {
+	if ((first = store_init(debug, store, ro, su, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
@@ -229,6 +207,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 					if((err = initialize_sql_parts(m, tt)) != NULL) {
 						fprintf(stderr, "!mvc_init: unable to start partitioned table: %s.%s: %s\n",
 								ss->base.name, tt->base.name, err);
+						freeException(err);
 						return -1;
 					}
 				}
@@ -1085,7 +1064,7 @@ mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, const char *name, l
 	if (sa) {
 		f = create_sql_func(sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 		f->s = s;
-	} else 
+	} else
 		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system);
 	return f;
 }
@@ -1109,7 +1088,7 @@ mvc_drop_all_func(mvc *m, sql_schema *s, list *list_func, int drop_action)
 }
 
 sql_schema *
-mvc_create_schema(mvc *m, const char *name, int auth_id, int owner)
+mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner)
 {
 	sql_schema *s = NULL;
 
@@ -1403,34 +1382,32 @@ mvc_drop_column(mvc *m, sql_table *t, sql_column *col, int drop_action)
 }
 
 void
-mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type)
+mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sht depend_type)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_dependency %d %d %d\n", id, depend_id, depend_type);
 	if ( (id != depend_id) || (depend_type == BEDROPPED_DEPENDENCY) )
 		sql_trans_create_dependency(m->session->tr, id, depend_id, depend_type);
-	
 }
 
 void
-mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type)
+mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type)
 {
 	node *n = id_l->h;
 	int i;
-	
+
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_dependencies on %d of type %d\n", depend_id, dep_type);
 
 	for (i = 0; i < list_length(id_l); i++)
 	{
-		mvc_create_dependency(m, *(int *) n->data, depend_id, dep_type);
+		mvc_create_dependency(m, *(sqlid *) n->data, depend_id, dep_type);
 		n = n->next;
 	}
-
 }
 
 int
-mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
+mvc_check_dependency(mvc * m, sqlid id, sht type, list *ignore_ids)
 {
 	list *dep_list = NULL;
 
@@ -1549,7 +1526,7 @@ mvc_is_sorted(mvc *m, sql_column *col)
 
 /* variable management */
 static sql_var*
-stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, int view, int frame)
+stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, dlist *wdef, int view, int frame)
 {
 	sql_var *v, *nvars;
 	int nextsize = sql->sizevars;
@@ -1571,6 +1548,8 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	v->t = t;
 	v->view = view;
 	v->frame = frame;
+	v->visited = 0;
+	v->wdef = wdef;
 	if (type) {
 		int tpe = type->type->localtype;
 		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
@@ -1587,7 +1566,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 sql_var*
 stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1596,7 +1575,7 @@ stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 sql_var*
 stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1605,7 +1584,7 @@ stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 sql_var*
 stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1614,10 +1593,57 @@ stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 sql_var*
 stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, 1, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, NULL, 1, 0);
 	if(res)
 		sql->topvars++;
 	return res;
+}
+
+sql_var*
+stack_push_window_def(mvc *sql, const char *name, dlist *wdef)
+{
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, wdef, 0, 0);
+	if(res)
+		sql->topvars++;
+	return res;
+}
+
+dlist *
+stack_get_window_def(mvc *sql, const char *name, int *pos)
+{
+	for (int i = sql->topvars-1; i >= 0; i--) {
+		if (!sql->vars[i].frame && sql->vars[i].wdef && strcmp(sql->vars[i].name, name)==0) {
+			if(pos)
+				*pos = i;
+			return sql->vars[i].wdef;
+		}
+	}
+	return NULL;
+}
+
+/* There could a possibility that this is vulnerable to a time-of-check, time-of-use race condition.
+ * However this should never happen in the SQL compiler */
+char
+stack_check_var_visited(mvc *sql, int i)
+{
+	if(i < 0 || i >= sql->topvars)
+		return 0;
+	return sql->vars[i].visited;
+}
+
+void
+stack_set_var_visited(mvc *sql, int i)
+{
+	if(i < 0 || i >= sql->topvars)
+		return;
+	sql->vars[i].visited = 1;
+}
+
+void
+stack_clear_frame_visited_flag(mvc *sql)
+{
+	for (int i = sql->topvars-1; i >= 0 && !sql->vars[i].frame; i--)
+		sql->vars[i].visited = 0;
 }
 
 atom *
@@ -1658,7 +1684,7 @@ stack_get_var(mvc *sql, const char *name)
 sql_var*
 stack_push_frame(mvc *sql, const char *name)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, 0, 1);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, NULL, 0, 1);
 	if(res) {
 		sql->topvars++;
 		sql->frame++;
@@ -1675,6 +1701,7 @@ stack_pop_until(mvc *sql, int top)
 		c_delete(v->name);
 		VALclear(&v->a.data);
 		v->a.data.vtype = 0;
+		v->wdef = NULL;
 	}
 }
 
@@ -1687,10 +1714,11 @@ stack_pop_frame(mvc *sql)
 		c_delete(v->name);
 		VALclear(&v->a.data);
 		v->a.data.vtype = 0;
-		if (v->t && v->view) 
+		if (v->t && v->view)
 			table_destroy(v->t);
 		else if (v->rel)
 			rel_destroy(v->rel);
+		v->wdef = NULL;
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
 		c_delete(sql->vars[sql->topvars].name);
@@ -1823,7 +1851,7 @@ stack_nr_of_declared_tables(mvc *sql)
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (sql->vars[i].rel && !sql->vars[i].view) {
 			sql_var *v = &sql->vars[i];
-			if (v->t) 
+			if (v->t)
 				dt++;
 		}
 	}
@@ -1946,6 +1974,18 @@ sql_idx *
 mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
 {
 	return sql_trans_copy_idx(m->session->tr, t, i);
+}
+
+sql_trigger *
+mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr)
+{
+	return sql_trans_copy_trigger(m->session->tr, t, tr);
+}
+
+sql_part *
+mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
+{
+	return sql_trans_copy_part(m->session->tr, t, pt);
 }
 
 sql_subquery *

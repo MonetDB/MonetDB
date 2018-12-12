@@ -65,7 +65,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 		if ( b == 0)
 			return -1;
 		cnt |= BATcount(b) > 0;
-		if (isTable(t) && t->access != TABLE_READONLY && (t->base.flag != TR_NEW /* alter */ ) &&
+		if (isTable(t) && t->access != TABLE_READONLY && (!isNew(t) /* alter */ ) &&
 		    t->persistence == SQL_PERSIST && !t->commit_action)
 			cnt |= store_funcs.count_col(tr, c, 0) > 0;
 		BBPunfix(b->batCacheid);
@@ -187,7 +187,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, conflict_err_min = NULL, conflict_err_max = NULL;
 	int tp1 = 0, errcode = 0, min_null = 0, max_null = 0;
 	size_t length = 0;
-	ssize_t (*atomtostr)(str *, size_t *, const void *);
+	ssize_t (*atomtostr)(str *, size_t *, const void *, bool);
 	sql_subtype tpe;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname,
@@ -246,13 +246,13 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 										"one partition can store null values at the time", err->t->s->base.name, err->t->base.name);
 			} else {
 				atomtostr = BATatoms[tp1].atomToStr;
-				if(atomtostr(&conflict_err_min, &length, err->part.range.minvalue) < 0) {
+				if(atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				} else if(atomtostr(&conflict_err_max, &length, err->part.range.maxvalue) < 0) {
+				} else if(atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				} else if(atomtostr(&err_min, &length, min) < 0) {
+				} else if(atomtostr(&err_min, &length, min, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				} else if(atomtostr(&err_max, &length, max) < 0) {
+				} else if(atomtostr(&err_max, &length, max, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				} else {
 					sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
@@ -634,13 +634,16 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", seq->base.name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else if (is_lng_nil(seq->start) || is_lng_nil(seq->minvalue) || is_lng_nil(seq->maxvalue) ||
+			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_lng_nil(seq->cycle)) {
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence properties must be non-NULL");
 	}
 	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
 	return NULL;
 }
 
 static str
-alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, lng *val)
+alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *val)
 {
 	sql_schema *s = NULL;
 	sql_sequence *nseq = NULL;
@@ -654,8 +657,10 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, lng *val)
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else if (val && is_lng_nil(*val)) {
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence value must be non-NULL");
 	}
-
+	/* if seq properties hold NULL values, then they should be ignored during the update */
 	/* first alter the known values */
 	sql_trans_alter_sequence(sql->session->tr, nseq, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle);
 	if (val)
@@ -686,7 +691,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 }
 
 static str
-drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
+drop_func(mvc *sql, char *sname, char *name, sqlid fid, int type, int action)
 {
 	sql_schema *s = NULL;
 	char is_aggr = (type == F_AGGR);
@@ -993,7 +998,7 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1);
 	str name = SaveArgReference(stk, pci, 2);
-	int auth_id;
+	sqlid auth_id;
 
 	initcontext();
 	auth_id = sql->role_id;
@@ -1051,12 +1056,12 @@ SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
-	str tname = *getArgReference_str(stk, pci, 2); 
+	//str tname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, tname, t, temp);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
 	return msg;
 }
 
@@ -1065,12 +1070,12 @@ SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
-	str vname = *getArgReference_str(stk, pci, 2); 
+	//str vname = *getArgReference_str(stk, pci, 2);
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	msg = create_table_or_view(sql, sname, vname, t, temp);
+	msg = create_table_or_view(sql, sname, t->base.name, t, temp);
 	return msg;
 }
 
@@ -1178,7 +1183,7 @@ SQLgrant_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *auth = SaveArgReference(stk, pci, 2);
-	int grantor = *getArgReference_int(stk, pci, 3);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 3);
 	int admin = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
@@ -1192,7 +1197,7 @@ SQLrevoke_roles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *auth = SaveArgReference(stk, pci, 2);
-	int grantor = *getArgReference_int(stk, pci, 3);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 3);
 	int admin = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
@@ -1210,7 +1215,7 @@ SQLgrant(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int privs = *getArgReference_int(stk, pci, 4);
 	char *cname = SaveArgReference(stk, pci, 5);
 	int grant = *getArgReference_int(stk, pci, 6);
-	int grantor = *getArgReference_int(stk, pci, 7);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 7);
 
 	initcontext();
 	if (!tname || strcmp(tname, str_nil) == 0)
@@ -1229,7 +1234,7 @@ str SQLrevoke(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int privs = *getArgReference_int(stk, pci, 4);
 	char *cname = SaveArgReference(stk, pci, 5);
 	int grant = *getArgReference_int(stk, pci, 6);
-	int grantor = *getArgReference_int(stk, pci, 7);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 7);
 
 	initcontext();
 	if (!tname || strcmp(tname, str_nil) == 0)
@@ -1243,12 +1248,12 @@ str
 SQLgrant_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
-	int func_id = *getArgReference_int(stk, pci, 2);
+	str sname = *getArgReference_str(stk, pci, 1);
+	sqlid func_id = (sqlid) *getArgReference_int(stk, pci, 2);
 	char *grantee = *getArgReference_str(stk, pci, 3);
 	int privs = *getArgReference_int(stk, pci, 4);
 	int grant = *getArgReference_int(stk, pci, 5);
-	int grantor = *getArgReference_int(stk, pci, 6);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 6);
 
 	initcontext();
 	msg = sql_grant_func_privs(sql, grantee, privs, sname, func_id, grant, grantor);
@@ -1259,12 +1264,12 @@ str
 SQLrevoke_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
-	int func_id = *getArgReference_int(stk, pci, 2);
+	str sname = *getArgReference_str(stk, pci, 1);
+	sqlid func_id = (sqlid) *getArgReference_int(stk, pci, 2);
 	char *grantee = *getArgReference_str(stk, pci, 3);
 	int privs = *getArgReference_int(stk, pci, 4);
 	int grant = *getArgReference_int(stk, pci, 5);
-	int grantor = *getArgReference_int(stk, pci, 6);
+	sqlid grantor = (sqlid) *getArgReference_int(stk, pci, 6);
 
 	initcontext();
 	msg = sql_revoke_func_privs(sql, grantee, privs, sname, func_id, grant, grantor);
@@ -1331,7 +1336,7 @@ SQLcreate_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *role = sname;
-	int grantor = *getArgReference_int(stk, pci, 3);
+	sqlid grantor = (sqlid)*getArgReference_int(stk, pci, 3);
 
 	initcontext();
 	msg = sql_create_role(sql, role, grantor);
@@ -1368,7 +1373,7 @@ SQLdrop_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *fname = *getArgReference_str(stk, pci, 2);
-	int fid = *getArgReference_int(stk, pci, 3);
+	sqlid fid = (sqlid)*getArgReference_int(stk, pci, 3);
 	int type = *getArgReference_int(stk, pci, 4);
 	int action = *getArgReference_int(stk, pci, 5);
 
@@ -1508,7 +1513,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg;
-	int objid = *getArgReference_int(stk, pci, 1);
+	sqlid objid = (sqlid) *getArgReference_int(stk, pci, 1);
 	char *remark = *getArgReference_str(stk, pci, 2);
 	sql_trans *tx;
 	sql_schema *sys;
@@ -1552,4 +1557,105 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ok != LOG_OK)
 		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "operation failed");
 	return MAL_SUCCEED;
+}
+
+str
+SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str old_name = *getArgReference_str(stk, pci, 1);
+	str new_name = *getArgReference_str(stk, pci, 2);
+	sql_schema *s;
+
+	initcontext();
+	if (!(s = mvc_bind_schema(sql, old_name)))
+		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), old_name);
+	if (s->system)
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
+	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
+		throw(SQL, "sql.rename_schema", SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
+	if (mvc_bind_schema(sql, new_name))
+		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+
+	if (!sql_trans_rename_schema(sql->session->tr, s->base.id, new_name))
+		throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (s == cur_schema(sql))
+		if(!mvc_set_schema(sql, new_name))
+			throw(SQL, "sql.rename_schema",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg;
+}
+
+str
+SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str schema_name = *getArgReference_str(stk, pci, 1);
+	str old_name = *getArgReference_str(stk, pci, 2);
+	str new_name = *getArgReference_str(stk, pci, 3);
+	sql_schema *s;
+	sql_table *t;
+
+	initcontext();
+	if (!(s = mvc_bind_schema(sql, schema_name)))
+		throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
+	if (!(t = mvc_bind_table(sql, s, old_name)))
+		throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", old_name, schema_name);
+	if (t->system)
+		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
+		throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table %s (there are database objects which depend on it)", old_name);
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
+		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
+	if (mvc_bind_table(sql, s, new_name))
+		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
+
+	if (!sql_trans_rename_table(sql->session->tr, s, t->base.id, new_name))
+		throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg;
+}
+
+str
+SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	str schema_name = *getArgReference_str(stk, pci, 1);
+	str table_name = *getArgReference_str(stk, pci, 2);
+	str old_name = *getArgReference_str(stk, pci, 3);
+	str new_name = *getArgReference_str(stk, pci, 4);
+	sql_schema *s;
+	sql_table *t;
+	sql_column *col;
+
+	initcontext();
+	if (!(s = mvc_bind_schema(sql, schema_name)))
+		throw(SQL, "sql.rename_column", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
+	if (!(t = mvc_bind_table(sql, s, table_name)))
+		throw(SQL, "sql.rename_column", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", table_name, schema_name);
+	if (t->system)
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
+	if (isView(t))
+		throw(SQL, "sql.rename_column", SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, table_name);
+	if (!(col = mvc_bind_column(sql, t, old_name)))
+		throw(SQL, "sql.rename_column", SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
+	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
+		throw(SQL, "sql.rename_column", SQLSTATE(2BM37) "ALTER TABLE: cannot rename column '%s' (there are database objects which depend on it)", old_name);
+	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
+		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: invalid new column name");
+	if (mvc_bind_column(sql, t, new_name))
+		throw(SQL, "sql.rename_column", SQLSTATE(3F000) "ALTER TABLE: there is a column named '%s' in table '%s'", new_name, table_name);
+
+	if (!sql_trans_rename_column(sql->session->tr, t, old_name, new_name))
+		throw(SQL, "sql.rename_column",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg;
 }

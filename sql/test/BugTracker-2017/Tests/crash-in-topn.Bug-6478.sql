@@ -4,7 +4,7 @@ CREATE TABLE "sys"."unitTestDontDelete" (
 	"C"                DOUBLE,
 	"D"                TIMESTAMP,
 	"id" BIGINT        NOT NULL,
-	CONSTRAINT "\"unitTestDontDelete\"_PK" PRIMARY KEY ("id")
+	CONSTRAINT "unitTestDontDelete_PK" PRIMARY KEY ("id")
 );
 INSERT INTO "sys"."unitTestDontDelete" VALUES (NULL, NULL, NULL, NULL, 0);
 INSERT INTO "sys"."unitTestDontDelete" VALUES ('Cat1', 0, 0.5, '2013-06-10 11:10:10.000000', 1);

@@ -3,7 +3,7 @@ b:= bat.new(:int);
 b1:= bat.append(b,2);
 b2:= bat.append(b1,5);
 b3:= bat.append(b2,3);
-b5:= algebra.sort(b3,false,false);
+b5:= algebra.sort(b3,false,false,false);
 end;
 
 #should throw out the last statement

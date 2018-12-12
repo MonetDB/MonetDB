@@ -68,9 +68,9 @@ geom_catalog_upgrade(void *lg, int olddb)
 	}
 
 	for(p=0, q=BUNlast(ct); p<q; p++) {
-		const char *type = BUNtail(cti, p);
-		int digits = *(int*)BUNtail(cdi, p);
-		int scale = *(int*)BUNtail(csi, p);
+		const char *type = BUNtvar(cti, p);
+		int digits = *(int*)BUNtloc(cdi, p);
+		int scale = *(int*)BUNtloc(csi, p);
 
 		if (strcasecmp(type, "point") == 0) {
 			type = "geometry";

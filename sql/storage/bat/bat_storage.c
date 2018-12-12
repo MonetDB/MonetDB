@@ -600,7 +600,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 			return LOG_ERR;
 		c->data = bat;
 		obat = timestamp_delta(oc->data, tr->stime);
-		if(dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW) == LOG_ERR)
+		if(dup_bat(tr, c->t, obat, bat, type, isNew(oc), isNew(c)) == LOG_ERR)
 			return LOG_ERR;
 		c->base.allocated = 1;
 	}
@@ -630,7 +630,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 			return LOG_ERR;
 		i->data = bat;
 		obat = timestamp_delta(oi->data, tr->stime);
-		if(dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW) == LOG_ERR)
+		if(dup_bat(tr, i->t, obat, bat, type, isNew(i), isNew(i)) == LOG_ERR)
 			return LOG_ERR;
 		i->base.allocated = 1;
 	}
@@ -753,7 +753,7 @@ dup_col(sql_trans *tr, sql_column *oc, sql_column *c )
 			ok = LOG_ERR;
 		else {
 			c->data = bat;
-			ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW);
+			ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), isNew(c));
 			c->base.allocated = 1;
 		}
 	}
@@ -774,7 +774,7 @@ dup_idx(sql_trans *tr, sql_idx *i, sql_idx *ni )
 			ok = LOG_ERR;
 		else {
 			ni->data = bat;
-			ok = dup_bat(tr, ni->t, obat, bat, type, isNew(i), ni->base.flag == TR_NEW);
+			ok = dup_bat(tr, ni->t, obat, bat, type, isNew(i), isNew(ni));
 			ni->base.allocated = 1;
 		}
 	}
@@ -836,7 +836,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		else {
 			c->data = bat;
 			obat = timestamp_delta(oc->data, tr->stime);
-			ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW);
+			ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), isNew(c));
 			if(ok == LOG_OK)
 				c->base.allocated = 1;
 		}
@@ -893,7 +893,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		else {
 			i->data = bat;
 			obat = timestamp_delta(oi->data, tr->stime);
-			ok = dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW);
+			ok = dup_bat(tr, i->t, obat, bat, type, isNew(i), isNew(i));
 			if(ok != LOG_ERR)
 				i->base.allocated = 1;
 		}
@@ -1027,7 +1027,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 			sql_column *oc = tr_find_column(tr->parent, c);
 			c->data = timestamp_delta(oc->data, tr->stime);
 		}
-       		bat = c->data;
+		bat = c->data;
 		if (bat->cached) {
 			bat_destroy(bat->cached);
 			bat->cached = NULL;
@@ -1044,7 +1044,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 				sql_idx *oi = tr_find_idx(tr->parent, i);
 				i->data = timestamp_delta(oi->data, tr->stime);
 			}
-       			bat = i->data;
+			bat = i->data;
 			if (bat && bat->cached) {
 				bat_destroy(bat->cached);
 				bat->cached = NULL;
@@ -1092,7 +1092,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, tr->stime);
 	}
-        b = c->data;
+	b = c->data;
 	if (!b)
 		return 1;
 	if (b->cnt > 1024) {
@@ -1147,7 +1147,7 @@ count_del(sql_trans *tr, sql_table *t)
 		sql_table *ot = tr_find_table(tr->parent, t);
 		t->data = timestamp_dbat(ot->data, tr->stime);
 	}
-       	d = t->data;
+	d = t->data;
 	if (!d)
 		return 0;
 	return d->cnt;
@@ -1163,7 +1163,7 @@ count_col_upd(sql_trans *tr, sql_column *c)
 		sql_column *oc = tr_find_column(tr->parent, c);
 		c->data = timestamp_delta(oc->data, tr->stime);
 	}
-        b = c->data;
+	b = c->data;
 	if (!b)
 		return 1;
 	return b->ucnt;
@@ -1453,7 +1453,7 @@ create_col(sql_trans *tr, sql_column *c)
 			ok = LOG_ERR;
 	}
 
-	if (c->base.flag == TR_OLD && !isTempTable(c->t)){
+	if (!isNew(c) && !isTempTable(c->t)){
 		c->base.wtime = 0;
 		return load_bat(bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
@@ -1552,7 +1552,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 			ok = LOG_ERR;
 	}
 
-	if (ni->base.flag == TR_OLD && !isTempTable(ni->t)){
+	if (!isNew(ni) && !isTempTable(ni->t)){
 		ni->base.wtime = 0;
 		return load_bat(bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
@@ -1650,7 +1650,7 @@ create_del(sql_trans *tr, sql_table *t)
 			ok = LOG_ERR;
 	}
 	(void)tr;
-	if (t->base.flag == TR_OLD && !isTempTable(t)) {
+	if (!isNew(t) && !isTempTable(t)) {
 		log_bid bid = logger_find_bat(bat_logger, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id);
 
 		if (bid) {
@@ -1795,7 +1795,7 @@ destroy_col(sql_trans *tr, sql_column *c)
 static int
 log_destroy_col(sql_trans *tr, sql_column *c)
 {
-	if (c->data && c->base.allocated) 
+	if (c->data && c->base.allocated)
 		return log_destroy_delta(tr, c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
 	return LOG_OK;
 }
@@ -1816,7 +1816,7 @@ destroy_idx(sql_trans *tr, sql_idx *i)
 static int
 log_destroy_idx(sql_trans *tr, sql_idx *i)
 {
-	if (i->data && i->base.allocated) 
+	if (i->data && i->base.allocated)
 		return log_destroy_delta(tr, i->data, i->t->bootstrap?0:LOG_IDX, i->base.id);
 	return LOG_OK;
 }
@@ -1878,7 +1878,7 @@ log_destroy_dbat(sql_trans *tr, sql_dbat *bat, char tpe, oid id)
 static int
 log_destroy_del(sql_trans *tr, sql_table *t)
 {
-	if (t->data && t->base.allocated) 
+	if (t->data && t->base.allocated)
 		return log_destroy_dbat(tr, t->data, t->bootstrap?0:LOG_TAB, t->base.id);
 	return LOG_OK;
 }
@@ -1951,7 +1951,7 @@ clear_col(sql_trans *tr, sql_column *c)
 			return 0;
 		obat = timestamp_delta(oc->data, tr->stime);
 		assert(tr != gtrans);
-		if(dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW) == LOG_ERR)
+		if(dup_bat(tr, c->t, obat, bat, type, isNew(oc), isNew(c)) == LOG_ERR)
 			return 0;
 		c->base.allocated = 1;
 	}
@@ -1972,7 +1972,7 @@ clear_idx(sql_trans *tr, sql_idx *i)
 		if(!bat)
 			return 0;
 		obat = timestamp_delta(oi->data, tr->stime);
-		if(dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW))
+		if(dup_bat(tr, i->t, obat, bat, type, isNew(i), isNew(i)))
 			return 0;
 		i->base.allocated = 1;
 	}
@@ -2357,15 +2357,11 @@ gtr_minmax_col( sql_trans *tr, sql_column *c)
 	cur = temp_descriptor(cbat->bid);
 	if (cur == NULL)
 		return LOG_ERR;
-	if (BATgetprop(cur, GDK_MIN_VALUE)) {
-		bat_destroy(cur);
-		return ok;
-	}
-
+	/* make sure min and max values are stored in the BAT
+	 * properties (BATmin and BATmax store them there if they're
+	 * not already there, and if they are, they're quick) */
 	BATmin(cur, &val);
-	BATsetprop(cur, GDK_MIN_VALUE, cur->ttype, &val);
 	BATmax(cur, &val);
-	BATsetprop(cur, GDK_MAX_VALUE, cur->ttype, &val);
 	bat_destroy(cur);
 	return ok;
 }

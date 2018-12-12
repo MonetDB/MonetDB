@@ -10,7 +10,6 @@
 #define _LOGGER_H_
 
 #define LOGFILE "log"
-#define LOGFILE_SHARED "log_shared"
 
 typedef struct logaction {
 	int type;		/* type of change */
@@ -50,12 +49,9 @@ typedef struct logger {
 	/* convert old style floating point NIL values to NaN */
 	bool convert_nil_nan;
 #endif
-	bool shared; /* a flag to indicate if the logger is a shared on (usually read-only) */
 	char *fn;
 	char *dir;
-	char *local_dir; /* the directory in which the non-shared log is written */
-	int dbfarm_role; /* role for the dbfarm used for the logdir, PERSISTENT by default */
-	int local_dbfarm_role; /* role for the dbfarm used for the logdir, PERSISTENT by default */
+	char *local_dir; /* the directory in which the log is written */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
 	stream *log;
@@ -81,16 +77,6 @@ typedef struct logger {
 	size_t bufsize;
 } logger;
 
-/* Holds logger settings
- * if shared_logdir and shared_drift_threshold are set,
- * as well as if readonly = 1, the instance is assumed to be in slave mode*/
-typedef struct logger_settings {
-	char *logdir;	/* (the regular) server write-ahead log directory */
-	char *shared_logdir;	/* shared write-ahead log directory */
-	int	shared_drift_threshold; /* shared write-ahead log drift threshold */
-	int keep_persisted_log_files; 	/* a flag if old WAL files should be preserved */
-} logger_settings;
-
 #define BATSIZE 0
 
 typedef int log_bid;
@@ -115,12 +101,11 @@ typedef int log_bid;
 #define LOG_COL 2
 #define LOG_IDX 3
 
-gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int keep_persisted_log_files);
-gdk_export logger *logger_create_shared(int debug, const char *fn, const char *logdir, const char *slave_logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
+gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
 gdk_export gdk_return logger_exit(logger *lg);
 gdk_export gdk_return logger_restart(logger *lg);
-gdk_export gdk_return logger_cleanup(logger *lg, int keep_persisted_log_files);
+gdk_export gdk_return logger_cleanup(logger *lg);
 gdk_export void logger_with_ids(logger *lg);
 gdk_export lng logger_changes(logger *lg);
 gdk_export lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role);

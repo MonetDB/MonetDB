@@ -37,8 +37,8 @@ int TYPE_sqlblob;
 
 mal_export str BLOBprelude(void *ret);
 
-mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const blob *pin);
-mal_export ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val);
+mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const blob *pin, bool external);
+mal_export ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val, bool external);
 mal_export int BLOBcmp(const blob *l, const blob *r);
 mal_export BUN BLOBhash(const blob *b);
 mal_export const blob *BLOBnull(void);
@@ -194,7 +194,7 @@ BLOBput(Heap *h, var_t *bun, const blob *val)
  	base = h->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, blobsize(val->nitems));
-		h->dirty = 1;
+		h->dirty = true;
 	}
 	return *bun;
 }
@@ -208,14 +208,14 @@ BLOBnitems(int *ret, blob *b)
 }
 
 ssize_t
-BLOBtostr(str *tostr, size_t *l, const blob *p)
+BLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 {
 	char *s;
 	size_t i;
 	size_t expectedlen;
 
 	if (p->nitems == ~(size_t) 0)
-		expectedlen = 4;
+		expectedlen = external ? 4 : 2;
 	else
 		expectedlen = 24 + (p->nitems * 3);
 	if (*l < expectedlen || *tostr == NULL) {
@@ -226,8 +226,12 @@ BLOBtostr(str *tostr, size_t *l, const blob *p)
 		*l = expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
-		strcpy(*tostr, "nil");
-		return 3;
+		if (external) {
+			strcpy(*tostr, "nil");
+			return 3;
+		}
+		strcpy(*tostr, str_nil);
+		return 1;
 	}
 
 	sprintf(*tostr, "(%zu:", p->nitems);
@@ -247,7 +251,7 @@ BLOBtostr(str *tostr, size_t *l, const blob *p)
 }
 
 ssize_t
-BLOBfromstr(const char *instr, size_t *l, blob **val)
+BLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 {
 	size_t i;
 	size_t nitems;
@@ -256,7 +260,7 @@ BLOBfromstr(const char *instr, size_t *l, blob **val)
 	const char *s = instr;
 	char *e;
 
-	if (GDK_STRNIL(instr) || strncmp(instr, "nil", 3) == 0) {
+	if (GDK_STRNIL(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
 			GDKfree(*val);
@@ -384,14 +388,14 @@ BLOBtoblob(blob **retval, str *s)
  * no brackets and no spaces in between the hexits
  */
 ssize_t
-SQLBLOBtostr(str *tostr, size_t *l, const blob *p)
+SQLBLOBtostr(str *tostr, size_t *l, const blob *p, bool external)
 {
 	char *s;
 	size_t i;
 	size_t expectedlen;
 
 	if (p->nitems == ~(size_t) 0)
-		expectedlen = 4;
+		expectedlen = external ? 4 : 2;
 	else
 		expectedlen = 24 + (p->nitems * 3);
 	if (*l < expectedlen || *tostr == NULL) {
@@ -402,8 +406,12 @@ SQLBLOBtostr(str *tostr, size_t *l, const blob *p)
 		*l = expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
-		strcpy(*tostr, "nil");
-		return 3;
+		if (external) {
+			strcpy(*tostr, "nil");
+			return 3;
+		}
+		strcpy(*tostr, str_nil);
+		return 1;
 	}
 
 	s = *tostr;
@@ -420,11 +428,11 @@ SQLBLOBtostr(str *tostr, size_t *l, const blob *p)
 }
 
 /* SQL 99 compatible BLOB input string
- * differs from the MonetDB BLOB input in that it does not start with a size
- * no brackets and no spaces in between the hexits
+ * differs from the MonetDB BLOB input in that it does not start with
+ * a size and no brackets
  */
 ssize_t
-SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
+SQLBLOBfromstr(const char *instr, size_t *l, blob **val, bool external)
 {
 	size_t i;
 	size_t nitems;
@@ -432,7 +440,7 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 	blob *result;
 	const char *s = instr;
 
-	if (GDK_STRNIL(instr) || strncmp(instr, "nil", 3) == 0) {
+	if (GDK_STRNIL(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
 			GDKfree(*val);
@@ -443,15 +451,21 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 		return GDK_STRNIL(instr) ? 1 : 3;
 	}
 
-	/* since the string is built of (only) hexits the number of bytes
-	 * required for it is the length of the string divided by two
+	/* count hexits and check for hexits/space
 	 */
-	i = strlen(instr);
-	if (i % 2 == 1) {
-		GDKerror("sqlblob_fromstr: Illegal blob length '%zu' (should be even)\n", i);
+	for (i = nitems = 0; instr[i]; i++) {
+		if (isxdigit((unsigned char) instr[i]))
+			nitems++;
+		else if (!isspace((unsigned char) instr[i])) {
+			GDKerror("sqlblob_fromstr: Illegal char in blob\n");
+			return -1;
+		}
+	}
+	if (nitems % 2 != 0) {
+		GDKerror("sqlblob_fromstr: Illegal blob length '%zu' (should be even)\n", nitems);
 		return -1;
 	}
-	nitems = i / 2;
+	nitems /= 2;
 	nbytes = blobsize(nitems);
 
 	if (*l < nbytes || *val == NULL) {
@@ -470,27 +484,35 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 	for (i = 0; i < nitems; ++i) {
 		char res = 0;
 
-		if (isdigit((unsigned char) *s)) {
-			res = *s - '0';
-		} else if (*s >= 'A' && *s <= 'F') {
-			res = 10 + *s - 'A';
-		} else if (*s >= 'a' && *s <= 'f') {
-			res = 10 + *s - 'a';
-		} else {
-			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
-			return -1;
+		for (;;) {
+			if (isdigit((unsigned char) *s)) {
+				res = *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res = 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res = 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
 		}
 		s++;
 		res <<= 4;
-		if (isdigit((unsigned char) *s)) {
-			res += *s - '0';
-		} else if (*s >= 'A' && *s <= 'F') {
-			res += 10 + *s - 'A';
-		} else if (*s >= 'a' && *s <= 'f') {
-			res += 10 + *s - 'a';
-		} else {
-			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
-			return -1;
+		for (;;) {
+			if (isdigit((unsigned char) *s)) {
+				res += *s - '0';
+			} else if (*s >= 'A' && *s <= 'F') {
+				res += 10 + *s - 'A';
+			} else if (*s >= 'a' && *s <= 'f') {
+				res += 10 + *s - 'a';
+			} else {
+				assert(isspace((unsigned char) *s));
+				s++;
+				continue;
+			}
+			break;
 		}
 		s++;
 
@@ -520,7 +542,7 @@ BLOBblob_fromstr(blob **b, const char **s)
 {
 	size_t len = 0;
 
-	if (BLOBfromstr(*s, &len, b) < 0)
+	if (BLOBfromstr(*s, &len, b, false) < 0)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -531,7 +553,7 @@ BLOBsqlblob_fromstr(sqlblob **b, const char **s)
 {
 	size_t len = 0;
 
-	if (SQLBLOBfromstr(*s, &len, b) < 0)
+	if (SQLBLOBfromstr(*s, &len, b, false) < 0)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

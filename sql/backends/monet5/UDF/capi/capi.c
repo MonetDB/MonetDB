@@ -309,7 +309,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 		bat_data->null_value = tpe##_nil;                                      \
 		if (BATtdense(b)) {					\
 			size_t it = 0;                                                     \
-			tpe val = b->T.seq;                                                \
+			tpe val = b->tseqbase;                                             \
 			/* bat is dense, materialize it */                                 \
 			bat_data->data = wrapped_GDK_malloc_nojump(                        \
 				bat_data->count * sizeof(bat_data->null_value));               \
@@ -1030,7 +1030,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
-				char *t = (char *)BUNtail(li, p);
+				char *t = (char *)BUNtvar(li, p);
 				if (strcmp(t, str_nil) == 0) {
 					bat_data->data[j] = NULL;
 				} else {
@@ -1130,7 +1130,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
-				blob *t = (blob *)BUNtail(li, p);
+				blob *t = (blob *)BUNtvar(li, p);
 				if (t->nitems == ~(size_t)0) {
 					bat_data->data[j].size = ~(size_t) 0;
 					bat_data->data[j].data = NULL;
@@ -1189,7 +1189,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				} else {
 					char *result = NULL;
 					size_t length = 0;
-					if (BATatoms[bat_type].atomToStr(&result, &length, t) ==
+					if (BATatoms[bat_type].atomToStr(&result, &length, t, false) ==
 						0) {
 						msg = createException(
 							MAL, "cudf.eval",
@@ -1474,7 +1474,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (!ptr || strcmp(ptr, str_nil) == 0) {
 						appended_element = (void *)BATatoms[bat_type].atomNull;
 					} else {
-						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element) ==
+						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element, false) ==
 							0) {
 							msg = createException(MAL, "cudf.eval",
 												  "Failed to convert output "
@@ -1498,11 +1498,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				GDKfree(data);
 			}
 		}
-		b->tnil = 0;
-		b->tnonil = 0;
-		b->tkey = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
+		b->tnil = false;
+		b->tnonil = false;
+		b->tkey = false;
+		b->tsorted = false;
+		b->trevsorted = false;
 
 		// free the output value right now to prevent the internal data from
 		// being freed later

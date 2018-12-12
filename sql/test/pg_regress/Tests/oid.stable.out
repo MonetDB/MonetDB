@@ -38,8 +38,6 @@ Ready.
 [ 1	]
 #INSERT INTO OID_TBL(f1) VALUES ('000');
 [ 1	]
-#INSERT INTO OID_TBL(f1) VALUES ('    ');  -- in MonetDB this one is accepted
-[ 1 ]
 #INSERT INTO OID_TBL(f1) VALUES ('5     ');
 [ 1 ]
 #INSERT INTO OID_TBL(f1) VALUES ('   10  ');
@@ -58,7 +56,6 @@ Ready.
 [ "",	987@0,	"987@0"	]
 [ "",	12345678901@0,	"12345678901@0"	]
 [ "",	0@0,	"0@0"	]
-[ "",	NULL,	NULL	]
 [ "",	5@0,	"5@0"	]
 [ "",	10@0,	"10@0"	]
 [ "",	15@0,	"15@0"	]
@@ -68,7 +65,6 @@ Ready.
 % ten,	f1,	oid2str # name
 % char,	oid,	varchar # type
 % 0,	13,	13 # length
-[ "",	NULL,	NULL	]
 [ "",	NULL,	NULL	]
 [ "",	0@0,	"0@0"	]
 [ "",	5@0,	"5@0"	]

@@ -1,6 +1,98 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Nov 29 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved and extended storagemodel functionality. Changes include:
+- Added views sys."tablestorage" and sys."schemastorage" for easy and
+  quick assesment of aggregated storage usage per table or per schema.
+- Excluded listing system tables in views sys."storage", sys."tablestorage"
+  and sys."schemastorage". You can still use sys."storage"() to query
+  storage of system tables and columns.
+- In procedure sys.storagemodelinit() when populating table
+  sys.storagemodelinput it now excludes system tables as system tables are
+  not useful to be modeled for storagesize by application users.
+  It now also computes and populates the atomwidth column more correctly
+  for variable size data types (strings, blobs) when the table has
+  representative data in those columns.
+- System function sys.columnsize() has been corrected for types: tinyint,
+  real, date, time, timetz, sec_interval, month_interval, decimal, uuid,
+  mbr, char, clob, json, url, blob, geometry and geometrya.
+  For variable size data types (varchar, char, clob, json, url, blob,
+  geometry, geometrya) it now returns the columnsize excluding the
+  variable heapsize. The heapsize is retrievable via sys.heapsize().
+- System function sys.heapsize() has been corrected for all variable size
+  data types: varchar, char, clob, json, url, blob, geometry and geometrya.
+- System function sys.imprintsize() has been corrected. The imprintsize
+  depends on the width (1 or 2 or 4 or 8 or 16 bytes) of the data type.
+  Also instead of 12% it now uses 20%, which is a better estimate.
+- System function sys.storagemodel() has been removed as it outputs the
+  same data as view sys.storagemodel. Use view sys.storagemodel instead.
+- Corrected views sys.storagemodel and sys.tablestoragemodel by returning
+  a computed orderidxsize when the count has been changed in the
+  sys.storagemodelinput table.  Also the views now return data ordered
+  by schema, table and column names.
+- Extended view sys.tablestoragemodel with column: "storages". Besides
+  columns also keys (primary, foreign and unique keys) and indexes
+  (ordered, imprints) use storage, so the "storages" count can be higher
+  than the number of columns per table.
+- Corrected the data type of columns "schema", "table", "column", "type",
+  "mode" and location in table sys.storagemodelinput and functions
+  sys."storage"(), sys."storage"(sname), sys."storage"(sname, tname)
+  and sys."storage"(sname, tname, cname) from string into varchar(1024).
+  Consequently also the views based on the table or functions will be
+  reporting varchar(1024) as column meta data instead of clob for those
+  columns.  This allows faster querying and reporting by generic SQL
+  programs which treat clob querying different from varchar columns.
+
+* Mon Nov 26 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Extended windowing functions catalog with SQL standard semantics.
+  Standard aggregation functions can now be used in windowing
+  functions: (avg,max,min,sum,prod,count). Other windowing specific
+  functions were also implemented: (percent_rank,cume_dist,ntile,
+  lag,lead,first_value,last_value,nth_value).
+- The standard frame specification was implemented for aggregation
+  functions as well as first_value, last_value and nth_value
+  functions. The available frames are rows, range and groups.
+  Bounds can be unbounded (partition limit), the current row, a fixed
+  number of rows (constant), or variable (column as input).
+  (e.g SELECT COUNT(col1) OVER (PARTITION BY col2 ORDER BY col3 RANGE
+  BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM t1;).
+- Added WINDOW keyword which is optionally provided after the FROM
+  clause, with window specifications used in the projection
+  (e.g SELECT SUM(col1) OVER w1, LAST_VALUE(col2) OVER w2 FROM t1
+  WINDOW w1 AS (ROWS BETWEEN 5 PRECEDING AND 0 FOLLOWING),
+  w2 AS (w1);).
+- Our previous partitioning implementation didn’t impose order in the
+  input. With this reexamination, partitioning now imposes ascending
+  order by default, thus pairing with the industry standard
+  implementation.
+
+* Fri Nov 23 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented X'...' style binary string literals.
+- Implemented U&'...' Unicode character string literals and
+  U&"..." Unicode delimited identifiers, including UESCAPE.  For the
+  string literals, you can have U&'...' '...' '...' UESCAPE '...' where
+  the escape must be as single character and the other '...' strings
+  are also Unicode character string literals.  For now, these latter
+  strings also undergo C-style backslash interpretation.
+- Implemented PostgreSQL-like E'...' strings.  The strings can contain
+  C-style backslash escapes.  The old format strings '...' currently
+  still also accept C-style escapes, but that feature will be removed
+  in a future release.
+
+* Thu Nov  8 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented the NULLS FIRST and NULLS LAST option to ORDER BY.  The
+  default is NULLS FIRST for ASC(ending) and NULLS LAST for DESC(ending).
+
+* Thu Oct 18 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added possibility to rename SQL schemas, tables and columns with ALTER
+  statements:
+  > ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident
+  > ALTER TABLE [ IF EXISTS ] qname RENAME TO ident
+  > ALTER TABLE [ IF EXISTS ] qname RENAME [ COLUMN ] ident TO ident
+  Also added optional IF EXISTS clause to other existing ALTER TABLE
+  statements.
+
 * Tue Okt  9 2018 Aris Koning <aris.koning@monetdbsolutions.com>
 - The sql SAMPLE syntax is extended to include an optional integral SEED
   parameter that sets the seed for the internal random number generator

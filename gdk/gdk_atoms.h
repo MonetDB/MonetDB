@@ -43,31 +43,31 @@
  */
 
 #ifdef HAVE_HGE
-gdk_export ssize_t hgeFromStr(const char *src, size_t *len, hge **dst);
-gdk_export ssize_t hgeToStr(str *dst, size_t *len, const hge *src);
+gdk_export ssize_t hgeFromStr(const char *src, size_t *len, hge **dst, bool external);
+gdk_export ssize_t hgeToStr(str *dst, size_t *len, const hge *src, bool external);
 #endif
-gdk_export ssize_t lngFromStr(const char *src, size_t *len, lng **dst);
-gdk_export ssize_t lngToStr(str *dst, size_t *len, const lng *src);
-gdk_export ssize_t intFromStr(const char *src, size_t *len, int **dst);
-gdk_export ssize_t intToStr(str *dst, size_t *len, const int *src);
-gdk_export ssize_t batFromStr(const char *src, size_t *len, bat **dst);
-gdk_export ssize_t batToStr(str *dst, size_t *len, const bat *src);
-gdk_export ssize_t ptrFromStr(const char *src, size_t *len, ptr **dst);
-gdk_export ssize_t ptrToStr(str *dst, size_t *len, const ptr *src);
-gdk_export ssize_t bitFromStr(const char *src, size_t *len, bit **dst);
-gdk_export ssize_t bitToStr(str *dst, size_t *len, const bit *src);
-gdk_export ssize_t OIDfromStr(const char *src, size_t *len, oid **dst);
-gdk_export ssize_t OIDtoStr(str *dst, size_t *len, const oid *src);
-gdk_export ssize_t shtFromStr(const char *src, size_t *len, sht **dst);
-gdk_export ssize_t shtToStr(str *dst, size_t *len, const sht *src);
-gdk_export ssize_t bteFromStr(const char *src, size_t *len, bte **dst);
-gdk_export ssize_t bteToStr(str *dst, size_t *len, const bte *src);
-gdk_export ssize_t fltFromStr(const char *src, size_t *len, flt **dst);
-gdk_export ssize_t fltToStr(str *dst, size_t *len, const flt *src);
-gdk_export ssize_t dblFromStr(const char *src, size_t *len, dbl **dst);
-gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src);
+gdk_export ssize_t lngFromStr(const char *src, size_t *len, lng **dst, bool external);
+gdk_export ssize_t lngToStr(str *dst, size_t *len, const lng *src, bool external);
+gdk_export ssize_t intFromStr(const char *src, size_t *len, int **dst, bool external);
+gdk_export ssize_t intToStr(str *dst, size_t *len, const int *src, bool external);
+gdk_export ssize_t batFromStr(const char *src, size_t *len, bat **dst, bool external);
+gdk_export ssize_t batToStr(str *dst, size_t *len, const bat *src, bool external);
+gdk_export ssize_t ptrFromStr(const char *src, size_t *len, ptr **dst, bool external);
+gdk_export ssize_t ptrToStr(str *dst, size_t *len, const ptr *src, bool external);
+gdk_export ssize_t bitFromStr(const char *src, size_t *len, bit **dst, bool external);
+gdk_export ssize_t bitToStr(str *dst, size_t *len, const bit *src, bool external);
+gdk_export ssize_t OIDfromStr(const char *src, size_t *len, oid **dst, bool external);
+gdk_export ssize_t OIDtoStr(str *dst, size_t *len, const oid *src, bool external);
+gdk_export ssize_t shtFromStr(const char *src, size_t *len, sht **dst, bool external);
+gdk_export ssize_t shtToStr(str *dst, size_t *len, const sht *src, bool external);
+gdk_export ssize_t bteFromStr(const char *src, size_t *len, bte **dst, bool external);
+gdk_export ssize_t bteToStr(str *dst, size_t *len, const bte *src, bool external);
+gdk_export ssize_t fltFromStr(const char *src, size_t *len, flt **dst, bool external);
+gdk_export ssize_t fltToStr(str *dst, size_t *len, const flt *src, bool external);
+gdk_export ssize_t dblFromStr(const char *src, size_t *len, dbl **dst, bool external);
+gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src, bool external);
 gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
-gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst);
+gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst, bool external);
 gdk_export BUN strHash(const char *s);
 gdk_export size_t strLen(const char *s);
 gdk_export int strNil(const char *s);
@@ -195,7 +195,7 @@ gdk_export const ptr ptr_nil;
 /* use "do ... while(0)" so that lhs can safely be used in if statements */
 #define ATOMstorage(t)		BATatoms[t].storage
 #define ATOMsize(t)		BATatoms[t].size
-#define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
+#define ATOMfromstr(t,s,l,src,ext)	BATatoms[t].atomFromStr(src,l,s,ext)
 #define ATOMnilptr(t)		BATatoms[t].atomNull
 #define ATOMcompare(t)		BATatoms[t].atomCmp
 #define ATOMcmp(t,l,r)		((*ATOMcompare(t))(l, r))

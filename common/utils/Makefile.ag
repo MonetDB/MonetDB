@@ -8,11 +8,11 @@
 
 MTSAFE
 
-INCLUDES = $(openssl_CFLAGS)
+INCLUDES = ../.. $(openssl_CFLAGS)
 
 lib_mutils  =  {
 	NOINST
-	SOURCES = mutils.h mutils.c prompt.c mprompt.h
+	SOURCES = mutils.h mutils.c prompt.c mprompt.h revision.c
 }
 
 lib_mcrypt = {
@@ -28,10 +28,4 @@ lib_muuid = {
 lib_msabaoth = {
 	NOINST
 	SOURCES = msabaoth.h msabaoth.c
-}
-
-lib_strptime = {
-	NOINST
-	SOURCES = strptime.cpp
-	COND = NATIVE_WIN32
 }

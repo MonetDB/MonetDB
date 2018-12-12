@@ -1,4 +1,4 @@
-select '_' like '\\_';
-select '_' like '\\_' escape '\\';
-select * from (select '_' as foo) AS t0 WHERE foo LIKE '\\_';
-select * from (select '_' as foo) AS t0 WHERE foo LIKE '\\_' escape '\\';
+select '_' like E'\\_';
+select '_' like E'\\_' escape E'\\';
+select * from (select '_' as foo) AS t0 WHERE foo LIKE E'\\_';
+select * from (select '_' as foo) AS t0 WHERE foo LIKE E'\\_' escape E'\\';

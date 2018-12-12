@@ -211,12 +211,12 @@ sql_update_hugeint(Client c, mvc *sql)
 			"external name udf.fuse;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.generate_series(first hugeint, last hugeint)\n"
+			"create function sys.generate_series(first hugeint, \"limit\" hugeint)\n"
 			"returns table (value hugeint)\n"
 			"external name generator.series;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.generate_series(first hugeint, last hugeint, stepsize hugeint)\n"
+			"create function sys.generate_series(first hugeint, \"limit\" hugeint, stepsize hugeint)\n"
 			"returns table (value hugeint)\n"
 			"external name generator.series;\n");
 
@@ -1578,8 +1578,8 @@ sql_update_remote_tables(Client c, mvc *sql)
 
 			/* This is probably not correct: offsets? */
 			for (BUN i = 0; i < cnt; i++) {
-				v = BUNtail(tbl_it, i);
-				u = BUNtail(uri_it, i);
+				v = BUNtvar(tbl_it, i);
+				u = BUNtvar(uri_it, i);
 				if (v == NULL || (*cmp)(v, nil) == 0 ||
 				    u == NULL || (*cmp)(u, nil) == 0) {
 					BBPunfix(tbl->batCacheid);

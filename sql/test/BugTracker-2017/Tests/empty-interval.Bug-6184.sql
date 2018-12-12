@@ -6,7 +6,7 @@ CREATE TABLE "sys"."unitTestDontDelete" (
 	"C" DOUBLE,
 	"D" TIMESTAMP
 );
-COPY 10 RECORDS INTO "sys"."unitTestDontDelete" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 10 RECORDS INTO "sys"."unitTestDontDelete" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 NULL	NULL	NULL	NULL
 "Cat1"	0	0.5	2013-06-10 11:10:10.000000
 "Cat2"	1	1.5	2013-06-11 12:11:11.000000

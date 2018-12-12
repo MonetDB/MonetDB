@@ -183,7 +183,7 @@ TMsubcommit_list(bat *subcommit, int cnt)
 	assert(subcommit[0] == 0); /* BBP artifact: slot 0 in the array will be ignored */
 
 	/* sort the list on BAT id */
-	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat);
+	GDKqsort(subcommit + 1, NULL, NULL, cnt - 1, sizeof(bat), 0, TYPE_bat, false, false);
 
 	assert(cnt == 1 || subcommit[1] > 0);  /* all values > 0 */
 	/* de-duplication of BAT ids in subcommit list
@@ -229,10 +229,8 @@ TMsubcommit(BAT *b)
 	/* collect the list and save the new bats outside any
 	 * locking */
 	BATloop(b, p, q) {
-		bat bid = BBPindex((str) BUNtail(bi, p));
+		bat bid = BBPindex((str) BUNtvar(bi, p));
 
-		if (bid < 0)
-			bid = -bid;
 		if (bid)
 			subcommit[cnt++] = bid;
 	}
@@ -263,7 +261,7 @@ TMabort(void)
 				if (b->batPersistence == PERSISTENT)
 					BBPrelease(i);
 				b->batPersistence = TRANSIENT;
-				b->batDirtydesc = 1;
+				b->batDirtydesc = true;
 			}
 		}
 	}
@@ -300,7 +298,7 @@ TMabort(void)
 				if (b->batPersistence != PERSISTENT)
 					BBPretain(i);
 				b->batPersistence = PERSISTENT;
-				b->batDirtydesc = 1;
+				b->batDirtydesc = true;
 			}
 			BBPunfix(i);
 		}

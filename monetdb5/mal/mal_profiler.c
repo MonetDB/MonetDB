@@ -15,6 +15,7 @@
  * reset once the owner leaves.
  */
 #include "monetdb_config.h"
+#include "mutils.h"         /* mercurial_revision */
 #include "mal_function.h"
 #include "mal_listing.h"
 #include "mal_profiler.h"
@@ -55,6 +56,7 @@ static struct{
 	lng user, nice, system, idle, iowait;
 	double load;
 } corestat[256];
+
 
 /* the heartbeat process produces a ping event once every X milliseconds */
 //#ifdef ATOMIC_LOCK
@@ -153,6 +155,10 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	/* make profile event tuple  */
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
+	/* TODO: This could probably be optimized somehow to avoid the
+	 * function call to mercurial_revision().
+	 */
+	logadd("\"version\":\""VERSION" (hg id: %s)\",%s", mercurial_revision(), prettify);
 	logadd("\"source\":\"trace\",%s", prettify);
 
 	logadd("\"clk\":"LLFMT",%s", usec, prettify);

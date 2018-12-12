@@ -92,7 +92,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
-	if (v->tnonil == TRUE) {
+	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
@@ -142,9 +142,6 @@ round_body_nonil(TYPE v, int d, int s, int r)
 			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
 			lres = ((v - rnd) / scales[dff]) * scales[dff];
-#if TPE(TYPE) != TYPE_lng && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
-		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
-#endif
 		res = (TYPE) lres;
 	} else if (r <= 0 && -r + s > 0) {
 		int dff = -r + s;
@@ -154,9 +151,6 @@ round_body_nonil(TYPE v, int d, int s, int r)
 			lres = ((v + rnd) / scales[dff]) * scales[dff];
 		else
 			lres = ((v - rnd) / scales[dff]) * scales[dff];
-#if TPE(TYPE) != TYPE_lng && (!defined(HAVE_HGE) || TPE(TYPE) != TYPE_hge)
-		assert((lng) GDKmin(TYPE) < lres && lres <= (lng) GDKmax(TYPE));
-#endif
 		res = (TYPE) lres;
 	} else {
 		res = v;
@@ -191,7 +185,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	BAT *res, *v;
 	TYPE *src, *dst;
 	BUN i, cnt;
-	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
+	bool nonil;		/* TRUE: we know there are no NIL (NULL) values */
 
 	/* basic sanity checks */
 	assert(_res && _v && r && d && s);
@@ -218,14 +212,14 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	src = (TYPE *) Tloc(v, 0);
 	dst = (TYPE *) Tloc(res, 0);
 
-	nonil = TRUE;
-	if (v->tnonil == TRUE) {
+	nonil = true;
+	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = round_body_nonil(src[i], *d, *s, *r);
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (ISNIL(TYPE)(src[i])) {
-				nonil = FALSE;
+				nonil = false;
 				dst[i] = NIL(TYPE);
 			} else {
 				dst[i] = round_body_nonil(src[i], *d, *s, *r);
@@ -358,8 +352,8 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	const TYPE r = NIL(TYPE);
 	BATloop(b, p, q) {
-		TYPE r = NIL(TYPE);
 		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
@@ -389,7 +383,7 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		TYPE r;
 		msg = str_2dec(&r, &v, d, sc);
 		if (msg) {
@@ -433,7 +427,7 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 		throw(SQL, "sql.num_" STRING(TYPE), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		str v = (str) BUNtail(bi, p);
+		str v = (str) BUNtvar(bi, p);
 		TYPE r;
 		msg = str_2num(&r, &v, len);
 		if (msg) {
@@ -469,9 +463,6 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 		value += rnd;
 		value /= scales[d];
 	}
-#if defined(HAVE_HGE) && TPE(TYPE) == TYPE_hge
-	assert((hge) GDK_lng_min <= value && value <= (hge) GDK_lng_max);
-#endif
 	*res = value;
 	return MAL_SUCCEED;
 }

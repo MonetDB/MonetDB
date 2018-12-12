@@ -521,9 +521,18 @@ isOrderDepenent(InstrPtr p)
 	if( getModuleId(p) != batsqlRef)
 		return 0;
 	if ( getFunctionId(p) == differenceRef ||
+		getFunctionId(p) == window_boundRef ||
 		getFunctionId(p) == row_numberRef ||
 		getFunctionId(p) == rankRef ||
-		getFunctionId(p) == dense_rankRef)
+		getFunctionId(p) == dense_rankRef ||
+		getFunctionId(p) == percent_rankRef ||
+		getFunctionId(p) == cume_distRef ||
+		getFunctionId(p) == ntileRef ||
+		getFunctionId(p) == first_valueRef ||
+		getFunctionId(p) == last_valueRef ||
+		getFunctionId(p) == nth_valueRef ||
+		getFunctionId(p) == lagRef ||
+		getFunctionId(p) == leadRef)
 		return 1;
 	return 0;
 }
@@ -573,8 +582,7 @@ isSample(InstrPtr p)
 
 int isOrderby(InstrPtr p){
 	return getModuleId(p) == algebraRef &&
-		(getFunctionId(p) == sortRef ||
-		 getFunctionId(p) == sortReverseRef);
+		getFunctionId(p) == sortRef;
 }
 
 int 

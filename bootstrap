@@ -62,6 +62,8 @@ aclocal$amv ${_m4_extra_dirs} || exit $?
 autoheader  || exit $?
 automake$amv --add-missing --copy --foreign  || exit $?
 autoconf || exit $?
+# a bit hacky: add dependency on monetdb_hgversion.h for common/utils/revision.c
+sed -i~ '/revision.*:/s;$; ../../monetdb_hgversion.h;' common/utils/Makefile.am
 if [ -f buildtools/conf/install-sh -a ! -x buildtools/conf/install-sh ]; then
     chmod +x buildtools/conf/install-sh
 fi

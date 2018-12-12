@@ -65,12 +65,11 @@ static char name[128];
 static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 {
 	BATiter bi = bat_iterator(b);
-	BATiter biidx = bat_iterator(bidx);
 	BUN p;
 
 	if (BAThash(b) == GDK_SUCCEED) {
 		HASHloop_str(bi, b->thash, p, part) {
-			if (*((oid *) BUNtail(biidx, p)) == *prv) {
+			if (BUNtoid(bidx, p) == *prv) {
 				*prv = (oid) p;
 				return TRUE;
 			}
@@ -80,7 +79,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 		BUN q;
 
 		BATloop(b, p, q) {
-			if (*((oid *) BUNtail(biidx, p)) == *prv &&
+			if (BUNtoid(bidx, p) == *prv &&
 				strcmp(BUNtail(bi, p), part) == 0) {
 				*prv = (oid) p;
 				return TRUE;
@@ -522,7 +521,6 @@ takeOid(oid id, str *val)
 	str parts[MAX_TKNZR_DEPTH];
 	size_t lngth = 0;
 	str s;
-	BATiter biidx; /* Iterator for index bat */
 
 	if (id >= BATcount(tokenBAT[INDEX].val)) {
 		throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " illegal oid");
@@ -535,9 +533,8 @@ takeOid(oid id, str *val)
 
 	for (i = depth - 1; i >= 0; i--) {
 		BATiter bi = bat_iterator(tokenBAT[i].val);
-		biidx = bat_iterator(tokenBAT[i].idx);
-		parts[i] = (str) BUNtail(bi, id);
-		id = *(oid *) BUNtail(biidx, id);
+		parts[i] = (str) BUNtvar(bi, id);
+		id = BUNtoid(tokenBAT[i].idx, id);
 		lngth += strlen(parts[i]);
 	}
 

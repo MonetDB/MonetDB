@@ -313,7 +313,7 @@ write_header(stream *output, bam_field fields[11])
 	 * the table will be small (<30 chromosomes).
 	 */
 	BATloop(fields[2].b, p, q) {
-		cur = (str) BUNtail(iter, p);
+		cur = (str) BUNtvar(iter, p);
 
 		/* Do not print unknown chromosome (*) to header */
 		if(strcmp(cur, "*") == 0) {
@@ -394,9 +394,9 @@ cleanup_fields(bam_field fields[11]) {
 }
 
 
-#define CUR_STR(field, i) ((str) BUNtail(field.iter, (field.cur+i)))
-#define CUR_SHT(field, i) (*(sht *) BUNtail(field.iter, (field.cur+i)))
-#define CUR_INT(field, i) (*(int *) BUNtail(field.iter, (field.cur+i)))
+#define CUR_STR(field, i) ((str) BUNtvar(field.iter, (field.cur+i)))
+#define CUR_SHT(field, i) (*(sht *) BUNtloc(field.iter, (field.cur+i)))
+#define CUR_INT(field, i) (*(int *) BUNtloc(field.iter, (field.cur+i)))
 
 str
 sam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -466,7 +466,7 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	throw(MAL, "bam_export", SQLSTATE(BA000) "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
+	throw(MAL, "bam_export", SQLSTATE(0A000) PROGRAM_NYI);
 #else
 	/* arg 1: path to desired output file */
 	str output_path = *getArgReference_str(stk, pci, pci->retc);

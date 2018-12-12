@@ -115,6 +115,123 @@ Ready.
 % 1,	1,	1 # length
 [ 1,	2,	3	]
 [ 1,	2,	4	]
+#SELECT C1, C2, C3
+#  FROM T1
+# WHERE (C2, C1) IN
+#       (
+#	 SELECT C2, C2
+#	   FROM T1
+#	  GROUP BY C1, C2
+#	 HAVING COUNT(*) > 1
+#       );
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	2,	3	]
+[ 1,	2,	4	]
+#SELECT C1, C2, C3
+#  FROM T1
+# WHERE (C1, C2) IN
+#       (
+#	 SELECT T1.C1, T1.C2
+#	   FROM T1
+#	  GROUP BY T1.C1, T1.C2
+#	 HAVING COUNT(*) > 1
+#       );
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	2,	3	]
+[ 1,	2,	4	]
+#SELECT C1, C2, C3
+#  FROM T1
+# WHERE (C1, C2) IN
+#       (
+#	 SELECT T.C1, T.C2
+#	   FROM T1 AS T
+#	  GROUP BY T.C1, T.C2
+#	 HAVING COUNT(*) > 1
+#       );
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	2,	3	]
+[ 1,	2,	4	]
+#SELECT C1, C2, C3
+#  FROM T1
+# WHERE (C1, C2) NOT IN
+#       (
+#	 SELECT C1, C2
+#	   FROM T1
+#	  GROUP BY C1, C2
+#	 HAVING COUNT(*) = 1
+#       );
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	2,	3	]
+[ 1,	2,	4	]
+#INSERT INTO T1 
+#VALUES (21, 22, 3),
+#       (21, 22, 4),
+#       (22, 22, 5),
+#       (21, 23, 6);
+[ 4	]
+#SELECT C1, C2, C3
+#  FROM T1
+# WHERE (C1, C2) IN
+#       (
+#	 SELECT C1, C2
+#	   FROM T1
+#	  GROUP BY C1, C2
+#	 HAVING COUNT(*) > 1
+#       );
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 2,	2,	1 # length
+[ 1,	2,	3	]
+[ 1,	2,	4	]
+[ 21,	22,	3	]
+[ 21,	22,	4	]
+#SELECT C1, C2, C3
+#  FROM T1
+# WHERE (C2, C1) IN
+#       (
+#	 SELECT C2, C1
+#	   FROM T1
+#	  GROUP BY C1, C2
+#	 HAVING COUNT(*) > 1
+#       );
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 2,	2,	1 # length
+[ 1,	2,	3	]
+[ 1,	2,	4	]
+[ 21,	22,	3	]
+[ 21,	22,	4	]
+#SELECT C1, C2, C3
+#  FROM T1
+# WHERE (C1, C2) IN
+#       (
+#	 SELECT T1.C1, T1.C2
+#	   FROM T1
+#	  GROUP BY T1.C1, T1.C2
+#	 HAVING COUNT(*) > 1
+#       );
+% sys.t1,	sys.t1,	sys.t1 # table_name
+% c1,	c2,	c3 # name
+% int,	int,	int # type
+% 2,	2,	1 # length
+[ 1,	2,	3	]
+[ 1,	2,	4	]
+[ 21,	22,	3	]
+[ 21,	22,	4	]
 #ROLLBACK;
 
 # 11:21:55 >  

@@ -82,10 +82,9 @@ sortlocklist(MT_Lock *l)
 	while (l && r) {
 		if (l->sleep < r->sleep ||
 		    (l->sleep == r->sleep &&
-		     l->contention < r->contention) ||
-		    (l->sleep == r->sleep &&
-		     l->contention == r->contention &&
-		     l->count <= r->count)) {
+		     (l->contention < r->contention ||
+		      (l->contention == r->contention &&
+		       l->count <= r->count)))) {
 			/* l is smaller */
 			if (ll == NULL) {
 				assert(t == NULL);
@@ -116,14 +115,25 @@ void
 GDKlockstatistics(int what)
 {
 	MT_Lock *l;
+	int n = 0;
 
 	if (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) {
 		fprintf(stderr, "#WARNING: GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
+	if (what == -1) {
+		for (l = GDKlocklist; l; l = l->next) {
+			l->count = 0;
+			l->contention = 0;
+			l->sleep = 0;
+		}
+		ATOMIC_CLEAR(GDKlocklistlock, dummy);
+		return;
+	}
 	GDKlocklist = sortlocklist(GDKlocklist);
 	fprintf(stderr, "# lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\n");
-	for (l = GDKlocklist; l; l = l->next)
+	for (l = GDKlocklist; l; l = l->next) {
+		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && l->contention) ||
@@ -133,6 +143,8 @@ GDKlockstatistics(int what)
 				l->count, l->contention, l->sleep,
 				l->lock ? "locked" : "",
 				l->locker ? l->locker : "");
+	}
+	fprintf(stderr, "#number of locks  %d\n", n);
 	fprintf(stderr, "#total lock count %zu\n", (size_t) GDKlockcnt);
 	fprintf(stderr, "#lock contention  %zu\n", (size_t) GDKlockcontentioncnt);
 	fprintf(stderr, "#lock sleep count %zu\n", (size_t) GDKlocksleepcnt);

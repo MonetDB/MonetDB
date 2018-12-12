@@ -99,7 +99,7 @@ GDKgetenv(const char *name)
 
 	if (b != BUN_NONE) {
 		BATiter GDKenvi = bat_iterator(GDKval);
-		return BUNtail(GDKenvi, b);
+		return BUNtvar(GDKenvi, b);
 	}
 	return NULL;
 }
@@ -641,6 +641,8 @@ GDKinit(opt *set, int setlen)
 		if (GDKsetenv("monet_pid", buf) != GDK_SUCCEED)
 			GDKfatal("GDKinit: GDKsetenv failed");
 	}
+	if (GDKsetenv("revision", mercurial_revision()) != GDK_SUCCEED)
+		GDKfatal("GDKinit: GDKsetenv failed");
 
 	return 1;
 }

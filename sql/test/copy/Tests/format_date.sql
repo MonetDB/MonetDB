@@ -1,7 +1,7 @@
 CREATE TABLE orders_1 (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice FLOAT NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL) ;
 CREATE TABLE orders_2 (o_orderkey INT NOT NULL, o_custkey INT NOT NULL, o_orderstatus VARCHAR(1) NOT NULL, o_totalprice FLOAT NOT NULL, o_orderdate DATE NOT NULL, o_orderpriority VARCHAR(15) NOT NULL, o_clerk VARCHAR(15) NOT NULL, o_shippriority INT NOT NULL, o_comment VARCHAR(79) NOT NULL) ;
 
-COPY 150 RECORDS INTO orders_1 from STDIN USING DELIMITERS '|', '|\n';
+COPY 150 RECORDS INTO orders_1 from STDIN USING DELIMITERS '|', E'|\n';
 1|370|O|172799.49|1996-01-02|5-LOW|Clerk#000000951|0|blithely final dolphins solve-- blithely blithe packages nag blith|
 2|781|O|38426.09|1996-12-01|1-URGENT|Clerk#000000880|0|quickly regular depend|
 3|1234|F|205654.30|1993-10-14|5-LOW|Clerk#000000955|0|deposits alongside of the dependencies are slowly about |
@@ -154,7 +154,7 @@ COPY 150 RECORDS INTO orders_1 from STDIN USING DELIMITERS '|', '|\n';
 582|494|O|181813.20|1997-10-21|1-URGENT|Clerk#000000378|0|quietly ironic pinto beans wake carefully. ironic accounts across the dol|
 
 
-COPY 150 RECORDS INTO orders_2 from STDIN (o_orderkey, o_custkey, o_orderstatus, o_totalprice, o_orderdate '%Y-%m-%d', o_orderpriority, o_clerk, o_shippriority, o_comment ) USING DELIMITERS '|', '|\n';
+COPY 150 RECORDS INTO orders_2 from STDIN (o_orderkey, o_custkey, o_orderstatus, o_totalprice, o_orderdate '%Y-%m-%d', o_orderpriority, o_clerk, o_shippriority, o_comment ) USING DELIMITERS '|', E'|\n';
 1|370|O|172799.49|1996-01-02|5-LOW|Clerk#000000951|0|blithely final dolphins solve-- blithely blithe packages nag blith|
 2|781|O|38426.09|1996-12-01|1-URGENT|Clerk#000000880|0|quickly regular depend|
 3|1234|F|205654.30|1993-10-14|5-LOW|Clerk#000000955|0|deposits alongside of the dependencies are slowly about |

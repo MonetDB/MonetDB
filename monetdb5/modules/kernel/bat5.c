@@ -34,7 +34,7 @@
 
 /* set access mode to bat, replacing input with output */
 static BAT *
-setaccess(BAT *b, int mode)
+setaccess(BAT *b, restrict_t mode)
 {
 	BAT *bn = b;
 
@@ -149,7 +149,7 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 static inline char *
 oidtostr(oid i, char *p, size_t len)
 {
-	if (OIDtoStr(&p, &len, &i) < 0)
+	if (OIDtoStr(&p, &len, &i, false) < 0)
 		return NULL;
 	return p;
 }
@@ -497,12 +497,12 @@ BKCsetkey(bat *res, const bat *bid, const bit *param)
 			throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
 		}
 		BATkey(b, true);
-		b->tunique = 1;
+		b->tunique = true;
 	} else {
-		b->tunique = 0;
+		b->tunique = false;
 	}
 	if (b->tunique != unique)
-		b->batDirtydesc = 1;
+		b->batDirtydesc = true;
 	*res = b->batCacheid;
 	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -613,7 +613,7 @@ str
 BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 {
 	BAT *b;
-	int m;
+	restrict_t m;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setAccess", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -654,10 +654,6 @@ BKCgetAccess(str *res, const bat *bid)
 		break;
 	case BAT_WRITE:
 		*res = GDKstrdup("write");
-		break;
-	default:
-		/* cannot happen, just here to help analysis tools */
-		*res = GDKstrdup(str_nil);
 		break;
 	}
 	BBPunfix(b->batCacheid);
@@ -1053,7 +1049,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrink", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1112,8 +1108,8 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
 	BATsetcount(bn, cnt);
-	bn->tsorted = 0;
-	bn->trevsorted = 0;
+	bn->tsorted = false;
+	bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 	bn->tnonil = b->tnonil;
@@ -1149,7 +1145,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1172,8 +1168,8 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 
 
@@ -1227,7 +1223,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1298,8 +1294,8 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b) - BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 
@@ -1331,7 +1327,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 		BBPunfix(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", SQLSTATE(HY001) MAL_MALLOC_FAIL );
 	}
-	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false);
+	res = BATsort(&bs, NULL, NULL, d, NULL, NULL, false, false, false);
 	BBPunfix(d->batCacheid);
 	if (res != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -1360,8 +1356,8 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 	}
 
     BATsetcount(bn, BATcount(b)-BATcount(bs));
-    bn->tsorted = 0;
-    bn->trevsorted = 0;
+    bn->tsorted = false;
+    bn->trevsorted = false;
 	bn->tseqbase = oid_nil;
 
 

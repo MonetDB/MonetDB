@@ -189,8 +189,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	}
 	va_end(va);
 	if (BATcount(s) == 1) {
-		BATiter ri = bat_iterator(s);
-		rid = *(oid *) BUNtail(ri, 0);
+		rid = BUNtoid(s, 0);
 	}
 	bat_destroy(s);
 	return rid;
@@ -352,7 +351,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	b = full_column(tr, orderby_col);
 	s = BATproject(r->data, b);
 	full_destroy(orderby_col, b);
-	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false) != GDK_SUCCEED) {
+	if (BATsort(NULL, &o, NULL, s, NULL, NULL, false, false, false) != GDK_SUCCEED) {
 		bat_destroy(s);
 		return NULL;
 	}
@@ -372,8 +371,7 @@ static oid
 rids_next(rids *r)
 {
 	if (r->cur < BATcount((BAT *) r->data)) {
-		BATiter bi = bat_iterator((BAT *) r->data);
-		return *(oid*)BUNtail(bi, r->cur++);
+		return BUNtoid((BAT *) r->data, r->cur++);
 	}
 	return oid_nil;
 }
@@ -467,7 +465,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 
 	/* need id, obc */
 	ids = o = g = NULL;
-	ret = BATsort(&ids, &o, &g, lcb, NULL, NULL, false, false);
+	ret = BATsort(&ids, &o, &g, lcb, NULL, NULL, false, false, false);
 	bat_destroy(lcb);
 	if (ret != GDK_SUCCEED) {
 		bat_destroy(obb);
@@ -476,7 +474,7 @@ subrids_create(sql_trans *tr, rids *t1, sql_column *rc, sql_column *lc, sql_colu
 	}
 
 	s = NULL;
-	ret = BATsort(NULL, &s, NULL, obb, o, g, false, false);
+	ret = BATsort(NULL, &s, NULL, obb, o, g, false, false, false);
 	bat_destroy(obb);
 	bat_destroy(o);
 	bat_destroy(g);
@@ -514,10 +512,9 @@ subrids_next(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		BATiter ri = bat_iterator((BAT *) r->rids);
-		int id = *(int*)BUNtail(ii, r->pos);
+		sqlid id = *(sqlid*)BUNtloc(ii, r->pos);
 		if (id == r->id)
-			return *(oid*)BUNtail(ri, r->pos++);
+			return BUNtoid((BAT *) r->rids, r->pos++);
 	}
 	return oid_nil;
 }
@@ -527,7 +524,7 @@ subrids_nextid(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		r->id = *(int*)BUNtail(ii, r->pos);
+		r->id = *(sqlid*)BUNtloc(ii, r->pos);
 		return r->id;
 	}
 	return -1;

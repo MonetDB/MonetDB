@@ -170,9 +170,9 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		break;
 	}
 	BATsetcount(bn, c);
-	bn->tkey = 1;
-	bn->tnil = 0;
-	bn->tnonil = 1;
+	bn->tkey = true;
+	bn->tnil = false;
+	bn->tnonil = true;
 	*result = bn;
 	return MAL_SUCCEED;
 }
@@ -406,11 +406,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 			BATsetcount(bn, (BUN) n);
-			bn->tsorted = 1;
+			bn->tsorted = true;
 			bn->trevsorted = BATcount(bn) <= 1;
-			bn->tkey = 1;
-			bn->tnil = 0;
-			bn->tnonil = 1;
+			bn->tkey = true;
+			bn->tnil = false;
+			bn->tnonil = true;
 			* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 			BBPkeepref(bn->batCacheid);
 			return MAL_SUCCEED;
@@ -441,11 +441,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				oid *op = (oid *) Tloc(bn, 0);
 				const oid *cp = (const oid *) Tloc(cand, 0);
 				BATsetcount(bn, n - (o2 - o1));
-				bn->tnil = 0;
-				bn->tnonil = 1;
-				bn->tsorted = 1;
+				bn->tnil = false;
+				bn->tnonil = true;
+				bn->tsorted = true;
 				bn->trevsorted = BATcount(bn) <= 1;
-				bn->tkey = 1;
+				bn->tkey = true;
 				for (o = 0; o < o1; o++)
 					*op++ = cp[o];
 				for (o = o2; o < (oid) n; o++)
@@ -477,11 +477,11 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*op++ = o;
 			for (o = o2; o < (oid) n; o++)
 				*op++ = o;
-			bn->tnil = 0;
-			bn->tnonil = 1;
-			bn->tsorted = 1;
+			bn->tnil = false;
+			bn->tnonil = true;
+			bn->tsorted = true;
 			bn->trevsorted = BATcount(bn) <= 1;
-			bn->tkey = 1;
+			bn->tkey = true;
 		} else {
 			bn = BATdense(0, o1, (BUN) (o2 - o1));
 			if (bn == NULL)
@@ -701,11 +701,11 @@ wrapup:
 	if( cndid)
 		BBPunfix(cndid);
 	if( bn){
-		bn->tsorted = 1;
-		bn->trevsorted = 0;
-		bn->tkey = 1;
-		bn->tnil = 0;
-		bn->tnonil = 1;
+		bn->tsorted = true;
+		bn->trevsorted = false;
+		bn->tkey = true;
+		bn->tnil = false;
+		bn->tnonil = true;
 		BATsetcount(bn,c);
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
@@ -833,10 +833,10 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	/* adminstrative wrapup of the projection */
 	BBPunfix(bid);
 	if( bn){
-		bn->tsorted = bn->trevsorted = 0;
-		bn->tkey = 0;
-		bn->tnil = 0;
-		bn->tnonil = 0;
+		bn->tsorted = bn->trevsorted = false;
+		bn->tkey = false;
+		bn->tnil = false;
+		bn->tnonil = false;
 		BATsetcount(bn,c);
 		BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
 	}
@@ -952,18 +952,18 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"generator.join", SQLSTATE(42000) "Illegal type");
 	}
 
-	bln->tsorted = bln->trevsorted = 0;
-	bln->tkey = 0;
-	bln->tnil = 0;
-	bln->tnonil = 0;
+	bln->tsorted = bln->trevsorted = false;
+	bln->tkey = false;
+	bln->tnil = false;
+	bln->tnonil = false;
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
 	
-	brn->tsorted = brn->trevsorted = 0;
-	brn->tkey = 0;
-	brn->tnil = 0;
-	brn->tnonil = 0;
+	brn->tsorted = brn->trevsorted = false;
+	brn->tkey = false;
+	brn->tnil = false;
+	brn->tnonil = false;
 	BATsetcount(brn,c);
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;
@@ -1093,18 +1093,18 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		throw(MAL,"generator.rangejoin","Illegal type");
 	}
 
-	bln->tsorted = bln->trevsorted = 0;
-	bln->tkey = 0;
-	bln->tnil = 0;
-	bln->tnonil = 0;
+	bln->tsorted = bln->trevsorted = false;
+	bln->tkey = false;
+	bln->tnil = false;
+	bln->tnonil = false;
 	BATsetcount(bln,c);
 	bln->tsorted = incr || c <= 1;
 	bln->trevsorted = !incr || c <= 1;
 	
-	brn->tsorted = brn->trevsorted = 0;
-	brn->tkey = 0;
-	brn->tnil = 0;
-	brn->tnonil = 0;
+	brn->tsorted = brn->trevsorted = false;
+	brn->tkey = false;
+	brn->tnil = false;
+	brn->tnonil = false;
 	BATsetcount(brn,c);
 	brn->tsorted = incr || c <= 1;
 	brn->trevsorted = !incr || c <= 1;

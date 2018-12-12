@@ -94,7 +94,6 @@ usage(char *prog, int xit)
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
-	fprintf(stderr, "    --dbinit=<stmt>           Execute statement at startup\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --daemon=yes|no           Do not read commands from standard input [no]\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
@@ -130,7 +129,6 @@ monet_hello(void)
 	dbl sz_mem_h;
 	char  *qc = " kMGTPE";
 	int qi = 0;
-	size_t len;
 
 	monet_memory = MT_npages() * MT_pagesize();
 	sz_mem_h = (dbl) monet_memory;
@@ -139,12 +137,18 @@ monet_hello(void)
 		qi++;
 	}
 
-	printf("# MonetDB 5 server v" VERSION);
+	printf("# MonetDB 5 server v%s", GDKversion());
+	{
+		const char *rev = mercurial_revision();
+		/* coverity[pointless_string_compare] */
+		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+			printf(" (%s)", MONETDB_RELEASE);
+		else if (strcmp(rev, "Unknown") != 0)
+			printf(" (hg id: %s)", rev);
+	}
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
 		printf("\n# This is an unreleased version");
-	else
-		printf(" \"%s\"", MONETDB_RELEASE);
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
@@ -167,18 +171,21 @@ monet_hello(void)
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
-	len = snprintf(monet_characteristics, sizeof(monet_characteristics)-1, "{\n\"version\":\"%s\",\n", VERSION);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"release\":\"%s\",\n", MONETDB_RELEASE);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"host\":\"%s\",\n", HOST);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"threads\":\"%d\",\n", GDKnr_threads);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"memory\":\"%.3f %cB\",\n", sz_mem_h, qc[qi]);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"oid\":\"%zu\",\n", sizeof(oid) *8);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"packages\":[");
-	// add the compiled in package names
+	(void) snprintf(monet_characteristics, sizeof(monet_characteristics),
+			"{\n"
+			"\"version\":\"%s\",\n"
+			"\"release\":\"%s\",\n"
+			"\"host\":\"%s\",\n"
+			"\"threads\":\"%d\",\n"
+			"\"memory\":\"%.3f %cB\",\n"
+			"\"oid\":\"%zu\",\n"
+			"\"packages\":["
 #ifdef HAVE_HGE
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"%s\"","huge");
+			"\"huge\""
 #endif
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "]\n}");
+			"]\n}",
+			GDKversion(), MONETDB_RELEASE, HOST, GDKnr_threads,
+			sz_mem_h, qc[qi], sizeof(oid) * 8);
 }
 
 static str
@@ -234,7 +241,6 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
-	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 	char prmodpath[1024];
 	char *modpath = NULL;
@@ -246,7 +252,6 @@ main(int argc, char **av)
 		{ "config", 1, 0, 'c' },
 		{ "dbpath", 1, 0, 0 },
 		{ "dbextra", 1, 0, 0 },
-		{ "dbinit", 1, 0, 0 } ,
 		{ "daemon", 1, 0, 0 },
 		{ "debug", 2, 0, 'd' },
 		{ "help", 0, 0, '?' },
@@ -328,13 +333,6 @@ main(int argc, char **av)
 					fprintf(stderr, "#warning: ignoring multiple --dbextra arguments\n");
 				else
 					dbextra = optarg;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
-				if (dbinit)
-					fprintf(stderr, "#warning: ignoring multiple --dbinit argument\n");
-				else
-					dbinit = optarg;
 				break;
 			}
 #ifdef HAVE_CONSOLE
@@ -499,7 +497,7 @@ main(int argc, char **av)
 	}
 	mo_free_options(set, setlen);
 
-	if (GDKsetenv("monet_version", VERSION) != GDK_SUCCEED ||
+	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
 	    GDKsetenv("monet_release", MONETDB_RELEASE) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 		exit(1);
@@ -663,14 +661,6 @@ main(int argc, char **av)
 	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
 		msab_registerStop();
 		GDKfatal("%s", err);
-	}
-	if (dbinit == NULL)
-		dbinit = GDKgetenv("dbinit");
-	if (dbinit) {
-		if((err = callString(mal_clients, dbinit, listing)) != MAL_SUCCEED) {
-			msab_registerStop();
-			GDKfatal("%s", err);
-		}
 	}
 
 	emergencyBreakpoint();

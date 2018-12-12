@@ -10,7 +10,7 @@ create table t2770608 (
 	"eclass"     INTEGER,
 	"schema_id"  INTEGER
 );
-COPY 29 RECORDS INTO t2770608 FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 29 RECORDS INTO t2770608 FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0	"any"	"any"	0	0	0	0	0
 1	"bat"	"table"	0	0	0	1	0
 2	"ptr"	"ptr"	0	0	0	1	0

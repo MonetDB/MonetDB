@@ -34,7 +34,7 @@
 		for (iu = 0; iu < ret->count; iu++) {                                  \
 			if (isnan(((flt *)data)[index_offset * ret->count + iu])) {        \
 				((flt *)data)[index_offset * ret->count + iu] = flt_nil;       \
-				bat->tnil = 1;                                                 \
+				bat->tnil = true;                                              \
 			}                                                                  \
 		}                                                                      \
 		bat->tnonil = !bat->tnil;                                              \
@@ -44,7 +44,7 @@
 		for (iu = 0; iu < ret->count; iu++) {                                  \
 			if (isnan(((dbl *)data)[index_offset * ret->count + iu])) {        \
 				((dbl *)data)[index_offset * ret->count + iu] = dbl_nil;       \
-				bat->tnil = 1;                                                 \
+				bat->tnil = true;                                              \
 			}                                                                  \
 		}                                                                      \
 		bat->tnonil = !bat->tnil;                                              \
@@ -64,24 +64,24 @@
 		msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Cannot create column");     \
 			goto wrapup;                                                       \
 		}                                                                      \
-		bat->tnil = 0;                                                         \
-		bat->tnonil = 1;                                                       \
-		bat->tkey = 0;                                                         \
-		bat->tsorted = 0;                                                      \
-		bat->trevsorted = 0;                                                   \
+		bat->tnil = false;                                                     \
+		bat->tnonil = true;                                                    \
+		bat->tkey = false;                                                     \
+		bat->tsorted = false;                                                  \
+		bat->trevsorted = false;                                               \
 		/*Change nil values to the proper values, if they exist*/              \
 		if (mask != NULL) {                                                    \
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask[index_offset * ret->count + iu] == TRUE) {            \
 					(*(mtpe *)(&data[(index_offset * ret->count + iu) *        \
 									 ret->memory_size])) = mtpe##_nil;         \
-					bat->tnil = 1;                                             \
+					bat->tnil = true;                                          \
 				}                                                              \
 			}                                                                  \
-			bat->tnonil = 1 - bat->tnil;                                       \
+			bat->tnonil = !bat->tnil;                                          \
 		} else {                                                               \
-			bat->tnil = 0;                                                     \
-			bat->tnonil = 0;                                                   \
+			bat->tnil = false;                                                 \
+			bat->tnonil = false;                                               \
 			nancheck_##mtpe(bat);                                              \
 		}                                                                      \
                                                                                \
@@ -128,24 +128,24 @@
 			msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Cannot create column");     \
 			goto wrapup;                                                       \
 		}                                                                      \
-		bat->tnil = 0;                                                         \
-		bat->tnonil = 1;                                                       \
-		bat->tkey = 0;                                                         \
-		bat->tsorted = 0;                                                      \
-		bat->trevsorted = 0;                                                   \
+		bat->tnil = false;                                                     \
+		bat->tnonil = true;                                                    \
+		bat->tkey = false;                                                     \
+		bat->tsorted = false;                                                  \
+		bat->trevsorted = false;                                               \
 		/*Change nil values to the proper values, if they exist*/              \
 		if (mask != NULL) {                                                    \
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask[index_offset * ret->count + iu] == TRUE) {            \
 					(*(mtpe *)(&data[(index_offset * ret->count + iu) *        \
 									 ret->memory_size])) = mtpe##_nil;         \
-					bat->tnil = 1;                                             \
+					bat->tnil = true;                                          \
 				}                                                              \
 			}                                                                  \
-			bat->tnonil = 1 - bat->tnil;                                       \
+			bat->tnonil = !bat->tnil;                                          \
 		} else {                                                               \
-			bat->tnil = 0;                                                     \
-			bat->tnonil = 0;                                                   \
+			bat->tnil = false;                                                 \
+			bat->tnonil = false;                                               \
 			nancheck_##mtpe(bat);                                              \
 		}                                                                      \
 		/*When we create a BAT a small part of memory is allocated, free it*/  \
@@ -195,7 +195,7 @@
 		} else {                                                               \
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask[index_offset * ret->count + iu] == TRUE) {            \
-					bat->tnil = 1;                                             \
+					bat->tnil = true;                                          \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = mtpe_to##_nil;     \
 				} else {                                                       \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = (mtpe_to)(*(       \
@@ -211,7 +211,7 @@
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (isnan((                                                    \
 						(mtpe_from *)data)[index_offset * ret->count + iu])) { \
-					bat->tnil = 1;                                             \
+					bat->tnil = true;                                          \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = mtpe_to##_nil;     \
 				} else {                                                       \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = (mtpe_to)(         \
@@ -223,7 +223,7 @@
 				if (mask[index_offset * ret->count + iu] == TRUE ||            \
 					isnan((                                                    \
 						(mtpe_from *)data)[index_offset * ret->count + iu])) { \
-					bat->tnil = 1;                                             \
+					bat->tnil = true;                                          \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = mtpe_to##_nil;     \
 				} else {                                                       \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = (mtpe_to)(*(       \
@@ -254,13 +254,13 @@
 					goto wrapup;                                               \
 				}                                                              \
 				((mtpe_to *)Tloc(bat, 0))[index + iu] = value;                 \
-				if (bat->tnil == 0)                                            \
+				if (!bat->tnil)                                                \
 					bat->tnil = is_##mtpe_to##_nil(value);                     \
 			}                                                                  \
 		} else {                                                               \
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask[index_offset * ret->count + iu] == TRUE) {            \
-					bat->tnil = 1;                                             \
+					bat->tnil = true;                                          \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = mtpe_to##_nil;     \
 				} else {                                                       \
 					msg = func(                                                \
@@ -271,7 +271,7 @@
 						goto wrapup;                                           \
 					}                                                          \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = value;             \
-					if (bat->tnil == 0)                                        \
+					if (!bat->tnil)                                            \
 						bat->tnil = is_##mtpe_to##_nil(value);                 \
 				}                                                              \
 			}                                                                  \
@@ -290,7 +290,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 		size_t len = 0;
 		gdk_return ret;
 
-		BATatoms[b->ttype].atomFromStr(text, &len, &element);
+		BATatoms[b->ttype].atomFromStr(text, &len, &element, false);
 		ret = BUNappend(b, element, force);
 		GDKfree(element);
 		return ret;
@@ -315,7 +315,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 	} else {                                                                   \
 		for (iu = 0; iu < ret->count; iu++) {                                  \
 			if (mask[index_offset * ret->count + iu] == TRUE) {                \
-				bat->tnil = 1;                                                 \
+				bat->tnil = true;                                              \
 				if (convert_and_append(bat, str_nil, false) != GDK_SUCCEED) {           \
 					msg = createException(MAL, "pyapi.eval",                   \
 										  SQLSTATE(PY000) "BUNappend failed.\n");              \
@@ -398,7 +398,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 					BatType_Format(TYPE_##mtpe));                              \
 				goto wrapup;                                                   \
 		}                                                                      \
-		bat->tnonil = 1 - bat->tnil;                                           \
+		bat->tnonil = !bat->tnil;                                              \
 	}
 
 #define NP_INSERT_STRING_BAT(b)                                                \
@@ -448,7 +448,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask != NULL &&                                            \
 					(mask[index_offset * ret->count + iu]) == TRUE) {          \
-					b->tnil = 1;                                               \
+					b->tnil = true;                                            \
 					if (convert_and_append(b, str_nil, false) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \
@@ -477,7 +477,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask != NULL &&                                            \
 					(mask[index_offset * ret->count + iu]) == TRUE) {          \
-					b->tnil = 1;                                               \
+					b->tnil = true;                                            \
 					if (convert_and_append(b, str_nil, false) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \
@@ -525,7 +525,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 			for (iu = 0; iu < ret->count; iu++) {                              \
 				if (mask != NULL &&                                            \
 					(mask[index_offset * ret->count + iu]) == TRUE) {          \
-					b->tnil = 1;                                               \
+					b->tnil = true;                                            \
 					if (convert_and_append(b, str_nil, false) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \
@@ -552,7 +552,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 				SQLSTATE(PY000) "Unrecognized type. Could not convert to NPY_UNICODE.\n");     \
 			goto wrapup;                                                       \
 	}                                                                          \
-	b->tnonil = 1 - b->tnil;
+	b->tnonil = !b->tnil;
 
 #ifdef HAVE_HGE
 #define NOT_HGE(mtpe) TYPE_##mtpe != TYPE_hge
@@ -600,13 +600,13 @@ convert_and_append(BAT* b, const char* text, bool force) {
 				msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Cannot create column"); \
 				goto wrapup;                                                   \
 			}                                                                  \
-			bat->tkey = 0;                                                     \
-			bat->tsorted = 0;                                                  \
-			bat->trevsorted = 0;                                               \
+			bat->tkey = false;                                                 \
+			bat->tsorted = false;                                              \
+			bat->trevsorted = false;                                           \
 			NP_INSERT_BAT(bat, mtpe, 0);                                       \
 			if (!mask) {                                                       \
-				bat->tnil = 0;                                                 \
-				bat->tnonil = 0;                                               \
+				bat->tnil = false;                                             \
+				bat->tnonil = false;                                           \
 			}                                                                  \
 			BATsetcount(bat, (BUN)ret->count);                                 \
 			BATsettrivprop(bat);                                               \

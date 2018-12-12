@@ -74,7 +74,7 @@ SET SCHEMA "sys";
 CREATE TABLE "sys"."t3850" (
 	"s" VARCHAR(1)
 );
-COPY 1 RECORDS INTO "sys"."t3850" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1 RECORDS INTO "sys"."t3850" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 "\177"
 COMMIT;
 #drop table t3850;

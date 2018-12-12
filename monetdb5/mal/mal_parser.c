@@ -476,7 +476,7 @@ cstToken(Client cntxt, ValPtr cst)
 		if (cst->vtype == TYPE_flt) {
 			size_t len = sizeof(flt);
 			float *pval = &cst->val.fval;
-			if (fltFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+			if (fltFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
@@ -484,7 +484,7 @@ cstToken(Client cntxt, ValPtr cst)
 		if (cst->vtype == TYPE_dbl) {
 			size_t len = sizeof(dbl);
 			double *pval = &cst->val.dval;
-			if (dblFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+			if (dblFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
@@ -492,7 +492,7 @@ cstToken(Client cntxt, ValPtr cst)
 		if (*s == '@') {
 			size_t len = sizeof(lng);
 			lng l, *pval = &l;
-			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+			if (lngFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
@@ -527,14 +527,14 @@ cstToken(Client cntxt, ValPtr cst)
 			if (cst->vtype == TYPE_dbl) {
 				size_t len = sizeof(dbl);
 				dbl *pval = &cst->val.dval;
-				if (dblFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				if (dblFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 					parseError(cntxt, GDKerrbuf);
 					return i;
 				}
 			} else {
 				size_t len = sizeof(lng);
 				lng *pval = &cst->val.lval;
-				if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				if (lngFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 					parseError(cntxt, GDKerrbuf);
 					return i;
 				}
@@ -552,7 +552,7 @@ cstToken(Client cntxt, ValPtr cst)
 				i++;
 				s++;
 			}
-			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval, true) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
@@ -568,7 +568,7 @@ handleInts:
 #ifdef HAVE_HGE
 			size_t len = sizeof(hge);
 			hge l, *pval = &l;
-			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0)
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval, true) < 0)
 				l = hge_nil;
 
 			if ((hge) GDK_int_min <= l && l <= (hge) GDK_int_max) {
@@ -587,7 +587,7 @@ handleInts:
 #else
 			size_t len = sizeof(lng);
 			lng l, *pval = &l;
-			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0)
+			if (lngFromStr(CURRENT(cntxt), &len, &pval, true) < 0)
 				l = lng_nil;
 
 			if ((lng) GDK_int_min <= l && l <= (lng) GDK_int_max) {

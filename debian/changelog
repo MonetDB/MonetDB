@@ -26,7 +26,7 @@ monetdb (11.31.9) unstable; urgency=low
 
   * buildtools: On Ubuntu 18.10 (Cosmic Cuttlefish), the libmonetdb5-server-bam package
     cannot be built because of an incompatibility in the libbam library
-    (it cannot be used in a shared object.
+    (it cannot be used in a shared object).
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 3 Oct 2018 09:50:02 +0200
 

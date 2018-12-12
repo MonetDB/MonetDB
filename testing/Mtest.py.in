@@ -344,6 +344,7 @@ F_TIME = 4
 F_ABRT = 5
 F_RECU = 6
 F_SEGV = 7
+F_MISSING = 8
 
 FAILURES = {
     F_SKIP  : ("F_SKIP",  '-'),
@@ -355,6 +356,7 @@ FAILURES = {
     F_ABRT  : ("F_ABRT",  'A'),
     F_RECU  : ("F_RECU",  'R'),
     F_SEGV  : ("F_SEGV",  'C'),
+    F_MISSING: ("F_MISSING", 'M'),
 }
 
 CONDITIONALS = {
@@ -832,6 +834,9 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
         elif result == F_SEGV:
             diffclass = 'segfault'
             difftext += ' (Crash)'
+        elif result == F_MISSING:
+            diffclass = 'error'
+            difftext += ' (Output missing)'
         else:
             diffclass = 'error'
 
@@ -1075,6 +1080,8 @@ def AddHref (href, target, linktext, diff) :
         klass = 'segfault'
     elif diff == F_WARN:
         klass = 'warning'
+    elif diff == F_MISSING:
+        klass = 'error'
     else:
         klass = 'good'
     a = Element('a', {'href': href, 'target': target, 'class': klass},
@@ -1091,9 +1098,7 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, o, e) :
     CreateTstWhatXhtml(env, TST, STABLEout, EXT, o)
     CreateTstWhatXhtml(env, TST, STABLEerr, EXT, e)
 
-    if o == F_ERROR or e == F_ERROR:
-        tstclass = 'error'
-    elif e == F_RECU:
+    if e == F_RECU:
         tstclass = 'recursion'
     elif e == F_TIME:
         tstclass = 'timeout'
@@ -1103,6 +1108,10 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, o, e) :
         tstclass = 'abort'
     elif e == F_SEGV:
         tstclass = 'segfault'
+    elif o == F_MISSING or e == F_MISSING:
+        tstclass = 'error'
+    elif o == F_ERROR or e == F_ERROR:
+        tstclass = 'error'
     elif o == F_WARN or e == F_WARN:
         tstclass = 'warning'
     else:
@@ -1850,7 +1859,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
-def CategorizeResult(TST, SockTime):
+def CategorizeResult(TST, SockTime, outmissing, errmissing):
     l = '<!--MajorDiffs-->'   # assign something in case file is empty
     for l in open("%s.out.diff.html" % TST):
         pass
@@ -1859,7 +1868,10 @@ def CategorizeResult(TST, SockTime):
     elif l.startswith('<!--MinorDiffs-->'):
         o = F_WARN
     elif l.startswith('<!--MajorDiffs-->'):
-        o = F_ERROR
+        if outmissing:
+            o = F_MISSING
+        else:
+            o = F_ERROR
     else:
         Warn("Unexpected last line in %s.out.diff.html:\n%s" % (TST, l))
         ff = open("%s.out.diff.html" % TST, "a")
@@ -1874,14 +1886,17 @@ def CategorizeResult(TST, SockTime):
     elif l.startswith('<!--MinorDiffs-->'):
         e = F_WARN
     elif l.startswith('<!--MajorDiffs-->'):
-        e = F_ERROR
+        if errmissing:
+            e = F_MISSING
+        else:
+            e = F_ERROR
     else:
         Warn("Unexpected last line in %s.err.diff.html:\n%s" % (TST, l))
         ff = open("%s.err.diff.html" % TST, "a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
-    if e == F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
+    if e in (F_ERROR, F_MISSING) and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
         e = SockTime
     return o, e
 
@@ -2152,12 +2167,15 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
+        outmissing = errmissing = False
         if not os.path.isfile(TST+STABLEout):
             open(TST+STABLEout,"w").close()
             ACCURACYout = 0
+            outmissing = True
         if not os.path.isfile(TST+STABLEerr):
             open(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
+            errmissing = True
 
         PRELUDE = []
         if EXT !=  '.sql':
@@ -2203,49 +2221,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
 
         t0 = time.time()
         tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests)
-        if tres == 'segfault':
-            # rename core file, if any -- might have to check
-            # /proc/sys/kernel/core_pattern in the future but hopefully
-            # this value is kept sane
-            corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'core')
-            if not os.path.exists(corefile):
-                corefile = None
-            # braindead engineers at RedHat decided to change the core
-            # dump name on their own (disregarding kernel settings)
-            if corefile is None:
-                corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'core.*')
-                corefile = glob.glob(corefile)
-                if corefile is not None and len(corefile) > 0 and os.path.exists(corefile[0]):
-                    corefile = corefile[0]
-                else:
-                    corefile = None
-            # FreeBSD uses processname.core
-            if corefile is None:
-                corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'mserver5.core')
-                if not os.path.exists(corefile):
-                    corefile = None
-            if corefile is not None:
-                try:
-                    os.rename(corefile, os.path.join(env['GDK_DBFARM'],
-                        env['TSTDB'], 'core-%s' % (TST)))
-                except:
-                    corefile = None
-            # leave a marker for TestTools
-            if corefile is None:
-                try:
-                    f = open(os.path.join(env['GDK_DBFARM'], env['TSTDB'],
-                        'crash-%s' % (TST)))
-                    f.write("crash without core file, or renaming it failed\n")
-                    f.close()
-                except:
-                    pass
 
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
             STDOUT.write(" %7.3fs " % TX)
 
-        errcode = F_OK
         if tres == 'timeout':
             errcode = F_TIME
         elif tres == 'recursion':
@@ -2260,6 +2241,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             errcode = F_WARN
         elif tres is not None:
             errcode = F_ERROR
+        else:
+            errcode = F_OK
 
         sockerr = CheckSocket3(env, "MAPI", TestErrFile)
 
@@ -2490,7 +2473,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             proc = process.Popen(cmd, universal_newlines = True)
             proc.wait()
 
-        FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode))
+        FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode), outmissing, errmissing)
         if FailedOut == F_OK and FailedErr == F_OK and testweb:
             for f in ['%s.out.diff.html' % TST, '%s.test.out' % TST,
                       '%s.server.out' % TST, '%s.client.out' % TST,
@@ -2524,6 +2507,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     prgreen('OK   ')
                 elif FailedOut == F_WARN:
                     prgreen('minor')
+                elif FailedOut == F_MISSING:
+                    prred('MISS ')
                 else:
                     prred('MAJOR')
                 STDOUT.write(' ')
@@ -2531,6 +2516,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     prgreen('OK')
                 elif FailedErr == F_WARN:
                     prgreen('minor')
+                elif FailedErr == F_MISSING:
+                    prred('MISS')
                 else:
                     prred('MAJOR')
             STDOUT.write('\n')
@@ -2959,13 +2946,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ClntOut = open(ClntOutFile,"w")
             ClntErr = open(ClntErrFile,"w")
             PROLOGUE = []
-            DBINIT = []
             if os.path.isfile(TST + ".prologue5"):
                 PROLOGUE = [TST + ".prologue5"]
-            if os.path.isfile(TST + ".dbinit5"):
-                dbinit = open(TST + ".dbinit5").readline().strip()
-                if dbinit:
-                    DBINIT = ['--dbinit=%s' % dbinit]
 
             Srvr = splitcommand(exe['mserver5'][1]) + LOCAL_CONF
             if nomito:
@@ -2984,14 +2966,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+            if os.path.isfile(TST + '.options5'):
+                Srvr.extend(open(TST + '.options5').read().split())
             lang=""
 
             if SERVER == "MAL":
                 lang="mal"
-                Srvr.extend(DBINIT)
             if SERVER == "SQL":
                 lang="sql"
-                Srvr.extend(DBINIT)
             Srvr.extend(PROLOGUE)
 
             # enable r integration in server
@@ -4572,7 +4554,8 @@ VALUES (%s, '%s', '%s', '%s',
                             (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
                             (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
                             (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
-                            (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
+                            (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY"),
+                            (F_MISSING, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
                 if Failure[x]:
                     how = z
                     what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)

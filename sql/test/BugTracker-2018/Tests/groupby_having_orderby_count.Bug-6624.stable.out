@@ -24,42 +24,33 @@ Ready.
 # 18:32:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8372" "--port=30905"
 # 18:32:54 >  
 
-#SELECT type,COUNT(id) FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY COUNT(id) DESC;
-% .columns,	.L16 # table_name
-% type,	L16 # name
+#CREATE TABLE cols_6624 as
+# SELECT id, type FROM sys.columns WHERE table_id IN (SELECT id FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'tmp')) WITH DATA;
+#SELECT type,COUNT(id) FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY COUNT(id) DESC;
+% sys.cols_6624,	sys.L3 # table_name
+% type,	L3 # name
 % varchar,	bigint # type
-% 9,	3 # length
-[ "int",	244	]
-[ "varchar",	154	]
-[ "clob",	68	]
-[ "smallint",	55	]
-[ "bigint",	53	]
-[ "boolean",	28	]
-[ "timestamp",	12	]
-#SELECT type,COUNT(id) FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY 2 DESC;
-% .columns,	.L16 # table_name
-% type,	L16 # name
+% 8,	2 # length
+[ "int",	19	]
+[ "varchar",	14	]
+[ "smallint",	6	]
+#SELECT type,COUNT(id) FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY 2 DESC;
+% sys.cols_6624,	sys.L3 # table_name
+% type,	L3 # name
 % varchar,	bigint # type
-% 9,	3 # length
-[ "int",	244	]
-[ "varchar",	154	]
-[ "clob",	68	]
-[ "smallint",	55	]
-[ "bigint",	53	]
-[ "boolean",	28	]
-[ "timestamp",	12	]
-#SELECT type,COUNT(id) as cnt FROM sys.columns GROUP BY type HAVING COUNT(id)>10 ORDER BY cnt DESC;
-% .columns,	.L17 # table_name
+% 8,	2 # length
+[ "int",	19	]
+[ "varchar",	14	]
+[ "smallint",	6	]
+#SELECT type,COUNT(id) as cnt FROM cols_6624 GROUP BY type HAVING COUNT(id)>5 ORDER BY cnt DESC;
+% sys.cols_6624,	sys.L4 # table_name
 % type,	cnt # name
 % varchar,	bigint # type
-% 9,	3 # length
-[ "int",	244	]
-[ "varchar",	154	]
-[ "clob",	68	]
-[ "smallint",	55	]
-[ "bigint",	53	]
-[ "boolean",	28	]
-[ "timestamp",	12	]
+% 8,	2 # length
+[ "int",	19	]
+[ "varchar",	14	]
+[ "smallint",	6	]
+#DROP TABLE cols_6624;
 
 # 18:32:54 >  
 # 18:32:54 >  "Done."

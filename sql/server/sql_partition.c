@@ -374,7 +374,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 			sql_table* pt = find_sql_table(mt->s, next->base.name);
 
 			pt->p = NULL;
-			cs_del(&mt->members, n, next->base.flag);
+			cs_del(&mt->members, n, next->base.flags);
 			sql_trans_drop_dependency(sql->session->tr, next->base.id, mt->base.id, TABLE_DEPENDENCY);
 		}
 		for (node *n = new->h; n; n = n->next) {

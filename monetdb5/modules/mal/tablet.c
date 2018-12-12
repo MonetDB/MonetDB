@@ -67,12 +67,12 @@ void_bat_create(int adt, BUN nr)
 	}
 
 	/* disable all properties here */
-	b->tsorted = FALSE;
-	b->trevsorted = FALSE;
+	b->tsorted = false;
+	b->trevsorted = false;
 	b->tnosorted = 0;
 	b->tnorevsorted = 0;
 	b->tseqbase = oid_nil;
-	b->tkey = FALSE;
+	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
 	return b;
@@ -171,8 +171,8 @@ TABLETcollect(BAT **bats, Tablet *as)
 		bats[j] = fmt[i].c;
 		BBPfix(bats[j]->batCacheid);
 		BATsetaccess(fmt[i].c, BAT_READ);
-		fmt[i].c->tsorted = fmt[i].c->trevsorted = 0;
-		fmt[i].c->tkey = 0;
+		fmt[i].c->tsorted = fmt[i].c->trevsorted = false;
+		fmt[i].c->tkey = false;
 		BATsettrivprop(fmt[i].c);
 
 		if (cnt != BATcount(fmt[i].c))
@@ -197,8 +197,8 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		if (fmt[i].skip)
 			continue;
 		b = fmt[i].c;
-		b->tsorted = b->trevsorted = 0;
-		b->tkey = 0;
+		b->tsorted = b->trevsorted = false;
+		b->tkey = false;
 		BATsettrivprop(b);
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
@@ -207,11 +207,11 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b->tkey = (offset > 0) ? FALSE : bv->tkey;
 		b->tnonil &= bv->tnonil;
 		if (b->tsorted != bv->tsorted)
-			b->tsorted = 0;
+			b->tsorted = false;
 		if (b->trevsorted != bv->trevsorted)
-			b->trevsorted = 0;
+			b->trevsorted = false;
 		if (BATtdense(b))
-			b->tkey = TRUE;
+			b->tkey = true;
 		b->batDirtydesc = true;
 
 		if (offset > 0) {
@@ -369,7 +369,7 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd, BUN nr_attr
 		Column *f = fmt + i;
 
 		if (f->c) {
-			char *p = BUNtail(f->ci, id - f->c->hseqbase);
+			const void *p = BUNtail(f->ci, id - f->c->hseqbase);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 				size_t l = strlen(f->nullstr);
@@ -837,7 +837,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 	/* include testing on the terminating null byte !! */
 	if (s == 0) {
 		adt = fmt->nildata;
-		fmt->c->tnonil = 0;
+		fmt->c->tnonil = false;
 	} else
 		adt = fmt->frstr(fmt, fmt->adt, s);
 
@@ -896,7 +896,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		freeException(err);
 		/* replace it with a nil */
 		adt = fmt->nildata;
-		fmt->c->tnonil = 0;
+		fmt->c->tnonil = false;
 	}
 	bunfastapp(fmt->c, adt);
 	return ret;
@@ -967,7 +967,7 @@ SQLload_parse_line(READERtask *task, int idx)
 	char *line = task->lines[task->cur][idx];
 	Tablet *as = task->as;
 	Column *fmt = as->format;
-	int error = 0;
+	bool error = false;
 	str errline = 0;
 
 #ifdef _DEBUG_TABLET_
@@ -980,11 +980,11 @@ SQLload_parse_line(READERtask *task, int idx)
 
 	if (task->quote || task->seplen != 1) {
 		for (i = 0; i < as->nr_attrs; i++) {
-			int quote = 0;
+			bool quote = false;
 			task->fields[i][idx] = line;
 			/* recognize fields starting with a quote, keep them */
 			if (*line && *line == task->quote) {
-				quote = 1;
+				quote = true;
 #ifdef _DEBUG_TABLET_
 				mnstr_printf(GDKout, "before #1 %s\n", s = line);
 #endif
@@ -998,7 +998,7 @@ SQLload_parse_line(READERtask *task, int idx)
 					snprintf(errmsg, BUFSIZ, "Quote (%c) missing", task->quote);
 					tablet_error(task, idx, (int) i, errmsg, errline);
 					GDKfree(errline);
-					error++;
+					error = true;
 					goto errors1;
 				} else
 					*line++ = 0;
@@ -1018,10 +1018,10 @@ SQLload_parse_line(READERtask *task, int idx)
 			/* not enough fields */
 			if (i < as->nr_attrs - 1) {
 				errline = SQLload_error(task, idx, i+1);
-				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing ", i+1);
+				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing", i+1);
 				tablet_error(task, idx, (int) i, errmsg, errline);
 				GDKfree(errline);
-				error++;
+				error = true;
 			  errors1:
 				/* we save all errors detected  as NULL values */
 				for (; i < as->nr_attrs; i++)
@@ -1061,7 +1061,7 @@ SQLload_parse_line(READERtask *task, int idx)
 				snprintf(errmsg, BUFSIZ, "Column value "BUNFMT" missing",i+1);
 				tablet_error(task, idx, (int) i, errmsg, errline);
 				GDKfree(errline);
-				error++;
+				error = true;
 				/* we save all errors detected */
 				for (; i < as->nr_attrs; i++)
 					task->fields[i][idx] = NULL;
@@ -1081,7 +1081,7 @@ SQLload_parse_line(READERtask *task, int idx)
 		snprintf(errmsg, BUFSIZ, "Leftover data '%s'",line);
 		tablet_error(task, idx, (int) i, errmsg, errline);
 		GDKfree(errline);
-		error++;
+		error = true;
 	}
 #ifdef _DEBUG_TABLET_
 	if (error)

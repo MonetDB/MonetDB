@@ -7,7 +7,7 @@ CREATE TABLE news (
 );
 
 INSERT INTO news (id, content, user_id, "date") VALUES
-(1, 'dwerg.net word volwassen, er is eindelijk content
+(1, E'dwerg.net word volwassen, er is eindelijk content
 en het voicemail archief begint al aardig vol te lopen.
 De commentaar en rating code voor de voicemails is ook
 al vrij aardig aan het vorderen. Dus dat beloofd nog

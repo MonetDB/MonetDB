@@ -122,8 +122,16 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 					t->base.name);
 			} else {
 				char *t = sql_subtype_string(atom_type(a));
-				char *s = atom2string(sql->sa, a);
-				mnstr_printf(fout, "%s \"%s\"", t, s);
+				if (a->isnull)
+					mnstr_printf(fout, "%s \"NULL\"", t);
+				else {
+					char *s = ATOMformat(a->data.vtype, VALptr(&a->data));
+					if (s && *s == '"')
+						mnstr_printf(fout, "%s %s", t, s);
+					else if (s)
+						mnstr_printf(fout, "%s \"%s\"", t, s);
+					GDKfree(s);
+				}
 				_DELETE(t);
 			}
 		} else { /* variables */
@@ -1032,9 +1040,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
-		(*pos)+= (int) strlen("NOT");
+		(*pos)+= (int) strlen("ASC");
 		skipWS(r, pos);
-		set_direction(exp, ASCENDING);
+		set_direction(exp, 1);
 	}
 	/* [ NOT ] NULL */
 	if (strncmp(r+*pos, "NOT",  strlen("NOT")) == 0) {

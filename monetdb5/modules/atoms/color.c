@@ -47,21 +47,25 @@ CLRhextoint(char h, char l)
 
 	if (isdigit((unsigned char) h))
 		r = 16 * (int) (h - '0');
-	if (h >= 'a' && h <= 'f')
+	else if (h >= 'a' && h <= 'f')
 		r = 16 * (int) (10 + h - 'a');
-	if (h >= 'A' && h <= 'F')
+	else if (h >= 'A' && h <= 'F')
 		r = 16 * (int) (10 + h - 'A');
+	else
+		return -1;
 	if (isdigit((unsigned char) l))
 		r += (int) (l - '0');
-	if (l >= 'a' && l <= 'f')
+	else if (l >= 'a' && l <= 'f')
 		r += (int) (10 + l - 'a');
-	if (l >= 'A' && l <= 'F')
+	else if (l >= 'A' && l <= 'F')
 		r += (int) (10 + l - 'A');
+	else
+		return -1;
 	return r;
 }
 
 ssize_t
-color_fromstr(const char *colorStr, size_t *len, color **c)
+color_fromstr(const char *colorStr, size_t *len, color **c, bool external)
 {
 	const char *p = colorStr;
 
@@ -80,24 +84,30 @@ color_fromstr(const char *colorStr, size_t *len, color **c)
 
 	while (GDKisspace(*p))
 		p++;
-	if (strncmp(p, "nil", 3) == 0) {
+	if (external && strncmp(p, "nil", 3) == 0) {
 		**c = color_nil;
 		p += 3;
-	} else {
-		if (strncmp(p, "0x00", 4) == 0) {
-			int r = CLRhextoint(p[4], p[5]);
-			int g = CLRhextoint(p[6], p[7]);
-			int b = CLRhextoint(p[8], p[9]);
+	} else if (strncmp(p, "0x00", 4) == 0) {
+		int r, g, b;
 
-			**c = (color) (r << 16 | g << 8 | b);
-		} else
+		if ((r = CLRhextoint(p[4], p[5])) == -1 ||
+			(g = CLRhextoint(p[6], p[7])) == -1 ||
+			(b = CLRhextoint(p[8], p[9])) == -1) {
 			**c = color_nil;
+			return 0;
+		}
+		**c = (color) (r << 16 | g << 8 | b);
+		p += 10;
+	} else {
+		**c = color_nil;
+		GDKerror("not a color\n");
+		return -1;
 	}
 	return (ssize_t) (p - colorStr);
 }
 
 ssize_t
-color_tostr(char **colorStr, size_t *len, const color *c)
+color_tostr(char **colorStr, size_t *len, const color *c, bool external)
 {
 	color sc = *c;
 
@@ -112,8 +122,12 @@ color_tostr(char **colorStr, size_t *len, const color *c)
 	}
 
 	if (is_color_nil(sc)) {
-		strcpy(*colorStr, "nil");
-		return 3;
+		if (external) {
+			strcpy(*colorStr, "nil");
+			return 3;
+		}
+		strcpy(*colorStr, str_nil);
+		return 1;
 	}
 	snprintf(*colorStr, *len, "0x%08X", (unsigned int) sc);
 
@@ -126,7 +140,7 @@ CLRstr(str *s, const color *c)
 	size_t len = 0;
 	str t = 0;
 
-	if (color_tostr(&t, &len, c) < 0)
+	if (color_tostr(&t, &len, c, false) < 0)
 		throw(MAL, "color.str", GDK_EXCEPTION);
 	*s = t;
 	return MAL_SUCCEED;
@@ -377,7 +391,7 @@ CLRcolor(color *c, const char **val)
 {
 	size_t len = sizeof(color);
 
-	if (color_fromstr(*val, &len, &c) < 0)
+	if (color_fromstr(*val, &len, &c, false) < 0)
 		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

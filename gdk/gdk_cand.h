@@ -27,10 +27,8 @@
 					start = (s)->tseqbase;		\
 					end = start + BATcount(s);	\
 				} else {				\
-					oid x = (b)->hseqbase;		\
-					start = SORTfndfirst((s), &x);	\
-					x += BATcount(b);		\
-					end = SORTfndfirst((s), &x);	\
+					start = SORTfndfirst((s), &(b)->hseqbase); \
+					end = SORTfndfirst((s), &(oid){(b)->hseqbase+BATcount(b)}); \
 					cand = (const oid *) Tloc((s), start); \
 					candend = (const oid *) Tloc((s), end); \
 					if (cand == candend) {		\

@@ -6,11 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
-/* This file is included multiple times.  We expect a bunch of tokens
- * to be redefined differently each time (see gdk_ssort.c).  If the
- * token GDKssortimpl is defined, the main interface is defined.
- */
-
 /*
  * This file implements a stable sort algorithm known as "timsort".
  * The algorithm is a straight copy of the listsort function in the
@@ -18,6 +13,11 @@
  * environment.
  * The original author of the sort algorithm was Tim Peters, the
  * adaptation was done by Sjoerd Mullender.
+ *
+ *
+ * This file is included multiple times.  We expect a bunch of tokens
+ * to be redefined differently each time (see gdk_ssort.c).  If the
+ * token GDKssortimpl is defined, the main interface is defined.
  */
 
 /* binarysort is the best method for sorting small arrays: it does few
@@ -797,8 +797,8 @@ do_ssort(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t minru
  * the actual key is found at that offset (MonetDB var-sized
  * atoms). */
 gdk_return
-GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap, size_t nitems,
-	     int hs, int ts, int tpe)
+GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap,
+	     size_t nitems, int hs, int ts, int tpe)
 {
 	char temp;
 	MergeState ms;

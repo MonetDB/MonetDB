@@ -634,13 +634,13 @@ XMLprelude(void *ret)
 }
 
 ssize_t
-XMLfromString(const char *src, size_t *len, xml *x)
+XMLfromString(const char *src, size_t *len, xml *x, bool external)
 {
 	if (*x){
 		GDKfree(*x);
 		*x = NULL;
 	}
-	if (strcmp(src, "nil") == 0) {
+	if (external && strcmp(src, "nil") == 0) {
 		*x = GDKstrdup(str_nil);
 		if (*x == NULL)
 			return -1;
@@ -663,24 +663,23 @@ XMLfromString(const char *src, size_t *len, xml *x)
 }
 
 ssize_t
-XMLtoString(str *s, size_t *len, const char *src)
+XMLtoString(str *s, size_t *len, const char *src, bool external)
 {
 	size_t l;
 
 	if (GDK_STRNIL(src))
-		src = "nil";
+		src = external ? "nil" : str_nil;
 	else
 		src++;
-	assert(strlen(src) < (size_t) INT_MAX);
 	l = strlen(src) + 1;
-	if (l >= *len) {
+	if (l >= *len || *s == NULL) {
 		GDKfree(*s);
-		*s = (str) GDKmalloc(l);
+		*s = GDKmalloc(l);
 		if (*s == NULL)
 			return -1;
+		*len = l;
 	}
 	strcpy(*s, src);
-	*len = l;
 	return (ssize_t) l - 1;
 }
 
@@ -688,17 +687,19 @@ XMLtoString(str *s, size_t *len, const char *src)
 
 #define NO_LIBXML_FATAL "xml: MonetDB was built without libxml, but what you are trying to do requires it."
 
-ssize_t XMLfromString(const char *src, size_t *len, xml *x) {
+ssize_t XMLfromString(const char *src, size_t *len, xml *x, bool external) {
 	(void) src;
 	(void) len;
 	(void) x;
+	(void) external;
 	GDKerror("not implemented\n");
 	return -1;
 }
-ssize_t XMLtoString(str *s, size_t *len, const char *src) {
+ssize_t XMLtoString(str *s, size_t *len, const char *src, bool external) {
 	(void) s;
 	(void) len;
 	(void) src;
+	(void) external;
 	GDKerror("not implemented\n");
 	return -1;
 }

@@ -86,7 +86,7 @@ VIEWcreate(oid seq, BAT *b)
 
 	BATcheck(b, "VIEWcreate", NULL);
 
-	bn = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
+	bn = BATcreatedesc(seq, b->ttype, false, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -115,7 +115,7 @@ VIEWcreate(oid seq, BAT *b)
 	 * with a copy from the parent.  Clear the copied flag since
 	 * our heap was not copied from our parent(s) even if our
 	 * parent's heap was copied from its parent. */
-	bn->theap.copied = 0;
+	bn->theap.copied = false;
 	bn->tprops = NULL;
 
 	/* correct values after copy of head and tail info */
@@ -128,7 +128,7 @@ VIEWcreate(oid seq, BAT *b)
 	bn->timprints = NULL;
 	/* Order OID index */
 	bn->torderidx = NULL;
-	if (BBPcacheit(bn, 1) != GDK_SUCCEED) {	/* enter in BBP */
+	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp)
 			BBPunshare(tp);
 		if (bn->tvheap)
@@ -186,8 +186,8 @@ BATmaterialize(BAT *b)
 	/* point of no return */
 	b->ttype = tt;
 	BATsetdims(b);
-	b->batDirtydesc = TRUE;
-	b->theap.dirty = TRUE;
+	b->batDirtydesc = true;
+	b->theap.dirty = true;
 
 	/* So now generate [t..t+cnt-1] */
 	t = b->tseqbase;
@@ -315,7 +315,7 @@ VIEWreset(BAT *b)
 		b->batRestricted = BAT_WRITE;
 
 		b->tkey = BATtkey(v);
-		b->tunique = 0;
+		b->tunique = false;
 
 		/* copy the heaps */
 		b->theap = tail;
@@ -336,11 +336,11 @@ VIEWreset(BAT *b)
 			v->theap.parentid = 0;
 		}
 		b->batSharecnt = 0;
-		b->batCopiedtodisk = 0;
+		b->batCopiedtodisk = false;
 		b->batDirtydesc = true;
 
 		b->tkey = BATtkey(v);
-		b->tunique = 0;
+		b->tunique = false;
 
 		/* make the BAT empty and insert all again */
 		DELTAinit(b);

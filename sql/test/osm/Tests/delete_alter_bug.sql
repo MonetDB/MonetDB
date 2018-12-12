@@ -1,5 +1,5 @@
 CREATE TABLE way_tags (way integer, k varchar(255), v varchar(1024));
-COPY 25 RECORDS INTO way_tags from STDIN USING DELIMITERS ',', '\n', '''';
+COPY 25 RECORDS INTO way_tags from STDIN USING DELIMITERS ',', E'\n', '''';
 23950357,'created_by','Potlatch 0.10f'
 23950357,'highway','tertiary'
 23950357,'oneway','yes'

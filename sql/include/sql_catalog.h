@@ -85,8 +85,8 @@
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 #define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
-#define TR_OLD 0
 #define TR_NEW 1
+#define TR_RENAMED 2
 
 #define RDONLY 0
 #define RD_INS 1
@@ -94,14 +94,31 @@
 #define RD_UPD_VAL 3
 #define QUICK  4
 
-#define FRAME_ROWS  0 
-#define FRAME_RANGE 1
+/* the following list of macros are used by rel_rankop function */
+#define UNBOUNDED_PRECEDING_BOUND 0
+#define UNBOUNDED_FOLLOWING_BOUND 1
+#define CURRENT_ROW_BOUND         2
 
-#define EXCLUDE_NONE 0
-#define EXCLUDE_CURRENT_ROW 1
-#define EXCLUDE_GROUP 2
-#define EXCLUDE_TIES 3
-#define EXCLUDE_NO_OTHERS 4
+#define FRAME_ROWS  0 		/* number of rows (preceding/following) */
+#define FRAME_RANGE 1		/* logical range (based on the ordering column).
+				   Example:
+				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING  
+				             AND INTERVAL '1' MONTH FOLLOWING */
+#define FRAME_GROUPS 2
+#define FRAME_ALL 3 /* special case of FRAME_RANGE, cover the entire partition */
+
+/* the following list of macros are used by SQLwindow_bound function */
+#define BOUND_FIRST_HALF_PRECEDING  0
+#define BOUND_FIRST_HALF_FOLLOWING  1
+#define BOUND_SECOND_HALF_PRECEDING 2
+#define BOUND_SECOND_HALF_FOLLOWING 3
+#define CURRENT_ROW_PRECEDING       4
+#define CURRENT_ROW_FOLLOWING       5
+
+#define EXCLUDE_NONE 0		/* nothing excluded (also the default) */
+#define EXCLUDE_CURRENT_ROW 1	/* exclude the current row */
+#define EXCLUDE_GROUP 2		/* exclude group */
+#define EXCLUDE_TIES 3		/* exclude group but not the current row */
 
 /* The following macros are used in properties field of sql_table */
 #define PARTITION_RANGE       1
@@ -176,15 +193,21 @@ typedef struct sql_base {
 	int wtime;
 	int rtime;
 	int allocated;
-	int flag;
+	int flags;
 	int refcnt;
 	sqlid id;
 	char *name;
 } sql_base;
 
-extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, const char *name);
-extern void base_set_name(sql_base * b, const char *name);
-extern void base_destroy(sql_base * b);
+#define newFlagSet(x)     ((x & TR_NEW) == TR_NEW)
+#define removeNewFlag(x)  ((x)->base.flags &= ~TR_NEW)
+#define isNew(x)          (newFlagSet((x)->base.flags))
+
+#define setRenamedFlag(x)    ((x)->base.flags |= TR_RENAMED)
+#define removeRenamedFlag(x) ((x)->base.flags &= ~TR_RENAMED)
+#define isRenamed(x)         (((x)->base.flags & TR_RENAMED) == TR_RENAMED)
+
+extern void base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name);
 
 typedef struct changeset {
 	sql_allocator *sa;
@@ -203,7 +226,7 @@ extern void cs_del(changeset * cs, node *elm, int flag);
 extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
-extern node *cs_find_id(changeset * cs, int id);
+extern node *cs_find_id(changeset * cs, sqlid id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
 extern void cs_remove_node(changeset * cs, node *n);
@@ -232,8 +255,8 @@ typedef struct sql_trans {
 
 typedef struct sql_schema {
 	sql_base base;
-	int auth_id;
-	int owner;
+	sqlid auth_id;
+	sqlid owner;
 	bit system;		/* system or user schema */
 	// TODO? int type;	/* persistent, session local, transaction local */
 
@@ -590,10 +613,10 @@ typedef struct res_table {
 	int query_type;
 	int nr_cols;
 	int cur_col;
-	char *tsep;
-	char *rsep;
-	char *ssep;
-	char *ns;
+	const char *tsep;
+	const char *rsep;
+	const char *ssep;
+	const char *ns;
 	res_col *cols;
 	bat order;
 	struct res_table *next;
@@ -623,8 +646,8 @@ extern void idx_destroy(sql_idx * i);
 
 extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, const char *name);
-extern node *list_find_id(list *l, int id);
-extern node *list_find_base_id(list *l, int id);
+extern node *list_find_id(list *l, sqlid id);
+extern node *list_find_base_id(list *l, sqlid id);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
 
@@ -635,24 +658,24 @@ extern sql_column *find_sql_column(sql_table *t, const char *cname);
 extern sql_part *find_sql_part(sql_table *t, const char *tname);
 
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
-extern sql_table *find_sql_table_id(sql_schema *s, int id);
-extern node *find_sql_table_node(sql_schema *s, int id);
+extern sql_table *find_sql_table_id(sql_schema *s, sqlid id);
+extern node *find_sql_table_node(sql_schema *s, sqlid id);
 
 extern sql_sequence *find_sql_sequence(sql_schema *s, const char *sname);
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
-extern sql_schema *find_sql_schema_id(sql_trans *t, int id);
-extern node *find_sql_schema_node(sql_trans *t, int id);
+extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);
+extern node *find_sql_schema_node(sql_trans *t, sqlid id);
 
 extern sql_type *find_sql_type(sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
-extern node *find_sql_type_node(sql_schema *s, int id);
+extern node *find_sql_type_node(sql_schema *s, sqlid id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
 extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
-extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
-extern node *find_sql_func_node(sql_schema *s, int id);
+extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
+extern node *find_sql_func_node(sql_schema *s, sqlid id);
 
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
 extern void *sql_range_part_validate_and_insert(void *v1, void *v2);

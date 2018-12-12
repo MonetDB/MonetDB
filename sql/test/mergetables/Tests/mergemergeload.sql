@@ -4,14 +4,14 @@ CREATE MERGE TABLE part2 ( x double, y double, z double);
 ALTER TABLE complete ADD TABLE part1;
 ALTER TABLE complete ADD TABLE part2;
 
-COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ','\n';
+COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ',E'\n';
 0.0 0.0 0.0
 1.0 0.0 0.0 
 0.0 1.0 0.0 
 1.0 1.0 0.0 
 
 
-COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ','\n';
+COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ',E'\n';
 2.0 0.0 0.0
 3.0 0.0 0.0 
 2.0 1.0 0.0 

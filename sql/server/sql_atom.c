@@ -264,10 +264,10 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 		a->isnull = 0;
 		if (ATOMstorage(type) == TYPE_str) {
 			a->isnull = 0;
-			a->data.val.sval = sql2str(sa_strdup(sa, val));
+			a->data.val.sval = sa_strdup(sa, val);
 			a->data.len = strlen(a->data.val.sval);
 		} else {
-			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val);
+			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val, false);
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
@@ -316,7 +316,7 @@ atom2string(sql_allocator *sa, atom *a)
 	case TYPE_hge:
 	{	char *_buf = buf;
 		size_t _bufsiz = BUFSIZ;
-		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval);
+		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
 		break;
 	}
 #endif
@@ -452,7 +452,7 @@ atom2sql(atom *a)
 		case TYPE_hge:
 		{	char *_buf = buf;
 			size_t _bufsiz = BUFSIZ;
-			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval);
+			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval, true);
 			break;
 		}
 #endif
@@ -1120,7 +1120,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 				}
 				s = decimal_to_str(dec, at);
 				len = sizeof(double);
-				res = ATOMfromstr(TYPE_dbl, &p, &len, s);
+				res = ATOMfromstr(TYPE_dbl, &p, &len, s, false);
 				GDKfree(s);
 				if (res < 0)
 					return 0;
@@ -1142,7 +1142,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			ptr p = NULL;
 
 			a->data.len = 0;
-			res = ATOMfromstr(type, &p, &a->data.len, a->data.val.sval);
+			res = ATOMfromstr(type, &p, &a->data.len, a->data.val.sval, false);
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < (ssize_t) strlen(a->data.val.sval) || !p ||
 			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
@@ -1580,6 +1580,118 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 		default:
 			break;
 	} //no support for strings and blobs max value
+
+	if(ret != NULL) {
+		res = atom_create(sa);
+		res->tpe = *tpe;
+		res->isnull = 0;
+		res->data.vtype = tpe->type->localtype;
+		VALset(&res->data, res->data.vtype, ret);
+	}
+
+	return res;
+}
+
+atom*
+atom_zero_value(sql_allocator *sa, sql_subtype* tpe)
+{
+	void *ret = NULL;
+	atom *res = NULL;
+
+#ifdef HAVE_HGE
+	hge hval = 0;
+#endif
+	lng lval = 0;
+	int ival = 0;
+	sht sval = 0;
+	bte bbval = 0;
+	bit bval = 0;
+	flt fval = 0;
+	dbl dval = 0;
+	date dt = 0;
+	daytime dyt = 0;
+	timestamp tmp;
+
+	switch (tpe->type->eclass) {
+		case EC_BIT:
+		{
+			ret = &bval;
+			break;
+		}
+		case EC_POS:
+		case EC_NUM:
+		case EC_DEC:
+		case EC_SEC:
+		case EC_MONTH:
+			switch (tpe->type->localtype) {
+#ifdef HAVE_HGE
+				case TYPE_hge:
+				{
+					ret = &hval;
+					break;
+				}
+#endif
+				case TYPE_lng:
+				{
+					ret = &lval;
+					break;
+				}
+				case TYPE_int:
+				{
+					ret = &ival;
+					break;
+				}
+				case TYPE_sht:
+				{
+					ret = &sval;
+					break;
+				}
+				case TYPE_bte:
+				{
+					ret = &bbval;
+					break;
+				}
+				default:
+					break;
+			}
+			break;
+		case EC_FLT:
+			switch (tpe->type->localtype) {
+				case TYPE_flt:
+				{
+					ret = &fval;
+					break;
+				}
+				case TYPE_dbl:
+				{
+					ret = &dval;
+					break;
+				}
+				default:
+					break;
+			}
+			break;
+		case EC_DATE: {
+			dt = MTIMEtodate(1, 1, YEAR_MIN);
+			ret = &dt;
+			break;
+		}
+		case EC_TIME: {
+			dyt = 0; //milliseconds on a day
+			ret = &dyt;
+			break;
+		}
+		case EC_TIMESTAMP: {
+			tmp = (timestamp) {
+					.msecs = 0, //milliseconds on a day
+					.days = MTIMEtodate(1, 1, YEAR_MIN),
+			};
+			ret = &tmp;
+			break;
+		}
+		default:
+			break;
+	} //no support for strings and blobs zero value
 
 	if(ret != NULL) {
 		res = atom_create(sa);

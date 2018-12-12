@@ -1,4 +1,4 @@
-select auxiliary 
+select orderidxsize 
 from sys.tablestoragemodel 
 where ((select r_regionkey from sys.region) is NULL)
   or ((select index_type_name from sys.index_types) is not NULL);
@@ -12,4 +12,4 @@ from
         where 
         ((select default_schema from sys.users) is NULL)
           or (cast(coalesce((select side_effect from sys.functions) ,
-              sample_65.revsorted) as boolean) is not NULL);
+              sample_65.sorted) as boolean) is not NULL);
