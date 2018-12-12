@@ -75,7 +75,7 @@ SQLhelp sqlhelp[] = {
 	{"ALTER SEQUENCE",
 	 "",
 	 "ALTER SEQUENCE ident [ AS datatype] [ RESTART [WITH start]] [INCREMENT BY increment]\n"
-	 "[MINVALUE minvalue | NO MINVALUE]  [MAXVALUE maxvalue | NOMAXVALUE] | [ [NO] CYCLE]",
+	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE]",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"ALTER USER",
@@ -207,7 +207,7 @@ SQLhelp sqlhelp[] = {
 	{"CREATE SEQUENCE",
 	 "Define a new sequence generator",
 	 "CREATE SEQUENCE ident [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
-	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NOMAXVALUE] | [ [NO] CYCLE]",
+	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE]",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"CREATE STREAM TABLE",
@@ -581,7 +581,7 @@ SQLhelp sqlhelp[] = {
 	{"generated_column",
 	 NULL,
 	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
-	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NOMAXVALUE] | [ [NO] CYCLE] ')' ] ",
+	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ] ",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"global_privileges",

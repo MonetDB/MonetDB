@@ -11,6 +11,7 @@
 
 #include "sql_types.h"
 #include "sql_atom.h"
+#include "sql_tokens.h"
 
 typedef enum symtype {
 	type_int,
@@ -53,7 +54,7 @@ extern dlist *dlist_append_symbol(sql_allocator *sa, dlist *l, struct symbol *da
 extern dlist *dlist_append_type(sql_allocator *sa, dlist *l, struct sql_subtype *data);
 
 typedef struct symbol {
-	int token;
+	tokens token;
 	symtype type;
 	symbdata data;
 } symbol;
@@ -82,11 +83,11 @@ typedef struct AtomNode {
 	struct atom *a;
 } AtomNode;
 
-extern symbol *symbol_create(sql_allocator *sa, int token, char *data);
-extern symbol *symbol_create_list(sql_allocator *sa, int token, dlist *data);
-extern symbol *symbol_create_int(sql_allocator *sa, int token, int data);
-extern symbol *symbol_create_lng(sql_allocator *sa, int token, lng data);
-extern symbol *symbol_create_symbol(sql_allocator *sa, int token, symbol *data);
+extern symbol *symbol_create(sql_allocator *sa, tokens token, char *data);
+extern symbol *symbol_create_list(sql_allocator *sa, tokens token, dlist *data);
+extern symbol *symbol_create_int(sql_allocator *sa, tokens token, int data);
+extern symbol *symbol_create_lng(sql_allocator *sa, tokens token, lng data);
+extern symbol *symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data);
 
 extern int symbol_cmp(symbol *s1, symbol *s2);
 

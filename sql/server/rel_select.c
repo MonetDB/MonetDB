@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "rel_select.h"
+#include "sql_tokens.h"
 #include "sql_semantic.h"	/* TODO this dependency should be removed, move
 				   the dependent code into sql_mvc */
 #include "sql_privileges.h"
@@ -3800,7 +3801,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 }
 
 static sql_exp *
-rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, int f)
+rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_search_list, symbol *opt_else, int f)
 {
 	sql_subtype *tpe = NULL;
 	list *conds = new_exp_list(sql->sa);
@@ -4445,7 +4446,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 }
 
 static int
-generate_window_bound(int sql_token, bool first_half)
+generate_window_bound(tokens sql_token, bool first_half)
 {
 	switch(sql_token) {
 		case SQL_PRECEDING:
@@ -4507,7 +4508,7 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 }
 
 static sql_exp*
-calculate_window_bound(mvc *sql, sql_rel *p, int token, symbol *bound, sql_exp *ie, int frame_type, int f)
+calculate_window_bound(mvc *sql, sql_rel *p, tokens token, symbol *bound, sql_exp *ie, int frame_type, int f)
 {
 	sql_subtype *bt, *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *iet;
 	unsigned char bclass = 0;
