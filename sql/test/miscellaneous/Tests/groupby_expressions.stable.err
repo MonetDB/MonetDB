@@ -30,7 +30,11 @@ stderr of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 # 14:21:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21747" "--port=32012"
 # 14:21:56 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-23848/.s.monetdb.34914
+MAPI  = (monetdb) /var/tmp/mtest-28161/.s.monetdb.36698
+QUERY = select "aa"+3452 from "groupings" group by "aa"+"bb"; --error
+ERROR = !SELECT: no such aggregate 'sql_add'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-28161/.s.monetdb.36698
 QUERY = select count(*) from "groupings" group by rank() over (); --error
 ERROR = !RANK: window function 'rank' not allowed in GROUP BY clause
 CODE  = 42000

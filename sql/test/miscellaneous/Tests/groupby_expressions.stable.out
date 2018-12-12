@@ -134,6 +134,48 @@ Ready.
 % 1 # length
 [ 2	]
 [ 3	]
+#select count(*) from "groupings" group by "aa" > 1;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 1	]
+#select "aa" > 1 from "groupings" group by "aa" > 1;
+% sys.L1 # table_name
+% L1 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ true	]
+#select count(*) from "groupings" group by case when "aa" > 1 then "aa" else "aa" + 10 end;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 1	]
+#select case when "aa" > 1 then "aa" else "aa" * 4 end from "groupings" group by case when "aa" > 1 then "aa" else "aa" * 4 end;
+% sys.L1 # table_name
+% L1 # name
+% bigint # type
+% 1 # length
+[ 4	]
+[ 2	]
+#select cast(sum("aa"+"bb") as bigint) from "groupings" group by "aa"+"bb";
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 8	]
+#select cast(sum("aa"+3452) as bigint) from "groupings" group by "aa"+"bb";
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 4 # length
+[ 3453	]
+[ 6907	]
 #rollback;
 
 # 14:21:56 >  

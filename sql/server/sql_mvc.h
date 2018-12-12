@@ -68,7 +68,7 @@
 #define mod_locked 	16 
 
 typedef struct sql_groupby_expression {
-	char *sdef;
+	symbol *sdef;
 	tokens token;
 	sql_exp *exp;
 } sql_groupby_expression;

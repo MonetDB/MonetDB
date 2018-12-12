@@ -1628,21 +1628,10 @@ sql_var*
 stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 {
 	sql_var* res = NULL;
-	char *err = NULL;
 	sql_groupby_expression *sge = MNEW(sql_groupby_expression);
 
 	if(sge) {
-		sge->sdef = symbol2string(sql, def, 1, &err);
-		if (!sge->sdef) {
-			if (err) {
-				(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: incorrect expression '%s'", err);
-				_DELETE(err);
-				_DELETE(sge);
-				return NULL;
-			}
-			_DELETE(sge);
-			return NULL;
-		}
+		sge->sdef = def;
 		sge->token = def->token;
 		sge->exp = exp;
 
@@ -1657,19 +1646,9 @@ stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 sql_exp*
 stack_get_groupby_expression(mvc *sql, symbol *def)
 {
-	char *err = NULL, *sdef = symbol2string(sql, def, 1, &err);
-
 	if(sql->has_groupby_expressions) {
-		if (!sdef) {
-			if (err) {
-				(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: incorrect expression '%s'", err);
-				_DELETE(err);
-				return NULL;
-			}
-			return NULL;
-		}
 		for (int i = sql->topvars-1; i >= 0; i--) {
-			if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && strcmp(sql->vars[i].exp->sdef, sdef)==0) {
+			if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && symbol_cmp(sql->vars[i].exp->sdef, def)==0) {
 				return sql->vars[i].exp->exp;
 			}
 		}
@@ -1757,10 +1736,8 @@ stack_pop_until(mvc *sql, int top)
 		c_delete(v->name);
 		VALclear(&v->a.data);
 		v->a.data.vtype = 0;
-		if(v->exp) {
-			_DELETE(v->exp->sdef);
+		if(v->exp)
 			_DELETE(v->exp);
-		}
 		v->wdef = NULL;
 	}
 }
@@ -1778,10 +1755,8 @@ stack_pop_frame(mvc *sql)
 			table_destroy(v->t);
 		else if (v->rel)
 			rel_destroy(v->rel);
-		else if(v->exp) {
-			_DELETE(v->exp->sdef);
+		else if(v->exp)
 			_DELETE(v->exp);
-		}
 		v->wdef = NULL;
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
