@@ -1506,7 +1506,7 @@ void MOScreatecalendar(Client cntxt, MOStask task);
 void MOScreatedictionary(Client cntxt, MOStask task);
 void MOScreateframeDictionary(Client cntxt, MOStask task);
 str MOSdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str MOSdecompressInternal(Client cntxt, bat *bid);
+str MOSdecompressInternal(Client cntxt, bat *ret, bat *bid);
 str MOSdecompressStorage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 void MOSdecompress_calendar(Client cntxt, MOStask task);
 void MOSdecompress_delta(Client cntxt, MOStask task);
