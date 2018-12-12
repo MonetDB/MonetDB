@@ -6506,12 +6506,13 @@ int find_subgeometry_type(char* geoSubType) {
 	return subType;	
 }
 
-char *token2string(int token)
+char *token2string(tokens token)
 {
 	switch (token) {
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
 	SQL(CREATE_SCHEMA);
 	SQL(CREATE_TABLE);
+	SQL(CREATE_TABLE_LOADER);
 	SQL(CREATE_VIEW);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
@@ -6664,6 +6665,28 @@ char *token2string(int token)
 	SQL(FOLLOWING);
 	SQL(CURRENT_ROW);
 	SQL(WINDOW);
+	SQL(RENAME_USER);
+	SQL(ANALYZE);
+	SQL(SAMPLE);
+	SQL(CALL);
+	SQL(TABLE_OPERATOR);
+	SQL(IS_NULL);
+	SQL(IS_NOT_NULL);
+	SQL(STORAGE);
+	SQL(CONNECT);
+	SQL(DISCONNECT);
+	SQL(DATABASE);
+	SQL(PORT);
+	SQL(NOT_LIKE);
+	SQL(PW_UNENCRYPTED);
+	SQL(PW_ENCRYPTED);
+	SQL(COPYLOADER);
+	SQL(START);
+	SQL(INC);
+	SQL(MINVALUE);
+	SQL(MAXVALUE);
+	SQL(CACHE);
+	SQL(CYCLE);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

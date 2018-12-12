@@ -14,7 +14,7 @@
 int symbol_debug = 0;
 
 static symbol *
-symbol_init(symbol *s, int token, symtype type )
+symbol_init(symbol *s, tokens token, symtype type )
 {
 	s->token = token;
 	s->type = type;
@@ -22,7 +22,7 @@ symbol_init(symbol *s, int token, symtype type )
 }
 
 symbol *
-symbol_create(sql_allocator *sa, int token, char *data)
+symbol_create(sql_allocator *sa, tokens token, char *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -36,7 +36,7 @@ symbol_create(sql_allocator *sa, int token, char *data)
 }
 
 symbol *
-symbol_create_list(sql_allocator *sa, int token, dlist *data)
+symbol_create_list(sql_allocator *sa, tokens token, dlist *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -50,7 +50,7 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 }
 
 symbol *
-symbol_create_int(sql_allocator *sa, int token, int data)
+symbol_create_int(sql_allocator *sa, tokens token, int data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -64,7 +64,7 @@ symbol_create_int(sql_allocator *sa, int token, int data)
 }
 
 symbol *
-symbol_create_lng(sql_allocator *sa, int token, lng data)
+symbol_create_lng(sql_allocator *sa, tokens token, lng data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
@@ -78,7 +78,7 @@ symbol_create_lng(sql_allocator *sa, int token, lng data)
 }
 
 symbol *
-symbol_create_symbol(sql_allocator *sa, int token, symbol *data)
+symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 

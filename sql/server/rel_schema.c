@@ -393,6 +393,9 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		mvc_null(sql, cs, null);
 		res = SQL_OK;
 	} 	break;
+	default:{
+		res = SQL_ERR;
+	}
 	}
 	if (res == SQL_ERR) {
 		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown constraint (%p)->token = %s\n", s, token2string(s->token));
@@ -480,6 +483,9 @@ column_option(
 		mvc_null(sql, cs, null);
 		res = SQL_OK;
 	} 	break;
+	default:{
+		res = SQL_ERR;
+	}
 	}
 	if (res == SQL_ERR) {
 		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s\n", s, token2string(s->token));
@@ -617,6 +623,8 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);
 		break;
+	default:
+		res = SQL_ERR;
 	}
 	if (res != SQL_OK) {
 		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint type: wrong token (%p) = %s\n", s, token2string(s->token));
@@ -729,6 +737,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		case SQL_DROP_CONSTRAINT:
 			msg = "drop constraint from"; 
 			break;
+		default:
+			sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (%p)->token = %s\n", s, token2string(s->token));
+			return SQL_ERR;
 		}
 		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot %s %s '%s'\n",
 				msg, 
@@ -907,6 +918,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		assert(0);
+	default:
+		res = SQL_ERR;
 	}
 	if (res == SQL_ERR) {
 		sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (%p)->token = %s\n", s, token2string(s->token));
@@ -1859,7 +1872,7 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 {
 	dlist *obj_privs = privs->h->data.lval;
 	symbol *obj = privs->h->next->data.sym;
-	int token = obj->token;
+	tokens token = obj->token;
 
 	if (token == SQL_NAME) {
 		dlist *qname = obj->data.lval;
@@ -2043,7 +2056,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 {
 	dlist *obj_privs = privs->h->data.lval;
 	symbol *obj = privs->h->next->data.sym;
-	int token = obj->token;
+	tokens token = obj->token;
 
 	if (token == SQL_NAME) {
 		dlist *qname = obj->data.lval;
