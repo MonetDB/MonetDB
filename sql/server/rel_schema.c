@@ -994,9 +994,12 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 
 	if (temp != SQL_DECLARED_TABLE) {
 		if (temp != SQL_PERSIST && tt == tt_table) {
-			s = mvc_bind_schema(sql, "tmp");
-			if (temp == SQL_LOCAL_TEMP && sname && strcmp(sname, s->base.name) != 0)
-				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: local temporary tables should be stored in the '%s' schema", s->base.name);
+			if (temp == SQL_LOCAL_TEMP || temp == SQL_GLOBAL_TEMP) {
+				if (sname && strcmp(sname, "tmp") != 0)
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: %s temporary tables should be stored in the 'tmp' schema",
+									 (temp == SQL_LOCAL_TEMP) ? "local" : "global");
+				s = mvc_bind_schema(sql, "tmp");
+			}
 		} else if (s == NULL) {
 			s = ss;
 		}

@@ -11,16 +11,16 @@
 #include "gdk_analytic.h"
 #include "mtime.h"
 
-#define voidresultBAT(r,tpe,cnt,b,err)				\
-	do {							\
-		r = COLnew(b->hseqbase, tpe, cnt, TRANSIENT);	\
-		if (r == NULL) {				\
-			BBPunfix(b->batCacheid);		\
-			throw(MAL, err, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
-		}						\
-		r->tsorted = 0;					\
-		r->trevsorted = 0;				\
-		r->tnonil = 1;					\
+#define voidresultBAT(r,tpe,cnt,b,err)					\
+	do {								\
+		r = COLnew(b->hseqbase, tpe, cnt, TRANSIENT);		\
+		if (r == NULL) {					\
+			BBPunfix(b->batCacheid);			\
+			throw(MAL, err, SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+		}							\
+		r->tsorted = false;					\
+		r->trevsorted = false;					\
+		r->tnonil = true;					\
 	} while (0)
 
 str 

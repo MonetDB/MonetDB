@@ -194,7 +194,7 @@ BLOBput(Heap *h, var_t *bun, const blob *val)
  	base = h->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, blobsize(val->nitems));
-		h->dirty = 1;
+		h->dirty = true;
 	}
 	return *bun;
 }

@@ -172,8 +172,8 @@ BATsample_with_seed(BAT *b, BUN n, unsigned seed)
 
 		BATsetcount(bn, slen);
 		bn->trevsorted = bn->batCount <= 1;
-		bn->tsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
 	ALGODEBUG fprintf(stderr, "#BATsample(" ALGOBATFMT "," BUNFMT ")="

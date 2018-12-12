@@ -296,7 +296,7 @@ la_bat_clear(logger *lg, logaction *la)
 
 	b = BATdescriptor(bid);
 	if (b) {
-		int access = b->batRestricted;
+		restrict_t access = (restrict_t) b->batRestricted;
 		b->batRestricted = BAT_WRITE;
 		BATclear(b, true);
 		b->batRestricted = access;
@@ -946,7 +946,7 @@ logger_open(logger *lg)
 	char *filename;
 
 	snprintf(id, sizeof(id), LLFMT, lg->id);
-	filename = GDKfilepath(BBPselectfarm(lg->dbfarm_role, 0, offheap), lg->dir, LOGFILE, id);
+	filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id);
 
 	lg->log = open_wstream(filename);
 	if (lg->log) {
@@ -1523,49 +1523,6 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	return res;
 }
 
-/* Set the logdir path, add a dbfarm if needed.
- * Returns the role of the dbfarm containing the logdir.
- */
-static int
-logger_set_logdir_path(char *filename, const char *fn, const char *logdir)
-{
-	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
-
-	if (MT_path_absolute(logdir)) {
-		char logdir_parent_path[FILENAME_MAX] = "";
-		char logdir_name[FILENAME_MAX] = "";
-
-		/* split the logdir string into absolute parent dir
-		 * path and (relative) log dir name */
-		if (GDKextractParentAndLastDirFromPath(logdir, logdir_parent_path, logdir_name) == GDK_SUCCEED) {
-			/* set the new relative logdir location
-			 * including the logger function name
-			 * subdir */
-			snprintf(filename, FILENAME_MAX, "%s%c%s%c",
-				 logdir_name, DIR_SEP, fn, DIR_SEP);
-
-			/* add a new dbfarm for the logger directory
-			 * using the parent dir path, assuming it is
-			 * set, s.t. the logs are stored in a location
-			 * other than the default dbfarm, or at least
-			 * it appears so to (multi)dbfarm aware
-			 * functions */
-			role = LOG_DIR;
-			BBPaddfarm(logdir_parent_path, 1 << role);
-		} else {
-			fprintf(stderr, "logger_set_logdir_path: logdir path is not correct (%s).\n"
-				"Make sure you specify a valid absolute or relative path.\n", logdir);
-			return -1;
-		}
-	} else {
-		/* just concat the logdir and fn with appropriate separators */
-		snprintf(filename, FILENAME_MAX, "%s%c%s%c",
-			 logdir, DIR_SEP, fn, DIR_SEP);
-	}
-
-	return role;
-}
-
 /* Load data from the logger logdir
  * Initialize new directories and catalog files if none are present,
  * unless running in read-only mode
@@ -1578,7 +1535,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, catalog_tpe, catalog_oid, dcatalog, bid;
-	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
+	int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 	bool needcommit = false;
 	int dbg = GDKdebug;
 
@@ -2153,9 +2110,15 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = GDKmalloc(sizeof(struct logger));
+	logger *lg;
 	char filename[FILENAME_MAX];
 
+	if (MT_path_absolute(logdir)) {
+		fprintf(stderr, "!ERROR: logger_new: logdir must be relative path\n");
+		return NULL;
+	}
+
+	lg = GDKmalloc(sizeof(struct logger));
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
 		return NULL;
@@ -2173,12 +2136,13 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->convert_nil_nan = false;
 #endif
 
-	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir);
+	snprintf(filename, sizeof(filename), "%s%c%s%c",
+		 logdir, DIR_SEP, fn, DIR_SEP);
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
 	lg->bufsize = 64*1024;
 	lg->buf = GDKmalloc(lg->bufsize);
-	if (lg->dbfarm_role < 0 || lg->fn == NULL || lg->dir == NULL || lg->buf == NULL) {
+	if (lg->fn == NULL || lg->dir == NULL || lg->buf == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: strdup failed\n");
 		GDKfree(lg->fn);
 		GDKfree(lg->dir);
@@ -2304,7 +2268,7 @@ logger_exit(logger *lg)
 {
 	FILE *fp;
 	char filename[FILENAME_MAX];
-	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
+	int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 
 	logger_close(lg);
 	if (GDKmove(farmid, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
@@ -2396,7 +2360,7 @@ logger_cleanup(logger *lg)
 {
 	char buf[BUFSIZ];
 	FILE *fp = NULL;
-	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
+	int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 
 	snprintf(buf, sizeof(buf), "%s%s.bak-" LLFMT, lg->dir, LOGFILE, lg->id);
 
@@ -2986,7 +2950,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
 	lng lid = (lng) id;
 
-	assert(b->batRestricted > 0 ||
+	assert(b->batRestricted != BAT_WRITE ||
 	       b == lg->snapshots_bid ||
 	       b == lg->snapshots_tid ||
 	       b == lg->dsnapshots ||

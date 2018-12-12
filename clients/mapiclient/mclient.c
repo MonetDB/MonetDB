@@ -2704,7 +2704,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 #endif
 					if (*line) {
 						mnstr_printf(toConsole, "START TRANSACTION;\n");
-						dump_table(mid, NULL, line, toConsole, 0, 1, useinserts, false);
+						dump_table(mid, NULL, line, toConsole, false, true, useinserts, false);
 						mnstr_printf(toConsole, "COMMIT;\n");
 					} else
 						dump_database(mid, toConsole, 0, useinserts);

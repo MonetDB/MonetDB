@@ -439,8 +439,10 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 		return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
-	} else if (isNonPartitionedTable(t)) {
+	} else if (isNonPartitionedTable(t) && is_delete == 0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
+	} else if (isNonPartitionedTable(t) && is_delete != 0 && cs_size(&t->members) == 0) {
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s' has no partitions set", op, opname, tname);
 	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members) == 0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {

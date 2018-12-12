@@ -637,13 +637,16 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", seq->base.name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else if (is_lng_nil(seq->start) || is_lng_nil(seq->minvalue) || is_lng_nil(seq->maxvalue) ||
+			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_lng_nil(seq->cycle)) {
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence properties must be non-NULL");
 	}
 	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
 	return NULL;
 }
 
 static str
-alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, lng *val)
+alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *val)
 {
 	sql_schema *s = NULL;
 	sql_sequence *nseq = NULL;
@@ -657,8 +660,10 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, lng *val)
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else if (val && is_lng_nil(*val)) {
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: sequence value must be non-NULL");
 	}
-
+	/* if seq properties hold NULL values, then they should be ignored during the update */
 	/* first alter the known values */
 	sql_trans_alter_sequence(sql->session->tr, nseq, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle);
 	if (val)

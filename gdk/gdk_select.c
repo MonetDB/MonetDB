@@ -272,7 +272,7 @@ hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum, bool phash)
 	do {								\
 		BUN dcnt, icnt, limit, i, l, e;				\
 		cchdc_t *restrict d = (cchdc_t *) imprints->dict;	\
-		bte rpp    = ATOMelmshift(IMPS_PAGE >> b->tshift);	\
+		uint8_t rpp = ATOMelmshift(IMPS_PAGE >> b->tshift);	\
 		CAND;							\
 		for (i = 0, dcnt = 0, icnt = 0;				\
 		     dcnt < imprints->dictcnt && i + off < w + pr_off && p < q; \

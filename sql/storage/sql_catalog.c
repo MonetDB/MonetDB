@@ -136,7 +136,7 @@ list_find_id(list *l, sqlid id)
 		for (n = l->h; n; n = n->next) {
 
 			/* check if ids match */
-			if (id == *(int *) n->data) {
+			if (id == *(sqlid *) n->data) {
 				return n;
 			}
 		}

@@ -79,7 +79,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
-	if (v->tnonil == TRUE) {
+	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
@@ -189,7 +189,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	dst = (TYPE *) Tloc(res, 0);
 
 	nonil = TRUE;
-	if (v->tnonil == TRUE) {
+	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
 			dst[i] = round_body_nonil(src[i], *r);
 	} else {

@@ -168,13 +168,13 @@ MKEYbathash(bat *res, const bat *bid)
 
 	if (dst->batCount <= 1) {
 		BATkey(dst, true);
-		dst->tsorted = dst->trevsorted = 1;
+		dst->tsorted = dst->trevsorted = true;
 	} else {
 		BATkey(dst, false);
-		dst->tsorted = dst->trevsorted = 0;
+		dst->tsorted = dst->trevsorted = false;
 	}
-	dst->tnonil = 0;
-	dst->tnil = 0;
+	dst->tnonil = false;
+	dst->tnil = false;
 
 	BBPkeepref(*res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -318,13 +318,13 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 	if (bn->batCount <= 1) {
 		BATkey(bn, true);
-		bn->tsorted = bn->trevsorted = 1;
+		bn->tsorted = bn->trevsorted = true;
 	} else {
 		BATkey(bn, false);
-		bn->tsorted = bn->trevsorted = 0;
+		bn->tsorted = bn->trevsorted = false;
 	}
-	bn->tnonil = 0;
-	bn->tnil = 0;
+	bn->tnonil = false;
+	bn->tnil = false;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -399,13 +399,13 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 	if (bn->batCount <= 1) {
 		BATkey(bn, true);
-		bn->tsorted = bn->trevsorted = 1;
+		bn->tsorted = bn->trevsorted = true;
 	} else {
 		BATkey(bn, false);
-		bn->tsorted = bn->trevsorted = 0;
+		bn->tsorted = bn->trevsorted = false;
 	}
-	bn->tnonil = 0;
-	bn->tnil = 0;
+	bn->tnonil = false;
+	bn->tnil = false;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(hb->batCacheid);
@@ -491,13 +491,13 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 	if (bn->batCount <= 1) {
 		BATkey(bn, true);
-		bn->tsorted = bn->trevsorted = 1;
+		bn->tsorted = bn->trevsorted = true;
 	} else {
 		BATkey(bn, false);
-		bn->tsorted = bn->trevsorted = 0;
+		bn->tsorted = bn->trevsorted = false;
 	}
-	bn->tnonil = 0;
-	bn->tnil = 0;
+	bn->tnonil = false;
+	bn->tnil = false;
 
 	BBPkeepref(*res = bn->batCacheid);
 	BBPunfix(b->batCacheid);

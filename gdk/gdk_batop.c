@@ -936,7 +936,9 @@ BATslice(BAT *b, BUN l, BUN h)
 
 	/* If the source BAT is readonly, then we can obtain a VIEW
 	 * that just reuses the memory of the source. */
-	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
+	if (b->batRestricted == BAT_READ &&
+	    (!VIEWtparent(b) ||
+	     BBP_cache(VIEWtparent(b))->batRestricted == BAT_READ)) {
 		bn = VIEWcreate(b->hseqbase + low, b);
 		if (bn == NULL)
 			return NULL;

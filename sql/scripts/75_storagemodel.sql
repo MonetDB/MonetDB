@@ -158,11 +158,10 @@ create table sys.storagemodelinput(
 	"count" bigint NOT NULL,	-- estimated number of tuples
 	"distinct" bigint NOT NULL,	-- indication of distinct number of strings
 	atomwidth int NOT NULL,		-- average width of variable size char or binary strings
-	reference boolean NOT NULL,	-- used as foreign key reference
-	sorted boolean,			-- if set there is no need for an index
-	revsorted boolean,
-	"unique" boolean,
-	"orderidx" bigint,
+	reference boolean NOT NULL DEFAULT FALSE, -- used as foreign key reference
+	sorted boolean,			-- if set there is no need for an ordered index
+	"unique" boolean,		-- are values unique or not
+	isacolumn boolean NOT NULL DEFAULT TRUE,
 	compressed boolean
 );
 
@@ -172,7 +171,10 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select "schema", "table", "column", "type", typewidth, "count", 0,
+	select "schema", "table", "column", "type", typewidth, "count",
+		-- assume all variable size types contain distinct values
+		case when ("unique" or "type" IN ('varchar', 'char', 'clob', 'json', 'url', 'blob', 'geometry', 'geometrya'))
+			then "count" else 0 end,
 		case when "count" > 0 and heapsize >= 8192 and "type" in ('varchar', 'char', 'clob', 'json', 'url')
 			-- string heaps have a header of 8192
 			then cast((heapsize - 8192) / "count" as bigint)
@@ -180,15 +182,8 @@ begin
 			-- binary data heaps have a header of 32
 			then cast((heapsize - 32) / "count" as bigint)
 		else typewidth end,
-		FALSE, sorted, revsorted, "unique", orderidx, compressed
-	  from sys."storage"  -- view sys."storage" excludes system tables (as those are not useful to be modeled for storagesize by application users)
-	order by "schema", "table", "column";
-
-	update sys.storagemodelinput
-	   set "distinct" = "count"
-	 where "unique" = TRUE
-		-- assume all variable size types contain distinct values
-	    or "type" IN ('varchar', 'char', 'clob', 'json', 'url', 'blob', 'geometry', 'geometrya');
+		FALSE, case sorted when true then true else false end, "unique", TRUE, compressed
+	  from sys."storage";  -- view sys."storage" excludes system tables (as those are not useful to be modeled for storagesize by application users)
 
 	update sys.storagemodelinput
 	   set reference = TRUE
@@ -202,6 +197,16 @@ begin
 		  AND fkkey."id" = fkkeycol."id"
 		  AND fkschema."id" = fktable."schema_id"
 		  AND fkkey."rkey" > -1 );
+
+	update sys.storagemodelinput
+	   set isacolumn = FALSE
+	 where ("schema", "table", "column") NOT in (
+		SELECT sch."name", tbl."name", col."name"
+		  FROM sys."schemas" AS sch,
+			sys."tables" AS tbl,
+			sys."columns" AS col
+		WHERE sch."id" = tbl."schema_id"
+		  AND tbl."id" = col."table_id");
 end;
 
 
@@ -249,7 +254,7 @@ begin
 		then return 8192 + ((avgwidth + 8) * distincts);
 	end if;
 	if tpe in ('blob', 'geometry', 'geometrya')
-		then return avgwidth * count;
+		then return 32 + (avgwidth * count);
 	end if;
 
 	return 0;
@@ -290,20 +295,19 @@ begin
 	return 0;
 end;
 
+-- The computed maximum column storage requirements (estimates) view.
 create view sys.storagemodel as
 select "schema", "table", "column", "type", "count",
 	columnsize("type", "count") as columnsize,
 	heapsize("type", "count", "distinct", "atomwidth") as heapsize,
 	hashsize("reference", "count") as hashsize,
-	imprintsize("type", "count") as imprintsize,
-	cast(8 * "count" as bigint) as orderidxsize,
-	sorted, revsorted, "unique", compressed
+	case when isacolumn then imprintsize("type", "count") else 0 end as imprintsize,
+	case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end as orderidxsize,
+	sorted, "unique", isacolumn
  from sys.storagemodelinput
 order by "schema", "table", "column";
 
--- A summary of the table storage requirement is available as a table view.
--- The auxiliary column denotes the maximum space if all non-sorted columns
--- would be augmented with a hash (rare situation)
+-- A summary of the table storage requirement utility view.
 create view sys.tablestoragemodel as
 select "schema", "table",
 	max("count") as "rowcount",
@@ -311,9 +315,8 @@ select "schema", "table",
 	sum(columnsize("type", "count")) as columnsize,
 	sum(heapsize("type", "count", "distinct", "atomwidth")) as heapsize,
 	sum(hashsize("reference", "count")) as hashsize,
-	sum(imprintsize("type", "count")) as imprintsize,
-	sum(cast(8 * "count" as bigint)) as orderidxsize,
-	sum(cast(case when sorted = false then 8 * "count" else 0 end as bigint)) as auxiliary
+	sum(case when isacolumn then imprintsize("type", "count") else 0 end) as imprintsize,
+	sum(case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end) as orderidxsize
  from sys.storagemodelinput
 group by "schema", "table"
 order by "schema", "table";
