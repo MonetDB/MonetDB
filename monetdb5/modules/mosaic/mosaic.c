@@ -560,7 +560,7 @@ MOScompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for( i = 0; i< MOSAIC_METHODS; i++)
 			task->filter[i]= 1;
 
-	msg= MOScompressInternal(cntxt, getArgReference_bat(stk,pci,1), task,  flg);
+	msg= MOScompressInternal(cntxt, bid, task,  flg);
 	BBPkeepref(*ret = b->batCacheid);
 	GDKfree(task);
 	return msg;
