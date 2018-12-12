@@ -14,7 +14,7 @@ bat.append(d,"2015-07-11":date);
 io.print(d);
 mosaic.compress(d,"calendar");
 #mosaic.dump(xd);
-mosaic.decompress(d);
+d:= mosaic.decompress(d);
 io.print(d);
 
 bs:= bat.new(:timestamp);

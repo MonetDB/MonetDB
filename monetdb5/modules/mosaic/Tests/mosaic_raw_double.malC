@@ -8,10 +8,10 @@ base:= algebra.copy(b);
 io.print(base);
 mosaic.compress(b,"raw");
 mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);
 
 mosaic.compress(b,"raw");
 mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);

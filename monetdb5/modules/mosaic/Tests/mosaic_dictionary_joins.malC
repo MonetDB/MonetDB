@@ -10,10 +10,10 @@ base:= algebra.copy(b);
 io.print(base);
 mosaic.compress(b,"dictionary test 100");
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);
 
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 c:= bat.new(:oid);
 bat.append(c,0@0);
 bat.append(c,2@0);

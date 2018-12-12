@@ -10,7 +10,7 @@ base:= algebra.copy(b);
 io.print(base);
 mosaic.compress(b,"dictionary");
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);
 
 d:= bat.new(:date);
@@ -24,5 +24,5 @@ d:= bat.append(d,d);
 io.print(d);
 mosaic.compress(d,"dictionary");
 mosaic.dump(d);
-mosaic.decompress(d);
+d:= mosaic.decompress(d);
 io.print(d);

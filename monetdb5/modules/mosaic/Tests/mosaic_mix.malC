@@ -98,5 +98,5 @@ b:= bat.append(b,b);
 io.print(b);
 mosaic.compress(b);
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);

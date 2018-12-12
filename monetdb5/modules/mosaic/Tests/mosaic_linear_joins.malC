@@ -18,7 +18,7 @@ base:= algebra.copy(b);
 io.print(base);
 mosaic.compress(b,"linear");
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);
 
 c:= bat.new(:oid);

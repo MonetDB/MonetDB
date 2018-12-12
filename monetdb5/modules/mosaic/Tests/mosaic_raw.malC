@@ -8,7 +8,7 @@ base:= algebra.copy(b);
 io.print(b);
 mosaic.compress(b,"raw");
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);
 
 
@@ -19,5 +19,5 @@ bat.append(s,"brown");
 bat.append(s,"fox");
 
 mosaic.compress(s,"raw");
-mosaic.decompress(s);
+s:= mosaic.decompress(s);
 io.print(s);

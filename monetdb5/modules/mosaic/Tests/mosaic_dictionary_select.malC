@@ -10,7 +10,7 @@ base:= algebra.copy(b);
 io.print(base);
 mosaic.compress(b,"dictionary test 100");
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);
 
 s:= algebra.select(base,"2014-08-14 12:00:00":timestamp,"2014-08-14 12:02:00":timestamp,false,false,false);

@@ -15,7 +15,7 @@ base:= algebra.copy(b);
 io.print(base);
 mosaic.compress(b,"delta");
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);
 
 bs:= bat.new(:timestamp);

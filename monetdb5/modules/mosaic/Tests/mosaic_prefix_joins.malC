@@ -30,7 +30,7 @@ base:=algebra.copy(b);
 io.print(b);
 mosaic.compress(b,"prefix");
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(b);
 # Linear range compressions
 

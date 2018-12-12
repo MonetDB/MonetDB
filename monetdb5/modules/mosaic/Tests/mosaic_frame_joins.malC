@@ -9,7 +9,7 @@ base:= algebra.copy(b);
 
 mosaic.compress(b,"frame");
 #mosaic.dump(b);
-mosaic.decompress(b);
+b:= mosaic.decompress(b);
 io.print(base,b);
 
 c:= bat.new(:oid);
