@@ -2575,10 +2575,13 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 #define isVIEW(x)							\
 	(assert((x)->batCacheid > 0),					\
 	 ((x)->theap.parentid ||					\
-	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid)))
+	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid) || \
+	  ((x)->tmosaic && (x)->tmosaic->parentid != (x)->batCacheid)))
 
 #define VIEWtparent(x)	((x)->theap.parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
+// TODO check if this part of the check "(x)->tmosaic->parentid == (x)->batCacheid"  is necessary.
+#define VIEWmosaictparent(x)	((x)->tmosaic == NULL || (x)->tmosaic->parentid == (x)->batCacheid ? 0 : (x)->tmosaic->parentid)
 
 /*
  * @+ BAT Iterators

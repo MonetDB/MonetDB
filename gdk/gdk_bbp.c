@@ -1450,6 +1450,7 @@ BBPexit(void)
 						 * to locks) do it */
 						bat tp = VIEWtparent(b);
 						bat vtp = VIEWvtparent(b);
+						bat mosaictp = VIEWmosaictparent(b);
 						if (tp) {
 							BBP_desc(tp)->batSharecnt--;
 							--BBP_lrefs(tp);
@@ -1457,6 +1458,10 @@ BBPexit(void)
 						if (vtp) {
 							BBP_desc(vtp)->batSharecnt--;
 							--BBP_lrefs(vtp);
+						}
+						if (mosaictp) {
+							BBP_desc(mosaictp)->batSharecnt--;
+							--BBP_lrefs(mosaictp);
 						}
 						VIEWdestroy(b);
 					} else {
