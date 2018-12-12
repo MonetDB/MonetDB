@@ -633,7 +633,6 @@ int yydebug=1;
 /* sequence operations */
 %token SEQUENCE INCREMENT RESTART CONTINUE
 %token MAXVALUE MINVALUE CYCLE
-%token NOMAXVALUE NOMINVALUE NOCYCLE
 %token NEXT VALUE CACHE
 %token GENERATED ALWAYS IDENTITY
 %token SERIAL BIGSERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
@@ -1379,27 +1378,27 @@ opt_alt_seq_params:
 
 opt_seq_param:
     	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($3) ? $3 : $3 * $4); }
+  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($4) ? $4 : $3 * $4); }
   |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_alt_seq_param:
-    	AS data_type 				{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	RESTART 						{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
+    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	RESTART 			{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
   |	RESTART WITH opt_sign lngval 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), is_lng_nil($4) ? $4 : $3 * $4));  }
-  |	RESTART WITH subquery 			{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
-  |	opt_seq_common_param			{ $$ = $1; }
+  |	RESTART WITH subquery 		{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
+  |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_seq_common_param:
   	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
-  |	MINVALUE opt_sign lngval		{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
-  |	NOMINVALUE						{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
-  |	MAXVALUE opt_sign lngval		{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
-  |	NOMAXVALUE						{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
-  |	CACHE nonzerolng				{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
-  |	CYCLE							{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
-  |	NOCYCLE							{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
+  |	MINVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NO MINVALUE			{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
+  |	MAXVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NO MAXVALUE			{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
+  |	CACHE nonzerolng		{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
+  |	CYCLE				{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
+  |	NO CYCLE			{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
   ;
 
 /*=== END SEQUENCES ===*/
@@ -6513,12 +6512,13 @@ int find_subgeometry_type(char* geoSubType) {
 	return subType;	
 }
 
-char *token2string(int token)
+char *token2string(tokens token)
 {
 	switch (token) {
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
 	SQL(CREATE_SCHEMA);
 	SQL(CREATE_TABLE);
+	SQL(CREATE_TABLE_LOADER);
 	SQL(CREATE_VIEW);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
@@ -6671,6 +6671,28 @@ char *token2string(int token)
 	SQL(FOLLOWING);
 	SQL(CURRENT_ROW);
 	SQL(WINDOW);
+	SQL(RENAME_USER);
+	SQL(ANALYZE);
+	SQL(SAMPLE);
+	SQL(CALL);
+	SQL(TABLE_OPERATOR);
+	SQL(IS_NULL);
+	SQL(IS_NOT_NULL);
+	SQL(STORAGE);
+	SQL(CONNECT);
+	SQL(DISCONNECT);
+	SQL(DATABASE);
+	SQL(PORT);
+	SQL(NOT_LIKE);
+	SQL(PW_UNENCRYPTED);
+	SQL(PW_ENCRYPTED);
+	SQL(COPYLOADER);
+	SQL(START);
+	SQL(INC);
+	SQL(MINVALUE);
+	SQL(MAXVALUE);
+	SQL(CACHE);
+	SQL(CYCLE);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

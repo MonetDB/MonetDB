@@ -1069,7 +1069,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 
 int
 describe_table(Mapi mid, const char *schema, const char *tname,
-	       stream *toConsole, int foreign, bool databaseDump)
+	       stream *toConsole, bool foreign, bool databaseDump)
 {
 	int cnt, table_id = 0;
 	MapiHdl hdl = NULL;
@@ -1434,14 +1434,15 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 
 	snprintf(query, maxquerylen,
 		"%s "
-		"SELECT s.name, "
-		       "seq.name, "
-		       "get_value_for(s.name, seq.name), "
-		       "seq.\"minvalue\", "
-		       "seq.\"maxvalue\", "
-		       "seq.\"increment\", "
-		       "seq.\"cycle\", "
-		       "rem.\"remark\" "
+		"SELECT s.name, "				/* 0 */
+		       "seq.name, "				/* 1 */
+		       "get_value_for(s.name, seq.name), "	/* 2 */
+		       "seq.\"minvalue\", "			/* 3 */
+		       "seq.\"maxvalue\", "			/* 4 */
+		       "seq.\"increment\", "			/* 5 */
+		       "seq.\"cycle\", "			/* 6 */
+		       "seq.\"cacheinc\", "			/* 7 */
+		       "rem.\"remark\" "			/* 8 */
 		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id "
@@ -1462,7 +1463,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 		const char *maxvalue = mapi_fetch_field(hdl, 4);
 		const char *increment = mapi_fetch_field(hdl, 5);
 		const char *cycle = mapi_fetch_field(hdl, 6);
-		const char *remark = mapi_fetch_field(hdl, 7);
+		const char *cacheinc = mapi_fetch_field(hdl, 7);
+		const char *remark = mapi_fetch_field(hdl, 8);
 
 		mnstr_printf(toConsole, "CREATE SEQUENCE ");
 		dquoted_print(toConsole, schema, ".");
@@ -1474,6 +1476,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 			mnstr_printf(toConsole, " MINVALUE %s", minvalue);
 		if (strcmp(maxvalue, "0") != 0)
 			mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
+		if (strcmp(cacheinc, "1") != 0)
+			mnstr_printf(toConsole, " CACHE %s", cacheinc);
 		mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 		comment_on(toConsole, "SEQUENCE", schema, name, NULL, remark);
 		if (mnstr_errnr(toConsole)) {
@@ -1763,7 +1767,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 
 int
 dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole,
-	   int describe, int foreign, bool useInserts, bool databaseDump)
+	   bool describe, bool foreign, bool useInserts, bool databaseDump)
 {
 	int rc;
 
@@ -2081,7 +2085,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 }
 
 int
-dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
+dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 {
 	const char *start_trx = "START TRANSACTION";
 	const char *end = "ROLLBACK";
@@ -2582,7 +2586,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			int ptype = atoi(type), dont_describe = (ptype == 3 || ptype == 5);
 			schema = strdup(schema);
 			name = strdup(name);
-			rc = dump_table(mid, schema, name, toConsole, dont_describe ? 1 : describe, describe, useInserts, true);
+			rc = dump_table(mid, schema, name, toConsole, dont_describe || describe, describe, useInserts, true);
 			free(schema);
 			free(name);
 		} else if (query) {
