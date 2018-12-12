@@ -36,11 +36,11 @@ geom_catalog_upgrade(void *lg, int olddb)
 	if (!olddb)
 		return 1;
 
-	ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type")));
+	ct = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type"), 0, 0));
 	cti = bat_iterator(ct);
-	cd = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits")));
+	cd = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_digits"), 0, 0));
 	cdi = bat_iterator(cd);
-	cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale")));
+	cs = BATdescriptor((bat) logger_find_bat(lg, N(n, NULL, s, "_columns_type_scale"), 0, 0));
 	csi = bat_iterator(cs);
 
 	if (!ct || !cd || !cs) {
@@ -68,9 +68,9 @@ geom_catalog_upgrade(void *lg, int olddb)
 	}
 
 	for(p=0, q=BUNlast(ct); p<q; p++) {
-		const char *type = BUNtail(cti, p);
-		int digits = *(int*)BUNtail(cdi, p);
-		int scale = *(int*)BUNtail(csi, p);
+		const char *type = BUNtvar(cti, p);
+		int digits = *(int*)BUNtloc(cdi, p);
+		int scale = *(int*)BUNtloc(csi, p);
 
 		if (strcasecmp(type, "point") == 0) {
 			type = "geometry";
@@ -130,9 +130,9 @@ geom_catalog_upgrade(void *lg, int olddb)
 			scale = 0;
 		}
 
-		if (BUNappend(cnt, type, TRUE) != GDK_SUCCEED ||
-		    BUNappend(cnd, &digits, TRUE) != GDK_SUCCEED ||
-		    BUNappend(cns, &scale, TRUE) != GDK_SUCCEED) {
+		if (BUNappend(cnt, type, true) != GDK_SUCCEED ||
+		    BUNappend(cnd, &digits, true) != GDK_SUCCEED ||
+		    BUNappend(cns, &scale, true) != GDK_SUCCEED) {
 			BBPreclaim(cnt);
 			BBPreclaim(cnd);
 			BBPreclaim(cns);
@@ -146,9 +146,9 @@ geom_catalog_upgrade(void *lg, int olddb)
 	if (BATsetaccess(cnt, BAT_READ) != GDK_SUCCEED ||
 	    BATsetaccess(cnd, BAT_READ) != GDK_SUCCEED ||
 	    BATsetaccess(cns, BAT_READ) != GDK_SUCCEED ||
-	    logger_add_bat(lg, cnt, N(n, NULL, s, "_columns_type")) != GDK_SUCCEED ||
-	    logger_add_bat(lg, cnd, N(n, NULL, s, "_columns_type_digits")) != GDK_SUCCEED ||
-	    logger_add_bat(lg, cns, N(n, NULL, s, "_columns_type_scale")) != GDK_SUCCEED) {
+	    logger_add_bat(lg, cnt, N(n, NULL, s, "_columns_type"), 0, 0) != GDK_SUCCEED ||
+	    logger_add_bat(lg, cnd, N(n, NULL, s, "_columns_type_digits"), 0, 0) != GDK_SUCCEED ||
+	    logger_add_bat(lg, cns, N(n, NULL, s, "_columns_type_scale"), 0, 0) != GDK_SUCCEED) {
 		BBPunfix(cnt->batCacheid);
 		BBPunfix(ct->batCacheid);
 		BBPunfix(cnd->batCacheid);
@@ -4495,9 +4495,7 @@ geom_sql_upgrade(int olddb)
 			"GRANT EXECUTE ON FUNCTION Contains(Geometry, double, double) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name in ("
+			"update sys.functions set system = true where name in ("
 			"'contains', 'geometrytype', 'getproj4', 'get_type', "
 			"'has_m', 'has_z', 'internaltransform', 'left_shift', "
 			"'mbr', 'mbr_above', 'mbr_below', 'mbr_contained', "
@@ -4545,7 +4543,7 @@ geom_sql_upgrade(int olddb)
 			"'st_within', 'st_wkbtosql', 'st_wkttosql', 'st_x', "
 			"'st_xmax', 'st_xmax', 'st_xmin', 'st_xmin', 'st_y', "
 			"'st_ymax', 'st_ymax', 'st_ymin', 'st_ymin', 'st_z') "
-			"and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+			"and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update _tables set system = true where name in ('geometry_columns', 'spatial_ref_sys') and schema_id = (select id from schemas where name = 'sys');\n");
 

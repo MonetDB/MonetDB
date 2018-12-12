@@ -437,6 +437,8 @@ BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int window, int str
 			b->tnosorted = 0;
 			b->tnorevsorted = 0;
 		}
+		BATrmprop(b, GDK_MAX_VALUE); /* TODO! */
+		BATrmprop(b, GDK_MIN_VALUE);
 		BATsettrivprop(b);
 	}
 	return MAL_SUCCEED;
@@ -706,6 +708,8 @@ BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(b){
 			BATsetcount(b,0);
 			BATsettrivprop(b);
+			BATrmprop(b, GDK_MAX_VALUE);
+			BATrmprop(b, GDK_MIN_VALUE);
 		}
 	}
 	MT_lock_unset(&baskets[idx].lock);

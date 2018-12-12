@@ -8,7 +8,7 @@
 
 /* author: M Kersten
  * Progress indicator
- * tachograph -d demo 
+ * tachograph -d demo
  * which connects to the demo database server and presents a server progress bar.
 */
 
@@ -133,7 +133,7 @@ int64_t finishtime = 0;
 int64_t duration =0;
 char *prevquery= 0;
 int prevprogress =0;// pc of previous progress display
-int prevlevel =0; 
+int prevlevel =0;
 size_t txtlength=0;
 
 // limit the number of separate queries in the pool
@@ -146,7 +146,7 @@ static void resetTachograph(void){
 	if (debug)
 		fprintf(stderr, "RESET tachograph\n");
 	if( prevprogress)
-		printf("\n"); 
+		printf("\n");
 	for(i=0; i < maxevents; i++)
 	if( events[i].stmt)
 		free(events[i].stmt);
@@ -187,9 +187,9 @@ rendertime(int64_t ticks, int flg)
 	min = (t /60) %60;
 	hr = (t /3600);
 	if( flg)
-	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d.%06d", hr,min,sec, (int) ticks %1000000); 
+	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d.%06d", hr,min,sec, (int) ticks %1000000);
 	else
-	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d", hr,min,sec); 
+	snprintf(stamp,BUFSIZ,"%02d:%02d:%02d", hr,min,sec);
 }
 
 #define MSGLEN 100
@@ -204,7 +204,7 @@ showBar(int level, int64_t clk, char *stmt)
 	nl = level/2-prevlevel/2;
 	if( level != 100 && (nl == 0 ||  level/2 <= prevlevel/2))
 		return;
-	assert(MSGLEN < BUFSIZ);
+	static_assert(MSGLEN < BUFSIZ, "MSGLEN too small");
 	if(prevlevel == 0)
 		printf("[");
 	else
@@ -230,7 +230,7 @@ showBar(int level, int64_t clk, char *stmt)
 		rendertime(clk - duration ,0);
 		printf(" +%s ETC  ",stamp);
 		stamplen= strlen(stamp)+3;
-	} 
+	}
 	if( stmt)
 		printf("%s",stmt);
 	fflush(stdout);
@@ -249,7 +249,7 @@ update(EventRecord *ev)
 	int progress=0;
 	int i;
 	int uid = 0,qid = 0;
- 
+
 	/* handle a ping event, keep the current instruction in focus */
 	if (ev->state >= MDB_PING ) {
 		// All state events are ignored
@@ -319,8 +319,7 @@ update(EventRecord *ev)
 		if(ev->fcn && strstr(ev->fcn,"querylog.define") ){
 			// extract a string argument from a known MAL signature
 			maxevents = malsize;
-			events = (Event*) malloc(maxevents * sizeof(Event));
-			memset((char*)events, 0, maxevents * sizeof(Event));
+			events = calloc(maxevents, sizeof(Event));
 			// use the truncated query text, beware that the \ is already escaped in the call argument.
 			if(currentquery) {
 				if( prevquery && strcmp(currentquery,prevquery)){
@@ -373,7 +372,7 @@ update(EventRecord *ev)
 				fprintf(stderr, "Leave function %s capture %d\n", currentfunction, capturing);
 			resetTachograph();
 			initFiles();
-		} 
+		}
 	}
 }
 
@@ -561,7 +560,7 @@ main(int argc, char **argv)
 			if (debug)
 				printf("LASTLINE:%s", response);
 			len = strlen(response);
-			strncpy(buffer, response, len + 1);
+			snprintf(buffer, len + 1, "%s", response);
 		} else /* reset this line of buffer */
 			len = 0;
 	}

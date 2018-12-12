@@ -31,6 +31,7 @@ lib_sqlserver = {
 		sql_symbol.c \
 		sql_scan.c \
 		sql_parser.y \
+		sql_partition.c \
 		sql_mvc.c \
 		sql_env.c \
 		sql_privileges.c \
@@ -48,6 +49,7 @@ lib_sqlserver = {
 		rel_planner.c rel_planner.h \
 		rel_distribute.c \
 		rel_remote.c rel_remote.h \
+		rel_propagate.c rel_propagate.h \
 		rel_psm.c \
 		rel_xml.c \
 		rel_dump.c \
@@ -58,5 +60,6 @@ lib_sqlserver = {
 		sql_decimal.h sql_env.h sql_mvc.h sql_parser.h \
 		sql_privileges.h sql_qc.h sql_scan.h \
 		sql_semantic.h sql_symbol.h \
-		sql_timestamps.c sql_timestamps.h
+		sql_timestamps.c sql_timestamps.h \
+		sql_partition.h
 }

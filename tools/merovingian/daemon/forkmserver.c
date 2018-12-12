@@ -359,6 +359,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	/* a multiplex-funnel means starting a separate thread */
 	if (strcmp(kv->val, "mfunnel") == 0) {
+		FILE *f1, *f2;
 		/* create a dpair entry */
 		pthread_mutex_lock(&_mero_topdp_lock);
 
@@ -377,8 +378,20 @@ forkMserver(char *database, sabdb** stats, int force)
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		kv = findConfKey(ckv, "mfunnel");
-		if ((er = multiplexInit(database, kv->val,
-								fdopen(pfdo[1], "a"), fdopen(pfde[1], "a"))) != NO_ERR) {
+		if(!(f1 = fdopen(pfdo[1], "a"))) {
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			return newErr("Failed to open file descriptor\n");
+		}
+		if(!(f2 = fdopen(pfde[1], "a"))) {
+			fclose(f1);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			return newErr("Failed to open file descriptor\n");
+		}
+		if ((er = multiplexInit(database, kv->val, f1, f2)) != NO_ERR) {
 			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
 					 getErrMsg(er));
 			freeConfFile(ckv);
@@ -583,13 +596,18 @@ forkMserver(char *database, sabdb** stats, int force)
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
 		ssize_t write_error;	/* to avoid compiler warning */
+		int dup_err;
 		close(pfdo[0]);
-		dup2(pfdo[1], 1);
+		dup_err = dup2(pfdo[1], 1);
 		close(pfdo[1]);
 
 		close(pfde[0]);
-		dup2(pfde[1], 2);
+		if(dup_err == -1)
+			perror("dup2");
+		dup_err = dup2(pfde[1], 2);
 		close(pfde[1]);
+		if(dup_err == -1)
+			perror("dup2");
 
 		write_error = write(1, "arguments:", 10);
 		for (c = 0; argv[c] != NULL; c++) {

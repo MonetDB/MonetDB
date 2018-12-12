@@ -1,7 +1,7 @@
 -- The values denoted as (-)1.7976931348623157E+308 (with capital E) are
 -- originally inf (infinity)
 create table t (val double, gid int);
-copy 3131 records into t from stdin using delimiters ' ','\n' null as 'nan';
+copy 3131 records into t from stdin using delimiters ' ',E'\n' null as 'nan';
 -1.7976931348623157E+308 23
 9007199254740992.0 9
 -5e-324 38
@@ -3133,7 +3133,7 @@ nan 18
 0.001002004008016032 16
 -0.001001001001001001 16
 0.001 16
-select gid, sum(val) from t where gid in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 22, 23, 31, 33, 35, 37, 39, 40) group by gid order by gid;
+select gid, sum(val) from t where gid in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 22, 23, 31, 33, 35, 37, 39, 40, 41) group by gid order by gid;
 -- these should all produce overflow
 select sum(val) from t where gid = 14;
 select sum(val) from t where gid = 20;

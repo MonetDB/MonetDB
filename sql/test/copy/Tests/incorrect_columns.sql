@@ -1,7 +1,7 @@
 -- test the situation where the number of column values are incorrect
 create table t_columns(i int, t string);
 
-copy 7 records into t_columns from stdin delimiters ',','\n' best effort;
+copy 7 records into t_columns from stdin delimiters ',',E'\n' best effort;
 1,hello
 2
 no tag

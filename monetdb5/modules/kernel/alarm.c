@@ -96,7 +96,8 @@ ALARMprelude(void *ret)
 {
 	(void) ret;
 #ifdef SIGALRM
-	(void) signal(SIGALRM, (void (*)()) CLKsignal);
+	if(signal(SIGALRM, (void (*)()) CLKsignal) == SIG_ERR)
+		throw(MAL, "alarm.prelude", SQLSTATE(HY001) "Signal call failed");
 #endif
 	return MAL_SUCCEED;
 }
@@ -113,7 +114,8 @@ ALARMepilogue(void *ret)
 #undef  SIG_IGN			/*((__sighandler_t)1 ) */
 #define SIG_IGN   ((__sighandler_t)1L)
 #endif
-	(void) signal(SIGALRM, SIG_IGN);
+	if(signal(SIGALRM, SIG_IGN) == SIG_ERR)
+		throw(MAL, "alarm.epilogue", SQLSTATE(HY001) "Signal call failed");
 #endif
 	for (k = 0; k < timerTop; k++) {
 		if (timer[k].action)
@@ -156,7 +158,7 @@ ALARMsetalarm(void *res, int *secs, str *action)
 	(void) res;
 	(void) secs;
 	(void) action;		/* foolc compiler */
-	throw(MAL, "alarm.setalarm", PROGRAM_NYI);
+	throw(MAL, "alarm.setalarm", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str
@@ -164,7 +166,7 @@ ALARMtimers(bat *res, bat *actions)
 {
 	(void) res;		/* fool compiler */
 	(void) actions;		/* fool compiler */
-	throw(MAL, "alarm.timers", PROGRAM_NYI);
+	throw(MAL, "alarm.timers", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 str

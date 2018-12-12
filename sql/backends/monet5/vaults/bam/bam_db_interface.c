@@ -173,18 +173,18 @@
 
 
 
-#define SQL_COPY_INTO_FILES "COPY BINARY INTO bam.files FROM ('%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_SQ	"COPY BINARY INTO bam.sq	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_RG	"COPY BINARY INTO bam.rg	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
-#define SQL_COPY_INTO_PG	"COPY BINARY INTO bam.pg	FROM ('%s', '%s', '%s', '%s', '%s', '%s');\n"
+#define SQL_COPY_INTO_FILES "COPY BINARY INTO bam.files FROM ('%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
+#define SQL_COPY_INTO_SQ	"COPY BINARY INTO bam.sq	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
+#define SQL_COPY_INTO_RG	"COPY BINARY INTO bam.rg	FROM ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
+#define SQL_COPY_INTO_PG	"COPY BINARY INTO bam.pg	FROM ('%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
 
 #define SQL_COPY_INTO_ALIGNMENTS	"COPY BINARY INTO bam.%salignments_"LLFMT" FROM \
-	('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
+	('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
 #define SQL_COPY_INTO_PAIRED_ALIGNMENTS "COPY BINARY INTO bam.paired_%s_alignments_"LLFMT" FROM \
 	('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', \
-	 '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');\n"
+	 '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s') ON SERVER;\n"
 
-#define SQL_COPY_INTO_ALIGNMENTS_EXTRA "COPY BINARY INTO bam.alignments_extra_"LLFMT" FROM ('%s', '%s', '%s', '%s');\n"
+#define SQL_COPY_INTO_ALIGNMENTS_EXTRA "COPY BINARY INTO bam.alignments_extra_"LLFMT" FROM ('%s', '%s', '%s', '%s') ON SERVER;\n"
 
 #define BUF_SIZE_CREATE_STORAGE_0 2048
 #define BUF_SIZE_CREATE_STORAGE_1 8192
@@ -247,7 +247,6 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 {
 	sql_column *c;
 	BAT *b = NULL;
-	BATiter li;
 	BUN p = 0, q = 0;
 	lng max_file_id = 0;
 
@@ -266,9 +265,9 @@ next_file_id(mvc * m, sql_table * files, lng * next_file_id)
 	for(i=0; i<3; ++i) {
 		b = store_funcs.bind_col(m->session->tr, c, i);
 
-		li = bat_iterator(b);
+		const lng *vals = (const lng *) Tloc(b, 0);
 		BATloop(b, p, q) {
-			lng t = *(lng *) BUNtail(li, p);
+			lng t = vals[p];
 			max_file_id = MAX(max_file_id, t);
 		}
 		BBPunfix(b->batCacheid);
@@ -512,7 +511,7 @@ drop_file(Client cntxt, str descr, lng file_id, sht dbschema)
 	 * if(b_file_id != NULL) {
 	 * iter_file_id = bat_iterator(b_file_id);
 	 * BATloop(b_file_id, p, q) {
-	 * lng t = *(lng *)BUNtail(iter_file_id, p);
+	 * lng t = *(lng *)BUNtloc(iter_file_id, p);
 	 * if(t == file_id) { */
 	/* We found the right file id, store oid */
 	/*tuple_oid = *(oid *)BUNhead(iter_file_id, q);

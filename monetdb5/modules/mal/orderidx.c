@@ -64,7 +64,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 			break;
 		/* fall through */
 	default:
-		if (BATorderidx(b, 1) != GDK_SUCCEED)
+		if (BATorderidx(b, true) != GDK_SUCCEED)
 			throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
 		return MAL_SUCCEED;
 	}
@@ -261,10 +261,10 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	memcpy(Tloc(bn, 0), (const oid *) b->torderidx->base + ORDERIDXOFF,
 		   BATcount(b) * SIZEOF_OID);
 	BATsetcount(bn, BATcount(b));
-	bn->tkey = 1;
+	bn->tkey = true;
 	bn->tsorted = bn->trevsorted = BATcount(b) <= 1;
-	bn->tnil = 0;
-	bn->tnonil = 1;
+	bn->tnil = false;
+	bn->tnonil = true;
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);

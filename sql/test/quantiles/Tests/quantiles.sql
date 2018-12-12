@@ -4,7 +4,7 @@ CREATE TABLE "sys"."lit" (
 	"l_extendedprice" DECIMAL(15,2),
 	"l_returnflag"    VARCHAR(1)
 );
-COPY 10000 RECORDS INTO "sys"."lit" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 10000 RECORDS INTO "sys"."lit" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 21168.23	"N"
 45983.16	"N"
 13309.60	"N"

@@ -163,8 +163,8 @@ CREATE TABLE "am_obj_region" (
 
 
 INSERT INTO params_str VALUES ('s_ontologySource_CHUNK','am',1.0);
-INSERT INTO params_str VALUES ('s_generator_bag_of_words_ATTRIBUTE_A','http:\/\/www.w3.org\/2004\/02\/skos\/core#prefLabel',1.0);
-INSERT INTO params_str VALUES ('s_generator_bag_of_words_ATTRIBUTE_B','http:\/\/www.w3.org\/2004\/02\/skos\/core#prefLabel',1.0);
+INSERT INTO params_str VALUES ('s_generator_bag_of_words_ATTRIBUTE_A','http://www.w3.org/2004/02/skos/core#prefLabel',1.0);
+INSERT INTO params_str VALUES ('s_generator_bag_of_words_ATTRIBUTE_B','http://www.w3.org/2004/02/skos/core#prefLabel',1.0);
 CREATE VIEW s__RESULTVIEW__2084207473789121672 AS SELECT id AS a1, prob AS prob FROM am_obj_dict;
 CREATE VIEW s__RESULTVIEW__3744103893006362204 AS SELECT tree AS a1, subject AS a2, pre AS a3, post AS a4, size AS a5, level AS a6, prob AS prob FROM am_obj_tree WHERE tree = 'RDF_properties';
 CREATE VIEW s__RESULTVIEW__5907800622365123282 AS SELECT paramName AS a1, value AS a2, prob AS prob FROM params_str WHERE paramName = 's_generator_bag_of_words_ATTRIBUTE_A';

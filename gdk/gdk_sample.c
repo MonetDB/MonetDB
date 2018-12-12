@@ -26,6 +26,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "xoshiro256starstar.h"
 
 #undef BATsample
 
@@ -108,7 +109,7 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bat, oid start, oid stop)
 
 /* BATsample implements sampling for void headed BATs */
 BAT *
-BATsample(BAT *b, BUN n)
+BATsample_with_seed(BAT *b, BUN n, unsigned seed)
 {
 	BAT *bn;
 	BUN cnt, slen;
@@ -117,28 +118,23 @@ BATsample(BAT *b, BUN n)
 
 	BATcheck(b, "BATsample", NULL);
 	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n", NULL);
-	ALGODEBUG
-		fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
-
 	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {
 		bn = BATdense(0, 0, 0);
-		if (bn == NULL) {
-			return NULL;
-		}
-	/* sample size is larger than the input BAT, return all oids */
 	} else if (cnt <= n) {
+		/* sample size is larger than the input BAT, return
+		 * all oids */
 		bn = BATdense(0, b->hseqbase, cnt);
-		if (bn == NULL) {
-			return NULL;
-		}
 	} else {
 		oid minoid = b->hseqbase;
 		oid maxoid = b->hseqbase + cnt;
+		random_state_engine rse;
+		
+		
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
-		bit antiset = n > cnt / 2;
+		bool antiset = n > cnt / 2;
 		slen = n;
 		if (antiset)
 			n = cnt - n;
@@ -152,12 +148,17 @@ BATsample(BAT *b, BUN n)
 			GDKfree(tree);
 			return NULL;
 		}
+
+		init_random_state_engine(&rse, seed);
+
 		/* while we do not have enough sample OIDs yet */
 		for (rescnt = 0; rescnt < n; rescnt++) {
 			oid candoid;
 			do {
+				double random_double = next_double(rse);
+
 				/* generate a new random OID */
-				candoid = (oid) (minoid + DRAND * (maxoid - minoid));
+				candoid = (oid) (minoid + random_double * (maxoid - minoid));
 				/* if that candidate OID was already
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
@@ -171,9 +172,20 @@ BATsample(BAT *b, BUN n)
 
 		BATsetcount(bn, slen);
 		bn->trevsorted = bn->batCount <= 1;
-		bn->tsorted = 1;
-		bn->tkey = 1;
+		bn->tsorted = true;
+		bn->tkey = true;
 		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
+	ALGODEBUG fprintf(stderr, "#BATsample(" ALGOBATFMT "," BUNFMT ")="
+			  ALGOOPTBATFMT "\n",
+			  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;
+}
+
+BAT *
+BATsample(BAT *b, BUN n)
+{
+	unsigned some_random_seed = (unsigned) rand();
+
+	return BATsample_with_seed(b, n,some_random_seed);
 }

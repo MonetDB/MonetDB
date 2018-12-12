@@ -82,6 +82,7 @@ extern int subtype_cmp(sql_subtype *t1, sql_subtype *t2);
 extern int arg_subtype_cmp(sql_arg *a, sql_subtype *t);
 extern int is_subtype(sql_subtype *t1, sql_subtype *t2);
 extern char *subtype2string(sql_subtype *t);
+extern char *subtype2string2(sql_subtype *tpe);
 
 extern void type_destroy(sql_type *t);
 
@@ -95,6 +96,7 @@ extern sql_subaggr *sql_find_aggr(sql_allocator *sa, sql_schema *s, const char *
 extern int subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2);
 
 extern int subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2);
+extern sql_subfunc *sql_find_func_by_name(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type);
 extern sql_subfunc *sql_find_func(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type, sql_subfunc *prev);
 extern list *sql_find_funcs(sql_allocator *sa, sql_schema *s, const char *name, int nrargs, int type);
 extern sql_subfunc *sql_bind_member(sql_allocator *sa, sql_schema *s, const char *name, sql_subtype *tp, int nrargs, sql_subfunc *prev);

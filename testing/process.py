@@ -13,7 +13,7 @@ import tempfile
 import copy
 import atexit
 import threading
-if sys.version[:1] == '2':
+if sys.version.startswith('2'):
     import Queue as queue
 else:
     import queue
@@ -67,7 +67,7 @@ def _delfiles():
 atexit.register(_delfiles)
 
 class _BufferedPipe:
-    def __init__(self, fd, waitfor = None, skip = None):
+    def __init__(self, fd, waitfor=None, skip=None):
         self._pipe = fd
         self._queue = queue.Queue()
         self._eof = False
@@ -76,8 +76,8 @@ class _BufferedPipe:
             self._wfq = queue.Queue()
         else:
             self._wfq = None
-        self._thread = threading.Thread(target = self._readerthread,
-                                        args = (fd, self._queue, waitfor, self._wfq, skip))
+        self._thread = threading.Thread(target=self._readerthread,
+                                        args=(fd, self._queue, waitfor, self._wfq, skip))
         self._thread.setDaemon(True)
         self._thread.start()
 
@@ -108,11 +108,11 @@ class _BufferedPipe:
                     else:
                         j = 0
                         while j < s:
-                            if skip[j:s] + c != skip[:s-j+1]:
+                            if not skip.startswith(skip[j:s] + c):
                                 skipqueue.append(skip[j])
                                 j += 1
                             else:
-                                s = s-j+1
+                                s -= j - 1
                                 break
                         else:
                             if c == skip[0]:
@@ -131,7 +131,7 @@ class _BufferedPipe:
                 else:
                     j = 0
                     while j < w:
-                        if waitfor[j:w] + c != waitfor[:w-j+1]:
+                        if not waitfor.startswith(waitfor[j:w] + c):
                             queue.put(waitfor[j])
                             j += 1
                         else:
@@ -162,7 +162,7 @@ class _BufferedPipe:
             self._thread.join()
         self._thread = None
 
-    def read(self, size = -1):
+    def read(self, size=-1):
         if self._eof:
             return self._empty
         if size < 0:
@@ -186,7 +186,7 @@ class _BufferedPipe:
                 break                   # EOF
         return self._empty.join(ret)
 
-    def readline(self, size = -1):
+    def readline(self, size=-1):
         ret = []
         while size != 0:
             c = self.read(1)
@@ -212,7 +212,7 @@ class Popen(subprocess.Popen):
                 pass
         return ret
 
-    def communicate(self, input = None):
+    def communicate(self, input=None):
         # since we always use threads for stdout/stderr, we can just read()
         stdout = None
         stderr = None
@@ -232,11 +232,11 @@ class Popen(subprocess.Popen):
         self.wait()
         return stdout, stderr
 
-def client(lang, args = [], stdin = None, stdout = None, stderr = None,
-           port = os.getenv('MAPIPORT'), dbname = os.getenv('TSTDB'), host = None,
-           user = 'monetdb', passwd = 'monetdb', log = False,
-           interactive = None, echo = None, format = None,
-           input = None, communicate = False, universal_newlines = True):
+def client(lang, args=[], stdin=None, stdout=None, stderr=None,
+           server=None, port=None, dbname=None, host=None,
+           user='monetdb', passwd='monetdb', log=False,
+           interactive=None, echo=None, format=None,
+           input=None, communicate=False, universal_newlines=True):
     '''Start a client process.'''
     if lang == 'mal':
         cmd = _mal_client[:]
@@ -244,6 +244,8 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         cmd = _sql_client[:]
     elif lang == 'sqldump':
         cmd = _sql_dump[:]
+    if verbose:
+        sys.stdout.write('Default client: ' + ' '.join(cmd +  args) + '\n')
 
     # no -i if input from -s or /dev/null
     if '-i' in cmd and ('-s' in args or stdin is None):
@@ -267,18 +269,28 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
 
     env = None
 
+    # if server instance is specified, it provides defaults for
+    # database name and port
+    if server is not None:
+        if port is None:
+            port = server.dbport
+        if dbname is None:
+            dbname = server.dbname
+
     if port is not None:
         for i in range(len(cmd)):
-            if cmd[i][:7] == '--port=':
+            if cmd[i].startswith('--port='):
                 del cmd[i]
                 break
         cmd.append('--port=%d' % int(port))
+    if dbname is None:
+        dbname = os.getenv('TSTDB')
     if dbname is not None:
         cmd.append('--database=%s' % dbname)
     fnam = None
     if user is not None or passwd is not None:
         env = copy.deepcopy(os.environ)
-        fd, fnam = tempfile.mkstemp(text = True)
+        fd, fnam = tempfile.mkstemp(text=True)
         _dotmonetdbfile.append(fnam)
         if user is not None:
             os.write(fd, ('user=%s\n' % user).encode('utf-8'))
@@ -288,7 +300,7 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         env['DOTMONETDBFILE'] = fnam
     if host is not None:
         for i in range(len(cmd)):
-            if cmd[i][:7] == '--host=':
+            if cmd[i].startswith('--host='):
                 del cmd[i]
                 break
         cmd.append('--host=%s' % host)
@@ -320,12 +332,12 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
     else:
         out = stdout
     p = Popen(cmd + args,
-              stdin = stdin,
-              stdout = out,
-              stderr = stderr,
-              shell = False,
-              env = env,
-              universal_newlines = universal_newlines)
+              stdin=stdin,
+              stdout=out,
+              stderr=stderr,
+              shell=False,
+              env=env,
+              universal_newlines=universal_newlines)
     p.dotmonetdbfile = fnam
     if stdout == PIPE:
         p.stdout = _BufferedPipe(p.stdout)
@@ -339,10 +351,10 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
         sys.stderr.write(err)
     return p
 
-def server(args = [], stdin = None, stdout = None, stderr = None,
-           mapiport = None, dbname = os.getenv('TSTDB'), dbfarm = None,
-           dbinit = None, dbextra=None, bufsize = 0, log = False,
-           notrace = False, notimeout = False):
+def server(args=[], stdin=None, stdout=None, stderr=None,
+           mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
+           dbextra=None, bufsize=0, log=False,
+           notrace=False, notimeout=False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -350,31 +362,32 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                '--set', 'mapi_open=true',
                '--set', 'gdk_nr_threads=1',
                '--set', 'monet_prompt=']
+    if verbose:
+        sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
-    if dbinit is not None:
-        cmd.append('--dbinit')
-        cmd.append(dbinit)
     if mapiport is not None:
+        # make sure it's a string
+        mapiport = str(int(mapiport))
         for i in range(len(cmd)):
-            if cmd[i][:10] == 'mapi_port=':
+            if cmd[i].startswith('mapi_port='):
                 del cmd[i]
                 del cmd[i - 1]
                 break
         usock = None
         for i in range(len(cmd)):
-            if cmd[i][:11] == 'mapi_usock=':
+            if cmd[i].startswith('mapi_usock='):
                 usock = cmd[i][11:cmd[i].rfind('.')]
                 del cmd[i]
                 del cmd[i - 1]
                 break
         cmd.append('--set')
-        cmd.append('mapi_port=%d' % int(mapiport))
+        cmd.append('mapi_port=%s' % mapiport)
         if usock is not None:
             cmd.append('--set')
-            cmd.append('mapi_usock=%s.%d' % (usock, int(mapiport)))
+            cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
     for i in range(len(cmd)):
-        if cmd[i][:9] == '--dbpath=':
+        if cmd[i].startswith('--dbpath='):
             dbpath = cmd[i][9:]
             del cmd[i]
             break
@@ -395,7 +408,7 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
     if dbpath is not None:
         cmd.append('--dbpath=%s' % dbpath)
     for i in range(len(cmd)):
-        if cmd[i][:10] == '--dbextra=':
+        if cmd[i].startswith('--dbextra='):
             dbextra_path = cmd[i][10:]
             del cmd[i]
             break
@@ -438,12 +451,12 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
         sys.stderr.write('\n')
         sys.stderr.flush()
     p = Popen(cmd + args,
-              stdin = stdin,
-              stdout = stdout,
-              stderr = stderr,
-              shell = False,
-              universal_newlines = True,
-              bufsize = bufsize)
+              stdin=stdin,
+              stdout=stdout,
+              stderr=stderr,
+              shell=False,
+              universal_newlines=True,
+              bufsize=bufsize)
     if stderr == PIPE:
         p.stderr = _BufferedPipe(p.stderr)
     if stdout == PIPE:
@@ -459,4 +472,8 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
             p.stdout._waitfor()
         else:
             p.stdout = _BufferedPipe(p.stdout)
+    # store database name and port in the returned instance for the
+    # client to pick up
+    p.dbname = dbname
+    p.dbport = mapiport
     return p

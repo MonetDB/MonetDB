@@ -10,10 +10,6 @@ monetdb_var_logdir = $(logdir)
 monetdb_var_log_DATA = 
 monetdb_var_rundir = $(rundir)
 monetdb_var_run_DATA = 
-monetdb_var_dbfarmdir = $(localstatedir)/monetdb5/dbfarm
-monetdb_var_dbfarm_DATA = .merovingian_properties
-monetdb_etc_systemddir = $(prefix)/lib/systemd/system
-monetdb_etc_systemd_DATA = monetdbd.service
 
 INCLUDES = .. \
 		   ../../../common/stream \
@@ -24,7 +20,8 @@ INCLUDES = .. \
 		   ../../../monetdb5/mal \
 		   $(MSGCONTROL_FLAGS)
 
-EXTRA_DIST = monetdbd.1.in .merovingian_properties.in monetdbd.service.in
+SUBDIRS = config
+EXTRA_DIST = monetdbd.1.in
 
 bin_monetdbd = {
 	SOURCES = \
@@ -49,7 +46,7 @@ bin_monetdbd = {
 		   ../../../gdk/libbat \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \
-		   $(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) \
+		   $(SOCKET_LIBS) $(zlib_LIBS) $(bzip2_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) \
 		   $(MATH_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PSAPILIB) $(KVM_LIBS) \
 		   $(pcre_LIBS) $(libxml2_LIBS)
 }

@@ -12,11 +12,10 @@
 str
 ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, top = 0;
-	bat *bid;
+	int i;
+	bat bid;
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b, **joins = (BAT**)GDKzalloc(pci->argc * sizeof(BAT*)); 
-	int error = 0;
 
 	(void) mb;
 	(void) cntxt;
@@ -25,27 +24,20 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( joins == NULL)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = pci->retc; i < pci->argc; i++) {
-		bid = getArgReference_bat(stk, pci, i);
-		b = BATdescriptor(*bid);
-		if (b == NULL) {
-			error = 1;
-		} else {
-			if (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid) {
-				error = 1;
-			}
-			else joins[top++] = b;
-		}
-		if (error) {
-			while (top-- > 0)
-				BBPunfix(joins[top]->batCacheid);
+		bid = *getArgReference_bat(stk, pci, i);
+		b = BATdescriptor(bid);
+		if (b == NULL || (i + 1 < pci->argc && ATOMtype(b->ttype) != TYPE_oid)) {
+			while (--i >= pci->retc)
+				BBPunfix(joins[i - pci->retc]->batCacheid);
 			GDKfree(joins);
 			throw(MAL, "algebra.projectionpath", "%s", b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
 		}
+		joins[i - pci->retc] = b;
 	}
-	joins[top] = NULL;
+	joins[pci->argc - pci->retc] = NULL;
 	b = BATprojectchain(joins);
-	while (top-- > 0)
-		BBPunfix(joins[top]->batCacheid);
+	for (i = pci->retc; i < pci->argc; i++)
+		BBPunfix(joins[i - pci->retc]->batCacheid);
 	GDKfree(joins);
 	if ( b)
 		BBPkeepref( *r = b->batCacheid);

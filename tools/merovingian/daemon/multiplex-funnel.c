@@ -167,7 +167,7 @@ MFconnectionManager(void *d)
 							sabdb *walk;
 							sabdb *stats = getRemoteDB(m->dbcv[i]->database);
 							Mapi tm = m->dbcv[i]->conn;
-							char *uri = mapi_get_uri(tm);
+							const char *uri = mapi_get_uri(tm);
 							if (stats == NULL) {
 								Mfprintf(stderr, "target %s can no longer "
 										"be resolved\n",

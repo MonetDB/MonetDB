@@ -19,7 +19,7 @@ Options are:
  -d database | --database=database  database to connect to (may be URI)
  -e          | --echo             echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
- -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}
+ -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash,rowcount}
  -H          | --history          load/save cmdline history (default off)
  -i          | --interactive      interpret `\' commands on stdin
  -t          | --timer=format     use time formatting {none,clock,performance} (none is default)
@@ -34,6 +34,7 @@ Options are:
 SQL specific opions 
  -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes
  -a          | --autocommit       turn off autocommit mode
+ -R          | --allow-remote     allow remote content
  -r nr       | --rows=nr          for pagination
  -w nr       | --width=nr         for pagination
  -D          | --dump             create an SQL dump

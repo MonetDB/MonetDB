@@ -209,7 +209,7 @@ typedef struct CLIENT {
 
 	size_t blocksize;
 	protocol_version protocol;
-	int compute_column_widths;
+	bool filetrans;				/* whether the client can read files for us */
 
 	PlantRecord *plants;
 	int lastPlant;

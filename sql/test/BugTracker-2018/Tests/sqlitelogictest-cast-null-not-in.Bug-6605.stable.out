@@ -1,0 +1,87 @@
+stdout of test 'sqlitelogictest-cast-null-not-in.Bug-6605` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 13:53:33 >  
+# 13:53:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39693" "--set" "mapi_usock=/var/tmp/mtest-31327/.s.monetdb.39693" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 13:53:33 >  
+
+# MonetDB 5 server v11.29.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:39693/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31327/.s.monetdb.39693
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:53:33 >  
+# 13:53:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31327" "--port=39693"
+# 13:53:33 >  
+
+#START TRANSACTION;
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47), (87,21,10);
+[ 3	]
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
+#INSERT INTO tab2 VALUES (64,77,40), (75,67,58), (46,51,23);
+[ 3	]
+#SELECT * FROM tab0 cor0 WHERE + col2 + + + 89 + - CAST ( NULL AS REAL ) NOT IN ( 28 * + 37 - ( + col1 ) + + 63, 4,
+#( ( + - col0 ) ), + col2 );
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT * FROM tab1 AS cor0 WHERE CAST ( NULL AS INTEGER ) * CAST ( CAST ( + col2 AS INTEGER ) AS INTEGER ) * + + col1
+#NOT IN ( + 79 + col1, - col2 );
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT DISTINCT * FROM tab2 WHERE + col2 / - + CAST ( NULL AS INTEGER ) NOT IN ( + 92 * + col1, 7 );
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#TRUNCATE tab0;
+[ 3	]
+#TRUNCATE tab1;
+[ 3	]
+#TRUNCATE tab2;
+[ 3	]
+#INSERT INTO tab0 VALUES (97,1,99), (15,81,47), (87,21,10);
+[ 3	]
+#INSERT INTO tab1 VALUES (51,14,96), (85,5,59), (91,47,68);
+[ 3	]
+#INSERT INTO tab2 VALUES (64,77,40), (75,67,58), (46,51,23);
+[ 3	]
+#SELECT * FROM tab0 WHERE + col1 * CAST ( NULL AS INTEGER ) NOT IN ( + col2 );
+% sys.tab0,	sys.tab0,	sys.tab0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT * FROM tab1 AS cor0 WHERE CAST ( + col1 AS INTEGER ) * - 49 NOT IN ( - - CAST ( NULL AS REAL ) * col1,
+#col2 - + 22, - - 21 );
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT DISTINCT * FROM tab2 AS cor0 WHERE CAST ( NULL AS INTEGER ) / col2 NOT IN ( 19 / col2 );
+% sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#ROLLBACK;
+
+# 13:53:34 >  
+# 13:53:34 >  "Done."
+# 13:53:34 >  
+

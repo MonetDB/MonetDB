@@ -12,8 +12,10 @@
 #error this file should not be included outside its source directory
 #endif
 
-#define DISABLE_PARENT_HASH 1
-/* #define PERSISTENTHASH 1 */
+/* persist hash heaps for persistent BATs */
+#define PERSISTENTHASH 1
+
+/* persist order index heaps for persistent BATs */
 #define PERSISTENTIDX 1
 
 #include "gdk_system_private.h"
@@ -47,7 +49,7 @@ __hidden gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__visibility__("hidden")));
 __hidden bool BATcheckorderidx(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BATcreatedesc(oid hseq, int tt, int heapnames, int role)
+__hidden BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -55,8 +57,10 @@ __hidden void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, int subsorted)
+__hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+__hidden Hash *BAThash_impl(BAT *b, BAT *s, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -73,7 +77,8 @@ __hidden void BATsetdims(BAT *b)
 __hidden gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void BBPdump(void);		/* never called: for debugging only */
+void BBPdump(void)		/* never called: for debugging only */
+	__attribute__((__cold__));
 __hidden void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BBPgetdesc(bat i)
@@ -88,6 +93,8 @@ __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
+	__attribute__((__visibility__("hidden")));
+__hidden bool binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
@@ -105,10 +112,16 @@ __hidden BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *res
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
-__hidden Heap *createOIDXheap(BAT *b, int stable)
-	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bit force)
+__hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+__hidden Heap *createOIDXheap(BAT *b, bool stable)
+	__attribute__((__visibility__("hidden")));
+__hidden BAT *doublerange(oid l1, oid h1, oid l2, oid h2)
+	__attribute__((__visibility__("hidden")));
+__hidden BAT *doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
+	__attribute__((__visibility__("hidden")));
+__hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextend(const char *fn, size_t size)
 	__attribute__((__warn_unused_result__))
@@ -138,7 +151,7 @@ __hidden gdk_return GDKmunmap(void *addr, size_t len)
 __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
+__hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
@@ -146,6 +159,8 @@ __hidden gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void 
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+__hidden void gdk_system_reset(void)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
@@ -165,9 +180,9 @@ __hidden gdk_return HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
-__hidden void HEAPfree(Heap *h, int remove)
+__hidden void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
+__hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden void HEAP_recover(Heap *, const var_t *, BUN)
@@ -185,8 +200,8 @@ __hidden void IMPSfree(BAT *b)
 __hidden int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
 	__attribute__((__visibility__("hidden")));
 #ifndef NDEBUG
-__hidden void IMPSprint(BAT *b)
-	__attribute__((__visibility__("hidden")));
+void IMPSprint(BAT *b)		/* never called: for debugging only */
+	__attribute__((__cold__));
 #endif
 __hidden void MT_init_posix(void)
 	__attribute__((__visibility__("hidden")));
@@ -198,14 +213,26 @@ __hidden void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
+__hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void strCleanHash(Heap *hp, int rebuild)
+__hidden void strCleanHash(Heap *hp, bool rebuild)
+	__attribute__((__visibility__("hidden")));
+__hidden int strCmp(const char *l, const char *r)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
 	__attribute__((__visibility__("hidden")));
+__hidden void strHeap(Heap *d, size_t cap)
+	__attribute__((__visibility__("hidden")));
 __hidden var_t strLocate(Heap *h, const char *v)
+	__attribute__((__visibility__("hidden")));
+__hidden var_t strPut(Heap *h, var_t *dst, const char *v)
+	__attribute__((__visibility__("hidden")));
+__hidden str strRead(str a, stream *s, size_t cnt)
+	__attribute__((__visibility__("hidden")));
+__hidden ssize_t strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
+	__attribute__((__visibility__("hidden")));
+__hidden gdk_return strWrite(const char *a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return unshare_string_heap(BAT *b)
 	__attribute__((__warn_unused_result__))
@@ -217,18 +244,45 @@ __hidden gdk_return VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-__hidden bool binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
-	__attribute__((__visibility__("hidden")));
-__hidden void gdk_bbp_reset(void)
-	__attribute__((__visibility__("hidden")));
-__hidden void gdk_system_reset(void)
-	__attribute__((__visibility__("hidden")));
 
-#define BBP_BATMASK	511
+/* some macros to help print info about BATs when using ALGODEBUG */
+#define ALGOBATFMT	"%s#" BUNFMT "[%s]%s%s%s%s%s%s%s%s%s"
+#define ALGOBATPAR(b)	BATgetId(b),			\
+			BATcount(b),			\
+			ATOMname(b->ttype),		\
+			b->batPersistence == PERSISTENT ? "P" : isVIEW(b) ? "V" : "T", \
+			BATtdense(b) ? "D" : "",	\
+			b->tsorted ? "S" : "",		\
+			b->trevsorted ? "R" : "",	\
+			b->tkey ? "K" : "",		\
+			b->tnonil ? "N" : "",		\
+			b->thash ? "H" : "",		\
+			b->torderidx ? "O" : "",	\
+			b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
+/* use ALGOOPTBAT* when BAT is optional (can be NULL) */
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATPAR(b)				\
+			b ? BATgetId(b) : "",		\
+			b ? "#" : "",			\
+			b ? BATcount(b) : 0,		\
+			b ? "[" : "",			\
+			b ? ATOMname(b->ttype) : "",	\
+			b ? "]" : "",			\
+			b ? b->batPersistence == PERSISTENT ? "P" : isVIEW(b) ? "V" : "T" : "", \
+			b && BATtdense(b) ? "D" : "",	\
+			b && b->tsorted ? "S" : "",	\
+			b && b->trevsorted ? "R" : "",	\
+			b && b->tkey ? "K" : "",	\
+			b && b->tnonil ? "N" : "",	\
+			b && b->thash ? "H" : "",	\
+			b && b->torderidx ? "O" : "",	\
+			b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
+
+#define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
 #define BBP_THREADMASK	63
 
 struct PROPrec {
-	int id;
+	enum prop_t id;
 	ValRecord v;
 	struct PROPrec *next;	/* simple chain of properties */
 };
@@ -266,7 +320,7 @@ extern struct BBPfarm_t {
 	FILE *lock_file;
 } BBPfarms[MAXFARMS];
 
-extern int BBP_dirty;	/* BBP table dirty? */
+extern bool BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
@@ -276,8 +330,6 @@ extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;
-
-#define BBPdirty(x)	(BBP_dirty=(x))
 
 #define BATcheck(tst, msg, err)						\
 	do {								\

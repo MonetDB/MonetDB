@@ -25,7 +25,7 @@ Ready.
 # 16:32:28 >  
 
 #select 
-#        case when EXISTS ( select hashes from sys.tablestoragemodel )
+#        case when EXISTS ( select hashsize from sys.tablestoragemodel )
 #                then (true)
 #                else (false)
 #        end
@@ -38,7 +38,7 @@ Ready.
 [ false	]
 [ false	]
 #select 
-#        case when EXISTS ( select count(hashes) from sys.tablestoragemodel )
+#        case when EXISTS ( select count(hashsize) from sys.tablestoragemodel )
 #                then (true)
 #                else (false)
 #        end

@@ -9,8 +9,7 @@ INSERT INTO OID_TBL(f1) VALUES (1235);
 INSERT INTO OID_TBL(f1) VALUES ('987');
 INSERT INTO OID_TBL(f1) VALUES (12345678901);
 INSERT INTO OID_TBL(f1) VALUES ('000');
-INSERT INTO OID_TBL(f1) VALUES ('    ');  -- in MonetDB this one is accepted
--- leading/trailing hard tab is also allowed
+-- leading/trailing hard tab is allowed
 INSERT INTO OID_TBL(f1) VALUES ('5     ');
 INSERT INTO OID_TBL(f1) VALUES ('   10  ');
 INSERT INTO OID_TBL(f1) VALUES ('	  15 	  ');
@@ -19,6 +18,7 @@ INSERT INTO OID_TBL(f1) VALUES (null);
 SELECT '' AS ten, OID_TBL.*, cast(f1 as varchar(30)) as oid2str FROM OID_TBL;
 
 -- bad inputs
+INSERT INTO OID_TBL(f1) VALUES ('    ');  -- in MonetDB this one is not accepted
 INSERT INTO OID_TBL(f1) VALUES ('asdfasd');
 INSERT INTO OID_TBL(f1) VALUES ('99asdfasd');
 INSERT INTO OID_TBL(f1) VALUES ('5    d');

@@ -265,7 +265,7 @@ cleanup:
 	if(b)
 		buffer_destroy(b);
 	if(s)
-		mnstr_destroy(s);
+		close_stream(s);
 	return res;
 }
 
@@ -277,14 +277,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	const char *uri = mapiuri_uri(prp->value, m->sa);
+	const char *local_tbl = prp->value;
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
 	char *lname;
 	sql_rel *r = rel;
 
-	if(uri == NULL)
+	if(local_tbl == NULL)
 		return -1;
 
 	lname = GDKstrdup(name);
@@ -356,11 +356,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		lret[i] = getArg(p, 0);
 	}
 
-	/* q := remote.connect("uri", "user", "pass", "language"); */
+	/* q := remote.connect("schema.table", "msql"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
-	p = pushStr(curBlk, p, uri);
-	p = pushStr(curBlk, p, "monetdb");
-	p = pushStr(curBlk, p, "monetdb");
+	p = pushStr(curBlk, p, local_tbl);
 	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 
@@ -654,7 +652,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 
 	be->mvc_var = old_mv;
 	be->mb = old_mb;
-	if (top && c->caching && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+	if (top && c->clientid && !be->depth && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		q = newStmt(mb, sqlRef, exportOperationRef);
 		if (q == NULL)
 			return -1;
@@ -1291,8 +1289,7 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	/* output the data */
 	mnstr_printf(fd, "%s\n", b->buf + 1 /* omit starting \n */);
 
-	mnstr_close(s);
-	mnstr_destroy(s);
+	close_stream(s);
 	buffer_destroy(b);
 }
 

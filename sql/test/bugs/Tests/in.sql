@@ -34,7 +34,7 @@ select 'hello world' where (1,1) not in (select 1,1);
 select 'hello world' where (1,1) not in (select 1,5);
 
 create table in_table( in_col int, colid int, helloworld varchar(20));
-insert into in_table values (1, 10, 'hello'), (2, 12,  'world'), (3, 14, '\n');
+insert into in_table values (1, 10, 'hello'), (2, 12,  'world'), (3, 14, E'\n');
 
 select helloworld from in_table where 1 in (1);
 select helloworld from in_table where 1 in (0);

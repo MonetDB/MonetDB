@@ -266,6 +266,17 @@ string, use \fB\-n \(dq\(dq\fP (with the space) or \fB\-\-null=\fP.
 Switch autocommit mode off.
 By default, autocommit mode is on.
 .TP
+\fB\-\-allow\-remote\fP (\fB\-R\fP)
+Allow remote content (URLs) in the
+.B COPY INTO
+.I table
+.B FROM
+.I file
+.B ON CLIENT
+\&...
+query.  Remote content is retrieved by
+.IR mclient .
+.TP
 \fB\-\-rows=\fP\fInr\fP (\fB\-r\fP \fInr\fP)
 If specified, query results will be paged by an internal pager at the
 specified number of lines.
@@ -458,6 +469,20 @@ should be at least as large as the number of records actually present
 in the CSV file.
 This, because otherwise the remainder of the file will be interpreted
 as SQL queries.
+.PP
+Another, easier method to have the client read the file content is as
+follows.
+.PP
+mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' ON CLIENT USING DELIMITERS ',','\e\en',\e\(dq'\(dq
+.PP
+If, in addition, the option
+.B \-\-allow\-remote
+is passed to
+.IR mclient ,
+the
+.I $file
+in the above query can also be a URL.  It then has to have the form
+.IB schema :// string .
 .PP
 See https://www.monetdb.org/Documentation/Manuals/SQLreference/CopyInto
 for more information about the COPY INTO query.

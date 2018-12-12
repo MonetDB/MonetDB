@@ -9,7 +9,7 @@ CREATE TABLE "sys"."c__has_a" (
         "property_class" VARCHAR(32672)
 );
 CREATE INDEX "c__has_a_property_index" ON "sys"."c__has_a" ("property_table", "property_id");
-COPY 1 RECORDS INTO "sys"."c__has_a" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 1 RECORDS INTO "sys"."c__has_a" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 NULL	NULL	NULL	"SIMPLE"	4	"simpleclass"
 COMMIT;
 

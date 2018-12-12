@@ -27,6 +27,7 @@ code_gen = {'y':        [ '.tab.c', '.tab.h' ],
             'brg':      [ '.c' ],
             't':        [ '.c' ],
             'c':        [ '.o' ],
+            'cpp':      [ '.o' ],
 #            'java':     [ '.class' ],
             #'tex':      [ '.html', '.dvi', '.pdf' ],
             #'dvi':      [ '.ps' ],
@@ -68,6 +69,7 @@ t_inc = re.compile(t_inc, re.MULTILINE)
 
 scan_map = {
     'c': [ c_inc, None, '' ],
+    'cpp': [ c_inc, None, '' ],
     'h': [ c_inc, None, '' ],
     'y': [ c_inc, None, '' ],
     'l': [ c_inc, None, '' ],
@@ -378,7 +380,6 @@ def codegen(tree, cwd, topdir, incdirsmap):
         targets = []
         if type(v) is type({}) and "SOURCES" in v:
             for f in v["SOURCES"]:
-                base,ext = split_filename(f)
                 if f not in targets:
                     targets.append(f)
             targets = do_code_gen(targets,deps,code_gen)

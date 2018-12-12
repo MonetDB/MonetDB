@@ -82,7 +82,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 			_DELETE(c->name);
 			return NULL;
 		}
-		if (BUNappend(b, val, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b, val, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			_DELETE(c->tn);
 			_DELETE(c->name);
@@ -137,14 +137,6 @@ res_table_destroy(res_table *t)
 	if (t->order)
 		bat_decref(t->order);
 	_DELETE(t->cols);
-	if (t->tsep)
-		_DELETE(t->tsep);
-	if (t->rsep)
-		_DELETE(t->rsep);
-	if (t->ssep)
-		_DELETE(t->ssep);
-	if (t->ns)
-		_DELETE(t->ns);
 	_DELETE(t);
 }
 

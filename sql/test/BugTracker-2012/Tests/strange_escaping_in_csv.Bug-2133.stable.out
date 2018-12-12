@@ -50,16 +50,26 @@ bla
 """bla"
 """bla""""blah"""
 blah's nork
+#select E'blah\'nork';
 blah'nork
+#select E'blah\,blah';
 "blah,blah"
 "blah \tthe \n black"
-blah 	 the \n black
-blah\blah
+#select 'blah \t the \\n black';
+"blah \t the \\n black"
+#select 'blah\\blah';
+"blah\\blah"
+#select '\n';
 "\n"
-	
-\n
-\t
-"\\""blah\\"""
+#select '\t';
+"\t"
+#select '\\n';
+"\\n"
+#select '\\t';
+"\\t"
+#select '\"blah\"';
+"""blah"""
+#select '"blah"';
 """blah"""
 
 # 16:17:12 >  

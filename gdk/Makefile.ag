@@ -21,11 +21,11 @@ lib_gdk = {
 		gdk_orderidx.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
 		gdk_heap.c gdk_utils.c gdk_utils.h \
-		gdk_atoms.c gdk_atoms.h \
+		gdk_atoms.c gdk_atoms.h gdk_string.c \
 		gdk_qsort.c gdk_qsort_impl.h \
 		gdk_storage.c gdk_bat.c \
 		gdk_delta.c gdk_cross.c gdk_system.c gdk_value.c \
-		gdk_posix.c gdk_logger.c gdk_sample.c \
+		gdk_posix.c gdk_logger.c gdk_sample.c xoshiro256starstar.h \
 		gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h \
 		gdk_system.h gdk_system_private.h gdk_tm.h gdk_storage.h \
 		gdk_group.c \
@@ -34,6 +34,8 @@ lib_gdk = {
 		gdk_unique.c \
 		gdk_interprocess.c gdk_interprocess.h \
 		gdk_firstn.c \
+		gdk_analytic_bounds.c \
+		gdk_analytic_func.c gdk_analytic.h \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
 		../common/utils/libmutils \
@@ -52,6 +54,7 @@ headers_h = {
 	HEADERS = h
 	SOURCES = \
 		gdk.h \
+		gdk_analytic.h \
 		gdk_atomic.h \
 		gdk_atoms.h \
 		gdk_bbp.h \

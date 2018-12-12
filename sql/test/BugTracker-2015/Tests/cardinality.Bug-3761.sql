@@ -9,7 +9,7 @@ CREATE TABLE tbls (
 	"readonly"      BOOLEAN,
 	"temporary"     SMALLINT
 );
-COPY 54 RECORDS INTO tbls FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 54 RECORDS INTO tbls FROM stdin USING DELIMITERS E'\t',E'\n','"';
 2001	schemas	2000		10	true	0	0	0
 2007	types	2000		10	true	0	0	0
 2016	functions	2000		10	true	0	0	0
@@ -71,7 +71,7 @@ CREATE TABLE schms (
 	"owner"         INTEGER,
 	"system"        BOOLEAN
 );
-COPY 4 RECORDS INTO schms FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 4 RECORDS INTO schms FROM stdin USING DELIMITERS E'\t',E'\n','"';
 2000	"sys"	2	3	true
 2106	"tmp"	2	3	true
 6821	"json"	3	3	true

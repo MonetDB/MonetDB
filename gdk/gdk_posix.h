@@ -20,7 +20,7 @@
 #include <sys/time.h>		/* gettimeofday */
 #endif
 
-#if defined(HAVE_WINSOCK_H) && defined(NATIVE_WIN32)
+#ifdef HAVE_WINSOCK_H
 #include <winsock.h>		/* for timeval */
 #endif
 
@@ -132,7 +132,7 @@ gdk_export size_t MT_getrss(void);
 gdk_export void *MT_mmap(const char *path, int mode, size_t len);
 gdk_export int MT_munmap(void *p, size_t len);
 
-gdk_export int MT_path_absolute(const char *path);
+gdk_export bool MT_path_absolute(const char *path);
 
 
 /*

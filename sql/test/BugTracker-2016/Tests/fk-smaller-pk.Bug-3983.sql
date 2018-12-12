@@ -12,10 +12,10 @@ CREATE TABLE child2(x int REFERENCES parent2);
 -- it is accepted but I prefer to get a warning
 
 -- show PK columns
-SELECT * FROM dependencies_columns_on_keys() WHERE usr LIKE 'parent%';
+SELECT table_name, column_name, key_name, key_col_nr, key_type, depend_type FROM dependency_columns_on_keys WHERE table_name LIKE 'parent%' AND key_name LIKE 'parent%';
 
 -- show FK columns
-SELECT * FROM dependencies_keys_on_foreignkeys() WHERE usr LIKE 'child%';
+SELECT key_name, fk_name, key_type, depend_type FROM dependency_keys_on_foreignkeys WHERE fk_name LIKE 'child%';
 
 drop table child1;
 drop table parent2;

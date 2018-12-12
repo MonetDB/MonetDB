@@ -99,7 +99,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	BATloop(src, p, q) {
 		char *tr = NULL, *err = NULL;
 
-		const char *t = (const char *) BUNtail(li, p);
+		const char *t = (const char *) BUNtvar(li, p);
 
 		/* revert tail value */
 		err = UDFreverse_(&tr, t);
@@ -113,7 +113,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 		assert(tr != NULL);
 
 		/* append reversed tail in result BAT */
-		if (BUNappend(bn, tr, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(bn, tr, false) != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batudf.reverse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -299,12 +299,12 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		 */
 		if (BATtordered(bone)
 		    && (BATtkey(bone) || two_tail_sorted_unsigned))
-			bres->tsorted = 1;
+			bres->tsorted = true;
 		else
 			bres->tsorted = (BATcount(bres) <= 1);
 		if (BATtrevordered(bone)
 		    && (BATtkey(bone) || two_tail_revsorted_unsigned))
-			bres->trevsorted = 1;
+			bres->trevsorted = true;
 		else
 			bres->trevsorted = (BATcount(bres) <= 1);
 		/* result tail is key (unique), iff both input tails are */

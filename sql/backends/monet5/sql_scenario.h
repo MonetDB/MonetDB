@@ -17,7 +17,8 @@
 sql5_export int SQLdebug;
 sql5_export str SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLprelude(void *ret);
+sql5_export str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+//sql5_export str SQLprelude(void *ret);
 sql5_export str SQLepilogue(void *ret);
 
 sql5_export str SQLautocommit(mvc *m);

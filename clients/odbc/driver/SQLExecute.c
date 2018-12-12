@@ -447,6 +447,12 @@ MNDBExecute(ODBCStmt *stmt)
 		addStmtError(stmt, "HY001", NULL, 0);
 		return SQL_ERROR;
 	}
+	if (stmt->qtimeout != stmt->Dbc->qtimeout) {
+		snprintf(query, querylen, "call sys.settimeout(%" PRIu64 ")",
+			 (uint64_t) stmt->qtimeout);
+		if (mapi_query_handle(hdl, query) == MOK)
+			stmt->Dbc->qtimeout = stmt->qtimeout;
+	}
 	querypos = snprintf(query, querylen, "execute %d (", stmt->queryid);
 	/* XXX fill in parameter values */
 	if (desc->sql_desc_bind_offset_ptr)
@@ -482,8 +488,8 @@ MNDBExecute(ODBCStmt *stmt)
 	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt &&
 	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* we're the only Stmt handle, and we're only going forward */
-		if (stmt->Dbc->cachelimit != 1000)
-			mapi_cache_limit(stmt->Dbc->mid, 1000);
+		if (stmt->Dbc->cachelimit != 10000)
+			mapi_cache_limit(stmt->Dbc->mid, 10000);
 		stmt->Dbc->cachelimit = 1000;
 	} else {
 		if (stmt->Dbc->cachelimit != 100)

@@ -3,7 +3,7 @@ CREATE TABLE "x" (
 	"a1"   CHARACTER LARGE OBJECT,
 	"a2"   CHARACTER LARGE OBJECT
 );
-COPY 5 RECORDS INTO "x" FROM stdin USING DELIMITERS '|','\n','"';
+COPY 5 RECORDS INTO "x" FROM stdin USING DELIMITERS '|',E'\n','"';
 "fiets"|"damesfiets"
 "fiets"|"herenfiets"
 "auto"|"personenwag"
@@ -16,7 +16,7 @@ CREATE TABLE "y" (
 	"paramname" CHARACTER LARGE OBJECT,
 	"value"     CHARACTER LARGE OBJECT
 );
-COPY 1 RECORDS INTO "y" FROM stdin USING DELIMITERS '|','\n','"';
+COPY 1 RECORDS INTO "y" FROM stdin USING DELIMITERS '|',E'\n','"';
 "1"|"something"
 COMMIT;
 

@@ -93,6 +93,64 @@ UTF8_strlen(const char *val)
 	return pos;
 }
 
+
+static char *
+uescape_xform(char *restrict s, const char *restrict esc)
+{
+	size_t i, j;
+
+	for (i = j = 0; s[i]; i++) {
+		if (s[i] == *esc) {
+			if (s[i + 1] == *esc) {
+				s[j++] = *esc;
+				i++;
+			} else {
+				int c = 0;
+				int n;
+				if (s[i + 1] == '+') {
+					n = 6;
+					i++;
+				} else {
+					n = 4;
+				}
+				do {
+					i++;
+					c <<= 4;
+					if ('0' <= s[i] && s[i] <= '9')
+						c |= s[i] - '0';
+					else if ('a' <= s[i] && s[i] <= 'f')
+						c |= s[i] - 'a' + 10;
+					else if ('A' <= s[i] && s[i] <= 'F')
+						c |= s[i] - 'A' + 10;
+					else
+						return NULL;
+				} while (--n > 0);
+				if (c == 0 || c > 0x10FFFF || (c & 0xFFF800) == 0xD800)
+					return NULL;
+				if (c < 0x80) {
+					s[j++] = c;
+				} else {
+					if (c < 0x800) {
+						s[j++] = 0xC0 | (c >> 6);
+					} else {
+						if (c < 0x10000) {
+							s[j++] = 0xE0 | (c >> 12);
+						} else {
+							s[j++] = 0xF0 | (c >> 18);
+							s[j++] = 0x80 | ((c >> 12) & 0x3F);
+						}
+						s[j++] = 0x80 | ((c >> 6) & 0x3F);
+					}
+					s[j++] = 0x80 | (c & 0x3F);
+				}
+			}
+		} else {
+			s[j++] = s[i];
+		}
+	}
+	s[j] = 0;
+	return s;
+}
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -162,6 +220,7 @@ int yydebug=1;
 	between_predicate
 	comparison_predicate
 	opt_from_clause
+	opt_window_clause
 	existence_test
 	in_predicate
 	insert_stmt
@@ -246,6 +305,7 @@ int yydebug=1;
 	opt_limit
 	opt_offset
 	opt_sample
+	opt_seed
 	param
 	case_exp
 	case_scalar_exp
@@ -266,15 +326,15 @@ int yydebug=1;
 	if_opt_else
 	func_data_type
 	with_list_element
+	window_definition
 	window_function
 	window_function_type
 	window_partition_clause
 	window_order_clause
 	window_frame_clause
+	window_bound
 	window_frame_start
-	window_frame_end
-	window_frame_preceding
-	window_frame_following
+	window_following_bound
 	XML_value_function
 	XML_comment
   	XML_concatenation
@@ -303,6 +363,14 @@ int yydebug=1;
 	XML_value_expression
 	XML_primary
 	opt_comma_string_value_expression
+	opt_partition_by
+	opt_as_partition
+	opt_partition_spec
+	partition_list_value
+	partition_range_from
+	partition_range_to
+	partition_on
+	partition_expression
 
 %type <type>
 	data_type
@@ -313,9 +381,12 @@ int yydebug=1;
 	opt_constraint_name
 	non_reserved_word
 	ident
+	ident_or_uident
+	calc_ident
 	authorization_identifier
 	func_ident
 	restricted_ident
+	calc_restricted_ident
 	column
 	authid
 	grantee
@@ -324,6 +395,9 @@ int yydebug=1;
 	opt_using
 	opt_null_string
 	string
+	sstring
+	ustring
+	blobstring
 	type_alias
 	varchar
 	clob
@@ -339,6 +413,8 @@ int yydebug=1;
 	XML_namespace_prefix
 	XML_PI_target
 	function_body
+	opt_uescape
+	window_ident_clause
 	cq_alias
 
 %type <l>
@@ -383,6 +459,7 @@ int yydebug=1;
 	column_def_opt_list
 	opt_column_def_opt_list
 	table_exp
+	with_opt_credentials
 	table_ref_commalist
 	table_element_list
 	table_opt_storage
@@ -433,10 +510,12 @@ int yydebug=1;
 	forest_element_list
 	forest_element
 	XML_value_expression_list
+	window_definition_list
 	window_frame_extent
 	window_frame_between
 	routine_designator
 	drop_routine_designator
+	partition_list
 
 %type <i_val>
 	any_all_some
@@ -495,6 +574,7 @@ int yydebug=1;
 	window_frame_units
 	window_frame_exclusion
 	subgeometry_type
+	partition_type
 
 %type <l_val>
 	lngval
@@ -513,6 +593,8 @@ int yydebug=1;
 	opt_constraint
 	set_distinct
 	opt_with_check_option
+	opt_with_nulls
+	opt_on_location
 	create
 	create_or_replace
 	if_exists
@@ -524,14 +606,15 @@ int yydebug=1;
 	opt_grant_for
 
 	opt_asc_desc
+	opt_nulls_first_last
 	tz
 
-%right <sval> STRING
+%right <sval> STRING USTRING XSTRING
 %right <sval> X_BODY
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM 
+	IDENT UIDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT OIDNUM HEXADECIMAL INTNUM APPROXNUM
 	USING 
 	GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -551,12 +634,12 @@ int yydebug=1;
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  CONTINUOUS START_CONTINUOUS STOP STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
-%token  WINDOW NO_WINDOW STRIDE NO_STRIDE HEARTBEAT NO_HEARTBEAT CLOCK NO_CLOCK CYCLES NO_CYCLES
+%token  NO_WINDOW STRIDE NO_STRIDE HEARTBEAT NO_HEARTBEAT CLOCK NO_CLOCK CYCLES NO_CYCLES
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
-%token <operation> EXISTS ESCAPE HAVING sqlGROUP sqlNULL
+%token <operation> EXISTS ESCAPE UESCAPE HAVING sqlGROUP sqlNULL
 %token <operation> FROM FOR MATCH
 
 %token <operation> EXTRACT
@@ -608,7 +691,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
-%token CHECK CONSTRAINT CREATE COMMENT
+%token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
@@ -623,15 +706,15 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
-%token LIMIT OFFSET SAMPLE
+%token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
 %token ATOMIC BEGIN END
-%token COPY RECORDS DELIMITERS STDIN STDOUT FWF
+%token COPY RECORDS DELIMITERS STDIN STDOUT FWF CLIENT SERVER
 %token INDEX REPLACE
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
-%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED
+%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW
 
 %token X_BODY 
 %%
@@ -817,7 +900,7 @@ set_statement:
 	        sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($4))) );
+			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set SCHEMA ident
 		{ dlist *l = L();
@@ -825,7 +908,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0 );
 		append_string(l, sa_strdup(SA, "current_schema"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($3))) );
+			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set user '=' ident
 		{ dlist *l = L();
@@ -833,7 +916,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($4), 0 );
 		append_string(l, sa_strdup(SA, "current_user"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($4))) );
+			_newAtomNode( _atom_string(&t, $4)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set ROLE ident
 		{ dlist *l = L();
@@ -841,7 +924,7 @@ set_statement:
 		sql_find_subtype(&t, "char", UTF8_strlen($3), 0);
 		append_string(l, sa_strdup(SA, "current_role"));
 		append_symbol(l,
-			_newAtomNode( _atom_string(&t, sql2str($3))) );
+			_newAtomNode( _atom_string(&t, $3)) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
@@ -1072,42 +1155,77 @@ stream_stride_update:
  ;
 
 alter_statement:
-   ALTER TABLE qname ADD opt_column add_table_element
-
+   ALTER TABLE if_exists qname ADD opt_column add_table_element
 	{ dlist *l = L();
-	  append_list(l, $3);
+	  append_list(l, $4);
+	  append_symbol(l, $7);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE if_exists qname ADD TABLE qname opt_as_partition
+	{ dlist *l = L(), *part;
+	  append_list(l, $4);
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$7)));
+	  append_int(l, $3);
+	  if($8) {
+	      part = $8->data.lval;
+	      append_int(part, FALSE);
+	  }
+	  append_symbol(l, $8);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE if_exists qname ALTER alter_table_element
+	{ dlist *l = L();
+	  append_list(l, $4);
 	  append_symbol(l, $6);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname ADD TABLE qname
+ | ALTER TABLE if_exists qname DROP drop_table_element
 	{ dlist *l = L();
-	  append_list(l, $3);
-	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname ALTER alter_table_element
+ | ALTER TABLE if_exists qname SET READ ONLY
 	{ dlist *l = L();
-	  append_list(l, $3);
-	  append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname DROP drop_table_element
-	{ dlist *l = L();
-	  append_list(l, $3);
-	  append_symbol(l, $5);
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname SET READ ONLY
-	{ dlist *l = L();
-	  append_list(l, $3);
+	  append_list(l, $4);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_readonly));
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname SET INSERT ONLY
+ | ALTER TABLE if_exists qname SET INSERT ONLY
 	{ dlist *l = L();
-	  append_list(l, $3);
+	  append_list(l, $4);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_append));
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER TABLE qname SET READ WRITE
+ | ALTER TABLE if_exists qname SET READ WRITE
 	{ dlist *l = L();
-	  append_list(l, $3);
+	  append_list(l, $4);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_writable));
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE if_exists qname SET TABLE qname opt_as_partition
+	{ dlist *l = L(), *part;
+	  append_list(l, $4);
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$7)));
+	  append_int(l, $3);
+	  if($8) {
+	      part = $8->data.lval;
+	      append_int(part, TRUE);
+	  }
+	  append_symbol(l, $8);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER TABLE if_exists qname RENAME TO ident
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_string(l, $7);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_RENAME_TABLE, l ); }
+ | ALTER TABLE if_exists qname RENAME opt_column ident TO ident
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_string(l, $7);
+	  append_string(l, $9);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_RENAME_COLUMN, l); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -1128,15 +1246,23 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
- | ALTER STREAM TABLE qname SET stream_window_update
+ | ALTER SCHEMA if_exists ident RENAME TO ident
 	{ dlist *l = L();
-	  append_list(l, $4);
-	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_WINDOW, $6));
+	  append_string(l, $4);
+	  append_string(l, $7);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_RENAME_SCHEMA, l ); }
+ | ALTER STREAM TABLE if_exists qname SET stream_window_update
+	{ dlist *l = L();
+	  append_list(l, $5);
+	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_WINDOW, $7));
+	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER STREAM TABLE qname SET stream_stride_update
+ | ALTER STREAM TABLE if_exists qname SET stream_stride_update
 	{ dlist *l = L();
-	  append_list(l, $4);
-	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_STRIDE, $6));
+	  append_list(l, $5);
+	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_STRIDE, $7));
+	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
 
@@ -1178,7 +1304,7 @@ alter_table_element:
 	  $$ = _symbol_create_list( SQL_NOT_NULL, l); }
  |	opt_column ident DROP DEFAULT
 	{ $$ = _symbol_create( SQL_DROP_DEFAULT, $2); }
- |	opt_column ident SET STORAGE STRING
+ |	opt_column ident SET STORAGE string
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  if (!strlen($5))
@@ -1208,8 +1334,7 @@ drop_table_element:
 	{ dlist *l = L();
 	  append_list(l, $2 );
 	  append_int(l, $3 );
-	  append_int(l, 0);
-	  append_int(l, FALSE ); /* no if exists check */
+	  append_int(l, FALSE); /* no if exists check */
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
   ;
 
@@ -1291,27 +1416,27 @@ opt_alt_seq_params:
 
 opt_seq_param:
     	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	START WITH poslng 		{ $$ = _symbol_create_lng(SQL_START, $3); }
+  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($3) ? $3 : $3 * $4); }
   |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_alt_seq_param:
-    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	RESTART 			{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
-  |	RESTART WITH poslng 		{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), $3));  }
-  |	RESTART WITH subquery 		{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
-  |	opt_seq_common_param		{ $$ = $1; }
+    	AS data_type 				{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	RESTART 						{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
+  |	RESTART WITH opt_sign lngval 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), is_lng_nil($4) ? $4 : $3 * $4));  }
+  |	RESTART WITH subquery 			{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
+  |	opt_seq_common_param			{ $$ = $1; }
   ;
 
 opt_seq_common_param:
-  	INCREMENT BY nonzerolng		{ $$ = _symbol_create_lng(SQL_INC, $3); }
-  |	MINVALUE nonzerolng		{ $$ = _symbol_create_lng(SQL_MINVALUE, $2); }
-  |	NOMINVALUE			{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
-  |	MAXVALUE nonzerolng		{ $$ = _symbol_create_lng(SQL_MAXVALUE, $2); }
-  |	NOMAXVALUE			{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
-  |	CACHE nonzerolng		{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
-  |	CYCLE				{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
-  |	NOCYCLE				{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
+  	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
+  |	MINVALUE opt_sign lngval		{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NOMINVALUE						{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
+  |	MAXVALUE opt_sign lngval		{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NOMAXVALUE						{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
+  |	CACHE nonzerolng				{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
+  |	CYCLE							{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
+  |	NOCYCLE							{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
   ;
 
 /*=== END SEQUENCES ===*/
@@ -1374,7 +1499,7 @@ opt_encrypted:
 
 table_opt_storage:
     /* empty */		 { $$ = NULL; }
- |  STORAGE ident STRING { $$ = append_string(append_string(L(), $2), $3); } 
+ |  STORAGE ident string { $$ = append_string(append_string(L(), $2), $3); } 
  ;
 
 opt_temp_stream:
@@ -1402,7 +1527,7 @@ stream_table_details:
  ;
 
 table_def:
-    TABLE if_not_exists qname table_content_source  table_opt_storage
+    TABLE if_not_exists qname table_content_source table_opt_storage
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
@@ -1411,8 +1536,10 @@ table_def:
 	  append_symbol(l, $4);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $2);
 	  append_list(l, $5);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  TABLE if_not_exists qname FROM sqlLOADER func_ref
@@ -1431,10 +1558,12 @@ table_def:
 	  append_symbol(l, $6);
 	  append_int(l, (tpe == SQL_PERSISTED_STREAM) ? CA_COMMIT : CA_PRESERVE);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $4);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  append_list(l, $7);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  MERGE TABLE if_not_exists qname table_content_source 
+ |  MERGE TABLE if_not_exists qname table_content_source opt_partition_by
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
 	  dlist *l = L();
 
@@ -1443,7 +1572,9 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, $6);
 	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  REPLICA TABLE if_not_exists qname table_content_source 
@@ -1455,13 +1586,15 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
     We assume the monetdb user with default password */
- |  REMOTE TABLE if_not_exists qname table_content_source ON STRING
+ |  REMOTE TABLE if_not_exists qname table_content_source ON string with_opt_credentials
 	{ int commit_action = CA_COMMIT, tpe = SQL_REMOTE;
 	  dlist *l = L();
 
@@ -1470,7 +1603,9 @@ table_def:
 	  append_symbol(l, $5);
 	  append_int(l, commit_action);
 	  append_string(l, $7);
+	  append_list(l, $8);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
   | opt_temp TABLE if_not_exists qname table_content_source opt_on_commit 
@@ -1484,10 +1619,117 @@ table_def:
 		commit_action = $6;
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
+	  append_list(l, NULL);
 	  append_int(l, $3);
+	  append_symbol(l, NULL); /* only used for merge table */
 	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
+
+partition_type:
+   RANGE	{ $$ = PARTITION_RANGE; }
+ | VALUES	{ $$ = PARTITION_LIST; }
+ ;
+
+partition_expression:
+   simple_scalar_exp 	{ $$ = $1; }
+ ;
+
+partition_on:
+   ON '(' ident ')'                   { $$ = _symbol_create_list( SQL_PARTITION_COLUMN, append_string(L(), $3) ); }
+ | USING '(' partition_expression ')' { $$ = _symbol_create_list( SQL_PARTITION_EXPRESSION, append_symbol(L(), $3) ); }
+ ;
+
+opt_partition_by:
+ /* empty */									 { $$ = NULL; }
+ | PARTITION BY partition_type partition_on
+   { dlist *l = L();
+     int properties = $3;
+     append_int(l, $3);
+     append_symbol(l, $4);
+
+     assert($3 == PARTITION_RANGE || $3 == PARTITION_LIST);
+     if($4->token == SQL_PARTITION_COLUMN) {
+        properties |= PARTITION_COLUMN;
+     } else if($4->token == SQL_PARTITION_EXPRESSION) {
+        properties |= PARTITION_EXPRESSION;
+     } else {
+        assert(0);
+     }
+     append_int(l, properties);
+
+     $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
+ ;
+
+partition_list_value:
+   simple_scalar_exp { $$ = $1; }
+ ;
+
+partition_range_from:
+   simple_scalar_exp { $$ = $1; }
+ | RANGE MINVALUE    { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
+ ;
+
+partition_range_to:
+   simple_scalar_exp { $$ = $1; }
+ | RANGE MAXVALUE    { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
+ ;
+
+partition_list:
+   partition_list_value						{ $$ = append_symbol(L(), $1 ); }
+ | partition_list ',' partition_list_value  { $$ = append_symbol($1, $3 ); }
+ ;
+
+opt_with_nulls:
+    /* empty */		{ $$ = FALSE; }
+ |  WITH sqlNULL	{ $$ = TRUE; }
+ ;
+
+opt_partition_spec:
+   sqlIN '(' partition_list ')' opt_with_nulls
+    { dlist *l = L();
+      append_list(l, $3);
+      append_int(l, $5);
+      $$ = _symbol_create_list( SQL_PARTITION_LIST, l ); }
+ | BETWEEN partition_range_from AND partition_range_to opt_with_nulls
+    { dlist *l = L();
+      append_symbol(l, $2);
+      append_symbol(l, $4);
+      append_int(l, $5);
+      $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
+ | WITH sqlNULL
+    { dlist *l = L();
+      append_symbol(l, NULL);
+      append_symbol(l, NULL);
+      append_int(l, TRUE);
+      $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
+ ;
+
+opt_as_partition:
+ /* empty */						 { $$ = NULL; }
+ | AS PARTITION opt_partition_spec	 { $$ = $3; }
+ ;
+
+with_opt_credentials:
+  /* empty */
+  {
+	  $$ = append_string(L(), NULL);
+	  append_int($$, SQL_PW_ENCRYPTED);
+	  append_string($$, NULL);
+  }
+  | WITH USER string opt_encrypted PASSWORD string
+  {
+	  $$ = append_string(L(), $3);
+	  append_int($$, $4);
+	  append_string($$, $6);
+  }
+  | WITH opt_encrypted PASSWORD string
+  {
+	  $$ = append_string(L(), NULL);
+	  append_int($$, $2);
+	  append_string($$, $4);
+  }
+  ;
 
 opt_temp:
     TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
@@ -1668,7 +1910,7 @@ generated_column:
 
 		/* finally all the options */
 		append_list(l, $5);
-		append_int(l, 0); /* to be dropped */
+		append_int(l, 1); /* to be dropped */
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create_list(SQL_NEXT, append_string(L(), sn)));
 
 		if (m->sym) {
@@ -1700,7 +1942,7 @@ generated_column:
 		sql_find_subtype(&it, "int", 32, 0);
     		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
-		append_int(l, 0); /* to be dropped */
+		append_int(l, 1); /* to be dropped */
 		if (m->scanner.schema)
 			append_string(seqn2, m->scanner.schema);
 		append_string(seqn2, sn);
@@ -2827,22 +3069,29 @@ opt_to_savepoint:
  |  TO SAVEPOINT ident  { $$ = $3; }
  ;
 
+opt_on_location:
+    /* empty */		{ $$ = 0; }
+  | ON CLIENT		{ $$ = 1; }
+  | ON SERVER		{ $$ = 0; }
+  ;
+
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
 	  append_list(l, $7);
 	  append_list(l, $8);
-	  append_list(l, $9);
+	  append_list(l, $10);
 	  append_list(l, $2);
-	  append_string(l, $10);
-	  append_int(l, $11);
+	  append_string(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
-	  append_list(l, $14);
+	  append_int(l, $14);
+	  append_list(l, $15);
+	  append_int(l, $9);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint 
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_null_string opt_locked opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2855,29 +3104,28 @@ copyfrom_stmt:
 	  append_int(l, $12);
 	  append_int(l, $13);
 	  append_list(l, NULL);
+	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
   | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
-   | COPY opt_nr BINARY INTO qname opt_column_list FROM string_commalist /* binary copy from */ opt_constraint
+   | COPY BINARY INTO qname opt_column_list FROM string_commalist opt_on_location opt_constraint
 	{ dlist *l = L();
-	  if ($2 != NULL) {
-	  	yyerror(m, "COPY INTO: cannot pass number of records when using binary COPY INTO");
-		YYABORT;
-	  }
+	  append_list(l, $4);
 	  append_list(l, $5);
-	  append_list(l, $6);
-	  append_list(l, $8);
+	  append_list(l, $7);
 	  append_int(l, $9);
+	  append_int(l, $8);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
-  | COPY query_expression_def INTO string opt_seps opt_null_string 
+  | COPY query_expression_def INTO string opt_on_location opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
 	  append_string(l, $4);
-	  append_list(l, $5);
-	  append_string(l, $6);
+	  append_list(l, $6);
+	  append_string(l, $7);
+	  append_int(l, $5);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   | COPY query_expression_def INTO STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
@@ -2885,6 +3133,7 @@ copyfrom_stmt:
 	  append_string(l, NULL);
 	  append_list(l, $5);
 	  append_string(l, $6);
+	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_COPYTO, l ); }
   ;
   
@@ -2918,7 +3167,7 @@ header:
 			{ dlist *l = L();
 			  append_string(l, $1 );
 			  $$ = l; }
- |	ident STRING
+ |	ident string
 			{ dlist *l = L();
 			  append_string(l, $1 );
 			  append_string(l, $2 );
@@ -2929,12 +3178,12 @@ opt_seps:
     /* empty */
 				{ dlist *l = L();
 				  append_string(l, sa_strdup(SA, "|"));
-				  append_string(l, sa_strdup(SA, "\\n"));
+				  append_string(l, sa_strdup(SA, "\n"));
 				  $$ = l; }
  |  opt_using DELIMITERS string
 				{ dlist *l = L();
 				  append_string(l, $3);
-				  append_string(l, sa_strdup(SA, "\\n"));
+				  append_string(l, sa_strdup(SA, "\n"));
 				  $$ = l; }
  |  opt_using DELIMITERS string ',' string
 				{ dlist *l = L();
@@ -2945,7 +3194,7 @@ opt_seps:
 				{ dlist *l = L();
 				  append_string(l, $3);
 				  append_string(l, $5);
-				  append_string(l, sql2str($7));
+				  append_string(l, $7);
 				  $$ = l; }
  ;
 
@@ -3313,7 +3562,8 @@ simple_select:
 		$4->h->next->data.sym,
 		$4->h->next->next->data.sym,
 		$4->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, NULL, NULL,
+		$4->h->next->next->next->next->data.sym);
 	}
     ;
 
@@ -3324,7 +3574,8 @@ select_statement_single_row:
 		$6->h->next->data.sym,
 		$6->h->next->next->data.sym,
 		$6->h->next->next->next->data.sym,
-		NULL, NULL, NULL, NULL, NULL);
+		NULL, NULL, NULL, NULL, NULL,
+		$6->h->next->next->next->next->data.sym);
 	}
     ;
 
@@ -3349,7 +3600,7 @@ select_no_parens_orderby:
 				$$ = newSelectNode( 
 					SA, 0, 
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5, NULL);
 			}
 	  	} else {
 			yyerror(m, "missing SELECT operator");
@@ -3420,13 +3671,29 @@ selection:
  ;
 
 table_exp:
-    opt_from_clause opt_where_clause opt_group_by_clause opt_having_clause
+    opt_from_clause opt_window_clause opt_where_clause opt_group_by_clause opt_having_clause
 
 	{ $$ = L();
 	  append_symbol($$, $1);
-	  append_symbol($$, $2);
 	  append_symbol($$, $3);
-	  append_symbol($$, $4); }
+	  append_symbol($$, $4);
+	  append_symbol($$, $5);
+	  append_symbol($$, $2); }
+ ;
+
+window_definition:
+    ident AS '(' window_specification ')' { dlist *l = L(); append_string(l, $1); append_list(l, $4);
+                                            $$ = _symbol_create_list(SQL_NAME, l); }
+ ;
+
+window_definition_list:
+    window_definition                            { $$ = append_symbol(L(), $1); }
+ |  window_definition_list ',' window_definition { $$ = append_symbol($1, $3); }
+ ;
+
+opt_window_clause:
+    /* empty */                   { $$ = NULL; }
+ |  WINDOW window_definition_list { $$ = _symbol_create_list( SQL_WINDOW, $2); }
  ;
 
 opt_from_clause:
@@ -3590,16 +3857,38 @@ opt_offset:
 
 opt_sample:
 	/* empty */	{ $$ = NULL; }
- |  SAMPLE poslng	{
-		  	  sql_subtype *t = sql_bind_localtype("lng");
-			  $$ = _newAtomNode( atom_int(SA, t, $2));
+ |  SAMPLE poslng opt_seed	{
+
+	 				dlist *l = L();
+
+					 append_symbol(l,
+					 	_newAtomNode( atom_int(SA, sql_bind_localtype("lng"), $2)) );
+
+					if ($3)
+						append_symbol(l,$3);
+
+			  $$ = _symbol_create_list(SQL_SAMPLE, l);
 			}
- |  SAMPLE INTNUM	{
-		  	  sql_subtype *t = sql_bind_localtype("dbl");
-			  $$ = _newAtomNode( atom_float(SA, t, strtod($2,NULL)));
+ |  SAMPLE INTNUM opt_seed	{
+
+	 				dlist *l = L();
+
+				append_symbol(l,
+					 	_newAtomNode( atom_float(SA, sql_bind_localtype("dbl"), strtod($2,NULL))) );
+				
+				if ($3)
+						append_symbol(l,$3);
+
+			  $$ = _symbol_create_list(SQL_SAMPLE, l);
 			}
  |  SAMPLE param	{ $$ = $2; }
  ;
+
+ opt_seed:
+	/* empty */	{ $$ = NULL; }
+ | SEED intval {
+			  $$ = _newAtomNode( atom_int(SA, sql_bind_localtype("int"), $2));
+ }
 
 sort_specification_list:
     ordering_spec	 { $$ = append_symbol(L(), $1); }
@@ -3608,10 +3897,10 @@ sort_specification_list:
  ;
 
 ordering_spec:
-    scalar_exp opt_asc_desc
+    scalar_exp opt_asc_desc opt_nulls_first_last
 	{ dlist *l = L();
 	  append_symbol(l, $1);
-	  append_int(l, $2);
+	  append_int(l, $2 | (($3 == -1 ? !$2 : $3) << 1));
 	  $$ = _symbol_create_list(SQL_COLUMN, l ); }
 
  ;
@@ -3620,6 +3909,12 @@ opt_asc_desc:
     /* empty */ 	{ $$ = TRUE; }
  |  ASC			{ $$ = TRUE; }
  |  DESC		{ $$ = FALSE; }
+ ;
+
+opt_nulls_first_last:
+    /* empty */ 	{ $$ = -1; }
+ |  NULLS LAST		{ $$ = TRUE; }
+ |  NULLS FIRST		{ $$ = FALSE; }
  ;
 
 predicate:
@@ -3732,7 +4027,7 @@ like_exp:
 	  append_symbol(l, $1);
 	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  |  scalar_exp ESCAPE string
- 	{ const char *s = sql2str($3);
+ 	{ const char *s = $3;
 	  if (_strlen(s) != 1) {
 		yyerror(m, SQLSTATE(22019) "ESCAPE must be one character");
 		$$ = NULL;
@@ -4077,81 +4372,35 @@ param:
 	  $$ = _symbol_create_int( SQL_PARAMETER, nr ); 
 	}
 
-/*
-<window function> ::= <window function type> OVER <window name or specification>
-
-<window function type> ::=
-		<rank function type> <left paren> <right paren>
-	|	ROW_NUMBER <left paren> <right paren>
-	|	<aggregate function>
-
-<rank function type> ::= RANK | DENSE_RANK | PERCENT_RANK | CUME_DIST
-
-<window name or specification> ::= <window name> | <in-line window specification>
-
-<in-line window specification> ::= <window specification>
-
-
-<window specification> ::= <left paren> <window specification details> <right paren>
-
-<window specification details> ::=
-                [ <existing window name> ] [ <window partition clause> ] [ <window order clause> ] [ <window frame clause> ]
-
-<existing window name> ::= <window name>
-
-<window partition clause> ::= PARTITION BY <window partition column reference list>
-
-<window partition column reference list> ::= <window partition column reference> [ { <comma> <window partition column reference> }... ]
-
-<window partition column reference> ::= <column reference> [ <collate clause> ]
-
-<window order clause> ::= ORDER BY <sort specification list>
-
-<window frame clause> ::= <window frame units> <window frame extent> [ <window frame exclusion> ]
-
-<window frame units> ::= ROWS | RANGE
-
-<window frame extent> ::= <window frame start> | <window frame between>
-
-<window frame start> ::= UNBOUNDED PRECEDING | <window frame preceding> | CURRENT ROW
-
-<window frame preceding> ::= <unsigned value specification> PRECEDING
-
-<window frame between> ::= BETWEEN <window frame bound 1> AND <window frame bound 2>
-
-<window frame bound 1> ::= <window frame bound>
-
-<window frame bound 2> ::= <window frame bound>
-
-<window frame bound> ::=
-                <window frame start>
-        |       UNBOUNDED FOLLOWING
-        |       <window frame following>
-
-<window frame following> ::= <unsigned value specification> FOLLOWING
-
-<window frame exclusion> ::=
-                EXCLUDE CURRENT ROW
-        |       EXCLUDE GROUP
-        |       EXCLUDE TIES
-        |       EXCLUDE NO OTHERS
-
-*/
-
-window_function: 
+window_function:
 	window_function_type OVER '(' window_specification ')'
-	{ $$ = _symbol_create_list( SQL_RANK, 
-		append_list(append_symbol(L(), $1), $4)); }
+	{ $$ = _symbol_create_list( SQL_RANK, append_list(append_symbol(L(), $1), $4)); }
+  | window_function_type OVER ident
+	{ $$ = _symbol_create_list( SQL_RANK, append_string(append_symbol(L(), $1), $3)); }
   ;
 
 window_function_type:
-	qrank '(' ')' 	{ $$ = _symbol_create_list( SQL_RANK, $1 ); }
+	qrank '(' ')'
+	{ dlist *l = L();
+	  append_list(l, $1);
+	  append_list(l, NULL);
+	  $$ = _symbol_create_list( SQL_RANK, l ); }
+  | qrank '(' scalar_exp_list ')'
+	{ dlist *l = L();
+	  append_list(l, $1);
+	  append_list(l, $3);
+	  $$ = _symbol_create_list( SQL_RANK, l ); }
   |	aggr_ref
   ;
 
 window_specification:
-	window_partition_clause window_order_clause window_frame_clause
-	{ $$ = append_symbol(append_symbol(append_symbol(L(), $1), $2), $3); }
+	window_ident_clause window_partition_clause window_order_clause window_frame_clause
+	{ $$ = append_symbol(append_symbol(append_symbol(append_string(L(), $1), $2), $3), $4); }
+  ;
+
+window_ident_clause:
+	/* empty */ { $$ = NULL; }
+  |	ident       { $$ = $1; }
   ;
 
 window_partition_clause:
@@ -4175,46 +4424,55 @@ window_frame_clause:
 window_frame_units:
 	ROWS		{ $$ = FRAME_ROWS; }
   |	RANGE		{ $$ = FRAME_RANGE; }
+  |	GROUPS		{ $$ = FRAME_GROUPS; }
   ;
 
 window_frame_extent:
-	window_frame_start	{ $$ = append_symbol(append_symbol(L(), $1), _symbol_create_int(SQL_FRAME, -1)); }
-  |	window_frame_between	{ $$ = $1; }
+	window_frame_start    { dlist *l = L(); append_symbol(l, $1);
+                            symbol *s = _symbol_create_int( SQL_FOLLOWING, CURRENT_ROW_BOUND);
+                            dlist *l2 = append_symbol(L(), s);
+                            symbol *sym = _symbol_create_list( SQL_CURRENT_ROW, l2);
+                            append_symbol(l, sym);
+                            $$ = l; }
+  | window_frame_between  { $$ = $1; }
   ;
 
 window_frame_start:
-	UNBOUNDED PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME, -1); }
-  |	window_frame_preceding  { $$ = $1; }
-  |	CURRENT ROW		{ $$ = _symbol_create_int(SQL_FRAME, 0); }
+	UNBOUNDED PRECEDING   { symbol *s = _symbol_create_int( SQL_PRECEDING, UNBOUNDED_PRECEDING_BOUND);
+                            dlist *l2 = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_PRECEDING, l2); }
+  | simple_atom PRECEDING { dlist *l2 = append_symbol(L(), $1);
+                            $$ = _symbol_create_list( SQL_PRECEDING, l2); }
+  | CURRENT ROW           { symbol *s = _symbol_create_int( SQL_PRECEDING, CURRENT_ROW_BOUND);
+                            dlist *l = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_CURRENT_ROW, l); }
   ;
 
-window_frame_preceding:
-	value_exp PRECEDING	{ $$ = $1; }
+window_bound:
+	window_frame_start
+  | window_following_bound
   ;
-	
+
 window_frame_between:
-	BETWEEN window_frame_start AND window_frame_end
-				{ $$ = append_symbol(append_symbol(L(), $2), $4); }
+	BETWEEN window_bound AND window_bound { $$ = append_symbol(append_symbol(L(), $2), $4); }
   ;
 
-window_frame_end:
-	UNBOUNDED FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME, -1); }
-  | 	window_frame_following	{ $$ = $1; }
-  |	CURRENT ROW		{ $$ = _symbol_create_int(SQL_FRAME, 0); }
-  ;
-
-window_frame_following:
-	value_exp FOLLOWING	{ $$ = $1; }
+window_following_bound:
+	UNBOUNDED FOLLOWING   { symbol *s = _symbol_create_int( SQL_FOLLOWING, UNBOUNDED_FOLLOWING_BOUND);
+                            dlist *l2 = append_symbol(L(), s);
+                            $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
+  | simple_atom FOLLOWING { dlist *l2 = append_symbol(L(), $1);
+                            $$ = _symbol_create_list( SQL_FOLLOWING, l2); }
   ;
 
 window_frame_exclusion:
- 	/* empty */		{ $$ = EXCLUDE_NONE; }
- |      EXCLUDE CURRENT ROW	{ $$ = EXCLUDE_CURRENT_ROW; }
- |      EXCLUDE sqlGROUP	{ $$ = EXCLUDE_GROUP; }
- |      EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
- |      EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NO_OTHERS; }
- ;
-	
+	/* empty */			{ $$ = EXCLUDE_NONE; }
+  |	EXCLUDE CURRENT ROW	{ $$ = EXCLUDE_CURRENT_ROW; }
+  |	EXCLUDE sqlGROUP	{ $$ = EXCLUDE_GROUP; }
+  |	EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
+  |	EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NONE; }
+  ;
+
 var_ref:
 	AT ident 	{ $$ = _symbol_create( SQL_NAME, $2 ); }
  ;
@@ -4611,7 +4869,7 @@ user:
  ;
 
 literal:
-    string 	{ const char *s = sql2str($1);
+    string 	{ const char *s = $1;
 		  int len = UTF8_strlen(s);
 		  sql_subtype t;
 		  sql_find_subtype(&t, "char", len, 0 );
@@ -4637,7 +4895,7 @@ literal:
 		  	while (err == 0 && i < len)
 		  	{
 				res <<= 4;
-				if ('0'<= hexa[i] && hexa[i] <= '9')
+				if (isdigit((unsigned char) hexa[i]))
 					res = res + (hexa[i] - '0');
 				else if ('A' <= hexa[i] && hexa[i] <= 'F')
 					res = res + (hexa[i] - 'A' + 10);
@@ -4687,7 +4945,7 @@ literal:
 		  lng value, *p = &value;
 		  sql_subtype t;
 
-		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
+		  if (lngFromStr($1, &len, &p, false) < 0 || is_lng_nil(value))
 		  	err = 2;
 
 		  if (!err) {
@@ -4726,10 +4984,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr($1, &len, &p) < 0 || is_hge_nil(value))
+		  if (hgeFromStr($1, &len, &p, false) < 0 || is_hge_nil(value))
 		  	err = 2;
 #else
-		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
+		  if (lngFromStr($1, &len, &p, false) < 0 || is_lng_nil(value))
 		  	err = 2;
 #endif
 
@@ -4895,6 +5153,23 @@ literal:
 			YYABORT;
 		  }
 		}
+ |  blobstring
+		{ sql_subtype t;
+		  atom *a= 0;
+		  int r;
+
+		  $$ = NULL;
+ 		  r = sql_find_subtype(&t, "blob", 0, 0);
+	          if (r && (a = atom_general(SA, &t, $1)) != NULL)
+			$$ = _newAtomNode(a);
+		  if (!$$) {
+			char *msg = sql_message(SQLSTATE(22M28) "incorrect blob %s", $1);
+
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		  }
+		}
  |  aTYPE string
 		{ sql_subtype t;
 		  atom *a= 0;
@@ -4929,7 +5204,7 @@ literal:
 			YYABORT;
 		  }
 		}
- | IDENT string
+ | ident_or_uident string
 		{
 		  sql_type *t = mvc_bind_type(m, $1);
 		  atom *a;
@@ -5302,7 +5577,7 @@ data_type:
 			 	sql_find_subtype(&$$, $1, $3, $5);
 			  }
 			}
- | IDENT		{
+ | ident_or_uident	{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
 				char *msg = sql_message(SQLSTATE(22000) "Type (%s) unknown", $1);
@@ -5316,7 +5591,7 @@ data_type:
 			  }
 			}
 
- | IDENT '(' nonzero ')'
+ | ident_or_uident '(' nonzero ')'
 			{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
@@ -5470,8 +5745,10 @@ column:			ident ;
 
 authid: 		restricted_ident ;
 
-restricted_ident:
+calc_restricted_ident:
     IDENT	{ $$ = $1; }
+ |  UIDENT opt_uescape
+		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
@@ -5479,8 +5756,23 @@ restricted_ident:
  |  RANK	{ $$ = $1; }	/* without '(' */
  ;
 
-ident:
+restricted_ident:
+	calc_restricted_ident
+	{
+		$$ = $1;
+		if (!$1 || _strlen($1) == 0) {
+			char *msg = sql_message(SQLSTATE(42000) "An identifier cannot be empty");
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		}
+	}
+ ;
+
+calc_ident:
     IDENT	{ $$ = $1; }
+ |  UIDENT opt_uescape
+		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
  |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
@@ -5490,94 +5782,111 @@ ident:
  |  non_reserved_word
  ;
 
-non_reserved_word: 
-  LARGE		{ $$ = sa_strdup(SA, "large"); }	/* sloppy: officially reserved */
-| sqlNAME	{ $$ = sa_strdup(SA, "name"); }
-| OBJECT	{ $$ = sa_strdup(SA, "object"); }	/* sloppy: officially reserved */
-| PASSWORD	{ $$ = sa_strdup(SA, "password"); }	/* neither reserved nor non-reserv. */
-| PATH		{ $$ = sa_strdup(SA, "path"); }		/* sloppy: officially reserved */
-| PRECISION 	{ $$ = sa_strdup(SA, "precision"); }	/* sloppy: officially reserved */
-| PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }	/* sloppy: officially reserved */
-| ROLE		{ $$ = sa_strdup(SA, "role"); }	 	/* neither reserved nor non-reserv. */
-| sqlSIZE	{ $$ = sa_strdup(SA, "size"); }		/* sloppy: officially reserved */
-| TYPE		{ $$ = sa_strdup(SA, "type"); }
-| RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
-| VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
-| ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
+ident:
+	calc_ident
+	{
+		$$ = $1;
+		if (!$1 || _strlen($1) == 0) {
+			char *msg = sql_message(SQLSTATE(42000) "An identifier cannot be empty");
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		}
+	}
+ ;
 
-| ACTION	{ $$ = sa_strdup(SA, "action"); }	/* sloppy: officially reserved */
-| AS		{ $$ = sa_strdup(SA, "as"); }		/* sloppy: officially reserved */
+non_reserved_word:
+  AS		{ $$ = sa_strdup(SA, "as"); }		/* sloppy: officially reserved */
 | AUTHORIZATION	{ $$ = sa_strdup(SA, "authorization"); }/* sloppy: officially reserved */
 | COLUMN	{ $$ = sa_strdup(SA, "column"); }	/* sloppy: officially reserved */
 | CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
+| sqlDATE	{ $$ = sa_strdup(SA, "date"); }		/* sloppy: officially reserved */
 | DISTINCT	{ $$ = sa_strdup(SA, "distinct"); }	/* sloppy: officially reserved */
-| INCREMENT	{ $$ = sa_strdup(SA, "increment"); }	/* sloppy: officially reserved */
-| MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }	/* sloppy: officially reserved */
-| MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }	/* sloppy: officially reserved */
-| SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); } 	/* sloppy: officially reserved */
-| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }	/* sloppy: officially reserved */
+| EXEC		{ $$ = sa_strdup(SA, "exec"); }		/* sloppy: officially reserved */
+| EXECUTE	{ $$ = sa_strdup(SA, "execute"); }	/* sloppy: officially reserved */
+| FILTER	{ $$ = sa_strdup(SA, "filter"); }	/* sloppy: officially reserved */
+| INTERVAL	{ $$ = sa_strdup(SA, "interval"); }	/* sloppy: officially reserved */
+| LANGUAGE	{ $$ = sa_strdup(SA, "language"); }	/* sloppy: officially reserved */
+| LARGE		{ $$ = sa_strdup(SA, "large"); }	/* sloppy: officially reserved */
+| MATCH		{ $$ = sa_strdup(SA, "match"); }	/* sloppy: officially reserved */
+| NO		{ $$ = sa_strdup(SA, "no"); }		/* sloppy: officially reserved */
+| PRECISION 	{ $$ = sa_strdup(SA, "precision"); }	/* sloppy: officially reserved */
+| PREPARE	{ $$ = sa_strdup(SA, "prepare"); }	/* sloppy: officially reserved */
+| RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
+| ROW		{ $$ = sa_strdup(SA, "row"); }		/* sloppy: officially reserved */
 | START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
-| STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
 | TABLE		{ $$ = sa_strdup(SA, "table"); } 	/* sloppy: officially reserved */
+| TIME 		{ $$ = sa_strdup(SA, "time"); }		/* sloppy: officially reserved */
+| TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }	/* sloppy: officially reserved */
+| UESCAPE	{ $$ = sa_strdup(SA, "uescape"); }	/* sloppy: officially reserved */
+| VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
 
-| PAUSE		{ $$ = sa_strdup(SA, "pause"); } 	
-| RESUME	{ $$ = sa_strdup(SA, "resume"); } 
-| STOP		{ $$ = sa_strdup(SA, "stop"); } 
+| ACTION	{ $$ = sa_strdup(SA, "action"); }
+| ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
+| AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
+| CACHE		{ $$ = sa_strdup(SA, "cache"); }
+| CLIENT	{ $$ = sa_strdup(SA, "client"); }
+| COMMENT	{ $$ = sa_strdup(SA, "comment"); }
+| DATA 		{ $$ = sa_strdup(SA, "data"); }
+| SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
+| DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
+| SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
+| FIRST		{ $$ = sa_strdup(SA, "first"); }
+| GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
+| IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
+| INCREMENT	{ $$ = sa_strdup(SA, "increment"); }
+| KEY		{ $$ = sa_strdup(SA, "key"); }
+| LAST		{ $$ = sa_strdup(SA, "last"); }
+| LEVEL		{ $$ = sa_strdup(SA, "level"); }
+| MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }
+| MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
+| MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }
+| sqlNAME	{ $$ = sa_strdup(SA, "name"); }
+| NULLS		{ $$ = sa_strdup(SA, "nulls"); }
+| OBJECT	{ $$ = sa_strdup(SA, "object"); }
+| OPTIONS	{ $$ = sa_strdup(SA, "options"); }
+| PASSWORD	{ $$ = sa_strdup(SA, "password"); }
+| PATH		{ $$ = sa_strdup(SA, "path"); }
+| PAUSE		{ $$ = sa_strdup(SA, "pause"); }
+| SQL_PLAN	{ $$ = sa_strdup(SA, "plan"); }
+| PREP		{ $$ = sa_strdup(SA, "prep"); }
+| PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }
+| QUARTER	{ $$ = sa_strdup(SA, "quarter"); }
+| REPLACE	{ $$ = sa_strdup(SA, "replace"); }
+| RESUME	{ $$ = sa_strdup(SA, "resume"); }
+| ROLE		{ $$ = sa_strdup(SA, "role"); }
+| SCHEMA	{ $$ = sa_strdup(SA, "schema"); }
+| SERVER	{ $$ = sa_strdup(SA, "server"); }
+| sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
+| sqlSIZE	{ $$ = sa_strdup(SA, "size"); }
+| STATEMENT	{ $$ = sa_strdup(SA, "statement"); }
+| STOP		{ $$ = sa_strdup(SA, "stop"); }
+| STORAGE	{ $$ = sa_strdup(SA, "storage"); }
+| TEMP		{ $$ = sa_strdup(SA, "temp"); }
+| TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
+| sqlTEXT	{ $$ = sa_strdup(SA, "text"); }
+| SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
+| TYPE		{ $$ = sa_strdup(SA, "type"); }
+| WEEK 		{ $$ = sa_strdup(SA, "week"); }
+| ZONE		{ $$ = sa_strdup(SA, "zone"); }
 
-|  CACHE	{ $$ = sa_strdup(SA, "cache"); }
-|  DATA 	{ $$ = sa_strdup(SA, "data"); }
-|  DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
-|  MATCH	{ $$ = sa_strdup(SA, "match"); }
-|  OPTIONS	{ $$ = sa_strdup(SA, "options"); }
-|  ROW		{ $$ = sa_strdup(SA, "row"); }
-|  KEY		{ $$ = sa_strdup(SA, "key"); }
-|  LANGUAGE	{ $$ = sa_strdup(SA, "language"); }
-|  LEVEL	{ $$ = sa_strdup(SA, "level"); }
-|  sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
-|  sqlDATE	{ $$ = sa_strdup(SA, "date"); }
-|  TIME 	{ $$ = sa_strdup(SA, "time"); }
-|  TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }
-|  INTERVAL	{ $$ = sa_strdup(SA, "interval"); }
-|  QUARTER	{ $$ = sa_strdup(SA, "quarter"); }
-|  WEEK 	{ $$ = sa_strdup(SA, "week"); }
-|  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
-
-|  PREP		{ $$ = sa_strdup(SA, "prep"); }
-|  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
-|  EXEC		{ $$ = sa_strdup(SA, "exec"); }
-|  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
-|  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
-|  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
-|  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
-|  sqlTEXT     	{ $$ = sa_strdup(SA, "text"); }
-|  AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
-|  NO		{ $$ = sa_strdup(SA, "no"); }
 /* SQL/XML non reserved words */
-|  STRIP	{ $$ = sa_strdup(SA, "strip"); }
-|  WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
-|  PASSING	{ $$ = sa_strdup(SA, "passing"); }
-|  NIL		{ $$ = sa_strdup(SA, "nil"); }
-|  REF		{ $$ = sa_strdup(SA, "ref"); }
-|  ABSENT	{ $$ = sa_strdup(SA, "absent"); }
-|  EMPTY	{ $$ = sa_strdup(SA, "empty"); }
-|  DOCUMENT	{ $$ = sa_strdup(SA, "document"); }
-|  ELEMENT	{ $$ = sa_strdup(SA, "element"); }
-|  CONTENT	{ $$ = sa_strdup(SA, "content"); }
-|  NAMESPACE	{ $$ = sa_strdup(SA, "namespace"); }
-|  RETURNING	{ $$ = sa_strdup(SA, "returning"); }
-|  LOCATION	{ $$ = sa_strdup(SA, "location"); }
-|  ID		{ $$ = sa_strdup(SA, "id"); }
-|  ACCORDING	{ $$ = sa_strdup(SA, "according"); }
-|  URI		{ $$ = sa_strdup(SA, "uri"); }
-|  FILTER	{ $$ = sa_strdup(SA, "filter"); }
-|  TEMPORARY	{ $$ = sa_strdup(SA, "temporary"); }
-|  TEMP		{ $$ = sa_strdup(SA, "temp"); }
-|  ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
-|  MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
-|  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
-|  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
-|  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
-|  COMMENT	{ $$ = sa_strdup(SA, "comment"); }
+| ABSENT	{ $$ = sa_strdup(SA, "absent"); }
+| ACCORDING	{ $$ = sa_strdup(SA, "according"); }
+| CONTENT	{ $$ = sa_strdup(SA, "content"); }
+| DOCUMENT	{ $$ = sa_strdup(SA, "document"); }
+| ELEMENT	{ $$ = sa_strdup(SA, "element"); }
+| EMPTY		{ $$ = sa_strdup(SA, "empty"); }
+| ID		{ $$ = sa_strdup(SA, "id"); }
+| LOCATION	{ $$ = sa_strdup(SA, "location"); }
+| NAMESPACE	{ $$ = sa_strdup(SA, "namespace"); }
+| NIL		{ $$ = sa_strdup(SA, "nil"); }
+| PASSING	{ $$ = sa_strdup(SA, "passing"); }
+| REF		{ $$ = sa_strdup(SA, "ref"); }
+| RETURNING	{ $$ = sa_strdup(SA, "returning"); }
+| STRIP		{ $$ = sa_strdup(SA, "strip"); }
+| URI		{ $$ = sa_strdup(SA, "uri"); }
+| WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
 ;
 
 name_commalist:
@@ -5609,6 +5918,11 @@ lngval:
 		  }
 		}
 
+ident_or_uident:
+	IDENT			{ $$ = $1; }
+    |	UIDENT opt_uescape	{ $$ = uescape_xform($1, $2); }
+    ;
+
 intval:
 	sqlINT	
  		{
@@ -5631,7 +5945,7 @@ intval:
 			YYABORT;
 		  }
 		}
- |	IDENT	{
+ |	ident_or_uident	{
 		  char *name = $1;
 		  sql_subtype *tpe;
 
@@ -5648,8 +5962,13 @@ intval:
 		      tpe->type->localtype == TYPE_int ||
 		      tpe->type->localtype == TYPE_sht ||
 		      tpe->type->localtype == TYPE_bte ) {
+#ifdef HAVE_HGE
+			hge sgn = stack_get_number(m, name);
+			assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
+#else
 			lng sgn = stack_get_number(m, name);
 			assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
+#endif
 			$$ = (int) sgn;
 		  } else {
 			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) has wrong type (number expected)", $1);
@@ -5662,13 +5981,57 @@ intval:
 		}
  ;
 
-string:
+opt_uescape:
+/* empty */	{ $$ = "\\"; }
+| UESCAPE string
+		{ char *s = $2;
+		  if (strlen(s) != 1 || strchr("\"'0123456789abcdefABCDEF+ \t\n\r\f", *s) != NULL) {
+			yyerror(m, SQLSTATE(22019) "UESCAPE must be one character");
+			$$ = NULL;
+			YYABORT;
+		  } else {
+			$$ = s;
+		  }
+		}
+
+ustring:
+    USTRING
+		{ $$ = $1; }
+ |  USTRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
+		  _DELETE(s);
+		}
+ ;
+
+blobstring:
+    XSTRING	/* X'<hexit>...' */
+		{ $$ = $1; }
+ |  XSTRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
+		  _DELETE(s);
+		}
+ ;
+
+sstring:
     STRING
 		{ $$ = $1; }
- |  STRING string
-		{ char *s = strconcat($1,$2); 
-	 	  $$ = sa_strdup(SA, s);	
+ |  STRING sstring
+		{ char *s = strconcat($1,$2);
+	 	  $$ = sa_strdup(SA, s);
 		  _DELETE(s);
+		}
+ ;
+
+string:
+   sstring	{ $$ = $1; }
+ | ustring opt_uescape
+		{ $$ = uescape_xform($1, $2);
+		  if ($$ == NULL) {
+			yyerror(m, SQLSTATE(22019) "Bad Unicode string");
+			YYABORT;
+		  }
 		}
  ;
 
@@ -6371,6 +6734,7 @@ char *token2string(int token)
 	TR(MODE);
 	SQL(INSERT);
 	SQL(DELETE);
+	SQL(TRUNCATE);
 	SQL(UPDATE);
 	SQL(CROSS);
 	SQL(JOIN);
@@ -6442,6 +6806,18 @@ char *token2string(int token)
 	SQL(XMLTEXT);
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
+	SQL(MERGE_PARTITION);
+	SQL(PARTITION_LIST);
+	SQL(PARTITION_RANGE);
+	SQL(PARTITION_COLUMN);
+	SQL(PARTITION_EXPRESSION);
+	SQL(RENAME_SCHEMA);
+	SQL(RENAME_TABLE);
+	SQL(RENAME_COLUMN);
+	SQL(PRECEDING);
+	SQL(FOLLOWING);
+	SQL(CURRENT_ROW);
+	SQL(WINDOW);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }
@@ -6487,4 +6863,3 @@ int sqlerror(mvc * c, const char *err)
 				sqlstate, err, QUERY(c->scanner));
 	return 1;
 }
-

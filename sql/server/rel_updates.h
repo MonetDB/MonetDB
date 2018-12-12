@@ -21,8 +21,11 @@ extern sql_rel *rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts);
 extern sql_rel *rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes);
 extern sql_rel *rel_truncate(sql_allocator *sa, sql_rel *t, int drop_action, int check_identity);
 
-extern sql_exp * rel_parse_val(mvc *m, char *query, char emode);
+extern sql_exp * rel_parse_val(mvc *m, char *query, char emode, sql_rel *from);
 
 extern sql_rel *rel_updates(mvc *sql, symbol *sym);
+
+extern sql_table *insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname);
+extern sql_table *update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete);
 
 #endif /*_REL_UPDATES_H_*/

@@ -65,9 +65,15 @@ command_help(int argc, char *argv[])
 int
 command_version(void)
 {
-	printf("MonetDB Database Server v%s (%s)\n",
-			MERO_VERSION, MONETDB_RELEASE);
-	return(0);
+	const char *rev = mercurial_revision();
+	printf("MonetDB Database Server v%s", VERSION);
+	/* coverity[pointless_string_compare] */
+	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
+		printf(" (%s)", MONETDB_RELEASE);
+	else if (strcmp(rev, "Unknown") != 0)
+		printf(" (hg id: %s)", rev);
+	printf("\n");
+	return 0;
 }
 
 int

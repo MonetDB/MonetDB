@@ -1,0 +1,185 @@
+stdout of test 'capi16` in directory 'sql/backends/monet5/UDF/capi` itself:
+
+
+# 15:47:18 >  
+# 15:47:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36686" "--set" "mapi_usock=/var/tmp/mtest-6494/.s.monetdb.36686" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/myth/opt/var/MonetDB/mTests_sql_backends_monet5_UDF_capi" "--set" "embedded_c=true"
+# 15:47:18 >  
+
+# MonetDB 5 server v11.29.4
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_UDF_capi', using 4 threads
+# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-30.eduroam.cwi.nl:36686/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6494/.s.monetdb.36686
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 15:47:19 >  
+# 15:47:19 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6494" "--port=36686"
+# 15:47:19 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION string_reverse(input STRING) RETURNS STRING
+#LANGUAGE C {
+##include <string.h>
+#    size_t i, j;
+#    result->initialize(result, input.count);
+#    for(i = 0; i < input.count; i++) {
+#        char* input_string = input.data[i];
+#        size_t len = strlen(input_string);
+#        result->data[i] = malloc(len + 1);
+#        for(j = 0; j < len; j++) {
+#            result->data[i][j] = input_string[len - j - 1];
+#        }
+#        result->data[i][len] = '\0';
+#    }
+#};
+#SELECT 'hello', string_reverse('hello');
+% .L2,	.L4 # table_name
+% L2,	L4 # name
+% char,	clob # type
+% 5,	5 # length
+[ "hello",	"olleh"	]
+#CREATE FUNCTION capi10(inp BLOB) RETURNS BLOB LANGUAGE C {
+#    size_t i;
+#    result->initialize(result, inp.count);
+#    for(i = 0; i < inp.count; i++) {
+#        if (inp.is_null(inp.data[i])) {
+#            result->data[i] = result->null_value;
+#        } else {
+#            result->data[i].data = malloc(inp.data[i].size);
+#            memcpy(result->data[i].data, inp.data[i].data, inp.data[i].size);
+#            result->data[i].size = inp.data[i].size;
+#        }
+#    }
+#};
+#SELECT BLOB '00FFFF00', capi10(BLOB '00FFFF00');
+% .L2,	.L4 # table_name
+% L2,	L4 # name
+% blob,	blob # type
+% 0,	0 # length
+[ 00FFFF00,	00FFFF00	]
+#CREATE FUNCTION capi00(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+#    size_t i;
+#    result->initialize(result, inp.count);
+#    for(i = 0; i < inp.count; i++) {
+#        result->data[i] = inp.data[i] * 2;
+#    }
+#};
+#SELECT 1, capi00(1);
+% .L2,	.L4 # table_name
+% L2,	L4 # name
+% tinyint,	int # type
+% 1,	1 # length
+[ 1,	2	]
+#CREATE FUNCTION capi02_increment_year(d DATE) RETURNS DATE
+#language C
+#{
+#    size_t i;
+#    result->initialize(result, d.count);
+#    for(i = 0; i < result->count; i++) {
+#        if (d.is_null(d.data[i])) {
+#            result->data[i] = result->null_value;
+#        } else {
+#            result->data[i].year = d.data[i].year + 1;
+#            result->data[i].month = d.data[i].month;
+#            result->data[i].day = d.data[i].day;
+#        }
+#    }
+#};
+#SELECT capi02_increment_year('1992-09-20');
+% .L2 # table_name
+% L2 # name
+% date # type
+% 10 # length
+[ 1993-09-20	]
+#CREATE FUNCTION capi02_randomize_time(d TIME) RETURNS TIME
+#language C
+#{
+#    size_t i;
+#    result->initialize(result, d.count);
+#    for(i = 0; i < result->count; i++) {
+#        if (d.is_null(d.data[i])) {
+#            result->data[i] = result->null_value;
+#        } else {
+#            result->data[i].hours = (i + 1234) % 24;
+#            result->data[i].minutes = (i + 1234) % 60;
+#            result->data[i].seconds = (i + 1234) % 60;
+#            result->data[i].ms = (i + 1234) % 1000;
+#        }
+#    }
+#};
+#SELECT capi02_randomize_time('03:03:02.0101');
+% .L2 # table_name
+% L2 # name
+% time # type
+% 8 # length
+[ 10:34:34	]
+#CREATE FUNCTION capi02_increment_timestamp(d TIMESTAMP) RETURNS TIMESTAMP
+#language C
+#{
+#    size_t i;
+#    result->initialize(result, d.count);
+#    for(i = 0; i < result->count; i++) {
+#        if (d.is_null(d.data[i])) {
+#            result->data[i] = result->null_value;
+#        } else {
+#            result->data[i].date.year = d.data[i].date.year + 1;
+#            result->data[i].date.month = d.data[i].date.month;
+#            result->data[i].date.day = d.data[i].date.day;
+#
+#            result->data[i].time.hours = (i + 1234) % 24;
+#SELECT capi02_increment_timestamp('1992-09-20 03:03:02.0101');
+% .L2 # table_name
+% L2 # name
+% timestamp # type
+% 26 # length
+[ 1993-09-20 10:34:34.234000	]
+#ROLLBACK;
+
+# 15:47:20 >  
+# 15:47:20 >  "Done."
+# 15:47:20 >  
+

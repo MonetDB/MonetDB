@@ -61,11 +61,11 @@ QUERY = select * from sys.sys.sys.t3948;
 ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = select * from sys.sys.dependencies_tables_on_views();
-ERROR = !syntax error, unexpected '(', expecting SCOLON in: "select * from sys.sys.dependencies_tables_on_views("
+QUERY = select * from sys.sys.generate_series(1,2);
+ERROR = !syntax error, unexpected '(', expecting SCOLON in: "select * from sys.sys.generate_series("
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = select * from sys.sys.sys.dependencies_tables_on_views();
+QUERY = select * from sys.sys.sys.generate_series(1,2);
 ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
 CODE  = 42000
 

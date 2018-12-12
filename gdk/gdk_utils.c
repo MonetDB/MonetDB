@@ -43,6 +43,10 @@ static char THRprintbuf[BUFSIZ];
 # include <sys/sysctl.h>
 #endif
 
+#ifdef __CYGWIN__
+#include <sysinfoapi.h>
+#endif
+
 #ifdef NATIVE_WIN32
 #define chdir _chdir
 #endif
@@ -95,12 +99,12 @@ GDKgetenv(const char *name)
 
 	if (b != BUN_NONE) {
 		BATiter GDKenvi = bat_iterator(GDKval);
-		return BUNtail(GDKenvi, b);
+		return BUNtvar(GDKenvi, b);
 	}
 	return NULL;
 }
 
-int
+bool
 GDKgetenv_istext(const char *name, const char* text)
 {
 	char *val = GDKgetenv(name);
@@ -111,13 +115,13 @@ GDKgetenv_istext(const char *name, const char* text)
 	return 0;
 }
 
-int
+bool
 GDKgetenv_isyes(const char *name)
 {
 	return GDKgetenv_istext(name, "yes");
 }
 
-int
+bool
 GDKgetenv_istrue(const char *name)
 {
 	return GDKgetenv_istext(name, "true");
@@ -136,8 +140,8 @@ GDKgetenv_int(const char *name, int def)
 gdk_return
 GDKsetenv(const char *name, const char *value)
 {
-	if (BUNappend(GDKkey, name, FALSE) != GDK_SUCCEED ||
-	    BUNappend(GDKval, value, FALSE) != GDK_SUCCEED)
+	if (BUNappend(GDKkey, name, false) != GDK_SUCCEED ||
+	    BUNappend(GDKval, value, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -220,6 +224,7 @@ GDKlog(FILE *lockFile, const char *format, ...)
 static void
 BATSIGignore(int nr)
 {
+	(void) nr;
 	GDKsyserror("! ERROR signal %d caught by thread %zu\n", nr, (size_t) MT_getpid());
 }
 #endif
@@ -228,6 +233,7 @@ BATSIGignore(int nr)
 static void
 BATSIGabort(int nr)
 {
+	(void) nr;
 	GDKexit(3);		/* emulate Windows exit code without pop-up */
 }
 #endif
@@ -417,7 +423,7 @@ MT_init(void)
 
 #define CATNAP		50	/* time to sleep in ms for catnaps */
 
-static void THRinit(void);
+static int THRinit(void);
 static void GDKlockHome(int farmid);
 
 #ifndef STATIC_CODE_ANALYSIS
@@ -426,7 +432,7 @@ static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
 #endif
 #endif
 
-int
+bool
 GDKinit(opt *set, int setlen)
 {
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
@@ -437,18 +443,18 @@ GDKinit(opt *set, int setlen)
 	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
-	assert(sizeof(char) == SIZEOF_CHAR);
-	assert(sizeof(short) == SIZEOF_SHORT);
-	assert(sizeof(int) == SIZEOF_INT);
-	assert(sizeof(long) == SIZEOF_LONG);
-	assert(sizeof(lng) == SIZEOF_LNG);
+	static_assert(sizeof(char) == SIZEOF_CHAR, "error in configure: bad value for SIZEOF_CHAR");
+	static_assert(sizeof(short) == SIZEOF_SHORT, "error in configure: bad value for SIZEOF_SHORT");
+	static_assert(sizeof(int) == SIZEOF_INT, "error in configure: bad value for SIZEOF_INT");
+	static_assert(sizeof(long) == SIZEOF_LONG, "error in configure: bad value for SIZEOF_LONG");
+	static_assert(sizeof(lng) == SIZEOF_LNG, "error in configure: bad value for SIZEOF_LNG");
 #ifdef HAVE_HGE
-	assert(sizeof(hge) == SIZEOF_HGE);
+	static_assert(sizeof(hge) == SIZEOF_HGE, "error in configure: bad value for SIZEOF_HGE");
 #endif
-	assert(sizeof(oid) == SIZEOF_OID);
-	assert(sizeof(void *) == SIZEOF_VOID_P);
-	assert(sizeof(size_t) == SIZEOF_SIZE_T);
-	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);
+	static_assert(sizeof(oid) == SIZEOF_OID, "error in configure: bad value for SIZEOF_OID");
+	static_assert(sizeof(void *) == SIZEOF_VOID_P, "error in configure: bad value for SIZEOF_VOID_P");
+	static_assert(sizeof(size_t) == SIZEOF_SIZE_T, "error in configure: bad value for SIZEOF_SIZE_T");
+	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG, "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&MT_system_lock,"MT_system_lock");
@@ -481,19 +487,21 @@ GDKinit(opt *set, int setlen)
 	if (mnstr_init() < 0)
 		return 0;
 	MT_init_posix();
-	THRinit();
+	if (THRinit() < 0)
+		return 0;
 #ifndef NATIVE_WIN32
-	BATSIGinit();
+	if (BATSIGinit() < 0)
+		return 0;
 #endif
 #ifdef WIN32
 	(void) signal(SIGABRT, BATSIGabort);
-#ifndef __MINGW32__ // MinGW does not have these
+#if !defined(__MINGW32__) && !defined(__CYGWIN__)
 	_set_abort_behavior(0, _CALL_REPORTFAULT | _WRITE_ABORT_MSG);
 	_set_error_mode(_OUT_TO_STDERR);
 #endif
 #endif
 	MT_init();
-	BBPdirty(1);
+	BBP_dirty = true;
 
 	/* now try to lock the database: go through all farms, and if
 	 * we see a new directory, lock it */
@@ -633,17 +641,20 @@ GDKinit(opt *set, int setlen)
 		if (GDKsetenv("monet_pid", buf) != GDK_SUCCEED)
 			GDKfatal("GDKinit: GDKsetenv failed");
 	}
+	if (GDKsetenv("revision", mercurial_revision()) != GDK_SUCCEED)
+		GDKfatal("GDKinit: GDKsetenv failed");
 
 	return 1;
 }
 
 int GDKnr_threads = 0;
 static int GDKnrofthreads;
+static ThreadRec GDKthreads[THREADS];
 
-int
+bool
 GDKexiting(void)
 {
-	int stopped;
+	bool stopped;
 #ifdef ATOMIC_LOCK
 	pthread_mutex_lock(&GDKstoppedLock.lock);
 #endif
@@ -802,9 +813,9 @@ GDKreset(int status, int exit)
 			GDKbbpLock[i].free = 0;
 		}
 
-		memset((char*) GDKthreads, 0, sizeof(GDKthreads));
-		memset((char*) THRdata, 0, sizeof(THRdata));
-		memset((char*) THRprintbuf,0, sizeof(THRprintbuf));
+		memset(GDKthreads, 0, sizeof(GDKthreads));
+		memset(THRdata, 0, sizeof(THRdata));
+		memset(THRprintbuf, 0, sizeof(THRprintbuf));
 		gdk_bbp_reset();
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
@@ -883,7 +894,8 @@ GDKlockHome(int farmid)
 	assert(BBPfarms[farmid].dirname != NULL);
 	assert(BBPfarms[farmid].lock_file == NULL);
 
-	gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
+	if(!(gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL)))
+		GDKfatal("GDKlockHome: malloc failure\n");
 
 	/*
 	 * Obtain the global database lock.
@@ -910,7 +922,8 @@ GDKlockHome(int farmid)
 	/*
 	 * Print the new process list in the global lock file.
 	 */
-	fseek(GDKlockFile, 0, SEEK_SET);
+	if(fseek(GDKlockFile, 0, SEEK_SET) == -1)
+		GDKfatal("GDKlockHome: Error while setting the file pointer on %s\n", gdklockpath);
 	if (ftruncate(fileno(GDKlockFile), 0) < 0)
 		GDKfatal("GDKlockHome: Could not truncate %s\n", gdklockpath);
 	fflush(GDKlockFile);
@@ -1282,7 +1295,6 @@ GDKms(void)
  * descriptors are the same as for the server and should be
  * subsequently reset.
  */
-ThreadRec GDKthreads[THREADS];
 void *THRdata[THREADDATA] = { 0 };
 
 Thread
@@ -1340,18 +1352,25 @@ THRnew(const char *name)
 			return NULL;
 		}
 		tid = s->tid;
-		memset(s, 0, sizeof(*s));
-		s->pid = pid;
-		s->tid = tid;
-		s->data[1] = THRdata[1];
-		s->data[0] = THRdata[0];
-		s->sp = THRsp();
+		*s = (ThreadRec) {
+			.pid = pid,
+			.tid = tid,
+			.data[1] = THRdata[1],
+			.data[0] = THRdata[0],
+			.sp = THRsp(),
+		};
 
 		PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", (unsigned) s->tid, (size_t) pid, (size_t) s->sp);
 		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;
 		s->name = GDKstrdup(name);
+		if(!s->name) {
+			MT_lock_unset(&GDKthreadLock);
+			IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
+			GDKerror("THRnew: malloc failure\n");
+			return NULL;
+		}
 	}
 	MT_lock_unset(&GDKthreadLock);
 
@@ -1399,16 +1418,22 @@ THRhighwater(void)
  * the network.  The code below should be improved to gain speed.
  */
 
-static void
+static int
 THRinit(void)
 {
 	int i = 0;
 
-	THRdata[0] = (void *) file_wastream(stdout, "stdout");
-	THRdata[1] = (void *) file_rastream(stdin, "stdin");
+	if((THRdata[0] = (void *) file_wastream(stdout, "stdout")) == NULL)
+		return -1;
+	if((THRdata[1] = (void *) file_rastream(stdin, "stdin")) == NULL) {
+		close_stream(THRdata[0]);
+		THRdata[0] = NULL;
+		return -1;
+	}
 	for (i = 0; i < THREADS; i++) {
 		GDKthreads[i].tid = i + 1;
 	}
+	return 0;
 }
 
 void

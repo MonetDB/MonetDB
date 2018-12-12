@@ -11,7 +11,7 @@ CREATE TABLE "sys"."tbls" (
 	"readonly"      BOOLEAN,
 	"temporary"     SMALLINT
 );
-COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 2001	"schemas"	2000	NULL	0	true	0	false	0
 2007	"types"	2000	NULL	0	true	0	false	0
 2016	"functions"	2000	NULL	0	true	0	false	0

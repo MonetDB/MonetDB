@@ -30,8 +30,8 @@ stderr of test 'int_parse` in directory 'sql/test/copy` itself:
 # 11:23:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4649" "--port=31080"
 # 11:23:33 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
-QUERY = copy 3 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = copy 3 records into t_int from stdin USING DELIMITERS ',',E'\n','"' NULL AS '';
         0
         5.1
 ERROR = !Failed to import table 't_int', line 2 field i 'int' expected in '5.1'
@@ -42,8 +42,8 @@ QUERY = 9
         select * from t_int;
 ERROR = !syntax error, unexpected sqlINT in: "9"
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
+MAPI  = (monetdb) /var/tmp/mtest-10958/.s.monetdb.35734
+QUERY = copy 5 records into t_int from stdin delimiters ',',E'\n' NULL as '';
         1
         nil
 ERROR = !Failed to import table 't_int', line 2 field i 'int' expected in 'nil'

@@ -87,10 +87,16 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {
-		char *uri = p->query;
-		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p); 
+		char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
+		if (!local_name) {
+			return NULL;
+		}
+		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
+		if (!p) {
+			return NULL;
+		}
 
-		p->value = uri;
+		p->value = local_name;
 	}
 	return r;
 }
@@ -114,8 +120,10 @@ exp_replica(mvc *sql, sql_exp *e, char *uri)
 			e->f = exps_replica(sql, e->f, uri);
 		return e;
 	}
-	if (e->flag & PSM_REL) 
+	if (e->flag & PSM_REL)
 		e->l = replica(sql, e->l, uri);
+	if (e->flag & PSM_EXCEPTION)
+		e->l = exp_replica(sql, e->l, uri);
 	return e;
 }
 
@@ -139,7 +147,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 
 	if (rel_is_ref(rel)) {
 		if (has_remote_or_replica(rel)) {
-			sql_rel *nrel = rel_copy(sql->sa, rel);
+			sql_rel *nrel = rel_copy(sql->sa, rel, 0);
 
 			if (nrel && rel->p)
 				nrel->p = prop_copy(sql->sa, rel->p);
@@ -167,12 +175,24 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 						break;
 					}
 				}
-			} else { /* no match, use first */
-				sql_part *p = NULL;
-
+			} else { /* no match, find one without remote or use first */
 				if (t->members.set) {
-					p = t->members.set->h->data;
-					rel = rewrite_replica(sql, rel, t, p, 1);
+					int fnd = 0;
+					sql_part *p;
+					for (n = t->members.set->h; n; n = n->next) {
+						sql_part *p = n->data;
+						sql_table *pt = find_sql_table(t->s, p->base.name);
+	
+						if (!isRemote(pt)) {
+							fnd = 1;
+							rel = rewrite_replica(sql, rel, t, p, 0);
+							break;
+						}
+					}
+					if (!fnd) {
+						p = t->members.set->h->data;
+						rel = rewrite_replica(sql, rel, t, p, 1);
+					}
 				} else {
 					rel = NULL;
 				}
@@ -205,7 +225,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 		rel->l = replica(sql, rel->l, uri);
 		break;
 	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps) 
+		if ((rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION) && rel->exps)
 			rel->exps = exps_replica(sql, rel->exps, uri);
 		rel->l = replica(sql, rel->l, uri);
 		if (rel->r)
@@ -240,8 +260,10 @@ exp_distribute(mvc *sql, sql_exp *e)
 			e->f = exps_distribute(sql, e->f);
 		return e;
 	}
-	if (e->flag & PSM_REL) 
+	if (e->flag & PSM_REL)
 		e->l = distribute(sql, e->l);
+	if (e->flag & PSM_EXCEPTION)
+		e->l = exp_distribute(sql, e->l);
 	return e;
 }
 
@@ -268,7 +290,7 @@ distribute(mvc *sql, sql_rel *rel)
 
 	if (rel_is_ref(rel)) {
 		if (has_remote_or_replica(rel)) {
-			sql_rel *nrel = rel_copy(sql->sa, rel);
+			sql_rel *nrel = rel_copy(sql->sa, rel, 0);
 
 			if (nrel && rel->p)
 				nrel->p = prop_copy(sql->sa, rel->p);
@@ -285,10 +307,17 @@ distribute(mvc *sql, sql_rel *rel)
 
 		/* set_remote() */
 		if (t && isRemote(t)) {
-			char *uri = t->query;
+			//TODO: check for allocation failure
+			char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, t->s->base.name, "."), t->base.name);
+			if (!local_name) {
+				return NULL;
+			}
 
-			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p); 
-			p->value = uri;
+			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p);
+			if (!p) {
+				return NULL;
+			}
+			p->value = local_name;
 		}
 		break;
 	}
@@ -309,6 +338,13 @@ distribute(mvc *sql, sql_rel *rel)
 		l = rel->l = distribute(sql, rel->l);
 		r = rel->r = distribute(sql, rel->r);
 
+		if (is_join(rel->op) && list_empty(rel->exps) &&
+			find_prop(l->p, PROP_REMOTE) == NULL &&
+			find_prop(r->p, PROP_REMOTE) == NULL) {
+			/* cleanup replica's */
+			l = rel->l = replica(sql, l, NULL);
+			r = rel->r = replica(sql, r, NULL);
+		}
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 		    r && find_prop(r->p, PROP_REMOTE) == NULL) {
 			r = rel->r = distribute(sql, replica(sql, rel->r, pl->value));
@@ -316,6 +352,7 @@ distribute(mvc *sql, sql_rel *rel)
 		    	   r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
 			l = rel->l = distribute(sql, replica(sql, rel->l, pr->value));
 		}
+
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 		    r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL && 
 		    strcmp(pl->value, pr->value) == 0) {
@@ -339,7 +376,7 @@ distribute(mvc *sql, sql_rel *rel)
 		}
 		break;
 	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps) 
+		if ((rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION) && rel->exps)
 			rel->exps = exps_distribute(sql, rel->exps);
 		rel->l = distribute(sql, rel->l);
 		if (rel->r)
@@ -374,8 +411,10 @@ exp_remote_func(mvc *sql, sql_exp *e)
 			e->f = exps_remote_func(sql, e->f);
 		return e;
 	}
-	if (e->flag & PSM_REL) 
+	if (e->flag & PSM_REL)
 		e->l = rel_remote_func(sql, e->l);
+	if (e->flag & PSM_EXCEPTION)
+		e->l = exp_remote_func(sql, e->l);
 	return e;
 }
 
@@ -424,7 +463,7 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 		rel->l = rel_remote_func(sql, rel->l);
 		break;
 	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps) 
+		if ((rel->flag == DDL_PSM || rel->flag == DDL_EXCEPTION) && rel->exps)
 			rel->exps = exps_remote_func(sql, rel->exps);
 		rel->l = rel_remote_func(sql, rel->l);
 		if (rel->r)

@@ -117,7 +117,7 @@ str-trim
 alastair_udf_mergetable_bug
 
 copy-into-fwf
-copy-from-compressed
+HAVE_LIBZ&HAVE_LIBBZ2&HAVE_LIBLZMA?copy-from-compressed
 
 truncate-statements
 truncate-statements-extra

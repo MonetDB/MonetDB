@@ -1,0 +1,52 @@
+stdout of test 'local_replica_table_not_detected.Bug-6620` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 15:25:58 >  
+# 15:25:58 >  "/usr/local/opt/python@2/bin/python2.7" "local_replica_table_not_detected.Bug-6620.py" "local_replica_table_not_detected.Bug-6620"
+# 15:25:58 >  
+
+create table s1 (i int)
+insert into s1 values (23), (42)
+create table t1 (s varchar(10))
+insert into t1 values ('abc'), ('efg')
+create table s2 (i int)
+insert into s2 values (23), (42)
+create table t2 (s varchar(10))
+insert into t2 values ('foo'), ('bar')
+#create remote table s1 (i int) on 'mapi:monetdb://localhost:57465/node1';
+#create remote table t1 (s varchar(10)) on 'mapi:monetdb://localhost:57465/node1';
+create replica table repS(i int)
+alter table repS add table s1
+alter table repS add table s2
+create merge table mrgT (s varchar(10))
+alter table mrgT add table t1
+alter table mrgT add table t2
+plan select * from repS
+project (
+| table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ]
+) [ "reps"."i" ]
+plan select * from repS, mrgT
+union (
+| table 
+| | project (
+| | | crossproduct (
+| | | | REMOTE(sys.s1) [ "s1"."i" as "reps"."i", "s1"."%TID%" NOT NULL as "reps"."%TID%" ],
+| | | | project (
+| | | | | REMOTE(sys.t1) [ "t1"."s" as "mrgt"."s" ] COUNT 
+| | | | ) [ "mrgt"."s" ]
+| | | ) [  ]
+| | ) [ "reps"."i", "mrgt"."s" ] REMOTE mapi:monetdb://localhost:52345/node1 [ "reps"."i", "mrgt"."s" ],
+| project (
+| | crossproduct (
+| | | table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
+| | | project (
+| | | | table(sys.t2) [ "t2"."s" as "mrgt"."s" ] COUNT 
+| | | ) [ "mrgt"."s" ]
+| | ) [  ]
+| ) [ "reps"."i", "mrgt"."s" ]
+) [ "reps"."i", "mrgt"."s" ]
+
+# 15:26:00 >  
+# 15:26:00 >  "Done."
+# 15:26:00 >  
+

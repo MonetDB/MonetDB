@@ -33,13 +33,32 @@ cs_destroy(changeset * cs)
 }
 
 void
-cs_add(changeset * cs, void *elm, int flag)
+cs_add(changeset * cs, void *elm, int flags)
 {
 	if (!cs->set) 
 		cs->set = list_new(cs->sa, cs->destroy);
 	list_append(cs->set, elm);
-	if (flag == TR_NEW && !cs->nelm)
+	if (newFlagSet(flags) && !cs->nelm)
 		cs->nelm = cs->set->t;
+}
+
+void *
+cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp)
+{
+	return list_traverse_with_validate(cs->set, elm, cmp);
+}
+
+void*
+cs_add_with_validate(changeset * cs, void *elm, int flags, fvalidate cmp)
+{
+	void* res = NULL;
+	if (!cs->set)
+		cs->set = list_new(cs->sa, cs->destroy);
+	if((res = list_append_with_validate(cs->set, elm, cmp)) != NULL)
+		return res;
+	if (newFlagSet(flags) && !cs->nelm)
+		cs->nelm = cs->set->t;
+	return res;
 }
 
 void
@@ -49,9 +68,9 @@ cs_add_before(changeset * cs, node *n, void *elm)
 }
 
 void
-cs_del(changeset * cs, node *elm, int flag)
+cs_del(changeset * cs, node *elm, int flags)
 {
-	if (flag == TR_NEW) {	/* remove just added */
+	if (newFlagSet(flags)) {	/* remove just added */
 		if (cs->nelm == elm)
 			cs->nelm = elm->next;
 		list_remove_node(cs->set, elm);

@@ -18,7 +18,7 @@
 #define PyString_CheckExact PyUnicode_CheckExact
 #endif
 
-bool string_copy(char *source, char *dest, size_t max_size, bool allow_unicode)
+bool string_copy(const char *source, char *dest, size_t max_size, bool allow_unicode)
 {
 	size_t i;
 	for (i = 0; i < max_size; i++) {
@@ -36,7 +36,7 @@ bool string_copy(char *source, char *dest, size_t max_size, bool allow_unicode)
 int hge_to_string(char *str, hge x)
 {
 	size_t len = 256; /* assume str is large enough */
-	hgeToStr(&str, &len, &x);
+	hgeToStr(&str, &len, &x, false);
 	return TRUE;
 }
 
@@ -175,7 +175,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 		ucs2_to_utf8(0, ((PyUnicodeObject *)obj)->length, utf8_string, str);
 #endif
 #else
-		char *str = PyUnicode_AsUTF8(obj);
+		const char *str = PyUnicode_AsUTF8(obj);
 		if (!string_copy(str, utf8_string, len-1, true)) {
 			msg = createException(MAL, "pyapi.eval",
 								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
@@ -206,7 +206,7 @@ wrapup:
 }
 
 #define STRING_TO_NUMBER_FACTORY(tpe)                                          \
-	str str_to_##tpe(char *ptr, size_t maxsize, tpe *value)                    \
+	str str_to_##tpe(const char *ptr, size_t maxsize, tpe *value)              \
 	{                                                                          \
 		size_t len = sizeof(tpe);                                              \
 		char buf[256];                                                         \
@@ -219,7 +219,7 @@ wrapup:
 				return GDKstrdup("string too long to convert.");               \
 			ptr = buf;                                                         \
 		}                                                                      \
-		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value) < 0)  \
+		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value, false) < 0) \
 			return GDKstrdup("Error converting string.");                      \
 		return MAL_SUCCEED;                                                    \
 	}

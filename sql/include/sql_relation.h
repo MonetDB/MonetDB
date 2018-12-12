@@ -36,7 +36,7 @@ typedef struct expression {
 	void *r;
 	void *f;	/* func's and aggr's */
 			/* e_cmp may have have 2 arguments */
-	int flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, cmp types */
+	int flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
 	unsigned char card;	/* card
 				   (0 truth value!)
 				   (1 atoms)
@@ -67,6 +67,7 @@ typedef struct expression {
 #define ANTISEL	32
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
+#define NULLS_LAST	256
 
 #define UPD_COMP		1
 #define UPD_LOCKED		2
@@ -81,7 +82,8 @@ typedef struct expression {
 #define PSM_WHILE 8
 #define PSM_IF 16
 #define PSM_REL 32
-#define PSM_YIELD 64
+#define PSM_EXCEPTION 64
+#define PSM_YIELD 128
 
 #define SET_PSM_LEVEL(level)	(level<<8)
 #define GET_PSM_LEVEL(level)	(level>>8)
@@ -91,10 +93,13 @@ typedef struct expression {
 #define DDL_OUTPUT			1
 #define DDL_LIST			2
 #define DDL_PSM				3
+#define DDL_EXCEPTION		4
 
 #define DDL_CREATE_SEQ			5
 #define DDL_ALTER_SEQ			6
 #define DDL_DROP_SEQ			7
+#define DDL_ALTER_TABLE_ADD_RANGE_PARTITION		8
+#define DDL_ALTER_TABLE_ADD_LIST_PARTITION		9
 
 #define DDL_RELEASE			11
 #define DDL_COMMIT			12
@@ -138,9 +143,13 @@ typedef struct expression {
 #define DDL_ALTER_TABLE_ADD_TABLE	63
 #define DDL_ALTER_TABLE_DEL_TABLE	64
 #define DDL_ALTER_TABLE_SET_ACCESS	65
-#define DDL_ALTER_STREAM_TABLE		66
 
-#define DDL_COMMENT_ON			67
+#define DDL_COMMENT_ON			66
+#define DDL_RENAME_SCHEMA		67
+#define DDL_RENAME_TABLE		68
+#define DDL_RENAME_COLUMN		69
+
+#define DDL_ALTER_STREAM_TABLE  70
 
 #define DDL_EMPTY 100
 
@@ -234,6 +243,14 @@ typedef enum operator_type {
 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) \
 	(op == op_sample)
+#define is_insert(op) \
+	(op == op_insert)
+#define is_update(op) \
+	(op == op_update)
+#define is_delete(op) \
+	(op == op_delete)
+#define is_truncate(op) \
+	(op == op_truncate)
 
 /* NO NIL semantics of aggr operations */
 #define need_no_nil(e) \
@@ -257,8 +274,10 @@ typedef enum operator_type {
 
 #define is_ascending(e) \
 	((e->flag&ASCENDING)==ASCENDING)
+#define nulls_last(e) \
+	((e->flag&NULLS_LAST)==NULLS_LAST)
 #define set_direction(e, dir) \
-	e->flag |= (dir?ASCENDING:0)
+	e->flag |= ((dir&1)?ASCENDING:0) | ((dir&2)?NULLS_LAST:0)
 
 #define is_anti(e) \
 	((e->flag&ANTISEL)==ANTISEL)

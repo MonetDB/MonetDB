@@ -24,13 +24,13 @@ select group_concat(c) from testme where c < 3;
 
 create table othertest (a int, b clob);
 
-insert into othertest values (1, '\\t a\t'), (1, '\n\\n,'), (1, ',,,');
+insert into othertest values (1, E'\\t a\t'), (1, E'\n\\n,'), (1, ',,,');
 
 select a, group_concat(b) from othertest group by a;
 
 select group_concat(b) from othertest;
 
-insert into othertest values (2, '\n'), (2, '\n'), (1, '');
+insert into othertest values (2, E'\n'), (2, E'\n'), (1, '');
 
 select a, group_concat(b) from othertest group by a;
 

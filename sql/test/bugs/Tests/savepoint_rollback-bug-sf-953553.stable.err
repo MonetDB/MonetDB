@@ -82,8 +82,8 @@ stderr of test 'savepoint_rollback-bug-sf-953553` in directory 'sql/test/bugs` i
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ROLLBACK TO SAVEPOINT a2;
-ERROR = !ROLLBACK TO SAVEPOINT: (a2) failed
-CODE  = 3B000
+ERROR = !ROLLBACK TO SAVEPOINT: no such savepoint: 'a2'
+CODE  = 42000
 
 # 21:02:42 >  
 # 21:02:42 >  Done.

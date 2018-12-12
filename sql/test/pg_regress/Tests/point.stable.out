@@ -16,9 +16,6 @@ stdout of test 'point` in directory 'sql/test/pg_regress` itself:
 # Listening for connection requests on mapi:monetdb://essen.ins.cwi.nl:31786/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5174/.s.monetdb.31786
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -54,9 +51,11 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 18:36:57 >  
-# 18:36:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5174" "--port=31786"
-# 18:36:57 >  
+Ready.
+
+# 15:18:46 >  
+# 15:18:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13481" "--port=38041"
+# 15:18:46 >  
 
 #CREATE TABLE POINT_TBL(f1 GEOMETRY(POINT));
 #INSERT INTO POINT_TBL(f1) VALUES (ST_MakePoint(0.0,0.0));
@@ -86,74 +85,74 @@ Ready.
 % .L2,	sys.point_tbl,	sys.L6 # table_name
 % six,	f1,	txt # name
 % char,	geometry,	varchar # type
-% 0,	0,	18 # length
-[ "",	"POINT (0 0)",	"\"POINT (0 0)\""	]
-[ "",	"POINT (-10 0)",	"\"POINT (-10 0)\""	]
-[ "",	"POINT (-3 4)",	"\"POINT (-3 4)\""	]
-[ "",	"POINT (5.1 34.5)",	"\"POINT (5.1 34.5)\""	]
-[ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
+% 0,	0,	16 # length
+[ "",	"POINT (0 0)",	"POINT (0 0)"	]
+[ "",	"POINT (-10 0)",	"POINT (-10 0)"	]
+[ "",	"POINT (-3 4)",	"POINT (-3 4)"	]
+[ "",	"POINT (5.1 34.5)",	"POINT (5.1 34.5)"	]
+[ "",	"POINT (-5 -12)",	"POINT (-5 -12)"	]
 [ "",	NULL,	NULL	]
 #CREATE VIEW POINT_TBL_VW AS SELECT f1, cast(f1 as varchar(55)) as txt FROM POINT_TBL;
 #SELECT * FROM POINT_TBL_VW;
 % sys.point_tbl_vw,	sys.point_tbl_vw # table_name
 % f1,	txt # name
 % geometry,	varchar # type
-% 0,	18 # length
-[ "POINT (0 0)",	"\"POINT (0 0)\""	]
-[ "POINT (-10 0)",	"\"POINT (-10 0)\""	]
-[ "POINT (-3 4)",	"\"POINT (-3 4)\""	]
-[ "POINT (5.1 34.5)",	"\"POINT (5.1 34.5)\""	]
-[ "POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
+% 0,	16 # length
+[ "POINT (0 0)",	"POINT (0 0)"	]
+[ "POINT (-10 0)",	"POINT (-10 0)"	]
+[ "POINT (-3 4)",	"POINT (-3 4)"	]
+[ "POINT (5.1 34.5)",	"POINT (5.1 34.5)"	]
+[ "POINT (-5 -12)",	"POINT (-5 -12)"	]
 [ NULL,	NULL	]
 #SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE p.f1 << ST_MakePoint(0.0, 0.0);
 % .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
-% 0,	0,	16 # length
-[ "",	"POINT (-10 0)",	"\"POINT (-10 0)\""	]
-[ "",	"POINT (-3 4)",	"\"POINT (-3 4)\""	]
-[ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
+% 0,	0,	14 # length
+[ "",	"POINT (-10 0)",	"POINT (-10 0)"	]
+[ "",	"POINT (-3 4)",	"POINT (-3 4)"	]
+[ "",	"POINT (-5 -12)",	"POINT (-5 -12)"	]
 #SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE ST_MakePoint(0.0,0.0) >> p.f1;
 % .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
-% 0,	0,	16 # length
-[ "",	"POINT (-10 0)",	"\"POINT (-10 0)\""	]
-[ "",	"POINT (-3 4)",	"\"POINT (-3 4)\""	]
-[ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
+% 0,	0,	14 # length
+[ "",	"POINT (-10 0)",	"POINT (-10 0)"	]
+[ "",	"POINT (-3 4)",	"POINT (-3 4)"	]
+[ "",	"POINT (-5 -12)",	"POINT (-5 -12)"	]
 #SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE ST_MakePoint(0.0,0.0) |>> p.f1;
 % .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
-% 0,	0,	16 # length
-[ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
+% 0,	0,	14 # length
+[ "",	"POINT (-5 -12)",	"POINT (-5 -12)"	]
 #SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 <<| ST_MakePoint(0.0, 0.0);
 % .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
-% 0,	0,	16 # length
-[ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
+% 0,	0,	14 # length
+[ "",	"POINT (-5 -12)",	"POINT (-5 -12)"	]
 #SELECT '' AS one, p.* FROM POINT_TBL_VW p WHERE p.f1 ~= ST_MakePoint(5.1, 34.5);
 % .L10,	sys.p,	sys.p # table_name
 % one,	f1,	txt # name
 % char,	geometry,	varchar # type
-% 0,	0,	18 # length
-[ "",	"POINT (5.1 34.5)",	"\"POINT (5.1 34.5)\""	]
+% 0,	0,	16 # length
+[ "",	"POINT (5.1 34.5)",	"POINT (5.1 34.5)"	]
 #SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE p.f1 @ ST_WKTToSQL('linestring(0 0, 100 100)');
 % .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
-% 0,	0,	18 # length
-[ "",	"POINT (0 0)",	"\"POINT (0 0)\""	]
-[ "",	"POINT (5.1 34.5)",	"\"POINT (5.1 34.5)\""	]
+% 0,	0,	16 # length
+[ "",	"POINT (0 0)",	"POINT (0 0)"	]
+[ "",	"POINT (5.1 34.5)",	"POINT (5.1 34.5)"	]
 #SELECT '' AS three, p.* FROM POINT_TBL_VW p WHERE not p.f1 @ ST_WKTToSQL('linestring(0 0, 100 100)');
 % .L10,	sys.p,	sys.p # table_name
 % three,	f1,	txt # name
 % char,	geometry,	varchar # type
-% 0,	0,	16 # length
-[ "",	"POINT (-10 0)",	"\"POINT (-10 0)\""	]
-[ "",	"POINT (-3 4)",	"\"POINT (-3 4)\""	]
-[ "",	"POINT (-5 -12)",	"\"POINT (-5 -12)\""	]
+% 0,	0,	14 # length
+[ "",	"POINT (-10 0)",	"POINT (-10 0)"	]
+[ "",	"POINT (-3 4)",	"POINT (-3 4)"	]
+[ "",	"POINT (-5 -12)",	"POINT (-5 -12)"	]
 #SELECT '' AS six, p.f1, p.f1 <-> ST_MakePoint(0,0) AS dist FROM POINT_TBL p ORDER BY dist;
 % .L2,	sys.p,	sys.L5 # table_name
 % six,	f1,	dist # name
@@ -262,8 +261,8 @@ Ready.
 [ "",	"POINT (-3 4)",	"POINT (0 0)",	5	]
 [ "",	"POINT (-10 0)",	"POINT (-3 4)",	8.062257748	]
 [ "",	"POINT (-10 0)",	"POINT (0 0)",	10	]
-[ "",	"POINT (-10 0)",	"POINT (-5 -12)",	13	]
 [ "",	"POINT (-5 -12)",	"POINT (0 0)",	13	]
+[ "",	"POINT (-10 0)",	"POINT (-5 -12)",	13	]
 [ "",	"POINT (-5 -12)",	"POINT (-3 4)",	16.1245155	]
 [ "",	"POINT (-3 4)",	"POINT (5.1 34.5)",	31.55724954	]
 [ "",	"POINT (0 0)",	"POINT (5.1 34.5)",	34.87491934	]

@@ -1,0 +1,12 @@
+create
+check0
+HAVE_DATA_PATH?load
+alter
+check1
+11
+38
+72
+83
+98
+99
+drop

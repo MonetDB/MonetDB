@@ -79,7 +79,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 	char flushdir[128];
 
 	/* Enables clear function to check variables */
-	memset(bw, 0, sizeof(bam_wrapper));
+	*bw = (bam_wrapper) {.type = SAM,};
 
 	if (mkdir(DIR_BINARIES, 0777) == -1 && errno != EEXIST) {
 		throw(MAL, "init_bam_wrapper",
@@ -234,7 +234,7 @@ open_header_write_streams(bam_wrapper * bw)
 	int i;
 
 	for (i = 0; i < 6; ++i) {
-		if ((bw->files[i] = bsopen(bw->fp_files[i])) == NULL) {
+		if ((bw->files[i] = bsopen(bw->fp_files[i], true)) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
@@ -242,7 +242,7 @@ open_header_write_streams(bam_wrapper * bw)
 		}
 	}
 	for (i = 0; i < 7; ++i) {
-		if ((bw->sq[i] = bsopen(bw->fp_sq[i])) == NULL) {
+		if ((bw->sq[i] = bsopen(bw->fp_sq[i], true)) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
@@ -250,7 +250,7 @@ open_header_write_streams(bam_wrapper * bw)
 		}
 	}
 	for (i = 0; i < 13; ++i) {
-		if ((bw->rg[i] = bsopen(bw->fp_rg[i])) == NULL) {
+		if ((bw->rg[i] = bsopen(bw->fp_rg[i], true)) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
@@ -258,7 +258,7 @@ open_header_write_streams(bam_wrapper * bw)
 		}
 	}
 	for (i = 0; i < 6; ++i) {
-		if ((bw->pg[i] = bsopen(bw->fp_pg[i])) == NULL) {
+		if ((bw->pg[i] = bsopen(bw->fp_pg[i], true)) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
@@ -275,7 +275,7 @@ open_alignment_write_streams(bam_wrapper * bw) {
 
 	for (i = 0; i < 12; ++i) {
 		if ((bw->alignments[i] =
-			 bsopen(bw->fp_alignments[i])) == NULL) {
+			 bsopen(bw->fp_alignments[i], true)) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
@@ -284,7 +284,7 @@ open_alignment_write_streams(bam_wrapper * bw) {
 	}
 	for (i = 0; i < 4; ++i) {
 		if ((bw->alignments_extra[i] =
-			 bsopen(bw->fp_alignments_extra[i])) == NULL) {
+			 bsopen(bw->fp_alignments_extra[i], true)) == NULL) {
 			throw(MAL, "init_bam_wrapper",
 				  ERR_INIT_BAM_WRAPPER
 				  "Binary file '%s' could not be opened",
@@ -294,7 +294,7 @@ open_alignment_write_streams(bam_wrapper * bw) {
 	if (bw->dbschema == 1) {
 		for (i = 0; i < 23; ++i) {
 			if ((bw->alignments_paired_primary[i] =
-				 bsopen(bw->fp_alignments_paired_primary[i])) ==
+				 bsopen(bw->fp_alignments_paired_primary[i], true)) ==
 				NULL) {
 				throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER
@@ -303,7 +303,7 @@ open_alignment_write_streams(bam_wrapper * bw) {
 					  bw->fp_alignments_paired_primary[i]);
 			}
 			if ((bw->alignments_paired_secondary[i] =
-				 bsopen(bw->fp_alignments_paired_secondary[i])) ==
+				 bsopen(bw->fp_alignments_paired_secondary[i], true)) ==
 				NULL) {
 				throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER
@@ -533,7 +533,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 {
 	bam_header_option *opt = NULL;
 
-	memset(ret_hl, 0, sizeof(bam_header_line));	/* Enable clear function to check all variables */
+	*ret_hl = (bam_header_line) {.header_tag = {0}};	/* Enable clear function to check all variables */
 
 	/* start by stripping \n, \r, \t and spaces */
 	while (**header == '\n' || **header == '\r' || **header == '\t'
@@ -1208,7 +1208,7 @@ init_alignment(bam_wrapper *bw, alignment * alig)
 	bit result;
 
 	/* Enables clear function to check variables */
-	memset(alig, 0, sizeof(alignment));
+	*alig = (alignment) {0};
 
 	alig->qname_size = 10000;
 	alig->rname_size = 10000;

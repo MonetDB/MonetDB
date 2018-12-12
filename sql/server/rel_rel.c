@@ -109,7 +109,7 @@ rel_create( sql_allocator *sa )
 }
 
 sql_rel *
-rel_copy( sql_allocator *sa, sql_rel *i )
+rel_copy( sql_allocator *sa, sql_rel *i, int deep )
 {
 	sql_rel *rel = rel_create(sa);
 	if(!rel)
@@ -129,9 +129,17 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 		rel->r = i->r;
 		break;
 	case op_groupby:
-		rel->l = rel_copy(sa, i->l);
-		if (i->r)
-			rel->r = (i->r)?list_dup(i->r, (fdup)NULL):NULL;
+		rel->l = rel_copy(sa, i->l, deep);
+		if (i->r) {
+			if (!deep) {
+				rel->r = list_dup(i->r, (fdup) NULL);
+			} else {
+				list* l = (list*)i->r;
+				rel->r = list_new(l->sa, l->destroy);
+				for(node *n = l->h ; n ; n = n->next)
+					list_append(rel->r, rel_copy(sa, (sql_rel *)n->data, deep));
+			}
+		}
 		break;
 	case op_join:
 	case op_left:
@@ -144,13 +152,13 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 	case op_select:
 	default:
 		if (i->l)
-			rel->l = rel_copy(sa, i->l);
+			rel->l = rel_copy(sa, i->l, deep);
 		if (i->r)
-			rel->r = rel_copy(sa, i->r);
+			rel->r = rel_copy(sa, i->r, deep);
 		break;
 	}
 	rel->op = i->op;
-	rel->exps = (i->exps)?list_dup(i->exps, (fdup)NULL):NULL;
+	rel->exps = (!i->exps)?NULL:deep?exps_copy(sa, i->exps):list_dup(i->exps, (fdup)NULL);
 	return rel;
 }
 
@@ -808,6 +816,20 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	}
 	if (e && !list_empty(e))
 		set_processed(rel);
+	return rel;
+}
+
+sql_rel *
+rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
+{
+	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
+	rel->l = l;
+	rel->r = r;
+	rel->exps = exps;
+	rel->op = op_ddl;
+	rel->flag = DDL_EXCEPTION;
 	return rel;
 }
 

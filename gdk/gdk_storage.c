@@ -409,7 +409,7 @@ GDKextend(const char *fn, size_t size)
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
 gdk_return
-GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
+GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
 {
 	int err = 0;
 
@@ -622,7 +622,7 @@ DESCload(int i)
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
 	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
-	b->batCopiedtodisk = 1;
+	b->batCopiedtodisk = true;
 	DESCclean(b);
 	return b;
 }
@@ -630,12 +630,11 @@ DESCload(int i)
 void
 DESCclean(BAT *b)
 {
-	b->batDirtyflushed = DELTAdirty(b) ? TRUE : FALSE;
-	b->batDirty = 0;
-	b->batDirtydesc = 0;
-	b->theap.dirty = 0;
+	b->batDirtyflushed = DELTAdirty(b);
+	b->batDirtydesc = false;
+	b->theap.dirty = false;
 	if (b->tvheap)
-		b->tvheap->dirty = 0;
+		b->tvheap->dirty = false;
 }
 
 /* spawning the background msync should be done carefully 
@@ -758,7 +757,7 @@ BATsave(BAT *bd)
 	b = &bs;
 
 	if (b->tvheap) {
-		b->tvheap = (Heap *) GDKmalloc(sizeof(Heap));
+		b->tvheap = GDKmalloc(sizeof(Heap));
 		if (b->tvheap == NULL) {
 			return GDK_FAIL;
 		}
@@ -767,10 +766,10 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->batCopiedtodisk == 0 || b->batDirty || b->theap.dirty)
+	if (!b->batCopiedtodisk || b->batDirtydesc || b->theap.dirty)
 		if (err == GDK_SUCCEED && b->ttype)
 			err = HEAPsave(&b->theap, nme, "tail");
-	if (b->tvheap && (b->batCopiedtodisk == 0 || b->batDirty || b->tvheap->dirty))
+	if (b->tvheap && (!b->batCopiedtodisk || b->batDirtydesc || b->tvheap->dirty))
 		if (b->ttype && b->tvarsized) {
 			if (err == GDK_SUCCEED)
 				err = HEAPsave(b->tvheap, nme, "theap");
@@ -780,7 +779,7 @@ BATsave(BAT *bd)
 		GDKfree(b->tvheap);
 
 	if (err == GDK_SUCCEED) {
-		bd->batCopiedtodisk = 1;
+		bd->batCopiedtodisk = true;
 		DESCclean(bd);
 		return GDK_SUCCEED;
 	}
@@ -809,7 +808,7 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
 		if (HEAPload(&b->theap, nme, "tail", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			HEAPfree(&b->theap, 0);
+			HEAPfree(&b->theap, false);
 			return NULL;
 		}
 		assert(b->theap.size >> b->tshift <= BUN_MAX);
@@ -821,12 +820,12 @@ BATload_intern(bat bid, bool lock)
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
 		if (HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ) != GDK_SUCCEED) {
-			HEAPfree(&b->theap, 0);
-			HEAPfree(b->tvheap, 0);
+			HEAPfree(&b->theap, false);
+			HEAPfree(b->tvheap, false);
 			return NULL;
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
-			strCleanHash(b->tvheap, FALSE);	/* ensure consistency */
+			strCleanHash(b->tvheap, false);	/* ensure consistency */
 		} else {
 			HEAP_recover(b->tvheap, (const var_t *) Tloc(b, 0),
 				     BATcount(b));
@@ -834,14 +833,14 @@ BATload_intern(bat bid, bool lock)
 	}
 
 	/* initialize descriptor */
-	b->batDirtydesc = FALSE;
+	b->batDirtydesc = false;
 	b->theap.parentid = 0;
 
 	/* load succeeded; register it in BBP */
 	if (BBPcacheit(b, lock) != GDK_SUCCEED) {
-		HEAPfree(&b->theap, 0);
+		HEAPfree(&b->theap, false);
 		if (b->tvheap)
-			HEAPfree(b->tvheap, 0);
+			HEAPfree(b->tvheap, false);
 		return NULL;
 	}
 	return b;
@@ -882,7 +881,7 @@ BATdelete(BAT *b)
 		    b->batCopiedtodisk)
 			IODEBUG fprintf(stderr, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->theap.base) {
-		HEAPfree(&b->theap, 1);
+		HEAPfree(&b->theap, true);
 	}
 	if (b->tvheap) {
 		assert(b->tvheap->parentid == bid);
@@ -891,10 +890,10 @@ BATdelete(BAT *b)
 			    b->batCopiedtodisk)
 				IODEBUG fprintf(stderr, "#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b->tvheap, 1);
+			HEAPfree(b->tvheap, true);
 		}
 	}
-	b->batCopiedtodisk = FALSE;
+	b->batCopiedtodisk = false;
 }
 
 /*
@@ -907,7 +906,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	int i;
 	BUN n, cnt;
 	struct colinfo {
-		ssize_t (*s) (str *, size_t *, const void *);
+		ssize_t (*s) (str *, size_t *, const void *, bool);
 		BATiter i;
 	} *colinfo;
 	char *buf;
@@ -959,7 +958,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (n = 0, cnt = BATcount(argv[0]); n < cnt; n++) {
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
-			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n));
+			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n), true);
 			if (len < 0) {
 				GDKfree(buf);
 				GDKfree(colinfo);

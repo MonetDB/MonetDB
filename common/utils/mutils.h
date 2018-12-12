@@ -9,7 +9,7 @@
 #ifndef _MUTILS_H_
 #define _MUTILS_H_
 
-#ifdef NATIVE_WIN32
+#ifdef WIN32
 #if !defined(LIBMUTILS) && !defined(LIBGDK) && !defined(LIBMEROUTIL)
 #define mutils_export extern __declspec(dllimport)
 #else
@@ -71,5 +71,8 @@ mutils_export void print_trace(void);
  * pointer to a static buffer that is overwritten by subsequent calls to
  * this function. */
 mutils_export char *get_bin_path(void);
+
+/* Returns the Mercurial changeset of the current checkout, if available */
+mutils_export const char *mercurial_revision(void);
 
 #endif	/* _MUTILS_H_ */

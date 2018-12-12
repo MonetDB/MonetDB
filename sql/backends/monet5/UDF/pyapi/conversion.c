@@ -108,7 +108,7 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	// element is NULL, and 'False' otherwise
 	// if we know for sure that the BAT has no NULL values, we can skip the construction
 	// of this masked array. Otherwise, we create it.
-	if (!(b->tnil == 0 && b->tnonil == 1)) {
+	if (b->tnil || !b->tnonil) {
 		PyObject *mask;
 		PyObject *mafunc = PyObject_GetAttrString(
 			PyImport_Import(PyString_FromString("numpy.ma")), "masked_array");
@@ -173,7 +173,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			// FIXME: scalar SQL types
 			msg = createException(
 				MAL, "pyapi.eval",
-				SQLSTATE(PY000) "Scalar SQL types haven't been implemented yet... sorry");
+				SQLSTATE(0A000) "Scalar SQL types haven't been implemented yet... sorry");
 			goto wrapup;
 		} else {
 			BAT *ret_bat = NULL;
@@ -195,7 +195,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		data = PyArray_DATA((PyArrayObject *)vararray);
 		BATloop(b, p, q)
 		{
-			blob *t = (blob *)BUNtail(li, p);
+			blob *t = (blob *)BUNtvar(li, p);
 			if (t->nitems == ~(size_t)0) {
 				data[p] = Py_None;
 				Py_INCREF(Py_None);
@@ -235,7 +235,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 				BATloop(b, p, q)
 				{
-					char *t = (char *)BUNtail(li, p);
+					char *t = (char *)BUNtvar(li, p);
 					for (; *t != 0; t++) {
 						if (*t & 0x80) {
 							unicode = true;
@@ -264,7 +264,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							}
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtail(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
 									if (strcmp(t, str_nil) == 0) {
@@ -294,7 +294,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtail(li, p);
+								char *t = (char *)BUNtvar(li, p);
 								if (strcmp(t, str_nil) == 0) {
 									// str_nil isn't a valid UTF-8 character
 									// (it's 0x80), so we can't decode it as
@@ -329,7 +329,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							}
 							BATloop(b, p, q)
 							{
-								const char *t = (const char *)BUNtail(li, p);
+								const char *t = (const char *)BUNtvar(li, p);
 								ptrdiff_t offset = t - b->tvheap->base;
 								if (!pyptrs[offset]) {
 									pyptrs[offset] = PyString_FromString(t);
@@ -342,7 +342,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 						} else {
 							BATloop(b, p, q)
 							{
-								char *t = (char *)BUNtail(li, p);
+								char *t = (char *)BUNtvar(li, p);
 								obj = PyString_FromString(t);
 								if (obj == NULL) {
 									msg = createException(
@@ -358,20 +358,16 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			} break;
 #ifdef HAVE_HGE
 			case TYPE_hge: {
-				li = bat_iterator(b);
 				// create a NPY_FLOAT64 array to hold the huge type
 				vararray = PyArray_New(&PyArray_Type, 1,
 									   (npy_intp[1]){t_end - t_start},
 									   NPY_FLOAT64, NULL, NULL, 0, 0, NULL);
 
 				j = 0;
-				{
-					dbl *data = (dbl *)PyArray_DATA((PyArrayObject *)vararray);
-					BATloop(b, p, q)
-					{
-						const hge *t = (const hge *)BUNtail(li, p);
-						data[j++] = (dbl)*t;
-					}
+				npy_float64 *data = (npy_float64 *)PyArray_DATA((PyArrayObject *)vararray);
+				const hge *vals = (const hge *) Tloc(b, 0);
+				BATloop(b, p, q) {
+					data[j++] = (npy_float64)vals[p];
 				}
 				break;
 			}
@@ -825,51 +821,108 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		bool *mask = NULL;
 		char *data = NULL;
 		blob *ele_blob;
-		size_t blob_fixed_size = -1;
+		size_t blob_fixed_size = ret->memory_size;
+
+		PyObject *pickle_module = NULL, *pickle = NULL;
+		bool gstate = 0;
+
 		if (ret->result_type == NPY_OBJECT) {
-			// FIXME: check for byte array/or pickle object to string
-			msg = createException(MAL, "pyapi.eval",
-								  SQLSTATE(PY000) "Python object to BLOB not supported yet.");
-			goto wrapup;
+			// Python objects, we may need to pickle them, so we
+			// may execute Python code, we have to obtain the GIL
+			gstate = Python_ObtainGIL();
+			pickle_module = PyImport_ImportModule("pickle");
+			if (pickle_module == NULL) {
+				msg = createException(MAL, "pyapi.eval",
+									  SQLSTATE(PY000) "Can't load pickle module to pickle python object to blob");
+				Python_ReleaseGIL(gstate);
+				goto wrapup;
+			}
+			blob_fixed_size = 0; // Size depends on the objects
 		}
+
 		if (ret->mask_data != NULL) {
 			mask = (bool *)ret->mask_data;
 		}
 		if (ret->array_data == NULL) {
 			msg = createException(MAL, "pyapi.eval",
 								  SQLSTATE(PY000) "No return value stored in the structure.");
+			if (ret->result_type == NPY_OBJECT) {
+				Py_XDECREF(pickle_module);
+				Python_ReleaseGIL(gstate);
+			}
 			goto wrapup;
 		}
 		data = (char *)ret->array_data;
 		data += (index_offset * ret->count) * ret->memory_size;
-		blob_fixed_size = ret->memory_size;
 		b = COLnew(seqbase, TYPE_sqlblob, (BUN)ret->count, TRANSIENT);
-		b->tnil = 0;
-		b->tnonil = 1;
-		b->tkey = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
+		b->tnil = false;
+		b->tnonil = true;
+		b->tkey = false;
+		b->tsorted = false;
+		b->trevsorted = false;
 		for (iu = 0; iu < ret->count; iu++) {
+
+			char* memcpy_data;
 			size_t blob_len = 0;
+
+			if (ret->result_type == NPY_OBJECT) {
+				PyObject *object = *((PyObject **)&data[0]);
+				if (PyByteArray_Check(object)) {
+					memcpy_data = PyByteArray_AsString(object);
+					blob_len = pyobject_get_size(object);
+				} else {
+					pickle = PyObject_CallMethod(pickle_module, "dumps", "O", object);
+					if (pickle == NULL) {
+						msg = createException(MAL, "pyapi.eval",
+											  SQLSTATE(PY000) "Can't pickle object to blob");
+						Py_XDECREF(pickle_module);
+						Python_ReleaseGIL(gstate);
+						goto wrapup;
+					}
+					memcpy_data = PyBytes_AsString(pickle);
+					blob_len = pyobject_get_size(pickle);
+					Py_XDECREF(pickle);
+				}
+				if (memcpy_data == NULL) {
+					msg = createException(MAL, "pyapi.eval",
+										  SQLSTATE(PY000) "Can't get blob pickled object as char*");
+					Py_XDECREF(pickle_module);
+					Python_ReleaseGIL(gstate);
+					goto wrapup;
+				}
+			} else {
+				memcpy_data = data;
+			}
+
 			if (mask && mask[iu]) {
 				ele_blob = (blob *)GDKmalloc(offsetof(blob, data));
 				ele_blob->nitems = ~(size_t)0;
 			} else {
 				if (blob_fixed_size > 0) {
 					blob_len = blob_fixed_size;
-				} else {
-					assert(0);
 				}
 				ele_blob = GDKmalloc(blobsize(blob_len));
 				ele_blob->nitems = blob_len;
-				memcpy(ele_blob->data, data, blob_len);
+				memcpy(ele_blob->data, memcpy_data, blob_len);
 			}
 			if (BUNappend(b, ele_blob, FALSE) != GDK_SUCCEED) {
+				if (ret->result_type == NPY_OBJECT) {
+					Py_XDECREF(pickle_module);
+					Python_ReleaseGIL(gstate);
+				}
 				goto bunins_failed;
 			}
 			GDKfree(ele_blob);
 			data += ret->memory_size;
+
 		}
+
+		// We are done, we can release the GIL
+		if (ret->result_type == NPY_OBJECT) {
+			Py_XDECREF(pickle_module);
+			Python_ReleaseGIL(gstate);
+		}
+
 		BATsetcount(b, (BUN)ret->count);
 		BATsettrivprop(b);
 	} else {
@@ -925,11 +978,11 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				}
 
 				b = COLnew(seqbase, TYPE_str, (BUN)ret->count, TRANSIENT);
-				b->tnil = 0;
-				b->tnonil = 1;
-				b->tkey = 0;
-				b->tsorted = 0;
-				b->trevsorted = 0;
+				b->tnil = false;
+				b->tnonil = true;
+				b->tkey = false;
+				b->tsorted = false;
+				b->trevsorted = false;
 				NP_INSERT_STRING_BAT(b);
 				if (utf8_string)
 					GDKfree(utf8_string);
@@ -1010,7 +1063,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		BUN p = 0, q = 0;
 		char *result = NULL;
 		size_t length = 0;
-		ssize_t (*strConversion)(str *, size_t *, const void *) =
+		ssize_t (*strConversion)(str *, size_t *, const void *, bool) =
 			BATatoms[b->ttype].atomToStr;
 		*ret_bat = COLnew(0, TYPE_str, 0, TRANSIENT);
 		*ret_type = conv_type;
@@ -1021,11 +1074,11 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		BATloop(b, p, q)
 		{
 			void *element = (void *)BUNtail(li, p);
-			if (strConversion(&result, &length, element) < 0) {
+			if (strConversion(&result, &length, element, false) < 0) {
 				return createException(MAL, "pyapi.eval",
 									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}
-			if (BUNappend(*ret_bat, result, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(*ret_bat, result, false) != GDK_SUCCEED) {
 				BBPunfix((*ret_bat)->batCacheid);
 				throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}

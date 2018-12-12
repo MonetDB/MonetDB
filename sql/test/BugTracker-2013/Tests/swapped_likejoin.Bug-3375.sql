@@ -8,7 +8,7 @@ CREATE TABLE "sys"."tbls" (
 	"commit_action" SMALLINT,
 	"access"        SMALLINT
 );
-COPY 49 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS '\t','\n','"';
+COPY 49 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 2001	schemas	2000		0	true	0	0
 2007	types	2000		0	true	0	0
 2016	functions	2000		0	true	0	0

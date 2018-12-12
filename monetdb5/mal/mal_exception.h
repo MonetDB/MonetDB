@@ -38,13 +38,19 @@ enum malexception {
 #define rethrow(FCN, TMP, PRV) \
 	{if ((TMP = PRV) != MAL_SUCCEED) return(TMP);}
 
-mal_export str	createException(enum malexception, const char *,
+#if !__has_attribute(__returns_nonnull__)
+#define __returns_nonnull__
+#endif
+
+mal_export str createException(enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
+	__attribute__((__format__(__printf__, 3, 4)))
+	__attribute__((__returns_nonnull__));
 /*FIXmal_export str createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, ...);*/
 mal_export str createMalException(MalBlkPtr , int , enum malexception , 
 	_In_z_ _Printf_format_string_ const char *, ...)
-	__attribute__((__format__(__printf__, 4, 5)));
+	__attribute__((__format__(__printf__, 4, 5)))
+	__attribute__((__returns_nonnull__));
 mal_export void	showException(stream *out, enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 4, 5)));

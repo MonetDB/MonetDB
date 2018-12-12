@@ -46,7 +46,7 @@ ORDER by name;
 select * from user_views
 UNION ALL
 select * from user_tables
-ORDER by query;
+ORDER by query, name;
 
 select * from user_views
 UNION

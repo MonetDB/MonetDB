@@ -51,10 +51,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		GDKfree(b);
 		return NULL;
 	}
-	strncpy(n, query, len);
+	snprintf(n, len + 2, "%s\n", query);
 	query = n;
-	query[len] = '\n';
-	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
 	buf = buffer_rastream(b, "sqlstatement");
@@ -131,6 +129,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_CREATE_SCHEMA:
 	case SQL_DROP_SCHEMA:
 
+	case SQL_DECLARE_TABLE:
 	case SQL_CREATE_TABLE:
 	case SQL_CREATE_VIEW:
 	case SQL_DROP_TABLE:
@@ -153,6 +152,10 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_CREATE_USER:
 	case SQL_DROP_USER:
 	case SQL_ALTER_USER:
+
+	case SQL_RENAME_COLUMN:
+	case SQL_RENAME_SCHEMA:
+	case SQL_RENAME_TABLE:
 	case SQL_RENAME_USER:
 
 	case SQL_CREATE_TYPE:

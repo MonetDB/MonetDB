@@ -128,12 +128,16 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	} while (0)
 #endif
 
+/* mix_bte(0x80) == 0x80 */
 #define mix_bte(X)	((unsigned int) (unsigned char) (X))
+/* mix_sht(0x8000) == 0x8000 */
 #define mix_sht(X)	((unsigned int) (unsigned short) (X))
+/* mix_int(0x81060038) == 0x80000000 */
 #define mix_int(X)	(((unsigned int) (X) >> 7) ^	\
 			 ((unsigned int) (X) >> 13) ^	\
 			 ((unsigned int) (X) >> 21) ^	\
 			 (unsigned int) (X))
+/* mix_lng(0x810600394347424F) == 0x8000000000000000 */
 #define mix_lng(X)	(((ulng) (X) >> 7) ^	\
 			 ((ulng) (X) >> 13) ^	\
 			 ((ulng) (X) >> 21) ^	\
@@ -143,6 +147,8 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			 ((ulng) (X) >> 56) ^	\
 			 (ulng) (X))
 #ifdef HAVE_HGE
+/* mix_hge(0x810600394347424F90AC1429D6BFCC57) ==
+ * 0x80000000000000000000000000000000 */
 #define mix_hge(X)	(((uhge) (X) >> 7) ^	\
 			 ((uhge) (X) >> 13) ^	\
 			 ((uhge) (X) >> 21) ^	\
@@ -185,7 +191,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
+		if (BAThash((y).b) == GDK_SUCCEED) {			\
 			HASHloop_str((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -197,7 +203,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {							\
 		BUN _i;						\
 		(x) = BUN_NONE;					\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {		\
+		if (BAThash((y).b) == GDK_SUCCEED) {		\
 			HASHloop((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;			\
 				break;				\
@@ -209,7 +215,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 	do {								\
 		BUN _i;							\
 		(x) = BUN_NONE;						\
-		if (BAThash((y).b, 0) == GDK_SUCCEED) {			\
+		if (BAThash((y).b) == GDK_SUCCEED) {			\
 			HASHloop_##TYPE((y), (y).b->thash, _i, (z)) {	\
 				(x) = _i;				\
 				break;					\
@@ -232,18 +238,19 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
  * a pointer to the value to be stored.
  *
  * HASHins receives a BAT* param and is adaptive, killing wrongly
- * configured hash tables.
- * Use HASHins_any or HASHins_<tpe> instead if you know what you're
- * doing or want to keep the hash. */
+ * configured hash tables.  Also, persistent hashes cannot be
+ * maintained, so must be destroyed before this macro is called. */
 #define HASHins(b,i,v)							\
 	do {								\
 		if ((b)->thash) {					\
+			assert((b)->thash != (Hash *) 1);		\
+			assert((((size_t *) (b)->thash->heap.base)[0] & (1 << 24)) == 0); \
 			if (((i) & 1023) == 1023 && HASHgonebad((b), (v))) { \
 				HASHdestroy(b);				\
 			} else {					\
 				BUN _c = HASHprobe((b)->thash, (v));	\
 				HASHputall((b)->thash, (i), _c);	\
-				(b)->thash->heap.dirty = TRUE;		\
+				(b)->thash->heap.dirty = true;		\
 			}						\
 		}							\
 	} while (0)

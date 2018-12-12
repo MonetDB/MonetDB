@@ -15,9 +15,6 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 # Visit https://www.monetdb.org/ for further information
 # Listening for connection requests on mapi:monetdb://lab03:33047/
 # MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -50,9 +47,11 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
 
-# 22:58:57 >  
-# 22:58:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36275"
-# 22:58:57 >  
+Ready.
+
+# 16:06:52 >  
+# 16:06:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25090" "--port=39713"
+# 16:06:52 >  
 
 #set optimizer = 'sequential_pipe'; -- to get predictable errors
 #create table ttt (a int, b int, c int);
@@ -67,21 +66,21 @@ Ready.
 % def # name
 % clob # type
 % 560 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();"	]
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();"	]
 #explain copy into ttt from 'a:\tmp/xyz';
 % .explain # table_name
 % mal # name
 % clob # type
-% 177 # length
+% 183 # length
 function user.s10_1():void;
-    X_1:void := querylog.define("explain copy into ttt from \\'a:\\\\tmp/xyz\\';":str, "sequential_pipe":str, 21:int);
+    X_1:void := querylog.define("explain copy into ttt from E\\'a:\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
-    (X_25:bat[:int], X_26:bat[:int], X_27:bat[:int]) := sql.copy_from(nil:ptr, "|":str, "\\n":str, nil:str, "null":str, "a:\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str);
-    X_29:int := sql.append(X_4:int, "sys":str, "ttt":str, "a":str, X_25:bat[:int]);
-    X_34:int := sql.append(X_29:int, "sys":str, "ttt":str, "b":str, X_26:bat[:int]);
-    X_37:int := sql.append(X_34:int, "sys":str, "ttt":str, "c":str, X_27:bat[:int]);
-    X_39:lng := aggr.count(X_27:bat[:int]);
-    sql.affectedRows(X_37:int, X_39:lng);
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(nil:ptr, "|":str, "\n":str, nil:str, "null":str, "a:\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "a":str, X_26:bat[:int]);
+    X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
+    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
+    X_40:lng := aggr.count(X_28:bat[:int]);
+    sql.affectedRows(X_38:int, X_40:lng);
 end user.s10_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -122,21 +121,21 @@ end user.s10_1;
 % def # name
 % clob # type
 % 583 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from 'Z:/tmp/xyz';
 % .explain # table_name
 % mal # name
 % clob # type
-% 176 # length
+% 182 # length
 function user.s26_1():void;
-    X_1:void := querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';":str, "user_1":str, 21:int);
+    X_1:void := querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';":str, "user_1":str, 22:int);
     X_4:int := sql.mvc();
-    (X_25:bat[:int], X_26:bat[:int], X_27:bat[:int]) := sql.copy_from(nil:ptr, "|":str, "\\n":str, nil:str, "null":str, "Z:/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str);
-    X_29:int := sql.append(X_4:int, "sys":str, "ttt":str, "a":str, X_25:bat[:int]);
-    X_34:int := sql.append(X_29:int, "sys":str, "ttt":str, "b":str, X_26:bat[:int]);
-    X_39:lng := aggr.count(X_27:bat[:int]);
-    X_37:int := sql.append(X_34:int, "sys":str, "ttt":str, "c":str, X_27:bat[:int]);
-    sql.affectedRows(X_37:int, X_39:lng);
+    (X_26:bat[:int], X_27:bat[:int], X_28:bat[:int]) := sql.copy_from(nil:ptr, "|":str, "\n":str, nil:str, "null":str, "Z:/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int);
+    X_30:int := sql.append(X_4:int, "sys":str, "ttt":str, "a":str, X_26:bat[:int]);
+    X_35:int := sql.append(X_30:int, "sys":str, "ttt":str, "b":str, X_27:bat[:int]);
+    X_40:lng := aggr.count(X_28:bat[:int]);
+    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "c":str, X_28:bat[:int]);
+    sql.affectedRows(X_38:int, X_40:lng);
 end user.s26_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 

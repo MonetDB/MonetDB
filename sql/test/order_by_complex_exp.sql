@@ -18,11 +18,11 @@ INSERT INTO test02 VALUES (19,'ABF',30) ;
 plan select col1
 from test02
 group by col1
-order by count(col1);
+order by count(col1), col1;
 
 select col1
 from test02
 group by col1
-order by count(col1);
+order by count(col1), col1;
 
 drop table test02;

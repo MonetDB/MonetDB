@@ -82,10 +82,9 @@ sortlocklist(MT_Lock *l)
 	while (l && r) {
 		if (l->sleep < r->sleep ||
 		    (l->sleep == r->sleep &&
-		     l->contention < r->contention) ||
-		    (l->sleep == r->sleep &&
-		     l->contention == r->contention &&
-		     l->count <= r->count)) {
+		     (l->contention < r->contention ||
+		      (l->contention == r->contention &&
+		       l->count <= r->count)))) {
 			/* l is smaller */
 			if (ll == NULL) {
 				assert(t == NULL);
@@ -116,14 +115,25 @@ void
 GDKlockstatistics(int what)
 {
 	MT_Lock *l;
+	int n = 0;
 
 	if (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) {
 		fprintf(stderr, "#WARNING: GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
+	if (what == -1) {
+		for (l = GDKlocklist; l; l = l->next) {
+			l->count = 0;
+			l->contention = 0;
+			l->sleep = 0;
+		}
+		ATOMIC_CLEAR(GDKlocklistlock, dummy);
+		return;
+	}
 	GDKlocklist = sortlocklist(GDKlocklist);
 	fprintf(stderr, "# lock name\tcount\tcontention\tsleep\tlocked\t(un)locker\n");
-	for (l = GDKlocklist; l; l = l->next)
+	for (l = GDKlocklist; l; l = l->next) {
+		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && l->contention) ||
@@ -133,6 +143,8 @@ GDKlockstatistics(int what)
 				l->count, l->contention, l->sleep,
 				l->lock ? "locked" : "",
 				l->locker ? l->locker : "");
+	}
+	fprintf(stderr, "#number of locks  %d\n", n);
 	fprintf(stderr, "#total lock count %zu\n", (size_t) GDKlockcnt);
 	fprintf(stderr, "#lock contention  %zu\n", (size_t) GDKlockcontentioncnt);
 	fprintf(stderr, "#lock sleep count %zu\n", (size_t) GDKlocksleepcnt);
@@ -153,12 +165,12 @@ static struct winthread {
 #define DETACHED	2
 #define WAITING		4
 static CRITICAL_SECTION winthread_cs;
-static int winthread_cs_init = 0;
+static bool winthread_cs_init = false;
 
 void
 gdk_system_reset(void)
 {
-	winthread_cs_init = 0;
+	winthread_cs_init = false;
 }
 
 static struct winthread *
@@ -202,10 +214,10 @@ static void
 join_threads(void)
 {
 	struct winthread *w;
-	int waited;
+	bool waited;
 
 	do {
-		waited = 0;
+		waited = false;
 		EnterCriticalSection(&winthread_cs);
 		for (w = winthreads; w; w = w->next) {
 			if ((w->flags & (EXITED | DETACHED | WAITING)) == (EXITED | DETACHED)) {
@@ -214,7 +226,7 @@ join_threads(void)
 				WaitForSingleObject(w->hdl, INFINITE);
 				CloseHandle(w->hdl);
 				rm_winthread(w);
-				waited = 1;
+				waited = true;
 				EnterCriticalSection(&winthread_cs);
 				break;
 			}
@@ -227,10 +239,10 @@ void
 join_detached_threads(void)
 {
 	struct winthread *w;
-	int waited;
+	bool waited;
 
 	do {
-		waited = 0;
+		waited = false;
 		EnterCriticalSection(&winthread_cs);
 		for (w = winthreads; w; w = w->next) {
 			if ((w->flags & (DETACHED | WAITING)) == DETACHED) {
@@ -239,7 +251,7 @@ join_detached_threads(void)
 				WaitForSingleObject(w->hdl, INFINITE);
 				CloseHandle(w->hdl);
 				rm_winthread(w);
-				waited = 1;
+				waited = true;
 				EnterCriticalSection(&winthread_cs);
 				break;
 			}
@@ -256,12 +268,12 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	if (w == NULL)
 		return -1;
 
-	if (winthread_cs_init == 0) {
+	if (!winthread_cs_init) {
 		/* we only get here before any threads are created,
 		 * and this is the only time that winthread_cs_init is
 		 * ever changed */
 		InitializeCriticalSection(&winthread_cs);
-		winthread_cs_init = 1;
+		winthread_cs_init = true;
 	}
 	join_threads();
 	w->func = f;
@@ -446,13 +458,18 @@ find_posthread(pthread_t tid)
 #endif
 
 #ifdef HAVE_PTHREAD_SIGMASK
-static void
+static int
 MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
-	(void) sigdelset(new_mask, SIGQUIT);
-	(void) sigdelset(new_mask, SIGALRM);	/* else sleep doesn't work */
-	(void) sigdelset(new_mask, SIGPROF);
-	(void) pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
+	if(sigdelset(new_mask, SIGQUIT))
+		return -1;
+	if(sigdelset(new_mask, SIGALRM))	/* else sleep doesn't work */
+		return -1;
+	if(sigdelset(new_mask, SIGPROF))
+		return -1;
+	if(pthread_sigmask(SIG_SETMASK, new_mask, orig_mask))
+		return -1;
+	return 0;
 }
 #endif
 
@@ -471,13 +488,12 @@ static void *
 thread_starter(void *arg)
 {
 	struct posthread *p = (struct posthread *) arg;
-	pthread_t tid = p->tid;
 
 	(*p->func)(p->arg);
 	pthread_mutex_lock(&posthread_lock);
 	/* *p may have been freed by join_threads, so try to find it
          * again before using it */
-	if ((p = find_posthread_locked(tid)) != NULL)
+	if ((p = find_posthread_locked(pthread_self())) != NULL)
 		p->exited = 1;
 	pthread_mutex_unlock(&posthread_lock);
 	return NULL;
@@ -499,12 +515,12 @@ static void
 join_threads(void)
 {
 	struct posthread *p;
-	int waited;
+	bool waited;
 	pthread_t tid;
 
 	pthread_mutex_lock(&posthread_lock);
 	do {
-		waited = 0;
+		waited = false;
 		for (p = posthreads; p; p = p->next) {
 			if (p->exited) {
 				tid = p->tid;
@@ -513,7 +529,7 @@ join_threads(void)
 				pthread_mutex_unlock(&posthread_lock);
 				pthread_join(tid, NULL);
 				pthread_mutex_lock(&posthread_lock);
-				waited = 1;
+				waited = true;
 				break;
 			}
 		}
@@ -555,7 +571,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	join_threads();
 #ifdef HAVE_PTHREAD_SIGMASK
 	(void) sigfillset(&new_mask);
-	MT_thread_sigmask(&new_mask, &orig_mask);
+	if(MT_thread_sigmask(&new_mask, &orig_mask))
+		return -1;
 #endif
 	if(pthread_attr_init(&attr))
 		return -1;
@@ -570,7 +587,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	p = malloc(sizeof(struct posthread));
 	if (p == NULL) {
 #ifdef HAVE_PTHREAD_SIGMASK
-		MT_thread_sigmask(&orig_mask, NULL);
+		(void) MT_thread_sigmask(&orig_mask, NULL); //going to fail anyway
 #endif
 		pthread_attr_destroy(&attr);
 		return -1;
@@ -603,7 +620,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		free(p);
 	}
 #ifdef HAVE_PTHREAD_SIGMASK
-	MT_thread_sigmask(&orig_mask, NULL);
+	if(MT_thread_sigmask(&orig_mask, NULL))
+		return -1;
 #endif
 	return ret ? -1 : 0;
 }

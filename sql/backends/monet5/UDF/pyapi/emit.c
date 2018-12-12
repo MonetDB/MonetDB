@@ -21,7 +21,7 @@
 		tpe val = tpe##_nil;                                                   \
 		msg = pyobject_to_##tpe(&dictEntry, 42, &val);                         \
 		if (msg != MAL_SUCCEED ||                                              \
-			BUNappend(self->cols[i].b, &val, 0) != GDK_SUCCEED) {              \
+			BUNappend(self->cols[i].b, &val, false) != GDK_SUCCEED) {              \
 			if (msg == MAL_SUCCEED)                                            \
 				msg = GDKstrdup("BUNappend failed.");                          \
 			goto wrapup;                                                       \
@@ -205,13 +205,13 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					for (ai = 0; ai < self->nvals; ai++) {
 						if (BUNappend(self->cols[self->ncols].b,
 									  ATOMnil(self->cols[self->ncols].b->ttype),
-									  0) != GDK_SUCCEED) {
+									  false) != GDK_SUCCEED) {
 							msg = GDKstrdup("BUNappend failed.");
 							goto wrapup;
 						}
 					}
-					self->cols[self->ncols].b->tnil = 1;
-					self->cols[self->ncols].b->tnonil = 0;
+					self->cols[self->ncols].b->tnil = true;
+					self->cols[self->ncols].b->tnonil = false;
 					BATsetcount(self->cols[self->ncols].b, self->nvals);
 				}
 				self->ncols++;
@@ -229,7 +229,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 					val->nitems = ~(size_t) 0;
 					msg = pyobject_to_blob(&dictEntry, 42, &val);
 					if (msg != MAL_SUCCEED ||
-						BUNappend(self->cols[i].b, val, 0) != GDK_SUCCEED) {
+						BUNappend(self->cols[i].b, val, false) != GDK_SUCCEED) {
 						if (msg == MAL_SUCCEED)
 							msg = GDKstrdup("BUNappend failed.");
 						goto wrapup;
@@ -353,7 +353,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 						GDKfree(utf8_string);
 					}
 				}
-				self->cols[i].b->tnonil = 1 - self->cols[i].b->tnil;
+				self->cols[i].b->tnonil = !self->cols[i].b->tnil;
 			}
 		} else {
 			if (self->cols[i].def != NULL) {
@@ -363,12 +363,12 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			for (ai = 0; ai < (size_t)el_count; ai++) {
 				if (BUNappend(self->cols[i].b,
 							  ATOMnil(self->cols[i].b->ttype),
-							  0) != GDK_SUCCEED) {
+							  false) != GDK_SUCCEED) {
 					goto wrapup;
 				}
 			}
-			self->cols[i].b->tnil = 1;
-			self->cols[i].b->tnonil = 0;
+			self->cols[i].b->tnil = true;
+			self->cols[i].b->tnonil = false;
 		}
 		BATsetcount(self->cols[i].b, self->nvals + el_count);
 	}

@@ -105,8 +105,8 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % clob # type
-% 4 # length
-[ "^.*$"	]
+% 5 # length
+[ "^.*?$"	]
 #SELECT sql2pcre('_??', '?');
 % .L2 # table_name
 % L2 # name
@@ -123,8 +123,8 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % clob # type
-% 8 # length
-[ "^.*\\^.*$"	]
+% 10 # length
+[ "^.*?\\^.*?$"	]
 #DROP FUNCTION sql2pcre;
 
 # 16:37:27 >  

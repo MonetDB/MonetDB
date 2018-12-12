@@ -780,7 +780,7 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 				len = snprintf(buf2, sizeof(buf2), "%s (%s)\n",
-						MERO_VERSION, MONETDB_RELEASE);
+						VERSION, MONETDB_RELEASE);
 				send_client("=");
 				break;
 			} else if (strcmp(p, "mserver") == 0) {

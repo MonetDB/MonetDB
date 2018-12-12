@@ -987,7 +987,7 @@ Ready.
 [ 14@0,	23:59:59.999,	23,	59,	59,	999	]
 [ 15@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
 [ 16@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
-[ 17@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
+[ 17@0,	nil,	24,	0,	0,	999	]
 [ 18@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
 [ 19@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]
 [ 20@0,	  nil,		  nil,	  nil,		  nil,		  nil		  ]

@@ -22,6 +22,7 @@
 #include "sql_keyword.h"
 #include "sql_atom.h"
 #include "sql_query.h"
+#include "sql_symbol.h"
 
 #define ERRSIZE 8192
 
@@ -83,9 +84,11 @@ typedef struct sql_var {
 	const char *name;
 	atom a;
 	sql_table *t;
-	sql_rel *rel;	
+	sql_rel *rel;
+	dlist *wdef;
 	char view;
 	char frame;
+	char visited; //used for window definitions lookup
 } sql_var;
 
 typedef struct sql_subquery {
@@ -120,8 +123,8 @@ typedef struct mvc {
 	struct symbol *sym;
 	int no_mitosis;		/* run query without mitosis */
 
-	int user_id;
-	int role_id;
+	sqlid user_id;
+	sqlid role_id;
 	lng last_id;
 	lng rowcnt;
 
@@ -176,9 +179,9 @@ extern void mvc_cancel_session(mvc *m);
 #define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
 
 extern int mvc_trans(mvc *c);
-extern int mvc_commit(mvc *c, int chain, const char *name);
-extern int mvc_rollback(mvc *c, int chain, const char *name);
-extern int mvc_release(mvc *c, const char *name);
+extern str mvc_commit(mvc *c, int chain, const char *name, bool enabling_auto_commit);
+extern str mvc_rollback(mvc *c, int chain, const char *name, bool disabling_auto_commit);
+extern str mvc_release(mvc *c, const char *name);
 
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
@@ -198,16 +201,16 @@ extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
-extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg);
+extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, int type, int lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
 extern int mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
-extern sql_schema *mvc_create_schema(mvc *m, const char *name, int auth_id, int owner);
+extern sql_schema *mvc_create_schema(mvc *m, const char *name, sqlid auth_id, sqlid owner);
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
-extern int mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
+extern str mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
 extern int mvc_drop_all_tables(mvc *m, sql_schema *s, list *list_table, int drop_action);
-extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz);
+extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int persistence, const char *sql, bit system);
 extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
 extern sql_table *mvc_create_stream_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, int window, int stride);
@@ -218,6 +221,7 @@ extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
+extern sql_column *mvc_rename_column(mvc *c, sql_column *col, char *new_name);
 extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
 extern sql_table * mvc_alter_stream_table(mvc *m, sql_table *t, int operation, int value);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
@@ -240,16 +244,22 @@ extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
 
 /*dependency control*/
-extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
-extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
-extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
+extern void mvc_create_dependency(mvc *m, sqlid id, sqlid depend_id, sht depend_type);
+extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, sht dep_type);
+extern int mvc_check_dependency(mvc * m, sqlid id, sht type, list *ignore_ids);
 
 /* variable management */
 extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);
 extern sql_var* stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
 extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
 extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
+extern sql_var* stack_push_window_def(mvc *sql, const char *name, dlist *sym);
+extern dlist* stack_get_window_def(mvc *sql, const char *name, int *pos);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
+
+extern char stack_check_var_visited(mvc *sql, int i);
+extern void stack_set_var_visited(mvc *sql, int i);
+extern void stack_clear_frame_visited_flag(mvc *sql);
 
 extern sql_var* stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
@@ -285,6 +295,8 @@ extern void stack_set_number(mvc *sql, const char *name, lng v);
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
 extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
+extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr);
+extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));

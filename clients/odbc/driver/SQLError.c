@@ -140,15 +140,15 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 		return SQL_ERROR;
 
 	if (SQL_SUCCEEDED(rc)) {
-		char *e = ODBCutf82wchar(state, 5, SQLState, 6, NULL);
+		const char *e = ODBCutf82wchar(state, 5, SQLState, 6, NULL);
 
 		if (e)
 			rc = SQL_ERROR;
 	}
 
 	if (SQL_SUCCEEDED(rc)) {
-		char *e = ODBCutf82wchar(errmsg, n,
-					 MessageText, BufferLength, &n);
+		const char *e = ODBCutf82wchar(errmsg, n,
+					       MessageText, BufferLength, &n);
 
 		if (e)
 			rc = SQL_ERROR;

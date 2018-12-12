@@ -1,0 +1,223 @@
+stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
+
+
+# 16:51:10 >  
+# 16:51:10 >  "/usr/bin/python" "mergepart23.py" "mergepart23"
+# 16:51:10 >  
+
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));CREATE TABLE subtable4 (a int, b varchar(32));ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+% sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum # name
+% varchar,	varchar # type
+% 2,	2 # length
+[ "5",	"10"	]
+[ "11",	"20"	]
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:33958/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1771/.s.monetdb.33958
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+% sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum # name
+% varchar,	varchar # type
+% 2,	2 # length
+[ "5",	"10"	]
+[ "11",	"20"	]
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION BETWEEN 11 AND 20;SELECT "minimum", "maximum" FROM range_partitions;
+% sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum # name
+% varchar,	varchar # type
+% 2,	2 # length
+[ "5",	"10"	]
+[ "11",	"20"	]
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:33958/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1771/.s.monetdb.33958
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+% sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum # name
+% varchar,	varchar # type
+% 2,	2 # length
+[ "5",	"10"	]
+[ "11",	"20"	]
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
+[ 4	]
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
+[ 4	]
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
+% .testme,	.testme # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	5 # length
+[ 5,	"one"	]
+[ 12,	"two"	]
+[ 13,	"three"	]
+[ 15,	"four"	]
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
+% .anothertest,	.anothertest # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	5 # length
+[ 11,	"one"	]
+[ 12,	"two"	]
+[ 13,	"three"	]
+[ 15,	"four"	]
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+% sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum # name
+% varchar,	varchar # type
+% 2,	2 # length
+[ "5",	"10"	]
+[ "11",	"20"	]
+[ "11",	"20"	]
+[ "21",	"30"	]
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+% sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	maximum # name
+% varchar,	varchar # type
+% 0,	0 # length
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:39847/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24262/.s.monetdb.39847
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+% sys.value_partitions # table_name
+% value # name
+% varchar # type
+% 2 # length
+[ "15"	]
+[ "25"	]
+[ "35"	]
+[ "45"	]
+[ "55"	]
+[ "65"	]
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://wired-142.cwi.nl:39847/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24262/.s.monetdb.39847
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
+#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
+#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
+% sys.value_partitions # table_name
+% value # name
+% varchar # type
+% 0 # length
+#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
+#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
+#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_merge-partitions', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-193.eduroam.cwi.nl:33958/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1771/.s.monetdb.33958
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 16:51:13 >  
+# 16:51:13 >  "Done."
+# 16:51:13 >  
+

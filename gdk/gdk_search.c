@@ -275,8 +275,9 @@ BINSEARCHFUNC(dbl)
 
 /* Do a binary search for the first/last occurrence of v between lo and hi
  * (lo inclusive, hi not inclusive) in vals/vars.
- * If last is set, return the index of the first value > v; if last is
- * not set, return the index of the first value >= v.
+ * If last > 0, return the index of the first value > v; if last == 0,
+ * return the index of the first value >= v; if last < 0, return
+ * BUN_NONE if v does not occur, any BUN where v occurs otherwise.
  * If ordering is -1, the values are sorted in reverse order and hence
  * all comparisons are reversed.
  */

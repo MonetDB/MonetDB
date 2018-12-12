@@ -5,20 +5,20 @@ create table compression_schemes (
 
 
 copy into compression_schemes
-from '$QTSTSRCDIR/copy-from-compressed.csv.raw'
-using delimiters ',', '\n';
+from E'$QTSTSRCDIR/copy-from-compressed.csv.raw'
+using delimiters ',', E'\n';
 
 copy into compression_schemes
-from '$QTSTSRCDIR/copy-from-compressed.csv.gz'
-using delimiters ',', '\n';
+from E'$QTSTSRCDIR/copy-from-compressed.csv.gz'
+using delimiters ',', E'\n';
 
 copy into compression_schemes
-from '$QTSTSRCDIR/copy-from-compressed.csv.bz2'
-using delimiters ',', '\n';
+from E'$QTSTSRCDIR/copy-from-compressed.csv.bz2'
+using delimiters ',', E'\n';
 
 copy into compression_schemes
-from '$QTSTSRCDIR/copy-from-compressed.csv.xz'
-using delimiters ',', '\n';
+from E'$QTSTSRCDIR/copy-from-compressed.csv.xz'
+using delimiters ',', E'\n';
 
 
 select * from compression_schemes order by extension;
