@@ -175,6 +175,21 @@ Ready.
 [ 100	]
 [ 100	]
 [ NULL	]
+#select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #drop table analytics;
 
 # 13:13:17 >  

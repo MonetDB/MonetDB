@@ -21,9 +21,13 @@ select case when "aa" > 1 then "aa" else "aa" * 4 end from "groupings" group by 
 
 select cast(sum("aa"+"bb") as bigint) from "groupings" group by "aa"+"bb";
 select cast(sum("aa"+3452) as bigint) from "groupings" group by "aa"+"bb";
+
+select count(*) from "groupings" having count("aa"-54) > 2;
+select count(*) from "groupings" order by count("bb"+1);
 rollback;
 
 select "aa"+3452 from "groupings" group by "aa"+"bb"; --error
+select count(*) from "groupings" group by count("aa"); --error
 select count(*) from "groupings" group by rank() over (); --error
 select count(*) from "groupings" having rank() over (); --error
 select count(*) from "groupings" order by rank() over (); --error TODO?

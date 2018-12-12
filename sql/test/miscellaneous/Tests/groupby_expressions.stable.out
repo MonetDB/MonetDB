@@ -176,6 +176,18 @@ Ready.
 % 4 # length
 [ 3453	]
 [ 6907	]
+#select count(*) from "groupings" having count("aa"-54) > 2;
+% .L2 # table_name
+% L2 # name
+% bigint # type
+% 1 # length
+[ 3	]
+#select count(*) from "groupings" order by count("bb"+1);
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 3	]
 #rollback;
 
 # 14:21:56 >  

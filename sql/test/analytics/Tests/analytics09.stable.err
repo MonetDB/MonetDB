@@ -54,13 +54,9 @@ MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
 QUERY = select cast(prod(sum(aa)) * count(1 + aa) / avg(null) over () as bigint) from analytics; --error, nesting aggregation functions
 ERROR = !SELECT: subquery result missing
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
-QUERY = select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics; --TODO we don't support expressions in partition by as well group by statements
-ERROR = !syntax error, unexpected CASE in: "select rank() over (partition by case"
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
+MAPI  = (monetdb) /var/tmp/mtest-11873/.s.monetdb.31832
 QUERY = select rank() over (partition by sum(aa)) from analytics; --TODO we don't support expressions in partition by as well group by
-ERROR = !syntax error, unexpected '(', expecting ')' in: "select rank() over (partition by sum("
+ERROR = !Cannot use non GROUP BY column 'aa' in query results without an aggregate function
 CODE  = 42000
 
 # 13:13:17 >  

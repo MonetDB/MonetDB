@@ -3561,6 +3561,13 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		if (uaname)
 			GDKfree(uaname);
 		return e;
+	} else if(is_sql_groupby(f)) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
+							   uaname ? toUpperCopy(uaname, aname) : aname, aname);
+		if (uaname)
+			GDKfree(uaname);
+		return e;
 	}
 
 	if (is_sql_having(f) && is_select(groupby->op))
@@ -4704,9 +4711,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	supports_frames = (window_function->token != SQL_RANK) || is_nth_value ||
 					  (strcmp(s->base.name, "sys") == 0 && ((strcmp(aname, "first_value") == 0) || strcmp(aname, "last_value") == 0));
 
-	if (is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_sql_orderby(f)) {
+	if (is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_sql_orderby(f) || is_sql_partitionby(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		const char *clause = is_sql_where(f)?"WHERE":is_sql_groupby(f)?"GROUP BY":is_sql_having(f)?"HAVING":"ORDER BY";
+		const char *clause = is_sql_where(f)?"WHERE":is_sql_groupby(f)?"GROUP BY":is_sql_having(f)?"HAVING":is_sql_orderby(f)?"ORDER BY":"PARTITION BY";
 		(void) sql_error(sql, 02, SQLSTATE(42000) "%s: window function '%s' not allowed in %s clause",
 						 uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
 		if (uaname)
@@ -4826,7 +4833,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	/* Partition By */
 	if (partition_by_clause) {
-		gbe = rel_group_by(sql, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f );
+		gbe = rel_group_by(sql, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f | sql_partitionby );
 		if (!gbe)
 			return NULL;
 		for(n = gbe->h ; n ; n = n->next) {
@@ -5057,7 +5064,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 	if (THRhighwater())
 		return sql_error(sql, 10, SQLSTATE(42000) "SELECT: too many nested operators");
 
-	if (*rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
+	if (rel && *rel && (*rel)->card == CARD_AGGR) { //group by expression case, handle it before
 		sql_exp *exp = stack_get_groupby_expression(sql, se);
 		if (sql->errstr[0] != '\0')
 			return NULL;
