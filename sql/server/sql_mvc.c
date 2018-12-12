@@ -1629,7 +1629,7 @@ stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 {
 	sql_var* res = NULL;
 	char *err = NULL;
-	sql_groupby_expression* sge = MNEW(sql_groupby_expression);
+	sql_groupby_expression *sge = MNEW(sql_groupby_expression);
 
 	if(sge) {
 		sge->sdef = symbol2string(sql, def, 1, &err);
@@ -1637,8 +1637,10 @@ stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
 			if (err) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "SELECT: incorrect expression '%s'", err);
 				_DELETE(err);
+				_DELETE(sge);
 				return NULL;
 			}
+			_DELETE(sge);
 			return NULL;
 		}
 		sge->token = def->token;

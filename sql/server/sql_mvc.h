@@ -22,6 +22,7 @@
 #include "sql_keyword.h"
 #include "sql_atom.h"
 #include "sql_query.h"
+#include "sql_tokens.h"
 #include "sql_symbol.h"
 
 #define ERRSIZE 8192
@@ -68,7 +69,7 @@
 
 typedef struct sql_groupby_expression {
 	char *sdef;
-	int token;
+	tokens token;
 	sql_exp *exp;
 } sql_groupby_expression;
 
