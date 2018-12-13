@@ -4464,7 +4464,7 @@ generate_window_bound(tokens sql_token, bool first_half)
 /* window functions */
 static sql_exp*
 generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schema *s, sql_exp *pe, sql_exp *e,
-						   sql_exp *start, sql_exp *fend, int frame_type, int excl, int t1, int t2)
+						   sql_exp *start, sql_exp *fend, int frame_type, int excl, tokens t1, tokens t2)
 {
 	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs1 = sa_list(sql->sa), *targs2 = sa_list(sql->sa);
 	sql_subfunc *dc1, *dc2;
