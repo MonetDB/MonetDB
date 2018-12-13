@@ -1847,7 +1847,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 	/* get out the single value as we don't want an enclosing projection! */
 	if (m->sym && m->sym->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *)m->sym;
-		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
+		if (sn->selection->h->data.sym->token == SQL_COLUMN || sn->selection->h->data.sym->token == SQL_IDENT) {
 			int is_last = 0;
 			sql_rel *r = from;
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;

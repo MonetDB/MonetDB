@@ -1163,7 +1163,7 @@ rel_parse_value(backend *be, char *query, char emode)
 	/* get out the single value as we don't want an enclosing projection! */
 	if (m->sym->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *)m->sym;
-		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
+		if (sn->selection->h->data.sym->token == SQL_COLUMN || sn->selection->h->data.sym->token == SQL_IDENT) {
 			int is_last = 0;
 			sql_rel *rel = NULL;
 			sql_exp *e = rel_value_exp2(m, &rel, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel, ek, &is_last);

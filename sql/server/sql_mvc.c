@@ -1648,7 +1648,7 @@ stack_get_groupby_expression(mvc *sql, symbol *def)
 {
 	if(sql->has_groupby_expressions) {
 		for (int i = sql->topvars-1; i >= 0; i--) {
-			if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && symbol_cmp(sql->vars[i].exp->sdef, def)==0) {
+			if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && symbol_cmp(sql, sql->vars[i].exp->sdef, def)==0) {
 				return sql->vars[i].exp->exp;
 			}
 		}
@@ -2081,4 +2081,160 @@ mvc_find_subexp(mvc *m, const char *rname, const char *name)
 		}
 	}
 	return NULL;
+}
+
+static inline int dlist_cmp(mvc *sql, dlist *l1, dlist *l2);
+
+static inline int
+dnode_cmp(mvc *sql, dnode *d1, dnode *d2)
+{
+	if (d1 == d2)
+		return 0;
+
+	if (!d1 || !d2)
+		return -1;
+
+	if (d1->type == d2->type) {
+		switch (d1->type) {
+			case type_int:
+				return (d1->data.i_val - d2->data.i_val);
+			case type_lng: {
+				lng c = d1->data.l_val - d2->data.l_val;
+				assert((lng) GDK_int_min <= c && c <= (lng) GDK_int_max);
+				return (int) c;
+			}
+			case type_string:
+				if (d1->data.sval == d2->data.sval)
+					return 0;
+				if (!d1->data.sval || !d2->data.sval)
+					return -1;
+				return strcmp(d1->data.sval, d2->data.sval);
+			case type_list:
+				return dlist_cmp(sql, d1->data.lval, d2->data.lval);
+			case type_symbol:
+				return symbol_cmp(sql, d1->data.sym, d2->data.sym);
+			case type_type:
+				return subtype_cmp(&d1->data.typeval, &d2->data.typeval);
+			default:
+				assert(0);
+		}
+	}
+	return -1;
+}
+
+static inline int
+dlist_cmp(mvc *sql, dlist *l1, dlist *l2)
+{
+	int res = 0;
+	dnode *d1, *d2;
+
+	if (l1 == l2)
+		return 0;
+
+	if (!l1 || !l2 || dlist_length(l1) != dlist_length(l2))
+		return -1;
+
+	for (d1 = l1->h, d2 = l2->h; !res && d1; d1 = d1->next, d2 = d2->next) {
+		res = dnode_cmp(sql, d1, d2);
+	}
+	return res;
+}
+
+static inline int
+AtomNodeCmp(AtomNode *a1, AtomNode *a2)
+{
+	if (a1 == a2)
+		return 0;
+	if (!a1 || !a2)
+		return -1;
+	if (a1->a && a2->a)
+		return atom_cmp(a1->a, a2->a);
+	return -1;
+}
+
+static inline int
+SelectNodeCmp(mvc *sql, SelectNode *s1, SelectNode *s2)
+{
+	if (s1 == s2)
+		return 0;
+	if (!s1 || !s2)
+		return -1;
+
+	if (symbol_cmp(sql, s1->limit, s2->limit) == 0 &&
+		symbol_cmp(sql, s1->offset, s2->offset) == 0 &&
+		symbol_cmp(sql, s1->sample, s2->sample) == 0 &&
+		s1->distinct == s2->distinct &&
+		s1->lateral == s2->lateral &&
+		symbol_cmp(sql, s1->name, s2->name) == 0 &&
+		symbol_cmp(sql, s1->orderby, s2->orderby) == 0 &&
+		symbol_cmp(sql, s1->having, s2->having) == 0 &&
+		symbol_cmp(sql, s1->groupby, s2->groupby) == 0 &&
+		symbol_cmp(sql, s1->where, s2->where) == 0 &&
+		symbol_cmp(sql, s1->from, s2->from) == 0 &&
+		symbol_cmp(sql, s1->window, s2->window) == 0 &&
+		dlist_cmp(sql, s1->selection, s2->selection) == 0)
+		return 0;
+	return -1;
+}
+
+static inline int
+_symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
+{
+	if (s1 == s2)
+		return 0;
+	if (!s1 || !s2)
+		return -1;
+	if (s1->token != s2->token || s1->type != s2->type)
+		return -1;
+	switch (s1->type) {
+		case type_int:
+			return (s1->data.i_val - s2->data.i_val);
+		case type_lng: {
+			lng c = s1->data.l_val - s2->data.l_val;
+			assert((lng) GDK_int_min <= c && c <= (lng) GDK_int_max);
+			return (int) c;
+		}
+		case type_string:
+			if (s1->data.sval == s2->data.sval)
+				return 0;
+			if (!s1->data.sval || !s2->data.sval)
+				return -1;
+			return strcmp(s1->data.sval, s2->data.sval);
+		case type_list: {
+			if (s1->token == SQL_IDENT) {
+				atom *at1, *at2;
+
+				if (s2->token != SQL_IDENT)
+					return -1;
+				at1 = sql_bind_arg(sql, s1->data.lval->h->data.i_val);
+				at2 = sql_bind_arg(sql, s2->data.lval->h->data.i_val);
+				return atom_cmp(at1, at2);
+			} else {
+				return dlist_cmp(sql, s1->data.lval, s2->data.lval);
+			}
+		}
+		case type_type:
+			return subtype_cmp(&s1->data.typeval, &s2->data.typeval);
+		case type_symbol:
+			if (s1->token == SQL_SELECT) {
+				if (s2->token != SQL_SELECT)
+					return -1;
+				return SelectNodeCmp(sql, (SelectNode *) s1, (SelectNode *) s2);
+			} else if (s1->token == SQL_ATOM) {
+				if (s2->token != SQL_ATOM)
+					return -1;
+				return AtomNodeCmp((AtomNode *) s1, (AtomNode *) s2);
+			} else {
+				return symbol_cmp(sql, s1->data.sym, s2->data.sym);
+			}
+		default:
+			assert(0);
+	}
+	return 0;		/* never reached, just to pacify compilers */
+}
+
+int
+symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
+{
+	return _symbol_cmp(sql, s1, s2);
 }

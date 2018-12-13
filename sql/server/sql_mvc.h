@@ -297,4 +297,6 @@ extern sql_subquery *mvc_push_subquery(mvc *m, const char *name, sql_rel *r);
 extern sql_subquery *mvc_find_subquery(mvc *m, const char *rname, const char *name);
 extern sql_exp *mvc_find_subexp(mvc *m, const char *rname, const char *name);
 
+extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
+
 #endif /*_SQL_MVC_H*/

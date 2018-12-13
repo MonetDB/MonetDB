@@ -89,8 +89,6 @@ extern symbol *symbol_create_int(sql_allocator *sa, tokens token, int data);
 extern symbol *symbol_create_lng(sql_allocator *sa, tokens token, lng data);
 extern symbol *symbol_create_symbol(sql_allocator *sa, tokens token, symbol *data);
 
-extern int symbol_cmp(symbol *s1, symbol *s2);
-
 extern symbol *newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *window);
 
 extern symbol *newAtomNode(sql_allocator *sa, atom *a);

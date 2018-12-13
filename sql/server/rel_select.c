@@ -1051,7 +1051,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 	sql_exp *exp = NULL;
 	dlist *l = NULL;
 
-	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
+	assert((column_r->token == SQL_COLUMN || column_r->token == SQL_IDENT) && column_r->type == type_list);
 	l = column_r->data.lval;
 
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
@@ -2375,6 +2375,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}
 	}
+	case SQL_IDENT:
 	case SQL_COLUMN:
 		return rel_column_ref(sql, rel, sc, f);
 	case SQL_UNION:
@@ -3010,6 +3011,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		sql_exp *e = exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		return rel_select(sql->sa, rel, e);
 	}
+	case SQL_IDENT:
 	case SQL_COLUMN: {
 		sql_rel *or = rel;
 		sql_exp *e = rel_column_ref(sql, &rel, sc, f);
@@ -4063,7 +4065,8 @@ rel_selection_ref(mvc *sql, sql_rel **rel, symbol *grp, dlist *selection )
 	name = gl->h->data.sval;
 	for (n = selection->h; n; n = n->next) {
 		/* we only look for columns */
-		if (n->data.sym->token == SQL_COLUMN) {
+		tokens to = n->data.sym->token;
+		if (to == SQL_COLUMN || to == SQL_IDENT) {
 			dlist *l = n->data.sym->data.lval;
 			/* AS name */
 			if (l->h->next->data.sval &&
@@ -4079,12 +4082,12 @@ rel_selection_ref(mvc *sql, sql_rel **rel, symbol *grp, dlist *selection )
 					*/
 					dlist_append_string(sql->sa, l,
 						sa_strdup(sql->sa, name));
-					sym = symbol_create_list(sql->sa, SQL_COLUMN, l);
+					sym = symbol_create_list(sql->sa, to, l);
 					l = dlist_create(sql->sa);
 					dlist_append_symbol(sql->sa, l, sym);
 					/* no alias */
 					dlist_append_symbol(sql->sa, l, NULL);
-					n->data.sym = symbol_create_list(sql->sa, SQL_COLUMN, l);
+					n->data.sym = symbol_create_list(sql->sa, to, l);
 				
 				}
 				return ve;
@@ -4140,7 +4143,7 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 
 	if (!r || !is_project(r->op) || column_r->type == type_int)
 		return NULL;
-	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
+	assert((column_r->token == SQL_COLUMN || column_r->token == SQL_IDENT) && column_r->type == type_list);
 
 	r = r->l;
 	if (!r)
@@ -4164,7 +4167,7 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 	}
 	if (e)
 		return e;
-	return NULL;
+	return sql_error(sql, 02, SQLSTATE(42000) "ORDER BY: absolute column names not supported");
 }
 
 static list *
@@ -4378,12 +4381,12 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 	for (; o; o = o->next) {
 		symbol *order = o->data.sym;
 
-		if (order->token == SQL_COLUMN) {
+		if (order->token == SQL_COLUMN || order->token == SQL_IDENT) {
 			symbol *col = order->data.lval->h->data.sym;
 			int direction = order->data.lval->h->next->data.i_val;
 			sql_exp *e = NULL;
 
-			if (col->token == SQL_COLUMN || col->token == SQL_ATOM) {
+			if (col->token == SQL_COLUMN || col->token == SQL_IDENT || col->token == SQL_ATOM) {
 				int is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
 
@@ -4413,7 +4416,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 			assert(order->data.lval->h->next->type == type_int);
 			if (or != rel)
 				return NULL;
-			if (!e && sql->session->status != -ERR_AMBIGUOUS && col->token == SQL_COLUMN) {
+			if (!e && sql->session->status != -ERR_AMBIGUOUS && (col->token == SQL_COLUMN || col->token == SQL_IDENT)) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
@@ -5093,6 +5096,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		return rel_aggr(sql, rel, se, f);
 	case SQL_RANK:
 		return rel_rankop(sql, rel, se, f);
+	case SQL_IDENT:
 	case SQL_COLUMN:
 		return rel_column_ref(sql, rel, se, f );
 	case SQL_NAME:
@@ -5328,7 +5332,7 @@ rel_table_exp(mvc *sql, sql_rel **rel, symbol *column_e )
 sql_exp *
 rel_column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 {
-	if (column_e->token == SQL_COLUMN) {
+	if (column_e->token == SQL_COLUMN || column_e->token == SQL_IDENT) {
 		return column_exp(sql, rel, column_e, f);
 	}
 	return NULL;

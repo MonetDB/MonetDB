@@ -3226,7 +3226,7 @@ null:
 			_DELETE(msg);
 			YYABORT;
 		}
-		$$ = _symbol_create_list( SQL_COLUMN,
+		$$ = _symbol_create_list( SQL_IDENT,
 			append_int(L(), m->argc-1));
 	   } else {
 		$$ = _symbol_create(SQL_NULL, NULL );
@@ -4170,8 +4170,8 @@ simple_scalar_exp:
  |  '-' scalar_exp %prec UMINUS 
 			{ 
  			  $$ = NULL;
-			  assert($2->token != SQL_COLUMN || $2->data.lval->h->type != type_lng);
-			  if ($2->token == SQL_COLUMN && $2->data.lval->h->type == type_int) {
+			  assert(($2->token != SQL_COLUMN && $2->token != SQL_IDENT) || $2->data.lval->h->type != type_lng);
+			  if (($2->token == SQL_COLUMN || $2->token == SQL_IDENT) && $2->data.lval->h->type == type_int) {
 				atom *a = sql_bind_arg(m, $2->data.lval->h->data.i_val);
 				if (!atom_neg(a)) {
 					$$ = $2;
@@ -4527,9 +4527,7 @@ atom:
 			YYABORT;
 		}
 		an->a = NULL;
-		/* we miss use SQL_COLUMN also for param's, maybe
-				change SQL_COLUMN to SQL_IDENT */
-		$$ = _symbol_create_list( SQL_COLUMN,
+		$$ = _symbol_create_list( SQL_IDENT,
 			append_int(L(), m->argc-1));
 	  } else {
 		AtomNode *an = (AtomNode*)$1;
@@ -6565,6 +6563,7 @@ char *token2string(tokens token)
 	SQL(IF);
 	SQL(ELSE);
 	SQL(WHILE);
+	SQL(IDENT);
 	SQL(COLUMN);
 	SQL(COLUMN_OPTIONS);
 	SQL(COALESCE);

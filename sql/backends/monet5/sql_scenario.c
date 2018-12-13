@@ -1190,7 +1190,7 @@ SQLparser(Client c)
 			goto finalize;
 		}
 		scanner_query_processed(&(m->scanner));
-	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
 		scanner_query_processed(&(m->scanner));
 		m->no_mitosis = be->q->no_mitosis;

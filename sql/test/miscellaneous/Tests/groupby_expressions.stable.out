@@ -134,6 +134,36 @@ Ready.
 % 1 # length
 [ 2	]
 [ 3	]
+#create function sumints(a int, b int) returns int begin return a + b; end;
+#select count(*) from "groupings" group by sumints("aa","bb");
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+#select sumints("aa","bb") from "groupings" group by sumints("aa","bb");
+% sys.L1 # table_name
+% L1 # name
+% int # type
+% 1 # length
+[ 2	]
+[ 4	]
+#select cast(sumints("aa","bb")*sum("bb") as bigint) from "groupings" group by sumints("aa","bb");
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 2 # length
+[ 2	]
+[ 20	]
+#select cast(sum("bb") as bigint) from "groupings" group by sumints("aa","bb")*sumints("aa",19);
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
 #select count(*) from "groupings" group by "aa" > 1;
 % sys.L3 # table_name
 % L3 # name
@@ -188,6 +218,42 @@ Ready.
 % bigint # type
 % 1 # length
 [ 3	]
+#select 1 group by 1;
+% .L2 # table_name
+% L2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select 1 group by 2;
+% .L2 # table_name
+% L2 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#select -90 from "groupings" group by -90;
+% .L1 # table_name
+% L1 # name
+% tinyint # type
+% 3 # length
+[ -90	]
+#select count(*) from "groupings" group by 'hello';
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 3	]
+#select count(*) from "groupings" group by NULL;
+% .L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 3	]
+#select 'world' from "groupings" group by -90;
+% .L3 # table_name
+% L3 # name
+% char # type
+% 5 # length
+[ "world"	]
 #rollback;
 
 # 14:21:56 >  

@@ -381,8 +381,9 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s);
 		c_delete(s);
 	}	break;
+	case SQL_IDENT:
 	case SQL_COLUMN: {
-		/* can only be variables */ 
+		/* can only be variables */
 		dlist *l = se->data.lval;
 		assert(l->h->type != type_lng);
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
