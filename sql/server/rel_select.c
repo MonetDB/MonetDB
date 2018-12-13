@@ -42,6 +42,9 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 {
 	list *exps;
 
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	if (!rel)
 		return NULL;
 
@@ -4151,6 +4154,9 @@ rel_projections_(mvc *sql, sql_rel *rel)
 {
 	list *rexps, *exps ;
 
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	if (is_subquery(rel) && is_project(rel->op))
 		return new_exp_list(sql->sa);
 
@@ -4318,8 +4324,12 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 		}
 		/* try with reverted aliases */
 		if (!e && r && sql->session->status != -ERR_AMBIGUOUS) {
-			sql_rel *nr = rel_project(sql->sa, r, rel_projections_(sql, r));
+			list *proj = rel_projections_(sql, r);
+			sql_rel *nr;
 
+			if (!proj)
+				return NULL;
+			nr = rel_project(sql->sa, r, proj);
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
