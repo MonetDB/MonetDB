@@ -1136,7 +1136,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) {
-			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel) {
+			if (rel && *rel && (*rel)->card == CARD_AGGR && is_sql_sel(f)) {
 				sql_rel *gb = *rel;
 
 				while(gb->l && !is_groupby(gb->op) && is_project(gb->op))
