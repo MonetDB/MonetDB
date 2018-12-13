@@ -356,6 +356,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
 
+ 	if (THRhighwater())
+		return sql_error(be->mvc, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	if (!e) {
 		assert(0);
 		return NULL;
