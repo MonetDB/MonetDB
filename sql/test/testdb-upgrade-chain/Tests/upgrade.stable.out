@@ -17,10 +17,18 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
 # MonetDB/GIS module loaded
 Running database upgrade commands:
 set schema sys;
+ALTER TABLE sys.keywords SET READ WRITE;
+INSERT INTO sys.keywords VALUES ('WINDOW');
 drop table sys.systemfunctions;
 create view sys.systemfunctions as select id as function_id from sys.functions where system;
 grant select on sys.systemfunctions to public;
 update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');
+set schema "sys";
+commit;
+
+Running database upgrade commands:
+set schema "sys";
+ALTER TABLE sys.keywords SET READ ONLY;
 set schema "sys";
 commit;
 
@@ -41,12 +49,28 @@ drop function if exists sys."storage"(clob, clob) cascade;
 drop function if exists sys."storage"(clob) cascade;
 drop function if exists sys."storage"() cascade;
 create function sys."storage"()
-returns table ("schema" varchar(1024),"table" varchar(1024),"column" varchar(1024),"type" varchar(1024),"mode" varchar(15),location varchar(1024),"count" bigint,
-	typewidth int,columnsize bigint,heapsize bigint,hashes bigint,phash boolean,"imprints" bigint,sorted boolean,revsorted boolean,"unique" boolean,orderidx bigint)
+returns table (
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"mode" varchar(15),
+	location varchar(1024),
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	"imprints" bigint,
+	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
+	orderidx bigint
+)
 external name sql."storage";
 create view sys."storage" as
 select * from sys."storage"()
--- exclude system tables
  where ("schema", "table") in (
 	SELECT sch."name", tbl."name"
 	  FROM sys."tables" AS tbl JOIN sys."schemas" AS sch ON tbl.schema_id = sch.id
@@ -76,29 +100,80 @@ select "schema",
 group by "schema"
 order by "schema";
 create function sys."storage"(sname varchar(1024))
-returns table ("schema" varchar(1024),"table" varchar(1024),"column" varchar(1024),"type" varchar(1024),"mode" varchar(15),location varchar(1024),"count" bigint,
-	typewidth int,columnsize bigint,heapsize bigint,hashes bigint,phash boolean,"imprints" bigint,sorted boolean,revsorted boolean,"unique" boolean,orderidx bigint)
+returns table (
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"mode" varchar(15),
+	location varchar(1024),
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	"imprints" bigint,
+	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
+	orderidx bigint
+)
 external name sql."storage";
 create function sys."storage"(sname varchar(1024), tname varchar(1024))
-returns table ("schema" varchar(1024),"table" varchar(1024),"column" varchar(1024),"type" varchar(1024),"mode" varchar(15),location varchar(1024),"count" bigint,
-	typewidth int,columnsize bigint,heapsize bigint,hashes bigint,phash boolean,"imprints" bigint,sorted boolean,revsorted boolean,"unique" boolean,orderidx bigint)
+returns table (
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"mode" varchar(15),
+	location varchar(1024),
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	"imprints" bigint,
+	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
+	orderidx bigint
+)
 external name sql."storage";
 create function sys."storage"(sname varchar(1024), tname varchar(1024), cname varchar(1024))
-returns table ("schema" varchar(1024),"table" varchar(1024),"column" varchar(1024),"type" varchar(1024),"mode" varchar(15),location varchar(1024),"count" bigint,
-	typewidth int,columnsize bigint,heapsize bigint,hashes bigint,phash boolean,"imprints" bigint,sorted boolean,revsorted boolean,"unique" boolean,orderidx bigint)
+returns table (
+	"schema" varchar(1024),
+	"table" varchar(1024),
+	"column" varchar(1024),
+	"type" varchar(1024),
+	"mode" varchar(15),
+	location varchar(1024),
+	"count" bigint,
+	typewidth int,
+	columnsize bigint,
+	heapsize bigint,
+	hashes bigint,
+	phash boolean,
+	"imprints" bigint,
+	sorted boolean,
+	revsorted boolean,
+	"unique" boolean,
+	orderidx bigint
+)
 external name sql."storage";
 create table sys.storagemodelinput(
 	"schema" varchar(1024) NOT NULL,
 	"table" varchar(1024) NOT NULL,
-	"column" varchar(1024) NOT NULL,	-- name of column or index or pkey or fkey or unique constraint
+	"column" varchar(1024) NOT NULL,
 	"type" varchar(1024) NOT NULL,
 	typewidth int NOT NULL,
-	"count" bigint NOT NULL,	-- estimated number of tuples
-	"distinct" bigint NOT NULL,	-- indication of distinct number of strings
-	atomwidth int NOT NULL,		-- average width of variable size char or binary strings
-	reference boolean NOT NULL DEFAULT FALSE, -- used as foreign key reference
-	sorted boolean,			-- if set there is no need for an ordered index
-	"unique" boolean,		-- are values unique or not
+	"count" bigint NOT NULL,
+	"distinct" bigint NOT NULL,
+	atomwidth int NOT NULL,
+	reference boolean NOT NULL DEFAULT FALSE,
+	sorted boolean,
+	"unique" boolean,
 	isacolumn boolean NOT NULL DEFAULT TRUE
 );
 create procedure sys.storagemodelinit()
@@ -107,19 +182,15 @@ begin
 
 	insert into sys.storagemodelinput
 	select "schema", "table", "column", "type", typewidth, "count",
-		-- assume all variable size types contain distinct values
 		case when ("unique" or "type" IN ('varchar', 'char', 'clob', 'json', 'url', 'blob', 'geometry', 'geometrya'))
 			then "count" else 0 end,
 		case when "count" > 0 and heapsize >= 8192 and "type" in ('varchar', 'char', 'clob', 'json', 'url')
-			-- string heaps have a header of 8192
 			then cast((heapsize - 8192) / "count" as bigint)
 		when "count" > 0 and heapsize >= 32 and "type" in ('blob', 'geometry', 'geometrya')
-			-- binary data heaps have a header of 32
 			then cast((heapsize - 32) / "count" as bigint)
 		else typewidth end,
 		FALSE, case sorted when true then true else false end, "unique", TRUE
-	  from sys."storage";  -- view sys."storage" excludes system tables (as those are not useful to be modeled for storagesize by application users)
-
+	  from sys."storage";
 	update sys.storagemodelinput
 	   set reference = TRUE
 	 where ("schema", "table", "column") in (
@@ -146,7 +217,6 @@ end;
 create function sys.columnsize(tpe varchar(1024), count bigint)
 returns bigint
 begin
-	-- for fixed size types: typewidth_inbytes * count
 	if tpe in ('tinyint', 'boolean')
 		then return count;
 	end if;
@@ -162,8 +232,6 @@ begin
 	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')
 		then return 16 * count;
 	end if;
-
-	-- for variable size types we compute the columnsize as refs (assume 4 bytes each for char strings) to the heap, excluding data in the var heap
 	if tpe in ('varchar', 'char', 'clob', 'json', 'url')
 		then return 4 * count;
 	end if;
@@ -176,7 +244,6 @@ end;
 create function sys.heapsize(tpe varchar(1024), count bigint, distincts bigint, avgwidth int)
 returns bigint
 begin
-	-- only variable size types have a heap
 	if tpe in ('varchar', 'char', 'clob', 'json', 'url')
 		then return 8192 + ((avgwidth + 8) * distincts);
 	end if;
@@ -189,7 +256,6 @@ end;
 create function sys.hashsize(b boolean, count bigint)
 returns bigint
 begin
-	-- assume non-compound keys
 	if b = true
 		then return 8 * count;
 	end if;
@@ -198,7 +264,6 @@ end;
 create function sys.imprintsize(tpe varchar(1024), count bigint)
 returns bigint
 begin
-	-- for fixed size types: typewidth_inbytes * 0.2 * count
 	if tpe in ('tinyint', 'boolean')
 		then return cast(0.2 * count as bigint);
 	end if;
@@ -211,12 +276,9 @@ begin
 	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')
 		then return cast(1.6 * count as bigint);
 	end if;
-	-- a decimal can be mapped to tinyint or smallint or int or bigint or hugeint depending on precision. For the estimate we assume mapping to hugeint.
 	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')
 		then return cast(3.2 * count as bigint);
 	end if;
-
-	-- imprints are not supported on other types
 	return 0;
 end;
 create view sys.storagemodel as
