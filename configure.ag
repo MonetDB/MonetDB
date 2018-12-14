@@ -1352,10 +1352,12 @@ AS_VAR_IF([have_bz2], [no], [], [
 				[AS_VAR_IF([have_bz2], [auto], [],
 					[AC_MSG_ERROR([-lbz2 library not found])])
 				 have_bz2=no
+				 bzip2_LIBS=
 				 why_not_bz2="(bz2 library not found)"])],
 			[AS_VAR_IF([have_bz2], [auto], [],
 				[AC_MSG_ERROR([bzlib.h header not found])])
 			 have_bz2=no
+			 bzip2_LIBS=
 			 why_not_bz2="(bzlib.h header not found)"])
 		LDFLAGS="$save_LDFLAGS"
 		CPPFLAGS="$save_CPPFLAGS"])
