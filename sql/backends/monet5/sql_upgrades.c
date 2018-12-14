@@ -1749,6 +1749,11 @@ sql_update_default(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
+	/* 51_sys_schema_extensions.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"INSERT INTO sys.keywords VALUES ('WINDOW');\n"
+		);
 	/* 99_system.sql */
 	t = mvc_bind_table(sql, s, "systemfunctions");
 	t->system = 0;
@@ -1757,7 +1762,6 @@ sql_update_default(Client c, mvc *sql)
 			"create view sys.systemfunctions as select id as function_id from sys.functions where system;\n"
 			"grant select on sys.systemfunctions to public;\n"
 			"update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');\n");
-
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
@@ -1765,6 +1769,16 @@ sql_update_default(Client c, mvc *sql)
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	if (err == MAL_SUCCEED) {
+		schema = stack_get_string(sql, "current_schema");
+		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n");
+		if (schema)
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	}
 
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
@@ -1800,6 +1814,327 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
 			"DROP FUNCTION dependencies_functions_on_functions();\n"
 			"DROP FUNCTION dependencies_functions_on_triggers();\n"
 			"DROP FUNCTION dependencies_keys_on_foreignKeys();\n");
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_upgrade_2019_storagemodel(Client c, mvc *sql)
+{
+	size_t bufsize = 20000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	sql_schema *s;
+	sql_table *t;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_upgrade_2019_storagemodel", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	schema = stack_get_string(sql, "current_schema");
+
+	s = mvc_bind_schema(sql, "sys");
+	/* set views and tables internally to non-system to allow drop commands to succeed without error */
+	if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
+		t->system = 0;
+	if ((t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
+		t->system = 0;
+	if ((t = mvc_bind_table(sql, s, "storagemodelinput")) != NULL)
+		t->system = 0;
+	if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
+		t->system = 0;
+
+	/* new 75_storagemodel.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+		"set schema sys;\n"
+		/* drop objects in reverse order of original creation of old 75_storagemodel.sql */
+		"drop view if exists sys.tablestoragemodel;\n"
+		"drop view if exists sys.storagemodel cascade;\n"
+		"drop function if exists sys.storagemodel() cascade;\n"
+		"drop function if exists sys.imprintsize(bigint, clob) cascade;\n"
+		"drop function if exists sys.hashsize(boolean, bigint) cascade;\n"
+		"drop function if exists sys.heapsize(clob, bigint, int) cascade;\n"
+		"drop function if exists sys.columnsize(clob, bigint, bigint) cascade;\n"
+		"drop procedure if exists sys.storagemodelinit();\n"
+		"drop table if exists sys.storagemodelinput cascade;\n"
+		"drop view if exists sys.\"storage\" cascade;\n"
+		"drop function if exists sys.\"storage\"(clob, clob, clob) cascade;\n"
+		"drop function if exists sys.\"storage\"(clob, clob) cascade;\n"
+		"drop function if exists sys.\"storage\"(clob) cascade;\n"
+		"drop function if exists sys.\"storage\"() cascade;\n"
+		"create function sys.\"storage\"()\n"
+		"returns table (\n"
+		"	\"schema\" varchar(1024),\n"
+		"	\"table\" varchar(1024),\n"
+		"	\"column\" varchar(1024),\n"
+		"	\"type\" varchar(1024),\n"
+		"	\"mode\" varchar(15),\n"
+		"	location varchar(1024),\n"
+		"	\"count\" bigint,\n"
+		"	typewidth int,\n"
+		"	columnsize bigint,\n"
+		"	heapsize bigint,\n"
+		"	hashes bigint,\n"
+		"	phash boolean,\n"
+		"	\"imprints\" bigint,\n"
+		"	sorted boolean,\n"
+		"	revsorted boolean,\n"
+		"	\"unique\" boolean,\n"
+		"	orderidx bigint\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+		"create view sys.\"storage\" as\n"
+		"select * from sys.\"storage\"()\n"
+		" where (\"schema\", \"table\") in (\n"
+		"	SELECT sch.\"name\", tbl.\"name\"\n"
+		"	  FROM sys.\"tables\" AS tbl JOIN sys.\"schemas\" AS sch ON tbl.schema_id = sch.id\n"
+		"	 WHERE tbl.\"system\" = FALSE)\n"
+		"order by \"schema\", \"table\", \"column\";\n"
+		"create view sys.\"tablestorage\" as\n"
+		"select \"schema\", \"table\",\n"
+		"	max(\"count\") as \"rowcount\",\n"
+		"	count(*) as \"storages\",\n"
+		"	sum(columnsize) as columnsize,\n"
+		"	sum(heapsize) as heapsize,\n"
+		"	sum(hashes) as hashsize,\n"
+		"	sum(\"imprints\") as imprintsize,\n"
+		"	sum(orderidx) as orderidxsize\n"
+		" from sys.\"storage\"\n"
+		"group by \"schema\", \"table\"\n"
+		"order by \"schema\", \"table\";\n"
+		"create view sys.\"schemastorage\" as\n"
+		"select \"schema\",\n"
+		"	count(*) as \"storages\",\n"
+		"	sum(columnsize) as columnsize,\n"
+		"	sum(heapsize) as heapsize,\n"
+		"	sum(hashes) as hashsize,\n"
+		"	sum(\"imprints\") as imprintsize,\n"
+		"	sum(orderidx) as orderidxsize\n"
+		" from sys.\"storage\"\n"
+		"group by \"schema\"\n"
+		"order by \"schema\";\n"
+		"create function sys.\"storage\"(sname varchar(1024))\n"
+		"returns table (\n"
+		"	\"schema\" varchar(1024),\n"
+		"	\"table\" varchar(1024),\n"
+		"	\"column\" varchar(1024),\n"
+		"	\"type\" varchar(1024),\n"
+		"	\"mode\" varchar(15),\n"
+		"	location varchar(1024),\n"
+		"	\"count\" bigint,\n"
+		"	typewidth int,\n"
+		"	columnsize bigint,\n"
+		"	heapsize bigint,\n"
+		"	hashes bigint,\n"
+		"	phash boolean,\n"
+		"	\"imprints\" bigint,\n"
+		"	sorted boolean,\n"
+		"	revsorted boolean,\n"
+		"	\"unique\" boolean,\n"
+		"	orderidx bigint\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+		"create function sys.\"storage\"(sname varchar(1024), tname varchar(1024))\n"
+		"returns table (\n"
+		"	\"schema\" varchar(1024),\n"
+		"	\"table\" varchar(1024),\n"
+		"	\"column\" varchar(1024),\n"
+		"	\"type\" varchar(1024),\n"
+		"	\"mode\" varchar(15),\n"
+		"	location varchar(1024),\n"
+		"	\"count\" bigint,\n"
+		"	typewidth int,\n"
+		"	columnsize bigint,\n"
+		"	heapsize bigint,\n"
+		"	hashes bigint,\n"
+		"	phash boolean,\n"
+		"	\"imprints\" bigint,\n"
+		"	sorted boolean,\n"
+		"	revsorted boolean,\n"
+		"	\"unique\" boolean,\n"
+		"	orderidx bigint\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+		"create function sys.\"storage\"(sname varchar(1024), tname varchar(1024), cname varchar(1024))\n"
+		"returns table (\n"
+		"	\"schema\" varchar(1024),\n"
+		"	\"table\" varchar(1024),\n"
+		"	\"column\" varchar(1024),\n"
+		"	\"type\" varchar(1024),\n"
+		"	\"mode\" varchar(15),\n"
+		"	location varchar(1024),\n"
+		"	\"count\" bigint,\n"
+		"	typewidth int,\n"
+		"	columnsize bigint,\n"
+		"	heapsize bigint,\n"
+		"	hashes bigint,\n"
+		"	phash boolean,\n"
+		"	\"imprints\" bigint,\n"
+		"	sorted boolean,\n"
+		"	revsorted boolean,\n"
+		"	\"unique\" boolean,\n"
+		"	orderidx bigint\n"
+		")\n"
+		"external name sql.\"storage\";\n"
+		"create table sys.storagemodelinput(\n"
+		"	\"schema\" varchar(1024) NOT NULL,\n"
+		"	\"table\" varchar(1024) NOT NULL,\n"
+		"	\"column\" varchar(1024) NOT NULL,\n"
+		"	\"type\" varchar(1024) NOT NULL,\n"
+		"	typewidth int NOT NULL,\n"
+		"	\"count\" bigint NOT NULL,\n"
+		"	\"distinct\" bigint NOT NULL,\n"
+		"	atomwidth int NOT NULL,\n"
+		"	reference boolean NOT NULL DEFAULT FALSE,\n"
+		"	sorted boolean,\n"
+		"	\"unique\" boolean,\n"
+		"	isacolumn boolean NOT NULL DEFAULT TRUE\n"
+		");\n"
+		"create procedure sys.storagemodelinit()\n"
+		"begin\n"
+		"	delete from sys.storagemodelinput;\n"
+		"	insert into sys.storagemodelinput\n"
+		"	select \"schema\", \"table\", \"column\", \"type\", typewidth, \"count\",\n"
+		"		case when (\"unique\" or \"type\" IN ('varchar', 'char', 'clob', 'json', 'url', 'blob', 'geometry', 'geometrya'))\n"
+		"			then \"count\" else 0 end,\n"
+		"		case when \"count\" > 0 and heapsize >= 8192 and \"type\" in ('varchar', 'char', 'clob', 'json', 'url')\n"
+		"			then cast((heapsize - 8192) / \"count\" as bigint)\n"
+		"		when \"count\" > 0 and heapsize >= 32 and \"type\" in ('blob', 'geometry', 'geometrya')\n"
+		"			then cast((heapsize - 32) / \"count\" as bigint)\n"
+		"		else typewidth end,\n"
+		"		FALSE, case sorted when true then true else false end, \"unique\", TRUE\n"
+		"	  from sys.\"storage\";\n"
+		"	update sys.storagemodelinput\n"
+		"	   set reference = TRUE\n"
+		"	 where (\"schema\", \"table\", \"column\") in (\n"
+		"		SELECT fkschema.\"name\", fktable.\"name\", fkkeycol.\"name\"\n"
+		"		  FROM	sys.\"keys\" AS fkkey,\n"
+		"			sys.\"objects\" AS fkkeycol,\n"
+		"			sys.\"tables\" AS fktable,\n"
+		"			sys.\"schemas\" AS fkschema\n"
+		"		WHERE fktable.\"id\" = fkkey.\"table_id\"\n"
+		"		  AND fkkey.\"id\" = fkkeycol.\"id\"\n"
+		"		  AND fkschema.\"id\" = fktable.\"schema_id\"\n"
+		"		  AND fkkey.\"rkey\" > -1 );\n"
+		"	update sys.storagemodelinput\n"
+		"	   set isacolumn = FALSE\n"
+		"	 where (\"schema\", \"table\", \"column\") NOT in (\n"
+		"		SELECT sch.\"name\", tbl.\"name\", col.\"name\"\n"
+		"		  FROM sys.\"schemas\" AS sch,\n"
+		"			sys.\"tables\" AS tbl,\n"
+		"			sys.\"columns\" AS col\n"
+		"		WHERE sch.\"id\" = tbl.\"schema_id\"\n"
+		"		  AND tbl.\"id\" = col.\"table_id\");\n"
+		"end;\n"
+		"create function sys.columnsize(tpe varchar(1024), count bigint)\n"
+		"returns bigint\n"
+		"begin\n"
+		"	if tpe in ('tinyint', 'boolean')\n"
+		"		then return count;\n"
+		"	end if;\n"
+		"	if tpe = 'smallint'\n"
+		"		then return 2 * count;\n"
+		"	end if;\n"
+		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\n"
+		"		then return 4 * count;\n"
+		"	end if;\n"
+		"	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n"
+		"		then return 8 * count;\n"
+		"	end if;\n"
+		"	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')\n"
+		"		then return 16 * count;\n"
+		"	end if;\n"
+		"	if tpe in ('varchar', 'char', 'clob', 'json', 'url')\n"
+		"		then return 4 * count;\n"
+		"	end if;\n"
+		"	if tpe in ('blob', 'geometry', 'geometrya')\n"
+		"		then return 8 * count;\n"
+		"	end if;\n"
+		"	return 8 * count;\n"
+		"end;\n"
+		"create function sys.heapsize(tpe varchar(1024), count bigint, distincts bigint, avgwidth int)\n"
+		"returns bigint\n"
+		"begin\n"
+		"	if tpe in ('varchar', 'char', 'clob', 'json', 'url')\n"
+		"		then return 8192 + ((avgwidth + 8) * distincts);\n"
+		"	end if;\n"
+		"	if tpe in ('blob', 'geometry', 'geometrya')\n"
+		"		then return 32 + (avgwidth * count);\n"
+		"	end if;\n"
+		"	return 0;\n"
+		"end;\n"
+		"create function sys.hashsize(b boolean, count bigint)\n"
+		"returns bigint\n"
+		"begin\n"
+		"	if b = true\n"
+		"		then return 8 * count;\n"
+		"	end if;\n"
+		"	return 0;\n"
+		"end;\n"
+		"create function sys.imprintsize(tpe varchar(1024), count bigint)\n"
+		"returns bigint\n"
+		"begin\n"
+		"	if tpe in ('tinyint', 'boolean')\n"
+		"		then return cast(0.2 * count as bigint);\n"
+		"	end if;\n"
+		"	if tpe = 'smallint'\n"
+		"		then return cast(0.4 * count as bigint);\n"
+		"	end if;\n"
+		"	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')\n"
+		"		then return cast(0.8 * count as bigint);\n"
+		"	end if;\n"
+		"	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')\n"
+		"		then return cast(1.6 * count as bigint);\n"
+		"	end if;\n"
+		"	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')\n"
+		"		then return cast(3.2 * count as bigint);\n"
+		"	end if;\n"
+		"	return 0;\n"
+		"end;\n"
+		"create view sys.storagemodel as\n"
+		"select \"schema\", \"table\", \"column\", \"type\", \"count\",\n"
+		"	columnsize(\"type\", \"count\") as columnsize,\n"
+		"	heapsize(\"type\", \"count\", \"distinct\", \"atomwidth\") as heapsize,\n"
+		"	hashsize(\"reference\", \"count\") as hashsize,\n"
+		"	case when isacolumn then imprintsize(\"type\", \"count\") else 0 end as imprintsize,\n"
+		"	case when (isacolumn and not sorted) then cast(8 * \"count\" as bigint) else 0 end as orderidxsize,\n"
+		"	sorted, \"unique\", isacolumn\n"
+		" from sys.storagemodelinput\n"
+		"order by \"schema\", \"table\", \"column\";\n"
+		"create view sys.tablestoragemodel as\n"
+		"select \"schema\", \"table\",\n"
+		"	max(\"count\") as \"rowcount\",\n"
+		"	count(*) as \"storages\",\n"
+		"	sum(columnsize(\"type\", \"count\")) as columnsize,\n"
+		"	sum(heapsize(\"type\", \"count\", \"distinct\", \"atomwidth\")) as heapsize,\n"
+		"	sum(hashsize(\"reference\", \"count\")) as hashsize,\n"
+		"	sum(case when isacolumn then imprintsize(\"type\", \"count\") else 0 end) as imprintsize,\n"
+		"	sum(case when (isacolumn and not sorted) then cast(8 * \"count\" as bigint) else 0 end) as orderidxsize\n"
+		" from sys.storagemodelinput\n"
+		"group by \"schema\", \"table\"\n"
+		"order by \"schema\", \"table\";\n"
+	);
+	assert(pos < bufsize);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+		"update sys._tables set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+		" and name in ('storage', 'tablestorage', 'schemastorage', 'storagemodelinput', 'storagemodel', 'tablestoragemodel');\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+		" and name in ('storage') and type = %d;\n", F_UNION);
+	pos += snprintf(buf + pos, bufsize - pos,
+		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+		" and name in ('storagemodelinit') and type = %d;\n", F_PROC);
+	pos += snprintf(buf + pos, bufsize - pos,
+		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
+		" and name in ('columnsize', 'heapsize', 'hashsize', 'imprintsize') and type = %d;\n", F_FUNC);
+
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
@@ -2015,6 +2350,16 @@ SQLupgrades(Client c, mvc *m)
 	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	/* when function storagemodel() exists and views tablestorage and schemastorage not yet exist then upgrade storagemodel to match 75_storagemodel.sql */
+	if (sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
+	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
+	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
+		if ((err = sql_upgrade_2019_storagemodel(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
