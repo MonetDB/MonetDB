@@ -57,4 +57,24 @@ select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from 
 
 select rank() over (partition by sum(aa)) from analytics; --TODO we don't support expressions in partition by as well group by
 
+select rank() over (partition by 12*sum(aa)) from analytics; --TODO
+
+select rank() over (partition by sum(aa)) from analytics group by aa; --TODO
+
+select rank() over (partition by sum(aa)) from analytics group by bb; --TODO
+
+select rank() over (partition by sum(aa)*sum(bb)) from analytics; --TODO
+
+select rank() over (partition by sum(aa), sum(bb)) from analytics; --TODO
+
+select rank() over (partition by sum(aa), sum(bb)) from analytics group by aa; --TODO
+
+select rank() over (partition by sum(aa), bb) from analytics group by aa; --TODO should be an error
+
+select min(aa) over (partition by sum(bb)) from analytics; --TODO should be an error
+
+select min(aa) over (partition by sum(aa)) from analytics; ---TODO should be an error
+
+select rank() over (order by sum(aa)) from analytics; --TODO
+
 drop table analytics;

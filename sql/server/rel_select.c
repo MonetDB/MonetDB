@@ -3566,10 +3566,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		if (uaname)
 			GDKfree(uaname);
 		return e;
-	} else if(is_sql_groupby(f)) {
+	} else if(is_sql_groupby(f) || is_sql_partitionby(f)) {
+		const char *clause = is_sql_groupby(f) ? "GROUP BY":"PARTITION BY";
 		char *uaname = GDKmalloc(strlen(aname) + 1);
-		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in GROUP BY clause",
-							   uaname ? toUpperCopy(uaname, aname) : aname, aname);
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in %s clause",
+							   uaname ? toUpperCopy(uaname, aname) : aname, aname, clause);
 		if (uaname)
 			GDKfree(uaname);
 		return e;
