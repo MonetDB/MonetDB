@@ -106,7 +106,14 @@ Ready.
 % 1 # length
 [ 4	]
 [ 3	]
-#select cast(sum(("aa"+1) + ("bb"+1)) as bigint) from "groupings" group by "aa"+1, "bb"+1;
+#select cast(sum(distinct "aa"+1) as bigint) from "groupings" group by "aa"+1;
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 3	]
+#select cast(sum(("aa"+1) + ("bb"+2)) as bigint) from "groupings" group by "aa"+1, "bb"+2;
 % sys.L5 # table_name
 % L5 # name
 % bigint # type
@@ -171,6 +178,19 @@ Ready.
 % 1 # length
 [ 2	]
 [ 1	]
+#select count(distinct "aa") from "groupings" group by "aa" > 1;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 1	]
+[ 1	]
+#select distinct count(distinct "aa") from "groupings" group by "aa" > 1;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 1	]
 #select "aa" > 1 from "groupings" group by "aa" > 1;
 % sys.L1 # table_name
 % L1 # name
@@ -199,7 +219,21 @@ Ready.
 % 1 # length
 [ 2	]
 [ 8	]
+#select cast(sum(distinct "aa"+"bb") as bigint) from "groupings" group by "aa"+"bb";
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 4	]
 #select cast(sum("aa"+3452) as bigint) from "groupings" group by "aa"+"bb";
+% sys.L4 # table_name
+% L4 # name
+% bigint # type
+% 4 # length
+[ 3453	]
+[ 6907	]
+#select cast(sum(distinct "aa"+3452) as bigint) from "groupings" group by "aa"+"bb";
 % sys.L4 # table_name
 % L4 # name
 % bigint # type
