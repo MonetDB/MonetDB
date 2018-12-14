@@ -1356,10 +1356,12 @@ AS_VAR_IF([have_bz2], [no], [], [
 				[AS_VAR_IF([have_bz2], [auto], [],
 					[AC_MSG_ERROR([-lbz2 library not found])])
 				 have_bz2=no
+				 bzip2_LIBS=
 				 why_not_bz2="(bz2 library not found)"])],
 			[AS_VAR_IF([have_bz2], [auto], [],
 				[AC_MSG_ERROR([bzlib.h header not found])])
 			 have_bz2=no
+			 bzip2_LIBS=
 			 why_not_bz2="(bzlib.h header not found)"])
 		LDFLAGS="$save_LDFLAGS"
 		CPPFLAGS="$save_CPPFLAGS"])
@@ -1460,7 +1462,7 @@ AS_VAR_IF([have_pthread], [no], [], [
 			# complains about "error: argument unused during
 			# compilation: '-pthread'".
 			# However, disabling -pthread completely might be
-			# too redical/harsh; see also
+			# too radical/harsh; see also
 			# https://www.monetdb.org/pipermail/developers-list/2014-March/004264.html
 			# a better alternative might be required but is
 			# still pending ...
