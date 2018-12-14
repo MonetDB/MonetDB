@@ -399,7 +399,7 @@ SQLhelp sqlhelp[] = {
 	 "[ FROM from_item [',' ...] ]\n"
 	 "[ WINDOW window_definition [',' ...] ]\n"
 	 "[ WHERE condition ]\n"
-	 "[ GROUP BY grouping_element ',', ...] ]\n"
+	 "[ GROUP BY expression ',', ...] ]\n"
 	 "[ HAVING condition [',' ...] ]\n"
 	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
