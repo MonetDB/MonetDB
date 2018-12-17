@@ -133,6 +133,22 @@ Ready.
 [ NULL,	NULL	]
 [ NULL,	NULL	]
 #rollback;
+#insert into predata values (1, 1);
+[ 1	]
+#insert into merging values (1, 1), (2, 1);
+[ 2	]
+#select aa, bb from predata;
+% sys.predata,	sys.predata # table_name
+% aa,	bb # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
+#select aa, bb from predata;
+% sys.predata,	sys.predata # table_name
+% aa,	bb # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	1	]
 #drop table merging;
 #drop table predata;
 

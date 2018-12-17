@@ -1370,6 +1370,43 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
 
 static sql_rel *
+validate_merge_update_delete(mvc *sql, sql_table *t, sql_rel *upd_del, sql_rel *bt, sql_rel *join_rel)
+{
+	char buf[BUFSIZ];
+	sql_exp *aggr, *bigger, *ex;
+	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	sql_subfunc *bf;
+	list *exps = new_exp_list(sql->sa);
+	sql_rel *groupby;
+
+	groupby = rel_groupby(sql, rel_dup(join_rel), NULL); //aggregate by all column and count (distinct values)
+	groupby->r = rel_projections(sql, bt, NULL, 1, 0);
+	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, groupby->card, 0);
+	(void) rel_groupby_add_aggr(sql, groupby, aggr);
+	exp_label(sql->sa, aggr, ++sql->label);
+
+	bf = sql_bind_func(sql->sa, sql->session->schema, ">", exp_subtype(aggr), exp_subtype(aggr), F_FUNC);
+	if (!bf)
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: function '>' not found");
+	list_append(exps, exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr), is_intern(aggr)));
+	list_append(exps, exp_atom_lng(sql->sa, 1));
+	bigger = exp_op(sql->sa, exps, bf);
+	exp_label(sql->sa, bigger, ++sql->label);
+	groupby = rel_select(sql->sa, groupby, bigger); //select only columns with more than 1 value
+
+	groupby = rel_groupby(sql, groupby, NULL);
+	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, groupby->card, 0);
+	(void) rel_groupby_add_aggr(sql, groupby, aggr);
+	exp_label(sql->sa, aggr, ++sql->label); //count all of them, if there is at least one, throw the exception
+
+	ex = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr), is_intern(aggr));
+	snprintf(buf, BUFSIZ, "MERGE: There are rows in '%s.%s' with multiple matches on source relation", t->s->base.name, t->base.name);
+	ex = exp_exception(sql->sa, ex, buf);
+
+	return rel_exception(sql->sa, upd_del, groupby, list_append(new_exp_list(sql->sa), ex));
+}
+
+static sql_rel *
 merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search_cond, dlist *merge_list)
 {
 	char *sname = qname_schema(qname), *tname = qname_table(qname), *alias_name;
@@ -1456,11 +1493,10 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 				if((processed & MERGE_INSERT) == MERGE_INSERT)
 					joined = rel_dup(joined);
 
-				join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
+				join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
 				join_rel = rel_logical_exp(sql, join_rel, search_cond, sql_where);
 				if (!join_rel)
 					return NULL;
-				join_rel->op = op_semi;
 				set_processed(join_rel);
 
 				e = exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
@@ -1470,7 +1506,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			} else {
 				assert(0);
 			}
-			if(!upd_del)
+			if(!upd_del || !(upd_del = validate_merge_update_delete(sql, t, upd_del, bt, join_rel)))
 				return NULL;
 		} else if(token == SQL_MERGE_NO_MATCH) {
 			if((processed & MERGE_INSERT) == MERGE_INSERT)
@@ -1506,6 +1542,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
 	} else if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
 		res = upd_del;
+		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
 	} else if((processed & MERGE_INSERT) == MERGE_INSERT) {
 		res = insert;
 	} else {

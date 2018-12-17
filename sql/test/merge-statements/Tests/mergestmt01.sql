@@ -49,6 +49,17 @@ select aa, bb from predata;
 
 rollback;
 
+insert into predata values (1, 1);
+insert into merging values (1, 1), (2, 1);
+
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then update set aa = sub.aa; --error, each target row must match one and only one source row
+select aa, bb from predata;
+
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then delete; --error, each target row must match one and only one source row
+select aa, bb from predata;
+
 merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
       when not matched then insert values (othertt.aa, othertt.bb); --error there was no match for the merged table, so it shouldn't appear in the insert clause
 
