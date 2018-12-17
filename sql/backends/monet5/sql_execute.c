@@ -785,7 +785,7 @@ SQLengineIntern(Client c, backend *be)
 		msg = SQLrun(c,be,m);
 
 cleanup_engine:
-	if (m->type == Q_SCHEMA)
+	if (m->type == Q_SCHEMA && m->qc != NULL)
 		qc_clean(m->qc);
 	if (msg) {
 		/* don't print exception decoration, just the message */
