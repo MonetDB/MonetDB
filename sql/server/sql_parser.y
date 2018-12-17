@@ -201,6 +201,7 @@ int yydebug=1;
 	schema_element
 	delete_stmt
 	truncate_stmt
+	merge_stmt
 	copyfrom_stmt
 	table_def
 	view_def
@@ -235,6 +236,7 @@ int yydebug=1;
 	joined_table
 	join_spec
 	search_condition
+	opt_search_condition
 	and_exp
 	update_statement
 	update_stmt
@@ -368,6 +370,9 @@ int yydebug=1;
 	partition_range_to
 	partition_on
 	partition_expression
+	merge_match_clause
+	merge_update_or_delete
+	merge_insert
 
 %type <type>
 	data_type
@@ -511,6 +516,7 @@ int yydebug=1;
 	routine_designator
 	drop_routine_designator
 	partition_list
+	merge_when_list
 
 %type <i_val>
 	any_all_some
@@ -617,7 +623,7 @@ int yydebug=1;
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
-%token <sval> sqlDELETE UPDATE SELECT INSERT 
+%token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
@@ -1199,6 +1205,12 @@ alter_statement:
 	  append_string(l, $9);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_RENAME_COLUMN, l); }
+ | ALTER TABLE if_exists qname SET SCHEMA ident
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_string(l, $7);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -2840,12 +2852,12 @@ sql:
  | update_statement
  ;
 
-update_statement: 
-/* todo merge statement */
+update_statement:
    delete_stmt
  | truncate_stmt
  | insert_stmt
  | update_stmt
+ | merge_stmt
  | copyfrom_stmt
  ;
 
@@ -3094,11 +3106,12 @@ string_commalist_contents:
  ;
 
 delete_stmt:
-    sqlDELETE FROM qname opt_where_clause
+    sqlDELETE FROM qname opt_alias_name opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_string(l, $4);
+	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 
@@ -3124,46 +3137,67 @@ truncate_stmt:
  ;
 
 update_stmt:
-    UPDATE qname SET assignment_commalist opt_from_clause opt_where_clause
+    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $2);
-	  append_list(l, $4);
-	  append_symbol(l, $5);
+	  append_string(l, $3);
+	  append_list(l, $5);
 	  append_symbol(l, $6);
+	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
-/* todo merge statment 
+opt_search_condition:
+ /* empty */            { $$ = NULL; }
+ | AND search_condition { $$ = $2; }
+ ;
 
-Conditionally update rows of a table, or insert new rows into a table, or both.
+merge_update_or_delete:
+   UPDATE SET assignment_commalist
+   { dlist *l = L();
+     append_list(l, $3);
+     $$ = _symbol_create_list( SQL_UPDATE, l ); }
+ | sqlDELETE
+   { $$ = _symbol_create_list( SQL_DELETE, NULL ); }
+ ;
 
+merge_insert:
+   INSERT opt_column_list values_or_query_spec
+   { dlist *l = L();
+     append_list(l, $2);
+     append_symbol(l, $3);
+     $$ = _symbol_create_list( SQL_INSERT, l ); }
+ ;
 
-<merge statement> ::=
-		MERGE INTO <target table> [ [ AS ] <merge correlation name> ]
-		USING <table reference> ON <search condition> <merge operation specification>
+merge_match_clause:
+   WHEN MATCHED opt_search_condition THEN merge_update_or_delete
+   { dlist *l = L();
+     append_symbol(l, $3);
+     append_symbol(l, $5);
+     $$ = _symbol_create_list( SQL_MERGE_MATCH, l ); }
+ | WHEN NOT MATCHED opt_search_condition THEN merge_insert
+   { dlist *l = L();
+     append_symbol(l, $4);
+     append_symbol(l, $6);
+     $$ = _symbol_create_list( SQL_MERGE_NO_MATCH, l ); }
+ ;
 
-<merge correlation name> ::= <correlation name>
+merge_when_list:
+   merge_match_clause                 { $$ = append_symbol(L(), $1); }
+ | merge_when_list merge_match_clause { $$ = append_symbol($1, $2); }
+ ;
 
-<merge operation specification> ::= <merge when clause>...
+merge_stmt:
+    MERGE INTO qname opt_alias_name USING table_ref ON search_condition merge_when_list
 
-<merge when clause> ::= <merge when matched clause> | <merge when not matched clause>
-
-<merge when matched clause> ::= WHEN MATCHED THEN <merge update specification>
-
-<merge when not matched clause> ::= WHEN NOT MATCHED THEN <merge insert specification>
-
-<merge update specification> ::= UPDATE SET <set clause list>
-
-<merge insert specification> ::=
-		INSERT [ <left paren> <insert column list> <right paren> ]
-		[ <override clause> ] VALUES <merge insert value list>
-
-<merge insert value list> ::=
-		<left paren> <merge insert value element> [ { <comma> <merge insert value element> }... ] <right paren>
-
-<merge insert value element> ::= <value expression> | <contextually typed value specification>
-*/
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_string(l, $4);
+	  append_symbol(l, $6);
+	  append_symbol(l, $8);
+	  append_list(l, $9);
+	  $$ = _symbol_create_list( SQL_MERGE, l ); }
 
 insert_stmt:
     INSERT INTO qname values_or_query_spec
@@ -6583,6 +6617,7 @@ char *token2string(tokens token)
 	SQL(DELETE);
 	SQL(TRUNCATE);
 	SQL(UPDATE);
+	SQL(MERGE);
 	SQL(CROSS);
 	SQL(JOIN);
 	SQL(SELECT);
@@ -6661,10 +6696,13 @@ char *token2string(tokens token)
 	SQL(RENAME_SCHEMA);
 	SQL(RENAME_TABLE);
 	SQL(RENAME_COLUMN);
+	SQL(SET_TABLE_SCHEMA);
 	SQL(PRECEDING);
 	SQL(FOLLOWING);
 	SQL(CURRENT_ROW);
 	SQL(WINDOW);
+	SQL(MERGE_MATCH);
+	SQL(MERGE_NO_MATCH);
 	SQL(RENAME_USER);
 	SQL(ANALYZE);
 	SQL(SAMPLE);

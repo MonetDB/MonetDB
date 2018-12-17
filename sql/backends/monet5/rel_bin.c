@@ -3502,7 +3502,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		pin = refs_find_rel(refs, prel);
 
 	if (constraint && !be->first_statement_generated)
-		sql_insert_check_null(be, be->cur_append? t->p : t, inserts->op4.lval);
+		sql_insert_check_null(be, (be->cur_append && t->p) ? t->p : t, inserts->op4.lval);
 
 	l = sa_list(sql->sa);
 
@@ -4417,7 +4417,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	node *n;
 
 	if (!be->first_statement_generated)
-		sql_update_check_null(be, be->cur_append? t->p : t, updates);
+		sql_update_check_null(be, (be->cur_append && t->p) ? t->p : t, updates);
 
 	/* check keys + get idx */
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
@@ -4512,7 +4512,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			updates[c->colnr] = bin_find_column(be, update, ce->l, ce->r);
 	}
 	if (!be->first_statement_generated)
-		sql_update_check_null(be, be->cur_append? t->p : t, updates);
+		sql_update_check_null(be, (be->cur_append && t->p) ? t->p : t, updates);
 
 	/* check keys + get idx */
 	updcol = first_updated_col(updates, list_length(t->columns.set));
@@ -4749,7 +4749,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if(be->cur_append && !be->first_statement_generated) {
 		for(sql_table *up = t->p ; up ; up = up->p) {
 			if (!sql_delete_triggers(be, up, v, 0, 1, 3))
-				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", up->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "DELETE: triggers failed for table '%s'", up->base.name);
 		}
 	}
 	if (!sql_delete_triggers(be, t, v, 0, 1, 3))
@@ -5067,6 +5067,10 @@ rel2bin_list(backend *be, sql_rel *rel, list *refs)
 	list *slist = sa_list(sql->sa);
 
 	(void)refs;
+
+	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
+		create_merge_partitions_accumulator(be);
+
 	if (rel->l)  /* first construct the sub relation */
 		l = subrel_bin(be, rel->l, refs);
 	if (rel->r)  /* first construct the sub relation */

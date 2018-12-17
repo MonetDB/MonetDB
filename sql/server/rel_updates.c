@@ -17,9 +17,10 @@
 #include "rel_dump.h"
 #include "rel_psm.h"
 #include "sql_symbol.h"
+#include "rel_prop.h"
 
 static sql_exp *
-insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
+insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s, const char* action)
 {
 	if (s->token == SQL_NULL) {
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
@@ -32,10 +33,10 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 			e = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", c->def, typestr), sql->emode, NULL);
 			_DELETE(typestr);
 			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-				return sql_error(sql, 02, SQLSTATE(HY005) "INSERT INTO: default expression could not be evaluated");
+				return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 			return e;
 		} else {
-			return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 		}
 	} else {
 		int is_last = 0;
@@ -291,9 +292,8 @@ rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
 	return rel_insert(sql, rel_basetable(sql, t, name), inserts);
 }
 
-
 static list *
-check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tname)
+check_table_columns(mvc *sql, sql_table *t, dlist *columns, const char *op, char *tname)
 {
 	list *collist;
 
@@ -307,7 +307,7 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tnam
 			if (c) {
 				list_append(collist, c);
 			} else {
-				return sql_error(sql, 02, SQLSTATE(42S22) "%s INTO: no such column '%s.%s'", op, tname, n->data.sval);
+				return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", op, tname, n->data.sval);
 			}
 		}
 	} else {
@@ -317,7 +317,7 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tnam
 }
 
 static list *
-rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, int copy)
+rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, int copy, const char* action)
 {
 	int len, i;
 	sql_exp **inserts = insert_exp_array(sql, t, &len);
@@ -363,13 +363,13 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 							_DELETE(typestr);
 							e = rel_parse_val(sql, q, sql->emode, NULL);
 							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-								return sql_error(sql, 02, SQLSTATE(HY005) "INSERT INTO: default expression could not be evaluated");
+								return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
 						} else {
 							atom *a = atom_general(sql->sa, &c->type, NULL);
 							e = exp_atom(sql->sa, a);
 						}
 						if (!e) 
-							return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
+							return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
 						if (exps) {
 							list *vals_list = exps->f;
 			
@@ -460,34 +460,14 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 }
 
 static sql_rel *
-insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
+insert_generate_inserts(mvc *sql, sql_table *t, dlist *columns, symbol *val_or_q, const char* action)
 {
-	size_t rowcount = 1;
-	char *sname = qname_schema(qname);
-	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	list *collist = NULL;
 	sql_rel *r = NULL;
-
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
-		return NULL;
-	}
-	if (!s)
-		s = cur_schema(sql);
-	t = mvc_bind_table(sql, s, tname);
-	if (!t && !sname) {
-		s = tmp_schema(sql);
-		t = mvc_bind_table(sql, s, tname);
-		if (!t) 
-			t = mvc_bind_table(sql, NULL, tname);
-	}
-	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
-		return NULL;
-	collist = check_table_columns(sql, t, columns, "INSERT", tname);
+	size_t rowcount = 1;
+	list *collist = check_table_columns(sql, t, columns, action, t->base.name);
 	if (!collist)
 		return NULL;
+
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *rowlist = val_or_q->data.lval;
 		dlist *values;
@@ -505,7 +485,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 			values = o->data.lval;
 
 			if (dlist_length(values) != list_length(collist)) {
-				return sql_error(sql, 02, SQLSTATE(21S01) "INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
+				return sql_error(sql, 02, SQLSTATE(21S01) "%s: number of values doesn't match number of columns of table '%s'", action, t->base.name);
 			} else {
 				dnode *n;
 				node *v, *m;
@@ -514,8 +494,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 						sql_exp *vals = exp_values(sql->sa, sa_list(sql->sa));
 						sql_column *c = m->data;
-	
-					        vals->tpe = c->type;
+
+						vals->tpe = c->type;
 						exp_label(sql->sa, vals, ++sql->label);
 						list_append(exps, vals);
 					}
@@ -526,12 +506,12 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 						list *vals_list = vals->f;
 						sql_column *c = m->data;
 						sql_rel *r = NULL;
-						sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
-						if (!ins) 
+						sql_exp *ins = insert_value(sql, c, &r, n->data.sym, action);
+						if (!ins)
 							return NULL;
 						if (r && inner)
 							inner = rel_crossproduct(sql->sa, inner, r, op_join);
-						else if (r) 
+						else if (r)
 							inner = r;
 						if (inner && !ins->name && !exp_is_atom(ins)) {
 							exp_label(sql->sa, ins, ++sql->label);
@@ -544,12 +524,12 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 						sql_column *c = m->data;
 						sql_rel *r = NULL;
-						sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
+						sql_exp *ins = insert_value(sql, c, &r, n->data.sym, action);
 						if (!ins)
 							return NULL;
 						if (r && inner)
 							inner = rel_crossproduct(sql->sa, inner, r, op_join);
-						else if (r) 
+						else if (r)
 							inner = r;
 						if (!ins->name)
 							exp_label(sql->sa, ins, ++sql->label);
@@ -565,21 +545,105 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 
 		r = rel_subquery(sql, NULL, val_or_q, ek, APPLY_JOIN);
 	}
-	if (!r) 
+	if (!r)
 		return NULL;
 
-	/* In case of missing project, order by or distinct, we need to add	
+	/* In case of missing project, order by or distinct, we need to add
 	   and projection */
 	if (r->op != op_project || r->r || need_distinct(r))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
 	if ((r->exps && list_length(r->exps) != list_length(collist)) ||
-	   (!r->exps && collist)) 
-		return sql_error(sql, 02, SQLSTATE(21S01) "INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
+		(!r->exps && collist))
+		return sql_error(sql, 02, SQLSTATE(21S01) "%s: query result doesn't match number of columns in table '%s'", action, t->base.name);
 
-	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0);
+	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0, action);
 	if(!r->exps)
 		return NULL;
-	return rel_insert_table(sql, t, tname, r);
+	return r;
+}
+
+static sql_rel *
+merge_generate_inserts(mvc *sql, sql_table *t, sql_rel *r, dlist *columns, symbol *val_or_q)
+{
+	sql_rel *res = NULL;
+	list *collist = check_table_columns(sql, t, columns, "MERGE", t->base.name);
+
+	if (!collist)
+		return NULL;
+
+	if (val_or_q->token == SQL_VALUES) {
+		list *exps = new_exp_list(sql->sa);
+		dlist *rowlist = val_or_q->data.lval;
+
+		if (!rowlist->h) {
+			res = rel_project(sql->sa, NULL, NULL);
+			if (!columns)
+				collist = NULL;
+		} else {
+			node *m;
+			dnode *n;
+			dlist *inserts = rowlist->h->data.lval;
+
+			if (dlist_length(rowlist) != 1)
+				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: number of insert rows must be exactly one in a merge statement");
+			if (dlist_length(inserts) != list_length(collist))
+				return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: number of values doesn't match number of columns of table '%s'", t->base.name);
+
+			for (n = inserts->h, m = collist->h; n && m; n = n->next, m = m->next) {
+				sql_column *c = m->data;
+				sql_exp *ins = insert_value(sql, c, &r, n->data.sym, "MERGE");
+				if (!ins)
+					return NULL;
+				if (!ins->name)
+					exp_label(sql->sa, ins, ++sql->label);
+				list_append(exps, ins);
+			}
+		}
+		if (collist)
+			res = rel_project(sql->sa, r, exps);
+	} else {
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: sub-queries not yet supported in INSERT clauses inside MERGE statements");
+	}
+	if (!res)
+		return NULL;
+	if ((res->exps && list_length(res->exps) != list_length(collist)) || (!res->exps && collist))
+		return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: query result doesn't match number of columns in table '%s'", t->base.name);
+
+	res->l = r;
+	res->exps = rel_inserts(sql, t, res, collist, 2, 0, "MERGE");
+	if(!res->exps)
+		return NULL;
+	return res;
+}
+
+static sql_rel *
+insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
+{
+	char *sname = qname_schema(qname);
+	char *tname = qname_table(qname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_rel *r = NULL;
+
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+		if (!t) 
+			t = mvc_bind_table(sql, NULL, tname);
+	}
+	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL) 
+		return NULL;
+	r = insert_generate_inserts(sql, t, columns, val_or_q, "INSERT INTO");
+	if(!r)
+		return NULL;
+	return rel_insert_table(sql, t, t->base.name, r);
 }
 
 static int
@@ -870,16 +934,15 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	return r;
 }
 
-
 static sql_exp *
-update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname)
+update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname, const char *action)
 {
 	if (!c) {
 		rel_destroy(r);
-		return sql_error(sql, 02, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'", t->base.name, cname);
+		return sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s.%s'", action, t->base.name, cname);
 	}
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
-		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), t->base.name, cname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, stack_get_string(sql, "current_user"), t->base.name, cname);
 	if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
 		rel_destroy(r);
 		return NULL;
@@ -888,7 +951,177 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 }
 
 static sql_rel *
-update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
+update_generate_assignments(mvc *sql, sql_table *t, sql_rel *r, sql_rel *bt, dlist *assignmentlist, const char *action)
+{
+	sql_table *mt = NULL;
+	sql_exp *e = NULL, **updates;
+	list *exps, *pcols = NULL;
+	dnode *n;
+	const char *rname = NULL;
+
+	if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
+		mt = t;
+	} else if(t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
+		mt = t->p;
+	}
+	if(mt && isPartitionedByColumnTable(mt)) {
+		pcols = sa_list(sql->sa);
+		int *nid = sa_alloc(sql->sa, sizeof(int));
+		*nid = mt->part.pcol->colnr;
+		list_append(pcols, nid);
+	} else if(mt && isPartitionedByExpressionTable(mt)) {
+		pcols = mt->part.pexp->cols;
+	}
+	/* first create the project */
+	e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	exps = new_exp_list(sql->sa);
+	append(exps, e);
+	updates = table_update_array(sql, t);
+	for (n = assignmentlist->h; n; n = n->next) {
+		symbol *a = NULL;
+		sql_exp *v = NULL;
+		sql_rel *rel_val = NULL;
+		dlist *assignment = n->data.sym->data.lval;
+		int single = (assignment->h->next->type == type_string);
+		/* Single assignments have a name, multicolumn a list */
+
+		a = assignment->h->data.sym;
+		if (a) {
+			int status = sql->session->status;
+			exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
+
+			if(single && a->token == SQL_DEFAULT) {
+				char *colname = assignment->h->next->data.sval;
+				sql_column *col = mvc_bind_column(sql, t, colname);
+				if (col->def) {
+					char *typestr = subtype2string2(&col->type);
+					if(!typestr)
+						return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode, NULL);
+					_DELETE(typestr);
+				} else {
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, col->base.name);
+				}
+			} else if (single) {
+				v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
+			} else {
+				rel_val = rel_subquery(sql, NULL, a, ek, APPLY_JOIN);
+			}
+			if (!v) {
+				sql->errstr[0] = 0;
+				sql->session->status = status;
+				if (single) {
+					rel_val = NULL;
+					v = rel_value_exp(sql, &r, a, sql_sel, ek);
+				} else if (!rel_val && r) {
+					r = rel_subquery(sql, r, a, ek, APPLY_LOJ);
+					if (r) {
+						list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
+
+						r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+						if (r)
+							list_merge(r->exps, val_exps, (fdup)NULL);
+						reset_processed(r);
+					}
+				}
+			}
+			if ((single && !v) || (!single && !r)) {
+				rel_destroy(r);
+				return NULL;
+			}
+			if (rel_val) {
+				if (single) {
+					if (!exp_name(v))
+						exp_label(sql->sa, v, ++sql->label);
+					rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
+					v = rel_project_add_exp(sql, rel_val, v);
+					reset_processed(rel_val);
+				}
+				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
+				if (single)
+					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+			}
+		}
+		if (!single) {
+			dlist *cols = assignment->h->next->data.lval;
+			dnode *m;
+			node *n;
+			int nr;
+
+			if (!rel_val)
+				rel_val = r;
+			if (!rel_val || !is_project(rel_val->op) ||
+				dlist_length(cols) > list_length(rel_val->exps)) {
+				rel_destroy(r);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: too many columns specified", action);
+			}
+			nr = (list_length(rel_val->exps)-dlist_length(cols));
+			for(n=rel_val->exps->h; nr; nr--, n = n->next)
+				;
+			for(m = cols->h; n && m; n = n->next, m = m->next) {
+				char *cname = m->data.sval;
+				sql_column *c = mvc_bind_column(sql, t, cname);
+				sql_exp *v = n->data;
+
+				if(mt && pcols) {
+					for(node *nn = pcols->h; nn; nn = n->next) {
+						int next = *(int*) nn->data;
+						if(next == c->colnr) {
+							if(isPartitionedByColumnTable(mt)) {
+								return sql_error(sql, 02, SQLSTATE(42000) "%s: Update on the partitioned column is not possible at the moment", action);
+							} else if(isPartitionedByExpressionTable(mt)) {
+								return sql_error(sql, 02, SQLSTATE(42000) "%s: Update a column used by the partition's expression is not possible at the moment", action);
+							}
+						}
+					}
+				}
+				if (!exp_name(v))
+					exp_label(sql->sa, v, ++sql->label);
+				v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+				if (!v) { /* check for NULL */
+					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+				} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
+					return NULL;
+				}
+				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
+				assert(!updates[c->colnr]);
+				exp_setname(sql->sa, v, c->t->base.name, c->base.name);
+				updates[c->colnr] = v;
+			}
+		} else {
+			char *cname = assignment->h->next->data.sval;
+			sql_column *c = mvc_bind_column(sql, t, cname);
+
+			if(mt && pcols) {
+				for(node *nn = pcols->h; nn; nn = nn->next) {
+					int next = *(int*) nn->data;
+					if(next == c->colnr) {
+						if(isPartitionedByColumnTable(mt)) {
+							return sql_error(sql, 02, SQLSTATE(42000) "%s: Update on the partitioned column is not possible at the moment", action);
+						} else if(isPartitionedByExpressionTable(mt)) {
+							return sql_error(sql, 02, SQLSTATE(42000) "%s: Update a column used by the partition's expression is not possible at the moment", action);
+						}
+					}
+				}
+			}
+			if (!v) {
+				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+			} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
+				return NULL;
+			}
+			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
+			exp_setname(sql->sa, v, c->t->base.name, c->base.name);
+			updates[c->colnr] = v;
+		}
+	}
+	e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
+	r = rel_update(sql, bt, r, updates, exps);
+	return r;
+}
+
+static sql_rel *
+update_table(mvc *sql, dlist *qname, str alias, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -911,28 +1144,12 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
-		sql_table *mt = NULL;
-		sql_exp *e = NULL, **updates;
-		sql_rel *r = NULL;
-		list *exps, *pcols = NULL;
-		dnode *n;
-		const char *rname = NULL;
-		sql_rel *res = NULL, *bt = rel_basetable(sql, t, t->base.name);
+		sql_rel *r = NULL, *bt = rel_basetable(sql, t, t->base.name), *res = bt;
 
-		if(isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t)) {
-			mt = t;
-		} else if(t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p))) {
-			mt = t->p;
+		if(alias) {
+			for(node *nn = res->exps->h ; nn ; nn = nn->next)
+				exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
 		}
-		if(mt && isPartitionedByColumnTable(mt)) {
-			pcols = sa_list(sql->sa);
-			int *nid = sa_alloc(sql->sa, sizeof(int));
-			*nid = mt->part.pcol->colnr;
-			list_append(pcols, nid);
-		} else if(mt && isPartitionedByExpressionTable(mt)) {
-			pcols = mt->part.pexp->cols;
-		}
-		res = bt;
 #if 0
 			dlist *selection = dlist_create(sql->sa);
 			dlist *from_list = dlist_create(sql->sa);
@@ -985,9 +1202,16 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 
 			for (n = fl->h; n && res; n = n->next) {
 				fnd = table_ref(sql, NULL, n->data.sym, 0);
-				if (fnd)
+				if (fnd) {
+					if(alias) {
+						for(node *nn = fnd->exps->h ; nn ; nn = nn->next) {
+							sql_exp* ee = (sql_exp*) nn->data;
+							if(ee->rname && !strcmp(ee->rname, alias))
+								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: multiple references into table '%s'", alias);
+						}
+					}
 					res = rel_crossproduct(sql->sa, res, fnd, op_join);
-				else
+				} else
 					res = fnd;
 			}
 			if (!res) 
@@ -1018,153 +1242,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 		} else {	/* update all */
 			r = res;
 		}
-	
-		/* first create the project */
-		e = exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-		exps = new_exp_list(sql->sa);
-		append(exps, e);
-		updates = table_update_array(sql, t);
-		for (n = assignmentlist->h; n; n = n->next) {
-			symbol *a = NULL;
-			sql_exp *v = NULL;
-			sql_rel *rel_val = NULL;
-			dlist *assignment = n->data.sym->data.lval;
-			int single = (assignment->h->next->type == type_string);
-			/* Single assignments have a name, multicolumn a list */
-
-			a = assignment->h->data.sym;
-			if (a) {
-				int status = sql->session->status;
-				exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
-
-				if(single && a->token == SQL_DEFAULT) {
-					char *colname = assignment->h->next->data.sval;
-					sql_column *col = mvc_bind_column(sql, t, colname);
-					if (col->def) {
-						char *typestr = subtype2string2(&col->type);
-						if(!typestr)
-							return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-						v = rel_parse_val(sql, sa_message(sql->sa, "select cast(%s as %s);", col->def, typestr), sql->emode, NULL);
-						_DELETE(typestr);
-					} else {
-						return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: column '%s' has no valid default value", col->base.name);
-					}
-				} else if (single) {
-					v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
-				} else {
-					rel_val = rel_subquery(sql, NULL, a, ek, APPLY_JOIN);
-				}
-				if (!v) {
-					sql->errstr[0] = 0;
-					sql->session->status = status;
-					if (single) {
-						rel_val = NULL;
-						v = rel_value_exp(sql, &r, a, sql_sel, ek);
-					} else if (!rel_val && r) {
-						r = rel_subquery(sql, r, a, ek, APPLY_LOJ);
-						if (r) {
-							list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
-
-							r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
-							if (r)
-								list_merge(r->exps, val_exps, (fdup)NULL);
-							reset_processed(r);
-						}
-					}
-				}
-				if ((single && !v) || (!single && !r)) {
-					rel_destroy(r);
-					return NULL;
-				}
-				if (rel_val) {
-					if (single) {
-						if (!exp_name(v))
-							exp_label(sql->sa, v, ++sql->label);
-						rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
-						v = rel_project_add_exp(sql, rel_val, v);
-						reset_processed(rel_val);
-					}
-					r = rel_crossproduct(sql->sa, r, rel_val, op_left);
-					if (single) 
-						v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
-				}
-			}
-			if (!single) {
-				dlist *cols = assignment->h->next->data.lval;
-				dnode *m;
-				node *n;
-				int nr;
-
-				if (!rel_val)
-					rel_val = r;
-				if (!rel_val || !is_project(rel_val->op) ||
-				    dlist_length(cols) > list_length(rel_val->exps)) {
-					rel_destroy(r);
-					return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: too many columns specified");
-				}
-				nr = (list_length(rel_val->exps)-dlist_length(cols));
-				for(n=rel_val->exps->h; nr; nr--, n = n->next)
-					; 
-				for(m = cols->h; n && m; n = n->next, m = m->next) {
-					char *cname = m->data.sval;
-					sql_column *c = mvc_bind_column(sql, t, cname);
-					sql_exp *v = n->data;
-
-					if(mt && pcols) {
-						for(node *nn = pcols->h; nn; nn = n->next) {
-							int next = *(int*) nn->data;
-							if(next == c->colnr) {
-								if(isPartitionedByColumnTable(mt)) {
-									return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column is not possible at the moment");
-								} else if(isPartitionedByExpressionTable(mt)) {
-									return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update a column used by the partition's expression is not possible at the moment");
-								}
-							}
-						}
-					}
-					if (!exp_name(v))
-						exp_label(sql->sa, v, ++sql->label);
-					v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
-					if (!v) { /* check for NULL */
-						v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-					} else if ((v = update_check_column(sql, t, c, v, r, cname)) == NULL) {
-						return NULL;
-					}
-					list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
-					assert(!updates[c->colnr]);
-					exp_setname(sql->sa, v, c->t->base.name, c->base.name);
-					updates[c->colnr] = v;
-				}
-			} else {
-				char *cname = assignment->h->next->data.sval;
-				sql_column *c = mvc_bind_column(sql, t, cname);
-
-				if(mt && pcols) {
-					for(node *nn = pcols->h; nn; nn = nn->next) {
-						int next = *(int*) nn->data;
-						if(next == c->colnr) {
-							if(isPartitionedByColumnTable(mt)) {
-								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column is not possible at the moment");
-							} else if(isPartitionedByExpressionTable(mt)) {
-								return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update a column used by the partition's expression is not possible at the moment");
-							}
-						}
-					}
-				}
-				if (!v) {
-					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				} else if ((v = update_check_column(sql, t, c, v, r, cname)) == NULL) {
-					return NULL;
-				}
-				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
-				exp_setname(sql->sa, v, c->t->base.name, c->base.name);
-				updates[c->colnr] = v;
-			}
-		}
-		e = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-		r = rel_project(sql->sa, r, append(new_exp_list(sql->sa),e));
-		r = rel_update(sql, bt, r, updates, exps);
-		return r;
+		return update_generate_assignments(sql, t, r, bt, assignmentlist, "UPDATE");
 	}
 	return NULL;
 }
@@ -1198,7 +1276,7 @@ rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_acti
 }
 
 static sql_rel *
-delete_table(mvc *sql, dlist *qname, symbol *opt_where)
+delete_table(mvc *sql, dlist *qname, str alias, symbol *opt_where)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1222,6 +1300,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = NULL;
+		sql_exp *e;
 
 		if (opt_where) {
 			int status = sql->session->status;
@@ -1238,16 +1317,16 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 				sql->errstr[0] = 0;
 				sql->session->status = status;
 				r = rel_basetable(sql, t, t->base.name );
+				if(alias) {
+					for(node *nn = r->exps->h ; nn ; nn = nn->next)
+						exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
+				}
 				r = rel_logical_exp(sql, r, opt_where, sql_where);
 			}
-			if (!r) {
+			if (!r)
 				return NULL;
-			} else {
-				sql_exp *e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-
-				r = rel_project(sql->sa, r, append(new_exp_list(sql->sa), e));
-
-			}
+			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+			r = rel_project(sql->sa, r, append(new_exp_list(sql->sa), e));
 			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), r);
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), NULL);
@@ -1283,6 +1362,156 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
 		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
 	return NULL;
+}
+
+#define MERGE_UPDATE_DELETE 1
+#define MERGE_INSERT        2
+
+extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
+
+static sql_rel *
+merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search_cond, dlist *merge_list)
+{
+	char *sname = qname_schema(qname), *tname = qname_table(qname), *alias_name;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	sql_rel *bt, *joined, *join_rel = NULL, *extra_project = NULL, *insert = NULL, *upd_del = NULL, *res = NULL;
+	int processed = 0;
+
+	assert(tref && search_cond && merge_list);
+
+	if (sname && !(s=mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "MERGE: no such schema '%s'", sname);
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+		if (!t)
+			t = mvc_bind_table(sql, NULL, tname);
+		if (!t)
+			t = stack_find_table(sql, tname);
+	}
+	if (!t)
+		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
+	if (!table_privs(sql, t, PRIV_SELECT))
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
+	if (isMergeTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
+
+	bt = rel_basetable(sql, t, t->base.name);
+	joined = table_ref(sql, NULL, tref, 0);
+	if (!bt || !joined)
+		return NULL;
+
+	if(alias) {
+		for(node *nn = bt->exps->h ; nn ; nn = nn->next)
+			exp_setname(sql->sa, (sql_exp*) nn->data, alias, NULL); //the last parameter is optional, hence NULL
+	}
+	alias_name = alias ? alias : t->base.name;
+	if (rel_name(bt) && rel_name(joined) && strcmp(rel_name(bt), rel_name(joined)) == 0)
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", rel_name(bt));
+
+	for(dnode *m = merge_list->h; m; m = m->next) {
+		symbol *sym = m->data.sym, *opt_search, *action;
+		int token = sym->token;
+		dlist* dl = sym->data.lval, *sts;
+		opt_search = dl->h->data.sym;
+		action = dl->h->next->data.sym;
+		sts = action->data.lval;
+
+		if(opt_search)
+			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: search condition not yet supported");
+
+		if(token == SQL_MERGE_MATCH) {
+			int uptdel = action->token;
+			sql_exp *e;
+
+			if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
+				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN MATCHED clause is allowed");
+			processed |= MERGE_UPDATE_DELETE;
+
+			if(uptdel == SQL_UPDATE) {
+				if(!update_allowed(sql, t, tname, "MERGE", "update", 0))
+					return NULL;
+				if((processed & MERGE_INSERT) == MERGE_INSERT)
+					joined = rel_dup(joined);
+
+				join_rel = rel_crossproduct(sql->sa, bt, joined, op_join);
+				join_rel = rel_logical_exp(sql, join_rel, search_cond, sql_where);
+				if (!join_rel)
+					return NULL;
+				set_processed(join_rel);
+
+				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
+				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
+				e = exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				append(extra_project->exps, e);
+
+				upd_del = update_generate_assignments(sql, t, extra_project, bt, sts->h->data.lval, "MERGE");
+			} else if(uptdel == SQL_DELETE) {
+				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
+					return NULL;
+				if((processed & MERGE_INSERT) == MERGE_INSERT)
+					joined = rel_dup(joined);
+
+				join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
+				join_rel = rel_logical_exp(sql, join_rel, search_cond, sql_where);
+				if (!join_rel)
+					return NULL;
+				join_rel->op = op_semi;
+				set_processed(join_rel);
+
+				e = exp_column(sql->sa, alias_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+				extra_project = rel_project(sql->sa, join_rel, append(new_exp_list(sql->sa), e));
+
+				upd_del = rel_delete(sql->sa, bt, extra_project);
+			} else {
+				assert(0);
+			}
+			if(!upd_del)
+				return NULL;
+		} else if(token == SQL_MERGE_NO_MATCH) {
+			if((processed & MERGE_INSERT) == MERGE_INSERT)
+				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN NOT MATCHED clause is allowed");
+			processed |= MERGE_INSERT;
+
+			assert(action->token == SQL_INSERT);
+			if (!insert_allowed(sql, t, tname, "MERGE", "insert"))
+				return NULL;
+			if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
+				joined = rel_dup(joined);
+
+			join_rel = rel_crossproduct(sql->sa, joined, bt, op_left);
+			join_rel = rel_logical_exp(sql, join_rel, search_cond, sql_where);
+			if (!join_rel)
+				return NULL;
+			join_rel->op = op_anti;
+			set_processed(join_rel);
+
+			insert = merge_generate_inserts(sql, t, join_rel, sts->h->data.lval, sts->h->next->data.sym);
+			if(!insert)
+				return NULL;
+			insert = rel_insert(sql, rel_dup(bt), insert);
+			if(!insert)
+				return NULL;
+		} else {
+			assert(0);
+		}
+	}
+
+	if(processed == (MERGE_UPDATE_DELETE | MERGE_INSERT)) {
+		res = rel_list(sql->sa, insert, upd_del);
+		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
+	} else if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
+		res = upd_del;
+	} else if((processed & MERGE_INSERT) == MERGE_INSERT) {
+		res = insert;
+	} else {
+		assert(0);
+	}
+	return res;
 }
 
 static list *
@@ -1407,12 +1636,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	if (!t && !sname) {
 		s = tmp_schema(sql);
 		t = mvc_bind_table(sql, s, tname);
-		if (!t) 
+		if (!t)
 			t = stack_find_table(sql, tname);
 	}
-	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
+	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
-	/* Only the MONETDB user is allowed copy into with 
+	/* Only the MONETDB user is allowed copy into with
 	   a lock and only on tables without idx */
 	if (locked && !copy_allowed(sql, 1)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
@@ -1429,7 +1658,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: only allowed in auto commit mode");
 	}
 	/* lock the store, for single user/transaction */
-	if (locked) { 
+	if (locked) {
 		if (headers)
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: not allowed with column lists");
 		store_lock();
@@ -1441,15 +1670,15 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		sql->emod |= mod_locked;
 		sql->caching = 0; 	/* do not cache this query */
 	}
-		 
-	collist = check_table_columns(sql, t, columns, "COPY", tname);
+
+	collist = check_table_columns(sql, t, columns, "COPY INTO", tname);
 	if (!collist)
 		return NULL;
 	/* If we have a header specification use intermediate table, for
 	 * column specification other then the default list we need to reorder
 	 */
 	nt = t;
-	if (headers || collist != t->columns.set) 
+	if (headers || collist != t->columns.set)
 		reorder = 1;
 	if (headers) {
 		int has_formats = 0;
@@ -1534,7 +1763,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 			char *cname = dn->data.sval;
 			sql_exp *e, *ne;
 
-			if (!list_find_name(collist, cname)) 
+			if (!list_find_name(collist, cname))
 				continue;
 		       	e = m->data;
 			if (dn->next) {
@@ -1549,7 +1778,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 
 				snprintf(fname, l+8, "str_to_%s", cs->type.type->sqlname);
 				sql_find_subtype(&st, "clob", 0, 0);
-				f = sql_bind_func_result(sql->sa, sys, fname, &st, &st, &cs->type); 
+				f = sql_bind_func_result(sql->sa, sys, fname, &st, &st, &cs->type);
 				if (!f)
 					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: '%s' missing for type %s", fname, cs->type.type->sqlname);
 				append(args, e);
@@ -1565,13 +1794,16 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		rel = rel_project(sql->sa, rel, nexps);
 		reorder = 0;
 	}
-	
+
 	if (!rel)
 		return rel;
-	if (reorder) 
-		rel = rel_project(sql->sa, rel, rel_inserts(sql, t, rel, collist, 1, 1));
-	else {
-		rel->exps = rel_inserts(sql, t, rel, collist, 1, 0);
+	if (reorder) {
+		list *exps = rel_inserts(sql, t, rel, collist, 1, 1, "COPY INTO");
+		if(!exps)
+			return NULL;
+		rel = rel_project(sql->sa, rel, exps);
+	} else {
+		rel->exps = rel_inserts(sql, t, rel, collist, 1, 0, "COPY INTO");
 		if(!rel->exps)
 			return NULL;
 	}
@@ -1630,7 +1862,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 	if (files == NULL)
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: must specify files");
 
-	collist = check_table_columns(sql, t, columns, "COPY BINARY", tname);
+	collist = check_table_columns(sql, t, columns, "COPY BINARY INTO", tname);
 	if (!collist)
 		return NULL;
 
@@ -1945,7 +2177,8 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.sym);
+		ret = update_table(sql, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.lval,
+						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1953,7 +2186,7 @@ rel_updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = delete_table(sql, l->h->data.lval, l->h->next->data.sym);
+		ret = delete_table(sql, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1967,6 +2200,14 @@ rel_updates(mvc *sql, symbol *s)
 		sql->type = Q_UPDATE;
 	}
 		break;
+	case SQL_MERGE:
+	{
+		dlist *l = s->data.lval;
+
+		ret = merge_into_table(sql, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym,
+							   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.lval);
+		sql->type = Q_UPDATE;
+	} break;
 	default:
 		sql->use_views = old;
 		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(%p)->token = %s", s, token2string(s->token));

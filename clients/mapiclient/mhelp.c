@@ -41,7 +41,7 @@ typedef struct {
 	const char *comments;
 } SQLhelp;
 
-#define NUMBER_MAJOR_COMMANDS 75 // The number of major commands to show in case of no query
+#define NUMBER_MAJOR_COMMANDS 76 // The number of major commands to show in case of no query
 
 SQLhelp sqlhelp[] = {
 	// major commands
@@ -56,7 +56,8 @@ SQLhelp sqlhelp[] = {
 	 "ALTER TABLE [ IF EXISTS ] qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE [ IF EXISTS ] qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE [ IF EXISTS ] qname SET { { READ | INSERT } ONLY | READ WRITE }\n"
-	 "ALTER TABLE [ IF EXISTS ] qname RENAME TO ident",
+	 "ALTER TABLE [ IF EXISTS ] qname RENAME TO ident\n"
+	 "ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident",
 	 "column_def,table_constraint",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER MERGE TABLE",
@@ -275,7 +276,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"DELETE",
 	 "",
-	 "[ WITH with_list ] DELETE FROM qname [ WHERE search_condition ]",
+	 "[ WITH with_list ] DELETE FROM qname [ [AS] ident ] [ WHERE search_condition ]",
 	 "with_list,search_condition",
 	 NULL},
 	{"DROP AGGREGATE",
@@ -356,7 +357,7 @@ SQLhelp sqlhelp[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"INSERT",
 	 "",
-	 "[ WITH with_list ] INSERT INTO qname [ column_list ] { DEFAULT VALUES | VALUES row_values | query_expression }",
+	 "[ WITH with_list ] INSERT INTO qname [ column_list ] [ { DEFAULT VALUES | VALUES row_values | query_expression } ]",
 	 "with_list,column_list,row_values,query_expression",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Updates"},
 	{"GRANT",
@@ -365,6 +366,11 @@ SQLhelp sqlhelp[] = {
 	 "GRANT role [',' ...] TO grantee [',' ...] [ WITH ADMIN OPTION]",
 	 "privileges,role,grantee",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Permissions"},
+	{"MERGE",
+	 "",
+	 "[ WITH with_list ] MERGE INTO qname [ [AS] ident ] USING table_ref ON search_condition merge_list",
+	 "with_list,table_ref,search_condition,merge_list",
+	 NULL},
 	{"RELEASE SAVEPOINT",
 	 "",
 	 "RELEASE SAVEPOINT ident",
@@ -479,7 +485,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"UPDATE",
 	 "",
-	 "[ WITH with_list ] UPDATE qname SET assignment_list [ WHERE search_condition ]",
+	 "[ WITH with_list ] UPDATE qname [ [AS] ident ] SET assignment_list [ WHERE search_condition ]",
 	 "with_list,assignment_list,search_condition",
 	 NULL},
 	{"WHILE",
@@ -622,6 +628,17 @@ SQLhelp sqlhelp[] = {
 	 NULL,
 	 "READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE ",
 	 NULL,
+	 NULL},
+	{"merge_clause",
+	 NULL,
+	 "{ WHEN MATCHED [ AND search_condition ] THEN { UPDATE SET assignment_list | DELETE } } |\n"
+	 "{ WHEN NOT MATCHED [ AND search_condition ] THEN INSERT [ column_list ] [ { DEFAULT VALUES | VALUES row_values } ] }",
+	 "search_condition,assignment_list,column_list,row_values",
+	 NULL},
+	{"merge_list",
+	 NULL,
+	 "merge_clause [ ',' ... ]",
+	 "merge_clause",
 	 NULL},
 	{"nrofrecords",
 	 "",
@@ -774,8 +791,8 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"update_statement",
 	 NULL,
-	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | copyfrom_stmt",
-	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | copyfrom_stmt",
+	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | merge_stmt | copyfrom_stmt",
+	 "delete_stmt,truncate_stmt,insert_stmt,update_stmt,merge_stmt,copyfrom_stmt",
 	 NULL},
 	{"triggered_action",
 	 NULL,

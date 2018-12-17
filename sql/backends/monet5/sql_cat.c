@@ -1611,7 +1611,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t->system)
 		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-		throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table %s (there are database objects which depend on it)", old_name);
+		throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", old_name);
 	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
 		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
 	if (mvc_bind_table(sql, s, new_name))
