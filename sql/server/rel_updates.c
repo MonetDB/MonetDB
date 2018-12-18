@@ -1377,7 +1377,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, sql_rel *upd_del, sql_rel *
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	sql_subfunc *bf;
 	list *exps = new_exp_list(sql->sa);
-	sql_rel *groupby;
+	sql_rel *groupby, *res;
 
 	groupby = rel_groupby(sql, rel_dup(join_rel), NULL); //aggregate by all column and count (distinct values)
 	groupby->r = rel_projections(sql, bt, NULL, 1, 0);
@@ -1403,7 +1403,8 @@ validate_merge_update_delete(mvc *sql, sql_table *t, sql_rel *upd_del, sql_rel *
 	snprintf(buf, BUFSIZ, "MERGE: There are rows in '%s.%s' with multiple matches on source relation", t->s->base.name, t->base.name);
 	ex = exp_exception(sql->sa, ex, buf);
 
-	return rel_exception(sql->sa, upd_del, groupby, list_append(new_exp_list(sql->sa), ex));
+	res = rel_exception(sql->sa, groupby, NULL, list_append(new_exp_list(sql->sa), ex));
+	return rel_list(sql->sa, res, upd_del);
 }
 
 static sql_rel *
