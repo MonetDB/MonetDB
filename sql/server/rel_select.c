@@ -3142,7 +3142,7 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
-			return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
 		}
 		return NULL;
 	}
@@ -3435,7 +3435,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
 	}
 	if (!l && !r && sf) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
@@ -3525,7 +3525,7 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
 	}
 	if (f) {
 		if (err) {
