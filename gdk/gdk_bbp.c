@@ -2418,6 +2418,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	if (lock)
 		MT_lock_set(&GDKswapLock(i));
 	if (releaseShare) {
+		assert(BBP_desc(i)->vHeapSharecnt > 0);
 		--BBP_desc(i)->vHeapSharecnt;
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
@@ -2718,11 +2719,10 @@ BBPdestroy(BAT *b)
 			(*tunfix) (BUNtail(bi, p));
 		}
 	}
+	if (svp) b->tvheap = NULL;
 	BATdelete(b);	/* handles persistent case also (file deletes) */
 	BBPclear(b->batCacheid);	/* if destroyed; de-register from BBP */
-
-	if (svp)
-		GDKunshare(svp);
+	if (svp) GDKunshare(svp);
 }
 
 static gdk_return
