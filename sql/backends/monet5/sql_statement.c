@@ -1956,7 +1956,7 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		s->op2 = op2;
 		s->flag = cmp_project;
 		s->key = 0;
-		s->nrcols = 2;
+		s->nrcols = MAX(op1->nrcols,op2->nrcols);
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;
