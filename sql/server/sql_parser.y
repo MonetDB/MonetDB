@@ -3429,8 +3429,13 @@ with_list_element:
  ;
 
 with_query_expression:
-	select_no_parens_orderby
-  ;
+   select_no_parens_orderby
+ | select_statement_single_row
+ | delete_stmt
+ | insert_stmt
+ | update_stmt
+ | merge_stmt
+ ;
 
 
 sql:

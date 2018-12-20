@@ -8,6 +8,8 @@
   lookup is performed). As an example the query:
   SELECT col1*2 FROM t1 GROUP BY col1*2; is correct, while
   SELECT sin(col1+5) FROM t1 GROUP BY col1*2; is wrong.
+- Allow usage of WITH clauses in insert, update, delete and merge
+  statements.
 
 * Mon Dec 17 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Implemented merge statements from SQL:2003 standard. Using a source

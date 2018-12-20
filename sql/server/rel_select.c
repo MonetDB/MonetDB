@@ -302,7 +302,7 @@ sql_rel *
 rel_with_query(mvc *sql, symbol *q ) 
 {
 	dnode *d = q->data.lval->h;
-	symbol *select = d->next->data.sym;
+	symbol *next = d->next->data.sym;
 	sql_rel *rel;
 
 	if(!stack_push_frame(sql, "WITH"))
@@ -342,7 +342,7 @@ rel_with_query(mvc *sql, symbol *q )
 				noninternexp_setname(sql->sa, ne->data, name, NULL );
 		}
 	}
-	rel = rel_semantic(sql, select);
+	rel = rel_semantic(sql, next);
 	stack_pop_frame(sql);
 	return rel;
 }
