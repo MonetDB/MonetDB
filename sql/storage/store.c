@@ -979,6 +979,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	}
 	if (t->type == F_FUNC && !t->res)
 		t->type = F_PROC;
+	t->side_effect = (t->type==F_FILT || (t->res && (t->lang==FUNC_LANG_SQL || !list_empty(t->ops))))?FALSE:TRUE;
 	return t;
 }
 
@@ -4641,7 +4642,7 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int 
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
-	t->side_effect = (type==F_FILT||res)?FALSE:TRUE;
+	t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
 	t->ops = args;
@@ -4671,7 +4672,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
-	se = t->side_effect = (type==F_FILT||res)?FALSE:TRUE;
+	se = t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
 	t->ops = sa_list(tr->sa);

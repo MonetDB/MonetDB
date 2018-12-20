@@ -3143,7 +3143,7 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
-			return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
 		}
 		return NULL;
 	}
@@ -3436,7 +3436,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
 	}
 	if (!l && !r && sf) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
@@ -3526,7 +3526,7 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
-		return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such aggregate '%s'", fname);
 	}
 	if (f) {
 		if (err) {
@@ -5087,7 +5087,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			e = _rel_lastexp(sql, r);
 
 			/* group by needed ? */
-			if (e->card > CARD_ATOM && e->card > ek.card) {
+			if (e->card >= CARD_ATOM && e->card > ek.card) {
 				int processed = is_processed(r);
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
@@ -5258,8 +5258,11 @@ column_exp(mvc *sql, sql_rel **rel, symbol *column_e, int f)
 {
 	dlist *l = column_e->data.lval;
 	exp_kind ek = {type_value, card_column, FALSE};
-	sql_exp *ve = rel_value_exp(sql, rel, l->h->data.sym, f, ek);
+	sql_exp *ve;
 
+	if (f == sql_sel && rel && *rel && (*rel)->card < CARD_AGGR)
+		ek.card = card_value;
+       	ve = rel_value_exp(sql, rel, l->h->data.sym, f, ek);
 	if (!ve)
 		return NULL;
 	/* AS name */

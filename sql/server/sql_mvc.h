@@ -30,11 +30,10 @@
 #define type_value	0
 #define type_predicate	1
 
-/* todo cleanup card_row and card_set, both seem to be not used */
 /* cardinality expected by enclosing operator */
 #define card_none	-1	/* psm call doesn't return anything */
 #define card_value	0
-#define card_row 	1
+#define card_row 	1 /* needed for subqueries on single value tables (select (select 1))*/
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
 #define card_relation 	4

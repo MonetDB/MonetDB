@@ -76,40 +76,40 @@ Ready.
 % 1 # length
 [ 1	]
 #select (select 1 where false);
-% .L3 # table_name
-% L3 # name
+% .L4 # table_name
+% L4 # name
 % tinyint # type
-% 0 # length
+% 1 # length
 [ NULL	]
 #select (select 1 where true);
-% .L3 # table_name
-% L3 # name
+% .L4 # table_name
+% L4 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select (select (select 1 where true) where false);
-% .L4 # table_name
-% L4 # name
+% .L6 # table_name
+% L6 # name
 % tinyint # type
-% 0 # length
+% 1 # length
 [ NULL	]
 #select (select (select 1 where false) where true);
-% .L4 # table_name
-% L4 # name
+% .L6 # table_name
+% L6 # name
 % tinyint # type
-% 0 # length
+% 1 # length
 [ NULL	]
 #select (select (select 1 where true) where true);
-% .L4 # table_name
-% L4 # name
+% .L6 # table_name
+% L6 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 #select (select (select 1 where false) where false);
-% .L4 # table_name
-% L4 # name
+% .L6 # table_name
+% L6 # name
 % tinyint # type
-% 0 # length
+% 1 # length
 [ NULL	]
 
 # 17:31:38 >  
