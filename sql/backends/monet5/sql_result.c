@@ -925,7 +925,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		};
 		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
-			sql_error(m, 500, "failed to allocate memory ");
+			sql_error(m, 500, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			return NULL;
 		}
 		as.format = fmt;
@@ -954,7 +954,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				}
 				GDKfree(fmt[i].type);
 				GDKfree(fmt[i].data);
-				sql_error(m, 500, "failed to allocate space for column");
+				sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
 				return NULL;
 			}
 			fmt[i].c = NULL;
@@ -998,7 +998,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 							GDKfree(fmt[j].data);
 							BBPunfix(fmt[j].c->batCacheid);
 						}
-						sql_error(m, 500, "failed to allocate space for column");
+						sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
 						return NULL;
 					}
 				}
@@ -1011,7 +1011,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
-					sql_error(m, 500, "failed to allocate space for column");
+					sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
 					TABLETdestroy_format(&as);
 					return NULL;
 				}
@@ -1820,7 +1820,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	if(fmt == NULL || tres == NULL) {
 		GDKfree(fmt);
 		GDKfree(tres);
-		sql_error(m, 500, "failed to allocate space");
+		sql_error(m, 500, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return -1;
 	}
 
