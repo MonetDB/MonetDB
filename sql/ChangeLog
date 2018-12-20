@@ -23,7 +23,7 @@
 - Added possibility to change the schema of a table with the syntax:
   > ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident
 - Added optional alias option for target table in update and delete
-  statements: (e.g. UPDATE target AS alias SET col1=...)
+  statements: (e.g. UPDATE target AS alias SET col1=1 WHERE alias.col2 < 5)
 
 * Thu Nov 29 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Improved and extended storagemodel functionality. Changes include:
