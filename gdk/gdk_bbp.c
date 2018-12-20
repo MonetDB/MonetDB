@@ -1318,6 +1318,7 @@ BBPinit(void)
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
 	ATOMIC_INIT(BBPsizeLock);
+	BATsample(NULL, 0);	/* initializes the lock */
 #endif
 
 	if (BBPfarms[0].dirname == NULL) {
