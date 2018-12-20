@@ -501,6 +501,7 @@ int yydebug=1;
 	routine_body
 	table_function_column_list
 	select_target_list
+	search_condition_commalist
 	external_function_name
 	with_list
 	window_specification
@@ -3259,7 +3260,7 @@ null:
 			_DELETE(msg);
 			YYABORT;
 		}
-		$$ = _symbol_create_list( SQL_COLUMN,
+		$$ = _symbol_create_list( SQL_IDENT,
 			append_int(L(), m->argc-1));
 	   } else {
 		$$ = _symbol_create(SQL_NULL, NULL );
@@ -3679,7 +3680,12 @@ opt_table_name:
 
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
- |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ |  sqlGROUP BY search_condition_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ ;
+
+search_condition_commalist:
+    search_condition                                { $$ = append_symbol(L(), $1); }
+ |  search_condition_commalist ',' search_condition { $$ = append_symbol($1, $3); }
  ;
 
 column_ref_commalist:
@@ -4198,8 +4204,8 @@ simple_scalar_exp:
  |  '-' scalar_exp %prec UMINUS 
 			{ 
  			  $$ = NULL;
-			  assert($2->token != SQL_COLUMN || $2->data.lval->h->type != type_lng);
-			  if ($2->token == SQL_COLUMN && $2->data.lval->h->type == type_int) {
+			  assert(($2->token != SQL_COLUMN && $2->token != SQL_IDENT) || $2->data.lval->h->type != type_lng);
+			  if (($2->token == SQL_COLUMN || $2->token == SQL_IDENT) && $2->data.lval->h->type == type_int) {
 				atom *a = sql_bind_arg(m, $2->data.lval->h->data.i_val);
 				if (!atom_neg(a)) {
 					$$ = $2;
@@ -4288,7 +4294,7 @@ window_ident_clause:
 
 window_partition_clause:
 	/* empty */ 	{ $$ = NULL; }
-  |	PARTITION BY column_ref_commalist
+  |	PARTITION BY search_condition_commalist
 	{ $$ = _symbol_create_list( SQL_GROUPBY, $3 ); }
   ;
 
@@ -4555,9 +4561,7 @@ atom:
 			YYABORT;
 		}
 		an->a = NULL;
-		/* we miss use SQL_COLUMN also for param's, maybe
-				change SQL_COLUMN to SQL_IDENT */
-		$$ = _symbol_create_list( SQL_COLUMN,
+		$$ = _symbol_create_list( SQL_IDENT,
 			append_int(L(), m->argc-1));
 	  } else {
 		AtomNode *an = (AtomNode*)$1;
@@ -6593,6 +6597,7 @@ char *token2string(tokens token)
 	SQL(IF);
 	SQL(ELSE);
 	SQL(WHILE);
+	SQL(IDENT);
 	SQL(COLUMN);
 	SQL(COLUMN_OPTIONS);
 	SQL(COALESCE);

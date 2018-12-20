@@ -64,6 +64,7 @@ typedef enum tokens {
 	SQL_IF,
 	SQL_ELSE,
 	SQL_WHILE,
+	SQL_IDENT,
 	SQL_COLUMN,
 	SQL_COLUMN_OPTIONS,
 	SQL_COALESCE,

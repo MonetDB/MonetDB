@@ -222,13 +222,13 @@ qc_find(qc *cache, int id)
 }
 
 cq *
-qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
+qc_match(qc *cache, mvc *sql, symbol *s, atom **params, int  plen, int key)
 {
 	cq *q;
 
 	for (q = cache->q; q; q = q->next) {
 		if (q->key == key) {
-			if (q->paramlen == plen && param_list_cmp(q->params, params, plen, q->type) == 0 && symbol_cmp(q->s, s) == 0) {
+			if (q->paramlen == plen && param_list_cmp(q->params, params, plen, q->type) == 0 && symbol_cmp(sql, q->s, s) == 0) {
 				q->count++;
 				return q;
 			}

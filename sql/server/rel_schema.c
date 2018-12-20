@@ -430,7 +430,7 @@ column_option(
 		symbol *sym = s->data.sym;
 		char *err = NULL, *r;
 
-		if (sym->token == SQL_COLUMN) {
+		if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT) {
 			sql_exp *e = rel_logical_value_exp(sql, NULL, sym, sql_sel);
 			
 			if (e && is_atom(e->type)) {
