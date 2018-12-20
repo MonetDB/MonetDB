@@ -209,3 +209,9 @@ comment "initialize the rand() function with a seed and call rand()";
 command pi():dbl
 address MATHpi
 comment "return an important mathematical value";
+
+command prelude() :void
+address MATHprelude
+comment "initilize mmath module";
+
+mmath.prelude();

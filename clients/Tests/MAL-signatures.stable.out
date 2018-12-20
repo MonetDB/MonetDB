@@ -10671,6 +10671,7 @@ Ready.
 [ "mmath",	"pi",	"command mmath.pi():dbl ",	"MATHpi;",	"return an important mathematical value"	]
 [ "mmath",	"pow",	"command mmath.pow(x:dbl, y:dbl):dbl ",	"MATHbinary_POWdbl;",	"The pow(x,y) function  returns the value of x raised to the power of y."	]
 [ "mmath",	"pow",	"command mmath.pow(x:flt, y:flt):flt ",	"MATHbinary_POWflt;",	""	]
+[ "mmath",	"prelude",	"command mmath.prelude():void ",	"MATHprelude;",	"initilize mmath module"	]
 [ "mmath",	"radians",	"command mmath.radians(x:dbl):dbl ",	"MATHunary_RADIANSdbl;",	"The radians() function converts degrees into radians"	]
 [ "mmath",	"radians",	"command mmath.radians(x:flt):flt ",	"MATHunary_RADIANSflt;",	""	]
 [ "mmath",	"rand",	"unsafe command mmath.rand():int ",	"MATHrandint;",	"return a random number"	]

@@ -62,4 +62,6 @@ mal_export str MATHrandintarg(int *res, const int *dummy);
 mal_export str MATHsrandint(void *ret, const int *seed);
 mal_export str MATHsqlrandint(int *res, const int *seed);
 mal_export str MATHpi(dbl *pi);
+mal_export str MATHprelude(void *ret);
+
 #endif /* __MMATH_H__ */
