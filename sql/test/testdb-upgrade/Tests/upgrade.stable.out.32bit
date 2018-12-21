@@ -16,6 +16,12 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade` itself:
 # Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:34708/
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11915/.s.monetdb.34708
 # MonetDB/GIS module loaded
+Running database upgrade commands:
+set schema sys;
+update sys.functions set side_effect = true where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));
+set schema "sys";
+commit;
+
 # MonetDB/SQL module loaded
 
 Ready.
