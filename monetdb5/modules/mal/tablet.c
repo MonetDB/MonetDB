@@ -627,6 +627,7 @@ typedef struct {
 	lng *time, wtime;			/* time per col + time per thread */
 	int rounds;					/* how often did we divide the work */
 	bool ateof;					/* io control */
+	bool from_stdin;
 	bstream *b;
 	stream *out;
 	MT_Id tid;
@@ -1235,8 +1236,8 @@ SQLproducer(void *p)
 	READERtask *task = (READERtask *) p;
 	int consoleinput = 0;
 	int cur = 0;		// buffer being filled
-	bool blocked[MAXBUFFERS] = { 0 };
-	bool ateof[MAXBUFFERS] = { 0 };
+	bool blocked[MAXBUFFERS] = { false };
+	bool ateof[MAXBUFFERS] = { false };
 	BUN cnt = 0, bufcnt[MAXBUFFERS] = { 0 };
 	char *end, *e, *s, *base;
 	const char *rsep = task->rsep;
@@ -1335,6 +1336,10 @@ SQLproducer(void *p)
 		 * scan ended (we need to back off some since we could be in
 		 * the middle of the record separator).  If this is too
 		 * costly, we have to rethink the matter. */
+		if (task->from_stdin && *s == '\n' && task->maxrow == BUN_NONE) {
+			ateof[cur] = true;
+			goto reportlackofinput;
+		}
 		for (e = s; *e && e < end && cnt < task->maxrow;) {
 			/* tokenize the record completely the format of the input
 			 * should comply to the following grammar rule [
@@ -1597,7 +1602,7 @@ create_rejects_table(Client cntxt)
 }
 
 BUN
-SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best)
+SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin)
 {
 	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
@@ -1617,6 +1622,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	memset(ptask, 0, sizeof(ptask));
 	task = (READERtask) {
 		.cntxt = cntxt,
+		.from_stdin = from_stdin,
 	};
 
 	/* create the reject tables */
