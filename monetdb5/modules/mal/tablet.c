@@ -1334,6 +1334,10 @@ SQLproducer(void *p)
 		 * scan ended (we need to back off some since we could be in
 		 * the middle of the record separator).  If this is too
 		 * costly, we have to rethink the matter. */
+		if (task->out && *s == '\n' && task->maxrow == BUN_NONE) {
+			ateof[cur] = true;
+			goto reportlackofinput;
+		}
 		for (e = s; *e && e < end && cnt < task->maxrow;) {
 			/* tokenize the record completely the format of the input
 			 * should comply to the following grammar rule [
