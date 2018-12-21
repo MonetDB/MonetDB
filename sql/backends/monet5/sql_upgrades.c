@@ -1826,6 +1826,50 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
 }
 
 static str
+sql_update_aug2018_sp2(Client c, mvc *sql)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	res_table *output;
+	BAT *b;
+
+	schema = stack_get_string(sql, "current_schema");
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_aug2018_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* required update for changeset 23e1231ada99 */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"select id from sys.functions where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set side_effect = true where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
+
+			if (schema)
+				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
 sql_upgrade_2019_storagemodel(Client c, mvc *sql)
 {
 	size_t bufsize = 20000, pos = 0;
@@ -2353,6 +2397,11 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
+	}
+
+	if ((err = sql_update_aug2018_sp2(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
 	}
 
 	/* when function storagemodel() exists and views tablestorage and schemastorage not yet exist then upgrade storagemodel to match 75_storagemodel.sql */
