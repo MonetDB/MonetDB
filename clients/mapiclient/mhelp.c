@@ -405,13 +405,13 @@ SQLhelp sqlhelp[] = {
 	 "[ FROM from_item [',' ...] ]\n"
 	 "[ WINDOW window_definition [',' ...] ]\n"
 	 "[ WHERE condition ]\n"
-	 "[ GROUP BY expression ',', ...] ]\n"
+	 "[ GROUP BY expression [',' ...] ]\n"
 	 "[ HAVING condition [',' ...] ]\n"
 	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
 	 "[ LIMIT { count | param } ]\n"
 	 "[ OFFSET { count | param } ]\n"
-	 "[ SAMPLE size ]",
+	 "[ SAMPLE size [ SEED size ] ]",
 	 "with_list,expression,window_definition",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"},
 	{"SET",
@@ -844,7 +844,7 @@ SQLhelp sqlhelp[] = {
 	 NULL,
 	 "[ ident ]\n"
 	 "[ PARTITION BY expression [ ',' ... ] ]\n"
-	 "[ ORDER BY sort_spec ]\n"
+	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [ ',' ... ] ]\n"
 	 "[ { ROWS | RANGE | GROUPS } { window_frame_start | BETWEEN window_bound AND window_bound }\n"
 	 "  [ EXCLUDING { CURRENT ROW | GROUP | TIES | NO OTHERS } ] ]",
 	 "window_bound,window_frame_start",
