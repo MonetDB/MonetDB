@@ -843,7 +843,7 @@ SQLhelp sqlhelp[] = {
 	{"window_specification",
 	 NULL,
 	 "[ ident ]\n"
-	 "[ PARTITION BY column_ref [ ',' ... ] ]\n"
+	 "[ PARTITION BY expression [ ',' ... ] ]\n"
 	 "[ ORDER BY sort_spec ]\n"
 	 "[ { ROWS | RANGE | GROUPS } { window_frame_start | BETWEEN window_bound AND window_bound }\n"
 	 "  [ EXCLUDING { CURRENT ROW | GROUP | TIES | NO OTHERS } ] ]",
