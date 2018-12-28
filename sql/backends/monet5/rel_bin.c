@@ -323,8 +323,11 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	} else {
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
 
-		s = distinct_value_list(be, value_list(be, nl, left, sel));
-		s = stmt_join(be, c, s, sel, in, cmp);
+		s = distinct_value_list(be, value_list(be, nl, NULL, NULL));
+		s = stmt_join(be, c, s, NULL, in, cmp);
+
+		if (sel)
+			s = stmt_tinter(be, s, sel);
 	}
 
 	return s;
