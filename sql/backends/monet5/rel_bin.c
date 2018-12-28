@@ -295,7 +295,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 {
 	mvc *sql = be->mvc;
 	node *n;
-	stmt *s = NULL, *c = exp_bin(be, ce, left, right, grp, ext, cnt, NULL);
+	stmt *r = NULL, *s = NULL, *c = exp_bin(be, ce, left, right, grp, ext, cnt, NULL);
 
 	if (c->nrcols == 0) {
 		sql_subtype *bt = sql_bind_localtype("bit");
@@ -325,9 +325,14 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 
 		s = distinct_value_list(be, value_list(be, nl, NULL, NULL));
 		s = stmt_join(be, c, s, NULL, in, cmp);
+		s = stmt_result(be, s, 0);
 
-		if (sel)
-			s = stmt_tinter(be, s, sel);
+		if (sel) {
+			r = stmt_join(be, s, sel, NULL, 0, cmp_equal);
+			r = stmt_result(be, r, 0);
+			r = distinct_value_list(be, s);
+			s = stmt_project(be, r, s);
+		}
 	}
 
 	return s;
