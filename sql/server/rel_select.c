@@ -3556,7 +3556,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_subaggr *a = NULL;
 	int no_nil = 0;
-	sql_rel *groupby = *rel, *gr, *project = NULL, *iproject = NULL;
+	sql_rel *groupby = *rel, *gr, *project = NULL, *iproject = NULL, *r = (groupby)?groupby->l:NULL;
 	list *exps = NULL;
 
 	if (!groupby) {
@@ -3566,7 +3566,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		if (uaname)
 			GDKfree(uaname);
 		return e;
-	} else if(is_sql_groupby(f) || is_sql_partitionby(f)) {
+	} else if(is_sql_groupby(f) || (is_sql_partitionby(f) && !r && r->op != op_groupby)) {
 		const char *clause = is_sql_groupby(f) ? "GROUP BY":"PARTITION BY";
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate function '%s' not allowed in %s clause",
@@ -3587,7 +3587,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			r = r->l;
 		}
 
-		if (is_sql_having(f))
+		if (is_sql_having(f) || is_sql_partitionby(f))
 			project = groupby;
 		if (is_sql_having(f) && r->op == op_select && r->l)
 			r = r->l;
