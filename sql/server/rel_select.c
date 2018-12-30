@@ -183,17 +183,13 @@ rel_project2groupby(mvc *sql, sql_rel *g)
 {
 	if (g->op == op_project) {
 		node *en;
-
-		g->card = CARD_ATOM; /* no groupby expressions */
-		g->op = op_groupby;
-		g->r = new_exp_list(sql->sa); /* add empty groupby column list */
 		
 		if (!g->exps)
 			g->exps = new_exp_list(sql->sa);
 		for (en = g->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 
-			if (e->card > g->card) {
+			if (e->card > CARD_ATOM) {
 				if (e->type == e_column && e->r) {
 					return sql_error(sql, 02, SQLSTATE(42000) "Cannot use non GROUP BY column '%s' in query results without an aggregate function", (char *) e->r);
 				} else {
@@ -201,6 +197,9 @@ rel_project2groupby(mvc *sql, sql_rel *g)
 				}
 			}
 		}
+		g->card = CARD_ATOM; /* no groupby expressions */
+		g->op = op_groupby;
+		g->r = new_exp_list(sql->sa); /* add empty groupby column list */
 		g = rel_project(sql->sa, g, rel_projections(sql, g, NULL, 1, 1));
 		reset_processed(g);
 		return g;
@@ -3587,7 +3586,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			r = r->l;
 		}
 
-		if (is_sql_having(f) || is_sql_partitionby(f))
+		if (is_sql_having(f) || (r->op == op_groupby && is_sql_partitionby(f)))
 			project = groupby;
 		if (is_sql_having(f) && r->op == op_select && r->l)
 			r = r->l;
@@ -4337,11 +4336,13 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 	}
 
 	if (!e) {
-		sql_rel *or = r;
+		//sql_rel *or = r;
 
 		e = rel_value_exp(sql, &r, column_r, sql_sel | sql_orderby, ek);
+		/*
 		if (r && or != r)
 			(*R)->l = r;
+			*/
 		/* add to internal project */
 		if (e && is_processed(r)) {
 			e = rel_project_add_exp(sql, r, e);
@@ -4662,6 +4663,40 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	return window_specification; //return something to say there were no errors
 }
 
+static void
+rel_intermediates_add_exp(mvc *sql, sql_rel *p, sql_rel *op, sql_exp *in)
+{
+	while(p != op) {
+		sql_rel *pp = op;
+
+		while(pp->l && pp->l != p) 
+			pp = pp->l;
+		if (pp && pp->l == p) {
+			assert(pp->op == op_project);
+			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
+			in = rel_project_add_exp(sql, pp, in);
+		}
+		p = pp;
+	}
+}
+
+static sql_exp*
+opt_groupby_add_exp(mvc *sql, sql_rel *p, sql_rel *pp, sql_exp *in)
+{
+	if (p->op == op_groupby) {
+		if (!exp_name(in))
+			exp_label(sql->sa, in, ++sql->label);
+		append(p->exps, in);
+		in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
+	} else if (pp && pp->op == op_groupby) {
+		if (!exp_name(in))
+			exp_label(sql->sa, in, ++sql->label);
+		append(p->exps, in);
+		in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
+	}
+	return in;
+}
+
 /*
  * select x, y, rank_op() over (partition by x order by y) as, ...
                 aggr_op(z) over (partition by y order by x) as, ...
@@ -4686,11 +4721,11 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	char *aname = NULL, *sname = NULL, *window_ident = NULL;
 	sql_subfunc *wf = NULL;
 	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL;
-	sql_rel *r = *rel, *p, *pp;
+	sql_rel *r = *rel, *p, *pp, *op;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	dnode *dn = window_function->data.lval->h;
-	int distinct = 0, project_added = 0, is_last, frame_type, pos;
+	int distinct = 0, project_added = 0, is_last, frame_type, pos, group = 0;
 	bool is_nth_value, supports_frames;
 
 	stack_clear_frame_visited_flag(sql); //clear visited flags before iterating
@@ -4735,6 +4770,12 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		return NULL;
 	}
 
+	/* 
+	 * We need to keep track of the input relation, pp (projection)
+	 * which may in the first step (which could be in the partitioning, ordering or window operator) change into a group by.
+	 * then we project the partitioning/ordering + require result columns (p).
+	 * followed by the projection with window operators. 
+	 */
 	/* window operations are only allowed in the projection */
 	if (r && r->op != op_project) {
 		*rel = r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
@@ -4757,7 +4798,85 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	if (p && !is_project(p->op))
 		p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
-	p = rel_project(sql->sa, p, sa_list(sql->sa));
+	pp = p;
+
+	if (p->l && !is_processed(p)) { /* ADD check for processed ! */
+		sql_rel *pl = p->l;
+
+		op = p;
+		while(p->l && !is_processed(p)) {
+			pl = p->l;
+			if (pl->op == op_groupby)
+				break;
+			p = pl;
+		}
+		if (pl && pl->op == op_groupby) {
+			group = 1;
+			p = pl;
+			/* At the end we switch back to the old projection relation op. 
+			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
+		}
+		if (!group)
+			p = op;
+	} 
+	if (!group && list_length(r->exps))
+		p = pp = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
+
+	/* Partition By */
+	if (partition_by_clause) {
+		gbe = rel_group_by(sql, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f);
+		if (!gbe)
+			return NULL;
+
+		for(n = gbe->h ; n ; n = n->next) {
+			sql_exp *en = n->data;
+
+			n->data = en = opt_groupby_add_exp(sql, p, NULL, en);
+			set_direction(en, 1);
+		}
+		if (p->op == op_groupby) {
+			sql_rel *npp = pp;
+
+			pp = p;
+			p = rel_project(sql->sa, npp, rel_projections(sql, npp, NULL, 1, 0));
+		}
+		p->r = gbe;
+	}
+	/* Order By */
+	if (order_by_clause) {
+		obe = rel_order_by(sql, &pp, order_by_clause, f);
+		if (!obe)
+			return NULL;
+		if (p->op == op_groupby) {
+			sql_rel *npp = pp;
+
+			pp = p;
+			p = rel_project(sql->sa, npp, rel_projections(sql, npp, NULL, 1, 0));
+		}
+		if (p->r) {
+			p->r = list_merge(sa_list(sql->sa), p->r, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
+			for(n = obe->h ; n ; n = n->next) {
+				sql_exp *e1 = n->data;
+				bool found = false;
+
+				for(node *nn = ((list*)p->r)->h ; nn && !found ; nn = nn->next) {
+					sql_exp *e2 = nn->data;
+					//the partition expression order should be the same as the one in the order by clause (if it's in there as well)
+					if(!exp_equal(e1, e2)) {
+						if(is_ascending(e1))
+							e2->flag |= ASCENDING;
+						else
+							e2->flag &= ~ASCENDING;
+						found = true;
+					}
+				}
+				if(!found)
+					append(p->r, e1);
+			}
+		} else {
+			p->r = obe;
+		}
+	}
 
 	fargs = sa_list(sql->sa);
 	if (window_function->token == SQL_RANK) { //rank function call
@@ -4768,7 +4887,12 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		int nfargs = 0;
 
 		if(!dnn || is_ntile) { //pass an input column for analytic functions that don't require it
-			sql_rel *lr = p->l;
+			sql_rel *lr = p;//->l;
+
+			if (!lr || !is_project(lr->op)) {
+				p = pp = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 0));
+				lr = p->l;
+			}
 			in = lr->exps->h->data;
 			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 			if(!in)
@@ -4801,6 +4925,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 					if(!(in = rel_check_type(sql, &first->tpe, in, type_equal)))
 						return NULL;
 				}
+				in = opt_groupby_add_exp(sql, p, pp, in);
 				append(fargs, in);
 				nfargs++;
 			}
@@ -4811,13 +4936,17 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if (n) {
 			if (!n->next->data.sym) { /* count(*) */
 				sql_rel *lr = p->l;
+
+				if (!lr || !is_project(lr->op)) {
+					p = pp = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 0));
+					lr = p->l;
+				}
 				in = lr->exps->h->data;
 				in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
-				if(!in)
-					return NULL;
 				append(fargs, in);
 				append(fargs, exp_atom_bool(sql->sa, 0)); //don't ignore nills
 			} else {
+				sql_rel *lop = p;
 				is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
 
@@ -4827,8 +4956,18 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				 * symbol compilation is required
 				 */
 				in = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
+				if (!in && !group) { /* try with implicit groupby */
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					p = rel_project(sql->sa, lop, sa_list(sql->sa));
+					in = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
+				}
 				if(!in)
 					return NULL;
+				in = opt_groupby_add_exp(sql, p, pp, in);
+				if (group) 
+					rel_intermediates_add_exp(sql, p, op, in);
 				append(fargs, in);
 				if(strcmp(s->base.name, "sys") == 0 && strcmp(aname, "count") == 0) {
 					sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
@@ -4842,58 +4981,13 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		}
 	}
 
-	p->l = rel_project(sql->sa, p->l, rel_projections(sql, p->l, NULL, 1, 1));
-	pp = p->l;
-
-	/* Partition By */
-	if (partition_by_clause) {
-		gbe = rel_group_by(sql, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f | sql_partitionby );
-		if (!gbe)
-			return NULL;
-		for(n = gbe->h ; n ; n = n->next) {
-			sql_exp *en = n->data;
-			set_direction(en, 1);
-		}
-		pp->r = gbe;
-	}
-	/* Order By */
-	if (order_by_clause) {
-		sql_rel *g;
-		obe = rel_order_by(sql, &pp, order_by_clause, f);
-		if (!obe)
-			return NULL;
-		/* conditionally? */
-		g = pp->l;
-		if (g->op == op_groupby) {
-			list_merge(pp->exps, obe, (fdup)NULL);
-			pp->exps = list_distinct(pp->exps, (fcmp)exp_equal, (fdup)NULL);
-		}
-		if (pp->r) {
-			pp->r = list_merge(sa_list(sql->sa), pp->r, (fdup)NULL);
-			for(n = obe->h ; n ; n = n->next) {
-				sql_exp *e1 = n->data;
-				bool found = false;
-				for(node *nn = ((list*)pp->r)->h ; nn && !found ; nn = nn->next) {
-					sql_exp *e2 = nn->data;
-					//the partition expression order should be the same as the one in the order by clause (if it's in there as well)
-					if(!exp_equal(e1, e2)) {
-						if(is_ascending(e1))
-							e2->flag |= ASCENDING;
-						else
-							e2->flag &= ~ASCENDING;
-						found = true;
-					}
-				}
-				if(!found)
-					append(pp->r, e1);
-			}
-		} else {
-			pp->r = obe;
-		}
-	}
-
 	if(distinct)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: DISTINCT clause is not implemented for window functions");
+
+	if (group)
+		p = op;
+	if (p->exps && list_length(p->exps))
+		p = rel_project(sql->sa, p, sa_list(sql->sa));
 
 	/* diff for partitions */
 	if (gbe) {

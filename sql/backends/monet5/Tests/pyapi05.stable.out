@@ -49,7 +49,7 @@ Ready.
 #};
 #SELECT cluster FROM (SELECT MIN(x) AS minx, MAX(x) AS maxx, kmeans(x,5) AS cluster FROM xdata 
 #	GROUP BY cluster) as cdata ORDER BY cluster;
-% sys.cdata # table_name
+% sys.L12 # table_name
 % cluster # name
 % int # type
 % 1 # length
