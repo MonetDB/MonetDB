@@ -28,8 +28,8 @@ Ready.
 #insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4);
 [ 10	]
 #select cast(sum(1) over () as bigint), rank() over (), nth_value(1, 1) over ();
-% .L6,	.L11,	.L15 # table_name
-% L6,	L11,	L15 # name
+% .L5,	.L10,	.L14 # table_name
+% L5,	L10,	L14 # name
 % bigint,	int,	tinyint # type
 % 1,	1,	1 # length
 [ 1,	1,	1	]
@@ -52,8 +52,8 @@ Ready.
 % 2 # length
 [ 46	]
 #select cast(aa * count(1) over () as bigint) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % bigint # type
 % 3 # length
 [ 150	]
@@ -79,14 +79,14 @@ Ready.
 % 3 # length
 [ 368	]
 #select avg(sum(aa)) over () from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % double # type
 % 24 # length
 [ 46	]
 #select sum(cast(aa as double)) over (rows unbounded preceding) from analytics;
-% sys.L5 # table_name
-% L5 # name
+% sys.L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 15	]
@@ -100,8 +100,8 @@ Ready.
 [ 46	]
 [ 46	]
 #select sum(cast(aa as double)) over (range unbounded preceding) from analytics;
-% sys.L5 # table_name
-% L5 # name
+% sys.L4 # table_name
+% L4 # name
 % double # type
 % 24 # length
 [ 46	]
@@ -115,32 +115,47 @@ Ready.
 [ 46	]
 [ 46	]
 #select avg(avg(aa)) over (rows unbounded preceding) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % double # type
 % 24 # length
 [ 5.75	]
 #select avg(avg(aa)) over (range unbounded preceding) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % double # type
 % 24 # length
 [ 5.75	]
 #select avg(sum(aa)) over (rows unbounded preceding) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % double # type
 % 24 # length
 [ 46	]
 #select avg(sum(aa)) over (range unbounded preceding) from analytics;
-% sys.L6 # table_name
-% L6 # name
+% sys.L5 # table_name
+% L5 # name
 % double # type
 % 24 # length
 [ 46	]
+#select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics;
+% sys.L5,	sys.L11 # table_name
+% L5,	L11 # name
+% double,	double # type
+% 24,	24 # length
+[ 46,	5.75	]
+#select avg(sum(aa)) over (),
+#       cast(sum(aa) * count(case when bb < 2 then bb - 1 else bb + 1 end) / avg(1) over (rows between current row and current row) as bigint),
+#       avg(sum(aa)) over (rows unbounded preceding),
+#       avg(sum(aa)) over (range unbounded preceding) from analytics;
+% sys.L5,	sys.L16,	sys.L21,	sys.L25 # table_name
+% L5,	L16,	L21,	L25 # name
+% double,	bigint,	double,	double # type
+% 24,	3,	24,	24 # length
+[ 46,	460,	46,	46	]
 #select avg(sum(aa)) over () from analytics group by aa;
-% sys.L4 # table_name
-% L4 # name
+% sys.L3 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 6.571428571	]
@@ -151,6 +166,19 @@ Ready.
 [ 6.571428571	]
 [ 6.571428571	]
 [ 6.571428571	]
+#select cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint) from analytics group by aa;
+% sys.L6 # table_name
+% L6 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 3	]
+[ 0	]
+[ 1	]
+[ NULL	]
+[ 1	]
+[ 1	]
+[ 1	]
 #select avg(sum(aa)) over (partition by bb) from analytics group by bb;
 % sys.L4 # table_name
 % L4 # name
@@ -161,8 +189,8 @@ Ready.
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) * 100 / sum(sum(aa)) over () as bigint) from analytics;
-% sys.L10 # table_name
-% L10 # name
+% sys.L7 # table_name
+% L7 # name
 % bigint # type
 % 3 # length
 [ 100	]
@@ -176,12 +204,47 @@ Ready.
 [ 100	]
 [ NULL	]
 #select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics;
+% sys.L3 # table_name
+% L3 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select rank() over (partition by sum(aa)) from analytics group by aa;
 % sys.L4 # table_name
 % L4 # name
 % int # type
 % 1 # length
 [ 1	]
 [ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select rank() over (partition by sum(aa)) from analytics group by bb;
+% sys.L4 # table_name
+% L4 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select rank() over (partition by sum(aa), sum(bb)) from analytics group by aa;
+% sys.L5 # table_name
+% L5 # name
+% int # type
+% 1 # length
 [ 1	]
 [ 1	]
 [ 1	]

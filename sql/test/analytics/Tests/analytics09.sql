@@ -29,14 +29,16 @@ select avg(sum(aa)) over (rows unbounded preceding) from analytics;
 
 select avg(sum(aa)) over (range unbounded preceding) from analytics;
 
-select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics; --TODO support multiple aggregations within the same projection
+select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics;
 
 select avg(sum(aa)) over (),
        cast(sum(aa) * count(case when bb < 2 then bb - 1 else bb + 1 end) / avg(1) over (rows between current row and current row) as bigint),
        avg(sum(aa)) over (rows unbounded preceding),
-       avg(sum(aa)) over (range unbounded preceding) from analytics; --TODO support multiple aggregations within the same projection
+       avg(sum(aa)) over (range unbounded preceding) from analytics;
 
 select avg(sum(aa)) over () from analytics group by aa;
+
+select cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint) from analytics group by aa;
 
 select avg(sum(aa)) over (),
        avg(sum(aa)) over (rows unbounded preceding),
@@ -59,21 +61,21 @@ select rank() over (partition by sum(aa)) from analytics; --TODO we don't suppor
 
 select rank() over (partition by 12*sum(aa)) from analytics; --TODO
 
-select rank() over (partition by sum(aa)) from analytics group by aa; --TODO
+select rank() over (partition by sum(aa)) from analytics group by aa;
 
-select rank() over (partition by sum(aa)) from analytics group by bb; --TODO
+select rank() over (partition by sum(aa)) from analytics group by bb;
 
 select rank() over (partition by sum(aa)*sum(bb)) from analytics; --TODO
 
 select rank() over (partition by sum(aa), sum(bb)) from analytics; --TODO
 
-select rank() over (partition by sum(aa), sum(bb)) from analytics group by aa; --TODO
+select rank() over (partition by sum(aa), sum(bb)) from analytics group by aa;
 
-select rank() over (partition by sum(aa), bb) from analytics group by aa; --TODO should be an error
+select rank() over (partition by sum(aa), bb) from analytics group by aa; --error
 
-select min(aa) over (partition by sum(bb)) from analytics; --TODO should be an error
+select min(aa) over (partition by sum(bb)) from analytics; --error
 
-select min(aa) over (partition by sum(aa)) from analytics; ---TODO should be an error
+select min(aa) over (partition by sum(aa)) from analytics; ---error
 
 select rank() over (order by sum(aa)) from analytics; --TODO
 
