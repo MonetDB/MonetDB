@@ -4855,8 +4855,6 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	/* Order By */
 	if (order_by_clause) {
 		obe = rel_order_by(sql, &pp, order_by_clause, nf);
-		if (!obe)
-			return NULL;
 		if (!obe && !group && !gbe) { /* try with implicit groupby */
 			/* reset error */
 			sql->session->status = 0;
@@ -4864,6 +4862,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			p = pp = rel_project(sql->sa, p, sa_list(sql->sa));
 			obe = rel_order_by(sql, &p, order_by_clause, f);
 		}
+		if (!obe)
+			return NULL;
 		if (p->op == op_groupby) {
 			sql_rel *npp = pp;
 

@@ -77,6 +77,6 @@ select min(aa) over (partition by sum(bb)) from analytics; --error
 
 select min(aa) over (partition by sum(aa)) from analytics; ---error
 
-select rank() over (order by sum(aa)) from analytics; --TODO
+select rank() over (order by sum(aa)) from analytics;
 
 drop table analytics;
