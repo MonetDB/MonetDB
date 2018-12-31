@@ -4725,7 +4725,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	dnode *dn = window_function->data.lval->h;
-	int distinct = 0, project_added = 0, is_last, frame_type, pos, group = 0;
+	int distinct = 0, project_added = 0, is_last, frame_type, pos, group = 0, nf = f;
 	bool is_nth_value, supports_frames;
 
 	stack_clear_frame_visited_flag(sql); //clear visited flags before iterating
@@ -4822,31 +4822,48 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (!group && list_length(r->exps))
 		p = pp = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
 
+	if (pp && pp->op == op_groupby)
+		nf = sql_partitionby;
 	/* Partition By */
 	if (partition_by_clause) {
-		gbe = rel_group_by(sql, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f);
+		gbe = rel_group_by(sql, &pp, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, nf);
+		if (!gbe && !group) { /* try with implicit groupby */
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			p = pp = rel_project(sql->sa, p, sa_list(sql->sa));
+			gbe = rel_group_by(sql, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f);
+		}
 		if (!gbe)
 			return NULL;
 
-		for(n = gbe->h ; n ; n = n->next) {
-			sql_exp *en = n->data;
-
-			n->data = en = opt_groupby_add_exp(sql, p, NULL, en);
-			set_direction(en, 1);
-		}
 		if (p->op == op_groupby) {
 			sql_rel *npp = pp;
 
 			pp = p;
 			p = rel_project(sql->sa, npp, rel_projections(sql, npp, NULL, 1, 0));
 		}
+
+		for(n = gbe->h ; n ; n = n->next) {
+			sql_exp *en = n->data;
+
+			n->data = en = opt_groupby_add_exp(sql, p, pp, en);
+			set_direction(en, 1);
+		}
 		p->r = gbe;
 	}
 	/* Order By */
 	if (order_by_clause) {
-		obe = rel_order_by(sql, &pp, order_by_clause, f);
+		obe = rel_order_by(sql, &pp, order_by_clause, nf);
 		if (!obe)
 			return NULL;
+		if (!obe && !group && !gbe) { /* try with implicit groupby */
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			p = pp = rel_project(sql->sa, p, sa_list(sql->sa));
+			obe = rel_order_by(sql, &p, order_by_clause, f);
+		}
 		if (p->op == op_groupby) {
 			sql_rel *npp = pp;
 
@@ -4956,7 +4973,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 				 * symbol compilation is required
 				 */
 				in = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
-				if (!in && !group) { /* try with implicit groupby */
+				if (!in && !group && !obe && !gbe) { /* try with implicit groupby */
 					/* reset error */
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
