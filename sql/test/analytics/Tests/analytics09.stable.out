@@ -289,6 +289,12 @@ Ready.
 % int # type
 % 1 # length
 [ 1	]
+#select dense_rank() over (partition by sum(aa) order by avg(bb)) from analytics;
+% sys.L6 # table_name
+% L6 # name
+% int # type
+% 1 # length
+[ 1	]
 #drop table analytics;
 
 # 13:13:17 >  

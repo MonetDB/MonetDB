@@ -85,6 +85,6 @@ select rank() over (order by sum(aa), bb) from analytics; --error
 
 select min(aa) over (order by sum(bb)) from analytics; --error
 
---select dense_rank() over (partition by sum(aa) order by avg(bb)) from analytics; TODO
+select dense_rank() over (partition by sum(aa) order by avg(bb)) from analytics;
 
 drop table analytics;

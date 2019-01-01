@@ -4864,11 +4864,18 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		}
 		if (!obe)
 			return NULL;
+
 		if (p->op == op_groupby) {
 			sql_rel *npp = pp;
 
 			pp = p;
 			p = rel_project(sql->sa, npp, rel_projections(sql, npp, NULL, 1, 0));
+		}
+
+		for(n = obe->h ; n ; n = n->next) {
+			sql_exp *en = n->data;
+
+			n->data = opt_groupby_add_exp(sql, p, pp, en);
 		}
 		if (p->r) {
 			p->r = list_merge(sa_list(sql->sa), p->r, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
