@@ -341,7 +341,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		}
 
  		// Need to order this because the output of join is not necessarily an ordered cl.
-		// This is relevant for instance when this passed to a mergecand operation.
+		// This is relevant for instance when this is passed to a mergecand operation.
 		s = stmt_order(be, s, 1, 0);
 		s = stmt_result(be, s, 0);
 	}
