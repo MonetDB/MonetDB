@@ -295,7 +295,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 {
 	mvc *sql = be->mvc;
 	node *n;
-	stmt *r = NULL, *s = NULL, *c = exp_bin(be, ce, left, right, grp, ext, cnt, NULL);
+	stmt *s = NULL, *c = exp_bin(be, ce, left, right, grp, ext, cnt, NULL);
 
 	if (c->nrcols == 0) {
 		sql_subtype *bt = sql_bind_localtype("bit");
@@ -321,18 +321,29 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				stmt_const(be, bin_first_column(be, left), s), 
 				stmt_bool(be, 1), cmp_equal, sel, 0); 
 	} else {
-		comp_type cmp = (in)?cmp_equal:cmp_notequal;
-
-		s = distinct_value_list(be, value_list(be, nl, NULL, NULL));
-		s = stmt_join(be, c, s, NULL, in, cmp);
+		s = value_list(be, nl, NULL, NULL);
+		s = distinct_value_list(be, s); // make sure results are unique
+		s = stmt_join(be, c, s, NULL, in, cmp_equal);
 		s = stmt_result(be, s, 0);
 
-		if (sel) {
-			r = stmt_join(be, s, sel, NULL, 0, cmp_equal);
-			r = stmt_result(be, r, 0);
-			r = distinct_value_list(be, s);
-			s = stmt_project(be, r, s);
+		if (!in) {
+			stmt* oid_c;
+			oid_c = stmt_mirror(be, c);
+			// TODO: Somehow stmt_tdiff only allows BAT[oid] arguments hence the mirror op.
+			s = stmt_tdiff(be, oid_c, s);
 		}
+
+		if (sel) {
+			stmt* oid_intersection;
+			// TODO: check if stmt_tinter should safely allow a null value for sel
+			oid_intersection = stmt_tinter(be, s, sel);
+			s = stmt_project(be, oid_intersection, s);
+		}
+
+ 		// Need to order this because the output of join is not necessarily an ordered cl.
+		// This is relevant for instance when this passed to a mergecand operation.
+		s = stmt_order(be, s, 1, 0);
+		s = stmt_result(be, s, 0);
 	}
 
 	return s;

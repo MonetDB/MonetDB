@@ -694,6 +694,9 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 	BAT *bn = NULL, *on = NULL, *gn = NULL;
 	BAT *b = NULL, *o = NULL, *g = NULL;
 
+	// TODO: I think that ALGsort doesn't maintain the key property of the resulting bat, e.g. reordering a key bat
+	// should return a bat with the key property.
+
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.sort", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (order && !is_bat_nil(*order) && (o = BATdescriptor(*order)) == NULL) {

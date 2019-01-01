@@ -111,7 +111,7 @@ typedef struct stmt {
 	stmtdata op4;		/* only op4 will hold other types */
 
 	char nrcols;
-	char key;		/* key (aka all values are unique) */
+	char key;		/* key (aka all values are unique) */ // TODO make this thing a bool
 	char aggr;		/* aggregated */
 	char partition;		/* selected as mitosis candidate */
 
