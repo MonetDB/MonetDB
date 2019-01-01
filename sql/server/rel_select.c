@@ -4721,7 +4721,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	char *aname = NULL, *sname = NULL, *window_ident = NULL;
 	sql_subfunc *wf = NULL;
 	sql_exp *in = NULL, *pe = NULL, *oe = NULL, *call = NULL, *start = NULL, *eend = NULL, *fstart = NULL, *fend = NULL;
-	sql_rel *r = *rel, *p, *pp, *op;
+	sql_rel *r = *rel, *p, *pp, *op = NULL;
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	sql_schema *s = sql->session->schema;
 	dnode *dn = window_function->data.lval->h;

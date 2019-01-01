@@ -283,6 +283,12 @@ Ready.
 % int # type
 % 1 # length
 [ 1	]
+#select rank() over (order by sum(aa), sum(bb)) from analytics;
+% sys.L7 # table_name
+% L7 # name
+% int # type
+% 1 # length
+[ 1	]
 #drop table analytics;
 
 # 13:13:17 >  

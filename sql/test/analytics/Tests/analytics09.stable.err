@@ -55,6 +55,14 @@ MAPI  = (monetdb) /var/tmp/mtest-9405/.s.monetdb.32071
 QUERY = select min(aa) over (partition by sum(aa)) from analytics; ---error
 ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9623/.s.monetdb.34265
+QUERY = select rank() over (order by sum(aa), bb) from analytics; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'bb' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9623/.s.monetdb.34265
+QUERY = select min(aa) over (order by sum(bb)) from analytics; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
+CODE  = 42000
 
 # 13:13:17 >  
 # 13:13:17 >  "Done."
