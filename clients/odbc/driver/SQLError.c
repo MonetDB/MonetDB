@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -140,7 +140,8 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 		return SQL_ERROR;
 
 	if (SQL_SUCCEEDED(rc)) {
-		const char *e = ODBCutf82wchar(state, 5, SQLState, 6, NULL);
+		const char *e = ODBCutf82wchar(state, 5, SQLState, 6, NULL,
+					       NULL);
 
 		if (e)
 			rc = SQL_ERROR;
@@ -148,7 +149,8 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 
 	if (SQL_SUCCEEDED(rc)) {
 		const char *e = ODBCutf82wchar(errmsg, n,
-					       MessageText, BufferLength, &n);
+					       MessageText, BufferLength, &n,
+					       NULL);
 
 		if (e)
 			rc = SQL_ERROR;

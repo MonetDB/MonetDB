@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
@@ -1229,7 +1229,7 @@ ODBCFetch(ODBCStmt *stmt,
 			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
 
 		/* if SQL_C_WCHAR is requested, first convert to UTF-8
-		 * (SQL_C_CHAR), and at the end convert to UTF-16 */
+		 * (SQL_C_CHAR), and at the end convert to WCHAR */
 		origptr = ptr;
 
 		origbuflen = buflen;
@@ -1263,25 +1263,20 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WVARCHAR:
 		case SQL_WLONGVARCHAR:
 		case SQL_GUID:
-			if (irdrec->already_returned > datalen) {
-				data += datalen;
-				datalen = 0;
-			} else {
-				data += irdrec->already_returned;
-				datalen -= irdrec->already_returned;
-			}
-			if (datalen == 0 && irdrec->already_returned != 0) {
+			if (irdrec->already_returned >= datalen) {
 				/* no more data to return */
 				if (type == SQL_C_WCHAR)
 					free(ptr);
 				return SQL_NO_DATA;
 			}
+			data += irdrec->already_returned;
+			datalen -= irdrec->already_returned;
 			copyString(data, datalen, ptr, buflen, lenp, SQLLEN,
 				   addStmtError, stmt, return SQL_ERROR);
 			if (datalen < (size_t) buflen)
 				irdrec->already_returned += datalen;
 			else
-				irdrec->already_returned += buflen;
+				irdrec->already_returned += buflen - 1;
 			break;
 		case SQL_BINARY:
 		case SQL_VARBINARY:
@@ -1289,30 +1284,18 @@ ODBCFetch(ODBCStmt *stmt,
 			size_t k;
 			int n;
 			unsigned char c = 0;
-			SQLLEN j = 0;
+			SQLLEN j;
 			unsigned char *p = ptr;
 
-			if (buflen < 0) {
-				/* Invalid string or buffer length */
-				addStmtError(stmt, "HY090", NULL, 0);
-				if (type == SQL_C_WCHAR)
-					free(ptr);
-				return SQL_ERROR;
-			}
-			if (irdrec->already_returned > datalen) {
-				data += datalen;
-				datalen = 0;
-			} else {
-				data += irdrec->already_returned;
-				datalen -= irdrec->already_returned;
-			}
-			if (datalen == 0 && irdrec->already_returned != 0) {
+			if (irdrec->already_returned >= datalen) {
 				/* no more data to return */
 				if (type == SQL_C_WCHAR)
 					free(ptr);
 				return SQL_NO_DATA;
 			}
-			for (k = 0; k < datalen; k++) {
+			data += irdrec->already_returned;
+			datalen -= irdrec->already_returned;
+			for (k = 0, j = 0; k < datalen && j < buflen; k++) {
 				if (isdigit((unsigned char) data[k]))
 					n = data[k] - '0';
 				else if ('A' <= data[k] && data[k] <= 'F')
@@ -1329,15 +1312,22 @@ ODBCFetch(ODBCStmt *stmt,
 				}
 				if (k & 1) {
 					c |= n;
-					if (j < buflen)
-						p[j] = c;
+					p[j] = c;
 					j++;
 				} else
 					c = n << 4;
 			}
+			if (k & 1) {
+				/* should not happen: uneven length */
+				/* General error */
+				addStmtError(stmt, "HY000", "Unexpected data from server", 0);
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+				return SQL_ERROR;
+			}
 			irdrec->already_returned += k;
 			if (lenp)
-				*lenp = j;
+				*lenp = datalen / 2;
 			break;
 		}
 		case SQL_TINYINT:
@@ -1876,9 +1866,11 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
+			SQLINTEGER i;
 
 			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
-				       (SQLWCHAR *) origptr, origbuflen, &n);
+				       (SQLWCHAR *) origptr,
+				       origbuflen / sizeof(SQLWCHAR), &n, &i);
 #ifdef ODBCDEBUG
 			ODBCLOG("Writing %d bytes to %p\n",
 				(int) (n * sizeof(SQLWCHAR)),
@@ -1888,6 +1880,8 @@ ODBCFetch(ODBCStmt *stmt,
 			if (origlenp)
 				*origlenp = n * sizeof(SQLWCHAR); /* # of bytes, not chars */
 			free(ptr);
+			irdrec->already_returned -= datalen;
+			irdrec->already_returned += i;
 		}
 #ifdef ODBCDEBUG
 		else
