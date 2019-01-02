@@ -212,7 +212,7 @@ BATcheckimprints(BAT *b)
 		    (imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0) {
 			int fd;
 
-			snprintf(imprints->imprints.filename, sizeof(imprints->imprints.filename), "%s.timprints", nme);
+			stpconcat(imprints->imprints.filename, nme, ".timprints", NULL);
 			/* check whether a persisted imprints index
 			 * can be found */
 			if ((fd = GDKfdlocate(imprints->imprints.farmid, nme, "rb", "timprints")) >= 0) {
@@ -388,7 +388,7 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			return GDK_FAIL;
 		}
-		snprintf(imprints->imprints.filename, sizeof(imprints->imprints.filename), "%s.timprints", nme);
+		stpconcat(imprints->imprints.filename, nme, ".timprints", NULL);
 		pages = (((size_t) BATcount(b) * b->twidth) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype,
 							   imprintsheap);

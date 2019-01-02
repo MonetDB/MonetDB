@@ -2586,6 +2586,7 @@ AC_CHECK_FUNCS([\
 	setsid \
 	shutdown \
 	sigaction \
+	stpcpy \
 	strcasestr \
 	strncasecmp \
 	strptime \
@@ -2850,6 +2851,18 @@ typedef enum {
 /* static_assert is a C11 feature, defined in assert.h which also exists
  * in many other compilers we ignore it if the compiler doesn't support it */
 @%:@define static_assert(expr, mesg)	((void) 0)
+@%:@endif
+
+@%:@ifndef HAVE_STPCPY
+static inline char *
+stpcpy(char *restrict dst, const char *restrict src)
+{
+	size_t i;
+	for (i = 0; src[i]; i++)
+		dst[i] = src[i];
+	dst[i] = 0;
+	return dst + i;
+}
 @%:@endif
 
 @%:@if defined(HAVE___INT128)

@@ -877,6 +877,16 @@ c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 }
 #endif
 
+static inline char *
+stpcpy(char *restrict dst, const char *restrict src)
+{
+	size_t i;
+	for (i = 0; src[i]; i++)
+		dst[i] = src[i];
+	dst[i] = 0;
+	return dst + i;
+}
+
 /* type used by connect */
 #define socklen_t int
 

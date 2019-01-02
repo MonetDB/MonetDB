@@ -401,7 +401,8 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src)	\
 {							\
 	atommem(TYPE##Strlen);				\
 	if (is_##TYPE##_nil(*src)) {			\
-		return snprintf(*dst, *len, "nil");	\
+		strcpy(*dst, "nil");			\
+		return 3;				\
 	}						\
 	return snprintf(*dst, *len, FMT, FMTCAST *src);	\
 }
@@ -479,11 +480,16 @@ bitToStr(char **dst, size_t *len, const bit *src)
 {
 	atommem(6);
 
-	if (is_bit_nil(*src))
-		return snprintf(*dst, *len, "nil");
-	if (*src)
-		return snprintf(*dst, *len, "true");
-	return snprintf(*dst, *len, "false");
+	if (is_bit_nil(*src)) {
+		strcpy(*dst, "nil");
+		return 3;
+	}
+	if (*src) {
+		strcpy(*dst, "true");
+		return 4;
+	}
+	strcpy(*dst, "false");
+	return 5;
 }
 
 ssize_t
@@ -533,11 +539,12 @@ batToStr(char **dst, size_t *len, const bat *src)
 
 	if (is_bat_nil(b) || (s = BBPname(b)) == NULL || *s == 0) {
 		atommem(4);
-		return snprintf(*dst, *len, "nil");
+		strcpy(*dst, "nil");
+		return 3;
 	}
 	i = strlen(s) + 3;
 	atommem(i);
-	return snprintf(*dst, *len, "<%s>", s);
+	return stpconcat(*dst, "<", s, ">", NULL) - *dst;
 }
 
 
@@ -975,7 +982,8 @@ dblToStr(char **dst, size_t *len, const dbl *src)
 
 	atommem(dblStrlen);
 	if (is_dbl_nil(*src)) {
-		return snprintf(*dst, *len, "nil");
+		strcpy(*dst, "nil");
+		return 3;
 	}
 	for (i = 4; i < 18; i++) {
 		snprintf(*dst, *len, "%.*g", i, *src);
@@ -1042,7 +1050,8 @@ fltToStr(char **dst, size_t *len, const flt *src)
 
 	atommem(fltStrlen);
 	if (is_flt_nil(*src)) {
-		return snprintf(*dst, *len, "nil");
+		strcpy(*dst, "nil");
+		return 3;
 	}
 	for (i = 4; i < 10; i++) {
 		snprintf(*dst, *len, "%.*g", i, *src);
@@ -1748,7 +1757,8 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src)
 {
 	if (GDK_STRNIL(src)) {
 		atommem(4);
-		return snprintf(*dst, *len, "nil");
+		strcpy(*dst, "nil");
+		return 3;
 	} else {
 		ssize_t l = 0;
 		size_t sz = escapedStrlen(src, NULL, NULL, '"');
@@ -1850,7 +1860,8 @@ OIDtoStr(char **dst, size_t *len, const oid *src)
 	atommem(oidStrlen);
 
 	if (is_oid_nil(*src)) {
-		return snprintf(*dst, *len, "nil");
+		strcpy(*dst, "nil");
+		return 3;
 	}
 	return snprintf(*dst, *len, OIDFMT "@0", *src);
 }

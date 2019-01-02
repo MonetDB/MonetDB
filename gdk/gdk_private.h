@@ -206,6 +206,19 @@ __hidden void persistOIDX(BAT *b)
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+static inline char *
+stpconcat(char *restrict dst, const char *src, ...)
+{
+	va_list ap;
+
+	va_start(ap, src);
+	while (src) {
+		dst = stpcpy(dst, src);
+		src = va_arg(ap, const char *);
+	}
+	va_end(ap);
+	return dst;
+}
 __hidden void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmpNoNil(const unsigned char *l, const unsigned char *r)
