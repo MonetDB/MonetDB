@@ -178,14 +178,17 @@ ODBCwchar2utf8(const SQLWCHAR *src, SQLLEN length, const char **errmsg)
 
 /* Convert a UTF-8 encoded string to UTF-16 (SQLWCHAR).  On success
    returns NULL, on error returns a string with an error message.  The
-   first two arguments describe the input, the last three arguments
-   describe the output, both in the normal ODBC fashion. */
+   first two arguments describe the input, the next three arguments
+   describe the output, both in the normal ODBC fashion.
+   The last argument is the count of the number of input bytes
+   actually converted to the output. */
 const char *
 ODBCutf82wchar(const SQLCHAR *src,
 	       SQLINTEGER length,
 	       SQLWCHAR *buf,
 	       SQLLEN buflen,
-	       SQLSMALLINT *buflenout)
+	       SQLSMALLINT *buflenout,
+	       SQLINTEGER *consumed)
 {
 	SQLLEN i = 0;
 	SQLINTEGER j = 0;
@@ -201,6 +204,8 @@ ODBCutf82wchar(const SQLCHAR *src,
 			buf[0] = 0;
 		if (buflenout)
 			*buflenout = 0;
+		if (consumed)
+			*consumed = 0;
 		return NULL;
 	}
 	if (length == SQL_NTS)
@@ -257,6 +262,8 @@ ODBCutf82wchar(const SQLCHAR *src,
 	}
 	if (buflen > 0)
 		buf[i] = 0;
+	if (consumed)
+		*consumed = j;
 	while (j < length && src[j]) {
 		i++;
 		if ((src[j+0] & 0x80) == 0) {

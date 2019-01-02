@@ -221,7 +221,8 @@ SQLGetDiagRecW(SQLSMALLINT HandleType,
 #endif
 
 	if (SQL_SUCCEEDED(rc)) {
-		const char *e = ODBCutf82wchar(state, 5, SQLState, 6, NULL);
+		const char *e = ODBCutf82wchar(state, 5, SQLState, 6, NULL,
+					       NULL);
 
 		if (e)
 			rc = SQL_ERROR;
@@ -229,7 +230,7 @@ SQLGetDiagRecW(SQLSMALLINT HandleType,
 
 	if (SQL_SUCCEEDED(rc)) {
 		const char *e = ODBCutf82wchar(msg, n, MessageText,
-					       BufferLength, &n);
+					       BufferLength, &n, NULL);
 
 		if (e)
 			rc = SQL_ERROR;
