@@ -726,7 +726,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
-		snprintf(extension, sizeof(extension), "%s%s", ext, suffix);
+		stpconcat(extension, ext, suffix, NULL);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
@@ -763,7 +763,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return GDK_SUCCEED;
 	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
-	snprintf(ext2, sizeof(ext2), "%s%s", ext, ".new");
+	stpconcat(ext2, ext, ".new", NULL);
 	return (GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED) ? GDK_SUCCEED : GDK_FAIL;
 }
 

@@ -284,16 +284,19 @@ char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
 		else if (n->type == type_symbol)
 			s = symbol2string(sql, n->data.sym, expression, err);
 
-		if (!s)
+		if (!s) {
+			_DELETE(b);
 			return NULL;
+		}
 		if (b) {
-			char *o = b;
-			b = strconcat(b,".");
-			_DELETE(o);
-			o = b;
-			b = strconcat(b,s);
-			_DELETE(o);
+			char *o = NEW_ARRAY(char, strlen(b) + strlen(s) + 2);
+			if (o)
+				stpcpy(stpcpy(stpcpy(o, b), "."), s);
+			_DELETE(b);
 			_DELETE(s);
+			b = o;
+			if (b == NULL)
+				return NULL;
 		} else {
 			b = s;
 		}

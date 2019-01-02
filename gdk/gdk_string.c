@@ -795,7 +795,8 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bo
 	}
 	if (GDK_STRNIL(src)) {
 		atommem(4);
-		return snprintf(*dst, *len, "nil");
+		strcpy(*dst, "nil");
+		return 3;
 	} else {
 		ssize_t l = 0;
 		size_t sz = escapedStrlen(src, NULL, NULL, '"');

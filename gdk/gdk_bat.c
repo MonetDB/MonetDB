@@ -116,14 +116,12 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 	assert(bn->batCacheid > 0);
 
 	const char *nme = BBP_physical(bn->batCacheid);
-	snprintf(bn->theap.filename, sizeof(bn->theap.filename),
-		 "%s.tail", nme);
+	stpconcat(bn->theap.filename, nme, ".tail", NULL);
 	bn->theap.farmid = BBPselectfarm(role, bn->ttype, offheap);
 	if (heapnames && ATOMneedheap(tt)) {
 		if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
 			goto bailout;
-		snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename),
-			 "%s.theap", nme);
+		stpconcat(bn->tvheap->filename, nme, ".theap", NULL);
 		bn->tvheap->parentid = bn->batCacheid;
 		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
@@ -737,10 +735,10 @@ COLcopy(BAT *b, int tt, bool writable, int role)
 			thp = (Heap) {
 				.farmid = BBPselectfarm(role, b->ttype, varheap),
 			};
-			snprintf(bthp.filename, sizeof(bthp.filename),
-				 "%s.tail", BBP_physical(bn->batCacheid));
-			snprintf(thp.filename, sizeof(thp.filename), "%s.theap",
-				 BBP_physical(bn->batCacheid));
+			stpconcat(bthp.filename, BBP_physical(bn->batCacheid),
+				  ".tail", NULL);
+			stpconcat(thp.filename, BBP_physical(bn->batCacheid),
+				  ".theap", NULL);
 			if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
 			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
 				HEAPfree(&thp, true);
