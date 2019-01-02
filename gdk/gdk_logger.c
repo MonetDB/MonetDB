@@ -2516,7 +2516,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name)
 
 	ha = "vid";
 	ta = ATOMname(b->ttype);
-	len = stpconcat(buf, ha, ",", ta, NULL) - buf;
+	len = (int) (stpconcat(buf, ha, ",", ta, NULL) - buf);
 	len++;			/* include EOS */
 	if (!mnstr_writeInt(lg->log, len) ||
 	    mnstr_write(lg->log, buf, 1, len) != (ssize_t) len) {
