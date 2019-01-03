@@ -4666,7 +4666,7 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 static void
 rel_intermediates_add_exp(mvc *sql, sql_rel *p, sql_rel *op, sql_exp *in)
 {
-	while(p != op) {
+	while(op && p != op) {
 		sql_rel *pp = op;
 
 		while(pp->l && pp->l != p) 
@@ -4800,6 +4800,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
 	pp = p;
 
+	if (p && is_processed(p) && p->op == op_groupby)
+		group = 1;
 	if (p->l && !is_processed(p)) { /* ADD check for processed ! */
 		sql_rel *pl = p->l;
 
@@ -5008,7 +5010,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if(distinct)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: DISTINCT clause is not implemented for window functions");
 
-	if (group)
+	if (group && op)
 		p = op;
 	if (p->exps && list_length(p->exps))
 		p = rel_project(sql->sa, p, sa_list(sql->sa));
