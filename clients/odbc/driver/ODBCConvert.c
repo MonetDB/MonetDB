@@ -1862,7 +1862,7 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
-			SQLINTEGER i;
+			size_t i;
 
 			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
 				       (SQLWCHAR *) origptr,
@@ -1878,6 +1878,10 @@ ODBCFetch(ODBCStmt *stmt,
 			free(ptr);
 			irdrec->already_returned -= datalen;
 			irdrec->already_returned += i;
+			if (i < datalen) {
+				/* String data, right-truncated */
+				addStmtError(stmt, "01004", NULL, 0);
+			}
 		}
 #ifdef ODBCDEBUG
 		else
