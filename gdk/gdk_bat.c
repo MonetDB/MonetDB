@@ -1008,7 +1008,7 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	BATcheck(b, "BUNappend", GDK_FAIL);
 
-	assert(!isVIEW(b));
+	assert(!VIEWtparent(b));
 	if (b->tunique && BUNfnd(b, t) != BUN_NONE) {
 		return GDK_SUCCEED;
 	}
