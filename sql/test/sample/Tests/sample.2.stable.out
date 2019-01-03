@@ -27,8 +27,8 @@ Ready.
 % .L3 # table_name
 % value # name
 % tinyint # type
-% 1 # length
-[ 1	]
+% 2 # length
+[ 20	]
 
 # 10:58:45 >  
 # 10:58:45 >  "Done."
