@@ -1885,8 +1885,7 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 #ifdef ODBCDEBUG
 		else
-			ODBCLOG("Writing %d bytes to %p\n",
-				(int) strlen(ptr), ptr);
+			ODBCLOG("Writing %zu bytes to %p\n", strlen(ptr), ptr);
 #endif
 		break;
 	}
