@@ -41,9 +41,7 @@ typedef struct {
 	const char *comments;
 } SQLhelp;
 
-#define NUMBER_MAJOR_COMMANDS 74 // The number of major commands to show in case of no query
-
-SQLhelp sqlhelp[] = {
+SQLhelp sqlhelp1[] = {
 	// major commands
 	{"ALTER TABLE",
 	 "",
@@ -490,7 +488,9 @@ SQLhelp sqlhelp[] = {
 	 "[ EXCLUDING {CURRENT ROW | GROUP | TIES | NO OTHERS} ]",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/WindowFunctions"},
-
+	{NULL, NULL, NULL, NULL, NULL}	/* End of list marker */
+};
+SQLhelp sqlhelp2[] = {
 // The subgrammar rules
 	{"assignment_list",
 	 NULL,
@@ -804,9 +804,14 @@ sql_grammar_rule(const char *word, stream *toConsole)
 	*s = 0;
 	buflen = (size_t) (s - buf);
 
-	for (i = 0; sqlhelp[i].command; i++) {
-		if (strncasecmp(sqlhelp[i].command, buf, buflen) == 0 && sqlhelp[i].synopsis == NULL) {
-			mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp[i].syntax);
+	for (i = 0; sqlhelp1[i].command; i++) {
+		if (strncasecmp(sqlhelp1[i].command, buf, buflen) == 0 && sqlhelp1[i].synopsis == NULL) {
+			mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp1[i].syntax);
+		}
+	}
+	for (i = 0; sqlhelp2[i].command; i++) {
+		if (strncasecmp(sqlhelp2[i].command, buf, buflen) == 0 && sqlhelp2[i].synopsis == NULL) {
+			mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp2[i].syntax);
 		}
 	}
 	while (*word && (isalnum((unsigned char) *word || *word == '_')))
@@ -817,36 +822,36 @@ sql_grammar_rule(const char *word, stream *toConsole)
 }
 
 static void
-sql_grammar(int idx, stream *toConsole)
+sql_grammar(SQLhelp *sqlhelp, stream *toConsole)
 {
 	const char *t1;
-	if (sqlhelp[idx].synopsis == NULL) {
-		mnstr_printf(toConsole, "%s : %s\n", sqlhelp[idx].command, sqlhelp[idx].syntax);
-		if (sqlhelp[idx].comments)
-			mnstr_printf(toConsole, "%s\n", sqlhelp[idx].comments);
+	if (sqlhelp->synopsis == NULL) {
+		mnstr_printf(toConsole, "%s : %s\n", sqlhelp->command, sqlhelp->syntax);
+		if (sqlhelp->comments)
+			mnstr_printf(toConsole, "%s\n", sqlhelp->comments);
 		return;
 	}
-	if (sqlhelp[idx].command)
-		mnstr_printf(toConsole, "command  : %s\n", sqlhelp[idx].command);
-	if (sqlhelp[idx].synopsis && *sqlhelp[idx].synopsis)
-		mnstr_printf(toConsole, "synopsis : %s\n", sqlhelp[idx].synopsis);
-	if (sqlhelp[idx].syntax && *sqlhelp[idx].syntax) {
+	if (sqlhelp->command)
+		mnstr_printf(toConsole, "command  : %s\n", sqlhelp->command);
+	if (sqlhelp->synopsis && *sqlhelp->synopsis)
+		mnstr_printf(toConsole, "synopsis : %s\n", sqlhelp->synopsis);
+	if (sqlhelp->syntax && *sqlhelp->syntax) {
 		mnstr_printf(toConsole, "syntax   : ");
-		for (t1 = sqlhelp[idx].syntax; *t1; t1++) {
+		for (t1 = sqlhelp->syntax; *t1; t1++) {
 			if (*t1 == '\n')
 				mnstr_printf(toConsole, "\n           ");
 			else
 				mnstr_printf(toConsole, "%c", *t1);
 		}
 		mnstr_printf(toConsole, "\n");
-		t1 = sqlhelp[idx].rules;
+		t1 = sqlhelp->rules;
 		if (t1 && *t1)
 			do
 				t1 = sql_grammar_rule(t1, toConsole);
 			while (t1);
 	}
-	if (sqlhelp[idx].comments)
-		mnstr_printf(toConsole, "%s\n", sqlhelp[idx].comments);
+	if (sqlhelp->comments)
+		mnstr_printf(toConsole, "%s\n", sqlhelp->comments);
 }
 
 static void
@@ -875,27 +880,39 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 	}
 
 	if (*pattern && *pattern != '*') {
-		int first = 1;
+		bool first = true;
 		size_t patlen = strlen(pattern);
 		/* ignore possible final newline in pattern */
 		if (pattern[patlen - 1] == '\n')
 			patlen--;
-		for (i = 0; *pattern && sqlhelp[i].command; i++)
-			if (strncasecmp(sqlhelp[i].command, pattern, patlen) == 0) {
+		for (i = 0; sqlhelp1[i].command; i++)
+			if (strncasecmp(sqlhelp1[i].command, pattern, patlen) == 0) {
 				if (!first)
 					mnstr_printf(toConsole, "\n");
-				sql_grammar(i, toConsole);
-				first = 0;
+				sql_grammar(&sqlhelp1[i], toConsole);
+				first = false;
+			}
+		for (i = 0; sqlhelp2[i].command; i++)
+			if (strncasecmp(sqlhelp2[i].command, pattern, patlen) == 0) {
+				if (!first)
+					mnstr_printf(toConsole, "\n");
+				sql_grammar(&sqlhelp2[i], toConsole);
+				first = false;
 			}
 		return;
 	}
 	// collect the major topics
-	for (i = 0; sqlhelp[i].command; i++) {
-		if (islower((unsigned char) sqlhelp[i].command[0]) && *pattern != '*')
-			break;
+	for (i = 0; sqlhelp1[i].command; i++) {
 		total++;
-		if ((len = strlen(sqlhelp[i].command)) > maxlen)
+		if ((len = strlen(sqlhelp1[i].command)) > maxlen)
 			maxlen = len;
+	}
+	if (*pattern == '*') {
+		for (i = 0; sqlhelp2[i].command; i++) {
+			total++;
+			if ((len = strlen(sqlhelp2[i].command)) > maxlen)
+				maxlen = len;
+		}
 	}
 
 	// provide summary of all major topics  (=search terms)
@@ -909,9 +926,9 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 	for (i = 0; i < step; i++) {
 		int j;
 		for (j = 0; j < ncolumns; j++) {
-			int nextNum = i + j * step;
-			if(nextNum < NUMBER_MAJOR_COMMANDS) {
-				sql_word(sqlhelp[nextNum].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
+			size_t nextNum = i + j * step;
+			if(nextNum < sizeof(sqlhelp1)/sizeof(sqlhelp1[0]) - 1) {
+				sql_word(sqlhelp1[nextNum].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
 			}
 		}
 		mnstr_printf(toConsole, "\n");
