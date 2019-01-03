@@ -5102,7 +5102,7 @@ wkbTOSTR(char **geomWKT, size_t *len, const wkb *geomWKB, bool external)
 		if (external)
 			snprintf(*geomWKT, *len, "\"%s\"", wkt);
 		else
-			snprintf(*geomWKT, *len, "%s", wkt);
+			strcpy(*geomWKT, wkt);
 		GEOSFree(wkt);
 
 		return (ssize_t) dstStrLen;
@@ -5286,7 +5286,7 @@ mbrTOSTR(char **dst, size_t *len, const mbr *atom, bool external)
 			snprintf(*dst, *len, "\"%s\"", tempWkt);
 			dstStrLen += 2;
 		} else {
-			snprintf(*dst, *len, "%s", tempWkt);
+			strcpy(*dst, tempWkt);
 		}
 	} else if (external) {
 		strcpy(*dst, "nil");
