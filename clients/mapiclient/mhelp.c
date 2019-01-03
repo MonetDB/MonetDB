@@ -53,19 +53,19 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER TABLE qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE qname SET { { READ | INSERT } ONLY | READ WRITE }",
-	 "column_def,table_constraint",
+	 "qname,column_def,table_constraint,ident",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER MERGE TABLE",
 	 "",
 	 "ALTER TABLE qname ADD TABLE qname\n"
 	 "ALTER TABLE qname DROP TABLE qname [ RESTRICT | CASCADE ]\n",
-	 "",
+	 "qname",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"},
 	{"ALTER SEQUENCE",
 	 "",
-	 "ALTER SEQUENCE ident [ AS datatype] [ RESTART [WITH start]] [INCREMENT BY increment]\n"
+	 "ALTER SEQUENCE ident [ AS data_type] [ RESTART [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE]",
-	 NULL,
+	 "ident,data_type",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"ALTER USER",
 	 "",
@@ -74,7 +74,7 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string SET SCHEMA schemaname\n"
 	 "ALTER USER RENAME TO ident\n"
 	 "ALTER USER SET [ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string",
-	 NULL,
+	 "ident",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Users"},
 	{"ANALYZE",
 	 "Collect column data statistics for optimizations",
@@ -96,7 +96,7 @@ SQLhelp sqlhelp1[] = {
 	 "COMMENT ON { SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |\n"
 	 "           FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER }\n"
 	 "     qname IS { 'my description text' | NULL | '' }",
-	 NULL,
+	 "qname",
 	 NULL},
 	{"COMMIT",
 	 "Commit the current transaction",
@@ -106,7 +106,7 @@ SQLhelp sqlhelp1[] = {
 	{"COPY BINARY",
 	 "Append binary representations into a table",
 	 "COPY [nrofrecords] BINARY INTO qname [column_list] FROM string [',' ...] [NO CONSTRAINT]",
-	 "nrofrecords",
+	 "nrofrecords,qname,column_list",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"},
 	{"COPY INTO",
 	 "Parse a csv-file into a table",
@@ -114,13 +114,13 @@ SQLhelp sqlhelp1[] = {
 	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT] [FWF '(' integer [',' ...] ')'\n"
 	 "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
 	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT]\n"
-	 "COPY query_expression INTO [STDOUT | string] [seps] [NULL [AS] string]",
-	 "nrofrecords,headerlist,separators",
+	 "COPY query_expression INTO [STDOUT | string] [separators] [NULL [AS] string]",
+	 "nrofrecords,qname,column_list,headerlist,separators",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData"},
 	{"COPY LOADER",
 	 "Copy into using a user supplied parsing function",
 	 "COPY LOADER INTO qname FROM qname '(' [ scalar_expression ... ] ')'",
-	 NULL,
+	 "qname",
 	 NULL},
 	{"CREATE AGGREGATE",
 	 "",
@@ -130,7 +130,7 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE [ OR REPLACE ] AGGREGATE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [',' ...] ')' }\n"
 	 "    LANGUAGE ident external_code",
-	 "param,data_type,function_return",
+	 "qname,param,data_type,function_return,ident",
 	 NULL},
 	{"CREATE FILTER FUNCTION",
 	 "",
@@ -188,6 +188,11 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE REPLICA TABLE [ IF NOT EXISTS ] qname table_source;",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/TransactionReplication"},
+	{"CREATE ROLE",
+	 "",
+	 "CREATE ROLE ident [ WITH ADMIN { CURRENT_USER | CURRENT_ROLE } ]",
+	 "ident",
+	 NULL},
 	{"CREATE SCHEMA",
 	 "",
 	 "CREATE SCHEMA [ IF NOT EXISTS ] schema_name [default_char_set] [path_spec] [schema_element]",
@@ -195,9 +200,9 @@ SQLhelp sqlhelp1[] = {
 	 NULL},
 	{"CREATE SEQUENCE",
 	 "Define a new sequence generator",
-	 "CREATE SEQUENCE ident [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
+	 "CREATE SEQUENCE ident [ AS data_type] [ START [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE]",
-	 NULL,
+	 "ident,data_type",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"CREATE STREAM TABLE",
 	 "Temporary table, locked during updates/ continues query processing",
@@ -389,7 +394,7 @@ SQLhelp sqlhelp1[] = {
 	{"SELECT",
 	 "",
 	 "[ WITH with_list ]\n"
-	 "SELECT [ ALL | DISTINCT [ ON ( expression [',' ...] ) ] ]\n"
+	 "SELECT [ ALL | DISTINCT [ ON { expression [',' ...] } ] ]\n"
 	 "[ '*' | expression [ [ AS ] output_name ] [',' ...] ]\n"
 	 "[ FROM from_item [',' ...] ]\n"
 	 "[ WHERE condition ]\n"
@@ -577,9 +582,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"generated_column",
 	 NULL,
-	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
+	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS data_type] [ START [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ] ",
-	 NULL,
+	 "data_type",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"global_privileges",
 	 NULL,
@@ -593,7 +598,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"headerlist",
 	 NULL,
-	 "'(' ( ident [string] ) [',' ...]",
+	 "'(' { ident [string] } [',' ...] ')'",
 	 NULL,
 	 NULL},
 	{"ident",
@@ -604,7 +609,7 @@ SQLhelp sqlhelp2[] = {
 	{"ident_list",
 	 NULL,
 	 "ident [',' ...]",
-	 NULL,
+	 "ident",
 	 NULL},
 	{"interval",
 	 NULL,
@@ -802,21 +807,19 @@ static const char *
 sql_grammar_rule(const char *word, stream *toConsole)
 {
 	char buf[65], *s = buf;
-	size_t buflen;
 	int i;
 	while (s < buf + 64 && *word != ',' && *word && !isspace((unsigned char) *word))
 		*s++ = *word++;
 	*s = 0;
-	buflen = (size_t) (s - buf);
 
-	for (i = 0; sqlhelp1[i].command; i++) {
-		if (strncasecmp(sqlhelp1[i].command, buf, buflen) == 0 && sqlhelp1[i].synopsis == NULL) {
-			mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp1[i].syntax);
-		}
-	}
 	for (i = 0; sqlhelp2[i].command; i++) {
-		if (strncasecmp(sqlhelp2[i].command, buf, buflen) == 0 && sqlhelp2[i].synopsis == NULL) {
-			mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp2[i].syntax);
+		if (strcasecmp(sqlhelp2[i].command, buf) == 0) {
+			if (sqlhelp2[i].syntax) {
+				mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp2[i].syntax);
+				if (sqlhelp2[i].synopsis)
+					mnstr_printf(toConsole, "%.*s   %s\n", (int) (s - buf), "", sqlhelp2[i].synopsis);
+			} else if (sqlhelp2[i].synopsis)
+				mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp2[i].synopsis);
 		}
 	}
 	while (*word && (isalnum((unsigned char) *word || *word == '_')))
@@ -834,6 +837,11 @@ sql_grammar(SQLhelp *sqlhelp, stream *toConsole)
 		mnstr_printf(toConsole, "%s : %s\n", sqlhelp->command, sqlhelp->syntax);
 		if (sqlhelp->comments)
 			mnstr_printf(toConsole, "%s\n", sqlhelp->comments);
+		t1 = sqlhelp->rules;
+		if (t1 && *t1)
+			do
+				t1 = sql_grammar_rule(t1, toConsole);
+			while (t1);
 		return;
 	}
 	if (sqlhelp->command)
@@ -929,8 +937,7 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 		step++;
 	}
 	for (i = 0; i < step; i++) {
-		int j;
-		for (j = 0; j < ncolumns; j++) {
+		for (int j = 0; j < ncolumns; j++) {
 			size_t nextNum = i + j * step;
 			if(nextNum < sizeof(sqlhelp1)/sizeof(sqlhelp1[0]) - 1) {
 				sql_word(sqlhelp1[nextNum].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
