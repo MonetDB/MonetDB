@@ -290,6 +290,8 @@ distinct_value_list(backend *be, stmt *list)
 	return stmt_project(be, ext, list);
 }
 
+static stmt * stmt_selectnonil( backend *be, stmt *col, stmt *s );
+
 static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r) 
 {
@@ -322,7 +324,10 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				stmt_bool(be, 1), cmp_equal, sel, 0); 
 	} else {
 		s = value_list(be, nl, NULL, NULL);
-		s = distinct_value_list(be, s); // make sure results are unique
+		
+		s = distinct_value_list(be, s); // The actual in-value-list should not contain duplicates to ensure that final join results are unique.
+		s = stmt_project(be, stmt_selectnonil(be, s, NULL), s); // The actual in-value-list should not contain null values.
+
 		s = stmt_join(be, c, s, NULL, in, cmp_equal);
 		s = stmt_result(be, s, 0);
 

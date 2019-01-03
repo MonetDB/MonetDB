@@ -1,0 +1,593 @@
+NOT IN
+
+(gdb) p nr_of_bats(mb,p)
+$95 = 3
+(gdb) p mb->var[p->argv[0]].type
+$96 = 65542
+(gdb) p mb->var[p->argv[1]].type
+$97 = 65542
+(gdb) p mb->var[p->argv[2]].type
+$98 = 65541
+(gdb) p mb->var[p->argv[3]].type
+$99 = 65541
+(gdb) p mb->var[p->argv[4]].type
+$100 = 65542
+(gdb) info br
+Num     Type           Disp Enb Address            What
+15      hw watchpoint  keep y                      (malType *) *0x7fffd404ec90
+        breakpoint already hit 3 times
+(gdb) del 15
+(gdb) p->argv[0]
+Undefined command: "p->argv".  Try "help".
+(gdb) p p->argv[0]
+$101 = 40
+(gdb) p p->argv[1]
+$102 = 41
+(gdb) p p->argv[2]
+$103 = 9
+(gdb) p p->argv[3]
+$104 = 39
+(gdb) p p->argv[4]
+$105 = 29
+(gdb) p *p
+$106 = {token = 50 '2', barrier = 0 '\000', typechk = 2 '\002', gc = 3 '\003', polymorphic = 0 '\000', varargs = 0 '\000', jump = 0, pc = 0, fcn = 0x0, blk = 0x7fffd4041c70, mitosis = -1, clock = 0, ticks = 0, calls = 0,
+  totticks = 0, wbytes = 0, modname = 0x7ffff4dfe5b8 "algebra", fcnname = 0x7ffff4dfeba8 "antijoin", argc = 8, retc = 2, maxarg = 16, argv = 0x7fffd404581c}
+(gdb) p p
+$107 = (InstrPtr) 0x7fffd40457b0
+(gdb) p mb
+$108 = (MalBlkPtr) 0x7fffd40027e0
+
+IN
+
+mb = (MalBlkPtr) 0x7fffd4029240
+p = (InstrPtr) 0x7fffd4145680
+
+(gdb) p mb->var[p->argv[0]].type
+$120 = 65542
+(gdb) p mb->var[p->argv[1]].type
+$121 = 65542
+(gdb) p mb->var[p->argv[2]].type
+$122 = 65541
+(gdb) p mb->var[p->argv[3]].type
+$123 = 65541
+(gdb) p mb->var[p->argv[4]].type
+$124 = 4
+
+(gdb) p p->argv[0]
+$127 = 36
+(gdb) p p->argv[1]
+$128 = 37
+(gdb) p p->argv[2]
+$129 = 18
+(gdb) p p->argv[3]
+$130 = 35
+(gdb) p p->argv[4]
+$131 = 38
+
+
+NOT IN
+NOTE: watching malType of VarRecord at 0x7fffd40588b0 (p &(mb->var[p->argv[4]]))
+(gdb) p &(mb->var[p->argv[4]].type)
+$162 = (malType *) 0x7fffd40588f0
+this value is set in mat_apply2 which has only one call side in the codebase in OPTmergetableImplementation.
+
+(IN) doesn't call mat_apply2
+
+(NOT IN) goes in because there is a 'select' instruction in the mal plan at the point that it is handled in OPTmergetableImplementation.
+
+(IN) doesn't have this select instruction??!!?? Why??
+
+Inside OPTmergetableImplementation the mal plans look like  these is the plan according to (NOT IN)
+IN	NOT in
+define	    define
+mvc	    mvc
+tid	    tid
+tid	    tid
+tid	    tid
+tid	    tid
+tid	    tid
+new	    new
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+new	    new
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+new	    new
+new	    new
+projection	
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+new	    new
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+bind	    bind
+new	    new
+new	    new
+projection	    select
+new	    new
+append	    append
+groupdone	    groupdone
+projection	    projection
+join	    antijoin
+projection	    projection
+projection	    projection
+new	    new
+new	    new
+new	    new
+new	    new
+new	    new
+append	    append
+append	    append
+append	    append
+append	    append
+append	    append
+append	    append
+append	    append
+append	    append
+append	    append
+append	    append
+resultSet	    resultSet
+deadcode	    deadcode
+aliases	    aliases
+constants	    constants
+commonTerms	    commonTerms
+projectionpath	    projectionpath
+deadcode	    deadcode
+reorder	    reorder
+matpack	    matpack
+dataflow	    dataflow
+querylog	    querylog
+multiplex	    multiplex
+generator	    generator
+profiler	    profiler
+candidates	    candidates
+postfix	    postfix
+deadcode	    deadcode
+wlc	    wlc
+garbageCollector	    garbageCollector
+
+So in the (IN) situation there are two projections that aren't there in (NOT IN). However in (NOT IN) we have a select.
+I am trying to figure out when the projection instruction is set. Seems that the assiocated memory addresses change per run...
+(gdb) p &(p -> fcnname)
+$27 = (str *) 0x7fffd4045a68
+the first time that I catch it using a conditional breakpoint in  OPTmergetableImplementation it has the above value
+
+Ok I think I found the origin of this projection instruction. However it is copied from some other malblock:
+(gdb) p &(old->stmt[i]->fcnname)
+$35 = (str *) 0x7fffd4041c08
+(gdb) watch * (str *) 0x7fffd4041c08
+Hardware watchpoint 11: * (str *) 0x7fffd4041c08
+Ok somewhere in the parsing a stmt_project_join occurs. This is where the projection comes from. the stacktrace is
+#0  stmt_project_join (be=0x7fffd4002b60, op1=0x7fffd4136ec0, op2=0x7fffd4137040, ins=0x0) at ../../../../sql/backends/monet5/sql_statement.c:1970
+#1  0x00007ffff49d4df2 in stmt_project (be=0x7fffd4002b60, op1=0x7fffd4136ec0, op2=0x7fffd4137040) at ../../../../sql/backends/monet5/sql_statement.c:1990
+#2  0x00007ffff49ad31d in stmt_col (be=0x7fffd4002b60, c=0x5555573dadb0, del=0x7fffd4136ec0) at ../../../../sql/backends/monet5/rel_bin.c:878
+#3  0x00007ffff49aeb16 in rel2bin_basetable (be=0x7fffd4002b60, rel=0x7fffd4136020) at ../../../../sql/backends/monet5/rel_bin.c:1307
+#4  0x00007ffff49c18f0 in subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4136020, refs=0x7fffd4136de0) at ../../../../sql/backends/monet5/rel_bin.c:5287
+#5  0x00007ffff49b598d in rel2bin_select (be=0x7fffd4002b60, rel=0x7fffd4136340, refs=0x7fffd4136de0) at ../../../../sql/backends/monet5/rel_bin.c:2707
+#6  0x00007ffff49c1a81 in subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4136340, refs=0x7fffd4136de0) at ../../../../sql/backends/monet5/rel_bin.c:5325
+#7  0x00007ffff49b4ec2 in rel2bin_project (be=0x7fffd4002b60, rel=0x7fffd4136800, refs=0x7fffd4136de0, topn=0x0) at ../../../../sql/backends/monet5/rel_bin.c:2571
+#8  0x00007ffff49c1a53 in subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4136800, refs=0x7fffd4136de0) at ../../../../sql/backends/monet5/rel_bin.c:5321
+#9  0x00007ffff49c1d46 in _subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4136800, refs=0x7fffd4136de0) at ../../../../sql/backends/monet5/rel_bin.c:5384
+#10 0x00007ffff49c1e59 in output_rel_bin (be=0x7fffd4002b60, rel=0x7fffd4136800) at ../../../../sql/backends/monet5/rel_bin.c:5407
+#11 0x00007ffff49e158e in sql_relation2stmt (be=0x7fffd4002b60, r=0x7fffd4136800) at ../../../../sql/backends/monet5/sql_gencode.c:606
+#12 0x00007ffff49e1797 in backend_dumpstmt (be=0x7fffd4002b60, mb=0x7fffd4132720, r=0x7fffd4136800, top=1, add_end=1, query=0x7fffd4001db0 "explain select * from foo where i in (1);")
+    at ../../../../sql/backends/monet5/sql_gencode.c:646
+#13 0x00007ffff49e205b in backend_dumpproc (be=0x7fffd4002b60, c=0x7ffff5054368, cq=0x7fffd41331e0, r=0x7fffd4136800) at ../../../../sql/backends/monet5/sql_gencode.c:776
+#14 0x00007ffff499cfd3 in SQLparser (c=0x7ffff5054368) at ../../../../sql/backends/monet5/sql_scenario.c:1262
+#15 0x00007ffff7a09d0e in runPhase (c=0x7ffff5054368, phase=1) at ../../../monetdb5/mal/mal_scenario.c:510
+#16 0x00007ffff7a09e17 in runScenarioBody (c=0x7ffff5054368, once=0) at ../../../monetdb5/mal/mal_scenario.c:532
+#17 0x00007ffff7a0a0d3 in runScenario (c=0x7ffff5054368, once=0) at ../../../monetdb5/mal/mal_scenario.c:569
+#18 0x00007ffff7a0be65 in MSserveClient (dummy=0x7ffff5054368) at ../../../monetdb5/mal/mal_session.c:525
+#19 0x00007ffff7a0b927 in MSscheduleClient (command=0x7fffd4000b30 "\020\v", challenge=0x7fffef1f7eab "DIGTjxl4Q", fin=0x7fffe8000c80, fout=0x7fffe8002d60, protocol=PROTOCOL_9, blocksize=8190)
+---Type <return> to continue, or q <return> to quit---c
+    at ../../../monetdb5/mal/mal_session.c:403
+#20 0x00007ffff7aa6d67 in doChallenge (data=0x7fffe8000c90) at ../../../../monetdb5/modules/mal/mal_mapi.c:270
+#21 0x00007ffff75df237 in thread_starter (arg=0x555555a35af0) at ../../gdk/gdk_system.c:492
+#22 0x00007ffff59106db in start_thread (arg=0x7fffef1f8700) at pthread_create.c:463
+#23 0x00007ffff563988f in clone () at ../sysdeps/unix/sysv/linux/x86_64/clone.S:95
+
+I THINK it is the first projection join that hits the following line as breakpoint: sql_statement.c:1978
+
+
+
+4223222 CRASH
+
+Ok so I have found some code in rel_select that when deactivated, no longer crashes the server. However it does creates resource leeks.
+
+aris@aris-MonetDB:~/Sources/monetdb$ time mclient -f rowcount select_10K_10K.sql
+633678 tuples
+
+real	2m4.657s
+user	0m0.084s
+sys	0m0.039s
+aris@aris-MonetDB:~/Sources/monetdb$ time mclient -f rowcount select_10K_10K.sql
+9366322 tuples
+
+real	5m24.929s
+user	0m0.950s
+sys	0m0.584s
+aris@aris-MonetDB:~/Sources/monetdb$ echo "first one is for default branch with 'IN' operator."
+first one is for default branch with 'IN' operator.
+aris@aris-MonetDB:~/Sources/monetdb$ echo "second one is for default branch with 'NOT IN' operator."
+second one is for default branch with 'NOT IN' operator.
+aris@aris-MonetDB:~/Sources/monetdb$ time mclient -f rowcount select_10K_10K.sql
+9366322 tuples
+
+real	5m2.891s
+user	0m1.049s
+sys	0m0.709s
+aris@aris-MonetDB:~/Sources/monetdb$ echo "Previous one is "NOT IN" query with default branch with weird "NOT IN clause" removed"
+Previous one is NOT IN query with default branch with weird NOT IN clause removed
+aris@aris-MonetDB:~/Sources/monetdb$ time mclient -f rowcount select_10K_10K.sql
+^C
+real	17m51.920s
+user	0m0.008s
+sys	0m0.000s
+
+aris@aris-MonetDB:~/Sources/monetdb$ echo "The previous query is a "NOT IN" on the special branch with the "NOT IN clause" removed. the query never finishes and mserver complains about running out of virtual memory????"
+The previous query is a NOT IN on the special branch with the NOT IN clause removed. the query never finishes and mserver complains about running out of virtual memory????
+aris@aris-MonetDB:~/Sources/monetdb$ echo "#GDKmremap(87777607680) fails, try to free up space [memory in use=71173840,virtual memory in use=673214695120]"
+#GDKmremap(87777607680) fails, try to free up space [memory in use=71173840,virtual memory in use=673214695120]
+aris@aris-MonetDB:~/Sources/monetdb$ kill -9 $(pgrep mserver5)
+
+Ok I have studied the dubious code in rel_select. What it basically does in the "NOT IN" situation is that it adds an additional predicate expression "isnull(c) = False". That's when the assertions fail.
+
+Now if I perform the following query:
+client -f rowcount  -s "select * from foo as bar where bar.i = 3 or bar.i in (1, 2);" 
+
+ it crashes in exactly the same way as the "NOT IN" version would crash without the initial predicate expression:
+ client -f rowcount  -s "select * from foo as bar bar.i in (1, 2);" 
+
+I think this is what Niels means with that the join statement doesn't merge the candidate lists correctly.
+
+The following query runs fine:
+mclient -f rowcount -s "select foo.c from foo where i in (1) or i = 2;"
+
+it cals batjoin with multiple worker threads and an empty candidate list. Which is not weird because the COMPARE expression comes after the IN expression.
+
+However if I change the order of the predicates it breaks again. Furthermore handle_in_exps is called twice!
+
+mclient -f rowcount -s "select foo.c from foo where i = 2 or i in (1);"
+
+the associated stracktrace of the first and second column
+
+#0  handle_in_exps (be=0x7fffd4002b60, ce=0x7fffd4031a60, nl=0x7fffd4031c90, left=0x7fffd4033300, right=0x0, grp=0x0, ext=0x0, cnt=0x0, sel=0x0, in=1, use_r=0) at ../../../../sql/backends/monet5/rel_bin.c:327	#0  handle_in_exps (be=0x7fffd4002b60, ce=0x7fffd4031610, nl=0x7fffd40328b0, left=0x7fffd4033300, right=0x0, grp=0x0, ext=0x0, cnt=0x0, sel=0x7fffd4033780, in=1, use_r=0) at ../../../../sql/backends/monet5/rel_bin.c:327
+#1  0x00007ffff49abb94 in exp_bin (be=0x7fffd4002b60, e=0x7fffd4031e80, left=0x7fffd4033300, right=0x0, grp=0x0, ext=0x0, cnt=0x0, sel=0x0) at ../../../../sql/backends/monet5/rel_bin.c:676	#1  0x00007ffff49abb94 in exp_bin (be=0x7fffd4002b60, e=0x7fffd4032980, left=0x7fffd4033300, right=0x0, grp=0x0, ext=0x0, cnt=0x0, sel=0x7fffd4033780) at ../../../../sql/backends/monet5/rel_bin.c:676
+#2  0x00007ffff49ac02a in exp_bin (be=0x7fffd4002b60, e=0x7fffd4032600, left=0x7fffd4033300, right=0x0, grp=0x0, ext=0x0, cnt=0x0, sel=0x0) at ../../../../sql/backends/monet5/rel_bin.c:721	
+#3  0x00007ffff49b5bd0 in rel2bin_select (be=0x7fffd4002b60, rel=0x7fffd4031920, refs=0x7fffd4032da0) at ../../../../sql/backends/monet5/rel_bin.c:2745	#2  0x00007ffff49b5bd0 in rel2bin_select (be=0x7fffd4002b60, rel=0x7fffd4031920, refs=0x7fffd4032da0) at ../../../../sql/backends/monet5/rel_bin.c:2745
+#4  0x00007ffff49c1a7d in subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4031920, refs=0x7fffd4032da0) at ../../../../sql/backends/monet5/rel_bin.c:5325	#3  0x00007ffff49c1a7d in subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4031920, refs=0x7fffd4032da0) at ../../../../sql/backends/monet5/rel_bin.c:5325
+#5  0x00007ffff49b4ebe in rel2bin_project (be=0x7fffd4002b60, rel=0x7fffd4032080, refs=0x7fffd4032da0, topn=0x0) at ../../../../sql/backends/monet5/rel_bin.c:2571	#4  0x00007ffff49b4ebe in rel2bin_project (be=0x7fffd4002b60, rel=0x7fffd4032080, refs=0x7fffd4032da0, topn=0x0) at ../../../../sql/backends/monet5/rel_bin.c:2571
+#6  0x00007ffff49c1a4f in subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4032080, refs=0x7fffd4032da0) at ../../../../sql/backends/monet5/rel_bin.c:5321	#5  0x00007ffff49c1a4f in subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4032080, refs=0x7fffd4032da0) at ../../../../sql/backends/monet5/rel_bin.c:5321
+#7  0x00007ffff49c1d42 in _subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4032080, refs=0x7fffd4032da0) at ../../../../sql/backends/monet5/rel_bin.c:5384	#6  0x00007ffff49c1d42 in _subrel_bin (be=0x7fffd4002b60, rel=0x7fffd4032080, refs=0x7fffd4032da0) at ../../../../sql/backends/monet5/rel_bin.c:5384
+#8  0x00007ffff49c1e55 in output_rel_bin (be=0x7fffd4002b60, rel=0x7fffd4032080) at ../../../../sql/backends/monet5/rel_bin.c:5407	#7  0x00007ffff49c1e55 in output_rel_bin (be=0x7fffd4002b60, rel=0x7fffd4032080) at ../../../../sql/backends/monet5/rel_bin.c:5407
+#9  0x00007ffff49e158a in sql_relation2stmt (be=0x7fffd4002b60, r=0x7fffd4032080) at ../../../../sql/backends/monet5/sql_gencode.c:606	#8  0x00007ffff49e158a in sql_relation2stmt (be=0x7fffd4002b60, r=0x7fffd4032080) at ../../../../sql/backends/monet5/sql_gencode.c:606
+#10 0x00007ffff49e1793 in backend_dumpstmt (be=0x7fffd4002b60, mb=0x7fffd40022e0, r=0x7fffd4032080, top=1, add_end=1, query=0x7fffd4002030 "select foo.c from foo where i = 2 or i in (1);") at ../../../../sql/backends/monet5/sql_gencode.c:646	#9  0x00007ffff49e1793 in backend_dumpstmt (be=0x7fffd4002b60, mb=0x7fffd40022e0, r=0x7fffd4032080, top=1, add_end=1, query=0x7fffd4002030 "select foo.c from foo where i = 2 or i in (1);") at ../../../../sql/backends/monet5/sql_gencode.c:646
+#11 0x00007ffff49e2057 in backend_dumpproc (be=0x7fffd4002b60, c=0x7ffff5054368, cq=0x7fffd4001fa0, r=0x7fffd4032080) at ../../../../sql/backends/monet5/sql_gencode.c:776	#10 0x00007ffff49e2057 in backend_dumpproc (be=0x7fffd4002b60, c=0x7ffff5054368, cq=0x7fffd4001fa0, r=0x7fffd4032080) at ../../../../sql/backends/monet5/sql_gencode.c:776
+#12 0x00007ffff499cfd3 in SQLparser (c=0x7ffff5054368) at ../../../../sql/backends/monet5/sql_scenario.c:1262	#11 0x00007ffff499cfd3 in SQLparser (c=0x7ffff5054368) at ../../../../sql/backends/monet5/sql_scenario.c:1262
+#13 0x00007ffff7a09c34 in runPhase (c=0x7ffff5054368, phase=1) at ../../../monetdb5/mal/mal_scenario.c:510	#12 0x00007ffff7a09c34 in runPhase (c=0x7ffff5054368, phase=1) at ../../../monetdb5/mal/mal_scenario.c:510
+#14 0x00007ffff7a09d3d in runScenarioBody (c=0x7ffff5054368, once=0) at ../../../monetdb5/mal/mal_scenario.c:532	#13 0x00007ffff7a09d3d in runScenarioBody (c=0x7ffff5054368, once=0) at ../../../monetdb5/mal/mal_scenario.c:532
+#15 0x00007ffff7a09ff9 in runScenario (c=0x7ffff5054368, once=0) at ../../../monetdb5/mal/mal_scenario.c:569	#14 0x00007ffff7a09ff9 in runScenario (c=0x7ffff5054368, once=0) at ../../../monetdb5/mal/mal_scenario.c:569
+#16 0x00007ffff7a0bd8b in MSserveClient (dummy=0x7ffff5054368) at ../../../monetdb5/mal/mal_session.c:525	#15 0x00007ffff7a0bd8b in MSserveClient (dummy=0x7ffff5054368) at ../../../monetdb5/mal/mal_session.c:525
+#17 0x00007ffff7a0b84d in MSscheduleClient (command=0x7fffd4000b30 "0A", challenge=0x7fffef1f7eab "1WFbqUXSprF", fin=0x555557092f60, fout=0x7fffe8002d60, protocol=PROTOCOL_9, blocksize=8190) at ../../../monetdb5/mal/mal_session.c:403	#16 0x00007ffff7a0b84d in MSscheduleClient (command=0x7fffd4000b30 "0A", challenge=0x7fffef1f7eab "1WFbqUXSprF", fin=0x555557092f60, fout=0x7fffe8002d60, protocol=PROTOCOL_9, blocksize=8190) at ../../../monetdb5/mal/mal_session.c:403
+#18 0x00007ffff7aa6c8d in doChallenge (data=0x555557092f70) at ../../../../monetdb5/modules/mal/mal_mapi.c:270	#17 0x00007ffff7aa6c8d in doChallenge (data=0x555557092f70) at ../../../../monetdb5/modules/mal/mal_mapi.c:270
+#19 0x00007ffff75df237 in thread_starter (arg=0x555555a35d90) at ../../gdk/gdk_system.c:492	#18 0x00007ffff75df237 in thread_starter (arg=0x555555a35d90) at ../../gdk/gdk_system.c:492
+#20 0x00007ffff59106db in start_thread (arg=0x7fffef1f8700) at pthread_create.c:463	#19 0x00007ffff59106db in start_thread (arg=0x7fffef1f8700) at pthread_create.c:463
+#21 0x00007ffff563988f in clone () at ../sysdeps/unix/sysv/linux/x86_64/clone.S:95	#20 0x00007ffff563988f in clone () at ../sysdeps/unix/sysv/linux/x86_64/clone.S:95
+
+I have compared the following two queries
+mclient -f rowcount -s "select foo.c from foo where i = 2 or i < 2;"
+and
+mclient -f rowcount -s "select foo.c from foo where i = 2 or i in (1);"
+
+I notice that rel2bin_select thinks that for the former query there is only one (parent) expression associated with the select query: the OR predicate itself. While for the second query, it thinks there are two associated expression.
+
+Interestingly enough when I try the folowing query:
+mclient -f rowcount -s "select foo.c from foo where i not in (1);"
+
+It also thinks that there are two expressions.
+
+Even more interesting to notice is that when I just use a simple IN query like
+mclient -f rowcount -s "select foo.c from foo where i in (1);"
+
+it thinks that there is only one expression again...
+
+And finally when I combine the IN predicate with the simple comparison predicate in a different order
+mclient -f rowcount -s "select foo.c from foo where i in (1);"
+
+The query runs fine again and the number of expressions in rel2bin_select is again one!
+
+So in all cases that run without problems the expression count is equal to one, the queries run fine. If the count is two then the query fails. 
+
+Clearly the location that fills in the expression list would be suspect now.
+But... I think that the rel_optimizer is only responsible for adding these additional where clauses.
+Basically it transforms existing expression into a more efficient expression and ADDS it to the list next to the original filter but adds to it.
+
+This sounds like pretty decent behavior to me. So I think that the culprit is stmt_join when it should accept a candidate list it somehow cannot handle this.
+
+I have changed the handle_in_expression somewhat. I combine a join without a candidate list with intersect call to the candidate list filter outside of the join. But this throws an errors in gdk in projectionpath.
+
+=select ( =| table(sys.foo) [ "foo"."i", "foo"."c" ] COUNT=) [ int "NULL" !  <= "foo"."i" !  <= int "NULL", "foo"."i" notin (int[A0]) ]
+
+=project (
+=| select (
+=| | table(sys.foo) [ "foo"."i", "foo"."c" ] COUNT
+=| ) [ int "NULL" !  <= "foo"."i" !  <= int "NULL", "foo"."i" notin (int[A0]) ]
+=) [ "foo"."c" ]
+
+In gdb a pro-tip is to use "call _rel_print(be->mvc, rel)" to see serialize the content of a relation.
+
+Ok I realized I was in a state of thinko here all along, high on my own brain fart: the problem is NOT the candidate list in join. It's the merge statement in case of an OR.
+
+The following query runs fine:
+# explain: select c from foo where i in (2, 3, 4) or i = 1;
+function user.s2_1():void;
+    X_5:void := querylog.define("explain select c from foo where i in (2, 3, 4) or i = 1;":str, "default_pipe":str, 45:int);
+barrier X_194:bit := language.dataflow();
+    X_29:bat[:int] := bat.new(nil:int);
+    X_8:int := sql.mvc();
+    X_143:bat[:str] := sql.bind(X_8:int, "sys":str, "foo":str, "c":str, 0:int, 3:int, 4:int);
+    X_142:bat[:str] := sql.bind(X_8:int, "sys":str, "foo":str, "c":str, 0:int, 2:int, 4:int);
+    X_141:bat[:str] := sql.bind(X_8:int, "sys":str, "foo":str, "c":str, 0:int, 1:int, 4:int);
+    X_140:bat[:str] := sql.bind(X_8:int, "sys":str, "foo":str, "c":str, 0:int, 0:int, 4:int);
+    X_131:bat[:int] := sql.bind(X_8:int, "sys":str, "foo":str, "i":str, 0:int, 3:int, 4:int);
+    X_130:bat[:int] := sql.bind(X_8:int, "sys":str, "foo":str, "i":str, 0:int, 2:int, 4:int);
+    X_129:bat[:int] := sql.bind(X_8:int, "sys":str, "foo":str, "i":str, 0:int, 1:int, 4:int);
+    X_128:bat[:int] := sql.bind(X_8:int, "sys":str, "foo":str, "i":str, 0:int, 0:int, 4:int);
+    C_127:bat[:oid] := sql.tid(X_8:int, "sys":str, "foo":str, 3:int, 4:int);
+    C_126:bat[:oid] := sql.tid(X_8:int, "sys":str, "foo":str, 2:int, 4:int);
+    C_125:bat[:oid] := sql.tid(X_8:int, "sys":str, "foo":str, 1:int, 4:int);
+    C_124:bat[:oid] := sql.tid(X_8:int, "sys":str, "foo":str, 0:int, 4:int);
+    X_33:bat[:int] := bat.append(X_29:bat[:int], 2:int, true:bit);
+    X_37:bat[:int] := bat.append(X_33:bat[:int], 3:int, true:bit);
+    X_40:bat[:int] := bat.append(X_37:bat[:int], 4:int, true:bit);
+    X_59:bat[:str] := bat.new(nil:str);
+    X_65:bat[:int] := bat.new(nil:int);
+    X_63:bat[:int] := bat.new(nil:int);
+    X_62:bat[:str] := bat.new(nil:str);
+    X_61:bat[:str] := bat.new(nil:str);
+    (X_41:bat[:oid], C_42:bat[:oid], X_43:bat[:lng]) := group.groupdone(X_40:bat[:int]);
+    X_44:bat[:int] := algebra.projection(C_42:bat[:oid], X_40:bat[:int]);
+    (X_162:bat[:oid], X_163:bat[:oid]) := algebra.join(X_131:bat[:int], X_44:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_167:bat[:oid] := algebra.thetaselect(X_131:bat[:int], C_127:bat[:oid], 1:int, "==":str);
+    C_171:bat[:oid] := bat.mergecand(X_162:bat[:oid], C_167:bat[:oid]);
+    X_179:bat[:str] := algebra.projection(C_171:bat[:oid], X_143:bat[:str]);
+    (X_160:bat[:oid], X_161:bat[:oid]) := algebra.join(X_130:bat[:int], X_44:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_166:bat[:oid] := algebra.thetaselect(X_130:bat[:int], C_126:bat[:oid], 1:int, "==":str);
+    C_170:bat[:oid] := bat.mergecand(X_160:bat[:oid], C_166:bat[:oid]);
+    X_178:bat[:str] := algebra.projection(C_170:bat[:oid], X_142:bat[:str]);
+    (X_158:bat[:oid], X_159:bat[:oid]) := algebra.join(X_129:bat[:int], X_44:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_165:bat[:oid] := algebra.thetaselect(X_129:bat[:int], C_125:bat[:oid], 1:int, "==":str);
+    C_169:bat[:oid] := bat.mergecand(X_158:bat[:oid], C_165:bat[:oid]);
+    X_177:bat[:str] := algebra.projection(C_169:bat[:oid], X_141:bat[:str]);
+    (X_156:bat[:oid], X_157:bat[:oid]) := algebra.join(X_128:bat[:int], X_44:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_164:bat[:oid] := algebra.thetaselect(X_128:bat[:int], C_124:bat[:oid], 1:int, "==":str);
+    C_168:bat[:oid] := bat.mergecand(X_156:bat[:oid], C_164:bat[:oid]);
+    X_176:bat[:str] := algebra.projection(C_168:bat[:oid], X_140:bat[:str]);
+    X_66:bat[:str] := bat.append(X_59:bat[:str], "sys.foo":str);
+    X_68:bat[:str] := bat.append(X_61:bat[:str], "c":str);
+    X_70:bat[:str] := bat.append(X_62:bat[:str], "varchar":str);
+    X_72:bat[:int] := bat.append(X_63:bat[:int], 10:int);
+    X_74:bat[:int] := bat.append(X_65:bat[:int], 0:int);
+    X_188:bat[:str] := mat.packIncrement(X_176:bat[:str], 4:int);
+    X_190:bat[:str] := mat.packIncrement(X_188:bat[:str], X_177:bat[:str]);
+    X_191:bat[:str] := mat.packIncrement(X_190:bat[:str], X_178:bat[:str]);
+    X_57:bat[:str] := mat.packIncrement(X_191:bat[:str], X_179:bat[:str]);
+    language.pass(X_40:bat[:int]);
+    language.pass(X_131:bat[:int]);
+    language.pass(X_130:bat[:int]);
+    language.pass(X_129:bat[:int]);
+    language.pass(X_44:bat[:int]);
+    language.pass(X_128:bat[:int]);
+
+But this query with the parameters of the OR operator reversed break in the usual opt_mergetableImplementation
+
+# explain select c from foo where i = 1 or i in (2, 3, 4);
+function user.s2_1():void;
+    X_0:void := querylog.define("explain select c from foo where i = 1 or i in (2, 3, 4);":str, "default_pipe":str, 61:int);
+    X_3:int := sql.mvc();
+    X_4:bat[:oid] := sql.tid(X_3:int, "sys":str, "foo":str);
+    X_111:bat[:oid] := sql.tid(X_3:int, "sys":str, "foo":str, 0:int, 4:int);
+    X_112:bat[:oid] := sql.tid(X_3:int, "sys":str, "foo":str, 1:int, 4:int);
+    X_113:bat[:oid] := sql.tid(X_3:int, "sys":str, "foo":str, 2:int, 4:int);
+    X_114:bat[:oid] := sql.tid(X_3:int, "sys":str, "foo":str, 3:int, 4:int);
+    X_7:bat[:int] :=   sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 0:int);
+    X_115:bat[:int] := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 0:int, 0:int, 4:int);
+    X_116:bat[:int] := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 0:int, 1:int, 4:int);
+    X_117:bat[:int] := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 0:int, 2:int, 4:int);
+    X_118:bat[:int] := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 0:int, 3:int, 4:int);
+    X_10:bat[:int] := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 1:int);
+    (X_12:bat[:oid], X_13:bat[:int]) := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 2:int);
+    (X_119:bat[:oid], X_120:bat[:int]) := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 2:int, 0:int, 4:int);
+    (X_121:bat[:oid], X_122:bat[:int]) := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 2:int, 1:int, 4:int);
+    (X_123:bat[:oid], X_124:bat[:int]) := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 2:int, 2:int, 4:int);
+    (X_125:bat[:oid], X_126:bat[:int]) := sql.bind(X_3:int, "sys":str, "foo":str, "i":str, 2:int, 3:int, 4:int);
+    X_17:bat[:str] := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 0:int);
+    X_127:bat[:str] := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 0:int, 0:int, 4:int);
+    X_128:bat[:str] := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 0:int, 1:int, 4:int);
+    X_129:bat[:str] := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 0:int, 2:int, 4:int);
+    X_130:bat[:str] := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 0:int, 3:int, 4:int);
+    X_19:bat[:str] := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 1:int);
+    (X_20:bat[:oid], X_21:bat[:str]) := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 2:int);
+    (X_131:bat[:oid], X_132:bat[:str]) := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 2:int, 0:int, 4:int);
+    (X_134:bat[:oid], X_135:bat[:str]) := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 2:int, 1:int, 4:int);
+    (X_138:bat[:oid], X_139:bat[:str]) := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 2:int, 2:int, 4:int);
+    (X_141:bat[:oid], X_142:bat[:str]) := sql.bind(X_3:int, "sys":str, "foo":str, "c":str, 2:int, 3:int, 4:int);
+    X_144:bat[:oid] := algebra.thetaselect(X_115:bat[:int], X_111:bat[:oid], 1:int, "==":str);
+    X_145:bat[:oid] := algebra.thetaselect(X_116:bat[:int], X_112:bat[:oid], 1:int, "==":str);
+    X_146:bat[:oid] := algebra.thetaselect(X_117:bat[:int], X_113:bat[:oid], 1:int, "==":str);
+    X_147:bat[:oid] := algebra.thetaselect(X_118:bat[:int], X_114:bat[:oid], 1:int, "==":str);
+    X_26 := mat.pack(X_144:bat[:oid], X_145:bat[:oid], X_146:bat[:oid], X_147:bat[:oid]);
+    X_28:bat[:int] := bat.new(nil:int);
+    X_32:bat[:int] := bat.append(X_28:bat[:int], 2:int, true:bit);
+    X_36:bat[:int] := bat.append(X_32:bat[:int], 3:int, true:bit);
+    X_39:bat[:int] := bat.append(X_36:bat[:int], 4:int, true:bit);
+    (X_40:bat[:oid], X_41:bat[:oid], X_42:bat[:lng]) := group.groupdone(X_39:bat[:int]);
+    X_43:bat[:int] := algebra.projection(X_41:bat[:oid], X_39:bat[:int]);
+    (X_148:bat[:oid], X_149:bat[:oid]) := algebra.join(X_115:bat[:int], X_43:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    (X_150:bat[:oid], X_151:bat[:oid]) := algebra.join(X_116:bat[:int], X_43:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    (X_152:bat[:oid], X_153:bat[:oid]) := algebra.join(X_117:bat[:int], X_43:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    (X_154:bat[:oid], X_155:bat[:oid]) := algebra.join(X_118:bat[:int], X_43:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    X_156:bat[:oid] := bat.mergecand(X_144:bat[:oid], X_148:bat[:oid]);
+    X_157:bat[:oid] := bat.mergecand(X_145:bat[:oid], X_150:bat[:oid]);
+    X_158:bat[:oid] := bat.mergecand(X_146:bat[:oid], X_152:bat[:oid]);
+    X_159:bat[:oid] := bat.mergecand(X_147:bat[:oid], X_154:bat[:oid]);
+    # START manual reconstruction of return argument!!!!
+    X_50 = mat.pack(X_156:bat[:oid], X_157:bat[:oid], X_158:bat[:oid], X_159:bat[:oid]);
+    # END manual reconstruction of return argument!!!!
+    X_51:bat[:int] := bat.new(nil:int);
+    X_54:bat[:int] := bat.append(X_51:bat[:int], 1:int, true:bit);
+    X_57:bat[:int] := bat.append(X_54:bat[:int], 2:int, true:bit);
+    X_60:bat[:int] := bat.append(X_57:bat[:int], 3:int, true:bit);
+    X_63:bat[:int] := bat.append(X_60:bat[:int], 4:int, true:bit);
+    (X_64:bat[:oid], X_65:bat[:oid], X_66:bat[:lng]) := group.groupdone(X_63:bat[:int]);
+    # FROM HERE manual reconstruction of return argument!!!!
+    X_67:bat[:int] := algebra.projection(X_65:bat[:oid], X_63:bat[:int]);
+    # FROM HERE manual reconstruction of everything!!!!
+    (X_68, X_69) := algebra.join(X_7, X_67, X_50, ...)
+
+Notice that everything looks pretty ok op to the last call to bat.new.
+The rel_optimizer produces an additional AND clause
+(AND because the previous filters are introduced as a candidate list)
+
+I am now 99% sure that the opt_mergetable.c's is just not aware of joins with candidate lists, hence
+the check on nr_of_bats == 2 fails because there is an additional bat of type [oid] besides the left and right bat.
+
+so all the checks based on the value of bats - nr_of_bats of the reavulated
+
+However if I change in gdb bats two 2 in an artifical way. the explain query passes the mal generation plus optimization
+
+And the resulting plan is as follows
+
+function user.s2_1():void;
+    X_5:void := querylog.define("explain select c from foo where i = 1 or i in (2, 3, 4);":str, "default_pipe":str, 61:int);
+barrier X_227:bit := language.dataflow();
+    X_33:bat[:int] := bat.new(nil:int);
+    X_8:int := sql.mvc();
+    X_151:bat[:int] := sql.bind(X_8:int, "sys":str, "foo":str, "i":str, 0:int, 3:int, 4:int);
+    C_147:bat[:oid] := sql.tid(X_8:int, "sys":str, "foo":str, 3:int, 4:int);
+    C_180:bat[:oid] := algebra.thetaselect(X_151:bat[:int], C_147:bat[:oid], 1:int, "==":str);
+    X_150:bat[:int] := sql.bind(X_8:int, "sys":str, "foo":str, "i":str, 0:int, 2:int, 4:int);
+    C_146:bat[:oid] := sql.tid(X_8:int, "sys":str, "foo":str, 2:int, 4:int);
+    C_179:bat[:oid] := algebra.thetaselect(X_150:bat[:int], C_146:bat[:oid], 1:int, "==":str);
+    X_149:bat[:int] := sql.bind(X_8:int, "sys":str, "foo":str, "i":str, 0:int, 1:int, 4:int);
+    C_145:bat[:oid] := sql.tid(X_8:int, "sys":str, "foo":str, 1:int, 4:int);
+    C_178:bat[:oid] := algebra.thetaselect(X_149:bat[:int], C_145:bat[:oid], 1:int, "==":str);
+    X_148:bat[:int] := sql.bind(X_8:int, "sys":str, "foo":str, "i":str, 0:int, 0:int, 4:int);
+    C_144:bat[:oid] := sql.tid(X_8:int, "sys":str, "foo":str, 0:int, 4:int);
+    C_177:bat[:oid] := algebra.thetaselect(X_148:bat[:int], C_144:bat[:oid], 1:int, "==":str);
+    X_163:bat[:str] := sql.bind(X_8:int, "sys":str, "foo":str, "c":str, 0:int, 3:int, 4:int);
+    X_162:bat[:str] := sql.bind(X_8:int, "sys":str, "foo":str, "c":str, 0:int, 2:int, 4:int);
+    X_161:bat[:str] := sql.bind(X_8:int, "sys":str, "foo":str, "c":str, 0:int, 1:int, 4:int);
+    X_160:bat[:str] := sql.bind(X_8:int, "sys":str, "foo":str, "c":str, 0:int, 0:int, 4:int);
+    X_37:bat[:int] := bat.append(X_33:bat[:int], 2:int, true:bit);
+    X_41:bat[:int] := bat.append(X_37:bat[:int], 3:int, true:bit);
+    X_44:bat[:int] := bat.append(X_41:bat[:int], 4:int, true:bit);
+    X_56:bat[:int] := bat.new(nil:int);
+    (X_45:bat[:oid], C_46:bat[:oid], X_47:bat[:lng]) := group.groupdone(X_44:bat[:int]);
+    X_48:bat[:int] := algebra.projection(C_46:bat[:oid], X_44:bat[:int]);
+    (X_181:bat[:oid], X_182:bat[:oid]) := algebra.join(X_148:bat[:int], X_48:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_189:bat[:oid] := bat.mergecand(C_177:bat[:oid], X_181:bat[:oid]);
+    (X_183:bat[:oid], X_184:bat[:oid]) := algebra.join(X_149:bat[:int], X_48:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_190:bat[:oid] := bat.mergecand(C_178:bat[:oid], X_183:bat[:oid]);
+    (X_185:bat[:oid], X_186:bat[:oid]) := algebra.join(X_150:bat[:int], X_48:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_191:bat[:oid] := bat.mergecand(C_179:bat[:oid], X_185:bat[:oid]);
+    (X_187:bat[:oid], X_188:bat[:oid]) := algebra.join(X_151:bat[:int], X_48:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);
+    C_192:bat[:oid] := bat.mergecand(C_180:bat[:oid], X_187:bat[:oid]);
+    X_217:bat[:oid] := mat.packIncrement(C_189:bat[:oid], 4:int);
+    X_219:bat[:oid] := mat.packIncrement(X_217:bat[:oid], C_190:bat[:oid]);
+    X_220:bat[:oid] := mat.packIncrement(X_219:bat[:oid], C_191:bat[:oid]);
+    X_55:bat[:oid] := mat.packIncrement(X_220:bat[:oid], C_192:bat[:oid]);
+    X_59:bat[:int] := bat.append(X_56:bat[:int], 1:int, true:bit);
+    X_62:bat[:int] := bat.append(X_59:bat[:int], 2:int, true:bit);
+    X_65:bat[:int] := bat.append(X_62:bat[:int], 3:int, true:bit);
+    X_68:bat[:int] := bat.append(X_65:bat[:int], 4:int, true:bit);
+    X_78:bat[:str] := bat.new(nil:str);
+    X_84:bat[:int] := bat.new(nil:int);
+    X_82:bat[:int] := bat.new(nil:int);
+    X_81:bat[:str] := bat.new(nil:str);
+    X_80:bat[:str] := bat.new(nil:str);
+    (X_69:bat[:oid], C_70:bat[:oid], X_71:bat[:lng]) := group.groupdone(X_68:bat[:int]);
+    X_72:bat[:int] := algebra.projection(C_70:bat[:oid], X_68:bat[:int]);
+    (X_199:bat[:oid], X_200:bat[:oid]) := algebra.join(X_151:bat[:int], X_72:bat[:int], X_55:bat[:oid], nil:BAT, false:bit, nil:lng);
+    X_208:bat[:str] := algebra.projection(X_199:bat[:oid], X_163:bat[:str]);
+    (X_197:bat[:oid], X_198:bat[:oid]) := algebra.join(X_150:bat[:int], X_72:bat[:int], X_55:bat[:oid], nil:BAT, false:bit, nil:lng);
+    X_207:bat[:str] := algebra.projection(X_197:bat[:oid], X_162:bat[:str]);
+    (X_195:bat[:oid], X_196:bat[:oid]) := algebra.join(X_149:bat[:int], X_72:bat[:int], X_55:bat[:oid], nil:BAT, false:bit, nil:lng);
+    X_206:bat[:str] := algebra.projection(X_195:bat[:oid], X_161:bat[:str]);
+    (X_193:bat[:oid], X_194:bat[:oid]) := algebra.join(X_148:bat[:int], X_72:bat[:int], X_55:bat[:oid], nil:BAT, false:bit, nil:lng);
+    X_205:bat[:str] := algebra.projection(X_193:bat[:oid], X_160:bat[:str]);
+    X_85:bat[:str] := bat.append(X_78:bat[:str], "sys.foo":str);
+    X_87:bat[:str] := bat.append(X_80:bat[:str], "c":str);
+    X_89:bat[:str] := bat.append(X_81:bat[:str], "varchar":str);
+    X_91:bat[:int] := bat.append(X_82:bat[:int], 10:int);
+    X_93:bat[:int] := bat.append(X_84:bat[:int], 0:int);
+    X_222:bat[:str] := mat.packIncrement(X_205:bat[:str], 4:int);
+    X_223:bat[:str] := mat.packIncrement(X_222:bat[:str], X_206:bat[:str]);
+    X_224:bat[:str] := mat.packIncrement(X_223:bat[:str], X_207:bat[:str]);
+    X_76:bat[:str] := mat.packIncrement(X_224:bat[:str], X_208:bat[:str]);
+    language.pass(X_44:bat[:int]);
+    language.pass(X_48:bat[:int]);
+    language.pass(X_68:bat[:int]);
+    language.pass(X_151:bat[:int]);
+    language.pass(X_150:bat[:int]);
+    language.pass(X_149:bat[:int]);
+    language.pass(X_148:bat[:int]);
+    language.pass(X_72:bat[:int]);
+    language.pass(X_55:bat[:oid]);
+
+This looks fine except for the fact that it is doing the sql optimization apparently wrong:
+ i = 1 or i in (2, 3, 4) =>  (i = 2 or i in (1, 2, 3)) and (i in (1, 2, 3, 4))
+ which should simply be 
+i = 1 or i in (2, 3, 4) =>  i in (1, 2, 3, 4)
+I.e. it should replace the original OR query.
+
+However besides this failure in optimization, it actually crashes on an assert failure in BATmergecand. Which is actually not that weird given the mal script.
+The mergecand operation requires that it's inputs are sorted unique non-null oid bats.
+But the input comes from join operation which do not guarantee order of the resulting candidate lists.
+
+So this already goes wrong on a deeper level. However I can solve this by sorting the output of the join.
+
+The sort on the join did help a great deal!
+
+But I notice that things are still pretty wrong. The following query produces errorneous results:
+
+mclient -f raw -s "explain select c from foo where i not in (1, 2);"
+it basicallyADDS the candidates for "not in (1)" and "not in (2)" instead of taking a proper union.
+
+I think this is due to the anti join behavior. I should basically due the grouping AFTER the join.
+
+This could also explain why I sometimes get key errors on gdk_mergecand in some other query with not in and a additional predicate.
+
+
+To visualize the mal block while debugging inside gdb: printFunction(THRdata[0],mb,0,23)
+
+I finally managed to workaround all of the internal bugs.
+
+So basically remove the candidate list from the join statement and do an intersection at the very end with the possible candidate list.
+
+Instead of an antijoin perform a join followed by a difference operator. The difference operator can only take bats of oid's so I need to use stmt_mirror that returns the oid column given a column.
+
+
+Comparing two postgresql: there is a weird behavior in postgresql:
+The following query gives empty results
+select * from foo where i not in (null, 2);
+
+While monetdb both my branch and the default branch give the results back for mathing 2, e.g. 
+select * from foo where i not in (null, 2); <=> select * from foo where i not in (2);
+
+On the other hand in monetdb both branches give a non-empty result set for
+select * from foo where i not in (null);
+Postgresql does the right thing here: it returns empty because x <> null and x = null is always empty.
