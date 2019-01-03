@@ -100,7 +100,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 	} while (0)
 
 extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, const char **errmsg);
-extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout, SQLINTEGER *consumed);
+extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout, size_t *consumed);
 
 #define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)			\
 	do {								\

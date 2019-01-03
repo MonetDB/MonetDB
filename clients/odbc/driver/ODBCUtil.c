@@ -188,7 +188,7 @@ ODBCutf82wchar(const SQLCHAR *src,
 	       SQLWCHAR *buf,
 	       SQLLEN buflen,
 	       SQLSMALLINT *buflenout,
-	       SQLINTEGER *consumed)
+	       size_t *consumed)
 {
 	SQLLEN i = 0;
 	SQLINTEGER j = 0;
@@ -263,7 +263,7 @@ ODBCutf82wchar(const SQLCHAR *src,
 	if (buflen > 0)
 		buf[i] = 0;
 	if (consumed)
-		*consumed = j;
+		*consumed = (size_t) j;
 	while (j < length && src[j]) {
 		i++;
 		if ((src[j+0] & 0x80) == 0) {
