@@ -396,23 +396,17 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
 			return _STRDUP(l->h->data.sval);
 		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
-			char *first = _STRDUP(l->h->data.sval);
-			char *second = _STRDUP(l->h->next->data.sval);
+			char *first = l->h->data.sval;
+			char *second = l->h->next->data.sval;
 			char *res;
 
 			if(!first || !second) {
-				_DELETE(first);
-				_DELETE(second);
 				return NULL;
 			}
-			res = strconcat(first,".");
-			_DELETE(first);
-			if(!res) {
-				_DELETE(second);
-				return NULL;
+			res = NEW_ARRAY(char, strlen(first) + strlen(second) + 2);
+			if (res) {
+				stpcpy(stpcpy(stpcpy(res, first), "."), second);
 			}
-			res = strconcat(res,second);
-			_DELETE(second);
 			return res;
 		} else {
 			char *e = dlist2string(sql, l, expression, err);
