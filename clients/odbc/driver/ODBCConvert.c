@@ -1929,7 +1929,7 @@ ODBCFetch(ODBCStmt *stmt,
 		for (k = 0, j = 0; k < datalen && j < buflen; k++) {
 			unsigned int n;
 
-			if (isdigit(data[k]))
+			if (isdigit((unsigned char) data[k]))
 				n = data[k] - '0';
 			else if ('A' <= data[k] && data[k] <= 'F')
 				n = data[k] - 'A' + 10;
