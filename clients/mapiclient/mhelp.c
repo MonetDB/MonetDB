@@ -222,6 +222,11 @@ SQLhelp sqlhelp1[] = {
 	 "CREATE TYPE qname EXTERNAL NAME ident",
 	 NULL,
 	 NULL},
+	{"CREATE USER",
+	 "Create a new user",
+	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string SCHEMA ident",
+	 "ident",
+	 NULL},
 	{"CREATE VIEW",
 	 "",
 	 "CREATE [ OR REPLACE ] VIEW qname [ column_list ] AS { query_expression | '(' query_expression ')' }\n"
