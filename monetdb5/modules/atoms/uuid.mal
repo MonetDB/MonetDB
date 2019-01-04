@@ -13,9 +13,14 @@ command write() address UUIDwrite;
 command prelude():void address UUIDprelude;
 uuid.prelude();
 
-command new() :uuid
+# unsafe is to prevent optimizers to reuse common expressions
+unsafe command new() :uuid
 address UUIDgenerateUuid
 comment "Generate a new uuid";
+
+unsafe command new(d:int) :uuid
+address UUIDgenerateUuidInt
+comment "Generate a new uuid (dummy version for side effect free multiplex loop)";
 
 command uuid(s:str):uuid
 address UUIDstr2uuid

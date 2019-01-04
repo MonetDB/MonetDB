@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -77,14 +77,20 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	if (path == NULL)
 		return NULL;
 	if (farmid == NOFARM) {
-		snprintf(path, pathlen, "%s%s%s%s%s",
-			 dir ? dir : "", sep, name,
-			 ext ? "." : "", ext ? ext : "");
+		char *p = path;
+		if (dir)
+			p = stpcpy(p, dir);
+		p = stpconcat(p, sep, name, NULL);
+		if (ext)
+			p = stpconcat(p, ".", ext, NULL);
 	} else {
-		snprintf(path, pathlen, "%s%c%s%s%s%s%s",
-			 BBPfarms[farmid].dirname, DIR_SEP,
-			 dir ? dir : "", sep, name,
-			 ext ? "." : "", ext ? ext : "");
+		char *p = path;
+		p = stpconcat(p, BBPfarms[farmid].dirname, DIR_SEP_STR, NULL);
+		if (dir)
+			p = stpcpy(p, dir);
+		p = stpconcat(p, sep, name, NULL);
+		if (ext)
+			p = stpconcat(p, ".", ext, NULL);
 	}
 	return path;
 }

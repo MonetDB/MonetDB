@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /**
@@ -41,9 +41,7 @@ typedef struct {
 	const char *comments;
 } SQLhelp;
 
-#define NUMBER_MAJOR_COMMANDS 75 // The number of major commands to show in case of no query
-
-SQLhelp sqlhelp[] = {
+SQLhelp sqlhelp1[] = {
 	// major commands
 	{"ALTER TABLE",
 	 "",
@@ -56,26 +54,27 @@ SQLhelp sqlhelp[] = {
 	 "ALTER TABLE [ IF EXISTS ] qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE [ IF EXISTS ] qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE [ IF EXISTS ] qname SET { { READ | INSERT } ONLY | READ WRITE }\n"
-	 "ALTER TABLE [ IF EXISTS ] qname RENAME TO ident",
-	 "column_def,table_constraint",
+	 "ALTER TABLE [ IF EXISTS ] qname RENAME TO ident\n"
+	 "ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident",
+	 "qname,column_def,table_constraint,ident",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER MERGE TABLE",
 	 "",
 	 "ALTER TABLE [ IF EXISTS ] qname ADD TABLE qname [ AS PARTITION opt_partition_spec ]\n"
 	 "ALTER TABLE [ IF EXISTS ] qname DROP TABLE qname [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE [ IF EXISTS ] qname SET TABLE qname AS PARTITION opt_partition_spec",
-	 "opt_partition_spec",
+	 "qname,opt_partition_spec",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"},
 	{"ALTER SCHEMA",
 	 "",
 	 "ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident",
-	 NULL,
+	 "ident",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
 	{"ALTER SEQUENCE",
 	 "",
-	 "ALTER SEQUENCE ident [ AS datatype] [ RESTART [WITH start]] [INCREMENT BY increment]\n"
+	 "ALTER SEQUENCE ident [ AS data_type] [ RESTART [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE]",
-	 NULL,
+	 "ident,data_type",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"ALTER USER",
 	 "",
@@ -84,7 +83,7 @@ SQLhelp sqlhelp[] = {
 	 "ALTER USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string SET SCHEMA schemaname\n"
 	 "ALTER USER RENAME TO ident\n"
 	 "ALTER USER SET [ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string",
-	 NULL,
+	 "ident",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Users"},
 	{"ANALYZE",
 	 "Collect column data statistics for optimizations",
@@ -106,7 +105,7 @@ SQLhelp sqlhelp[] = {
 	 "COMMENT ON { SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |\n"
 	 "           FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER }\n"
 	 "     qname IS { 'my description text' | NULL | '' }",
-	 NULL,
+	 "qname",
 	 NULL},
 	{"COMMIT",
 	 "Commit the current transaction",
@@ -116,7 +115,7 @@ SQLhelp sqlhelp[] = {
 	{"COPY BINARY",
 	 "Append binary representations into a table",
 	 "COPY [nrofrecords] BINARY INTO qname [column_list] FROM string [',' ...] [ON { CLIENT | SERVER }] [NO CONSTRAINT]",
-	 "nrofrecords",
+	 "nrofrecords,qname,column_list",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"},
 	{"COPY INTO",
 	 "Parse a csv file into a table or write a query result to a csv file",
@@ -124,13 +123,13 @@ SQLhelp sqlhelp[] = {
 	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT] [FWF '(' integer [',' ...] ')'\n"
 	 "COPY [nrofrecords] INTO qname [column_list] FROM STDIN [headerlist] [ separators]\n"
 	 " [NULL [AS] string] [LOCKED] [BEST EFFORT] [NO CONSTRAINT]\n"
-	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [seps] [NULL [AS] string]",
-	 "nrofrecords,headerlist,separators",
+	 "COPY query_expression INTO [STDOUT | string [ON { CLIENT | SERVER }]] [separators] [NULL [AS] string]",
+	 "nrofrecords,qname,column_list,headerlist,separators",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/LoadingBulkData"},
 	{"COPY LOADER",
 	 "Copy into using a user supplied parsing function",
 	 "COPY LOADER INTO qname FROM qname '(' [ scalar_expression ... ] ')'",
-	 NULL,
+	 "qname",
 	 NULL},
 	{"CREATE AGGREGATE",
 	 "",
@@ -140,7 +139,7 @@ SQLhelp sqlhelp[] = {
 	 "CREATE [ OR REPLACE ] AGGREGATE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [',' ...] ')' }\n"
 	 "    LANGUAGE ident external_code",
-	 "param,data_type,function_return",
+	 "qname,param,data_type,function_return,ident",
 	 NULL},
 	{"CREATE FILTER FUNCTION",
 	 "",
@@ -198,6 +197,11 @@ SQLhelp sqlhelp[] = {
 	 "CREATE REPLICA TABLE [ IF NOT EXISTS ] qname table_source;",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/TransactionReplication"},
+	{"CREATE ROLE",
+	 "",
+	 "CREATE ROLE ident [ WITH ADMIN { CURRENT_USER | CURRENT_ROLE } ]",
+	 "ident",
+	 NULL},
 	{"CREATE SCHEMA",
 	 "",
 	 "CREATE SCHEMA [ IF NOT EXISTS ] schema_name [default_char_set] [path_spec] [schema_element]",
@@ -205,9 +209,9 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE SEQUENCE",
 	 "Define a new sequence generator",
-	 "CREATE SEQUENCE ident [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
+	 "CREATE SEQUENCE ident [ AS data_type] [ START [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE]",
-	 NULL,
+	 "ident,data_type",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"CREATE STREAM TABLE",
 	 "Temporary table, locked during updates/ continues query processing",
@@ -231,6 +235,11 @@ SQLhelp sqlhelp[] = {
 	 "Add user defined type to the type system ",
 	 "CREATE TYPE qname EXTERNAL NAME ident",
 	 NULL,
+	 NULL},
+	{"CREATE USER",
+	 "Create a new user",
+	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string SCHEMA ident",
+	 "ident",
 	 NULL},
 	{"CREATE VIEW",
 	 "",
@@ -275,7 +284,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"DELETE",
 	 "",
-	 "[ WITH with_list ] DELETE FROM qname [ WHERE search_condition ]",
+	 "[ WITH with_list ] DELETE FROM qname [ [AS] ident ] [ WHERE search_condition ]",
 	 "with_list,search_condition",
 	 NULL},
 	{"DROP AGGREGATE",
@@ -356,7 +365,7 @@ SQLhelp sqlhelp[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"INSERT",
 	 "",
-	 "[ WITH with_list ] INSERT INTO qname [ column_list ] { DEFAULT VALUES | VALUES row_values | query_expression }",
+	 "[ WITH with_list ] INSERT INTO qname [ column_list ] [ { DEFAULT VALUES | VALUES row_values | query_expression } ]",
 	 "with_list,column_list,row_values,query_expression",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Updates"},
 	{"GRANT",
@@ -365,6 +374,11 @@ SQLhelp sqlhelp[] = {
 	 "GRANT role [',' ...] TO grantee [',' ...] [ WITH ADMIN OPTION]",
 	 "privileges,role,grantee",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Permissions"},
+	{"MERGE",
+	 "",
+	 "[ WITH with_list ] MERGE INTO qname [ [AS] ident ] USING table_ref ON search_condition merge_list",
+	 "with_list,table_ref,search_condition,merge_list",
+	 NULL},
 	{"RELEASE SAVEPOINT",
 	 "",
 	 "RELEASE SAVEPOINT ident",
@@ -394,18 +408,18 @@ SQLhelp sqlhelp[] = {
 	{"SELECT",
 	 "",
 	 "[ WITH with_list ]\n"
-	 "SELECT [ ALL | DISTINCT [ ON ( expression [',' ...] ) ] ]\n"
+	 "SELECT [ ALL | DISTINCT [ ON { expression [',' ...] } ] ]\n"
 	 "[ '*' | expression [ [ AS ] output_name ] [',' ...] ]\n"
 	 "[ FROM from_item [',' ...] ]\n"
 	 "[ WINDOW window_definition [',' ...] ]\n"
 	 "[ WHERE condition ]\n"
-	 "[ GROUP BY grouping_element ',', ...] ]\n"
+	 "[ GROUP BY expression [',' ...] ]\n"
 	 "[ HAVING condition [',' ...] ]\n"
 	 "[ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] [ CORRESPONDING ] select ]\n"
 	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [',' ...] ]\n"
 	 "[ LIMIT { count | param } ]\n"
 	 "[ OFFSET { count | param } ]\n"
-	 "[ SAMPLE size ]",
+	 "[ SAMPLE size [ SEED size ] ]",
 	 "with_list,expression,window_definition",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"},
 	{"SET",
@@ -479,7 +493,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"UPDATE",
 	 "",
-	 "[ WITH with_list ] UPDATE qname SET assignment_list [ WHERE search_condition ]",
+	 "[ WITH with_list ] UPDATE qname [ [AS] ident ] SET assignment_list [ WHERE search_condition ]",
 	 "with_list,assignment_list,search_condition",
 	 NULL},
 	{"WHILE",
@@ -492,7 +506,9 @@ SQLhelp sqlhelp[] = {
 	 "{ window_aggregate_function | window_rank_function } OVER { ident | '(' window_specification ')' }",
 	 "window_aggregate_function,window_rank_function,window_specification",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/WindowFunctions"},
-
+	{NULL, NULL, NULL, NULL, NULL}	/* End of list marker */
+};
+SQLhelp sqlhelp2[] = {
 // The subgrammar rules
 	{"assignment_list",
 	 NULL,
@@ -574,9 +590,9 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"generated_column",
 	 NULL,
-	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
+	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS data_type] [ START [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ] ",
-	 NULL,
+	 "data_type",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"global_privileges",
 	 NULL,
@@ -590,7 +606,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"headerlist",
 	 NULL,
-	 "'(' ( ident [string] ) [',' ...]",
+	 "'(' { ident [string] } [',' ...] ')'",
 	 NULL,
 	 NULL},
 	{"ident",
@@ -601,7 +617,7 @@ SQLhelp sqlhelp[] = {
 	{"ident_list",
 	 NULL,
 	 "ident [',' ...]",
-	 NULL,
+	 "ident",
 	 NULL},
 	{"interval",
 	 NULL,
@@ -622,6 +638,17 @@ SQLhelp sqlhelp[] = {
 	 NULL,
 	 "READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE ",
 	 NULL,
+	 NULL},
+	{"merge_clause",
+	 NULL,
+	 "{ WHEN MATCHED [ AND search_condition ] THEN { UPDATE SET assignment_list | DELETE } } |\n"
+	 "{ WHEN NOT MATCHED [ AND search_condition ] THEN INSERT [ column_list ] [ { DEFAULT VALUES | VALUES row_values } ] }",
+	 "search_condition,assignment_list,column_list,row_values",
+	 NULL},
+	{"merge_list",
+	 NULL,
+	 "merge_clause [ ',' ... ]",
+	 "merge_clause",
 	 NULL},
 	{"nrofrecords",
 	 "",
@@ -774,8 +801,8 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"update_statement",
 	 NULL,
-	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | copyfrom_stmt",
-	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | copyfrom_stmt",
+	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | merge_stmt | copyfrom_stmt",
+	 "delete_stmt,truncate_stmt,insert_stmt,update_stmt,merge_stmt,copyfrom_stmt",
 	 NULL},
 	{"triggered_action",
 	 NULL,
@@ -826,8 +853,8 @@ SQLhelp sqlhelp[] = {
 	{"window_specification",
 	 NULL,
 	 "[ ident ]\n"
-	 "[ PARTITION BY column_ref [ ',' ... ] ]\n"
-	 "[ ORDER BY sort_spec ]\n"
+	 "[ PARTITION BY expression [ ',' ... ] ]\n"
+	 "[ ORDER BY expression [ ASC | DESC ] [ NULLS { FIRST | LAST } ] [ ',' ... ] ]\n"
 	 "[ { ROWS | RANGE | GROUPS } { window_frame_start | BETWEEN window_bound AND window_bound }\n"
 	 "  [ EXCLUDING { CURRENT ROW | GROUP | TIES | NO OTHERS } ] ]",
 	 "window_bound,window_frame_start",
@@ -865,16 +892,19 @@ static const char *
 sql_grammar_rule(const char *word, stream *toConsole)
 {
 	char buf[65], *s = buf;
-	size_t buflen;
 	int i;
 	while (s < buf + 64 && *word != ',' && *word && !isspace((unsigned char) *word))
 		*s++ = *word++;
 	*s = 0;
-	buflen = (size_t) (s - buf);
 
-	for (i = 0; sqlhelp[i].command; i++) {
-		if (strncasecmp(sqlhelp[i].command, buf, buflen) == 0 && sqlhelp[i].synopsis == NULL) {
-			mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp[i].syntax);
+	for (i = 0; sqlhelp2[i].command; i++) {
+		if (strcasecmp(sqlhelp2[i].command, buf) == 0) {
+			if (sqlhelp2[i].syntax) {
+				mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp2[i].syntax);
+				if (sqlhelp2[i].synopsis)
+					mnstr_printf(toConsole, "%.*s   %s\n", (int) (s - buf), "", sqlhelp2[i].synopsis);
+			} else if (sqlhelp2[i].synopsis)
+				mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp2[i].synopsis);
 		}
 	}
 	while (*word && (isalnum((unsigned char) *word || *word == '_')))
@@ -885,36 +915,41 @@ sql_grammar_rule(const char *word, stream *toConsole)
 }
 
 static void
-sql_grammar(int idx, stream *toConsole)
+sql_grammar(SQLhelp *sqlhelp, stream *toConsole)
 {
 	const char *t1;
-	if (sqlhelp[idx].synopsis == NULL) {
-		mnstr_printf(toConsole, "%s : %s\n", sqlhelp[idx].command, sqlhelp[idx].syntax);
-		if (sqlhelp[idx].comments)
-			mnstr_printf(toConsole, "%s\n", sqlhelp[idx].comments);
+	if (sqlhelp->synopsis == NULL) {
+		mnstr_printf(toConsole, "%s : %s\n", sqlhelp->command, sqlhelp->syntax);
+		if (sqlhelp->comments)
+			mnstr_printf(toConsole, "%s\n", sqlhelp->comments);
+		t1 = sqlhelp->rules;
+		if (t1 && *t1)
+			do
+				t1 = sql_grammar_rule(t1, toConsole);
+			while (t1);
 		return;
 	}
-	if (sqlhelp[idx].command)
-		mnstr_printf(toConsole, "command  : %s\n", sqlhelp[idx].command);
-	if (sqlhelp[idx].synopsis && *sqlhelp[idx].synopsis)
-		mnstr_printf(toConsole, "synopsis : %s\n", sqlhelp[idx].synopsis);
-	if (sqlhelp[idx].syntax && *sqlhelp[idx].syntax) {
+	if (sqlhelp->command)
+		mnstr_printf(toConsole, "command  : %s\n", sqlhelp->command);
+	if (sqlhelp->synopsis && *sqlhelp->synopsis)
+		mnstr_printf(toConsole, "synopsis : %s\n", sqlhelp->synopsis);
+	if (sqlhelp->syntax && *sqlhelp->syntax) {
 		mnstr_printf(toConsole, "syntax   : ");
-		for (t1 = sqlhelp[idx].syntax; *t1; t1++) {
+		for (t1 = sqlhelp->syntax; *t1; t1++) {
 			if (*t1 == '\n')
 				mnstr_printf(toConsole, "\n           ");
 			else
 				mnstr_printf(toConsole, "%c", *t1);
 		}
 		mnstr_printf(toConsole, "\n");
-		t1 = sqlhelp[idx].rules;
+		t1 = sqlhelp->rules;
 		if (t1 && *t1)
 			do
 				t1 = sql_grammar_rule(t1, toConsole);
 			while (t1);
 	}
-	if (sqlhelp[idx].comments)
-		mnstr_printf(toConsole, "%s\n", sqlhelp[idx].comments);
+	if (sqlhelp->comments)
+		mnstr_printf(toConsole, "%s\n", sqlhelp->comments);
 }
 
 static void
@@ -943,27 +978,39 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 	}
 
 	if (*pattern && *pattern != '*') {
-		int first = 1;
+		bool first = true;
 		size_t patlen = strlen(pattern);
 		/* ignore possible final newline in pattern */
 		if (pattern[patlen - 1] == '\n')
 			patlen--;
-		for (i = 0; *pattern && sqlhelp[i].command; i++)
-			if (strncasecmp(sqlhelp[i].command, pattern, patlen) == 0) {
+		for (i = 0; sqlhelp1[i].command; i++)
+			if (strncasecmp(sqlhelp1[i].command, pattern, patlen) == 0) {
 				if (!first)
 					mnstr_printf(toConsole, "\n");
-				sql_grammar(i, toConsole);
-				first = 0;
+				sql_grammar(&sqlhelp1[i], toConsole);
+				first = false;
+			}
+		for (i = 0; sqlhelp2[i].command; i++)
+			if (strncasecmp(sqlhelp2[i].command, pattern, patlen) == 0) {
+				if (!first)
+					mnstr_printf(toConsole, "\n");
+				sql_grammar(&sqlhelp2[i], toConsole);
+				first = false;
 			}
 		return;
 	}
 	// collect the major topics
-	for (i = 0; sqlhelp[i].command; i++) {
-		if (islower((unsigned char) sqlhelp[i].command[0]) && *pattern != '*')
-			break;
+	for (i = 0; sqlhelp1[i].command; i++) {
 		total++;
-		if ((len = strlen(sqlhelp[i].command)) > maxlen)
+		if ((len = strlen(sqlhelp1[i].command)) > maxlen)
 			maxlen = len;
+	}
+	if (*pattern == '*') {
+		for (i = 0; sqlhelp2[i].command; i++) {
+			total++;
+			if ((len = strlen(sqlhelp2[i].command)) > maxlen)
+				maxlen = len;
+		}
 	}
 
 	// provide summary of all major topics  (=search terms)
@@ -975,11 +1022,10 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 		step++;
 	}
 	for (i = 0; i < step; i++) {
-		int j;
-		for (j = 0; j < ncolumns; j++) {
-			int nextNum = i + j * step;
-			if(nextNum < NUMBER_MAJOR_COMMANDS) {
-				sql_word(sqlhelp[nextNum].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
+		for (int j = 0; j < ncolumns; j++) {
+			size_t nextNum = i + j * step;
+			if(nextNum < sizeof(sqlhelp1)/sizeof(sqlhelp1[0]) - 1) {
+				sql_word(sqlhelp1[nextNum].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
 			}
 		}
 		mnstr_printf(toConsole, "\n");

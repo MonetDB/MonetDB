@@ -5,7 +5,7 @@ dnl This Source Code Form is subject to the terms of the Mozilla Public
 dnl License, v. 2.0.  If a copy of the MPL was not distributed with this
 dnl file, You can obtain one at http://mozilla.org/MPL/2.0/.
 dnl
-dnl Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+dnl Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 dnl Process this file with autoconf to produce a configure script.
 
@@ -53,7 +53,7 @@ dnl  (including their trailing newline).
 
 AC_PREREQ([2.63b])
 AC_INIT([MonetDB], [11.32.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
-AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.])
+AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -1356,10 +1356,12 @@ AS_VAR_IF([have_bz2], [no], [], [
 				[AS_VAR_IF([have_bz2], [auto], [],
 					[AC_MSG_ERROR([-lbz2 library not found])])
 				 have_bz2=no
+				 bzip2_LIBS=
 				 why_not_bz2="(bz2 library not found)"])],
 			[AS_VAR_IF([have_bz2], [auto], [],
 				[AC_MSG_ERROR([bzlib.h header not found])])
 			 have_bz2=no
+			 bzip2_LIBS=
 			 why_not_bz2="(bzlib.h header not found)"])
 		LDFLAGS="$save_LDFLAGS"
 		CPPFLAGS="$save_CPPFLAGS"])
@@ -1460,7 +1462,7 @@ AS_VAR_IF([have_pthread], [no], [], [
 			# complains about "error: argument unused during
 			# compilation: '-pthread'".
 			# However, disabling -pthread completely might be
-			# too redical/harsh; see also
+			# too radical/harsh; see also
 			# https://www.monetdb.org/pipermail/developers-list/2014-March/004264.html
 			# a better alternative might be required but is
 			# still pending ...
@@ -2588,6 +2590,7 @@ AC_CHECK_FUNCS([\
 	setsid \
 	shutdown \
 	sigaction \
+	stpcpy \
 	strcasestr \
 	strncasecmp \
 	strptime \
@@ -2840,6 +2843,18 @@ typedef enum {
 /* static_assert is a C11 feature, defined in assert.h which also exists
  * in many other compilers we ignore it if the compiler doesn't support it */
 @%:@define static_assert(expr, mesg)	((void) 0)
+@%:@endif
+
+@%:@ifndef HAVE_STPCPY
+static inline char *
+stpcpy(char *restrict dst, const char *restrict src)
+{
+	size_t i;
+	for (i = 0; src[i]; i++)
+		dst[i] = src[i];
+	dst[i] = 0;
+	return dst + i;
+}
 @%:@endif
 
 @%:@if defined(HAVE___INT128)

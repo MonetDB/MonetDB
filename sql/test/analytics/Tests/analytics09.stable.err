@@ -28,23 +28,12 @@ stderr of test 'analytics09` in directory 'sql/test/analytics` itself:
 # 13:13:17 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1389" "--port=37694"
 # 13:13:17 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
-QUERY = select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics; --TODO support multiple aggregations within the same projection
-ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
-QUERY = select avg(sum(aa)) over (),
-               cast(sum(aa) * count(case when bb < 2 then bb - 1 else bb + 1 end) / avg(1) over (rows between current row and current row) as bigint),
-               avg(sum(aa)) over (rows unbounded preceding),
-               avg(sum(aa)) over (range unbounded preceding) from analytics; --TODO support multiple aggregations within the same projection
-ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
+MAPI  = (monetdb) /var/tmp/mtest-7775/.s.monetdb.35563
 QUERY = select avg(sum(aa)) over (),
                avg(sum(aa)) over (rows unbounded preceding),
                cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
                avg(sum(aa)) over (range unbounded preceding) from analytics group by aa; --TODO support multiple aggregations within the same projection
-ERROR = !Cannot use non GROUP BY column 'L4' in query results without an aggregate function
+ERROR = !Cannot use non GROUP BY column 'L3' in query results without an aggregate function
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
 QUERY = select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics; --error, nesting aggregation functions
@@ -54,13 +43,25 @@ MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
 QUERY = select cast(prod(sum(aa)) * count(1 + aa) / avg(null) over () as bigint) from analytics; --error, nesting aggregation functions
 ERROR = !SELECT: subquery result missing
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
-QUERY = select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics; --TODO we don't support expressions in partition by as well group by statements
-ERROR = !syntax error, unexpected CASE in: "select rank() over (partition by case"
+MAPI  = (monetdb) /var/tmp/mtest-17541/.s.monetdb.31437
+QUERY = select rank() over (partition by sum(aa), bb) from analytics group by aa; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'bb' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-1389/.s.monetdb.37694
-QUERY = select rank() over (partition by sum(aa)) from analytics; --TODO we don't support expressions in partition by as well group by
-ERROR = !syntax error, unexpected '(', expecting ')' in: "select rank() over (partition by sum("
+MAPI  = (monetdb) /var/tmp/mtest-10156/.s.monetdb.31763
+QUERY = select min(aa) over (partition by sum(bb)) from analytics; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9405/.s.monetdb.32071
+QUERY = select min(aa) over (partition by sum(aa)) from analytics; ---error
+ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9623/.s.monetdb.34265
+QUERY = select rank() over (order by sum(aa), bb) from analytics; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'bb' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9623/.s.monetdb.34265
+QUERY = select min(aa) over (order by sum(bb)) from analytics; --error
+ERROR = !SELECT: cannot use non GROUP BY column 'aa' in query results without an aggregate function
 CODE  = 42000
 
 # 13:13:17 >  

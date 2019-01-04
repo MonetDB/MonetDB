@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -219,6 +219,23 @@ MATHunary_FINITE(bit *res, const dbl *a)
 	return MAL_SUCCEED;
 }
 
+#include "xoshiro256starstar.h"
+
+/* global pseudo random generator state */
+static random_state_engine mmath_rse;
+/* serialize access to state */
+static MT_Lock mmath_rse_lock MT_LOCK_INITIALIZER("mmath_rse_lock");
+
+str
+MATHprelude(void *ret)
+{
+	(void) ret;
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_init(&mmath_rse_lock, "mmath_rse_lock");
+#endif
+	init_random_state_engine(mmath_rse, (uint64_t) GDKusec());
+	return MAL_SUCCEED;
+}
 
 str
 MATHrandint(int *res)
@@ -226,7 +243,9 @@ MATHrandint(int *res)
 #ifdef STATIC_CODE_ANALYSIS
 	*res = 0;
 #else
-	*res = rand();
+	MT_lock_set(&mmath_rse_lock);
+	*res = (int) (next(mmath_rse) >> 33);
+	MT_lock_unset(&mmath_rse_lock);
 #endif
 	return MAL_SUCCEED;
 }
@@ -238,7 +257,9 @@ MATHrandintarg(int *res, const int *dummy)
 #ifdef STATIC_CODE_ANALYSIS
 	*res = 0;
 #else
-	*res = rand();
+	MT_lock_set(&mmath_rse_lock);
+	*res = (int) (next(mmath_rse) >> 33);
+	MT_lock_unset(&mmath_rse_lock);
 #endif
 	return MAL_SUCCEED;
 }
@@ -247,18 +268,22 @@ str
 MATHsrandint(void *ret, const int *seed)
 {
 	(void) ret;
-	srand(*seed);
+	MT_lock_set(&mmath_rse_lock);
+	init_random_state_engine(mmath_rse, (uint64_t) *seed);
+	MT_lock_unset(&mmath_rse_lock);
 	return MAL_SUCCEED;
 }
 
 str
 MATHsqlrandint(int *res, const int *seed)
 {
-	srand(*seed);
 #ifdef STATIC_CODE_ANALYSIS
 	*res = 0;
 #else
-	*res = rand();
+	MT_lock_set(&mmath_rse_lock);
+	init_random_state_engine(mmath_rse, (uint64_t) *seed);
+	*res = (int) (next(mmath_rse) >> 33);
+	MT_lock_unset(&mmath_rse_lock);
 #endif
 	return MAL_SUCCEED;
 }

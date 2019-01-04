@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -60,6 +60,7 @@ mal_export ssize_t UUIDtoString(str *retval, size_t *len, const uuid *value, boo
 mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
 
 mal_export str UUIDgenerateUuid(uuid **retval);
+mal_export str UUIDgenerateUuidInt(uuid **retval, int *d);
 mal_export str UUIDstr2uuid(uuid **retval, str *s);
 mal_export str UUIDuuid2str(str *retval, uuid **u);
 mal_export str UUIDisaUUID(bit *retval, str *u);
@@ -214,6 +215,13 @@ UUIDgenerateUuid(uuid **retval)
 		}
 #endif
 	return MAL_SUCCEED;
+}
+
+str
+UUIDgenerateUuidInt(uuid **retval, int *d)
+{
+	(void)d;
+	return UUIDgenerateUuid(retval);
 }
 
 str

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -196,6 +196,10 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 {
 	int ambiguous = 0;
 	sql_rel *l = NULL, *r = NULL;
+
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	switch(rel->op) {
 	case op_join:
 	case op_left:
@@ -261,7 +265,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f )
 {
 	sql_rel *p = NULL;
 
-	if (f == sql_sel && rel && is_project(rel->op) && !is_processed(rel))
+	if (is_sql_sel(f) && rel && is_project(rel->op) && !is_processed(rel))
 		rel = rel->l;
 
 	if (!rel || (rel = rel_bind_column_(sql, &p, rel, cname)) == NULL)
@@ -884,6 +888,9 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	list *lexps, *rexps, *exps;
 	int include_subquery = (intern==2)?1:0;
 
+	if (THRhighwater())
+		return sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+
 	if (!rel || (!include_subquery && is_subquery(rel) && rel->op == op_project))
 		return new_exp_list(sql->sa);
 
@@ -960,9 +967,14 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	find the base column.
  */
 static int
-rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
+rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 {
 	int found = 0;
+
+	if (THRhighwater()) {
+		sql_error(sql, 10, SQLSTATE(42000) "query too complex: running out of stack space");
+		return 0;
+	}
 
 	switch (rel->op) {
 	case op_join:
@@ -971,9 +983,9 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 	case op_full:
 	case op_apply:
 		/* first right (possible subquery) */
-		found = rel_bind_path_(rel->r, e, path);
+		found = rel_bind_path_(sql, rel->r, e, path);
 		if (!found)
-			found = rel_bind_path_(rel->l, e, path);
+			found = rel_bind_path_(sql, rel->l, e, path);
 		break;
 	case op_semi:
 	case op_anti:
@@ -981,14 +993,14 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 	case op_select:
 	case op_topn:
 	case op_sample:
-		found = rel_bind_path_(rel->l, e, path);
+		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
 
 	case op_union:
 	case op_inter:
 	case op_except:
 		if (!rel->exps) {
-			found = rel_bind_path_(rel->l, e, path);
+			found = rel_bind_path_(sql, rel->l, e, path);
 			assert(0);
 			break;
 		}
@@ -1018,9 +1030,9 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 }
 
 static list *
-rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
+rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e )
 {
-	list *path = new_rel_list(sa);
+	list *path = new_rel_list(sql->sa);
 	if(!path) {
 		return NULL;
 	}
@@ -1029,7 +1041,7 @@ rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
 		e = e->l;
 	if (e->type == e_column) {
 		if (rel) {
-			if (!rel_bind_path_(rel, e, path)) {
+			if (!rel_bind_path_(sql, rel, e, path)) {
 				/* something is wrong */
 				return NULL;
 			}
@@ -1047,7 +1059,7 @@ rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
 sql_rel *
 rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 {
-	list *l = rel_bind_path(sql->sa, rel, ls);
+	list *l = rel_bind_path(sql, rel, ls);
 	node *n;
 	sql_rel *lrel = NULL, *p = NULL;
 
@@ -1104,14 +1116,14 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e)
 sql_rel *
 rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e)
 {
-	list *l = rel_bind_path(sql->sa, rel, ls);
-	list *r = rel_bind_path(sql->sa, rel, rs);
+	list *l = rel_bind_path(sql, rel, ls);
+	list *r = rel_bind_path(sql, rel, rs);
 	list *r2 = NULL;
 	node *ln, *rn;
 	sql_rel *lrel = NULL, *rrel = NULL, *rrel2 = NULL, *p = NULL;
 
 	if (rs2)
-		r2 = rel_bind_path(sql->sa, rel, rs2);
+		r2 = rel_bind_path(sql, rel, rs2);
 	if (!l || !r || (rs2 && !r2))
 		return NULL;
 

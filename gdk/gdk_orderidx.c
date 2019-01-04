@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -83,7 +83,7 @@ BATcheckorderidx(BAT *b)
 		b->torderidx = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0) {
-			snprintf(hp->filename, sizeof(hp->filename), "%s.torderidx", nme);
+			stpconcat(hp->filename, nme, ".torderidx", NULL);
 
 			/* check whether a persisted orderidx can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {
@@ -132,7 +132,7 @@ createOIDXheap(BAT *b, bool stable)
 	nme = BBP_physical(b->batCacheid);
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
-	    snprintf(m->filename, sizeof(m->filename), "%s.torderidx", nme) < 0 ||
+	    stpconcat(m->filename, nme, ".torderidx", NULL) == NULL ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
 		GDKfree(m);
 		return NULL;
@@ -350,7 +350,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	}
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
-	    snprintf(m->filename, sizeof(m->filename), "%s.torderidx", nme) < 0 ||
+	    stpconcat(m->filename, nme, ".torderidx", NULL) == NULL ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
 		GDKfree(m);
 		MT_lock_unset(&GDKhashLock(b->batCacheid));

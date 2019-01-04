@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -401,8 +401,10 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
 {									\
 	atommem(TYPE##Strlen);						\
 	if (is_##TYPE##_nil(*src)) {					\
-		if (external)						\
-			return snprintf(*dst, *len, "nil");		\
+		if (external) {						\
+			strcpy(*dst, "nil");				\
+			return 3;					\
+		}							\
 		strcpy(*dst, str_nil);					\
 		return 1;						\
 	}								\
@@ -481,14 +483,19 @@ bitToStr(char **dst, size_t *len, const bit *src, bool external)
 	atommem(6);
 
 	if (is_bit_nil(*src)) {
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
-	if (*src)
-		return snprintf(*dst, *len, "true");
-	return snprintf(*dst, *len, "false");
+	if (*src) {
+		strcpy(*dst, "true");
+		return 4;
+	}
+	strcpy(*dst, "false");
+	return 5;
 }
 
 ssize_t
@@ -538,14 +545,16 @@ batToStr(char **dst, size_t *len, const bat *src, bool external)
 
 	if (is_bat_nil(b) || (s = BBPname(b)) == NULL || *s == 0) {
 		atommem(4);
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
 	i = strlen(s) + 3;
 	atommem(i);
-	return snprintf(*dst, *len, "<%s>", s);
+	return stpconcat(*dst, "<", s, ">", NULL) - *dst;
 }
 
 
@@ -989,8 +998,10 @@ dblToStr(char **dst, size_t *len, const dbl *src, bool external)
 
 	atommem(dblStrlen);
 	if (is_dbl_nil(*src)) {
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
@@ -1059,8 +1070,10 @@ fltToStr(char **dst, size_t *len, const flt *src, bool external)
 
 	atommem(fltStrlen);
 	if (is_flt_nil(*src)) {
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}
@@ -1134,8 +1147,10 @@ OIDtoStr(char **dst, size_t *len, const oid *src, bool external)
 	atommem(oidStrlen);
 
 	if (is_oid_nil(*src)) {
-		if (external)
-			return snprintf(*dst, *len, "nil");
+		if (external) {
+			strcpy(*dst, "nil");
+			return 3;
+		}
 		strcpy(*dst, str_nil);
 		return 1;
 	}

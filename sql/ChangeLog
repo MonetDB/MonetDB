@@ -1,6 +1,32 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Dec 20 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Allow usage of custom expressions in GROUP BY and PARTITION BY
+  clauses. The same expressions can be used in the projection phase as
+  long as it is exactly the same used in the grouping clause (textual
+  lookup is performed). As an example the query:
+  SELECT col1*2 FROM t1 GROUP BY col1*2; is correct, while
+  SELECT sin(col1+5) FROM t1 GROUP BY col1*2; is wrong.
+- Allow usage of WITH clauses in insert, update, delete and merge
+  statements.
+
+* Mon Dec 17 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Implemented merge statements from SQL:2003 standard. Using a source
+  relation R, a target table T is updating depending on the result of
+  the merge. In case of a match, the table T's row is either updated
+  or deleted with R's row. In a non-match case, R's row is inserted
+  into T. The grammar is the follows:
+  > MERGE INTO target [ [AS] ident ] USING source ON search_condition
+  { WHEN MATCHED [ AND search_condition ] THEN
+    { UPDATE SET assignment_list | DELETE } } |
+  { WHEN NOT MATCHED [ AND search_condition ] THEN
+    INSERT [ column_list ] [ { DEFAULT VALUES | VALUES row_values } ] }
+- Added possibility to change the schema of a table with the syntax:
+  > ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident
+- Added optional alias option for target table in update and delete
+  statements: (e.g. UPDATE target AS alias SET col1=1 WHERE alias.col2 < 5)
+
 * Thu Nov 29 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Improved and extended storagemodel functionality. Changes include:
 - Added views sys."tablestorage" and sys."schemastorage" for easy and

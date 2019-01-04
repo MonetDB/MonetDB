@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* (c): M. L. Kersten
@@ -1813,7 +1813,11 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			goto allLeft;
 		case 'C': case 'c':
 			if (MALkeyword(cntxt, "command", 7)) {
-				parseCommandPattern(cntxt, COMMANDsymbol);
+				MalBlkPtr p = parseCommandPattern(cntxt, COMMANDsymbol);
+				if (p) {
+					p->unsafeProp = unsafeProp;
+					p->sealedProp = sealedProp;
+				}
 				cntxt->curprg->def->unsafeProp = unsafeProp;
 				cntxt->curprg->def->sealedProp = sealedProp;
 				if (inlineProp)
@@ -1840,8 +1844,11 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			goto allLeft;
 		case 'F': case 'f':
 			if (MALkeyword(cntxt, "function", 8)) {
+				MalBlkPtr p;
 				cntxt->blkmode++;
-				if (parseFunction(cntxt, FUNCTIONsymbol)){
+				if ((p = parseFunction(cntxt, FUNCTIONsymbol))){
+					p->unsafeProp = unsafeProp;
+					p->sealedProp = sealedProp;
 					cntxt->curprg->def->inlineProp = inlineProp;
 					cntxt->curprg->def->unsafeProp = unsafeProp;
 					cntxt->curprg->def->sealedProp = sealedProp;
@@ -1887,9 +1894,14 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			goto allLeft;
 		case 'P': case 'p':
 			if (MALkeyword(cntxt, "pattern", 7)) {
+				MalBlkPtr p;
 				if( inlineProp )
 					parseError(cntxt, "parseError:INLINE ignored\n");
-				parseCommandPattern(cntxt, PATTERNsymbol);
+				p = parseCommandPattern(cntxt, PATTERNsymbol);
+				if (p) {
+					p->unsafeProp = unsafeProp;
+					p->sealedProp = sealedProp;
+				}
 				cntxt->curprg->def->unsafeProp = unsafeProp;
 				cntxt->curprg->def->sealedProp = sealedProp;
 				inlineProp = 0;
