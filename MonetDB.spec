@@ -113,7 +113,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Aug2018-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Aug2018-SP2/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1061,6 +1061,37 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Jan 04 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.31.13-20190104
+- Rebuilt.
+- BZ#6643: schema name qualifier in create global temporary table
+  json.table6643 ... is not honered
+- BZ#6645: optimizer treats all the functions with no or constant
+  parameters as constant
+- BZ#6650: PREPARE SQL statement fails to compile user defined functions
+  with parameter/s
+- BZ#6651: Multi-column IN clause for subquery produces wrong results
+- BZ#6653: CREATE TABLE accepts empty table/column name
+- BZ#6654: Incorrect handling of 'TRUE' in compound select
+- BZ#6657: Restart sequence with a non atomic sub-query cardinality
+  gives wrong error message
+- BZ#6660: GRANTing a ROLE is not idempotent
+- BZ#6662: Concurrency Conflicts Exception string "!transaction is
+  aborted because of concurrency conflicts, will ROLLBACK instead" not
+  shown on prompt.
+- BZ#6664: mserver5 crash: infinite recursive happens at rel_bin.c:489
+- BZ#6665: Creation of serial types does not accept negative numbers
+- BZ#6666: COPY INTO from .. LOCKED doubles input data
+- BZ#6668: The SAMPLE key word doesn't work in a subquery.
+- BZ#6669: COPY [xxx RECORDS] INTO foo FROM STDIN ... doesn't work
+  without specifying nr of to be copied records
+- BZ#6672: SQLGetData with SQL_C_WCHAR string truncation and invalid
+  StrLen_or_Ind value
+
+* Tue Oct 30 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.13-20190104
+- sql: Disabled function sys.getcontent(url).
+
+* Thu Oct 11 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.13-20190104
+
 * Thu Oct 11 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.31.11-20181011
 - Rebuilt.
 - BZ#6648: key property potentially wrong after type conversion
