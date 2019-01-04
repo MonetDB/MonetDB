@@ -70,13 +70,13 @@ command_help(int argc, char *argv[])
 		printf("    -P pass  password to use to login at remote merovingian\n");
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "create") == 0) {
-		printf("Usage: monetdb create [-m pattern] database [database ...]\n");
+		printf("Usage: monetdb create [-m pattern] [-p pass] database [database ...]\n");
 		printf("  Initialises a new database or multiplexfunnel in the MonetDB Server.  A\n");
 		printf("  database created with this command makes it available\n");
 		printf("  for use, however in maintenance mode (see monetdb lock).\n");
 		printf("Options:\n");
-		printf("  -m       create a multiplex funnel for pattern.\n");
-		printf("  -p pass  create database with given password for database user.\n");
+		printf("  -m pattern  create a multiplex funnel for pattern.\n");
+		printf("  -p pass     create database with given password for database user.\n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		printf("Usage: monetdb destroy [-f] database [database ...]\n");
 		printf("  Removes the given database, including all its data and\n");
