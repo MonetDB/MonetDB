@@ -47,10 +47,11 @@ Ready.
 % item_id,	ss_item_rev,	ss_dev,	cs_item_rev,	cs_dev,	ws_item_rev,	ws_dev,	average # name
 % char,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal,	decimal # type
 % 16,	40,	40,	40,	40,	40,	40,	40 # length
-[ "AAAAAAAACNGBAAAA",	1900.15,	100.349612,	1950.92,	103.030847,	1829.52,	96.6195413,	1893.53	]
-[ "AAAAAAAAIDOAAAAA",	6605.22,	104.173422,	6078.33,	95.8636407,	6338.25,	99.9629373,	6340.6	]
-[ "AAAAAAAAJMFCAAAA",	3608.52,	103.053363,	3590.47,	102.537885,	3305.82,	94.4087518,	3501.60333	]
+[ "AAAAAAAACNGBAAAA",	1900.15,	100.300,	1950.92,	103.000,	1829.52,	96.600,	1893.530	]
+[ "AAAAAAAAIDOAAAAA",	6605.22,	104.100,	6078.33,	95.800,	6338.25,	99.900,	6340.600	]
+[ "AAAAAAAAJMFCAAAA",	3608.52,	103.000,	3590.47,	102.500,	3305.82,	94.400,	3501.603	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 19:59:03 >  
+# 19:59:03 >  "Done."
+# 19:59:03 >  
+
