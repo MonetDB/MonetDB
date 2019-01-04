@@ -1,0 +1,74 @@
+stdout of test '83` in directory 'sql/benchmarks/tpcds` itself:
+
+
+# 11:40:04 >  
+# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 11:40:04 >  
+
+# MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpcds', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.694 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:40:04 >  
+# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 11:40:04 >  
+
+#WITH sr_items AS
+#  (SELECT i_item_id item_id,
+#          sum(sr_return_quantity) sr_item_qty
+#   FROM store_returns,
+#        item,
+#        date_dim
+#   WHERE sr_item_sk = i_item_sk
+#     AND d_date IN
+#       (SELECT d_date
+#        FROM date_dim
+#        WHERE d_week_seq IN
+#            (SELECT d_week_seq
+#             FROM date_dim
+#             WHERE d_date IN ('2000-06-30',
+#                              '2000-09-27',
+#                              '2000-11-17')))
+#     AND sr_returned_date_sk = d_date_sk
+#   GROUP BY i_item_id),
+% sys.sr_items,	sys.sr_items,	sys.L64,	sys.cr_items,	sys.L67,	sys.wr_items,	sys.L72,	sys.L74 # table_name
+% item_id,	sr_item_qty,	sr_dev,	cr_item_qty,	cr_dev,	wr_item_qty,	wr_dev,	average # name
+% char,	hugeint,	decimal,	hugeint,	decimal,	hugeint,	decimal,	decimal # type
+% 16,	2,	40,	2,	40,	2,	40,	40 # length
+[ "AAAAAAAAANECAAAA",	34,	18.500,	9,	4.900,	18,	9.800,	20.333	]
+[ "AAAAAAAACAOBAAAA",	27,	11.600,	38,	16.400,	12,	5.100,	25.666	]
+[ "AAAAAAAACBNDAAAA",	38,	11.600,	52,	15.900,	19,	5.800,	36.333	]
+[ "AAAAAAAACCGAAAAA",	30,	15.100,	18,	9.000,	18,	9.000,	22.000	]
+[ "AAAAAAAACKBDAAAA",	32,	12.600,	22,	8.700,	30,	11.900,	28.000	]
+[ "AAAAAAAACOIBAAAA",	31,	8.000,	29,	7.500,	68,	17.700,	42.666	]
+[ "AAAAAAAAEBLDAAAA",	9,	3.700,	34,	13.900,	38,	15.600,	27.000	]
+[ "AAAAAAAAELFDAAAA",	54,	20.200,	4,	1.400,	31,	11.600,	29.666	]
+[ "AAAAAAAAFEBAAAAA",	19,	15.400,	17,	13.800,	5,	4.000,	13.666	]
+[ "AAAAAAAAFODDAAAA",	30,	11.400,	7,	2.600,	50,	19.100,	29.000	]
+[ "AAAAAAAAGLMCAAAA",	37,	26.800,	3,	2.100,	6,	4.300,	15.333	]
+[ "AAAAAAAAHAGDAAAA",	16,	8.300,	15,	7.800,	33,	17.100,	21.333	]
+[ "AAAAAAAAHCDEAAAA",	41,	19.200,	1,	0.400,	29,	13.600,	23.666	]
+[ "AAAAAAAALAEBAAAA",	19,	6.900,	21,	7.600,	51,	18.600,	30.333	]
+[ "AAAAAAAAMBDEAAAA",	26,	6.300,	66,	16.100,	44,	10.700,	45.333	]
+[ "AAAAAAAAMBGBAAAA",	5,	5.000,	1,	1.000,	27,	27.200,	11.000	]
+[ "AAAAAAAAMDODAAAA",	17,	10.800,	32,	20.500,	3,	1.900,	17.333	]
+[ "AAAAAAAAMOIAAAAA",	84,	25.400,	12,	3.600,	14,	4.200,	36.666	]
+[ "AAAAAAAANMAAAAAA",	12,	25.000,	1,	2.000,	3,	6.200,	5.333	]
+[ "AAAAAAAAODOAAAAA",	5,	4.300,	3,	2.600,	30,	26.300,	12.666	]
+[ "AAAAAAAAPJOCAAAA",	29,	15.300,	21,	11.100,	13,	6.800,	21.000	]
+
+# 15:09:58 >  
+# 15:09:58 >  "Done."
+# 15:09:58 >  
+

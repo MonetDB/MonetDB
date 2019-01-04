@@ -25,7 +25,6 @@ SELECT w_substr ,
                ELSE 0
            END) AS ">120 days"
 FROM catalog_sales ,
-
   (SELECT SUBSTRING(w_warehouse_name,1,20) w_substr,
           *
    FROM warehouse) AS sq1 ,
@@ -44,3 +43,4 @@ ORDER BY w_substr ,
          sm_type ,
          cc_name
 LIMIT 100;
+

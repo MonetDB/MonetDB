@@ -1,0 +1,155 @@
+stdout of test '22` in directory 'sql/benchmarks/tpcds` itself:
+
+
+# 11:40:04 >  
+# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 11:40:04 >  
+
+# MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpcds', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.694 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:40:04 >  
+# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 11:40:04 >  
+
+#WITH results AS
+#  (SELECT i_product_name ,
+#          i_brand ,
+#          i_class ,
+#          i_category ,
+#          inv_quantity_on_hand qoh
+#   FROM inventory ,
+#        date_dim ,
+#        item ,
+#        warehouse
+#   WHERE inv_date_sk=d_date_sk
+#     AND inv_item_sk=i_item_sk
+#     AND inv_warehouse_sk = w_warehouse_sk
+#     AND d_month_seq BETWEEN 1200 AND 1200 + 11 ),
+#     results_rollup AS
+#  (SELECT i_product_name,
+#          i_brand,
+#          i_class,
+#          i_category,
+#          avg(qoh) qoh
+#   FROM results
+% .results_rollup,	.results_rollup,	.results_rollup,	.results_rollup,	.results_rollup # table_name
+% i_product_name,	i_brand,	i_class,	i_category,	qoh # name
+% char,	char,	char,	char,	double # type
+% 50,	50,	50,	50,	24 # length
+[ "ationbarn station",	NULL,	NULL,	NULL,	430	]
+[ "ationbarn station",	"amalgbrand #8",	NULL,	NULL,	430	]
+[ "ationbarn station",	"amalgbrand #8",	"bathroom",	NULL,	430	]
+[ "ationbarn station",	"amalgbrand #8",	"bathroom",	"Home",	430	]
+[ "ationationprin st",	NULL,	NULL,	NULL,	435	]
+[ "ationationprin st",	"amalgexporti #2",	NULL,	NULL,	435	]
+[ "ationationprin st",	"amalgexporti #2",	"newborn",	NULL,	435	]
+[ "ationationprin st",	"amalgexporti #2",	"newborn",	"Children",	435	]
+[ "ationoughtn stn st",	NULL,	NULL,	NULL,	435	]
+[ "ationoughtn stn st",	"edu packimporto #2",	NULL,	NULL,	435	]
+[ "ationoughtn stn st",	"edu packimporto #2",	"sports-apparel",	NULL,	435	]
+[ "ationoughtn stn st",	"edu packimporto #2",	"sports-apparel",	"Men",	435	]
+[ "oughtcallyn stantiought",	NULL,	NULL,	NULL,	436	]
+[ "oughtcallyn stantiought",	"corpcorp #2",	NULL,	NULL,	436	]
+[ "oughtcallyn stantiought",	"corpcorp #2",	"rings",	NULL,	436	]
+[ "oughtcallyn stantiought",	"corpcorp #2",	"rings",	"Jewelry",	436	]
+[ "callyesebaration",	NULL,	NULL,	NULL,	437	]
+[ "callyesebaration",	"namelesscorp #7",	NULL,	NULL,	437	]
+[ "callyesebaration",	"namelesscorp #7",	"mens watch",	NULL,	437	]
+[ "callyesebaration",	"namelesscorp #7",	"mens watch",	"Jewelry",	437	]
+[ "n stcallyableoughtought",	NULL,	NULL,	NULL,	439	]
+[ "n stcallyableoughtought",	"amalgimporto #2",	NULL,	NULL,	439	]
+[ "n stcallyableoughtought",	"amalgimporto #2",	"accessories",	NULL,	439	]
+[ "n stcallyableoughtought",	"amalgimporto #2",	"accessories",	"Men",	439	]
+[ "n stprieingationought",	NULL,	NULL,	NULL,	439	]
+[ "n stprieingationought",	"namelesscorp #8",	NULL,	NULL,	439	]
+[ "n stprieingationought",	"namelesscorp #8",	"mens watch",	NULL,	439	]
+[ "n stprieingationought",	"namelesscorp #8",	"mens watch",	"Jewelry",	439	]
+[ "priationn stn st",	NULL,	NULL,	NULL,	439	]
+[ "priationn stn st",	"importoscholar #2",	NULL,	NULL,	439	]
+[ "priationn stn st",	"importoscholar #2",	"country",	NULL,	439	]
+[ "priationn stn st",	"importoscholar #2",	"country",	"Music",	439	]
+[ "n stbarought",	NULL,	NULL,	NULL,	440	]
+[ "n stbarought",	"corpbrand #10",	NULL,	NULL,	440	]
+[ "n stbarought",	"corpbrand #10",	"rugs",	NULL,	440	]
+[ "n stbarought",	"corpbrand #10",	"rugs",	"Home",	440	]
+[ "n stn stantioughtought",	NULL,	NULL,	NULL,	440	]
+[ "n stn stantioughtought",	"exportimaxi #8",	NULL,	NULL,	440	]
+[ "n stn stantioughtought",	"exportimaxi #8",	"computers",	NULL,	440	]
+[ "n stn stantioughtought",	"exportimaxi #8",	"computers",	"Books",	440	]
+[ "n stcallyesepriought",	NULL,	NULL,	NULL,	441	]
+[ "n stcallyesepriought",	"edu packscholar #2",	NULL,	NULL,	441	]
+[ "n stcallyesepriought",	"edu packscholar #2",	"classical",	NULL,	441	]
+[ "n stcallyesepriought",	"edu packscholar #2",	"classical",	"Music",	441	]
+[ "oughtbarantiese",	NULL,	NULL,	NULL,	441	]
+[ "oughtbarantiese",	"exportiedu pack #2",	NULL,	NULL,	441	]
+[ "oughtbarantiese",	"exportiedu pack #2",	"kids",	NULL,	441	]
+[ "oughtbarantiese",	"exportiedu pack #2",	"kids",	"Shoes",	441	]
+[ "priantiationation",	NULL,	NULL,	NULL,	441	]
+[ "priantiationation",	"importoimporto #2",	NULL,	NULL,	441	]
+[ "priantiationation",	"importoimporto #2",	"shirts",	NULL,	441	]
+[ "priantiationation",	"importoimporto #2",	"shirts",	"Men",	441	]
+[ "oughtbarprin st",	NULL,	NULL,	NULL,	442	]
+[ "oughtbarprin st",	"edu packscholar #2",	NULL,	NULL,	442	]
+[ "oughtbarprin st",	"edu packscholar #2",	"classical",	NULL,	442	]
+[ "oughtbarprin st",	"edu packscholar #2",	"classical",	"Music",	442	]
+[ "ationeingation",	NULL,	NULL,	NULL,	443	]
+[ "ationeingation",	"amalgexporti #2",	NULL,	NULL,	443	]
+[ "ationeingation",	"amalgexporti #2",	"newborn",	NULL,	443	]
+[ "ationeingation",	"amalgexporti #2",	"newborn",	"Children",	443	]
+[ "ationbarn stableought",	NULL,	NULL,	NULL,	444	]
+[ "ationbarn stableought",	"corpbrand #8",	NULL,	NULL,	444	]
+[ "ationbarn stableought",	"corpbrand #8",	"rugs",	NULL,	444	]
+[ "ationbarn stableought",	"corpbrand #8",	"rugs",	"Home",	444	]
+[ "eingableableationought",	NULL,	NULL,	NULL,	444	]
+[ "eingableableationought",	"amalgimporto #1",	NULL,	NULL,	444	]
+[ "eingableableationought",	"amalgimporto #1",	"accessories",	NULL,	444	]
+[ "eingableableationought",	"amalgimporto #1",	"accessories",	"Men",	444	]
+[ "eseationcallyableought",	NULL,	NULL,	NULL,	444	]
+[ "eseationcallyableought",	"importoexporti #1",	NULL,	NULL,	444	]
+[ "eseationcallyableought",	"importoexporti #1",	"infants",	NULL,	444	]
+[ "eseationcallyableought",	"importoexporti #1",	"infants",	"Children",	444	]
+[ "ableationprieing",	NULL,	NULL,	NULL,	445	]
+[ "ableationprieing",	"amalgamalg #1",	NULL,	NULL,	445	]
+[ "ableationprieing",	"amalgamalg #1",	"dresses",	NULL,	445	]
+[ "ableationprieing",	"amalgamalg #1",	"dresses",	"Women",	445	]
+[ "antibareingantiought",	NULL,	NULL,	NULL,	445	]
+[ "antibareingantiought",	"importoimporto #2",	NULL,	NULL,	445	]
+[ "antibareingantiought",	"importoimporto #2",	"shirts",	NULL,	445	]
+[ "antibareingantiought",	"importoimporto #2",	"shirts",	"Men",	445	]
+[ "ationantibarationought",	NULL,	NULL,	NULL,	445	]
+[ "ationantibarationought",	"univmaxi #8",	NULL,	NULL,	445	]
+[ "ationantibarationought",	"univmaxi #8",	"pools",	NULL,	445	]
+[ "ationantibarationought",	"univmaxi #8",	"pools",	"Sports",	445	]
+[ "n steseantiation",	NULL,	NULL,	NULL,	445	]
+[ "n steseantiation",	"univmaxi #10",	NULL,	NULL,	445	]
+[ "n steseantiation",	"univmaxi #10",	"pools",	NULL,	445	]
+[ "n steseantiation",	"univmaxi #10",	"pools",	"Sports",	445	]
+[ "oughtpricallybarought",	NULL,	NULL,	NULL,	445	]
+[ "oughtpricallybarought",	"edu packexporti #2",	NULL,	NULL,	445	]
+[ "oughtpricallybarought",	"edu packexporti #2",	"school-uniforms",	NULL,	445	]
+[ "oughtpricallybarought",	"edu packexporti #2",	"school-uniforms",	"Children",	445	]
+[ "pribarpribarought",	NULL,	NULL,	NULL,	446	]
+[ "pribarpribarought",	"edu packimporto #2",	NULL,	NULL,	446	]
+[ "pribarpribarought",	"edu packimporto #2",	"sports-apparel",	NULL,	446	]
+[ "pribarpribarought",	"edu packimporto #2",	"sports-apparel",	"Men",	446	]
+[ "ationbarpriableought",	NULL,	NULL,	NULL,	447	]
+[ "ationbarpriableought",	"exportiamalg #2",	NULL,	NULL,	447	]
+[ "ationbarpriableought",	"exportiamalg #2",	"maternity",	NULL,	447	]
+[ "ationbarpriableought",	"exportiamalg #2",	"maternity",	"Women",	447	]
+
+# 11:40:04 >  
+# 11:40:04 >"Done."
+# 11:40:04 >  

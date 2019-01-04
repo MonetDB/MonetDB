@@ -179,8 +179,8 @@ Ready.
 % sys.dbgen_version,	sys.dbgen_version,	sys.dbgen_version,	sys.dbgen_version # table_name
 % dv_version,	dv_create_date,	dv_create_time,	dv_cmdline_args # name
 % varchar,	date,	time,	varchar # type
-% 5,	10,	8,	0 # length
-[ "2.0.0",	2018-11-02,	17:31:46,	NULL	]
+% 6,	10,	8,	10 # length
+[ "2.10.0",	2018-10-22,	17:17:42,	"-DIR qual "	]
 #select * from customer_address limit 9;
 % sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address # table_name
 % ca_address_sk,	ca_address_id,	ca_street_number,	ca_street_name,	ca_street_type,	ca_suite_number,	ca_city,	ca_county,	ca_state,	ca_zip,	ca_country,	ca_gmt_offset,	ca_location_type # name

@@ -1,0 +1,108 @@
+stdout of test '39b` in directory 'sql/benchmarks/tpcds` itself:
+
+
+# 11:40:04 >  
+# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 11:40:04 >  
+
+# MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpcds', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.694 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:40:04 >  
+# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 11:40:04 >  
+
+#WITH inv AS
+#  (SELECT w_warehouse_name,
+#          w_warehouse_sk,
+#          i_item_sk,
+#          d_moy,
+#          stdev,
+#          mean,
+#          CASE mean
+#              WHEN 0 THEN NULL
+#              ELSE stdev/mean
+#          END cov
+#   FROM
+#     (SELECT w_warehouse_name,
+#             w_warehouse_sk,
+#             i_item_sk,
+#             d_moy,
+#             stddev_samp(inv_quantity_on_hand) stdev,
+#             avg(inv_quantity_on_hand) mean
+#      FROM inventory,
+#           item,
+#           warehouse,
+#           date_dim
+#      WHERE inv_item_sk = i_item_sk
+#        AND inv_warehouse_sk = w_warehouse_sk
+#        AND inv_date_sk = d_date_sk
+#        AND d_year =2001
+#      GROUP BY w_warehouse_name,
+#               w_warehouse_sk,
+#               i_item_sk,
+#               d_moy) foo
+#   WHERE CASE mean
+#             WHEN 0 THEN 0
+#             ELSE stdev/mean
+#         END > 1)
+#SELECT inv1.w_warehouse_sk,
+#       inv1.i_item_sk,
+#       inv1.d_moy,
+#       inv1.mean,
+#       inv1.cov,
+#       inv2.w_warehouse_sk,
+#       inv2.i_item_sk,
+#       inv2.d_moy,
+#       inv2.mean,
+#       inv2.cov
+#FROM inv inv1,
+#     inv inv2
+#WHERE inv1.i_item_sk = inv2.i_item_sk
+#  AND inv1.w_warehouse_sk = inv2.w_warehouse_sk
+#  AND inv1.d_moy=1
+#  AND inv2.d_moy=1+1
+#  AND inv1.cov > 1.5
+#ORDER BY inv1.w_warehouse_sk,
+#         inv1.i_item_sk,
+#         inv1.d_moy,
+#         inv1.mean,
+#         inv1.cov,
+#         inv2.d_moy,
+#         inv2.mean,
+#         inv2.cov ;
+#
+%
+%
+%
+%
+[ 1,	1569,	1,	212.000000,	1.6302135196395,	1,	1569,	2,	239.250000,	1.2641513267824	]
+[ 1,	5627,	1,	282.750000,	1.5657032366347,	1,	5627,	2,	297.500000,	1.2084286841446	]
+[ 1,	7999,	1,	166.250000,	1.7924231710846,	1,	7999,	2,	375.333333,	1.0080922644484	]
+[ 1,	8611,	1,	300.500000,	1.519154518416,	1,	8611,	2,	243.750000,	1.234212278096	]
+[ 1,	15345,	1,	148.500000,	1.5295784035843,	1,	15345,	2,	246.500000,	1.508798774725	]
+[ 2,	71,	1,	221.500000,	1.5639741083347,	2,	71,	2,	309.000000,	1.4917057895886	]
+[ 2,	6103,	1,	194.333333,	1.516067020537,	2,	6103,	2,	158.500000,	1.2743698636165	]
+[ 2,	6489,	1,	268.000000,	1.6956372368419,	2,	6489,	2,	389.000000,	1.41057805193	]
+[ 2,	15839,	1,	353.000000,	1.5063684437543,	2,	15839,	2,	255.500000,	1.2362393182894	]
+[ 3,	7207,	1,	329.666667,	1.5954482144608,	3,	7207,	2,	414.500000,	1.0179197079089	]
+[ 3,	10547,	1,	182.333333,	1.5325641542952,	3,	10547,	2,	320.250000,	1.3024418443732	]
+[ 3,	12867,	1,	278.250000,	1.6403800123934,	3,	12867,	2,	350.750000,	1.2006933321732	]
+[ 4,	947,	1,	247.500000,	1.6933181813503,	4,	947,	2,	203.333333,	1.2054331471447	]
+[ 5,	3137,	1,	271.250000,	1.5754532205943,	5,	3137,	2,	380.000000,	1.0834203388611	]
+
+# 11:40:04 >  
+# 11:40:04 >  "Done."
+# 11:40:04 >  
