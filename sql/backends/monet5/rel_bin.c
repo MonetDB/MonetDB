@@ -279,26 +279,33 @@ value_list(backend *be, list *vals, stmt *left, stmt *sel)
 }
 
 static stmt*
-distinct_value_list(backend *be, stmt *list)
+distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
 {
+	node *n;
+	stmt *s;
+
+	/* create bat append values */
+	s = stmt_temp(be, exp_subtype(vals->h->data));
+	for( n = vals->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL);
+
+		if (exp_is_null(be->mvc, e))
+			*last_null_value = i;
+
+		if (!i)
+			return NULL;
+		
+		s = stmt_append(be, s, i);
+	}
+	
 	// Probably faster to filter out the values directly in the underlying list of atoms.
 	// But for now use groupby to filter out duplicate values.
 
-	stmt* groupby = stmt_group(be, list, NULL, NULL, NULL, 1);
+	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
 	stmt* ext = stmt_result(be, groupby, 1);
 	
-	return stmt_project(be, ext, list);
-}
-
-static sql_exp* in_value_list_contains_null(mvc* sql, list *vals) {
-	for(node* n = vals->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (exp_is_null(sql, e))
-			return e;
-	}
-
-	return NULL;
+	return stmt_project(be, ext, s);
 }
 
 static stmt * stmt_selectnonil( backend *be, stmt *col, stmt *s );
@@ -334,17 +341,17 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				stmt_const(be, bin_first_column(be, left), s), 
 				stmt_bool(be, 1), cmp_equal, sel, 0); 
 	} else {
-		s = value_list(be, nl, NULL, NULL);
+		stmt* last_null_value = NULL; // CORNER CASE ALERT: See description below.
 		
-		s = distinct_value_list(be, s); // The actual in-value-list should not contain duplicates to ensure that final join results are unique.
+		// The actual in-value-list should not contain duplicates to ensure that final join results are unique.
+		s = distinct_value_list(be, nl, &last_null_value);
 		s = stmt_project(be, stmt_selectnonil(be, s, NULL), s); // The actual in-value-list should not contain null values.
 
 		s = stmt_join(be, c, s, NULL, in, cmp_equal);
 		s = stmt_result(be, s, 0);
 
 		if (!in) {
-			sql_exp* null_value;
-			if ((null_value = in_value_list_contains_null(be->mvc, nl))) {
+			if (last_null_value) {
 				// CORNER CASE ALERT:
 				// In case of a not-in-expression with the associated in-value-list containing a null value,
 				// the entire in-predicate is forced to always return false, i.e. an empty candidate list.
@@ -354,9 +361,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				// Ugly trick to return empty candidate list, because for all x it holds that: (x == null) == false.
 				//list* singleton_bat = sa_list(sql->sa);
 				// list_append(singleton_bat, null_value);
-				stmt* null_value_stmt;
-				null_value_stmt = exp_bin(be, null_value, left, right, grp, ext, cnt, NULL);
-				s = stmt_uselect(be, c, null_value_stmt, cmp_equal, NULL, 0);
+				s = stmt_uselect(be, c, last_null_value, cmp_equal, NULL, 0);
 				return s;
 			}
 			else {
