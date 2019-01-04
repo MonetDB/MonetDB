@@ -726,6 +726,8 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 				}
 				if (member && f->fix_scale == INOUT)
 					digits = member->digits;
+				if (IS_ANALYTIC(f) && mscale) 
+					scale = mscale;
 				if (member && r->type->eclass == EC_ANY) 
 					r = member;
 				res = sql_create_subtype(sa, r->type, digits, scale);
@@ -1820,6 +1822,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "sum", "sql", "sum", SECINT, SECINT, SCALE_NONE);
 
 	//analytical average for numerical types
+	sql_create_analytic(sa, "avg", "sql", "avg", DBL, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", BTE, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", SHT, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", INT, DBL, SCALE_NONE);
@@ -1829,6 +1832,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "avg", "sql", "avg", HGE, DBL, SCALE_NONE);
 #endif
 
+#if 0
 	t = decimals; // BTE
 	sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
 	t++; // SHT
@@ -1843,9 +1847,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
 	}
 #endif
-
+#endif
 	sql_create_analytic(sa, "avg", "sql", "avg", FLT, DBL, SCALE_NONE);
-	sql_create_analytic(sa, "avg", "sql", "avg", DBL, DBL, SCALE_NONE);
 
 	sql_create_func(sa, "and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);

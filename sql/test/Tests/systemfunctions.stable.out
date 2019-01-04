@@ -239,6 +239,8 @@ Ready.
 [ "sys",	"avg",	0,	"double",	"avg"	]
 [ "sys",	"avg",	1,	"real",	""	]
 [ "sys",	"avg",	0,	"double",	"avg"	]
+[ "sys",	"avg",	1,	"double",	""	]
+[ "sys",	"avg",	0,	"double",	"avg"	]
 [ "sys",	"avg",	1,	"tinyint",	""	]
 [ "sys",	"avg",	0,	"double",	"avg"	]
 [ "sys",	"avg",	1,	"smallint",	""	]

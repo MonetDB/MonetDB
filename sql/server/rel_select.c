@@ -2810,6 +2810,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 				if (!r) /* error */
 					return NULL;
+				assert (lident->type != e_column);
+				lident = exp_column(sql->sa, exp_relname(lident), exp_name(lident), exp_subtype(lident), exp_card(lident), has_nil(lident), is_intern(lident));
 				e = exp_compare(sql->sa, lident, r, cmp_equal );
 				append(jexps, e);
 			}
@@ -3844,7 +3846,7 @@ rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_se
 			if (e1 && e2) {
 				cond = rel_binop_(sql, e1, e2, NULL, "=", card_value);
 				result = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(e1), NULL));
-				else_exp = e1;	/* ELSE case */
+				else_exp = exp_copy(sql->sa, e1);	/* ELSE case */
 			}
 			/* COALESCE(e1,e2) == CASE WHEN e1
 			   IS NOT NULL THEN e1 ELSE e2 END */
@@ -3852,7 +3854,7 @@ rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_se
 			cond = rel_value_exp(sql, rel, dn->data.sym, f, ek);
 
 			if (cond) {
-				result = cond;
+				result = exp_copy(sql->sa, cond);
 				cond = rel_unop_(sql, rel_unop_(sql, cond, NULL, "isnull", card_value), NULL, "not", card_value);
 			}
 		} else {
@@ -3891,7 +3893,7 @@ rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_se
 			cond = rel_value_exp(sql, rel, dn->data.sym, f, ek);
 
 			if (cond) {
-				result = cond;
+				result = exp_copy(sql->sa, cond);
 				cond = rel_unop_(sql, rel_unop_(sql, cond, NULL, "isnull", card_value), NULL, "not", card_value);
 			}
 		} else {
@@ -3959,6 +3961,7 @@ rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_se
 		/* remove any null's in the condition */
 		if (has_nil(cond) && token != SQL_COALESCE) {
 			sql_exp *condnil = rel_unop_(sql, cond, NULL, "isnull", card_value);
+			cond = exp_copy(sql->sa, cond);
 			cond = rel_nop_(sql, condnil, exp_atom_bool(sql->sa, 0), cond, NULL, NULL, "ifthenelse", card_value);
 		}
 		if (!cond || !result || !res)

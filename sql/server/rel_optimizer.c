@@ -35,6 +35,8 @@ typedef int (*find_prop_fptr)(mvc *sql, sql_rel *rel);
 
 static sql_rel * rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes);
 static sql_rel * rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes) ;
+static list * rewrite_exps(mvc *sql, list *l, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes);
+
 static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
 
 static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
@@ -1595,12 +1597,16 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
+			if (rel_is_ref(l))
+				return rel;
 			if (l->op != op_project) { 
 				if (is_subquery(l))
 					return rel;
 				rel->l = l = rel_project(sql->sa, l, 
 					rel_projections(sql, l, NULL, 1, 1));
 			}
+			if (is_joinop(rel->op) && rel_is_ref(r))
+				return rel;
 			if (is_joinop(rel->op) && r->op != op_project) {
 				if (is_subquery(r))
 					return rel;
@@ -2829,11 +2835,59 @@ exp_case_fixup( mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *cc )
 	return e;
 }
 
-static sql_rel *
-rel_case_fixup(int *changes, mvc *sql, sql_rel *rel) 
+static sql_rel * rel_case_fixup(int *changes, mvc *sql, sql_rel *rel, int top);
+static sql_exp * rewrite_case_exp(mvc *sql, sql_exp *e, int *has_changes);
+
+static sql_rel * 
+rel_case_fixup_top(int *changes, mvc *sql, sql_rel *rel)
 {
-	
+	return rel_case_fixup(changes, sql, rel, 1);
+}
+
+static list *
+rewrite_case_exps(mvc *sql, list *l, int *has_changes)
+{
+	node *n;
+
+	if (!l)
+		return l;
+	for(n = l->h; n; n = n->next) 
+		n->data = rewrite_case_exp(sql, n->data, has_changes);
+	return l;
+}
+
+
+static sql_exp *
+rewrite_case_exp(mvc *sql, sql_exp *e, int *has_changes)
+{
+	if (e->type != e_psm)
+		return e;
+	if (e->flag & PSM_VAR) 
+		return e;
+	if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
+		e->l = rewrite_case_exp(sql, e->l, has_changes);
+	}
+	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+		e->l = rewrite_case_exp(sql, e->l, has_changes);
+		e->r = rewrite_case_exps(sql, e->r, has_changes);
+		if (e->f)
+			e->f = rewrite_case_exps(sql, e->f, has_changes);
+		return e;
+	}
+	if (e->flag & PSM_REL)
+		e->l = rel_case_fixup_top(has_changes, sql, e->l);
+	if (e->flag & PSM_EXCEPTION)
+		e->l = rewrite_case_exp(sql, e->l, has_changes);
+	return e;
+}
+
+static sql_rel *
+rel_case_fixup(int *changes, mvc *sql, sql_rel *rel, int top) 
+{
 	(void)changes; /* only go through it once, ie don't mark for changes */
+
+	if (!top && rel_is_ref(rel))
+		return rel;
 	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == DDL_PSM)) && rel->exps) {
 		list *exps = rel->exps;
 		node *n;
@@ -2848,8 +2902,11 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 			    e->type == e_aggr || e->type == e_psm) 
 				needed = 1;
 		}
-		if (!needed)
+		if (!needed) {
+			if (rel->l)
+				rel->l = rel_case_fixup(changes, sql, rel->l, is_topn(rel->op)?top:0);
 			return rel;
+		}
 
 		/* get proper output first, then rewrite lower project (such that it can split expressions) */
 		push_down = is_simple_project(rel->op) && !rel->r && !rel_is_ref(rel);
@@ -2864,8 +2921,22 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 				return NULL;
 			list_append(rel->exps, e);
 		}
+		if (is_ddl(rel->op) && rel->flag == DDL_PSM) 
+			rel->exps = rewrite_case_exps(sql, rel->exps, changes);
+		if (rel->l)
+			rel->l = rel_case_fixup(changes, sql, rel->l, is_topn(rel->op)?top:0);
+		if (is_ddl(rel->op) && rel->r)
+			rel->r = rel_case_fixup(changes, sql, rel->r, is_ddl(rel->op)?top:0);
 		return res;
 	} 
+	if (is_basetable(rel->op))
+		return rel;
+	if (rel->l)
+		rel->l = rel_case_fixup(changes, sql, rel->l,
+			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+	if ((is_join(rel->op) || is_ddl(rel->op) || is_modify(rel->op) || is_set(rel->op)) && rel->r)
+		rel->r = rel_case_fixup(changes, sql, rel->r,
+			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
 	return rel;
 }
 
@@ -7187,6 +7258,13 @@ rel_split_project(int *changes, mvc *sql, sql_rel *rel, int top)
 			rel->exps = sa_list(sql->sa);
 			for (n=exps->h; n; n = n->next) 
 				append(rel->exps, split_exp(sql, n->data, rel));
+		} else if (funcs && top && rel_is_ref(rel) && !rel->r) {
+			/* inplace */
+			list *exps = rel_projections(sql, rel, NULL, 1, 1);
+			sql_rel *l = rel_project(sql->sa, rel->l, NULL); 
+			rel->l = l;
+			l->exps = rel->exps;
+			rel->exps = exps;
 		}
 	}
 	if (is_set(rel->op) || is_basetable(rel->op))
@@ -9073,8 +9151,6 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static list * rewrite_exps(mvc *sql, list *l, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes);
-
 static sql_exp *
 rewrite_exp(mvc *sql, sql_exp *e, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes)
 {
@@ -9257,7 +9333,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 			rel = rel_split_project(&changes, sql, rel, 1);
 
 		if (level <= 0) {
-			rel = rewrite(sql, rel, &rel_case_fixup, &changes);
+			rel = rel_case_fixup(&changes, sql, rel, 1);
 			if (value_based_opt)
 				rel = rewrite(sql, rel, &rel_simplify_math, &changes);
 			rel = rewrite(sql, rel, &rel_distinct_project2groupby, &changes);
@@ -9450,11 +9526,22 @@ rel_reset_subquery(sql_rel *rel)
 static sql_rel *
 optimize(mvc *sql, sql_rel *rel, int value_based_opt) 
 {
+	list *refs = sa_list(sql->sa);
+	node *n;
 	int level = 0, changes = 1;
+
 
 	rel_reset_subquery(rel);
 	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
+
+	rel_dce_refs(sql, rel, refs);
+	if (refs) {
+		refs = rel_dependencies(sql, refs);
+		for (n = refs->h; n; n = n->next)
+			n->data = optimize_rel(sql, n->data, &changes, 0, value_based_opt);
+	}
+
 	return rel;
 }
 

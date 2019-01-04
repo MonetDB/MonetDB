@@ -45,6 +45,10 @@ Ready.
 % c0,	c1,	c2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+[ NULL,	NULL,	0	]
+[ NULL,	NULL,	0	]
+[ NULL,	NULL,	1	]
+[ NULL,	NULL,	1	]
 #select
 #  ref_7.length as c0,
 #  sample_1.type as c1,
@@ -61,7 +65,7 @@ Ready.
 #              on (sample_9.y is not NULL)
 #            on (sample_7.table_type_name = sample_8.function_type_name )
 #          left join sys.r as sample_10
-% .L14,	.L16,	.L20,	.L22 # table_name
+% .L15,	.L17,	.L21,	.L23 # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	varchar,	int,	smallint # type
 % 1,	0,	1,	1 # length
