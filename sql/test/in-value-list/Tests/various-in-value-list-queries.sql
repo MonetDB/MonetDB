@@ -58,3 +58,9 @@ select * from foo where i = 40 and i not in (null) order by i;
 select * from foo where i = 40 and i in (null) order by i;
 
 select * from foo where i = 40 and i in (select bar.i from foo as bar where i in (10, 20)) order by i;
+
+select * from foo where i = 40 or i in (select bar.i from foo as bar where i in (10, 20)) order by i;
+
+select * from foo where i = 40 and i not in (select bar.i from foo as bar where i in (10, 20)) order by i;
+
+select * from foo where i = 40 or i not in (select bar.i from foo as bar where i in (10, 20)) order by i;
