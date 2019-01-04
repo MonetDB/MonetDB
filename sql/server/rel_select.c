@@ -2754,7 +2754,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						return NULL;
 					list_append(nvals, r);
 					st = exp_subtype(l);
-					for (n = n->next; n; n = n->next) {
+					for (; n; n = n->next) {
 						if ((r = rel_check_type(sql, st, n->data, type_equal)) == NULL) 
 							return NULL;
 						list_append(nvals, r);
