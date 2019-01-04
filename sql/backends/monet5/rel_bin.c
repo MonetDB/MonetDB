@@ -290,6 +290,17 @@ distinct_value_list(backend *be, stmt *list)
 	return stmt_project(be, ext, list);
 }
 
+static sql_exp* in_value_list_contains_null(mvc* sql, list *vals) {
+	for(node* n = vals->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_is_null(sql, e))
+			return e;
+	}
+
+	return NULL;
+}
+
 static stmt * stmt_selectnonil( backend *be, stmt *col, stmt *s );
 
 static stmt *
@@ -332,10 +343,29 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		s = stmt_result(be, s, 0);
 
 		if (!in) {
-			stmt* oid_c;
-			oid_c = stmt_mirror(be, c);
-			// TODO: Somehow stmt_tdiff only allows BAT[oid] arguments hence the mirror op.
-			s = stmt_tdiff(be, oid_c, s);
+			sql_exp* null_value;
+			if ((null_value = in_value_list_contains_null(be->mvc, nl))) {
+				// CORNER CASE ALERT:
+				// In case of a not-in-expression with the associated in-value-list containing a null value,
+				// the entire in-predicate is forced to always return false, i.e. an empty candidate list.
+				// This is similar to postgres behavior.
+				// TODO: However I do not think this behavior is in accordance with SQL standard 2003.
+
+				// Ugly trick to return empty candidate list, because for all x it holds that: (x == null) == false.
+				//list* singleton_bat = sa_list(sql->sa);
+				// list_append(singleton_bat, null_value);
+				stmt* null_value_stmt;
+				null_value_stmt = exp_bin(be, null_value, left, right, grp, ext, cnt, NULL);
+				s = stmt_uselect(be, c, null_value_stmt, cmp_equal, NULL, 0);
+				return s;
+			}
+			else {
+				// BACK TO HAPPY FLOW:
+				stmt* oid_c;
+				// TODO: Somehow stmt_tdiff only allows BAT[oid] arguments hence the mirror op.
+				oid_c = stmt_mirror(be, c);
+				s = stmt_tdiff(be, oid_c, s);
+			}
 		}
 
 		if (sel) {
