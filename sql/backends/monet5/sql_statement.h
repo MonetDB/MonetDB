@@ -180,7 +180,7 @@ extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
 
-extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, stmt *op3, int anti, comp_type cmptype);
+extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype);
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
