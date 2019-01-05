@@ -42,40 +42,10 @@ Ready.
 #                         1200+3,
 #                         1200+4,
 #                         1200+5,
-#                         1200+6,
-#                         1200+7,
-#                         1200+8,
-#                         1200+9,
-#                         1200+10,
-#                         1200+11)
-#     AND ((i_category IN ('Books',
-#                          'Children',
-#                          'Electronics')
-#           AND i_class IN ('personal',
-#                           'portable',
-#                           'reference',
-#                           'self-help')
-#           AND i_brand IN ('scholaramalgamalg #14',
-#                           'scholaramalgamalg #7',
-#                           'exportiunivamalg #9',
-#                           'scholaramalgamalg #9')) or(i_category IN ('Women','Music','Men')
-#                                                       AND i_class IN ('accessories','classical','fragrances','pants')
-#                                                       AND i_brand IN ('amalgimporto #1','edu packscholar #1','exportiimporto #1', 'importoamalg #1')))
-#   GROUP BY i_manufact_id,
-#            d_qoy) tmp1
-#WHERE CASE
-#          WHEN avg_quarterly_sales > 0 THEN ABS (sum_sales - avg_quarterly_sales)/ avg_quarterly_sales
-#          ELSE NULL
-#      END > 0.1
-#ORDER BY avg_quarterly_sales,
-#         sum_sales,
-#         i_manufact_id
-#LIMIT 100;
-#
-%
-%
-%
-%
+% sys.tmp1,	sys.tmp1,	sys.tmp1 # table_name
+% i_manufact_id,	sum_sales,	avg_quarterly_sales # name
+% int,	decimal,	double # type
+% 3,	40,	24 # length
 [ 30,	165.67,	340.635000	]
 [ 30,	247.07,	340.635000	]
 [ 30,	627.63,	340.635000	]

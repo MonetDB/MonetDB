@@ -2874,7 +2874,7 @@ rewrite_case_exp(mvc *sql, sql_exp *e, int *has_changes)
 			e->f = rewrite_case_exps(sql, e->f, has_changes);
 		return e;
 	}
-	if (e->flag & PSM_REL)
+	if ((e->flag & PSM_REL) && e->l)
 		e->l = rel_case_fixup_top(has_changes, sql, e->l);
 	if (e->flag & PSM_EXCEPTION)
 		e->l = rewrite_case_exp(sql, e->l, has_changes);
@@ -3982,7 +3982,7 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 	list *gbe = rel->r;
 
 	(void)changes;
-	if (rel->op == op_groupby && list_length(gbe) == 1 && is_outerjoin(j->op)) {
+	if (rel->op == op_groupby && list_length(gbe) == 1 && j->op == op_join){ //&& is_join(j->op)) {
 		sql_rel *jl = j->l, *jr = j->r, *cr;
 		sql_exp *gb = gbe->h->data, *e;
 		node *n;
@@ -4062,6 +4062,8 @@ rel_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 	sql_rel *p = rel->l;
 	list *gbe = rel->r;
 
+	if (rel->op == op_groupby && gbe && p && is_join(p->op)) 
+		return gen_push_groupby_down(changes, sql, rel);
 	if (rel->op == op_groupby && gbe && p && p->op == op_project) {
 		sql_rel *j = p->l;
 		sql_rel *jl, *jr;
@@ -7197,12 +7199,11 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 			e->l = split_exp(sql, e->l, rel);
 			e->r = split_exp(sql, e->r, rel);
 			if (e->f) {
-				assert(0);
 				e->f = split_exp(sql, e->f, rel);
 			}
 		}
 		return e;
-	case e_psm:	
+	case e_psm:
 	case e_atom:
 		return e;
 	}
@@ -7278,6 +7279,115 @@ rel_split_project(int *changes, mvc *sql, sql_rel *rel, int top)
 	return rel;
 }
 
+static void select_split_exps(mvc *sql, list *exps, sql_rel *rel);
+
+static sql_exp *
+select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
+{
+	switch(e->type) {
+	case e_column:
+		return e;
+	case e_convert:
+		e->l = select_split_exp(sql, e->l, rel);
+		return e;
+	case e_aggr:
+	case e_func:
+		if (!is_analytic(e) && !exp_has_sideeffect(e)) {
+			sql_subfunc *f = e->f;
+			if (e->type == e_func && !f->func->s && !strcmp(f->func->base.name, "ifthenelse"))
+				return add_exp_too_project(sql, e, rel);
+		}
+		return e;
+	case e_cmp:	
+		if (get_cmp(e) == cmp_or) {
+			select_split_exps(sql, e->l, rel);
+			select_split_exps(sql, e->r, rel);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
+			e->l = select_split_exp(sql, e->l, rel);
+			select_split_exps(sql, e->r, rel);
+		} else {
+			e->l = select_split_exp(sql, e->l, rel);
+			e->r = select_split_exp(sql, e->r, rel);
+			if (e->f) {
+				e->f = select_split_exp(sql, e->f, rel);
+			}
+		}
+		return e;
+	case e_psm:
+	case e_atom:
+		return e;
+	}
+	return e;
+}
+
+static void
+select_split_exps(mvc *sql, list *exps, sql_rel *rel)
+{
+	node *n;
+
+	if (!exps)
+		return;
+	for(n=exps->h; n; n = n->next){
+		sql_exp *e = n->data;
+
+		e = select_split_exp(sql, e, rel);
+		n->data = e;
+	}
+}
+
+static sql_rel *
+rel_split_select(int *changes, mvc *sql, sql_rel *rel, int top) 
+{
+	if (is_select(rel->op) && list_length(rel->exps) && rel->l) {
+		list *exps = rel->exps;
+		node *n;
+		int funcs = 0;
+		sql_rel *nrel;
+
+		/* are there functions */
+		for (n=exps->h; n && !funcs; n = n->next) {
+			sql_exp *e = n->data;
+
+			funcs = exp_has_func(e);
+		}
+		/* introduce extra project */
+		if (funcs && rel->op != op_project) {
+			nrel = rel_project(sql->sa, rel->l, 
+				rel_projections(sql, rel->l, NULL, 1, 1));
+			rel->l = nrel;
+			/* recursively split all functions and add those to the projection list */
+			select_split_exps(sql, rel->exps, nrel);
+			if (nrel->l)
+				nrel->l = rel_split_project(changes, sql, nrel->l, is_topn(rel->op)?top:0);
+			return rel;
+		} else if (funcs && !top && !rel->r) {
+			/* projects can have columns point back into the expression list, ie
+			 * create a new list including the split expressions */
+			node *n;
+			list *exps = rel->exps;
+
+			rel->exps = sa_list(sql->sa);
+			for (n=exps->h; n; n = n->next) 
+				append(rel->exps, select_split_exp(sql, n->data, rel));
+		} else if (funcs && top && rel_is_ref(rel) && !rel->r) {
+			/* inplace */
+			list *exps = rel_projections(sql, rel, NULL, 1, 1);
+			sql_rel *l = rel_project(sql->sa, rel->l, NULL); 
+			rel->l = l;
+			l->exps = rel->exps;
+			rel->exps = exps;
+		}
+	}
+	if (is_set(rel->op) || is_basetable(rel->op))
+		return rel;
+	if (rel->l)
+		rel->l = rel_split_select(changes, sql, rel->l, 
+			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+	if (is_join(rel->op) && rel->r)
+		rel->r = rel_split_select(changes, sql, rel->r, 
+			(is_topn(rel->op)||is_ddl(rel->op)||is_modify(rel->op))?top:0);
+	return rel;
+}
 
 static list *
 exp_merge_range(sql_allocator *sa, list *exps)
@@ -9321,6 +9431,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	}
 }
 #endif
+	if (level <= 0 && gp.cnt[op_select]) 
+		rel = rel_split_select(&changes, sql, rel, 1);
 
 	/* simple merging of projects */
 	if (gp.cnt[op_project] || gp.cnt[op_groupby] || gp.cnt[op_ddl]) {

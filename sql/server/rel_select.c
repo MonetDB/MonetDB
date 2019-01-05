@@ -2459,13 +2459,50 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_AND:
 	{
+		/* split into 2 lists, simle logical expressions and or's */
+		list *nors = sa_list(sql->sa);
+		list *ors = sa_list(sql->sa);
+
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
+		node *n;
 
+		while (lo->token == SQL_AND) {
+			symbol *s;
+
+			sc = lo;
+			lo = sc->data.lval->h->data.sym;
+			s = sc->data.lval->h->next->data.sym;
+
+			if (s->token != SQL_OR)
+				list_prepend(nors, s);
+			else 
+				list_prepend(ors, s);
+		}
+		if (lo->token != SQL_OR)
+			list_prepend(nors, lo);
+		else 
+			list_prepend(ors, lo);
+		if (ro->token != SQL_OR)
+			append(nors, ro);
+		else 
+			append(ors, ro);
+
+		for(n=nors->h; n; n = n->next) {
+			symbol *lo = n->data;
+			rel = rel_logical_exp(sql, rel, lo, f);
+		}
+		for(n=ors->h; n; n = n->next) {
+			symbol *lo = n->data;
+			rel = rel_logical_exp(sql, rel, lo, f);
+		}
+		/*
 		rel = rel_logical_exp(sql, rel, lo, f);
 		if (!rel)
 			return NULL;
 		return rel_logical_exp(sql, rel, ro, f);
+		*/
+		return rel;
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -5970,6 +6007,8 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 		rel->exps = applyexps;
 		rel->flag = apply;
 	}
+	if (!rel && res) 
+		rel_destroy(res);
 	return rel;
 }
 
