@@ -1,9 +1,9 @@
 stdout of test '47` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '47` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #WITH v1 AS
 #  (SELECT i_category,
@@ -36,11 +36,10 @@ Ready.
 #                                                      i_brand,
 #                                                      s_store_name,
 #                                                      s_company_name,
-#                                                      d_year) avg_monthly_sales,
 % sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2 # table_name
 % i_category,	i_brand,	s_store_name,	s_company_name,	d_year,	d_moy,	avg_monthly_sales,	sum_sales,	psum,	nsum # name
 % char,	char,	varchar,	varchar,	int,	int,	double,	decimal,	decimal,	decimal # type
-% 50,	50,	5,	7,	4,	1,	24,	40,	40,	40 # length
+% 50,	50,	5,	7,	4,	1,	24,	20,	20,	20 # length
 [ "Men",	"importoimporto #1",	"ese",	"Unknown",	1999,	3,	5492.8175,	2070.65,	3307.78,	2784.11	]
 [ "Music",	"exportischolar #1",	"eing",	"Unknown",	1999,	2,	5134.238333,	1740.21,	4401.89,	2721.61	]
 [ "Music",	"edu packscholar #1",	"ese",	"Unknown",	1999,	4,	5463.700833,	2091.07,	3391.39,	3095.31	]
@@ -142,10 +141,10 @@ Ready.
 [ "Music",	"edu packscholar #1",	"able",	"Unknown",	1999,	1,	5335.908333,	2796.97,	13360.68,	3413.22	]
 [ "Children",	"exportiexporti #1",	"eing",	"Unknown",	1999,	4,	5109.654167,	2574.12,	2685.10,	2672.73	]
 
-# 19:58:54 >  
-# 19:58:54 >  "Done."
-# 19:58:54 >  
+# 18:32:21 >  
+# 18:32:21 >  "Done."
+# 18:32:21 >  
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

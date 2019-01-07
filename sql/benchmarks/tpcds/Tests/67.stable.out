@@ -1,9 +1,9 @@
 stdout of test '67` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '67` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #WITH results AS
 #  (SELECT i_category,
@@ -36,19 +36,10 @@ Ready.
 #          sum(coalesce(ss_sales_price*ss_quantity,0)) sumsales
 #   FROM store_sales,
 #        date_dim,
-#        store,
-#        item
-#   WHERE ss_sold_date_sk=d_date_sk
-#     AND ss_item_sk=i_item_sk
-#     AND ss_store_sk = s_store_sk
-#     AND d_month_seq BETWEEN 1200 AND 1200 + 11
-#   GROUP BY i_category,
-#            i_class,
-#            i_brand,
 % .dw2,	.dw2,	.dw2,	.dw2,	.dw2,	.dw2,	.dw2,	.dw2,	.dw2,	.dw2 # table_name
 % i_category,	i_class,	i_brand,	i_product_name,	d_year,	d_qoy,	d_moy,	s_store_id,	sumsales,	rk # name
 % char,	char,	char,	char,	int,	int,	int,	char,	decimal,	int # type
-% 50,	50,	50,	50,	4,	1,	1,	16,	40,	3 # length
+% 50,	50,	50,	50,	4,	1,	1,	16,	20,	3 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	102328.5900,	62	]
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	596191.7400,	4	]
 [ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	1628997.0000,	3	]
@@ -150,10 +141,7 @@ Ready.
 [ NULL,	"womens",	"amalgedu pack #2",	NULL,	NULL,	NULL,	NULL,	NULL,	101584.8800,	64	]
 [ NULL,	"womens",	"amalgedu pack #2",	NULL,	2000,	NULL,	NULL,	NULL,	101584.8800,	64	]
 
-# 15:09:40 >  
-# 15:09:40 >  "Done."
-# 15:09:40 >  
+# 18:32:37 >  
+# 18:32:37 >  "Done."
+# 18:32:37 >  
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  

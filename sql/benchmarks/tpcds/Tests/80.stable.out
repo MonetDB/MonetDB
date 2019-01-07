@@ -1,9 +1,9 @@
 stdout of test '80` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '80` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #WITH ssr AS
 #  (SELECT s_store_id AS store_id,
@@ -34,10 +34,12 @@ Ready.
 #                                     AND ss_ticket_number = sr_ticket_number), date_dim,
 #                                                                               store,
 #                                                                               item,
+#                                                                               promotion
+#   WHERE ss_sold_date_sk = d_date_sk
 % .foo,	.foo,	.foo,	.foo,	.foo # table_name
 % channel,	id,	sales,	returns_,	profit # name
 % char,	varchar,	decimal,	decimal,	decimal # type
-% 15,	28,	40,	40,	40 # length
+% 15,	28,	20,	20,	20 # length
 [ NULL,	NULL,	13343451.50,	687196.48,	-4060382.36	]
 [ "catalog channel",	NULL,	4456215.06,	230287.89,	-614823.52	]
 [ "catalog channel",	"catalog_pageAAAAAAAAAAABAAAA",	19965.69,	3132.48,	-16011.54	]
@@ -139,6 +141,6 @@ Ready.
 [ "catalog channel",	"catalog_pageAAAAAAAADOCBAAAA",	3356.59,	62.99,	-4084.30	]
 [ "catalog channel",	"catalog_pageAAAAAAAADOPAAAAA",	5090.89,	0.00,	-2319.86	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "Done."
+# 18:29:58 >  

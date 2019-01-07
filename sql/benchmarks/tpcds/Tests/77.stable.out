@@ -1,9 +1,9 @@
 stdout of test '77` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '77` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #WITH ss AS
 #  (SELECT s_store_sk,
@@ -36,16 +36,10 @@ Ready.
 #     AND ss_store_sk = s_store_sk
 #   GROUP BY s_store_sk) ,
 #     sr AS
-#  (SELECT s_store_sk,
-#          sum(sr_return_amt) AS returns_,
-#          sum(sr_net_loss) AS profit_loss
-#   FROM store_returns,
-#        date_dim,
-#        store
 % .foo,	.foo,	.foo,	.foo,	.foo # table_name
 % channel,	id,	sales,	returns_,	profit # name
 % char,	int,	decimal,	decimal,	decimal # type
-% 15,	2,	40,	40,	40 # length
+% 15,	2,	20,	20,	20 # length
 [ NULL,	NULL,	562937653.47,	12490154.95,	-100351224.00	]
 [ "catalog channel",	NULL,	538912.55,	2050279.74,	-1383554.73	]
 [ "catalog channel",	NULL,	404410817.75,	8201118.96,	-42762489.82	]
@@ -91,6 +85,6 @@ Ready.
 [ "web channel",	56,	1355553.42,	46633.14,	-164174.45	]
 [ "web channel",	59,	1395251.52,	10683.93,	-213197.75	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "Done."
+# 18:29:58 >  

@@ -1,9 +1,9 @@
 stdout of test '03` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '03` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT dt.d_year,
 #       item.i_brand_id brand_id,
@@ -36,16 +36,10 @@ Ready.
 #  AND item.i_manufact_id = 128
 #  AND dt.d_moy=11
 #GROUP BY dt.d_year,
-#         item.i_brand,
-#         item.i_brand_id
-#ORDER BY dt.d_year,
-#         sum_agg DESC,
-#         brand_id
-#LIMIT 100;
 % sys.dt,	sys.L3,	sys.L5,	sys.L10 # table_name
 % d_year,	brand_id,	brand,	sum_agg # name
 % int,	int,	char,	decimal # type
-% 4,	8,	50,	40 # length
+% 4,	8,	50,	20 # length
 [ 1998,	2001001,	"amalgimporto #1",	45162.45	]
 [ 1998,	5003001,	"exportischolar #1",	40600.56	]
 [ 1998,	5001001,	"amalgscholar #1",	32515.11	]
@@ -136,6 +130,6 @@ Ready.
 [ 2002,	2001001,	"exportischolar #2",	4162.39	]
 [ 2002,	5001001,	"amalgscholar #1",	3537.49	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

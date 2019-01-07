@@ -1,9 +1,9 @@
 stdout of test '07` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '07` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT i_item_id,
 #       avg(ss_quantity) agg1,
@@ -36,14 +36,6 @@ Ready.
 #     promotion
 #WHERE ss_sold_date_sk = d_date_sk
 #  AND ss_item_sk = i_item_sk
-#  AND ss_cdemo_sk = cd_demo_sk
-#  AND ss_promo_sk = p_promo_sk
-#  AND cd_gender = 'M'
-#  AND cd_marital_status = 'S'
-#  AND cd_education_status = 'College'
-#  AND (p_channel_email = 'N'
-#       OR p_channel_event = 'N')
-#  AND d_year = 2000
 % sys.item,	sys.L4,	sys.L7,	sys.L12,	sys.L15 # table_name
 % i_item_id,	agg1,	agg2,	agg3,	agg4 # name
 % char,	double,	double,	double,	double # type
@@ -149,7 +141,6 @@ Ready.
 [ "AAAAAAAAADHAAAAA",	86,	81.09,	0,	37.3	]
 [ "AAAAAAAAADHBAAAA",	28,	68.58,	223.79,	53.615	]
 
-# 12:33:19 >  
-# 12:33:19 >  "Done."
-# 12:33:19 >  
-
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

@@ -1,9 +1,9 @@
 stdout of test '57` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '57` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #WITH v1 AS
 #  (SELECT i_category,
@@ -36,11 +36,10 @@ Ready.
 #                                                      cc_name,
 #                                                      d_year) avg_monthly_sales,
 #                                        rank() OVER (PARTITION BY i_category,
-#                                                                  i_brand,
 % sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2,	sys.v2 # table_name
 % i_category,	i_brand,	cc_name,	d_year,	d_moy,	avg_monthly_sales,	sum_sales,	psum,	nsum # name
 % char,	char,	varchar,	int,	int,	double,	decimal,	decimal,	decimal # type
-% 50,	50,	13,	4,	1,	24,	40,	40,	40 # length
+% 50,	50,	13,	4,	1,	24,	20,	20,	20 # length
 [ "Shoes",	"importoedu pack #1",	"North Midwest",	1999,	3,	7101.78,	2518.33,	5264.86,	3066.29	]
 [ "Men",	"edu packimporto #1",	"NY Metro",	1999,	4,	7659.241667,	3227.88,	4759.01,	4664.83	]
 [ "Music",	"amalgscholar #1",	"Mid Atlantic",	1999,	1,	6659.493333,	2291.60,	14178.45,	4267.08	]
@@ -142,7 +141,7 @@ Ready.
 [ "Men",	"amalgimporto #1",	"Mid Atlantic",	1999,	4,	6611.335833,	3262.24,	4613.61,	4531.38	]
 [ "Music",	"amalgscholar #1",	"North Midwest",	1999,	6,	6876.880833,	3528.80,	2816.26,	4750.85	]
 
-# 19:59:02 >  
-# 19:59:02 >  "Done."
-# 19:59:02 >  
+# 18:32:29 >  
+# 18:32:29 >  "Done."
+# 18:32:29 >  
 

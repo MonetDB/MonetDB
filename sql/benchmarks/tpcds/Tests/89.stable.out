@@ -1,9 +1,9 @@
 stdout of test '89` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '89` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #SELECT * from
 #  (SELECT i_category, i_class, i_brand, s_store_name, s_company_name, d_moy, sum(ss_sales_price) sum_sales, avg(sum(ss_sales_price)) OVER (PARTITION BY i_category, i_brand, s_store_name, s_company_name) avg_monthly_sales
@@ -33,10 +33,12 @@ Ready.
 #     AND d_year = 1999
 #     AND ((i_category IN ('Books','Electronics','Sports')
 #           AND i_class IN ('computers','stereo','football') )
+#          OR (i_category IN ('Men','Jewelry','Women')
+#              AND i_class IN ('shirts','birdal','dresses')))
 % sys.tmp1,	sys.tmp1,	sys.tmp1,	sys.tmp1,	sys.tmp1,	sys.tmp1,	sys.tmp1,	sys.tmp1 # table_name
 % i_category,	i_class,	i_brand,	s_store_name,	s_company_name,	d_moy,	sum_sales,	avg_monthly_sales # name
 % char,	char,	char,	varchar,	varchar,	int,	decimal,	double # type
-% 50,	50,	50,	5,	7,	1,	40,	24 # length
+% 50,	50,	50,	5,	7,	1,	20,	24 # length
 [ "Men",	"shirts",	"importoimporto #1",	"ese",	"Unknown",	3,	2070.65,	5492.8175	]
 [ "Men",	"shirts",	"importoimporto #1",	"ought",	"Unknown",	6,	2152.15,	5045.758333	]
 [ "Men",	"shirts",	"importoimporto #1",	"able",	"Unknown",	2,	2333.43,	5194.818333	]
@@ -138,7 +140,7 @@ Ready.
 [ "Women",	"dresses",	"amalgamalg #2",	"able",	"Unknown",	5,	1084.94,	2337.278333	]
 [ "Women",	"dresses",	"amalgamalg #2",	"eing",	"Unknown",	4,	1317.08,	2569.346667	]
 
-# 19:59:32 >  
-# 19:59:32 >  "Done."
-# 19:59:32 >  
+# 18:32:55 >  
+# 18:32:55 >  "Done."
+# 18:32:55 >  
 

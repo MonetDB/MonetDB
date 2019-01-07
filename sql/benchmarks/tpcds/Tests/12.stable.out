@@ -1,9 +1,9 @@
 stdout of test '12` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '12` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT i_item_id,
 #       i_item_desc,
@@ -36,14 +36,10 @@ Ready.
 #     date_dim
 #WHERE ws_item_sk = i_item_sk
 #  AND i_category IN ('Sports',
-#                     'Books',
-#                     'Home')
-#  AND ws_sold_date_sk = d_date_sk
-#  AND d_date BETWEEN cast('1999-02-22' AS date) AND cast('1999-03-24' AS date)
 % sys.item,	sys.item,	sys.item,	sys.item,	sys.item,	sys.L12,	sys.L21 # table_name
 % i_item_id,	i_item_desc,	i_category,	i_class,	i_current_price,	itemrevenue,	revenueratio # name
 % char,	varchar,	char,	char,	decimal,	decimal,	decimal # type
-% 16,	200,	50,	50,	9,	40,	40 # length
+% 16,	200,	50,	50,	9,	20,	20 # length
 [ "AAAAAAAAAAKAAAAA",	"Small, political activities help great, bad policies. Therefore square features provide on a machines. Rules make over me",	"Books",	"arts",	2.42,	2742.60,	3.717520	]
 [ "AAAAAAAABHDCAAAA",	"Minor heads close common children; recently strong firms provide. Useful, young men ought to create changes. Popular, common regulations might decide. Points fit. Obvious, glad officials ",	"Books",	"arts",	3.88,	4258.84,	5.772743	]
 [ "AAAAAAAACKEAAAAA",	"Legs appear eventually soci",	"Books",	"arts",	35.27,	4010.65,	5.436328	]
@@ -145,7 +141,7 @@ Ready.
 [ "AAAAAAAADCOAAAAA",	"Silly acres shall belong alike following, similar pairs. Respectively lucky newspapers shall dare. Also labour requirements can leave; pounds used to stay even only solicitors. Silver systems may de",	"Books",	"entertainments",	75.74,	613.76,	0.942159	]
 [ "AAAAAAAADGKAAAAA",	"However small values ",	"Books",	"entertainments",	1.49,	3795.87,	5.826892	]
 
-# 19:58:12 >  
-# 19:58:12 >  "Done."
-# 19:58:12 >  
+# 18:31:46 >  
+# 18:31:46 >  "Done."
+# 18:31:46 >  
 

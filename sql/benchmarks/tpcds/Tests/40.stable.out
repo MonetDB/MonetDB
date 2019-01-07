@@ -1,9 +1,9 @@
 stdout of test '40` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '40` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT w_state,
 #       i_item_id,
@@ -39,7 +39,7 @@ Ready.
 % sys.warehouse,	sys.item,	sys.L11,	sys.L16 # table_name
 % w_state,	i_item_id,	sales_before,	sales_after # name
 % char,	char,	decimal,	decimal # type
-% 2,	16,	40,	40 # length
+% 2,	16,	20,	20 # length
 [ "TN",	"AAAAAAAAAABDAAAA",	0.00,	-82.10	]
 [ "TN",	"AAAAAAAAAACDAAAA",	-216.54,	158.04	]
 [ "TN",	"AAAAAAAAAAHDAAAA",	186.55,	0.00	]
@@ -141,10 +141,6 @@ Ready.
 [ "TN",	"AAAAAAAACMADAAAA",	71.42,	-13.64	]
 [ "TN",	"AAAAAAAACMJAAAAA",	0.00,	358.31	]
 
-# 15:09:10 >  
-# 15:09:10 >  "Done."
-# 15:09:10 >  
-
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

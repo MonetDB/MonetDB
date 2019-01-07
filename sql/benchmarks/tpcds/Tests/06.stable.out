@@ -1,9 +1,9 @@
 stdout of test '06` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '06` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT a.ca_state state,
 #       count(*) cnt
@@ -36,14 +36,6 @@ Ready.
 #  AND s.ss_sold_date_sk = d.d_date_sk
 #  AND s.ss_item_sk = i.i_item_sk
 #  AND d.d_month_seq =
-#    (SELECT DISTINCT (d_month_seq)
-#     FROM date_dim
-#     WHERE d_year = 2001
-#       AND d_moy = 1 )
-#  AND i.i_current_price > 1.2 *
-#    (SELECT avg(j.i_current_price)
-#     FROM item j
-#     WHERE j.i_category = i.i_category)
 % sys.L14,	sys.L17 # table_name
 % state,	cnt # name
 % char,	bigint # type
@@ -94,6 +86,6 @@ Ready.
 [ "GA",	153	]
 [ "TX",	228	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

@@ -1,9 +1,9 @@
 stdout of test '46` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,11 +20,10 @@ stdout of test '46` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
-#
 #SELECT c_last_name,
 #       c_first_name,
 #       ca_city,
@@ -36,20 +35,10 @@ Ready.
 #  (SELECT ss_ticket_number,
 #          ss_customer_sk,
 #          ca_city bought_city,
-#          sum(ss_coupon_amt) amt,
-#          sum(ss_net_profit) profit
-#   FROM store_sales,
-#        date_dim,
-#        store,
-#        household_demographics,
-#        customer_address
-#   WHERE store_sales.ss_sold_date_sk = date_dim.d_date_sk
-#     AND store_sales.ss_store_sk = store.s_store_sk
-#     AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
 % sys.customer,	sys.customer,	sys.current_addr,	sys.dn,	sys.dn,	sys.dn,	sys.dn # table_name
 % c_last_name,	c_first_name,	ca_city,	bought_city,	ss_ticket_number,	amt,	profit # name
 % char,	char,	varchar,	varchar,	int,	decimal,	decimal # type
-% 30,	20,	14,	14,	6,	40,	40 # length
+% 30,	20,	14,	14,	6,	20,	20 # length
 [ NULL,	NULL,	"Antioch",	"Belmont",	149232,	1500.41,	-3669.87	]
 [ NULL,	NULL,	"Ashland",	"Philadelphia",	155902,	2303.72,	-9449.87	]
 [ NULL,	NULL,	"Bayview",	"Springdale",	162862,	529.16,	-18595.60	]
@@ -151,6 +140,6 @@ Ready.
 [ NULL,	NULL,	"Mount Pleasant",	"Clifton",	33934,	2089.09,	-5930.92	]
 [ NULL,	NULL,	"Mount Pleasant",	"Union",	157956,	7732.84,	-12103.02	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

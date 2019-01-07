@@ -1,9 +1,9 @@
 stdout of test '14b` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '14b` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #WITH cross_items AS
 #  (SELECT i_item_sk ss_item_sk
@@ -36,14 +36,10 @@ Ready.
 #      WHERE ss_item_sk = iss.i_item_sk
 #        AND ss_sold_date_sk = d1.d_date_sk
 #        AND d1.d_year BETWEEN 1999 AND 1999 + 2 INTERSECT
-#        SELECT ics.i_brand_id,
-#               ics.i_class_id,
-#               ics.i_category_id
-#        FROM catalog_sales,
 % .L146,	sys.L150,	sys.L152,	sys.L154,	sys.L156,	sys.L160,	.L162,	sys.L164,	sys.L166,	sys.L170,	sys.L172,	sys.L174 # table_name
 % ty_channel,	ty_brand,	ty_class,	ty_category,	ty_sales,	ty_number_sales,	ly_channel,	ly_brand,	ly_class,	ly_category,	ly_sales,	ly_number_sales # name
 % char,	int,	int,	int,	decimal,	bigint,	char,	int,	int,	int,	decimal,	bigint # type
-% 5,	7,	1,	1,	40,	3,	5,	7,	1,	1,	40,	3 # length
+% 5,	7,	1,	1,	20,	3,	5,	7,	1,	1,	20,	3 # length
 [ "store",	1001001,	1,	1,	372549.5900,	137,	"store",	1001001,	1,	1,	1316197.4300,	340	]
 [ "store",	1001002,	1,	1,	799646.8600,	229,	"store",	1001002,	1,	1,	775776.6300,	188	]
 [ "store",	1002001,	2,	1,	765555.9100,	202,	"store",	1002001,	2,	1,	1218310.8200,	337	]
@@ -145,10 +141,6 @@ Ready.
 [ "store",	6008005,	8,	6,	84238.2800,	27,	"store",	6008005,	8,	6,	136071.7000,	27	]
 [ "store",	6008007,	8,	6,	14672.7700,	7,	"store",	6008007,	8,	6,	59474.2100,	18	]
 
-# 12:33:29 >  
-# 12:33:29 >  "Done."
-# 12:33:29 >  
-
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

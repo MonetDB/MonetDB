@@ -1,9 +1,9 @@
 stdout of test '31` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '31` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #WITH ss AS
 #  (SELECT ca_county,
@@ -36,20 +36,10 @@ Ready.
 #     AND ss_addr_sk=ca_address_sk
 #   GROUP BY ca_county,
 #            d_qoy,
-#            d_year),
-#     ws AS
-#  (SELECT ca_county,
-#          d_qoy,
-#          d_year,
-#          sum(ws_ext_sales_price) AS web_sales
-#   FROM web_sales,
-#        date_dim,
-#        customer_address
-#   WHERE ws_sold_date_sk = d_date_sk
 % sys.ss1,	sys.ss1,	sys.L30,	sys.L32,	sys.L34,	sys.L36 # table_name
 % ca_county,	d_year,	web_q1_q2_increase,	store_q1_q2_increase,	web_q2_q3_increase,	store_q2_q3_increase # name
 % varchar,	int,	decimal,	decimal,	decimal,	decimal # type
-% 21,	4,	40,	40,	40,	40 # length
+% 21,	4,	20,	20,	20,	20 # length
 [ "Atchison County",	2000,	0.800221,	0.242964,	11.944560,	3.162953	]
 [ "Bacon County",	2000,	1.168826,	0.394037,	0.968799,	0.510743	]
 [ "Bourbon County",	2000,	1.913115,	0.981927,	3.364802,	1.380122	]
@@ -102,7 +92,7 @@ Ready.
 [ "Williamson County",	2000,	2.985102,	0.391417,	5.805964,	4.396699	]
 [ "Wright County",	2000,	5.029335,	1.970809,	4.076528,	1.966472	]
 
-# 15:08:38 >  
-# 15:08:38 >  "Done."
-# 15:08:38 >  
+# 18:32:08 >  
+# 18:32:08 >  "Done."
+# 18:32:08 >  
 

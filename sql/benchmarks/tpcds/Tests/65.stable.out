@@ -1,9 +1,9 @@
 stdout of test '65` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '65` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #SELECT s_store_name,
 #       i_item_desc,
@@ -36,19 +36,10 @@ Ready.
 #          avg(revenue) AS ave
 #   FROM
 #     (SELECT ss_store_sk,
-#             ss_item_sk,
-#             sum(ss_sales_price) AS revenue
-#      FROM store_sales,
-#           date_dim
-#      WHERE ss_sold_date_sk = d_date_sk
-#        AND d_month_seq BETWEEN 1176 AND 1176+11
-#      GROUP BY ss_store_sk,
-#               ss_item_sk) sa
-#   GROUP BY ss_store_sk) sb,
 % sys.store,	sys.item,	sys.sc,	sys.item,	sys.item,	sys.item # table_name
 % s_store_name,	i_item_desc,	revenue,	i_current_price,	i_wholesale_cost,	i_brand # name
 % varchar,	varchar,	decimal,	decimal,	decimal,	char # type
-% 5,	199,	40,	9,	9,	50 # length
+% 5,	199,	20,	9,	9,	50 # length
 [ "able",	"Commercial, popular processes give later now wooden facts. Black, outer purposes examine national, precise heels. Invisible times s",	36.06,	5.25,	1.68,	"amalgedu pack #1"	]
 [ "able",	"Conventional, responsible products discuss delicately then actual findings. Extremel",	36.42,	3.67,	2.82,	"namelessnameless #5"	]
 [ "able",	"Difficulties wou",	25.25,	6.61,	2.31,	"importobrand #7"	]
@@ -150,7 +141,7 @@ Ready.
 [ "ought",	"European, happy homes shall not share. Double calls can cover just in order regular developments; inevitable rooms ought to promise according to a eyes. Normal attempts grow only, complex goods",	12.84,	8.03,	4.57,	"univnameless #7"	]
 [ "ought",	"Full-time clothes discharge glad, concerned details. Customs must survive",	10.29,	8.52,	6.73,	"exportiunivamalg #14"	]
 
-# 15:09:36 >  
-# 15:09:36 >  "Done."
-# 15:09:36 >  
+# 18:32:34 >  
+# 18:32:34 >  "Done."
+# 18:32:34 >  
 

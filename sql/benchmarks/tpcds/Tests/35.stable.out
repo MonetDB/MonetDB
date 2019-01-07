@@ -1,9 +1,9 @@
 stdout of test '35` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '35` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT ca_state,
 #       cd_gender,
@@ -36,14 +36,6 @@ Ready.
 #       count(*) cnt2,
 #       min(cd_dep_employed_count),
 #       max(cd_dep_employed_count),
-#       avg(cd_dep_employed_count),
-#       cd_dep_college_count,
-#       count(*) cnt3,
-#       min(cd_dep_college_count),
-#       max(cd_dep_college_count),
-#       avg(cd_dep_college_count)
-#FROM customer c,
-#     customer_address ca,
 % .ca,	.customer_demographics,	.customer_demographics,	.customer_demographics,	.L43,	.L45,	.L47,	.L51,	.customer_demographics,	.L55,	.L57,	.L61,	.L63,	.customer_demographics,	.L67,	.L71,	.L73,	.L75 # table_name
 % ca_state,	cd_gender,	cd_marital_status,	cd_dep_count,	cnt1,	L45,	L47,	L51,	cd_dep_employed_count,	cnt2,	L57,	L61,	L63,	cd_dep_college_count,	cnt3,	L71,	L73,	L75 # name
 % char,	char,	char,	int,	bigint,	int,	int,	double,	int,	bigint,	int,	int,	double,	int,	bigint,	int,	int,	double # type
@@ -149,6 +141,6 @@ Ready.
 [ NULL,	"M",	"M",	0,	1,	0,	0,	0,	6,	1,	6,	6,	6,	2,	1,	2,	2,	2	]
 [ NULL,	"M",	"M",	1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	6,	1,	6,	6,	6	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

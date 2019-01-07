@@ -1,9 +1,9 @@
 stdout of test '10` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '10` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT cd_gender,
 #       cd_marital_status,
@@ -36,14 +36,6 @@ Ready.
 #       count(*) cnt4,
 #       cd_dep_employed_count,
 #       count(*) cnt5,
-#       cd_dep_college_count,
-#       count(*) cnt6
-#FROM customer c,
-#     customer_address ca,
-#     customer_demographics
-#WHERE c.c_current_addr_sk = ca.ca_address_sk
-#  AND ca_county IN ('Rush County',
-#                    'Toole County',
 % .customer_demographics,	.customer_demographics,	.customer_demographics,	.L42,	.customer_demographics,	.L46,	.customer_demographics,	.L52,	.customer_demographics,	.L56,	.customer_demographics,	.L62,	.customer_demographics,	.L66 # table_name
 % cd_gender,	cd_marital_status,	cd_education_status,	cnt1,	cd_purchase_estimate,	cnt2,	cd_credit_rating,	cnt3,	cd_dep_count,	cnt4,	cd_dep_employed_count,	cnt5,	cd_dep_college_count,	cnt6 # name
 % char,	char,	char,	bigint,	int,	bigint,	char,	bigint,	int,	bigint,	int,	bigint,	int,	bigint # type
@@ -54,6 +46,6 @@ Ready.
 [ "M",	"D",	"Primary",	1,	7000,	1,	"Unknown",	1,	2,	1,	1,	1,	1,	1	]
 [ "M",	"W",	"Unknown",	1,	4500,	1,	"Good",	1,	5,	1,	0,	1,	1,	1	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

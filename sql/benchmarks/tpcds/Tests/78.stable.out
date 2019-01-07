@@ -1,9 +1,9 @@
 stdout of test '78` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '78` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #WITH ws AS
 #  (SELECT d_year AS ws_sold_year,
@@ -36,15 +36,10 @@ Ready.
 #   AND ws_item_sk=wr_item_sk
 #   JOIN date_dim ON ws_sold_date_sk = d_date_sk
 #   WHERE wr_order_number IS NULL
-#   GROUP BY d_year,
-#            ws_item_sk,
-#            ws_bill_customer_sk ),
-#     cs AS
-#  (SELECT d_year AS cs_sold_year,
 % .ss,	.ss,	.ss,	.L64,	.L66,	.L70,	.L72,	.L74,	.L76,	.L100 # table_name
 % ss_sold_year,	ss_item_sk,	ss_customer_sk,	ratio,	store_qty,	store_wholesale_cost,	store_sales_price,	other_chan_qty,	other_chan_wholesale_cost,	other_chan_sales_price # name
-% int,	int,	int,	decimal,	hugeint,	decimal,	decimal,	hugeint,	decimal,	decimal # type
-% 4,	4,	5,	40,	2,	40,	40,	2,	40,	40 # length
+% int,	int,	int,	decimal,	bigint,	decimal,	decimal,	bigint,	decimal,	decimal # type
+% 4,	4,	5,	20,	2,	20,	20,	2,	20,	20 # length
 [ 2000,	116,	51507,	8.9100,	98,	45.86,	80.12,	11,	46.07,	39.52	]
 [ 2000,	119,	51419,	0.8100,	60,	52.03,	86.53,	74,	68.27,	31.33	]
 [ 2000,	277,	52580,	1.9200,	23,	44.62,	13.73,	12,	4.43,	5.98	]
@@ -146,7 +141,7 @@ Ready.
 [ 2000,	8792,	59269,	0.5800,	19,	63.92,	40.80,	33,	5.11,	5.00	]
 [ 2000,	8861,	40885,	1.0300,	41,	69.21,	24.83,	40,	43.22,	59.55	]
 
-# 15:09:51 >  
-# 15:09:51 >  "Done."
-# 15:09:51 >  
+# 18:32:47 >  
+# 18:32:47 >  "Done."
+# 18:32:47 >  
 

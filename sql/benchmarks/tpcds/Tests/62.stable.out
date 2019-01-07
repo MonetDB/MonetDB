@@ -1,9 +1,9 @@
 stdout of test '62` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '62` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #SELECT w_substr,
 #       sm_type,
@@ -36,12 +36,9 @@ Ready.
 #                    AND (ws_ship_date_sk - ws_sold_date_sk <= 60) THEN 1
 #               ELSE 0
 #           END) AS "31-60 days",
-#       sum(CASE
-#               WHEN (ws_ship_date_sk - ws_sold_date_sk > 60)
-#                    AND (ws_ship_date_sk - ws_sold_date_sk <= 90) THEN 1
 % sys.sq1,	sys.ship_mode,	sys.web_site,	sys.L12,	sys.L15,	sys.L20,	sys.L23,	sys.L26 # table_name
 % w_substr,	sm_type,	web_name,	"30 days",	"31-60 days",	"61-90 days",	"91-120 days",	">120 days" # name
-% clob,	char,	varchar,	hugeint,	hugeint,	hugeint,	hugeint,	hugeint # type
+% clob,	char,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 20,	30,	6,	3,	3,	3,	3,	1 # length
 [ NULL,	"EXPRESS",	"site_0",	260,	283,	296,	314,	0	]
 [ NULL,	"EXPRESS",	"site_1",	330,	285,	315,	329,	0	]
@@ -144,6 +141,6 @@ Ready.
 [ "Doors canno",	"LIBRARY",	"site_3",	216,	198,	182,	222,	0	]
 [ "Doors canno",	"LIBRARY",	"site_4",	176,	163,	170,	216,	0	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "Done."
+# 18:29:58 >  

@@ -1,9 +1,9 @@
 stdout of test '81` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '81` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #WITH customer_total_return AS
 #  (SELECT cr_returning_customer_sk AS ctr_customer_sk ,
@@ -36,15 +36,10 @@ Ready.
 #     AND cr_returning_addr_sk = ca_address_sk
 #   GROUP BY cr_returning_customer_sk ,
 #            ca_state)
-#SELECT c_customer_id,
-#       c_salutation,
-#       c_first_name,
-#       c_last_name,
-#       ca_street_number,
 % sys.customer,	sys.customer,	sys.customer,	sys.customer,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.customer_address,	sys.ctr1 # table_name
 % c_customer_id,	c_salutation,	c_first_name,	c_last_name,	ca_street_number,	ca_street_name,	ca_street_type,	ca_suite_number,	ca_city,	ca_county,	ca_state,	ca_zip,	ca_country,	ca_gmt_offset,	ca_location_type,	ctr_total_return # name
 % char,	char,	char,	char,	char,	varchar,	char,	char,	varchar,	varchar,	char,	char,	varchar,	decimal,	char,	decimal # type
-% 16,	10,	20,	30,	10,	19,	15,	10,	15,	17,	2,	10,	13,	7,	20,	40 # length
+% 16,	10,	20,	30,	10,	19,	15,	10,	15,	17,	2,	10,	13,	7,	20,	20 # length
 [ "AAAAAAAAABBEAAAA",	"Dr.",	"Oscar",	"Fox",	"183",	"15th ",	"Ln",	"Suite P",	"Greenwood",	"Clay County",	"GA",	"38828",	"United States",	-5.00,	"condo",	4607.92	]
 [ "AAAAAAAAADCEBAAA",	"Sir",	"Billy",	"Bell",	"690",	"4th Fifth",	"Ct.",	"Suite 390",	"Hillcrest",	"Spalding County",	"GA",	"33003",	"United States",	-5.00,	"condo",	5567.44	]
 [ "AAAAAAAAAFBGAAAA",	"Mrs.",	"Erika",	"Buford",	"527",	"1st ",	"Ln",	"Suite 380",	"Lakewood",	"Jasper County",	"GA",	"38877",	"United States",	-5.00,	"single family",	5412.16	]
@@ -146,7 +141,7 @@ Ready.
 [ "AAAAAAAAFANDAAAA",	"Dr.",	"Daniel",	"Wilson",	"586",	"Pine Cherry",	"Street",	"Suite U",	"Deerfield",	"Muscogee County",	"GA",	"39840",	"United States",	-5.00,	"condo",	2774.69	]
 [ "AAAAAAAAFANDAAAA",	"Dr.",	"Daniel",	"Wilson",	"586",	"Pine Cherry",	"Street",	"Suite U",	"Deerfield",	"Muscogee County",	"GA",	"39840",	"United States",	-5.00,	"condo",	2946.52	]
 
-# 15:09:56 >  
-# 15:09:56 >  "Done."
-# 15:09:56 >  
+# 18:32:49 >  
+# 18:32:49 >  "Done."
+# 18:32:49 >  
 

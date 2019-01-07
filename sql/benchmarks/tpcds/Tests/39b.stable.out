@@ -1,9 +1,9 @@
 stdout of test '39b` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '39b` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #WITH inv AS
 #  (SELECT w_warehouse_name,
@@ -36,16 +36,6 @@ Ready.
 #              ELSE stdev/mean
 #          END cov
 #   FROM
-#     (SELECT w_warehouse_name,
-#             w_warehouse_sk,
-#             i_item_sk,
-#             d_moy,
-#             stddev_samp(inv_quantity_on_hand) stdev,
-#             avg(inv_quantity_on_hand) mean
-#      FROM inventory,
-#           item,
-#           warehouse,
-#           date_dim
 % sys.inv1,	sys.inv1,	sys.inv1,	sys.inv1,	sys.inv1,	sys.inv2,	sys.inv2,	sys.inv2,	sys.inv2,	sys.inv2 # table_name
 % w_warehouse_sk,	i_item_sk,	d_moy,	mean,	cov,	w_warehouse_sk,	i_item_sk,	d_moy,	mean,	cov # name
 % int,	int,	int,	double,	double,	int,	int,	int,	double,	double # type
@@ -65,7 +55,7 @@ Ready.
 [ 4,	947,	1,	247.5,	1.693318181,	4,	947,	2,	203.3333333,	1.205433145	]
 [ 5,	3137,	1,	271.25,	1.575453221,	5,	3137,	2,	380,	1.083420339	]
 
-# 19:58:47 >  
-# 19:58:47 >  "Done."
-# 19:58:47 >  
+# 18:32:16 >  
+# 18:32:16 >  "Done."
+# 18:32:16 >  
 

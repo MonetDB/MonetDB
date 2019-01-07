@@ -1,9 +1,9 @@
 stdout of test '72` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '72` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #SELECT i_item_desc,
 #       w_warehouse_name,
@@ -36,14 +36,9 @@ Ready.
 #               ELSE 0
 #           END) promo,
 #       count(*) total_cnt
-#FROM catalog_sales
-#JOIN inventory ON (cs_item_sk = inv_item_sk)
-#JOIN warehouse ON (w_warehouse_sk=inv_warehouse_sk)
-#JOIN item ON (i_item_sk = cs_item_sk)
-#JOIN customer_demographics ON (cs_bill_cdemo_sk = cd_demo_sk)
 % .item,	.warehouse,	.d1,	.L6,	.L11,	.L14 # table_name
 % i_item_desc,	w_warehouse_name,	d_week_seq,	no_promo,	promo,	total_cnt # name
-% varchar,	varchar,	int,	hugeint,	hugeint,	bigint # type
+% varchar,	varchar,	int,	bigint,	bigint,	bigint # type
 % 197,	20,	4,	1,	1,	1 # length
 [ "Best possible ages tell together new, st",	"Conventional childr",	5213,	0,	2,	2	]
 [ "Closed, good condition",	"Doors canno",	5169,	0,	2,	2	]
@@ -146,6 +141,6 @@ Ready.
 [ "Alone, small conditions get either likely companies. Inner, long-term patients make hot rebels. Procedures see fi",	"Important issues liv",	5215,	0,	1,	1	]
 [ "Already european mothers ought to impose big ever fixed parents. Dominant groups say even. Here basic weeks set as winners. Modern, young prayers release very environ",	"Doors canno",	5215,	0,	1,	1	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "Done."
+# 18:29:58 >  

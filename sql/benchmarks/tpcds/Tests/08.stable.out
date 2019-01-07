@@ -1,9 +1,9 @@
 stdout of test '08` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '08` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT s_store_name,
 #       sum(ss_net_profit)
@@ -36,24 +36,17 @@ Ready.
 #      WHERE SUBSTRING(ca_zip, 1, 5) IN ('24128',
 #                                     '76232',
 #                                     '65084',
-#                                     '87816',
-#                                     '83926',
-#                                     '77556',
-#                                     '20548',
 % sys.store,	sys.L23 # table_name
 % s_store_name,	L23 # name
 % varchar,	decimal # type
-% 5,	40 # length
+% 5,	20 # length
 [ "able",	-9767751.88	]
 [ "ation",	-10546549.93	]
 [ "bar",	-10133672.06	]
 [ "ese",	-10335181.30	]
 [ "ought",	-10737659.56	]
 
-# 12:33:20 >  
-# 12:33:20 >  "Done."
-# 12:33:20 >  
+# 18:31:41 >  
+# 18:31:41 >  "Done."
+# 18:31:41 >  
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  

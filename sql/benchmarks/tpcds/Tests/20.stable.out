@@ -1,9 +1,9 @@
 stdout of test '20` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:57 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '20` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:57 >  
 
 #SELECT i_item_id ,
 #       i_item_desc,
@@ -35,15 +35,10 @@ Ready.
 #     item,
 #     date_dim
 #WHERE cs_item_sk = i_item_sk
-#  AND i_category IN ('Sports',
-#                     'Books',
-#                     'Home')
-#  AND cs_sold_date_sk = d_date_sk
-#  AND d_date BETWEEN cast('1999-02-22' AS date) AND cast('1999-03-24' AS date)
 % sys.item,	sys.item,	sys.item,	sys.item,	sys.item,	sys.L12,	sys.L21 # table_name
 % i_item_id,	i_item_desc,	i_category,	i_class,	i_current_price,	itemrevenue,	revenueratio # name
 % char,	varchar,	char,	char,	decimal,	decimal,	decimal # type
-% 16,	200,	50,	50,	9,	40,	40 # length
+% 16,	200,	50,	50,	9,	20,	20 # length
 [ "AAAAAAAAOJGAAAAA",	NULL,	"Books",	NULL,	NULL,	2838.09,	24.109780	]
 [ "AAAAAAAAAAKAAAAA",	"Small, political activities help great, bad policies. Therefore square features provide on a machines. Rules make over me",	"Books",	"arts",	2.42,	6478.75,	3.228811	]
 [ "AAAAAAAAACKBAAAA",	"Clinical, inc initiatives make specially according to a activities.",	"Books",	"arts",	6.92,	1806.72,	0.900414	]
@@ -145,6 +140,6 @@ Ready.
 [ "AAAAAAAAHPADAAAA",	"Used, young sizes take requirements. Electoral, standard stones worry still private scenes. Major, still bedrooms say all once effective years. Long new moments will own after the",	"Books",	"computers",	9.19,	690.90,	0.365512	]
 [ "AAAAAAAAIAMAAAAA",	"Alone walls mus",	"Books",	"computers",	2.00,	4530.16,	2.396627	]
 
-# 11:40:04 >  
-# 11:40:04 >"Done."
-# 11:40:04 >  
+# 18:29:57 >  
+# 18:29:57 >  "Done."
+# 18:29:57 >  

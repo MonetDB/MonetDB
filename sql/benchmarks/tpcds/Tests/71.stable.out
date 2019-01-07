@@ -1,9 +1,9 @@
 stdout of test '71` in directory 'sql/benchmarks/tpcds` itself:
 
 
-# 11:40:04 >  
-# 11:40:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
 
 # MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
 # This is an unreleased version
@@ -20,9 +20,9 @@ stdout of test '71` in directory 'sql/benchmarks/tpcds` itself:
 
 Ready.
 
-# 11:40:04 >  
-# 11:40:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
 
 #SELECT i_brand_id brand_id,
 #       i_brand brand,
@@ -36,16 +36,10 @@ Ready.
 #          ws_sold_time_sk AS time_sk
 #   FROM web_sales,
 #        date_dim
-#   WHERE d_date_sk = ws_sold_date_sk
-#     AND d_moy=11
-#     AND d_year=1999
-#   UNION ALL SELECT cs_ext_sales_price AS ext_price,
-#                    cs_sold_date_sk AS sold_date_sk,
-#                    cs_item_sk AS sold_item_sk,
 % .L45,	.L47,	.time_dim,	.time_dim,	.L54 # table_name
 % brand_id,	brand,	t_hour,	t_minute,	ext_price # name
 % int,	char,	int,	int,	decimal # type
-% 8,	50,	2,	2,	40 # length
+% 8,	50,	2,	2,	20 # length
 [ 5004002,	"edu packscholar #2",	19,	31,	20021.76	]
 [ 7012010,	"importonameless #10",	7,	2,	17142.78	]
 [ 4004001,	"edu packedu pack #1",	9,	23,	16687.92	]
@@ -1065,6 +1059,6 @@ Ready.
 [ 2004002,	"edu packimporto #2",	9,	7,	NULL	]
 [ 5003002,	"exportischolar #2",	9,	20,	NULL	]
 
-# 11:40:04 >  
-# 11:40:04 >  "Done."
-# 11:40:04 >  
+# 18:29:58 >  
+# 18:29:58 >  "Done."
+# 18:29:58 >  
