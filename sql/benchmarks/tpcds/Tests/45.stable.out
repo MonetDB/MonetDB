@@ -42,34 +42,10 @@ Ready.
 #                              '86475',
 #                              '85392',
 #                              '85460',
-#                              '80348',
-#                              '81792')
-#       OR i_item_id IN
-#         (SELECT i_item_id
-#          FROM item
-#          WHERE i_item_sk IN (2,
-#                              3,
-#                              5,
-#                              7,
-#                              11,
-#                              13,
-#                              17,
-#                              19,
-#                              23,
-#                              29) ))
-#  AND ws_sold_date_sk = d_date_sk
-#  AND d_qoy = 2
-#  AND d_year = 2001
-#GROUP BY ca_zip,
-#         ca_city
-#ORDER BY ca_zip,
-#         ca_city
-#LIMIT 100;
-#
-%
-%
-%
-%
+% .customer_address,	.customer_address,	.L24 # table_name
+% ca_zip,	ca_city,	L24 # name
+% char,	varchar,	decimal # type
+% 10,	15,	40 # length
 [ "10150",	"Bunker Hill",	20.25	]
 [ "16098",	"Five Points",	18.05	]
 [ "28048",	"Salem",	9.81	]
