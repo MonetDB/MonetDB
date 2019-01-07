@@ -14,7 +14,7 @@ WITH inv AS
              w_warehouse_sk,
              i_item_sk,
              d_moy,
-             stddev_samp(inv_quantity_on_hand) stdev,
+             stddev_samp(inv_quantity_on_hand)*1.000 stdev,
              avg(inv_quantity_on_hand) mean
       FROM inventory,
            item,
