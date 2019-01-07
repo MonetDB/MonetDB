@@ -44,7 +44,7 @@ Ready.
 % .L27 # table_name
 % L27 # name
 % bigint # type
-% 1 # length
+% 3 # length
 [ 107	]
 
 # 15:08:47 >  

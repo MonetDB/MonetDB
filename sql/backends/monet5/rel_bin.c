@@ -1775,11 +1775,17 @@ releqjoin( backend *be, list *l1, list *l2, int used_hash, comp_type cmp_op, int
 		/* intentional both tail_type's of le (as re sometimes is a find for bulk loading */
 		sql_subfunc *f = NULL;
 		stmt * cmp;
+		list *ops;
 
 		f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		assert(f);
 
-		cmp = stmt_binop(be, le, re, f);
+		ops = sa_list(be->mvc->sa);
+		list_append(ops, le);
+		list_append(ops, re);
+		if (cmp_op == cmp_equal_nil)
+			list_append(ops, stmt_bool(be, 1));
+		cmp = stmt_Nop(be, stmt_list(be, ops), f);
 		cmp = stmt_uselect(be, cmp, stmt_bool(be, 1), cmp_equal, NULL, 0);
 		l = stmt_project(be, cmp, l );
 		r = stmt_project(be, cmp, r );
