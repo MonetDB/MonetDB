@@ -12,7 +12,11 @@ static BUN
 op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		  const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
 		  TPE *restrict dst, BUN cnt, BUN start, BUN end, const oid *restrict cand,
-		  const oid *candend, oid candoff, int nonil, const char *func)
+		  const oid *candend, oid candoff, bool nonil,
+#ifdef NIL_MATCHES_FLAG
+		  bool nil_matches,
+#endif
+		  const char *func)
 {
 	BUN nils = 0;
 	BUN i, j, k, loff = 0, roff = 0;
@@ -30,6 +34,9 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		CANDLOOP(dst, k, TPE_nil, 0, start);
 		if (is_oid_nil(v) || tp2 == TYPE_void) {
 			TPE res = is_oid_nil(v) || is_oid_nil(* (const oid *) rgt) ?
+#ifdef NIL_MATCHES_FLAG
+				nil_matches ? OP(is_oid_nil(v), is_oid_nil(* (const oid *) rgt)) :
+#endif
 				TPE_nil :
 				OP(v, * (const oid *) rgt);
 
@@ -50,8 +57,15 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			     v++, j += incr2, k++) {
 				CHECKCAND(dst, k, candoff, TPE_nil);
 				if (is_oid_nil(((const oid *) rgt)[j])) {
-					nils++;
-					dst[k] = TPE_nil;
+#ifdef NIL_MATCHES_FLAG
+					if (nil_matches) {
+						dst[k] = OP(false, true);
+					} else
+#endif
+					{
+						nils++;
+						dst[k] = TPE_nil;
+					}
 				} else {
 					dst[k] = OP(v, ((const oid *) rgt)[j]);
 				}
@@ -65,6 +79,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto unsupported;
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(bit, bit, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+		else if (nil_matches)
+			BINARY_3TYPE_FUNC_nilmatch(bit, bit, TPE, OP);
+#endif
 		else
 			BINARY_3TYPE_FUNC(bit, bit, TPE, OP);
 		break;
@@ -74,24 +92,40 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		btebte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(bte, bte, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(bte, bte, TPE, OP);
 			break;
 		case TYPE_sht:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, sht, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(bte, sht, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(bte, sht, TPE, OP);
 			break;
 		case TYPE_int:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(bte, int, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(bte, int, TPE, OP);
 			break;
 		case TYPE_lng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(bte, lng, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(bte, lng, TPE, OP);
 			break;
@@ -99,6 +133,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_hge:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, hge, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(bte, hge, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(bte, hge, TPE, OP);
 			break;
@@ -106,12 +144,20 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, flt, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(bte, flt, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(bte, flt, TPE, OP);
 			break;
 		case TYPE_dbl:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, dbl, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(bte, dbl, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(bte, dbl, TPE, OP);
 			break;
@@ -124,6 +170,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, bte, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(sht, bte, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(sht, bte, TPE, OP);
 			break;
@@ -131,18 +181,30 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		shtsht:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, sht, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(sht, sht, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(sht, sht, TPE, OP);
 			break;
 		case TYPE_int:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(sht, int, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(sht, int, TPE, OP);
 			break;
 		case TYPE_lng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(sht, lng, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(sht, lng, TPE, OP);
 			break;
@@ -150,6 +212,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_hge:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, hge, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(sht, hge, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(sht, hge, TPE, OP);
 			break;
@@ -157,12 +223,20 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, flt, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(sht, flt, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(sht, flt, TPE, OP);
 			break;
 		case TYPE_dbl:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, dbl, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(sht, dbl, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(sht, dbl, TPE, OP);
 			break;
@@ -175,12 +249,20 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, bte, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(int, bte, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(int, bte, TPE, OP);
 			break;
 		case TYPE_sht:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, sht, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(int, sht, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(int, sht, TPE, OP);
 			break;
@@ -188,12 +270,20 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		intint:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(int, int, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(int, int, TPE, OP);
 			break;
 		case TYPE_lng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(int, lng, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(int, lng, TPE, OP);
 			break;
@@ -201,6 +291,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_hge:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, hge, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(int, hge, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(int, hge, TPE, OP);
 			break;
@@ -208,12 +302,20 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, flt, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(int, flt, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(int, flt, TPE, OP);
 			break;
 		case TYPE_dbl:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, dbl, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(int, dbl, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(int, dbl, TPE, OP);
 			break;
@@ -226,18 +328,30 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, bte, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(lng, bte, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(lng, bte, TPE, OP);
 			break;
 		case TYPE_sht:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, sht, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(lng, sht, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(lng, sht, TPE, OP);
 			break;
 		case TYPE_int:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(lng, int, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(lng, int, TPE, OP);
 			break;
@@ -245,6 +359,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		lnglng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(lng, lng, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(lng, lng, TPE, OP);
 			break;
@@ -252,6 +370,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_hge:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, hge, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(lng, hge, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(lng, hge, TPE, OP);
 			break;
@@ -259,12 +381,20 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, flt, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(lng, flt, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(lng, flt, TPE, OP);
 			break;
 		case TYPE_dbl:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, dbl, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(lng, dbl, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(lng, dbl, TPE, OP);
 			break;
@@ -278,24 +408,40 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, bte, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(hge, bte, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(hge, bte, TPE, OP);
 			break;
 		case TYPE_sht:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, sht, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(hge, sht, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(hge, sht, TPE, OP);
 			break;
 		case TYPE_int:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, int, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(hge, int, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(hge, int, TPE, OP);
 			break;
 		case TYPE_lng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, lng, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(hge, lng, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(hge, lng, TPE, OP);
 			break;
@@ -303,18 +449,30 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		hgehge:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, hge, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(hge, hge, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(hge, hge, TPE, OP);
 			break;
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, flt, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(hge, flt, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(hge, flt, TPE, OP);
 			break;
 		case TYPE_dbl:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(hge, dbl, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(hge, dbl, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(hge, dbl, TPE, OP);
 			break;
@@ -328,24 +486,40 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, bte, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(flt, bte, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(flt, bte, TPE, OP);
 			break;
 		case TYPE_sht:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, sht, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(flt, sht, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(flt, sht, TPE, OP);
 			break;
 		case TYPE_int:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(flt, int, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(flt, int, TPE, OP);
 			break;
 		case TYPE_lng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(flt, lng, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(flt, lng, TPE, OP);
 			break;
@@ -353,6 +527,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_hge:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, hge, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(flt, hge, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(flt, hge, TPE, OP);
 			break;
@@ -361,12 +539,20 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		fltflt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, flt, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(flt, flt, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(flt, flt, TPE, OP);
 			break;
 		case TYPE_dbl:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, dbl, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(flt, dbl, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(flt, dbl, TPE, OP);
 			break;
@@ -379,24 +565,40 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, bte, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(dbl, bte, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(dbl, bte, TPE, OP);
 			break;
 		case TYPE_sht:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, sht, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(dbl, sht, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(dbl, sht, TPE, OP);
 			break;
 		case TYPE_int:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(dbl, int, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(dbl, int, TPE, OP);
 			break;
 		case TYPE_lng:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(dbl, lng, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(dbl, lng, TPE, OP);
 			break;
@@ -404,6 +606,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_hge:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, hge, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(dbl, hge, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(dbl, hge, TPE, OP);
 			break;
@@ -411,6 +617,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		case TYPE_flt:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, flt, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(dbl, flt, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(dbl, flt, TPE, OP);
 			break;
@@ -418,6 +628,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		dbldbl:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, dbl, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(dbl, dbl, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(dbl, dbl, TPE, OP);
 			break;
@@ -431,17 +645,37 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 
 			v = * (const oid *) rgt;
 			if (is_oid_nil(v)) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = TPE_nil;
-				nils = cnt;
+#ifdef NIL_MATCHES_FLAG
+				if (nil_matches) {
+					CANDLOOP(dst, k, TPE_nil, 0, start);
+					for (i = start * incr1, v += start, k = start;
+					     k < end; i += incr1, v++, k++) {
+						CHECKCAND(dst, k, candoff, TPE_nil);
+						dst[k] = OP(is_oid_nil(((const oid *) lft)[i]), true);
+					}
+					CANDLOOP(dst, k, TPE_nil, end, cnt);
+				} else
+#endif
+				{
+					for (k = 0; k < cnt; k++)
+						dst[k] = TPE_nil;
+					nils = cnt;
+				}
 			} else {
 				CANDLOOP(dst, k, TPE_nil, 0, start);
 				for (i = start * incr1, v += start, k = start;
 				     k < end; i += incr1, v++, k++) {
 					CHECKCAND(dst, k, candoff, TPE_nil);
 					if (is_oid_nil(((const oid *) lft)[i])) {
-						nils++;
-						dst[k] = TPE_nil;
+#ifdef NIL_MATCHES_FLAG
+						if (nil_matches) {
+							dst[k] = OP(true, false);
+						} else
+#endif
+						{
+							nils++;
+							dst[k] = TPE_nil;
+						}
 					} else {
 						dst[k] = OP(((const oid *) lft)[i], v);
 					}
@@ -451,6 +685,10 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		} else if (tp2 == TYPE_oid) {
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(oid, oid, TPE, OP);
+#ifdef NIL_MATCHES_FLAG
+			else if (nil_matches)
+				BINARY_3TYPE_FUNC_nilmatch(oid, oid, TPE, OP);
+#endif
 			else
 				BINARY_3TYPE_FUNC(oid, oid, TPE, OP);
 		} else {
@@ -469,8 +707,16 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
 			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
 			    s2 == NULL || strcmp(s2, str_nil) == 0) {
-				nils++;
-				dst[k] = TPE_nil;
+#ifdef NIL_MATCHES_FLAG
+				if (nil_matches) {
+					dst[k] = OP(s1 == NULL || strcmp(s1, str_nil) == 0,
+						    s2 == NULL || strcmp(s2, str_nil) == 0);
+				} else
+#endif
+				{
+					nils++;
+					dst[k] = TPE_nil;
+				}
 			} else {
 				int x = strcmp(s1, s2);
 				dst[k] = OP(x, 0);
@@ -516,8 +762,16 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			if (p1 == NULL || p2 == NULL ||
 			    (*atomcmp)(p1, nil) == 0 ||
 			    (*atomcmp)(p2, nil) == 0) {
-				nils++;
-				dst[k] = TPE_nil;
+#ifdef NIL_MATCHES_FLAG
+				if (nil_matches) {
+					dst[k] = OP(p1 == NULL || (*atomcmp)(p1, nil) == 0,
+						    p2 == NULL || (*atomcmp)(p2, nil) == 0);
+				} else
+#endif
+				{
+					nils++;
+					dst[k] = TPE_nil;
+				}
 			} else {
 				int x = (*atomcmp)(p1, p2);
 				dst[k] = OP(x, 0);
@@ -539,7 +793,10 @@ static BAT *
 BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		 const void *rgt, int tp2, int incr2, const char *hp2, int wd2,
 		 BUN cnt, BUN start, BUN end, const oid *restrict cand,
-		 const oid *candend, oid candoff, int nonil, oid seqbase,
+		 const oid *candend, oid candoff, bool nonil, oid seqbase,
+#ifdef NIL_MATCHES_FLAG
+		 bool nil_matches,
+#endif
 		 const char *func)
 {
 	BAT *bn;
@@ -555,7 +812,11 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	nils = op_typeswitchloop(lft, tp1, incr1, hp1, wd1,
 				 rgt, tp2, incr2, hp2, wd2,
 				 dst, cnt, start, end, cand, candend, candoff,
-				 nonil, func);
+				 nonil,
+#ifdef NIL_MATCHES_FLAG
+				 nil_matches,
+#endif
+				 func);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -574,7 +835,11 @@ BATcalcop_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 }
 
 BAT *
-BATcalcop(BAT *b1, BAT *b2, BAT *s)
+BATcalcop(BAT *b1, BAT *b2, BAT *s
+#ifdef NIL_MATCHES_FLAG
+	  , bool nil_matches
+#endif
+	)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -617,13 +882,20 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 			      b1->hseqbase,
 			      cand == NULL && b1->tnonil && b2->tnonil,
 			      b1->hseqbase,
+#ifdef NIL_MATCHES_FLAG
+			      nil_matches,
+#endif
 			      __func__);
 
 	return bn;
 }
 
 BAT *
-BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
+BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
+#ifdef NIL_MATCHES_FLAG
+	  , bool nil_matches
+#endif
+	)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -651,13 +923,20 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 			      b->hseqbase,
 			      cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->hseqbase,
+#ifdef NIL_MATCHES_FLAG
+			      nil_matches,
+#endif
 			      __func__);
 
 	return bn;
 }
 
 BAT *
-BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
+BATcalccstop(const ValRecord *v, BAT *b, BAT *s
+#ifdef NIL_MATCHES_FLAG
+	  , bool nil_matches
+#endif
+	)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -685,13 +964,20 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 			      b->hseqbase,
 			      cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->hseqbase,
+#ifdef NIL_MATCHES_FLAG
+			      nil_matches,
+#endif
 			      __func__);
 
 	return bn;
 }
 
 gdk_return
-VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
+VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt
+#ifdef NIL_MATCHES_FLAG
+	  , bool nil_matches
+#endif
+	)
 {
 	ret->vtype = TYPE_TPE;
 	if (op_typeswitchloop(VALptr(lft),
@@ -711,7 +997,10 @@ VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 			      NULL,
 			      NULL,
 			      0,
-			      0,
+			      false,
+#ifdef NIL_MATCHES_FLAG
+			      nil_matches,
+#endif
 			      __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;

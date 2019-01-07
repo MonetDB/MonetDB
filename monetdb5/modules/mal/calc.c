@@ -361,7 +361,11 @@ CMDvarEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalceq(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalceq(&stk->stk[getArg(pci, 0)],
+				  &stk->stk[getArg(pci, 1)],
+				  &stk->stk[getArg(pci, 2)],
+				  pci->argc == 3 ? false : *getArgReference_bit(stk, pci, 3)
+			) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.==", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -374,7 +378,11 @@ CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcne(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcne(&stk->stk[getArg(pci, 0)],
+				  &stk->stk[getArg(pci, 1)],
+				  &stk->stk[getArg(pci, 2)],
+				  pci->argc == 3 ? false : *getArgReference_bit(stk, pci, 3)
+			) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.!=", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

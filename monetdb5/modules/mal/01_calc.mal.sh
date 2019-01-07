@@ -229,6 +229,16 @@ address CMDvar${func^^}
 comment "Return V1 $op V2";
 
 EOF
+	case $op in
+	== | !=)
+	    cat <<EOF
+pattern $op(v1:$tp,v2:$tp,nil_matches:bit) :bit
+address CMDvar${func^^}
+comment "Return V1 $op V2";
+
+EOF
+	    ;;
+	esac
     done
     for tp1 in ${numeric[@]}; do
 	for tp2 in ${numeric[@]}; do
@@ -238,6 +248,16 @@ address CMDvar${func^^}
 comment "Return V1 $op V2";
 
 EOF
+	    case $op in
+	    == | !=)
+		cat <<EOF
+pattern $op(v1:$tp1,v2:$tp2,nil_matches:bit) :bit
+address CMDvar${func^^}
+comment "Return V1 $op V2";
+
+EOF
+		;;
+	    esac
 	done
     done
     echo
