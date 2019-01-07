@@ -38,7 +38,7 @@ Ready.
 % .sq1,	.sq1,	.sq1,	.sq1,	.sq1 # table_name
 % channel,	item,	return_ratio,	return_rank,	currency_rank # name
 % char,	int,	decimal,	int,	int # type
-% 7,	5,	21,	2,	2 # length
+% 7,	5,	20,	2,	2 # length
 [ "catalog",	17543,	0.5714,	1,	1	]
 [ "catalog",	14513,	0.6354,	2,	2	]
 [ "catalog",	12577,	0.6559,	3,	3	]

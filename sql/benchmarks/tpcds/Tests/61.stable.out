@@ -39,7 +39,7 @@ Ready.
 % .promotional_sales,	.all_sales,	.L16 # table_name
 % promotions,	total,	L16 # name
 % decimal,	decimal,	decimal # type
-% 20,	20,	28 # length
+% 20,	20,	20 # length
 [ 2894229.70,	5493575.41,	52.6800	]
 
 # 18:32:31 >  

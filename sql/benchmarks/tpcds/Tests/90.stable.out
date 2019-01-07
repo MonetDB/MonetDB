@@ -39,7 +39,7 @@ Ready.
 % .L14 # table_name
 % am_pm_ratio # name
 % decimal # type
-% 21 # length
+% 20 # length
 [ 0.6124	]
 
 # 18:32:55 >  
