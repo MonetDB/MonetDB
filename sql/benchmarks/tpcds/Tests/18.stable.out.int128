@@ -40,7 +40,7 @@ Ready.
 % i_item_id,	ca_country,	ca_state,	ca_county,	agg1,	agg2,	agg3,	agg4,	agg5,	agg6,	agg7 # name
 % char,	varchar,	char,	varchar,	double,	double,	double,	double,	double,	double,	double # type
 % 16,	0,	2,	0,	24,	24,	24,	24,	24,	24,	24 # length
-[ NULL,	NULL,	NULL,	NULL,	49.803721,	101.779821,	277.435551,	51.316508,	-238.901636,	1957.485012,	2.974943	]
+[ NULL,	NULL,	NULL,	NULL,	49.79514416,	101.8325076,	277.2558663,	51.32211845,	-240.1596434,	1957.467742,	2.974962064	]
 [ "AAAAAAAAAABAAAAA",	NULL,	NULL,	NULL,	60,	109.08,	5242.27,	98.17,	-1714.87,	1930,	0	]
 [ "AAAAAAAAAABDAAAA",	NULL,	NULL,	NULL,	61.5,	102.91,	0,	48.085,	-1680.225,	1953.5,	3	]
 [ "AAAAAAAAAADBAAAA",	NULL,	NULL,	NULL,	52,	35.64,	0,	22.8,	-484.12,	1949,	6	]
