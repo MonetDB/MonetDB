@@ -4915,9 +4915,13 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		}
 
 		for(n = obe->h ; n ; n = n->next) {
-			sql_exp *en = n->data;
+			sql_exp *oexp = n->data, *nexp;
 
-			n->data = opt_groupby_add_exp(sql, p, pp, en);
+			n->data = nexp = opt_groupby_add_exp(sql, p, pp, oexp);
+			if (is_ascending(oexp))
+				set_direction(nexp, 1);
+			if (nulls_last(oexp))
+				set_direction(nexp, 2);
 		}
 		if (p->r) {
 			p->r = list_merge(sa_list(sql->sa), p->r, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
