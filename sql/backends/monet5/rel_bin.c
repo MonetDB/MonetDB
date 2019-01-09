@@ -352,7 +352,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		s = distinct_value_list(be, nl, &last_null_value);
 		s = stmt_project(be, stmt_selectnonil(be, s, NULL), s); // The actual in-value-list should not contain null values.
 
-		s = stmt_join(be, c, s, in, cmp_equal);
+		s = stmt_join(be, c, s, in, cmp_left);
 		s = stmt_result(be, s, 0);
 
 		if (!in) {
@@ -383,12 +383,11 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			// TODO: check if stmt_tinter should safely allow a null value for sel
 			oid_intersection = stmt_tinter(be, s, sel);
 			s = stmt_project(be, oid_intersection, s);
+			s = stmt_order(be, s, 1, 0); // ordering is potentially only necessary if an intersect is performed.
+			s = stmt_result(be, s, 0);
 		}
 
- 		// Need to order this because the output of join is not necessarily an ordered cl.
-		// This is relevant for instance when this is passed to a mergecand operation.
-		s = stmt_order(be, s, 1, 0);
-		s = stmt_result(be, s, 0);
+		// s = stmt_set_key(be, s);
 	}
 
 	return s;
