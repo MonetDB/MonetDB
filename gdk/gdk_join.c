@@ -149,7 +149,9 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 		/* a BAT cannot grow larger than BUN_MAX */
 		maxsize = BUN_MAX;
 	}
-	size = estimate == BUN_NONE ? lcnt : estimate;
+	size = estimate == BUN_NONE ? lcnt < rcnt ? lcnt : rcnt : estimate;
+	if (size < 1024)
+		size = 1024;
 	if (size > maxsize)
 		size = maxsize;
 	if ((rkey | semi | only_misses) & nil_on_miss) {
@@ -209,6 +211,37 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 #define FVALUE(s, x)	((const char *) s##vals + ((x) * s##width))
 
 #define APPEND(b, o)		(((oid *) b->theap.base)[b->batCount++] = (o))
+
+#define MAYBEEXTEND_PROGRESS(CNT, PROGRESS)				\
+	do {								\
+		BUN N = (CNT);						\
+		if (BATcount(r1) + N > BATcapacity(r1)) {		\
+			/* make some extra space by extrapolating how */ \
+			/* much more we need (fraction of l we've seen */ \
+			/* so far is used as the fraction of the */	\
+			/* expected result size we've produced so */	\
+			/* far) */					\
+			BUN newcap = (BUN) ((double) lcnt / (lcnt - (PROGRESS)) * (BATcount(r1) + N) * 1.5); \
+			if (newcap < N + BATcount(r1))			\
+				newcap = N + BATcount(r1) + 1024;	\
+			if (newcap > maxsize)				\
+				newcap = maxsize;			\
+			/* make sure heap.free is set properly before	\
+			 * extending */					\
+			BATsetcount(r1, BATcount(r1));			\
+			if (BATextend(r1, newcap) != GDK_SUCCEED)	\
+				goto bailout;				\
+			if (r2) {					\
+				BATsetcount(r2, BATcount(r2));		\
+				if (BATextend(r2, newcap) != GDK_SUCCEED) \
+					goto bailout;			\
+				assert(BATcapacity(r1) == BATcapacity(r2)); \
+			}						\
+		}							\
+	} while (0)
+
+#define MAYBEEXTEND(CNT)	MAYBEEXTEND_PROGRESS(CNT, lcand ? (BUN) (lcandend - lcand) : (lend - lstart))
+#define MAYBEEXTEND_NO_CAND(CNT)	MAYBEEXTEND_PROGRESS(CNT, lend - lstart)
 
 /* Return BATs through r1p and r2p for the case that there is no
  * match between l and r, taking all flags into consideration.
@@ -824,7 +857,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	      bool nil_matches, BUN estimate, lng t0, bool swapped)
 {
 	BAT *r1, *r2;
-	BUN lstart, lend;
+	BUN lstart, lend, lcnt;
 	BUN rstart, rend;
 	BUN lscan, rscan;	/* opportunistic scan window */
 	BUN maxsize;
@@ -844,6 +877,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	lstart = rstart = 0;
 	lend = BATcount(l);
+	lcnt = lend - lstart;
 	rend = BATcount(r);
 	lvals = (const int *) Tloc(l, 0);
 	rvals = (const int *) Tloc(r, 0);
@@ -1004,27 +1038,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
-			/* make some extra space by extrapolating how
-			 * much more we need (fraction of l we've seen
-			 * so far is used as the fraction of the
-			 * expected result size we've produced so
-			 * far) */
-			BUN newcap = (BUN) ((double) BATcount(l) / (BATcount(l) - (lend - lstart)) * (BATcount(r1) + nl * nr) * 1.1);
-			if (newcap < nl * nr + BATcount(r1))
-				newcap = nl * nr + BATcount(r1) + 1024;
-			if (newcap > maxsize)
-				newcap = maxsize;
-			/* make sure heap.free is set properly before
-			 * extending */
-			BATsetcount(r1, BATcount(r1));
-			if (BATextend(r1, newcap) != GDK_SUCCEED)
-				goto bailout;
-			BATsetcount(r2, BATcount(r2));
-			if (BATextend(r2, newcap) != GDK_SUCCEED)
-				goto bailout;
-			assert(BATcapacity(r1) == BATcapacity(r2));
-		}
+		MAYBEEXTEND_NO_CAND(nl * nr);
 
 		/* maintain properties */
 		if (nl > 1) {
@@ -1120,7 +1134,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	      bool nil_matches, BUN estimate, lng t0, bool swapped)
 {
 	BAT *r1, *r2;
-	BUN lstart, lend;
+	BUN lstart, lend, lcnt;
 	BUN rstart, rend;
 	BUN lscan, rscan;	/* opportunistic scan window */
 	BUN maxsize;
@@ -1140,6 +1154,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	lstart = rstart = 0;
 	lend = BATcount(l);
+	lcnt = lend - lstart;
 	rend = BATcount(r);
 	lvals = (const lng *) Tloc(l, 0);
 	rvals = (const lng *) Tloc(r, 0);
@@ -1300,27 +1315,7 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
-			/* make some extra space by extrapolating how
-			 * much more we need (fraction of l we've seen
-			 * so far is used as the fraction of the
-			 * expected result size we've produced so
-			 * far) */
-			BUN newcap = (BUN) ((double) BATcount(l) / (BATcount(l) - (lend - lstart)) * (BATcount(r1) + nl * nr) * 1.1);
-			if (newcap < nl * nr + BATcount(r1))
-				newcap = nl * nr + BATcount(r1) + 1024;
-			if (newcap > maxsize)
-				newcap = maxsize;
-			/* make sure heap.free is set properly before
-			 * extending */
-			BATsetcount(r1, BATcount(r1));
-			if (BATextend(r1, newcap) != GDK_SUCCEED)
-				goto bailout;
-			BATsetcount(r2, BATcount(r2));
-			if (BATextend(r2, newcap) != GDK_SUCCEED)
-				goto bailout;
-			assert(BATcapacity(r1) == BATcapacity(r2));
-		}
+		MAYBEEXTEND_NO_CAND(nl * nr);
 
 		/* maintain properties */
 		if (nl > 1) {
@@ -1729,6 +1724,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			if (nlx > 0) {
 				if (only_misses) {
+					MAYBEEXTEND(nlx);
 					if (lcand) {
 						lskipped |= nlx > 1;
 						while (nlx > 0) {
@@ -1754,6 +1750,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						r2->trevsorted = false;
 						r2->tkey = false;
 					}
+					MAYBEEXTEND(nlx);
 					if (lcand) {
 						lskipped |= nlx > 1;
 						while (nlx > 0) {
@@ -2184,29 +2181,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
-		if (BATcount(r1) + nl * nr > BATcapacity(r1)) {
-			/* make some extra space by extrapolating how
-			 * much more we need (fraction of l we've seen
-			 * so far is used as the fraction of the
-			 * expected result size we've produced so
-			 * far) */
-			BUN newcap = (BUN) ((double) lcnt / (lcnt - (lcand ? (BUN) (lcandend - lcand) : (lend - lstart))) * (BATcount(r1) + nl * nr) * 1.1);
-			if (newcap < nl * nr + BATcount(r1))
-				newcap = nl * nr + BATcount(r1) + 1024;
-			if (newcap > maxsize)
-				newcap = maxsize;
-			/* make sure heap.free is set properly before
-			 * extending */
-			BATsetcount(r1, BATcount(r1));
-			if (BATextend(r1, newcap) != GDK_SUCCEED)
-				goto bailout;
-			if (r2) {
-				BATsetcount(r2, BATcount(r2));
-				if (BATextend(r2, newcap) != GDK_SUCCEED)
-					goto bailout;
-				assert(BATcapacity(r1) == BATcapacity(r2));
-			}
-		}
+		MAYBEEXTEND(nl * nr);
 
 		/* maintain properties */
 		if (nl > 1) {
@@ -2422,20 +2397,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 
 #define HASHLOOPBODY()							\
 	do {								\
-		if (BUNlast(r1) == BATcapacity(r1)) {			\
-			newcap = BATgrows(r1);				\
-			if (newcap > maxsize)				\
-				newcap = maxsize;			\
-			BATsetcount(r1, BATcount(r1));			\
-			if (BATextend(r1, newcap) != GDK_SUCCEED)	\
-				goto bailout;				\
-			if (r2) {					\
-				BATsetcount(r2, BATcount(r2));		\
-				if (BATextend(r2, newcap) != GDK_SUCCEED) \
-					goto bailout;			\
-				assert(BATcapacity(r1) == BATcapacity(r2)); \
-			}						\
-		}							\
+		MAYBEEXTEND(1);						\
 		APPEND(r1, lo);						\
 		if (r2)							\
 			APPEND(r2, ro);					\
@@ -2508,7 +2470,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN rb;
 	BUN rl, rh;
 	oid rseq;
-	BUN nr, newcap;
+	BUN nr;
 	const char *lvals;
 	const char *lvars;
 	int lwidth;
@@ -2658,14 +2620,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (nr == 0) {
 				if (only_misses) {
 					nr = 1;
-					if (BUNlast(r1) == BATcapacity(r1)) {
-						newcap = BATgrows(r1);
-						if (newcap > maxsize)
-							newcap = maxsize;
-						BATsetcount(r1, BATcount(r1));
-						if (BATextend(r1, newcap) != GDK_SUCCEED)
-							goto bailout;
-					}
+					MAYBEEXTEND(1);
 					APPEND(r1, lo);
 					if (lskipped)
 						r1->tseqbase = oid_nil;
@@ -2674,17 +2629,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r2->tnil = true;
 					r2->tnonil = false;
 					r2->tkey = false;
-					if (BUNlast(r1) == BATcapacity(r1)) {
-						newcap = BATgrows(r1);
-						if (newcap > maxsize)
-							newcap = maxsize;
-						BATsetcount(r1, BATcount(r1));
-						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r1, newcap) != GDK_SUCCEED ||
-						    BATextend(r2, newcap) != GDK_SUCCEED)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-					}
+					MAYBEEXTEND(1);
 					APPEND(r1, lo);
 					APPEND(r2, oid_nil);
 				} else {
@@ -2840,14 +2785,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (nr == 0) {
 				if (only_misses) {
 					nr = 1;
-					if (BUNlast(r1) == BATcapacity(r1)) {
-						newcap = BATgrows(r1);
-						if (newcap > maxsize)
-							newcap = maxsize;
-						BATsetcount(r1, BATcount(r1));
-						if (BATextend(r1, newcap) != GDK_SUCCEED)
-							goto bailout;
-					}
+					MAYBEEXTEND(1);
 					APPEND(r1, lo);
 					if (lskipped)
 						r1->tseqbase = oid_nil;
@@ -2856,17 +2794,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r2->tnil = true;
 					r2->tnonil = false;
 					r2->tkey = false;
-					if (BUNlast(r1) == BATcapacity(r1)) {
-						newcap = BATgrows(r1);
-						if (newcap > maxsize)
-							newcap = maxsize;
-						BATsetcount(r1, BATcount(r1));
-						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r1, newcap) != GDK_SUCCEED ||
-						    BATextend(r2, newcap) != GDK_SUCCEED)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-					}
+					MAYBEEXTEND(1);
 					APPEND(r1, lo);
 					APPEND(r2, oid_nil);
 				} else {
@@ -2965,7 +2893,6 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	const oid *p;
 	oid lastr = 0;		/* last value inserted into r2 */
 	BUN n, nr;
-	BUN newcap;
 	oid lo, ro;
 	int c;
 	bool lskipped = false;	/* whether we skipped values in l */
@@ -3104,17 +3031,7 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 				      (opcode & MASK_GT && c > 0) ||
 				      (opcode & MASK_EQ && c == 0)))
 					continue;
-				if (BUNlast(r1) == BATcapacity(r1)) {
-					newcap = BATgrows(r1);
-					if (newcap > maxsize)
-						newcap = maxsize;
-					BATsetcount(r1, BATcount(r1));
-					BATsetcount(r2, BATcount(r2));
-					if (BATextend(r1, newcap) != GDK_SUCCEED ||
-					    BATextend(r2, newcap) != GDK_SUCCEED)
-						goto bailout;
-					assert(BATcapacity(r1) == BATcapacity(r2));
-				}
+				MAYBEEXTEND(1);
 				if (BATcount(r2) > 0) {
 					if (lastr + 1 != ro)
 						r2->tseqbase = oid_nil;
@@ -3188,7 +3105,6 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const oid *p;
 	oid lastr = 0;		/* last value inserted into r2 */
 	BUN n, nr;
-	BUN newcap;
 	oid lo, ro;
 	bool lskipped = false;	/* whether we skipped values in l */
 	BUN nils = 0;		/* needed for XXX_WITH_CHECK macros */
@@ -3516,17 +3432,7 @@ bandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				continue;
 			}
 			}
-			if (BUNlast(r1) == BATcapacity(r1)) {
-				newcap = BATgrows(r1);
-				if (newcap > maxsize)
-					newcap = maxsize;
-				BATsetcount(r1, BATcount(r1));
-				BATsetcount(r2, BATcount(r2));
-				if (BATextend(r1, newcap) != GDK_SUCCEED ||
-				    BATextend(r2, newcap) != GDK_SUCCEED)
-					goto bailout;
-				assert(BATcapacity(r1) == BATcapacity(r2));
-			}
+			MAYBEEXTEND(1);
 			if (BATcount(r2) > 0) {
 				if (lastr + 1 != ro)
 					r2->tseqbase = oid_nil;
