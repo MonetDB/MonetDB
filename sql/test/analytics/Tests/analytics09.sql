@@ -51,12 +51,15 @@ select cast(sum(aa) * count(aa) over () as bigint),
 select cast(sum(sum(aa)) over () as bigint),
        cast(sum(aa) * count(count(aa)) over () as bigint) from analytics group by aa;
 
+select count(aa) over (),
+       avg(aa) over () * count(aa) from analytics group by aa; --TODO
+
 select cast(sum(aa) over () as bigint),
        cast(sum(aa) over () as bigint),
        cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa; --TODO
 
-select avg(sum(aa)) over (),
-       avg(sum(aa)) over (),
+select 21 - avg(sum(aa)) over (),
+       avg(45 * count(aa) + sum(aa)) over (),
        cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa; --TODO
 
 select avg(sum(aa)) over (partition by bb) from analytics group by bb;
