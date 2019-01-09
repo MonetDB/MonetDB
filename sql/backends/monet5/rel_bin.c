@@ -350,7 +350,11 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		
 		// The actual in-value-list should not contain duplicates to ensure that final join results are unique.
 		s = distinct_value_list(be, nl, &last_null_value);
-		s = stmt_project(be, stmt_selectnonil(be, s, NULL), s); // The actual in-value-list should not contain null values.
+
+		if (last_null_value) {
+			// The actual in-value-list should not contain null values.
+			s = stmt_project(be, stmt_selectnonil(be, s, NULL), s);
+		}
 
 		s = stmt_join(be, c, s, in, cmp_left);
 		s = stmt_result(be, s, 0);
