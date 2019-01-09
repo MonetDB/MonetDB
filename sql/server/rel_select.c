@@ -4723,15 +4723,25 @@ rel_intermediates_add_exp(mvc *sql, sql_rel *p, sql_rel *op, sql_exp *in)
 static sql_exp*
 opt_groupby_add_exp(mvc *sql, sql_rel *p, sql_rel *pp, sql_exp *in)
 {
+	sql_exp *found;
+
 	if (p->op == op_groupby) {
 		if (!exp_name(in))
 			exp_label(sql->sa, in, ++sql->label);
-		append(p->exps, in);
+		found = exps_find_exp( p->exps, in);
+		if (!found)
+			append(p->exps, in);
+		else
+			in = found;
 		in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 	} else if (pp && pp->op == op_groupby) {
 		if (!exp_name(in))
 			exp_label(sql->sa, in, ++sql->label);
-		append(p->exps, in);
+		found = exps_find_exp( p->exps, in);
+		if (!found)
+			append(p->exps, in);
+		else
+			in = found;
 		in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 	}
 	return in;

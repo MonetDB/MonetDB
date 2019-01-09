@@ -179,6 +179,34 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
+#select cast(sum(aa) * count(aa) over () as bigint),
+#       cast(sum(aa) over () as bigint) from analytics group by aa;
+% sys.L5,	sys.L11 # table_name
+% L5,	L11 # name
+% bigint,	bigint # type
+% 3,	2 # length
+[ 105,	43	]
+[ 42,	43	]
+[ 14,	43	]
+[ 35,	43	]
+[ NULL,	43	]
+[ 28,	43	]
+[ 42,	43	]
+[ 56,	43	]
+#select cast(sum(sum(aa)) over () as bigint),
+#       cast(sum(aa) * count(count(aa)) over () as bigint) from analytics group by aa;
+% sys.L5,	sys.L13 # table_name
+% L5,	L13 # name
+% bigint,	bigint # type
+% 2,	3 # length
+[ 46,	120	]
+[ 46,	48	]
+[ 46,	16	]
+[ 46,	40	]
+[ 46,	NULL	]
+[ 46,	32	]
+[ 46,	48	]
+[ 46,	64	]
 #select avg(sum(aa)) over (partition by bb) from analytics group by bb;
 % sys.L4 # table_name
 % L4 # name
