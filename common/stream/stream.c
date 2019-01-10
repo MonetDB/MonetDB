@@ -641,9 +641,8 @@ close_stream(stream *s)
 	}
 }
 
-#define EXT_LEN 4
 static const char *
-get_extention(const char *file)
+get_extension(const char *file)
 {
 	char *ext_start;
 
@@ -2051,7 +2050,7 @@ open_rstream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_rstream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzrstream(filename);
@@ -2079,7 +2078,7 @@ open_wstream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_wstream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzwstream(filename, "wb");
@@ -2108,7 +2107,7 @@ open_rastream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_rastream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzrastream(filename);
@@ -2136,7 +2135,7 @@ open_wastream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_wastream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzwastream(filename, "w");
