@@ -34,12 +34,6 @@ commit;
 
 Running database upgrade commands:
 set schema sys;
-update sys.functions set side_effect = true where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));
-set schema "sys";
-commit;
-
-Running database upgrade commands:
-set schema sys;
 drop view if exists sys.tablestoragemodel;
 drop view if exists sys.storagemodel cascade;
 drop function if exists sys.storagemodel() cascade;
