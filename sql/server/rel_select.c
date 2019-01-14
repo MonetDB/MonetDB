@@ -3710,7 +3710,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	
 	if (!args->data.sym) {	/* count(*) case */
 		sql_exp *e;
-		sql_rel *l;
+		sql_rel *l = NULL;
 
 		if (strcmp(aname, "count") != 0) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -3870,7 +3870,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
 		if (*rel != groupby || !is_sql_sel(f)) { /* selection */
-			sql_rel *l;
+			sql_rel *l = NULL;
 
 			e = rel_groupby_add_aggr(sql, groupby, e);
 			if (!group)
