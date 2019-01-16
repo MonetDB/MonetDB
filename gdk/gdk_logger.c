@@ -1030,7 +1030,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 	while (err == LOG_OK && log_read_format(lg, &l)) {
 		char *name = NULL;
 		char tpe;
-		oid id; 
+		oid id;
 
 		t1 = time(NULL);
 		if (t1 - t0 > 10) {
@@ -1124,7 +1124,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 			break;
 		case LOG_CREATE_ID:
 			l.flag = LOG_CREATE;
-			if (tr == NULL || log_read_id(lg, &tpe, &id) != LOG_OK) 
+			if (tr == NULL || log_read_id(lg, &tpe, &id) != LOG_OK)
 				err = LOG_EOF;
 			else
 				err = log_read_create(lg, tr, name, tpe, id);
@@ -1137,7 +1137,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 			break;
 		case LOG_USE_ID:
 			l.flag = LOG_USE;
-			if (tr == NULL || log_read_id(lg, &tpe, &id) != LOG_OK) 
+			if (tr == NULL || log_read_id(lg, &tpe, &id) != LOG_OK)
 				err = LOG_EOF;
 			else
 				err = log_read_use(lg, tr, &l, name, tpe, id);
@@ -1150,7 +1150,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 			break;
 		case LOG_DESTROY_ID:
 			l.flag = LOG_DESTROY;
-			if (tr == NULL || log_read_id(lg, &tpe, &id) != LOG_OK) 
+			if (tr == NULL || log_read_id(lg, &tpe, &id) != LOG_OK)
 				err = LOG_EOF;
 			else
 				err = log_read_destroy(lg, tr, name, tpe, id);
@@ -1163,7 +1163,7 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 			break;
 		case LOG_CLEAR_ID:
 			l.flag = LOG_CLEAR;
-			if (tr == NULL || log_read_id(lg, &tpe, &id) != LOG_OK) 
+			if (tr == NULL || log_read_id(lg, &tpe, &id) != LOG_OK)
 				err = LOG_EOF;
 			else
 				err = log_read_clear(lg, tr, name, tpe, id);
@@ -1433,7 +1433,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 
 		if (logger_switch_bat(catalog_bid, bids, lg->fn, "catalog_bid") != GDK_SUCCEED ||
 		    logger_switch_bat(catalog_nme, nmes, lg->fn, "catalog_nme") != GDK_SUCCEED ||
-		    logger_switch_bat(catalog_tpe, tpes, lg->fn, "catalog_tpe") != GDK_SUCCEED || 
+		    logger_switch_bat(catalog_tpe, tpes, lg->fn, "catalog_tpe") != GDK_SUCCEED ||
 		    logger_switch_bat(catalog_oid, oids, lg->fn, "catalog_oid") != GDK_SUCCEED) {
 			logbat_destroy(bids);
 			logbat_destroy(nmes);
@@ -1480,7 +1480,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		}
 
 		if (BATappend(ids, lg->seqs_id, tids, true) != GDK_SUCCEED ||
-		    BATappend(vals, lg->seqs_val, tids, true) != GDK_SUCCEED) { 
+		    BATappend(vals, lg->seqs_val, tids, true) != GDK_SUCCEED) {
 			logbat_destroy(tids);
 			logbat_destroy(ids);
 			logbat_destroy(vals);
@@ -1726,7 +1726,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			}
 			for(i=0;i<BATcount(n); i++) {
 				char zero = 0;
-			    	if (BUNappend(t, &zero, false) != GDK_SUCCEED)
+				if (BUNappend(t, &zero, false) != GDK_SUCCEED)
 					goto error;
 			}
 			lg->with_ids = false;
@@ -1749,7 +1749,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			}
 			for(i=0;i<BATcount(n); i++) {
 				lng zero = 0;
-			    	if (BUNappend(o, &zero, false) != GDK_SUCCEED)
+				if (BUNappend(o, &zero, false) != GDK_SUCCEED)
 					goto error;
 			}
 			lg->with_ids = false;
@@ -2503,12 +2503,12 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	}
 	l.flag = flag;
 	if (tpe)
-		l.flag = (l.flag == LOG_USE)?LOG_USE_ID:LOG_CREATE_ID; 
+		l.flag = (l.flag == LOG_USE)?LOG_USE_ID:LOG_CREATE_ID;
 	l.tid = lg->tid;
 	lg->changes++;
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    log_write_string(lg, name) != GDK_SUCCEED ||
-	    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED)) 
+	    (tpe && log_write_id(lg, tpe, id) != GDK_SUCCEED))
 		return GDK_FAIL;
 
 	if (lg->debug & 1)
@@ -2740,7 +2740,7 @@ log_tstart(logger *lg)
 #define DBLKSZ		8192
 #define SEGSZ		(64*DBLKSZ)
 
-#define LOG_LARGE 	LL_CONSTANT(2)*1024*1024*1024
+#define LOG_LARGE	LL_CONSTANT(2)*1024*1024*1024
 
 static gdk_return
 pre_allocate(logger *lg)
@@ -2992,7 +2992,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	if (BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
-	    BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED) 
+	    BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	BBPretain(bid);
 	return GDK_SUCCEED;
@@ -3008,10 +3008,10 @@ logger_upgrade_bat(logger *lg, const char *name, char tpe, oid id)
 		lng lid = (lng) id;
 
 		if (BUNappend(lg->dcatalog, &p, false) != GDK_SUCCEED ||
-		   BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
-	    	   BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
-	    	   BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
-	    	   BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED) 
+		    BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
+		    BUNappend(lg->catalog_nme, name, false) != GDK_SUCCEED ||
+		    BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
+		    BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
