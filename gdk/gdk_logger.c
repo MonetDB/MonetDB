@@ -1835,8 +1835,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		if (lg->snapshots_bid == NULL ||
 		    lg->snapshots_tid == NULL ||
 		    lg->dsnapshots == NULL) {
-			GDKerror("Logger_new: failed to create snapshots "
-				     "bats");
+			GDKerror("Logger_new: failed to create snapshots bats");
 			goto error;
 		}
 
@@ -1993,7 +1992,6 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		{
 			FILE *fp1;
-			fpos_t off;
 			int curid;
 
 			snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
@@ -2001,12 +1999,27 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
 			/* read the current log id without disturbing
 			 * the file pointer */
+#ifdef _MSC_VER
+			/* work around bug in Visual Studio runtime:
+			 * fgetpos may return incorrect value */
+			if ((fp1 = fopen(filename, "r")) == NULL)
+				goto error;
+			if (fgets(bak, sizeof(bak), fp1) == NULL ||
+			    fgets(bak, sizeof(bak), fp1) == NULL ||
+			    fscanf(fp1, "%d", &curid) != 1) {
+				fclose(fp1);
+				goto error;
+			}
+			fclose(fp1);
+#else
+			fpos_t off;
 			if (fgetpos(fp, &off) != 0)
 				goto error; /* should never happen */
 			if (fscanf(fp, "%d", &curid) != 1)
 				curid = -1; /* shouldn't happen? */
 			if (fsetpos(fp, &off) != 0)
 				goto error; /* should never happen */
+#endif
 
 			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
 				/* file indicating that we need to do
