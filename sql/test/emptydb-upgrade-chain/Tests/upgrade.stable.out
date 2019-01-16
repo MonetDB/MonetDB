@@ -280,10 +280,10 @@ begin
 end;
 create view sys.storagemodel as
 select "schema", "table", "column", "type", "count",
-	columnsize("type", "count") as columnsize,
-	heapsize("type", "count", "distinct", "atomwidth") as heapsize,
-	hashsize("reference", "count") as hashsize,
-	case when isacolumn then imprintsize("type", "count") else 0 end as imprintsize,
+	sys.columnsize("type", "count") as columnsize,
+	sys.heapsize("type", "count", "distinct", "atomwidth") as heapsize,
+	sys.hashsize("reference", "count") as hashsize,
+	case when isacolumn then sys.imprintsize("type", "count") else 0 end as imprintsize,
 	case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end as orderidxsize,
 	sorted, "unique", isacolumn
  from sys.storagemodelinput
@@ -292,10 +292,10 @@ create view sys.tablestoragemodel as
 select "schema", "table",
 	max("count") as "rowcount",
 	count(*) as "storages",
-	sum(columnsize("type", "count")) as columnsize,
-	sum(heapsize("type", "count", "distinct", "atomwidth")) as heapsize,
-	sum(hashsize("reference", "count")) as hashsize,
-	sum(case when isacolumn then imprintsize("type", "count") else 0 end) as imprintsize,
+	sum(sys.columnsize("type", "count")) as columnsize,
+	sum(sys.heapsize("type", "count", "distinct", "atomwidth")) as heapsize,
+	sum(sys.hashsize("reference", "count")) as hashsize,
+	sum(case when isacolumn then sys.imprintsize("type", "count") else 0 end) as imprintsize,
 	sum(case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end) as orderidxsize
  from sys.storagemodelinput
 group by "schema", "table"
