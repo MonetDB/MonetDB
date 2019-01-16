@@ -495,55 +495,18 @@ error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
 }
 
-/**
- * Small utility function to call the sabaoth marchConnection function
- * with the right arguments.  If the socket is bound to 0.0.0.0 the
- * hostname address is used, to make the info usable for servers outside
- * localhost.
- */
-static void SERVERannounce(struct in_addr addr, int port, str usockfile) {
-	str buf;
-	char host[128];
+static struct in6_addr ipv6_loopback_addr = IN6ADDR_LOOPBACK_INIT;
 
-	if (port > 0) {
-		if (addr.s_addr == INADDR_ANY) {
-			gethostname(host, sizeof(host));
-			host[sizeof(host) - 1] = '\0';
-		} else {
-			/* avoid doing this, it requires some includes that probably
-			 * give trouble on windowz
-			host = inet_ntoa(addr);
-			 */
-			sprintf(host, "%u.%u.%u.%u",
-					(unsigned) ((ntohl(addr.s_addr) >> 24) & 0xff),
-					(unsigned) ((ntohl(addr.s_addr) >> 16) & 0xff),
-					(unsigned) ((ntohl(addr.s_addr) >> 8) & 0xff),
-					(unsigned) (ntohl(addr.s_addr) & 0xff));
-		}
-		if ((buf = msab_marchConnection(host, port)) != NULL)
-			free(buf);
-		else
-			/* announce that we're now reachable */
-			printf("# Listening for connection requests on "
-					"mapi:monetdb://%s:%i/\n", host, port);
-	}
-	if (usockfile != NULL) {
-		port = 0;
-		if ((buf = msab_marchConnection(usockfile, port)) != NULL)
-			free(buf);
-		else
-			/* announce that we're now reachable */
-			printf("# Listening for UNIX domain connection requests on "
-					"mapi:monetdb://%s\n", usockfile);
-	}
-}
+static struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 
 static str
 SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 {
-	struct sockaddr_in server;
+	struct sockaddr_in server_ipv4;
+	struct sockaddr_in6 server_ipv6;
 	SOCKET sock = INVALID_SOCKET;
 	SOCKET *psock;
+	bool bind_ipv6 = false;
 	bool accept_any = false;
 	bool autosense = false;
 #ifdef HAVE_SYS_UN_H
@@ -557,12 +520,15 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	int port;
 	int maxusers;
 	char *usockfile;
+	str buf;
+	char host[128];
 #ifdef DEBUG_SERVER
 	char msg[512], host[512];
 	Client cntxt= mal_clients;
 #endif
 
 	accept_any = GDKgetenv_istrue("mapi_open");
+	bind_ipv6 = GDKgetenv_istrue("mapi_ipv6");
 	autosense = GDKgetenv_istrue("mapi_autosense");
 
 	/* early way out, we do not want to listen on any port when running in embedded mode */
@@ -607,7 +573,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	}
 
 	if (port > 0) {
-		sock = socket(AF_INET, SOCK_STREAM
+		sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
 					  | SOCK_CLOEXEC
 #endif
@@ -640,18 +606,34 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", err);
 		}
 
-		server.sin_family = AF_INET;
-		if (accept_any)
-			server.sin_addr.s_addr = htonl(INADDR_ANY);
-		else
-			server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-		for (i = 0; i < 8; i++)
-			server.sin_zero[i] = 0;
-		length = (SOCKLEN) sizeof(server);
+		if (bind_ipv6) {
+			server_ipv6.sin6_family = AF_INET6;
+			if (accept_any)
+				memcpy(server_ipv6.sin6_addr.s6_addr, &ipv6_any_addr, sizeof(struct in6_addr));
+			else
+				memcpy(server_ipv6.sin6_addr.s6_addr, &ipv6_loopback_addr, sizeof(struct in6_addr));
+			server_ipv6.sin6_flowinfo = 0;
+			server_ipv6.sin6_scope_id = 0;
+			length = (SOCKLEN) sizeof(server_ipv6);
+		} else {
+			server_ipv4.sin_family = AF_INET;
+			if (accept_any)
+				server_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
+			else
+				server_ipv4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+			for (i = 0; i < 8; i++)
+				server_ipv4.sin_zero[i] = 0;
+			length = (SOCKLEN) sizeof(server_ipv4);
+		}
 
 		do {
-			server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-			if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
+			if (bind_ipv6) {
+				server_ipv6.sin6_port = htons((unsigned short) ((port) & 0xFFFF));
+			} else {
+				server_ipv4.sin_port = htons((unsigned short) ((port) & 0xFFFF));
+			}
+
+			if (bind(sock, bind_ipv6 ? (SOCKPTR) &server_ipv6 : (SOCKPTR) &server_ipv4, length) == SOCKET_ERROR) {
 				if (
 #ifdef _MSC_VER
 					WSAGetLastError() == WSAEADDRINUSE &&
@@ -683,7 +665,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			}
 		} while (1);
 
-		if (getsockname(sock, (SOCKPTR) &server, &length) == SOCKET_ERROR) {
+		if (getsockname(sock, bind_ipv6 ? (SOCKPTR) &server_ipv6 : (SOCKPTR) &server_ipv4, &length) == SOCKET_ERROR) {
 			closesocket(sock);
 			GDKfree(psock);
 			GDKfree(usockfile);
@@ -825,7 +807,58 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	 * predictable... */
 	srand((unsigned int) GDKusec());
 
-	SERVERannounce(server.sin_addr, port, usockfile);
+	if (port > 0) {
+		if (bind_ipv6) {
+			if (memcmp(server_ipv6.sin6_addr.s6_addr, &ipv6_loopback_addr, sizeof(struct in6_addr)) == 0) {
+				sprintf(host, "::1");
+			} else if (memcmp(server_ipv6.sin6_addr.s6_addr, &ipv6_any_addr, sizeof(struct in6_addr)) == 0) {
+				gethostname(host, sizeof(host));
+				host[sizeof(host) - 1] = '\0';
+			} else {
+				sprintf(host,"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+						(int)server_ipv6.sin6_addr.s6_addr[0],  (int)server_ipv6.sin6_addr.s6_addr[1],
+						(int)server_ipv6.sin6_addr.s6_addr[2],  (int)server_ipv6.sin6_addr.s6_addr[3],
+						(int)server_ipv6.sin6_addr.s6_addr[4],  (int)server_ipv6.sin6_addr.s6_addr[5],
+						(int)server_ipv6.sin6_addr.s6_addr[6],  (int)server_ipv6.sin6_addr.s6_addr[7],
+						(int)server_ipv6.sin6_addr.s6_addr[8],  (int)server_ipv6.sin6_addr.s6_addr[9],
+						(int)server_ipv6.sin6_addr.s6_addr[10], (int)server_ipv6.sin6_addr.s6_addr[11],
+						(int)server_ipv6.sin6_addr.s6_addr[12], (int)server_ipv6.sin6_addr.s6_addr[13],
+						(int)server_ipv6.sin6_addr.s6_addr[14], (int)server_ipv6.sin6_addr.s6_addr[15]);
+			}
+		} else {
+			if (server_ipv4.sin_addr.s_addr == INADDR_ANY) {
+				gethostname(host, sizeof(host));
+				host[sizeof(host) - 1] = '\0';
+			} else {
+				/* avoid doing this, it requires some includes that probably
+				 * give trouble on windowz
+				host = inet_ntoa(addr);
+				 */
+				sprintf(host, "%u.%u.%u.%u",
+						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 24) & 0xff),
+						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 16) & 0xff),
+						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 8) & 0xff),
+						(unsigned) (ntohl(server_ipv4.sin_addr.s_addr) & 0xff));
+			}
+		}
+
+		if ((buf = msab_marchConnection(host, port)) != NULL)
+			free(buf);
+		else
+			/* announce that we're now reachable */
+			printf("# Listening for connection requests on "
+				   "mapi:monetdb://%s:%i/\n", host, port);
+	}
+	if (usockfile != NULL) {
+		port = 0;
+		if ((buf = msab_marchConnection(usockfile, port)) != NULL)
+			free(buf);
+		else
+			/* announce that we're now reachable */
+			printf("# Listening for UNIX domain connection requests on "
+				   "mapi:monetdb://%s\n", usockfile);
+	}
+
 	if (usockfile)
 		GDKfree(usockfile);
 	return MAL_SUCCEED;

@@ -209,6 +209,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char *embeddedr = NULL;
 	char *embeddedpy = NULL;
 	char *embeddedc = NULL;
+	char *ipv6 = NULL;
 	char *dbextra = NULL;
 	char *argv[512];	/* for the exec arguments */
 	char property_other[1024];
@@ -500,6 +501,9 @@ forkMserver(char *database, sabdb** stats, int force)
 
 
 	mport = (unsigned int)getConfNum(_mero_props, "port");
+	kv = findConfKey(ckv, "ipv6");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+		ipv6 = "mapi_ipv6=true";
 
 	/* ok, now exec that mserver we want */
 	snprintf(dbpath, sizeof(dbpath),
@@ -536,6 +540,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 	} else {
 		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		if (ipv6 != NULL) {
+			argv[c++] = "--set"; argv[c++] = ipv6;
+		}
 		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
