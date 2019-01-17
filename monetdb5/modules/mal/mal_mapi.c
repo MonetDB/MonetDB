@@ -495,9 +495,9 @@ error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
 }
 
-static struct in6_addr ipv6_loopback_addr = IN6ADDR_LOOPBACK_INIT;
+static const struct in6_addr ipv6_loopback_addr = IN6ADDR_LOOPBACK_INIT;
 
-static struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
+static const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 
 static str
 SERVERlisten(int *Port, str *Usockfile, int *Maxusers)

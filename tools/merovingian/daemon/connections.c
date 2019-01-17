@@ -23,14 +23,12 @@
 #include "merovingian.h"
 #include "connections.h"
 
-static struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
-
 err
 openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short port, FILE *log)
 {
 	struct sockaddr_in server_ipv4;
 	struct sockaddr_in6 server_ipv6;
-	struct addrinfo *rp = NULL;
+	struct addrinfo *result = NULL, *rp = NULL;
 	int sock = -1, check = 0;
 	socklen_t length = 0;
 	int on = 1;
@@ -43,7 +41,6 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 
 	snprintf(sport, 16, "%hu", port);
 	if (bindaddr) {
-		struct addrinfo *result;
 		struct addrinfo hints = (struct addrinfo) {
 			.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
 			.ai_socktype = SOCK_STREAM,
@@ -56,7 +53,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 
 		check = getaddrinfo(bindaddr, sport, &hints, &result);
 		if (check != 0)
-			return newErr("cannot find host %s with error: %s", bindaddr, strerror(errno));
+			return newErr("cannot find host %s with error: %s", bindaddr, gai_strerror(check));
 
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
 			sock = socket(rp->ai_family, rp->ai_socktype
@@ -72,13 +69,15 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 
 			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
 				closesocket(sock);
-				return newErr("setsockopt unexpectedly failed: %s", strerror(errno));
+				continue;
 			}
 
 			if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
 				break; /* working */
 		}
 		if (rp == NULL) {
+			if (result)
+				freeaddrinfo(result);
 			if (sock != -1)
 				closesocket(sock);
 			return newErr("cannot bind to host %s", bindaddr);
@@ -128,7 +127,9 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 	}
 
 	if (bindaddr) {
-		if (getnameinfo(rp->ai_addr, rp->ai_addrlen, ghost, sizeof(ghost), sport, sizeof(sport), NI_NUMERICSERV) != 0) {
+		int res = getnameinfo(rp->ai_addr, rp->ai_addrlen, ghost, sizeof(ghost), sport, sizeof(sport), NI_NUMERICSERV);
+		freeaddrinfo(result);
+		if (res != 0) {
 			closesocket(sock);
 			return(newErr("failed getting socket name: %s", strerror(errno)));
 		}
@@ -178,7 +179,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 }
 
 err
-openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
+openConnectionUDP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short port)
 {
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
@@ -188,7 +189,7 @@ openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
 	char host[512];
 
 	hints = (struct addrinfo) {
-		.ai_family = AF_INET,      /* Allow IPv4 only (broadcasting) */
+		.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
 		.ai_socktype = SOCK_DGRAM, /* Datagram socket */
 		.ai_flags = AI_PASSIVE,    /* For wildcard IP address */
 		.ai_protocol = 0,          /* Any protocol */
