@@ -170,7 +170,7 @@ This property specifies which TCP port
 should listen to for connection requests.  Defaults to 50000.
 .TP
 .B ipv6
-This property forces monetdbd to bind on ipv6 addresses only.  This
+This property forces monetdbd to bind on IPv6 addresses only.  This
 enforcement applies to the discovery service as well if enabled.  In that
 case the discovery service will use IPv6 multicast on ff02::1 address.
 Defaults to false.
