@@ -2375,14 +2375,6 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
-	    t->type == tt_table) {
-		if ((err = sql_update_default(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
 	if (sql_bind_func(m->sa, s, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
 	 && sql_bind_func(m->sa, s, "dependencies_tables_on_views", NULL, NULL, F_UNION)
@@ -2411,7 +2403,17 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 	}
 
-	/* when function storagemodel() exists and views tablestorage and schemastorage not yet exist then upgrade storagemodel to match 75_storagemodel.sql */
+	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
+	    t->type == tt_table) {
+		if ((err = sql_update_default(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	/* when function storagemodel() exists and views tablestorage
+	 * and schemastorage don't, then upgrade storagemodel to match
+	 * 75_storagemodel.sql */
 	if (sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
