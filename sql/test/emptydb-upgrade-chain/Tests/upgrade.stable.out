@@ -304,6 +304,7 @@ update sys._tables set system = true where schema_id = (select id from sys.schem
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('storage') and type = 5;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('storagemodelinit') and type = 2;
 update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name in ('columnsize', 'heapsize', 'hashsize', 'imprintsize') and type = 1;
+update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = '_tables' and t.schema_id in (select id from sys.schemas s where s.name in ('sys', 'tmp')));
 set schema "sys";
 commit;
 

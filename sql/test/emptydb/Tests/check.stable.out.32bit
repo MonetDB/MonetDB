@@ -848,7 +848,7 @@ CREATE TABLE "bam"."pg" ("id" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT 
 CREATE TABLE "bam"."rg" ("id" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT NOT NULL, "cn" CHARACTER LARGE OBJECT, "ds" CHARACTER LARGE OBJECT, "dt" TIMESTAMP, "fo" CHARACTER LARGE OBJECT, "ks" CHARACTER LARGE OBJECT, "lb" CHARACTER LARGE OBJECT, "pg" CHARACTER LARGE OBJECT, "pi" INTEGER, "pl" CHARACTER LARGE OBJECT, "pu" CHARACTER LARGE OBJECT, "sm" CHARACTER LARGE OBJECT, CONSTRAINT "rg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"), CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id"));
 CREATE TABLE "bam"."sq" ("sn" CHARACTER LARGE OBJECT NOT NULL, "file_id" BIGINT NOT NULL, "ln" INTEGER, "as" INTEGER, "m5" CHARACTER LARGE OBJECT, "sp" CHARACTER LARGE OBJECT, "ur" CHARACTER LARGE OBJECT, CONSTRAINT "sq_pkey_sn_file_id" PRIMARY KEY ("sn", "file_id"), CONSTRAINT "sq_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES "bam"."files" ("file_id"));
 CREATE TABLE "sys"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048));
-CREATE TABLE "sys"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(2048), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
+CREATE TABLE "sys"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(1048576), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
 CREATE TABLE "sys"."args" ("id" INTEGER, "func_id" INTEGER, "name" VARCHAR(256), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "inout" TINYINT, "number" INTEGER);
 CREATE TABLE "sys"."auths" ("id" INTEGER, "name" VARCHAR(1024), "grantor" INTEGER);
 CREATE TABLE "sys"."comments" ("id" INTEGER NOT NULL, "remark" VARCHAR(65000) NOT NULL, CONSTRAINT "comments_id_pkey" PRIMARY KEY ("id"));
@@ -884,7 +884,7 @@ CREATE TABLE "sys"."types" ("id" INTEGER, "systemname" VARCHAR(256), "sqlname" V
 CREATE TABLE "sys"."user_role" ("login_id" INTEGER, "role_id" INTEGER);
 CREATE TABLE "sys"."value_partitions" ("table_id" INTEGER, "partition_id" INTEGER, "value" VARCHAR(2048));
 CREATE TABLE "tmp"."_columns" ("id" INTEGER, "name" VARCHAR(1024), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "table_id" INTEGER, "default" VARCHAR(2048), "null" BOOLEAN, "number" INTEGER, "storage" VARCHAR(2048));
-CREATE TABLE "tmp"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(2048), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
+CREATE TABLE "tmp"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" INTEGER, "query" VARCHAR(1048576), "type" SMALLINT, "system" BOOLEAN, "commit_action" SMALLINT, "access" SMALLINT);
 CREATE TABLE "tmp"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
 CREATE TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024), "rkey" INTEGER, "action" INTEGER);
 CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
@@ -1467,7 +1467,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.t,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c # table_name
 % name,	name,	type,	type_digits,	type_scale,	default,	null,	number,	storage # name
 % varchar,	varchar,	varchar,	int,	int,	varchar,	boolean,	int,	varchar # type
-% 34,	26,	9,	5,	1,	5,	5,	2,	0 # length
+% 34,	26,	9,	7,	1,	5,	5,	2,	0 # length
 [ "_columns",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "_columns",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "_columns",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
@@ -1494,8 +1494,8 @@ drop function pcre_replace(string, string, string, string);
 [ "_tables",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "_tables",	"schema_id",	"int",	32,	0,	NULL,	true,	2,	NULL	]
 [ "_tables",	"schema_id",	"int",	32,	0,	NULL,	true,	2,	NULL	]
-[ "_tables",	"query",	"varchar",	2048,	0,	NULL,	true,	3,	NULL	]
-[ "_tables",	"query",	"varchar",	2048,	0,	NULL,	true,	3,	NULL	]
+[ "_tables",	"query",	"varchar",	1048576,	0,	NULL,	true,	3,	NULL	]
+[ "_tables",	"query",	"varchar",	1048576,	0,	NULL,	true,	3,	NULL	]
 [ "_tables",	"type",	"smallint",	16,	0,	NULL,	true,	4,	NULL	]
 [ "_tables",	"type",	"smallint",	16,	0,	NULL,	true,	4,	NULL	]
 [ "_tables",	"system",	"boolean",	1,	0,	NULL,	true,	5,	NULL	]
