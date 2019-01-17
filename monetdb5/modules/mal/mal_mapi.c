@@ -815,7 +815,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				gethostname(host, sizeof(host));
 				host[sizeof(host) - 1] = '\0';
 			} else {
-				sprintf(host,"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+				snprintf(host, sizeof(host),"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
 						(int)server_ipv6.sin6_addr.s6_addr[0],  (int)server_ipv6.sin6_addr.s6_addr[1],
 						(int)server_ipv6.sin6_addr.s6_addr[2],  (int)server_ipv6.sin6_addr.s6_addr[3],
 						(int)server_ipv6.sin6_addr.s6_addr[4],  (int)server_ipv6.sin6_addr.s6_addr[5],
@@ -834,7 +834,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				 * give trouble on windowz
 				host = inet_ntoa(addr);
 				 */
-				sprintf(host, "%u.%u.%u.%u",
+				snprintf(host, sizeof(host), "%u.%u.%u.%u",
 						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 24) & 0xff),
 						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 16) & 0xff),
 						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 8) & 0xff),
