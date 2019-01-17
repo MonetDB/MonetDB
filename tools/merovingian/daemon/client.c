@@ -59,11 +59,12 @@ handleClient(void *data)
 	char *user = NULL, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
 	char dbmod[64];
-	char host[128];
+	char host[512];
+	char port[16];
 	sabdb *top = NULL;
 	sabdb *stat = NULL;
-	struct sockaddr_in saddr;
-	socklen_t saddrlen = sizeof(struct sockaddr_in);
+	struct sockaddr saddr;
+	socklen_t saddrlen = 0;
 	err e;
 	confkeyval *ckv, *kv;
 	char mydoproxy;
@@ -94,23 +95,16 @@ handleClient(void *data)
 
 	if (isusock) {
 		snprintf(host, sizeof(host), "(local)");
-	} else if (getpeername(sock, (struct sockaddr *)&saddr, &saddrlen) == -1) {
-		Mfprintf(stderr, "couldn't get peername of client: %s\n",
-				strerror(errno));
+	} else if (getpeername(sock, &saddr, &saddrlen) == -1) {
+		Mfprintf(stderr, "couldn't get peername of client: %s\n", strerror(errno));
 		snprintf(host, sizeof(host), "(unknown)");
 	} else {
-		struct hostent *hoste = 
-			gethostbyaddr(&saddr.sin_addr.s_addr, 4, saddr.sin_family);
-		if (hoste == NULL) {
-			snprintf(host, sizeof(host), "%u.%u.%u.%u:%u",
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 24) & 0xff),
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 16) & 0xff),
-					(unsigned) ((ntohl(saddr.sin_addr.s_addr) >> 8) & 0xff),
-					(unsigned) (ntohl(saddr.sin_addr.s_addr) & 0xff),
-					(unsigned) (ntohs(saddr.sin_port)));
+		char ghost[512];
+		if (getnameinfo(&saddr, saddrlen, ghost, sizeof(ghost), port, sizeof(port),
+			NI_NUMERICSERV | NI_NUMERICHOST) == 0) {
+			snprintf(host, sizeof(host), "%s:%s", ghost, port);
 		} else {
-			snprintf(host, sizeof(host), "%s:%u",
-					hoste->h_name, (unsigned) (ntohs(saddr.sin_port)));
+			snprintf(host, sizeof(host), "(unknown):%s", port);
 		}
 	}
 

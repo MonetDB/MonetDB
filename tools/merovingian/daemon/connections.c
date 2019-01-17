@@ -32,12 +32,9 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 	int sock = -1, check = 0;
 	socklen_t length = 0;
 	int on = 1;
-	int i = 0;
-	struct hostent *hoste;
-	char *host = NULL;
+	int i = 0, flags = NI_NUMERICSERV;
 	char sport[16];
-	char hostip[24];
-	char ghost[512];
+	char host[512];
 
 	snprintf(sport, 16, "%hu", port);
 	if (bindaddr) {
@@ -46,10 +43,8 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 			.ai_socktype = SOCK_STREAM,
 			.ai_flags = AI_PASSIVE,
 			.ai_protocol = IPPROTO_TCP,
-			.ai_canonname = NULL,
-			.ai_addr = NULL,
-			.ai_next = NULL,
 		};
+		flags |= NI_NUMERICHOST;
 
 		check = getaddrinfo(bindaddr, sport, &hints, &result);
 		if (check != 0)
@@ -82,6 +77,11 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 				closesocket(sock);
 			return newErr("cannot bind to host %s", bindaddr);
 		}
+		if (bind_ipv6)
+			server_ipv6 = *(struct sockaddr_in6*) rp->ai_addr;
+		else
+			server_ipv4 = *(struct sockaddr_in*) rp->ai_addr;
+		length = rp->ai_addrlen;
 	} else {
 		sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
@@ -126,44 +126,13 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		}
 	}
 
-	if (bindaddr) {
-		int res = getnameinfo(rp->ai_addr, rp->ai_addrlen, ghost, sizeof(ghost), sport, sizeof(sport), NI_NUMERICSERV);
+	check = getnameinfo(bind_ipv6 ? (struct sockaddr*) &server_ipv6 : (struct sockaddr*) &server_ipv4, length, host,
+						sizeof(host), sport, sizeof(sport), flags);
+	if (result)
 		freeaddrinfo(result);
-		if (res != 0) {
-			closesocket(sock);
-			return(newErr("failed getting socket name: %s", strerror(errno)));
-		}
-		host = ghost;
-	} else {
-		if (bind_ipv6)
-			hoste = gethostbyaddr(&server_ipv6.sin6_addr.s6_addr, sizeof(server_ipv6.sin6_addr.s6_addr),
-								  server_ipv6.sin6_family);
-		else
-			hoste = gethostbyaddr(&server_ipv4.sin_addr.s_addr, sizeof(server_ipv4.sin_addr.s_addr),
-								  server_ipv4.sin_family);
-		if (hoste == NULL) {
-			if (bind_ipv6) {
-				snprintf(hostip, sizeof(hostip),
-						"%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-						 (int)server_ipv6.sin6_addr.s6_addr[0],  (int)server_ipv6.sin6_addr.s6_addr[1],
-						 (int)server_ipv6.sin6_addr.s6_addr[2],  (int)server_ipv6.sin6_addr.s6_addr[3],
-						 (int)server_ipv6.sin6_addr.s6_addr[4],  (int)server_ipv6.sin6_addr.s6_addr[5],
-						 (int)server_ipv6.sin6_addr.s6_addr[6],  (int)server_ipv6.sin6_addr.s6_addr[7],
-						 (int)server_ipv6.sin6_addr.s6_addr[8],  (int)server_ipv6.sin6_addr.s6_addr[9],
-						 (int)server_ipv6.sin6_addr.s6_addr[10], (int)server_ipv6.sin6_addr.s6_addr[11],
-						 (int)server_ipv6.sin6_addr.s6_addr[12], (int)server_ipv6.sin6_addr.s6_addr[13],
-						 (int)server_ipv6.sin6_addr.s6_addr[14], (int)server_ipv6.sin6_addr.s6_addr[15]);
-			} else {
-				snprintf(hostip, sizeof(hostip), "%u.%u.%u.%u",
-						 (unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 24) & 0xff),
-						 (unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 16) & 0xff),
-						 (unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 8) & 0xff),
-						 (unsigned) (ntohl(server_ipv4.sin_addr.s_addr) & 0xff));
-			}
-			host = hostip;
-		} else {
-			host = hoste->h_name;
-		}
+	if (check != 0) {
+		closesocket(sock);
+		return(newErr("failed getting socket name: %s", strerror(errno)));
 	}
 
 	/* keep queue of 5 */

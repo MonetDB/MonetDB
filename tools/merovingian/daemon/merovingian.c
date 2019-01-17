@@ -920,11 +920,7 @@ main(int argc, char *argv[])
 				struct addrinfo *multi, hints = (struct addrinfo) {
 					.ai_family = AF_INET6,
 					.ai_socktype = SOCK_DGRAM,
-					.ai_flags = AI_PASSIVE,
-					.ai_protocol = 0,
-					.ai_canonname = NULL,
-					.ai_addr = NULL,
-					.ai_next = NULL,
+					.ai_protocol = IPPROTO_UDP,
 				};
 
 				_mero_broadcastaddr = (struct sockaddr*) &server_ipv6;
