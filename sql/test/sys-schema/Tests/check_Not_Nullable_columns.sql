@@ -1,3 +1,5 @@
+-- All queries should return NO rows (so no violations found).
+
 -- query to fecth all columns (of all tables in all schemas) which are specified as NOT NULL
 -- select s.name, t.name, c.name
 --   from columns c join tables t on c.table_id = t.id join schemas s on t.schema_id = s.id
@@ -35,6 +37,17 @@ SELECT "privilege_code_name", * FROM "sys"."privilege_codes" WHERE "privilege_co
 
 -- moved to: geom_tables_checks.sql
 -- SELECT "srid", * FROM "sys"."spatial_ref_sys" WHERE "srid" IS NULL;
+
+SELECT "atomwidth", * FROM "sys"."storagemodelinput" WHERE "atomwidth" IS NULL;
+SELECT "column", * FROM "sys"."storagemodelinput" WHERE "column" IS NULL;
+SELECT "count", * FROM "sys"."storagemodelinput" WHERE "count" IS NULL;
+SELECT "distinct", * FROM "sys"."storagemodelinput" WHERE "distinct" IS NULL;
+SELECT "isacolumn", * FROM "sys"."storagemodelinput" WHERE "isacolumn" IS NULL;
+SELECT "reference", * FROM "sys"."storagemodelinput" WHERE "reference" IS NULL;
+SELECT "schema", * FROM "sys"."storagemodelinput" WHERE "schema" IS NULL;
+SELECT "table", * FROM "sys"."storagemodelinput" WHERE "table" IS NULL;
+SELECT "type", * FROM "sys"."storagemodelinput" WHERE "type" IS NULL;
+SELECT "typewidth", * FROM "sys"."storagemodelinput" WHERE "typewidth" IS NULL;
 
 SELECT "function_id", * FROM "sys"."systemfunctions" WHERE "function_id" IS NULL;
 
@@ -125,11 +138,27 @@ SELECT "privileges", * FROM "sys"."privileges" WHERE "privileges" IS NULL;
 SELECT "grantor", * FROM "sys"."privileges" WHERE "grantor" IS NULL;
 SELECT "grantable", * FROM "sys"."privileges" WHERE "grantable" IS NULL;
 
+SELECT "maximum", * FROM "sys"."range_partitions" WHERE "maximum" IS NULL;
+SELECT "minimum", * FROM "sys"."range_partitions" WHERE "minimum" IS NULL;
+SELECT "partition_id", * FROM "sys"."range_partitions" WHERE "partition_id" IS NULL;
+SELECT "table_id", * FROM "sys"."range_partitions" WHERE "table_id" IS NULL;
+SELECT "with_nulls", * FROM "sys"."range_partitions" WHERE "with_nulls" IS NULL;
+
 SELECT "id", * FROM "sys"."schemas" WHERE "id" IS NULL;
 SELECT "name", * FROM "sys"."schemas" WHERE "name" IS NULL;
 SELECT "authorization", * FROM "sys"."schemas" WHERE "authorization" IS NULL;
 SELECT "owner", * FROM "sys"."schemas" WHERE "owner" IS NULL;
 SELECT "system", * FROM "sys"."schemas" WHERE "system" IS NULL;
+
+SELECT "cacheinc", * FROM "sys"."sequences" WHERE "cacheinc" IS NULL;
+SELECT "cycle", * FROM "sys"."sequences" WHERE "cycle" IS NULL;
+SELECT "id", * FROM "sys"."sequences" WHERE "id" IS NULL;
+SELECT "increment", * FROM "sys"."sequences" WHERE "increment" IS NULL;
+SELECT "maxvalue", * FROM "sys"."sequences" WHERE "maxvalue" IS NULL;
+SELECT "minvalue", * FROM "sys"."sequences" WHERE "minvalue" IS NULL;
+SELECT "name", * FROM "sys"."sequences" WHERE "name" IS NULL;
+SELECT "schema_id", * FROM "sys"."sequences" WHERE "schema_id" IS NULL;
+SELECT "start", * FROM "sys"."sequences" WHERE "start" IS NULL;
 
 -- moved to: geom_tables_checks.sql
 -- SELECT "auth_name", * FROM "sys"."spatial_ref_sys" WHERE "auth_name" IS NULL;
@@ -150,6 +179,15 @@ SELECT "maxval", * FROM "sys"."statistics" WHERE "maxval" IS NULL;
 SELECT "sorted", * FROM "sys"."statistics" WHERE "sorted" IS NULL;
 SELECT "revsorted", * FROM "sys"."statistics" WHERE "revsorted" IS NULL;
 
+SELECT "sorted", * FROM "sys"."storagemodelinput" WHERE "sorted" IS NULL;
+SELECT "unique", * FROM "sys"."storagemodelinput" WHERE "unique" IS NULL;
+
+SELECT "id", * FROM "sys"."table_partitions" WHERE "id" IS NULL;
+SELECT "table_id", * FROM "sys"."table_partitions" WHERE "table_id" IS NULL;
+SELECT "type", * FROM "sys"."table_partitions" WHERE "type" IS NULL;
+-- either column_id or expression must be populated
+SELECT "column_id", "expression", * FROM "sys"."table_partitions" WHERE "column_id" IS NULL AND "expression" IS NULL;
+
 SELECT "id", * FROM "sys"."triggers" WHERE "id" IS NULL;
 SELECT "name", * FROM "sys"."triggers" WHERE "name" IS NULL;
 SELECT "table_id", * FROM "sys"."triggers" WHERE "table_id" IS NULL;
@@ -166,4 +204,11 @@ SELECT "scale", * FROM "sys"."types" WHERE "scale" IS NULL;
 SELECT "radix", * FROM "sys"."types" WHERE "radix" IS NULL;
 SELECT "eclass", * FROM "sys"."types" WHERE "eclass" IS NULL;
 SELECT "schema_id", * FROM "sys"."types" WHERE "schema_id" IS NULL;
+
+SELECT "login_id", * FROM "sys"."user_role" WHERE "login_id" IS NULL;
+SELECT "role_id", * FROM "sys"."user_role" WHERE "role_id" IS NULL;
+
+SELECT "partition_id", * FROM "sys"."value_partitions" WHERE "partition_id" IS NULL;
+SELECT "table_id", * FROM "sys"."value_partitions" WHERE "table_id" IS NULL;
+SELECT "value", * FROM "sys"."value_partitions" WHERE "value" IS NULL;
 

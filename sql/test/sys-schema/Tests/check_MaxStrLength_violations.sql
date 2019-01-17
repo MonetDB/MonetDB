@@ -1,4 +1,5 @@
 -- Character string data max length violation checks
+-- All queries should return NO rows (so no violations found).
 
 -- query used to synthesize bam specific SQLs for checking data length violations:
 -- select s.name as sch_nm, t.name as tbl_nm, t.type, c.name as col_nm, c.type, c.type_digits
