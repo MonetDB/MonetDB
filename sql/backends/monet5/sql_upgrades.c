@@ -1762,6 +1762,13 @@ sql_update_default(Client c, mvc *sql)
 			"create view sys.systemfunctions as select id as function_id from sys.functions where system;\n"
 			"grant select on sys.systemfunctions to public;\n"
 			"update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+	/* update type of "query" attribute of tables sys._tables and
+	 * tmp_tables from varchar(2048) to varchar(1048576) */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = '_tables' and t.schema_id in (select id from sys.schemas s where s.name in ('sys', 'tmp')));\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = 'tables' and t.schema_id in (select id from sys.schemas s where s.name = 'sys'));\n");
+
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
@@ -1870,7 +1877,7 @@ sql_update_aug2018_sp2(Client c, mvc *sql)
 }
 
 static str
-sql_upgrade_default(Client c, mvc *sql)
+sql_update_storagemodel(Client c, mvc *sql)
 {
 	size_t bufsize = 20000, pos = 0;
 	char *buf, *err;
@@ -1879,7 +1886,7 @@ sql_upgrade_default(Client c, mvc *sql)
 	sql_table *t;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_upgrade_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_storagemodel", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	schema = stack_get_string(sql, "current_schema");
 
@@ -2179,11 +2186,6 @@ sql_upgrade_default(Client c, mvc *sql)
 		"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys')"
 		" and name in ('columnsize', 'heapsize', 'hashsize', 'imprintsize') and type = %d;\n", F_FUNC);
 
-	/* update type of "query" attribute of tables sys._tables and
-	 * tmp_tables from varchar(2048) to varchar(1048576) */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = '_tables' and t.schema_id in (select id from sys.schemas s where s.name in ('sys', 'tmp')));\n");
-
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
@@ -2413,7 +2415,7 @@ SQLupgrades(Client c, mvc *m)
 	if (sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
-		if ((err = sql_upgrade_default(c, m)) != NULL) {
+		if ((err = sql_update_storagemodel(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

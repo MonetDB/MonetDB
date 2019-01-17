@@ -120,7 +120,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
-		mvc_create_column_(m, t, "query", "varchar", 2048);
+		mvc_create_column_(m, t, "query", "varchar", 1 << 20);
 		mvc_create_column_(m, t, "type", "smallint", 16);
 		mvc_create_column_(m, t, "system", "boolean", 1);
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
