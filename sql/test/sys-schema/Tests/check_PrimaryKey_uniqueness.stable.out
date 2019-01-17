@@ -80,7 +80,7 @@ Ready.
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, function_id FROM sys.systemfunctions GROUP BY function_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.systemfunctions # table_name
+% sys.L7,	sys.systemfunctions # table_name
 % duplicates,	function_id # name
 % bigint,	int # type
 % 1,	1 # length
@@ -245,7 +245,7 @@ Ready.
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% .L11,	.storage,	.storage,	.storage # table_name
+% .L113,	.storage,	.storage,	.storage # table_name
 % duplicates,	schema,	table,	column # name
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
@@ -260,7 +260,7 @@ Ready.
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestoragemodel GROUP BY schema, table HAVING COUNT(*) > 1;
-% sys.L42,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
+% sys.L36,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
 % duplicates,	schema,	table # name
 % bigint,	varchar,	varchar # type
 % 1,	0,	0 # length
