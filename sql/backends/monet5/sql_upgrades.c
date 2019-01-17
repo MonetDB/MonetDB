@@ -2206,6 +2206,7 @@ SQLupgrades(Client c, mvc *m)
 	sql_schema *s = mvc_bind_schema(m, "sys");
 	sql_table *t;
 	sql_column *col;
+	bool hugeint_upgraded = false;
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -2215,6 +2216,7 @@ SQLupgrades(Client c, mvc *m)
 				fprintf(stderr, "!%s\n", err);
 				freeException(err);
 			}
+			hugeint_upgraded = true;
 		}
 	}
 #endif
@@ -2408,6 +2410,12 @@ SQLupgrades(Client c, mvc *m)
 		if ((err = sql_update_default(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
+		}
+		if (!hugeint_upgraded) {
+			if ((err = sql_fix_system_tables(c, m)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				freeException(err);
+			}
 		}
 	}
 
