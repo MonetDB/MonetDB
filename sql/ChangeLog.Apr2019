@@ -1,6 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Jan 18 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Removed unused global SQL variable "history".
+
 * Thu Dec 20 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Allow usage of custom expressions in GROUP BY and PARTITION BY
   clauses. The same expressions can be used in the projection phase as
