@@ -48,7 +48,7 @@ leavedb(char *name)
 			"LEAV %s mapi:monetdb://%s:%u/",
 			name, _mero_hostname,
 			(unsigned int)getConfNum(_mero_props, "port"));
-	difuse(buf);
+	broadcast(buf);
 }
 
 static void
@@ -103,7 +103,7 @@ anncdbS(sabdb *stats)
 				_mero_hostname,
 				(unsigned int)getConfNum(_mero_props, "port"),
 				getConfNum(_mero_props, "discoveryttl") + 60);
-		difuse(buf);
+		broadcast(buf);
 	}
 	freeConfFile(props);
 	free(props);

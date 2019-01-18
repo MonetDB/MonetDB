@@ -30,20 +30,16 @@ remotedb _mero_remotedbs = NULL;
 pthread_mutex_t _mero_remotedb_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void
-difuse(char *msg)
+broadcast(char *msg)
 {
-	ssize_t sent;
-	size_t len = strlen(msg) + 1;
+	int len = strlen(msg) + 1;
 	if (_mero_broadcastsock < 0)
 		return;
-	sent = sendto(_mero_broadcastsock, msg, len, 0, _mero_broadcastaddr, _mero_broadcastlength);
-	if (sent == -1) {
-		Mfprintf(_mero_discerr, "error while sending %s message: %s\n",
-				 _mero_broadcastaddr->sa_family == AF_INET ? "broadcast" : "multicast", strerror(errno));
-	} else if (sent < (ssize_t) len) {
-		Mfprintf(_mero_discerr, "a %s message was not sent entirely\n",
-				 _mero_broadcastaddr->sa_family == AF_INET ? "broadcast" : "multicast");
-	}
+	if (sendto(_mero_broadcastsock, msg, len, 0,
+				(struct sockaddr *)&_mero_broadcastaddr,
+				sizeof(_mero_broadcastaddr)) != len)
+		Mfprintf(_mero_discerr, "error while sending broadcast "
+				"message: %s\n", strerror(errno));
 }
 
 static int
@@ -310,7 +306,7 @@ discoveryRunner(void *d)
 	/* start shouting around that we're here ;) request others to tell
 	 * what databases they have */
 	snprintf(buf, 512, "HELO %s", _mero_hostname);
-	difuse(buf);
+	broadcast(buf);
 
 	ckv = getDefaultProps();
 	discttl = findConfKey(_mero_props, "discoveryttl");
@@ -348,7 +344,7 @@ discoveryRunner(void *d)
 							stats->dbname, val[0] == '\0' ? "" : "/", val,
 							_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
 							discttl->ival + 60);
-					difuse(buf);
+					broadcast(buf);
 				}
 				freeConfFile(ckv);
 			}
@@ -362,7 +358,7 @@ discoveryRunner(void *d)
 						_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
 						discttl->ival + 60);
 				/* coverity[string_null] */
-				difuse(buf);
+				broadcast(buf);
 			}
 		}
 
@@ -527,7 +523,7 @@ discoveryRunner(void *d)
 			snprintf(buf, 512, "LEAV %s mapi:monetdb://%s:%u/",
 					stats->dbname, _mero_hostname,
 					(unsigned int)getConfNum(_mero_props, "port"));
-			difuse(buf);
+			broadcast(buf);
 		}
 		freeConfFile(ckv);
 		stats = stats->next;
@@ -540,7 +536,7 @@ discoveryRunner(void *d)
 	if (getConfNum(_mero_props, "control") != 0) {
 		snprintf(buf, 512, "LEAV * %s:%u",
 				_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"));
-		difuse(buf);
+		broadcast(buf);
 	}
 
 	free(ckv);

@@ -118,11 +118,8 @@ FILE *_mero_ctlerr = NULL;
 int _mero_broadcastsock = -1;
 /* ipv6 global any bind address constant */
 const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
-/* broadcast/multicast address/port */
-struct sockaddr_in server_ipv4;
-struct sockaddr_in6 server_ipv6;
-struct sockaddr *_mero_broadcastaddr;
-socklen_t _mero_broadcastlength;
+/* broadcast address/port */
+struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
 char _mero_hostname[128];
 /* default options read from config file */
@@ -908,90 +905,36 @@ main(int argc, char *argv[])
 	/* open up connections */
 	if ((e = openConnectionTCP(&sock, use_ipv6, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(discovery == 0 || (e = openConnectionUDP(&discsock, use_ipv6, host, port)) == NO_ERR) &&
+		(discovery == 0 || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 
 		if (discovery == 1) {
-			if (use_ipv6) { //as ipv6 does not support broadcast, we will use multicast instead
-				int check = -1;
-				struct ipv6_mreq mreq;
-				struct addrinfo *multi, hints = (struct addrinfo) {
-					.ai_family = AF_INET6,
-					.ai_socktype = SOCK_DGRAM,
-					.ai_protocol = IPPROTO_UDP,
-				};
-
-				_mero_broadcastaddr = (struct sockaddr*) &server_ipv6;
-				_mero_broadcastlength = (socklen_t) sizeof(struct sockaddr_in6);
-
-				memset(&server_ipv6, 0, sizeof(struct sockaddr_in6));
-				server_ipv6.sin6_family = AF_INET6;
-				server_ipv6.sin6_port = htons(port);
-				server_ipv6.sin6_addr = ipv6_any_addr;
-
-				_mero_broadcastsock = socket(AF_INET6, SOCK_DGRAM
+			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
 #ifdef SOCK_CLOEXEC
-											| SOCK_CLOEXEC
+										 | SOCK_CLOEXEC
 #endif
-						, 0);
-				if (_mero_broadcastsock == -1) {
-					Mfprintf(stderr, "cannot create multicast package: %s\n", strerror(errno));
-					closesocket(discsock);
-					discsock = -1;
-				} else if ((check = getaddrinfo("ff02::1", NULL, &hints, &multi)) != 0) {
-					//ipv6 multicast all nodes on the local network segment
-					Mfprintf(stderr, "cannot create multicast package: %s\n", gai_strerror(check));
-					closesocket(discsock);
-					closesocket(_mero_broadcastsock);
-					discsock = -1;
-				}
-
-				if (discsock != -1) {
-					memset(&mreq, 0, sizeof(mreq));
-					memcpy(&mreq.ipv6mr_multiaddr, &((struct sockaddr_in6 *) multi->ai_addr)->sin6_addr,
-						   sizeof(mreq.ipv6mr_multiaddr));
-					mreq.ipv6mr_interface = 0;
-					freeaddrinfo(multi);
-
-					if (setsockopt( _mero_broadcastsock, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) != 0) {
-						Mfprintf(stderr, "cannot create multicast package: %s\n", strerror(errno));
-						closesocket(discsock);
-						closesocket(_mero_broadcastsock);
-						discsock = -1;
-					}
-				}
-			} else {
-				_mero_broadcastaddr = (struct sockaddr*) &server_ipv4;
-				_mero_broadcastlength = (socklen_t) sizeof(struct sockaddr_in);
-				server_ipv4.sin_family = AF_INET;
-				server_ipv4.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-				/* the target port is our configured port, not elegant, but how
-				 * else can we do it? can't broadcast to all ports or something */
-				server_ipv4.sin_port = htons(port);
-				for (int i = 0; i < 8; i++)
-					server_ipv4.sin_zero[i] = 0;
-				ret = 1;
-				_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
-#ifdef SOCK_CLOEXEC
-											| SOCK_CLOEXEC
-#endif
-						, 0);
-				if (_mero_broadcastsock == -1 ||
-					setsockopt(_mero_broadcastsock, SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == -1) {
-					Mfprintf(stderr, "cannot create broadcast package, discovery services disabled, error: %s \n",
-							strerror(errno));
-					closesocket(discsock);
-					if (_mero_broadcastsock >= 0)
-						closesocket(_mero_broadcastsock);
-					discsock = -1;
-				}
+										 , 0);
+			ret = 1;
+			if (_mero_broadcastsock == -1 ||
+				setsockopt(_mero_broadcastsock,
+						   SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == -1)
+			{
+				Mfprintf(stderr, "cannot create broadcast package, "
+						"discovery services disabled\n");
+				closesocket(discsock);
+				discsock = -1;
 			}
 #ifndef SOCK_CLOEXEC
-			if (discsock != -1)
-				(void) fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
+			(void) fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
 #endif
+
+			_mero_broadcastaddr.sin_family = AF_INET;
+			_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+			/* the target port is our configured port, not elegant, but how
+			 * else can we do it? can't broadcast to all ports or something */
+			_mero_broadcastaddr.sin_port = htons(port);
 		}
 
 		/* Paranoia umask, but good, because why would people have to sniff

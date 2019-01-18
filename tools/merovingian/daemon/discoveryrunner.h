@@ -11,7 +11,7 @@
 
 #include "msabaoth.h"
 
-void difuse(char *msg);
+void broadcast(char *msg);
 void registerMessageTap(int fd);
 void unregisterMessageTap(int fd);
 void *discoveryRunner(void *d);

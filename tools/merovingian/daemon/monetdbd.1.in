@@ -170,9 +170,7 @@ This property specifies which TCP port
 should listen to for connection requests.  Defaults to 50000.
 .TP
 .B ipv6
-This property forces monetdbd to bind on IPv6 addresses only.  This
-enforcement applies to the discovery service as well if enabled.  In that
-case the discovery service will use IPv6 multicast on ff02::1 address.
+This property forces monetdbd to bind connections on IPv6 addresses only.
 Defaults to false.
 .TP
 .B listenaddr
@@ -202,10 +200,9 @@ one specified at configure time, which is @MONETDB5_PASSWDHASH@.
 Changing this property takes effect immediately at runtime.
 .TP
 .B discovery
-Specifies whether neighbor discovery is to be enabled using UDP.
-The discovery method is performed with broadcasts on IPv4 and
-multicasts in IPv6, while using the same portnumber as the port
-setting.
+Specifies whether neighbor discovery is to be enabled using UDP
+broadcasts or not.  The broadcasts are done on the same portnumber as
+the port setting.
 .TP
 .B discoveryttl
 .I Monetdbd
