@@ -754,11 +754,6 @@ Ready.
 % table_id,	table_id,	partition_id,	value # name
 % int,	int,	int,	varchar # type
 % 1,	1,	1,	0 # length
-#SELECT "value", * FROM "sys"."value_partitions" WHERE "value" IS NULL;
-% sys.value_partitions,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
-% value,	table_id,	partition_id,	value # name
-% varchar,	int,	int,	varchar # type
-% 0,	1,	1,	0 # length
 
 # 18:07:03 >  
 # 18:07:03 >  "Done."

@@ -50,5 +50,6 @@ SELECT COUNT(*) AS duplicates, def FROM sys.optimizers GROUP BY def HAVING COUNT
 -- new tables introduced in 2019
 SELECT COUNT(*) AS duplicates, table_id, column_id FROM sys.table_partitions WHERE "column_id" IS NOT NULL GROUP BY table_id, column_id HAVING COUNT(*) >1;
 SELECT COUNT(*) AS duplicates, table_id, "expression" FROM sys.table_partitions WHERE "expression" IS NOT NULL GROUP BY table_id, "expression" HAVING COUNT(*) >1;
-SELECT COUNT(*) AS duplicates, table_id, partition_id, maximum FROM sys.range_partitions GROUP BY table_id, partition_id, maximum HAVING COUNT(*) >1;
+SELECT COUNT(*) AS duplicates, table_id, partition_id, "maximum" FROM sys.range_partitions GROUP BY table_id, partition_id, "maximum" HAVING COUNT(*) >1;
+SELECT COUNT(*) AS duplicates, table_id, partition_id, "minimum" FROM sys.range_partitions GROUP BY table_id, partition_id, "minimum"  HAVING COUNT(*) >1;
 
