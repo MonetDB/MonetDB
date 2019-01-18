@@ -1,0 +1,35 @@
+# ChangeLog file for MonetDB
+# This file is updated with Maddlog
+
+* Mon Nov 12 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Added an extra argument of type `bool' to the atom to string and
+  string to atom methods to indicate whether the string is for
+  internal use (casting the value to or from a string) of external use
+  (to be printed).
+
+* Wed Nov  7 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a nilslast option for BATfirstn.  If set, NILs come
+  last in the ordering that BATfirstn simulates, so non-NIL values are
+  preferentially returned.  The old behavior can be obtained by setting
+  nilslast to !asc(ending).
+
+* Tue Nov  6 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a nilslast option for BATsort.  This option should be
+  equal to the reverse option for stable sort (it is not implemented for
+  stable sort), but can be different from reverse for non-stable sort.
+  The functions BATsort and GDKqsort have extra parameters, the function
+  GDKqsort_rev has been removed (superseded by GDKqsort with the new
+  `reverse' parameter).
+
+* Tue Oct 30 2018 Sjoerd Mullender <sjoerd@acm.org>
+- The BUNtail, BUNtvar, BUNtloc, and BUNtpos macros (and Tloc and Tpos)
+  now return a `void *' instead of a `char *'.
+
+* Tue Aug 21 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Function PROPdestroy now takes a BAT* parameter.
+
+* Wed Aug 15 2018 Sjoerd Mullender <sjoerd@acm.org>
+- A whole bunch of functions now take a bool argument instead of an
+  int argument.  Some functions now return a bool instead of an int.
+  In all these cases, the int was used as a Boolean value.
+

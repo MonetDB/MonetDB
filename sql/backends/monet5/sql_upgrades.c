@@ -1733,7 +1733,7 @@ sql_update_aug2018(Client c, mvc *sql)
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
+sql_update_apr2019(Client c, mvc *sql)
 {
 	size_t bufsize = 2000, pos = 0;
 	char *buf, *err;
@@ -1743,7 +1743,7 @@ sql_update_default(Client c, mvc *sql)
 
 	schema = stack_get_string(sql, "current_schema");
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_apr2019", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	s = mvc_bind_schema(sql, "sys");
 
@@ -2407,7 +2407,7 @@ SQLupgrades(Client c, mvc *m)
 
 	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
 	    t->type == tt_table) {
-		if ((err = sql_update_default(c, m)) != NULL) {
+		if ((err = sql_update_apr2019(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
