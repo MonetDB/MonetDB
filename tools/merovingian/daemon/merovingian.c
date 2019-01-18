@@ -122,6 +122,7 @@ const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 struct sockaddr_in server_ipv4;
 struct sockaddr_in6 server_ipv6;
 struct sockaddr *_mero_broadcastaddr;
+socklen_t _mero_broadcastlength;
 /* hostname of this machine */
 char _mero_hostname[128];
 /* default options read from config file */
@@ -915,7 +916,6 @@ main(int argc, char *argv[])
 		if (discovery == 1) {
 			if (use_ipv6) { //as ipv6 does not support broadcast, we will use multicast instead
 				int check = -1;
-				socklen_t length = 0;
 				struct ipv6_mreq mreq;
 				struct addrinfo *multi, hints = (struct addrinfo) {
 					.ai_family = AF_INET6,
@@ -924,24 +924,21 @@ main(int argc, char *argv[])
 				};
 
 				_mero_broadcastaddr = (struct sockaddr*) &server_ipv6;
+				_mero_broadcastlength = (socklen_t) sizeof(struct sockaddr_in6);
+
+				memset(&server_ipv6, 0, sizeof(struct sockaddr_in6));
 				server_ipv6.sin6_family = AF_INET6;
-				server_ipv6.sin6_flowinfo = 0;
-				server_ipv6.sin6_scope_id = 0;
 				server_ipv6.sin6_port = htons(port);
-				memcpy(server_ipv6.sin6_addr.s6_addr, &ipv6_any_addr, sizeof(struct in6_addr));
-				length = (socklen_t) sizeof(server_ipv6);
+				server_ipv6.sin6_addr = ipv6_any_addr;
 
 				_mero_broadcastsock = socket(AF_INET6, SOCK_DGRAM
 #ifdef SOCK_CLOEXEC
 											| SOCK_CLOEXEC
 #endif
 						, 0);
-				if (_mero_broadcastsock == -1 || bind(_mero_broadcastsock, (SOCKPTR) &server_ipv6,
-						 length) != 0) {
+				if (_mero_broadcastsock == -1) {
 					Mfprintf(stderr, "cannot create multicast package: %s\n", strerror(errno));
 					closesocket(discsock);
-					if (_mero_broadcastsock >= 0)
-						closesocket(_mero_broadcastsock);
 					discsock = -1;
 				} else if ((check = getaddrinfo("ff02::1", NULL, &hints, &multi)) != 0) {
 					//ipv6 multicast all nodes on the local network segment
@@ -967,6 +964,7 @@ main(int argc, char *argv[])
 				}
 			} else {
 				_mero_broadcastaddr = (struct sockaddr*) &server_ipv4;
+				_mero_broadcastlength = (socklen_t) sizeof(struct sockaddr_in);
 				server_ipv4.sin_family = AF_INET;
 				server_ipv4.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 				/* the target port is our configured port, not elegant, but how

@@ -33,7 +33,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 	int sock = -1, check = 0;
 	socklen_t length = 0;
 	int on = 1;
-	int i = 0, flags = NI_NUMERICSERV;
+	int i = 0;
 	char sport[16];
 	char host[512];
 
@@ -45,7 +45,6 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 			.ai_flags = AI_PASSIVE,
 			.ai_protocol = IPPROTO_TCP,
 		};
-		flags |= NI_NUMERICHOST;
 
 		check = getaddrinfo(bindaddr, sport, &hints, &result);
 		if (check != 0)
@@ -90,12 +89,11 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 			return(newErr("creation of stream socket failed: %s", strerror(errno)));
 
 		if (bind_ipv6) {
+			memset(&server_ipv6, 0, sizeof(server_ipv6));
 			server_ipv6.sin6_family = AF_INET6;
-			server_ipv6.sin6_flowinfo = 0;
-			server_ipv6.sin6_scope_id = 0;
 			length = (socklen_t) sizeof(server_ipv6);
 			server_ipv6.sin6_port = htons((unsigned short) ((port) & 0xFFFF));
-			memcpy(server_ipv6.sin6_addr.s6_addr, &ipv6_any_addr, sizeof(struct in6_addr));
+			server_ipv6.sin6_addr = ipv6_any_addr;
 		} else {
 			server_ipv4.sin_family = AF_INET;
 			for (i = 0; i < 8; i++)
@@ -125,7 +123,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		}
 	}
 
-	check = getnameinfo(server, length, host, sizeof(host), sport, sizeof(sport), flags);
+	check = getnameinfo(server, length, host, sizeof(host), sport, sizeof(sport), NI_NUMERICSERV);
 	if (result)
 		freeaddrinfo(result);
 	if (check != 0) {

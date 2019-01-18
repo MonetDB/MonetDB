@@ -224,7 +224,8 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 				break;
 			}
 		}
-		freeaddrinfo(results);
+		if (results)
+			freeaddrinfo(results);
 		if (rp == NULL)
 			return(newErr("cannot open socket: %s", strerror(errno)));
 	}

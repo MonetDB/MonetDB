@@ -76,6 +76,7 @@ extern FILE *_mero_ctlerr;
 extern int _mero_broadcastsock;
 extern const struct in6_addr ipv6_any_addr;
 extern struct sockaddr *_mero_broadcastaddr;
+extern socklen_t _mero_broadcastlength;
 extern char _mero_hostname[128];
 extern confkeyval *_mero_db_props;
 extern confkeyval *_mero_props;

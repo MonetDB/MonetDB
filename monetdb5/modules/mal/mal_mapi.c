@@ -608,13 +608,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		}
 
 		if (bind_ipv6) {
+			memset(&server_ipv6, 0, sizeof(server_ipv6));
 			server_ipv6.sin6_family = AF_INET6;
 			if (accept_any)
-				memcpy(server_ipv6.sin6_addr.s6_addr, &ipv6_any_addr, sizeof(struct in6_addr));
+				server_ipv6.sin6_addr = ipv6_any_addr;
 			else
-				memcpy(server_ipv6.sin6_addr.s6_addr, &ipv6_loopback_addr, sizeof(struct in6_addr));
-			server_ipv6.sin6_flowinfo = 0;
-			server_ipv6.sin6_scope_id = 0;
+				server_ipv6.sin6_addr = ipv6_loopback_addr;
 			server = (struct sockaddr*) &server_ipv6;
 			length = (SOCKLEN) sizeof(server_ipv6);
 		} else {

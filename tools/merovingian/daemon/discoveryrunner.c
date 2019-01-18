@@ -36,7 +36,7 @@ difuse(char *msg)
 	size_t len = strlen(msg) + 1;
 	if (_mero_broadcastsock < 0)
 		return;
-	sent = sendto(_mero_broadcastsock, msg, len, 0, _mero_broadcastaddr, sizeof(*_mero_broadcastaddr));
+	sent = sendto(_mero_broadcastsock, msg, len, 0, _mero_broadcastaddr, _mero_broadcastlength);
 	if (sent == -1) {
 		Mfprintf(_mero_discerr, "error while sending %s message: %s\n",
 				 _mero_broadcastaddr->sa_family == AF_INET ? "broadcast" : "multicast", strerror(errno));
