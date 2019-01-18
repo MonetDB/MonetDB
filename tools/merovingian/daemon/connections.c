@@ -26,6 +26,7 @@
 err
 openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short port, FILE *log)
 {
+	struct sockaddr *server;
 	struct sockaddr_in server_ipv4;
 	struct sockaddr_in6 server_ipv6;
 	struct addrinfo *result = NULL, *rp = NULL;
@@ -77,10 +78,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 				closesocket(sock);
 			return newErr("cannot bind to host %s", bindaddr);
 		}
-		if (bind_ipv6)
-			server_ipv6 = *(struct sockaddr_in6*) rp->ai_addr;
-		else
-			server_ipv4 = *(struct sockaddr_in*) rp->ai_addr;
+		server = rp->ai_addr;
 		length = rp->ai_addrlen;
 	} else {
 		sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
@@ -106,6 +104,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 			server_ipv4.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 			server_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
 		}
+		server = bind_ipv6 ? (struct sockaddr*) &server_ipv6 : (struct sockaddr*) &server_ipv4;
 
 #ifndef SOCK_CLOEXEC
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
@@ -115,19 +114,18 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 			return newErr("setsockopt unexpectedly failed: %s", strerror(errno));
 		}
 
-		if (bind(sock, bind_ipv6 ? (SOCKPTR) &server_ipv6 : (SOCKPTR) &server_ipv4, length) == -1) {
+		if (bind(sock, server, length) == -1) {
 			closesocket(sock);
 			return(newErr("binding to stream socket port %hu failed: %s", port, strerror(errno)));
 		}
 
-		if (getsockname(sock, bind_ipv6 ? (SOCKPTR) &server_ipv6 : (SOCKPTR) &server_ipv4, &length) == -1) {
+		if (getsockname(sock, server, &length) == -1) {
 			closesocket(sock);
 			return(newErr("failed getting socket name: %s", strerror(errno)));
 		}
 	}
 
-	check = getnameinfo(bind_ipv6 ? (struct sockaddr*) &server_ipv6 : (struct sockaddr*) &server_ipv4, length, host,
-						sizeof(host), sport, sizeof(sport), flags);
+	check = getnameinfo(server, length, host, sizeof(host), sport, sizeof(sport), flags);
 	if (result)
 		freeaddrinfo(result);
 	if (check != 0) {
@@ -136,7 +134,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 	}
 
 	/* keep queue of 5 */
-	if(listen(sock, 5) == -1) {
+	if (listen(sock, 5) == -1) {
 		closesocket(sock);
 		return(newErr("failed setting socket to listen: %s", strerror(errno)));
 	}

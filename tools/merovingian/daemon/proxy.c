@@ -86,13 +86,8 @@ proxyThread(void *d)
 err
 startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 {
-	struct hostent *hp;
-	struct sockaddr_in server;
-	struct sockaddr *serv;
-	socklen_t servsize;
 	int ssock = -1;
-	char *port, *t;
-	char *conn;
+	char *port, *t, *conn;
 	struct stat statbuf;
 	stream *sfdin, *sfout;
 	merovingian_proxy *pctos, *pstoc;
@@ -197,39 +192,41 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		mnstr_destroy(cfout);
 		return(NO_ERR);
 	} else {
-		hp = gethostbyname(conn);
-		if (hp == NULL) {
-			err x = newErr("cannot get address for hostname '%s': %s",
-						conn, hstrerror(h_errno));
+		int check;
+		struct addrinfo *results, *rp, hints = (struct addrinfo) {
+			.ai_family = AF_UNSPEC,
+			.ai_socktype = SOCK_STREAM,
+			.ai_protocol = IPPROTO_TCP,
+		};
+
+		if ((check = getaddrinfo(conn, port, &hints, &results)) != 0) {
+			err x = newErr("cannot get address for hostname '%s': %s", conn, gai_strerror(check));
 			free(conn);
 			return(x);
 		}
 		free(conn);
 
-		server = (struct sockaddr_in) {
-			.sin_family = hp->h_addrtype,
-			.sin_port = htons((unsigned short) atoi(port)),
-		};
-		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		serv = (struct sockaddr *) &server;
-		servsize = sizeof(server);
-
-		ssock = socket(serv->sa_family, SOCK_STREAM
+		for (rp = results; rp; rp = rp->ai_next) {
+			ssock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
-					   | SOCK_CLOEXEC
+							| SOCK_CLOEXEC
 #endif
-					   , IPPROTO_TCP);
-		if (ssock == -1) {
-			return(newErr("cannot open socket: %s", strerror(errno)));
-		}
+						   , rp->ai_protocol);
+			if (ssock == -1)
+				continue;
+			if (connect(ssock, rp->ai_addr, rp->ai_addrlen) == -1) {
+				closesocket(ssock);
+				continue;
+			} else {
 #ifndef SOCK_CLOEXEC
-		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
+				(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
 #endif
-
-		if (connect(ssock, serv, servsize) == -1) {
-			closesocket(ssock);
-			return(newErr("cannot connect: %s", strerror(errno)));
+				break;
+			}
 		}
+		freeaddrinfo(results);
+		if (rp == NULL)
+			return(newErr("cannot open socket: %s", strerror(errno)));
 	}
 
 	sfdin = block_stream(socket_rstream(ssock, "merovingian<-server (proxy read)"));

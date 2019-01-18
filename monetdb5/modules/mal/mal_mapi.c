@@ -502,6 +502,7 @@ static const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 static str
 SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 {
+	struct sockaddr* server = NULL;
 	struct sockaddr_in server_ipv4;
 	struct sockaddr_in6 server_ipv6;
 	SOCKET sock = INVALID_SOCKET;
@@ -614,6 +615,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				memcpy(server_ipv6.sin6_addr.s6_addr, &ipv6_loopback_addr, sizeof(struct in6_addr));
 			server_ipv6.sin6_flowinfo = 0;
 			server_ipv6.sin6_scope_id = 0;
+			server = (struct sockaddr*) &server_ipv6;
 			length = (SOCKLEN) sizeof(server_ipv6);
 		} else {
 			server_ipv4.sin_family = AF_INET;
@@ -623,17 +625,17 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				server_ipv4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 			for (i = 0; i < 8; i++)
 				server_ipv4.sin_zero[i] = 0;
+			server = (struct sockaddr*) &server_ipv4;
 			length = (SOCKLEN) sizeof(server_ipv4);
 		}
 
 		do {
-			if (bind_ipv6) {
+			if (bind_ipv6)
 				server_ipv6.sin6_port = htons((unsigned short) ((port) & 0xFFFF));
-			} else {
+			else
 				server_ipv4.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-			}
 
-			if (bind(sock, bind_ipv6 ? (SOCKPTR) &server_ipv6 : (SOCKPTR) &server_ipv4, length) == SOCKET_ERROR) {
+			if (bind(sock, server, length) == SOCKET_ERROR) {
 				if (
 #ifdef _MSC_VER
 					WSAGetLastError() == WSAEADDRINUSE &&
@@ -665,7 +667,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			}
 		} while (1);
 
-		if (getsockname(sock, bind_ipv6 ? (SOCKPTR) &server_ipv6 : (SOCKPTR) &server_ipv4, &length) == SOCKET_ERROR) {
+		if (getsockname(sock, server, &length) == SOCKET_ERROR) {
 			closesocket(sock);
 			GDKfree(psock);
 			GDKfree(usockfile);
