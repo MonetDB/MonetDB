@@ -501,9 +501,7 @@ forkMserver(char *database, sabdb** stats, int force)
 
 
 	mport = (unsigned int)getConfNum(_mero_props, "port");
-	kv = findConfKey(ckv, "ipv6");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
-		ipv6 = "mapi_ipv6=true";
+	ipv6 = getConfNum(_mero_props, "ipv6") == 1 ? "mapi_ipv6=true" : "mapi_ipv6=false";
 
 	/* ok, now exec that mserver we want */
 	snprintf(dbpath, sizeof(dbpath),
@@ -540,9 +538,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 	} else {
 		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
-		if (ipv6 != NULL) {
-			argv[c++] = "--set"; argv[c++] = ipv6;
-		}
 		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
@@ -551,6 +546,7 @@ forkMserver(char *database, sabdb** stats, int force)
 		snprintf(port, sizeof(port), "mapi_port=%u", mport + 1);
 		snprintf(usock, sizeof(usock), "mapi_usock=");
 	}
+	argv[c++] = "--set"; argv[c++] = ipv6;
 	argv[c++] = "--set"; argv[c++] = port;
 	argv[c++] = "--set"; argv[c++] = usock;
 	argv[c++] = "--set"; argv[c++] = vaultkey;

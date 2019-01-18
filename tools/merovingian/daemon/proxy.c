@@ -87,7 +87,7 @@ err
 startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 {
 	int ssock = -1;
-	char *port, *t, *conn;
+	char *port, *t, *conn, *endipv6;
 	struct stat statbuf;
 	stream *sfdin, *sfout;
 	merovingian_proxy *pctos, *pstoc;
@@ -98,8 +98,21 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	/* quick 'n' dirty parsing */
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
 		conn = strdup(url + sizeof("mapi:monetdb://") - 1);
-		/* drop anything off after the hostname */
-		if ((port = strchr(conn, ':')) != NULL) {
+
+		if (*conn == '[') { /* check for an IPv6 address */
+			if ((endipv6 = strchr(conn, ']')) != NULL) {
+				if ((port = strchr(endipv6, ':')) != NULL) {
+					*port = '\0';
+					port++;
+					if ((t = strchr(port, '/')) != NULL)
+						*t = '\0';
+				} else {
+					return(newErr("can't find a port in redirect: %s", url));
+				}
+			} else {
+				return(newErr("invalid IPv6 address in redirect: %s", url));
+			}
+		} else if ((port = strchr(conn, ':')) != NULL) { /* drop anything off after the hostname */
 			*port = '\0';
 			port++;
 			if ((t = strchr(port, '/')) != NULL)
