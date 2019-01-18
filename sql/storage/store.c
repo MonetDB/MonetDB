@@ -1850,7 +1850,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "schema_id", "int", 32);
-		bootstrap_create_column(tr, t, "query", "varchar", 2048);
+		bootstrap_create_column(tr, t, "query", "varchar", 1 << 20);
 		bootstrap_create_column(tr, t, "type", "smallint", 16);
 		bootstrap_create_column(tr, t, "system", "boolean", 1);
 		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);

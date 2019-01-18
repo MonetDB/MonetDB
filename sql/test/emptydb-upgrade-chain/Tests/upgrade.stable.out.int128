@@ -5877,6 +5877,8 @@ drop table sys.systemfunctions;
 create view sys.systemfunctions as select id as function_id from sys.functions where system;
 grant select on sys.systemfunctions to public;
 update sys._tables set system = true where name = 'systemfunctions' and schema_id = (select id from sys.schemas where name = 'sys');
+update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = '_tables' and t.schema_id in (select id from sys.schemas s where s.name in ('sys', 'tmp')));
+update sys._columns set type_digits = 1048576 where name = 'query' and table_id in (select id from sys._tables t where t.name = 'tables' and t.schema_id in (select id from sys.schemas s where s.name = 'sys'));
 set schema "sys";
 commit;
 

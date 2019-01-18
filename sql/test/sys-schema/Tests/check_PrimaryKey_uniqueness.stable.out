@@ -80,7 +80,7 @@ Ready.
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, function_id FROM sys.systemfunctions GROUP BY function_id HAVING COUNT(*) > 1;
-% sys.L3,	sys.systemfunctions # table_name
+% sys.L7,	sys.systemfunctions # table_name
 % duplicates,	function_id # name
 % bigint,	int # type
 % 1,	1 # length
@@ -164,6 +164,11 @@ Ready.
 % duplicates,	id,	depend_id # name
 % bigint,	int,	int # type
 % 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.ids GROUP BY id HAVING COUNT(*) > 1;
+% .L413,	.ids # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.auths GROUP BY id HAVING COUNT(*) > 1;
 % sys.L3,	sys.auths # table_name
 % duplicates,	id # name
@@ -244,8 +249,13 @@ Ready.
 % duplicates,	rowid # name
 % bigint,	bigint # type
 % 1,	1 # length
+#SELECT COUNT(*) AS duplicates, schema FROM sys.schemastorage GROUP BY schema HAVING COUNT(*) > 1;
+% .L141,	.schemastorage # table_name
+% duplicates,	schema # name
+% bigint,	varchar # type
+% 1,	0 # length
 #SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1;
-% .L11,	.storage,	.storage,	.storage # table_name
+% .L113,	.storage,	.storage,	.storage # table_name
 % duplicates,	schema,	table,	column # name
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
@@ -259,11 +269,31 @@ Ready.
 % duplicates,	schema,	table,	column # name
 % bigint,	varchar,	varchar,	varchar # type
 % 1,	0,	0,	0 # length
-#SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestoragemodel GROUP BY schema, table HAVING COUNT(*) > 1;
-% sys.L42,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
+#SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestorage GROUP BY schema, table HAVING COUNT(*) > 1;
+% .L145,	.tablestorage,	.tablestorage # table_name
 % duplicates,	schema,	table # name
 % bigint,	varchar,	varchar # type
 % 1,	0,	0 # length
+#SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestoragemodel GROUP BY schema, table HAVING COUNT(*) > 1;
+% sys.L36,	sys.tablestoragemodel,	sys.tablestoragemodel # table_name
+% duplicates,	schema,	table # name
+% bigint,	varchar,	varchar # type
+% 1,	0,	0 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.table_partitions GROUP BY id HAVING COUNT(*) >1;
+% sys.L3,	sys.table_partitions # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, table_id, partition_id, minimum FROM sys.range_partitions GROUP BY table_id, partition_id, minimum HAVING COUNT(*) >1;
+% sys.L3,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% duplicates,	table_id,	partition_id,	minimum # name
+% bigint,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
+#SELECT COUNT(*) AS duplicates, table_id, partition_id, "value" FROM sys.value_partitions GROUP BY table_id, partition_id, "value" HAVING COUNT(*) >1;
+% sys.L3,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
+% duplicates,	table_id,	partition_id,	value # name
+% bigint,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
 
 # 16:31:35 >  
 # 16:31:35 >  "Done."

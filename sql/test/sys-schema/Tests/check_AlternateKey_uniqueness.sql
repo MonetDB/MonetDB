@@ -1,5 +1,6 @@
 -- check all standard sys (and tmp) tables on Alternate Key uniqueness
 -- All queries should return NO rows (so no duplicates found).
+
 SELECT COUNT(*) AS duplicates, name FROM sys.schemas GROUP BY name HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, table_type_name FROM sys.table_types GROUP BY table_type_name HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, schema_id, name FROM sys._tables GROUP BY schema_id, name HAVING COUNT(*) > 1;
@@ -45,4 +46,9 @@ SELECT COUNT(*) AS duplicates, privilege_code_name FROM sys.privilege_codes GROU
 SELECT COUNT(*) AS duplicates, name FROM sys.auths GROUP BY name HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, def FROM sys.optimizers GROUP BY def HAVING COUNT(*) > 1;
+
+-- new tables introduced in 2019
+SELECT COUNT(*) AS duplicates, table_id, column_id FROM sys.table_partitions WHERE "column_id" IS NOT NULL GROUP BY table_id, column_id HAVING COUNT(*) >1;
+SELECT COUNT(*) AS duplicates, table_id, "expression" FROM sys.table_partitions WHERE "expression" IS NOT NULL GROUP BY table_id, "expression" HAVING COUNT(*) >1;
+SELECT COUNT(*) AS duplicates, table_id, partition_id, maximum FROM sys.range_partitions GROUP BY table_id, partition_id, maximum HAVING COUNT(*) >1;
 

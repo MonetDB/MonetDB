@@ -184,6 +184,21 @@ Ready.
 % duplicates,	def # name
 % bigint,	clob # type
 % 1,	0 # length
+#SELECT COUNT(*) AS duplicates, table_id, column_id FROM sys.table_partitions WHERE "column_id" IS NOT NULL GROUP BY table_id, column_id HAVING COUNT(*) >1;
+% sys.L3,	sys.table_partitions,	sys.table_partitions # table_name
+% duplicates,	table_id,	column_id # name
+% bigint,	int,	int # type
+% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, table_id, "expression" FROM sys.table_partitions WHERE "expression" IS NOT NULL GROUP BY table_id, "expression" HAVING COUNT(*) >1;
+% sys.L3,	sys.table_partitions,	sys.table_partitions # table_name
+% duplicates,	table_id,	expression # name
+% bigint,	int,	varchar # type
+% 1,	1,	0 # length
+#SELECT COUNT(*) AS duplicates, table_id, partition_id, maximum FROM sys.range_partitions GROUP BY table_id, partition_id, maximum HAVING COUNT(*) >1;
+% sys.L3,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% duplicates,	table_id,	partition_id,	maximum # name
+% bigint,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
 
 # 16:31:36 >  
 # 16:31:36 >  "Done."
