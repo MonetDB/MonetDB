@@ -118,7 +118,7 @@ GDKcreatedir(const char *dir)
 #ifdef WIN32
 			strlen(path) > 3 &&
 #endif
-			mkdir(path, 0755) < 0) {
+			mkdir(path, MONETDB_DIRMODE) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
 				IODEBUG fprintf(stderr, "#GDKcreatedir: mkdir(%s) failed\n", path);

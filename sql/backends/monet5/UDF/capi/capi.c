@@ -693,7 +693,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		if (mkdir(deldirpath, 0755) < 0 && errno != EEXIST) {
+		if (mkdir(deldirpath, 0777) < 0 && errno != EEXIST) {
 			msg = createException(MAL, "cudf.eval",
 								  "cannot create directory %s\n", deldirpath);
 			goto wrapup;
