@@ -1241,7 +1241,7 @@ BBPaddfarm(const char *dirname, int rolemask)
 	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
 		GDKfatal("BBPaddfarm: bad rolemask\n");
 	}
-	if (mkdir(dirname, 0755) < 0) {
+	if (mkdir(dirname, MONETDB_DIRMODE) < 0) {
 		if (errno == EEXIST) {
 			if (stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
 				GDKfatal("BBPaddfarm: %s: not a directory\n", dirname);
@@ -3029,7 +3029,7 @@ BBPprepare(bool subcommit)
 		backup_dir = 0;
 		ret = BBPrecover(0);
 		if (ret == GDK_SUCCEED) {
-			if (mkdir(bakdirpath, 0755) < 0 && errno != EEXIST) {
+			if (mkdir(bakdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 				GDKsyserror("BBPprepare: cannot create directory %s\n", bakdirpath);
 				ret = GDK_FAIL;
 			}
@@ -3039,7 +3039,7 @@ BBPprepare(bool subcommit)
 	}
 	if (ret == GDK_SUCCEED && start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
-		if (mkdir(subdirpath, 0755) < 0) {
+		if (mkdir(subdirpath, MONETDB_DIRMODE) < 0) {
 			GDKsyserror("BBPprepare: cannot create directory %s\n", subdirpath);
 			ret = GDK_FAIL;
 		}
@@ -3425,7 +3425,7 @@ BBPrecover(int farmid)
 	dstdir = dstpath + j;
 	IODEBUG fprintf(stderr, "#BBPrecover(start)\n");
 
-	if (mkdir(leftdirpath, 0755) < 0 && errno != EEXIST) {
+	if (mkdir(leftdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 		GDKsyserror("BBPrecover: cannot create directory %s\n", leftdirpath);
 		closedir(dirp);
 		GDKfree(bakdirpath);

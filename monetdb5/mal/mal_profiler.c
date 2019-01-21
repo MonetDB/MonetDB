@@ -599,7 +599,7 @@ startTrace(str path)
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
 			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
-			if (mkdir(buf, 0755) < 0 && errno != EEXIST) {
+			if (mkdir(buf, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 				MT_lock_unset(&mal_profileLock);
 				throw(MAL, "profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
 			}

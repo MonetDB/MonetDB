@@ -413,7 +413,6 @@ SELECT 'current_schema', current_schema UNION ALL
 SELECT 'current_timezone', current_timezone UNION ALL
 SELECT 'current_user', current_user UNION ALL
 SELECT 'debug', debug UNION ALL
-SELECT 'history', history UNION ALL
 SELECT 'last_id', last_id UNION ALL
 SELECT 'optimizer', optimizer UNION ALL
 SELECT 'pi', pi() UNION ALL

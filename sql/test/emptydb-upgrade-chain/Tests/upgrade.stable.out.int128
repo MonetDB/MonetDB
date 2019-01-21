@@ -5873,6 +5873,20 @@ Running database upgrade commands:
 set schema sys;
 ALTER TABLE sys.keywords SET READ WRITE;
 INSERT INTO sys.keywords VALUES ('WINDOW');
+DROP VIEW sys.var_values;
+CREATE VIEW sys.var_values (var_name, value) AS
+SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL
+SELECT 'current_role', current_role UNION ALL
+SELECT 'current_schema', current_schema UNION ALL
+SELECT 'current_timezone', current_timezone UNION ALL
+SELECT 'current_user', current_user UNION ALL
+SELECT 'debug', debug UNION ALL
+SELECT 'last_id', last_id UNION ALL
+SELECT 'optimizer', optimizer UNION ALL
+SELECT 'pi', pi() UNION ALL
+SELECT 'rowcnt', rowcnt;
+UPDATE sys._tables SET system = true WHERE name = 'var_values' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');
+GRANT SELECT ON sys.var_values TO PUBLIC;
 drop table sys.systemfunctions;
 create view sys.systemfunctions as select id as function_id from sys.functions where system;
 grant select on sys.systemfunctions to public;

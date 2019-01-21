@@ -79,13 +79,6 @@ sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 #endif
 		m->cache = (int) sgn;
-	} else if (strcmp(name, "history") == 0) {
-#ifdef HAVE_HGE
-		assert((hge) GDK_int_min <= sgn && sgn <= (hge) GDK_int_max);
-#else
-		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
-#endif
-		m->history = (sgn != 0);
 	} 
 	return NULL;
 }
