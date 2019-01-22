@@ -132,6 +132,15 @@ module batmmath;
 	command log10(x:bat[:flt],s:bat[:oid]) :bat[:flt]
 	address CMDscience_bat_flt_log10_cand;
 
+	command log2(x:bat[:dbl]) :bat[:dbl]
+	address CMDscience_bat_dbl_log2;
+	command log2(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+	address CMDscience_bat_dbl_log2_cand;
+	command log2(x:bat[:flt]) :bat[:flt]
+	address CMDscience_bat_flt_log2;
+	command log2(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+	address CMDscience_bat_flt_log2_cand;
+
 	command sqrt(x:bat[:dbl]) :bat[:dbl]
 	address CMDscience_bat_dbl_sqrt;
 	command sqrt(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]

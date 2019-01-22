@@ -1956,6 +1956,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "exp", "mmath", "exp", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log", "mmath", "log", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log10", "mmath", "log10", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "log2", "mmath", "log2", *t, NULL, *t, SCALE_FIX);
 	}
 	sql_create_func(sa, "pi", "mmath", "pi", NULL, NULL, DBL, SCALE_NONE);
 

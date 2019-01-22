@@ -160,6 +160,7 @@ unopM5(_TANH,tanh)
 unopM5(_EXP,exp)
 unopM5(_LOG,log)
 unopM5(_LOG10,log10)
+unopM5(_LOG2,log2)
 
 binopM5(_POW,pow)
 unopM5(_SQRT,sqrt)

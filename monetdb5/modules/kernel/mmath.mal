@@ -122,6 +122,12 @@ command log10(x:dbl)    :dbl
 address MATHunary_LOG10dbl
 comment "The log10(x) function returns the base-10 logarithm of x.";
 
+command log2(x:flt)    :flt 
+address MATHunary_LOG2flt;
+command log2(x:dbl)    :dbl 
+address MATHunary_LOG2dbl
+comment "The log2(x) function returns the base-2 logarithm of x.";
+
 
 command pow(x:flt,y:flt)  :flt 
 address MATHbinary_POWflt;

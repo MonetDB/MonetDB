@@ -376,6 +376,7 @@ scienceImpl(degrees)
 scienceImpl(exp)
 scienceImpl(log)
 scienceImpl(log10)
+scienceImpl(log2)
 scienceImpl(sqrt)
 #ifdef HAVE_CBRT
 scienceImpl(cbrt)
