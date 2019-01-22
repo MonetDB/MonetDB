@@ -44,7 +44,7 @@ address BLOBtoblob
 comment "store a string as a blob.";
 command nitems(b:blob):int
 address BLOBnitems
-comment " get the number of bytes in this blob.";
+comment "get the number of bytes in this blob.";
 
 atom sqlblob:blob;
 
@@ -59,6 +59,10 @@ command sqlblob(s:str):sqlblob
 address BLOBsqlblob_fromstr;
 
 module blob;
+
+command nitems(b:sqlblob):int
+address BLOBnitems
+comment "get the number of bytes in this blob.";
 
 command prelude() :void
 address BLOBprelude;

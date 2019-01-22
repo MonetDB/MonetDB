@@ -921,6 +921,8 @@ Ready.
 [ "sys",	"left_shift_assign",	0,	"boolean",	"create function \"left_shift_assign\"(i1 inet, i2 inet) returns boolean\n external name inet.\"<<=\";"	]
 [ "sys",	"left_shift_assign",	1,	"inet",	""	]
 [ "sys",	"left_shift_assign",	2,	"inet",	""	]
+[ "sys",	"length",	0,	"int",	"nitems"	]
+[ "sys",	"length",	1,	"blob",	""	]
 [ "sys",	"length",	0,	"int",	"length"	]
 [ "sys",	"length",	1,	"char",	""	]
 [ "sys",	"length",	0,	"int",	"length"	]

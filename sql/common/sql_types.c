@@ -1412,8 +1412,9 @@ sqltypeinit( sql_allocator *sa)
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
 #endif
-	sql_type *SECINT, *MONINT, *DTE; 
+	sql_type *SECINT, *MONINT, *DTE;
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
+	sql_type *BLOB;
 	sql_type *ANY, *TABLE;
 	sql_type *GEOM, *MBR;
 	sql_func *f;
@@ -1489,7 +1490,9 @@ sqltypeinit( sql_allocator *sa)
 	TMESTAMP = *t++ = sql_create_type(sa, "TIMESTAMP", 7, 0, 0, EC_TIMESTAMP, "timestamp");
 	TMESTAMPTZ = *t++ = sql_create_type(sa, "TIMESTAMPTZ", 7, SCALE_FIX, 0, EC_TIMESTAMP, "timestamp");
 
-	*t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
+	BLOB = *t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
+
+	sql_create_func(sa, "length", "blob", "nitems", BLOB, NULL, INT, SCALE_NONE);
 
 	if (geomcatalogfix_get() != NULL) {
 		// the geom module is loaded 

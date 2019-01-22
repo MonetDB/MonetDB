@@ -49,7 +49,7 @@ mal_export void BLOBheap(Heap *heap, size_t capacity);
 mal_export str BLOBtoblob(blob **retval, str *s);
 mal_export str BLOBfromblob(str *retval, blob **b);
 mal_export str BLOBfromidx(str *retval, blob **binp, int *index);
-mal_export str BLOBnitems(int *ret, blob *b);
+mal_export str BLOBnitems(int *ret, blob **b);
 mal_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 mal_export blob * BLOBread(blob *a, stream *s, size_t cnt);
 mal_export gdk_return BLOBwrite(const blob *a, stream *s, size_t cnt);
@@ -200,10 +200,10 @@ BLOBput(Heap *h, var_t *bun, const blob *val)
 }
 
 str
-BLOBnitems(int *ret, blob *b)
+BLOBnitems(int *ret, blob **b)
 {
-	assert(b->nitems <INT_MAX);
-	*ret = (int) b->nitems;
+	assert((*b)->nitems <INT_MAX);
+	*ret = (int) (*b)->nitems;
 	return MAL_SUCCEED;
 }
 
