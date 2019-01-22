@@ -5079,6 +5079,7 @@ drop function pcre_replace(string, string, string, string);
 % 3,	9,	14,	3,	1,	2,	9 # length
 [ "sys",	"bat",	"table",	0,	0,	0,	"TABLE"	]
 [ "sys",	"bit",	"boolean",	1,	0,	2,	"BIT"	]
+[ "sys",	"blob",	"blob",	0,	0,	0,	"BLOB"	]
 [ "sys",	"bte",	"decimal",	2,	1,	10,	"DEC"	]
 [ "sys",	"bte",	"tinyint",	8,	1,	2,	"NUM"	]
 [ "sys",	"date",	"date",	0,	0,	0,	"DATE"	]
@@ -5101,7 +5102,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"ptr",	"ptr",	0,	0,	0,	"TABLE"	]
 [ "sys",	"sht",	"decimal",	4,	1,	10,	"DEC"	]
 [ "sys",	"sht",	"smallint",	16,	1,	2,	"NUM"	]
-[ "sys",	"sqlblob",	"blob",	0,	0,	0,	"BLOB"	]
 [ "sys",	"str",	"char",	0,	0,	0,	"CHAR"	]
 [ "sys",	"str",	"clob",	0,	0,	0,	"STRING"	]
 [ "sys",	"str",	"varchar",	0,	0,	0,	"STRING"	]

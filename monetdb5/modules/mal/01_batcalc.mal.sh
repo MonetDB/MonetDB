@@ -425,7 +425,7 @@ done
 for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     op=${func%:*}
     func=${func#*:}
-    for tp in bit str sqlblob oid; do
+    for tp in bit str blob oid; do
 	cat <<EOF
 pattern $op(b1:bat[:$tp],b2:bat[:$tp]) :bat[:bit]
 address CMDbat${func^^}

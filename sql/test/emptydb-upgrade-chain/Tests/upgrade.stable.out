@@ -78,7 +78,7 @@ insert into sys.types values (21, 'daytime', 'timetz', 7, 1, 0, 12, 2000);
 insert into sys.types values (22, 'date', 'date', 0, 0, 0, 13, 2000);
 insert into sys.types values (23, 'timestamp', 'timestamp', 7, 0, 0, 14, 2000);
 insert into sys.types values (24, 'timestamp', 'timestamptz', 7, 1, 0, 14, 2000);
-insert into sys.types values (25, 'sqlblob', 'blob', 0, 0, 0, 5, 2000);
+insert into sys.types values (25, 'blob', 'blob', 0, 0, 0, 5, 2000);
 insert into sys.types values (27, 'wkb', 'geometry', 0, 0, 0, 15, 2000);
 insert into sys.types values (28, 'wkba', 'geometrya', 0, 0, 0, 16, 2000);
 insert into sys.types values (29, 'mbr', 'mbr', 0, 0, 0, 16, 2000);

@@ -2108,7 +2108,7 @@ create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
 			break;
 		}
 		case EC_BLOB: {
-			if(SQLBLOBtostr(&buf, &len, (const blob *)value, true) < 0)
+			if(BLOBtostr(&buf, &len, (const blob *)value, true) < 0)
 				return NULL;
 			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
 			break;

@@ -46,24 +46,6 @@ command nitems(b:blob):int
 address BLOBnitems
 comment "get the number of bytes in this blob.";
 
-atom sqlblob:blob;
-
-command tostr()   address SQLBLOBtostr;
-command fromstr() address SQLBLOBfromstr;
-
-command sqlblob(s:sqlblob):sqlblob
-address BLOBblob_blob
-comment "Noop routine.";
-
-command sqlblob(s:str):sqlblob
-address BLOBsqlblob_fromstr;
-
-module blob;
-
-command nitems(b:sqlblob):int
-address BLOBnitems
-comment "get the number of bytes in this blob.";
-
 command prelude() :void
 address BLOBprelude;
 
@@ -73,5 +55,3 @@ module calc;
 
 command blob(b:blob):blob address BLOBblob_blob;
 command blob(s:str):blob address BLOBblob_fromstr;
-command sqlblob(b:sqlblob):sqlblob address BLOBblob_blob;
-command sqlblob(s:str):sqlblob address BLOBsqlblob_fromstr;

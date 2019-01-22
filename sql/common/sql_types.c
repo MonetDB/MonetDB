@@ -1490,7 +1490,7 @@ sqltypeinit( sql_allocator *sa)
 	TMESTAMP = *t++ = sql_create_type(sa, "TIMESTAMP", 7, 0, 0, EC_TIMESTAMP, "timestamp");
 	TMESTAMPTZ = *t++ = sql_create_type(sa, "TIMESTAMPTZ", 7, SCALE_FIX, 0, EC_TIMESTAMP, "timestamp");
 
-	BLOB = *t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
+	BLOB = *t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "blob");
 
 	sql_create_func(sa, "length", "blob", "nitems", BLOB, NULL, INT, SCALE_NONE);
 

@@ -16310,22 +16310,22 @@ pattern <(v:str,b:bat[:str],s:bat[:oid]) :bat[:bit]
 address CMDbatLT
 comment "Return V < B with candidates list";
 
-pattern <(b1:bat[:sqlblob],b2:bat[:sqlblob]) :bat[:bit]
+pattern <(b1:bat[:blob],b2:bat[:blob]) :bat[:bit]
 address CMDbatLT
 comment "Return B1 < B2";
-pattern <(b1:bat[:sqlblob],b2:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern <(b1:bat[:blob],b2:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatLT
 comment "Return B1 < B2 with candidates list";
-pattern <(b:bat[:sqlblob],v:sqlblob) :bat[:bit]
+pattern <(b:bat[:blob],v:blob) :bat[:bit]
 address CMDbatLT
 comment "Return B < V";
-pattern <(b:bat[:sqlblob],v:sqlblob,s:bat[:oid]) :bat[:bit]
+pattern <(b:bat[:blob],v:blob,s:bat[:oid]) :bat[:bit]
 address CMDbatLT
 comment "Return B < V with candidates list";
-pattern <(v:sqlblob,b:bat[:sqlblob]) :bat[:bit]
+pattern <(v:blob,b:bat[:blob]) :bat[:bit]
 address CMDbatLT
 comment "Return V < B";
-pattern <(v:sqlblob,b:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern <(v:blob,b:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatLT
 comment "Return V < B with candidates list";
 
@@ -17071,22 +17071,22 @@ pattern <=(v:str,b:bat[:str],s:bat[:oid]) :bat[:bit]
 address CMDbatLE
 comment "Return V <= B with candidates list";
 
-pattern <=(b1:bat[:sqlblob],b2:bat[:sqlblob]) :bat[:bit]
+pattern <=(b1:bat[:blob],b2:bat[:blob]) :bat[:bit]
 address CMDbatLE
 comment "Return B1 <= B2";
-pattern <=(b1:bat[:sqlblob],b2:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern <=(b1:bat[:blob],b2:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatLE
 comment "Return B1 <= B2 with candidates list";
-pattern <=(b:bat[:sqlblob],v:sqlblob) :bat[:bit]
+pattern <=(b:bat[:blob],v:blob) :bat[:bit]
 address CMDbatLE
 comment "Return B <= V";
-pattern <=(b:bat[:sqlblob],v:sqlblob,s:bat[:oid]) :bat[:bit]
+pattern <=(b:bat[:blob],v:blob,s:bat[:oid]) :bat[:bit]
 address CMDbatLE
 comment "Return B <= V with candidates list";
-pattern <=(v:sqlblob,b:bat[:sqlblob]) :bat[:bit]
+pattern <=(v:blob,b:bat[:blob]) :bat[:bit]
 address CMDbatLE
 comment "Return V <= B";
-pattern <=(v:sqlblob,b:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern <=(v:blob,b:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatLE
 comment "Return V <= B with candidates list";
 
@@ -17832,22 +17832,22 @@ pattern >(v:str,b:bat[:str],s:bat[:oid]) :bat[:bit]
 address CMDbatGT
 comment "Return V > B with candidates list";
 
-pattern >(b1:bat[:sqlblob],b2:bat[:sqlblob]) :bat[:bit]
+pattern >(b1:bat[:blob],b2:bat[:blob]) :bat[:bit]
 address CMDbatGT
 comment "Return B1 > B2";
-pattern >(b1:bat[:sqlblob],b2:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern >(b1:bat[:blob],b2:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatGT
 comment "Return B1 > B2 with candidates list";
-pattern >(b:bat[:sqlblob],v:sqlblob) :bat[:bit]
+pattern >(b:bat[:blob],v:blob) :bat[:bit]
 address CMDbatGT
 comment "Return B > V";
-pattern >(b:bat[:sqlblob],v:sqlblob,s:bat[:oid]) :bat[:bit]
+pattern >(b:bat[:blob],v:blob,s:bat[:oid]) :bat[:bit]
 address CMDbatGT
 comment "Return B > V with candidates list";
-pattern >(v:sqlblob,b:bat[:sqlblob]) :bat[:bit]
+pattern >(v:blob,b:bat[:blob]) :bat[:bit]
 address CMDbatGT
 comment "Return V > B";
-pattern >(v:sqlblob,b:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern >(v:blob,b:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatGT
 comment "Return V > B with candidates list";
 
@@ -18593,22 +18593,22 @@ pattern >=(v:str,b:bat[:str],s:bat[:oid]) :bat[:bit]
 address CMDbatGE
 comment "Return V >= B with candidates list";
 
-pattern >=(b1:bat[:sqlblob],b2:bat[:sqlblob]) :bat[:bit]
+pattern >=(b1:bat[:blob],b2:bat[:blob]) :bat[:bit]
 address CMDbatGE
 comment "Return B1 >= B2";
-pattern >=(b1:bat[:sqlblob],b2:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern >=(b1:bat[:blob],b2:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatGE
 comment "Return B1 >= B2 with candidates list";
-pattern >=(b:bat[:sqlblob],v:sqlblob) :bat[:bit]
+pattern >=(b:bat[:blob],v:blob) :bat[:bit]
 address CMDbatGE
 comment "Return B >= V";
-pattern >=(b:bat[:sqlblob],v:sqlblob,s:bat[:oid]) :bat[:bit]
+pattern >=(b:bat[:blob],v:blob,s:bat[:oid]) :bat[:bit]
 address CMDbatGE
 comment "Return B >= V with candidates list";
-pattern >=(v:sqlblob,b:bat[:sqlblob]) :bat[:bit]
+pattern >=(v:blob,b:bat[:blob]) :bat[:bit]
 address CMDbatGE
 comment "Return V >= B";
-pattern >=(v:sqlblob,b:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern >=(v:blob,b:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatGE
 comment "Return V >= B with candidates list";
 
@@ -19392,41 +19392,41 @@ pattern ==(v:str,b:bat[:str],s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbatEQ
 comment "Return V == B with candidates list";
 
-pattern ==(b1:bat[:sqlblob],b2:bat[:sqlblob]) :bat[:bit]
+pattern ==(b1:bat[:blob],b2:bat[:blob]) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2";
-pattern ==(b1:bat[:sqlblob],b2:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern ==(b1:bat[:blob],b2:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2 with candidates list";
-pattern ==(b:bat[:sqlblob],v:sqlblob) :bat[:bit]
+pattern ==(b:bat[:blob],v:blob) :bat[:bit]
 address CMDbatEQ
 comment "Return B == V";
-pattern ==(b:bat[:sqlblob],v:sqlblob,s:bat[:oid]) :bat[:bit]
+pattern ==(b:bat[:blob],v:blob,s:bat[:oid]) :bat[:bit]
 address CMDbatEQ
 comment "Return B == V with candidates list";
-pattern ==(v:sqlblob,b:bat[:sqlblob]) :bat[:bit]
+pattern ==(v:blob,b:bat[:blob]) :bat[:bit]
 address CMDbatEQ
 comment "Return V == B";
-pattern ==(v:sqlblob,b:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern ==(v:blob,b:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatEQ
 comment "Return V == B with candidates list";
 
-pattern ==(b1:bat[:sqlblob],b2:bat[:sqlblob],nil_matches:bit) :bat[:bit]
+pattern ==(b1:bat[:blob],b2:bat[:blob],nil_matches:bit) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2";
-pattern ==(b1:bat[:sqlblob],b2:bat[:sqlblob],s:bat[:oid],nil_matches:bit) :bat[:bit]
+pattern ==(b1:bat[:blob],b2:bat[:blob],s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2 with candidates list";
-pattern ==(b:bat[:sqlblob],v:sqlblob,nil_matches:bit) :bat[:bit]
+pattern ==(b:bat[:blob],v:blob,nil_matches:bit) :bat[:bit]
 address CMDbatEQ
 comment "Return B == V";
-pattern ==(b:bat[:sqlblob],v:sqlblob,s:bat[:oid],nil_matches:bit) :bat[:bit]
+pattern ==(b:bat[:blob],v:blob,s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbatEQ
 comment "Return B == V with candidates list";
-pattern ==(v:sqlblob,b:bat[:sqlblob],nil_matches:bit) :bat[:bit]
+pattern ==(v:blob,b:bat[:blob],nil_matches:bit) :bat[:bit]
 address CMDbatEQ
 comment "Return V == B";
-pattern ==(v:sqlblob,b:bat[:sqlblob],s:bat[:oid],nil_matches:bit) :bat[:bit]
+pattern ==(v:blob,b:bat[:blob],s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbatEQ
 comment "Return V == B with candidates list";
 
@@ -20913,41 +20913,41 @@ pattern !=(v:str,b:bat[:str],s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return V != B with candidates list";
 
-pattern !=(b1:bat[:sqlblob],b2:bat[:sqlblob]) :bat[:bit]
+pattern !=(b1:bat[:blob],b2:bat[:blob]) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2";
-pattern !=(b1:bat[:sqlblob],b2:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern !=(b1:bat[:blob],b2:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2 with candidates list";
-pattern !=(b:bat[:sqlblob],v:sqlblob) :bat[:bit]
+pattern !=(b:bat[:blob],v:blob) :bat[:bit]
 address CMDbatNE
 comment "Return B != V";
-pattern !=(b:bat[:sqlblob],v:sqlblob,s:bat[:oid]) :bat[:bit]
+pattern !=(b:bat[:blob],v:blob,s:bat[:oid]) :bat[:bit]
 address CMDbatNE
 comment "Return B != V with candidates list";
-pattern !=(v:sqlblob,b:bat[:sqlblob]) :bat[:bit]
+pattern !=(v:blob,b:bat[:blob]) :bat[:bit]
 address CMDbatNE
 comment "Return V != B";
-pattern !=(v:sqlblob,b:bat[:sqlblob],s:bat[:oid]) :bat[:bit]
+pattern !=(v:blob,b:bat[:blob],s:bat[:oid]) :bat[:bit]
 address CMDbatNE
 comment "Return V != B with candidates list";
 
-pattern !=(b1:bat[:sqlblob],b2:bat[:sqlblob],nil_matches:bit) :bat[:bit]
+pattern !=(b1:bat[:blob],b2:bat[:blob],nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2";
-pattern !=(b1:bat[:sqlblob],b2:bat[:sqlblob],s:bat[:oid],nil_matches:bit) :bat[:bit]
+pattern !=(b1:bat[:blob],b2:bat[:blob],s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2 with candidates list";
-pattern !=(b:bat[:sqlblob],v:sqlblob,nil_matches:bit) :bat[:bit]
+pattern !=(b:bat[:blob],v:blob,nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return B != V";
-pattern !=(b:bat[:sqlblob],v:sqlblob,s:bat[:oid],nil_matches:bit) :bat[:bit]
+pattern !=(b:bat[:blob],v:blob,s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return B != V with candidates list";
-pattern !=(v:sqlblob,b:bat[:sqlblob],nil_matches:bit) :bat[:bit]
+pattern !=(v:blob,b:bat[:blob],nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return V != B";
-pattern !=(v:sqlblob,b:bat[:sqlblob],s:bat[:oid],nil_matches:bit) :bat[:bit]
+pattern !=(v:blob,b:bat[:blob],s:bat[:oid],nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return V != B with candidates list";
 

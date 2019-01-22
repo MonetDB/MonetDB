@@ -848,7 +848,7 @@ fixfloatbats(void)
 static int
 headheapinit(oid *hseq, const char *buf, bat bid)
 {
-	char type[11];
+	char type[33];
 	uint16_t width;
 	uint16_t var;
 	uint16_t properties;
@@ -864,7 +864,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 	int n;
 
 	if (sscanf(buf,
-		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
+		   " %32s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu16
 		   "%n",
@@ -887,7 +887,7 @@ static int
 heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, const char *filename)
 {
 	int t;
-	char type[11];
+	char type[33];
 	uint16_t width;
 	uint16_t var;
 	uint16_t properties;
@@ -907,7 +907,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	norevsorted = 0; /* default for first case */
 	if (bbpversion <= GDKLIBRARY_TALIGN ?
 	    sscanf(buf,
-		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
+		   " %32s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu16
 		   "%n",
@@ -934,6 +934,9 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	if (strcmp(type, "hge") == 0)
 		havehge = true;
 #endif
+	/* sqlblob was changed to plain blob in the Apr2019 release */
+	if (strcmp(type, "sqlblob") == 0)
+		strcpy(type, "blob");
 	if ((t = ATOMindex(type)) < 0) {
 		if ((t = ATOMunknown_find(type)) == 0)
 			GDKfatal("BBPinit: no space for atom %s", type);
