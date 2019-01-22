@@ -44,6 +44,7 @@ unopM5_export(_EXP)
 unopM5_export(_LOG)
 unopM5_export(_LOG10)
 unopM5_export(_LOG2)
+binopM5_export(_LOG)
 
 binopM5_export(_POW)
 unopM5_export(_SQRT)

@@ -116,6 +116,13 @@ command log(x:dbl)   	  :dbl
 address MATHunary_LOGdbl
 comment "The log(x) function returns the natural logarithm of x.";
 
+command log(x:flt,base:flt)   	  :flt
+address MATHbinary_LOGflt
+comment "The log(x) function returns the logarithm of x in the given base.";
+command log(x:dbl,base:dbl)   	  :dbl
+address MATHbinary_LOGdbl
+comment "The log(x) function returns the logarithm of x in the given base.";
+
 command log10(x:flt)    :flt 
 address MATHunary_LOG10flt;
 command log10(x:dbl)    :dbl 
