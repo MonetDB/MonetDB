@@ -38,26 +38,25 @@ scienceDef(degrees)
 scienceDef(exp)
 scienceDef(log)
 scienceDef(log10)
+scienceDef(log2)
 scienceDef(sqrt)
 scienceDef(cbrt)
 scienceDef(ceil)
 scienceDef(fabs)
 scienceDef(floor)
 
-mal_export str CMDscience_bat_cst_atan2_dbl(bat *ret, const bat *bid, const dbl *d);
-mal_export str CMDscience_bat_cst_atan2_dbl_cand(bat *ret, const bat *bid, const dbl *d, const bat *sid);
-mal_export str CMDscience_bat_cst_atan2_flt(bat *ret, const bat *bid, const flt *d);
-mal_export str CMDscience_bat_cst_atan2_flt_cand(bat *ret, const bat *bid, const flt *d, const bat *sid);
-mal_export str CMDscience_cst_bat_atan2_dbl(bat *ret, const dbl *d, const bat *bid);
-mal_export str CMDscience_cst_bat_atan2_dbl_cand(bat *ret, const dbl *d, const bat *bid, const bat *sid);
-mal_export str CMDscience_cst_bat_atan2_flt(bat *ret, const flt *d, const bat *bid);
-mal_export str CMDscience_cst_bat_atan2_flt_cand(bat *ret, const flt *d, const bat *bid, const bat *sid);
-mal_export str CMDscience_bat_cst_pow_dbl(bat *ret, const bat *bid, const dbl *d);
-mal_export str CMDscience_bat_cst_pow_dbl_cand(bat *ret, const bat *bid, const dbl *d, const bat *sid);
-mal_export str CMDscience_bat_cst_pow_flt(bat *ret, const bat *bid, const flt *d);
-mal_export str CMDscience_bat_cst_pow_flt_cand(bat *ret, const bat *bid, const flt *d, const bat *sid);
-mal_export str CMDscience_cst_bat_pow_dbl(bat *ret, const dbl *d, const bat *bid);
-mal_export str CMDscience_cst_bat_pow_dbl_cand(bat *ret, const dbl *d, const bat *bid, const bat *sid);
-mal_export str CMDscience_cst_bat_pow_flt(bat *ret, const flt *d, const bat *bid);
-mal_export str CMDscience_cst_bat_pow_flt_cand(bat *ret, const flt *d, const bat *bid, const bat *sid);
+#define scienceBinaryDef(F)												\
+mal_export str CMDscience_bat_cst_##F##_dbl(bat *ret, const bat *bid, const dbl *d); \
+mal_export str CMDscience_bat_cst_##F##_dbl_cand(bat *ret, const bat *bid, const dbl *d, const bat *sid); \
+mal_export str CMDscience_bat_cst_##F##_flt(bat *ret, const bat *bid, const flt *d); \
+mal_export str CMDscience_bat_cst_##F##_flt_cand(bat *ret, const bat *bid, const flt *d, const bat *sid); \
+mal_export str CMDscience_cst_bat_##F##_dbl(bat *ret, const dbl *d, const bat *bid); \
+mal_export str CMDscience_cst_bat_##F##_dbl_cand(bat *ret, const dbl *d, const bat *bid, const bat *sid); \
+mal_export str CMDscience_cst_bat_##F##_flt(bat *ret, const flt *d, const bat *bid); \
+mal_export str CMDscience_cst_bat_##F##_flt_cand(bat *ret, const flt *d, const bat *bid, const bat *sid);
+
+scienceBinaryDef(atan2)
+scienceBinaryDef(pow)
+scienceBinaryDef(log)
+
 #endif  /* _BATMATH_H */

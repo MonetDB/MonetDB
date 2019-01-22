@@ -16,7 +16,6 @@
 #include "mal_linker.h"
 #include "gdk_utils.h"
 #include "gdk.h"
-#include "mmath.h"
 #include "sql_catalog.h"
 #include "sql_execute.h"
 #include "rapi.h"

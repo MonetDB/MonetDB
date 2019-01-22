@@ -1,6 +1,13 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Jan 22 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented length(blob) and comparison between blobs.
+- Implemented a two argument function log which calculates the logarithm
+  of the first argument using the second argument as base.
+- Next to the functions log (natural logarithm) and log10 (base 10
+  logarithm), there is now also log2 (base 2 logarithm).
+
 * Fri Jan 18 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Removed unused global SQL variable "history".
 

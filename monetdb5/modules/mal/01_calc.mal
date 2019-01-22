@@ -3283,6 +3283,10 @@ pattern <(v1:str,v2:str) :bit
 address CMDvarLT
 comment "Return V1 < V2";
 
+pattern <(v1:blob,v2:blob) :bit
+address CMDvarLT
+comment "Return V1 < V2";
+
 pattern <(v1:oid,v2:oid) :bit
 address CMDvarLT
 comment "Return V1 < V2";
@@ -3437,6 +3441,10 @@ address CMDvarLE
 comment "Return V1 <= V2";
 
 pattern <=(v1:str,v2:str) :bit
+address CMDvarLE
+comment "Return V1 <= V2";
+
+pattern <=(v1:blob,v2:blob) :bit
 address CMDvarLE
 comment "Return V1 <= V2";
 
@@ -3597,6 +3605,10 @@ pattern >(v1:str,v2:str) :bit
 address CMDvarGT
 comment "Return V1 > V2";
 
+pattern >(v1:blob,v2:blob) :bit
+address CMDvarGT
+comment "Return V1 > V2";
+
 pattern >(v1:oid,v2:oid) :bit
 address CMDvarGT
 comment "Return V1 > V2";
@@ -3751,6 +3763,10 @@ address CMDvarGE
 comment "Return V1 >= V2";
 
 pattern >=(v1:str,v2:str) :bit
+address CMDvarGE
+comment "Return V1 >= V2";
+
+pattern >=(v1:blob,v2:blob) :bit
 address CMDvarGE
 comment "Return V1 >= V2";
 
@@ -3916,6 +3932,14 @@ address CMDvarEQ
 comment "Return V1 == V2";
 
 pattern ==(v1:str,v2:str,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:blob,v2:blob) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:blob,v2:blob,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4229,6 +4253,14 @@ address CMDvarNE
 comment "Return V1 != V2";
 
 pattern !=(v1:str,v2:str,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:blob,v2:blob) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:blob,v2:blob,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 

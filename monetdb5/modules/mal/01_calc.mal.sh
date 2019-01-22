@@ -222,7 +222,7 @@ done
 for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     op=${func%:*}
     func=${func#*:}
-    for tp in bit str oid; do
+    for tp in bit str blob oid; do
 	cat <<EOF
 pattern $op(v1:$tp,v2:$tp) :bit
 address CMDvar${func^^}

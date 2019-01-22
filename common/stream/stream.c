@@ -2524,16 +2524,17 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				s->stream_data.s + 1,
 #endif
 				&fds, NULL, NULL, &tv);
-			if (s->timeout_func && s->timeout_func()) {
-				s->errnr = MNSTR_TIMEOUT;
-				return -1;
-			}
 			if (ret == SOCKET_ERROR) {
 				s->errnr = MNSTR_READ_ERROR;
 				return -1;
 			}
-			if (ret == 0)
+			if (ret == 0) {
+				if (s->timeout_func == NULL || s->timeout_func()) {
+					s->errnr = MNSTR_TIMEOUT;
+					return -1;
+				}
 				continue;
+			}
 			assert(ret == 1);
 			assert(FD_ISSET(s->stream_data.s, &fds));
 		}

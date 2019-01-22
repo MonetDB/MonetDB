@@ -20,6 +20,7 @@
 #include "batmmath.h"
 #include "gdk_cand.h"
 #include <fenv.h>
+#include "mmath_private.h"
 #ifndef FE_INVALID
 #define FE_INVALID			0
 #endif
@@ -376,6 +377,7 @@ scienceImpl(degrees)
 scienceImpl(exp)
 scienceImpl(log)
 scienceImpl(log10)
+scienceImpl(log2)
 scienceImpl(sqrt)
 #ifdef HAVE_CBRT
 scienceImpl(cbrt)
@@ -393,3 +395,5 @@ scienceBinaryImpl(atan2,dbl,)
 scienceBinaryImpl(atan2,flt,f)
 scienceBinaryImpl(pow,dbl,)
 scienceBinaryImpl(pow,flt,f)
+scienceBinaryImpl(log,dbl,bs)
+scienceBinaryImpl(log,flt,bsf)
