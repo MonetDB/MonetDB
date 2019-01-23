@@ -81,8 +81,8 @@ rel_create_seq(
 	lng min,
 	lng max,
 	lng cache,
-	int cycle,
-	int bedropped)
+	bit cycle,
+	bit bedropped)
 {
 	sql_rel *res = NULL;
 	sql_sequence *seq = NULL;
@@ -110,8 +110,8 @@ rel_create_seq(
 	if (is_lng_nil(max)) max = 0;
 	if (is_lng_nil(cache)) cache = 1;
 
-	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, (bit) cycle);
-	seq->bedropped = (bit) bedropped;
+	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle);
+	seq->bedropped = bedropped;
 	res = rel_seq(sql->sa, DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
 	/* for multi statements we keep the sequence around */
 	if (res && stack_has_frame(sql, "MUL") != 0) {
@@ -136,12 +136,13 @@ list_create_seq(
 	sql_schema *ss,
 	dlist *qname,
 	dlist *options,
-	int bedropped)
+	bit bedropped)
 {
 	dnode *n;
 	sql_subtype* t = NULL;
 	lng start = lng_nil, inc = lng_nil, min = lng_nil, max = lng_nil, cache = lng_nil;
-	int used = 0, cycle = 0;
+	unsigned int used = 0;
+	bit cycle = 0;
 
 	/* check if no option is given twice */
 	for (n = options->h; n; n = n->next) {
@@ -190,9 +191,7 @@ list_create_seq(
 			if ((used&(1<<SEQ_CYCLE)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CYCLE or NO CYCLE should be passed as most once");
 			used |= (1<<SEQ_CYCLE);
-			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: CYCLE must be non-NULL");
-			cycle = s->data.i_val;
+			cycle = s->data.i_val != 0;
 			break;
 		case SQL_CACHE:
 			if ((used&(1<<SEQ_CACHE)))
@@ -220,7 +219,7 @@ rel_alter_seq(
 		lng min,
 		lng max,
 		lng cache,
-		int cycle)
+		bit cycle)
 {
 	char* name = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -283,7 +282,8 @@ list_alter_seq(
 	sql_subtype* t = NULL;
 	lng inc = lng_nil, min = lng_nil, max = lng_nil, cache = lng_nil;
 	dlist *start = NULL;
-	int used = 0, cycle = 0;
+	unsigned int used = 0;
+	bit cycle = 0;
 
 	/* check if no option is given twice */
 	for (n = options->h; n; n = n->next) {
@@ -332,7 +332,7 @@ list_alter_seq(
 			if ((used&(1<<SEQ_CYCLE)))
 				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CYCLE or NO CYCLE should be passed as most once");
 			used |= (1<<SEQ_CYCLE);
-			cycle = s->data.i_val;
+			cycle = s->data.i_val != 0;
 			break;
 		case SQL_CACHE:
 			if ((used&(1<<SEQ_CACHE)))
@@ -364,7 +364,7 @@ rel_sequences(mvc *sql, symbol *s)
 /* sql_schema* s */	cur_schema(sql),
 /* dlist* qname */	l->h->data.lval,
 /* dlist* options */	l->h->next->data.lval,
-/* int bedropped */	l->h->next->next->data.i_val);
+/* bit bedropped */	(bit) (l->h->next->next->data.i_val != 0));
 		}
 		break;
 		case SQL_ALTER_SEQ:
