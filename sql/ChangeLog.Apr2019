@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Jan 23 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Function octet_length now also accepts a BLOB argument and returns
+  the length of the BLOB (i.e. the same as length when called with a
+  BLOB argument).
+
 * Tue Jan 22 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Implemented length(blob) and comparison between blobs.
 - Implemented a two argument function log which calculates the logarithm
