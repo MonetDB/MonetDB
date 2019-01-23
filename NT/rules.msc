@@ -185,8 +185,13 @@ R.lib: "$(libr_DLL)"
 !ENDIF
 
 !IFDEF HAVE_LIBPY
-libpy_LIBS = $(PYTHON2DIR)\libs\python27.lib
-libpy_CFLAGS = -DHAVE_LIBPY -I$(PYTHON2DIR)\include -I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include
+libpy_LIBS = "$(PYTHON2DIR)\libs\python27.lib"
+libpy_CFLAGS = -DHAVE_LIBPY "-I$(PYTHON2DIR)\include" "-I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include"
+!ENDIF
+
+!IFDEF HAVE_LIBPY3
+libpy3_LIBS = "$(PYTHON3DIR)\libs\python37.lib"
+libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\site-packages\numpy\core\include"
 !ENDIF
 
 # some programs we use, probably no need to edit
