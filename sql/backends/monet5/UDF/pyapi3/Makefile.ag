@@ -46,4 +46,11 @@ headers_autoload = {
 	SOURCES = 50_pyapi3.mal
 }
 
+scripts_bat = {
+	COND = NATIVE_WIN32
+	EXT = bat
+	DIR = prefix
+	SOURCES = pyapi_locatepython3.bat
+}
+
 EXTRA_DIST_DIR = Tests

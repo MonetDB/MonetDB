@@ -57,7 +57,7 @@
 
 // DLL Export Flags
 #ifdef WIN32
-#ifndef LIBPYAPI
+#if !defined(LIBPYAPI) && !defined(LIBPYAPI3)
 #define pyapi_export extern __declspec(dllimport)
 #else
 #define pyapi_export extern __declspec(dllexport)

@@ -105,14 +105,11 @@ GDKgetenv(const char *name)
 }
 
 bool
-GDKgetenv_istext(const char *name, const char* text)
+GDKgetenv_istext(const char *name, const char *text)
 {
-	char *val = GDKgetenv(name);
+	const char *val = GDKgetenv(name);
 
-	if (val && strcasecmp(val, text) == 0) {
-		return 1;
-	}
-	return 0;
+	return val && strcasecmp(val, text) == 0;
 }
 
 bool

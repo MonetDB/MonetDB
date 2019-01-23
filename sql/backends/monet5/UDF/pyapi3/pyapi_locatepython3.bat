@@ -7,7 +7,7 @@
 @echo off
  
 setlocal ENABLEEXTENSIONS
-set KEY_NAME="HKEY_LOCAL_MACHINE\SOFTWARE\Python\PythonCore\2.7\InstallPath"
+set KEY_NAME="HKEY_LOCAL_MACHINE\SOFTWARE\Python\PythonCore\3.7\InstallPath"
 set VALUE_NAME=""
  
 FOR /F "usebackq skip=2 tokens=1-3" %%A IN (`REG QUERY %KEY_NAME% /v %VALUE_NAME% 2^>nul`) DO (
@@ -24,10 +24,10 @@ IF defined LOCALPYTHONHOME (
     endlocal & (
         set PYTHONHOME=%LOCALPYTHONHOME%
         set PYTHONPATH=%LOCALPYTHONPATH%
-        set MONETDBPYTHONUDF=embedded_py=true
+        set MONETDBPYTHONUDF=embedded_py=3
         set "PATH=%LOCALPYTHONHOME%;%PATH%"
     )
 ) ELSE (
-    @echo MonetDB/Python Disabled: Python 2.7 installation not found.
+    @echo MonetDB/Python Disabled: Python 3.7 installation not found.
     endlocal
 )
