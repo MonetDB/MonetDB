@@ -851,8 +851,6 @@ str BLOBblob_blob(blob **d, blob **s);
 str BLOBblob_fromstr(blob **b, const char **d);
 int BLOBcmp(const blob *l, const blob *r);
 void BLOBdel(Heap *h, var_t *index);
-str BLOBfromblob(str *retval, blob **b);
-str BLOBfromidx(str *retval, blob **binp, int *index);
 ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val, bool external);
 int BLOBget(Heap *h, int *bun, int *l, blob **val);
 BUN BLOBhash(const blob *b);

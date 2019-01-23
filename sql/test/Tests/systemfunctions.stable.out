@@ -1344,6 +1344,8 @@ Ready.
 [ "sys",	"ntile",	2,	"bigint",	""	]
 [ "sys",	"ntile",	3,	"boolean",	""	]
 [ "sys",	"ntile",	4,	"boolean",	""	]
+[ "sys",	"octet_length",	0,	"int",	"nitems"	]
+[ "sys",	"octet_length",	1,	"blob",	""	]
 [ "sys",	"octet_length",	0,	"int",	"nbytes"	]
 [ "sys",	"octet_length",	1,	"char",	""	]
 [ "sys",	"octet_length",	0,	"int",	"nbytes"	]

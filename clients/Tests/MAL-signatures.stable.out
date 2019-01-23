@@ -9128,8 +9128,6 @@ Ready.
 [ "blob",	"nitems",	"command blob.nitems(b:blob):int ",	"BLOBnitems;",	"get the number of bytes in this blob."	]
 [ "blob",	"prelude",	"command blob.prelude():void ",	"BLOBprelude;",	""	]
 [ "blob",	"toblob",	"command blob.toblob(v:str):blob ",	"BLOBtoblob;",	"store a string as a blob."	]
-[ "blob",	"tostring",	"command blob.tostring(v:blob):str ",	"BLOBfromblob;",	"get the bytes from blob as a string, till\n\tthe first 0 byte or the end of the blob"	]
-[ "blob",	"tostring",	"command blob.tostring(v:blob, index:int):str ",	"BLOBfromidx;",	"get the bytes from blob as a string,\n\t starting at byte 'index' till the first\n\t0 byte or the end of the blob."	]
 [ "bstream",	"create",	"unsafe command bstream.create(s:streams, bufsize:int):bstream ",	"bstream_create_wrapwrap;",	"create a buffered stream"	]
 [ "bstream",	"destroy",	"unsafe command bstream.destroy(s:bstream):void ",	"bstream_destroy_wrapwrap;",	"destroy bstream"	]
 [ "bstream",	"read",	"unsafe command bstream.read(s:bstream, size:int):int ",	"bstream_read_wrapwrap;",	"read at least size bytes into the buffer of s"	]
