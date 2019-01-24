@@ -34,7 +34,7 @@ int GetSQLType(sql_subtype *sql_subtype);
 
 static bool IsBlobType(int type)
 {
-	return type == TYPE_blob || type == TYPE_sqlblob;
+	return type == TYPE_blob;
 }
 
 PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
@@ -854,7 +854,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		}
 		data = (char *)ret->array_data;
 		data += (index_offset * ret->count) * ret->memory_size;
-		b = COLnew(seqbase, TYPE_sqlblob, (BUN)ret->count, TRANSIENT);
+		b = COLnew(seqbase, TYPE_blob, (BUN)ret->count, TRANSIENT);
 		b->tnil = false;
 		b->tnonil = true;
 		b->tkey = false;

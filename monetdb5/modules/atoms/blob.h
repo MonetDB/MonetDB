@@ -19,13 +19,10 @@ typedef struct blob {
 	/*unsigned */ char data[FLEXIBLE_ARRAY_MEMBER];
 } blob;
 
-#define sqlblob blob
-
 mal_export int TYPE_blob;
-mal_export int TYPE_sqlblob;
 
 mal_export var_t blobsize(size_t nitems);
-mal_export ssize_t SQLBLOBfromstr(const char *instr, size_t *l, blob **val, bool external);
-mal_export ssize_t SQLBLOBtostr(str *tostr, size_t *l, const blob *pin, bool external);
+mal_export ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val, bool external);
+mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const blob *pin, bool external);
 
 #endif /* __BLOB_H__ */

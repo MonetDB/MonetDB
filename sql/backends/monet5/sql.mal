@@ -937,15 +937,15 @@ command calc.str( v:date ) :str
 address SQLdate_2_str
 comment "cast date to str";
 
-command calc.sqlblob( v:str ) :sqlblob 
-address str_2_sqlblob
-comment "cast to sqlblob";
-command batcalc.sqlblob( v:bat[:str] ) :bat[:sqlblob] 
-address batstr_2_sqlblob
-comment "cast to sqlblob";
-command calc.str( v:sqlblob ) :str 
-address SQLsqlblob_2_str
-comment "cast sqlblob to str";
+command calc.blob( v:str ) :blob 
+address str_2_blob
+comment "cast to blob";
+command batcalc.blob( v:bat[:str] ) :bat[:blob] 
+address batstr_2_blob
+comment "cast to blob";
+command calc.str( v:blob ) :str 
+address SQLblob_2_str
+comment "cast blob to str";
 
 pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast

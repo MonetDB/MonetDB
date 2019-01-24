@@ -199,6 +199,11 @@ Ready.
 % duplicates,	table_id,	partition_id,	maximum # name
 % bigint,	int,	int,	varchar # type
 % 1,	1,	1,	0 # length
+#SELECT COUNT(*) AS duplicates, table_id, partition_id, "minimum" FROM sys.range_partitions GROUP BY table_id, partition_id, "minimum"  HAVING COUNT(*) >1;
+% sys.L3,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% duplicates,	table_id,	partition_id,	minimum # name
+% bigint,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
 
 # 16:31:36 >  
 # 16:31:36 >  "Done."

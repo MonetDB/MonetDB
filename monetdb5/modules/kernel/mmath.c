@@ -20,6 +20,7 @@
 #include "monetdb_config.h"
 #include "mmath.h"
 #include <fenv.h>
+#include "mmath_private.h"
 #ifndef FE_INVALID
 #define FE_INVALID			0
 #endif
@@ -33,6 +34,18 @@
 #define cot(x)				(1 / tan(x))
 #define radians(x)			((x) * 3.14159265358979323846 / 180.0)
 #define degrees(x)			((x) * 180.0 / 3.14159265358979323846)
+
+double
+logbs(double x, double base)
+{
+	return log(x) / log(base);
+}
+
+float
+logbsf(float x, float base)
+{
+	return logf(x) / logf(base);
+}
 
 #define unopbaseM5(NAME, FUNC, TYPE)								\
 str																	\
@@ -160,6 +173,9 @@ unopM5(_TANH,tanh)
 unopM5(_EXP,exp)
 unopM5(_LOG,log)
 unopM5(_LOG10,log10)
+unopM5(_LOG2,log2)
+
+binopM5(_LOG,logbs)
 
 binopM5(_POW,pow)
 unopM5(_SQRT,sqrt)

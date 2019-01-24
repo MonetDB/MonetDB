@@ -184,9 +184,10 @@ SELECT "unique", * FROM "sys"."storagemodelinput" WHERE "unique" IS NULL;
 
 SELECT "id", * FROM "sys"."table_partitions" WHERE "id" IS NULL;
 SELECT "table_id", * FROM "sys"."table_partitions" WHERE "table_id" IS NULL;
-SELECT "type", * FROM "sys"."table_partitions" WHERE "type" IS NULL;
+SELECT "type", * FROM "sys"."table_partitions" WHERE "type" IS NULL OR "type" NOT IN (5,6,9,10);
 -- either column_id or expression must be populated
-SELECT "column_id", "expression", * FROM "sys"."table_partitions" WHERE "column_id" IS NULL AND "expression" IS NULL;
+SELECT "column_id", "expression", * FROM "sys"."table_partitions"
+WHERE ("column_id" IS NULL AND "expression" IS NULL) OR ("column_id" IS NOT NULL AND "expression" IS NOT NULL);
 
 SELECT "id", * FROM "sys"."triggers" WHERE "id" IS NULL;
 SELECT "name", * FROM "sys"."triggers" WHERE "name" IS NULL;
@@ -210,5 +211,3 @@ SELECT "role_id", * FROM "sys"."user_role" WHERE "role_id" IS NULL;
 
 SELECT "partition_id", * FROM "sys"."value_partitions" WHERE "partition_id" IS NULL;
 SELECT "table_id", * FROM "sys"."value_partitions" WHERE "table_id" IS NULL;
-SELECT "value", * FROM "sys"."value_partitions" WHERE "value" IS NULL;
-

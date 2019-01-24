@@ -1,6 +1,15 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Jan 23 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function blob.tostring() since it cannot guarantee that the
+  resulting string is properly encoded in UTF-8.
+
+* Tue Jan 22 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the type "sqlblob", changed the external format of the type
+  "blob" to be like what "sqlblob" used to be.  In other words, the
+  "blob" type is now SQL-compatible.
+
 * Thu Nov  8 2018 Sjoerd Mullender <sjoerd@acm.org>
 - The MAL functions algebra.sort and algebra.firstn now have a new,
   extra second-to-last argument, nilslast:bit, which indicates where

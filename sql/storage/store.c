@@ -6304,7 +6304,7 @@ sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int dro
 }
 
 sql_sequence *
-sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle)
+sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys"); 
 	sql_table *seqs = find_sql_table(syss, "sequences");

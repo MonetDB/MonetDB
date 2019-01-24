@@ -259,9 +259,9 @@ sql5_export str str_2_date(date *res, const str *val);
 sql5_export str batstr_2_date(bat *res, const bat *val);
 sql5_export str SQLdate_2_str(str *res, const date *val);
 
-sql5_export str str_2_sqlblob(sqlblob * *res, const str *val);
-sql5_export str batstr_2_sqlblob(bat *res, const bat *val);
-sql5_export str SQLsqlblob_2_str(str *res, const sqlblob * val);
+sql5_export str str_2_blob(blob * *res, const str *val);
+sql5_export str batstr_2_blob(bat *res, const bat *val);
+sql5_export str SQLblob_2_str(str *res, const blob * val);
 
 
 sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

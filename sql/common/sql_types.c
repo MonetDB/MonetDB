@@ -1412,8 +1412,9 @@ sqltypeinit( sql_allocator *sa)
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
 #endif
-	sql_type *SECINT, *MONINT, *DTE; 
+	sql_type *SECINT, *MONINT, *DTE;
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
+	sql_type *BLOB;
 	sql_type *ANY, *TABLE;
 	sql_type *GEOM, *MBR;
 	sql_func *f;
@@ -1489,7 +1490,10 @@ sqltypeinit( sql_allocator *sa)
 	TMESTAMP = *t++ = sql_create_type(sa, "TIMESTAMP", 7, 0, 0, EC_TIMESTAMP, "timestamp");
 	TMESTAMPTZ = *t++ = sql_create_type(sa, "TIMESTAMPTZ", 7, SCALE_FIX, 0, EC_TIMESTAMP, "timestamp");
 
-	*t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
+	BLOB = *t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "blob");
+
+	sql_create_func(sa, "length", "blob", "nitems", BLOB, NULL, INT, SCALE_NONE);
+	sql_create_func(sa, "octet_length", "blob", "nitems", BLOB, NULL, INT, SCALE_NONE);
 
 	if (geomcatalogfix_get() != NULL) {
 		// the geom module is loaded 
@@ -1955,7 +1959,9 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sqrt", "mmath", "sqrt", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "exp", "mmath", "exp", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log", "mmath", "log", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "log", "mmath", "log", *t, *t, *t, SCALE_FIX);
 		sql_create_func(sa, "log10", "mmath", "log10", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "log2", "mmath", "log2", *t, NULL, *t, SCALE_FIX);
 	}
 	sql_create_func(sa, "pi", "mmath", "pi", NULL, NULL, DBL, SCALE_NONE);
 

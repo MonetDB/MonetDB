@@ -1754,6 +1754,24 @@ sql_update_apr2019(Client c, mvc *sql)
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
 			"INSERT INTO sys.keywords VALUES ('WINDOW');\n"
 		);
+	t = mvc_bind_table(sql, s, "var_values");
+	t->system = 0;	/* make it non-system else the drop view will fail */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"DROP VIEW sys.var_values;\n"
+			"CREATE VIEW sys.var_values (var_name, value) AS\n"
+			"SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL\n"
+			"SELECT 'current_role', current_role UNION ALL\n"
+			"SELECT 'current_schema', current_schema UNION ALL\n"
+			"SELECT 'current_timezone', current_timezone UNION ALL\n"
+			"SELECT 'current_user', current_user UNION ALL\n"
+			"SELECT 'debug', debug UNION ALL\n"
+			"SELECT 'last_id', last_id UNION ALL\n"
+			"SELECT 'optimizer', optimizer UNION ALL\n"
+			"SELECT 'pi', pi() UNION ALL\n"
+			"SELECT 'rowcnt', rowcnt;\n"
+			"UPDATE sys._tables SET system = true WHERE name = 'var_values' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+			"GRANT SELECT ON sys.var_values TO PUBLIC;\n");
+
 	/* 99_system.sql */
 	t = mvc_bind_table(sql, s, "systemfunctions");
 	t->system = 0;
