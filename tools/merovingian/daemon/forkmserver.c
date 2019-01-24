@@ -199,6 +199,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char dbpath[1024];
 	char dbextra_path[1024];
 	char port[24];
+	char listenaddr[512];
 	char muri[512]; /* possibly undersized */
 	char usock[512];
 	char mydoproxy;
@@ -499,7 +500,20 @@ forkMserver(char *database, sabdb** stats, int force)
 		dbextra = kv->val;
 	}
 
-
+	kv = findConfKey(ckv, "listenaddr");
+	if (kv->val != NULL) {
+		if (mydoproxy == 1) {
+			// listenaddr is only available on forwarding method
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			free(sabdbfarm);
+			return newErr("attempting to start mserver with listening address while being proxied by monetdbd; this option is only possible on forward method\n");
+		}
+		snprintf(listenaddr, sizeof(listenaddr), "mapi_listenaddr=%s", kv->val);
+	} else {
+		listenaddr[0] = '\0';
+	}
 	mport = (unsigned int)getConfNum(_mero_props, "port");
 	ipv6 = getConfNum(_mero_props, "ipv6") == 1 ? "mapi_ipv6=true" : "mapi_ipv6=false";
 
@@ -537,7 +551,11 @@ forkMserver(char *database, sabdb** stats, int force)
 			snprintf(usock, sizeof(usock), "mapi_usock=");
 		}
 	} else {
-		argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		if (listenaddr[0] != '\0') {
+			argv[c++] = "--set"; argv[c++] = listenaddr;
+		} else {
+			argv[c++] = "--set"; argv[c++] = "mapi_open=true";
+		}
 		argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 		/* avoid this mserver binding to the same port as merovingian
 		 * but on another interface, (INADDR_ANY ... sigh) causing
