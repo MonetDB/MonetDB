@@ -574,7 +574,7 @@ int64_t mapi_rows_affected(MapiHdl hdl);
 MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence);
 MapiHdl mapi_send(Mapi mid, const char *cmd);
 MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit);
-MapiMsg mapi_set_size_header(Mapi mid, int value);
+MapiMsg mapi_set_size_header(Mapi mid, bool value);
 void mapi_setfilecallback(Mapi mid, char *(*getfunc)(void *priv, const char *filename, bool binary, uint64_t offset, size_t *size), char *(*putfunc)(void *priv, const char *filename, const void *data, size_t size), void *priv);
 int mapi_split_line(MapiHdl hdl);
 MapiMsg mapi_start_talking(Mapi mid);
