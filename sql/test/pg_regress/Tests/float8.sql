@@ -110,8 +110,8 @@ SELECT '' AS three, f.f1, sqrt(f.f1) AS sqrt_f1
 -- power
 SELECT power(cast('144' as double), cast('0.5' as double));
 
--- take exp of ln(f.f1)   (in MonetDB ln() is implemented as log())
-SELECT '' AS three, f.f1, exp(log(f.f1)) AS exp_ln_f1
+-- take exp of ln(f.f1)
+SELECT '' AS three, f.f1, exp(ln(f.f1)) AS exp_ln_f1
    FROM FLOAT8_TBL f
    WHERE f.f1 > '0.0';
 
