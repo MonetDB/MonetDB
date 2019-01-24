@@ -3438,7 +3438,7 @@ TSTTHREADS = "0"
 dftTSTPREF = "mTests"
 TSTSUFF = "Tests"
 
-if hasattr(os,"symlink"):
+if os.name != 'nt' and hasattr(os, "symlink"):
     SymlinkOrCopy = os.symlink
     listdir = os.listdir
 else:
