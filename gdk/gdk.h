@@ -767,9 +767,6 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_HEADED	061033U	/* head properties are stored */
-#define GDKLIBRARY_NOKEY	061034U	/* nokey values can't be trusted */
-#define GDKLIBRARY_BADEMPTY	061035U	/* possibility of duplicate empty str */
 #define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
 #define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
 #define GDKLIBRARY		061040U
