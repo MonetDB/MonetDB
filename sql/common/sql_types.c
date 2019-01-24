@@ -1466,7 +1466,7 @@ sqltypeinit( sql_allocator *sa)
 	}
 #endif
 
-	/* float(n) (n indicates precision of atleast n digits) */
+	/* float(n) (n indicates precision of at least n digits) */
 	/* ie n <= 23 -> flt */
 	/*    n <= 51 -> dbl */
 	/*    n <= 62 -> long long dbl (with -ieee) (not supported) */
@@ -1954,6 +1954,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sqrt", "mmath", "sqrt", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "exp", "mmath", "exp", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log", "mmath", "log", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "ln", "mmath", "log", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log", "mmath", "log", *t, *t, *t, SCALE_FIX);
 		sql_create_func(sa, "log10", "mmath", "log10", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log2", "mmath", "log2", *t, NULL, *t, SCALE_FIX);
