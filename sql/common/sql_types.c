@@ -121,18 +121,15 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
-int sql_type_convert (int from, int to) 
+int sql_type_convert (int from, int to)
 {
-	int c = convert_matrix[from][to];
-	return c;
+	return convert_matrix[from][to];
 }
 
-int is_commutative(const char *fnm)
+bool is_commutative(const char *fnm)
 {
-	if (strcmp("sql_add", fnm) == 0 ||
-	    strcmp("sql_mul", fnm) == 0)
-	    	return 1;
-	return 0;
+	return strcmp("sql_add", fnm) == 0 ||
+		strcmp("sql_mul", fnm) == 0;
 }
 
 void
@@ -169,7 +166,7 @@ sql_create_subtype(sql_allocator *sa, sql_type *t, unsigned int digits, unsigned
 	return res;
 }
 
-static int
+static bool
 localtypes_cmp(int nlt, int olt)
 {
 	if (nlt == TYPE_flt || nlt == TYPE_dbl) {
@@ -183,9 +180,7 @@ localtypes_cmp(int nlt, int olt)
 		nlt = TYPE_lng;
 #endif
 	}
-	if (nlt == olt)
-		return 1;
-	return 0;
+	return nlt == olt;
 }
 
 sql_subtype *
@@ -214,7 +209,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		sql_type *t = n->data;
 
 		if (localtypes_cmp(t->localtype, localtype)) {
-			if ((digits && t->digits > digits) || (!digits && digits == t->digits)) {
+			if (digits == 0 ? t->digits == 0 : t->digits > digits) {
 				sql_init_subtype(r, t, digits, 0);
 				return r;
 			}
@@ -224,7 +219,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 					break;
 				}
 				n = m;
-				if ((digits && t->digits > digits) || (!digits && digits == t->digits)) {
+				if (digits == 0 ? t->digits == 0 : t->digits > digits) {
 					sql_init_subtype(r, t, digits, 0);
 					return r;
 				}
@@ -1471,7 +1466,7 @@ sqltypeinit( sql_allocator *sa)
 	}
 #endif
 
-	/* float(n) (n indicates precision of atleast n digits) */
+	/* float(n) (n indicates precision of at least n digits) */
 	/* ie n <= 23 -> flt */
 	/*    n <= 51 -> dbl */
 	/*    n <= 62 -> long long dbl (with -ieee) (not supported) */
@@ -1959,6 +1954,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sqrt", "mmath", "sqrt", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "exp", "mmath", "exp", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log", "mmath", "log", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "ln", "mmath", "log", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log", "mmath", "log", *t, *t, *t, SCALE_FIX);
 		sql_create_func(sa, "log10", "mmath", "log10", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log2", "mmath", "log2", *t, NULL, *t, SCALE_FIX);

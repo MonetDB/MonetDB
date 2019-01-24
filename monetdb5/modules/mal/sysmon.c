@@ -68,7 +68,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		now = QRYqueue[i].tag;	/* temporarily use so that we have correct type */
 		if (BUNappend(tag, &now, false) != GDK_SUCCEED)
 			goto bailout;
-		msg = AUTHgetUsername(&usr, cntxt);
+		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
 

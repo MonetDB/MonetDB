@@ -3568,7 +3568,7 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 }
 
 MapiMsg
-mapi_set_size_header(Mapi mid, int value)
+mapi_set_size_header(Mapi mid, bool value)
 {
 	if (mid->languageId != LANG_SQL) {
 		mapi_setError(mid, "size header only supported in SQL", "mapi_set_size_header", MERROR);

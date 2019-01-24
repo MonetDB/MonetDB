@@ -261,7 +261,7 @@ MNDBConnect(ODBCDbc *dbc,
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		set_timezone(mid);
 		get_serverinfo(dbc);
-		mapi_set_size_header(mid, 1);
+		mapi_set_size_header(mid, true);
 		/* set timeout after we're connected */
 		mapi_timeout(mid, dbc->sql_attr_connection_timeout * 1000);
 	}
