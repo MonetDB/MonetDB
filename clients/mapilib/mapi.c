@@ -4171,13 +4171,20 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					} else {
 						off = strtoul(line, &line, 10);
 					}
-					assert(*line == ' ');
-					line++; /* skip one space */
+					if (*line++ != ' ') {
+						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
+						mnstr_flush(mid->to);
+						break;
+					}
 					read_file(hdl, off, strdup(line), binary);
 					break;
 				}
 				case 'w':
-					line++; /* skip one space */
+					if (*line++ != ' ') {
+						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
+						mnstr_flush(mid->to);
+						break;
+					}
 					write_file(hdl, strdup(line));
 					break;
 				}
