@@ -90,7 +90,7 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 	MT_lock_init( &mal_beatLock, "mal_beatLock");
-	MT_lock_init( &mal_oltpLock, "mal_beatLock");
+	MT_lock_init( &mal_oltpLock, "mal_oltpLock");
 #endif
 
 /* Any error encountered here terminates the process
