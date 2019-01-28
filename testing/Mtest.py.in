@@ -3010,12 +3010,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
             savepath = None
             savepypath = None
+            savepyhome = None
             if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
                 # enable Python 3 integration in server
                 if winreg is not None:
                     try:
                         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Python\PythonCore\3.7\InstallPath') as key:
                             instpath = winreg.QueryValue(key, None)
+                            savepyhome = os.environ.get('PYTHONHOME')
                             os.environ['PYTHONHOME'] = instpath
                             savepypath = os.environ.get('PYTHONPATH')
                             os.environ['PYTHONPATH'] = instpath + 'Lib'
@@ -3030,6 +3032,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     try:
                         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Python\PythonCore\2.7\InstallPath') as key:
                             instpath = winreg.QueryValue(key, None)
+                            savepyhome = os.environ.get('PYTHONHOME')
                             os.environ['PYTHONHOME'] = instpath
                             savepypath = os.environ.get('PYTHONPATH')
                             os.environ['PYTHONPATH'] = instpath + 'Lib'
@@ -3050,6 +3053,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     os.environ['PYTHONPATH'] = savepypath
                 else:
                     del os.environ['PYTHONPATH']
+                if savepyhome:
+                    os.environ['PYTHONHOME'] = savepyhome
+                else:
+                    del os.environ['PYTHONHOME']
             ln="dummy"
             while 0 < len(ln) and not ln.startswith('Ready.'):
                 ln=pSrvr.stdout.readline()
