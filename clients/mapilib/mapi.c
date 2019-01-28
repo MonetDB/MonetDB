@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -3568,7 +3568,7 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 }
 
 MapiMsg
-mapi_set_size_header(Mapi mid, int value)
+mapi_set_size_header(Mapi mid, bool value)
 {
 	if (mid->languageId != LANG_SQL) {
 		mapi_setError(mid, "size header only supported in SQL", "mapi_set_size_header", MERROR);
@@ -4171,13 +4171,20 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					} else {
 						off = strtoul(line, &line, 10);
 					}
-					assert(*line == ' ');
-					line++; /* skip one space */
+					if (*line++ != ' ') {
+						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
+						mnstr_flush(mid->to);
+						break;
+					}
 					read_file(hdl, off, strdup(line), binary);
 					break;
 				}
 				case 'w':
-					line++; /* skip one space */
+					if (*line++ != ' ') {
+						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
+						mnstr_flush(mid->to);
+						break;
+					}
 					write_file(hdl, strdup(line));
 					break;
 				}

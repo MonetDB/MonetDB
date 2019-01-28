@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -438,17 +438,13 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 int
 malLibraryEnabled(str name) {
 	if (strcmp(name, "pyapi") == 0) {
-		char *val = GDKgetenv("embedded_py");
-		if (val && (strcasecmp(val, "2") == 0 || GDKgetenv_istrue("embedded_py") || GDKgetenv_istrue("embedded_py"))) {
-			return true;
-		}
-		return false;
+		const char *val = GDKgetenv("embedded_py");
+		return val && (strcmp(val, "2") == 0 ||
+					   strcasecmp(val, "true") == 0 ||
+					   strcasecmp(val, "yes") == 0);
 	} else if (strcmp(name, "pyapi3") == 0) {
-		char *val = GDKgetenv("embedded_py");
-		if (val && strcasecmp(val, "3") == 0) {
-			return true;
-		}
-		return false;
+		const char *val = GDKgetenv("embedded_py");
+		return val && strcasecmp(val, "3") == 0;
 	}
 	return true;
 }

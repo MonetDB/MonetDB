@@ -1,0 +1,51 @@
+stdout of test '85` in directory 'sql/benchmarks/tpcds` itself:
+
+
+# 18:29:58 >  
+# 18:29:58 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30709" "--set" "mapi_usock=/var/tmp/mtest-16393/.s.monetdb.30709" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-devel/var/MonetDB/mTests_sql_benchmarks_tpcds" "--set" "embedded_c=true"
+# 18:29:58 >  
+
+# MonetDB 5 server v11.32.0 (hg id: edafb9f9a3c6+79d16e518d38+)
+# This is an unreleased version
+# Serving database 'mTests_sql_benchmarks_tpcds', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.694 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30709/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16393/.s.monetdb.30709
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:29:58 >  
+# 18:29:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16393" "--port=30709"
+# 18:29:58 >  
+
+#SELECT SUBSTRING(r_reason_desc,1,20) ,
+#       avg(ws_quantity) ,
+#       avg(wr_refunded_cash) ,
+#       avg(wr_fee)
+#FROM web_sales,
+#     web_returns,
+#     web_page,
+#     customer_demographics cd1,
+#     customer_demographics cd2,
+#     customer_address,
+#     date_dim,
+% sys.L50,	sys.L52,	sys.L54,	sys.L56 # table_name
+% L50,	L52,	L54,	L56 # name
+% clob,	double,	double,	double # type
+% 20,	24,	24,	24 # length
+[ "Gift exchange",	76,	464.36,	8.62	]
+[ "Not the product that",	70,	876.67,	46.67	]
+[ "Parts missing",	7,	129.42,	38.65	]
+[ "reason 23",	47,	734.61,	6.17	]
+[ "reason 25",	5,	48.94,	53.145	]
+[ "reason 28",	8,	306.2,	37.06	]
+
+# 18:29:58 >  
+# 18:29:58 >  "Done."
+# 18:29:58 >  

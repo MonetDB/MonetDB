@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -980,6 +980,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	}
 	if (t->type == F_FUNC && !t->res)
 		t->type = F_PROC;
+	t->side_effect = (t->type==F_FILT || (t->res && (t->lang==FUNC_LANG_SQL || !list_empty(t->ops))))?FALSE:TRUE;
 	return t;
 }
 
@@ -1674,7 +1675,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 
 
 static sql_schema *
-bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
+bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 {
 	sql_schema *s = SA_ZNEW(tr->sa, sql_schema);
 
@@ -1850,7 +1851,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "schema_id", "int", 32);
-		bootstrap_create_column(tr, t, "query", "varchar", 2048);
+		bootstrap_create_column(tr, t, "query", "varchar", 1 << 20);
 		bootstrap_create_column(tr, t, "type", "smallint", 16);
 		bootstrap_create_column(tr, t, "system", "boolean", 1);
 		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);
@@ -2215,9 +2216,9 @@ store_unlock(void)
 }
 
 static sql_kc *
-kc_dup_(sql_trans *tr, int flag, sql_kc *kc, sql_table *t, int copy)
+kc_dup_(sql_trans *tr, int flags, sql_kc *kc, sql_table *t, int copy)
 {
-	sql_allocator *sa = (newFlagSet(flag) && !copy)?tr->parent->sa:tr->sa;
+	sql_allocator *sa = (newFlagSet(flags) && !copy)?tr->parent->sa:tr->sa;
 	sql_kc *nkc = SA_ZNEW(sa, sql_kc);
 	sql_column *c = find_sql_column(t, kc->c->base.name);
 
@@ -2228,9 +2229,9 @@ kc_dup_(sql_trans *tr, int flag, sql_kc *kc, sql_table *t, int copy)
 }
 
 static sql_kc *
-kc_dup(sql_trans *tr, int flag, sql_kc *kc, sql_table *t)
+kc_dup(sql_trans *tr, int flags, sql_kc *kc, sql_table *t)
 {
-	return kc_dup_(tr, flag, kc, t, 0);
+	return kc_dup_(tr, flags, kc, t, 0);
 }
 
 static sql_key *
@@ -2334,9 +2335,9 @@ key_dup_(sql_trans *tr, int flags, sql_key *k, sql_table *t, int copy)
 }
 
 static sql_key *
-key_dup(sql_trans *tr, int flag, sql_key *k, sql_table *t)
+key_dup(sql_trans *tr, int flags, sql_key *k, sql_table *t)
 {
-	return key_dup_(tr, flag, k, t, 0);
+	return key_dup_(tr, flags, k, t, 0);
 }
 
 sql_key *
@@ -3076,7 +3077,7 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 typedef int (*rfufunc) (sql_trans *tr, sql_base * fs, sql_base * ts, int mode);
 typedef sql_base *(*rfcfunc) (sql_trans *tr, sql_base * b, int mode);
 typedef int (*rfdfunc) (sql_trans *tr, sql_base * b, int mode);
-typedef sql_base *(*dupfunc) (sql_trans *tr, int flag, sql_base * b, sql_base * p);
+typedef sql_base *(*dupfunc) (sql_trans *tr, int flags, sql_base * b, sql_base * p);
 
 static int
 rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql_base * b, rfufunc rollforward_updates, rfcfunc rollforward_creates, rfdfunc rollforward_deletes, dupfunc fd, int mode)
@@ -3587,7 +3588,7 @@ rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt, int mo
 }
 
 static sql_table *
-conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
+conditional_table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 {
 	int p = (tr->parent == gtrans);
 
@@ -3595,7 +3596,7 @@ conditional_table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	if ((p && isGlobal(ot)) ||
 	    /* allways dup in recursive mode */
 	    tr->parent != gtrans)
-		return table_dup(tr, flag, ot, s);
+		return table_dup(tr, flags, ot, s);
 	else if (!isGlobal(ot)){/* is local temp, may need to be cleared */
 		if (ot->commit_action == CA_DELETE) {
 			sql_trans_clear_table(tr, ot);
@@ -4650,7 +4651,7 @@ create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, int 
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
-	t->side_effect = (type==F_FILT||res)?FALSE:TRUE;
+	t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
 	t->ops = args;
@@ -4680,7 +4681,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, const char *func, list *arg
 	t->type = type;
 	t->lang = lang;
 	t->sql = (lang==FUNC_LANG_SQL||lang==FUNC_LANG_MAL);
-	se = t->side_effect = (type==F_FILT||res)?FALSE:TRUE;
+	se = t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
 	t->ops = sa_list(tr->sa);
@@ -6312,7 +6313,7 @@ sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int dro
 }
 
 sql_sequence *
-sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle)
+sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys"); 
 	sql_table *seqs = find_sql_table(syss, "sequences");

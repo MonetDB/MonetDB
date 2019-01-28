@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -157,6 +157,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_RENAME_SCHEMA:
 	case SQL_RENAME_TABLE:
 	case SQL_RENAME_USER:
+	case SQL_SET_TABLE_SCHEMA:
 
 	case SQL_CREATE_TYPE:
 	case SQL_DROP_TYPE:
@@ -185,6 +186,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_UPDATE:
 	case SQL_DELETE:
 	case SQL_TRUNCATE:
+	case SQL_MERGE:
 	case SQL_COPYFROM:
 	case SQL_BINCOPYFROM:
 	case SQL_COPYLOADER:

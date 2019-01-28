@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -177,7 +177,7 @@ BATmaterialize(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
-	snprintf(b->theap.filename, sizeof(b->theap.filename), "%s.tail", BBP_physical(b->batCacheid));
+	stpconcat(b->theap.filename, BBP_physical(b->batCacheid), ".tail", NULL);
 	if (HEAPalloc(&b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
 		b->theap = tail;
 		return GDK_FAIL;
@@ -275,7 +275,7 @@ VIEWreset(BAT *b)
 		assert(tp || tvp || !b->ttype);
 
 		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		snprintf(tail.filename, sizeof(tail.filename), "%s.tail", nme);
+		stpconcat(tail.filename, nme, ".tail", NULL);
 		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
 			goto bailout;
 		if (b->tvheap) {
@@ -283,7 +283,7 @@ VIEWreset(BAT *b)
 			if (th == NULL)
 				goto bailout;
 			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-			snprintf(th->filename, sizeof(th->filename), "%s.theap", nme);
+			stpconcat(th->filename, nme, ".tail", NULL);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}

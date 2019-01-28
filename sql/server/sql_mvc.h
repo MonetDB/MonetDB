@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -22,6 +22,7 @@
 #include "sql_keyword.h"
 #include "sql_atom.h"
 #include "sql_query.h"
+#include "sql_tokens.h"
 #include "sql_symbol.h"
 
 #define ERRSIZE 8192
@@ -30,11 +31,10 @@
 #define type_value	0
 #define type_predicate	1
 
-/* todo cleanup card_row and card_set, both seem to be not used */
 /* cardinality expected by enclosing operator */
 #define card_none	-1	/* psm call doesn't return anything */
 #define card_value	0
-#define card_row 	1
+#define card_row 	1 /* needed for subqueries on single value tables (select (select 1))*/
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
 #define card_relation 	4
@@ -66,12 +66,19 @@
 /* locked needs unlocking */
 #define mod_locked 	16 
 
+typedef struct sql_groupby_expression {
+	symbol *sdef;
+	tokens token;
+	sql_exp *exp;
+} sql_groupby_expression;
+
 typedef struct sql_var {
 	const char *name;
 	atom a;
 	sql_table *t;
 	sql_rel *rel;
 	dlist *wdef;
+	sql_groupby_expression *exp;
 	char view;
 	char frame;
 	char visited; //used for window definitions lookup
@@ -108,6 +115,7 @@ typedef struct mvc {
 	int argmax;
 	struct symbol *sym;
 	int no_mitosis;		/* run query without mitosis */
+	bool has_groupby_expressions;
 
 	sqlid user_id;
 	sqlid role_id;
@@ -118,9 +126,8 @@ typedef struct mvc {
 	int timezone;		/* milliseconds west of UTC */
 	int cache;		/* some queries should not be cached ! */
 	int caching;		/* cache current query ? */
-	int history;		/* queries statistics are kept  */
 	int reply_size;		/* reply size */
-	int sizeheader;		/* print size header in result set */
+	bool sizeheader;	/* print size header in result set */
 	int debug;
 
 	lng Topt;		/* timer for optimizer phase */
@@ -236,6 +243,8 @@ extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_t
 extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
 extern sql_var* stack_push_window_def(mvc *sql, const char *name, dlist *sym);
 extern dlist* stack_get_window_def(mvc *sql, const char *name, int *pos);
+extern sql_var* stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp);
+extern sql_exp* stack_get_groupby_expression(mvc *sql, symbol *def);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
 extern char stack_check_var_visited(mvc *sql, int i);
@@ -285,5 +294,7 @@ extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ c
 extern sql_subquery *mvc_push_subquery(mvc *m, const char *name, sql_rel *r);
 extern sql_subquery *mvc_find_subquery(mvc *m, const char *rname, const char *name);
 extern sql_exp *mvc_find_subexp(mvc *m, const char *rname, const char *name);
+
+extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 
 #endif /*_SQL_MVC_H*/

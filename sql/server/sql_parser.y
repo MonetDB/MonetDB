@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 %{
@@ -201,6 +201,7 @@ int yydebug=1;
 	schema_element
 	delete_stmt
 	truncate_stmt
+	merge_stmt
 	copyfrom_stmt
 	table_def
 	view_def
@@ -235,6 +236,7 @@ int yydebug=1;
 	joined_table
 	join_spec
 	search_condition
+	opt_search_condition
 	and_exp
 	update_statement
 	update_stmt
@@ -368,6 +370,9 @@ int yydebug=1;
 	partition_range_to
 	partition_on
 	partition_expression
+	merge_match_clause
+	merge_update_or_delete
+	merge_insert
 
 %type <type>
 	data_type
@@ -496,6 +501,7 @@ int yydebug=1;
 	routine_body
 	table_function_column_list
 	select_target_list
+	search_condition_commalist
 	external_function_name
 	with_list
 	window_specification
@@ -511,6 +517,7 @@ int yydebug=1;
 	routine_designator
 	drop_routine_designator
 	partition_list
+	merge_when_list
 
 %type <i_val>
 	any_all_some
@@ -568,7 +575,6 @@ int yydebug=1;
 	lngval
 	poslng
 	nonzerolng
-	signedlng
 
 %type <bval>
 	opt_brackets
@@ -618,7 +624,7 @@ int yydebug=1;
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION
-%token <sval> sqlDELETE UPDATE SELECT INSERT 
+%token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
@@ -633,7 +639,6 @@ int yydebug=1;
 /* sequence operations */
 %token SEQUENCE INCREMENT RESTART CONTINUE
 %token MAXVALUE MINVALUE CYCLE
-%token NOMAXVALUE NOMINVALUE NOCYCLE
 %token NEXT VALUE CACHE
 %token GENERATED ALWAYS IDENTITY
 %token SERIAL BIGSERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
@@ -1201,6 +1206,12 @@ alter_statement:
 	  append_string(l, $9);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_RENAME_COLUMN, l); }
+ | ALTER TABLE if_exists qname SET SCHEMA ident
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_string(l, $7);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
 	  append_string(l, $3);
@@ -1378,28 +1389,28 @@ opt_alt_seq_params:
   ;
 
 opt_seq_param:
-    	AS data_type 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	START WITH signedlng 	{ $$ = _symbol_create_lng(SQL_START, $3); }
-  |	opt_seq_common_param	{ $$ = $1; }
+    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	START WITH opt_sign lngval 	{ $$ = _symbol_create_lng(SQL_START, is_lng_nil($4) ? $4 : $3 * $4); }
+  |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_alt_seq_param:
-    	AS data_type 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
-  |	RESTART 				{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
-  |	RESTART WITH signedlng 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), $3));  }
-  |	RESTART WITH subquery 	{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
-  |	opt_seq_common_param	{ $$ = $1; }
+    	AS data_type 			{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$2)); }
+  |	RESTART 			{ $$ = _symbol_create_list(SQL_START, append_int(L(),0)); /* plain restart now */ }
+  |	RESTART WITH opt_sign lngval 	{ $$ = _symbol_create_list(SQL_START, append_lng(append_int(L(),2), is_lng_nil($4) ? $4 : $3 * $4));  }
+  |	RESTART WITH subquery 		{ $$ = _symbol_create_list(SQL_START, append_symbol(append_int(L(),1), $3));  }
+  |	opt_seq_common_param		{ $$ = $1; }
   ;
 
 opt_seq_common_param:
-  	INCREMENT BY signedlng	{ $$ = _symbol_create_lng(SQL_INC, $3); }
-  |	MINVALUE signedlng		{ $$ = _symbol_create_lng(SQL_MINVALUE, $2); }
-  |	NOMINVALUE				{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
-  |	MAXVALUE signedlng		{ $$ = _symbol_create_lng(SQL_MAXVALUE, $2); }
-  |	NOMAXVALUE				{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
+  	INCREMENT BY opt_sign lngval	{ $$ = _symbol_create_lng(SQL_INC, is_lng_nil($4) ? $4 : $3 * $4); }
+  |	MINVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MINVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NO MINVALUE			{ $$ = _symbol_create_lng(SQL_MINVALUE, 0); }
+  |	MAXVALUE opt_sign lngval	{ $$ = _symbol_create_lng(SQL_MAXVALUE, is_lng_nil($3) ? $3 : $2 * $3); }
+  |	NO MAXVALUE			{ $$ = _symbol_create_lng(SQL_MAXVALUE, 0); }
   |	CACHE nonzerolng		{ $$ = _symbol_create_lng(SQL_CACHE, $2); }
-  |	CYCLE					{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
-  |	NOCYCLE					{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
+  |	CYCLE				{ $$ = _symbol_create_int(SQL_CYCLE, 1); }
+  |	NO CYCLE			{ $$ = _symbol_create_int(SQL_CYCLE, 0); }
   ;
 
 /*=== END SEQUENCES ===*/
@@ -2842,12 +2853,12 @@ sql:
  | update_statement
  ;
 
-update_statement: 
-/* todo merge statement */
+update_statement:
    delete_stmt
  | truncate_stmt
  | insert_stmt
  | update_stmt
+ | merge_stmt
  | copyfrom_stmt
  ;
 
@@ -3096,11 +3107,12 @@ string_commalist_contents:
  ;
 
 delete_stmt:
-    sqlDELETE FROM qname opt_where_clause
+    sqlDELETE FROM qname opt_alias_name opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $3);
-	  append_symbol(l, $4);
+	  append_string(l, $4);
+	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 
@@ -3126,46 +3138,67 @@ truncate_stmt:
  ;
 
 update_stmt:
-    UPDATE qname SET assignment_commalist opt_from_clause opt_where_clause
+    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $2);
-	  append_list(l, $4);
-	  append_symbol(l, $5);
+	  append_string(l, $3);
+	  append_list(l, $5);
 	  append_symbol(l, $6);
+	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
-/* todo merge statment 
+opt_search_condition:
+ /* empty */            { $$ = NULL; }
+ | AND search_condition { $$ = $2; }
+ ;
 
-Conditionally update rows of a table, or insert new rows into a table, or both.
+merge_update_or_delete:
+   UPDATE SET assignment_commalist
+   { dlist *l = L();
+     append_list(l, $3);
+     $$ = _symbol_create_list( SQL_UPDATE, l ); }
+ | sqlDELETE
+   { $$ = _symbol_create_list( SQL_DELETE, NULL ); }
+ ;
 
+merge_insert:
+   INSERT opt_column_list values_or_query_spec
+   { dlist *l = L();
+     append_list(l, $2);
+     append_symbol(l, $3);
+     $$ = _symbol_create_list( SQL_INSERT, l ); }
+ ;
 
-<merge statement> ::=
-		MERGE INTO <target table> [ [ AS ] <merge correlation name> ]
-		USING <table reference> ON <search condition> <merge operation specification>
+merge_match_clause:
+   WHEN MATCHED opt_search_condition THEN merge_update_or_delete
+   { dlist *l = L();
+     append_symbol(l, $3);
+     append_symbol(l, $5);
+     $$ = _symbol_create_list( SQL_MERGE_MATCH, l ); }
+ | WHEN NOT MATCHED opt_search_condition THEN merge_insert
+   { dlist *l = L();
+     append_symbol(l, $4);
+     append_symbol(l, $6);
+     $$ = _symbol_create_list( SQL_MERGE_NO_MATCH, l ); }
+ ;
 
-<merge correlation name> ::= <correlation name>
+merge_when_list:
+   merge_match_clause                 { $$ = append_symbol(L(), $1); }
+ | merge_when_list merge_match_clause { $$ = append_symbol($1, $2); }
+ ;
 
-<merge operation specification> ::= <merge when clause>...
+merge_stmt:
+    MERGE INTO qname opt_alias_name USING table_ref ON search_condition merge_when_list
 
-<merge when clause> ::= <merge when matched clause> | <merge when not matched clause>
-
-<merge when matched clause> ::= WHEN MATCHED THEN <merge update specification>
-
-<merge when not matched clause> ::= WHEN NOT MATCHED THEN <merge insert specification>
-
-<merge update specification> ::= UPDATE SET <set clause list>
-
-<merge insert specification> ::=
-		INSERT [ <left paren> <insert column list> <right paren> ]
-		[ <override clause> ] VALUES <merge insert value list>
-
-<merge insert value list> ::=
-		<left paren> <merge insert value element> [ { <comma> <merge insert value element> }... ] <right paren>
-
-<merge insert value element> ::= <value expression> | <contextually typed value specification>
-*/
+	{ dlist *l = L();
+	  append_list(l, $3);
+	  append_string(l, $4);
+	  append_symbol(l, $6);
+	  append_symbol(l, $8);
+	  append_list(l, $9);
+	  $$ = _symbol_create_list( SQL_MERGE, l ); }
 
 insert_stmt:
     INSERT INTO qname values_or_query_spec
@@ -3227,7 +3260,7 @@ null:
 			_DELETE(msg);
 			YYABORT;
 		}
-		$$ = _symbol_create_list( SQL_COLUMN,
+		$$ = _symbol_create_list( SQL_IDENT,
 			append_int(L(), m->argc-1));
 	   } else {
 		$$ = _symbol_create(SQL_NULL, NULL );
@@ -3396,8 +3429,13 @@ with_list_element:
  ;
 
 with_query_expression:
-	select_no_parens_orderby
-  ;
+   select_no_parens_orderby
+ | select_statement_single_row
+ | delete_stmt
+ | insert_stmt
+ | update_stmt
+ | merge_stmt
+ ;
 
 
 sql:
@@ -3647,7 +3685,12 @@ opt_table_name:
 
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
- |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ |  sqlGROUP BY search_condition_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
+ ;
+
+search_condition_commalist:
+    search_condition                                { $$ = append_symbol(L(), $1); }
+ |  search_condition_commalist ',' search_condition { $$ = append_symbol($1, $3); }
  ;
 
 column_ref_commalist:
@@ -4166,8 +4209,8 @@ simple_scalar_exp:
  |  '-' scalar_exp %prec UMINUS 
 			{ 
  			  $$ = NULL;
-			  assert($2->token != SQL_COLUMN || $2->data.lval->h->type != type_lng);
-			  if ($2->token == SQL_COLUMN && $2->data.lval->h->type == type_int) {
+			  assert(($2->token != SQL_COLUMN && $2->token != SQL_IDENT) || $2->data.lval->h->type != type_lng);
+			  if (($2->token == SQL_COLUMN || $2->token == SQL_IDENT) && $2->data.lval->h->type == type_int) {
 				atom *a = sql_bind_arg(m, $2->data.lval->h->data.i_val);
 				if (!atom_neg(a)) {
 					$$ = $2;
@@ -4256,7 +4299,7 @@ window_ident_clause:
 
 window_partition_clause:
 	/* empty */ 	{ $$ = NULL; }
-  |	PARTITION BY column_ref_commalist
+  |	PARTITION BY search_condition_commalist
 	{ $$ = _symbol_create_list( SQL_GROUPBY, $3 ); }
   ;
 
@@ -4523,9 +4566,7 @@ atom:
 			YYABORT;
 		}
 		an->a = NULL;
-		/* we miss use SQL_COLUMN also for param's, maybe
-				change SQL_COLUMN to SQL_IDENT */
-		$$ = _symbol_create_list( SQL_COLUMN,
+		$$ = _symbol_create_list( SQL_IDENT,
 			append_int(L(), m->argc-1));
 	  } else {
 		AtomNode *an = (AtomNode*)$1;
@@ -4883,7 +4924,7 @@ literal:
 		  }
 		}
  |  INTNUM
-		{ char *s = strip_extra_zeros(sa_strdup(SA, $1));
+		{ char *s = sa_strdup(SA, $1);
 		  char *dot = strchr(s, '.');
 		  int digits = _strlen(s) - 1;
 		  int scale = digits - (int) (dot-s);
@@ -5289,12 +5330,6 @@ poslng:
 		  }
 		}
 	;
-
-signedlng:
-	lngval     { $$ = $1; }
-  | '+' lngval { $$ = $2; }
-  | '-' lngval { $$ = is_lng_nil($2) ? $2 : -1 * $2; }
-  ;
 
 posint:
 	intval 	{ $$ = $1;
@@ -6514,12 +6549,13 @@ int find_subgeometry_type(char* geoSubType) {
 	return subType;	
 }
 
-char *token2string(int token)
+char *token2string(tokens token)
 {
 	switch (token) {
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
 	SQL(CREATE_SCHEMA);
 	SQL(CREATE_TABLE);
+	SQL(CREATE_TABLE_LOADER);
 	SQL(CREATE_VIEW);
 	SQL(CREATE_INDEX);
 	SQL(CREATE_ROLE);
@@ -6566,6 +6602,7 @@ char *token2string(int token)
 	SQL(IF);
 	SQL(ELSE);
 	SQL(WHILE);
+	SQL(IDENT);
 	SQL(COLUMN);
 	SQL(COLUMN_OPTIONS);
 	SQL(COALESCE);
@@ -6590,6 +6627,7 @@ char *token2string(int token)
 	SQL(DELETE);
 	SQL(TRUNCATE);
 	SQL(UPDATE);
+	SQL(MERGE);
 	SQL(CROSS);
 	SQL(JOIN);
 	SQL(SELECT);
@@ -6668,10 +6706,35 @@ char *token2string(int token)
 	SQL(RENAME_SCHEMA);
 	SQL(RENAME_TABLE);
 	SQL(RENAME_COLUMN);
+	SQL(SET_TABLE_SCHEMA);
 	SQL(PRECEDING);
 	SQL(FOLLOWING);
 	SQL(CURRENT_ROW);
 	SQL(WINDOW);
+	SQL(MERGE_MATCH);
+	SQL(MERGE_NO_MATCH);
+	SQL(RENAME_USER);
+	SQL(ANALYZE);
+	SQL(SAMPLE);
+	SQL(CALL);
+	SQL(TABLE_OPERATOR);
+	SQL(IS_NULL);
+	SQL(IS_NOT_NULL);
+	SQL(STORAGE);
+	SQL(CONNECT);
+	SQL(DISCONNECT);
+	SQL(DATABASE);
+	SQL(PORT);
+	SQL(NOT_LIKE);
+	SQL(PW_UNENCRYPTED);
+	SQL(PW_ENCRYPTED);
+	SQL(COPYLOADER);
+	SQL(START);
+	SQL(INC);
+	SQL(MINVALUE);
+	SQL(MAXVALUE);
+	SQL(CACHE);
+	SQL(CYCLE);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }

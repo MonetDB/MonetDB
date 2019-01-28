@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -74,68 +74,68 @@ table_has_updates(sql_trans *tr, sql_table *t)
 }
 
 static char *
-rel_check_tables(sql_table *nt, sql_table *nnt, const char* errtable)
+rel_check_tables(sql_table *nt, sql_table *nnt, const char *errtable)
 {
 	node *n, *m, *nn, *mm;
 
 	if (cs_size(&nt->columns) != cs_size(&nnt->columns))
-		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table doesn't match %s TABLE definition", errtable, errtable);
+		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table doesn't match %s definition", errtable, errtable);
 	for (n = nt->columns.set->h, m = nnt->columns.set->h; n && m; n = n->next, m = m->next) {
 		sql_column *nc = n->data;
 		sql_column *mc = m->data;
 
 		if (subtype_cmp(&nc->type, &mc->type) != 0)
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table column type doesn't match %s TABLE definition", errtable, errtable);
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column type doesn't match %s definition", errtable, errtable);
 		if(isRangePartitionTable(nt) || isListPartitionTable(nt)) {
 			if (nc->null != mc->null)
-				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table column NULL check doesn't match %s TABLE definition", errtable, errtable);
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errtable, errtable);
 			if ((!nc->def && mc->def) || (nc->def && !mc->def) || (nc->def && mc->def && strcmp(nc->def, mc->def) != 0))
-				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table column DEFAULT value doesn't match %s TABLE definition", errtable, errtable);
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table column DEFAULT value doesn't match %s definition", errtable, errtable);
 		}
 	}
 	if(isNonPartitionedTable(nt)) {
 		if (cs_size(&nt->idxs) != cs_size(&nnt->idxs))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table index doesn't match %s TABLE definition", errtable, errtable);
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index doesn't match %s definition", errtable, errtable);
 		if (cs_size(&nt->idxs))
 			for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
 				sql_idx *ni = n->data;
 				sql_idx *mi = m->data;
 
 				if (ni->type != mi->type)
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table index type doesn't match %s TABLE definition", errtable, errtable);
+					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index type doesn't match %s definition", errtable, errtable);
 			}
 	} else { //for partitioned tables we allow indexes but the key set must be exactly the same
 		if (cs_size(&nt->keys) != cs_size(&nnt->keys))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key doesn't match %s TABLE definition", errtable, errtable);
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key doesn't match %s definition", errtable, errtable);
 		if (cs_size(&nt->keys))
 			for (n = nt->keys.set->h, m = nnt->keys.set->h; n && m; n = n->next, m = m->next) {
 				sql_key *ni = n->data;
 				sql_key *mi = m->data;
 
 				if (ni->type != mi->type)
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key type doesn't match %s TABLE definition", errtable, errtable);
+					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
 				if (list_length(ni->columns) != list_length(mi->columns))
-					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key type doesn't match %s TABLE definition", errtable, errtable);
+					throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key type doesn't match %s definition", errtable, errtable);
 				for (nn = ni->columns->h, mm = mi->columns->h; nn && mm; nn = nn->next, mm = mm->next) {
 					sql_kc *nni = nn->data;
 					sql_kc *mmi = mm->data;
 
 					if (nni->c->colnr != mmi->c->colnr)
-						throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table key's columns doesn't match %s TABLE definition", errtable, errtable);
+						throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table key's columns doesn't match %s definition", errtable, errtable);
 				}
 			}
 	}
 
 	for(sql_table *up = nt->p ; up ; up = up->p) {
 		if(!strcmp(up->s->base.name, nnt->s->base.name) && !strcmp(up->base.name, nnt->base.name))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s TABLE: to be added table is a parent of the %s TABLE", errtable, errtable);
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table is a parent of the %s", errtable, errtable);
 	}
 	return MAL_SUCCEED;
 }
 
 static char*
 validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname, char *psname, char *ptname,
-							   sql_table **mt, sql_table **pt, int update, const char* errtable)
+							   sql_table **mt, sql_table **pt, int update)
 {
 	sql_schema *ms = mvc_bind_schema(sql, msname), *ps = mvc_bind_schema(sql, psname);
 	sql_table *rmt = NULL, *rpt = NULL;
@@ -151,11 +151,12 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	if (rmt && rpt) {
 		char *msg;
 		node *n = cs_find_id(&rmt->members, rpt->base.id);
+		const char *errtable = TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties);
 
 		if (n && !update)
-			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
-		if(!n && update)
-			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
+			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the %s '%s.%s'", psname, ptname, errtable, msname, mtname);
+		if (!n && update)
+			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 		if ((msg = rel_check_tables(rmt, rpt, errtable)) != NULL)
 			return msg;
 		return MAL_SUCCEED;
@@ -170,7 +171,7 @@ static char *
 alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname)
 {
 	sql_table *mt = NULL, *pt = NULL;
-	str msg = validate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt, 0, "MERGE");
+	str msg = validate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt, 0);
 
 	if(msg == MAL_SUCCEED)
 		sql_trans_add_table(sql->session->tr, mt, pt);
@@ -191,7 +192,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	sql_subtype tpe;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname,
-											 &mt, &pt, update, "RANGE PARTITION"))) {
+											 &mt, &pt, update))) {
 		return msg;
 	} else if(!isRangePartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
@@ -292,7 +293,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	sql_subtype tpe;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname,
-											 &mt, &pt, update, "LIST PARTITION"))) {
+											 &mt, &pt, update))) {
 		return msg;
 	} else if(!isListPartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
@@ -635,7 +636,7 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 	} else if (!mvc_schema_privs(sql, s)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (is_lng_nil(seq->start) || is_lng_nil(seq->minvalue) || is_lng_nil(seq->maxvalue) ||
-			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_lng_nil(seq->cycle)) {
+			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_bit_nil(seq->cycle)) {
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: sequence properties must be non-NULL");
 	}
 	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
@@ -1611,7 +1612,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t->system)
 		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-		throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table %s (there are database objects which depend on it)", old_name);
+		throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", old_name);
 	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
 		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
 	if (mvc_bind_table(sql, s, new_name))

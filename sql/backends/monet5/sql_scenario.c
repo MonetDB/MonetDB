@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -231,7 +231,7 @@ SQLepilogue(void *ret)
 	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val))) \
 		failure--;
 
-#define NR_GLOBAL_VARS 10
+#define NR_GLOBAL_VARS 9
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -241,7 +241,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_subtype ctype;
 	char *typename;
 	lng sec = 0;
-	bit F = FALSE;
 	ValRecord src;
 	str opt;
 	int failure = 0;
@@ -266,10 +265,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
 	SQLglobal("current_timezone", &sec, failure);
-
-	typename = "boolean";
-	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("history", &F, failure);
 
 	typename = "bigint";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -1193,7 +1188,7 @@ SQLparser(Client c)
 			goto finalize;
 		}
 		scanner_query_processed(&(m->scanner));
-	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
 		scanner_query_processed(&(m->scanner));
 		m->no_mitosis = be->q->no_mitosis;

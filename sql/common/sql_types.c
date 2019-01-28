@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -121,18 +121,15 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_EXTERNAL*/{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
 
-int sql_type_convert (int from, int to) 
+int sql_type_convert (int from, int to)
 {
-	int c = convert_matrix[from][to];
-	return c;
+	return convert_matrix[from][to];
 }
 
-int is_commutative(const char *fnm)
+bool is_commutative(const char *fnm)
 {
-	if (strcmp("sql_add", fnm) == 0 ||
-	    strcmp("sql_mul", fnm) == 0)
-	    	return 1;
-	return 0;
+	return strcmp("sql_add", fnm) == 0 ||
+		strcmp("sql_mul", fnm) == 0;
 }
 
 void
@@ -169,7 +166,7 @@ sql_create_subtype(sql_allocator *sa, sql_type *t, unsigned int digits, unsigned
 	return res;
 }
 
-static int
+static bool
 localtypes_cmp(int nlt, int olt)
 {
 	if (nlt == TYPE_flt || nlt == TYPE_dbl) {
@@ -183,9 +180,7 @@ localtypes_cmp(int nlt, int olt)
 		nlt = TYPE_lng;
 #endif
 	}
-	if (nlt == olt)
-		return 1;
-	return 0;
+	return nlt == olt;
 }
 
 sql_subtype *
@@ -214,7 +209,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 		sql_type *t = n->data;
 
 		if (localtypes_cmp(t->localtype, localtype)) {
-			if ((digits && t->digits > digits) || (!digits && digits == t->digits)) {
+			if (digits == 0 ? t->digits == 0 : t->digits > digits) {
 				sql_init_subtype(r, t, digits, 0);
 				return r;
 			}
@@ -224,7 +219,7 @@ sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 					break;
 				}
 				n = m;
-				if ((digits && t->digits > digits) || (!digits && digits == t->digits)) {
+				if (digits == 0 ? t->digits == 0 : t->digits > digits) {
 					sql_init_subtype(r, t, digits, 0);
 					return r;
 				}
@@ -726,6 +721,8 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 				}
 				if (member && f->fix_scale == INOUT)
 					digits = member->digits;
+				if (IS_ANALYTIC(f) && mscale) 
+					scale = mscale;
 				if (member && r->type->eclass == EC_ANY) 
 					r = member;
 				res = sql_create_subtype(sa, r->type, digits, scale);
@@ -1410,8 +1407,9 @@ sqltypeinit( sql_allocator *sa)
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
 #endif
-	sql_type *SECINT, *MONINT, *DTE; 
+	sql_type *SECINT, *MONINT, *DTE;
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
+	sql_type *BLOB;
 	sql_type *ANY, *TABLE;
 	sql_type *GEOM, *MBR;
 	sql_func *f;
@@ -1468,7 +1466,7 @@ sqltypeinit( sql_allocator *sa)
 	}
 #endif
 
-	/* float(n) (n indicates precision of atleast n digits) */
+	/* float(n) (n indicates precision of at least n digits) */
 	/* ie n <= 23 -> flt */
 	/*    n <= 51 -> dbl */
 	/*    n <= 62 -> long long dbl (with -ieee) (not supported) */
@@ -1487,7 +1485,10 @@ sqltypeinit( sql_allocator *sa)
 	TMESTAMP = *t++ = sql_create_type(sa, "TIMESTAMP", 7, 0, 0, EC_TIMESTAMP, "timestamp");
 	TMESTAMPTZ = *t++ = sql_create_type(sa, "TIMESTAMPTZ", 7, SCALE_FIX, 0, EC_TIMESTAMP, "timestamp");
 
-	*t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
+	BLOB = *t++ = sql_create_type(sa, "BLOB", 0, 0, 0, EC_BLOB, "blob");
+
+	sql_create_func(sa, "length", "blob", "nitems", BLOB, NULL, INT, SCALE_NONE);
+	sql_create_func(sa, "octet_length", "blob", "nitems", BLOB, NULL, INT, SCALE_NONE);
 
 	if (geomcatalogfix_get() != NULL) {
 		// the geom module is loaded 
@@ -1566,6 +1567,8 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_aggr(sa, "max", "aggr", "max", ANY, ANY);
 	sql_create_func(sa, "sql_min", "calc", "min", ANY, ANY, ANY, SCALE_FIX);
 	sql_create_func(sa, "sql_max", "calc", "max", ANY, ANY, ANY, SCALE_FIX);
+	sql_create_func(sa, "least", "calc", "min_no_nil", ANY, ANY, ANY, SCALE_FIX);
+	sql_create_func(sa, "greatest", "calc", "max_no_nil", ANY, ANY, ANY, SCALE_FIX);
 	sql_create_func3(sa, "ifthenelse", "calc", "ifthenelse", BIT, ANY, ANY, ANY, SCALE_FIX);
 
 	/* sum for numerical and decimals */
@@ -1820,6 +1823,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_analytic(sa, "sum", "sql", "sum", SECINT, SECINT, SCALE_NONE);
 
 	//analytical average for numerical types
+	sql_create_analytic(sa, "avg", "sql", "avg", DBL, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", BTE, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", SHT, DBL, SCALE_NONE);
 	sql_create_analytic(sa, "avg", "sql", "avg", INT, DBL, SCALE_NONE);
@@ -1829,6 +1833,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "avg", "sql", "avg", HGE, DBL, SCALE_NONE);
 #endif
 
+#if 0
 	t = decimals; // BTE
 	sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
 	t++; // SHT
@@ -1843,9 +1848,8 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "avg", "sql", "avg", *(t), DBL, SCALE_NONE);
 	}
 #endif
-
+#endif
 	sql_create_analytic(sa, "avg", "sql", "avg", FLT, DBL, SCALE_NONE);
-	sql_create_analytic(sa, "avg", "sql", "avg", DBL, DBL, SCALE_NONE);
 
 	sql_create_func(sa, "and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);
@@ -1952,7 +1956,10 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sqrt", "mmath", "sqrt", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "exp", "mmath", "exp", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "log", "mmath", "log", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "ln", "mmath", "log", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "log", "mmath", "log", *t, *t, *t, SCALE_FIX);
 		sql_create_func(sa, "log10", "mmath", "log10", *t, NULL, *t, SCALE_FIX);
+		sql_create_func(sa, "log2", "mmath", "log2", *t, NULL, *t, SCALE_FIX);
 	}
 	sql_create_func(sa, "pi", "mmath", "pi", NULL, NULL, DBL, SCALE_NONE);
 

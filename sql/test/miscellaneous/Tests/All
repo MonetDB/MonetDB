@@ -2,3 +2,6 @@ declared_tables
 #now
 trace_test
 simple_selects
+update_delete_aliases
+groupby_expressions
+with_update_stmts

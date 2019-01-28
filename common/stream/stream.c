@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* stream
@@ -641,9 +641,8 @@ close_stream(stream *s)
 	}
 }
 
-#define EXT_LEN 4
 static const char *
-get_extention(const char *file)
+get_extension(const char *file)
 {
 	char *ext_start;
 
@@ -1011,14 +1010,6 @@ stream_gzwrite(stream *restrict s, const void *restrict buf, size_t elmsize, siz
 	return size == 0 ? -1 : (ssize_t) size;
 }
 
-static void
-stream_gzclose(stream *s)
-{
-	if (s->stream_data.p)
-		gzclose((gzFile) s->stream_data.p);
-	s->stream_data.p = NULL;
-}
-
 static int
 stream_gzflush(stream *s)
 {
@@ -1028,6 +1019,15 @@ stream_gzflush(stream *s)
 	    gzflush((gzFile) s->stream_data.p, Z_SYNC_FLUSH) != Z_OK)
 		return -1;
 	return 0;
+}
+
+static void
+stream_gzclose(stream *s)
+{
+	stream_gzflush(s);
+	if (s->stream_data.p)
+		gzclose((gzFile) s->stream_data.p);
+	s->stream_data.p = NULL;
 }
 
 static stream *
@@ -2050,7 +2050,7 @@ open_rstream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_rstream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzrstream(filename);
@@ -2078,7 +2078,7 @@ open_wstream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_wstream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzwstream(filename, "wb");
@@ -2107,7 +2107,7 @@ open_rastream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_rastream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzrastream(filename);
@@ -2135,7 +2135,7 @@ open_wastream(const char *filename)
 #ifdef STREAM_DEBUG
 	fprintf(stderr, "open_wastream %s\n", filename);
 #endif
-	ext = get_extention(filename);
+	ext = get_extension(filename);
 
 	if (strcmp(ext, "gz") == 0)
 		return open_gzwastream(filename, "w");
@@ -2524,16 +2524,17 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				s->stream_data.s + 1,
 #endif
 				&fds, NULL, NULL, &tv);
-			if (s->timeout_func && s->timeout_func()) {
-				s->errnr = MNSTR_TIMEOUT;
-				return -1;
-			}
 			if (ret == SOCKET_ERROR) {
 				s->errnr = MNSTR_READ_ERROR;
 				return -1;
 			}
-			if (ret == 0)
+			if (ret == 0) {
+				if (s->timeout_func == NULL || s->timeout_func()) {
+					s->errnr = MNSTR_TIMEOUT;
+					return -1;
+				}
 				continue;
+			}
 			assert(ret == 1);
 			assert(FD_ISSET(s->stream_data.s, &fds));
 		}
@@ -3996,6 +3997,8 @@ bs_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
+	if (!ss->readonly && s->nr > 0)
+		bs_flush(ss);
 	if (s->s)
 		s->s->close(s->s);
 }
@@ -4613,6 +4616,8 @@ bs2_close(stream *ss)
 	assert(s);
 	if (s == NULL)
 		return;
+	if (!ss->readonly && s->nr > 0)
+		bs2_flush(ss);
 	assert(s->s);
 	if (s->s)
 		s->s->close(s->s);

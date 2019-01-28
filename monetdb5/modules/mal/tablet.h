@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -72,7 +72,7 @@ typedef struct Table_t {
 	BAT *complaints;			/* lines that did not match the required input */
 } Tablet;
 
-mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best);
+mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin);
 mal_export str TABLETcreate_bats(Tablet *as, BUN est);
 mal_export str TABLETcollect(BAT **bats, Tablet *as);
 mal_export str TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset);

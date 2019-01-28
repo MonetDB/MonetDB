@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 import sys
 import os
@@ -51,7 +51,7 @@ def splitcommand(cmd):
         del command[0]
     return command
 
-def process(args, recursive = False):
+def process(args, recursive=False):
     argv = []
     for arg in args:
         if not recursive and arg[:1] == '@':
@@ -64,9 +64,9 @@ def process(args, recursive = False):
             else:
                 dirname = os.path.dirname(arg)
                 p = subprocess.Popen(['lib', '/nologo', '/list', arg],
-                                     shell = False,
-                                     universal_newlines = True,
-                                     stdout = subprocess.PIPE)
+                                     shell=False,
+                                     universal_newlines=True,
+                                     stdout=subprocess.PIPE)
                 for f in p.stdout:
                     argv.append(os.path.join(dirname, f.strip()))
                 p.wait()
@@ -79,12 +79,8 @@ argv = process(sys.argv[1:])
 if verbose:
     sys.stdout.write('EXECUTE: %s\n' % ' '.join(argv))
     sys.stdout.flush()
-p = subprocess.Popen(argv, shell = False, universal_newlines = True,
-                     stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-out, err = p.communicate()
-sys.stdout.write(out)
-sys.stderr.write(err)
-if p.returncode and not verbose:
+returncode = subprocess.call(argv, shell=False)
+if returncode and not verbose:
     sys.stderr.write('failed invocation: %s\n' % ' '.join(argv))
     sys.stderr.flush()
-sys.exit(p.returncode)
+sys.exit(returncode)

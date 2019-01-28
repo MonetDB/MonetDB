@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -374,15 +374,20 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 {
 	bat *bid;
 	BAT *bn, *b, *s = NULL;
-	int tp1, tp2;
+	int tp1, tp2, tp3;
+
+	assert(3 <= pci->argc && pci->argc <= 5);
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
-	if (pci->argc == 4) {
+	if (pci->argc >= 4 && ((tp3 = stk->stk[getArg(pci, 3)].vtype) == TYPE_bat ||
+						   isaBatType(tp3))) {
 		bat *sid = getArgReference_bat(stk, pci, 3);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
 			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	if (pci->argc >= 4 && stk->stk[getArg(pci, pci->argc - 1)].vtype == TYPE_bit)
+		abort_on_error = *getArgReference_bit(stk, pci, pci->argc - 1);
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		BAT *b2 = NULL;
@@ -737,8 +742,8 @@ CMDbatLSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY1(stk, pci, BATcalclsh, BATcalclshcst, BATcalccstlsh, 0,
-						 "batcalc.lsh_noerror");
+	return CMDbatBINARY1(stk, pci, BATcalclsh, BATcalclshcst, BATcalccstlsh,
+						 false, "batcalc.lsh_noerror");
 }
 
 mal_export str CMDbatLSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -749,8 +754,8 @@ CMDbatLSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY1(stk, pci, BATcalclsh, BATcalclshcst, BATcalccstlsh, 1,
-						 "batcalc.<<");
+	return CMDbatBINARY1(stk, pci, BATcalclsh, BATcalclshcst, BATcalccstlsh,
+						 true, "batcalc.<<");
 }
 
 mal_export str CMDbatRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -761,8 +766,8 @@ CMDbatRSH(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY1(stk, pci, BATcalcrsh, BATcalcrshcst, BATcalccstrsh, 0,
-						 "batcalc.rsh_noerror");
+	return CMDbatBINARY1(stk, pci, BATcalcrsh, BATcalcrshcst, BATcalccstrsh,
+						 false, "batcalc.rsh_noerror");
 }
 
 mal_export str CMDbatRSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -773,8 +778,8 @@ CMDbatRSHsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY1(stk, pci, BATcalcrsh, BATcalcrshcst, BATcalccstrsh, 1,
-						 "batcalc.>>");
+	return CMDbatBINARY1(stk, pci, BATcalcrsh, BATcalcrshcst, BATcalccstrsh,
+						 true, "batcalc.>>");
 }
 
 mal_export str CMDbatLT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -833,8 +838,8 @@ CMDbatEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY0(stk, pci, BATcalceq, BATcalceqcst, BATcalccsteq,
-						 "batcalc.==");
+	return CMDbatBINARY1(stk, pci, BATcalceq, BATcalceqcst, BATcalccsteq,
+						 false, "batcalc.==");
 }
 
 mal_export str CMDbatNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -845,8 +850,8 @@ CMDbatNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	return CMDbatBINARY0(stk, pci, BATcalcne, BATcalcnecst, BATcalccstne,
-						 "batcalc.!=");
+	return CMDbatBINARY1(stk, pci, BATcalcne, BATcalcnecst, BATcalccstne,
+						 false, "batcalc.!=");
 }
 
 mal_export str CMDbatCMP(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

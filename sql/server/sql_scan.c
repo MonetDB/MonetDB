@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -197,6 +197,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("UPDATE", UPDATE);
 	failed += keywords_insert("DELETE", sqlDELETE);
 	failed += keywords_insert("TRUNCATE", TRUNCATE);
+	failed += keywords_insert("MATCHED", MATCHED);
 
 	failed += keywords_insert("ACTION", ACTION);
 	failed += keywords_insert("CASCADE", CASCADE);
@@ -385,9 +386,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("MAXVALUE", MAXVALUE);
 	failed += keywords_insert("MINVALUE", MINVALUE);
 	failed += keywords_insert("CYCLE", CYCLE);
-	failed += keywords_insert("NOMAXVALUE", NOMAXVALUE);
-	failed += keywords_insert("NOMINVALUE", NOMINVALUE);
-	failed += keywords_insert("NOCYCLE", NOCYCLE);
 	failed += keywords_insert("CACHE", CACHE);
 	failed += keywords_insert("NEXT", NEXT);
 	failed += keywords_insert("VALUE", VALUE);
@@ -1340,23 +1338,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 			token = UNIONJOIN;
 		} else {
 			lc->yynext = next;
-		}
-	} else if (token == NO) {
-		int next = sqllex(yylval, parm);
-
-		switch (next) {
-			case MAXVALUE:
-				token = NOMAXVALUE;
-			break;
-			case MINVALUE:
-				token = NOMINVALUE;
-			break;
-			case CYCLE:
-				token = NOCYCLE;
-			break;
-			default:
-				lc->yynext = next;
-			break;
 		}
 	} else if (token == SCOLON) {
 		/* ignore semi-colon(s) following a semi-colon */

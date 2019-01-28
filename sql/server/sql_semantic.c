@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -284,16 +284,19 @@ char *dlist2string(mvc *sql, dlist *l, int expression, char **err)
 		else if (n->type == type_symbol)
 			s = symbol2string(sql, n->data.sym, expression, err);
 
-		if (!s)
+		if (!s) {
+			_DELETE(b);
 			return NULL;
+		}
 		if (b) {
-			char *o = b;
-			b = strconcat(b,".");
-			_DELETE(o);
-			o = b;
-			b = strconcat(b,s);
-			_DELETE(o);
+			char *o = NEW_ARRAY(char, strlen(b) + strlen(s) + 2);
+			if (o)
+				stpcpy(stpcpy(stpcpy(o, b), "."), s);
+			_DELETE(b);
 			_DELETE(s);
+			b = o;
+			if (b == NULL)
+				return NULL;
 		} else {
 			b = s;
 		}
@@ -381,8 +384,9 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s);
 		c_delete(s);
 	}	break;
+	case SQL_IDENT:
 	case SQL_COLUMN: {
-		/* can only be variables */ 
+		/* can only be variables */
 		dlist *l = se->data.lval;
 		assert(l->h->type != type_lng);
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
@@ -391,6 +395,19 @@ char *symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		} else if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
 			return _STRDUP(l->h->data.sval);
+		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
+			char *first = l->h->data.sval;
+			char *second = l->h->next->data.sval;
+			char *res;
+
+			if(!first || !second) {
+				return NULL;
+			}
+			res = NEW_ARRAY(char, strlen(first) + strlen(second) + 2);
+			if (res) {
+				stpcpy(stpcpy(stpcpy(res, first), "."), second);
+			}
+			return res;
 		} else {
 			char *e = dlist2string(sql, l, expression, err);
 			if (e)

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -599,7 +599,7 @@ startTrace(str path)
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
 			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
-			if (mkdir(buf, 0755) < 0 && errno != EEXIST) {
+			if (mkdir(buf, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 				MT_lock_unset(&mal_profileLock);
 				throw(MAL, "profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
 			}

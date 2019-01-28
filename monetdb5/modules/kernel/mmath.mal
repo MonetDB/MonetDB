@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 module mmath;
 
@@ -116,11 +116,24 @@ command log(x:dbl)   	  :dbl
 address MATHunary_LOGdbl
 comment "The log(x) function returns the natural logarithm of x.";
 
+command log(x:flt,base:flt)   	  :flt
+address MATHbinary_LOGflt
+comment "The log(x) function returns the logarithm of x in the given base.";
+command log(x:dbl,base:dbl)   	  :dbl
+address MATHbinary_LOGdbl
+comment "The log(x) function returns the logarithm of x in the given base.";
+
 command log10(x:flt)    :flt 
 address MATHunary_LOG10flt;
 command log10(x:dbl)    :dbl 
 address MATHunary_LOG10dbl
 comment "The log10(x) function returns the base-10 logarithm of x.";
+
+command log2(x:flt)    :flt 
+address MATHunary_LOG2flt;
+command log2(x:dbl)    :dbl 
+address MATHunary_LOG2dbl
+comment "The log2(x) function returns the base-2 logarithm of x.";
 
 
 command pow(x:flt,y:flt)  :flt 
@@ -209,3 +222,9 @@ comment "initialize the rand() function with a seed and call rand()";
 command pi():dbl
 address MATHpi
 comment "return an important mathematical value";
+
+command prelude() :void
+address MATHprelude
+comment "initilize mmath module";
+
+mmath.prelude();

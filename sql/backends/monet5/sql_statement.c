@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1995,7 +1995,7 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		s->op2 = op2;
 		s->flag = cmp_project;
 		s->key = 0;
-		s->nrcols = 2;
+		s->nrcols = MAX(op1->nrcols,op2->nrcols);
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;

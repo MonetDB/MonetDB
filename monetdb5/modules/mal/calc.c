@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -361,7 +361,11 @@ CMDvarEQ(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalceq(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalceq(&stk->stk[getArg(pci, 0)],
+				  &stk->stk[getArg(pci, 1)],
+				  &stk->stk[getArg(pci, 2)],
+				  pci->argc == 3 ? false : *getArgReference_bit(stk, pci, 3)
+			) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.==", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -374,7 +378,11 @@ CMDvarNE(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARcalcne(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+	if (VARcalcne(&stk->stk[getArg(pci, 0)],
+				  &stk->stk[getArg(pci, 1)],
+				  &stk->stk[getArg(pci, 2)],
+				  pci->argc == 3 ? false : *getArgReference_bit(stk, pci, 3)
+			) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.!=", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

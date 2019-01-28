@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* (author) M. Kersten */
@@ -90,7 +90,7 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 	MT_lock_init( &mal_beatLock, "mal_beatLock");
-	MT_lock_init( &mal_oltpLock, "mal_beatLock");
+	MT_lock_init( &mal_oltpLock, "mal_oltpLock");
 #endif
 
 /* Any error encountered here terminates the process

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -136,7 +136,7 @@ list_find_id(list *l, sqlid id)
 		for (n = l->h; n; n = n->next) {
 
 			/* check if ids match */
-			if (id == *(int *) n->data) {
+			if (id == *(sqlid *) n->data) {
 				return n;
 			}
 		}

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -397,285 +397,6 @@ static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
 
-#ifdef GDKLIBRARY_BADEMPTY
-/* There was a bug (fixed in changeset 1f5498568a24) which could
- * result in empty strings not being double-eliminated.  This code
- * fixes the affected bats.
- * Note that we only fix BATs whose string heap is still fully double
- * eliminated. */
-static inline bool
-offsearch(const int *restrict offsets, int noffsets, int val)
-{
-	/* binary search on offsets for val, return whether present */
-	int lo = 0, hi = noffsets - 1, mid;
-
-	while (hi > lo) {
-		mid = (lo + hi) / 2;
-		if (offsets[mid] == val)
-			return 1;
-		if (offsets[mid] < val)
-			lo = mid + 1;
-		else
-			hi = mid - 1;
-	}
-	return offsets[lo] == val;
-}
-
-static void
-fixstroffheap(BAT *b, int *restrict offsets)
-{
-	long_str filename;
-	Heap h1;		/* old offset heap */
-	Heap h2;		/* new string heap */
-	Heap h3;		/* new offset heap */
-	Heap *h;		/* string heap */
-	int noffsets = 0;
-	const size_t extralen = b->tvheap->hashash ? EXTRALEN : 0;
-	size_t pos;
-	var_t emptyoff = 0;
-	const char *nme, *bnme;
-	char *srcdir;
-	BUN i;
-	int width;
-	bool nofix = true;
-
-	assert(GDK_ELIMDOUBLES(b->tvheap));
-
-	nme = BBP_physical(b->batCacheid);
-	srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
-	if (srcdir == NULL)
-		GDKfatal("fixstroffheap: GDKmalloc failed\n");
-	*strrchr(srcdir, DIR_SEP) = 0;
-
-	/* load string heap */
-	if (HEAPload(b->tvheap, nme, "theap", false) != GDK_SUCCEED)
-		GDKfatal("fixstroffheap: loading string (theap) heap "
-			 "for BAT %d failed\n", b->batCacheid);
-	h = b->tvheap;		/* abbreviation */
-	/* collect valid offsets */
-	pos = GDK_STRHASHSIZE;
-	while (pos < h->free) {
-		const char *s;
-		size_t pad;
-
-		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-		if (pad < sizeof(stridx_t))
-			pad += GDK_VARALIGN;
-		pos += pad + extralen;
-		s = h->base + pos;
-		if (*s == '\0')
-			emptyoff = (var_t) pos;
-		offsets[noffsets++] = (int) pos; /* < 65536, i.e. fits */
-		pos += GDK_STRLEN(s);
-	}
-	HEAPfree(b->tvheap, false);
-
-	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
-		bnme++;
-	else
-		bnme = nme;
-	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
-
-	width = b->twidth;
-	h2.dirty = false;
-	if (emptyoff == 0) {
-		/* no legitimate empty string in the string heap; we
-		 * now make a backup of the old string heap and create
-		 * a new one to which we add an empty string */
-		h2 = *b->tvheap;
-		if (GDKmove(h2.farmid, srcdir, bnme, "theap", BAKDIR, bnme, "theap") != GDK_SUCCEED)
-			GDKfatal("fixstroffheap: cannot make backup of %s.theap\n", nme);
-		snprintf(h2.filename, sizeof(h2.filename), "%s.theap", nme);
-		h2.base = NULL;
-		if (HEAPalloc(&h2, h2.size, 1) != GDK_SUCCEED)
-			GDKfatal("fixstroffheap: allocating new string heap "
-				 "for BAT %d failed\n", b->batCacheid);
-		h2.cleanhash = b->tvheap->cleanhash;
-		h2.hashash = b->tvheap->hashash;
-		h2.free = b->tvheap->free;
-		/* load old offset heap and copy contents to new heap */
-		h1 = *b->tvheap;
-		snprintf(h1.filename, sizeof(h1.filename), "%s.theap", filename);
-		h1.base = NULL;
-		h1.dirty = false;
-		if (HEAPload(&h1, filename, "theap", false) != GDK_SUCCEED)
-			GDKfatal("fixstroffheap: loading old tail heap "
-				 "for BAT %d failed\n", b->batCacheid);
-		memcpy(h2.base, h1.base, h2.free);
-		HEAPfree(&h1, false);
-		h2.dirty = true;
-		if ((*BATatoms[TYPE_str].atomPut)(&h2, &emptyoff, "") == 0)
-			GDKfatal("fixstroffheap: cannot insert empty string "
-				 "in BAT %d failed\n", b->batCacheid);
-		/* if the offset of the new empty string doesn't fit
-		 * in the offset heap (too many bits for the current
-		 * width), we will also make the new offset heap
-		 * wider */
-		if ((width <= 2 ? emptyoff - GDK_VAROFFSET : emptyoff) >= (var_t) (1 << (width * 8))) {
-			width <<= 1;
-			assert((width <= 2 ? emptyoff - GDK_VAROFFSET : emptyoff) < (var_t) (1 << (width * 8)));
-		}
-	}
-
-	/* make backup of offset heap */
-	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED)
-		GDKfatal("fixstroffheap: cannot make backup of %s.tail\n", nme);
-	/* load old offset heap */
-	h1 = b->theap;
-	snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
-	h1.base = NULL;
-	h1.dirty = false;
-	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED)
-		GDKfatal("fixstroffheap: loading old tail heap "
-			 "for BAT %d failed\n", b->batCacheid);
-
-	/* create new offset heap */
-	h3 = b->theap;
-	snprintf(h3.filename, sizeof(h3.filename), "%s.tail", nme);
-	if (HEAPalloc(&h3, b->batCapacity, width) != GDK_SUCCEED)
-		GDKfatal("fixstroffheap: allocating new tail heap "
-			 "for BAT %d failed\n", b->batCacheid);
-	h3.dirty = true;
-	h3.free = h1.free;
-
-	switch (b->twidth) {
-	case 1:
-		for (i = 0; i < b->batCount; i++) {
-			pos = (var_t) ((unsigned char *) h1.base)[i] + GDK_VAROFFSET;
-			if (!offsearch(offsets, noffsets, (int) pos)) {
-				pos = emptyoff;
-				nofix = false;
-			}
-			if (width == 1)
-				((unsigned char *) h3.base)[i] = (unsigned char) (pos - GDK_VAROFFSET);
-			else
-				((unsigned short *) h3.base)[i] = (unsigned short) (pos - GDK_VAROFFSET);
-		}
-		break;
-	case 2:
-		for (i = 0; i < b->batCount; i++) {
-			pos = (var_t) ((unsigned short *) h1.base)[i] + GDK_VAROFFSET;
-			if (!offsearch(offsets, noffsets, (int) pos)) {
-				pos = emptyoff;
-				nofix = false;
-			}
-			if (width == 2)
-				((unsigned short *) h3.base)[i] = (unsigned short) (pos - GDK_VAROFFSET);
-			else
-				((unsigned int *) h3.base)[i] = (unsigned int) (pos - GDK_VAROFFSET);
-		}
-		break;
-	case 4:
-		for (i = 0; i < b->batCount; i++) {
-			pos = (var_t) ((unsigned int *) h1.base)[i];
-			if (!offsearch(offsets, noffsets, (int) pos)) {
-				pos = emptyoff;
-				nofix = false;
-			}
-			((unsigned int *) h3.base)[i] = (unsigned int) pos;
-		}
-		break;
-#if SIZEOF_VAR_T == 8
-	case 8:
-		for (i = 0; i < b->batCount; i++) {
-			pos = (var_t) ((ulng *) h1.base)[i];
-			if (!offsearch(offsets, noffsets, (int) pos)) {
-				pos = emptyoff;
-				nofix = false;
-			}
-			((ulng *) h3.base)[i] = (ulng) pos;
-		}
-		break;
-#endif
-	default:
-		/* cannot happen */
-		assert(0);
-	}
-
-	/* cleanup */
-	HEAPfree(&h1, false);
-	if (nofix) {
-		/* didn't fix anything, move backups back */
-		if (h2.dirty) {
-			HEAPfree(&h2, true);
-			if (GDKmove(b->tvheap->farmid, BAKDIR, bnme, "theap", srcdir, bnme, "theap") != GDK_SUCCEED)
-				GDKfatal("fixstroffheap: cannot restore backup of %s.theap\n", nme);
-		}
-		HEAPfree(&h3, true);
-		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED)
-			GDKfatal("fixstroffheap: cannot restore backup of %s.tail\n", nme);
-	} else {
-		/* offset heap was fixed */
-		b->twidth = width;
-		b->batDirtydesc = true;
-		if (h2.dirty) {
-			/* in addition, we added an empty string to
-			 * the string heap */
-			if (HEAPsave(&h2, nme, "theap") != GDK_SUCCEED)
-				GDKfatal("fixstroffheap: saving heap failed\n");
-			HEAPfree(&h2, false);
-			*b->tvheap = h2;
-		}
-		if (HEAPsave(&h3, nme, "tail") != GDK_SUCCEED)
-			GDKfatal("fixstroffheap: saving heap failed\n");
-		HEAPfree(&h3, false);
-		b->theap = h3;
-	}
-	GDKfree(srcdir);
-}
-
-static void
-fixstrbats(void)
-{
-	bat bid;
-	BAT *b;
-	int *offsets;
-	int tt;
-
-	fprintf(stderr,
-		"# fixing string offset heaps\n");
-	fflush(stderr);
-
-	/* The minimum size a string occupies in the double-eliminated
-	 * part of a string heap is SIZEOF_VAR_T (due to padding to
-	 * multiples of this value) plus the size of the chain pointer
-	 * (another var_t), and if hashes are stored, plus the size of
-	 * a hash value (yet another var_t).  In total, 2 or 3 var_t
-	 * sizes.  The hash table itself is 1024 times the size of a
-	 * var_t.  So on 32 bit architectures, 8000 is plenty, and on
-	 * 64 bit architectures, 4000 is plenty.  But we need less if
-	 * the heap is not fully occupied.  This results in the
-	 * following calculation. */
-	offsets = GDKmalloc((GDK_ELIMLIMIT / (2 * SIZEOF_VAR_T)) * sizeof(int));
-	if (offsets == NULL)
-		GDKfatal("fixstroffheap: cannot allocate memory\n");
-
-	for (bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++) {
-		if ((b = BBP_desc(bid)) == NULL || b->batCount == 0)
-			continue;	/* not a valid BAT, or an empty one */
-		if ((tt = b->ttype) < 0) {
-			const char *anme;
-
-			/* as yet unknown tail column type */
-			anme = ATOMunknown_name(tt);
-			/* known string types */
-			if (strcmp(anme, "url") == 0 ||
-			    strcmp(anme, "json") == 0 ||
-			    strcmp(anme, "xml") == 0 ||
-			    strcmp(anme, "identifier") == 0)
-				tt = TYPE_str;
-		}
-
-		if (tt != TYPE_str || !GDK_ELIMDOUBLES(b->tvheap))
-			continue;	/* nothing to do for this BAT */
-
-		fixstroffheap(b, offsets);
-	}
-
-	GDKfree(offsets);
-}
-#endif
-
 #ifdef GDKLIBRARY_NIL_NAN
 static void
 fixfltheap(BAT *b)
@@ -705,7 +426,7 @@ fixfltheap(BAT *b)
 		GDKfatal("fixfltheap: cannot make backup of %s.tail\n", nme);
 	/* load old heap */
 	h1 = b->theap;
-	snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
+	stpconcat(h1.filename, filename, ".tail", NULL);
 	h1.base = NULL;
 	h1.dirty = false;
 	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED)
@@ -714,7 +435,7 @@ fixfltheap(BAT *b)
 
 	/* create new heap */
 	h2 = b->theap;
-	snprintf(h2.filename, sizeof(h2.filename), "%s.tail", nme);
+	stpconcat(h2.filename, nme, ".tail", NULL);
 	if (HEAPalloc(&h2, b->batCapacity, b->twidth) != GDK_SUCCEED)
 		GDKfatal("fixfltheap: allocating new tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
@@ -847,50 +568,11 @@ fixfloatbats(void)
 }
 #endif
 
-#ifdef GDKLIBRARY_HEADED
-static int
-headheapinit(oid *hseq, const char *buf, bat bid)
-{
-	char type[11];
-	uint16_t width;
-	uint16_t var;
-	uint16_t properties;
-	uint64_t nokey0;
-	uint64_t nokey1;
-	uint64_t nosorted;
-	uint64_t norevsorted;
-	uint64_t base;
-	uint64_t align;
-	uint64_t free;
-	uint64_t size;
-	uint16_t storage;
-	int n;
-
-	if (sscanf(buf,
-		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
-		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
-		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu16
-		   "%n",
-		   type, &width, &var, &properties, &nokey0,
-		   &nokey1, &nosorted, &norevsorted, &base,
-		   &align, &free, &size, &storage,
-		   &n) < 13)
-		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
-
-	if (strcmp(type, "void") != 0)
-		GDKfatal("BBPinit: head column must be VOID (ID = %d).", (int) bid);
-	if (base > (uint64_t) GDK_oid_max)
-		GDKfatal("BBPinit: head seqbase out of range (ID = %d, seq = %" PRIu64 ").", (int) bid, base);
-	*hseq = (oid) base;
-	return n;
-}
-#endif
-
 static int
 heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, const char *filename)
 {
 	int t;
-	char type[11];
+	char type[33];
 	uint16_t width;
 	uint16_t var;
 	uint16_t properties;
@@ -910,7 +592,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	norevsorted = 0; /* default for first case */
 	if (bbpversion <= GDKLIBRARY_TALIGN ?
 	    sscanf(buf,
-		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
+		   " %32s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu16
 		   "%n",
@@ -937,6 +619,9 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	if (strcmp(type, "hge") == 0)
 		havehge = true;
 #endif
+	/* sqlblob was changed to plain blob in the Apr2019 release */
+	if (strcmp(type, "sqlblob") == 0)
+		strcpy(type, "blob");
 	if ((t = ATOMindex(type)) < 0) {
 		if ((t = ATOMunknown_find(type)) == 0)
 			GDKfatal("BBPinit: no space for atom %s", type);
@@ -970,8 +655,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	b->theap.free = (size_t) free;
 	b->theap.size = (size_t) size;
 	b->theap.base = NULL;
-	snprintf(b->theap.filename, sizeof(b->theap.filename),
-		 "%s.tail", filename);
+	stpconcat(b->theap.filename, filename, ".tail", NULL);
 	b->theap.storage = (storage_t) storage;
 	b->theap.copied = false;
 	b->theap.newstorage = (storage_t) storage;
@@ -1001,8 +685,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
 		b->tvheap->free = (size_t) free;
 		b->tvheap->size = (size_t) size;
 		b->tvheap->base = NULL;
-		snprintf(b->tvheap->filename, sizeof(b->tvheap->filename),
-			 "%s.theap", filename);
+		stpconcat(b->tvheap->filename, filename, ".theap", NULL);
 		b->tvheap->storage = (storage_t) storage;
 		b->tvheap->copied = false;
 		b->tvheap->hashash = hashash != 0;
@@ -1031,16 +714,10 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		char headname[129];
 		char filename[24];
 		unsigned int properties;
-		int lastused;
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
 		uint64_t first = 0, count, capacity, base = 0;
-#ifdef GDKLIBRARY_HEADED
-		/* these variables are not used in later versions */
-		char tailname[129];
-		uint16_t map_head = 0, map_tail = 0, map_hheap = 0, map_theap = 0;
-#endif
 		int Thashash;
 
 		if ((s = strchr(buf, '\r')) != NULL) {
@@ -1051,18 +728,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			*s = 0;
 		}
 
-		if (bbpversion <= GDKLIBRARY_HEADED ?
-		    sscanf(buf,
-			   "%" SCNu64 " %" SCNu16 " %128s %128s %23s %d %u"
-			   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu16
-			   " %" SCNu16 " %" SCNu16 " %" SCNu16
-			   "%n",
-			   &batid, &status, headname, tailname, filename,
-			   &lastused, &properties, &first,
-			   &count, &capacity, &map_head, &map_tail, &map_hheap,
-			   &map_theap,
-			   &nread) < 14 :
-		    sscanf(buf,
+		if (sscanf(buf,
 			   "%" SCNu64 " %" SCNu16 " %128s %23s %u %" SCNu64
 			   " %" SCNu64 " %" SCNu64
 			   "%n",
@@ -1113,22 +779,11 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		bn->batInserted = bn->batCount;
 		bn->batCapacity = (BUN) capacity;
 
-		if (bbpversion <= GDKLIBRARY_HEADED) {
-			nread += headheapinit(&bn->hseqbase, buf + nread, bid);
-		} else {
-			if (base > (uint64_t) GDK_oid_max)
-				GDKfatal("BBPinit: head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ").", batid, base);
-			bn->hseqbase = (oid) base;
-		}
+		if (base > (uint64_t) GDK_oid_max)
+			GDKfatal("BBPinit: head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ").", batid, base);
+		bn->hseqbase = (oid) base;
 		nread += heapinit(bn, buf + nread, &Thashash, bbpversion, bid, filename);
 		nread += vheapinit(bn, buf + nread, Thashash, bid, filename);
-
-		if (bbpversion <= GDKLIBRARY_NOKEY &&
-		    (bn->tnokey[0] != 0 || bn->tnokey[1] != 0)) {
-			/* we don't trust the nokey values */
-			bn->tnokey[0] = bn->tnokey[1] = 0;
-			bn->batDirtydesc = true;
-		}
 
 		if (buf[nread] != '\n' && buf[nread] != ' ')
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
@@ -1186,10 +841,7 @@ BBPheader(FILE *fp)
 	}
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_NIL_NAN &&
-	    bbpversion != GDKLIBRARY_TALIGN &&
-	    bbpversion != GDKLIBRARY_BADEMPTY &&
-	    bbpversion != GDKLIBRARY_NOKEY &&
-	    bbpversion != GDKLIBRARY_HEADED) {
+	    bbpversion != GDKLIBRARY_TALIGN) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
 			 "This database was probably created by %s version of MonetDB.",
 			 GDKLIBRARY, bbpversion,
@@ -1252,7 +904,7 @@ BBPaddfarm(const char *dirname, int rolemask)
 	if (rolemask == 0 || (rolemask & 1 && BBPfarms[0].dirname != NULL)) {
 		GDKfatal("BBPaddfarm: bad rolemask\n");
 	}
-	if (mkdir(dirname, 0755) < 0) {
+	if (mkdir(dirname, MONETDB_DIRMODE) < 0) {
 		if (errno == EEXIST) {
 			if (stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
 				GDKfatal("BBPaddfarm: %s: not a directory\n", dirname);
@@ -1321,6 +973,7 @@ BBPinit(void)
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
 	ATOMIC_INIT(BBPsizeLock);
+	BATsample(NULL, 0);	/* initializes the lock */
 #endif
 
 	if (!GDKinmemory()) {
@@ -1411,10 +1064,6 @@ BBPinit(void)
 		}
 	}
 
-#ifdef GDKLIBRARY_BADEMPTY
-	if (bbpversion <= GDKLIBRARY_BADEMPTY)
-		fixstrbats();
-#endif
 #ifdef GDKLIBRARY_NIL_NAN
 	if (bbpversion <= GDKLIBRARY_NIL_NAN)
 		fixfloatbats();
@@ -2977,7 +2626,7 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		long_str kill_ext;
 		char *path;
 
-		snprintf(kill_ext, sizeof(kill_ext), "%s.kill", ext);
+		stpconcat(kill_ext, ext, ".kill", NULL);
 		path = GDKfilepath(hp->farmid, dstdir, nme, kill_ext);
 		if (path == NULL)
 			return GDK_FAIL;
@@ -3040,7 +2689,7 @@ BBPprepare(bool subcommit)
 		backup_dir = 0;
 		ret = BBPrecover(0);
 		if (ret == GDK_SUCCEED) {
-			if (mkdir(bakdirpath, 0755) < 0 && errno != EEXIST) {
+			if (mkdir(bakdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 				GDKsyserror("BBPprepare: cannot create directory %s\n", bakdirpath);
 				ret = GDK_FAIL;
 			}
@@ -3050,7 +2699,7 @@ BBPprepare(bool subcommit)
 	}
 	if (ret == GDK_SUCCEED && start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
-		if (mkdir(subdirpath, 0755) < 0) {
+		if (mkdir(subdirpath, MONETDB_DIRMODE) < 0) {
 			GDKsyserror("BBPprepare: cannot create directory %s\n", subdirpath);
 			ret = GDK_FAIL;
 		}
@@ -3100,7 +2749,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		char extnew[16];
 		gdk_return mvret = GDK_SUCCEED;
 
-		snprintf(extnew, sizeof(extnew), "%s.new", ext);
+		stpconcat(extnew, ext, ".new", NULL);
 		if (dirty &&
 		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
 		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
@@ -3139,7 +2788,7 @@ do_backup(const char *srcdir, const char *nme, const char *ext,
 		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
 			long_str kill_ext;
 
-			snprintf(kill_ext, sizeof(kill_ext), "%s.new.kill", ext);
+			stpconcat(kill_ext, ext, ".new.kill", NULL);
 			if (file_exists(h->farmid, BAKDIR, nme, kill_ext) &&
 			    file_move(h->farmid, BAKDIR, SUBDIR, nme, kill_ext) != GDK_SUCCEED) {
 				ret = GDK_FAIL;
@@ -3436,7 +3085,7 @@ BBPrecover(int farmid)
 	dstdir = dstpath + j;
 	IODEBUG fprintf(stderr, "#BBPrecover(start)\n");
 
-	if (mkdir(leftdirpath, 0755) < 0 && errno != EEXIST) {
+	if (mkdir(leftdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 		GDKsyserror("BBPrecover: cannot create directory %s\n", leftdirpath);
 		closedir(dirp);
 		GDKfree(bakdirpath);

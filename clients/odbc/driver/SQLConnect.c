@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -261,7 +261,7 @@ MNDBConnect(ODBCDbc *dbc,
 		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		set_timezone(mid);
 		get_serverinfo(dbc);
-		mapi_set_size_header(mid, 1);
+		mapi_set_size_header(mid, true);
 		/* set timeout after we're connected */
 		mapi_timeout(mid, dbc->sql_attr_connection_timeout * 1000);
 	}

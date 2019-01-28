@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual
@@ -293,10 +293,10 @@ end;
 -- The computed maximum column storage requirements (estimates) view.
 create view sys.storagemodel as
 select "schema", "table", "column", "type", "count",
-	columnsize("type", "count") as columnsize,
-	heapsize("type", "count", "distinct", "atomwidth") as heapsize,
-	hashsize("reference", "count") as hashsize,
-	case when isacolumn then imprintsize("type", "count") else 0 end as imprintsize,
+	sys.columnsize("type", "count") as columnsize,
+	sys.heapsize("type", "count", "distinct", "atomwidth") as heapsize,
+	sys.hashsize("reference", "count") as hashsize,
+	case when isacolumn then sys.imprintsize("type", "count") else 0 end as imprintsize,
 	case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end as orderidxsize,
 	sorted, "unique", isacolumn
  from sys.storagemodelinput
@@ -307,10 +307,10 @@ create view sys.tablestoragemodel as
 select "schema", "table",
 	max("count") as "rowcount",
 	count(*) as "storages",
-	sum(columnsize("type", "count")) as columnsize,
-	sum(heapsize("type", "count", "distinct", "atomwidth")) as heapsize,
-	sum(hashsize("reference", "count")) as hashsize,
-	sum(case when isacolumn then imprintsize("type", "count") else 0 end) as imprintsize,
+	sum(sys.columnsize("type", "count")) as columnsize,
+	sum(sys.heapsize("type", "count", "distinct", "atomwidth")) as heapsize,
+	sum(sys.hashsize("reference", "count")) as hashsize,
+	sum(case when isacolumn then sys.imprintsize("type", "count") else 0 end) as imprintsize,
 	sum(case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end) as orderidxsize
  from sys.storagemodelinput
 group by "schema", "table"

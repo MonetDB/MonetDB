@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -767,9 +767,6 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_HEADED	061033U	/* head properties are stored */
-#define GDKLIBRARY_NOKEY	061034U	/* nokey values can't be trusted */
-#define GDKLIBRARY_BADEMPTY	061035U	/* possibility of duplicate empty str */
 #define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
 #define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
 #define GDKLIBRARY		061040U
