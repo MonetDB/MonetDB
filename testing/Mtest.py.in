@@ -68,17 +68,23 @@ if isatty:
         PURPLE = '\033[1;35m'       # actually magenta
         BLACK = '\033[0;0m'
         def prred(str, write = sys.stdout.write):
-            write(RED)
-            write(str)
-            write(BLACK)
+            try:
+                write(RED)
+                write(str)
+            finally:
+                write(BLACK)
         def prgreen(str, write = sys.stdout.write):
-            write(GREEN)
-            write(str)
-            write(BLACK)
+            try:
+                write(GREEN)
+                write(str)
+            finally:
+                write(BLACK)
         def prpurple(str, write = sys.stdout.write):
-            write(PURPLE)
-            write(str)
-            write(BLACK)
+            try:
+                write(PURPLE)
+                write(str)
+            finally:
+                write(BLACK)
     else:
         try:
             import ctypes
@@ -101,17 +107,23 @@ if isatty:
                     return wattr
                 reset = get_csbi_attributes(handle)
                 def prred(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x4)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x4)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
                 def prgreen(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x2)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x2)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
                 def prpurple(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x5)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x5)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
 
 if os.path.exists('/usr/bin/coredumpctl'):
     # probably Linux if /usr/bin/coredumpctl exists
@@ -2997,13 +3009,17 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             savepath = None
+            savepypath = None
+            savepyhome = None
             if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
                 # enable Python 3 integration in server
                 if winreg is not None:
                     try:
                         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Python\PythonCore\3.7\InstallPath') as key:
                             instpath = winreg.QueryValue(key, None)
+                            savepyhome = os.environ.get('PYTHONHOME')
                             os.environ['PYTHONHOME'] = instpath
+                            savepypath = os.environ.get('PYTHONPATH')
                             os.environ['PYTHONPATH'] = instpath + 'Lib'
                             savepath = os.environ['PATH']
                             os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
@@ -3016,7 +3032,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     try:
                         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Python\PythonCore\2.7\InstallPath') as key:
                             instpath = winreg.QueryValue(key, None)
+                            savepyhome = os.environ.get('PYTHONHOME')
                             os.environ['PYTHONHOME'] = instpath
+                            savepypath = os.environ.get('PYTHONPATH')
                             os.environ['PYTHONPATH'] = instpath + 'Lib'
                             savepath = os.environ['PATH']
                             os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
@@ -3031,6 +3049,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             if savepath is not None:
                 os.environ['PATH'] = savepath
+                if savepypath:
+                    os.environ['PYTHONPATH'] = savepypath
+                else:
+                    del os.environ['PYTHONPATH']
+                if savepyhome:
+                    os.environ['PYTHONHOME'] = savepyhome
+                else:
+                    del os.environ['PYTHONHOME']
             ln="dummy"
             while 0 < len(ln) and not ln.startswith('Ready.'):
                 ln=pSrvr.stdout.readline()
