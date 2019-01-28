@@ -68,17 +68,23 @@ if isatty:
         PURPLE = '\033[1;35m'       # actually magenta
         BLACK = '\033[0;0m'
         def prred(str, write = sys.stdout.write):
-            write(RED)
-            write(str)
-            write(BLACK)
+            try:
+                write(RED)
+                write(str)
+            finally:
+                write(BLACK)
         def prgreen(str, write = sys.stdout.write):
-            write(GREEN)
-            write(str)
-            write(BLACK)
+            try:
+                write(GREEN)
+                write(str)
+            finally:
+                write(BLACK)
         def prpurple(str, write = sys.stdout.write):
-            write(PURPLE)
-            write(str)
-            write(BLACK)
+            try:
+                write(PURPLE)
+                write(str)
+            finally:
+                write(BLACK)
     else:
         try:
             import ctypes
@@ -101,17 +107,23 @@ if isatty:
                     return wattr
                 reset = get_csbi_attributes(handle)
                 def prred(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x4)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x4)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
                 def prgreen(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x2)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x2)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
                 def prpurple(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x5)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x5)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
 
 if os.path.exists('/usr/bin/coredumpctl'):
     # probably Linux if /usr/bin/coredumpctl exists
