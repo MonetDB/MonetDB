@@ -2961,8 +2961,20 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_exp *re = l->h->next->data;
 			sql_subtype *et = exp_subtype(e);
 
+			/* if one argument is NULL, return it, EXCEPT
+			 * if "_no_nil" is in the name of the
+			 * implementation function (currently either
+			 * min_no_nil or max_no_nil), in which case we
+			 * ignore the NULL and return the other
+			 * value */
 			if (exp_is_atom(le) && exp_is_null(sql, le)) {
 				(*changes)++;
+				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
+					exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
+					if (subtype_cmp(et, exp_subtype(re)) != 0)
+						re = exp_convert(sql->sa, re, exp_subtype(re), et);
+					return re;
+				}
 				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
 				if (subtype_cmp(et, exp_subtype(le)) != 0)
 					le = exp_convert(sql->sa, le, exp_subtype(le), et);
@@ -2970,6 +2982,12 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			}
 			if (exp_is_atom(re) && exp_is_null(sql, re)) {
 				(*changes)++;
+				if (f && f->func && f->func->imp && strstr(f->func->imp, "_no_nil") != NULL) {
+					exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
+					if (subtype_cmp(et, exp_subtype(le)) != 0)
+						le = exp_convert(sql->sa, le, exp_subtype(le), et);
+					return le;
+				}
 				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
 				if (subtype_cmp(et, exp_subtype(re)) != 0)
 					re = exp_convert(sql->sa, re, exp_subtype(re), et);
