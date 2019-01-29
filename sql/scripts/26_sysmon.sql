@@ -19,8 +19,10 @@ returns table(
 	query string
 )
 external name sql.sysmon_queue;
+grant execute on function sys.queue to public;
 
 create view sys.queue as select * from sys.queue();
+grant select on sys.queue to public;
 
 -- operations to manipulate the state of havoc queries
 create procedure sys.pause(tag int)

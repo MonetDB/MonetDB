@@ -1536,6 +1536,11 @@ sql_update_apr2019(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
+	/* 26_sysmon.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"grant execute on function sys.queue to public;\n"
+			"grant select on sys.queue to public;\n");
+
 	/* 51_sys_schema_extensions.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
