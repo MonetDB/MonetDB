@@ -2741,7 +2741,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c)
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
-	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
+	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
 		return NULL;
 	base_init(tr->sa, &col->base, c->base.id, TR_NEW, c->base.name);
 	col->type = c->type;
@@ -5477,7 +5477,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 	if (!tpe)
 		return NULL;
 
-	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
+	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
 		return NULL;
 	col = create_sql_column(tr->sa, t, name, tpe);
 
