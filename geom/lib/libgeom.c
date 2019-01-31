@@ -33,8 +33,8 @@ libgeom_exit(void)
 	finishGEOS();
 }
 
-int
-wkb_isnil(const wkb *w)
+bool
+is_wkb_nil(const wkb *w)
 {
 	if (!w || w->len == ~0)
 		return 1;
@@ -110,7 +110,7 @@ wkb2geos(const wkb *geomWKB)
 {
 	GEOSGeom geosGeometry;
 
-	if (wkb_isnil(geomWKB))
+	if (is_wkb_nil(geomWKB))
 		return NULL;
 
 	geosGeometry = GEOSGeomFromWKB_buf((unsigned char *) geomWKB->data, geomWKB->len);

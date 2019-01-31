@@ -1857,7 +1857,7 @@ int time_is_null(cudf_data_time value)
 
 int timestamp_is_null(cudf_data_timestamp value)
 {
-	return ts_isnil(timestamp_from_data(&value));
+	return is_timestamp_nil(timestamp_from_data(&value));
 }
 
 int str_is_null(char *value) { return value == NULL; }

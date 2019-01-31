@@ -133,10 +133,10 @@ libgeom_export void libgeom_exit(void);
  * Returns a GEOSGeom, created from a geom_geometry.
  * On failure, returns NULL.
  */
-//#define wkb2geos( geom ) wkb_isnil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
+//#define wkb2geos( geom ) is_wkb_nil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
 #define mbr_nil mbrFromGeos(NULL); 
 
-libgeom_export int wkb_isnil(const wkb *wkbp);
+libgeom_export bool is_wkb_nil(const wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
 libgeom_export int getMbrGeom(mbr *res, wkb *geom);
 libgeom_export GEOSGeom wkb2geos(const wkb *geomWKB);
