@@ -3230,7 +3230,7 @@ daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 
 	/* correct fraction */
 	*res = *v;
-	if (!daytime_isnil(*v) && d < 3) {
+	if (!is_daytime_nil(*v) && d < 3) {
 		*res = (daytime) (*res / scales[3 - d]);
 		*res = (daytime) (*res * scales[3 - d]);
 	}
@@ -3595,7 +3595,7 @@ second_interval_daytime(lng *res, const daytime *s, const int *d, const int *sk)
 	lng r = *(int *) s;
 
 	(void) sk;
-	if (daytime_isnil(*s)) {
+	if (is_daytime_nil(*s)) {
 		*res = lng_nil;
 		return MAL_SUCCEED;
 	}

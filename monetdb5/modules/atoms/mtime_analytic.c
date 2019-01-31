@@ -71,57 +71,57 @@
 	} while (0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, CMP) \
-	do {                                     \
-		lng m = k - 1;                       \
-		TPE1 v;                              \
-		TPE2 rlimit, calc;                   \
-		for(; k<i; k++, rb++) {              \
-			rlimit = (TPE2) LIMIT;           \
-			v = bp[k];                       \
-			if(TPE1##_isnil(v)) {            \
-				for(j=k; ; j--) {            \
-					if(!TPE1##_isnil(bp[j])) \
-						break;               \
-				}                            \
-			} else {                         \
-				for(j=k; ; j--) {            \
-					if(j == m)               \
-						break;               \
-					if(TPE1##_isnil(bp[j]))  \
-						break;               \
-					CMP(v, bp[j], calc);     \
-					if(calc > rlimit)        \
-						break;               \
-				}                            \
-			}                                \
-			j++;                             \
-			*rb = j;                         \
-		}                                    \
+	do {																\
+		lng m = k - 1;													\
+		TPE1 v;															\
+		TPE2 rlimit, calc;												\
+		for(; k<i; k++, rb++) {											\
+			rlimit = (TPE2) LIMIT;										\
+			v = bp[k];													\
+			if(is_##TPE1##_nil(v)) {									\
+				for(j=k; ; j--) {										\
+					if(!is_##TPE1##_nil(bp[j]))							\
+						break;											\
+				}														\
+			} else {													\
+				for(j=k; ; j--) {										\
+					if(j == m)											\
+						break;											\
+					if(is_##TPE1##_nil(bp[j]))							\
+						break;											\
+					CMP(v, bp[j], calc);								\
+					if(calc > rlimit)									\
+						break;											\
+				}														\
+			}															\
+			j++;														\
+			*rb = j;													\
+		}																\
 	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, CMP) \
-	do {                                     \
-		TPE1 v;                              \
-		TPE2 rlimit, calc;                   \
-		for(; k<i; k++, rb++) {              \
-			rlimit = (TPE2) LIMIT;           \
-			v = bp[k];                       \
-			if(TPE1##_isnil(v)) {            \
-				for(j=k+1; j<i; j++) {       \
-					if(!TPE1##_isnil(bp[j])) \
-						break;               \
-				}                            \
-			} else {                         \
-				for(j=k+1; j<i; j++) {       \
-					if(TPE1##_isnil(bp[j]))  \
-						break;               \
-					CMP(v, bp[j], calc);     \
-					if(calc > rlimit)        \
-						break;               \
-				}                            \
-			}                                \
-			*rb = j;                         \
-		}                                    \
+	do {																\
+		TPE1 v;															\
+		TPE2 rlimit, calc;												\
+		for(; k<i; k++, rb++) {											\
+			rlimit = (TPE2) LIMIT;										\
+			v = bp[k];													\
+			if(is_##TPE1##_nil(v)) {									\
+				for(j=k+1; j<i; j++) {									\
+					if(!is_##TPE1##_nil(bp[j]))							\
+						break;											\
+				}														\
+			} else {													\
+				for(j=k+1; j<i; j++) {									\
+					if(is_##TPE1##_nil(bp[j]))							\
+						break;											\
+					CMP(v, bp[j], calc);								\
+					if(calc > rlimit)									\
+						break;											\
+				}														\
+			}															\
+			*rb = j;													\
+		}																\
 	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(TPE1, IMP, LIMIT, TPE2, CMP) \
