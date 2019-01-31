@@ -58,7 +58,7 @@ str
 sql_drop_statistics(Client cntxt, sql_table *t)
 {
 	node *ncol;
-	char *dquery, *msg;
+	char *dquery, *msg = NULL;
 
 	dquery = (char *) GDKzalloc(96);
 	if (dquery == NULL) {
@@ -71,10 +71,11 @@ sql_drop_statistics(Client cntxt, sql_table *t)
 			snprintf(dquery, 96, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
 			msg = SQLstatementIntern(cntxt, &dquery, "SQLanalyze", TRUE, FALSE, NULL);
 			if (msg)
-				return msg;
+				break;
 		}
 	}
-	return NULL;
+	GDKfree(dquery);
+	return msg;
 }
 
 str
