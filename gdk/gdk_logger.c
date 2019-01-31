@@ -2961,7 +2961,7 @@ gdk_return
 logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 {
 	log_bid bid = logger_find_bat(lg, name, tpe, id);
-	lng lid = (lng) id;
+	lng lid = tpe ? (lng) id : 0;
 
 	assert(b->batRestricted != BAT_WRITE ||
 	       b == lg->snapshots_bid ||
@@ -3005,7 +3005,7 @@ logger_upgrade_bat(logger *lg, const char *name, char tpe, oid id)
 
 	if (bid) {
 		oid p = (oid) log_find(lg->catalog_bid, lg->dcatalog, bid);
-		lng lid = (lng) id;
+		lng lid = tpe ? (lng) id : 0;
 
 		if (BUNappend(lg->dcatalog, &p, false) != GDK_SUCCEED ||
 		    BUNappend(lg->catalog_bid, &bid, false) != GDK_SUCCEED ||
