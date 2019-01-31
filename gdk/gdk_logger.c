@@ -3075,8 +3075,11 @@ logger_find_bat(logger *lg, const char *name, char tpe, oid id)
 		if (BAThash(lg->catalog_nme) == GDK_SUCCEED) {
 			HASHloop_str(cni, cni.b->thash, p, name) {
 				oid pos = p;
-				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
-					return *(log_bid *) Tloc(lg->catalog_bid, p);
+				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
+					oid lid = *(oid*) Tloc(lg->catalog_oid, p);
+					if (!lid)
+						return *(log_bid *) Tloc(lg->catalog_bid, p);
+				}
 			}
 		}
 	} else {

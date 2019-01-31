@@ -25,5 +25,6 @@
 #endif
 
 sql5_export str sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str sql_drop_statistics(Client cntxt, sql_table *t);
 
 #endif /* _SQL_STATISTICS_DEF */
