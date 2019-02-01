@@ -479,7 +479,7 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				switch (errnr) {
+				switch (errno) {
 				case EINTR:
 					/* interrupted */
 					break;
@@ -493,7 +493,7 @@ acceptConnections(int sock, int usock)
 					/* connection aborted before we began */
 					break;
 				default:
-					msg = strerror(errnr);
+					msg = strerror(errno);
 					goto error;
 				}
 				continue;
@@ -511,7 +511,7 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				switch (errnr) {
+				switch (errno) {
 				case EINTR:
 					/* interrupted */
 					break;
@@ -525,7 +525,7 @@ acceptConnections(int sock, int usock)
 					/* connection aborted before we began */
 					break;
 				default:
-					msg = strerror(errnr);
+					msg = strerror(errno);
 					goto error;
 				}
 				continue;

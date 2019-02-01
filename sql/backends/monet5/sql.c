@@ -2151,10 +2151,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			int errnr = mnstr_errnr(s);
-			close_stream(s);
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errnr));
+					      filename?filename:"stdout", strerror(errno));
+			close_stream(s);
 			goto wrapup_result_set1;
 		}
 	} else {
@@ -2351,10 +2350,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			int errnr = mnstr_errnr(s);
-			close_stream(s);
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errnr));
+					      filename?filename:"stdout", strerror(errno));
+			close_stream(s);
 			goto wrapup_result_set;
 		}
 	} else {
@@ -2683,9 +2681,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				int errnr = mnstr_errnr(ss);
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, strerror(errno));
 				close_stream(ss);
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, strerror(errnr));
 				return msg;
 			}
 		}
