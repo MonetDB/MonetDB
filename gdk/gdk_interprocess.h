@@ -27,9 +27,9 @@ gdk_export size_t GDKuniqueid(size_t offset);
  */
 
 //! Create a memory mapped file if it does not exist and open it
-gdk_export gdk_return GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str *msg);
+gdk_export void *GDKinitmmap(size_t id, size_t size, size_t *return_size);
 //! Release a memory mapped file that was created through GDKinitmmap
-gdk_export gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id, str *msg);
+gdk_export gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id);
 //! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
 gdk_export gdk_return GDKmmapfile(str buffer, size_t max, size_t id);
 
@@ -38,17 +38,17 @@ gdk_export gdk_return GDKmmapfile(str buffer, size_t max, size_t id);
  */
 
 //! Create an interprocess semaphore
-gdk_export gdk_return GDKcreatesem(int id, int count, int *semid, str *msg);
+gdk_export gdk_return GDKcreatesem(int id, int count, int *semid);
 //! Get an interprocess semaphore that was already created using GDKcreatesem
-gdk_export gdk_return GDKgetsem(int sem_id, int count, int *semid, str *msg);
+gdk_export gdk_return GDKgetsem(int sem_id, int count, int *semid);
 //! Gets the value of an interprocess semaphore
-gdk_export gdk_return GDKgetsemval(int sem_id, int number, int *semval, str *msg);
+gdk_export gdk_return GDKgetsemval(int sem_id, int number, int *semval);
 //! Change the value of an interprocess semaphore
-gdk_export gdk_return GDKchangesemval(int sem_id, int number, int change, str *msg);
+gdk_export gdk_return GDKchangesemval(int sem_id, int number, int change);
 //! Change the value of an interprocess semaphore with a timeout
-gdk_export gdk_return GDKchangesemval_timeout(int sem_id, int number, int change, int timeout_mseconds, bool *succeed, str *msg);
+gdk_export gdk_return GDKchangesemval_timeout(int sem_id, int number, int change, int timeout_mseconds, bool *succeed);
 //! Destroy an interprocess semaphore
-gdk_export gdk_return GDKreleasesem(int sem_id, str *msg);
+gdk_export gdk_return GDKreleasesem(int sem_id);
 
 /*
  * Operations for copying a BAT into a memory mapped file
