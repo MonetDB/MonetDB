@@ -1292,7 +1292,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s",tname);
 	}
-	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
+	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.append_col(m->session->tr, c, ins, tpe);
@@ -1357,9 +1357,9 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(upd->batCacheid);
 		throw(SQL, "sql.update", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
-	if( upd && BATcount(upd) > 4096 && upd->batPersistence == PERSISTENT)
+	if( upd && BATcount(upd) > 4096 && !upd->batTransient)
 		BATmsync(upd);
-	if( tids && BATcount(tids) > 4096 && tids->batPersistence == PERSISTENT)
+	if( tids && BATcount(tids) > 4096 && !tids->batTransient)
 		BATmsync(tids);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
@@ -1441,7 +1441,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
-	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
+	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 	store_funcs.delete_tab(m->session->tr, t, b, tpe);
 	if (b)
@@ -2151,10 +2151,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			int errnr = mnstr_errnr(s);
-			close_stream(s);
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errnr));
+					      filename?filename:"stdout", strerror(errno));
+			close_stream(s);
 			goto wrapup_result_set1;
 		}
 	} else {
@@ -2351,10 +2350,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			int errnr = mnstr_errnr(s);
-			close_stream(s);
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errnr));
+					      filename?filename:"stdout", strerror(errno));
+			close_stream(s);
 			goto wrapup_result_set;
 		}
 	} else {
@@ -2683,9 +2681,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				int errnr = mnstr_errnr(ss);
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, strerror(errno));
 				close_stream(ss);
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, strerror(errnr));
 				return msg;
 			}
 		}

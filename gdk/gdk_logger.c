@@ -171,13 +171,13 @@ logbat_destroy(BAT *b)
 }
 
 static BAT *
-logbat_new(int tt, BUN size, int role)
+logbat_new(int tt, BUN size, role_t role)
 {
 	BAT *nb = COLnew(0, tt, size, role);
 
 	if (nb) {
 		if (role == PERSISTENT)
-			BATmode(nb, PERSISTENT);
+			BATmode(nb, false);
 	} else {
 		fprintf(stderr, "!ERROR: logbat_new: creating new BAT[void:%s]#" BUNFMT " failed\n", ATOMname(tt), size);
 	}
@@ -1324,7 +1324,7 @@ logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 {
 	char bak[BUFSIZ];
 
-	if (BATmode(old, TRANSIENT) != GDK_SUCCEED) {
+	if (BATmode(old, true) != GDK_SUCCEED) {
 		GDKerror("Logger_new: cannot convert old %s to transient", name);
 		return GDK_FAIL;
 	}
@@ -2429,7 +2429,7 @@ logger_changes(logger *lg)
 
 /* Read the last recorded transactions id from a logfile */
 lng
-logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role)
+logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, role_t role)
 {
 	char filename[FILENAME_MAX];
 	FILE *fp;
@@ -2485,7 +2485,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	int len;
 	char buf[BUFSIZ];
 	logformat l;
-	int flag = (b->batPersistence == PERSISTENT) ? LOG_USE : LOG_CREATE;
+	int flag = b->batTransient ? LOG_CREATE : LOG_USE;
 	BUN p;
 
 	l.nr = 0;
@@ -2903,7 +2903,7 @@ bm_commit(logger *lg)
 		str name = BBPname(bid);
 
 		if (lb == NULL ||
-		    BATmode(lb, TRANSIENT) != GDK_SUCCEED) {
+		    BATmode(lb, true) != GDK_SUCCEED) {
 			logbat_destroy(lb);
 			logbat_destroy(n);
 			return GDK_FAIL;
@@ -2934,7 +2934,7 @@ bm_commit(logger *lg)
 			continue;
 
 		if ((lb = BATdescriptor(bid)) == NULL ||
-		    BATmode(lb, PERSISTENT) != GDK_SUCCEED) {
+		    BATmode(lb, false) != GDK_SUCCEED) {
 			logbat_destroy(lb);
 			logbat_destroy(n);
 			return GDK_FAIL;

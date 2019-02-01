@@ -1106,7 +1106,7 @@ BATkeyed(BAT *b)
 			/* we completed the scan: no duplicates */
 			b->tkey = true;
 		} else if (BATcheckhash(b) ||
-			   (b->batPersistence == PERSISTENT &&
+			   (!b->batTransient &&
 			    BAThash(b) == GDK_SUCCEED) ||
 			   (VIEWtparent(b) != 0 &&
 			    BATcheckhash(BBPdescriptor(VIEWtparent(b))))) {
@@ -1724,7 +1724,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (!reverse &&
 		    !nilslast &&
 		    pb != NULL &&
-		    (ords != NULL || pb->batPersistence == PERSISTENT) &&
+		    (ords != NULL || !pb->batTransient) &&
 		    (m = createOIDXheap(pb, stable)) != NULL) {
 			if (ords == NULL) {
 				ords = (oid *) m->base + ORDERIDXOFF;
@@ -1822,7 +1822,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 /* return a new BAT of length n with seqbase hseq, and the constant v
  * in the tail */
 BAT *
-BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
+BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 {
 	BAT *bn;
 	void *restrict p;

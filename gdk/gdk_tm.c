@@ -258,9 +258,9 @@ TMabort(void)
 			BAT *b = BBPquickdesc(i, false);
 
 			if (b) {
-				if (b->batPersistence == PERSISTENT)
+				if (!b->batTransient)
 					BBPrelease(i);
-				b->batPersistence = TRANSIENT;
+				b->batTransient = true;
 				b->batDirtydesc = true;
 			}
 		}
@@ -295,9 +295,9 @@ TMabort(void)
 			}
 			if (BBP_status(i) & BBPDELETED) {
 				BBP_status_on(i, BBPEXISTING, "TMabort");
-				if (b->batPersistence != PERSISTENT)
+				if (b->batTransient)
 					BBPretain(i);
-				b->batPersistence = PERSISTENT;
+				b->batTransient = false;
 				b->batDirtydesc = true;
 			}
 			BBPunfix(i);

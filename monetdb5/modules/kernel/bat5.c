@@ -166,7 +166,7 @@ oidtostr(oid i, char *p, size_t len)
 
 
 str
-BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role)
+BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 {
 	BAT *bn;
 
@@ -186,7 +186,7 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 	bn = BATattach(*tt, *heapfile, TRANSIENT);
 	if (bn == NULL)
 		throw(MAL, "bat.attach", GDK_EXCEPTION);
-	if( bn->batPersistence == PERSISTENT)
+	if( !bn->batTransient)
 		BATmsync(bn);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
@@ -280,7 +280,7 @@ BKCdelete_all(bat *r, const bat *bid)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.delete_all", GDK_EXCEPTION);
 	}
-	if( b->batPersistence == PERSISTENT)
+	if( !b->batTransient)
 		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
@@ -313,7 +313,7 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.append", GDK_EXCEPTION);
 	}
-	if( b->batPersistence == PERSISTENT)
+	if( !b->batTransient)
 		BATmsync(b);
 	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
@@ -561,7 +561,7 @@ BKCpersists(void *r, const bat *bid, const bit *flg)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (BATmode(b, (*flg == TRUE) ? PERSISTENT : TRANSIENT) != GDK_SUCCEED) {
+	if (BATmode(b, (*flg != TRUE)) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setPersistence", ILLEGAL_ARGUMENT);
 	}
@@ -584,7 +584,7 @@ BKCisPersistent(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*res = (b->batPersistence == PERSISTENT) ? TRUE :FALSE;
+	*res = !b->batTransient;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -604,7 +604,7 @@ BKCisTransient(bit *res, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setTransient", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*res = b->batPersistence == TRANSIENT;
+	*res = b->batTransient;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -688,12 +688,10 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		throw(MAL, "bat.getInfo", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	if (b->batPersistence == PERSISTENT) {
-		mode = "persistent";
-	} else if (b->batPersistence == TRANSIENT) {
+	if (b->batTransient) {
 		mode = "transient";
 	} else {
-		mode ="unknown";
+		mode = "persistent";
 	}
 
 	switch (b->batRestricted) {
@@ -954,7 +952,7 @@ BKCsave2(void *r, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.save", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if ( b->batPersistence != TRANSIENT){
+	if ( !b->batTransient){
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.save", "Only save transient columns.");
 	}

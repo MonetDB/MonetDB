@@ -327,9 +327,9 @@ msab_retreatScenario(const char *lang)
 				rewind(f);
 				len = strlen(buf) + 1;
 				if (fwrite(buf, 1, len, f) < len) {
-					(void)fclose(f);
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
 							strerror(errno), pathbuf);
+					(void)fclose(f);
 					return(strdup(buf));
 				}
 				fflush(f);

@@ -1046,9 +1046,9 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifndef NDEBUG
 	fprintf(stderr,"#File loaded in %d ms\t", GDKms() - time0);
 #endif
-	BATmode(x, PERSISTENT);
-	BATmode(y, PERSISTENT);
-	BATmode(z, PERSISTENT);
+	BATmode(x, false);
+	BATmode(y, false);
+	BATmode(z, false);
 	store_funcs.append_col(m->session->tr, colx, x, TYPE_bat);
 	store_funcs.append_col(m->session->tr, coly, y, TYPE_bat);
 	store_funcs.append_col(m->session->tr, colz, z, TYPE_bat);

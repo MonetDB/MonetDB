@@ -555,6 +555,11 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 #define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
 
+typedef enum {
+	PERSISTENT = 0,
+	TRANSIENT,
+} role_t;
+
 /* Heap storage modes */
 typedef enum {
 	STORE_MEM     = 0,	/* load into GDKmalloced memory */
@@ -691,7 +696,7 @@ gdk_export int VALisnil(const ValRecord *v);
  * typedef struct {
  *           // static BAT properties
  *           bat    batCacheid;       // bat id: index in BBPcache
- *           int    batPersistence;   // persistence mode
+ *           bool   batTransient;     // persistence mode
  *           bool   batCopiedtodisk;  // BAT is saved on disk?
  *           // dynamic BAT properties
  *           int    batHeat;          // heat of BAT in the BBP
@@ -781,11 +786,11 @@ typedef struct BAT {
 	bool
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	 batDirtydesc:1,	/* bat descriptor dirty marker */
+	 batTransient:1;	/* should the BAT persist on disk? */
 	uint8_t	/* adjacent bit fields are packed together (if they fit) */
-	 batRestricted:2,	/* access privileges */
-	 batPersistence:1;	/* should the BAT persist on disk? */
-	uint8_t batRole;	/* role of the bat */
+	 batRestricted:2;	/* access privileges */
+	role_t batRole;		/* role of the bat */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
 
@@ -912,7 +917,7 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  * @- BAT construction
  * @multitable @columnfractions 0.08 0.7
  * @item @code{BAT* }
- * @tab COLnew (oid headseq, int tailtype, BUN cap, int role)
+ * @tab COLnew (oid headseq, int tailtype, BUN cap, role_t role)
  * @item @code{BAT* }
  * @tab BATextend (BAT *b, BUN newcap)
  * @end multitable
@@ -930,7 +935,7 @@ gdk_export void HEAP_free(Heap *heap, var_t block);
  */
 #define BATDELETE	(-9999)
 
-gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, int role)
+gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((__warn_unused_result__));
@@ -1244,7 +1249,7 @@ bat_iterator(BAT *b)
  * @item BAT *
  * @tab BATkey (BAT *b, bool onoff)
  * @item BAT *
- * @tab BATmode (BAT *b, int mode)
+ * @tab BATmode (BAT *b, bool transient)
  * @item BAT *
  * @tab BATsetaccess (BAT *b, restrict_t mode)
  * @item int
@@ -1285,7 +1290,7 @@ gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, bool onoff);
-gdk_export gdk_return BATmode(BAT *b, int mode);
+gdk_export gdk_return BATmode(BAT *b, bool transient);
 gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
@@ -1311,9 +1316,6 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 			 (b)->theap.dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 
-#define PERSISTENT		0
-#define TRANSIENT		1
-
 #define BATcapacity(b)	(b)->batCapacity
 /*
  * @- BAT manipulation
@@ -1321,7 +1323,7 @@ gdk_export restrict_t BATgetaccess(BAT *b);
  * @item BAT *
  * @tab BATclear (BAT *b, bool force)
  * @item BAT *
- * @tab COLcopy (BAT *b, int tt, bool writeable, int role)
+ * @tab COLcopy (BAT *b, int tt, bool writeable, role_t role)
  * @end multitable
  *
  * The routine BATclear removes the binary associations, leading to an
@@ -1330,7 +1332,7 @@ gdk_export restrict_t BATgetaccess(BAT *b);
  * name.
  */
 gdk_export gdk_return BATclear(BAT *b, bool force);
-gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, int role);
+gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
 	__attribute__((__warn_unused_result__));
@@ -2245,7 +2247,7 @@ gdk_export gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
 	__attribute__((__warn_unused_result__));
-gdk_export BAT *BATattach(int tt, const char *heapfile, int role);
+gdk_export BAT *BATattach(int tt, const char *heapfile, role_t role);
 
 #ifdef NATIVE_WIN32
 #ifdef _MSC_VER
@@ -2704,7 +2706,7 @@ gdk_export void BATrmprop(BAT *b, enum prop_t idx);
 gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, bool li, bool hi, bool anti);
 gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 
-gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, int role);
+gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	__attribute__((__warn_unused_result__));
 

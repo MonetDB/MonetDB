@@ -12,7 +12,7 @@
 #include "mal.h"
 #include "gdk.h"
 
-mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role);
+mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role);
 mal_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);
 mal_export str BKCdensebat(bat *ret, const lng *size);
 mal_export str BKCmirror(bat *ret, const bat *bid);

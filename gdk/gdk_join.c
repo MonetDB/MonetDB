@@ -3896,14 +3896,12 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 				 rstart, rend, rcnt, rcand, rcandend,
 				 nil_matches, false, false, false,
 				 estimate, t0, false);
-	} else if (l->batPersistence == PERSISTENT &&
-		   r->batPersistence != PERSISTENT) {
+	} else if (!l->batTransient && r->batTransient) {
 		/* l is persistent and r is not, create hash on l
 		 * since it may be reused */
 		swap = true;
 		reason = "left is persistent";
-	} else if (l->batPersistence != PERSISTENT &&
-		   r->batPersistence == PERSISTENT) {
+	} else if (l->batTransient && !r->batTransient) {
 		/* l is not persistent but r is, create hash on r
 		 * since it may be reused */
 		/* nothing */;
