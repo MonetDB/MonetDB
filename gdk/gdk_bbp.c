@@ -323,7 +323,6 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	(void) type;		/* may use in future */
 	(void) hptype;		/* may use in future */
 
-	assert(role >= 0 && role < 32);
 #ifndef PERSISTENTHASH
 	if (hptype == hashheap)
 		role = TRANSIENT;
@@ -333,7 +332,7 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 		role = TRANSIENT;
 #endif
 	for (i = 0; i < MAXFARMS; i++)
-		if (BBPfarms[i].dirname && BBPfarms[i].roles & (1 << role))
+		if (BBPfarms[i].dirname && BBPfarms[i].roles & (1 << (int) role))
 			return i;
 	/* must be able to find farms for TRANSIENT and PERSISTENT */
 	assert(role != TRANSIENT && role != PERSISTENT);

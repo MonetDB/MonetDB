@@ -74,7 +74,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	 * Alloc space for the BAT and its dependent records.
 	 */
 	assert(tt >= 0);
-	assert(role >= 0 && role < 32);
 
 	bn = GDKzalloc(sizeof(BAT));
 
@@ -181,7 +180,6 @@ COLnew(oid hseq, int tt, BUN cap, role_t role)
 	assert(hseq <= oid_nil);
 	assert(tt != TYPE_bat);
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "COLnew:tt error\n", NULL);
-	ERRORcheck(role < 0 || role >= 32, "COLnew:role error\n", NULL);
 
 	/* round up to multiple of BATTINY */
 	if (cap < BUN_MAX - BATTINY)
@@ -253,7 +251,6 @@ BATattach(int tt, const char *heapfile, role_t role)
 	ERRORcheck(tt <= 0 , "BATattach: bad tail type (<=0)\n", NULL);
 	ERRORcheck(ATOMvarsized(tt) && ATOMstorage(tt) != TYPE_str, "BATattach: bad tail type (varsized and not str)\n", NULL);
 	ERRORcheck(heapfile == NULL, "BATattach: bad heapfile name\n", NULL);
-	ERRORcheck(role < 0 || role >= 32, "BATattach: role error\n", NULL);
 
 	if ((f = fopen(heapfile, "rb")) == NULL) {
 		GDKsyserror("BATattach: cannot open %s\n", heapfile);
