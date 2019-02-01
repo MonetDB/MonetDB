@@ -4084,10 +4084,13 @@ def main(argv) :
     os.chdir(BACK)
 
     # check whether our hostname makes sense
-    try:
-        socket.getaddrinfo(socket.gethostname(), None)
-    except:
+    if os.environ['HOST'] == 'localhost':
         CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+    else:
+        try:
+            socket.getaddrinfo(socket.gethostname(), None)
+        except:
+            CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
