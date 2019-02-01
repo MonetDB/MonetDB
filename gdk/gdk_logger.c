@@ -171,7 +171,7 @@ logbat_destroy(BAT *b)
 }
 
 static BAT *
-logbat_new(int tt, BUN size, int role)
+logbat_new(int tt, BUN size, role_t role)
 {
 	BAT *nb = COLnew(0, tt, size, role);
 
@@ -2429,7 +2429,7 @@ logger_changes(logger *lg)
 
 /* Read the last recorded transactions id from a logfile */
 lng
-logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role)
+logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, role_t role)
 {
 	char filename[FILENAME_MAX];
 	FILE *fp;

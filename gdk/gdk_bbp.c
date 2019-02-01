@@ -316,7 +316,7 @@ BBPinithash(int j)
 }
 
 int
-BBPselectfarm(int role, int type, enum heaptype hptype)
+BBPselectfarm(role_t role, int type, enum heaptype hptype)
 {
 	int i;
 

@@ -49,7 +49,7 @@ __hidden gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__visibility__("hidden")));
 __hidden bool BATcheckorderidx(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
+__hidden BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -88,7 +88,7 @@ __hidden void BBPinit(void)
 __hidden bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
+__hidden int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));

@@ -1822,7 +1822,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 /* return a new BAT of length n with seqbase hseq, and the constant v
  * in the tail */
 BAT *
-BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
+BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 {
 	BAT *bn;
 	void *restrict p;

@@ -18,7 +18,7 @@ bat_destroy(BAT *b)
 }
 
 BAT *
-bat_new(int tt, BUN size, int role)
+bat_new(int tt, BUN size, role_t role)
 {
 	return COLnew(0, tt, size, role);
 }

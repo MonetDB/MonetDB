@@ -166,7 +166,7 @@ oidtostr(oid i, char *p, size_t len)
 
 
 str
-BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role)
+BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 {
 	BAT *bn;
 

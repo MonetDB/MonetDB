@@ -66,7 +66,7 @@ BATinit_idents(BAT *bn)
 }
 
 BAT *
-BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
+BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 {
 	BAT *bn;
 
@@ -173,7 +173,7 @@ BATsetdims(BAT *b)
  * filenames.
  */
 BAT *
-COLnew(oid hseq, int tt, BUN cap, int role)
+COLnew(oid hseq, int tt, BUN cap, role_t role)
 {
 	BAT *bn;
 
@@ -243,7 +243,7 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 }
 
 BAT *
-BATattach(int tt, const char *heapfile, int role)
+BATattach(int tt, const char *heapfile, role_t role)
 {
 	BAT *bn;
 	char *p;
@@ -656,7 +656,7 @@ wrongtype(int t1, int t2)
  */
 /* TODO make it simpler, ie copy per column */
 BAT *
-COLcopy(BAT *b, int tt, bool writable, int role)
+COLcopy(BAT *b, int tt, bool writable, role_t role)
 {
 	BUN bunstocopy = BUN_NONE;
 	BUN cnt;
