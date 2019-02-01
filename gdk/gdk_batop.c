@@ -1106,7 +1106,7 @@ BATkeyed(BAT *b)
 			/* we completed the scan: no duplicates */
 			b->tkey = true;
 		} else if (BATcheckhash(b) ||
-			   (b->batPersistence == PERSISTENT &&
+			   (!b->batTransient &&
 			    BAThash(b) == GDK_SUCCEED) ||
 			   (VIEWtparent(b) != 0 &&
 			    BATcheckhash(BBPdescriptor(VIEWtparent(b))))) {
@@ -1724,7 +1724,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (!reverse &&
 		    !nilslast &&
 		    pb != NULL &&
-		    (ords != NULL || pb->batPersistence == PERSISTENT) &&
+		    (ords != NULL || !pb->batTransient) &&
 		    (m = createOIDXheap(pb, stable)) != NULL) {
 			if (ords == NULL) {
 				ords = (oid *) m->base + ORDERIDXOFF;

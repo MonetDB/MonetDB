@@ -1158,7 +1158,7 @@ SQLworker(void *arg)
 					if (b == NULL)
 						continue;
 					t0 = GDKusec();
-					if (b->batPersistence != PERSISTENT)
+					if (b->batTransient)
 						continue;
 					BATmsync(b);
 					t0 = GDKusec() - t0;

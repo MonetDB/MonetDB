@@ -627,7 +627,7 @@ DESCload(int i)
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
-	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
+	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
 	DESCclean(b);
 	return b;
@@ -694,7 +694,7 @@ BATmsync(BAT *b)
 #endif
 		struct msync *arg;
 
-		assert(b->batPersistence == PERSISTENT);
+		assert(!b->batTransient);
 		if (b->theap.storage == STORE_MMAP &&
 		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
 			arg->id = b->batCacheid;

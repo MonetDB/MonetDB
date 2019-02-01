@@ -263,7 +263,7 @@ __hidden BAT *virtualize(BAT *bn)
 #define ALGOBATPAR(b)	BATgetId(b),			\
 			BATcount(b),			\
 			ATOMname(b->ttype),		\
-			b->batPersistence == PERSISTENT ? "P" : isVIEW(b) ? "V" : "T", \
+			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
 			BATtdense(b) ? "D" : "",	\
 			b->tsorted ? "S" : "",		\
 			b->trevsorted ? "R" : "",	\
@@ -281,7 +281,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b ? "[" : "",			\
 			b ? ATOMname(b->ttype) : "",	\
 			b ? "]" : "",			\
-			b ? b->batPersistence == PERSISTENT ? "P" : isVIEW(b) ? "V" : "T" : "", \
+			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
 			b && BATtdense(b) ? "D" : "",	\
 			b && b->tsorted ? "S" : "",	\
 			b && b->trevsorted ? "R" : "",	\

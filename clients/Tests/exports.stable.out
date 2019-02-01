@@ -148,7 +148,7 @@ gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, b
 void *BATmax(BAT *b, void *aggr);
 BAT *BATmergecand(BAT *a, BAT *b);
 void *BATmin(BAT *b, void *aggr);
-gdk_return BATmode(BAT *b, int mode);
+gdk_return BATmode(BAT *b, bool transient);
 void BATmsync(BAT *b);
 bool BATordered(BAT *b);
 bool BATordered_rev(BAT *b);

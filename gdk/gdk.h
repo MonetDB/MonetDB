@@ -691,7 +691,7 @@ gdk_export int VALisnil(const ValRecord *v);
  * typedef struct {
  *           // static BAT properties
  *           bat    batCacheid;       // bat id: index in BBPcache
- *           int    batPersistence;   // persistence mode
+ *           bool   batTransient;     // persistence mode
  *           bool   batCopiedtodisk;  // BAT is saved on disk?
  *           // dynamic BAT properties
  *           int    batHeat;          // heat of BAT in the BBP
@@ -781,10 +781,10 @@ typedef struct BAT {
 	bool
 	 batCopiedtodisk:1,	/* once written */
 	 batDirtyflushed:1,	/* was dirty before commit started? */
-	 batDirtydesc:1;	/* bat descriptor dirty marker */
+	 batDirtydesc:1,	/* bat descriptor dirty marker */
+	 batTransient:1;	/* should the BAT persist on disk? */
 	uint8_t	/* adjacent bit fields are packed together (if they fit) */
-	 batRestricted:2,	/* access privileges */
-	 batPersistence:1;	/* should the BAT persist on disk? */
+	 batRestricted:2;	/* access privileges */
 	uint8_t batRole;	/* role of the bat */
 	uint16_t unused; 	/* value=0 for now (sneakily used by mat.c) */
 	int batSharecnt;	/* incoming view count */
@@ -1244,7 +1244,7 @@ bat_iterator(BAT *b)
  * @item BAT *
  * @tab BATkey (BAT *b, bool onoff)
  * @item BAT *
- * @tab BATmode (BAT *b, int mode)
+ * @tab BATmode (BAT *b, bool transient)
  * @item BAT *
  * @tab BATsetaccess (BAT *b, restrict_t mode)
  * @item int
@@ -1285,7 +1285,7 @@ gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, bool onoff);
-gdk_export gdk_return BATmode(BAT *b, int mode);
+gdk_export gdk_return BATmode(BAT *b, bool transient);
 gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);

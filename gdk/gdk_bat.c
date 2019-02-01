@@ -97,7 +97,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
 	bn->tprops = NULL;
 
 	bn->batRole = role;
-	bn->batPersistence = TRANSIENT;
+	bn->batTransient = true;
 	/*
 	 * add to BBP
 	 */
@@ -2033,47 +2033,46 @@ BATgetaccess(BAT *b)
 	} while (0)
 
 gdk_return
-BATmode(BAT *b, int mode)
+BATmode(BAT *b, bool transient)
 {
 	BATcheck(b, "BATmode", GDK_FAIL);
 
 	/* can only make a bat PERSISTENT if its role is already
 	 * PERSISTENT */
-	assert(mode == PERSISTENT || mode == TRANSIENT);
-	assert(mode == TRANSIENT || b->batRole == PERSISTENT);
+	assert(transient || b->batRole == PERSISTENT);
 
-	if (b->batRole == TRANSIENT && mode != TRANSIENT) {
+	if (b->batRole == TRANSIENT && !transient) {
 		GDKerror("cannot change mode of BAT in TRANSIENT farm.\n");
 		return GDK_FAIL;
 	}
 
-	if (mode != b->batPersistence) {
+	if (transient != b->batTransient) {
 		bat bid = b->batCacheid;
 
-		if (mode == PERSISTENT) {
+		if (!transient) {
 			check_type(b->ttype);
 		}
 		BBP_dirty = true;
 
-		if (mode == PERSISTENT && isVIEW(b)) {
+		if (!transient && isVIEW(b)) {
 			if (VIEWreset(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 		}
 		/* persistent BATs get a logical reference */
-		if (mode == PERSISTENT) {
+		if (!transient) {
 			BBPretain(bid);
-		} else if (b->batPersistence == PERSISTENT) {
+		} else if (!b->batTransient) {
 			BBPrelease(bid);
 		}
 		MT_lock_set(&GDKswapLock(bid));
-		if (mode == PERSISTENT) {
+		if (!transient) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
 			else
 				BBP_status_on(bid, BBPEXISTING, "BATmode");
 			BBP_status_off(bid, BBPDELETED, "BATmode");
-		} else if (b->batPersistence == PERSISTENT) {
+		} else if (!b->batTransient) {
 			if (!(BBP_status(bid) & BBPNEW))
 				BBP_status_on(bid, BBPDELETED, "BATmode");
 			BBP_status_off(bid, BBPPERSISTENT, "BATmode");
@@ -2081,7 +2080,7 @@ BATmode(BAT *b, int mode)
 		/* session bats or persistent bats that did not
 		 * witness a commit yet may have been saved */
 		if (b->batCopiedtodisk) {
-			if (mode == PERSISTENT) {
+			if (!transient) {
 				BBP_status_off(bid, BBPTMP, "BATmode");
 			} else {
 				/* TMcommit must remove it to
@@ -2089,7 +2088,7 @@ BATmode(BAT *b, int mode)
 				BBP_status_on(bid, BBPTMP, "BATmode");
 			}
 		}
-		b->batPersistence = mode;
+		b->batTransient = transient;
 		MT_lock_unset(&GDKswapLock(bid));
 	}
 	return GDK_SUCCEED;
