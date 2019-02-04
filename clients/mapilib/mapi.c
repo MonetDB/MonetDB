@@ -2392,24 +2392,23 @@ mapi_reconnect(Mapi mid)
 				   | SOCK_CLOEXEC
 #endif
 				   , rp->ai_protocol);
-			if (s == INVALID_SOCKET) {
-				snprintf(errbuf, sizeof(errbuf),
-					 "could not connect to %s:%s: %s",
-					 mid->hostname, port,
+			if (s != INVALID_SOCKET) {
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
+				(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
+				if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
+					break;  /* success */
+				closesocket(s);
+			}
+			snprintf(errbuf, sizeof(errbuf),
+				 "could not connect to %s:%s: %s",
+				 mid->hostname, port,
 #ifdef _MSC_VER
 					 wsaerror(WSAGetLastError())
 #else
-					 strerror(errno)
+				 strerror(errno)
 #endif
-					);
-				continue;
-			}
-#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-			(void) fcntl(s, F_SETFD, FD_CLOEXEC);
-#endif
-			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
-				break;  /* success */
-			closesocket(s);
+				);
 		}
 		freeaddrinfo(res);
 		if (rp == NULL) {
