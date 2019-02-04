@@ -1788,7 +1788,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
 	hash = equi &&
-		((b->batPersistence == PERSISTENT &&
+		((!b->batTransient &&
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
 		 BATcheckhash(b));
@@ -1880,10 +1880,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 */
 		bool use_imprints = !equi &&
 			!b->tvarsized &&
-			(b->batPersistence == PERSISTENT ||
+			(!b->batTransient ||
 			 (parent != 0 &&
 			  (tmp = BBPquickdesc(parent, false)) != NULL &&
-			  tmp->batPersistence == PERSISTENT));
+			  !tmp->batTransient));
 		bn = scanselect(b, s, bn, tl, th, li, hi, equi, anti,
 				lval, hval, lnil, maximum, use_imprints);
 	}
@@ -2220,10 +2220,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li,
 		cnt = BATcount(r1);
 		assert(BATcount(r1) == BATcount(r2));
 	} else if ((BATcount(rl) > 2 ||
-		    l->batPersistence == PERSISTENT ||
+		    !l->batTransient ||
 		    (VIEWtparent(l) != 0 &&
 		     (tmp = BBPquickdesc(VIEWtparent(l), false)) != NULL &&
-		     tmp->batPersistence == PERSISTENT) ||
+		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
 		/* implementation using imprints on left column

@@ -55,6 +55,30 @@ strToStrSQuote(char **dst, size_t *len, const void *src, bool external)
 }
 
 str
+sql_drop_statistics(Client cntxt, sql_table *t)
+{
+	node *ncol;
+	char *dquery, *msg = NULL;
+
+	dquery = (char *) GDKzalloc(96);
+	if (dquery == NULL) {
+		throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	if (isTable(t) && t->columns.set) {
+		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+			sql_column *c = ncol->data;
+
+			snprintf(dquery, 96, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
+			msg = SQLstatementIntern(cntxt, &dquery, "SQLanalyze", TRUE, FALSE, NULL);
+			if (msg)
+				break;
+		}
+	}
+	GDKfree(dquery);
+	return msg;
+}
+
+str
 sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;

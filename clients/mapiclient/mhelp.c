@@ -53,8 +53,8 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER TABLE [ IF EXISTS ] qname RENAME [ COLUMN ] ident TO ident\n"
 	 "ALTER TABLE [ IF EXISTS ] qname DROP [ COLUMN ] ident [ RESTRICT | CASCADE ]\n"
 	 "ALTER TABLE [ IF EXISTS ] qname DROP CONSTRAINT ident [ RESTRICT | CASCADE ]\n"
-	 "ALTER TABLE [ IF EXISTS ] qname SET { { READ | INSERT } ONLY | READ WRITE }\n"
 	 "ALTER TABLE [ IF EXISTS ] qname RENAME TO ident\n"
+	 "ALTER TABLE [ IF EXISTS ] qname SET { { READ | INSERT } ONLY | READ WRITE }\n"
 	 "ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident",
 	 "qname,column_def,table_constraint,ident",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Alter"},
@@ -542,9 +542,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"column_constraint",
 	 NULL,
-	 "NULL | NOT NULL | UNIQUE | PRIMARY KEY | CHECK '(' search_condition ')' |\n"
-	 " REFERENCES qname [ column_list ] [ MATCH {FULL|PARTIAL|SIMPLE} ] reference_action ...\n",
-	 "column_list,search_condition,reference_action",
+	 "[ CONSTRAINT ident ] { NOT NULL | NULL | UNIQUE | PRIMARY KEY | CHECK '(' search_condition ')' |\n"
+	 "    REFERENCES qname [ column_list ] [ match_options ] [ reference_action ] }\n",
+	 "column_list,search_condition,match_options,reference_action",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableIdentityColumn"},
 	{"control_statement",
 	 NULL,
@@ -636,7 +636,12 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"isolevel",
 	 NULL,
-	 "READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE ",
+	 "READ UNCOMMITTED | READ COMMITTED | REPEATABLE READ | SERIALIZABLE",
+	 NULL,
+	 NULL},
+	{"match_options",
+	 NULL,
+	 "MATCH { FULL | PARTIAL | SIMPLE }",
 	 NULL,
 	 NULL},
 	{"merge_clause",
@@ -744,9 +749,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL,},
 	{"table_constraint",
 	 NULL,
-	 "CONSTRAINT [ ident ] { PRIMARY KEY column_list | UNIQUE column_list |\n"
-	 "    FOREIGN KEY column_list REFERENCES qname [ column_list ] [ MATCH {FULL|PARTIAL|SIMPLE} ] }",
-	 "column_list",
+	 "[ CONSTRAINT ident ] { PRIMARY KEY column_list | UNIQUE column_list |\n"
+	 "    FOREIGN KEY column_list REFERENCES qname [ column_list ] [ match_options ] [ reference_action ] }",
+	 "column_list,match_options,reference_action",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableIdentityColumn"},
 	{"table_element",
 	 NULL,

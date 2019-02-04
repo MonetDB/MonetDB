@@ -581,7 +581,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	if (port > 0) {
 		if (listenaddr && *listenaddr) {
-			int check = 0;
+			int check = 0, e = errno;
 			char sport[16];
 			struct addrinfo *result = NULL, *rp = NULL, hints = (struct addrinfo) {
 				.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
@@ -591,7 +591,6 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			};
 
 			do {
-				bool ok = false;
 				snprintf(sport, 16, "%d", port);
 				check = getaddrinfo(listenaddr, sport, &hints, &result);
 				if (check != 0) {
@@ -607,71 +606,67 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				}
 
 				for (rp = result; rp != NULL; rp = rp->ai_next) {
+					int bind_check;
 					sock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
 								  | SOCK_CLOEXEC
 #endif
 								  , rp->ai_protocol);
-					if (sock == INVALID_SOCKET)
+					if (sock == INVALID_SOCKET) {
+						e = errno;
 						continue;
+					}
 #ifndef SOCK_CLOEXEC
 					(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
 					if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
+						e = errno;
 						closesocket(sock);
 						continue;
 					}
 
-					if (bind(sock, rp->ai_addr, rp->ai_addrlen) != SOCKET_ERROR) {
-						ok = true;
-						break;
-					}
-				}
-				if (ok) {
-					if (result)
-						freeaddrinfo(result);
-					break;
-				} else if (port > 65535) {
-					if (sock != -1)
+					bind_check = bind(sock, rp->ai_addr, rp->ai_addrlen);
+					e = errno;
+					if (bind_check == SOCKET_ERROR) {
 						closesocket(sock);
-					if (result)
-						freeaddrinfo(result);
+						continue;
+					} else
+						break;
+				}
+				if (result)
+					freeaddrinfo(result);
+				errno = e;
+				if (errno == 0 && sock != INVALID_SOCKET)
+					break;
+
+				if (port > 65535) {
 					GDKfree(psock);
 					GDKfree(usockfile);
 					throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed", port);
-				} else {
-					if (
+				} else if (
 #ifdef _MSC_VER
-						WSAGetLastError() == WSAEADDRINUSE &&
+							WSAGetLastError() == WSAEADDRINUSE &&
 #else
 #ifdef EADDRINUSE
-						errno == EADDRINUSE &&
+							errno == EADDRINUSE &&
 #else
 #endif
 #endif
-						autosense && port <= 65535) {
-						closesocket(sock);
-						if (result)
-							freeaddrinfo(result);
-						port++;
-						continue;
-					}
-					str err = createException(IO, "mal_mapi.listen",
-											  OPERATION_FAILED ": bind to stream socket port %d failed: %s", port,
-#ifdef _MSC_VER
-											  wsaerror(WSAGetLastError())
-#else
-											  strerror(errno)
-#endif
-					);
-					closesocket(sock);
-					if (result)
-						freeaddrinfo(result);
-					GDKfree(psock);
-					GDKfree(usockfile);
-					return err;
+							autosense && port <= 65535) {
+								port++;
+								continue;
 				}
+				GDKfree(psock);
+				GDKfree(usockfile);
+				errno = e;
+				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed: %s", port,
+#ifdef _MSC_VER
+											wsaerror(WSAGetLastError())
+#else
+											strerror(errno)
+#endif
+				);
 			} while (1);
 		} else {
 			sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
@@ -680,9 +675,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 						  , 0);
 			if (sock == INVALID_SOCKET) {
+				int e = errno;
 				GDKfree(psock);
 				GDKfree(usockfile);
-				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": creation of stream socket failed: %s",
+				errno = e;
+				throw(IO, "mal_mapi.listen",
+					  OPERATION_FAILED ": bind to stream socket port %d "
+					  "failed: %s", port,
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
 #else
@@ -695,6 +694,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 
 			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
+				int e = errno;
 #ifdef _MSC_VER
 				const char *err = wsaerror(WSAGetLastError());
 #else
@@ -703,6 +703,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				GDKfree(psock);
 				GDKfree(usockfile);
 				closesocket(sock);
+				errno = e;
 				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", err);
 			}
 
@@ -734,6 +735,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 					server_ipv4.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 
 				if (bind(sock, server, length) == SOCKET_ERROR) {
+					int e = errno;
 					if (
 #ifdef _MSC_VER
 						WSAGetLastError() == WSAEADDRINUSE &&
@@ -751,6 +753,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 					closesocket(sock);
 					GDKfree(psock);
 					GDKfree(usockfile);
+					errno = e;
 					throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed: %s", port,
 #ifdef _MSC_VER
 						  wsaerror(WSAGetLastError())
@@ -764,9 +767,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			} while (1);
 
 			if (getsockname(sock, server, &length) == SOCKET_ERROR) {
+				int e = errno;
 				closesocket(sock);
 				GDKfree(psock);
 				GDKfree(usockfile);
+				errno = e;
 				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": failed getting socket name: %s",
 #ifdef _MSC_VER
 					  wsaerror(WSAGetLastError())
@@ -778,10 +783,13 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		}
 
 		if (listen(sock, maxusers) == SOCKET_ERROR) {
+			int e = errno;
 			closesocket(sock);
 			GDKfree(psock);
 			GDKfree(usockfile);
-			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": failed to set socket to listen %s",
+			errno = e;
+			throw(IO, "mal_mapi.listen",
+				  OPERATION_FAILED ": failed getting socket name: %s",
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
@@ -798,9 +806,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 					   , 0);
 		if (usock == INVALID_SOCKET) {
+			int e = errno;
 			GDKfree(psock);
 			GDKfree(usockfile);
-			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": creation of UNIX socket failed: %s",
+			errno = e;
+			throw(IO, "mal_mapi.listen",
+				  OPERATION_FAILED ": creation of UNIX socket failed: %s",
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
@@ -838,9 +849,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		}
 		if (bind(usock, (SOCKPTR) &userver, length) == SOCKET_ERROR) {
 			char *e;
+			int err = errno;
 			closesocket(usock);
 			(void) remove(usockfile);
 			GDKfree(psock);
+			errno = err;
 			e = createException(IO, "mal_mapi.listen",
 								OPERATION_FAILED
 								": binding to UNIX socket file %s failed: %s",
@@ -856,9 +869,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		}
 		if(listen(usock, maxusers) == SOCKET_ERROR) {
 			char *e;
+			int err = errno;
 			closesocket(usock);
 			(void) remove(usockfile);
 			GDKfree(psock);
+			errno = err;
 			e = createException(IO, "mal_mapi.listen",
 								OPERATION_FAILED
 								": setting UNIX socket file %s to listen failed: %s",

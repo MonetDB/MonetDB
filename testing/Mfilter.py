@@ -32,6 +32,13 @@ def wlen(str) :
     return len(' '.join(str.split()))
 ### wlen(str) #
 
+def openutf8(file, mode='r'):
+    try:
+        f = open(file, mode, encoding='utf-8') # Python 3
+    except TypeError:
+        f = open(file, mode)    # Python 2
+    return f
+
 test = (
         # potential differences, which we want to ignore
         re.compile('(?:'+')|(?:'.join([
@@ -140,7 +147,7 @@ def mFilter (FILE, IGNORE) :
         i += 1
     IGNORE = ''.join(ign)
 
-    fin = open(FILE, "rU")
+    fin = openutf8(FILE, "rU")
     LINE = fin.readline()
     while  len(LINE)  and  ( len(LINE) < 15  or  LINE[:15] not in ("stdout of test ", "stderr of test ") ):
         LINE = fin.readline()
@@ -154,7 +161,7 @@ def mFilter (FILE, IGNORE) :
     ftmp = []
     ig = n = 0
     il = iw = ic = el = ew = ec = al = aw = ac = 0
-    for iline in open(FILE, 'rU'):
+    for iline in openutf8(FILE, 'rU'):
         iline = iline.replace('\033[?1034h','')
         if iline.startswith('# builtin opt') or \
            iline.startswith('# cmdline opt') or \
@@ -240,7 +247,7 @@ def mFilter (FILE, IGNORE) :
                         ic = ic + c
                 ftmp.append(ln)
 
-    fout = open(FILE + ".FILTERED", "w")
+    fout = openutf8(FILE + ".FILTERED", "w")
     if (al > 0) or (aw > 0) or (ac >0):
         fout.write("Statistics about std"+WHAT+" of test '"+TST+"` in directory '"+TSTDIR+"`:\n")
         fout.write("  %9d lines, %9d words, %9d chars   in lines not matching '^$|%s|^=`\n" % (il,iw,ic,IGNORE))
@@ -289,7 +296,7 @@ def mFilter (FILE, IGNORE) :
                     warn(THISFILE, "Removing input file '%s'." % FILE)
                     try:
                         os.remove(FILE)
-                        fin = open(FILE,"w")
+                        fin = openutf8(FILE,"w")
                         fin.write("%s: Removed '%s' to create space for '%s'.\n" % (THISFILE, FILE, fout.name))
                         fin.close()
                     except:

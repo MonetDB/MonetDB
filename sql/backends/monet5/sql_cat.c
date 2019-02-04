@@ -19,6 +19,7 @@
 #include "sql_mvc.h"
 #include "sql_qc.h"
 #include "sql_partition.h"
+#include "sql_statistics.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
 #include "querylog.h"
@@ -386,7 +387,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 }
 
 static char *
-alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
+alter_table_set_access(Client cntxt, mvc *sql, char *sname, char *tname, int access)
 {
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *t = NULL;
@@ -401,6 +402,8 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 				throw(SQL,"sql.alter_table_set_access",SQLSTATE(40000) "ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
 
 			mvc_access(sql, t, access);
+			if (access == 0)
+				sql_drop_statistics(cntxt, t);
 		}
 	} else {
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, sname);
@@ -1504,7 +1507,7 @@ SQLalter_set_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int access = *getArgReference_int(stk, pci, 3);
 
 	initcontext();
-	msg = alter_table_set_access(sql, sname, tname, access);
+	msg = alter_table_set_access(cntxt, sql, sname, tname, access);
 
 	return msg;
 }

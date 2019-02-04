@@ -232,7 +232,7 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(seen);
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
-		   (b->batPersistence == PERSISTENT &&
+		   (!b->batTransient &&
 		    BAThash(b) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {

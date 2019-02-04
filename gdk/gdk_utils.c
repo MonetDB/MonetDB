@@ -758,7 +758,7 @@ GDKreset(int status, int exit)
 			/* we can't clean up after killing threads */
 			BBPexit();
 		}
-		GDKlog(GET_GDKLOCK(0), GDKLOGOFF);
+		GDKlog(GET_GDKLOCK(PERSISTENT), GDKLOGOFF);
 
 		for (farmid = 0; farmid < MAXFARMS; farmid++) {
 			if (BBPfarms[farmid].dirname != NULL) {
@@ -842,7 +842,7 @@ GDKreset(int status, int exit)
 void
 GDKexit(int status)
 {
-	if (GET_GDKLOCK(0) == NULL) {
+	if (GET_GDKLOCK(PERSISTENT) == NULL) {
 #ifdef HAVE_EMBEDDED
 		return;
 #else
@@ -1195,7 +1195,7 @@ GDKfatal(const char *format, ...)
 			MT_exit_thread(1);
 			/* exit(1); */
 		} else {
-			GDKlog(GET_GDKLOCK(0), "%s", message);
+			GDKlog(GET_GDKLOCK(PERSISTENT), "%s", message);
 #ifdef COREDUMP
 			abort();
 #else

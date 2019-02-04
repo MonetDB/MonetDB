@@ -40,7 +40,7 @@
 
 typedef int date;
 #define date_nil		((date) int_nil)
-#define date_isnil(X)	((X) == date_nil)
+#define is_date_nil(X)	((X) == date_nil)
 #define date_max		GDK_int_max /* used for overflow checks */
 
 /*
@@ -50,7 +50,7 @@ typedef int date;
  */
 typedef int daytime;
 #define daytime_nil ((daytime) int_nil)
-#define daytime_isnil(X) ((X) == daytime_nil)
+#define is_daytime_nil(X) ((X) == daytime_nil)
 /* it should never overflow */
 
 /*
@@ -102,9 +102,8 @@ typedef struct {
 mal_export tzone tzone_local;
 mal_export timestamp *timestamp_nil;
 
-#define timestamp_isnil(X) ts_isnil(X)
-#define tz_isnil(z)   (get_offset(&(z)) == get_offset(tzone_nil))
-#define ts_isnil(t)   ((t).days == timestamp_nil->days && (t).msecs == timestamp_nil->msecs)
+#define is_tzone_nil(z)   (get_offset(&(z)) == get_offset(tzone_nil))
+#define is_timestamp_nil(t)   ((t).days == timestamp_nil->days && (t).msecs == timestamp_nil->msecs)
 
 mal_export ssize_t daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external);
 mal_export ssize_t timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external);

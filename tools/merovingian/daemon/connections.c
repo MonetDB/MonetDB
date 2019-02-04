@@ -108,17 +108,23 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
+			int e = errno;
 			closesocket(sock);
+			errno = e;
 			return newErr("setsockopt unexpectedly failed: %s", strerror(errno));
 		}
 
 		if (bind(sock, server, length) == -1) {
+			int e = errno;
 			closesocket(sock);
+			errno = e;
 			return(newErr("binding to stream socket port %hu failed: %s", port, strerror(errno)));
 		}
 
 		if (getsockname(sock, server, &length) == -1) {
+			int e = errno;
 			closesocket(sock);
+			errno = e;
 			return(newErr("failed getting socket name: %s", strerror(errno)));
 		}
 	}
@@ -128,12 +134,14 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		freeaddrinfo(result);
 	if (check != 0) {
 		closesocket(sock);
-		return(newErr("failed getting socket name: %s", strerror(errno)));
+		return(newErr("failed getting socket name: %s", gai_strerror(check)));
 	}
 
 	/* keep queue of 5 */
 	if (listen(sock, 5) == -1) {
+		int e = errno;
 		closesocket(sock);
+		errno = e;
 		return(newErr("failed setting socket to listen: %s", strerror(errno)));
 	}
 

@@ -95,7 +95,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	/* disable caching */
 	m->caching = 0;
 	/* disable size header */
-	m->sizeheader = 0;
+	m->sizeheader = false;
 
 	if (first || catalog_version) {
 		if(mvc_trans(m) < 0) {

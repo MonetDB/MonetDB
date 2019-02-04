@@ -338,304 +338,6 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 }
 
 static str
-sql_update_dec2016(Client c, mvc *sql)
-{
-	size_t bufsize = 10240, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-	sql_schema *s;
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	s = mvc_bind_schema(sql, "sys");
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	{
-		sql_table *t;
-
-		if ((t = mvc_bind_table(sql, s, "storagemodel")) != NULL)
-			t->system = 0;
-		if ((t = mvc_bind_table(sql, s, "storagemodelinput")) != NULL)
-			t->system = 0;
-		if ((t = mvc_bind_table(sql, s, "storage")) != NULL)
-			t->system = 0;
-		if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
-			t->system = 0;
-	}
-
-	/* 18_index.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create procedure sys.createorderindex(sys string, tab string, col string)\n"
-			"external name sql.createorderindex;\n"
-			"create procedure sys.droporderindex(sys string, tab string, col string)\n"
-			"external name sql.droporderindex;\n");
-
-	/* 24_zorder.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function sys.zorder_decode_y;\n"
-			"drop function sys.zorder_decode_x;\n"
-			"drop function sys.zorder_encode;\n");
-
-	/* 75_storagemodel.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.tablestoragemodel;\n"
-			"drop view sys.storagemodel;\n"
-			"drop function sys.storagemodel();\n"
-			"drop procedure sys.storagemodelinit();\n"
-			"drop function sys.\"storage\"(string, string, string);\n"
-			"drop function sys.\"storage\"(string, string);\n"
-			"drop function sys.\"storage\"(string);\n"
-			"drop view sys.\"storage\";\n"
-			"drop function sys.\"storage\"();\n"
-			"alter table sys.storagemodelinput add column \"revsorted\" boolean;\n"
-			"alter table sys.storagemodelinput add column \"unique\" boolean;\n"
-			"alter table sys.storagemodelinput add column \"orderidx\" bigint;\n"
-			"create function sys.\"storage\"()\n"
-			"returns table (\n"
-			" \"schema\" string,\n"
-			" \"table\" string,\n"
-			" \"column\" string,\n"
-			" \"type\" string,\n"
-			" \"mode\" string,\n"
-			" location string,\n"
-			" \"count\" bigint,\n"
-			" typewidth int,\n"
-			" columnsize bigint,\n"
-			" heapsize bigint,\n"
-			" hashes bigint,\n"
-			" phash boolean,\n"
-			" \"imprints\" bigint,\n"
-			" sorted boolean,\n"
-			" revsorted boolean,\n"
-			" \"unique\" boolean,\n"
-			" orderidx bigint\n"
-			")\n"
-			"external name sql.\"storage\";\n"
-			"create view sys.\"storage\" as select * from sys.\"storage\"();\n"
-			"create function sys.\"storage\"( sname string)\n"
-			"returns table (\n"
-			" \"schema\" string,\n"
-			" \"table\" string,\n"
-			" \"column\" string,\n"
-			" \"type\" string,\n"
-			" \"mode\" string,\n"
-			" location string,\n"
-			" \"count\" bigint,\n"
-			" typewidth int,\n"
-			" columnsize bigint,\n"
-			" heapsize bigint,\n"
-			" hashes bigint,\n"
-			" phash boolean,\n"
-			" \"imprints\" bigint,\n"
-			" sorted boolean,\n"
-			" revsorted boolean,\n"
-			" \"unique\" boolean,\n"
-			" orderidx bigint\n"
-			")\n"
-			"external name sql.\"storage\";\n"
-			"create function sys.\"storage\"( sname string, tname string)\n"
-			"returns table (\n"
-			" \"schema\" string,\n"
-			" \"table\" string,\n"
-			" \"column\" string,\n"
-			" \"type\" string,\n"
-			" \"mode\" string,\n"
-			" location string,\n"
-			" \"count\" bigint,\n"
-			" typewidth int,\n"
-			" columnsize bigint,\n"
-			" heapsize bigint,\n"
-			" hashes bigint,\n"
-			" phash boolean,\n"
-			" \"imprints\" bigint,\n"
-			" sorted boolean,\n"
-			" revsorted boolean,\n"
-			" \"unique\" boolean,\n"
-			" orderidx bigint\n"
-			")\n"
-			"external name sql.\"storage\";\n"
-			"create function sys.\"storage\"( sname string, tname string, cname string)\n"
-			"returns table (\n"
-			" \"schema\" string,\n"
-			" \"table\" string,\n"
-			" \"column\" string,\n"
-			" \"type\" string,\n"
-			" \"mode\" string,\n"
-			" location string,\n"
-			" \"count\" bigint,\n"
-			" typewidth int,\n"
-			" columnsize bigint,\n"
-			" heapsize bigint,\n"
-			" hashes bigint,\n"
-			" phash boolean,\n"
-			" \"imprints\" bigint,\n"
-			" sorted boolean,\n"
-			" revsorted boolean,\n"
-			" \"unique\" boolean,\n"
-			" orderidx bigint\n"
-			")\n"
-			"external name sql.\"storage\";\n"
-			"create procedure sys.storagemodelinit()\n"
-			"begin\n"
-			" delete from sys.storagemodelinput;\n"
-			" insert into sys.storagemodelinput\n"
-			" select X.\"schema\", X.\"table\", X.\"column\", X.\"type\", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X.\"unique\", X.orderidx from sys.\"storage\"() X;\n"
-			" update sys.storagemodelinput\n"
-			" set reference = true\n"
-			" where concat(concat(\"schema\",\"table\"), \"column\") in (\n"
-			"  SELECT concat( concat(\"fkschema\".\"name\", \"fktable\".\"name\"), \"fkkeycol\".\"name\" )\n"
-			"  FROM \"sys\".\"keys\" AS    \"fkkey\",\n"
-			"    \"sys\".\"objects\" AS \"fkkeycol\",\n"
-			"    \"sys\".\"tables\" AS  \"fktable\",\n"
-			"    \"sys\".\"schemas\" AS \"fkschema\"\n"
-			"  WHERE   \"fktable\".\"id\" = \"fkkey\".\"table_id\"\n"
-			"   AND \"fkkey\".\"id\" = \"fkkeycol\".\"id\"\n"
-			"   AND \"fkschema\".\"id\" = \"fktable\".\"schema_id\"\n"
-			"   AND \"fkkey\".\"rkey\" > -1);\n"
-			" update sys.storagemodelinput\n"
-			" set \"distinct\" = \"count\"\n"
-			" where \"type\" = 'varchar' or \"type\"='clob';\n"
-			"end;\n"
-			"create function sys.storagemodel()\n"
-			"returns table (\n"
-			" \"schema\" string,\n"
-			" \"table\" string,\n"
-			" \"column\" string,\n"
-			" \"type\" string,\n"
-			" \"count\" bigint,\n"
-			" columnsize bigint,\n"
-			" heapsize bigint,\n"
-			" hashes bigint,\n"
-			" \"imprints\" bigint,\n"
-			" sorted boolean,\n"
-			" revsorted boolean,\n"
-			" \"unique\" boolean,\n"
-			" orderidx bigint)\n"
-			"begin\n"
-			" return select I.\"schema\", I.\"table\", I.\"column\", I.\"type\", I.\"count\",\n"
-			" columnsize(I.\"type\", I.count, I.\"distinct\"),\n"
-			" heapsize(I.\"type\", I.\"distinct\", I.\"atomwidth\"),\n"
-			" hashsize(I.\"reference\", I.\"count\"),\n"
-			" imprintsize(I.\"count\",I.\"type\"),\n"
-			" I.sorted, I.revsorted, I.\"unique\", I.orderidx\n"
-			" from sys.storagemodelinput I;\n"
-			"end;\n"
-			"create view sys.storagemodel as select * from sys.storagemodel();\n"
-			"create view sys.tablestoragemodel\n"
-			"as select \"schema\",\"table\",max(count) as \"count\",\n"
-			" sum(columnsize) as columnsize,\n"
-			" sum(heapsize) as heapsize,\n"
-			" sum(hashes) as hashes,\n"
-			" sum(\"imprints\") as \"imprints\",\n"
-			" sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n"
-			"from sys.storagemodel() group by \"schema\",\"table\";\n"
-			"update sys._tables set system = true where name in ('storage', 'storagemodel', 'tablestoragemodel') and schema_id = (select id from sys.schemas where name = 'sys');\n");
-
-	/* 80_statistics.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"alter table sys.statistics add column \"revsorted\" boolean;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('storage', 'storagemodel') and type = %d and schema_id = (select id from sys.schemas where name = 'sys');\n",
-			F_UNION);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where name in ('createorderindex', 'droporderindex', 'storagemodelinit') and type = %d and schema_id = (select id from sys.schemas where name = 'sys');\n",
-			F_PROC);
-
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_dec2016_sp2(Client c, mvc *sql)
-{
-	size_t bufsize = 2048, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-	res_table *output;
-	BAT *b;
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos, "select id from sys.types where sqlname = 'decimal' and digits = %d;\n",
-#ifdef HAVE_HGE
-			have_hge ? 39 :
-#endif
-			19);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
-	if (err) {
-		GDKfree(buf);
-		return err;
-	}
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) > 0) {
-			pos = 0;
-			pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-#ifdef HAVE_HGE
-			if (have_hge) {
-				pos += snprintf(buf + pos, bufsize - pos,
-						"update sys.types set digits = 38 where sqlname = 'decimal' and digits = 39;\n"
-						"update sys.args set type_digits = 38 where type = 'decimal' and type_digits = 39;\n");
-			} else
-#endif
-				pos += snprintf(buf + pos, bufsize - pos,
-						"update sys.types set digits = 18 where sqlname = 'decimal' and digits = 19;\n"
-						"update sys.args set type_digits = 18 where type = 'decimal' and type_digits = 19;\n");
-
-			if (schema)
-				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
-
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_tables_destroy(output);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_dec2016_sp3(Client c, mvc *sql)
-{
-	size_t bufsize = 2048, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016_sp3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"set schema \"sys\";\n"
-			"drop procedure sys.settimeout(bigint);\n"
-			"drop procedure sys.settimeout(bigint,bigint);\n"
-			"drop procedure sys.setsession(bigint);\n"
-			"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;\n"
-			"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;\n"
-			"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;\n"
-			"update sys.functions set system = true where name in ('settimeout', 'setsession') and schema_id = (select id from sys.schemas where name = 'sys');\n");
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
-	assert(pos < bufsize);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
 sql_update_jul2017(Client c, mvc *sql)
 {
 	size_t bufsize = 10000, pos = 0;
@@ -1733,6 +1435,91 @@ sql_update_aug2018(Client c, mvc *sql)
 }
 
 static str
+sql_update_aug2018_sp2(Client c, mvc *sql)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	res_table *output;
+	BAT *b;
+
+	schema = stack_get_string(sql, "current_schema");
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_aug2018_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* required update for changeset 23e1231ada99 */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"select id from sys.functions where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err) {
+		GDKfree(buf);
+		return err;
+	}
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) > 0) {
+			pos = 0;
+			pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+			pos += snprintf(buf + pos, bufsize - pos,
+					"update sys.functions set side_effect = true where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
+
+			if (schema)
+				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
+{
+	size_t bufsize = 1600, pos = 0;
+	char *schema = NULL, *err = NULL;
+	char *buf = GDKmalloc(bufsize);
+
+	if (buf == NULL)
+		throw(SQL, "sql_drop_functions_dependencies_Xs_on_Ys", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	schema = stack_get_string(sql, "current_schema");
+	/* remove functions which were created in sql/scripts/21_dependency_functions.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"DROP FUNCTION dependencies_schemas_on_users();\n"
+			"DROP FUNCTION dependencies_owners_on_schemas();\n"
+			"DROP FUNCTION dependencies_tables_on_views();\n"
+			"DROP FUNCTION dependencies_tables_on_indexes();\n"
+			"DROP FUNCTION dependencies_tables_on_triggers();\n"
+			"DROP FUNCTION dependencies_tables_on_foreignKeys();\n"
+			"DROP FUNCTION dependencies_tables_on_functions();\n"
+			"DROP FUNCTION dependencies_columns_on_views();\n"
+			"DROP FUNCTION dependencies_columns_on_keys();\n"
+			"DROP FUNCTION dependencies_columns_on_indexes();\n"
+			"DROP FUNCTION dependencies_columns_on_functions();\n"
+			"DROP FUNCTION dependencies_columns_on_triggers();\n"
+			"DROP FUNCTION dependencies_views_on_functions();\n"
+			"DROP FUNCTION dependencies_views_on_triggers();\n"
+			"DROP FUNCTION dependencies_functions_on_functions();\n"
+			"DROP FUNCTION dependencies_functions_on_triggers();\n"
+			"DROP FUNCTION dependencies_keys_on_foreignKeys();\n");
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
 sql_update_apr2019(Client c, mvc *sql)
 {
 	size_t bufsize = 2000, pos = 0;
@@ -1748,6 +1535,11 @@ sql_update_apr2019(Client c, mvc *sql)
 	s = mvc_bind_schema(sql, "sys");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+	/* 26_sysmon.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"grant execute on function sys.queue to public;\n"
+			"grant select on sys.queue to public;\n");
 
 	/* 51_sys_schema_extensions.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1805,91 +1597,6 @@ sql_update_apr2019(Client c, mvc *sql)
 		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	}
 
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
-{
-	size_t bufsize = 1600, pos = 0;
-	char *schema = NULL, *err = NULL;
-	char *buf = GDKmalloc(bufsize);
-
-	if (buf == NULL)
-		throw(SQL, "sql_drop_functions_dependencies_Xs_on_Ys", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	schema = stack_get_string(sql, "current_schema");
-	/* remove functions which were created in sql/scripts/21_dependency_functions.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"set schema \"sys\";\n"
-			"DROP FUNCTION dependencies_schemas_on_users();\n"
-			"DROP FUNCTION dependencies_owners_on_schemas();\n"
-			"DROP FUNCTION dependencies_tables_on_views();\n"
-			"DROP FUNCTION dependencies_tables_on_indexes();\n"
-			"DROP FUNCTION dependencies_tables_on_triggers();\n"
-			"DROP FUNCTION dependencies_tables_on_foreignKeys();\n"
-			"DROP FUNCTION dependencies_tables_on_functions();\n"
-			"DROP FUNCTION dependencies_columns_on_views();\n"
-			"DROP FUNCTION dependencies_columns_on_keys();\n"
-			"DROP FUNCTION dependencies_columns_on_indexes();\n"
-			"DROP FUNCTION dependencies_columns_on_functions();\n"
-			"DROP FUNCTION dependencies_columns_on_triggers();\n"
-			"DROP FUNCTION dependencies_views_on_functions();\n"
-			"DROP FUNCTION dependencies_views_on_triggers();\n"
-			"DROP FUNCTION dependencies_functions_on_functions();\n"
-			"DROP FUNCTION dependencies_functions_on_triggers();\n"
-			"DROP FUNCTION dependencies_keys_on_foreignKeys();\n");
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
-	assert(pos < bufsize);
-
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_aug2018_sp2(Client c, mvc *sql)
-{
-	size_t bufsize = 1000, pos = 0;
-	char *buf, *err;
-	char *schema;
-	res_table *output;
-	BAT *b;
-
-	schema = stack_get_string(sql, "current_schema");
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_aug2018_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-
-	/* required update for changeset 23e1231ada99 */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"select id from sys.functions where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
-	if (err) {
-		GDKfree(buf);
-		return err;
-	}
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) > 0) {
-			pos = 0;
-			pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
-			pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set side_effect = true where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
-
-			if (schema)
-				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
-
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_table_destroy(output);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -2268,29 +1975,6 @@ SQLupgrades(Client c, mvc *m)
 				fprintf(stderr, "!%s\n", err);
 				freeException(err);
 			}
-		}
-	}
-
-	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!sql_bind_func3(m->sa, s, "createorderindex", &tp, &tp, &tp, F_PROC)) {
-		if ((err = sql_update_dec2016(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
-	if ((err = sql_update_dec2016_sp2(c, m)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
-	}
-
-	sql_find_subtype(&tp, "bigint", 0, 0);
-	if ((f = sql_bind_func(m->sa, s, "settimeout", &tp, NULL, F_PROC)) != NULL &&
-	     /* The settimeout function used to be in the sql module */
-	     f->func->sql && f->func->query && strstr(f->func->query, "sql") != NULL) {
-		if ((err = sql_update_dec2016_sp3(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
 		}
 	}
 

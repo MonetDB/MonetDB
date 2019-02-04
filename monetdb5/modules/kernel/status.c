@@ -587,10 +587,10 @@ SYSgdkEnv(bat *ret, bat *ret2)
 		if (BBPvalid(i)) {
 			pbat++;
 			if (BBP_cache(i)) {
-				if (BBP_cache(i)->batPersistence == PERSISTENT)
-					per++;
-				else
+				if (BBP_cache(i)->batTransient)
 					tmp++;
+				else
+					per++;
 			} else {
 				pdisk++;
 			}
