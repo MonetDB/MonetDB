@@ -3519,9 +3519,6 @@ else:
     def listdir(d):
         return os.listdir(os.path.abspath(d))
 
-os.environ['CYGPATH_W'] = '@CYGPATH_W@'
-os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
-
 HOST = 'localhost'
 if 'HOST' in os.environ:
     HOST = os.environ['HOST']

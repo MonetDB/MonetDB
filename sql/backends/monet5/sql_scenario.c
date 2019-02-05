@@ -587,12 +587,12 @@ SQLinit(Client c)
 	if (msg != MAL_SUCCEED)
 		return msg;
 
-	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
+	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE, "logmanager")) == 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
 	GDKregister(sqllogthread);
 	if (!(SQLdebug&1024)) {
-		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
+		if ((idlethread = THRcreate((void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE, "idlemanager")) == 0) {
 			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
 		}
 		GDKregister(idlethread);

@@ -324,6 +324,7 @@ void PROPdestroy(BAT *b);
 BUN SORTfnd(BAT *b, const void *v);
 BUN SORTfndfirst(BAT *b, const void *v);
 BUN SORTfndlast(BAT *b, const void *v);
+MT_Id THRcreate(void (*f)(void *), void *arg, enum MT_thr_detach d, const char *name);
 void *THRdata[THREADDATA];
 void THRdel(Thread t);
 Thread THRget(int tid);

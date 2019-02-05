@@ -1969,7 +1969,7 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 			fprintf(stderr,				\
 				"#GDKstrdup(len=%zu) -> %p"	\
 				" %s[%s:%d]\n",			\
-				strlen(_str),			\
+				_str ? strlen(_str) : 0,	\
 				_res,				\
 				__func__, __FILE__, __LINE__);	\
 		_res;						\
@@ -2100,7 +2100,7 @@ GDKstrdup_debug(const char *str, const char *filename, int lineno)
 	void *res = GDKstrdup(str);
 	ALLOCDEBUG fprintf(stderr, "#GDKstrdup(len=%zu) -> "
 			   "%p [%s:%d]\n",
-			   strlen(str), res, filename, lineno);
+			   str ? strlen(str) : 0, res, filename, lineno);
 	return res;
 }
 #define GDKstrdup(s)	GDKstrdup_debug((s), __FILE__, __LINE__)
@@ -2306,6 +2306,7 @@ typedef struct threadStruct {
 gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);
 gdk_export Thread THRnew(const char *name);
+gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
 gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, void *);
 gdk_export void *THRgetdata(int);
