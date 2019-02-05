@@ -376,7 +376,6 @@ MCforkClient(Client father)
 static void
 freeClient(Client c)
 {
-	Thread t = c->mythread;
 	c->mode = FINISHCLIENT;
 
 #ifdef MAL_CLIENT_DEBUG
@@ -430,8 +429,6 @@ freeClient(Client c)
 		freeMalBlk(c->wlc);
 	c->wlc_kind = 0;
 	c->wlc = NULL;
-	if (t)
-		THRdel(t);  /* you may perform suicide */
 	MT_sema_destroy(&c->s);
 	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 }

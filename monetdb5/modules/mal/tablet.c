@@ -1098,15 +1098,6 @@ SQLworker(void *arg)
 	unsigned int i;
 	int j, piece;
 	lng t0;
-	Thread thr;
-
-	thr = THRnew("SQLworker");
-	if (thr == NULL) {
-		task->id = -1;			/* signal failure */
-		MT_sema_up(&task->reply);
-		return;
-	}
-	MT_sema_up(&task->reply);
 
 	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
@@ -1183,7 +1174,6 @@ SQLworker(void *arg)
   do_return:
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
-	THRdel(thr);
 }
 
 static void
@@ -1243,19 +1233,9 @@ SQLproducer(void *p)
 	const char *rsep = task->rsep;
 	size_t rseplen = strlen(rsep), partial = 0;
 	char quote = task->quote;
-	Thread thr;
 
-	thr = THRnew("SQLproducer");
-	if (thr == NULL) {
-		task->id = -1;
-		tablet_error(task, lng_nil, int_nil, "cannot create producer thread", "SQLproducer");
-		MT_sema_up(&task->consumer);
-		return;
-	}
-	MT_sema_up(&task->consumer);
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
-		THRdel(thr);
 		return;
 	}
 
@@ -1484,7 +1464,6 @@ SQLproducer(void *p)
 			/* then wait until it is done */
 			MT_sema_down(&task->producer);
 			if (cnt == task->maxrow) {
-				THRdel(thr);
 				return;
 			}
 		} else {
@@ -1498,7 +1477,6 @@ SQLproducer(void *p)
 				MT_sema_down(&task->producer);
 				blocked[(cur + 1) % MAXBUFFERS] = false;
 				if (task->state == ENDOFCOPY) {
-					THRdel(thr);
 					return;
 				}
 			}
@@ -1523,7 +1501,6 @@ SQLproducer(void *p)
 #ifdef _DEBUG_TABLET_CNTRL
 				mnstr_printf(GDKout, "#Producer delivered all\n");
 #endif
-				THRdel(thr);
 				return;
 			}
 		}
@@ -1535,7 +1512,6 @@ SQLproducer(void *p)
 #ifdef _DEBUG_TABLET_CNTRL
 			mnstr_printf(GDKout, "#Producer encountered eof\n");
 #endif
-			THRdel(thr);
 			return;
 		}
 		/* consumers ask us to stop? */
@@ -1545,7 +1521,6 @@ SQLproducer(void *p)
 				mnstr_printf(GDKout, "#SQL producer early exit %.63s\n",
 							 task->b->buf + task->b->pos);
 #endif
-			THRdel(thr);
 			return;
 		}
 		bufcnt[cur] = cnt;
@@ -1570,7 +1545,6 @@ SQLproducer(void *p)
 		tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
 		task->b->pos += partial;
 	}
-	THRdel(thr);
 }
 
 static void
@@ -1727,14 +1701,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	}
 
 	task.id = 0;
-	if(MT_create_thread(&task.tid, SQLproducer, (void *) &task, MT_THR_JOINABLE) < 0) {
+	if ((task.tid = THRcreate(SQLproducer, (void *) &task, MT_THR_JOINABLE, "SQLproducer")) == 0) {
 		tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start producer thread", "SQLload_file");
-		goto bailout;
-	}
-	/* wait until producer started */
-	MT_sema_down(&task.consumer);
-	if (task.id < 0) {
-		/* producer failed to properly start */
 		goto bailout;
 	}
 #ifdef _DEBUG_TABLET_
@@ -1758,16 +1726,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #endif
 		MT_sema_init(&ptask[j].sema, 0, "ptask[j].sema");
 		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
-		if(MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE) < 0) {
-			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
-			threads = j;
-			for (j = 0; j < threads; j++)
-				ptask[j].workers = threads;
-		}
-		/* wait until thread started */
-		MT_sema_down(&ptask[j].reply);
-		if (ptask[j].id == -1) {
-			/* allocation failure inside thread */
+		if ((ptask[j].tid = THRcreate(SQLworker, (void *) &ptask[j], MT_THR_JOINABLE, "SQLworker")) == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
 			threads = j;
 			for (j = 0; j < threads; j++)

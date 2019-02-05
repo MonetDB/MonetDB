@@ -1357,21 +1357,96 @@ THRnew(const char *name)
 			.sp = THRsp(),
 		};
 
-		PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", (unsigned) s->tid, (size_t) pid, (size_t) s->sp);
-		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
-
-		GDKnrofthreads++;
 		s->name = GDKstrdup(name);
-		if(!s->name) {
+		if (s->name == NULL) {
+			s->pid = 0;
 			MT_lock_unset(&GDKthreadLock);
 			IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
 			GDKerror("THRnew: malloc failure\n");
 			return NULL;
 		}
+		GDKnrofthreads++;
+		PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", (unsigned) s->tid, (size_t) pid, (size_t) s->sp);
+		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
 	}
 	MT_lock_unset(&GDKthreadLock);
 
 	return s;
+}
+
+struct THRstart {
+	void (*func) (void *);
+	void *arg;
+	MT_Sema sem;
+	Thread thr;
+};
+
+static void
+THRstarter(void *a)
+{
+	struct THRstart *t = a;
+	void (*func) (void *) = t->func;
+	void *arg = t->arg;
+
+	MT_sema_down(&t->sem);
+	t->thr->sp = THRsp();
+	(*func)(arg);
+	THRdel(t->thr);
+	MT_sema_destroy(&t->sem);
+	GDKfree(a);
+}
+
+MT_Id
+THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
+{
+	MT_Id tid;
+	Thread s;
+	struct THRstart *t;
+
+	if ((t = GDKmalloc(sizeof(*t))) == NULL)
+		return 0;
+	t->func = f;
+	t->arg = arg;
+	MT_lock_set(&GDKthreadLock);
+	for (s = GDKthreads; s < GDKthreads + THREADS; s++) {
+		if (s->pid == 0) {
+			break;
+		}
+	}
+	if (s == GDKthreads + THREADS) {
+		MT_lock_unset(&GDKthreadLock);
+		IODEBUG fprintf(stderr, "#THRcreate: too many threads\n");
+		GDKerror("THRcreate: too many threads\n");
+		return 0;
+	}
+	tid = s->tid;
+	/* name is for debugging and may be NULL */
+	*s = (ThreadRec) {
+		.pid = ~0,
+		.tid = tid,
+		.data[0] = THRdata[0],
+		.data[1] = THRdata[1],
+		.name = GDKstrdup(name),
+	};
+	MT_lock_unset(&GDKthreadLock);
+	t->thr = s;
+	MT_sema_init(&t->sem, 0, "THRcreate");
+	if (MT_create_thread(&tid, THRstarter, t, d) != 0) {
+		GDKerror("THRcreate: could not start thread\n");
+		MT_sema_destroy(&t->sem);
+		GDKfree(t);
+		MT_lock_set(&GDKthreadLock);
+		s->pid = 0;
+		MT_lock_unset(&GDKthreadLock);
+		return 0;
+	}
+	MT_lock_set(&GDKthreadLock);
+	GDKnrofthreads++;
+	s->pid = tid;
+	MT_lock_unset(&GDKthreadLock);
+	/* send new thread on its way */
+	MT_sema_up(&t->sem);
+	return tid;
 }
 
 void

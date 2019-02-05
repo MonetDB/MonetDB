@@ -478,7 +478,7 @@ SERVERlistenThread(SOCKET *Sock)
 			goto stream_alloc_fail;
 		}
 		data->out = s;
-		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, "doChallenge")) == 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -942,7 +942,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		GDKfree(data);
 		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, "doChallenge")) == 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);
