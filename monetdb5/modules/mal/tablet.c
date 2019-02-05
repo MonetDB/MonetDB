@@ -1224,7 +1224,7 @@ static void
 SQLproducer(void *p)
 {
 	READERtask *task = (READERtask *) p;
-	int consoleinput = 0;
+	bool consoleinput = false;
 	int cur = 0;		// buffer being filled
 	bool blocked[MAXBUFFERS] = { false };
 	bool ateof[MAXBUFFERS] = { false };
@@ -1247,7 +1247,7 @@ SQLproducer(void *p)
 	*s = 0;
 	task->cur = cur;
 	if (task->as->filename == NULL) {
-		consoleinput = 1;
+		consoleinput = true;
 		goto parseSTDIN;
 	}
 	for (;;) {
@@ -1316,7 +1316,7 @@ SQLproducer(void *p)
 		 * scan ended (we need to back off some since we could be in
 		 * the middle of the record separator).  If this is too
 		 * costly, we have to rethink the matter. */
-		if (task->from_stdin && *s == '\n' && task->maxrow == BUN_NONE) {
+		if (task->from_stdin && *s == '\n' && task->maxrow == BUN_MAX) {
 			ateof[cur] = true;
 			goto reportlackofinput;
 		}
