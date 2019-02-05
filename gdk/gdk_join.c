@@ -3755,6 +3755,19 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	ALGODEBUG t0 = GDKusec();
 
+	if ((parent = VIEWtparent(l)) != 0) {
+		BAT *b = BBPdescriptor(parent);
+		if (l->hseqbase == b->hseqbase &&
+		    BATcount(l) == BATcount(b))
+			l = b;
+	}
+	if ((parent = VIEWtparent(r)) != 0) {
+		BAT *b = BBPdescriptor(parent);
+		if (r->hseqbase == b->hseqbase &&
+		    BATcount(r) == BATcount(b))
+			r = b;
+	}
+
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
 	lcnt = lcand ? (BUN) (lcandend - lcand) : lend - lstart;
