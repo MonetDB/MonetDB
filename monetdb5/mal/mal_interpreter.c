@@ -18,38 +18,16 @@
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 #include "mal_private.h"
-  
 
-/*
- * The struct alignment leads to 40% gain in simple instructions when set.
- */
+
 inline
 ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 {
-	ValRecord *v = &stk->stk[pci->argv[k]];
-
-#ifdef STRUCT_ALIGNED
-	return (ptr) &v->val.ival;
-#else
-	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void: return (ptr) &v->val.ival;
-	case TYPE_bit:  return (ptr) &v->val.btval;
-	case TYPE_sht:  return (ptr) &v->val.shval;
-	case TYPE_bat:  return (ptr) &v->val.bval;
-	case TYPE_int:  return (ptr) &v->val.ival;
-	case TYPE_bte:  return (ptr) &v->val.btval;
-	case TYPE_oid:  return (ptr) &v->val.oval;
-	case TYPE_ptr:  return (ptr) &v->val.pval;
-	case TYPE_flt:  return (ptr) &v->val.fval;
-	case TYPE_dbl:  return (ptr) &v->val.dval;
-	case TYPE_lng:  return (ptr) &v->val.lval;
-#ifdef HAVE_HGE
-	case TYPE_hge:  return (ptr) &v->val.hval;
-#endif
-	case TYPE_str:  return (ptr) &v->val.sval;
-	default:        return (ptr) &v->val.pval;
-	}
-#endif
+	/* the C standard says: "A pointer to a union object, suitably
+	 * converted, points to each of its members (or if a member is a
+	 * bit-field, then to the unit in which it resides), and vice
+	 * versa." */
+	return (ptr) &stk->stk[pci->argv[k]].val;
 }
 
 str malCommandCall(MalStkPtr stk, InstrPtr pci)

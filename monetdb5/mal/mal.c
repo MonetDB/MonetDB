@@ -50,32 +50,7 @@ MT_Lock     mal_oltpLock MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
  * Initialization of the MAL context
- * The compiler directive STRUCT_ALIGNED tells that the
- * fields in the VALrecord all start at the same offset.
- * This knowledge avoids low-level type decodings, but should
- * be assured at least once for each platform.
  */
-
-static
-void tstAligned(void)
-{
-#ifdef STRUCT_ALIGNED
-	ValRecord v;
-	static_assert((void *) &v.val.bval == (void *) &v.val.ival, "misaligned");
-	static_assert((void *) &v.val.btval == (void *) &v.val.ival, "misaligned");
-	static_assert((void *) &v.val.shval == (void *) &v.val.ival, "misaligned");
-	static_assert((void *) &v.val.ival == (void *) &v.val.ival, "misaligned");
-	static_assert((void *) &v.val.oval == (void *) &v.val.ival, "misaligned");
-	static_assert((void *) &v.val.pval == (void *) &v.val.ival, "misaligned");
-	static_assert((void *) &v.val.fval == (void *) &v.val.ival, "misaligned");
-	static_assert((void *) &v.val.dval == (void *) &v.val.ival, "misaligned");
-	static_assert((void *) &v.val.lval == (void *) &v.val.ival, "misaligned");
-#ifdef HAVE_HGE
-	static_assert((void *) &v.val.hval == (void *) &v.val.ival, "misaligned");
-#endif
-	static_assert((void *) &v.val.sval == (void *) &v.val.ival, "misaligned");
-#endif
-}
 
 int mal_init(void){
 #ifdef NEED_MT_LOCK_INIT
@@ -92,7 +67,6 @@ int mal_init(void){
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
-	tstAligned();
 	MCinit();
 	mdbInit();
 	monet_memory = MT_npages() * MT_pagesize();
