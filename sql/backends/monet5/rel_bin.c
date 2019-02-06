@@ -1589,6 +1589,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	} else if (rel->l) { /* handle sub query via function */
 		int i;
 		char name[16], *nme;
+		sql_rel *fr;
 
 		nme = number2name(name, 16, ++sql->remote);
 
@@ -1597,6 +1598,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		sub = stmt_list(be, l);
 		sub = stmt_func(be, sub, sa_strdup(sql->sa, nme), rel->l, 0);
+		fr = rel->l;
 		l = sa_list(sql->sa);
 		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
 			sql_exp *c = n->data;
@@ -1605,6 +1607,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			const char *rnme = NULL;
 
 			s = stmt_alias(be, s, rnme, nme);
+			if (fr->card <= CARD_ATOM) /* single value, get result from bat */
+				s = stmt_fetch(be, s);
 			list_append(l, s);
 		}
 		sub = stmt_list(be, l);

@@ -2189,6 +2189,7 @@ str expandRef;
 str exportOperationRef;
 str export_tableRef;
 str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len);
+str fetchRef;
 int findGDKtype(int type);
 Module findModule(Module scope, str name);
 str findRef;
