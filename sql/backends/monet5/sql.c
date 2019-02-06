@@ -1391,7 +1391,10 @@ setwritable(BAT *b)
 		if (b->batSharecnt) {
 			bn = COLcopy(b, b->ttype, true, TRANSIENT);
 			if (bn != NULL)
-				BATsetaccess(bn, BAT_WRITE);
+				if (BATsetaccess(bn, BAT_WRITE) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					bn = NULL;
+				}
 		} else {
 			bn = NULL;
 		}
@@ -2794,7 +2797,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			c = BATattach(col->type.type->localtype, fname, TRANSIENT);
 			if (c == NULL)
 				throw(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
-			BATsetaccess(c, BAT_READ);
+			if (BATsetaccess(c, BAT_READ) != GDK_SUCCEED) {
+				BBPreclaim(c);
+				throw(SQL, "sql", SQLSTATE(42000) "Failed to set internal access while attaching file %s", fname);
+			}
 		} else if (tpe == TYPE_str) {
 			/* get the BAT and fill it with the strings */
 			c = COLnew(0, TYPE_str, 0, TRANSIENT);
