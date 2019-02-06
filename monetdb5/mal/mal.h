@@ -106,10 +106,6 @@ mal_export void mserver_reset(int exit);
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)
 
-#ifndef WORDS_BIGENDIAN
-#define STRUCT_ALIGNED
-#endif
-
 /* The MAL instruction block type definitions */
 /* Variable properties */
 #define VAR_CONSTANT 	1
