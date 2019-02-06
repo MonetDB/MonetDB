@@ -1110,12 +1110,16 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 			name = (char*)v;
 			s = find_sql_schema(tr, name);
 			_DELETE(v);
-			if (s == NULL) 
-				GDKfatal("SQL schema missing or incompatible, rebuild from archive");
+			if (s == NULL) {
+				GDKerror("SQL schema missing or incompatible, rebuild from archive");
+				return NULL;
+			}
 		}
 		s->base.id = sid;
 	} else {
 		s = SA_ZNEW(tr->sa, sql_schema);
+		if (s == NULL)
+			return NULL;
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
 		base_init(tr->sa, &s->base, sid, 0, v); _DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
@@ -1245,7 +1249,7 @@ sql_trans_update_schemas(sql_trans* tr)
 	table_funcs.rids_destroy(schemas);
 }
 
-static void
+static bool
 load_trans(sql_trans* tr, sqlid id)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -1260,7 +1264,9 @@ load_trans(sql_trans* tr, sqlid id)
 
 	for(rid = table_funcs.rids_next(schemas); !is_oid_nil(rid); rid = table_funcs.rids_next(schemas)) {
 		sql_schema *ns = load_schema(tr, id, rid);
-		if (ns && !instore(ns->base.id, id))
+		if (ns == NULL)
+			return false;
+		if (!instore(ns->base.id, id))
 			cs_add(&tr->schemas, ns, 0);
 	}
 	/* members maybe from different schemas */
@@ -1270,6 +1276,7 @@ load_trans(sql_trans* tr, sqlid id)
 		set_members(&s->tables);
 	}
 	table_funcs.rids_destroy(schemas);
+	return true;
 }
 
 static int
@@ -1932,8 +1939,12 @@ store_load(void) {
 		store_oid = prev_oid;
 
 	/* load remaining schemas, tables, columns etc */
-	if (!first)
-		load_trans(gtrans, id);
+	if (!first && !load_trans(gtrans, id)) {
+		GDKfree(store_oids);
+		store_oids = NULL;
+		nstore_oids = 0;
+		return -1;
+	}
 	store_initialized = 1;
 	GDKfree(store_oids);
 	store_oids = NULL;

@@ -286,7 +286,8 @@ main(int argc, char **av)
 #endif
 #endif
 	if (setlocale(LC_CTYPE, "") == NULL) {
-		GDKfatal("cannot set locale\n");
+		fprintf(stderr, "cannot set locale\n");
+		exit(1);
 	}
 
 	if (getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
@@ -624,21 +625,21 @@ main(int argc, char **av)
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
 			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
-				snprintf(secret, sizeof(secret),
-						"unable to open vault_key_file %s: %s",
-						GDKgetenv("monet_vault_key"), strerror(errno));
+				fprintf(stderr,
+					"unable to open vault_key_file %s: %s\n",
+					GDKgetenv("monet_vault_key"), strerror(errno));
 				/* don't show this as a crash */
 				msab_registerStop();
-				GDKfatal("%s", secret);
+				exit(1);
 			}
 			len = fread(secret, 1, sizeof(secret), secretf);
 			secret[len] = '\0';
 			len = strlen(secret); /* secret can contain null-bytes */
 			if (len == 0) {
-				snprintf(secret, sizeof(secret), "vault key has zero-length!");
+				fprintf(stderr, "vault key has zero-length!\n");
 				/* don't show this as a crash */
 				msab_registerStop();
-				GDKfatal("%s", secret);
+				exit(1);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
 								"(%zu), enlarge your vault key!\n", len);
@@ -648,14 +649,18 @@ main(int argc, char **av)
 		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			msab_registerStop();
-			GDKfatal("%s", err);
+			fprintf(stderr, "%s\n", err);
+			freeException(err);
+			exit(1);
 		}
 	}
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		/* don't show this as a crash */
 		msab_registerStop();
-		GDKfatal("%s", err);
+		fprintf(stderr, "%s\n", err);
+		freeException(err);
+		exit(1);
 	}
 	if (mal_init()) {
 		/* don't show this as a crash */
@@ -665,7 +670,9 @@ main(int argc, char **av)
 
 	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
 		msab_registerStop();
-		GDKfatal("%s", err);
+		fprintf(stderr, "%s\n", err);
+		freeException(err);
+		exit(1);
 	}
 
 	emergencyBreakpoint();
