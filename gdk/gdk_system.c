@@ -312,7 +312,7 @@ MT_exit_thread(int s)
 		ExitThread(s);
 	} else {
 		/* no threads started yet, so this is a global exit */
-		MT_global_exit(s);
+		exit(s);
 	}
 }
 
@@ -724,13 +724,6 @@ pthread_sema_down(pthread_sema_t *s)
 }
 #endif
 #endif
-
-/* coverity[+kill] */
-void
-MT_global_exit(int s)
-{
-	exit(s);
-}
 
 MT_Id
 MT_getpid(void)
