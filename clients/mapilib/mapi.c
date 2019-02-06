@@ -2646,6 +2646,13 @@ mapi_reconnect(Mapi mid)
 				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
 			}
 
+			if (pwdhash == NULL) {
+				snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
+						serverhash);
+				close_connection(mid);
+				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
+			}
+
 			free(mid->password);
 			mid->password = malloc(1 + strlen(pwdhash) + 1);
 			sprintf(mid->password, "\1%s", pwdhash);
