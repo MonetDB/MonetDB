@@ -73,7 +73,7 @@ MCinit(void)
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
 			fprintf(stderr,"#MCinit: GDKsetenv failed");
-			mal_exit();
+			mal_exit(1);
 		}
 	}
 
@@ -83,7 +83,7 @@ MCinit(void)
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
 		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
-		mal_exit();
+		mal_exit(1);
 	}
 }
 
@@ -501,7 +501,7 @@ MCcloseClient(Client c)
 
 	/* adm is set to disallow new clients entering */
 	mal_clients[CONSOLE].mode = FINISHCLIENT;
-	mal_exit();
+	mal_exit(0);
 }
 
 str

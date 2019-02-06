@@ -232,7 +232,7 @@ static void
 handler(int sig)
 {
 	(void) sig;
-	mal_exit();
+	mal_exit(-1);
 }
 
 int
@@ -674,7 +674,7 @@ main(int argc, char **av)
 		/* check for internal exception message to terminate */
 		if (msg) {
 			if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
-				mal_exit();
+				mal_exit(0);
 			fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
 			freeException(msg);
 		}
@@ -697,9 +697,9 @@ main(int argc, char **av)
 	while (1)
 		MT_sleep_ms(5000);
 
-	/* mal_exit calls MT_global_exit, so statements after this call will
+	/* mal_exit calls exit, so statements after this call will
 	 * never get reached */
-	mal_exit();
+	mal_exit(0);
 
 	return 0;
 }

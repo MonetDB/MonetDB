@@ -734,7 +734,7 @@ GDKregister(MT_Id pid)
 }
 
 void
-GDKreset(int status, int exit)
+GDKreset(int status)
 {
 	MT_Id pid = MT_getpid();
 	Thread t, s;
@@ -861,11 +861,6 @@ GDKreset(int status, int exit)
 	MT_lock_destroy(&mallocsuccesslock);
 #endif
 #endif
-#ifndef HAVE_EMBEDDED
-	if (exit) {
-		MT_global_exit(status);
-	}
-#endif
 }
 
 /* coverity[+kill] */
@@ -881,9 +876,9 @@ GDKexit(int status)
 #endif
 	}
 	GDKprepareExit();
-	GDKreset(status, 1);
+	GDKreset(status);
 #ifndef HAVE_EMBEDDED
-	MT_exit_thread(-1);
+	exit(status);
 #endif
 }
 
