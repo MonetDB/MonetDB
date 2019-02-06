@@ -58,7 +58,7 @@ gdk_export int BBPout;		/* BATs swapped out of BBP */
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
 
 /* global calls */
-gdk_export void BBPaddfarm(const char *dirname, int rolemask);
+gdk_export gdk_return BBPaddfarm(const char *dirname, int rolemask);
 gdk_export void BBPresetfarms(void);
 
 /* update interface */

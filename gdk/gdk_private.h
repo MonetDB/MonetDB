@@ -83,7 +83,7 @@ __hidden void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
-__hidden void BBPinit(void)
+__hidden gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))

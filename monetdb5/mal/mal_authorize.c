@@ -730,8 +730,7 @@ AUTHgetUsername(str *username, Client cntxt)
 	 * happens, it may be a security breach/attempt, and hence
 	 * terminating the entire system seems like the right thing to do to
 	 * me. */
-	if (p == BUN_NONE || p >= BATcount(user))
-		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, cntxt->user);
+	assert(p < BATcount(user));
 
 	useri = bat_iterator(user);
 	if ((*username = GDKstrdup( BUNtvar(useri, p))) == NULL)

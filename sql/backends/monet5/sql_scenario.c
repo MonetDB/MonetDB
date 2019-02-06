@@ -324,7 +324,6 @@ SQLprepareClient(Client c, int login)
 	c->state[MAL_SCENARIO_OPTIMIZE] = c;
 	c->sqlcontext = be;
 
-	initSQLreferences();
 	return NULL;
 }
 

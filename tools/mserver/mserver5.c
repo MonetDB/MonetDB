@@ -207,7 +207,7 @@ static int
 monet_init(opt *set, int setlen)
 {
 	/* determine Monet's kernel settings */
-	if (!GDKinit(set, setlen))
+	if (GDKinit(set, setlen) != GDK_SUCCEED)
 		return 0;
 
 #ifdef HAVE_CONSOLE
@@ -488,12 +488,17 @@ main(int argc, char **av)
 		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
 		exit(1);
 	}
-	BBPaddfarm(dbpath, 1 << PERSISTENT);
-	BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT);
+	if (BBPaddfarm(dbpath, 1 << PERSISTENT) != GDK_SUCCEED ||
+	    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT) != GDK_SUCCEED) {
+		fprintf(stderr, "!ERROR: cannot add farm\n");
+		exit(1);
+	}
 	GDKfree(dbpath);
 	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
-		return 0;
+		if (GDKerrbuf && *GDKerrbuf)
+			fprintf(stderr, "%s\n", GDKerrbuf);
+		exit(1);
 	}
 	mo_free_options(set, setlen);
 

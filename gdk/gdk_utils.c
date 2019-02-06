@@ -74,22 +74,22 @@ static void GDKunlockHome(int farmid);
  * access its information.
  */
 
-static int
+static bool
 GDKenvironment(const char *dbpath)
 {
-	if (dbpath == 0) {
+	if (dbpath == NULL) {
 		fprintf(stderr, "!GDKenvironment: database name missing.\n");
-		return 0;
+		return false;
 	}
 	if (strlen(dbpath) >= FILENAME_MAX) {
 		fprintf(stderr, "!GDKenvironment: database name too long.\n");
-		return 0;
+		return false;
 	}
 	if (!MT_path_absolute(dbpath)) {
 		fprintf(stderr, "!GDKenvironment: directory not an absolute path: %s.\n", dbpath);
-		return 0;
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 char *
@@ -421,7 +421,7 @@ MT_init(void)
 #define CATNAP		50	/* time to sleep in ms for catnaps */
 
 static int THRinit(void);
-static void GDKlockHome(int farmid);
+static gdk_return GDKlockHome(int farmid);
 
 #ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
@@ -429,7 +429,7 @@ static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
 #endif
 #endif
 
-bool
+gdk_return
 GDKinit(opt *set, int setlen)
 {
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
@@ -476,19 +476,19 @@ GDKinit(opt *set, int setlen)
 	}
 	errno = 0;
 	if (!GDKenvironment(dbpath))
-		return 0;
+		return GDK_FAIL;
 
 	if ((p = mo_find_option(set, setlen, "gdk_debug")))
 		GDKdebug = strtol(p, NULL, 10);
 
 	if (mnstr_init() < 0)
-		return 0;
+		return GDK_FAIL;
 	MT_init_posix();
 	if (THRinit() < 0)
-		return 0;
+		return GDK_FAIL;
 #ifndef NATIVE_WIN32
 	if (BATSIGinit() < 0)
-		return 0;
+		return GDK_FAIL;
 #endif
 #ifdef WIN32
 	(void) signal(SIGABRT, BATSIGabort);
@@ -513,14 +513,15 @@ GDKinit(opt *set, int setlen)
 					break;
 				}
 			}
-			if (!skip)
-				GDKlockHome(farmid);
+			if (!skip && GDKlockHome(farmid) != GDK_SUCCEED)
+				return GDK_FAIL;
 		}
 	}
 
 	/* Mserver by default takes 80% of all memory as a default */
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
-	BBPinit();
+	if (BBPinit() != GDK_SUCCEED)
+		return GDK_FAIL;
 
 	if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 		GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;
@@ -530,7 +531,8 @@ GDKinit(opt *set, int setlen)
 
 	n = (opt *) malloc(setlen * sizeof(opt));
 	if (n == NULL)
-		GDKfatal("GDKinit: malloc failed\n");
+		return GDK_FAIL;
+
 	for (i = 0; i < setlen; i++) {
 		int done = 0;
 		int j;
@@ -572,25 +574,35 @@ GDKinit(opt *set, int setlen)
 			    /* x & (x - 1): turn off rightmost 1 bit;
 			     * i.e. if result is zero, x is power of
 			     * two */
-			    (GDK_mmap_pagesize & (GDK_mmap_pagesize - 1)) != 0)
-				GDKfatal("GDKinit: gdk_mmap_pagesize must be power of 2 between 2**12 and 2**20\n");
+			    (GDK_mmap_pagesize & (GDK_mmap_pagesize - 1)) != 0) {
+				free(n);
+				GDKerror("GDKinit: gdk_mmap_pagesize must be power of 2 between 2**12 and 2**20\n");
+				return GDK_FAIL;
+			}
 		}
 	}
 
 	GDKkey = COLnew(0, TYPE_str, 100, TRANSIENT);
 	GDKval = COLnew(0, TYPE_str, 100, TRANSIENT);
 	if (GDKkey == NULL || GDKval == NULL) {
-		/* no cleanup necessary before GDKfatal */
-		GDKfatal("GDKinit: Could not create environment BAT");
+		free(n);
+		GDKerror("GDKinit: Could not create environment BAT");
+		return GDK_FAIL;
 	}
 	if (BBPrename(GDKkey->batCacheid, "environment_key") != 0 ||
-	    BBPrename(GDKval->batCacheid, "environment_val") != 0)
-		GDKfatal("GDKinit: BBPrename failed");
+	    BBPrename(GDKval->batCacheid, "environment_val") != 0) {
+		free(n);
+		GDKerror("GDKinit: BBPrename failed");
+		return GDK_FAIL;
+	}
 
 	/* store options into environment BATs */
 	for (i = 0; i < nlen; i++)
-		if (GDKsetenv(n[i].name, n[i].value) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv(n[i].name, n[i].value) != GDK_SUCCEED) {
+			free(n);
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 	free(n);
 
 	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
@@ -599,49 +611,67 @@ GDKinit(opt *set, int setlen)
 
 	if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 	    (p = strrchr(p, DIR_SEP)) != NULL) {
-		if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 #if DIR_SEP != '/'		/* on Windows look for different separator */
 	} else if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 	    (p = strrchr(p, '/')) != NULL) {
-		if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 #endif
 	}
 	if (GDKgetenv("gdk_vm_maxsize") == NULL) {
 		snprintf(buf, sizeof(buf), "%zu", GDK_vm_maxsize);
-		if (GDKsetenv("gdk_vm_maxsize", buf) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv("gdk_vm_maxsize", buf) != GDK_SUCCEED) {
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 	}
 	if (GDKgetenv("gdk_mem_maxsize") == NULL) {
 		snprintf(buf, sizeof(buf), "%zu", GDK_mem_maxsize);
-		if (GDKsetenv("gdk_mem_maxsize", buf) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv("gdk_mem_maxsize", buf) != GDK_SUCCEED) {
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 	}
 	if (GDKgetenv("gdk_mmap_minsize_persistent") == NULL) {
 		snprintf(buf, sizeof(buf), "%zu", GDK_mmap_minsize_persistent);
-		if (GDKsetenv("gdk_mmap_minsize_persistent", buf) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv("gdk_mmap_minsize_persistent", buf) != GDK_SUCCEED) {
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 	}
 	if (GDKgetenv("gdk_mmap_minsize_transient") == NULL) {
 		snprintf(buf, sizeof(buf), "%zu", GDK_mmap_minsize_transient);
-		if (GDKsetenv("gdk_mmap_minsize_transient", buf) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv("gdk_mmap_minsize_transient", buf) != GDK_SUCCEED) {
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 	}
 	if (GDKgetenv("gdk_mmap_pagesize") == NULL) {
 		snprintf(buf, sizeof(buf), "%zu", GDK_mmap_pagesize);
-		if (GDKsetenv("gdk_mmap_pagesize", buf) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv("gdk_mmap_pagesize", buf) != GDK_SUCCEED) {
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 	}
 	if (GDKgetenv("monet_pid") == NULL) {
 		snprintf(buf, sizeof(buf), "%d", (int) getpid());
-		if (GDKsetenv("monet_pid", buf) != GDK_SUCCEED)
-			GDKfatal("GDKinit: GDKsetenv failed");
+		if (GDKsetenv("monet_pid", buf) != GDK_SUCCEED) {
+			GDKerror("GDKinit: GDKsetenv failed");
+			return GDK_FAIL;
+		}
 	}
-	if (GDKsetenv("revision", mercurial_revision()) != GDK_SUCCEED)
-		GDKfatal("GDKinit: GDKsetenv failed");
+	if (GDKsetenv("revision", mercurial_revision()) != GDK_SUCCEED) {
+		GDKerror("GDKinit: GDKsetenv failed");
+		return GDK_FAIL;
+	}
 
-	return 1;
+	return GDK_SUCCEED;
 }
 
 int GDKnr_threads = 0;
@@ -880,7 +910,7 @@ MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
  * normal routines yet. So we have a local fatal here instead of
  * GDKfatal.
  */
-static void
+static gdk_return
 GDKlockHome(int farmid)
 {
 	int fd;
@@ -891,20 +921,24 @@ GDKlockHome(int farmid)
 	assert(BBPfarms[farmid].dirname != NULL);
 	assert(BBPfarms[farmid].lock_file == NULL);
 
-	if(!(gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL)))
-		GDKfatal("GDKlockHome: malloc failure\n");
+	if(!(gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL))) {
+		GDKerror("GDKlockHome: malloc failure\n");
+		return GDK_FAIL;
+	}
 
 	/*
 	 * Obtain the global database lock.
 	 */
 	if (stat(BBPfarms[farmid].dirname, &st) < 0 &&
 	    GDKcreatedir(gdklockpath) != GDK_SUCCEED) {
-		GDKfatal("GDKlockHome: could not create %s\n",
+		GDKerror("GDKlockHome: could not create %s\n",
 			 BBPfarms[farmid].dirname);
+		return GDK_FAIL;
 	}
 	if ((fd = MT_lockf(gdklockpath, F_TLOCK, 4, 1)) < 0) {
-		GDKfatal("GDKlockHome: Database lock '%s' denied\n",
+		GDKerror("GDKlockHome: Database lock '%s' denied\n",
 			 gdklockpath);
+		return GDK_FAIL;
 	}
 
 	/* now we have the lock on the database and are the only
@@ -912,20 +946,32 @@ GDKlockHome(int farmid)
 
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		close(fd);
-		GDKfatal("GDKlockHome: Could not fdopen %s\n", gdklockpath);
+		GDKerror("GDKlockHome: Could not fdopen %s\n", gdklockpath);
+		return GDK_FAIL;
 	}
-	BBPfarms[farmid].lock_file = GDKlockFile;
 
 	/*
 	 * Print the new process list in the global lock file.
 	 */
-	if(fseek(GDKlockFile, 0, SEEK_SET) == -1)
-		GDKfatal("GDKlockHome: Error while setting the file pointer on %s\n", gdklockpath);
-	if (ftruncate(fileno(GDKlockFile), 0) < 0)
-		GDKfatal("GDKlockHome: Could not truncate %s\n", gdklockpath);
-	fflush(GDKlockFile);
+	if (fseek(GDKlockFile, 0, SEEK_SET) == -1) {
+		fclose(GDKlockFile);
+		GDKerror("GDKlockHome: Error while setting the file pointer on %s\n", gdklockpath);
+		return GDK_FAIL;
+	}
+	if (ftruncate(fileno(GDKlockFile), 0) < 0) {
+		fclose(GDKlockFile);
+		GDKerror("GDKlockHome: Could not truncate %s\n", gdklockpath);
+		return GDK_FAIL;
+	}
+	if (fflush(GDKlockFile) == EOF) {
+		fclose(GDKlockFile);
+		GDKerror("GDKlockHome: Could not flush %s\n", gdklockpath);
+		return GDK_FAIL;
+	}
 	GDKlog(GDKlockFile, GDKLOGON);
 	GDKfree(gdklockpath);
+	BBPfarms[farmid].lock_file = GDKlockFile;
+	return GDK_SUCCEED;
 }
 
 
@@ -1452,9 +1498,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 void
 THRdel(Thread t)
 {
-	if (t < GDKthreads || t > GDKthreads + THREADS) {
-		GDKfatal("THRdel: illegal call\n");
-	}
+	assert(GDKthreads <= t && t < GDKthreads + THREADS);
 	MT_lock_set(&GDKthreadLock);
 	PARDEBUG fprintf(stderr, "#pid = %zu, disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 

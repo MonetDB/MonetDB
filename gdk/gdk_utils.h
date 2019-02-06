@@ -74,7 +74,7 @@ gdk_export size_t _MT_pagesize;
 #define MT_npages()	_MT_npages
 
 gdk_export void MT_init(void);	/*  init the package. */
-gdk_export bool GDKinit(opt *set, int setlen);
+gdk_export gdk_return GDKinit(opt *set, int setlen);
 
 /* used for testing only */
 gdk_export void GDKsetmallocsuccesscount(lng count);
