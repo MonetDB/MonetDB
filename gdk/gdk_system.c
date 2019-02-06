@@ -536,7 +536,6 @@ MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask)
 {
 	/* do not check for errors! */
 	sigdelset(new_mask, SIGQUIT);
-	sigdelset(new_mask, SIGALRM);
 	sigdelset(new_mask, SIGPROF);
 	pthread_sigmask(SIG_SETMASK, new_mask, orig_mask);
 }
