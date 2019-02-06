@@ -236,35 +236,11 @@ BATSIGabort(int nr)
 #endif
 
 #ifndef NATIVE_WIN32
-static void
-BATSIGinterrupt(int nr)
-{
-	GDKexit(nr);
-}
-
 static int
 BATSIGinit(void)
 {
-/* HACK to pacify compiler */
-#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))
-#undef  SIG_IGN			/*((__sighandler_t)1 ) */
-#define SIG_IGN   ((__sighandler_t)1L)
-#endif
-
 #ifdef SIGPIPE
 	(void) signal(SIGPIPE, SIG_IGN);
-#endif
-#ifdef __SIGRTMIN
-	(void) signal(__SIGRTMIN + 1, SIG_IGN);
-#endif
-#ifdef SIGHUP
-	(void) signal(SIGHUP, MT_global_exit);
-#endif
-#ifdef SIGINT
-	(void) signal(SIGINT, BATSIGinterrupt);
-#endif
-#ifdef SIGTERM
-	(void) signal(SIGTERM, BATSIGinterrupt);
 #endif
 	return 0;
 }
