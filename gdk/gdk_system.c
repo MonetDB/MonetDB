@@ -428,7 +428,7 @@ static struct posthread {
 	pthread_t tid;
 	void (*func)(void *);
 	void *arg;
-	int exited;
+	bool exited;
 } *posthreads = NULL;
 static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -494,7 +494,7 @@ thread_starter(void *arg)
 	/* *p may have been freed by join_threads, so try to find it
          * again before using it */
 	if ((p = find_posthread_locked(pthread_self())) != NULL)
-		p->exited = 1;
+		p->exited = true;
 	pthread_mutex_unlock(&posthread_lock);
 	return NULL;
 }
@@ -594,7 +594,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	}
 	p->func = f;
 	p->arg = arg;
-	p->exited = 0;
+	p->exited = false;
 	if (d == MT_THR_DETACHED) {
 		pf = thread_starter;
 		newtp = &p->tid;
@@ -634,7 +634,7 @@ MT_exiting_thread(void)
 
 	pthread_mutex_lock(&posthread_lock);
 	if ((p = find_posthread_locked(tid)) != NULL)
-		p->exited = 1;
+		p->exited = true;
 	pthread_mutex_unlock(&posthread_lock);
 }
 
