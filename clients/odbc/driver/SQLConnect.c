@@ -332,11 +332,11 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 	clearDbcErrors(dbc);
 
 	fixWcharIn(ServerName, NameLength1, SQLCHAR, ds,
-		   addDbcError, dbc, goto exit);
+		   addDbcError, dbc, goto bailout);
 	fixWcharIn(UserName, NameLength2, SQLCHAR, uid,
-		   addDbcError, dbc, goto exit);
+		   addDbcError, dbc, goto bailout);
 	fixWcharIn(Authentication, NameLength3, SQLCHAR, pwd,
-		   addDbcError, dbc, goto exit);
+		   addDbcError, dbc, goto bailout);
 
 	rc = MNDBConnect(dbc,
 			 ds, SQL_NTS,
@@ -344,7 +344,7 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 			 pwd, SQL_NTS,
 			 NULL, 0, NULL);
 
-      exit:
+      bailout:
 	if (ds)
 		free(ds);
 	if (uid)

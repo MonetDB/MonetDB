@@ -255,18 +255,18 @@ SQLPrimaryKeysW(SQLHSTMT StatementHandle,
 	clearStmtErrors(stmt);
 
 	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 
 	rc = MNDBPrimaryKeys(stmt,
 			     catalog, SQL_NTS,
 			     schema, SQL_NTS,
 			     table, SQL_NTS);
 
-      exit:
+      bailout:
 	if (catalog)
 		free(catalog);
 	if (schema)
