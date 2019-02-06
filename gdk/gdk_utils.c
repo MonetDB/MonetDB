@@ -1399,7 +1399,7 @@ THRstarter(void *a)
 MT_Id
 THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 {
-	MT_Id tid;
+	MT_Id pid;
 	Thread s;
 	struct THRstart *t;
 
@@ -1419,7 +1419,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 		GDKerror("THRcreate: too many threads\n");
 		return 0;
 	}
-	tid = s->tid;
+	int tid = s->tid;
 	/* name is for debugging and may be NULL */
 	*s = (ThreadRec) {
 		.pid = ~0,
@@ -1431,7 +1431,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	MT_lock_unset(&GDKthreadLock);
 	t->thr = s;
 	MT_sema_init(&t->sem, 0, "THRcreate");
-	if (MT_create_thread(&tid, THRstarter, t, d) != 0) {
+	if (MT_create_thread(&pid, THRstarter, t, d) != 0) {
 		GDKerror("THRcreate: could not start thread\n");
 		MT_sema_destroy(&t->sem);
 		GDKfree(t);
@@ -1442,11 +1442,11 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	}
 	MT_lock_set(&GDKthreadLock);
 	GDKnrofthreads++;
-	s->pid = tid;
+	s->pid = pid;
 	MT_lock_unset(&GDKthreadLock);
 	/* send new thread on its way */
 	MT_sema_up(&t->sem);
-	return tid;
+	return pid;
 }
 
 void

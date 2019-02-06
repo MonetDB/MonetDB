@@ -60,27 +60,23 @@ static
 void tstAligned(void)
 {
 #ifdef STRUCT_ALIGNED
-	int allAligned=0;
 	ValRecord v;
-	ptr val, base;
-	base = (ptr) & v.val.ival;
-	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.btval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
+	static_assert((void *) &v.val.bval == (void *) &v.val.ival, "misaligned");
+	static_assert((void *) &v.val.btval == (void *) &v.val.ival, "misaligned");
+	static_assert((void *) &v.val.shval == (void *) &v.val.ival, "misaligned");
+	static_assert((void *) &v.val.ival == (void *) &v.val.ival, "misaligned");
+	static_assert((void *) &v.val.oval == (void *) &v.val.ival, "misaligned");
+	static_assert((void *) &v.val.pval == (void *) &v.val.ival, "misaligned");
+	static_assert((void *) &v.val.fval == (void *) &v.val.ival, "misaligned");
+	static_assert((void *) &v.val.dval == (void *) &v.val.ival, "misaligned");
+	static_assert((void *) &v.val.lval == (void *) &v.val.ival, "misaligned");
 #ifdef HAVE_HGE
-	val= (ptr) & v.val.hval; if(val != base){ allAligned = -1; }
+	static_assert((void *) &v.val.hval == (void *) &v.val.ival, "misaligned");
 #endif
-	val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
-	if(allAligned<0)
-	    GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
+	static_assert((void *) &v.val.sval == (void *) &v.val.ival, "misaligned");
 #endif
 }
+
 int mal_init(void){
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
