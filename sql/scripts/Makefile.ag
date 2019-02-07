@@ -4,43 +4,55 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
-MT_SAFE
+INCLUDES = ../include ../common ../storage \
+		   ../../monetdb5/modules/atoms \
+		   ../../monetdb5/modules/kernel \
+		   ../../monetdb5/mal \
+		   ../../monetdb5/modules/atoms \
+		   ../../monetdb5/modules/mal \
+		   ../../common/options \
+		   ../../common/stream \
+		   ../../common/utils \
+		   ../../gdk
 
-headers_sql = {
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 09_like.sql \
-		10_math.sql \
-		11_times.sql \
-		12_url.sql \
-		13_date.sql \
-		14_inet.sql \
-		15_querylog.sql \
-		16_tracelog.sql \
-		17_temporal.sql \
-		18_index.sql \
-		20_vacuum.sql \
-		21_dependency_views.sql \
-		22_clients.sql \
-		23_skyserver.sql \
-		25_debug.sql \
-		26_sysmon.sql \
-		27_rejects.sql \
-		39_analytics.sql \
-		40_json.sql \
-		41_md5sum.sql \
-		45_uuid.sql \
-		46_profiler.sql \
-		51_sys_schema_extension.sql \
-		60_wlcr.sql \
-		75_storagemodel.sql \
-		80_statistics.sql \
-		99_system.sql
+lib_sqlscripts = {
+	MODULE
+	DIR = libdir
+	SOURCES = sql_scripts.c sql_scripts.h \
+		09_like.sql.c 09_like.sql.h \
+		10_math.sql.c 10_math.sql.h \
+		11_times.sql.c 11_times.sql.h \
+		12_url.sql.c 12_url.sql.h \
+		13_date.sql.c 13_date.sql.h \
+		14_inet.sql.c 14_inet.sql.h \
+		15_querylog.sql.c 15_querylog.sql.h \
+		16_tracelog.sql.c 16_tracelog.sql.h \
+		17_temporal.sql.c 17_temporal.sql.h \
+		18_index.sql.c 18_index.sql.h \
+		20_vacuum.sql.c 20_vacuum.sql.h \
+		21_dependency_views.sql.c 21_dependency_views.sql.h \
+		22_clients.sql.c 22_clients.sql.h \
+		23_skyserver.sql.c 23_skyserver.sql.h \
+		25_debug.sql.c 25_debug.sql.h \
+		26_sysmon.sql.c 26_sysmon.sql.h \
+		27_rejects.sql.c 27_rejects.sql.h \
+		39_analytics.sql.c 39_analytics.sql.h \
+		40_json.sql.c 40_json.sql.h \
+		41_md5sum.sql.c 41_md5sum.sql.h \
+		45_uuid.sql.c 45_uuid.sql.h \
+		46_profiler.sql.c 46_profiler.sql.h \
+		51_sys_schema_extension.sql.c 51_sys_schema_extension.sql.h \
+		60_wlcr.sql.c 60_wlcr.sql.h \
+		75_storagemodel.sql.c 75_storagemodel.sql.h \
+		80_statistics.sql.c 80_statistics.sql.h \
+		99_system.sql.c 99_system.sql.h
 }
 
-headers_hge = {
+lib_sqlscripts_hge = {
+	MODULE
 	COND = HAVE_HGE
-	HEADERS = sql
-	DIR = libdir/monetdb5/createdb
-	SOURCES = 39_analytics_hge.sql 40_json_hge.sql
+	DIR = libdir
+	SOURCES = sql_scripts_hge.c sql_scripts_hge.h \
+		39_analytics_hge.sql.c 39_analytics_hge.sql.h \
+		40_json_hge.sql.c 40_json_hge.sql.h
 }

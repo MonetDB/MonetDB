@@ -45,6 +45,10 @@
 #include "opt_mitosis.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
+#include "sql_scripts.h"
+#ifdef HAVE_HGE
+#include "sql_scripts_hge.h"
+#endif
 
 static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
@@ -469,98 +473,17 @@ SQLinit(Client c)
 		SQLnewcatalog = 0;
 		maybeupgrade = 0;
 
-#ifdef HAVE_EMBEDDED
-		size_t createdb_len = strlen(createdb_inline);
-		buffer* createdb_buf;
-		stream* createdb_stream;
-		bstream* createdb_bstream;
-		if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL) {
-			MT_lock_unset(&sql_contextLock);
-			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		buffer_init(createdb_buf, createdb_inline, createdb_len);
-		if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
-			MT_lock_unset(&sql_contextLock);
-			GDKfree(createdb_buf);
-			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
-			MT_lock_unset(&sql_contextLock);
-			close_stream(createdb_stream);
-			GDKfree(createdb_buf);
-			throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		if (bstream_next(createdb_bstream) >= 0)
-			msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
-		else
-			msg = createException(MAL, "createdb", SQLSTATE(42000) "Could not load inlined createdb script");
+		if ((msg = install_sql_scripts(c)) != MAL_SUCCEED)
+			return msg;
+#ifdef HAVE_HGE
+		if ((msg = install_sql_scripts_hge(c)) != MAL_SUCCEED)
+			return msg;
+#endif
 
-		bstream_destroy(createdb_bstream);
-		GDKfree(createdb_buf);
 		if (m->sa)
 			sa_destroy(m->sa);
 		m->sa = NULL;
 		m->sqs = NULL;
-
-#else
-		char path[FILENAME_MAX];
-		str fullname;
-
-		snprintf(path, FILENAME_MAX, "createdb");
-		slash_2_dir_sep(path);
-		fullname = MSP_locate_sqlscript(path, 1);
-		if (fullname) {
-			str filename = fullname;
-			str p, n, newmsg= MAL_SUCCEED;
-			fprintf(stdout, "# SQL catalog created, loading sql scripts once\n");
-			do {
-				stream *fd = NULL;
-
-				p = strchr(filename, PATH_SEP);
-				if (p)
-					*p = '\0';
-				if ((n = strrchr(filename, DIR_SEP)) == NULL) {
-					n = filename;
-				} else {
-					n++;
-				}
-				fprintf(stdout, "# loading sql script: %s\n", n);
-				fd = open_rastream(filename);
-				if (p)
-					filename = p + 1;
-
-				if (fd) {
-					size_t sz;
-					sz = getFileSize(fd);
-					if (sz > (size_t) 1 << 29) {
-						close_stream(fd);
-						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
-					} else {
-						bstream *bfd = NULL;
-
-						if((bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz)) == NULL) {
-							close_stream(fd);
-							newmsg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-						} else {
-							if (bstream_next(bfd) >= 0)
-								newmsg = SQLstatementIntern(c, &bfd->buf, "sql.init", TRUE, FALSE, NULL);
-							bstream_destroy(bfd);
-						}
-					}
-					if (m->sa)
-						sa_destroy(m->sa);
-					m->sa = NULL;
-					m->sqs = NULL;
-					if (newmsg){
-						fprintf(stderr,"%s",newmsg);
-						GDKfree(newmsg);
-					}
-				}
-			} while (p);
-			GDKfree(fullname);
-		} else
-			fprintf(stderr, "!could not read createdb.sql\n");
-#endif
 	} else {		/* handle upgrades */
 		m->sqs = NULL;
 		if (!m->sa)
