@@ -3755,3 +3755,38 @@ const_column(backend *be, stmt *val)
 	}
 	return NULL;
 }
+
+stmt *
+stmt_fetch(backend *be, stmt *val)
+{
+	sql_subtype *ct = tail_type(val);
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+	int tt = ct->type->localtype;
+
+	if (val->nr < 0) 
+		return NULL;
+	q = newStmt(mb, algebraRef, fetchRef);
+	if (q == NULL)
+		return NULL;
+	setVarType(mb, getArg(q, 0), tt);
+	q = pushArgument(mb, q, val->nr);
+	q = pushOid(mb, q, 0);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_single);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op1 = val;
+		s->op4.typeval = *ct;
+		s->nrcols = 0;
+
+		s->tname = val->tname;
+		s->cname = val->cname;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}

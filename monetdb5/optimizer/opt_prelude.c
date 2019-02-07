@@ -127,6 +127,7 @@ str execRef;
 str expandRef;
 str exportOperationRef;
 str export_tableRef;
+str fetchRef;
 str findRef;
 str finishRef;
 str firstnRef;
@@ -429,6 +430,7 @@ void optimizerInit(void)
 	expandRef = putName("expand");
 	exportOperationRef = putName("exportOperation");
 	export_tableRef = putName("export_table");
+	fetchRef = putName("fetch");
 	findRef = putName("find");
 	finishRef = putName("finish");
 	firstnRef = putName("firstn");

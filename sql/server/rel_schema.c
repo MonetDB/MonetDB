@@ -1163,7 +1163,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 				str output;
 				if((output = mvc_drop_table(sql, s, t, 0)) != MAL_SUCCEED) {
 					sql_error(sql, 02, SQLSTATE(42000) "%s", output);
-					GDKfree(output);
+					freeException(output);
 					return NULL;
 				}
 		 	}

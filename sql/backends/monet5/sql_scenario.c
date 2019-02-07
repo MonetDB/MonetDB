@@ -359,7 +359,7 @@ SQLresetClient(Client c)
 	if(other && !msg)
 		msg = other;
 	else if(other && msg)
-		GDKfree(other);
+		freeException(other);
 	return msg;
 }
 
@@ -552,7 +552,7 @@ SQLinit(Client c)
 					m->sqs = NULL;
 					if (newmsg){
 						fprintf(stderr,"%s",newmsg);
-						GDKfree(newmsg);
+						freeException(newmsg);
 					}
 				}
 			} while (p);
