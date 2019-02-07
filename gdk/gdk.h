@@ -1882,7 +1882,6 @@ gdk_export void *GDKmmap(const char *path, int mode, size_t len);
 
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
-gdk_export int	GDK_vm_trim;		/* allow trimming */
 
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */

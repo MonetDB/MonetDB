@@ -112,15 +112,6 @@ The kernel tries to choose the values for optimal performance.
 Changing these parameters is discouraged.
 .P
 .TP
-.B gdk_vmtrim
-Enable or disable the vmtrim thread which tries to unload memory that
-is not in use.
-Default:
-.B yes
-on 32 bit platforms,
-.B no
-on 64 bit platforms
-.TP
 .B gdk_debug
 You can enable debug output for specific kernel operations.
 By default debug is switched off for obvious reasons.
