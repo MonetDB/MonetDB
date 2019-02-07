@@ -546,8 +546,11 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	d = *(int *)v;				_DELETE(v);
 	if (!sql_find_subtype(&c->type, tpe, sz, d)) {
 		sql_type *lt = sql_trans_bind_type(tr, t->s, tpe);
-		if (lt == NULL) 
-			GDKfatal("SQL type %s missing", tpe);
+		if (lt == NULL) {
+			fprintf(stderr, "SQL type %s missing\n", tpe);
+			_DELETE(tpe);
+			return NULL;
+		}
 		sql_init_subtype(&c->type, lt, sz, d);
 	}
 	_DELETE(tpe);
@@ -800,6 +803,8 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	}
 	for(rid = table_funcs.subrids_next(nrs); !is_oid_nil(rid); rid = table_funcs.subrids_next(nrs)) {
 		sql_column* next = load_column(tr, t, rid);
+		if (next == NULL)
+			return NULL;
 		cs_add(&t->columns, next, 0);
 		if(pcolid == next->base.id) {
 			t->part.pcol = next;
@@ -913,8 +918,11 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 	tpe = table_funcs.column_find_value(tr, find_sql_column(args, "type"), rid);
 	if (!sql_find_subtype(&a->type, tpe, digits, scale)) {
 		sql_type *lt = sql_trans_bind_type(tr, f->s, tpe);
-		if (lt == NULL) 
-			GDKfatal("SQL type %s missing", tpe);
+		if (lt == NULL) {
+			fprintf(stderr, "SQL type %s missing\n", tpe);
+			_DELETE(tpe);
+			return NULL;
+		}
 		sql_init_subtype(&a->type, lt, digits, scale);
 	}
 	_DELETE(tpe);
@@ -965,16 +973,19 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 		fprintf(stderr, "#\tload func %s\n", t->base.name);
 
 	t->ops = list_new(tr->sa, (fdestroy)NULL);
-	if (rs)
-	for(rid = table_funcs.subrids_next(rs); !is_oid_nil(rid); rid = table_funcs.subrids_next(rs)) {
-		sql_arg *a = load_arg(tr, t, rid);
+	if (rs) {
+		for(rid = table_funcs.subrids_next(rs); !is_oid_nil(rid); rid = table_funcs.subrids_next(rs)) {
+			sql_arg *a = load_arg(tr, t, rid);
 
-		if (a->inout == ARG_OUT) {
-			if (!t->res)
-				t->res = sa_list(tr->sa);
-			list_append(t->res, a);
-		} else {
-			list_append(t->ops, a);
+			if (a == NULL)
+				return NULL;
+			if (a->inout == ARG_OUT) {
+				if (!t->res)
+					t->res = sa_list(tr->sa);
+				list_append(t->res, a);
+			} else {
+				list_append(t->ops, a);
+			}
 		}
 	}
 	if (t->type == F_FUNC && !t->res)
@@ -1164,9 +1175,15 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		sqlid tid;
 
 		for(tid = table_funcs.subrids_nextid(nrs); tid >= 0; tid = table_funcs.subrids_nextid(nrs)) {
-			if (!instore(tid, id))
-				cs_add(&s->tables, load_table(tr, s, tid, nrs), 0);
-			else
+			if (!instore(tid, id)) {
+				sql_table *t = load_table(tr, s, tid, nrs);
+				if (t == NULL) {
+					table_funcs.subrids_destroy(nrs);
+					table_funcs.rids_destroy(rs);
+					return NULL;
+				}
+				cs_add(&s->tables, t, 0);
+			} else
 				while (!is_oid_nil(table_funcs.subrids_next(nrs)))
 					;
 		}
@@ -1184,15 +1201,29 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		sql_column *arg_number = find_sql_column(args, "number");
 		subrids *nrs = table_funcs.subrids_create(tr, rs, func_id, arg_func_id, arg_number);
 		sqlid fid;
+		sql_func *f;
 
-		for(fid = table_funcs.subrids_nextid(nrs); fid >= 0; fid = table_funcs.subrids_nextid(nrs)) 
-			cs_add(&s->funcs, load_func(tr, s, fid, nrs), 0);
+		for(fid = table_funcs.subrids_nextid(nrs); fid >= 0; fid = table_funcs.subrids_nextid(nrs)) {
+			f = load_func(tr, s, fid, nrs);
+			if (f == NULL) {
+				table_funcs.subrids_destroy(nrs);
+				table_funcs.rids_destroy(rs);
+				return NULL;
+			}
+			cs_add(&s->funcs, f, 0);
+		}
 		/* Handle all procedures without arguments (no args) */
 		rs = table_funcs.rids_diff(tr, rs, func_id, nrs, arg_func_id);
 		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 			void *v = table_funcs.column_find_value(tr, func_id, rid);
 			fid = *(sqlid*)v; _DELETE(v);
-			cs_add(&s->funcs, load_func(tr, s, fid, NULL), 0);
+			f = load_func(tr, s, fid, NULL);
+			if (f == NULL) {
+				table_funcs.subrids_destroy(nrs);
+				table_funcs.rids_destroy(rs);
+				return NULL;
+			}
+			cs_add(&s->funcs, f, 0);
 		}
 		table_funcs.subrids_destroy(nrs);
 	}
