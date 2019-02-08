@@ -12,9 +12,6 @@
 #include "monet_options.h"
 #include <setjmp.h>
 
-gdk_export BAT *GDKkey;
-gdk_export BAT *GDKval;
-
 gdk_export char *GDKgetenv(const char *name);
 
 gdk_export bool GDKgetenv_istext(const char *name, const char* text);
@@ -24,6 +21,7 @@ gdk_export bool GDKgetenv_istrue(const char *name);
 gdk_export int GDKgetenv_int(const char *name, int def);
 
 gdk_export gdk_return GDKsetenv(const char *name, const char *value);
+gdk_export gdk_return GDKcopyenv(BAT **key, BAT **val, bool writable);
 
 /*
  * @+ Memory management

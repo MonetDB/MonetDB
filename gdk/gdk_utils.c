@@ -20,8 +20,8 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
-BAT *GDKkey = NULL;
-BAT *GDKval = NULL;
+static BAT *GDKkey = NULL;
+static BAT *GDKval = NULL;
 int GDKdebug = 0;
 
 static char THRprintbuf[BUFSIZ];
@@ -140,6 +140,27 @@ GDKsetenv(const char *name, const char *value)
 	if (BUNappend(GDKkey, name, false) != GDK_SUCCEED ||
 	    BUNappend(GDKval, value, false) != GDK_SUCCEED)
 		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+gdk_return
+GDKcopyenv(BAT **key, BAT **val, bool writable)
+{
+	BAT *k, *v;
+
+	if (key == NULL || val == NULL) {
+		GDKerror("GDKcopyenv: called incorrectly.\n");
+		return GDK_FAIL;
+	}
+	k = COLcopy(GDKkey, GDKkey->ttype, writable, TRANSIENT);
+	v = COLcopy(GDKval, GDKval->ttype, writable, TRANSIENT);
+	if (k == NULL || v == NULL) {
+		BBPreclaim(k);
+		BBPreclaim(v);
+		return GDK_FAIL;
+	}
+	*key = k;
+	*val = v;
 	return GDK_SUCCEED;
 }
 
@@ -716,13 +737,13 @@ GDKreset(int status)
 	int farmid;
 	int i;
 
-	if( GDKkey){
+	if (GDKkey) {
 		BBPunfix(GDKkey->batCacheid);
-		GDKkey = 0;
+		GDKkey = NULL;
 	}
-	if( GDKval){
+	if (GDKval) {
 		BBPunfix(GDKval->batCacheid);
-		GDKval = 0;
+		GDKval = NULL;
 	}
 
 	MT_lock_set(&GDKthreadLock);
