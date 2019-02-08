@@ -745,9 +745,10 @@ GDKreset(int status)
 {
 	MT_Id pid = MT_getpid();
 	Thread t, s;
-	struct serverthread *st;
 	int farmid;
 	int i;
+
+	assert(GDKexiting());
 
 	if (GDKkey) {
 		BBPunfix(GDKkey->batCacheid);
@@ -759,11 +760,12 @@ GDKreset(int status)
 	}
 
 	MT_lock_set(&GDKthreadLock);
-	for (st = serverthread; st; st = serverthread) {
+	while (serverthread != NULL) {
+		struct serverthread *st = serverthread;
+		serverthread = st->next;
 		MT_lock_unset(&GDKthreadLock);
 		MT_join_thread(st->pid);
 		MT_lock_set(&GDKthreadLock);
-		serverthread = st->next;
 		GDKfree(st);
 	}
 	MT_lock_unset(&GDKthreadLock);
