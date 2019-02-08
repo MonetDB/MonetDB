@@ -243,7 +243,7 @@ main(int argc, char **av)
 	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
 	str err = MAL_SUCCEED;
 	char prmodpath[1024];
-	char *modpath = NULL;
+	const char *modpath = NULL;
 	char *binpath = NULL;
 	str *monet_script;
 	char *dbpath = NULL;

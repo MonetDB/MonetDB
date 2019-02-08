@@ -198,7 +198,8 @@ void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
-	char *database = NULL, *s, *dbname;
+	char *database = NULL, *s;
+	const char *dbname;
 	str msg = MAL_SUCCEED;
 	bool filetrans = false;
 	Client c;

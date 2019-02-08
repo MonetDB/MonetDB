@@ -668,7 +668,7 @@ TBL_getdir(void)
 	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
 	int i = 0;
 
-	char *mod_path;
+	const char *mod_path;
 	size_t extlen = strlen(MAL_EXT);
 	size_t len;
 	struct dirent *dent;
@@ -687,7 +687,7 @@ TBL_getdir(void)
 	while (mod_path || dirp) {
 		if (dirp == NULL) {
 			char *cur_dir;
-			char *p;
+			const char *p;
 			size_t l;
 
 			if ((p = strchr(mod_path, PATH_SEP)) != NULL) {

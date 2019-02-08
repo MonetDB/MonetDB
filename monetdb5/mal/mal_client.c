@@ -64,7 +64,7 @@ mal_client_reset(void)
 void
 MCinit(void)
 {
-	char *max_clients = GDKgetenv("max_clients");
+	const char *max_clients = GDKgetenv("max_clients");
 	int maxclients = 0;
 
 	if (max_clients != NULL)
@@ -201,7 +201,7 @@ MCexitClient(Client c)
 Client
 MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
-	str prompt;
+	const char *prompt;
 
 	c->user = user;
 	c->username = 0;

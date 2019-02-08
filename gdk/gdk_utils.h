@@ -12,7 +12,7 @@
 #include "monet_options.h"
 #include <setjmp.h>
 
-gdk_export char *GDKgetenv(const char *name);
+gdk_export const char *GDKgetenv(const char *name);
 
 gdk_export bool GDKgetenv_istext(const char *name, const char* text);
 gdk_export bool GDKgetenv_isyes(const char *name);

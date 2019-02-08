@@ -92,7 +92,7 @@ GDKenvironment(const char *dbpath)
 	return true;
 }
 
-char *
+const char *
 GDKgetenv(const char *name)
 {
 	BUN b = BUNfnd(GDKkey, (ptr) name);
@@ -127,7 +127,7 @@ GDKgetenv_istrue(const char *name)
 int
 GDKgetenv_int(const char *name, int def)
 {
-	char *val = GDKgetenv(name);
+	const char *val = GDKgetenv(name);
 
 	if (val)
 		return atoi(val);
@@ -428,7 +428,7 @@ gdk_return
 GDKinit(opt *set, int setlen)
 {
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
-	char *p;
+	const char *p;
 	opt *n;
 	int i, nlen = 0;
 	int farmid;

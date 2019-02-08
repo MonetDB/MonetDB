@@ -248,7 +248,7 @@ bit GDKfataljumpenable;
 str GDKfatalmsg;
 char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
 void GDKfree(void *blk);
-char *GDKgetenv(const char *name);
+const char *GDKgetenv(const char *name);
 int GDKgetenv_int(const char *name, int def);
 bool GDKgetenv_istext(const char *name, const char *text);
 bool GDKgetenv_istrue(const char *name);

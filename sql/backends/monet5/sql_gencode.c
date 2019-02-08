@@ -905,7 +905,7 @@ backend_create_r_func(backend *be, sql_func *f)
 // defaults to python 2 if none is enabled
 static int
 enabled_python_version(void) {
-    char* env = GDKgetenv(pyapi_enableflag);
+    const char* env = GDKgetenv(pyapi_enableflag);
     if (env && strncmp(env, "3", 1) == 0) {
     	return 3;
     }

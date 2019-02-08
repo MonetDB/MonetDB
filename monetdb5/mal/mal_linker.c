@@ -148,7 +148,7 @@ loadLibrary(str filename, int flag)
 	void *handle = NULL;
 	str s;
 	int idx;
-	char *mod_path = GDKgetenv("monet_mod_path");
+	const char *mod_path = GDKgetenv("monet_mod_path");
 
 	/* AIX requires RTLD_MEMBER to load a module that is a member of an
 	 * archive.  */
@@ -179,7 +179,7 @@ loadLibrary(str filename, int flag)
 	}
 
 	while (*mod_path) {
-		char *p;
+		const char *p;
 
 		for (p = mod_path; *p && *p != PATH_SEP; p++)
 			;
@@ -305,7 +305,7 @@ cmpstr(const void *_p1, const void *_p2)
 char *
 locate_file(const char *basename, const char *ext, bit recurse)
 {
-	char *mod_path = GDKgetenv("monet_mod_path");
+	const char *mod_path = GDKgetenv("monet_mod_path");
 	char *fullname;
 	size_t fullnamelen;
 	size_t filelen = strlen(basename) + strlen(ext);
@@ -325,7 +325,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		return NULL;
 	while (*mod_path) {
 		size_t i;
-		char *p;
+		const char *p;
 		int fd;
 		DIR *rdir;
 

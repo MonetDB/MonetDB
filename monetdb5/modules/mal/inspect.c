@@ -531,7 +531,7 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 str
 INSPECTgetEnvironmentKey(str *ret, str *key)
 {
-	str s;
+	const char *s;
 	*ret = 0;
 
 	s= GDKgetenv(*key);

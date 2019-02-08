@@ -49,7 +49,7 @@
 static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 int SQLdebug = 0;
-static char *sqlinit = NULL;
+static const char *sqlinit = NULL;
 MT_Lock sql_contextLock MT_LOCK_INITIALIZER("sql_contextLock");
 
 static void
@@ -87,7 +87,7 @@ str
 SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	str logmsg;
+	const char *logmsg;
 	int cnt=0;
 
 	(void) mb;
@@ -110,7 +110,7 @@ str
 SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	str logmsg;
+	const char *logmsg;
 	int cnt=0;
 
 	(void) mb;
@@ -228,7 +228,7 @@ SQLepilogue(void *ret)
 }
 
 #define SQLglobal(name, val, failure)                                                                             \
-	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val))) \
+	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, (char*)(val)))) \
 		failure--;
 
 #define NR_GLOBAL_VARS 9
@@ -236,13 +236,13 @@ SQLepilogue(void *ret)
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
 static int
-global_variables(mvc *sql, char *user, char *schema)
+global_variables(mvc *sql, const char *user, const char *schema)
 {
 	sql_subtype ctype;
-	char *typename;
+	const char *typename;
 	lng sec = 0;
 	ValRecord src;
-	str opt;
+	const char *opt;
 	int failure = 0;
 
 	typename = "int";
@@ -368,7 +368,8 @@ MT_Id sqllogthread, idlethread;
 static str
 SQLinit(Client c)
 {
-	char *debug_str = GDKgetenv("sql_debug"), *msg = MAL_SUCCEED;
+	const char *debug_str = GDKgetenv("sql_debug");
+	char *msg = MAL_SUCCEED;
 	bool readonly = GDKgetenv_isyes("gdk_readonly");
 	bool single_user = GDKgetenv_isyes("gdk_single_user");
 	const char *gmt = "GMT";

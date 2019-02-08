@@ -539,7 +539,7 @@ static void SERVERannounce(struct in_addr addr, int port, str usockfile) {
 }
 
 static str
-SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
+SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 {
 	struct sockaddr_in server;
 	SOCKET sock = INVALID_SOCKET;
@@ -576,12 +576,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	port = *Port;
 	if (Usockfile == NULL || *Usockfile == 0 ||
-		*Usockfile[0] == '\0' || strcmp(*Usockfile, str_nil) == 0)
+		strcmp(Usockfile, str_nil) == 0)
 	{
 		usockfile = NULL;
 	} else {
 #ifdef HAVE_SYS_UN_H
-		usockfile = GDKstrdup(*Usockfile);
+		usockfile = GDKstrdup(Usockfile);
 		if (usockfile == NULL) {
 			GDKfree(psock);
 			throw(MAL,"mal_mapi.listen", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -856,7 +856,7 @@ str
 SERVERlisten_default(int *ret)
 {
 	int port = SERVERPORT;
-	str p;
+	const char *p;
 	int maxusers = SERVERMAXUSERS;
 
 	(void) ret;
@@ -864,7 +864,7 @@ SERVERlisten_default(int *ret)
 	if (p)
 		port = (int) strtol(p, NULL, 10);
 	p = GDKgetenv("mapi_usock");
-	return SERVERlisten(&port, &p, &maxusers);
+	return SERVERlisten(&port, p, &maxusers);
 }
 
 str
@@ -872,7 +872,7 @@ SERVERlisten_usock(int *ret, str *usock)
 {
 	int maxusers = SERVERMAXUSERS;
 	(void) ret;
-	return SERVERlisten(0, usock, &maxusers);
+	return SERVERlisten(0, usock ? *usock : NULL, &maxusers);
 }
 
 str
@@ -882,7 +882,7 @@ SERVERlisten_port(int *ret, int *pid)
 	int maxusers = SERVERMAXUSERS;
 
 	(void) ret;
-	return SERVERlisten(&port, 0, &maxusers);
+	return SERVERlisten(&port, NULL, &maxusers);
 }
 /*
  * The internet connection listener may be terminated from the server console,

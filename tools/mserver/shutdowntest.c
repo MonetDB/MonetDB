@@ -101,7 +101,7 @@ static str monetdb_initialize(void) {
 	str retval = MAL_SUCCEED;
 	char *err;
 	char prmodpath[1024];
-	char *modpath = NULL;
+	const char *modpath = NULL;
 	char *binpath = NULL;
 
 	if (monetdb_initialized) return MAL_SUCCEED;
