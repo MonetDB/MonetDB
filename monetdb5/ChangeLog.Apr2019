@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Fri Feb  8 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Changed the way blobs are ordered.  Before, shorter blobs came before
+  longer, now the contents is compared first.
+
 * Wed Jan 23 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Removed function blob.tostring() since it cannot guarantee that the
   resulting string is properly encoded in UTF-8.

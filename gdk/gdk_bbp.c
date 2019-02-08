@@ -657,6 +657,12 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	b->theap.newstorage = (storage_t) storage;
 	b->theap.farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
 	b->theap.dirty = false;
+#ifdef GDKLIBRARY_BLOB_SORT
+	if (bbpversion <= GDKLIBRARY_BLOB_SORT && strcmp(type, "blob") == 0) {
+		b->tsorted = b->trevsorted = false;
+		b->tnosorted = b->tnorevsorted = 0;
+	}
+#endif
 	if (b->theap.free > b->theap.size)
 		GDKfatal("BBPinit: \"free\" value larger than \"size\" in heap of bat %d\n", (int) bid);
 	return n;
@@ -836,6 +842,7 @@ BBPheader(FILE *fp)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_BLOB_SORT &&
 	    bbpversion != GDKLIBRARY_NIL_NAN &&
 	    bbpversion != GDKLIBRARY_TALIGN) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
