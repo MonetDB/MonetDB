@@ -50,37 +50,8 @@ MT_Lock     mal_oltpLock MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
  * Initialization of the MAL context
- * The compiler directive STRUCT_ALIGNED tells that the
- * fields in the VALrecord all start at the same offset.
- * This knowledge avoids low-level type decodings, but should
- * be assured at least once for each platform.
  */
 
-static
-void tstAligned(void)
-{
-#ifdef STRUCT_ALIGNED
-	int allAligned=0;
-	ValRecord v;
-	ptr val, base;
-	base = (ptr) & v.val.ival;
-	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.btval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
-#ifdef HAVE_HGE
-	val= (ptr) & v.val.hval; if(val != base){ allAligned = -1; }
-#endif
-	val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
-	if(allAligned<0)
-	    GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
-#endif
-}
 int mal_init(void){
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
@@ -90,13 +61,12 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 	MT_lock_init( &mal_beatLock, "mal_beatLock");
-	MT_lock_init( &mal_oltpLock, "mal_beatLock");
+	MT_lock_init( &mal_oltpLock, "mal_oltpLock");
 #endif
 
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
-	tstAligned();
 	MCinit();
 	mdbInit();
 	monet_memory = MT_npages() * MT_pagesize();

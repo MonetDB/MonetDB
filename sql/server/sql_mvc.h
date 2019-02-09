@@ -126,9 +126,8 @@ typedef struct mvc {
 	int timezone;		/* milliseconds west of UTC */
 	int cache;		/* some queries should not be cached ! */
 	int caching;		/* cache current query ? */
-	int history;		/* queries statistics are kept  */
 	int reply_size;		/* reply size */
-	int sizeheader;		/* print size header in result set */
+	bool sizeheader;	/* print size header in result set */
 	int debug;
 
 	lng Topt;		/* timer for optimizer phase */

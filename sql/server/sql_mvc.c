@@ -94,10 +94,8 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 
 	/* disable caching */
 	m->caching = 0;
-	/* disable history */
-	m->history = 0;
 	/* disable size header */
-	m->sizeheader = 0;
+	m->sizeheader = false;
 
 	if (first || catalog_version) {
 		if(mvc_trans(m) < 0) {
@@ -120,7 +118,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
-		mvc_create_column_(m, t, "query", "varchar", 2048);
+		mvc_create_column_(m, t, "query", "varchar", 1 << 20);
 		mvc_create_column_(m, t, "type", "smallint", 16);
 		mvc_create_column_(m, t, "system", "boolean", 1);
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
@@ -238,25 +236,13 @@ mvc_exit(void)
 void
 mvc_logmanager(void)
 {
-	Thread thr = THRnew("logmanager");
-
-	if (thr == NULL)
-		GDKfatal("logmanager: cannot allocate thread");
-
 	store_manager();
-	THRdel(thr);
 }
 
 void
 mvc_idlemanager(void)
 {
-	Thread thr = THRnew("idlemanager");
-
-	if (thr == NULL)
-		GDKfatal("idlemanager: cannot allocate thread");
-
 	idle_manager();
-	THRdel(thr);
 }
 
 int
@@ -674,7 +660,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->debug = debug;
 	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
-	m->history = 0;
 
 	m->label = 0;
 	m->remote = 0;
@@ -756,9 +741,6 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 		stack_set_number(m, "cache", DEFAULT_CACHESIZE);
 	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
-	if (m->history != 0)
-		stack_set_number(m, "history", 0);
-	m->history = 0;
 
 	m->label = 0;
 	m->remote = 0;

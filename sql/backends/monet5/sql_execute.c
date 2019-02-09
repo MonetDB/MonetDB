@@ -454,7 +454,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		throw(SQL, "sql.statement", SQLSTATE(HY002) "Catalogue not available");
 	}
 
-	initSQLreferences();
 	m = sql->mvc;
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);

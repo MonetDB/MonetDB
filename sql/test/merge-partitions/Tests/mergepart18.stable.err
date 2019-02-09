@@ -30,7 +30,7 @@ stderr of test 'mergepart18` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
 QUERY = ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '1' AND '100'; --error
-ERROR = !ALTER TABLE: table 'sys.subt1' isn't part of the MERGE TABLE 'sys.updateme'
+ERROR = !ALTER TABLE: table 'sys.subt1' isn't part of the RANGE PARTITION TABLE 'sys.updateme'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
 QUERY = ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '-100' AND '0'; --error

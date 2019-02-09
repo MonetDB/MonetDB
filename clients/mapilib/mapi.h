@@ -148,7 +148,7 @@ mapi_export bool mapi_get_trace(Mapi mid);
 mapi_export bool mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit);
-mapi_export MapiMsg mapi_set_size_header(Mapi mid, int value);
+mapi_export MapiMsg mapi_set_size_header(Mapi mid, bool value);
 mapi_export MapiMsg mapi_release_id(Mapi mid, int id);
 mapi_export const char *mapi_result_error(MapiHdl hdl);
 mapi_export const char *mapi_result_errorcode(MapiHdl hdl);

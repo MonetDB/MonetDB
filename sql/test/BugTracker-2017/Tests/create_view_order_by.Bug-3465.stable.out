@@ -263,7 +263,7 @@ Ready.
 #select * from system_tables
 #ORDER BY system, query, name DESC
 #LIMIT 10;
-% .L57,	.L57,	.L57,	.L57,	.L57,	.L57,	.L57,	.L57 # table_name
+% .L61,	.L61,	.L61,	.L61,	.L61,	.L61,	.L61,	.L61 # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 13,	4,	177,	2,	5,	1,	1,	1 # length
@@ -281,7 +281,7 @@ Ready.
 #INTERSECT
 #(select * from system_tables UNION select * from system_views)
 #ORDER BY name DESC;
-% .L57,	.L57,	.L57,	.L57,	.L57,	.L57,	.L57,	.L57 # table_name
+% .L61,	.L61,	.L61,	.L61,	.L61,	.L61,	.L61,	.L61 # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	0,	1,	5,	1,	1,	1 # length
@@ -292,9 +292,7 @@ Ready.
 % .L53,	.L53,	.L53,	.L53,	.L53,	.L53,	.L53,	.L53 # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
-% 9,	4,	0,	1,	5,	1,	1,	1 # length
-[ "test10",	2000,	NULL,	0,	false,	0,	0,	0	]
-[ "my_tables",	2000,	NULL,	0,	false,	0,	0,	0	]
+% 0,	1,	0,	1,	5,	1,	1,	1 # length
 #DROP VIEW all_tbl_objs;
 #DROP VIEW all_tables;
 #DROP VIEW all_views;

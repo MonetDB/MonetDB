@@ -223,7 +223,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 		PyObject *dictEntry = PyDict_GetItemString(args, self->cols[i].name);
 		if (dictEntry && dictEntry != Py_None) {
 			if (PyType_IsPyScalar(dictEntry)) {
-				if (self->cols[i].b->ttype == TYPE_blob || self->cols[i].b->ttype == TYPE_sqlblob) {
+				if (self->cols[i].b->ttype == TYPE_blob) {
 					blob s;
 					blob* val = &s;
 					val->nitems = ~(size_t) 0;

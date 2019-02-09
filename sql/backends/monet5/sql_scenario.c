@@ -231,7 +231,7 @@ SQLepilogue(void *ret)
 	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val))) \
 		failure--;
 
-#define NR_GLOBAL_VARS 10
+#define NR_GLOBAL_VARS 9
 /* NR_GLOBAL_VAR should match exactly the number of variables created
    in global_variables */
 /* initialize the global variable, ie make mvc point to these */
@@ -241,7 +241,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_subtype ctype;
 	char *typename;
 	lng sec = 0;
-	bit F = FALSE;
 	ValRecord src;
 	str opt;
 	int failure = 0;
@@ -266,10 +265,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
 	SQLglobal("current_timezone", &sec, failure);
-
-	typename = "boolean";
-	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("history", &F, failure);
 
 	typename = "bigint";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -329,7 +324,6 @@ SQLprepareClient(Client c, int login)
 	c->state[MAL_SCENARIO_OPTIMIZE] = c;
 	c->sqlcontext = be;
 
-	initSQLreferences();
 	return NULL;
 }
 
@@ -592,12 +586,12 @@ SQLinit(Client c)
 	if (msg != MAL_SUCCEED)
 		return msg;
 
-	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
+	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE, "logmanager")) == 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
 	GDKregister(sqllogthread);
 	if (!(SQLdebug&1024)) {
-		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
+		if ((idlethread = THRcreate((void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE, "idlemanager")) == 0) {
 			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
 		}
 		GDKregister(idlethread);

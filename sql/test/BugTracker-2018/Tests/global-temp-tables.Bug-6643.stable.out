@@ -69,6 +69,8 @@ Ready.
 #START TRANSACTION;
 #CREATE LOCAL TEMP TABLE "temp1" ("id" int, "name" VARCHAR(99));
 #CREATE GLOBAL TEMP TABLE "temp2" ("id" int, "name" VARCHAR(99));
+#CREATE LOCAL TEMPORARY TABLE tmp."temp3" ("id" int, "name" VARCHAR(99));
+#CREATE GLOBAL TEMPORARY TABLE tmp."temp4" ("id" int, "name" VARCHAR(99));
 #ROLLBACK;
 
 # 16:48:58 >  

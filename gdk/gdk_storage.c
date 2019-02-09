@@ -118,14 +118,14 @@ GDKcreatedir(const char *dir)
 #ifdef WIN32
 			strlen(path) > 3 &&
 #endif
-			mkdir(path, 0755) < 0) {
+			mkdir(path, MONETDB_DIRMODE) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("GDKcreatedir: cannot create directory %s\n", path);
 				IODEBUG fprintf(stderr, "#GDKcreatedir: mkdir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
 			if ((dirp = opendir(path)) == NULL) {
-				GDKerror("GDKcreatedir: %s not a directory\n", path);
+				GDKsyserror("GDKcreatedir: %s not a directory\n", path);
 				IODEBUG fprintf(stderr, "#GDKcreatedir: opendir(%s) failed\n", path);
 				return GDK_FAIL;
 			}
@@ -279,6 +279,8 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		char *path;
 
 		path = GDKfilepath(farmid, dir, nme, ext);
+		if (path == NULL)
+			return GDK_FAIL;
 		/* if file already doesn't exist, we don't care */
 		if (remove(path) != 0 && errno != ENOENT) {
 			GDKsyserror("GDKunlink(%s)\n", path);
@@ -305,7 +307,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	IODEBUG t0 = GDKms();
 
 	if ((nme1 == NULL) || (*nme1 == 0)) {
-		errno = EFAULT;
+		GDKerror("GDKmove: no file specified\n");
 		return GDK_FAIL;
 	}
 	path1 = GDKfilepath(farmid, dir1, nme1, ext1);
@@ -483,9 +485,10 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				/* do not tolerate corrupt heap images
 				 * (BBPrecover on restart will kill
 				 * them) */
-				GDKfatal("GDKsave: could not open: name=%s, "
+				GDKerror("GDKsave: could not remove: name=%s, "
 					 "ext=%s, mode %d\n", nme,
 					 ext ? ext : "", (int) mode);
+				return GDK_FAIL;
 			}
 		} else {
 			err = -1;
@@ -627,7 +630,7 @@ DESCload(int i)
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
-	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
+	b->batTransient = (BBP_status(b->batCacheid) & BBPPERSISTENT) == 0;
 	b->batCopiedtodisk = true;
 	DESCclean(b);
 	return b;
@@ -694,7 +697,7 @@ BATmsync(BAT *b)
 #endif
 		struct msync *arg;
 
-		assert(b->batPersistence == PERSISTENT);
+		assert(!b->batTransient);
 		if (b->theap.storage == STORE_MMAP &&
 		    (arg = GDKmalloc(sizeof(*arg))) != NULL) {
 			arg->id = b->batCacheid;

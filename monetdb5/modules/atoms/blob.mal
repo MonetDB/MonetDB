@@ -28,37 +28,16 @@ command blob(s:str):blob
 address BLOBblob_fromstr;
 
 # @+ string functions
-# Manipulation functions to extract strings from blobs and vice versa.
+# Manipulation function to convert strings to blobs.
 # Not to be confused with blob parsing and printing.
-command tostring(v:blob) :str
-address BLOBfromblob
-comment "get the bytes from blob as a string, till
-	the first 0 byte or the end of the blob";
-command tostring(v:blob, index:int ) :str
-address BLOBfromidx
-comment "get the bytes from blob as a string,
-	 starting at byte 'index' till the first
-	0 byte or the end of the blob.";
+# Note, a function tostring(b:blob):str is not possible since the
+# string would not be guaranteed UTF-8 encoded.
 command toblob(v:str) :blob
 address BLOBtoblob
 comment "store a string as a blob.";
 command nitems(b:blob):int
 address BLOBnitems
-comment " get the number of bytes in this blob.";
-
-atom sqlblob:blob;
-
-command tostr()   address SQLBLOBtostr;
-command fromstr() address SQLBLOBfromstr;
-
-command sqlblob(s:sqlblob):sqlblob
-address BLOBblob_blob
-comment "Noop routine.";
-
-command sqlblob(s:str):sqlblob
-address BLOBsqlblob_fromstr;
-
-module blob;
+comment "get the number of bytes in this blob.";
 
 command prelude() :void
 address BLOBprelude;
@@ -69,5 +48,3 @@ module calc;
 
 command blob(b:blob):blob address BLOBblob_blob;
 command blob(s:str):blob address BLOBblob_fromstr;
-command sqlblob(b:sqlblob):sqlblob address BLOBblob_blob;
-command sqlblob(s:str):sqlblob address BLOBsqlblob_fromstr;

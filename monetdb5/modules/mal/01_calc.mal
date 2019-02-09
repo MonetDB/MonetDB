@@ -3283,6 +3283,10 @@ pattern <(v1:str,v2:str) :bit
 address CMDvarLT
 comment "Return V1 < V2";
 
+pattern <(v1:blob,v2:blob) :bit
+address CMDvarLT
+comment "Return V1 < V2";
+
 pattern <(v1:oid,v2:oid) :bit
 address CMDvarLT
 comment "Return V1 < V2";
@@ -3437,6 +3441,10 @@ address CMDvarLE
 comment "Return V1 <= V2";
 
 pattern <=(v1:str,v2:str) :bit
+address CMDvarLE
+comment "Return V1 <= V2";
+
+pattern <=(v1:blob,v2:blob) :bit
 address CMDvarLE
 comment "Return V1 <= V2";
 
@@ -3597,6 +3605,10 @@ pattern >(v1:str,v2:str) :bit
 address CMDvarGT
 comment "Return V1 > V2";
 
+pattern >(v1:blob,v2:blob) :bit
+address CMDvarGT
+comment "Return V1 > V2";
+
 pattern >(v1:oid,v2:oid) :bit
 address CMDvarGT
 comment "Return V1 > V2";
@@ -3754,6 +3766,10 @@ pattern >=(v1:str,v2:str) :bit
 address CMDvarGE
 comment "Return V1 >= V2";
 
+pattern >=(v1:blob,v2:blob) :bit
+address CMDvarGE
+comment "Return V1 >= V2";
+
 pattern >=(v1:oid,v2:oid) :bit
 address CMDvarGE
 comment "Return V1 >= V2";
@@ -3907,7 +3923,23 @@ pattern ==(v1:bit,v2:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:bit,v2:bit,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:str,v2:str) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:str,v2:str,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:blob,v2:blob) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:blob,v2:blob,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3915,7 +3947,15 @@ pattern ==(v1:oid,v2:oid) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:oid,v2:oid,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:bte,v2:bte) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:bte,v2:bte,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3923,7 +3963,15 @@ pattern ==(v1:bte,v2:sht) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:bte,v2:sht,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:bte,v2:int) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:bte,v2:int,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3931,7 +3979,15 @@ pattern ==(v1:bte,v2:lng) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:bte,v2:lng,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:bte,v2:flt) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:bte,v2:flt,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3939,7 +3995,15 @@ pattern ==(v1:bte,v2:dbl) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:bte,v2:dbl,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:sht,v2:bte) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:sht,v2:bte,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3947,7 +4011,15 @@ pattern ==(v1:sht,v2:sht) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:sht,v2:sht,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:sht,v2:int) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:sht,v2:int,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3955,7 +4027,15 @@ pattern ==(v1:sht,v2:lng) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:sht,v2:lng,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:sht,v2:flt) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:sht,v2:flt,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3963,7 +4043,15 @@ pattern ==(v1:sht,v2:dbl) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:sht,v2:dbl,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:int,v2:bte) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:int,v2:bte,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3971,7 +4059,15 @@ pattern ==(v1:int,v2:sht) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:int,v2:sht,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:int,v2:int) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:int,v2:int,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3979,7 +4075,15 @@ pattern ==(v1:int,v2:lng) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:int,v2:lng,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:int,v2:flt) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:int,v2:flt,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3987,7 +4091,15 @@ pattern ==(v1:int,v2:dbl) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:int,v2:dbl,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:lng,v2:bte) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:lng,v2:bte,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -3995,7 +4107,15 @@ pattern ==(v1:lng,v2:sht) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:lng,v2:sht,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:lng,v2:int) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:lng,v2:int,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4003,7 +4123,15 @@ pattern ==(v1:lng,v2:lng) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:lng,v2:lng,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:lng,v2:flt) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:lng,v2:flt,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4011,7 +4139,15 @@ pattern ==(v1:lng,v2:dbl) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:lng,v2:dbl,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:flt,v2:bte) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:flt,v2:bte,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4019,7 +4155,15 @@ pattern ==(v1:flt,v2:sht) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:flt,v2:sht,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:flt,v2:int) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:flt,v2:int,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4027,7 +4171,15 @@ pattern ==(v1:flt,v2:lng) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:flt,v2:lng,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:flt,v2:flt) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:flt,v2:flt,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4035,7 +4187,15 @@ pattern ==(v1:flt,v2:dbl) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:flt,v2:dbl,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:dbl,v2:bte) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:dbl,v2:bte,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4043,7 +4203,15 @@ pattern ==(v1:dbl,v2:sht) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:dbl,v2:sht,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:dbl,v2:int) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:dbl,v2:int,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4051,11 +4219,23 @@ pattern ==(v1:dbl,v2:lng) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:dbl,v2:lng,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:dbl,v2:flt) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(v1:dbl,v2:flt,nil_matches:bit) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern ==(v1:dbl,v2:dbl) :bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
+pattern ==(v1:dbl,v2:dbl,nil_matches:bit) :bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
@@ -4064,7 +4244,23 @@ pattern !=(v1:bit,v2:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:bit,v2:bit,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:str,v2:str) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:str,v2:str,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:blob,v2:blob) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:blob,v2:blob,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4072,7 +4268,15 @@ pattern !=(v1:oid,v2:oid) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:oid,v2:oid,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:bte,v2:bte) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:bte,v2:bte,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4080,7 +4284,15 @@ pattern !=(v1:bte,v2:sht) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:bte,v2:sht,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:bte,v2:int) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:bte,v2:int,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4088,7 +4300,15 @@ pattern !=(v1:bte,v2:lng) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:bte,v2:lng,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:bte,v2:flt) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:bte,v2:flt,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4096,7 +4316,15 @@ pattern !=(v1:bte,v2:dbl) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:bte,v2:dbl,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:sht,v2:bte) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:sht,v2:bte,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4104,7 +4332,15 @@ pattern !=(v1:sht,v2:sht) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:sht,v2:sht,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:sht,v2:int) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:sht,v2:int,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4112,7 +4348,15 @@ pattern !=(v1:sht,v2:lng) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:sht,v2:lng,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:sht,v2:flt) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:sht,v2:flt,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4120,7 +4364,15 @@ pattern !=(v1:sht,v2:dbl) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:sht,v2:dbl,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:int,v2:bte) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:int,v2:bte,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4128,7 +4380,15 @@ pattern !=(v1:int,v2:sht) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:int,v2:sht,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:int,v2:int) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:int,v2:int,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4136,7 +4396,15 @@ pattern !=(v1:int,v2:lng) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:int,v2:lng,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:int,v2:flt) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:int,v2:flt,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4144,7 +4412,15 @@ pattern !=(v1:int,v2:dbl) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:int,v2:dbl,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:lng,v2:bte) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:lng,v2:bte,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4152,7 +4428,15 @@ pattern !=(v1:lng,v2:sht) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:lng,v2:sht,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:lng,v2:int) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:lng,v2:int,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4160,7 +4444,15 @@ pattern !=(v1:lng,v2:lng) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:lng,v2:lng,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:lng,v2:flt) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:lng,v2:flt,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4168,7 +4460,15 @@ pattern !=(v1:lng,v2:dbl) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:lng,v2:dbl,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:flt,v2:bte) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:flt,v2:bte,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4176,7 +4476,15 @@ pattern !=(v1:flt,v2:sht) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:flt,v2:sht,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:flt,v2:int) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:flt,v2:int,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4184,7 +4492,15 @@ pattern !=(v1:flt,v2:lng) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:flt,v2:lng,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:flt,v2:flt) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:flt,v2:flt,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4192,7 +4508,15 @@ pattern !=(v1:flt,v2:dbl) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:flt,v2:dbl,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:dbl,v2:bte) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:dbl,v2:bte,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4200,7 +4524,15 @@ pattern !=(v1:dbl,v2:sht) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:dbl,v2:sht,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:dbl,v2:int) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:dbl,v2:int,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -4208,11 +4540,23 @@ pattern !=(v1:dbl,v2:lng) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:dbl,v2:lng,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:dbl,v2:flt) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 
+pattern !=(v1:dbl,v2:flt,nil_matches:bit) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
 pattern !=(v1:dbl,v2:dbl) :bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(v1:dbl,v2:dbl,nil_matches:bit) :bit
 address CMDvarNE
 comment "Return V1 != V2";
 

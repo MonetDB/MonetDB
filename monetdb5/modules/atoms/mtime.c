@@ -314,7 +314,7 @@ fromdate(date n, int *d, int *m, int *y)
 {
 	int day, month, year;
 
-	if (date_isnil(n)) {
+	if (is_date_nil(n)) {
 		if (d)
 			*d = int_nil;
 		if (m)
@@ -388,7 +388,7 @@ fromtime(daytime n, int *hour, int *min, int *sec, int *msec)
 {
 	int h, m, s, ms;
 
-	if (!daytime_isnil(n)) {
+	if (!is_daytime_nil(n)) {
 		h = n / 3600000;
 		n -= h * 3600000;
 		m = n / 60000;
@@ -516,7 +516,7 @@ timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 
 	MTIMEtimestamp_add(ret, t, &add);
 
-	if (ts_isnil(*ret) || z->dst == 0) {
+	if (is_timestamp_nil(*ret) || z->dst == 0) {
 		return 0;
 	}
 	set_rule(start, z->dst_start);
@@ -630,7 +630,7 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 	}
 	/* handle semantic error here (returns nil in that case) */
 	**d = todate(day, month, yearneg ? -year : year);
-	if (date_isnil(**d)) {
+	if (is_date_nil(**d)) {
 		GDKerror("Semantic error in date.\n");
 		return -1;
 	}
@@ -651,7 +651,7 @@ date_tostr(str *buf, size_t *len, const date *val, bool external)
 		if( *buf == NULL)
 			return -1;
 	}
-	if (date_isnil(*val) || !DATE(day, month, year)) {
+	if (is_date_nil(*val) || !DATE(day, month, year)) {
 		if (external) {
 			strcpy(*buf, "nil");
 			return 3;
@@ -742,7 +742,7 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 	}
 	/* handle semantic error here (returns nil in that case) */
 	**ret = totime(hour, min, sec, msec);
-	if (daytime_isnil(**ret)) {
+	if (is_daytime_nil(**ret)) {
 		GDKerror("Semantic error in time.\n");
 		return -1;
 	}
@@ -757,7 +757,7 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 	lng val, offset = 0;
 	daytime mtime = 24 * 60 * 60 * 1000;
 
-	if (pos < 0 || daytime_isnil(**ret))
+	if (pos < 0 || is_daytime_nil(**ret))
 		return pos;
 
 	s = buf + pos;
@@ -801,7 +801,7 @@ daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
 		if( *buf == NULL)
 			return -1;
 	}
-	if (daytime_isnil(*val) || !TIME(hour, min, sec, msec)) {
+	if (is_daytime_nil(*val) || !TIME(hour, min, sec, msec)) {
 		if (external) {
 			strcpy(*buf, "nil");
 			return 3;
@@ -835,7 +835,7 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 	pos = date_fromstr(buf, len, &d, external);
 	if (pos < 0)
 		return pos;
-	if (date_isnil(*d)) {
+	if (is_date_nil(*d)) {
 		**ret = *timestamp_nil;
 		return pos;
 	}
@@ -847,14 +847,14 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		if (pos < 0)
 			return pos;
 		s += pos;
-		if (daytime_isnil(*t)) {
+		if (is_daytime_nil(*t)) {
 			**ret = *timestamp_nil;
 			return (ssize_t) (s - buf);
 		}
 	} else if (*s) {
 		(*ret)->msecs = daytime_nil;
 	}
-	if (date_isnil((*ret)->days) || daytime_isnil((*ret)->msecs)) {
+	if (is_date_nil((*ret)->days) || is_daytime_nil((*ret)->msecs)) {
 		**ret = *timestamp_nil;
 	} else {
 		lng offset = 0;
@@ -932,7 +932,7 @@ timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *tim
 		/* int off = get_offset(timezone); */
 		timestamp tmp = *val;
 
-		if (!ts_isnil(tmp) && timestamp_inside(&tmp, val, timezone, (lng) 0)) {
+		if (!is_timestamp_nil(tmp) && timestamp_inside(&tmp, val, timezone, (lng) 0)) {
 			lng add = (lng) 3600000;
 
 			MTIMEtimestamp_add(&tmp, &tmp, &add);
@@ -950,7 +950,7 @@ timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *tim
 				return -1;
 		}
 		s = *buf;
-		if (ts_isnil(tmp)) {
+		if (is_timestamp_nil(tmp)) {
 			if (external) {
 				strcpy(*buf, "nil");
 				return 3;
@@ -1243,7 +1243,7 @@ tzone_tostr(str *buf, size_t *len, const tzone *z, bool external)
 			return -1;
 	}
 	s = *buf;
-	if (tz_isnil(*z)) {
+	if (is_tzone_nil(*z)) {
 		if (external) {
 			strcpy(s, "nil");
 			s += 3;
@@ -1297,7 +1297,7 @@ tzone_tostr(str *buf, size_t *len, const tzone *z, bool external)
 static str
 tzone_set_local(const tzone *z)
 {
-	if (tz_isnil(*z))
+	if (is_tzone_nil(*z))
 		throw(MAL, "mtime.timezone_local", "cannot set timezone to nil");
 	tzone_local = *z;
 	return MAL_SUCCEED;
@@ -1306,7 +1306,7 @@ tzone_set_local(const tzone *z)
 static str
 daytime_add(daytime *ret, const daytime *v, const lng *msec)
 {
-	if (daytime_isnil(*v)) {
+	if (is_daytime_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		*ret = *v + (daytime) (*msec);
@@ -1318,7 +1318,7 @@ daytime_add(daytime *ret, const daytime *v, const lng *msec)
 str
 MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec)
 {
-	if (!ts_isnil(*v) && !is_lng_nil(*msec)) {
+	if (!is_timestamp_nil(*v) && !is_lng_nil(*msec)) {
 		int day = (int) (*msec / (24 * 60 * 60 * 1000));
 
 		ret->msecs = (int) (v->msecs + (*msec - ((lng) day) * (24 * 60 * 60 * 1000)));
@@ -1665,7 +1665,7 @@ MTIMEtimestamp_fromstr(timestamp *ret, const char * const *d)
 str
 MTIMEtimestamp_create(timestamp *ret, const date *d, const daytime *t, const tzone *z)
 {
-	if (date_isnil(*d) || daytime_isnil(*t) || tz_isnil(*z)) {
+	if (is_date_nil(*d) || is_daytime_nil(*t) || is_tzone_nil(*z)) {
 		*ret = *timestamp_nil;
 	} else {
 		lng add = get_offset(z) * (lng) -60000;
@@ -1717,7 +1717,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 	t = (timestamp *) Tloc(bn, 0);
 	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, d++) {
-		if (date_isnil(*d)) {
+		if (is_date_nil(*d)) {
 			*t = *timestamp_nil;
 			bn->tnil = true;
 		} else {
@@ -1727,7 +1727,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 				timestamp_inside(&tmp, t, &tzone_local, (lng) -3600000))
 				*t = tmp;
 			MTIMEtimestamp_add(t, t, &add);
-			if (ts_isnil(*t))
+			if (is_timestamp_nil(*t))
 				bn->tnil = true;
 		}
 	}
@@ -1745,7 +1745,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 str
 MTIMEdate_extract_year(int *ret, const date *v)
 {
-	if (date_isnil(*v)) {
+	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		fromdate(*v, NULL, NULL, ret);
@@ -1757,7 +1757,7 @@ MTIMEdate_extract_year(int *ret, const date *v)
 str
 MTIMEdate_extract_quarter(int *ret, const date *v)
 {
-	if (date_isnil(*v)) {
+	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		int mnd = 0;
@@ -1775,7 +1775,7 @@ MTIMEdate_extract_quarter(int *ret, const date *v)
 str
 MTIMEdate_extract_month(int *ret, const date *v)
 {
-	if (date_isnil(*v)) {
+	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		fromdate(*v, NULL, ret, NULL);
@@ -1787,7 +1787,7 @@ MTIMEdate_extract_month(int *ret, const date *v)
 str
 MTIMEdate_extract_day(int *ret, const date *v)
 {
-	if (date_isnil(*v)) {
+	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		fromdate(*v, ret, NULL, NULL);
@@ -1799,7 +1799,7 @@ MTIMEdate_extract_day(int *ret, const date *v)
 str
 MTIMEdate_extract_dayofyear(int *ret, const date *v)
 {
-	if (date_isnil(*v)) {
+	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		int year;
@@ -1814,7 +1814,7 @@ MTIMEdate_extract_dayofyear(int *ret, const date *v)
 str
 MTIMEdate_extract_weekofyear(int *ret, const date *v)
 {
-	if (date_isnil(*v)) {
+	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		int year;
@@ -1839,7 +1839,7 @@ MTIMEdate_extract_weekofyear(int *ret, const date *v)
 str
 MTIMEdate_extract_dayofweek(int *ret, const date *v)
 {
-	if (date_isnil(*v)) {
+	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		*ret = date_dayofweek(*v);
@@ -1851,7 +1851,7 @@ MTIMEdate_extract_dayofweek(int *ret, const date *v)
 str
 MTIMEdaytime_extract_hours(int *ret, const daytime *v)
 {
-	if (daytime_isnil(*v)) {
+	if (is_daytime_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		fromtime(*v, ret, NULL, NULL, NULL);
@@ -1863,7 +1863,7 @@ MTIMEdaytime_extract_hours(int *ret, const daytime *v)
 str
 MTIMEdaytime_extract_minutes(int *ret, const daytime *v)
 {
-	if (daytime_isnil(*v)) {
+	if (is_daytime_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		fromtime(*v, NULL, ret, NULL, NULL);
@@ -1875,7 +1875,7 @@ MTIMEdaytime_extract_minutes(int *ret, const daytime *v)
 str
 MTIMEdaytime_extract_seconds(int *ret, const daytime *v)
 {
-	if (daytime_isnil(*v)) {
+	if (is_daytime_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		fromtime(*v, NULL, NULL, ret, NULL);
@@ -1889,7 +1889,7 @@ MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *v)
 {
 	int sec, milli;
 
-	if (daytime_isnil(*v)) {
+	if (is_daytime_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		fromtime(*v, NULL, NULL, &sec, &milli);
@@ -1902,7 +1902,7 @@ MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *v)
 str
 MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v)
 {
-	if (daytime_isnil(*v)) {
+	if (is_daytime_nil(*v)) {
 		*ret = int_nil;
 	} else {
 		fromtime(*v, NULL, NULL, NULL, ret);
@@ -1914,7 +1914,7 @@ MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v)
 str
 MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t, const tzone *z)
 {
-	if (ts_isnil(*t) || tz_isnil(*z)) {
+	if (is_timestamp_nil(*t) || is_tzone_nil(*z)) {
 		*ret = daytime_nil;
 	} else {
 		timestamp tmp;
@@ -1924,7 +1924,7 @@ MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t, const tzone *z)
 
 			MTIMEtimestamp_add(&tmp, &tmp, &add);
 		}
-		if (ts_isnil(tmp)) {
+		if (is_timestamp_nil(tmp)) {
 			*ret = daytime_nil;
 		} else {
 			*ret = tmp.msecs;
@@ -1961,13 +1961,13 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 	dt = (daytime *) Tloc(bn, 0);
 	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, dt++) {
-		if (ts_isnil(*t)) {
+		if (is_timestamp_nil(*t)) {
 			*dt = daytime_nil;
 			bn->tnil = true;
 		} else {
 			if (timestamp_inside(&tmp, t, &tzone_local, (lng) 0))
 				MTIMEtimestamp_add(&tmp, &tmp, &add);
-			if (ts_isnil(tmp)) {
+			if (is_timestamp_nil(tmp)) {
 				*dt = daytime_nil;
 				bn->tnil = true;
 			} else {
@@ -1989,7 +1989,7 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 str
 MTIMEtimestamp_extract_date(date *ret, const timestamp *t, const tzone *z)
 {
-	if (ts_isnil(*t) || tz_isnil(*z)) {
+	if (is_timestamp_nil(*t) || is_tzone_nil(*z)) {
 		*ret = date_nil;
 	} else {
 		timestamp tmp;
@@ -1999,7 +1999,7 @@ MTIMEtimestamp_extract_date(date *ret, const timestamp *t, const tzone *z)
 
 			MTIMEtimestamp_add(&tmp, &tmp, &add);
 		}
-		if (ts_isnil(tmp)) {
+		if (is_timestamp_nil(tmp)) {
 			*ret = date_nil;
 		} else {
 			*ret = tmp.days;
@@ -2036,13 +2036,13 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 	d = (date *) Tloc(bn, 0);
 	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, d++) {
-		if (ts_isnil(*t)) {
+		if (is_timestamp_nil(*t)) {
 			*d = date_nil;
 			bn->tnil = true;
 		} else {
 			if (timestamp_inside(&tmp, t, &tzone_local, (lng) 0))
 				MTIMEtimestamp_add(&tmp, &tmp, &add);
-			if (ts_isnil(tmp)) {
+			if (is_timestamp_nil(tmp)) {
 				*d = date_nil;
 				bn->tnil = true;
 			} else {
@@ -2065,7 +2065,7 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 str
 MTIMEdate_addyears(date *ret, const date *v, const int *delta)
 {
-	if (date_isnil(*v) || is_int_nil(*delta)) {
+	if (is_date_nil(*v) || is_int_nil(*delta)) {
 		*ret = date_nil;
 	} else {
 		int d, m, y, x, z = *delta;
@@ -2112,7 +2112,7 @@ MTIMEdate_adddays(date *ret, const date *v, const int *delta)
 str
 MTIMEdate_addmonths(date *ret, const date *v, const int *delta)
 {
-	if (date_isnil(*v) || is_int_nil(*delta)) {
+	if (is_date_nil(*v) || is_int_nil(*delta)) {
 		*ret = date_nil;
 	} else {
 		int d, m, y, x, z = *delta;
@@ -2152,7 +2152,7 @@ MTIMEdate_submonths(date *ret, const date *v, const int *delta)
 str
 MTIMEdate_diff(int *ret, const date *v1, const date *v2)
 {
-	if (date_isnil(*v1) || date_isnil(*v2)) {
+	if (is_date_nil(*v1) || is_date_nil(*v2)) {
 		*ret = int_nil;
 	} else {
 		*ret = (int) (*v1 - *v2);
@@ -2195,7 +2195,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	bn->tnonil = true;
 	bn->tnil = false;
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t1) || date_isnil(*t2)) {
+		if (is_date_nil(*t1) || is_date_nil(*t2)) {
 			*tn = int_nil;
 			bn->tnonil = false;
 			bn->tnil = true;
@@ -2219,7 +2219,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 str
 MTIMEdaytime_diff(lng *ret, const daytime *v1, const daytime *v2)
 {
-	if (daytime_isnil(*v1) || daytime_isnil(*v2)) {
+	if (is_daytime_nil(*v1) || is_daytime_nil(*v2)) {
 		*ret = lng_nil;
 	} else {
 		*ret = (lng) (*v1 - *v2);
@@ -2231,7 +2231,7 @@ MTIMEdaytime_diff(lng *ret, const daytime *v1, const daytime *v2)
 str
 MTIMEtimestamp_diff(lng *ret, const timestamp *v1, const timestamp *v2)
 {
-	if (ts_isnil(*v1) || ts_isnil(*v2)) {
+	if (is_timestamp_nil(*v1) || is_timestamp_nil(*v2)) {
 		*ret = lng_nil;
 	} else {
 		*ret = ((lng) (v1->days - v2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (v1->msecs - v2->msecs));
@@ -2274,7 +2274,7 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	bn->tnonil = true;
 	bn->tnil = false;
 	for (i = 0; i < n; i++) {
-		if (ts_isnil(*t1) || ts_isnil(*t2)) {
+		if (is_timestamp_nil(*t1) || is_timestamp_nil(*t2)) {
 			*tn = lng_nil;
 			bn->tnonil = false;
 			bn->tnil = true;
@@ -2301,7 +2301,7 @@ MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z)
 {
 	*ret = FALSE;
 
-	if (tz_isnil(*z)) {
+	if (is_tzone_nil(*z)) {
 		*ret = bit_nil;
 	} else if (z->dst) {
 		timestamp tmp;
@@ -2419,7 +2419,7 @@ MTIMErule_extract_minutes(int *ret, const rule *r)
 str
 MTIMEtzone_extract_start(rule *ret, const tzone *t)
 {
-	if (tz_isnil(*t) || !t->dst) {
+	if (is_tzone_nil(*t) || !t->dst) {
 		ret->asint = int_nil;
 	} else {
 		set_rule(*ret, t->dst_start);
@@ -2431,7 +2431,7 @@ MTIMEtzone_extract_start(rule *ret, const tzone *t)
 str
 MTIMEtzone_extract_end(rule *ret, const tzone *t)
 {
-	if (tz_isnil(*t) || !t->dst) {
+	if (is_tzone_nil(*t) || !t->dst) {
 		ret->asint = int_nil;
 	} else {
 		set_rule(*ret, t->dst_end);
@@ -2443,7 +2443,7 @@ MTIMEtzone_extract_end(rule *ret, const tzone *t)
 str
 MTIMEtzone_extract_minutes(int *ret, const tzone *t)
 {
-	*ret = (tz_isnil(*t)) ? int_nil : get_offset(t);
+	*ret = (is_tzone_nil(*t)) ? int_nil : get_offset(t);
 	return MAL_SUCCEED;
 }
 
@@ -2452,7 +2452,7 @@ MTIMEdate_sub_sec_interval_wrap(date *ret, const date *t, const int *sec)
 {
 	int delta;
 
-	if (is_int_nil(*sec) || date_isnil(*t)) {
+	if (is_int_nil(*sec) || is_date_nil(*t)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
@@ -2465,7 +2465,7 @@ MTIMEdate_sub_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec)
 {
 	int delta;
 
-	if (is_lng_nil(*msec) || date_isnil(*t)) {
+	if (is_lng_nil(*msec) || is_date_nil(*t)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
@@ -2478,7 +2478,7 @@ MTIMEdate_add_sec_interval_wrap(date *ret, const date *t, const int *sec)
 {
 	int delta;
 
-	if (is_int_nil(*sec) || date_isnil(*t)) {
+	if (is_int_nil(*sec) || is_date_nil(*t)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
@@ -2491,7 +2491,7 @@ MTIMEdate_add_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec)
 {
 	int delta;
 
-	if (is_lng_nil(*msec) || date_isnil(*t)) {
+	if (is_lng_nil(*msec) || is_date_nil(*t)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
@@ -2795,7 +2795,7 @@ MTIMEepoch_bulk(bat *ret, bat *bid)
 	bn->tnonil = true;
 	b->tnil = false;
 	for (i = 0; i < n; i++) {
-		if (ts_isnil(*t)) {
+		if (is_timestamp_nil(*t)) {
 			*tn = lng_nil;
 			bn->tnonil = false;
 			bn->tnil = true;
@@ -2881,7 +2881,7 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 				BBPunfix(b->batCacheid);
 				return msg;
 			}
-			if (ts_isnil(*t))
+			if (is_timestamp_nil(*t))
 				bn->tnil = true;
 		}
 	}
@@ -2938,7 +2938,7 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 				BBPunfix(b->batCacheid);
 				return msg;
 			}
-			if (ts_isnil(*t))
+			if (is_timestamp_nil(*t))
 				bn->tnil = true;
 		}
 	}
@@ -3228,7 +3228,7 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	y = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*y = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3275,7 +3275,7 @@ MTIMEdate_extract_quarter_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	q = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*q = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3321,7 +3321,7 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	m = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*m = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3367,7 +3367,7 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	d = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*d = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3414,7 +3414,7 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	h = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*h = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3460,7 +3460,7 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	m = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*m = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3506,7 +3506,7 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*s = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3552,7 +3552,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*s = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3599,7 +3599,7 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (date_isnil(*t)) {
+		if (is_date_nil(*t)) {
 			*s = int_nil;
 			bn->tnil = true;
 		} else {
@@ -3646,7 +3646,7 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 	size_t sz;
 	int mon, year;
 
-	if (date_isnil(*d) || strcmp(*format, str_nil) == 0) {
+	if (is_date_nil(*d) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
 		if (*s == NULL)
 			throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -3691,7 +3691,7 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 	size_t sz;
 	int msec;
 
-	if (daytime_isnil(*d) || strcmp(*format, str_nil) == 0) {
+	if (is_daytime_nil(*d) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
 		if (*s == NULL)
 			throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -3736,7 +3736,7 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 	size_t sz;
 	int mon, year, msec;
 
-	if (timestamp_isnil(*ts) || strcmp(*format, str_nil) == 0) {
+	if (is_timestamp_nil(*ts) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
 		if (*s == NULL)
 			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);

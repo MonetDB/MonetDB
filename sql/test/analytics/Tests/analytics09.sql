@@ -43,7 +43,24 @@ select cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unb
 select avg(sum(aa)) over (),
        avg(sum(aa)) over (rows unbounded preceding),
        cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
-       avg(sum(aa)) over (range unbounded preceding) from analytics group by aa; --TODO support multiple aggregations within the same projection
+       avg(sum(aa)) over (range unbounded preceding) from analytics group by aa;
+
+select cast(sum(aa) * count(aa) over () as bigint),
+       cast(sum(aa) over () as bigint) from analytics group by aa;
+
+select cast(sum(sum(aa)) over () as bigint),
+       cast(sum(aa) * count(count(aa)) over () as bigint) from analytics group by aa;
+
+select count(aa) over (),
+       avg(aa) over () * count(aa) from analytics group by aa;
+
+select cast(sum(aa) over () as bigint),
+       cast(sum(aa) over () as bigint),
+       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa;
+
+select 21 - avg(sum(aa)) over (),
+       avg(45 * count(aa) + sum(aa)) over (),
+       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa;
 
 select avg(sum(aa)) over (partition by bb) from analytics group by bb;
 

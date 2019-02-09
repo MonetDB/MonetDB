@@ -31,20 +31,11 @@
 static size_t interprocess_unique_id = 1;
 static key_t base_key = 800000000;
 
-gdk_return interprocess_init_semaphore(int id, int count, int flags, int *semid, str *msg);
-
 // Regular ftok produces too many collisions
-static gdk_return
+static inline void
 ftok_enhanced(int id, key_t * return_key)
 {
 	*return_key = base_key + id;
-	return GDK_SUCCEED;
-}
-
-#define interprocess_create_error(...) {		\
-    *msg = (char*) GDKzalloc(500 * sizeof(char));	\
-    snprintf(*msg, 500, __VA_ARGS__);			\
-    errno = 0;						\
 }
 
 //! Obtain a set of unique identifiers that can be used to create memory mapped files or semaphores
@@ -66,20 +57,16 @@ GDKuniqueid(size_t offset)
 //! Create a memory mapped file if it does not exist and open it
 /* id: The unique identifier of the memory mapped file (use GDKuniquemmapid to get a unique identifier)
  * size: Minimum required size of the file
- * return_ptr: Return value pointing into the file
- * msg: Error message (only set if function returns GDK_FAIL)
- * return: GDK_SUCCEED if successful, GDK_FAIL if not successful (with msg set to error message)
+ * return: Return value pointing into the file, NULL if not successful
 */
-gdk_return
-GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str *msg)
+void *
+GDKinitmmap(size_t id, size_t size, size_t *return_size)
 {
 	char address[100];
 	void *ptr;
 	int fd;
 	int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC | MAP_SHARED;
-	char *path = NULL;
-
-	assert(return_ptr != NULL);
+	char *path;
 
 	GDKmmapfile(address, sizeof(address), id);
 
@@ -90,66 +77,53 @@ GDKinitmmap(size_t id, size_t size, void **return_ptr, size_t *return_size, str 
 	 size = GDK_mmap_pagesize; */
 	fd = GDKfdlocate(0, address, "wb", "tmp");
 	if (fd < 0) {
-		interprocess_create_error("Failure in GDKfdlocate: %s", strerror(errno));
-		goto cleanup;
+		return NULL;
 	}
 	path = GDKfilepath(0, BATDIR, address, "tmp");
 	if (path == NULL) {
-		interprocess_create_error("Failure in GDKfilepath: %s", strerror(errno));
-		goto cleanup;
+		return NULL;
 	}
 	close(fd);
 	if (GDKextend(path, size) != GDK_SUCCEED) {
-		interprocess_create_error("Failure in GDKextend: %s", strerror(errno));
-		goto cleanup;
+		GDKfree(path);
+		return NULL;
 	}
 	ptr = GDKmmap(path, mod, size);
-	if (ptr == NULL) {
-		interprocess_create_error("Failure in GDKmmap: %s", strerror(errno));
-		goto cleanup;
-	}
 	GDKfree(path);
-	*return_ptr = ptr;
+	if (ptr == NULL) {
+		return NULL;
+	}
 	if (return_size != NULL) {
 		*return_size = size;
 	}
-	return GDK_SUCCEED;
-      cleanup:
-	if (path)
-		GDKfree(path);
-	return GDK_FAIL;
+	return ptr;
 }
 
 //! Release a memory mapped file that was created through GDKinitmmap
 /* ptr: Pointer to the file
  * size: Size of the file
  * id: Identifier of the file
- * msg: Error message (only set if function returns GDK_FAIL)
- * return: GDK_SUCCEED if successful, GDK_FAIL if not successful (with msg set to error message)
+ * return: GDK_SUCCEED if successful, GDK_FAIL if not successful
 */
 gdk_return
-GDKreleasemmap(void *ptr, size_t size, size_t id, str *msg)
+GDKreleasemmap(void *ptr, size_t size, size_t id)
 {
 	char address[100];
 	char *path;
 	int ret;
 	GDKmmapfile(address, sizeof(address), id);
 	if (GDKmunmap(ptr, size) != GDK_SUCCEED) {
-		interprocess_create_error("Failure in GDKmunmap: %s", strerror(errno));
 		return GDK_FAIL;
 	}
 	path = GDKfilepath(0, BATDIR, address, "tmp");
 	if (path == NULL) {
-		interprocess_create_error("Failure in GDKfilepath: %s", strerror(errno));
 		return GDK_FAIL;
 	}
 	ret = remove(path);
+	if (ret < 0)
+		GDKsyserror("cannot remove '%s'", path);
 	GDKfree(path);
-	if (ret < 0) {
-		interprocess_create_error("Failure in GDKfree: %s", strerror(errno));
-		return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
+	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
 //! snprintf the file name of a memory mapped file (as created by GDKinitmmap)
@@ -164,17 +138,14 @@ GDKmmapfile(str buffer, size_t max, size_t id)
 	return GDK_SUCCEED;
 }
 
-gdk_return
-interprocess_init_semaphore(int id, int count, int flags, int *semid, str *msg)
+static gdk_return
+interprocess_init_semaphore(int id, int count, int flags, int *semid)
 {
 	key_t key;
-	if (ftok_enhanced(id, &key) != GDK_SUCCEED) {
-		interprocess_create_error("Failure in ftok_enhanced: %s", strerror(errno));
-		return GDK_FAIL;
-	}
+	ftok_enhanced(id, &key);
 	*semid = semget(key, count, flags | 0666);
 	if (*semid < 0) {
-		interprocess_create_error("Failure in semget: %s", strerror(errno));
+		GDKsyserror("semget failed");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -184,38 +155,35 @@ interprocess_init_semaphore(int id, int count, int flags, int *semid, str *msg)
 /* id: identifier (obtain from GDKuniqueid)
  * count: amount of semaphores
  * semid: identifier of the created semaphore (only set if function returns GDK_SUCCEED)
- * msg: Error message (only set if function returns GDK_FAIL)
  */
 gdk_return
-GDKcreatesem(int id, int count, int *semid, str *msg)
+GDKcreatesem(int id, int count, int *semid)
 {
-	return interprocess_init_semaphore(id, count, IPC_CREAT, semid, msg);
+	return interprocess_init_semaphore(id, count, IPC_CREAT, semid);
 }
 
 //! Get an interprocess semaphore that was already created using GDKcreatesem
 /* id: identifier (obtain from GDKuniqueid)
  * count: amount of semaphores
  * semid: identifier of the semaphore (only set if function returns GDK_SUCCEED)
- * msg: Error message (only set if function returns GDK_FAIL)
  */
 gdk_return
-GDKgetsem(int id, int count, int *semid, str *msg)
+GDKgetsem(int id, int count, int *semid)
 {
-	return interprocess_init_semaphore(id, count, 0, semid, msg);
+	return interprocess_init_semaphore(id, count, 0, semid);
 }
 
 //! Gets the value of an interprocess semaphore
 /* sem_id: semaphore identifier (obtained from GDKcreatesem or GDKgetsem)
  * number: the semaphore number (must be less than 'count' given when creating the semaphore)
  * semval: the value of the semaphore (only set if function returns GDK_SUCCEED)
- * msg: Error message (only set if function returns GDK_FAIL)
  */
 gdk_return
-GDKgetsemval(int sem_id, int number, int *semval, str *msg)
+GDKgetsemval(int sem_id, int number, int *semval)
 {
 	*semval = semctl(sem_id, number, GETVAL, 0);
 	if (*semval < 0) {
-		interprocess_create_error("Failure in semctl: %s", strerror(errno));
+		GDKsyserror("semctl failed");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -225,10 +193,9 @@ GDKgetsemval(int sem_id, int number, int *semval, str *msg)
 /* sem_id: semaphore identifier (obtained from GDKcreatesem or GDKgetsem)
  * number: the semaphore number (must be less than 'count' given when creating the semaphore)
  * change: The change to apply to the semaphore value
- * msg: Error message (only set if function returns GDK_FAIL)
  */
 gdk_return
-GDKchangesemval(int sem_id, int number, int change, str *msg)
+GDKchangesemval(int sem_id, int number, int change)
 {
 	struct sembuf buffer;
 	buffer.sem_num = number;
@@ -236,7 +203,7 @@ GDKchangesemval(int sem_id, int number, int change, str *msg)
 	buffer.sem_flg = 0;
 
 	if (semop(sem_id, &buffer, 1) < 0) {
-		interprocess_create_error("Failure in semop: %s", strerror(errno));
+		GDKsyserror("semop failed");
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -248,10 +215,9 @@ GDKchangesemval(int sem_id, int number, int change, str *msg)
  * change: The change to apply to the semaphore value
  * timeout_mseconds: The timeout in milliseconds
  * succeed: Set to true if the value was successfully changed, or false if the timeout was reached
- * msg: Error message (only set if function returns GDK_FAIL)
  */
 gdk_return
-GDKchangesemval_timeout(int sem_id, int number, int change, int timeout_mseconds, bool *succeed, str *msg)
+GDKchangesemval_timeout(int sem_id, int number, int change, int timeout_mseconds, bool *succeed)
 {
 #ifdef HAVE_SEMTIMEDOP
 	// Some linux installations don't have semtimedop
@@ -274,7 +240,7 @@ GDKchangesemval_timeout(int sem_id, int number, int change, int timeout_mseconds
 			errno = 0;
 			return GDK_SUCCEED;
 		} else {
-			interprocess_create_error("Failure in semtimedop: %s", strerror(errno));
+			GDKsyserror("semtimedop failed");
 			return GDK_FAIL;
 		}
 	}
@@ -283,20 +249,19 @@ GDKchangesemval_timeout(int sem_id, int number, int change, int timeout_mseconds
 #else
 	(void) timeout_mseconds;
 	*succeed = true;
-	return GDKchangesemval(sem_id, number, change, msg);
+	return GDKchangesemval(sem_id, number, change);
 #endif
 }
 
 //! Destroy an interprocess semaphore
 /* sem_id: semaphore identifier (obtained from GDKcreatesem or GDKgetsem)
- * msg: Error message (only set if function returns GDK_FAIL)
  */
 gdk_return
-GDKreleasesem(int sem_id, str *msg)
+GDKreleasesem(int sem_id)
 {
 	if (semctl(sem_id, 0, IPC_RMID) < 0) {
-		interprocess_create_error("Failure in semctl: %s", strerror(errno))
-			return GDK_FAIL;
+		GDKsyserror("semctl failed");
+		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }

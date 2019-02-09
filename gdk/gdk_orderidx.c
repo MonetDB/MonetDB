@@ -41,6 +41,7 @@ BATidxsync(void *arg)
 							fsync(fd);
 #endif
 						}
+						hp->dirty = false;
 					} else {
 						perror("write hash");
 					}
@@ -49,8 +50,12 @@ BATidxsync(void *arg)
 			} else {
 				((oid *) hp->base)[0] |= (oid) 1 << 24;
 				if (!(GDKdebug & NOSYNCMASK) &&
-				    MT_msync(hp->base, SIZEOF_OID) < 0)
+				    MT_msync(hp->base, SIZEOF_OID) < 0) {
 					((oid *) hp->base)[0] &= ~((oid) 1 << 24);
+				} else {
+					hp->dirty = false;
+					failed = ""; /* not failed */
+				}
 			}
 			ALGODEBUG fprintf(stderr, "#BATidxsync(%s): orderidx persisted"
 					  " (" LLFMT " usec)%s\n",

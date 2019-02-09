@@ -51,6 +51,8 @@ def main():
     extend = []
     debug = []
     geom = []
+    pyapi2 = []
+    pyapi3 = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
     print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB5" UpgradeCode="%s" Version="%s">' % (upgradecode[arch], sys.argv[1]))
@@ -81,6 +83,19 @@ def main():
     print(r'    <Property Id="GEOMEXISTS">')
     print(r'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
     print(r'        <FileSearch Id="CheckFile3" Name="geom.mal"/>')
+    print(r'      </DirectorySearch>')
+    print(r'    </Property>')
+    print(r'    <Property Id="PYAPI2EXISTS">')
+    print(r'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]" Depth="0">')
+    print(r'        <FileSearch Id="CheckFile4" Name="pyapi_locatepython.bat"/>')
+    print(r'      </DirectorySearch>')
+    print(r'      <DirectorySearch Id="CheckFileDir42" Path="[INSTALLDIR]" Depth="0">')
+    print(r'        <FileSearch Id="CheckFile42" Name="pyapi_locatepython2.bat"/>')
+    print(r'      </DirectorySearch>')
+    print(r'    </Property>')
+    print(r'    <Property Id="PYAPI3EXISTS">')
+    print(r'      <DirectorySearch Id="CheckFileDir5" Path="[INSTALLDIR]" Depth="0">')
+    print(r'        <FileSearch Id="CheckFile5" Name="pyapi_locatepython3.bat"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     # up to and including 11.29.3, the geom module can not be
@@ -164,9 +179,13 @@ def main():
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
     print(r'                <Directory Id="autoload" Name="autoload">')
     id = comp(features, id, 18,
-              [r'lib\monetdb5\autoload\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
+              [r'lib\monetdb5\autoload\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x) and ('pyapi' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
     id = comp(geom, id, 18,
               [r'lib\monetdb5\autoload\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
+    id = comp(pyapi2, id, 18,
+              [r'lib\monetdb5\autoload\%s' % x for x in sorted(filter(lambda x: x.endswith('_pyapi.mal'), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
+    id = comp(pyapi3, id, 18,
+              [r'lib\monetdb5\autoload\%s' % x for x in sorted(filter(lambda x: x.endswith('_pyapi3.mal'), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'autoload'))))])
     print(r'                </Directory>')
     print(r'                <Directory Id="createdb" Name="createdb">')
     id = comp(features, id, 18,
@@ -175,15 +194,21 @@ def main():
               [r'lib\monetdb5\createdb\%s' % x for x in sorted(filter(lambda x: x.endswith('.sql') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5', 'createdb'))))])
     print(r'                </Directory>')
     id = comp(features, id, 16,
-              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x) and ('pyapi' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(features, id, 16,
-              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(debug, id, 16,
               [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.pdb') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(geom, id, 16,
               [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(geom, id, 16,
               [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+    id = comp(pyapi2, id, 16,
+              [r'lib\monetdb5\pyapi.mal',
+               r'lib\monetdb5\lib_pyapi.dll'])
+    id = comp(pyapi3, id, 16,
+              [r'lib\monetdb5\pyapi3.mal',
+               r'lib\monetdb5\lib_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
               [r'lib\libbat.lib',
@@ -215,8 +240,11 @@ def main():
               [r'license.rtf',
                r'M5server.bat',
                r'msqldump.bat',
-               r'pyapi_locatepython.bat',
                r'stethoscope.bat'])
+    id = comp(pyapi2, id, 12,
+              [r'pyapi_locatepython2.bat'])
+    id = comp(pyapi3, id, 12,
+              [r'pyapi_locatepython3.bat'])
     id = comp(features, id, 12,
               [r'mclient.bat'],
               name = 'MonetDB SQL Client',
@@ -244,6 +272,16 @@ def main():
     for f in features:
         print(r'        <ComponentRef Id="%s"/>' % f)
     print(r'        <MergeRef Id="VCRedist"/>')
+    print(r'      </Feature>')
+    print(r'      <Feature Id="PyAPI2" Level="1000" AllowAdvertise="no" Absent="allow" Title="Include embedded Python 2" Description="Files required for using embedded Python 2.">')
+    for f in pyapi2:
+        print(r'        <ComponentRef Id="%s"/>' % f)
+    print(r'        <Condition Level="1">PYAPI2EXISTS</Condition>')
+    print(r'      </Feature>')
+    print(r'      <Feature Id="PyAPI3" Level="1000" AllowAdvertise="no" Absent="allow" Title="Include embedded Python 3" Description="Files required for using embedded Python 3.">')
+    for f in pyapi3:
+        print(r'        <ComponentRef Id="%s"/>' % f)
+    print(r'        <Condition Level="1">PYAPI3EXISTS</Condition>')
     print(r'      </Feature>')
     print(r'      <Feature Id="Extend" Level="1000" AllowAdvertise="no" Absent="allow" Title="Extend MonetDB/SQL" Description="Files required for extending MonetDB (include files and .lib files).">')
     for f in extend:

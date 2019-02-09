@@ -36,7 +36,6 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	MT_lock_set(&mal_delayLock);
 	tag = COLnew(0, TYPE_lng, 256, TRANSIENT);
 	user = COLnew(0, TYPE_str, 256, TRANSIENT);
 	started = COLnew(0, TYPE_timestamp, 256, TRANSIENT);
@@ -46,20 +45,20 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oids = COLnew(0, TYPE_oid, 256, TRANSIENT);
 	query = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if ( tag == NULL || user == NULL || query == NULL || started == NULL || estimate == NULL || progress == NULL || activity == NULL || oids == NULL){
-		if (tag) BBPunfix(tag->batCacheid);
-		if (user) BBPunfix(user->batCacheid);
-		if (query) BBPunfix(query->batCacheid);
-		if (activity) BBPunfix(activity->batCacheid);
-		if (started) BBPunfix(started->batCacheid);
-		if (estimate) BBPunfix(estimate->batCacheid);
-		if (progress) BBPunfix(progress->batCacheid);
-		if (oids) BBPunfix(oids->batCacheid);
-		MT_lock_unset(&mal_delayLock);
+		BBPreclaim(tag);
+		BBPreclaim(user);
+		BBPreclaim(query);
+		BBPreclaim(activity);
+		BBPreclaim(started);
+		BBPreclaim(estimate);
+		BBPreclaim(progress);
+		BBPreclaim(oids);
 		throw(MAL, "SYSMONqueue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
+	MT_lock_set(&mal_delayLock);
 	for ( i = 0; i< qtop; i++)
-	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
+	if( QRYqueue[i].query && (QRYqueue[i].cntxt->idx == 0 || cntxt->user == 0 || QRYqueue[i].cntxt->user == cntxt->user)) {
 		now= (lng) time(0);
 		if ( (now-QRYqueue[i].start) > QRYqueue[i].runtime)
 			prog =QRYqueue[i].runtime > 0 ? 100: int_nil;
@@ -69,7 +68,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		now = QRYqueue[i].tag;	/* temporarily use so that we have correct type */
 		if (BUNappend(tag, &now, false) != GDK_SUCCEED)
 			goto bailout;
-		msg = AUTHgetUsername(&usr, cntxt);
+		msg = AUTHgetUsername(&usr, QRYqueue[i].cntxt);
 		if (msg != MAL_SUCCEED)
 			goto bailout;
 

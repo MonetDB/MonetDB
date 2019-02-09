@@ -135,6 +135,27 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
 	} while (0)
 
+/* special case for EQ and NE where we have a nil_matches flag for
+ * when it is set */
+#define BINARY_3TYPE_FUNC_nilmatch(TYPE1, TYPE2, TYPE3, FUNC)		\
+	do {								\
+		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, 0, start);	\
+		for (i = start * incr1, j = start * incr2, k = start;	\
+		     k < end; i += incr1, j += incr2, k++) {		\
+			register TYPE1 v1;				\
+			register TYPE2 v2;				\
+			CHECKCAND((TYPE3 *) dst, k, candoff, TYPE3##_nil); \
+			v1 = ((const TYPE1 *) lft)[i];			\
+			v2 = ((const TYPE2 *) rgt)[j];			\
+			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+				((TYPE3 *) dst)[k] = FUNC(is_##TYPE1##_nil(v1), is_##TYPE2##_nil(v2)); \
+			} else {					\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		}							\
+		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
+	} while (0)
+
 #define BINARY_3TYPE_FUNC_nonil(TYPE1, TYPE2, TYPE3, FUNC)		\
 	do {								\
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, 0, start);	\
@@ -12657,6 +12678,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define BATcalccstop		BATcalccsteq
 #define VARcalcop		VARcalceq
 
+#define NIL_MATCHES_FLAG 1
+
 #include "gdk_calc_compare.h"
 
 #undef OP
@@ -12681,6 +12704,8 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 #define VARcalcop		VARcalcne
 
 #include "gdk_calc_compare.h"
+
+#undef NIL_MATCHES_FLAG
 
 #undef OP
 #undef op_typeswitchloop

@@ -11,7 +11,6 @@
 #include "bat_utils.h"
 #include "sql_types.h" /* EC_POS */
 
-#define CATALOG_JUL2015 52200
 #define CATALOG_MAR2018 52201
 #define CATALOG_AUG2018 52202
 
@@ -23,14 +22,6 @@ static gdk_return
 bl_preversion(int oldversion, int newversion)
 {
 	(void)newversion;
-#ifdef CATALOG_JUL2015
-	if (oldversion == CATALOG_JUL2015) {
-		/* upgrade to Jun2016 releases */
-		catalog_version = oldversion;
-		geomversion_set();
-		return GDK_SUCCEED;
-	}
-#endif
 
 #ifdef CATALOG_MAR2018
 	if (oldversion == CATALOG_MAR2018) {
@@ -178,150 +169,6 @@ static gdk_return
 bl_postversion(void *lg)
 {
 	(void)lg;
-
-#ifdef CATALOG_JUL2015
-	if (catalog_version <= CATALOG_JUL2015) {
-		BAT *b;
-		BATiter bi;
-		BAT *te, *tne;
-		BUN p, q;
-		int geomUpgrade = 0;
-		geomcatalogfix_fptr func;
-
-		te = temp_descriptor(logger_find_bat(lg, N("sys", "types", "eclass"), 0, 0));
-		if (te == NULL)
-			return GDK_FAIL;
-		bi = bat_iterator(te);
-		tne = COLnew(te->hseqbase, TYPE_int, BATcount(te), PERSISTENT);
-		if (tne == NULL) {
-			bat_destroy(te);
-			return GDK_FAIL;
-		}
-		for (p = 0, q = BUNlast(te); p < q; p++) {
-			int eclass = *(int*)BUNtloc(bi, p);
-
-			if (eclass == EC_GEOM)		/* old EC_EXTERNAL */
-				eclass++;		/* shift up */
-			if (BUNappend(tne, &eclass, true) != GDK_SUCCEED) {
-				bat_destroy(tne);
-				bat_destroy(te);
-				return GDK_FAIL;
-			}
-		}
-		bat_destroy(te);
-		if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
-		    logger_add_bat(lg, tne, N("sys", "types", "eclass"), 0, 0) != GDK_SUCCEED) {
-			bat_destroy(tne);
-			return GDK_FAIL;
-		}
-		bat_destroy(tne);
-
-		/* in the past, the args.inout column may have been
-		 * incorrectly upgraded to a bit instead of a bte
-		 * column */
-		te = temp_descriptor(logger_find_bat(lg, N("sys", "args", "inout"), 0, 0));
-		if (te == NULL)
-			return GDK_FAIL;
-		if (te->ttype == TYPE_bit) {
-			bi = bat_iterator(te);
-			tne = COLnew(te->hseqbase, TYPE_bte, BATcount(te), PERSISTENT);
-			if (tne == NULL) {
-				bat_destroy(te);
-				return GDK_FAIL;
-			}
-			for (p = 0, q = BUNlast(te); p < q; p++) {
-				bte inout = (bte) *(bit*)BUNtloc(bi, p);
-
-				if (BUNappend(tne, &inout, true) != GDK_SUCCEED) {
-					bat_destroy(tne);
-					bat_destroy(te);
-					return GDK_FAIL;
-				}
-			}
-			if (BATsetaccess(tne, BAT_READ) != GDK_SUCCEED ||
-			    logger_add_bat(lg, tne, N("sys", "args", "inout"), 0, 0) != GDK_SUCCEED) {
-				bat_destroy(tne);
-				bat_destroy(te);
-				return GDK_FAIL;
-			}
-			bat_destroy(tne);
-		}
-		bat_destroy(te);
-
-		/* test whether the catalog contains information
-		 * regarding geometry types */
-		b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "types", "systemname"), 0, 0));
-		if (b == NULL)
-			return GDK_FAIL;
-		bi = bat_iterator(b);
-		for (p = 0, q = BUNlast(b); p < q; p++) {
-			char *t = toLower(BUNtvar(bi, p));
-			if (t == NULL) {
-				bat_destroy(b);
-				return GDK_FAIL;
-			}
-			geomUpgrade = strcmp(t, "wkb") == 0;
-			GDKfree(t);
-			if (geomUpgrade)
-				break;
-		}
-		bat_destroy(b);
-
-		if (!geomUpgrade) {
-			/* test whether the catalog contains
-			 * information about geometry columns */
-			b = BATdescriptor((bat) logger_find_bat(lg, N("sys", "_columns", "type"), 0, 0));
-			if (b == NULL)
-				return GDK_FAIL;
-			bi = bat_iterator(b);
-			for (p = 0, q = BUNlast(b); p < q; p++) {
-				char *t = toLower(BUNtvar(bi, p));
-				if (t == NULL) {
-					bat_destroy(b);
-					return GDK_FAIL;
-				}
-				geomUpgrade = strcmp(t, "point") == 0 ||
-					strcmp(t, "curve") == 0 ||
-					strcmp(t, "linestring") == 0 ||
-					strcmp(t, "surface") == 0 ||
-					strcmp(t, "polygon") == 0 ||
-					strcmp(t, "multipoint") == 0 ||
-					strcmp(t, "multicurve") == 0 ||
-					strcmp(t, "multilinestring") == 0 ||
-					strcmp(t, "multisurface") == 0 ||
-					strcmp(t, "multipolygon") == 0 ||
-					strcmp(t, "geometry") == 0 ||
-					strcmp(t, "geometrycollection") == 0;
-				GDKfree(t);
-				if (geomUpgrade)
-					break;
-			}
-			bat_destroy(b);
-		}
-
-		func = geomcatalogfix_get();
-		if (func) {
-			/* Either the catalog needs to be updated and
-			 * the geom module has been loaded
-			 * (geomUpgrade == 1), or the catalog knew
-			 * nothing about geometries but the geom
-			 * module is loaded (geomUpgrade == 0) */
-			(*func)(lg, geomUpgrade);
-		} else {
-			if (geomUpgrade) {
-				/* The catalog needs to be updated but
-				 * the geom module has not been
-				 * loaded.  The case is prohibited by
-				 * the sanity check performed during
-				 * initialization */
-				GDKfatal("the catalogue needs to be updated but the geom module is not loaded.\n");
-			}
-			/* The catalog knew nothing about geometries
-			 * and the geom module is not loaded: Do
-			 * nothing */
-		}
-	}
-#endif
 
 #ifdef CATALOG_MAR2018
 	if (catalog_version <= CATALOG_MAR2018) {

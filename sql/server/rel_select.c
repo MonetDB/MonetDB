@@ -2459,13 +2459,50 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 	}
 	case SQL_AND:
 	{
+		/* split into 2 lists, simle logical expressions and or's */
+		list *nors = sa_list(sql->sa);
+		list *ors = sa_list(sql->sa);
+
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
+		node *n;
 
+		while (lo->token == SQL_AND) {
+			symbol *s;
+
+			sc = lo;
+			lo = sc->data.lval->h->data.sym;
+			s = sc->data.lval->h->next->data.sym;
+
+			if (s->token != SQL_OR)
+				list_prepend(nors, s);
+			else 
+				list_prepend(ors, s);
+		}
+		if (lo->token != SQL_OR)
+			list_prepend(nors, lo);
+		else 
+			list_prepend(ors, lo);
+		if (ro->token != SQL_OR)
+			append(nors, ro);
+		else 
+			append(ors, ro);
+
+		for(n=nors->h; n; n = n->next) {
+			symbol *lo = n->data;
+			rel = rel_logical_exp(sql, rel, lo, f);
+		}
+		for(n=ors->h; n; n = n->next) {
+			symbol *lo = n->data;
+			rel = rel_logical_exp(sql, rel, lo, f);
+		}
+		/*
 		rel = rel_logical_exp(sql, rel, lo, f);
 		if (!rel)
 			return NULL;
 		return rel_logical_exp(sql, rel, ro, f);
+		*/
+		return rel;
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -2810,6 +2847,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 				if (!r) /* error */
 					return NULL;
+				assert (lident->type != e_column);
+				lident = exp_column(sql->sa, exp_relname(lident), exp_name(lident), exp_subtype(lident), exp_card(lident), has_nil(lident), is_intern(lident));
 				e = exp_compare(sql->sa, lident, r, cmp_equal );
 				append(jexps, e);
 			}
@@ -3549,14 +3588,82 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 }
 
+static void
+rel_intermediates_add_exp(mvc *sql, sql_rel *p, sql_rel *op, sql_exp *in)
+{
+	while(op && p != op) {
+		sql_rel *pp = op;
+
+		while(pp->l && pp->l != p) 
+			pp = pp->l;
+		if (pp && pp->l == p) {
+			assert(pp->op == op_project);
+			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
+			in = rel_project_add_exp(sql, pp, in);
+		}
+		p = pp;
+	}
+}
+
 static sql_exp *
 _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *args, int f)
 {
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_subaggr *a = NULL;
-	int no_nil = 0;
-	sql_rel *groupby = *rel, *gr, *project = NULL, *iproject = NULL, *r = (groupby)?groupby->l:NULL;
+	int no_nil = 0, group = 0;
+	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL, *r = (groupby)?groupby->l:NULL;
 	list *exps = NULL;
+
+	/* find having select */
+	if (groupby && groupby->l && !is_processed(groupby) && is_sql_having(f)) { 
+		sql_rel *gl = groupby->l;
+
+		og = groupby;
+		while(groupby->l && !is_processed(groupby)) {
+			gl = groupby->l;
+			if (is_select(gl->op))
+				break;
+			groupby = gl;
+		}
+		if (gl && is_select(gl->op)) {
+			group = 1;
+			sel = groupby = gl;
+			/* At the end we switch back to the old projection relation og. 
+			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
+		}
+		if (!group)
+			groupby = og;
+
+		if (sel && sel->l)
+			groupby = sel->l;
+
+		if (groupby && groupby->op == op_project && groupby->l)
+			r = groupby->l;
+
+		if (r && r->op == op_groupby)
+			groupby = r;
+	}
+
+	/* find groupby */
+	if (groupby && groupby->l && !is_processed(groupby)) { 
+		sql_rel *gl = groupby->l;
+
+		og = groupby;
+		while(groupby->l && !is_processed(groupby)) {
+			gl = groupby->l;
+			if (gl->op == op_groupby)
+				break;
+			groupby = gl;
+		}
+		if (gl && gl->op == op_groupby) {
+			group = 1;
+			groupby = gl;
+			/* At the end we switch back to the old projection relation og. 
+			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
+		}
+		if (!group)
+			groupby = og;
+	}
 
 	if (!groupby) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -3575,32 +3682,20 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		return e;
 	}
 
-	if (is_sql_having(f) && is_select(groupby->op))
-		groupby = groupby->l;
+	if (groupby->op != op_groupby) { 		/* implicit groupby */
+		sql_rel *ng = rel_project2groupby(sql, groupby);
 
-	if (groupby->l && groupby->op == op_project) {
-		sql_rel *r = groupby->l;	
-
-		if (!is_processed(r) && is_sql_sel(f) && r->op == op_project) {
-			project = r;
-			r = r->l;
+		if (*rel == groupby) {
+			*rel = ng;
+		} else {
+			sql_rel *l = *rel;
+			while(l->l && l->l != groupby) {
+				l = l->l;
+			}
+			if (l->l && l->l == groupby)
+				l->l = ng;
 		}
-
-		if (is_sql_having(f) || (r->op == op_groupby && is_sql_partitionby(f)))
-			project = groupby;
-		if (is_sql_having(f) && r->op == op_select && r->l)
-			r = r->l;
-		if (is_sql_having(f) && r->op == op_project && r->l) {
-			iproject = r;
-			r = r->l;
-		}
-
-		if (r->op == op_groupby) 
-			groupby = r;
 	}
-
-	if (groupby->op != op_groupby) 		/* implicit groupby */
-		*rel = rel_project2groupby(sql, groupby);
 	if (!*rel)
 		return NULL;
 
@@ -3615,6 +3710,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	
 	if (!args->data.sym) {	/* count(*) case */
 		sql_exp *e;
+		sql_rel *l = NULL;
 
 		if (strcmp(aname, "count") != 0) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -3628,15 +3724,21 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		e = exp_aggr(sql->sa, NULL, a, distinct, 0, groupby->card, 0);
 		if (*rel == groupby && is_sql_sel(f)) /* selection */
 			return e;
-		if (!project)
-			return rel_groupby_add_aggr(sql, groupby, e);
+
 		e = rel_groupby_add_aggr(sql, groupby, e);
-		if (iproject) {
-			e = rel_project_add_exp(sql, iproject, e);
-			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
-		}
-		e = rel_project_add_exp(sql, project, e);
-		e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+		if (!group)
+			return e;
+
+		if (og)
+	       		l = og->l;
+		if (l && is_sql_sel(f))
+			rel_intermediates_add_exp(sql, groupby, l, e);
+		else if (sel) {
+			rel_intermediates_add_exp(sql, groupby, sel->l, e);
+			if (sel != *rel)
+				rel_intermediates_add_exp(sql, sel, *rel, e);
+		} else
+			rel_intermediates_add_exp(sql, groupby, *rel, e);
 		return e;
 	} 
 
@@ -3768,16 +3870,21 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
 		if (*rel != groupby || !is_sql_sel(f)) { /* selection */
+			sql_rel *l = NULL;
+
 			e = rel_groupby_add_aggr(sql, groupby, e);
-			if (!e || !project)
+			if (!group)
 				return e;
-			if (iproject) {
-				e = rel_project_add_exp(sql, iproject, e);
-				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
-			}
-			e = rel_project_add_exp(sql, project, e);
-			if (iproject || !is_sql_sel(f))
-				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+			if (og)
+		       		l = og->l;
+			if (l && is_sql_sel(f))
+				rel_intermediates_add_exp(sql, groupby, l, e);
+			else if (sel) {
+				rel_intermediates_add_exp(sql, groupby, sel->l, e);
+				if (sel != *rel)
+					rel_intermediates_add_exp(sql, sel, *rel, e);
+			} else
+				rel_intermediates_add_exp(sql, groupby, *rel, e);
 		}
 		return e;
 	} else {
@@ -3844,7 +3951,7 @@ rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_se
 			if (e1 && e2) {
 				cond = rel_binop_(sql, e1, e2, NULL, "=", card_value);
 				result = exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(e1), NULL));
-				else_exp = e1;	/* ELSE case */
+				else_exp = exp_copy(sql->sa, e1);	/* ELSE case */
 			}
 			/* COALESCE(e1,e2) == CASE WHEN e1
 			   IS NOT NULL THEN e1 ELSE e2 END */
@@ -3852,7 +3959,7 @@ rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_se
 			cond = rel_value_exp(sql, rel, dn->data.sym, f, ek);
 
 			if (cond) {
-				result = cond;
+				result = exp_copy(sql->sa, cond);
 				cond = rel_unop_(sql, rel_unop_(sql, cond, NULL, "isnull", card_value), NULL, "not", card_value);
 			}
 		} else {
@@ -3891,7 +3998,7 @@ rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_se
 			cond = rel_value_exp(sql, rel, dn->data.sym, f, ek);
 
 			if (cond) {
-				result = cond;
+				result = exp_copy(sql->sa, cond);
 				cond = rel_unop_(sql, rel_unop_(sql, cond, NULL, "isnull", card_value), NULL, "not", card_value);
 			}
 		} else {
@@ -3959,6 +4066,7 @@ rel_case(mvc *sql, sql_rel **rel, tokens token, symbol *opt_cond, dlist *when_se
 		/* remove any null's in the condition */
 		if (has_nil(cond) && token != SQL_COALESCE) {
 			sql_exp *condnil = rel_unop_(sql, cond, NULL, "isnull", card_value);
+			cond = exp_copy(sql->sa, cond);
 			cond = rel_nop_(sql, condnil, exp_atom_bool(sql->sa, 0), cond, NULL, NULL, "ifthenelse", card_value);
 		}
 		if (!cond || !result || !res)
@@ -4663,35 +4771,28 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	return window_specification; //return something to say there were no errors
 }
 
-static void
-rel_intermediates_add_exp(mvc *sql, sql_rel *p, sql_rel *op, sql_exp *in)
-{
-	while(op && p != op) {
-		sql_rel *pp = op;
-
-		while(pp->l && pp->l != p) 
-			pp = pp->l;
-		if (pp && pp->l == p) {
-			assert(pp->op == op_project);
-			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
-			in = rel_project_add_exp(sql, pp, in);
-		}
-		p = pp;
-	}
-}
-
 static sql_exp*
 opt_groupby_add_exp(mvc *sql, sql_rel *p, sql_rel *pp, sql_exp *in)
 {
+	sql_exp *found;
+
 	if (p->op == op_groupby) {
 		if (!exp_name(in))
 			exp_label(sql->sa, in, ++sql->label);
-		append(p->exps, in);
+		found = exps_find_exp( p->exps, in);
+		if (!found)
+			append(p->exps, in);
+		else
+			in = found;
 		in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 	} else if (pp && pp->op == op_groupby) {
 		if (!exp_name(in))
 			exp_label(sql->sa, in, ++sql->label);
-		append(p->exps, in);
+		found = exps_find_exp( p->exps, in);
+		if (!found)
+			append(p->exps, in);
+		else
+			in = found;
 		in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
 	}
 	return in;
@@ -4802,7 +4903,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	if (p && is_processed(p) && p->op == op_groupby)
 		group = 1;
-	if (p->l && !is_processed(p)) { /* ADD check for processed ! */
+	if (p->l && !is_processed(p)) {
 		sql_rel *pl = p->l;
 
 		op = p;
@@ -4821,8 +4922,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		if (!group)
 			p = op;
 	} 
-	if (!group && list_length(r->exps))
+	if (!group && list_length(r->exps)) {
 		p = pp = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
+		reset_processed(p);
+	}
 
 	if (pp && pp->op == op_groupby)
 		nf = sql_partitionby;
@@ -4834,6 +4937,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 			p = pp = rel_project(sql->sa, p, sa_list(sql->sa));
+			reset_processed(p);
 			gbe = rel_group_by(sql, &p, partition_by_clause, NULL /* cannot use (selection) column references, as this result is a selection column */, f);
 		}
 		if (!gbe)
@@ -4844,6 +4948,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 			pp = p;
 			p = rel_project(sql->sa, npp, rel_projections(sql, npp, NULL, 1, 0));
+			reset_processed(p);
+			if (group && op)
+				op = p;
 		}
 
 		for(n = gbe->h ; n ; n = n->next) {
@@ -4862,6 +4969,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 			p = pp = rel_project(sql->sa, p, sa_list(sql->sa));
+			reset_processed(p);
 			obe = rel_order_by(sql, &p, order_by_clause, f);
 		}
 		if (!obe)
@@ -4872,12 +4980,19 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 			pp = p;
 			p = rel_project(sql->sa, npp, rel_projections(sql, npp, NULL, 1, 0));
+			reset_processed(p);
+			if (group && op)
+				op = p;
 		}
 
 		for(n = obe->h ; n ; n = n->next) {
-			sql_exp *en = n->data;
+			sql_exp *oexp = n->data, *nexp;
 
-			n->data = opt_groupby_add_exp(sql, p, pp, en);
+			n->data = nexp = opt_groupby_add_exp(sql, p, pp, oexp);
+			if (is_ascending(oexp))
+				set_direction(nexp, 1);
+			if (nulls_last(oexp))
+				set_direction(nexp, 2);
 		}
 		if (p->r) {
 			p->r = list_merge(sa_list(sql->sa), p->r, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
@@ -4917,7 +5032,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 			if (!lr || !is_project(lr->op)) {
 				p = pp = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 0));
+				reset_processed(p);
 				lr = p->l;
+				assert(!op);
 			}
 			in = lr->exps->h->data;
 			in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
@@ -4965,7 +5082,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 				if (!lr || !is_project(lr->op)) {
 					p = pp = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 0));
+					reset_processed(p);
 					lr = p->l;
+					assert(!op);
 				}
 				in = lr->exps->h->data;
 				in = exp_column(sql->sa, exp_relname(in), exp_name(in), exp_subtype(in), exp_card(in), has_nil(in), is_intern(in));
@@ -4987,6 +5106,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 					sql->session->status = 0;
 					sql->errstr[0] = '\0';
 					p = rel_project(sql->sa, lop, sa_list(sql->sa));
+					reset_processed(p);
+					assert(!op);
 					in = rel_value_exp2(sql, &p, n->next->data.sym, f, ek, &is_last);
 				}
 				if(!in)
@@ -5012,8 +5133,10 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	if (group && op)
 		p = op;
-	if (p->exps && list_length(p->exps))
+	if (p->exps && list_length(p->exps)) {
 		p = rel_project(sql->sa, p, sa_list(sql->sa));
+		reset_processed(p);
+	}
 
 	/* diff for partitions */
 	if (gbe) {
@@ -5967,6 +6090,8 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 		rel->exps = applyexps;
 		rel->flag = apply;
 	}
+	if (!rel && res) 
+		rel_destroy(res);
 	return rel;
 }
 

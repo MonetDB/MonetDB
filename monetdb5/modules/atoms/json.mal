@@ -183,7 +183,15 @@ pattern ==(l:json,r:json):bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(l:json,r:json,nil_matches:bit):bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern !=(l:json,r:json):bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(l:json,r:json,nil_matches:bit):bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -209,7 +217,15 @@ pattern ==(b1:bat[:json],b2:bat[:json]) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2";
 
+pattern ==(b1:bat[:json],b2:bat[:json],nil_matches:bit) :bat[:bit]
+address CMDbatEQ
+comment "Return B1 == B2";
+
 pattern !=(b1:bat[:json],b2:bat[:json]) :bat[:bit]
+address CMDbatNE
+comment "Return B1 != B2";
+
+pattern !=(b1:bat[:json],b2:bat[:json],nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2";
 

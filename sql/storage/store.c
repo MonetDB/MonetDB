@@ -1850,7 +1850,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "schema_id", "int", 32);
-		bootstrap_create_column(tr, t, "query", "varchar", 2048);
+		bootstrap_create_column(tr, t, "query", "varchar", 1 << 20);
 		bootstrap_create_column(tr, t, "type", "smallint", 16);
 		bootstrap_create_column(tr, t, "system", "boolean", 1);
 		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);
@@ -2741,7 +2741,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c)
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
-	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
+	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
 		return NULL;
 	base_init(tr->sa, &col->base, c->base.id, TR_NEW, c->base.name);
 	col->type = c->type;
@@ -5477,7 +5477,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 	if (!tpe)
 		return NULL;
 
-	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
+	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
 		return NULL;
 	col = create_sql_column(tr->sa, t, name, tpe);
 
@@ -6304,7 +6304,7 @@ sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int dro
 }
 
 sql_sequence *
-sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle)
+sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys"); 
 	sql_table *seqs = find_sql_table(syss, "sequences");

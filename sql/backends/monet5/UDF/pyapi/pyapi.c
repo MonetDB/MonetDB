@@ -350,10 +350,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		assert(memory_size > 0);
 		// create the shared memory for the header
 		MT_lock_set(&pyapiLock);
-		GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0],
-					&msg);
+		mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0]);
 		MT_lock_unset(&pyapiLock);
-		if (msg != MAL_SUCCEED) {
+		if (mmap_ptrs[0] == NULL) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 		mmap_ptr = mmap_ptrs[0];
@@ -364,16 +364,18 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		// requested or the child process is done)
 		// the forked process waits for the second one when it requests a query
 		// (waiting for the result of the query)
-		if (GDKcreatesem(mmap_id, 2, &query_sem, &msg) != GDK_SUCCEED) {
+		if (GDKcreatesem(mmap_id, 2, &query_sem) != GDK_SUCCEED) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 
 		// create the shared memory space for queries
 		MT_lock_set(&pyapiLock);
-		GDKinitmmap(mmap_id + 1, sizeof(QueryStruct), &mmap_ptrs[1],
-					&mmap_sizes[1], &msg);
+		mmap_ptrs[1] = GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
+						 &mmap_sizes[1]);
 		MT_lock_unset(&pyapiLock);
-		if (msg != MAL_SUCCEED) {
+		if (mmap_ptrs[1] == NULL) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 		query_ptr = mmap_ptrs[1];
@@ -395,8 +397,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		} else if (pid == 0) {
 			child_process = true;
 			query_ptr = NULL;
-			if (GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
-							(void **)&query_ptr, NULL, &msg) != GDK_SUCCEED) {
+			if ((query_ptr = GDKinitmmap(mmap_id + 1, sizeof(QueryStruct),
+										 NULL)) == NULL) {
+				msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 				goto wrapup;
 			}
 		} else {
@@ -418,8 +421,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 				// some reason
 				// in this case the semaphore value is never increased, so we
 				// would be stuck otherwise
-				if (GDKchangesemval_timeout(query_sem, 0, -1, 100, &sem_success,
-											&msg) != GDK_SUCCEED) {
+				if (GDKchangesemval_timeout(query_sem, 0, -1, 100, &sem_success) != GDK_SUCCEED) {
+					msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 					goto wrapup;
 				}
 				if (sem_success) {
@@ -454,11 +457,12 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					msg = createException(
 						MAL, "pyapi.eval",
 						SQLSTATE(PY000) "Failure in child process with unknown error.");
-				} else if (GDKinitmmap(mmap_id + 3, descr->bat_size,
-									   &mmap_ptrs[3], &mmap_sizes[3],
-									   &msg) == GDK_SUCCEED) {
+				} else if ((mmap_ptrs[3] = GDKinitmmap(mmap_id + 3, descr->bat_size,
+													   &mmap_sizes[3])) != NULL) {
 					msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "%s",
 										  (char *)mmap_ptrs[3]);
+				} else {
+					msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 				}
 				goto wrapup;
 			}
@@ -484,10 +488,11 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 				// get the shared memory address for this return value
 				assert(total_size > 0);
 				MT_lock_set(&pyapiLock);
-				GDKinitmmap(mmap_id + i + 3, total_size, &mmap_ptrs[i + 3],
-							&mmap_sizes[i + 3], &msg);
+				mmap_ptrs[i + 3] = GDKinitmmap(mmap_id + i + 3, total_size,
+											   &mmap_sizes[i + 3]);
 				MT_lock_unset(&pyapiLock);
-				if (msg != MAL_SUCCEED) {
+				if (mmap_ptrs[i + 3] == NULL) {
+					msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 					goto wrapup;
 				}
 				ret->array_data = mmap_ptrs[i + 3];
@@ -500,11 +505,12 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 
 					assert(mask_size > 0);
 					MT_lock_set(&pyapiLock);
-					GDKinitmmap(mmap_id + pci->retc + (i + 3), mask_size,
-								&mmap_ptrs[pci->retc + (i + 3)],
-								&mmap_sizes[pci->retc + (i + 3)], &msg);
+					mmap_ptrs[pci->retc + (i + 3)] = GDKinitmmap(
+						mmap_id + pci->retc + (i + 3), mask_size,
+						&mmap_sizes[pci->retc + (i + 3)]);
 					MT_lock_unset(&pyapiLock);
-					if (msg != MAL_SUCCEED) {
+					if (mmap_ptrs[pci->retc + (i + 3)] == NULL) {
+						msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 						goto wrapup;
 					}
 					ret->mask_data = mmap_ptrs[pci->retc + (i + 3)];
@@ -1040,8 +1046,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		// pointer to the header data first
 		// The main process has already created the header data for the child
 		// process
-		if (GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0],
-						&msg) != GDK_SUCCEED) {
+		if ((mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0])) == NULL) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 
@@ -1107,8 +1113,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 				// now create shared memory for the return value and copy the
 				// actual values
 				assert(memory_size > 0);
-				if (GDKinitmmap(mmap_id + i + 3, memory_size, &mmap_ptrs[i + 3],
-								&mmap_sizes[i + 3], &msg) != GDK_SUCCEED) {
+				if ((mmap_ptrs[i + 3] = GDKinitmmap(mmap_id + i + 3, memory_size,
+													&mmap_sizes[i + 3])) == NULL) {
+					msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 					goto wrapup;
 				}
 				mem_ptr = mmap_ptrs[i + 3];
@@ -1121,10 +1128,10 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					int mask_size = ret->count * sizeof(bool);
 					assert(mask_size > 0);
 					// create a memory space for the mask
-					if (GDKinitmmap(mmap_id + retcols + (i + 3), mask_size,
-									&mmap_ptrs[retcols + (i + 3)],
-									&mmap_sizes[retcols + (i + 3)],
-									&msg) != GDK_SUCCEED) {
+					if ((mmap_ptrs[retcols + (i + 3)] = GDKinitmmap(
+							 mmap_id + retcols + (i + 3), mask_size,
+							 &mmap_sizes[retcols + (i + 3)])) == NULL) {
+						msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 						goto wrapup;
 					}
 					mask_ptr = mmap_ptrs[retcols + i + 3];
@@ -1134,7 +1141,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			}
 		}
 		// now free the main process from the semaphore
-		if (GDKchangesemval(query_sem, 0, 1, &msg) != GDK_SUCCEED) {
+		if (GDKchangesemval(query_sem, 0, 1) != GDK_SUCCEED) {
+			msg = createException(MAL, "pyapi.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 		// Exit child process without an error code
@@ -1198,17 +1206,16 @@ wrapup:
 #ifdef HAVE_FORK
 	if (mapped && child_process) {
 		// If we get here, something went wrong in a child process
-		char *error_mem, *tmp_msg;
+		char *error_mem;
 		ReturnBatDescr *ptr;
 
 		// Now we exit the program with an error code
-		if (GDKchangesemval(query_sem, 0, 1, &tmp_msg) != GDK_SUCCEED) {
+		if (GDKchangesemval(query_sem, 0, 1) != GDK_SUCCEED) {
 			exit(1);
 		}
 
 		assert(memory_size > 0);
-		if (GDKinitmmap(mmap_id + 0, memory_size, &mmap_ptrs[0], &mmap_sizes[0],
-						&tmp_msg) != GDK_SUCCEED) {
+		if ((mmap_ptrs[0] = GDKinitmmap(mmap_id + 0, memory_size, &mmap_sizes[0])) == NULL) {
 			exit(1);
 		}
 
@@ -1228,8 +1235,9 @@ wrapup:
 		// We can simply use the slot mmap_id + 3, even though this is normally
 		// used for query return values
 		// This is because, if the process fails, no values will be returned
-		if (GDKinitmmap(mmap_id + 3, (strlen(msg) + 1) * sizeof(char),
-						(void **)&error_mem, NULL, &tmp_msg) != GDK_SUCCEED) {
+		if ((error_mem = GDKinitmmap(mmap_id + 3,
+									 (strlen(msg) + 1) * sizeof(char),
+									 NULL)) == NULL) {
 			exit(1);
 		}
 		strcpy(error_mem, msg);
@@ -1255,7 +1263,7 @@ wrapup:
 		}
 		for (i = 0; i < 3 + pci->retc * 2; i++) {
 			if (mmap_ptrs[i] != NULL) {
-				GDKreleasemmap(mmap_ptrs[i], mmap_sizes[i], mmap_id + i, &msg);
+				GDKreleasemmap(mmap_ptrs[i], mmap_sizes[i], mmap_id + i);
 			}
 		}
 		if (mmap_ptrs)
@@ -1263,7 +1271,7 @@ wrapup:
 		if (mmap_sizes)
 			GDKfree(mmap_sizes);
 		if (query_sem > 0) {
-			GDKreleasesem(query_sem, &msg);
+			GDKreleasesem(query_sem);
 		}
 	}
 #endif

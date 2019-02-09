@@ -2944,6 +2944,9 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	}
 
+	assigns(buf, bufpos, buflen, sep, stmt);
+	*bufp = buf;
+
 	if (strlen_or_ind_ptr != NULL && *strlen_or_ind_ptr == SQL_NULL_DATA) {
 		assigns(buf, bufpos, buflen, "NULL", stmt);
 		*bufp = buf;
@@ -3188,8 +3191,6 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	}
 
-	assigns(buf, bufpos, buflen, sep, stmt);
-	*bufp = buf;
 	/* just the types supported by the server */
 	switch (sqltype) {
 	case SQL_CHAR:

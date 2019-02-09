@@ -693,7 +693,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		if (mkdir(deldirpath, 0755) < 0 && errno != EEXIST) {
+		if (mkdir(deldirpath, 0777) < 0 && errno != EEXIST) {
 			msg = createException(MAL, "cudf.eval",
 								  "cannot create directory %s\n", deldirpath);
 			goto wrapup;
@@ -967,7 +967,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			void* input = NULL;
 			if (bat_type == TYPE_str) {
 				input = *((char**)getArgReference_str(stk, pci, i));
-			} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+			} else if (bat_type == TYPE_blob) {
 				input = *((blob**)getArgReference(stk, pci, i));
 			} else {
 				input = getArgReference(stk, pci, i);
@@ -1107,7 +1107,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				data_from_timestamp(baseptr[j], bat_data->data + j);
 			}
 			data_from_timestamp(*timestamp_nil, &bat_data->null_value);
-		} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+		} else if (bat_type == TYPE_blob) {
 			BATiter li;
 			BUN p = 0, q = 0;
 			str mprotect_retval;
@@ -1253,7 +1253,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else if (bat_type == TYPE_timestamp) {
 			GENERATE_BAT_OUTPUT_BASE(timestamp);
 			data_from_timestamp(*timestamp_nil, &bat_data->null_value);
-		} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+		} else if (bat_type == TYPE_blob) {
 			GENERATE_BAT_OUTPUT_BASE(blob);
 			bat_data->null_value.size = ~(size_t) 0;
 			bat_data->null_value.data = NULL;
@@ -1425,7 +1425,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					}
 				}
 				GDKfree(data);
-			} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+			} else if (bat_type == TYPE_blob) {
 				cudf_data_blob *source_base = (cudf_data_blob *)data;
 				blob *current_blob = NULL;
 				size_t current_blob_maxsize = 0;
@@ -1586,8 +1586,7 @@ wrapup:
 				}
 				if (bat_type == TYPE_str || bat_type == TYPE_date ||
 				    bat_type == TYPE_daytime ||
-				    bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
-				    bat_type == TYPE_sqlblob) {
+				    bat_type == TYPE_timestamp || bat_type == TYPE_blob) {
 					// have to free input data
 					void *data = GetTypeData(bat_type, inputs[i]);
 					if (data) {
@@ -1683,7 +1682,7 @@ static const char *GetTypeName(int type)
 		tpe = "time";
 	} else if (type == TYPE_timestamp) {
 		tpe = "timestamp";
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+	} else if (type == TYPE_blob) {
 		tpe = "blob";
 	} else {
 		// unsupported type: string
@@ -1718,7 +1717,7 @@ void *GetTypeData(int type, void *struct_ptr)
 		data = ((struct cudf_data_struct_time *)struct_ptr)->data;
 	} else if (type == TYPE_timestamp) {
 		data = ((struct cudf_data_struct_timestamp *)struct_ptr)->data;
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+	} else if (type == TYPE_blob) {
 		data = ((struct cudf_data_struct_blob *)struct_ptr)->data;
 	} else {
 		// unsupported type: string
@@ -1753,7 +1752,7 @@ void *GetTypeBat(int type, void *struct_ptr)
 		bat = ((struct cudf_data_struct_time *)struct_ptr)->bat;
 	} else if (type == TYPE_timestamp) {
 		bat = ((struct cudf_data_struct_timestamp *)struct_ptr)->bat;
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+	} else if (type == TYPE_blob) {
 		bat = ((struct cudf_data_struct_blob *)struct_ptr)->bat;
 	} else {
 		// unsupported type: string
@@ -1787,7 +1786,7 @@ size_t GetTypeCount(int type, void *struct_ptr)
 		count = ((struct cudf_data_struct_time *)struct_ptr)->count;
 	} else if (type == TYPE_timestamp) {
 		count = ((struct cudf_data_struct_timestamp *)struct_ptr)->count;
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+	} else if (type == TYPE_blob) {
 		count = ((struct cudf_data_struct_blob *)struct_ptr)->count;
 	} else {
 		// unsupported type: string
@@ -1858,7 +1857,7 @@ int time_is_null(cudf_data_time value)
 
 int timestamp_is_null(cudf_data_timestamp value)
 {
-	return ts_isnil(timestamp_from_data(&value));
+	return is_timestamp_nil(timestamp_from_data(&value));
 }
 
 int str_is_null(char *value) { return value == NULL; }

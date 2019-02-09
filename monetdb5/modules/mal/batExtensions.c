@@ -30,7 +30,8 @@
 
 str
 CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	int tt, kind = TRANSIENT;
+	int tt;
+	role_t kind = TRANSIENT;
 	BUN cap = 0;
 	bat *res;
 
