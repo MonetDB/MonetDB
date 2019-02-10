@@ -20,8 +20,8 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
-BAT *GDKkey = NULL;
-BAT *GDKval = NULL;
+static BAT *GDKkey = NULL;
+static BAT *GDKval = NULL;
 int GDKdebug = 0;
 
 static char THRprintbuf[BUFSIZ];
@@ -92,14 +92,16 @@ GDKenvironment(const char *dbpath)
 	return true;
 }
 
-char *
+const char *
 GDKgetenv(const char *name)
 {
-	BUN b = BUNfnd(GDKkey, (ptr) name);
+	if (GDKkey && GDKval) {
+		BUN b = BUNfnd(GDKkey, (ptr) name);
 
-	if (b != BUN_NONE) {
-		BATiter GDKenvi = bat_iterator(GDKval);
-		return BUNtvar(GDKenvi, b);
+		if (b != BUN_NONE) {
+			BATiter GDKenvi = bat_iterator(GDKval);
+			return BUNtvar(GDKenvi, b);
+		}
 	}
 	return NULL;
 }
@@ -127,7 +129,7 @@ GDKgetenv_istrue(const char *name)
 int
 GDKgetenv_int(const char *name, int def)
 {
-	char *val = GDKgetenv(name);
+	const char *val = GDKgetenv(name);
 
 	if (val)
 		return atoi(val);
@@ -140,6 +142,27 @@ GDKsetenv(const char *name, const char *value)
 	if (BUNappend(GDKkey, name, false) != GDK_SUCCEED ||
 	    BUNappend(GDKval, value, false) != GDK_SUCCEED)
 		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+gdk_return
+GDKcopyenv(BAT **key, BAT **val, bool writable)
+{
+	BAT *k, *v;
+
+	if (key == NULL || val == NULL) {
+		GDKerror("GDKcopyenv: called incorrectly.\n");
+		return GDK_FAIL;
+	}
+	k = COLcopy(GDKkey, GDKkey->ttype, writable, TRANSIENT);
+	v = COLcopy(GDKval, GDKval->ttype, writable, TRANSIENT);
+	if (k == NULL || v == NULL) {
+		BBPreclaim(k);
+		BBPreclaim(v);
+		return GDK_FAIL;
+	}
+	*key = k;
+	*val = v;
 	return GDK_SUCCEED;
 }
 
@@ -236,35 +259,11 @@ BATSIGabort(int nr)
 #endif
 
 #ifndef NATIVE_WIN32
-static void
-BATSIGinterrupt(int nr)
-{
-	GDKexit(nr);
-}
-
 static int
 BATSIGinit(void)
 {
-/* HACK to pacify compiler */
-#if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))
-#undef  SIG_IGN			/*((__sighandler_t)1 ) */
-#define SIG_IGN   ((__sighandler_t)1L)
-#endif
-
 #ifdef SIGPIPE
 	(void) signal(SIGPIPE, SIG_IGN);
-#endif
-#ifdef __SIGRTMIN
-	(void) signal(__SIGRTMIN + 1, SIG_IGN);
-#endif
-#ifdef SIGHUP
-	(void) signal(SIGHUP, MT_global_exit);
-#endif
-#ifdef SIGINT
-	(void) signal(SIGINT, BATSIGinterrupt);
-#endif
-#ifdef SIGTERM
-	(void) signal(SIGTERM, BATSIGinterrupt);
 #endif
 	return 0;
 }
@@ -284,8 +283,6 @@ size_t GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
 size_t GDK_mmap_pagesize = MMAP_PAGESIZE; /* mmap granularity */
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
-
-int GDK_vm_trim = 1;
 
 #define SEG_SIZE(x,y)	((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 
@@ -433,28 +430,38 @@ gdk_return
 GDKinit(opt *set, int setlen)
 {
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
-	char *p;
+	const char *p;
 	opt *n;
 	int i, nlen = 0;
 	int farmid;
 	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
-	static_assert(sizeof(char) == SIZEOF_CHAR, "error in configure: bad value for SIZEOF_CHAR");
-	static_assert(sizeof(short) == SIZEOF_SHORT, "error in configure: bad value for SIZEOF_SHORT");
-	static_assert(sizeof(int) == SIZEOF_INT, "error in configure: bad value for SIZEOF_INT");
-	static_assert(sizeof(long) == SIZEOF_LONG, "error in configure: bad value for SIZEOF_LONG");
-	static_assert(sizeof(lng) == SIZEOF_LNG, "error in configure: bad value for SIZEOF_LNG");
+	static_assert(sizeof(char) == SIZEOF_CHAR,
+		      "error in configure: bad value for SIZEOF_CHAR");
+	static_assert(sizeof(short) == SIZEOF_SHORT,
+		      "error in configure: bad value for SIZEOF_SHORT");
+	static_assert(sizeof(int) == SIZEOF_INT,
+		      "error in configure: bad value for SIZEOF_INT");
+	static_assert(sizeof(long) == SIZEOF_LONG,
+		      "error in configure: bad value for SIZEOF_LONG");
+	static_assert(sizeof(lng) == SIZEOF_LNG,
+		      "error in configure: bad value for SIZEOF_LNG");
 #ifdef HAVE_HGE
-	static_assert(sizeof(hge) == SIZEOF_HGE, "error in configure: bad value for SIZEOF_HGE");
+	static_assert(sizeof(hge) == SIZEOF_HGE,
+		      "error in configure: bad value for SIZEOF_HGE");
 #endif
-	static_assert(sizeof(oid) == SIZEOF_OID, "error in configure: bad value for SIZEOF_OID");
-	static_assert(sizeof(void *) == SIZEOF_VOID_P, "error in configure: bad value for SIZEOF_VOID_P");
-	static_assert(sizeof(size_t) == SIZEOF_SIZE_T, "error in configure: bad value for SIZEOF_SIZE_T");
-	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG, "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
+	static_assert(sizeof(oid) == SIZEOF_OID,
+		      "error in configure: bad value for SIZEOF_OID");
+	static_assert(sizeof(void *) == SIZEOF_VOID_P,
+		      "error in configure: bad value for SIZEOF_VOID_P");
+	static_assert(sizeof(size_t) == SIZEOF_SIZE_T,
+		      "error in configure: bad value for SIZEOF_SIZE_T");
+	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG,
+		      "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
 
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&MT_system_lock,"MT_system_lock");
+	MT_lock_init(&MT_system_lock, "MT_system_lock");
 	ATOMIC_INIT(GDKstoppedLock);
 	ATOMIC_INIT(mbyteslock);
 	MT_lock_init(&GDKnameLock, "GDKnameLock");
@@ -734,29 +741,31 @@ GDKregister(MT_Id pid)
 }
 
 void
-GDKreset(int status, int exit)
+GDKreset(int status)
 {
 	MT_Id pid = MT_getpid();
 	Thread t, s;
-	struct serverthread *st;
 	int farmid;
 	int i;
 
-	if( GDKkey){
+	assert(GDKexiting());
+
+	if (GDKkey) {
 		BBPunfix(GDKkey->batCacheid);
-		GDKkey = 0;
+		GDKkey = NULL;
 	}
-	if( GDKval){
+	if (GDKval) {
 		BBPunfix(GDKval->batCacheid);
-		GDKval = 0;
+		GDKval = NULL;
 	}
 
 	MT_lock_set(&GDKthreadLock);
-	for (st = serverthread; st; st = serverthread) {
+	while (serverthread != NULL) {
+		struct serverthread *st = serverthread;
+		serverthread = st->next;
 		MT_lock_unset(&GDKthreadLock);
 		MT_join_thread(st->pid);
 		MT_lock_set(&GDKthreadLock);
-		serverthread = st->next;
 		GDKfree(st);
 	}
 	MT_lock_unset(&GDKthreadLock);
@@ -817,8 +826,6 @@ GDKreset(int status, int exit)
 		GDK_vm_maxsize = GDK_VM_MAXSIZE;
 		GDKatomcnt = TYPE_str + 1;
 
-		GDK_vm_trim = 1;
-
 		if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient) {
 			GDK_mmap_minsize_transient = GDK_mem_maxsize / 16;
 			if (GDK_mmap_minsize_persistent > GDK_mmap_minsize_transient)
@@ -861,11 +868,6 @@ GDKreset(int status, int exit)
 	MT_lock_destroy(&mallocsuccesslock);
 #endif
 #endif
-#ifndef HAVE_EMBEDDED
-	if (exit) {
-		MT_global_exit(status);
-	}
-#endif
 }
 
 /* coverity[+kill] */
@@ -881,9 +883,9 @@ GDKexit(int status)
 #endif
 	}
 	GDKprepareExit();
-	GDKreset(status, 1);
+	GDKreset(status);
 #ifndef HAVE_EMBEDDED
-	MT_exit_thread(-1);
+	exit(status);
 #endif
 }
 

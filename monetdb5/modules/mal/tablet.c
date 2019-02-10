@@ -60,7 +60,10 @@ void_bat_create(int adt, BUN nr)
 	/* check for correct structures */
 	if (b == NULL)
 		return NULL;
-	BATsetaccess(b, BAT_APPEND);
+	if (BATsetaccess(b, BAT_APPEND) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		return NULL;
+	}
 	if (nr > BATTINY && adt && BATextend(b, nr) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
@@ -170,7 +173,8 @@ TABLETcollect(BAT **bats, Tablet *as)
 			continue;
 		bats[j] = fmt[i].c;
 		BBPfix(bats[j]->batCacheid);
-		BATsetaccess(fmt[i].c, BAT_READ);
+		if (BATsetaccess(fmt[i].c, BAT_READ) != GDK_SUCCEED)
+			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
 		fmt[i].c->tsorted = fmt[i].c->trevsorted = false;
 		fmt[i].c->tkey = false;
 		BATsettrivprop(fmt[i].c);
@@ -200,7 +204,8 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b->tsorted = b->trevsorted = false;
 		b->tkey = false;
 		BATsettrivprop(b);
-		BATsetaccess(b, BAT_READ);
+		if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED)
+			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
 		bats[j] = bv;
 
@@ -1587,7 +1592,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	READERtask ptask[MAXWORKERS];
 	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
-	int vmtrim = GDK_vm_trim;
 
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",
@@ -1605,11 +1609,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		tablet_error(&task, lng_nil, int_nil, "SQLload initialization failed", "");
 		goto bailout;
 	}
-
-	/* trimming process should not be active during this process. */
-	/* on sf10 experiments it showed a slowdown of a factor 2 on */
-	/* large tables. Instead rely on madvise */
-	GDK_vm_trim = 0;
 
 	assert(rsep);
 	assert(csep);
@@ -2006,8 +2005,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	munlockall();
 #endif
 
-	/* restore system setting */
-	GDK_vm_trim = vmtrim;
 	return res < 0 ? BUN_NONE : cnt;
 
   bailout:
@@ -2027,8 +2024,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #ifdef MLOCK_TST
 	munlockall();
 #endif
-	/* restore system setting */
-	GDK_vm_trim = vmtrim;
 	return BUN_NONE;
 }
 

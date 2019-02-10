@@ -55,10 +55,9 @@ static void ComputeParallelAggregation(AggrParams *p);
 static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
-static char *FunctionBasePath(void);
-static char *FunctionBasePath(void)
+static const char *FunctionBasePath(void)
 {
-	char *basepath = GDKgetenv("function_basepath");
+	const char *basepath = GDKgetenv("function_basepath");
 	if (basepath == NULL) {
 		basepath = getenv("HOME");
 	}

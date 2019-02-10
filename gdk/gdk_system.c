@@ -312,7 +312,7 @@ MT_exit_thread(int s)
 		ExitThread(s);
 	} else {
 		/* no threads started yet, so this is a global exit */
-		MT_global_exit(s);
+		exit(s);
 	}
 }
 
@@ -428,7 +428,7 @@ static struct posthread {
 	pthread_t tid;
 	void (*func)(void *);
 	void *arg;
-	int exited;
+	bool exited;
 } *posthreads = NULL;
 static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -463,8 +463,6 @@ MT_thread_sigmask(sigset_t * new_mask, sigset_t * orig_mask)
 {
 	if(sigdelset(new_mask, SIGQUIT))
 		return -1;
-	if(sigdelset(new_mask, SIGALRM))	/* else sleep doesn't work */
-		return -1;
 	if(sigdelset(new_mask, SIGPROF))
 		return -1;
 	if(pthread_sigmask(SIG_SETMASK, new_mask, orig_mask))
@@ -494,7 +492,7 @@ thread_starter(void *arg)
 	/* *p may have been freed by join_threads, so try to find it
          * again before using it */
 	if ((p = find_posthread_locked(pthread_self())) != NULL)
-		p->exited = 1;
+		p->exited = true;
 	pthread_mutex_unlock(&posthread_lock);
 	return NULL;
 }
@@ -594,7 +592,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	}
 	p->func = f;
 	p->arg = arg;
-	p->exited = 0;
+	p->exited = false;
 	if (d == MT_THR_DETACHED) {
 		pf = thread_starter;
 		newtp = &p->tid;
@@ -634,7 +632,7 @@ MT_exiting_thread(void)
 
 	pthread_mutex_lock(&posthread_lock);
 	if ((p = find_posthread_locked(tid)) != NULL)
-		p->exited = 1;
+		p->exited = true;
 	pthread_mutex_unlock(&posthread_lock);
 }
 
@@ -726,13 +724,6 @@ pthread_sema_down(pthread_sema_t *s)
 }
 #endif
 #endif
-
-/* coverity[+kill] */
-void
-MT_global_exit(int s)
-{
-	exit(s);
-}
 
 MT_Id
 MT_getpid(void)

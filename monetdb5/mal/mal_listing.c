@@ -32,6 +32,31 @@
 */
 #define advance(X,B,L)  while(*(X) && B+L>X)(X)++;
 
+/* Copy string in src to *dstp which has *lenp space available and
+ * terminate with a NULL byte.  *dstp and *lenp are adjusted for the
+ * used space.  If there is not enough space to copy all of src,
+ * return false, otherwise return true.  The resulting string is
+ * always NULL-terminated. */
+static inline bool
+copystring(char **dstp, const char *src, size_t *lenp)
+{
+	size_t len = *lenp;
+	char *dst = *dstp;
+
+	if (src == NULL)
+		return true;
+	if (len > 0) {
+		while (*src && len > 1) {
+			*dst++ = *src++;
+			len--;
+		}
+		*dst = 0;
+		*dstp = dst;
+		*lenp = len;
+	}
+	return *src == 0;
+}
+
 static str
 renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
@@ -140,87 +165,80 @@ beginning of each line.
 */
 
 str
-fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg, str base, size_t len)
+fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 {
 	int i;
-	str arg, t, tpe;
+	str arg, tpe;
 
-	t = s;
-	snprintf(t,(len-(t-base)), "%s", (flg ? "" : "#") );
-	advance(t, base, len);
-	if( mb->inlineProp){
-		snprintf(t,(len-(t-base)), "inline ");
-		advance(t, base, len);
-	}
-	if( mb->unsafeProp){
-		snprintf(t,(len-(t-base)), "unsafe ");
-		advance(t, base, len);
-	}
-	if( mb->sealedProp){
-		snprintf(t,(len-(t-base)), "sealed ");
-		advance(t, base, len);
-	}
-	snprintf(t,(len-(t-base)), "%s ",  operatorName(p->token));
-
-	advance(t, base, len);
-	snprintf(t, (len-(t-base)),  "%s.",  getModuleId(p)?getModuleId(p):"user");
-	advance(t, base, len);
-	snprintf(t, (len-(t-base)), "%s(",  getFunctionId(p));
-	advance(t, base, len);
+	len -= t - base;
+	if (!flg && !copystring(&t, "#", &len))
+		return base;
+	if( mb->inlineProp && !copystring(&t, "inline ", &len))
+		return base;
+	if( mb->unsafeProp && !copystring(&t, "unsafe ", &len))
+		return base;
+	if( mb->sealedProp && !copystring(&t, "sealed ", &len))
+		return base;
+	if (!copystring(&t, operatorName(p->token), &len) ||
+		!copystring(&t, " ", &len) ||
+		!copystring(&t, getModuleId(p) ? getModuleId(p) : "user", &len) ||
+		!copystring(&t, ".", &len) ||
+		!copystring(&t, getFunctionId(p), &len) ||
+		!copystring(&t, "(", &len))
+		return base;
 
 	for (i = p->retc; i < p->argc; i++) {
 		arg = renderTerm(mb, 0, p, i, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS));
-		if (arg) {
-			snprintf(t, (len-(t-base)),"%s", arg);
+		if (arg && !copystring(&t, arg, &len)) {
 			GDKfree(arg);
+			return base;
 		}
-		advance(t,  base, len);
-		if( i<p->argc-1) {
-			sprintf(t,", ");
-			advance(t,base,len);
-		}
+		GDKfree(arg);
+		if( i<p->argc-1 && !copystring(&t, ", ", &len))
+			return base;
 	}
 
 	advance(t,base,len);
-	if (p->varargs & VARARGS && t < base + len -3)
-		sprintf(t, "...");
-	advance(t,base,len);
+	if (p->varargs & VARARGS && !copystring(&t, "...", &len))
+		return base;
 
-	if (p->retc == 1 && t < base +len) {
-		*t++ = ')';
+	if (p->retc == 1) {
+		if (!copystring(&t, "):", &len))
+			return base;
 		tpe = getTypeName(getVarType(mb, getArg(p,0)));
-		snprintf(t,(len-(t-base)),":%s", tpe);
-		advance(t,base,len);
+		if (!copystring(&t, tpe, &len)) {
+			GDKfree(tpe);
+			return base;
+		}
 		GDKfree(tpe);
-		if (p->varargs & VARRETS && t < base + len -3)
-			sprintf(t, "...");
-		advance(t,base,len);
+		if (p->varargs & VARRETS && !copystring(&t, "...", &len))
+			return base;
 	} else {
-		if( t < base +len -3) sprintf(t, ") (");
-		t += 3;
+		if (!copystring(&t, ") (", &len))
+			return base;
 		for (i = 0; i < p->retc; i++) {
 			arg = renderTerm(mb, 0, p, i, (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS));
-			if (arg) {
-				snprintf(t,(len-(t-base)),"%s", arg);
+			if (arg && !copystring(&t, arg, &len)) {
 				GDKfree(arg);
+				return base;
 			}
-			advance(t,base,len);
-			if( i<p->retc-1 && t < base + len) {
-				sprintf(t,", ");
-				advance(t,base,len);
-			}
+			GDKfree(arg);
+			if( i<p->retc-1 && !copystring(&t, ", ", &len))
+				return base;
 		}
-		if (p->varargs & VARRETS && t < base +len -3)
-			sprintf(t, "...");
-		advance(t,base,len);
-		if(t < base + len) *t++ = ')';
+		if (p->varargs & VARRETS && !copystring(&t, "...", &len))
+			return base;
+		if (!copystring(&t, ")", &len))
+			return base;
 	}
 
-	if (mb->binding[0])
-		snprintf(t,(len-(t-base))," address %s;", mb->binding);
-	else
-		if( t <base + len) sprintf(t, ";");
-	return s;
+	if (mb->binding[0]) {
+		if (!copystring(&t, " address ", &len) ||
+			!copystring(&t, mb->binding, &len))
+			return base;
+	}
+	(void) copystring(&t, ";", &len);
+	return base;
 }
 
 str
@@ -248,53 +266,44 @@ operatorName(int i)
 str
 instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 {
-	int i, tab = 4;
-	str base, s, t;
-	size_t len=  (mb->stop < 1000? 1000: mb->stop) * 128 /* max realistic line length estimate */;
+	int i;
+	str base, t;
+	size_t len = 512 + (p->argc * 128);		 /* max realistic line length estimate */
 	str arg;
 
-	base = s = GDKmalloc(len);
-	if ( s == NULL)
-		return s;
-	if (flg) {
-		s[0] = 0;
-		t = s;
-	} else {
-		s[0] = '#';
+	t = base = GDKmalloc(len);
+	if ( base == NULL)
+		return NULL;
+	if (!flg) {
+		*t++ = '#';
+		len--;
 		if (p->typechk == TYPE_UNKNOWN) {
-			s[1] = '!';	/* error */
-			s[2] = 0;
-			t = s + 2;
-		} else {
-			s[1] = 0;
-			t = s + 1;
+			*t++ = '!';	/* error */
+			len--;
 		}
 	}
-	advance(t,base,len);
+	*t = 0;
 	if (p->token == REMsymbol && !( getModuleId(p) && strcmp(getModuleId(p),"querylog") == 0  && getFunctionId(p) && strcmp(getFunctionId(p),"define") == 0)) {
 		/* do nothing */
 	} else if (p->barrier) {
-		if (p->barrier == LEAVEsymbol || 
-			p->barrier == REDOsymbol || 
-			p->barrier == RETURNsymbol || 
-			p->barrier == YIELDsymbol || 
+		if (p->barrier == LEAVEsymbol ||
+			p->barrier == REDOsymbol ||
+			p->barrier == RETURNsymbol ||
+			p->barrier == YIELDsymbol ||
 			p->barrier == RAISEsymbol) {
-    			for(;tab>0;tab--) 
-				*t++= ' ';
-    			*t= 0;
-    			advance(t,base,len);
+			if (!copystring(&t, "    ", &len))
+				return base;
 		}
-		snprintf(t,(len-(t-base)), "%s ", operatorName(p->barrier));
-		advance(t,base,len);
-	} else
-	if( functionStart(p) && flg != LIST_MAL_CALL ){
-		return fcnDefinition(mb, p, s, flg, base, len);
+		arg = operatorName(p->barrier);
+		if (!copystring(&t, arg, &len) ||
+			!copystring(&t, " ", &len))
+			return base;
+	} else if( functionStart(p) && flg != LIST_MAL_CALL ){
+		return fcnDefinition(mb, p, t, flg, base, len + (t - base));
 	} else if (!functionExit(p) && flg!=LIST_MAL_CALL) {
-			// beautify with tabs
-    		for(;tab>0;tab--) 
-			*t++= ' ';
-    		*t= 0;
-    		advance(t,base,len);
+		// beautify with tabs
+		if (!copystring(&t, "    ", &len))
+			return base;
 	}
 	switch (p->token<0?-p->token:p->token) {
 	case FCNcall:
@@ -311,90 +320,99 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 			break;
 
 		/* display multi-assignment list */
-		if (p->retc > 1)
-			if( t< base+len) *t++ = '(';
+		if (p->retc > 1 && !copystring(&t, "(", &len))
+			return base;
 
 		for (i = 0; i < p->retc; i++) {
 			arg= renderTerm(mb, stk, p, i, flg);
 			if (arg) {
-				snprintf(t,(len-(t-base)), "%s", arg);
+				if (!copystring(&t, arg, &len)) {
+					GDKfree(arg);
+					return base;
+				}
 				GDKfree(arg);
 			}
-			advance(t,base,len);
-			if ( t < base+len && i < p->retc - 1){
-				*t++ = ',';
-				*t++ = ' ';
-			}
+			if (i < p->retc - 1 && !copystring(&t, ", ", &len))
+				return base;
 		}
-		if (p->retc > 1)
-			if( t< base+len) *t++ = ')';
+		if (p->retc > 1 && !copystring(&t, ")", &len))
+			return base;
 
 		if (p->argc > p->retc || getFunctionId(p)) {
-			if( t< base+len-4) {
-				sprintf(t, " := ");
-				t += 4;
-			}
+			if (!copystring(&t, " := ", &len))
+				return base;
 		}
-		*t = 0;
 		break;
 	case ENDsymbol:
-		snprintf(t,(len-(t-base)), "end %s.%s", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb, 0)));
-		advance(t,base,len);
+		if (!copystring(&t, "end ", &len) ||
+			!copystring(&t, getModuleId(getInstrPtr(mb,0)), &len) ||
+			!copystring(&t, ".", &len) ||
+			!copystring(&t, getFunctionId(getInstrPtr(mb, 0)), &len))
+			return base;
 		break;
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
 	case FACTORYsymbol:
 	case PATTERNsymbol:
 		if (flg & LIST_MAL_VALUE) {
-			snprintf(t,(len-(t-base)), "%s ", operatorName(p->token));
-			advance(t,base,len);
-			break;
+			if (!copystring(&t, operatorName(p->token), &len) ||
+				!copystring(&t, " ", &len))
+				return base;
 		}
-		return fcnDefinition(mb, p, s, flg, base, len);
+		return fcnDefinition(mb, p, t, flg, base, len + (t - base));
 	case REMsymbol:
 	case NOOPsymbol:
-		if(getVar(mb, getArg(p, 0))->value.val.sval && getVar(mb, getArg(p, 0))->value.len > 0) 
-			snprintf(t,(len-(t-base)), "#%s ", getVar(mb, getArg(p, 0))->value.val.sval);
-		else
-			snprintf(t, (len-(t-base)), "# ");
+		if (!copystring(&t, "#", &len))
+			return base;
+		if (getVar(mb, getArg(p, 0))->value.val.sval && getVar(mb, getArg(p, 0))->value.len > 0 &&
+			!copystring(&t, getVar(mb, getArg(p, 0))->value.val.sval, &len))
+			return base;
+		if (!copystring(&t, " ", &len))
+			return base;
 		break;
 	default:
-		snprintf(t,  (len-(t-base))," unknown symbol ?%d? ", p->token);
+		i = snprintf(t, len, " unknown symbol ?%d? ", p->token);
+		if (i < 0 || (size_t) i >= len)
+			return base;
+		len -= (size_t) i;
+		t += i;
+		break;
 	}
 
-	advance(t,base,len);
-	if (getModuleId(p))
-		snprintf(t,  (len-(t-base)),"%s.", getModuleId(p));
-	advance(t,base,len);
+	if (getModuleId(p)) {
+		if (!copystring(&t, getModuleId(p), &len) ||
+			!copystring(&t, ".", &len))
+			return base;
+	}
 	if (getFunctionId(p)) {
-		snprintf(t, (len-(t-base)), "%s(", getFunctionId(p));
-	} else if (p->argc > p->retc + 1)
-		snprintf(t, (len-(t-base)), "(");
-	advance(t,base,len);
-
+		if (!copystring(&t, getFunctionId(p), &len) ||
+			!copystring(&t, "(", &len))
+			return base;
+	} else if (p->argc > p->retc + 1) {
+		if (!copystring(&t, "(", &len))
+			return base;
+	}
 	for (i = p->retc; i < p->argc; i++) {
 		arg= renderTerm(mb, stk, p, i, flg);
 		if (arg) {
-			snprintf(t,(len-(t-base)), "%s", arg);
+			if (!copystring(&t, arg, &len)) {
+				GDKfree(arg);
+				return base;
+			}
 			GDKfree(arg);
 		}
-		advance(t,base,len);
 
-		if (i < p->argc -1 && t < base + len){
-			snprintf(t, (len-(t-base)), ", ");
-			advance(t,base,len);
-		}
-	} 
-	if (getFunctionId(p) || p->argc > p->retc + 1)
-		snprintf(t,(len-(t-base)), ")");
-	advance(t,base,len);
-	if (p->token != REMsymbol){
-		snprintf(t,(len-(t-base)), ";");
-		advance(t,base,len);
+		if (i < p->argc -1 && !copystring(&t, ", ", &len))
+			return base;
 	}
-	/* we may accidentally overwrite */
-	if (t > s + len)
-		GDKfatal("instruction2str:");
+	if (getFunctionId(p) || p->argc > p->retc + 1) {
+		if (!copystring(&t, ")", &len))
+			return base;
+	}
+	if (p->token != REMsymbol){
+		if (!copystring(&t, ";", &len))
+			return base;
+	}
 	return base;
 }
 
@@ -655,7 +673,7 @@ printSignature(stream *fd, Symbol s, int flg)
 		(void) fcnDefinition(s->def, p, txt, flg, txt, MAXLISTING);
 		mnstr_printf(fd, "%s\n", txt);
 		GDKfree(txt);
-	} else mnstr_printf(fd,"printSignature"MAL_MALLOC_FAIL);
+	} else mnstr_printf(fd, "printSignature: " MAL_MALLOC_FAIL);
 }
 
 void showMalBlkHistory(stream *out, MalBlkPtr mb)

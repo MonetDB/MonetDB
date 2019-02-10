@@ -44,14 +44,14 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
-#define MVC_INIT_DROP_TABLE(SQLID, TNAME)                      \
-	t = mvc_bind_table(m, s, TNAME);                           \
-	SQLID = t->base.id;                                        \
-	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
-		mvc_destroy(m);                                        \
-		fprintf(stderr, "!mvc_init: %s\n", output);            \
-		GDKfree(output);                                       \
-		return -1;                                             \
+#define MVC_INIT_DROP_TABLE(SQLID, TNAME)				\
+	t = mvc_bind_table(m, s, TNAME);				\
+	SQLID = t->base.id;						\
+	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {	\
+		mvc_destroy(m);						\
+		fprintf(stderr, "!mvc_init: %s\n", output);		\
+		freeException(output);					\
+		return -1;						\
 	}
 
 int
@@ -383,7 +383,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	if (m->session->status < 0) {
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted, will ROLLBACK instead", operation);
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 
@@ -398,14 +398,14 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			store_unlock();
 			msg = createException(SQL, "sql.commit", SQLSTATE(HY001) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		msg = WLCcommit(m->clientid);
 		store_unlock();
 		if(msg != MAL_SUCCEED) {
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		m->type = Q_TRANS;
@@ -446,7 +446,7 @@ build up the hash (not copied in the trans dup)) */
 		store_unlock();
 		if(msg != MAL_SUCCEED) {
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		if (mvc_debug)
@@ -478,14 +478,14 @@ build up the hash (not copied in the trans dup)) */
 		store_unlock();
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 	msg = WLCcommit(m->clientid);
 	if(msg != MAL_SUCCEED) {
 		store_unlock();
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 	sql_trans_end(m->session);

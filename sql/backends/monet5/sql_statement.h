@@ -240,5 +240,6 @@ extern const char *table_name(sql_allocator *sa, stmt *st);
 extern const char *schema_name(sql_allocator *sa, stmt *st);
 
 extern stmt *const_column(backend *ba, stmt *val);
+extern stmt *stmt_fetch(backend *ba, stmt *val);
 
 #endif /* _SQL_STATEMENT_H_ */

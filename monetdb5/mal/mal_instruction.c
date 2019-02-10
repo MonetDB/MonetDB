@@ -27,7 +27,7 @@ addMalException(MalBlkPtr mb, str msg)
 			return ; // just stick to one error message, ignore rest
 		strcpy(new, mb->errors);
 		strcat(new, msg);
-		GDKfree(mb->errors);
+		freeException(mb->errors);
 		mb->errors = new;
 	} else {
 		new = GDKstrdup(msg);

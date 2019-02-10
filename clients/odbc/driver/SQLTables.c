@@ -332,13 +332,13 @@ SQLTablesW(SQLHSTMT StatementHandle,
 	clearStmtErrors(stmt);
 
 	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(TableType, NameLength4, SQLCHAR, type,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 
 	rc = MNDBTables(stmt,
 			catalog, SQL_NTS,
@@ -346,7 +346,7 @@ SQLTablesW(SQLHSTMT StatementHandle,
 			table, SQL_NTS,
 			type, SQL_NTS);
 
-      exit:
+      bailout:
 	if (catalog)
 		free(catalog);
 	if (schema)

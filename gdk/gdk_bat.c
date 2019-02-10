@@ -1475,7 +1475,7 @@ BUNfnd(BAT *b, const void *v)
 	BUN r = BUN_NONE;
 	BATiter bi;
 
-	BATcheck(b, "BUNfnd", 0);
+	BATcheck(b, "BUNfnd", BUN_NONE);
 	if (!v)
 		return r;
 	if (BATtvoid(b))

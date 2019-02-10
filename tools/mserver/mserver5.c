@@ -232,7 +232,7 @@ static void
 handler(int sig)
 {
 	(void) sig;
-	mal_exit();
+	mal_exit(-1);
 }
 
 int
@@ -243,7 +243,7 @@ main(int argc, char **av)
 	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
 	str err = MAL_SUCCEED;
 	char prmodpath[1024];
-	char *modpath = NULL;
+	const char *modpath = NULL;
 	char *binpath = NULL;
 	str *monet_script;
 	char *dbpath = NULL;
@@ -286,7 +286,8 @@ main(int argc, char **av)
 #endif
 #endif
 	if (setlocale(LC_CTYPE, "") == NULL) {
-		GDKfatal("cannot set locale\n");
+		fprintf(stderr, "cannot set locale\n");
+		exit(1);
 	}
 
 	if (getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
@@ -624,21 +625,21 @@ main(int argc, char **av)
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
 			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
-				snprintf(secret, sizeof(secret),
-						"unable to open vault_key_file %s: %s",
-						GDKgetenv("monet_vault_key"), strerror(errno));
+				fprintf(stderr,
+					"unable to open vault_key_file %s: %s\n",
+					GDKgetenv("monet_vault_key"), strerror(errno));
 				/* don't show this as a crash */
 				msab_registerStop();
-				GDKfatal("%s", secret);
+				exit(1);
 			}
 			len = fread(secret, 1, sizeof(secret), secretf);
 			secret[len] = '\0';
 			len = strlen(secret); /* secret can contain null-bytes */
 			if (len == 0) {
-				snprintf(secret, sizeof(secret), "vault key has zero-length!");
+				fprintf(stderr, "vault key has zero-length!\n");
 				/* don't show this as a crash */
 				msab_registerStop();
-				GDKfatal("%s", secret);
+				exit(1);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
 								"(%zu), enlarge your vault key!\n", len);
@@ -648,14 +649,18 @@ main(int argc, char **av)
 		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
 			msab_registerStop();
-			GDKfatal("%s", err);
+			fprintf(stderr, "%s\n", err);
+			freeException(err);
+			exit(1);
 		}
 	}
 	/* make sure the authorisation BATs are loaded */
 	if ((err = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		/* don't show this as a crash */
 		msab_registerStop();
-		GDKfatal("%s", err);
+		fprintf(stderr, "%s\n", err);
+		freeException(err);
+		exit(1);
 	}
 	if (mal_init()) {
 		/* don't show this as a crash */
@@ -665,7 +670,9 @@ main(int argc, char **av)
 
 	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
 		msab_registerStop();
-		GDKfatal("%s", err);
+		fprintf(stderr, "%s\n", err);
+		freeException(err);
+		exit(1);
 	}
 
 	emergencyBreakpoint();
@@ -674,7 +681,7 @@ main(int argc, char **av)
 		/* check for internal exception message to terminate */
 		if (msg) {
 			if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
-				mal_exit();
+				mal_exit(0);
 			fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
 			freeException(msg);
 		}
@@ -697,9 +704,9 @@ main(int argc, char **av)
 	while (1)
 		MT_sleep_ms(5000);
 
-	/* mal_exit calls MT_global_exit, so statements after this call will
+	/* mal_exit calls exit, so statements after this call will
 	 * never get reached */
-	mal_exit();
+	mal_exit(0);
 
 	return 0;
 }

@@ -93,7 +93,7 @@ int mal_init(void){
  */
 void cleanOptimizerPipe(void);
 
-void mserver_reset(int exit)
+void mserver_reset(void)
 {
 	str err = 0;
 
@@ -152,7 +152,7 @@ void mserver_reset(int exit)
 	mal_namespace_reset();
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
-	GDKreset(0, exit);	// terminate all other threads
+	GDKreset(0);	// terminate all other threads
 }
 
 
@@ -166,7 +166,8 @@ void mserver_reset(int exit)
  * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
  */
 
-void mal_exit(void){
-	mserver_reset(1);
-	GDKexit(0); 	/* properly end GDK */
+void mal_exit(int status)
+{
+	mserver_reset();
+	exit(status);				/* properly end GDK */
 }

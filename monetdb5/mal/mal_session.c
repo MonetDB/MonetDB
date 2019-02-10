@@ -42,33 +42,33 @@ malBootstrap(void)
 	c = MCinitClient((oid) 0, 0, 0);
 	if(c == NULL) {
 		fprintf(stderr,"#malBootstrap:Failed to initialise client");
-		mal_exit();
+		mal_exit(1);
 	}
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
 		fprintf(stderr,"#malBootstrap:Failed to initialise client MAL module");
-		mal_exit();
+		mal_exit(1);
 	}
 	if ( (msg = defaultScenario(c)) ) {
 		fprintf(stderr,"#malBootstrap:Failed to initialise default scenario: %s", msg);
 		freeException(msg);
-		mal_exit();
+		mal_exit(1);
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		fprintf(stderr,"#malBootstrap:Failed to initialise client: %s", msg);
 		freeException(msg);
-		mal_exit();
+		mal_exit(1);
 	}
 	if( MCinitClientThread(c) < 0){
 		fprintf(stderr,"#malBootstrap:Failed to create client thread");
-		mal_exit();
+		mal_exit(1);
 	}
 	s = malInclude(c, bootfile, 0);
 	if (s != NULL) {
 		fprintf(stderr, "!%s\n", s);
 		GDKfree(s);
-		mal_exit();
+		mal_exit(1);
 	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->usermodule, c->curprg->def);
@@ -198,7 +198,8 @@ void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
-	char *database = NULL, *s, *dbname;
+	char *database = NULL, *s;
+	const char *dbname;
 	str msg = MAL_SUCCEED;
 	bool filetrans = false;
 	Client c;
