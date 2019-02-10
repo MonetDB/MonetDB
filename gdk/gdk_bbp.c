@@ -661,6 +661,7 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	if (bbpversion <= GDKLIBRARY_BLOB_SORT && strcmp(type, "blob") == 0) {
 		b->tsorted = b->trevsorted = false;
 		b->tnosorted = b->tnorevsorted = 0;
+		OIDXdestroy(b);
 	}
 #endif
 	if (b->theap.free > b->theap.size)
