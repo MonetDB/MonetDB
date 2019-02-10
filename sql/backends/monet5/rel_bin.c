@@ -375,10 +375,11 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			}
 			else {
 				// BACK TO HAPPY FLOW:
-				stmt* oid_c;
-				// TODO: Somehow stmt_tdiff only allows BAT[oid] arguments hence the mirror op.
-				oid_c = stmt_mirror(be, c);
-				s = stmt_tdiff(be, oid_c, s);
+				stmt* non_nulls;
+
+				non_nulls = stmt_selectnonil(be, c, NULL);
+				s = stmt_tdiff(be, non_nulls, s);
+				s = stmt_project(be, s, non_nulls);
 			}
 		}
 
