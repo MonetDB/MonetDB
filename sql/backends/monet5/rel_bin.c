@@ -346,6 +346,10 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				stmt_const(be, bin_first_column(be, left), s), 
 				stmt_bool(be, 1), cmp_equal, sel, 0); 
 	} else {
+		// TODO: handle_in_exps should contain all necessary logic for in-expressions to be SQL compliant.
+		// For non-SQL-standard compliant behavior, e.g. PostgreSQL backwards compatibility, we should
+		// make sure that this behavior is replicated by the sql optimizer and not handle_in_exps.
+
 		stmt* last_null_value = NULL; // CORNER CASE ALERT: See description below.
 		
 		// The actual in-value-list should not contain duplicates to ensure that final join results are unique.
@@ -375,8 +379,8 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			}
 			else {
 				// BACK TO HAPPY FLOW:
+				// Make sure that null values are never returned.
 				stmt* non_nulls;
-
 				non_nulls = stmt_selectnonil(be, c, NULL);
 				s = stmt_tdiff(be, non_nulls, s);
 				s = stmt_project(be, s, non_nulls);
@@ -385,14 +389,10 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 
 		if (sel) {
 			stmt* oid_intersection;
-			// TODO: check if stmt_tinter should safely allow a null value for sel
 			oid_intersection = stmt_tinter(be, s, sel);
 			s = stmt_project(be, oid_intersection, s);
-			// s = stmt_order(be, s, 1, 0); // ordering is potentially only necessary if an intersect is performed.
 			s = stmt_result(be, s, 0);
 		}
-
-		// s = stmt_set_key(be, s);
 	}
 
 	return s;
