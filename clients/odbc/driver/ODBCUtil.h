@@ -102,7 +102,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR *s, SQLLEN length, const char **errmsg);
 extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, SQLLEN buflen, SQLSMALLINT *buflenout, size_t *consumed);
 
-#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)			\
+#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, bailout)		\
 	do {								\
 		const char *e;						\
 		(s) = (t *) ODBCwchar2utf8((ws), (wsl), &e);		\
@@ -111,7 +111,7 @@ extern const char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR 
 			errfunc((hdl),					\
 				strcmp(e, "Memory allocation error") == 0 ? \
 					"HY001" : "HY000", e, 0);	\
-			exit;						\
+			bailout;					\
 		}							\
 	} while (0)
 #define fixWcharOut(r, s, sl, ws, wsl, wslp, cw, errfunc, hdl)		\

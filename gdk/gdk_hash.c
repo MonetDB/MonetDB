@@ -271,6 +271,7 @@ BAThashsync(void *arg)
 							fsync(fd);
 #endif
 						}
+						hp->dirty = false;
 					} else {
 						perror("write hash");
 					}
@@ -279,8 +280,12 @@ BAThashsync(void *arg)
 			} else {
 				((size_t *) hp->base)[0] |= (size_t) 1 << 24;
 				if (!(GDKdebug & NOSYNCMASK) &&
-				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0)
+				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
 					((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
+				} else {
+					hp->dirty = false;
+					failed = ""; /* not failed */
+				}
 			}
 			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 		}

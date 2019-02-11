@@ -3755,6 +3755,19 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	ALGODEBUG t0 = GDKusec();
 
+	if ((parent = VIEWtparent(l)) != 0) {
+		BAT *b = BBPdescriptor(parent);
+		if (l->hseqbase == b->hseqbase &&
+		    BATcount(l) == BATcount(b))
+			l = b;
+	}
+	if ((parent = VIEWtparent(r)) != 0) {
+		BAT *b = BBPdescriptor(parent);
+		if (r->hseqbase == b->hseqbase &&
+		    BATcount(r) == BATcount(b))
+			r = b;
+	}
+
 	CANDINIT(l, sl, lstart, lend, lcnt, lcand, lcandend);
 	CANDINIT(r, sr, rstart, rend, rcnt, rcand, rcandend);
 	lcnt = lcand ? (BUN) (lcandend - lcand) : lend - lstart;
@@ -3896,14 +3909,12 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 				 rstart, rend, rcnt, rcand, rcandend,
 				 nil_matches, false, false, false,
 				 estimate, t0, false);
-	} else if (l->batPersistence == PERSISTENT &&
-		   r->batPersistence != PERSISTENT) {
+	} else if (!l->batTransient && r->batTransient) {
 		/* l is persistent and r is not, create hash on l
 		 * since it may be reused */
 		swap = true;
 		reason = "left is persistent";
-	} else if (l->batPersistence != PERSISTENT &&
-		   r->batPersistence == PERSISTENT) {
+	} else if (l->batTransient && !r->batTransient) {
 		/* l is not persistent but r is, create hash on r
 		 * since it may be reused */
 		/* nothing */;

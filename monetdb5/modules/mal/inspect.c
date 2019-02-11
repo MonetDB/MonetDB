@@ -518,28 +518,20 @@ INSPECTatom_names(bat *ret)
 str
 INSPECTgetEnvironment(bat *ret, bat *ret2)
 {
-	BAT *b, *bn;
+	BAT *k, *v;
 
-	b = COLcopy(GDKkey, GDKkey->ttype, false, TRANSIENT);
-	if (b == 0)
-		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	bn = COLcopy(GDKval, GDKval->ttype, false, TRANSIENT);
-	if (bn == 0){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
- 	}
-	BAThseqbase(b,0);
-	BAThseqbase(bn,0);
+	if (GDKcopyenv(&k, &v, false) != GDK_SUCCEED)
+		throw(MAL, "inspect.getEnvironment", GDK_EXCEPTION);
 
-	BBPkeepref(*ret = b->batCacheid);
-	BBPkeepref(*ret2 = bn->batCacheid);
+	BBPkeepref(*ret = k->batCacheid);
+	BBPkeepref(*ret2 = v->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 INSPECTgetEnvironmentKey(str *ret, str *key)
 {
-	str s;
+	const char *s;
 	*ret = 0;
 
 	s= GDKgetenv(*key);

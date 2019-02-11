@@ -1292,7 +1292,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s",tname);
 	}
-	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
+	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.append_col(m->session->tr, c, ins, tpe);
@@ -1357,9 +1357,9 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(upd->batCacheid);
 		throw(SQL, "sql.update", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
-	if( upd && BATcount(upd) > 4096 && upd->batPersistence == PERSISTENT)
+	if( upd && BATcount(upd) > 4096 && !upd->batTransient)
 		BATmsync(upd);
-	if( tids && BATcount(tids) > 4096 && tids->batPersistence == PERSISTENT)
+	if( tids && BATcount(tids) > 4096 && !tids->batTransient)
 		BATmsync(tids);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
@@ -1441,7 +1441,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	}
-	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
+	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 	store_funcs.delete_tab(m->session->tr, t, b, tpe);
 	if (b)
@@ -1458,7 +1458,10 @@ setwritable(BAT *b)
 		if (b->batSharecnt) {
 			bn = COLcopy(b, b->ttype, true, TRANSIENT);
 			if (bn != NULL)
-				BATsetaccess(bn, BAT_WRITE);
+				if (BATsetaccess(bn, BAT_WRITE) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					bn = NULL;
+				}
 		} else {
 			bn = NULL;
 		}
@@ -2151,10 +2154,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			int errnr = mnstr_errnr(s);
-			close_stream(s);
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errnr));
+					      filename?filename:"stdout", strerror(errno));
+			close_stream(s);
 			goto wrapup_result_set1;
 		}
 	} else {
@@ -2351,10 +2353,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = cntxt->fdout;
 	} else if (!onclient) {
 		if ((s = open_wastream(filename)) == NULL || mnstr_errnr(s)) {
-			int errnr = mnstr_errnr(s);
-			close_stream(s);
 			msg=  createException(IO, "streams.open", SQLSTATE(42000) "could not open file '%s': %s",
-					      filename?filename:"stdout", strerror(errnr));
+					      filename?filename:"stdout", strerror(errno));
+			close_stream(s);
 			goto wrapup_result_set;
 		}
 	} else {
@@ -2683,9 +2684,8 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			ss = open_rastream(fname);
 			if (ss == NULL || mnstr_errnr(ss)) {
-				int errnr = mnstr_errnr(ss);
+				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, strerror(errno));
 				close_stream(ss);
-				msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "Cannot open file '%s': %s", fname, strerror(errnr));
 				return msg;
 			}
 		}
@@ -2970,7 +2970,11 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
 				goto bailout;
 			}
-			BATsetaccess(c, BAT_READ);
+			if (BATsetaccess(c, BAT_READ) != GDK_SUCCEED) {
+				BBPreclaim(c);
+				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to set internal access while attaching file %s", fname);
+				goto bailout;
+			}
 		} else {
 			msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
 			goto bailout;
@@ -3230,7 +3234,7 @@ daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 
 	/* correct fraction */
 	*res = *v;
-	if (!daytime_isnil(*v) && d < 3) {
+	if (!is_daytime_nil(*v) && d < 3) {
 		*res = (daytime) (*res / scales[3 - d]);
 		*res = (daytime) (*res * scales[3 - d]);
 	}
@@ -3595,7 +3599,7 @@ second_interval_daytime(lng *res, const daytime *s, const int *d, const int *sk)
 	lng r = *(int *) s;
 
 	(void) sk;
-	if (daytime_isnil(*s)) {
+	if (is_daytime_nil(*s)) {
 		*res = lng_nil;
 		return MAL_SUCCEED;
 	}

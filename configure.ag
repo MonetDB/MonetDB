@@ -1321,14 +1321,6 @@ AC_DEFINE_UNQUOTED([PATH_SEP_STR], ["$PATHSEP"], [Path separator])
 AC_DEFINE_UNQUOTED([SO_PREFIX], ["$SOPREF"], [Shared Object prefix])
 AC_DEFINE_UNQUOTED([SO_EXT], ["$SOEXT"], [Shared Object extension])
 
-AS_CASE([$host_os],
-    [cygwin*], [],
-    [
-	CYGPATH_W=echo
-	CYGPATH_WP=echo
-	AC_SUBST([CYGPATH_W])
-	AC_SUBST([CYGPATH_WP])])
-
 #    checks for libraries
 # check for bz2 (de)compression library
 org_have_bz2=auto

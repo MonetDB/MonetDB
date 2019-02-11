@@ -547,8 +547,11 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	d = *(int *)v;				_DELETE(v);
 	if (!sql_find_subtype(&c->type, tpe, sz, d)) {
 		sql_type *lt = sql_trans_bind_type(tr, t->s, tpe);
-		if (lt == NULL) 
-			GDKfatal("SQL type %s missing", tpe);
+		if (lt == NULL) {
+			fprintf(stderr, "SQL type %s missing\n", tpe);
+			_DELETE(tpe);
+			return NULL;
+		}
 		sql_init_subtype(&c->type, lt, sz, d);
 	}
 	_DELETE(tpe);
@@ -801,6 +804,8 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	}
 	for(rid = table_funcs.subrids_next(nrs); !is_oid_nil(rid); rid = table_funcs.subrids_next(nrs)) {
 		sql_column* next = load_column(tr, t, rid);
+		if (next == NULL)
+			return NULL;
 		cs_add(&t->columns, next, 0);
 		if(pcolid == next->base.id) {
 			t->part.pcol = next;
@@ -914,8 +919,11 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 	tpe = table_funcs.column_find_value(tr, find_sql_column(args, "type"), rid);
 	if (!sql_find_subtype(&a->type, tpe, digits, scale)) {
 		sql_type *lt = sql_trans_bind_type(tr, f->s, tpe);
-		if (lt == NULL) 
-			GDKfatal("SQL type %s missing", tpe);
+		if (lt == NULL) {
+			fprintf(stderr, "SQL type %s missing\n", tpe);
+			_DELETE(tpe);
+			return NULL;
+		}
 		sql_init_subtype(&a->type, lt, digits, scale);
 	}
 	_DELETE(tpe);
@@ -966,16 +974,19 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 		fprintf(stderr, "#\tload func %s\n", t->base.name);
 
 	t->ops = list_new(tr->sa, (fdestroy)NULL);
-	if (rs)
-	for(rid = table_funcs.subrids_next(rs); !is_oid_nil(rid); rid = table_funcs.subrids_next(rs)) {
-		sql_arg *a = load_arg(tr, t, rid);
+	if (rs) {
+		for(rid = table_funcs.subrids_next(rs); !is_oid_nil(rid); rid = table_funcs.subrids_next(rs)) {
+			sql_arg *a = load_arg(tr, t, rid);
 
-		if (a->inout == ARG_OUT) {
-			if (!t->res)
-				t->res = sa_list(tr->sa);
-			list_append(t->res, a);
-		} else {
-			list_append(t->ops, a);
+			if (a == NULL)
+				return NULL;
+			if (a->inout == ARG_OUT) {
+				if (!t->res)
+					t->res = sa_list(tr->sa);
+				list_append(t->res, a);
+			} else {
+				list_append(t->ops, a);
+			}
 		}
 	}
 	if (t->type == F_FUNC && !t->res)
@@ -1111,12 +1122,16 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 			name = (char*)v;
 			s = find_sql_schema(tr, name);
 			_DELETE(v);
-			if (s == NULL) 
-				GDKfatal("SQL schema missing or incompatible, rebuild from archive");
+			if (s == NULL) {
+				GDKerror("SQL schema missing or incompatible, rebuild from archive");
+				return NULL;
+			}
 		}
 		s->base.id = sid;
 	} else {
 		s = SA_ZNEW(tr->sa, sql_schema);
+		if (s == NULL)
+			return NULL;
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
 		base_init(tr->sa, &s->base, sid, 0, v); _DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
@@ -1161,9 +1176,15 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		sqlid tid;
 
 		for(tid = table_funcs.subrids_nextid(nrs); tid >= 0; tid = table_funcs.subrids_nextid(nrs)) {
-			if (!instore(tid, id))
-				cs_add(&s->tables, load_table(tr, s, tid, nrs), 0);
-			else
+			if (!instore(tid, id)) {
+				sql_table *t = load_table(tr, s, tid, nrs);
+				if (t == NULL) {
+					table_funcs.subrids_destroy(nrs);
+					table_funcs.rids_destroy(rs);
+					return NULL;
+				}
+				cs_add(&s->tables, t, 0);
+			} else
 				while (!is_oid_nil(table_funcs.subrids_next(nrs)))
 					;
 		}
@@ -1181,15 +1202,29 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		sql_column *arg_number = find_sql_column(args, "number");
 		subrids *nrs = table_funcs.subrids_create(tr, rs, func_id, arg_func_id, arg_number);
 		sqlid fid;
+		sql_func *f;
 
-		for(fid = table_funcs.subrids_nextid(nrs); fid >= 0; fid = table_funcs.subrids_nextid(nrs)) 
-			cs_add(&s->funcs, load_func(tr, s, fid, nrs), 0);
+		for(fid = table_funcs.subrids_nextid(nrs); fid >= 0; fid = table_funcs.subrids_nextid(nrs)) {
+			f = load_func(tr, s, fid, nrs);
+			if (f == NULL) {
+				table_funcs.subrids_destroy(nrs);
+				table_funcs.rids_destroy(rs);
+				return NULL;
+			}
+			cs_add(&s->funcs, f, 0);
+		}
 		/* Handle all procedures without arguments (no args) */
 		rs = table_funcs.rids_diff(tr, rs, func_id, nrs, arg_func_id);
 		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 			void *v = table_funcs.column_find_value(tr, func_id, rid);
 			fid = *(sqlid*)v; _DELETE(v);
-			cs_add(&s->funcs, load_func(tr, s, fid, NULL), 0);
+			f = load_func(tr, s, fid, NULL);
+			if (f == NULL) {
+				table_funcs.subrids_destroy(nrs);
+				table_funcs.rids_destroy(rs);
+				return NULL;
+			}
+			cs_add(&s->funcs, f, 0);
 		}
 		table_funcs.subrids_destroy(nrs);
 	}
@@ -1246,7 +1281,7 @@ sql_trans_update_schemas(sql_trans* tr)
 	table_funcs.rids_destroy(schemas);
 }
 
-static void
+static bool
 load_trans(sql_trans* tr, sqlid id)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -1261,7 +1296,9 @@ load_trans(sql_trans* tr, sqlid id)
 
 	for(rid = table_funcs.rids_next(schemas); !is_oid_nil(rid); rid = table_funcs.rids_next(schemas)) {
 		sql_schema *ns = load_schema(tr, id, rid);
-		if (ns && !instore(ns->base.id, id))
+		if (ns == NULL)
+			return false;
+		if (!instore(ns->base.id, id))
 			cs_add(&tr->schemas, ns, 0);
 	}
 	/* members maybe from different schemas */
@@ -1271,6 +1308,7 @@ load_trans(sql_trans* tr, sqlid id)
 		set_members(&s->tables);
 	}
 	table_funcs.rids_destroy(schemas);
+	return true;
 }
 
 static int
@@ -1933,8 +1971,12 @@ store_load(void) {
 		store_oid = prev_oid;
 
 	/* load remaining schemas, tables, columns etc */
-	if (!first)
-		load_trans(gtrans, id);
+	if (!first && !load_trans(gtrans, id)) {
+		GDKfree(store_oids);
+		store_oids = NULL;
+		nstore_oids = 0;
+		return -1;
+	}
 	store_initialized = 1;
 	GDKfree(store_oids);
 	store_oids = NULL;
@@ -2750,7 +2792,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c)
 	sql_table *syscolumn = find_sql_table(syss, "_columns");
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
-	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
+	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, c->base.name))
 		return NULL;
 	base_init(tr->sa, &col->base, c->base.id, TR_NEW, c->base.name);
 	col->type = c->type;
@@ -4013,7 +4055,7 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name)
 	return tr;
 }
 
-int
+bool
 sql_trans_validate(sql_trans *tr)
 {
 	node *n;
@@ -4021,12 +4063,12 @@ sql_trans_validate(sql_trans *tr)
 	/* depends on the iso level */
 
 	if (tr->schema_number != store_schema_number())
-		return 0;
+		return false;
 
 	/* since we protect usage through private copies both the iso levels
 	   read uncommited and read commited always succeed.
 	if (tr->level == ISO_READ_UNCOMMITED || tr->level == ISO_READ_COMMITED)
-		return 1;
+		return true;
 	 */
 
 	/* If only 'inserts' occurred on the read columns the repeatable reads
@@ -4044,10 +4086,10 @@ sql_trans_validate(sql_trans *tr)
  			os = find_sql_schema(tr->parent, s->base.name);
 			if (os && (s->base.wtime != 0 || s->base.rtime != 0)) {
 				if (!validate_tables(s, os)) 
-					return 0;
+					return false;
 			}
 		}
-	return 1;
+	return true;
 }
 
 #ifdef CAT_DEBUG
@@ -5486,7 +5528,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 	if (!tpe)
 		return NULL;
 
-	if (sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
+	if (t->system && sql_trans_name_conflict(tr, t->s->base.name, t->base.name, name))
 		return NULL;
 	col = create_sql_column(tr->sa, t, name, tpe);
 

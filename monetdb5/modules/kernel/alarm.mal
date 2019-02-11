@@ -10,14 +10,6 @@ unsafe command alarm.sleep(secs:int):void
 address ALARMsleep
 comment "Sleep a few seconds";
 
-#command alarm.action(secs:int, action:str):void
-#address ALARMsetalarm
-#comment "Execute a MAL action after a few secs. NYI";
-
-#unsafe command alarm.timers() (time:bat[:str],action:bat[:str])
-#address ALARMtimers
-#comment "Give the list of all active timers. NYI";
-
 unsafe command alarm.usec() :lng
 address ALARMusec
 comment "Return time in microseconds.";
@@ -33,14 +25,3 @@ comment "Return the current time as UNIX epoch.";
 unsafe command alarm.ctime() :str
 address ALARMctime
 comment "Return the current time as a C-time string.";
-
-command alarm.prelude():void
-address ALARMprelude
-comment "Initialize alarm module.";
-
-command alarm.epilogue():void
-address ALARMepilogue
-comment "Finalize alarm module.";
-
-alarm.prelude();
-

@@ -126,6 +126,7 @@ mal_export  str execRef;
 mal_export  str expandRef;
 mal_export  str exportOperationRef;
 mal_export  str export_tableRef;
+mal_export  str fetchRef;
 mal_export  str findRef;
 mal_export  str finishRef;
 mal_export  str firstnRef;

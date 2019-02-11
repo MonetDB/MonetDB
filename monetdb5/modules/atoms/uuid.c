@@ -90,7 +90,7 @@ UUIDprelude(void *ret)
 	return MAL_SUCCEED;
 }
 
-#define UUIDisnil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)
+#define is_uuid_nil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)
 
 /**
  * Returns the string representation of the given uuid value.
@@ -107,7 +107,7 @@ UUIDtoString(str *retval, size_t *len, const uuid *value, bool external)
 			return -1;
 		*len = UUID_STRLEN + 1;
 	}
-	if (UUIDisnil(value)) {
+	if (is_uuid_nil(value)) {
 		if (external) {
 			snprintf(*retval, *len, "nil");
 			return 3;
@@ -258,7 +258,7 @@ UUIDuuid2str(str *retval, uuid **u)
 str
 UUIDequal(bit *retval, uuid **l, uuid **r)
 {
-	if (UUIDisnil(*l) || UUIDisnil(*r))
+	if (is_uuid_nil(*l) || is_uuid_nil(*r))
 		*retval = bit_nil;
 	else
 		*retval = memcmp((*l)->u, (*r)->u, UUID_SIZE) == 0;

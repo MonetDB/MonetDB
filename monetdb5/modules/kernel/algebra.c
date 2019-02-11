@@ -1091,7 +1091,7 @@ str ALGreuse(bat *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.reuse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
+	if( !b->batTransient || b->batRestricted != BAT_WRITE){
 		if( ATOMvarsized(b->ttype) ){
 			bn= BATwcopy(b);
 			if (bn == NULL) {

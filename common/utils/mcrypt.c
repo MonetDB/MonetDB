@@ -97,7 +97,6 @@ mcrypt_MD5Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No MD5 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -135,7 +134,6 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA1 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -176,7 +174,6 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA224 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -219,7 +216,6 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA256 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -266,7 +262,6 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA384 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -318,7 +313,6 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No SHA512 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -356,7 +350,6 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No RIPEMD160 digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -376,7 +369,6 @@ mcrypt_BackendSum(const char *string, size_t len)
 	(void) string;
 	(void) len;
 	fprintf(stderr, "No digest function available.\n");
-	exit(1);
 	return NULL;
 #endif
 }
@@ -492,7 +484,6 @@ mcrypt_hashPassword(
 		(void) password;
 		(void) challenge;
 		fprintf(stderr, "MonetDB was built without OpenSSL, but what you are trying to do requires it.\n");
-		exit(1);
 		return NULL;
 	}
 

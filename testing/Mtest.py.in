@@ -68,17 +68,23 @@ if isatty:
         PURPLE = '\033[1;35m'       # actually magenta
         BLACK = '\033[0;0m'
         def prred(str, write = sys.stdout.write):
-            write(RED)
-            write(str)
-            write(BLACK)
+            try:
+                write(RED)
+                write(str)
+            finally:
+                write(BLACK)
         def prgreen(str, write = sys.stdout.write):
-            write(GREEN)
-            write(str)
-            write(BLACK)
+            try:
+                write(GREEN)
+                write(str)
+            finally:
+                write(BLACK)
         def prpurple(str, write = sys.stdout.write):
-            write(PURPLE)
-            write(str)
-            write(BLACK)
+            try:
+                write(PURPLE)
+                write(str)
+            finally:
+                write(BLACK)
     else:
         try:
             import ctypes
@@ -101,17 +107,23 @@ if isatty:
                     return wattr
                 reset = get_csbi_attributes(handle)
                 def prred(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x4)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x4)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
                 def prgreen(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x2)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x2)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
                 def prpurple(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x5)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x5)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
 
 if os.path.exists('/usr/bin/coredumpctl'):
     # probably Linux if /usr/bin/coredumpctl exists
@@ -2997,11 +3009,20 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
             savepath = None
+            savepypath = os.environ.get('PYTHONPATH')
+            savepyhome = os.environ.get('PYTHONHOME')
             if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
                 # enable Python 3 integration in server
                 if winreg is not None:
+                    if env['TST_BITS'] == '32bit':
+                        if sys.maxsize > 2**32:
+                            regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\3.7-32\InstallPath'
+                        else:
+                            regkey = r'SOFTWARE\Python\PythonCore\3.7-32\InstallPath'
+                    else:
+                        regkey = r'SOFTWARE\Python\PythonCore\3.7\InstallPath'
                     try:
-                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Python\PythonCore\3.7\InstallPath') as key:
+                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
                             instpath = winreg.QueryValue(key, None)
                             os.environ['PYTHONHOME'] = instpath
                             os.environ['PYTHONPATH'] = instpath + 'Lib'
@@ -3013,8 +3034,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 # enable Python integration in server
                 if winreg is not None:
+                    if env['TST_BITS'] == '32bit' and sys.maxsize > 2**32:
+                        regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath'
+                    else:
+                        regkey = r'SOFTWARE\Python\PythonCore\2.7\InstallPath'
                     try:
-                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Python\PythonCore\2.7\InstallPath') as key:
+                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
                             instpath = winreg.QueryValue(key, None)
                             os.environ['PYTHONHOME'] = instpath
                             os.environ['PYTHONPATH'] = instpath + 'Lib'
@@ -3031,6 +3056,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             if savepath is not None:
                 os.environ['PATH'] = savepath
+                if savepypath:
+                    os.environ['PYTHONPATH'] = savepypath
+                else:
+                    del os.environ['PYTHONPATH']
+                if savepyhome:
+                    os.environ['PYTHONHOME'] = savepyhome
+                else:
+                    del os.environ['PYTHONHOME']
             ln="dummy"
             while 0 < len(ln) and not ln.startswith('Ready.'):
                 ln=pSrvr.stdout.readline()
@@ -3485,9 +3518,6 @@ else:
         shutil.copy(os.path.normpath(os.path.join(os.getcwd(), src)), dst)
     def listdir(d):
         return os.listdir(os.path.abspath(d))
-
-os.environ['CYGPATH_W'] = '@CYGPATH_W@'
-os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
 
 HOST = 'localhost'
 if 'HOST' in os.environ:
@@ -4051,10 +4081,13 @@ def main(argv) :
     os.chdir(BACK)
 
     # check whether our hostname makes sense
-    try:
-        socket.getaddrinfo(socket.gethostname(), None)
-    except:
+    if os.environ['HOST'] == 'localhost':
         CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+    else:
+        try:
+            socket.getaddrinfo(socket.gethostname(), None)
+        except:
+            CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':

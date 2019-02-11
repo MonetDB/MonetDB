@@ -51,7 +51,7 @@ static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
 
 /* currently we only find simple column expressions */
 void *
-name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt ) 
+name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt ) 
 {
 	sql_exp *alias = NULL;
 	sql_column *c = NULL;
@@ -8455,6 +8455,103 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel*
+exp_skip_output_parts(sql_rel *rel)
+{
+	while ((is_topn(rel->op) || is_project(rel->op) || is_sample(rel->op)) && rel->l) {
+		if (rel->op == op_groupby && list_empty(rel->r))
+			return rel;			/* a group-by with no columns is a plain aggregate and hence always returns one row */
+		rel = rel->l;
+	}
+	return rel;
+}
+
+/* return true if the given expression is guaranteed to have no rows */
+static int
+exp_is_zero_rows(mvc *sql, sql_rel *rel, sql_rel *sel)
+{
+	sql_table *t;
+	node *n;
+
+	if (!rel)
+		return 0;
+	rel = exp_skip_output_parts(rel);
+	if (is_select(rel->op) && rel->l) {
+		sel = rel;
+		rel = exp_skip_output_parts(rel->l);
+	}
+	if (!sel)
+		return 0;
+	if (rel->op == op_join)
+		return exp_is_zero_rows(sql, rel->l, sel) || exp_is_zero_rows(sql, rel->r, sel);
+	if (rel->op == op_left || is_semi(rel->op))
+		return exp_is_zero_rows(sql, rel->l, sel);
+	if (rel->op == op_right)
+		return exp_is_zero_rows(sql, rel->r, sel);
+	if (!is_basetable(rel->op) || !rel->l)
+		return 0;
+	t = rel->l;
+	if (!isTable(t) || t->access != TABLE_READONLY)
+		return 0;
+
+	if (sel->exps) for (n = sel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;	
+		atom *lval = NULL, *hval = NULL;
+
+		if (e->type == e_cmp && (e->flag == cmp_equal || e->f)) {   /* half-ranges are theoretically optimizable here, but not implemented */
+			sql_exp *c = e->l;
+			if (c->type == e_column) {
+				sql_exp *l = e->r;
+				sql_exp *h = e->f;
+
+				lval = exp_flatten(sql, l);
+				hval = h ? exp_flatten(sql, h) : lval;
+				if (lval && hval) {
+					sql_rel *bt;
+					sql_column *col = name_find_column(sel, c->rname, c->name, -2, &bt);
+					void *min, *max;
+					if (col
+						&& col->t == t
+						&& sql_trans_ranges(sql->session->tr, col, &min, &max)
+						&& !exp_range_overlap(sql, c, min, max, lval, hval)) {
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+/* discard sides of UNION or UNION ALL which cannot produce any rows, as per
+statistics, similarly to the merge table optimizer, e.g.
+	select * from a where x between 1 and 2 union all select * from b where x between 1 and 2
+->	select * from b where x between 1 and 2   [assuming a has no rows with 1<=x<=2]
+*/
+static sql_rel *
+rel_remove_union_partitions(int *changes, mvc *sql, sql_rel *rel) 
+{
+	if (!is_union(rel->op))
+		return rel;
+	if (exp_is_zero_rows(sql, rel->l, NULL)) {
+		sql_rel *r = rel->r;
+		rel->r = NULL;
+		rel_destroy(rel);
+		(*changes)++;
+		sql->caching = 0;
+		return r;
+	}
+	if (exp_is_zero_rows(sql, rel->r, NULL)) {
+		sql_rel *l = rel->l;
+		rel->l = NULL;
+		rel_destroy(rel);
+		(*changes)++;
+		sql->caching = 0;
+		return l;
+	}
+	return rel;
+}
+
 /* TODO move all apply related stuff in to rel_apply.c/h */
 static int exps_uses_exps(list *users, list *exps);
 
@@ -9551,6 +9648,9 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 
 	if (gp.cnt[op_select])
 		rel = rewrite_topdown(sql, rel, &rel_push_select_down_union, &changes); 
+
+	if (gp.cnt[op_union] && gp.cnt[op_select])
+		rel = rewrite(sql, rel, &rel_remove_union_partitions, &changes); 
 
 	if (gp.cnt[op_groupby]) {
 		rel = rewrite_topdown(sql, rel, &rel_push_aggr_down, &changes);

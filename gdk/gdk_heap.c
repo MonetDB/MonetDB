@@ -1006,8 +1006,11 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 #ifdef TRACE
 		fprintf(stderr, "#block %zu is %zu bytes\n", block, blockp->size);
 #endif
-		if ((trail != 0) && (block <= trail))
-			GDKfatal("HEAP_malloc: Free list is not orderered\n");
+		assert(trail == 0 || block > trail);
+		if (trail != 0 && block <= trail) {
+			GDKerror("HEAP_malloc: Free list is not orderered\n");
+			return 0;
+		}
 
 		if (blockp->size >= nbytes)
 			break;
@@ -1103,8 +1106,10 @@ HEAP_free(Heap *heap, var_t mem)
 	CHUNK *afterp;
 	size_t after, before, block = mem;
 
+	assert(hheader->alignment == 8 || hheader->alignment == 4);
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
-		GDKfatal("HEAP_free: Heap structure corrupt\n");
+		GDKerror("HEAP_free: Heap structure corrupt\n");
+		return;
 	}
 
 	block -= hheader->alignment;

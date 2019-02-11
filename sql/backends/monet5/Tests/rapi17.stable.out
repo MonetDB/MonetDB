@@ -35,8 +35,8 @@ Ready.
 % .L3 # table_name
 % L3 # name
 % clob # type
-% 7 # length
-[ "integer"	]
+% 4 # length
+[ "Date"	]
 #ROLLBACK;
 
 # 19:11:49 >  

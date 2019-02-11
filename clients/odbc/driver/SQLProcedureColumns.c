@@ -363,13 +363,13 @@ SQLProcedureColumnsW(SQLHSTMT StatementHandle,
 	clearStmtErrors(stmt);
 
 	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(ProcName, NameLength3, SQLCHAR, proc,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(ColumnName, NameLength4, SQLCHAR, column,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 
 	rc = MNDBProcedureColumns(stmt,
 				  catalog, SQL_NTS,
@@ -377,7 +377,7 @@ SQLProcedureColumnsW(SQLHSTMT StatementHandle,
 				  proc, SQL_NTS,
 				  column, SQL_NTS);
 
-      exit:
+      bailout:
 	if (catalog)
 		free(catalog);
 	if (schema)

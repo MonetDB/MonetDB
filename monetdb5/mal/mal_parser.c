@@ -1448,8 +1448,8 @@ parseEnd(Client cntxt)
 				strcat(new,"!");
 				strcat(new,cntxt->curprg->def->errors);
 
-				GDKfree(errors);
-				GDKfree(cntxt->curprg->def->errors);
+				freeException(errors);
+				freeException(cntxt->curprg->def->errors);
 
 				cntxt->curprg->def->errors=0;
 				errors = new;

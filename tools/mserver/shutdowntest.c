@@ -101,7 +101,7 @@ static str monetdb_initialize(void) {
 	str retval = MAL_SUCCEED;
 	char *err;
 	char prmodpath[1024];
-	char *modpath = NULL;
+	const char *modpath = NULL;
 	char *binpath = NULL;
 
 	if (monetdb_initialized) return MAL_SUCCEED;
@@ -127,8 +127,11 @@ static str monetdb_initialize(void) {
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
 
-	BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT));
-	if (!GDKinit(set, setlen)) {
+	if (BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT)) != GDK_SUCCEED) {
+		retval = GDKstrdup("BBPaddfarm failed");
+		goto cleanup;
+	}
+	if (GDKinit(set, setlen) != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}
@@ -220,25 +223,25 @@ static str monetdb_initialize(void) {
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
 			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
-				snprintf(secret, sizeof(secret),
-						"unable to open vault_key_file %s: %s",
-						GDKgetenv("monet_vault_key"), strerror(errno));
+				fprintf(stderr,
+					"unable to open vault_key_file %s: %s\n",
+					GDKgetenv("monet_vault_key"), strerror(errno));
 				/* don't show this as a crash */
 				err = msab_registerStop();
 				if (err)
 					free(err);
-				GDKfatal("%s", secret);
+				exit(1);
 			}
 			len = fread(secret, 1, sizeof(secret), secretf);
 			secret[len] = '\0';
 			len = strlen(secret); /* secret can contain null-bytes */
 			if (len == 0) {
-				snprintf(secret, sizeof(secret), "vault key has zero-length!");
+				fprintf(stderr, "vault key has zero-length!\n");
 				/* don't show this as a crash */
 				err = msab_registerStop();
 				if (err)
 					free(err);
-				GDKfatal("%s", secret);
+				exit(1);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
 								"(%zu), enlarge your vault key!\n", len);
@@ -250,7 +253,8 @@ static str monetdb_initialize(void) {
 			err = msab_registerStop();
 			if (err)
 				free(err);
-			GDKfatal("%s", retval);
+			fprintf(stderr, "%s\n", retval);
+			exit(1);
 		}
 	}
 	/* make sure the authorisation BATs are loaded */
@@ -259,7 +263,8 @@ static str monetdb_initialize(void) {
 		err = msab_registerStop();
 		if (err)
 			free(err);
-		GDKfatal("%s", retval);
+		fprintf(stderr, "%s\n", retval);
+		exit(1);
 	}
 
 	if (mal_init() != 0) { // mal_init() does not return meaningful codes on failure
@@ -299,7 +304,7 @@ cleanup:
 
 static void monetdb_shutdown(void) {
 	if (monetdb_initialized) {
-		mserver_reset(0);
+		mserver_reset();
 		monetdb_initialized = 0;
 	}
 }

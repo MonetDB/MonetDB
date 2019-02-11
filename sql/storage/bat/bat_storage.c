@@ -1329,7 +1329,7 @@ snapshot_new_persistent_bat(sql_trans *tr, sql_delta *bat)
 	/* snapshot large bats */
 	bat_set_access(b, BAT_READ);
 	if (BATcount(b) > SNAPSHOT_MINSIZE)
-		BATmode(b, PERSISTENT);
+		BATmode(b, false);
 	bat_destroy(b);
 	return ok;
 }
@@ -1726,7 +1726,7 @@ snapshot_create_del(sql_trans *tr, sql_table *t)
 	/* snapshot large bats */
 	bat_set_access(b, BAT_READ);
 	if (BATcount(b) > SNAPSHOT_MINSIZE) 
-		BATmode(b, PERSISTENT);
+		BATmode(b, false);
 	bat_destroy(b);
 	return LOG_OK;
 }
@@ -2028,7 +2028,7 @@ empty_col(sql_column *c)
 				return LOG_ERR;
 		}
 		bat_set_access(b, BAT_READ);
-		if (BATmode(b, PERSISTENT) != GDK_SUCCEED ||
+		if (BATmode(b, false) != GDK_SUCCEED ||
 		    logger_add_bat(bat_logger, b, bat->name, c->t->bootstrap?0:LOG_COL, c->base.id) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return LOG_ERR;
@@ -2077,7 +2077,7 @@ empty_idx(sql_idx *i)
 				return LOG_ERR;
 		}
 		bat_set_access(b, BAT_READ);
-		if (BATmode(b, PERSISTENT) != GDK_SUCCEED ||
+		if (BATmode(b, false) != GDK_SUCCEED ||
 		    logger_add_bat(bat_logger, b, bat->name, i->t->bootstrap?0:LOG_IDX, i->base.id) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return LOG_ERR;
@@ -2114,7 +2114,7 @@ empty_del(sql_table *t)
 				return LOG_ERR;
 		}
 		bat_set_access(b, BAT_READ);
-		if (BATmode(b, PERSISTENT) != GDK_SUCCEED ||
+		if (BATmode(b, false) != GDK_SUCCEED ||
 		    logger_add_bat(bat_logger, b, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return LOG_ERR;
@@ -2476,7 +2476,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			temp_destroy(cbat->bid);
 			temp_destroy(cbat->ibid);
 			cbat->bid = cbat->ibid = 0;
-			if (cur->batPersistence == PERSISTENT)
+			if (!cur->batTransient)
 				BATmsync(cur);
 		}
 		obat->cnt = cbat->cnt = obat->ibase = cbat->ibase = BATcount(cur);
@@ -2579,7 +2579,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 				return LOG_ERR;
 			}
 			PROPdestroy(cur);
-			if (cur->batPersistence == PERSISTENT)
+			if (!cur->batTransient)
 				BATmsync(cur);
 		}
 		obat->cnt = obat->ibase = BATcount(cur);
@@ -3046,7 +3046,7 @@ tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 			/* any inserts */
 			if (BUNlast(ins) > 0) {
 				bat_set_access(ins, BAT_READ);
-				BATmode(ins, PERSISTENT);
+				BATmode(ins, false);
 			}
 			bat_destroy(ins);
 		} else {

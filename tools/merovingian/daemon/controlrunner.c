@@ -421,7 +421,11 @@ static void ctl_handle_client(
 							free(sadbfarm);
 							setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", buf2);
 							setlen = mo_system_config(&set, setlen);
-							BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT));
+							if (BBPaddfarm(buf2, (1 << PERSISTENT) | (1 << TRANSIENT)) != GDK_SUCCEED) {
+								Mfprintf(_mero_ctlerr, "%s: could not add farm to "
+									"'%s': %d: %s\n", origin, q, errno, strerror(errno));
+								exit(0);
+							}
 							/* the child, pollute scope by loading BBP */
 							if (chdir(q) < 0) {
 								/* Fabian says "Ignore the output.
@@ -448,7 +452,12 @@ static void ctl_handle_client(
 								len = strlen(buf2); /* secret can contain null-bytes */
 								fclose(secretf);
 							}
-							GDKinit(set, setlen);
+							if (GDKinit(set, setlen) != GDK_SUCCEED) {
+								Mfprintf(_mero_ctlerr, "%s: could not "
+										 "initialize database '%s'\n",
+										 origin, q);
+								exit(0);
+							}
 							vaultkey = buf2;
 							if ((err = AUTHunlockVault(vaultkey)) != NULL ||
 								(err = AUTHinitTables(p)) != NULL) {

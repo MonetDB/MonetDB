@@ -82,7 +82,6 @@ static struct worker {
 	enum {IDLE, RUNNING, JOINING, EXITED} flag;
 	Client cntxt;				/* client we do work for (NULL -> any) */
 	MT_Sema s;
-	MT_Sema startup;
 } workers[THREADS];
 
 static Queue *todo = 0;	/* pending instructions */
@@ -325,19 +324,11 @@ DFLOWworker(void *T)
 	DataFlow flow;
 	FlowEvent fe = 0, fnxt = 0;
 	int id = (int) (t - workers);
-	Thread thr;
+	int tid = THRgettid();
 	str error = 0;
 	int i,last;
 	Client cntxt;
 	InstrPtr p;
-
-	thr = THRnew("DFLOWworker");
-	if (thr == NULL) {
-		t->flag = IDLE;
-		MT_sema_up(&t->startup);
-		return;
-	}
-	MT_sema_up(&t->startup);
 
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
@@ -417,7 +408,7 @@ DFLOWworker(void *T)
 		/* update the numa information. keep the thread-id producing the value */
 		p= getInstrPtr(flow->mb,fe->pc);
 		for( i = 0; i < p->argc; i++)
-			setVarWorker(flow->mb,getArg(p,i),thr->tid);
+			setVarWorker(flow->mb,getArg(p,i),tid);
 
 		MT_lock_set(&flow->flowlock);
 		fe->state = DFLOWwrapup;
@@ -485,7 +476,6 @@ DFLOWworker(void *T)
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
-	THRdel(thr);
 	MT_lock_set(&dataflowLock);
 	t->flag = EXITED;
 	MT_lock_unset(&dataflowLock);
@@ -517,7 +507,6 @@ DFLOWinitialize(void)
 	}
 	for (i = 0; i < THREADS; i++) {
 		MT_sema_init(&workers[i].s, 0, "DFLOWinitialize");
-		MT_sema_init(&workers[i].startup, 0, "DFLOWinitialize:startup");
 	}
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 #ifdef NEED_MT_LOCK_INIT
@@ -528,15 +517,10 @@ DFLOWinitialize(void)
 	for (i = 0; i < limit; i++) {
 		workers[i].flag = RUNNING;
 		workers[i].cntxt = NULL;
-		if (MT_create_thread(&workers[i].id, DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0)
+		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, "DFLOWworker")) == 0)
 			workers[i].flag = IDLE;
-		else {
-			/* wait until it started */
-			MT_sema_down(&workers[i].startup);
-			/* then check whether it finished right away */
-			if (workers[i].flag != IDLE)
-				created++;
-		}
+		else
+			created++;
 	}
 	MT_lock_unset(&dataflowLock);
 	if (created == 0) {
@@ -899,19 +883,12 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 				workers[i].cntxt = cntxt;
 			}
 			workers[i].flag = RUNNING;
-			if (MT_create_thread(&workers[i].id, DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE) < 0) {
+			if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, "DFLOWworker")) == 0) {
 				/* cannot start new thread, run serially */
 				*ret = TRUE;
 				workers[i].flag = IDLE;
 				MT_lock_unset(&dataflowLock);
 				return MAL_SUCCEED;
-			}
-			/* wait until it started */
-			MT_sema_down(&workers[i].startup);
-			/* then check whether it finished right away */
-			if (workers[i].flag == IDLE) {
-				/* it wasn't to be */
-				i = THREADS;
 			}
 			break;
 		}

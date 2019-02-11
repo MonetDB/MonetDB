@@ -5904,6 +5904,8 @@ commit;
 
 Running database upgrade commands:
 set schema sys;
+grant execute on function sys.queue to public;
+grant select on sys.queue to public;
 ALTER TABLE sys.keywords SET READ WRITE;
 INSERT INTO sys.keywords VALUES ('WINDOW');
 DROP VIEW sys.var_values;

@@ -966,7 +966,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		GDKfree(sgrps);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
-		    (b->batPersistence == PERSISTENT &&
+		    (!b->batTransient &&
 		     BAThash(b) == GDK_SUCCEED) ||
 		    ((parent = VIEWtparent(b)) != 0 &&
 		     BATcheckhash(BBPdescriptor(parent))))) {

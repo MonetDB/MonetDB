@@ -144,7 +144,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		chkFlow(mb);
 		if ( mb->errors != MAL_SUCCEED ){
 			fprintf(stderr,"%s\n",mb->errors);
-			GDKfree(mb->errors);
+			freeException(mb->errors);
 			mb->errors = MAL_SUCCEED;
 		}
 		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
