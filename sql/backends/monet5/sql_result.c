@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -22,20 +22,6 @@
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
-
-// stpcpy definition, for systems that do not have stpcpy
-/* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
-   YYDEST.  */
-static char *
-mystpcpy (char *yydest, const char *yysrc) {
-	char *yyd = yydest;
-	const char *yys = yysrc;
-
-	while ((*yyd++ = *yys++) != '\0')
-	continue;
-
-	return yyd - 1;
-}
 
 #ifdef _MSC_VER
 /* use intrinsic functions on Windows */
@@ -875,7 +861,7 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int locked, int best)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int locked, int best, bool from_stdin)
 {
 	int i = 0, j;
 	node *n;
@@ -925,7 +911,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		};
 		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL) {
-			sql_error(m, 500, "failed to allocate memory ");
+			sql_error(m, 500, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			return NULL;
 		}
 		as.format = fmt;
@@ -954,7 +940,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				}
 				GDKfree(fmt[i].type);
 				GDKfree(fmt[i].data);
-				sql_error(m, 500, "failed to allocate space for column");
+				sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
 				return NULL;
 			}
 			fmt[i].c = NULL;
@@ -998,7 +984,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 							GDKfree(fmt[j].data);
 							BBPunfix(fmt[j].c->batCacheid);
 						}
-						sql_error(m, 500, "failed to allocate space for column");
+						sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
 						return NULL;
 					}
 				}
@@ -1007,11 +993,11 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			}
 		}
 		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
-			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best) != BUN_NONE && 
+			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin) != BUN_NONE && 
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
-					sql_error(m, 500, "failed to allocate space for column");
+					sql_error(m, 500, SQLSTATE(HY001) "failed to allocate space for column");
 					TABLETdestroy_format(&as);
 					return NULL;
 				}
@@ -1679,7 +1665,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 						} else {
 							str = (char*) element;
 						}
-						buf = mystpcpy(buf, str) + 1;
+						buf = stpcpy(buf, str) + 1;
 						assert(buf - bs2_buffer(s).buf <= (lng) bsize);
 					}
 					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
@@ -1820,7 +1806,7 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	if(fmt == NULL || tres == NULL) {
 		GDKfree(fmt);
 		GDKfree(tres);
-		sql_error(m, 500, "failed to allocate space");
+		sql_error(m, 500, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return -1;
 	}
 

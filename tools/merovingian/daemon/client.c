@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -479,7 +479,7 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				switch (errnr) {
+				switch (errno) {
 				case EINTR:
 					/* interrupted */
 					break;
@@ -493,7 +493,7 @@ acceptConnections(int sock, int usock)
 					/* connection aborted before we began */
 					break;
 				default:
-					msg = strerror(errnr);
+					msg = strerror(errno);
 					goto error;
 				}
 				continue;
@@ -511,7 +511,7 @@ acceptConnections(int sock, int usock)
 			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
-				switch (errnr) {
+				switch (errno) {
 				case EINTR:
 					/* interrupted */
 					break;
@@ -525,7 +525,7 @@ acceptConnections(int sock, int usock)
 					/* connection aborted before we began */
 					break;
 				default:
-					msg = strerror(errnr);
+					msg = strerror(errno);
 					goto error;
 				}
 				continue;

@@ -233,7 +233,7 @@ Ready.
 % double # type
 % 24 # length
 [ 12	]
-#SELECT '' AS three, f.f1, exp(log(f.f1)) AS exp_ln_f1
+#SELECT '' AS three, f.f1, exp(ln(f.f1)) AS exp_ln_f1
 #   FROM FLOAT8_TBL f
 #   WHERE f.f1 > '0.0';
 % .L2,	sys.f,	sys.L5 # table_name

@@ -104,6 +104,56 @@ Ready.
 % privilege_code_name,	privilege_code_id,	privilege_code_name # name
 % varchar,	int,	varchar # type
 % 0,	1,	0 # length
+#SELECT "atomwidth", * FROM "sys"."storagemodelinput" WHERE "atomwidth" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% atomwidth,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "column", * FROM "sys"."storagemodelinput" WHERE "column" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% column,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "count", * FROM "sys"."storagemodelinput" WHERE "count" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% count,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% bigint,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "distinct", * FROM "sys"."storagemodelinput" WHERE "distinct" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% distinct,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% bigint,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "isacolumn", * FROM "sys"."storagemodelinput" WHERE "isacolumn" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% isacolumn,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "reference", * FROM "sys"."storagemodelinput" WHERE "reference" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% reference,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "schema", * FROM "sys"."storagemodelinput" WHERE "schema" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% schema,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "table", * FROM "sys"."storagemodelinput" WHERE "table" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% table,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "type", * FROM "sys"."storagemodelinput" WHERE "type" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% type,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% varchar,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 0,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "typewidth", * FROM "sys"."storagemodelinput" WHERE "typewidth" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% typewidth,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% int,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 1,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
 #SELECT "function_id", * FROM "sys"."systemfunctions" WHERE "function_id" IS NULL;
 % sys.systemfunctions,	sys.systemfunctions # table_name
 % function_id,	function_id # name
@@ -424,6 +474,31 @@ Ready.
 % grantable,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % int,	int,	int,	int,	int,	int # type
 % 1,	1,	1,	1,	1,	1 # length
+#SELECT "maximum", * FROM "sys"."range_partitions" WHERE "maximum" IS NULL;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% maximum,	table_id,	partition_id,	minimum,	maximum,	with_nulls # name
+% varchar,	int,	int,	varchar,	varchar,	boolean # type
+% 0,	1,	1,	0,	0,	5 # length
+#SELECT "minimum", * FROM "sys"."range_partitions" WHERE "minimum" IS NULL;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% minimum,	table_id,	partition_id,	minimum,	maximum,	with_nulls # name
+% varchar,	int,	int,	varchar,	varchar,	boolean # type
+% 0,	1,	1,	0,	0,	5 # length
+#SELECT "partition_id", * FROM "sys"."range_partitions" WHERE "partition_id" IS NULL;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% partition_id,	table_id,	partition_id,	minimum,	maximum,	with_nulls # name
+% int,	int,	int,	varchar,	varchar,	boolean # type
+% 1,	1,	1,	0,	0,	5 # length
+#SELECT "table_id", * FROM "sys"."range_partitions" WHERE "table_id" IS NULL;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% table_id,	table_id,	partition_id,	minimum,	maximum,	with_nulls # name
+% int,	int,	int,	varchar,	varchar,	boolean # type
+% 1,	1,	1,	0,	0,	5 # length
+#SELECT "with_nulls", * FROM "sys"."range_partitions" WHERE "with_nulls" IS NULL;
+% sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
+% with_nulls,	table_id,	partition_id,	minimum,	maximum,	with_nulls # name
+% boolean,	int,	int,	varchar,	varchar,	boolean # type
+% 5,	1,	1,	0,	0,	5 # length
 #SELECT "id", * FROM "sys"."schemas" WHERE "id" IS NULL;
 % sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
 % id,	id,	name,	authorization,	owner,	system # name
@@ -449,6 +524,51 @@ Ready.
 % system,	id,	name,	authorization,	owner,	system # name
 % boolean,	int,	varchar,	int,	int,	boolean # type
 % 5,	1,	0,	1,	1,	5 # length
+#SELECT "cacheinc", * FROM "sys"."sequences" WHERE "cacheinc" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% cacheinc,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+#SELECT "cycle", * FROM "sys"."sequences" WHERE "cycle" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% cycle,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% boolean,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 5,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+#SELECT "id", * FROM "sys"."sequences" WHERE "id" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% id,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% int,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+#SELECT "increment", * FROM "sys"."sequences" WHERE "increment" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% increment,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+#SELECT "maxvalue", * FROM "sys"."sequences" WHERE "maxvalue" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% maxvalue,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+#SELECT "minvalue", * FROM "sys"."sequences" WHERE "minvalue" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% minvalue,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+#SELECT "name", * FROM "sys"."sequences" WHERE "name" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% name,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% varchar,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 0,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+#SELECT "schema_id", * FROM "sys"."sequences" WHERE "schema_id" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% schema_id,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% int,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
+#SELECT "start", * FROM "sys"."sequences" WHERE "start" IS NULL;
+% sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences,	sys.sequences # table_name
+% start,	id,	schema_id,	name,	start,	minvalue,	maxvalue,	increment,	cacheinc,	cycle # name
+% bigint,	int,	int,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
+% 1,	1,	1,	0,	1,	1,	1,	1,	1,	5 # length
 #SELECT "column_id", * FROM "sys"."statistics" WHERE "column_id" IS NULL;
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % column_id,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
@@ -509,6 +629,36 @@ Ready.
 % revsorted,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
 % boolean,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
 % 5,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT "sorted", * FROM "sys"."storagemodelinput" WHERE "sorted" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% sorted,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "unique", * FROM "sys"."storagemodelinput" WHERE "unique" IS NULL;
+% sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput,	sys.storagemodelinput # table_name
+% unique,	schema,	table,	column,	type,	typewidth,	count,	distinct,	atomwidth,	reference,	sorted,	unique,	isacolumn # name
+% boolean,	varchar,	varchar,	varchar,	varchar,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean # type
+% 5,	0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5 # length
+#SELECT "id", * FROM "sys"."table_partitions" WHERE "id" IS NULL;
+% sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
+% id,	id,	table_id,	column_id,	expression,	type # name
+% int,	int,	int,	int,	varchar,	tinyint # type
+% 1,	1,	1,	1,	0,	1 # length
+#SELECT "table_id", * FROM "sys"."table_partitions" WHERE "table_id" IS NULL;
+% sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
+% table_id,	id,	table_id,	column_id,	expression,	type # name
+% int,	int,	int,	int,	varchar,	tinyint # type
+% 1,	1,	1,	1,	0,	1 # length
+#SELECT "type", * FROM "sys"."table_partitions" WHERE "type" IS NULL;
+% sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
+% type,	id,	table_id,	column_id,	expression,	type # name
+% tinyint,	int,	int,	int,	varchar,	tinyint # type
+% 1,	1,	1,	1,	0,	1 # length
+#SELECT "column_id", "expression", * FROM "sys"."table_partitions" WHERE "column_id" IS NULL AND "expression" IS NULL;
+% sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions,	sys.table_partitions # table_name
+% column_id,	expression,	id,	table_id,	column_id,	expression,	type # name
+% int,	varchar,	int,	int,	int,	varchar,	tinyint # type
+% 1,	0,	1,	1,	1,	0,	1 # length
 #SELECT "id", * FROM "sys"."triggers" WHERE "id" IS NULL;
 % sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
 % id,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
@@ -584,6 +734,26 @@ Ready.
 % schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 1,	1,	0,	0,	1,	1,	1,	1,	1 # length
+#SELECT "login_id", * FROM "sys"."user_role" WHERE "login_id" IS NULL;
+% sys.user_role,	sys.user_role,	sys.user_role # table_name
+% login_id,	login_id,	role_id # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT "role_id", * FROM "sys"."user_role" WHERE "role_id" IS NULL;
+% sys.user_role,	sys.user_role,	sys.user_role # table_name
+% role_id,	login_id,	role_id # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT "partition_id", * FROM "sys"."value_partitions" WHERE "partition_id" IS NULL;
+% sys.value_partitions,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
+% partition_id,	table_id,	partition_id,	value # name
+% int,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
+#SELECT "table_id", * FROM "sys"."value_partitions" WHERE "table_id" IS NULL;
+% sys.value_partitions,	sys.value_partitions,	sys.value_partitions,	sys.value_partitions # table_name
+% table_id,	table_id,	partition_id,	value # name
+% int,	int,	int,	varchar # type
+% 1,	1,	1,	0 # length
 
 # 18:07:03 >  
 # 18:07:03 >  "Done."

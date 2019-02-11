@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2108,7 +2108,7 @@ create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
 			break;
 		}
 		case EC_BLOB: {
-			if(SQLBLOBtostr(&buf, &len, (const blob *)value, true) < 0)
+			if(BLOBtostr(&buf, &len, (const blob *)value, true) < 0)
 				return NULL;
 			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
 			break;

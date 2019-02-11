@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 # make rules to generate MonetDB RPMs (works on Fedora, only)
 
@@ -34,5 +34,27 @@ srpm: MonetDB.spec $(top_builddir)/$(distdir).tar.bz2 $(rpmtopdir)/rpmmacros
 all: monetdb_hgversion.h
 
 monetdb_hgversion.h: always
-	if [ -d "$(srcdir)"/.hg ] && hgid=`(cd "$(srcdir)"; hg id -i) 2>/dev/null`; then echo "#define MERCURIAL_ID \"$$hgid\"" > monetdb_hgversion.h.new; if [ -f monetdb_hgversion.h ] && cmp -s monetdb_hgversion.h monetdb_hgversion.h.new; then rm -f monetdb_hgversion.h.new; else mv -f monetdb_hgversion.h.new monetdb_hgversion.h; fi; elif [ -d "$(srcdir)"/.git ]; then hgid=`(cd "$(srcdir)"; git log -1 | sed -n '/Notes (hg):/,$$p' | grep -v Notes | sed 's/^ \+\(............\).*/\1/') 2>/dev/null`; dirty=`(cd "$(srcdir)"; [[ -z $$(git status -s) ]] || echo "+")`; if [ -z "$${hgid}" ]; then hgid="`(cd "$(srcdir)"; git rev-parse --short HEAD)` (git)"; fi; echo "#define MERCURIAL_ID \"$$hgid$$dirty\"" > monetdb_hgversion.h.new; if [ -f monetdb_hgversion.h ] && cmp -s monetdb_hgversion.h monetdb_hgversion.h.new; then rm -f monetdb_hgversion.h.new; else mv -f monetdb_hgversion.h.new monetdb_hgversion.h; fi; elif [ ! -f monetdb_hgversion.h ]; then touch monetdb_hgversion.h;fi
+	if [ -d "$(srcdir)"/.hg ] && hgid=`(cd "$(srcdir)"; hg id -i) 2>/dev/null`; then \
+		echo "#define MERCURIAL_ID \"$$hgid\"" > monetdb_hgversion.h.new; \
+		if [ -f monetdb_hgversion.h ] && cmp -s monetdb_hgversion.h monetdb_hgversion.h.new; then \
+			rm -f monetdb_hgversion.h.new; \
+		else \
+			mv -f monetdb_hgversion.h.new monetdb_hgversion.h; \
+		fi; \
+	elif [ -d "$(srcdir)"/.git ]; then \
+		hgid=`(cd "$(srcdir)"; git log -1 | sed -n '/Notes (hg):/,$$p' | grep -v Notes | sed 's/^ \+\(............\).*/\1/') 2>/dev/null`; \
+		dirty=`(cd "$(srcdir)"; [[ -z $$(git status -s) ]] || echo "+")`; \
+		if [ -z "$${hgid}" ]; then \
+			hgid="`(cd "$(srcdir)"; git rev-parse --short HEAD)` (git)"; \
+		fi; \
+		echo "#define MERCURIAL_ID \"$$hgid$$dirty\"" > monetdb_hgversion.h.new; \
+		if [ -f monetdb_hgversion.h ] && cmp -s monetdb_hgversion.h monetdb_hgversion.h.new; then \
+			rm -f monetdb_hgversion.h.new; \
+		else \
+			mv -f monetdb_hgversion.h.new monetdb_hgversion.h; \
+		fi; \
+	elif [ ! -f monetdb_hgversion.h ]; then \
+		touch monetdb_hgversion.h; \
+	fi
+
 always:

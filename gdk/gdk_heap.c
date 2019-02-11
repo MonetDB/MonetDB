@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -726,7 +726,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
 		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
-		snprintf(extension, sizeof(extension), "%s%s", ext, suffix);
+		stpconcat(extension, ext, suffix, NULL);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
@@ -763,7 +763,7 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 		return GDK_SUCCEED;
 	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
-	snprintf(ext2, sizeof(ext2), "%s%s", ext, ".new");
+	stpconcat(ext2, ext, ".new", NULL);
 	return (GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED) ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -997,8 +997,11 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 #ifdef TRACE
 		fprintf(stderr, "#block %zu is %zu bytes\n", block, blockp->size);
 #endif
-		if ((trail != 0) && (block <= trail))
-			GDKfatal("HEAP_malloc: Free list is not orderered\n");
+		assert(trail == 0 || block > trail);
+		if (trail != 0 && block <= trail) {
+			GDKerror("HEAP_malloc: Free list is not orderered\n");
+			return 0;
+		}
 
 		if (blockp->size >= nbytes)
 			break;
@@ -1094,8 +1097,10 @@ HEAP_free(Heap *heap, var_t mem)
 	CHUNK *afterp;
 	size_t after, before, block = mem;
 
+	assert(hheader->alignment == 8 || hheader->alignment == 4);
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
-		GDKfatal("HEAP_free: Heap structure corrupt\n");
+		GDKerror("HEAP_free: Heap structure corrupt\n");
+		return;
 	}
 
 	block -= hheader->alignment;

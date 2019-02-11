@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -152,7 +152,10 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		b->unused--;
 		if(b->unused == 0)
-			BATsetaccess(b, BAT_READ);
+			if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED) {
+				BBPunfix(b->batCacheid);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
+			}
 		assert(!b->tnil || !b->tnonil);
 		BBPkeepref(*ret = b->batCacheid);
 	}

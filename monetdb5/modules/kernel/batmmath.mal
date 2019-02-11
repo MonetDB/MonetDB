@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 module batmmath;
 
@@ -131,6 +131,33 @@ module batmmath;
 	address CMDscience_bat_flt_log10;
 	command log10(x:bat[:flt],s:bat[:oid]) :bat[:flt]
 	address CMDscience_bat_flt_log10_cand;
+
+	command log2(x:bat[:dbl]) :bat[:dbl]
+	address CMDscience_bat_dbl_log2;
+	command log2(x:bat[:dbl],s:bat[:oid]) :bat[:dbl]
+	address CMDscience_bat_dbl_log2_cand;
+	command log2(x:bat[:flt]) :bat[:flt]
+	address CMDscience_bat_flt_log2;
+	command log2(x:bat[:flt],s:bat[:oid]) :bat[:flt]
+	address CMDscience_bat_flt_log2_cand;
+
+	command log(x:bat[:dbl],y:dbl):bat[:dbl]
+	address CMDscience_bat_cst_log_dbl;
+	command log(x:bat[:dbl],y:dbl,s:bat[:oid]):bat[:dbl]
+	address CMDscience_bat_cst_log_dbl_cand;
+	command log(x:bat[:flt],y:flt):bat[:flt]
+	address CMDscience_bat_cst_log_flt;
+	command log(x:bat[:flt],y:flt,s:bat[:oid]):bat[:flt]
+	address CMDscience_bat_cst_log_flt_cand;
+
+	command log(x:dbl,y:bat[:dbl]):bat[:dbl]
+	address CMDscience_cst_bat_log_dbl;
+	command log(x:dbl,y:bat[:dbl],s:bat[:oid]):bat[:dbl]
+	address CMDscience_cst_bat_log_dbl_cand;
+	command log(x:flt,y:bat[:flt]):bat[:flt]
+	address CMDscience_cst_bat_log_flt;
+	command log(x:flt,y:bat[:flt],s:bat[:oid]):bat[:flt]
+	address CMDscience_cst_bat_log_flt_cand;
 
 	command sqrt(x:bat[:dbl]) :bat[:dbl]
 	address CMDscience_bat_dbl_sqrt;

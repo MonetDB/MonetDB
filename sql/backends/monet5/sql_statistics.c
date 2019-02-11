@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -52,6 +52,30 @@ strToStrSQuote(char **dst, size_t *len, const void *src, bool external)
 		(*dst)[l] = 0;
 	}
 	return l;
+}
+
+str
+sql_drop_statistics(Client cntxt, sql_table *t)
+{
+	node *ncol;
+	char *dquery, *msg = NULL;
+
+	dquery = (char *) GDKzalloc(96);
+	if (dquery == NULL) {
+		throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	if (isTable(t) && t->columns.set) {
+		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+			sql_column *c = ncol->data;
+
+			snprintf(dquery, 96, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
+			msg = SQLstatementIntern(cntxt, &dquery, "SQLanalyze", TRUE, FALSE, NULL);
+			if (msg)
+				break;
+		}
+	}
+	GDKfree(dquery);
+	return msg;
 }
 
 str

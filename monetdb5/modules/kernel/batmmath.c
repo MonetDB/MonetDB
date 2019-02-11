@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -20,6 +20,7 @@
 #include "batmmath.h"
 #include "gdk_cand.h"
 #include <fenv.h>
+#include "mmath_private.h"
 #ifndef FE_INVALID
 #define FE_INVALID			0
 #endif
@@ -376,6 +377,7 @@ scienceImpl(degrees)
 scienceImpl(exp)
 scienceImpl(log)
 scienceImpl(log10)
+scienceImpl(log2)
 scienceImpl(sqrt)
 #ifdef HAVE_CBRT
 scienceImpl(cbrt)
@@ -393,3 +395,5 @@ scienceBinaryImpl(atan2,dbl,)
 scienceBinaryImpl(atan2,flt,f)
 scienceBinaryImpl(pow,dbl,)
 scienceBinaryImpl(pow,flt,f)
+scienceBinaryImpl(log,dbl,bs)
+scienceBinaryImpl(log,flt,bsf)

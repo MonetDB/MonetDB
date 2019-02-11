@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef SQL_STORAGE_H
@@ -359,7 +359,7 @@ extern int store_next_oid(void);
 
 extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, const char *name);
 extern sql_trans *sql_trans_destroy(sql_trans *tr);
-extern int sql_trans_validate(sql_trans *tr);
+extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
 
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
@@ -422,7 +422,7 @@ extern int sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int dr
 extern sql_sequence *create_sql_sequence(sql_allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle);
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped);
 extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
-extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, lng cycle);
+extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
 extern lng sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 
 extern sql_session * sql_session_create(backend_stack stk, int autocommit);

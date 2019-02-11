@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -129,6 +129,7 @@ str execRef;
 str expandRef;
 str exportOperationRef;
 str export_tableRef;
+str fetchRef;
 str findRef;
 str finishRef;
 str firstnRef;
@@ -434,6 +435,7 @@ void optimizerInit(void)
 	expandRef = putName("expand");
 	exportOperationRef = putName("exportOperation");
 	export_tableRef = putName("export_table");
+	fetchRef = putName("fetch");
 	findRef = putName("find");
 	finishRef = putName("finish");
 	firstnRef = putName("firstn");

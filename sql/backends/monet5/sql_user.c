@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -554,7 +554,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	if (!schema || !mvc_set_schema(m, schema)) {
 		if (m->session->active) {
 			if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 		}
 		GDKfree(username);
 		return NULL;
@@ -567,7 +567,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 	GDKfree(username);
 	if((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
-		GDKfree(other);
+		freeException(other);
 		return NULL;
 	}
 	return schema;

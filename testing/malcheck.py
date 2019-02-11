@@ -40,10 +40,10 @@ mappings = {
     'any_2': 'void',
     'any_3': 'void',
     'any_4': 'void',
-    'sqlblob': 'blob',
+    'blob': 'blob',
 }
 cmappings = {
-    'sqlblob': 'blob',
+    'blob': 'blob',
 }
 atomfunctypes = {
     # MAL name: (return type, (argument...))

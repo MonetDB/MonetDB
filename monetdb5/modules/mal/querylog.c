@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -169,7 +169,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 		return NULL;
 
 	if (BBPrename(b->batCacheid, buf) != 0 ||
-		BATmode(b, PERSISTENT) != GDK_SUCCEED) {
+		BATmode(b, false) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
 	}
@@ -178,7 +178,7 @@ QLOGcreate(str hnme, str tnme, int tt)
 	return b;
 }
 
-#define cleanup(X)  if (X) { (X)->batPersistence = TRANSIENT; BBPrename((X)->batCacheid,"_"); BBPunfix((X)->batCacheid); } (X) = NULL;
+#define cleanup(X)  if (X) { (X)->batTransient = true; BBPrename((X)->batCacheid,"_"); BBPunfix((X)->batCacheid); } (X) = NULL;
 
 static void
 _QLOGcleanup(void)

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* included from gdk.h */
@@ -71,12 +71,12 @@ gdk_export BAT *BATcalccstgt(const ValRecord *v, BAT *b, BAT *s);
 gdk_export BAT *BATcalcge(BAT *b1, BAT *b2, BAT *s);
 gdk_export BAT *BATcalcgecst(BAT *b, const ValRecord *v, BAT *s);
 gdk_export BAT *BATcalccstge(const ValRecord *v, BAT *b, BAT *s);
-gdk_export BAT *BATcalceq(BAT *b1, BAT *b2, BAT *s);
-gdk_export BAT *BATcalceqcst(BAT *b, const ValRecord *v, BAT *s);
-gdk_export BAT *BATcalccsteq(const ValRecord *v, BAT *b, BAT *s);
-gdk_export BAT *BATcalcne(BAT *b1, BAT *b2, BAT *s);
-gdk_export BAT *BATcalcnecst(BAT *b, const ValRecord *v, BAT *s);
-gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b, BAT *s);
+gdk_export BAT *BATcalceq(BAT *b1, BAT *b2, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalceqcst(BAT *b, const ValRecord *v, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalccsteq(const ValRecord *v, BAT *b, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalcne(BAT *b1, BAT *b2, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalcnecst(BAT *b, const ValRecord *v, BAT *s, bool nil_matches);
+gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b, BAT *s, bool nil_matches);
 gdk_export BAT *BATcalccmp(BAT *b1, BAT *b2, BAT *s);
 gdk_export BAT *BATcalccmpcst(BAT *b, const ValRecord *v, BAT *s);
 gdk_export BAT *BATcalccstcmp(const ValRecord *v, BAT *b, BAT *s);
@@ -113,8 +113,8 @@ gdk_export gdk_return VARcalclt(ValPtr ret, const ValRecord *lft, const ValRecor
 gdk_export gdk_return VARcalcgt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_export gdk_return VARcalcle(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_export gdk_return VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
-gdk_export gdk_return VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
-gdk_export gdk_return VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export gdk_return VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
+gdk_export gdk_return VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, bool nil_matches);
 gdk_export gdk_return VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_export BAT *BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error);
 gdk_export gdk_return VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error);

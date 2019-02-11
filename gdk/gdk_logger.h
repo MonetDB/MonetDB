@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _LOGGER_H_
@@ -108,7 +108,7 @@ gdk_export gdk_return logger_restart(logger *lg);
 gdk_export gdk_return logger_cleanup(logger *lg);
 gdk_export void logger_with_ids(logger *lg);
 gdk_export lng logger_changes(logger *lg);
-gdk_export lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role);
+gdk_export lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, role_t role);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
 gdk_export gdk_return logger_reload(logger *lg);
 

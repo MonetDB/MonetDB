@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _MAPI_H_INCLUDED
@@ -148,7 +148,7 @@ mapi_export bool mapi_get_trace(Mapi mid);
 mapi_export bool mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit);
-mapi_export MapiMsg mapi_set_size_header(Mapi mid, int value);
+mapi_export MapiMsg mapi_set_size_header(Mapi mid, bool value);
 mapi_export MapiMsg mapi_release_id(Mapi mid, int id);
 mapi_export const char *mapi_result_error(MapiHdl hdl);
 mapi_export const char *mapi_result_errorcode(MapiHdl hdl);

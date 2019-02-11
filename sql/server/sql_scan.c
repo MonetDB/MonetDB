@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -197,6 +197,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("UPDATE", UPDATE);
 	failed += keywords_insert("DELETE", sqlDELETE);
 	failed += keywords_insert("TRUNCATE", TRUNCATE);
+	failed += keywords_insert("MATCHED", MATCHED);
 
 	failed += keywords_insert("ACTION", ACTION);
 	failed += keywords_insert("CASCADE", CASCADE);

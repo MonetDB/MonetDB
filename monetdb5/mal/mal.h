@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -84,8 +84,8 @@ mal_export MT_Lock  mal_oltpLock ;
 
 
 mal_export int mal_init(void);
-mal_export void mal_exit(void);
-mal_export void mserver_reset(int exit);
+mal_export void mal_exit(int status);
+mal_export void mserver_reset(void);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
@@ -105,10 +105,6 @@ mal_export void mserver_reset(int exit);
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_MAPI)
-
-#ifndef WORDS_BIGENDIAN
-#define STRUCT_ALIGNED
-#endif
 
 /* The MAL instruction block type definitions */
 /* Variable properties */

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -60,7 +60,10 @@ void_bat_create(int adt, BUN nr)
 	/* check for correct structures */
 	if (b == NULL)
 		return NULL;
-	BATsetaccess(b, BAT_APPEND);
+	if (BATsetaccess(b, BAT_APPEND) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		return NULL;
+	}
 	if (nr > BATTINY && adt && BATextend(b, nr) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return NULL;
@@ -170,7 +173,8 @@ TABLETcollect(BAT **bats, Tablet *as)
 			continue;
 		bats[j] = fmt[i].c;
 		BBPfix(bats[j]->batCacheid);
-		BATsetaccess(fmt[i].c, BAT_READ);
+		if (BATsetaccess(fmt[i].c, BAT_READ) != GDK_SUCCEED)
+			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
 		fmt[i].c->tsorted = fmt[i].c->trevsorted = false;
 		fmt[i].c->tkey = false;
 		BATsettrivprop(fmt[i].c);
@@ -200,7 +204,8 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 		b->tsorted = b->trevsorted = false;
 		b->tkey = false;
 		BATsettrivprop(b);
-		BATsetaccess(b, BAT_READ);
+		if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED)
+			throw(SQL, "copy", "Failed to set access at tablet part " BUNFMT "\n", cnt);
 		bv = BATslice(b, (offset > 0) ? offset - 1 : 0, BATcount(b));
 		bats[j] = bv;
 
@@ -627,6 +632,7 @@ typedef struct {
 	lng *time, wtime;			/* time per col + time per thread */
 	int rounds;					/* how often did we divide the work */
 	bool ateof;					/* io control */
+	bool from_stdin;
 	bstream *b;
 	stream *out;
 	MT_Id tid;
@@ -1097,15 +1103,6 @@ SQLworker(void *arg)
 	unsigned int i;
 	int j, piece;
 	lng t0;
-	Thread thr;
-
-	thr = THRnew("SQLworker");
-	if (thr == NULL) {
-		task->id = -1;			/* signal failure */
-		MT_sema_up(&task->reply);
-		return;
-	}
-	MT_sema_up(&task->reply);
 
 	GDKsetbuf(GDKzalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKclrerr();
@@ -1157,7 +1154,7 @@ SQLworker(void *arg)
 					if (b == NULL)
 						continue;
 					t0 = GDKusec();
-					if (b->batPersistence != PERSISTENT)
+					if (b->batTransient)
 						continue;
 					BATmsync(b);
 					t0 = GDKusec() - t0;
@@ -1182,7 +1179,6 @@ SQLworker(void *arg)
   do_return:
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
-	THRdel(thr);
 }
 
 static void
@@ -1233,28 +1229,18 @@ static void
 SQLproducer(void *p)
 {
 	READERtask *task = (READERtask *) p;
-	int consoleinput = 0;
+	bool consoleinput = false;
 	int cur = 0;		// buffer being filled
-	bool blocked[MAXBUFFERS] = { 0 };
-	bool ateof[MAXBUFFERS] = { 0 };
+	bool blocked[MAXBUFFERS] = { false };
+	bool ateof[MAXBUFFERS] = { false };
 	BUN cnt = 0, bufcnt[MAXBUFFERS] = { 0 };
 	char *end, *e, *s, *base;
 	const char *rsep = task->rsep;
 	size_t rseplen = strlen(rsep), partial = 0;
 	char quote = task->quote;
-	Thread thr;
 
-	thr = THRnew("SQLproducer");
-	if (thr == NULL) {
-		task->id = -1;
-		tablet_error(task, lng_nil, int_nil, "cannot create producer thread", "SQLproducer");
-		MT_sema_up(&task->consumer);
-		return;
-	}
-	MT_sema_up(&task->consumer);
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
-		THRdel(thr);
 		return;
 	}
 
@@ -1266,7 +1252,7 @@ SQLproducer(void *p)
 	*s = 0;
 	task->cur = cur;
 	if (task->as->filename == NULL) {
-		consoleinput = 1;
+		consoleinput = true;
 		goto parseSTDIN;
 	}
 	for (;;) {
@@ -1335,6 +1321,10 @@ SQLproducer(void *p)
 		 * scan ended (we need to back off some since we could be in
 		 * the middle of the record separator).  If this is too
 		 * costly, we have to rethink the matter. */
+		if (task->from_stdin && *s == '\n' && task->maxrow == BUN_MAX) {
+			ateof[cur] = true;
+			goto reportlackofinput;
+		}
 		for (e = s; *e && e < end && cnt < task->maxrow;) {
 			/* tokenize the record completely the format of the input
 			 * should comply to the following grammar rule [
@@ -1479,7 +1469,6 @@ SQLproducer(void *p)
 			/* then wait until it is done */
 			MT_sema_down(&task->producer);
 			if (cnt == task->maxrow) {
-				THRdel(thr);
 				return;
 			}
 		} else {
@@ -1493,7 +1482,6 @@ SQLproducer(void *p)
 				MT_sema_down(&task->producer);
 				blocked[(cur + 1) % MAXBUFFERS] = false;
 				if (task->state == ENDOFCOPY) {
-					THRdel(thr);
 					return;
 				}
 			}
@@ -1518,7 +1506,6 @@ SQLproducer(void *p)
 #ifdef _DEBUG_TABLET_CNTRL
 				mnstr_printf(GDKout, "#Producer delivered all\n");
 #endif
-				THRdel(thr);
 				return;
 			}
 		}
@@ -1530,7 +1517,6 @@ SQLproducer(void *p)
 #ifdef _DEBUG_TABLET_CNTRL
 			mnstr_printf(GDKout, "#Producer encountered eof\n");
 #endif
-			THRdel(thr);
 			return;
 		}
 		/* consumers ask us to stop? */
@@ -1540,7 +1526,6 @@ SQLproducer(void *p)
 				mnstr_printf(GDKout, "#SQL producer early exit %.63s\n",
 							 task->b->buf + task->b->pos);
 #endif
-			THRdel(thr);
 			return;
 		}
 		bufcnt[cur] = cnt;
@@ -1565,7 +1550,6 @@ SQLproducer(void *p)
 		tablet_error(task, lng_nil, int_nil, "incomplete record at end of file", s);
 		task->b->pos += partial;
 	}
-	THRdel(thr);
 }
 
 static void
@@ -1597,7 +1581,7 @@ create_rejects_table(Client cntxt)
 }
 
 BUN
-SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best)
+SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin)
 {
 	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
@@ -1608,7 +1592,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	READERtask ptask[MAXWORKERS];
 	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
-	int vmtrim = GDK_vm_trim;
 
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",
@@ -1617,6 +1600,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	memset(ptask, 0, sizeof(ptask));
 	task = (READERtask) {
 		.cntxt = cntxt,
+		.from_stdin = from_stdin,
 	};
 
 	/* create the reject tables */
@@ -1625,11 +1609,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		tablet_error(&task, lng_nil, int_nil, "SQLload initialization failed", "");
 		goto bailout;
 	}
-
-	/* trimming process should not be active during this process. */
-	/* on sf10 experiments it showed a slowdown of a factor 2 on */
-	/* large tables. Instead rely on madvise */
-	GDK_vm_trim = 0;
 
 	assert(rsep);
 	assert(csep);
@@ -1721,14 +1700,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	}
 
 	task.id = 0;
-	if(MT_create_thread(&task.tid, SQLproducer, (void *) &task, MT_THR_JOINABLE) < 0) {
+	if ((task.tid = THRcreate(SQLproducer, (void *) &task, MT_THR_JOINABLE, "SQLproducer")) == 0) {
 		tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start producer thread", "SQLload_file");
-		goto bailout;
-	}
-	/* wait until producer started */
-	MT_sema_down(&task.consumer);
-	if (task.id < 0) {
-		/* producer failed to properly start */
 		goto bailout;
 	}
 #ifdef _DEBUG_TABLET_
@@ -1752,16 +1725,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #endif
 		MT_sema_init(&ptask[j].sema, 0, "ptask[j].sema");
 		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
-		if(MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE) < 0) {
-			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
-			threads = j;
-			for (j = 0; j < threads; j++)
-				ptask[j].workers = threads;
-		}
-		/* wait until thread started */
-		MT_sema_down(&ptask[j].reply);
-		if (ptask[j].id == -1) {
-			/* allocation failure inside thread */
+		if ((ptask[j].tid = THRcreate(SQLworker, (void *) &ptask[j], MT_THR_JOINABLE, "SQLworker")) == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
 			threads = j;
 			for (j = 0; j < threads; j++)
@@ -2041,8 +2005,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	munlockall();
 #endif
 
-	/* restore system setting */
-	GDK_vm_trim = vmtrim;
 	return res < 0 ? BUN_NONE : cnt;
 
   bailout:
@@ -2062,8 +2024,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #ifdef MLOCK_TST
 	munlockall();
 #endif
-	/* restore system setting */
-	GDK_vm_trim = vmtrim;
 	return BUN_NONE;
 }
 

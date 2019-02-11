@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -332,13 +332,13 @@ SQLTablesW(SQLHSTMT StatementHandle,
 	clearStmtErrors(stmt);
 
 	fixWcharIn(CatalogName, NameLength1, SQLCHAR, catalog,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(SchemaName, NameLength2, SQLCHAR, schema,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(TableName, NameLength3, SQLCHAR, table,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 	fixWcharIn(TableType, NameLength4, SQLCHAR, type,
-		   addStmtError, stmt, goto exit);
+		   addStmtError, stmt, goto bailout);
 
 	rc = MNDBTables(stmt,
 			catalog, SQL_NTS,
@@ -346,7 +346,7 @@ SQLTablesW(SQLHSTMT StatementHandle,
 			table, SQL_NTS,
 			type, SQL_NTS);
 
-      exit:
+      bailout:
 	if (catalog)
 		free(catalog);
 	if (schema)

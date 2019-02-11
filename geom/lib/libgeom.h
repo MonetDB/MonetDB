@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef LIBGEOM_H
@@ -133,10 +133,10 @@ libgeom_export void libgeom_exit(void);
  * Returns a GEOSGeom, created from a geom_geometry.
  * On failure, returns NULL.
  */
-//#define wkb2geos( geom ) wkb_isnil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
+//#define wkb2geos( geom ) is_wkb_nil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
 #define mbr_nil mbrFromGeos(NULL); 
 
-libgeom_export int wkb_isnil(const wkb *wkbp);
+libgeom_export bool is_wkb_nil(const wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
 libgeom_export int getMbrGeom(mbr *res, wkb *geom);
 libgeom_export GEOSGeom wkb2geos(const wkb *geomWKB);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -44,14 +44,14 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
-#define MVC_INIT_DROP_TABLE(SQLID, TNAME)                      \
-	t = mvc_bind_table(m, s, TNAME);                           \
-	SQLID = t->base.id;                                        \
-	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
-		mvc_destroy(m);                                        \
-		fprintf(stderr, "!mvc_init: %s\n", output);            \
-		GDKfree(output);                                       \
-		return -1;                                             \
+#define MVC_INIT_DROP_TABLE(SQLID, TNAME)				\
+	t = mvc_bind_table(m, s, TNAME);				\
+	SQLID = t->base.id;						\
+	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {	\
+		mvc_destroy(m);						\
+		fprintf(stderr, "!mvc_init: %s\n", output);		\
+		freeException(output);					\
+		return -1;						\
 	}
 
 int
@@ -94,10 +94,8 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 
 	/* disable caching */
 	m->caching = 0;
-	/* disable history */
-	m->history = 0;
 	/* disable size header */
-	m->sizeheader = 0;
+	m->sizeheader = false;
 
 	if (first || catalog_version) {
 		if(mvc_trans(m) < 0) {
@@ -120,7 +118,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
-		mvc_create_column_(m, t, "query", "varchar", 2048);
+		mvc_create_column_(m, t, "query", "varchar", 1 << 20);
 		mvc_create_column_(m, t, "type", "smallint", 16);
 		mvc_create_column_(m, t, "system", "boolean", 1);
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
@@ -238,25 +236,13 @@ mvc_exit(void)
 void
 mvc_logmanager(void)
 {
-	Thread thr = THRnew("logmanager");
-
-	if (thr == NULL)
-		GDKfatal("logmanager: cannot allocate thread");
-
 	store_manager();
-	THRdel(thr);
 }
 
 void
 mvc_idlemanager(void)
 {
-	Thread thr = THRnew("idlemanager");
-
-	if (thr == NULL)
-		GDKfatal("idlemanager: cannot allocate thread");
-
 	idle_manager();
-	THRdel(thr);
 }
 
 int
@@ -397,7 +383,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	if (m->session->status < 0) {
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted, will ROLLBACK instead", operation);
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 
@@ -412,14 +398,14 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			store_unlock();
 			msg = createException(SQL, "sql.commit", SQLSTATE(HY001) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		msg = WLCcommit(m->clientid);
 		store_unlock();
 		if(msg != MAL_SUCCEED) {
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		m->type = Q_TRANS;
@@ -460,7 +446,7 @@ build up the hash (not copied in the trans dup)) */
 		store_unlock();
 		if(msg != MAL_SUCCEED) {
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		if (mvc_debug)
@@ -492,14 +478,14 @@ build up the hash (not copied in the trans dup)) */
 		store_unlock();
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 	msg = WLCcommit(m->clientid);
 	if(msg != MAL_SUCCEED) {
 		store_unlock();
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 	sql_trans_end(m->session);
@@ -674,7 +660,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->debug = debug;
 	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
-	m->history = 0;
 
 	m->label = 0;
 	m->remote = 0;
@@ -695,6 +680,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
 	m->type = Q_PARSE;
 	m->pushdown = 1;
+	m->has_groupby_expressions = false;
 
 	m->result_id = 0;
 	m->results = NULL;
@@ -755,15 +741,13 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 		stack_set_number(m, "cache", DEFAULT_CACHESIZE);
 	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
-	if (m->history != 0)
-		stack_set_number(m, "history", 0);
-	m->history = 0;
 
 	m->label = 0;
 	m->remote = 0;
 	m->cascade_action = NULL;
 	m->type = Q_PARSE;
 	m->pushdown = 1;
+	m->has_groupby_expressions = false;
 
 	for(i=0;i<MAXSTATS;i++)
 		m->opt_stats[i] = 0;
@@ -1526,7 +1510,7 @@ mvc_is_sorted(mvc *m, sql_column *col)
 
 /* variable management */
 static sql_var*
-stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, dlist *wdef, int view, int frame)
+stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, dlist *wdef, sql_groupby_expression *exp, int view, int frame)
 {
 	sql_var *v, *nvars;
 	int nextsize = sql->sizevars;
@@ -1550,6 +1534,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 	v->frame = frame;
 	v->visited = 0;
 	v->wdef = wdef;
+	v->exp = exp;
 	if (type) {
 		int tpe = type->type->localtype;
 		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
@@ -1566,7 +1551,7 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 sql_var*
 stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1575,7 +1560,7 @@ stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 sql_var*
 stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1584,7 +1569,7 @@ stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 sql_var*
 stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, NULL, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1593,7 +1578,7 @@ stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 sql_var*
 stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, NULL, 1, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, NULL, NULL, 1, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1602,7 +1587,7 @@ stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 sql_var*
 stack_push_window_def(mvc *sql, const char *name, dlist *wdef)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, wdef, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, wdef, NULL, 0, 0);
 	if(res)
 		sql->topvars++;
 	return res;
@@ -1612,10 +1597,42 @@ dlist *
 stack_get_window_def(mvc *sql, const char *name, int *pos)
 {
 	for (int i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && sql->vars[i].wdef && strcmp(sql->vars[i].name, name)==0) {
+		if (!sql->vars[i].frame && sql->vars[i].wdef && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			if(pos)
 				*pos = i;
 			return sql->vars[i].wdef;
+		}
+	}
+	return NULL;
+}
+
+sql_var*
+stack_push_groupby_expression(mvc *sql, symbol *def, sql_exp *exp)
+{
+	sql_var* res = NULL;
+	sql_groupby_expression *sge = MNEW(sql_groupby_expression);
+
+	if(sge) {
+		sge->sdef = def;
+		sge->token = def->token;
+		sge->exp = exp;
+
+		res = stack_set(sql, sql->topvars, NULL, NULL, NULL, NULL, NULL, sge, 0, 0);
+		if(res)
+			sql->topvars++;
+	}
+	sql->has_groupby_expressions = true;
+	return res;
+}
+
+sql_exp*
+stack_get_groupby_expression(mvc *sql, symbol *def)
+{
+	if(sql->has_groupby_expressions) {
+		for (int i = sql->topvars-1; i >= 0; i--) {
+			if (!sql->vars[i].frame && sql->vars[i].exp && sql->vars[i].exp->token == def->token && symbol_cmp(sql, sql->vars[i].exp->sdef, def)==0) {
+				return sql->vars[i].exp->exp;
+			}
 		}
 	}
 	return NULL;
@@ -1653,7 +1670,7 @@ stack_set_var(mvc *sql, const char *name, ValRecord *v)
 	atom *res = NULL;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
+		if (!sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			VALclear(&sql->vars[i].a.data);
 			if(VALcopy(&sql->vars[i].a.data, v) == NULL)
 				return NULL;
@@ -1674,7 +1691,7 @@ stack_get_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
+		if (!sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			return &sql->vars[i].a;
 		}
 	}
@@ -1684,7 +1701,7 @@ stack_get_var(mvc *sql, const char *name)
 sql_var*
 stack_push_frame(mvc *sql, const char *name)
 {
-	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, NULL, 0, 1);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, NULL, NULL, 0, 1);
 	if(res) {
 		sql->topvars++;
 		sql->frame++;
@@ -1701,6 +1718,8 @@ stack_pop_until(mvc *sql, int top)
 		c_delete(v->name);
 		VALclear(&v->a.data);
 		v->a.data.vtype = 0;
+		if(v->exp)
+			_DELETE(v->exp);
 		v->wdef = NULL;
 	}
 }
@@ -1718,6 +1737,8 @@ stack_pop_frame(mvc *sql)
 			table_destroy(v->t);
 		else if (v->rel)
 			rel_destroy(v->rel);
+		else if(v->exp)
+			_DELETE(v->exp);
 		v->wdef = NULL;
 	}
 	if (sql->topvars && sql->vars[sql->topvars].name)  
@@ -1731,8 +1752,7 @@ stack_find_type(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-			strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return &sql->vars[i].a.tpe;
 	}
 	return NULL;
@@ -1744,8 +1764,8 @@ stack_find_table(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    sql->vars[i].t && strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].t
+			&& sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return sql->vars[i].t;
 	}
 	return NULL;
@@ -1758,7 +1778,7 @@ stack_find_rel_view(mvc *sql, const char *name)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0)
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return rel_dup(sql->vars[i].rel);
 	}
 	return NULL;
@@ -1771,7 +1791,7 @@ stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0) {
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0) {
 			rel_destroy(sql->vars[i].rel);
 			sql->vars[i].rel = view;
 		}
@@ -1784,8 +1804,7 @@ stack_find_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    strcmp(sql->vars[i].name, name)==0)
+		if (!sql->vars[i].frame && !sql->vars[i].view && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;
@@ -1798,7 +1817,7 @@ stack_find_rel_var(mvc *sql, const char *name)
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && !sql->vars[i].view &&
-		    sql->vars[i].rel && strcmp(sql->vars[i].name, name)==0)
+		    sql->vars[i].rel && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return rel_dup(sql->vars[i].rel);
 	}
 	return NULL;
@@ -1810,7 +1829,7 @@ frame_find_var(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0 && !sql->vars[i].frame; i--) {
-		if (strcmp(sql->vars[i].name, name)==0)
+		if (sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;
@@ -1836,8 +1855,7 @@ stack_has_frame(mvc *sql, const char *name)
 	int i;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
-		if (sql->vars[i].frame && sql->vars[i].name && 
-		    strcmp(sql->vars[i].name, name)==0)
+		if (sql->vars[i].frame && sql->vars[i].name && strcmp(sql->vars[i].name, name)==0)
 			return 1;
 	}
 	return 0;
@@ -2045,4 +2063,160 @@ mvc_find_subexp(mvc *m, const char *rname, const char *name)
 		}
 	}
 	return NULL;
+}
+
+static inline int dlist_cmp(mvc *sql, dlist *l1, dlist *l2);
+
+static inline int
+dnode_cmp(mvc *sql, dnode *d1, dnode *d2)
+{
+	if (d1 == d2)
+		return 0;
+
+	if (!d1 || !d2)
+		return -1;
+
+	if (d1->type == d2->type) {
+		switch (d1->type) {
+			case type_int:
+				return (d1->data.i_val - d2->data.i_val);
+			case type_lng: {
+				lng c = d1->data.l_val - d2->data.l_val;
+				assert((lng) GDK_int_min <= c && c <= (lng) GDK_int_max);
+				return (int) c;
+			}
+			case type_string:
+				if (d1->data.sval == d2->data.sval)
+					return 0;
+				if (!d1->data.sval || !d2->data.sval)
+					return -1;
+				return strcmp(d1->data.sval, d2->data.sval);
+			case type_list:
+				return dlist_cmp(sql, d1->data.lval, d2->data.lval);
+			case type_symbol:
+				return symbol_cmp(sql, d1->data.sym, d2->data.sym);
+			case type_type:
+				return subtype_cmp(&d1->data.typeval, &d2->data.typeval);
+			default:
+				assert(0);
+		}
+	}
+	return -1;
+}
+
+static inline int
+dlist_cmp(mvc *sql, dlist *l1, dlist *l2)
+{
+	int res = 0;
+	dnode *d1, *d2;
+
+	if (l1 == l2)
+		return 0;
+
+	if (!l1 || !l2 || dlist_length(l1) != dlist_length(l2))
+		return -1;
+
+	for (d1 = l1->h, d2 = l2->h; !res && d1; d1 = d1->next, d2 = d2->next) {
+		res = dnode_cmp(sql, d1, d2);
+	}
+	return res;
+}
+
+static inline int
+AtomNodeCmp(AtomNode *a1, AtomNode *a2)
+{
+	if (a1 == a2)
+		return 0;
+	if (!a1 || !a2)
+		return -1;
+	if (a1->a && a2->a)
+		return atom_cmp(a1->a, a2->a);
+	return -1;
+}
+
+static inline int
+SelectNodeCmp(mvc *sql, SelectNode *s1, SelectNode *s2)
+{
+	if (s1 == s2)
+		return 0;
+	if (!s1 || !s2)
+		return -1;
+
+	if (symbol_cmp(sql, s1->limit, s2->limit) == 0 &&
+		symbol_cmp(sql, s1->offset, s2->offset) == 0 &&
+		symbol_cmp(sql, s1->sample, s2->sample) == 0 &&
+		s1->distinct == s2->distinct &&
+		s1->lateral == s2->lateral &&
+		symbol_cmp(sql, s1->name, s2->name) == 0 &&
+		symbol_cmp(sql, s1->orderby, s2->orderby) == 0 &&
+		symbol_cmp(sql, s1->having, s2->having) == 0 &&
+		symbol_cmp(sql, s1->groupby, s2->groupby) == 0 &&
+		symbol_cmp(sql, s1->where, s2->where) == 0 &&
+		symbol_cmp(sql, s1->from, s2->from) == 0 &&
+		symbol_cmp(sql, s1->window, s2->window) == 0 &&
+		dlist_cmp(sql, s1->selection, s2->selection) == 0)
+		return 0;
+	return -1;
+}
+
+static inline int
+_symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
+{
+	if (s1 == s2)
+		return 0;
+	if (!s1 || !s2)
+		return -1;
+	if (s1->token != s2->token || s1->type != s2->type)
+		return -1;
+	switch (s1->type) {
+		case type_int:
+			return (s1->data.i_val - s2->data.i_val);
+		case type_lng: {
+			lng c = s1->data.l_val - s2->data.l_val;
+			assert((lng) GDK_int_min <= c && c <= (lng) GDK_int_max);
+			return (int) c;
+		}
+		case type_string:
+			if (s1->data.sval == s2->data.sval)
+				return 0;
+			if (!s1->data.sval || !s2->data.sval)
+				return -1;
+			return strcmp(s1->data.sval, s2->data.sval);
+		case type_list: {
+			if (s1->token == SQL_IDENT) {
+				atom *at1, *at2;
+
+				if (s2->token != SQL_IDENT)
+					return -1;
+				at1 = sql_bind_arg(sql, s1->data.lval->h->data.i_val);
+				at2 = sql_bind_arg(sql, s2->data.lval->h->data.i_val);
+				return atom_cmp(at1, at2);
+			} else {
+				return dlist_cmp(sql, s1->data.lval, s2->data.lval);
+			}
+		}
+		case type_type:
+			return subtype_cmp(&s1->data.typeval, &s2->data.typeval);
+		case type_symbol:
+			if (s1->token == SQL_SELECT) {
+				if (s2->token != SQL_SELECT)
+					return -1;
+				return SelectNodeCmp(sql, (SelectNode *) s1, (SelectNode *) s2);
+			} else if (s1->token == SQL_ATOM) {
+				if (s2->token != SQL_ATOM)
+					return -1;
+				return AtomNodeCmp((AtomNode *) s1, (AtomNode *) s2);
+			} else {
+				return symbol_cmp(sql, s1->data.sym, s2->data.sym);
+			}
+		default:
+			assert(0);
+	}
+	return 0;		/* never reached, just to pacify compilers */
+}
+
+int
+symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
+{
+	return _symbol_cmp(sql, s1, s2);
 }

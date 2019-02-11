@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 #TODO:
 #=====
@@ -32,6 +32,14 @@ import struct
 import signal
 import fnmatch
 import glob
+try:
+    import winreg               # Python 3 on Windows
+except ImportError:
+    try:
+        import _winreg as winreg # Python 2 on Windows
+    except ImportError:
+        winreg = None           # not on Windows
+
 
 procdebug = False
 verbose = False
@@ -60,17 +68,23 @@ if isatty:
         PURPLE = '\033[1;35m'       # actually magenta
         BLACK = '\033[0;0m'
         def prred(str, write = sys.stdout.write):
-            write(RED)
-            write(str)
-            write(BLACK)
+            try:
+                write(RED)
+                write(str)
+            finally:
+                write(BLACK)
         def prgreen(str, write = sys.stdout.write):
-            write(GREEN)
-            write(str)
-            write(BLACK)
+            try:
+                write(GREEN)
+                write(str)
+            finally:
+                write(BLACK)
         def prpurple(str, write = sys.stdout.write):
-            write(PURPLE)
-            write(str)
-            write(BLACK)
+            try:
+                write(PURPLE)
+                write(str)
+            finally:
+                write(BLACK)
     else:
         try:
             import ctypes
@@ -93,17 +107,23 @@ if isatty:
                     return wattr
                 reset = get_csbi_attributes(handle)
                 def prred(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x4)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x4)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
                 def prgreen(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x2)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x2)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
                 def prpurple(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
-                    scta(handle, 0x5)
-                    write(str)
-                    scta(handle, reset)
+                    try:
+                        scta(handle, 0x5)
+                        write(str)
+                    finally:
+                        scta(handle, reset)
 
 if os.path.exists('/usr/bin/coredumpctl'):
     # probably Linux if /usr/bin/coredumpctl exists
@@ -260,11 +280,12 @@ if isatty and os.isatty(sys.stdin.fileno()):
                 # ridiculously narrow tty, ignore value
                 ttywidth = 0
 
-if os.name == 'nt':
-    p = os.path.join(sys.prefix, 'Lib')
-    if 'PYTHONPATH' in os.environ:
-        p = os.environ['PYTHONPATH'] + os.pathsep + p
-    os.environ['PYTHONPATH'] = p
+# if os.name == 'nt':
+#     p = os.path.join(sys.prefix, 'Lib')
+#     if 'PYTHONPATH' in os.environ:
+#         p = os.environ['PYTHONPATH'] + os.pathsep + p
+#     os.environ['PYTHONPATH'] = p
+#     print('setting PYTHONPATH to %s' % p)
 
 import string                   # for whitespace
 def splitcommand(cmd):
@@ -696,9 +717,16 @@ elif sys.version_info[0] == 3:
             url = url[2:]
         return url
 
+def openutf8(file, mode='r'):
+    try:
+        f = open(file, mode, encoding='utf-8') # Python 3
+    except TypeError:
+        f = open(file, mode)    # Python 2
+    return f
+
 def try_open(path, mode) :
     try:
-        f = open(path, mode)
+        f = openutf8(path, mode)
     except IOError as err:
         Warn("Opening file '%s' in mode '%s' failed with #%d: '%s'." % (path, mode, err.errno, err.strerror))
         f = None
@@ -760,7 +788,7 @@ def CreateHtmlIndex (env, *body) :
                                Element('title', {}, Text(HTMLTITLE)),
                                stylesheet),
                        hbody)
-        f = open("%s.head.html" % INDEX,"w")
+        f = openutf8("%s.head.html" % INDEX,"w")
         html.write(f, True)
         f.close()
 
@@ -797,7 +825,7 @@ def CreateHtmlIndex (env, *body) :
                                         'bordercolor': white,
                                         'marginwidth': '0',
                                         'marginheight': '0'})))
-        f = open("%s.html" % INDEX, "w")
+        f = openutf8("%s.html" % INDEX, "w")
         html.write(f, True)
         f.close()
         env['_%s_BODY_' % TSTDIR] = ["", 0]
@@ -868,10 +896,10 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
                                     'bordercolor': white,
                                     'marginwidth': '0',
                                     'marginheight': '0'})))
-    f = open(".%s%s.html" % (TST, WHAT), "w")
+    f = openutf8(".%s%s.html" % (TST, WHAT), "w")
     html.write(f, True)
     f.close()
-    f = open(".%s%s.head.html" % (TST, WHAT),"w")
+    f = openutf8(".%s%s.head.html" % (TST, WHAT),"w")
     target = '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:])
     if REV:                     # implies URLPREFIX is not None
         urlpref = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
@@ -895,7 +923,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
         d = urlpref
         if os.path.isfile(TST + stableWHAT + '.src'):
             # there's only one file like this...
-            fl = open(TST + stableWHAT + '.src').readline().strip()
+            fl = openutf8(TST + stableWHAT + '.src').readline().strip()
             if fl.startswith('$RELSRCDIR/'):
                 fl = fl[11:]
                 while fl.startswith('../'):
@@ -920,7 +948,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
     if REV:
         d = urlpref
         if os.path.isfile(TST + EXT + '.src'):
-            fl = open(TST + EXT + '.src').readline().strip()
+            fl = openutf8(TST + EXT + '.src').readline().strip()
             if fl.startswith('$RELSRCDIR/'):
                 fl = fl[11:]
                 while fl.startswith('../'):
@@ -984,7 +1012,7 @@ def CreateSrcIndex (env, TST, EXT) :
     if URLPREFIX:
         framesrc = '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT)
     else:
-        f = open(".%s.nosrc.index.html" % TST, "w")
+        f = openutf8(".%s.nosrc.index.html" % TST, "w")
         html = Element('html', {},
                        Element('head', {},
                                Element('title', {},
@@ -1025,7 +1053,7 @@ def CreateSrcIndex (env, TST, EXT) :
                                     'bordercolor': white,
                                     'marginwidth': '0',
                                     'marginheight': '0'})))
-    f = open(".%s.src.index.html" % TST,"w")
+    f = openutf8(".%s.src.index.html" % TST,"w")
     html.write(f, True)
     f.close()
 
@@ -1060,7 +1088,7 @@ def CreateSrcIndex (env, TST, EXT) :
                                             'cellspacing': '0',
                                             'cellpadding': '3'},
                                            tr))))
-    f = open(".%s.src.index.head.html" % TST, "w")
+    f = openutf8(".%s.src.index.head.html" % TST, "w")
     html.write(f, True)
     f.close()
 ### CreateSrcIndex (env, TST, EXT) #
@@ -1182,7 +1210,7 @@ def SkipTest(env, TST, EXT, REASON, length) :
     if testweb:
         return None
 
-    f = open(".%s.SKIPPED" % TST, "w")
+    f = openutf8(".%s.SKIPPED" % TST, "w")
     f.write("\n%s  Warning:  %s\n\n" % (THISFILE, TEXT))
     f.close()
     target = '%s_%s_body' % (DISTVER, TSTDIR)
@@ -1237,7 +1265,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
 
     alltests = []
     try:
-        allf = open(os.path.join(TSTSRCDIR, "All"))
+        allf = openutf8(os.path.join(TSTSRCDIR, "All"))
     except IOError:
         pass
     else:
@@ -1458,7 +1486,7 @@ def ApproveOutput (env, TST) :
                 if os.path.isfile(stableOUT):
                     shutil.copy(stableOUT,stableOUTPUT)
                 else:
-                    open(stableOUTPUT,"w").close()
+                    openutf8(stableOUTPUT,"w").close()
 
             for d in ('TMPDIR', 'TMP', 'TEMP'):
                 if d in os.environ:
@@ -1467,7 +1495,7 @@ def ApproveOutput (env, TST) :
             else:
                 patch = os.path.join(os.sep, 'tmp')
             patch = os.path.join(patch, "%s.patch-%s" % (os.path.basename(stableOUTPUT), str(os.getpid())))
-            f = open(patch + '.0', 'w')
+            f = openutf8(patch + '.0', 'w')
             proc = process.Popen(['diff', '-Bb', '-I^[#=]', '-I^MAPI *=', '-U0',
                                   stableOUTPUT, testOUTPUT],
                                  stdout = f, universal_newlines = True)
@@ -1485,8 +1513,8 @@ def ApproveOutput (env, TST) :
                     oc = ''
                 print("Approving  %s  ->  stable.%s%s%s" % (os.path.join(TSTDIR, "%s.test.%s" % (TST, WHAT)), WHAT, SYSTEM, oc))
 
-                f = open(patch + ".1", "wb")
-                for l in open(patch + ".0"):
+                f = openutf8(patch + ".1", "w")
+                for l in openutf8(patch + ".0"):
                     if TO.search(l):
                         f.write(l[:1] + '\n')
                         Warn('Rejecting (error) message: "%s"' % l[1:].replace(os.linesep, ''))
@@ -1507,16 +1535,16 @@ def ApproveOutput (env, TST) :
                         sem = 1
                 f.flush()
                 f.close()
-                o = open(stableOUTPUT).read()
-                open(stableOUTPUT + ".ORG", 'wb').write(o)
-                open(stableOUTPUT, 'wb').write(o)
+                o = openutf8(stableOUTPUT).read()
+                openutf8(stableOUTPUT + ".ORG", 'w').write(o)
+                openutf8(stableOUTPUT, 'w').write(o)
                 patchcmd = ['patch']
                 if not verbose:
                     patchcmd.append('--quiet')
                 proc = process.Popen(patchcmd + [stableOUTPUT, patch + '.1'],
                                      universal_newlines = True)
                 proc.wait()
-                f = open(patch, 'w')
+                f = openutf8(patch, 'w')
                 proc = process.Popen(['diff', '-u', stableOUTPUT + '.ORG',
                                       stableOUTPUT],
                                      stdout = f, universal_newlines = True)
@@ -1524,8 +1552,8 @@ def ApproveOutput (env, TST) :
                 f.close()
                 remove(stableOUTPUT + ".ORG")
                 remove(patch + ".1")
-                o = open(stableOUTPUT).read()
-                open(stableOUTPUT, 'w').write(o)
+                o = openutf8(stableOUTPUT).read()
+                openutf8(stableOUTPUT, 'w').write(o)
                 o = None
 
                 thefile = os.path.split(stableOUTPUT)[1]
@@ -1539,7 +1567,7 @@ def ApproveOutput (env, TST) :
                         elif f != thefile and test.match(f):
                             remove(os.path.join(dir or os.curdir, f + '.rej'))
                             remove(os.path.join(dir or os.curdir, f + '.orig'))
-                            proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin = open(patch), universal_newlines = True)
+                            proc = process.Popen(patchcmd + ['--forward', os.path.join(dir or os.curdir, f)], stdin = openutf8(patch), universal_newlines = True)
                             proc.wait()
                             if os.path.exists(os.path.join(dir or os.curdir, f + '.rej')):
                                 list.append(f)
@@ -1797,7 +1825,7 @@ def GetBitsAndModsAndThreads(env) :
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
     if os.path.isfile(TST + ".modules"):
-        for m in open(TST + ".modules"):
+        for m in openutf8(TST + ".modules"):
             m = m.strip()
             if m  and  m[0] != "#"  and  m not in env['TST_MODS']:
                 missing.append(m)
@@ -1818,7 +1846,7 @@ def CheckTests(env, TST, oktests):
         # we didn't clean up from a previous run, assume tests were done
         return missing
 
-    for test in open(TST + '.reqtests'):
+    for test in openutf8(TST + '.reqtests'):
         test = test.strip()
         if not test or test.startswith('#'):
             continue
@@ -1861,7 +1889,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
 
 def CategorizeResult(TST, SockTime, outmissing, errmissing):
     l = '<!--MajorDiffs-->'   # assign something in case file is empty
-    for l in open("%s.out.diff.html" % TST):
+    for l in openutf8("%s.out.diff.html" % TST):
         pass
     if   l.startswith('<!--NoDiffs-->'):
         o = F_OK
@@ -1874,12 +1902,12 @@ def CategorizeResult(TST, SockTime, outmissing, errmissing):
             o = F_ERROR
     else:
         Warn("Unexpected last line in %s.out.diff.html:\n%s" % (TST, l))
-        ff = open("%s.out.diff.html" % TST, "a")
+        ff = openutf8("%s.out.diff.html" % TST, "a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         o = F_ERROR
     l = '<!--MajorDiffs-->'   # assign something in case file is empty
-    for l in open("%s.err.diff.html" % TST):
+    for l in openutf8("%s.err.diff.html" % TST):
         pass
     if   l.startswith('<!--NoDiffs-->'):
         e = F_OK
@@ -1892,7 +1920,7 @@ def CategorizeResult(TST, SockTime, outmissing, errmissing):
             e = F_ERROR
     else:
         Warn("Unexpected last line in %s.err.diff.html:\n%s" % (TST, l))
-        ff = open("%s.err.diff.html" % TST, "a")
+        ff = openutf8("%s.err.diff.html" % TST, "a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
@@ -2114,7 +2142,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             return TX,Failed,Failed,elem,reason,links
 
         if os.path.isfile(TST+EXT+".src")  and not os.path.isfile(TST+EXT):
-            f = open(TST+EXT+".src","r")
+            f = openutf8(TST+EXT+".src","r")
             TSTSRC = expandvars(path(f.readline().strip()), env)
             f.close()
             if os.path.isfile(TSTSRC):
@@ -2134,14 +2162,14 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?\.src$", re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
-                f = open(ff,"r")
+                f = openutf8(ff,"r")
                 TSTSRC = expandvars(path(f.readline().strip()), env)
                 f.close()
                 if os.path.isfile(TSTSRC):
                     try:
                         if '.stable.' in ff:
-                            f1 = open(TSTSRC, "r")
-                            f2 = open(ff[:-4], "w")
+                            f1 = openutf8(TSTSRC, "r")
+                            f2 = openutf8(ff[:-4], "w")
                             line = f1.readline()
                             f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR.replace('\\', '/')))
                             f2.write(f1.read())
@@ -2159,8 +2187,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         for ff in listdir(TSTTRGDIR):
             fff = ff[:-3]
             if test.match(ff) and not os.path.isfile(fff):
-                f = open(fff,"w")
-                for l in open(ff):
+                f = openutf8(fff,"w")
+                for l in openutf8(ff):
                     f.write(expandvars(l, env))
                 f.close()
 
@@ -2169,11 +2197,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
         outmissing = errmissing = False
         if not os.path.isfile(TST+STABLEout):
-            open(TST+STABLEout,"w").close()
+            openutf8(TST+STABLEout,"w").close()
             ACCURACYout = 0
             outmissing = True
         if not os.path.isfile(TST+STABLEerr):
-            open(TST+STABLEerr,"w").close()
+            openutf8(TST+STABLEerr,"w").close()
             ACCURACYerr = 0
             errmissing = True
 
@@ -2184,7 +2212,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
 
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
-            for f in open(TST+".timeout"):
+            for f in openutf8(TST+".timeout"):
                 TOf = float(f.strip())
                 if TOf > 0:
                     TIMEOUT = int(TIMEOUT * TOf)
@@ -2212,8 +2240,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
 
         TestOutFile = TST+".test.out"
         TestErrFile = TST+".test.err"
-        TestOut = open(TestOutFile,"w")
-        TestErr = open(TestErrFile,"w")
+        TestOut = openutf8(TestOutFile,"w")
+        TestErr = openutf8(TestErrFile,"w")
         TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
         TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
         TestOut.close()
@@ -2307,7 +2335,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         if REV:
             d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
             if os.path.isfile(TST + EXT + '.src'):
-                f = open(TST + EXT + '.src').readline().strip()
+                f = openutf8(TST + EXT + '.src').readline().strip()
                 if f.startswith('$RELSRCDIR/'):
                     f = f[11:]
                     while f.startswith('../'):
@@ -2336,7 +2364,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             titlefmt = '-tTest %s%s (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST)
         else:
             titlefmt = '-tTest <a href="%s%s">%s%s</a> (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, TST)
-        diff_html = open('%s.out.diff.html' % TST,"w")
+        diff_html = openutf8('%s.out.diff.html' % TST,"w")
         diff_html.write('<!--MajorDiffs-->\n')
         diff_html.close()
         timedout = True
@@ -2405,7 +2433,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             proc = process.Popen(cmd, universal_newlines = True)
             proc.wait()
 
-        diff_html = open('%s.err.diff.html' % TST,"w")
+        diff_html = openutf8('%s.err.diff.html' % TST,"w")
         diff_html.write('<!--MajorDiffs-->\n')
         diff_html.close()
         timedout = True
@@ -2634,7 +2662,7 @@ def CheckSocket3(env,SERVER,ErrFileName) :
 """ % (SERVER, host, port, Serrno, Serrstr, SERVER)
         STDERR.write(Smsg)
         STDERR.flush()
-        ErrFile = open(ErrFileName, 'a')
+        ErrFile = openutf8(ErrFileName, 'a')
         ErrFile.write(Smsg)
         ErrFile.flush()
         ErrFile.close()
@@ -2939,12 +2967,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER in ["MAL", "SQL"]:
             SrvrOutFile = TST+".server.out"
             SrvrErrFile = TST+".server.err"
-            SrvrOut = open(SrvrOutFile,"w")
-            SrvrErr = open(SrvrErrFile,"w")
+            SrvrOut = openutf8(SrvrOutFile,"w")
+            SrvrErr = openutf8(SrvrErrFile,"w")
             ClntOutFile = TST+".client.out"
             ClntErrFile = TST+".client.err"
-            ClntOut = open(ClntOutFile,"w")
-            ClntErr = open(ClntErrFile,"w")
+            ClntOut = openutf8(ClntOutFile,"w")
+            ClntErr = openutf8(ClntErrFile,"w")
             PROLOGUE = []
             if os.path.isfile(TST + ".prologue5"):
                 PROLOGUE = [TST + ".prologue5"]
@@ -2967,7 +2995,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
             if os.path.isfile(TST + '.options5'):
-                Srvr.extend(open(TST + '.options5').read().split())
+                Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
 
             if SERVER == "MAL":
@@ -2980,18 +3008,62 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if (not all_tests or (COND != None and "HAVE_LIBR" in COND)) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
                 Srvr.extend(['--set', 'embedded_r=yes'])
 
+            savepath = None
+            savepypath = os.environ.get('PYTHONPATH')
+            savepyhome = os.environ.get('PYTHONHOME')
             if (COND != None and "HAVE_LIBPY3" in COND) and CONDITIONALS['HAVE_LIBPY3']:
                 # enable Python 3 integration in server
+                if winreg is not None:
+                    if env['TST_BITS'] == '32bit':
+                        if sys.maxsize > 2**32:
+                            regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\3.7-32\InstallPath'
+                        else:
+                            regkey = r'SOFTWARE\Python\PythonCore\3.7-32\InstallPath'
+                    else:
+                        regkey = r'SOFTWARE\Python\PythonCore\3.7\InstallPath'
+                    try:
+                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
+                            instpath = winreg.QueryValue(key, None)
+                            os.environ['PYTHONHOME'] = instpath
+                            os.environ['PYTHONPATH'] = instpath + 'Lib'
+                            savepath = os.environ['PATH']
+                            os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
+                    except WindowsError:
+                        pass
                 Srvr.extend(['--set', 'embedded_py=3'])
             elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 # enable Python integration in server
-                Srvr.extend(['--set', 'embedded_py=true'])
+                if winreg is not None:
+                    if env['TST_BITS'] == '32bit' and sys.maxsize > 2**32:
+                        regkey = r'SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath'
+                    else:
+                        regkey = r'SOFTWARE\Python\PythonCore\2.7\InstallPath'
+                    try:
+                        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, regkey) as key:
+                            instpath = winreg.QueryValue(key, None)
+                            os.environ['PYTHONHOME'] = instpath
+                            os.environ['PYTHONPATH'] = instpath + 'Lib'
+                            savepath = os.environ['PATH']
+                            os.environ['PATH'] = instpath.rstrip('\\') + os.pathsep + savepath
+                    except WindowsError:
+                        pass
+                Srvr.extend(['--set', 'embedded_py=2'])
 
             # enable C integration in server
             Srvr.extend(['--set', 'embedded_c=true'])
 
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+            if savepath is not None:
+                os.environ['PATH'] = savepath
+                if savepypath:
+                    os.environ['PYTHONPATH'] = savepypath
+                else:
+                    del os.environ['PYTHONPATH']
+                if savepyhome:
+                    os.environ['PYTHONHOME'] = savepyhome
+                else:
+                    del os.environ['PYTHONHOME']
             ln="dummy"
             while 0 < len(ln) and not ln.startswith('Ready.'):
                 ln=pSrvr.stdout.readline()
@@ -3048,8 +3120,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         ServerReady = mapi_ping(port, lang)
 
         else:
-            ClntOut = open(TestOutFile, 'a')
-            ClntErr = open(TestErrFile, 'a')
+            ClntOut = openutf8(TestOutFile, 'a')
+            ClntErr = openutf8(TestErrFile, 'a')
 
         if ServerReady:
             if   CALL == "other":
@@ -3076,7 +3148,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 for f in d:
                     if test.match(f):
                         cmd.append(f)
-                        returncode = RunIt(cmd, open(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                        returncode = RunIt(cmd, openutf8(os.devnull), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
             elif CALL in ["malC", "malCXs"]:
@@ -3097,7 +3169,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     Clnt = []   # cannot happen
                 for f in TSTs:
-                    returncode = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
+                    returncode = RunIt(Clnt, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
 
@@ -3120,12 +3192,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if passwd:
                     Clnt.append('-P%s' % passwd)
                 for f in TSTs:
-                    returncode = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
+                    returncode = RunIt(Clnt, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
             elif CALL == "R":
                 Clnt = splitcommand(exe['R_Client'][1])
-                RunIt(Clnt, open(TST+EXT), ClntOut, ClntErr, TIMEOUT)
+                RunIt(Clnt, openutf8(TST+EXT), ClntOut, ClntErr, TIMEOUT)
             elif CALL == "ruby":
                 Clnt = splitcommand(exe['ruby_client'][1]) + [TST + EXT]
 
@@ -3142,7 +3214,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER in ["MAL", "SQL"]:
             EPILOGUE = None
             if os.path.isfile(TST+".epilogue5"):
-                EPILOGUE = open(TST+".epilogue5",'r')
+                EPILOGUE = openutf8(TST+".epilogue5",'r')
             if EPILOGUE:
                 EpiFailed = ""
                 try:
@@ -3183,14 +3255,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
             AllOut = [SrvrOut, ClntOutFile]
             AllErr = [SrvrErr, ClntErrFile]
-            TestOut = open(TestOutFile, 'a')
+            TestOut = openutf8(TestOutFile, 'a')
             for q in AllOut:
                 if type(q) is type(''):
                     n = q
                 else:
                     n = q.name
                     q.close()
-                q = open(n,'r')
+                q = openutf8(n, 'r')
                 try:
                     TestOut.write(q.read())
                 except IOError as err:
@@ -3199,14 +3271,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     Warn("Reading from input '%s' or writing to output '%s' failed with 'MemoryError'." % (q.name, TestOut.name))
                 TestOut.flush()
                 q.close()
-            TestErr = open(TestErrFile, 'a')
+            TestErr = openutf8(TestErrFile, 'a')
             for q in AllErr:
                 if type(q) is type(''):
                     n = q
                 else:
                     n = q.name
                     q.close()
-                q = open(n,'r')
+                q = openutf8(n,'r')
                 TestErr.write(q.read())
                 TestErr.flush()
                 q.close()
@@ -3255,7 +3327,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         # FIXME: this begs for a much nicer solution (100% copy of below)
         for f in (TestErrFile, TestOutFile):
             if os.path.isfile(f):
-                for l in open(f):
+                for l in openutf8(f):
                     if TO.search(l):
                         return msg
 
@@ -3420,7 +3492,7 @@ def ReadMapproveRc(f) :
     v['ARCH'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z][A-Z0-9_]*) = "(.*)".*$')
-        for l in open(f):
+        for l in openutf8(f):
             m = r.match(l)
             if m:
                 v[m.group(1)] = m.group(2)
@@ -3438,7 +3510,7 @@ TSTTHREADS = "0"
 dftTSTPREF = "mTests"
 TSTSUFF = "Tests"
 
-if hasattr(os,"symlink"):
+if os.name != 'nt' and hasattr(os, "symlink"):
     SymlinkOrCopy = os.symlink
     listdir = os.listdir
 else:
@@ -3446,9 +3518,6 @@ else:
         shutil.copy(os.path.normpath(os.path.join(os.getcwd(), src)), dst)
     def listdir(d):
         return os.listdir(os.path.abspath(d))
-
-os.environ['CYGPATH_W'] = '@CYGPATH_W@'
-os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
 
 HOST = 'localhost'
 if 'HOST' in os.environ:
@@ -4012,10 +4081,13 @@ def main(argv) :
     os.chdir(BACK)
 
     # check whether our hostname makes sense
-    try:
-        socket.getaddrinfo(socket.gethostname(), None)
-    except:
+    if os.environ['HOST'] == 'localhost':
         CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+    else:
+        try:
+            socket.getaddrinfo(socket.gethostname(), None)
+        except:
+            CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
@@ -4295,7 +4367,7 @@ def main(argv) :
                 i = 0
                 while i < len(testlist):
                     if os.path.exists(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
-                        for t in open(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
+                        for t in openutf8(os.path.join(testdirs[0], 'Tests', testlist[i] + '.reqtests')):
                             t = t[:-1] # remove newline
                             if t not in testlist[:i]:
                                 testlist.insert(i, t)
@@ -4336,7 +4408,7 @@ def main(argv) :
 
             # write .monetdb file for mclient to do authentication with
             dotmonetdbfile = os.path.join(TSTTRGBASE, ".monetdb")
-            dotmonetdb = open(dotmonetdbfile, 'w')
+            dotmonetdb = openutf8(dotmonetdbfile, 'w')
             dotmonetdb.write('user=monetdb\n')
             dotmonetdb.write('password=monetdb\n')
             dotmonetdb.close()
@@ -4383,7 +4455,7 @@ def main(argv) :
             env['DIST'] = os.environ['DIST']
             env['VERSION'] = os.environ['VERSION']
             n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
-            f = open(n, 'w')
+            f = openutf8(n, 'w')
             for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_ARCH', 'TST_INT128', 'TST_SINGLE':
                 w = v.replace('TST_','')
                 f.write('%s = "%s"\n' % (w, env[v]))
@@ -4444,7 +4516,7 @@ def main(argv) :
                 # doesn't remove os.path.join(TSTTRGBASE, TSTPREF)
                 remove(os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc'))
             fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
-            fl = open(fn+"lst","w")
+            fl = openutf8(fn+"lst","w")
             Failure = [[] for i in FAILURES]
             for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
                 fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
@@ -4457,7 +4529,7 @@ def main(argv) :
             fl.write(":\t%7.3f\t\n" % t_)
             fl.close()
 
-            fl = open(fn+"sql","w")
+            fl = openutf8(fn+"sql","w")
             host = socket.gethostname()
             product = os.path.split(TSTSRCBASE)[-1]
 
@@ -4472,7 +4544,7 @@ def main(argv) :
             #    f = os.path.join(env['TSTBLDBASE'],'Makefile')
             #    if os.path.isfile(f):
             #        r = re.compile("^CC = (.*)$", re.MULTILINE)
-            #        for l in open(f):
+            #        for l in openutf8(f):
             #            mt = r.match(l)
             #            if mt:
             #                compiler = mt.group(1)

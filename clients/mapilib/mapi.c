@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -2328,7 +2328,6 @@ mapi_reconnect(Mapi mid)
 		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
 
 		if (connect(s, serv, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
-			closesocket(s);
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
 #ifdef _MSC_VER
@@ -2337,6 +2336,7 @@ mapi_reconnect(Mapi mid)
 				 strerror(errno)
 #endif
 				);
+			closesocket(s);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 
@@ -2353,7 +2353,6 @@ mapi_reconnect(Mapi mid)
 		msg.msg_flags = 0;
 
 		if (sendmsg(s, &msg, 0) < 0) {
-			closesocket(s);
 			snprintf(errbuf, sizeof(errbuf), "could not send initial byte: %s",
 #ifdef _MSC_VER
 				 wsaerror(WSAGetLastError())
@@ -2361,6 +2360,7 @@ mapi_reconnect(Mapi mid)
 				 strerror(errno)
 #endif
 				);
+			closesocket(s);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 	} else
@@ -2385,31 +2385,38 @@ mapi_reconnect(Mapi mid)
 			snprintf(errbuf, sizeof(errbuf), "getaddrinfo failed: %s", gai_strerror(ret));
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
+		errbuf[0] = 0;
 		for (rp = res; rp; rp = rp->ai_next) {
 			s = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
 				   | SOCK_CLOEXEC
 #endif
 				   , rp->ai_protocol);
-			if (s == INVALID_SOCKET)
-				continue;
+			if (s != INVALID_SOCKET) {
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-			(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+				(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
-			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
-				break;  /* success */
-			closesocket(s);
-		}
-		freeaddrinfo(res);
-		if (rp == NULL) {
-			snprintf(errbuf, sizeof(errbuf), "could not connect to %s:%s: %s",
+				if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
+					break;  /* success */
+				closesocket(s);
+			}
+			snprintf(errbuf, sizeof(errbuf),
+				 "could not connect to %s:%s: %s",
 				 mid->hostname, port,
 #ifdef _MSC_VER
-				 wsaerror(WSAGetLastError())
+					 wsaerror(WSAGetLastError())
 #else
 				 strerror(errno)
 #endif
 				);
+		}
+		freeaddrinfo(res);
+		if (rp == NULL) {
+			if (errbuf[0] == 0) {
+				/* should not happen */
+				snprintf(errbuf, sizeof(errbuf),
+					 "getaddrinfo succeeded but did not return a result");
+			}
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #else
@@ -2634,6 +2641,13 @@ mapi_reconnect(Mapi mid)
 #endif
 			{
 				snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
+						serverhash);
+				close_connection(mid);
+				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
+			}
+
+			if (pwdhash == NULL) {
+				snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
 						serverhash);
 				close_connection(mid);
 				return mapi_setError(mid, buf, "mapi_reconnect", MERROR);
@@ -3568,7 +3582,7 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 }
 
 MapiMsg
-mapi_set_size_header(Mapi mid, int value)
+mapi_set_size_header(Mapi mid, bool value)
 {
 	if (mid->languageId != LANG_SQL) {
 		mapi_setError(mid, "size header only supported in SQL", "mapi_set_size_header", MERROR);
@@ -4171,13 +4185,20 @@ read_into_cache(MapiHdl hdl, int lookahead)
 					} else {
 						off = strtoul(line, &line, 10);
 					}
-					assert(*line == ' ');
-					line++; /* skip one space */
+					if (*line++ != ' ') {
+						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
+						mnstr_flush(mid->to);
+						break;
+					}
 					read_file(hdl, off, strdup(line), binary);
 					break;
 				}
 				case 'w':
-					line++; /* skip one space */
+					if (*line++ != ' ') {
+						mnstr_printf(mid->to, "!HY000!unrecognized command from server\n");
+						mnstr_flush(mid->to);
+						break;
+					}
 					write_file(hdl, strdup(line));
 					break;
 				}

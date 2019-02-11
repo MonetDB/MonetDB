@@ -1,7 +1,11 @@
+update_statistics
+
 check_PrimaryKey_uniqueness
 check_AlternateKey_uniqueness
 check_ForeignKey_referential_integrity
 check_Not_Nullable_columns
+check_MaxStrLength_violations
 
 HAVE_GEOM?geom_tables_checks
+HAVE_NETCDF?netcdf_tables_checks
 HAVE_SAMTOOLS?bam_tables_checks

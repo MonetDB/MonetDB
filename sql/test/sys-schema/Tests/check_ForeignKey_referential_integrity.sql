@@ -1,5 +1,6 @@
 -- Check all standard sys (and tmp) tables on Referential Integrity
 -- All queries should return NO rows (so no invalid references found).
+
 SELECT * FROM sys.schemas WHERE authorization NOT IN (SELECT id FROM sys.auths);
 SELECT * FROM sys.schemas WHERE owner NOT IN (SELECT id FROM sys.auths);
 
@@ -138,3 +139,12 @@ SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, ord
 SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables);
 SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id);
 
+-- new tables introduced in 2019
+SELECT * FROM sys.table_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
+SELECT * FROM sys.table_partitions WHERE "column_id" IS NOT NULL AND "column_id" NOT IN (SELECT id FROM sys._columns);
+
+SELECT * FROM sys.range_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
+SELECT * FROM sys.range_partitions WHERE "partition_id" NOT IN (SELECT id FROM sys.table_partitions);
+
+SELECT * FROM sys.value_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables);
+SELECT * FROM sys.value_partitions WHERE "partition_id" NOT IN (SELECT id FROM sys.table_partitions);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _BAT_H_
@@ -12,7 +12,7 @@
 #include "mal.h"
 #include "gdk.h"
 
-mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role);
+mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role);
 mal_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);
 mal_export str BKCdensebat(bat *ret, const lng *size);
 mal_export str BKCmirror(bat *ret, const bat *bid);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -67,17 +67,6 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 		return -1;
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
-}
-
-/*
- * To speedup code generation we freeze the references to the major module names.
- */
-
-void
-initSQLreferences(void)
-{
-	if (zero_or_oneRef == NULL)
-		GDKfatal("error initSQLreferences");
 }
 
 InstrPtr
@@ -743,9 +732,14 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (m->argc) {
 		for (argc = 0; argc < m->argc; argc++) {
 			atom *a = m->args[argc];
-			int type = atom_type(a)->type->localtype;
-			int varid = 0;
+			sql_type *tpe = atom_type(a)->type;
+			int type, varid = 0;
 
+			if(!tpe) {
+				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument %d\n", argc+1);
+				goto cleanup;
+			}
+			type = tpe->localtype;
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			a->varid = varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
@@ -759,9 +753,14 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 
 		for (n = m->params->h; n; n = n->next, argc++) {
 			sql_arg *a = n->data;
-			int type = a->type.type->localtype;
-			int varid = 0;
+			sql_type *tpe = a->type.type;
+			int type, varid = 0;
 
+			if(!tpe) {
+				sql_error(m, 003, SQLSTATE(42000) "Could not determine type for argument %d\n", argc+1);
+				goto cleanup;
+			}
+			type = tpe->localtype;
 			snprintf(arg, IDLENGTH, "A%d", argc);
 			varid = newVariable(mb, arg,strlen(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
@@ -824,7 +823,7 @@ backend_call(backend *be, Client c, cq *cq)
 			sql_subtype *pt = cq->params + i;
 
 			if (!atom_cast(m->sa, a, pt)) {
-				sql_error(m, 003, "wrong type for argument %d of " "function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
+				sql_error(m, 003, SQLSTATE(42000) "wrong type for argument %d of " "function call: %s, expected %s\n", i + 1, atom_type(a)->type->sqlname, pt->type->sqlname);
 				break;
 			}
 			if (atom_null(a)) {
@@ -906,7 +905,7 @@ backend_create_r_func(backend *be, sql_func *f)
 // defaults to python 2 if none is enabled
 static int
 enabled_python_version(void) {
-    char* env = GDKgetenv(pyapi_enableflag);
+    const char* env = GDKgetenv(pyapi_enableflag);
     if (env && strncmp(env, "3", 1) == 0) {
     	return 3;
     }

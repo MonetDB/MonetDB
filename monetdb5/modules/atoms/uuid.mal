@@ -13,9 +13,14 @@ command write() address UUIDwrite;
 command prelude():void address UUIDprelude;
 uuid.prelude();
 
-command new() :uuid
+# unsafe is to prevent optimizers to reuse common expressions
+unsafe command new() :uuid
 address UUIDgenerateUuid
 comment "Generate a new uuid";
+
+unsafe command new(d:int) :uuid
+address UUIDgenerateUuidInt
+comment "Generate a new uuid (dummy version for side effect free multiplex loop)";
 
 command uuid(s:str):uuid
 address UUIDstr2uuid
@@ -47,7 +52,15 @@ pattern ==(l:uuid,r:uuid):bit
 address CMDvarEQ
 comment "Return V1 == V2";
 
+pattern ==(l:uuid,r:uuid,nil_matches:bit):bit
+address CMDvarEQ
+comment "Return V1 == V2";
+
 pattern !=(l:uuid,r:uuid):bit
+address CMDvarNE
+comment "Return V1 != V2";
+
+pattern !=(l:uuid,r:uuid,nil_matches:bit):bit
 address CMDvarNE
 comment "Return V1 != V2";
 
@@ -73,7 +86,15 @@ pattern ==(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
 address CMDbatEQ
 comment "Return B1 == B2";
 
+pattern ==(b1:bat[:uuid],b2:bat[:uuid],nil_matches:bit) :bat[:bit]
+address CMDbatEQ
+comment "Return B1 == B2";
+
 pattern !=(b1:bat[:uuid],b2:bat[:uuid]) :bat[:bit]
+address CMDbatNE
+comment "Return B1 != B2";
+
+pattern !=(b1:bat[:uuid],b2:bat[:uuid],nil_matches:bit) :bat[:bit]
 address CMDbatNE
 comment "Return B1 != B2";
 

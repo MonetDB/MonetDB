@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 -- create additional tables in "sys" schema and fill them with static content
 
@@ -413,7 +413,6 @@ SELECT 'current_schema', current_schema UNION ALL
 SELECT 'current_timezone', current_timezone UNION ALL
 SELECT 'current_user', current_user UNION ALL
 SELECT 'debug', debug UNION ALL
-SELECT 'history', history UNION ALL
 SELECT 'last_id', last_id UNION ALL
 SELECT 'optimizer', optimizer UNION ALL
 SELECT 'pi', pi() UNION ALL

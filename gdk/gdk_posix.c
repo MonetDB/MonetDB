@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -1099,20 +1099,11 @@ win_mkdir(const char *pathname, const int mode)
 void
 MT_sleep_ms(unsigned int ms)
 {
-#ifdef HAVE_NANOSLEEP_dont_use
-	struct timespec ts;
-
-	ts.tv_sec = (time_t) (ms / 1000);
-	ts.tv_nsec = 1000000 * (ms % 1000);
-	while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
-		;
-#else
 	struct timeval tv;
 
 	tv.tv_sec = ms / 1000;
 	tv.tv_usec = 1000 * (ms % 1000);
 	(void) select(0, NULL, NULL, NULL, &tv);
-#endif
 }
 
 #else /* WIN32 */

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -144,7 +144,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		chkFlow(mb);
 		if ( mb->errors != MAL_SUCCEED ){
 			fprintf(stderr,"%s\n",mb->errors);
-			GDKfree(mb->errors);
+			freeException(mb->errors);
 			mb->errors = MAL_SUCCEED;
 		}
 		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -1091,7 +1091,7 @@ str ALGreuse(bat *ret, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.reuse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
+	if( !b->batTransient || b->batRestricted != BAT_WRITE){
 		if( ATOMvarsized(b->ttype) ){
 			bn= BATwcopy(b);
 			if (bn == NULL) {

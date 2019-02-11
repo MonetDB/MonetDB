@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 ## Process this file with automake to produce Makefile.in
 
@@ -59,5 +59,5 @@ lib_sqlserver = {
 		rel_updates.h rel_psm.h rel_xml.h sql_atom.h sql_datetime.h \
 		sql_decimal.h sql_env.h sql_mvc.h sql_parser.h \
 		sql_privileges.h sql_qc.h sql_scan.h \
-		sql_semantic.h sql_symbol.h sql_partition.h
+		sql_semantic.h sql_symbol.h sql_tokens.h sql_partition.h
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1995,7 +1995,7 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		s->op2 = op2;
 		s->flag = cmp_project;
 		s->key = 0;
-		s->nrcols = 2;
+		s->nrcols = MAX(op1->nrcols,op2->nrcols);
 		s->nr = getDestVar(q);
 		s->q = q;
 		return s;
@@ -3746,6 +3746,41 @@ const_column(backend *be, stmt *val)
 		s->op1 = val;
 		s->op4.typeval = *ct;
 		s->nrcols = 1;
+
+		s->tname = val->tname;
+		s->cname = val->cname;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
+stmt_fetch(backend *be, stmt *val)
+{
+	sql_subtype *ct = tail_type(val);
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
+	int tt = ct->type->localtype;
+
+	if (val->nr < 0) 
+		return NULL;
+	q = newStmt(mb, algebraRef, fetchRef);
+	if (q == NULL)
+		return NULL;
+	setVarType(mb, getArg(q, 0), tt);
+	q = pushArgument(mb, q, val->nr);
+	q = pushOid(mb, q, 0);
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_single);
+		if(!s) {
+			freeInstruction(q);
+			return NULL;
+		}
+		s->op1 = val;
+		s->op4.typeval = *ct;
+		s->nrcols = 0;
 
 		s->tname = val->tname;
 		s->cname = val->cname;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef _REL_REL_H_
@@ -12,11 +12,21 @@
 #include "sql_relation.h"
 #include "sql_mvc.h"
 
-#define sql_from 	0
-#define sql_where 	1
-#define sql_sel   	2	
-#define sql_having 	3
-#define sql_orderby   	4	
+#define sql_from     1
+#define sql_where    2
+#define sql_sel      4
+#define sql_having   8
+#define sql_orderby 16
+#define sql_groupby 32 //ORed
+#define sql_partitionby 64 //ORed
+
+#define is_sql_from(X)    ((X & sql_from) == sql_from)
+#define is_sql_where(X)   ((X & sql_where) == sql_where)
+#define is_sql_sel(X)     ((X & sql_sel) == sql_sel)
+#define is_sql_having(X)  ((X & sql_having) == sql_having)
+#define is_sql_orderby(X) ((X & sql_orderby) == sql_orderby)
+#define is_sql_groupby(X) ((X & sql_groupby) == sql_groupby)
+#define is_sql_partitionby(X) ((X & sql_partitionby) == sql_partitionby)
 
 #define ERR_AMBIGUOUS		050000
 

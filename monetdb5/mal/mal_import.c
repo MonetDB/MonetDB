@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten
@@ -266,7 +266,7 @@ evalFile(str fname, int listing)
 	if (fd == 0 || mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		if (fd)
 			close_stream(fd);
-		throw(MAL,"mal.eval", "WARNING: could not open file\n");
+		throw(MAL,"mal.eval", "WARNING: could not open file '%s'\n", fname);
 	} 
 
 	c= MCinitClient((oid)0, bstream_create(fd, 128 * BLOCK),0);

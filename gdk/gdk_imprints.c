@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -212,7 +212,7 @@ BATcheckimprints(BAT *b)
 		    (imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0) {
 			int fd;
 
-			snprintf(imprints->imprints.filename, sizeof(imprints->imprints.filename), "%s.timprints", nme);
+			stpconcat(imprints->imprints.filename, nme, ".timprints", NULL);
 			/* check whether a persisted imprints index
 			 * can be found */
 			if ((fd = GDKfdlocate(imprints->imprints.farmid, nme, "rb", "timprints")) >= 0) {
@@ -298,7 +298,9 @@ BATimpsync(void *arg)
 							fsync(fd);
 #endif
 						}
+						hp->dirty = false;
 					} else {
+						failed = " write failed";
 						perror("write hash");
 					}
 					close(fd);
@@ -309,8 +311,13 @@ BATimpsync(void *arg)
 				/* sync-on-disk checked bit */
 				((size_t *) hp->base)[0] |= (size_t) 1 << 16;
 				if (!(GDKdebug & NOSYNCMASK) &&
-				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0)
+				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
+					failed = " sync failed";
 					((size_t *) hp->base)[0] &= ~((size_t) IMPRINTS_VERSION << 8);
+				} else {
+					hp->dirty = false;
+					failed = ""; /* not failed */
+				}
 			}
 			ALGODEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
 					  "imprints persisted "
@@ -388,7 +395,7 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			return GDK_FAIL;
 		}
-		snprintf(imprints->imprints.filename, sizeof(imprints->imprints.filename), "%s.timprints", nme);
+		stpconcat(imprints->imprints.filename, nme, ".timprints", NULL);
 		pages = (((size_t) BATcount(b) * b->twidth) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints.farmid = BBPselectfarm(b->batRole, b->ttype,
 							   imprintsheap);

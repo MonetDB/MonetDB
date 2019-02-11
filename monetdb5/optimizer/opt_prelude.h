@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #ifndef MAL_PRELUDE
@@ -127,6 +127,7 @@ mal_export  str execRef;
 mal_export  str expandRef;
 mal_export  str exportOperationRef;
 mal_export  str export_tableRef;
+mal_export  str fetchRef;
 mal_export  str findRef;
 mal_export  str finishRef;
 mal_export  str firstnRef;

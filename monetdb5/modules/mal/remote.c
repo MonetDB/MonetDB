@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -89,7 +89,7 @@ str RMTresolve(bat *ret, str *pat) {
 			"your platform, sorry"); /* please upgrade to Linux, etc. */
 #else
 	BAT *list;
-	char *mero_uri;
+	const char *mero_uri;
 	char *p;
 	unsigned int port;
 	char **redirs;

@@ -4,9 +4,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
-VERSION=11.32.0
+VERSION=11.34.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -185,8 +185,13 @@ R.lib: "$(libr_DLL)"
 !ENDIF
 
 !IFDEF HAVE_LIBPY
-libpy_LIBS = $(PYTHON2DIR)\libs\python27.lib
-libpy_CFLAGS = -DHAVE_LIBPY -I$(PYTHON2DIR)\include -I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include
+libpy_LIBS = "$(PYTHON2DIR)\libs\python27.lib"
+libpy_CFLAGS = -DHAVE_LIBPY "-I$(PYTHON2DIR)\include" "-I$(PYTHON2DIR)\Lib\site-packages\numpy\core\include"
+!ENDIF
+
+!IFDEF HAVE_LIBPY3
+libpy3_LIBS = "$(PYTHON3DIR)\libs\python37.lib"
+libpy3_CFLAGS = -DHAVE_LIBPY3 "-I$(PYTHON3DIR)\include" "-I$(PYTHON3DIR)\Lib\site-packages\numpy\core\include"
 !ENDIF
 
 # some programs we use, probably no need to edit

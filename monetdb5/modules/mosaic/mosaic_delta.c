@@ -435,8 +435,8 @@ MOSselect_delta(Client cntxt,  MOStask task, void *low, void *hgh, bit *li, bit 
 			select_delta(date);
 		if( task->type == TYPE_timestamp)
 			{ 	lng val= *(lng*) (((char*) task->blk) + MosaicBlkSize);
-				int lownil = timestamp_isnil(*(timestamp*)low);
-				int hghnil = timestamp_isnil(*(timestamp*)hgh);
+				int lownil = is_timestamp_nil(*(timestamp*)low);
+				int hghnil = is_timestamp_nil(*(timestamp*)hgh);
 
 				if( !*anti){
 					if( lownil && hghnil){

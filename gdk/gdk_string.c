@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -795,7 +795,8 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bo
 	}
 	if (GDK_STRNIL(src)) {
 		atommem(4);
-		return snprintf(*dst, *len, "nil");
+		strcpy(*dst, "nil");
+		return 3;
 	} else {
 		ssize_t l = 0;
 		size_t sz = escapedStrlen(src, NULL, NULL, '"');

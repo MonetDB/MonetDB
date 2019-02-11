@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 # @+ Date atom
 # Monet atoms can have multiple @emph{parse formats}. One of these formats is
@@ -49,7 +49,13 @@ address date_tostr;
 pattern ==(v:date,w:date):bit
 address CMDvarEQ
 comment "Equality of two dates";
+pattern ==(v:date,w:date,nil_matches:bit):bit
+address CMDvarEQ
+comment "Equality of two dates";
 pattern !=(v:date,w:date):bit
+address CMDvarNE
+comment "Equality of two dates";
+pattern !=(v:date,w:date,nil_matches:bit):bit
 address CMDvarNE
 comment "Equality of two dates";
 pattern <(v:date,w:date):bit
@@ -72,7 +78,13 @@ module mtime;
 pattern calc.==(v:date,w:date):bit
 address CMDvarEQ
 comment "Equality of two dates";
+pattern calc.==(v:date,w:date,nil_matches:bit):bit
+address CMDvarEQ
+comment "Equality of two dates";
 pattern calc.!=(v:date,w:date):bit
+address CMDvarNE
+comment "Equality of two dates";
+pattern calc.!=(v:date,w:date,nil_matches:bit):bit
 address CMDvarNE
 comment "Equality of two dates";
 pattern calc.<(v:date,w:date):bit
@@ -115,7 +127,13 @@ address daytime_tostr;
 pattern ==(v:daytime,w:daytime):bit
 address CMDvarEQ
 comment "Equality of two daytimes";
+pattern ==(v:daytime,w:daytime,nil_matches:bit):bit
+address CMDvarEQ
+comment "Equality of two daytimes";
 pattern !=(v:daytime,w:daytime):bit
+address CMDvarNE
+comment "Equality of two daytimes";
+pattern !=(v:daytime,w:daytime,nil_matches:bit):bit
 address CMDvarNE
 comment "Equality of two daytimes";
 pattern <(v:daytime,w:daytime):bit
@@ -138,7 +156,13 @@ module mtime;
 pattern calc.==(v:daytime,w:daytime):bit
 address CMDvarEQ
 comment "Equality of two daytimes";
+pattern calc.==(v:daytime,w:daytime,nil_matches:bit):bit
+address CMDvarEQ
+comment "Equality of two daytimes";
 pattern calc.!=(v:daytime,w:daytime):bit
+address CMDvarNE
+comment "Equality of two daytimes";
+pattern calc.!=(v:daytime,w:daytime,nil_matches:bit):bit
 address CMDvarNE
 comment "Equality of two daytimes";
 pattern calc.<(v:daytime,w:daytime):bit
@@ -208,7 +232,13 @@ comment "convert milli seconds since epoch into a timestamp";
 pattern ==(v:timestamp,w:timestamp):bit
 address CMDvarEQ
 comment "Equality of two timestamps";
+pattern ==(v:timestamp,w:timestamp,nil_matches:bit):bit
+address CMDvarEQ
+comment "Equality of two timestamps";
 pattern !=(v:timestamp,w:timestamp):bit
+address CMDvarNE
+comment "Equality of two timestamps";
+pattern !=(v:timestamp,w:timestamp,nil_matches:bit):bit
 address CMDvarNE
 comment "Equality of two timestamps";
 pattern <(v:timestamp,w:timestamp):bit
@@ -231,7 +261,13 @@ module mtime;
 pattern calc.==(v:timestamp,w:timestamp):bit
 address CMDvarEQ
 comment "Equality of two timestamps";
+pattern calc.==(v:timestamp,w:timestamp,nil_matches:bit):bit
+address CMDvarEQ
+comment "Equality of two timestamps";
 pattern calc.!=(v:timestamp,w:timestamp):bit
+address CMDvarNE
+comment "Equality of two timestamps";
+pattern calc.!=(v:timestamp,w:timestamp,nil_matches:bit):bit
 address CMDvarNE
 comment "Equality of two timestamps";
 pattern calc.<(v:timestamp,w:timestamp):bit

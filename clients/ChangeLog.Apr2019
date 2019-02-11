@@ -1,0 +1,8 @@
+# ChangeLog file for clients
+# This file is updated with Maddlog
+
+* Thu Oct 11 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- The mclient program can now be quit by typing quit or exit on the
+  command-line.  This makes it easier for novice users to quit the program
+  if they do not know that the standard command to quit is \q.
+

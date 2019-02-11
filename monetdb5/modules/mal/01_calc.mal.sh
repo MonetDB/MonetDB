@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
 
 sed '/^$/q' $0			# copy copyright from this file
 
@@ -222,13 +222,23 @@ done
 for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     op=${func%:*}
     func=${func#*:}
-    for tp in bit str oid; do
+    for tp in bit str blob oid; do
 	cat <<EOF
 pattern $op(v1:$tp,v2:$tp) :bit
 address CMDvar${func^^}
 comment "Return V1 $op V2";
 
 EOF
+	case $op in
+	== | !=)
+	    cat <<EOF
+pattern $op(v1:$tp,v2:$tp,nil_matches:bit) :bit
+address CMDvar${func^^}
+comment "Return V1 $op V2";
+
+EOF
+	    ;;
+	esac
     done
     for tp1 in ${numeric[@]}; do
 	for tp2 in ${numeric[@]}; do
@@ -238,6 +248,16 @@ address CMDvar${func^^}
 comment "Return V1 $op V2";
 
 EOF
+	    case $op in
+	    == | !=)
+		cat <<EOF
+pattern $op(v1:$tp1,v2:$tp2,nil_matches:bit) :bit
+address CMDvar${func^^}
+comment "Return V1 $op V2";
+
+EOF
+		;;
+	    esac
 	done
     done
     echo

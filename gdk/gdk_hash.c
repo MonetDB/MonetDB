@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -181,8 +181,7 @@ BATcheckhash(BAT *b)
 		b->thash = NULL;
 		if ((h = GDKzalloc(sizeof(*h))) != NULL &&
 		    (h->heap.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0) {
-			snprintf(h->heap.filename, sizeof(h->heap.filename),
-				 "%s.thash", nme);
+			stpconcat(h->heap.filename, nme, ".thash", NULL);
 
 			/* check whether a persisted hash can be found */
 			if ((fd = GDKfdlocate(h->heap.farmid, nme, "rb+", "thash")) >= 0) {
@@ -271,6 +270,7 @@ BAThashsync(void *arg)
 							fsync(fd);
 #endif
 						}
+						hp->dirty = false;
 					} else {
 						perror("write hash");
 					}
@@ -279,8 +279,12 @@ BAThashsync(void *arg)
 			} else {
 				((size_t *) hp->base)[0] |= (size_t) 1 << 24;
 				if (!(GDKdebug & NOSYNCMASK) &&
-				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0)
+				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
 					((size_t *) hp->base)[0] &= ~((size_t) 1 << 24);
+				} else {
+					hp->dirty = false;
+					failed = ""; /* not failed */
+				}
 			}
 			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 		}
@@ -386,7 +390,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		return NULL;
 	}
 	h->heap.dirty = true;
-	snprintf(h->heap.filename, sizeof(h->heap.filename), "%s.%s", nme, ext);
+	stpconcat(h->heap.filename, nme, ".", ext, NULL);
 
 	/* determine hash mask size */
 	cnt1 = 0;

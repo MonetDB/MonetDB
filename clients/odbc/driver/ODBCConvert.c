@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
@@ -1229,32 +1229,51 @@ ODBCFetch(ODBCStmt *stmt,
 			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? ardrec->sql_desc_octet_length : bind_type));
 
 		/* if SQL_C_WCHAR is requested, first convert to UTF-8
-		 * (SQL_C_CHAR), and at the end convert to UTF-16 */
+		 * (SQL_C_CHAR), and at the end convert to WCHAR */
 		origptr = ptr;
 
 		origbuflen = buflen;
 		origlenp = lenp;
 		if (type == SQL_C_WCHAR) {
 			/* allocate temporary space */
-			buflen = 511; /* should be enough for most types */
-			if (data != NULL &&
-			    (sql_type == SQL_CHAR ||
-			     sql_type == SQL_VARCHAR ||
-			     sql_type == SQL_LONGVARCHAR ||
-			     sql_type == SQL_WCHAR ||
-			     sql_type == SQL_WVARCHAR ||
-			     sql_type == SQL_WLONGVARCHAR))
-				buflen = (SQLLEN) datalen + 1; /* but this is certainly enough for strings */
-			ptr = malloc(buflen);
-			if (ptr == NULL) {
-				/* Memory allocation error */
-				addStmtError(stmt, "HY001", NULL, 0);
-				return SQL_ERROR;
+			switch (sql_type) {
+			case SQL_CHAR:
+			case SQL_VARCHAR:
+			case SQL_LONGVARCHAR:
+			case SQL_WCHAR:
+			case SQL_WVARCHAR:
+			case SQL_WLONGVARCHAR:
+			case SQL_BINARY:
+			case SQL_VARBINARY:
+			case SQL_LONGVARBINARY:
+			case SQL_GUID:
+				 /* this is certainly enough for strings */
+				buflen = (SQLLEN) datalen + 1;
+				ptr = NULL;
+				break;
+			default:
+				/* should be enough for most types */
+				buflen = 511;
+				ptr = malloc(buflen);
+				if (ptr == NULL) {
+					/* Memory allocation error */
+					addStmtError(stmt, "HY001", NULL, 0);
+					return SQL_ERROR;
+				}
+				break;
 			}
-
 			lenp = NULL;
 		}
 		switch (sql_type) {
+		case SQL_BINARY:
+		case SQL_VARBINARY:
+		case SQL_LONGVARBINARY:
+			if (buflen > 0 && (buflen & 1) == 0) {
+				/* return even number of bytes + NULL
+				 * (i.e. buflen must be odd) */
+				buflen--;
+			}
+			/* fall through */
 		default:
 		case SQL_CHAR:
 		case SQL_VARCHAR:
@@ -1263,83 +1282,24 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WVARCHAR:
 		case SQL_WLONGVARCHAR:
 		case SQL_GUID:
-			if (irdrec->already_returned > datalen) {
-				data += datalen;
-				datalen = 0;
-			} else {
-				data += irdrec->already_returned;
-				datalen -= irdrec->already_returned;
-			}
-			if (datalen == 0 && irdrec->already_returned != 0) {
+			if (irdrec->already_returned >= datalen) {
 				/* no more data to return */
-				if (type == SQL_C_WCHAR)
+				if (type == SQL_C_WCHAR && ptr)
 					free(ptr);
 				return SQL_NO_DATA;
 			}
-			copyString(data, datalen, ptr, buflen, lenp, SQLLEN,
-				   addStmtError, stmt, return SQL_ERROR);
+			data += irdrec->already_returned;
+			datalen -= irdrec->already_returned;
+			if (ptr) {
+				copyString(data, datalen, ptr, buflen, lenp,
+					   SQLLEN, addStmtError, stmt,
+					   return SQL_ERROR);
+			}
 			if (datalen < (size_t) buflen)
 				irdrec->already_returned += datalen;
 			else
-				irdrec->already_returned += buflen;
+				irdrec->already_returned += buflen - 1;
 			break;
-		case SQL_BINARY:
-		case SQL_VARBINARY:
-		case SQL_LONGVARBINARY: {
-			size_t k;
-			int n;
-			unsigned char c = 0;
-			SQLLEN j = 0;
-			unsigned char *p = ptr;
-
-			if (buflen < 0) {
-				/* Invalid string or buffer length */
-				addStmtError(stmt, "HY090", NULL, 0);
-				if (type == SQL_C_WCHAR)
-					free(ptr);
-				return SQL_ERROR;
-			}
-			if (irdrec->already_returned > datalen) {
-				data += datalen;
-				datalen = 0;
-			} else {
-				data += irdrec->already_returned;
-				datalen -= irdrec->already_returned;
-			}
-			if (datalen == 0 && irdrec->already_returned != 0) {
-				/* no more data to return */
-				if (type == SQL_C_WCHAR)
-					free(ptr);
-				return SQL_NO_DATA;
-			}
-			for (k = 0; k < datalen; k++) {
-				if (isdigit((unsigned char) data[k]))
-					n = data[k] - '0';
-				else if ('A' <= data[k] && data[k] <= 'F')
-					n = data[k] - 'A' + 10;
-				else if ('a' <= data[k] && data[k] <= 'f')
-					n = data[k] - 'a' + 10;
-				else {
-					/* should not happen */
-					/* General error */
-					addStmtError(stmt, "HY000", "Unexpected data from server", 0);
-					if (type == SQL_C_WCHAR)
-						free(ptr);
-					return SQL_ERROR;
-				}
-				if (k & 1) {
-					c |= n;
-					if (j < buflen)
-						p[j] = c;
-					j++;
-				} else
-					c = n << 4;
-			}
-			irdrec->already_returned += k;
-			if (lenp)
-				*lenp = j;
-			break;
-		}
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
@@ -1876,9 +1836,20 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
+			size_t i;
 
-			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
-				       (SQLWCHAR *) origptr, origbuflen, &n);
+			if (ptr) {
+				ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS,
+					       (SQLWCHAR *) origptr,
+					       origbuflen / sizeof(SQLWCHAR),
+					       &n, &i);
+				free(ptr);
+			} else {
+				ODBCutf82wchar((SQLCHAR *) data, SQL_NTS,
+					       (SQLWCHAR *) origptr,
+					       origbuflen / sizeof(SQLWCHAR),
+					       &n, &i);
+			}
 #ifdef ODBCDEBUG
 			ODBCLOG("Writing %d bytes to %p\n",
 				(int) (n * sizeof(SQLWCHAR)),
@@ -1887,16 +1858,20 @@ ODBCFetch(ODBCStmt *stmt,
 
 			if (origlenp)
 				*origlenp = n * sizeof(SQLWCHAR); /* # of bytes, not chars */
-			free(ptr);
+			irdrec->already_returned -= datalen;
+			irdrec->already_returned += i;
+			if (i < datalen) {
+				/* String data, right-truncated */
+				addStmtError(stmt, "01004", NULL, 0);
+			}
 		}
 #ifdef ODBCDEBUG
 		else
-			ODBCLOG("Writing %d bytes to %p\n",
-				(int) strlen(ptr), ptr);
+			ODBCLOG("Writing %zu bytes to %p\n", strlen(ptr), ptr);
 #endif
 		break;
 	}
-	case SQL_C_BINARY:
+	case SQL_C_BINARY: {
 		if (buflen < 0) {
 			/* Invalid string or buffer length */
 			addStmtError(stmt, "HY090", NULL, 0);
@@ -1939,8 +1914,63 @@ ODBCFetch(ODBCStmt *stmt,
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
+		case SQL_BINARY:
+		case SQL_VARBINARY:
+		case SQL_LONGVARBINARY:
+			break;
 		}
-		/* break;  -- not reached */
+		if (irdrec->already_returned >= datalen) {
+			/* no more data to return */
+			return SQL_NO_DATA;
+		}
+		data += irdrec->already_returned;
+		datalen -= irdrec->already_returned;
+
+		size_t k;
+		SQLLEN j;
+		unsigned char *p = ptr;
+
+		for (k = 0, j = 0; k < datalen && j < buflen; k++) {
+			unsigned int n;
+
+			if (isdigit((unsigned char) data[k]))
+				n = data[k] - '0';
+			else if ('A' <= data[k] && data[k] <= 'F')
+				n = data[k] - 'A' + 10;
+			else if ('a' <= data[k] && data[k] <= 'f')
+				n = data[k] - 'a' + 10;
+			else {
+				/* should not happen: not a hex character */
+				/* General error */
+				addStmtError(stmt, "HY000", "Unexpected data from server", 0);
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+				return SQL_ERROR;
+			}
+			if (k & 1) {
+				p[j] |= n;
+				j++;
+			} else {
+				p[j] = n << 4;
+			}
+		}
+		if (k & 1) {
+			/* should not happen: uneven length */
+			/* General error */
+			addStmtError(stmt, "HY000", "Unexpected data from server", 0);
+			if (type == SQL_C_WCHAR)
+				free(ptr);
+			return SQL_ERROR;
+		}
+		irdrec->already_returned += k;
+		if (lenp)
+			*lenp = datalen / 2;
+		if (k < datalen) {
+			/* String data, right-truncated */
+			addStmtError(stmt, "01004", NULL, 0);
+		}
+		break;
+	}
 	case SQL_C_BIT:
 		if (ardrec && row > 0)
 			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? (SQLINTEGER) sizeof(unsigned char) : bind_type));
@@ -2914,6 +2944,9 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	}
 
+	assigns(buf, bufpos, buflen, sep, stmt);
+	*bufp = buf;
+
 	if (strlen_or_ind_ptr != NULL && *strlen_or_ind_ptr == SQL_NULL_DATA) {
 		assigns(buf, bufpos, buflen, "NULL", stmt);
 		*bufp = buf;
@@ -3158,8 +3191,6 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	}
 
-	assigns(buf, bufpos, buflen, sep, stmt);
-	*bufp = buf;
 	/* just the types supported by the server */
 	switch (sqltype) {
 	case SQL_CHAR:

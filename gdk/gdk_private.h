@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -51,7 +51,7 @@ __hidden gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__visibility__("hidden")));
 __hidden bool BATcheckorderidx(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, int role)
+__hidden BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATdelete(BAT *b)
 	__attribute__((__visibility__("hidden")));
@@ -85,12 +85,12 @@ __hidden void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
-__hidden void BBPinit(void)
+__hidden gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
+__hidden int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
@@ -218,6 +218,19 @@ __hidden void persistOIDX(BAT *b)
 __hidden gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+static inline char *
+stpconcat(char *restrict dst, const char *src, ...)
+{
+	va_list ap;
+
+	va_start(ap, src);
+	while (src) {
+		dst = stpcpy(dst, src);
+		src = va_arg(ap, const char *);
+	}
+	va_end(ap);
+	return dst;
+}
 __hidden void strCleanHash(Heap *hp, bool rebuild)
 	__attribute__((__visibility__("hidden")));
 __hidden int strCmp(const char *l, const char *r)
@@ -252,7 +265,7 @@ __hidden BAT *virtualize(BAT *bn)
 #define ALGOBATPAR(b)	BATgetId(b),			\
 			BATcount(b),			\
 			ATOMname(b->ttype),		\
-			b->batPersistence == PERSISTENT ? "P" : isVIEW(b) ? "V" : "T", \
+			!b->batTransient ? "P" : isVIEW(b) ? "V" : "T", \
 			BATtdense(b) ? "D" : "",	\
 			b->tsorted ? "S" : "",		\
 			b->trevsorted ? "R" : "",	\
@@ -270,7 +283,7 @@ __hidden BAT *virtualize(BAT *bn)
 			b ? "[" : "",			\
 			b ? ATOMname(b->ttype) : "",	\
 			b ? "]" : "",			\
-			b ? b->batPersistence == PERSISTENT ? "P" : isVIEW(b) ? "V" : "T" : "", \
+			b ? !b->batTransient ? "P" : isVIEW(b) ? "V" : "T" : "", \
 			b && BATtdense(b) ? "D" : "",	\
 			b && b->tsorted ? "S" : "",	\
 			b && b->trevsorted ? "R" : "",	\

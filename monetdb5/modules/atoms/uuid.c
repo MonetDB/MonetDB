@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -60,6 +60,7 @@ mal_export ssize_t UUIDtoString(str *retval, size_t *len, const uuid *value, boo
 mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
 
 mal_export str UUIDgenerateUuid(uuid **retval);
+mal_export str UUIDgenerateUuidInt(uuid **retval, int *d);
 mal_export str UUIDstr2uuid(uuid **retval, str *s);
 mal_export str UUIDuuid2str(str *retval, uuid **u);
 mal_export str UUIDisaUUID(bit *retval, str *u);
@@ -89,7 +90,7 @@ UUIDprelude(void *ret)
 	return MAL_SUCCEED;
 }
 
-#define UUIDisnil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)
+#define is_uuid_nil(x)	(memcmp((x)->u, uuid_nil.u, UUID_SIZE) == 0)
 
 /**
  * Returns the string representation of the given uuid value.
@@ -106,7 +107,7 @@ UUIDtoString(str *retval, size_t *len, const uuid *value, bool external)
 			return -1;
 		*len = UUID_STRLEN + 1;
 	}
-	if (UUIDisnil(value)) {
+	if (is_uuid_nil(value)) {
 		if (external) {
 			snprintf(*retval, *len, "nil");
 			return 3;
@@ -217,6 +218,13 @@ UUIDgenerateUuid(uuid **retval)
 }
 
 str
+UUIDgenerateUuidInt(uuid **retval, int *d)
+{
+	(void)d;
+	return UUIDgenerateUuid(retval);
+}
+
+str
 UUIDisaUUID(bit *retval, str *s)
 {
 	uuid u;
@@ -250,7 +258,7 @@ UUIDuuid2str(str *retval, uuid **u)
 str
 UUIDequal(bit *retval, uuid **l, uuid **r)
 {
-	if (UUIDisnil(*l) || UUIDisnil(*r))
+	if (is_uuid_nil(*l) || is_uuid_nil(*r))
 		*retval = bit_nil;
 	else
 		*retval = memcmp((*l)->u, (*r)->u, UUID_SIZE) == 0;

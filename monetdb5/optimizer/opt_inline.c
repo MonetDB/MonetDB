@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "opt_inline.h"
 
-static int
+static bool
 isCorrectInline(MalBlkPtr mb){
 	/* make sure we have a simple inline function with a singe return */
 	InstrPtr p;
@@ -25,14 +25,16 @@ isCorrectInline(MalBlkPtr mb){
 }
 
 
-static int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
+static bool OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 	str mod,fcn;
 
 	mod = VALget(&getVar(mb, getArg(p, 1))->value);
 	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
 	if( (s= findSymbol(cntxt->usermodule, mod,fcn)) ==0 )
-		return FALSE;
+		return false;
+	if (s->def == mb)			/* avoid infinite recursion */
+		return false;
 	/*
 	 * Before we decide to propagate the inline request
 	 * to the multiplex operation, we check some basic properties

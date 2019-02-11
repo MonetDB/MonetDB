@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -232,7 +232,7 @@ BATunique(BAT *b, BAT *s)
 		GDKfree(seen);
 		seen = NULL;
 	} else if (BATcheckhash(b) ||
-		   (b->batPersistence == PERSISTENT &&
+		   (!b->batTransient &&
 		    BAThash(b) == GDK_SUCCEED) ||
 		   ((parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {

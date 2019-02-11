@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
 /*
@@ -24,7 +24,7 @@ str mnstr_open_rstreamwrap(Stream *S, str *filename)
 	stream *s;
 
 	if ((s = open_rstream(*filename)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
+		int errnr = errno;
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
@@ -40,7 +40,7 @@ str mnstr_open_wstreamwrap(Stream *S, str *filename)
 	stream *s;
 
 	if ((s = open_wstream(*filename)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
+		int errnr = errno;
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
@@ -57,7 +57,7 @@ str mnstr_open_rastreamwrap(Stream *S, str *filename)
 	stream *s;
 
 	if ((s = open_rastream(*filename)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
+		int errnr = errno;
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
@@ -74,7 +74,7 @@ str mnstr_open_wastreamwrap(Stream *S, str *filename)
 	stream *s;
 
 	if ((s = open_wastream(*filename)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
+		int errnr = errno;
 		if (s)
 			close_stream(s);
 		throw(IO, "streams.open", "could not open file '%s': %s",
