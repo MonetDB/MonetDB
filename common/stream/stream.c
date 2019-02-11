@@ -968,9 +968,7 @@ stream_gzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 		return 0;
 
 	size = gzfread(buf, elmsize, cnt, fp);
-#ifdef WIN32
-	/* on Windows when in text mode, convert \r\n line
-	 * endings to \n */
+	/* when in text mode, convert \r\n line endings to \n */
 	if (!s->binary) {
 		char *p1, *p2, *pe;
 
@@ -987,7 +985,6 @@ stream_gzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 			p1++;
 		}
 	}
-#endif
 
 	return size == 0 ? -1 : (ssize_t) size;
 }
@@ -1190,9 +1187,7 @@ stream_bzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
-#ifdef WIN32
-	/* on Windows when in text mode, convert \r\n line endings to
-	 * \n */
+	/* when in text mode, convert \r\n line endings to \n */
 	if (!s->binary) {
 		char *p1, *p2, *pe;
 
@@ -1209,7 +1204,6 @@ stream_bzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 			p1++;
 		}
 	}
-#endif
 	return (ssize_t) (size / elmsize);
 }
 
@@ -1432,9 +1426,8 @@ stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 		}
 	}
 	if (ressize) {
-#ifdef WIN32
-		/* on Windows when in text mode, convert \r\n line
-		 * endings to \n */
+		/* when in text mode, convert \r\n line endings to
+		 * \n */
 		if (!s->binary) {
 			char *p1, *p2, *pe;
 
@@ -1451,7 +1444,6 @@ stream_xzread(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt
 				p1++;
 			}
 		}
-#endif
 		return (ssize_t) (ressize / elmsize);
 	}
 	return 0;
@@ -1719,8 +1711,7 @@ stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cn
 		total_read += remaining_to_decompress;
 	}
 
-#ifdef WIN32
-	/* on Windows when in text mode, convert \r\n line endings to \n */
+	/* when in text mode, convert \r\n line endings to \n */
 	if (!s->binary) {
 		char *p1, *p2, *pe;
 
@@ -1737,7 +1728,6 @@ stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cn
 			p1++;
 		}
 	}
-#endif
 	return (ssize_t) (total_read / elmsize);
 }
 
