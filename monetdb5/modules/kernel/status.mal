@@ -6,13 +6,13 @@
 
 module status;
 
-command cpuStatistics()(:bat[:str],:bat[:int] )
+command cpuStatistics()(:bat[:str],:bat[:lng] )
 address SYScpuStatistics
 comment "Global cpu usage information";
 command memStatistics() (:bat[:str],:bat[:lng] )
 address SYSmemStatistics
 comment "Global memory usage information";
-command ioStatistics()(:bat[:str],:bat[:int] )
+command ioStatistics()(:bat[:str],:bat[:lng] )
 address SYSioStatistics
 comment "Global IO activity information";
 command vmStatistics(minsize:lng)(:bat[:str],:bat[:lng] )

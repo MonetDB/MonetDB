@@ -121,12 +121,12 @@ static struct tms state;
 str
 SYScpuStatistics(bat *ret, bat *ret2)
 {
-	int i;
+	lng i;
 	BAT *b, *bn;
 #ifdef HAVE_TIMES
 	struct tms newst;
 # ifndef HZ
-	static int HZ;
+	static int HZ = 0;
 
 	if (HZ == 0) {
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
@@ -139,7 +139,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 #endif
 
 	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
-	b = COLnew(0, TYPE_int, 32, TRANSIENT);
+	b = COLnew(0, TYPE_lng, 32, TRANSIENT);
 	if (b == 0 || bn == 0){
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
@@ -152,7 +152,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 	}
 	times(&newst);
 	/* store counters, ignore errors */
-	i = (int) (time(0) - clk);
+	i = (lng) (time(0) - clk);
 	if (BUNappend(bn, "elapsed", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED)
 		goto bailout;
@@ -175,7 +175,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 
 	state = newst;
 #else
-	i = int_nil;
+	i = lng_nil;
 	if (BUNappend(bn, "elapsed", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED ||
 		BUNappend(bn, "user", false) != GDK_SUCCEED ||
@@ -484,24 +484,24 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 str
 SYSioStatistics(bat *ret, bat *ret2)
 {
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	struct rusage ru;
 #endif
-	int i;
+	lng i;
 	BAT *b, *bn;
 
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &ru);
 #endif
 	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
-	b = COLnew(0, TYPE_int, 32, TRANSIENT);
+	b = COLnew(0, TYPE_lng, 32, TRANSIENT);
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
 		throw(MAL, "status.ioStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	/* store counters, ignore errors */
 	i = ru.ru_maxrss;
 	if (BUNappend(bn, "maxrss", false) != GDK_SUCCEED ||
@@ -536,7 +536,7 @@ SYSioStatistics(bat *ret, bat *ret2)
 		BUNappend(b, &i, false) != GDK_SUCCEED)
 		goto bailout;
 #else
-	i = int_nil;
+	i = lng_nil;
 	if (BUNappend(bn, "maxrss", false) != GDK_SUCCEED ||
 		BUNappend(b, &i, false) != GDK_SUCCEED ||
 		BUNappend(bn, "minflt", false) != GDK_SUCCEED ||

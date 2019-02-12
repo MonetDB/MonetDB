@@ -268,12 +268,12 @@ Ready.
 % v # name
 % blob # type
 % 0 # length
+[ NULL	]
 [ 	]
 [ 00	]
-[ 11	]
 [ 0123456789	]
+[ 11	]
 [ A0B2C3D4F5	]
-[ NULL	]
 #SELECT v, convert(v, varchar(16)) from T_blob;
 % sys.t_blob,	sys.L3 # table_name
 % v,	L3 # name
@@ -5862,8 +5862,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_char where v in ('0123456789');
-% sys.t_char,	sys.L4 # table_name
-% v,	L4 # name
+% sys.t_char,	sys.L3 # table_name
+% v,	L3 # name
 % char,	blob # type
 % 33,	0 # length
 [ "0123456789",	0123456789	]
@@ -6202,8 +6202,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_varchar where v in ('0123456789');
-% sys.t_varchar,	sys.L4 # table_name
-% v,	L4 # name
+% sys.t_varchar,	sys.L3 # table_name
+% v,	L3 # name
 % varchar,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
@@ -6542,8 +6542,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_clob where v in ('0123456789');
-% sys.t_clob,	sys.L4 # table_name
-% v,	L4 # name
+% sys.t_clob,	sys.L3 # table_name
+% v,	L3 # name
 % clob,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
