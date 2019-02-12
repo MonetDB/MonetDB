@@ -484,13 +484,13 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 str
 SYSioStatistics(bat *ret, bat *ret2)
 {
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	struct rusage ru;
 #endif
 	lng i;
 	BAT *b, *bn;
 
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &ru);
 #endif
 	bn = COLnew(0, TYPE_str, 32, TRANSIENT);
@@ -501,7 +501,7 @@ SYSioStatistics(bat *ret, bat *ret2)
 		throw(MAL, "status.ioStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-#ifndef NATIVE_WIN32
+#ifdef HAVE_SYS_RESOURCE_H
 	/* store counters, ignore errors */
 	i = ru.ru_maxrss;
 	if (BUNappend(bn, "maxrss", false) != GDK_SUCCEED ||
