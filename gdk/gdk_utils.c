@@ -23,6 +23,7 @@
 BAT *GDKkey = NULL;
 BAT *GDKval = NULL;
 int GDKdebug = 0;
+int GDKverbose = 0;
 
 static char THRprintbuf[BUFSIZ];
 
@@ -431,6 +432,12 @@ void
 GDKsetdebug(int debug)
 {
 	GDKdebug = debug;
+}
+
+void
+GDKsetverbose(int verbose)
+{
+	GDKverbose = verbose;
 }
 
 bool

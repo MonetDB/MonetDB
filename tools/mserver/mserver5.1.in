@@ -102,6 +102,18 @@ Print version and compile configuration.
 .B \-\-trace
 Print information about MAL instructions as they are executed.
 .TP
+\fB\-\-verbose\fP[\fB=\fP\fIvalue\fP]
+.PD 0
+.TP
+\fB\-v\fP[\fIvalue\fP]
+Set or increase verbosity level.  If not
+.I value
+is specified, the verbosity level is increased by
+.BR 1 .
+It a
+.I value
+is specified, the verbosity level is set to the given value.
+.TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
 .TP

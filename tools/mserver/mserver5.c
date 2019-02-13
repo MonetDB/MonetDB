@@ -101,6 +101,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
+	fprintf(stderr, "    --verbose[=value]         Set or increase verbosity level\n");
 
 	fprintf(stderr, "The debug, testing & trace options:\n");
 	fprintf(stderr, "     --threads\n");
@@ -248,6 +249,7 @@ main(int argc, char **av)
 	str *monet_script;
 	char *dbpath = NULL;
 	char *dbextra = NULL;
+	int verbosity = 0;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbpath", required_argument, NULL, 0 },
@@ -256,6 +258,7 @@ main(int argc, char **av)
 		{ "debug", optional_argument, NULL, 'd' },
 		{ "help", no_argument, NULL, '?' },
 		{ "version", no_argument, NULL, 0 },
+		{ "verbose", optional_argument, NULL, 'v' },
 		{ "readonly", no_argument, NULL, 'r' },
 		{ "single-user", no_argument, NULL, 0 },
 		{ "set", required_argument, NULL, 's' },
@@ -306,7 +309,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::rs:t::?",
+		int c = getopt_long(argc, av, "c:d::rs:t::v::?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -434,6 +437,19 @@ main(int argc, char **av)
 			break;
 		case 't':
 			mal_trace = 1;
+			break;
+		case 'v':
+			if (optarg) {
+				char *endarg;
+				verbosity = (int) strtol(optarg, &endarg, 10);
+				if (*endarg != '\0') {
+					fprintf(stderr, "ERROR: wrong format for --verbose=%s\n",
+							optarg);
+					usage(prog, -1);
+				}
+			} else {
+				verbosity++;
+			}
 			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
