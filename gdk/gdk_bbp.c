@@ -1997,7 +1997,7 @@ BBPinsert(BAT *bn)
 	bool lock = locked_by == 0 || locked_by != pid;
 	char dirname[24];
 	bat i;
-	int idx = threadmask(pid);
+	int idx = threadmask(pid), len = 0;
 
 	/* critical section: get a new BBP entry */
 	if (lock) {
@@ -2063,7 +2063,9 @@ BBPinsert(BAT *bn)
 #endif
 
 	if (*BBP_bak(i) == 0)
-		snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
+		len = snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
+	if (len == -1 || len >= FILENAME_MAX)
+		return 0;
 	BBP_logical(i) = BBP_bak(i);
 
 	/* Keep the physical location around forever */
@@ -2071,11 +2073,13 @@ BBPinsert(BAT *bn)
 		BBPgetsubdir(dirname, i);
 
 		if (*dirname)	/* i.e., i >= 0100 */
-			snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
+			len = snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
 				 "%s%c%o", dirname, DIR_SEP, (unsigned) i);
 		else
-			snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
+			len = snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
 				 "%o", (unsigned) i);
+		if (len == -1 || len >= FILENAME_MAX)
+			return 0;
 
 		BATDEBUG fprintf(stderr, "#%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
 	}
