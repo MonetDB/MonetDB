@@ -464,6 +464,9 @@ GDKinit(opt *set, int setlen)
 	static_assert(sizeof(size_t) == SIZEOF_SIZE_T, "error in configure: bad value for SIZEOF_SIZE_T");
 	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG, "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
 
+	if (!MT_thread_init())
+		return 0;
+
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&MT_system_lock,"MT_system_lock");
 	ATOMIC_INIT(GDKstoppedLock);
@@ -997,7 +1000,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
-		fprintf(stderr, "#%s%.*s%s",
+		fprintf(stderr, "#%s:%s%.*s%s",
+			MT_thread_name(),
 			prefix[0] == '#' ? prefix + 1 : prefix,
 			(int) messagelen, message, suffix);
 	} else {
@@ -1440,7 +1444,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	MT_lock_unset(&GDKthreadLock);
 	t->thr = s;
 	MT_sema_init(&t->sem, 0, "THRcreate");
-	if (MT_create_thread(&pid, THRstarter, t, d) != 0) {
+	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
 		GDKerror("THRcreate: could not start thread\n");
 		MT_sema_destroy(&t->sem);
 		GDKfree(t);

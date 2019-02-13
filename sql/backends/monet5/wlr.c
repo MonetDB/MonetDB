@@ -428,7 +428,8 @@ WLRinit(void)
 	if( wlr_state != WLR_START)
 		return MAL_SUCCEED;
 	// time to continue the consolidation process in the background
-	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt,
+			     MT_THR_JOINABLE, "WLRprocessScheduler") < 0) {
 			throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
 	}
 	GDKregister(wlr_thread);

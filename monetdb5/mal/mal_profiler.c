@@ -1082,7 +1082,8 @@ void initHeartbeat(void)
 	ATOMIC_INIT(mal_beatLock, "beatLock");
 #endif
 	ATOMIC_SET(hbrunning, 1, mal_beatLock);
-	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE) < 0) {
+	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
+						 "heartbeat") < 0) {
 		/* it didn't happen */
 		hbthread = 0;
 		ATOMIC_SET(hbrunning, 0, mal_beatLock);

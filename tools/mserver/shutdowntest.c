@@ -15,7 +15,6 @@
 #include "mal_import.h"
 #include "mal_client.h"
 #include "mal_function.h"
-#include "monet_version.h"
 #include "mal_authorize.h"
 #include "msabaoth.h"
 #include "mutils.h"
