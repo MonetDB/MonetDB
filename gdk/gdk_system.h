@@ -99,6 +99,7 @@
 
 /* debug and errno integers */
 gdk_export int GDKdebug;
+gdk_export void GDKsetdebug(int debug);
 
 /* API */
 

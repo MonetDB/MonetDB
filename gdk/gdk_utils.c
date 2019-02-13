@@ -427,6 +427,12 @@ static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
 #endif
 #endif
 
+void
+GDKsetdebug(int debug)
+{
+	GDKdebug = debug;
+}
+
 bool
 GDKinit(opt *set, int setlen)
 {
@@ -475,9 +481,6 @@ GDKinit(opt *set, int setlen)
 	errno = 0;
 	if (!GDKenvironment(dbpath))
 		return 0;
-
-	if ((p = mo_find_option(set, setlen, "gdk_debug")))
-		GDKdebug = strtol(p, NULL, 10);
 
 	if (mnstr_init() < 0)
 		return 0;

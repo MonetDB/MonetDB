@@ -277,6 +277,7 @@ void GDKregister(MT_Id pid);
 gdk_return GDKreleasemmap(void *ptr, size_t size, size_t id);
 gdk_return GDKreleasesem(int sem_id);
 void GDKreset(int status, int exit);
+void GDKsetdebug(int debug);
 gdk_return GDKsetenv(const char *name, const char *value);
 void GDKsetmallocsuccesscount(lng count);
 ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
