@@ -179,6 +179,7 @@ loadLibrary(str filename, int flag)
 	}
 
 	while (*mod_path) {
+		int len;
 		const char *p;
 
 		for (p = mod_path; *p && *p != PATH_SEP; p++)
@@ -186,38 +187,41 @@ loadLibrary(str filename, int flag)
 
 		/* try hardcoded SO_EXT if that is the same for modules */
 #ifdef _AIX
-		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
+		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
 #else
-		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
+		len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
+		if (len == -1 || len >= FILENAME_MAX)
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 		handle = dlopen(nme, mode);
-		if (handle == NULL && fileexists(nme)) {
+		if (handle == NULL && fileexists(nme))
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
-		}
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
-			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
+			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
+			if (len == -1 || len >= FILENAME_MAX)
+				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 			handle = dlopen(nme, mode);
-			if (handle == NULL && fileexists(nme)) {
+			if (handle == NULL && fileexists(nme))
 				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
-			}
 		}
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
-			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
+			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
+			if (len == -1 || len >= FILENAME_MAX)
+				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR "Library filename path is too large");
 			handle = dlopen(nme, mode);
-			if (handle == NULL && fileexists(nme)) {
+			if (handle == NULL && fileexists(nme))
 				throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
-			}
 		}
 #endif
 
@@ -247,8 +251,8 @@ loadLibrary(str filename, int flag)
 		}
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
 		if(filesLoaded[lastfile].fullname == NULL) {
-			MT_lock_unset(&mal_contextLock);
 			GDKfree(filesLoaded[lastfile].modname);
+			MT_lock_unset(&mal_contextLock);
 			if (handle)
 				dlclose(handle);
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
@@ -359,6 +363,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 				if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
 					continue;
 				if (strcmp(e->d_name + strlen(e->d_name) - strlen(ext), ext) == 0) {
+					int len;
 					strs[lasts] = GDKmalloc(strlen(fullname) + sizeof(DIR_SEP)
 							+ strlen(e->d_name) + sizeof(PATH_SEP) + 1);
 					if (strs[lasts] == NULL) {
@@ -368,7 +373,14 @@ locate_file(const char *basename, const char *ext, bit recurse)
 						(void)closedir(rdir);
 						return NULL;
 					}
-					sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP, e->d_name, PATH_SEP);
+					len = sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP, e->d_name, PATH_SEP);
+					if (len == -1 || len >= FILENAME_MAX) {
+						while (lasts >= 0)
+							GDKfree(strs[lasts--]);
+						GDKfree(fullname);
+						(void)closedir(rdir);
+						return NULL;
+					}
 					lasts++;
 				}
 				if (lasts >= MAXMULTISCRIPT)

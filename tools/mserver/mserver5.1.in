@@ -101,61 +101,64 @@ Print version and compile configuration.
 .TP
 .B \-\-trace
 Print information about MAL instructions as they are executed.
-.SH GDK PARAMETERS
-GDK (Goblin Database Kernel) is the current columnar storage kernel
-engine of the MonetDB 5 database.
-It is the component that manages and performs operations on BATs
-(Binary Association Tables), single columns.
-The parameters here affect the behaviour of GDK which may nagatively
-impact performance if set wrongly.
-The kernel tries to choose the values for optimal performance.
-Changing these parameters is discouraged.
-.P
 .TP
-.B gdk_debug
-You can enable debug output for specific kernel operations.
-By default debug is switched off for obvious reasons.
-The value of gdk_debug is an integer, which value can be (a
-combination of):
+\fB\-\-verbose\fP[\fB=\fP\fIvalue\fP]
+.PD 0
+.TP
+\fB\-v\fP[\fIvalue\fP]
+Set or increase verbosity level.  If not
+.I value
+is specified, the verbosity level is increased by
+.BR 1 .
+It a
+.I value
+is specified, the verbosity level is set to the given value.
+.TP
+\fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
+.PD 0
+.TP
+\fB\-d\fP[\fIvalue\fP]
+Set debug level.  This is mostly for debugging purposes.
+The value is an integer, which can be (a bit-wise OR of):
 .EX
-          1 = THRDMASK     = thread-specific debug output
-          2 = CHECKMASK    = property enforcing on new BATs
-          4 = MEMMASK      = memory allocation
-          8 = PROPMASK     = property checking on all values:
+          \fB1\fP = THRDMASK     = thread-specific debug output
+          \fB2\fP = CHECKMASK    = property enforcing on new BATs
+          \fB4\fP = MEMMASK      = memory allocation
+          \fB8\fP = PROPMASK     = property checking on all values:
                              tells about wrongly set properties
-         16 = IOMASK       = major IO activity
-         32 = BATMASK      = BAT handling
-.\"         64 = PARSEMASK    = parser debugging
-        128 = PARMASK      = Thread management
-.\"        256 = HEADLESSMASK = Warn about BAT heads that are not "headless-ready"
-        512 = TMMASK       = Transaction management
-       1024 = TEMMASK      = Locks and Triggers
-.\"       2048 = DLMASK       = Dynamic loading
-       4096 = PERFMASK     = BBP Performance (?)
-       8192 = DELTAMASK    = Delta debugging (?)
-      16384 = LOADMASK     = Module loading
-.\"      32768 = YACCMASK     = Yacc specific error messages
-    2097152 = ALGOMASK     = show join/select algorithm chosen
-    4194304 = ESTIMASK     = show result size estimations
+         \fB16\fP = IOMASK       = major IO activity
+         \fB32\fP = BATMASK      = BAT handling
+.\"         \fB64\fP = PARSEMASK    = parser debugging
+        \fB128\fP = PARMASK      = Thread management
+.\"        \fB256\fP = HEADLESSMASK = Warn about BAT heads that are not "headless-ready"
+        \fB512\fP = TMMASK       = Transaction management
+       \fB1024\fP = TEMMASK      = Locks and Triggers
+.\"       \fB2048\fP = DLMASK       = Dynamic loading
+       \fB4096\fP = PERFMASK     = BBP Performance (?)
+       \fB8192\fP = DELTAMASK    = Delta debugging (?)
+      \fB16384\fP = LOADMASK     = Module loading
+.\"      \fB32768\fP = YACCMASK     = Yacc specific error messages
+    \fB2097152\fP = ALGOMASK     = show join/select algorithm chosen
+    \fB4194304\fP = ESTIMASK     = show result size estimations
                              (for join, select)
-.\"    8388608 = XPROPMASK    = extended property checking:
+.\"    \fB8388608\fP = XPROPMASK    = extended property checking:
 .\"                             tells also about not set properties
-   16777216 = NOSYNCMASK = disable forcefully synchronizing files
+   \fB16777216\fP = NOSYNCMASK   = disable forcefully synchronizing files
                              to disk.  If this flag is set, there is
                              no guarantee that the database remains
                              consistent after a crash.  DO NOT USE
                              (unless you really don't care about your
                              data).
-   33554432 = DEADBEEFMASK = disable "cleaning" of freed memory
+   \fB33554432\fP = DEADBEEFMASK = disable "cleaning" of freed memory
                              in GDKfree() (e.g., for performance
                              measurements)
-   67108864 = ALLOCMASK    = exhaustive GDK malloc & free tracing
+   \fB67108864\fP = ALLOCMASK    = exhaustive GDK malloc & free tracing
                              for debugging (GDK developers, only)
-  134217728 = OPTMASK      = trace the actions, decisions and
+  \fB134217728\fP = OPTMASK      = trace the actions, decisions and
                              effects of MAL optimizers
-  268435456 = HEAPMASK     = trace/debug HEAPextend;
+  \fB268435456\fP = HEAPMASK     = trace/debug HEAPextend;
                              used only for development & debugging
-  536870912 = FORCEMITOMASK = forcefully activate mitosis even on
+  \fB536870912\fP = FORCEMITOMASK = forcefully activate mitosis even on
                               small tables, i.e., split small tables
                               in as many (tiny) pieces as there are
                               cores (threads) available;
@@ -167,27 +170,48 @@ combination of):
                               used only for development & testing;
                               set automatically by Mtest.py
 .EE
-
-Note that
-.I mserver5
-recognizes a series of command line options that sets one or more of
-these debug flags as well:
-.EX
-  \-\-threads       (THRDMASK | PARMASK)
-  \-\-memory        (MEMMASK | ALLOCMASK)
-  \-\-properties    (CHECKMASK | PROPMASK | BATMASK)
-  \-\-io            (IOMASK | PERFMASK)
-  \-\-heaps         (HEAPMASK)
-  \-\-transactions  (TMMASK | DELTAMASK | TEMMASK)
-  \-\-modules       (LOADMASK)
-  \-\-algorithms    (ALGOMASK | ESTIMASK)
-  \-\-performance   (DEADBEEFMASK)
-  \-\-optimizers    (OPTMASK)
-  \-\-forcemito     (FORCEMITOMASK | NOSYNCMASK)
-.EE
-
-Default:
-.BR 0 .
+The
+.I value
+together with the
+.B =
+sign is optional.  If not specified, it defaults to
+.BR 1 .
+In the short form \fB\-d\fP, the value, if present, must immediately
+(i.e. without space) follow the option.
+The values of multiple instances of this flag are OR-ed together.
+.TP
+.B \-\-threads
+Equivalent to \fB\-\-debug=\fP\fI(THRDMASK | PARMASK)\fP.
+.TP
+.B \-\-memory
+Equivalent to \fB\-\-debug=\fP\fI(MEMMASK | ALLOCMASK)\fP.
+.TP
+.B \-\-properties
+Equivalent to \fB\-\-debug=\fP\fI(CHECKMASK | PROPMASK | BATMASK)\fP.
+.TP
+.B \-\-io
+Equivalent to \fB\-\-debug=\fP\fI(IOMASK | PERFMASK)\fP.
+.TP
+.B \-\-heaps
+Equivalent to \fB\-\-debug=\fP\fI(HEAPMASK)\fP.
+.TP
+.B \-\-transactions
+Equivalent to \fB\-\-debug=\fP\fI(TMMASK | DELTAMASK | TEMMASK)\fP.
+.TP
+.B \-\-modules
+Equivalent to \fB\-\-debug=\fP\fI(LOADMASK)\fP.
+.TP
+.B \-\-algorithms
+Equivalent to \fB\-\-debug=\fP\fI(ALGOMASK | ESTIMASK)\fP.
+.TP
+.B \-\-performance
+Equivalent to \fB\-\-debug=\fP\fI(DEADBEEFMASK)\fP.
+.TP
+.B \-\-optimizers
+Equivalent to \fB\-\-debug=\fP\fI(OPTMASK)\fP.
+.TP
+.B \-\-forcemito
+Equivalent to \fB\-\-debug=\fP\fI(FORCEMITOMASK | NOSYNCMASK)\fP.
 .SH MSERVER5 PARAMETERS
 .I Mserver5
 instructs the GDK kernel through the MAL (MonetDB Assembler Language)

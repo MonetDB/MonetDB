@@ -101,6 +101,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
+	fprintf(stderr, "    --verbose[=value]         Set or increase verbosity level\n");
 
 	fprintf(stderr, "The debug, testing & trace options:\n");
 	fprintf(stderr, "     --threads\n");
@@ -242,36 +243,38 @@ main(int argc, char **av)
 	opt *set = NULL;
 	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
 	str err = MAL_SUCCEED;
-	char prmodpath[1024];
+	char prmodpath[FILENAME_MAX];
 	const char *modpath = NULL;
 	char *binpath = NULL;
 	str *monet_script;
 	char *dbpath = NULL;
 	char *dbextra = NULL;
+	int verbosity = 0;
 	static struct option long_options[] = {
-		{ "config", 1, 0, 'c' },
-		{ "dbpath", 1, 0, 0 },
-		{ "dbextra", 1, 0, 0 },
-		{ "daemon", 1, 0, 0 },
-		{ "debug", 2, 0, 'd' },
-		{ "help", 0, 0, '?' },
-		{ "version", 0, 0, 0 },
-		{ "readonly", 0, 0, 'r' },
-		{ "single-user", 0, 0, 0 },
-		{ "set", 1, 0, 's' },
-		{ "threads", 0, 0, 0 },
-		{ "memory", 0, 0, 0 },
-		{ "properties", 0, 0, 0 },
-		{ "io", 0, 0, 0 },
-		{ "transactions", 0, 0, 0 },
-		{ "trace", 2, 0, 't' },
-		{ "modules", 0, 0, 0 },
-		{ "algorithms", 0, 0, 0 },
-		{ "optimizers", 0, 0, 0 },
-		{ "performance", 0, 0, 0 },
-		{ "forcemito", 0, 0, 0 },
-		{ "heaps", 0, 0, 0 },
-		{ 0, 0, 0, 0 }
+		{ "config", required_argument, NULL, 'c' },
+		{ "dbpath", required_argument, NULL, 0 },
+		{ "dbextra", required_argument, NULL, 0 },
+		{ "daemon", required_argument, NULL, 0 },
+		{ "debug", optional_argument, NULL, 'd' },
+		{ "help", no_argument, NULL, '?' },
+		{ "version", no_argument, NULL, 0 },
+		{ "verbose", optional_argument, NULL, 'v' },
+		{ "readonly", no_argument, NULL, 'r' },
+		{ "single-user", no_argument, NULL, 0 },
+		{ "set", required_argument, NULL, 's' },
+		{ "threads", no_argument, NULL, 0 },
+		{ "memory", no_argument, NULL, 0 },
+		{ "properties", no_argument, NULL, 0 },
+		{ "io", no_argument, NULL, 0 },
+		{ "transactions", no_argument, NULL, 0 },
+		{ "trace", optional_argument, NULL, 't' },
+		{ "modules", no_argument, NULL, 0 },
+		{ "algorithms", no_argument, NULL, 0 },
+		{ "optimizers", no_argument, NULL, 0 },
+		{ "performance", no_argument, NULL, 0 },
+		{ "forcemito", no_argument, NULL, 0 },
+		{ "heaps", no_argument, NULL, 0 },
+		{ NULL, 0, NULL, 0 }
 	};
 
 #if defined(_MSC_VER) && defined(__cplusplus)
@@ -307,7 +310,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::rs:t::?",
+		int c = getopt_long(argc, av, "c:d::rs:t::v::?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -436,6 +439,19 @@ main(int argc, char **av)
 		case 't':
 			mal_trace = 1;
 			break;
+		case 'v':
+			if (optarg) {
+				char *endarg;
+				verbosity = (int) strtol(optarg, &endarg, 10);
+				if (*endarg != '\0') {
+					fprintf(stderr, "ERROR: wrong format for --verbose=%s\n",
+							optarg);
+					usage(prog, -1);
+				}
+			} else {
+				verbosity++;
+			}
+			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -451,16 +467,9 @@ main(int argc, char **av)
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog, -1);
 
-	if (debug || grpdebug) {
-		char buf[16];
-		char wasdebug = debug != 0;
-
-		debug |= grpdebug;  /* add the algorithm tracers */
-		snprintf(buf, sizeof(buf) - 1, "%d", debug);
-		setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", buf);
-		if (wasdebug)
-			mo_print_options(set, setlen);
-	}
+	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
+	if (debug)
+		mo_print_options(set, setlen);
 
 	monet_script = (str *) malloc(sizeof(str) * (argc + 1));
 	if (monet_script == NULL) {
@@ -537,8 +546,10 @@ main(int argc, char **av)
 			if (p != NULL) {
 				*p = '\0';
 				for (i = 0; libdirs[i] != NULL; i++) {
-					snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
-							binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					int len = snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
+									   binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					if (len == -1 || len >= FILENAME_MAX)
+						continue;
 					if (stat(prmodpath, &sb) == 0) {
 						modpath = prmodpath;
 						break;

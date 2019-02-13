@@ -822,7 +822,8 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 	psock[1] = INVALID_SOCKET;
 #endif
 	psock[2] = INVALID_SOCKET;
-	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock, MT_THR_JOINABLE) != 0) {
+	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock,
+						 MT_THR_JOINABLE, "server listener") != 0) {
 		GDKfree(psock);
 		if (usockfile)
 			GDKfree(usockfile);

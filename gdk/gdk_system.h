@@ -99,6 +99,9 @@
 
 /* debug and errno integers */
 gdk_export int GDKdebug;
+gdk_export void GDKsetdebug(int debug);
+gdk_export int GDKverbose;
+gdk_export void GDKsetverbose(int verbosity);
 
 /* API */
 
@@ -109,8 +112,12 @@ typedef size_t MT_Id;		/* thread number. will not be zero */
 
 enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 
+gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
-				void *arg, enum MT_thr_detach d);
+				void *arg, enum MT_thr_detach d,
+				const char *threadname);
+gdk_export const char *MT_thread_name(void);
+gdk_export void MT_thread_setname(const char *name);
 gdk_export void MT_exiting_thread(void);
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);

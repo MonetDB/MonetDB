@@ -23,6 +23,7 @@
 static BAT *GDKkey = NULL;
 static BAT *GDKval = NULL;
 int GDKdebug = 0;
+int GDKverbose = 0;
 
 static char THRprintbuf[BUFSIZ];
 
@@ -426,6 +427,18 @@ static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
 #endif
 #endif
 
+void
+GDKsetdebug(int debug)
+{
+	GDKdebug = debug;
+}
+
+void
+GDKsetverbose(int verbose)
+{
+	GDKverbose = verbose;
+}
+
 gdk_return
 GDKinit(opt *set, int setlen)
 {
@@ -460,6 +473,9 @@ GDKinit(opt *set, int setlen)
 	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG,
 		      "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
 
+	if (!MT_thread_init())
+		return 0;
+
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&MT_system_lock, "MT_system_lock");
 	ATOMIC_INIT(GDKstoppedLock);
@@ -484,9 +500,6 @@ GDKinit(opt *set, int setlen)
 	errno = 0;
 	if (!GDKenvironment(dbpath))
 		return GDK_FAIL;
-
-	if ((p = mo_find_option(set, setlen, "gdk_debug")))
-		GDKdebug = strtol(p, NULL, 10);
 
 	if (mnstr_init() < 0)
 		return GDK_FAIL;
@@ -1015,7 +1028,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		char *dst = buf + strlen(buf);
 		size_t maxlen = GDKMAXERRLEN - (dst - buf) - 1;
 
-		if (prefix && *prefix && dst < buf + GDKMAXERRLEN) {
+		if (*prefix && dst < buf + GDKMAXERRLEN) {
 			size_t preflen;
 
 			strncpy(dst, prefix, maxlen);
@@ -1028,7 +1041,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			maxlen = messagelen;
 		strncpy(dst, message, maxlen);
 		dst += maxlen;
-		if (suffix && *suffix && dst < buf + GDKMAXERRLEN) {
+		if (*suffix && dst < buf + GDKMAXERRLEN) {
 			size_t sufflen;
 
 			maxlen = buf + GDKMAXERRLEN - dst - 1;
@@ -1039,9 +1052,13 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
+		fprintf(stderr, "#%s:%s%.*s%s",
+			MT_thread_name(),
+			prefix[0] == '#' ? prefix + 1 : prefix,
+			(int) messagelen, message, suffix);
 	} else {
-		THRprintf(GDKout, "%s%.*s%s", prefix ? prefix : "",
-			  (int) messagelen, message, suffix ? suffix : "");
+		THRprintf(GDKout, "%s%.*s%s", prefix,
+			  (int) messagelen, message, suffix);
 	}
 }
 
@@ -1479,7 +1496,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	MT_lock_unset(&GDKthreadLock);
 	t->thr = s;
 	MT_sema_init(&t->sem, 0, "THRcreate");
-	if (MT_create_thread(&pid, THRstarter, t, d) != 0) {
+	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
 		GDKerror("THRcreate: could not start thread\n");
 		MT_sema_destroy(&t->sem);
 		GDKfree(t);
