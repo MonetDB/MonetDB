@@ -388,11 +388,23 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 					tt = TYPE_void;
 				}
 				break;
+			} else if (tr->changes[i].type == LOG_USE && strcmp(tr->changes[i].name, name) == 0) {
+				log_bid bid = (log_bid) tr->changes[i].nr;
+				BAT *b = BATdescriptor(bid);
+
+				if (b) {
+					ht = TYPE_void;
+					tt = b->ttype;
+				}
+				break;
 			}
 		}
 	}
 	assert((ht == TYPE_void && l->flag == LOG_INSERT) ||
 	       ((ht == TYPE_oid || !ht) && l->flag == LOG_UPDATE));
+	if ((ht != TYPE_void && l->flag == LOG_INSERT) ||
+	   ((ht != TYPE_void && ht != TYPE_oid) && l->flag == LOG_UPDATE))
+		return LOG_ERR;
 	if (ht >= 0 && tt >= 0) {
 		BAT *uid = NULL;
 		BAT *r;
