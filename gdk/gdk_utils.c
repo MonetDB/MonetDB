@@ -987,10 +987,9 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
-	} else {
-		THRprintf(GDKout, "%s%.*s%s", prefix ? prefix : "",
-			  (int) messagelen, message, suffix ? suffix : "");
 	}
+	fprintf(stderr, "%s%.*s%s", prefix ? prefix : "",
+		(int) messagelen, message, suffix ? suffix : "");
 }
 
 /* print an error or warning message, making sure the message ends in

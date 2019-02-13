@@ -79,6 +79,11 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		if (newmsg != NULL)
 			message = newmsg;
 	}
+	char *q = message;
+	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
+		fprintf(stderr, "#!ERROR:%.*s\n", (int) (p - q), q);
+	if (*q)
+		fprintf(stderr, "#!ERROR:%s\n", q);
 	return message;
 }
 
