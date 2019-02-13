@@ -184,7 +184,12 @@ CMDbbpLocation(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				snprintf(buf,FILENAME_MAX,"%s/bat/%s",cwd,BBP_physical(i));
+				int len = snprintf(buf,FILENAME_MAX,"%s/bat/%s",cwd,BBP_physical(i));
+				if (len == -1 || len >= FILENAME_MAX) {
+					BBPunlock();
+					BBPreclaim(b);
+					throw(MAL, "catalog.bbpLocation", SQLSTATE(HY001) "Could not write bpp filename path is too large");
+				}
 				if (BUNappend(b, buf, false) != GDK_SUCCEED) {
 					BBPunlock();
 					BBPreclaim(b);
@@ -384,6 +389,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 	bat	i;
 	char buf[FILENAME_MAX];
 	bat sz = getBBPsize();
+	str msg = MAL_SUCCEED;
 
 	id = COLnew(0, TYPE_int, (BUN) sz, TRANSIENT);
 	ns = COLnew(0, TYPE_str, (BUN) sz, TRANSIENT);
@@ -405,7 +411,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 			bn = BATdescriptor(i);
 			if (bn) {
 				lng l = BATcount(bn);
-				int heat_ = 0;
+				int heat_ = 0, len;
 				char *loc = BBP_cache(i) ? "load" : "disk";
 				char *mode = "persistent";
 				int refs = BBP_refs(i);
@@ -413,7 +419,11 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 
 				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
 					mode = "transient";
-				snprintf(buf, FILENAME_MAX, "%s", BBP_physical(i));
+				len = snprintf(buf, FILENAME_MAX, "%s", BBP_physical(i));
+				if (len == -1 || len >= FILENAME_MAX) {
+					msg = createException(MAL, "catalog.bbp", SQLSTATE(HY001) "Could not bpp filename path is too large");
+					goto bailout;
+				}
 				if (BUNappend(id, &i, false) != GDK_SUCCEED ||
 					BUNappend(ns, BBP_logical(i), false) != GDK_SUCCEED ||
 					BUNappend(tt, BATatoms[BATttype(bn)].name, false) != GDK_SUCCEED ||
@@ -426,6 +436,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 					BUNappend(status, loc, false) != GDK_SUCCEED ||
 					BUNappend(kind, mode, false) != GDK_SUCCEED) {
 					BBPunfix(bn->batCacheid);
+					msg = createException(MAL, "catalog.bbp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				BBPunfix(bn->batCacheid);
@@ -457,7 +468,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 	BBPreclaim(dirty);
 	BBPreclaim(status);
 	BBPreclaim(kind);
-	throw(MAL, "catalog.bbp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return msg;
 }
 
 str

@@ -1161,6 +1161,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 {
 	gdk_return res = GDK_SUCCEED;
 	char id[BUFSIZ];
+	int len;
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlogs logger id is " LLFMT "\n", lg->id);
@@ -1176,11 +1177,15 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 
 		if (!lg->shared && lid >= lg->id) {
 			lg->id = lid;
-			snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+			len = snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+			if (len == -1 || len >= FILENAME_MAX)
+				GDKerror("Logger filename path is too large\n");
 			res = logger_readlog(lg, log_filename);
 		} else {
 			while (lid >= lg->id && res == GDK_SUCCEED) {
-				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+				len = snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+				if (len == -1 || len >= FILENAME_MAX)
+					GDKerror("Logger filename path is too large\n");
 				if ((res = logger_readlog(lg, log_filename)) != GDK_SUCCEED && lg->shared && lg->id > 1) {
 					/* The only special case is if
 					 * the file is missing
@@ -1428,7 +1433,7 @@ static int
 logger_set_logdir_path(char *filename, const char *fn,
 		       const char *logdir, int shared)
 {
-	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
+	int len, role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
 	if (MT_path_absolute(logdir)) {
 		char logdir_parent_path[FILENAME_MAX] = "";
@@ -1440,8 +1445,10 @@ logger_set_logdir_path(char *filename, const char *fn,
 			/* set the new relative logdir location
 			 * including the logger function name
 			 * subdir */
-			snprintf(filename, FILENAME_MAX, "%s%c%s%c",
+			len = snprintf(filename, FILENAME_MAX, "%s%c%s%c",
 				 logdir_name, DIR_SEP, fn, DIR_SEP);
+			if (len == -1 || len >= FILENAME_MAX)
+				GDKerror("Logger filename path is too large\n");
 
 			/* add a new dbfarm for the logger directory
 			 * using the parent dir path, assuming it is
@@ -1458,8 +1465,10 @@ logger_set_logdir_path(char *filename, const char *fn,
 		}
 	} else {
 		/* just concat the logdir and fn with appropriate separators */
-		snprintf(filename, FILENAME_MAX, "%s%c%s%c",
+		len = snprintf(filename, FILENAME_MAX, "%s%c%s%c",
 			 logdir, DIR_SEP, fn, DIR_SEP);
+		if (len == -1 || len >= FILENAME_MAX)
+			GDKerror("Logger filename path is too large\n");
 	}
 
 	return role;
@@ -1472,7 +1481,7 @@ logger_set_logdir_path(char *filename, const char *fn,
 static gdk_return
 logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 {
-	int id = LOG_SID;
+	int len, id = LOG_SID;
 	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
 	str filenamestr = NULL;
@@ -1483,8 +1492,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	if(!(filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL)))
 		goto error;
 	snprintf(filename, FILENAME_MAX, "%s", filenamestr);
-	snprintf(bak, sizeof(bak), "%s.bak", filename);
+	len = snprintf(bak, sizeof(bak), "%s.bak", filename);
 	GDKfree(filenamestr);
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("Logger filename path is too large\n");
+		goto error;
+	}
 
 	lg->catalog_bid = NULL;
 	lg->catalog_nme = NULL;
@@ -1883,11 +1896,19 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		/* Do not do conversion if logger is shared/read-only */
 		if (!lg->shared) {
 			FILE *fp1;
-			int curid;
+			int len, curid;
 
-			snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
+			len = snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
 				 lg->dir);
-			snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-nil-nan filename path is too large\n");
+				goto error;
+			}
+			len = snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-nil-nan filename path is too large\n");
+				goto error;
+			}
 			/* read the current log id without disturbing
 			 * the file pointer */
 #ifdef _MSC_VER
@@ -2215,7 +2236,7 @@ logger_exit(logger *lg)
 {
 	FILE *fp;
 	char filename[FILENAME_MAX];
-	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
+	int len, farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	logger_close(lg);
 	if (GDKmove(farmid, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
@@ -2224,7 +2245,11 @@ logger_exit(logger *lg)
 		return GDK_FAIL;
 	}
 
-	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
+	len = snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
+	if (len == -1 || len >= FILENAME_MAX) {
+		fprintf(stderr, "!ERROR: logger_exit: logger filename path is too large\n");
+		return GDK_FAIL;
+	}
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
 		char ext[FILENAME_MAX];
 
@@ -2427,9 +2452,13 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int ro
 	FILE *fp;
 	char id[BUFSIZ];
 	lng lid = GDK_FAIL;
-	int farmid = BBPselectfarm(role, 0, offheap);
+	int len, farmid = BBPselectfarm(role, 0, offheap);
 
-	snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
+	len = snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
+	if (len == -1 || len >= FILENAME_MAX) {
+		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: logger filename path is too large\n");
+		return -1;
+	}
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		return -1;

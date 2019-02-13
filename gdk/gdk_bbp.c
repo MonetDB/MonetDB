@@ -801,6 +801,7 @@ fixfloatbats(void)
 	char filename[FILENAME_MAX];
 	FILE *fp;
 	size_t len;
+	int written;
 
 	for (bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++) {
 		if ((b = BBP_desc(bid)) == NULL) {
@@ -815,10 +816,13 @@ fixfloatbats(void)
 			 * logger that it also needs to do a
 			 * conversion.  That is done by creating a
 			 * file here based on the name of this BAT. */
-			snprintf(filename, sizeof(filename),
+			written = snprintf(filename, sizeof(filename),
 				 "%s/%.*s_nil-nan-convert",
 				 BBPfarms[0].dirname,
 				 (int) (len - 12), BBP_logical(bid));
+			if (written == -1 || written >= FILENAME_MAX)
+				GDKfatal("fixfloatbats: cannot create file %s has a very large pathname\n",
+						 filename);
 			fp = fopen(filename, "w");
 			if (fp == NULL)
 				GDKfatal("fixfloatbats: cannot create file %s\n",
