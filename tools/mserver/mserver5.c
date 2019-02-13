@@ -243,7 +243,7 @@ main(int argc, char **av)
 	opt *set = NULL;
 	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
 	str err = MAL_SUCCEED;
-	char prmodpath[1024];
+	char prmodpath[FILENAME_MAX];
 	char *modpath = NULL;
 	char *binpath = NULL;
 	str *monet_script;
@@ -540,8 +540,10 @@ main(int argc, char **av)
 			if (p != NULL) {
 				*p = '\0';
 				for (i = 0; libdirs[i] != NULL; i++) {
-					snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
-							binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					int len = snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
+									   binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					if (len == -1 || len >= FILENAME_MAX)
+						continue;
 					if (stat(prmodpath, &sb) == 0) {
 						modpath = prmodpath;
 						break;

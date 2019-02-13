@@ -591,20 +591,29 @@ static int tracecounter = 0;
 str
 startTrace(str path)
 {
+	int len;
 	char buf[FILENAME_MAX];
 
-	if( path && eventstream == NULL){
+	if (path && eventstream == NULL){
 		// create a file to keep the events, unless we
 		// already have a profiler stream
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
-			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
+			len = snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
+			if (len == -1 || len >= FILENAME_MAX) {
+				MT_lock_unset(&mal_profileLock);
+				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
+			}
 			if (mkdir(buf, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
 				MT_lock_unset(&mal_profileLock);
 				throw(MAL, "profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
 			}
-			snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
-			if((eventstream = open_wastream(buf)) == NULL) {
+			len = snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
+			if (len == -1 || len >= FILENAME_MAX) {
+				MT_lock_unset(&mal_profileLock);
+				throw(MAL, "profiler.startTrace", SQLSTATE(HY001) "Profiler filename path is too large");
+			}
+			if ((eventstream = open_wastream(buf)) == NULL) {
 				MT_lock_unset(&mal_profileLock );
 				throw(MAL,"profiler.startTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
