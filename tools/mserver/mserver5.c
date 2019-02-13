@@ -469,6 +469,7 @@ main(int argc, char **av)
 	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	if (debug)
 		mo_print_options(set, setlen);
+	GDKsetverbose(verbosity);
 
 	monet_script = (str *) malloc(sizeof(str) * (argc + 1));
 	if (monet_script == NULL) {
