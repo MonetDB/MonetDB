@@ -966,7 +966,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		char *dst = buf + strlen(buf);
 		size_t maxlen = GDKMAXERRLEN - (dst - buf) - 1;
 
-		if (prefix && *prefix && dst < buf + GDKMAXERRLEN) {
+		if (*prefix && dst < buf + GDKMAXERRLEN) {
 			size_t preflen;
 
 			strncpy(dst, prefix, maxlen);
@@ -979,7 +979,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			maxlen = messagelen;
 		strncpy(dst, message, maxlen);
 		dst += maxlen;
-		if (suffix && *suffix && dst < buf + GDKMAXERRLEN) {
+		if (*suffix && dst < buf + GDKMAXERRLEN) {
 			size_t sufflen;
 
 			maxlen = buf + GDKMAXERRLEN - dst - 1;
@@ -990,9 +990,13 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
+		fprintf(stderr, "#%s%.*s%s",
+			prefix[0] == '#' ? prefix + 1 : prefix,
+			(int) messagelen, message, suffix);
+	} else {
+		THRprintf(GDKout, "%s%.*s%s", prefix,
+			  (int) messagelen, message, suffix);
 	}
-	fprintf(stderr, "%s%.*s%s", prefix ? prefix : "",
-		(int) messagelen, message, suffix ? suffix : "");
 }
 
 /* print an error or warning message, making sure the message ends in
