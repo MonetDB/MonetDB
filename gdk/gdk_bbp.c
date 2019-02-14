@@ -3384,20 +3384,8 @@ BBPdiskscan(const char *parent, size_t baseoff)
 #else
 				delete = true;
 #endif
-			} else if (strncmp(p + 1, "priv", 4) != 0 &&
-				   strncmp(p + 1, "new", 3) != 0 &&
-				   strncmp(p + 1, "head", 4) != 0 &&
-				   strncmp(p + 1, "tail", 4) != 0) {
+			} else if (strncmp(p + 1, "new", 3) != 0) {
 				ok = false;
-			} else if (strncmp(p + 1, "head", 4) == 0 ||
-				   strncmp(p + 1, "hheap", 5) == 0 ||
-				   strncmp(p + 1, "hhash", 5) == 0 ||
-				   strncmp(p + 1, "himprints", 9) == 0 ||
-				   strncmp(p + 1, "horderidx", 9) == 0) {
-				/* head is VOID, so no head, hheap files, and
-				 * we do not support any indexes on the
-				 * head */
-				delete = true;
 			}
 		}
 		if (!ok) {
