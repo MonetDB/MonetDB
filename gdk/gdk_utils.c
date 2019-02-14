@@ -999,14 +999,14 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
-		fprintf(stderr, "#%s:%s%.*s%s",
-			MT_thread_name(),
-			prefix[0] == '#' ? prefix + 1 : prefix,
-			(int) messagelen, message, suffix);
 	} else {
 		THRprintf(GDKout, "%s%.*s%s", prefix,
 			  (int) messagelen, message, suffix);
 	}
+	fprintf(stderr, "#%s:%s%.*s%s",
+		MT_thread_name(),
+		prefix[0] == '#' ? prefix + 1 : prefix,
+		(int) messagelen, message, suffix);
 }
 
 /* print an error or warning message, making sure the message ends in
