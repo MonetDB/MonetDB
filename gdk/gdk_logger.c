@@ -434,7 +434,10 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 					tt = TYPE_void;
 				}
 				break;
-			} else if (tr->changes[i].type == LOG_USE && strcmp(tr->changes[i].name, name) == 0) {
+			} else if (tr->changes[i].type == LOG_USE &&
+				   (tpe == 0
+				    ? strcmp(tr->changes[i].name, name) == 0
+				    : tr->changes[i].tpe == tpe && tr->changes[i].cid == id)) {
 				log_bid bid = (log_bid) tr->changes[i].nr;
 				BAT *b = BATdescriptor(bid);
 

@@ -2065,7 +2065,6 @@ BATmode(BAT *b, bool transient)
 		if (!transient) {
 			check_type(b->ttype);
 		}
-		BBP_dirty = true;
 
 		if (!transient && isVIEW(b)) {
 			if (VIEWreset(b) != GDK_SUCCEED) {

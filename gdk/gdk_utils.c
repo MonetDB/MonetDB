@@ -518,7 +518,6 @@ GDKinit(opt *set, int setlen)
 #endif
 #endif
 	MT_init();
-	BBP_dirty = true;
 
 	/* now try to lock the database: go through all farms, and if
 	 * we see a new directory, lock it */
@@ -1052,14 +1051,14 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			dst += sufflen;
 		}
 		*dst = '\0';
-		fprintf(stderr, "#%s:%s%.*s%s",
-			MT_thread_name(),
-			prefix[0] == '#' ? prefix + 1 : prefix,
-			(int) messagelen, message, suffix);
 	} else {
 		THRprintf(GDKout, "%s%.*s%s", prefix,
 			  (int) messagelen, message, suffix);
 	}
+	fprintf(stderr, "#%s:%s%.*s%s",
+		MT_thread_name(),
+		prefix[0] == '#' ? prefix + 1 : prefix,
+		(int) messagelen, message, suffix);
 }
 
 /* print an error or warning message, making sure the message ends in
