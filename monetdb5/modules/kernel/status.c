@@ -604,10 +604,6 @@ SYSgdkEnv(bat *ret, bat *ret2)
 		BUNappend(b, &per, false) != GDK_SUCCEED ||
 		BUNappend(bn, "ondisk", false) != GDK_SUCCEED ||
 		BUNappend(b, &pdisk, false) != GDK_SUCCEED ||
-		BUNappend(bn, "todisk", false) != GDK_SUCCEED ||
-		BUNappend(b, &BBPout, false) != GDK_SUCCEED ||
-		BUNappend(bn, "fromdisk", false) != GDK_SUCCEED ||
-		BUNappend(b, &BBPin, false) != GDK_SUCCEED ||
 		pseudo(ret,ret2, bn,b)) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);

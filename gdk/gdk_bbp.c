@@ -159,12 +159,6 @@ getBBPsize(void)
 
 
 /*
- * other globals
- */
-int BBPin = 0;			/* bats loaded statistic */
-int BBPout = 0;			/* bats saved statistic */
-
-/*
  * @+ BBP Consistency and Concurrency
  * While GDK provides the basic building blocks for an ACID system, in
  * itself it is not such a system, as we this would entail too much
@@ -2392,7 +2386,6 @@ getBBPdescriptor(bat i, bool lock)
 		IODEBUG fprintf(stderr, "#load %s\n", BBPname(i));
 
 		b = BATload_intern(i, lock);
-		BBPin++;
 
 		/* clearing bits can be done without the lock */
 		BBP_status_off(i, BBPLOADING, "BBPdescriptor");
@@ -2454,7 +2447,6 @@ BBPsave(BAT *b)
 		if (BBP_status(bid) & BBPEXISTING)
 			ret = BBPbackup(b, false);
 		if (ret == GDK_SUCCEED) {
-			BBPout++;
 			ret = BATsave(b);
 		}
 		/* clearing bits can be done without the lock */
@@ -2577,7 +2569,6 @@ BBPquickdesc(bat bid, bool delaccess)
 	if (b == NULL ||
 	    complexatom(b->ttype, delaccess)) {
 		b = BATload_intern(bid, true);
-		BBPin++;
 	}
 	return b;
 }
@@ -3424,9 +3415,6 @@ gdk_bbp_reset(void)
 	memset(BBPfarms, 0, sizeof(BBPfarms));
 	BBP_hash = 0;
 	BBP_mask = 0;
-
-	BBPin = 0;
-	BBPout = 0;
 
 	locked_by = 0;
 	BBPunloadCnt = 0;
