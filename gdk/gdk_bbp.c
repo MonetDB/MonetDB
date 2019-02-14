@@ -923,7 +923,7 @@ BBPcheckbats(void)
 		if ((size_t) statb.st_size < b->theap.free) {
 			GDKerror("BBPcheckbats: file %s too small (expected %zu, actual %zu)\n", path, b->theap.free, (size_t) statb.st_size);
 			GDKfree(path);
-			return GDK_FAIL
+			return GDK_FAIL;
 		}
 		GDKfree(path);
 		if (b->tvheap != NULL) {
