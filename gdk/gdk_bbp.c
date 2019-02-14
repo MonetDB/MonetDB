@@ -823,6 +823,60 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 	}
 }
 
+/* check that the necessary files for all BATs exist and are large
+ * enough */
+static gdk_return
+BBPcheckbats(void)
+{
+	for (bat bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++) {
+		struct stat statb;
+		BAT *b;
+		char *path;
+
+		if ((b = BBP_desc(bid)) == NULL) {
+			/* not a valid BAT */
+			continue;
+		}
+		if (b->ttype == TYPE_void) {
+			/* no files needed */
+			continue;
+		}
+		path = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
+		if (path == NULL)
+			return GDK_FAIL;
+		if (stat(path, &statb) < 0) {
+			GDKsyserror("BBPcheckbats: cannot stat file %s\n",
+				    path);
+			GDKfree(path);
+			return GDK_FAIL;
+		}
+		if ((size_t) statb.st_size < b->theap.free) {
+			GDKerror("BBPcheckbats: file %s too small (expected %zu, actual %zu)\n", path, b->theap.free, (size_t) statb.st_size);
+			GDKfree(path);
+			return GDK_FAIL
+		}
+		GDKfree(path);
+		if (b->tvheap != NULL) {
+			path = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "theap");
+			if (path == NULL)
+				return GDK_FAIL;
+			if (stat(path, &statb) < 0) {
+				GDKsyserror("BBPcheckbats: cannot stat file %s\n",
+					    path);
+				GDKfree(path);
+				return GDK_FAIL;
+			}
+			if ((size_t) statb.st_size < b->tvheap->free) {
+				GDKerror("BBPcheckbats: file %s too small (expected %zu, actual %zu)\n", path, b->tvheap->free, (size_t) statb.st_size);
+				GDKfree(path);
+				return GDK_FAIL;
+			}
+			GDKfree(path);
+		}
+	}
+	return GDK_SUCCEED;
+}
+
 #ifdef HAVE_HGE
 #define SIZEOF_MAX_INT SIZEOF_HGE
 #else
@@ -1041,6 +1095,9 @@ BBPinit(void)
 	/* will call BBPrecover if needed */
 	if (BBPprepare(false) != GDK_SUCCEED)
 		GDKfatal("BBPinit: cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
+
+	if (BBPcheckbats() != GDK_SUCCEED)
+		GDKfatal("BBPinit: BBPcheckbats failed");
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
 	for (i = 0; i < MAXFARMS && BBPfarms[i].dirname != NULL; i++) {
