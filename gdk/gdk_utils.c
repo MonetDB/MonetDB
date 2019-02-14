@@ -474,7 +474,7 @@ GDKinit(opt *set, int setlen)
 		      "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
 
 	if (!MT_thread_init())
-		return 0;
+		return GDK_FAIL;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&MT_system_lock, "MT_system_lock");
