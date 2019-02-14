@@ -509,7 +509,6 @@ GDKinit(opt *set, int setlen)
 #endif
 #endif
 	MT_init();
-	BBP_dirty = true;
 
 	/* now try to lock the database: go through all farms, and if
 	 * we see a new directory, lock it */

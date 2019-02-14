@@ -161,7 +161,6 @@ getBBPsize(void)
 /*
  * other globals
  */
-bool BBP_dirty = false;		/* BBP structures modified? */
 int BBPin = 0;			/* bats loaded statistic */
 int BBPout = 0;			/* bats saved statistic */
 
@@ -1027,7 +1026,6 @@ BBPinit(void)
 	BBPlimit = 0;
 	memset(BBP, 0, sizeof(BBP));
 	ATOMIC_SET(BBPsize, 1, BBPsizeLock);
-	BBP_dirty = true;
 
 	bbpversion = BBPheader(fp);
 
@@ -1749,8 +1747,6 @@ BBPinsert(BAT *bn)
 		BATDEBUG fprintf(stderr, "#%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
 	}
 
-	BBP_dirty = true;
-
 	return i;
 }
 
@@ -1942,7 +1938,6 @@ BBPrename(bat bid, const char *nme)
 		BBP_status_on(bid, BBPRENAMED, "BBPrename");
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
-		BBP_dirty = true;
 	}
 	MT_lock_unset(&GDKnameLock);
 	MT_lock_unset(&GDKtrimLock(idx));
@@ -2388,7 +2383,6 @@ BBPsave(BAT *b)
 
 		if (DELTAdirty(b)) {
 			flags |= BBPSWAPPED;
-			BBP_dirty = true;
 		}
 		if (b->batTransient) {
 			flags |= BBPTMP;
@@ -2859,7 +2853,6 @@ gdk_return
 BBPsync(int cnt, bat *subcommit)
 {
 	gdk_return ret = GDK_SUCCEED;
-	bool bbpdirty = false;
 	int t0 = 0, t1 = 0;
 	str bakdir, deldir;
 
@@ -2875,7 +2868,6 @@ BBPsync(int cnt, bat *subcommit)
 	ret = BBPprepare(subcommit != NULL);
 
 	/* PHASE 1: safeguard everything in a backup-dir */
-	bbpdirty = BBP_dirty;
 	if (ret == GDK_SUCCEED) {
 		int idx = 0;
 
@@ -2928,51 +2920,39 @@ BBPsync(int cnt, bat *subcommit)
 	PERFDEBUG fprintf(stderr, "#BBPsync (write time %d)\n", (t0 = GDKms()) - t1);
 
 	if (ret == GDK_SUCCEED) {
-		if (bbpdirty) {
-			ret = BBPdir(cnt, subcommit);
-		} else if (backup_dir && GDKmove(0, (backup_dir == 1) ? BAKDIR : SUBDIR, "BBP", "dir", BATDIR, "BBP", "dir") != GDK_SUCCEED) {
-			ret = GDK_FAIL;	/* tried a cheap way to get BBP.dir; but it failed */
-		} else {
-			/* commit might still fail; we must remember
-			 * that we moved BBP.dir out of BAKDIR */
-			backup_dir = 0;
-		}
+		ret = BBPdir(cnt, subcommit);
 	}
 
 	PERFDEBUG fprintf(stderr, "#BBPsync (dir time %d) %d bats\n", (t1 = GDKms()) - t0, (bat) ATOMIC_GET(BBPsize, BBPsizeLock));
 
-	if (bbpdirty || backup_files > 0) {
-		if (ret == GDK_SUCCEED) {
+	if (ret == GDK_SUCCEED) {
+		/* atomic switchover */
+		/* this is the big one: this call determines
+		 * whether the operation of this function
+		 * succeeded, so no changing of ret after this
+		 * call anymore */
 
-			/* atomic switchover */
-			/* this is the big one: this call determines
-			 * whether the operation of this function
-			 * succeeded, so no changing of ret after this
-			 * call anymore */
+		if (rename(bakdir, deldir) < 0)
+			ret = GDK_FAIL;
+		if (ret != GDK_SUCCEED &&
+		    GDKremovedir(0, DELDIR) == GDK_SUCCEED && /* maybe there was an old deldir */
+		    rename(bakdir, deldir) < 0)
+			ret = GDK_FAIL;
+		if (ret != GDK_SUCCEED)
+			GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, deldir);
+		IODEBUG fprintf(stderr, "#BBPsync: rename %s %s = %d\n", bakdir, deldir, (int) ret);
+	}
 
-			if (rename(bakdir, deldir) < 0)
-				ret = GDK_FAIL;
-			if (ret != GDK_SUCCEED &&
-			    GDKremovedir(0, DELDIR) == GDK_SUCCEED && /* maybe there was an old deldir */
-			    rename(bakdir, deldir) < 0)
-				ret = GDK_FAIL;
-			if (ret != GDK_SUCCEED)
-				GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, deldir);
-			IODEBUG fprintf(stderr, "#BBPsync: rename %s %s = %d\n", bakdir, deldir, (int) ret);
-		}
-
-		/* AFTERMATH */
-		if (ret == GDK_SUCCEED) {
-			BBP_dirty = false;
-			backup_files = subcommit ? (backup_files - backup_subdir) : 0;
-			backup_dir = backup_subdir = 0;
-			if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
-				fprintf(stderr, "#BBPsync: cannot remove directory %s\n", DELDIR);
-			(void) BBPprepare(false); /* (try to) remove DELDIR and set up new BAKDIR */
-			if (backup_files > 1) {
-				PERFDEBUG fprintf(stderr, "#BBPsync (backup_files %d > 1)\n", backup_files);
-				backup_files = 1;
-			}
+	/* AFTERMATH */
+	if (ret == GDK_SUCCEED) {
+		backup_files = subcommit ? (backup_files - backup_subdir) : 0;
+		backup_dir = backup_subdir = 0;
+		if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
+			fprintf(stderr, "#BBPsync: cannot remove directory %s\n", DELDIR);
+		(void) BBPprepare(false); /* (try to) remove DELDIR and set up new BAKDIR */
+		if (backup_files > 1) {
+			PERFDEBUG fprintf(stderr, "#BBPsync (backup_files %d > 1)\n", backup_files);
+			backup_files = 1;
 		}
 	}
 	PERFDEBUG fprintf(stderr, "#BBPsync (ready time %d)\n", (t0 = GDKms()) - t1);
@@ -3400,7 +3380,6 @@ gdk_bbp_reset(void)
 	BBP_hash = 0;
 	BBP_mask = 0;
 
-	BBP_dirty = false;
 	BBPin = 0;
 	BBPout = 0;
 
