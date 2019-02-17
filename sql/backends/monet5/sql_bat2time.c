@@ -268,3 +268,112 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 	BBPunfix(b->batCacheid);
 	return msg;
 }
+
+static int truncate_check(const str *scale){
+	(void) scale;
+	return 
+		strcmp(*scale, "millenium") == 0 ||
+		strcmp(*scale, "century") == 0  ||
+		strcmp(*scale, "decade") == 0 ||
+		strcmp(*scale, "year") == 0 ||
+		strcmp(*scale, "quarter" ) == 0 ||
+		strcmp(*scale, "month") == 0 ||
+		strcmp(*scale, "week") == 0 ||
+		strcmp(*scale, "day") == 0  ||
+		strcmp(*scale, "hour") == 0 ||
+		strcmp(*scale, "minute") == 0 ||
+		strcmp(*scale, "second") == 0 ||
+		strcmp(*scale, "milliseconds") == 0 ||
+		strcmp(*scale, "microseconds") == 0;
+}
+
+#define date_trunc_loop(NAME, TYPE, DIVISOR) 	\
+	if  ( strcmp(*scale, NAME) == 0){ \
+		for( ; lo < hi; lo++)		\
+			if (is_lng_nil(bt[lo])) {     		\
+					dt[lo] = lng_nil;     		\
+					nils++;		\
+			} else                 		\
+				dt[lo] = (bt[lo] / DIVISOR) * DIVISOR; \
+	}
+
+str
+bat_date_trunc(bat *res, const str *scale, const bat *bid)
+{
+	BAT *b, *bn;
+	oid lo, hi;
+	lng *bt;
+	lng *dt;
+	char *msg = NULL;
+	lng nils = 0;
+
+	if ( truncate_check(scale) == 0)
+		throw(SQL, "batcalc.truncate_timestamp", SQLSTATE(HY005) "Improper directive ");
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "batcalc.truncate_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
+	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(SQL, "sql.truncate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
+	bt = (lng *) Tloc(b, 0);
+	dt = (lng *) Tloc(bn, 0);
+
+	lo = 0;
+	hi = lo + BATcount(b);
+
+	date_trunc_loop("microseconds", TIMESTAMP, 1)
+	date_trunc_loop("milliseconds", TIMESTAMP, 1000)
+	date_trunc_loop("seconds", TIMESTAMP, (1000 * 60))
+	date_trunc_loop("minute", TIMESTAMP, (1000 * 60 * 60))
+	date_trunc_loop("hour", TIMESTAMP, (1000 * 60 * 60 * 24))
+
+	// week
+	// quarter
+	// decade
+	// century
+	// millenium
+	if( nils){
+		bn->tnonil = false;  
+		bn->tnil = true;     
+		bn->tsorted = false;     
+		bn->trevsorted = false;  
+		bn->tkey = false;    
+	}
+	BATsetcount(bn, (BUN) lo);
+	BBPkeepref(*res = bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
+#define date_trunc_single(NAME, TYPE, DIVISOR) 	\
+	if  ( strcmp(*scale, NAME) == 0){ \
+		if (is_lng_nil(*bt)) {     		\
+			*dt = lng_nil;     		\
+		} else                 		\
+			*dt = (*bt / DIVISOR) * DIVISOR; \
+	}
+
+str
+date_trunc(lng *dt, const str *scale, const lng *bt)
+{
+	str msg = MAL_SUCCEED;
+
+	if (truncate_check(scale) == 0)
+		throw(SQL, "sql.truncate", SQLSTATE(HY001) "NYI");	
+
+	date_trunc_single("microseconds", TIMESTAMP, 1)
+	date_trunc_single("milliseconds", TIMESTAMP, 1000)
+	date_trunc_single("seconds", TIMESTAMP, (1000 * 60))
+	date_trunc_single("minute", TIMESTAMP, (1000 * 60 * 60))
+	date_trunc_single("hour", TIMESTAMP, (1000 * 60 * 60 * 24))
+	// week
+	// quarter
+	// decade
+	// century
+	// millenium
+	return msg;
+}
