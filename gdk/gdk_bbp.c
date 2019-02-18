@@ -219,14 +219,14 @@ getBBPsize(void)
  */
 static volatile MT_Id locked_by = 0;
 
-#define BBP_unload_inc(bid, nme)		\
+#define BBP_unload_inc()			\
 	do {					\
 		MT_lock_set(&GDKunloadLock);	\
 		BBPunloadCnt++;			\
 		MT_lock_unset(&GDKunloadLock);	\
 	} while (0)
 
-#define BBP_unload_dec(bid, nme)		\
+#define BBP_unload_dec()			\
 	do {					\
 		MT_lock_set(&GDKunloadLock);	\
 		--BBPunloadCnt;			\
@@ -2246,7 +2246,6 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			BATDEBUG {
 				fprintf(stderr, "#%s unload and free bat %d\n", func, i);
 			}
-			BBP_unload_inc(i, func);
 			/* free memory of transient */
 			if (BBPfree(b, func) != GDK_SUCCEED)
 				return -1;	/* indicate failure */
@@ -2501,6 +2500,7 @@ BBPfree(BAT *b, const char *calledFrom)
 	assert(BBPswappable(b));
 	(void) calledFrom;
 
+	BBP_unload_inc();
 	/* write dirty BATs before being unloaded */
 	ret = BBPsave(b);
 	if (ret == GDK_SUCCEED) {
@@ -2517,7 +2517,7 @@ BBPfree(BAT *b, const char *calledFrom)
 		fprintf(stderr, "#BBPfree turn off unloading %d\n", bid);
 	}
 	BBP_status_off(bid, BBPUNLOADING, calledFrom);
-	BBP_unload_dec(bid, calledFrom);
+	BBP_unload_dec();
 
 	/* parent released when completely done with child */
 	if (ret == GDK_SUCCEED && tp)
