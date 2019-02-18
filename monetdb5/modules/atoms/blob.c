@@ -84,15 +84,21 @@ static char hexit[] = "0123456789ABCDEF";
 int
 BLOBcmp(const blob *l, const blob *r)
 {
-	size_t len = l->nitems;
-
-	if (len != r->nitems)
-		return len < r->nitems ? -1 : len > r->nitems ? 1 : 0;
-
-	if (len == ~(size_t) 0)
-		return (0);
-
-	return memcmp(l->data, r->data, len);
+	int c;
+	if (r->nitems == ~(size_t)0)
+		return l->nitems != ~(size_t)0;
+	if (l->nitems == ~(size_t)0)
+		return -1;
+	if (l->nitems < r->nitems) {
+		c = memcmp(l->data, r->data, l->nitems);
+		if (c == 0)
+			return -1;
+	} else {
+		c = memcmp(l->data, r->data, r->nitems);
+		if (c == 0)
+			return l->nitems > r->nitems;
+	}
+	return c;
 }
 
 void

@@ -172,13 +172,15 @@ static char *RAPIinitialize(void) {
 static char *RAPIinstalladdons(void) {
 	int evalErr;
 	ParseStatus status;
-	char rlibs[BUFSIZ];
+	char rlibs[FILENAME_MAX];
 	char rapiinclude[BUFSIZ];
 	SEXP librisexp;
+	int len;
 
 	// r library folder, create if not exists
-	snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
-			 "rapi_packages");
+	len = snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP, "rapi_packages");
+	if (len == -1 || len >= FILENAME_MAX)
+		return "cannot create rapi_packages directory because the path is too large";
 
 	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
 		return "cannot create rapi_packages directory";

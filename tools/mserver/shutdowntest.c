@@ -15,7 +15,6 @@
 #include "mal_import.h"
 #include "mal_client.h"
 #include "mal_function.h"
-#include "monet_version.h"
 #include "mal_authorize.h"
 #include "msabaoth.h"
 #include "mutils.h"
@@ -100,7 +99,7 @@ static str monetdb_initialize(void) {
 	volatile int setlen = 0; /* use volatile for setjmp */
 	str retval = MAL_SUCCEED;
 	char *err;
-	char prmodpath[1024];
+	char prmodpath[FILENAME_MAX];
 	const char *modpath = NULL;
 	char *binpath = NULL;
 
@@ -159,8 +158,10 @@ static str monetdb_initialize(void) {
 			if (p != NULL) {
 				*p = '\0';
 				for (i = 0; libdirs[i] != NULL; i++) {
-					snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
+					int len = snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
 							binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					if (len == -1 || len >= FILENAME_MAX)
+						continue;
 					if (stat(prmodpath, &sb) == 0) {
 						modpath = prmodpath;
 						break;

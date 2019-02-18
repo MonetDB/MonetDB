@@ -333,7 +333,6 @@ extern struct BBPfarm_t {
 	FILE *lock_file;
 } BBPfarms[MAXFARMS];
 
-extern bool BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */

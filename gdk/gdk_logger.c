@@ -434,12 +434,27 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 					tt = TYPE_void;
 				}
 				break;
+			} else if (tr->changes[i].type == LOG_USE &&
+				   (tpe == 0
+				    ? strcmp(tr->changes[i].name, name) == 0
+				    : tr->changes[i].tpe == tpe && tr->changes[i].cid == id)) {
+				log_bid bid = (log_bid) tr->changes[i].nr;
+				BAT *b = BATdescriptor(bid);
+
+				if (b) {
+					ht = TYPE_void;
+					tt = b->ttype;
+				}
+				break;
 			}
 		}
 		assert(i < tr->nr); /* found one */
 	}
 	assert((ht == TYPE_void && l->flag == LOG_INSERT) ||
 	       ((ht == TYPE_oid || !ht) && l->flag == LOG_UPDATE));
+	if ((ht != TYPE_void && l->flag == LOG_INSERT) ||
+	   ((ht != TYPE_void && ht != TYPE_oid) && l->flag == LOG_UPDATE))
+		return LOG_ERR;
 	if (ht >= 0 && tt >= 0) {
 		BAT *uid = NULL;
 		BAT *r;
@@ -1207,6 +1222,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 {
 	gdk_return res = GDK_SUCCEED;
 	char id[BUFSIZ];
+	int len;
 
 	if (lg->debug & 1) {
 		fprintf(stderr, "#logger_readlogs logger id is " LLFMT "\n", lg->id);
@@ -1225,7 +1241,9 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 
 			lg->id = lid;
 			while (res == GDK_SUCCEED && !filemissing) {
-				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+				len = snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+				if (len == -1 || len >= FILENAME_MAX)
+					GDKerror("Logger filename path is too large\n");
 				res = logger_readlog(lg, log_filename, &filemissing);
 				if (!filemissing)
 					lg->id++;
@@ -1233,7 +1251,9 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 		} else {
 			bool filemissing = false;
 			while (lid >= lg->id && res == GDK_SUCCEED) {
-				snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+				len = snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
+				if (len == -1 || len >= FILENAME_MAX)
+					GDKerror("Logger filename path is too large\n");
 				res = logger_readlog(lg, log_filename, &filemissing);
 				/* Increment the id only at the end,
 				 * since we want to re-read the last
@@ -1530,6 +1550,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 static gdk_return
 logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 {
+	int len;
 	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
 	str filenamestr = NULL;
@@ -1542,8 +1563,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	if(!(filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL)))
 		goto error;
 	snprintf(filename, FILENAME_MAX, "%s", filenamestr);
-	snprintf(bak, sizeof(bak), "%s.bak", filename);
+	len = snprintf(bak, sizeof(bak), "%s.bak", filename);
 	GDKfree(filenamestr);
+	if (len == -1 || len >= FILENAME_MAX) {
+		GDKerror("Logger filename path is too large\n");
+		goto error;
+	}
 
 	lg->catalog_bid = NULL;
 	lg->catalog_nme = NULL;
@@ -1992,11 +2017,19 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		{
 			FILE *fp1;
-			int curid;
+			int len, curid;
 
-			snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
+			len = snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
 				 lg->dir);
-			snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-nil-nan filename path is too large\n");
+				goto error;
+			}
+			len = snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
+			if (len == -1 || len >= FILENAME_MAX) {
+				GDKerror("Convert-nil-nan filename path is too large\n");
+				goto error;
+			}
 			/* read the current log id without disturbing
 			 * the file pointer */
 #ifdef _MSC_VER
@@ -2281,7 +2314,7 @@ logger_exit(logger *lg)
 {
 	FILE *fp;
 	char filename[FILENAME_MAX];
-	int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
+	int len, farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 
 	logger_close(lg);
 	if (GDKmove(farmid, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
@@ -2290,7 +2323,11 @@ logger_exit(logger *lg)
 		return GDK_FAIL;
 	}
 
-	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
+	len = snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
+	if (len == -1 || len >= FILENAME_MAX) {
+		fprintf(stderr, "!ERROR: logger_exit: logger filename path is too large\n");
+		return GDK_FAIL;
+	}
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
 		char ext[FILENAME_MAX];
 
@@ -2435,9 +2472,13 @@ logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, role_t
 	FILE *fp;
 	char id[BUFSIZ];
 	lng lid = GDK_FAIL;
-	int farmid = BBPselectfarm(role, 0, offheap);
+	int len, farmid = BBPselectfarm(role, 0, offheap);
 
-	snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
+	len = snprintf(filename, sizeof(filename), "%s%s", dir, logger_file);
+	if (len == -1 || len >= FILENAME_MAX) {
+		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: logger filename path is too large\n");
+		return -1;
+	}
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "r")) == NULL) {
 		fprintf(stderr, "!ERROR: logger_read_last_transaction_id: unable to open file %s\n", filename);
 		return -1;

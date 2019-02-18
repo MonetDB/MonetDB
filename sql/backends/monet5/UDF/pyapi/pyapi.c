@@ -864,7 +864,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					res = MT_create_thread(&params->thread,
 										   (void (*)(void *)) &
 											   ComputeParallelAggregation,
-										   params, MT_THR_JOINABLE);
+										   params, MT_THR_JOINABLE,
+										   "ComputeParallelAggregation");
 					if (res != 0) {
 						msg = createException(MAL, "pyapi.eval",
 											  SQLSTATE(PY000) "Failed to start thread.");
