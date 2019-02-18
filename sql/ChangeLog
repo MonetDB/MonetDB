@@ -1,3 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Feb 18 2019 Aris Koning <aris.koning@monetdbsolutions.com>
+- The implementation of in-expression now follows a join-based approach
+  instead of using iterative union/selects. This greatly improves
+  performance for large in-value-lists. Furthermore the old approach has
+  large in-value-lists generate large MAL plans. This is now no longer
+  the case.
+
