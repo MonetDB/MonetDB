@@ -316,7 +316,7 @@ SQLrun(Client c, backend *be, mvc *m)
 				throw(SQL, "sql.prepare", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			retc = p->retc;
-			freeMalBlk(mb);
+			freeMalBlk(mb); // TODO can be factored out
 			mb = mc;
 			// declare the argument values as a constant
 			// We use the knowledge that the arguments are first on the stack
@@ -860,7 +860,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* generate MAL code, ignoring any code generation error */
 		if (backend_callinline(b, c) < 0 ||
 		    backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
-			msg = createException(SQL,"RAstatement","Program contains errors");
+			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
 			SQLaddQueryToCache(c);
 			msg = SQLoptimizeFunction(c,c->curprg->def);

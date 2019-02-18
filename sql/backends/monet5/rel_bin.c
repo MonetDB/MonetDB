@@ -255,6 +255,45 @@ row2cols(backend *be, stmt *sub)
 	return sub;
 }
 
+static stmt*
+distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
+{
+	node *n;
+	stmt *s;
+
+	/* create bat append values */
+	s = stmt_temp(be, exp_subtype(vals->h->data));
+	for( n = vals->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL);
+
+		if (exp_is_null(be->mvc, e))
+			*last_null_value = i;
+
+		if (!i)
+			return NULL;
+
+		s = stmt_append(be, s, i);
+	}
+
+	// Probably faster to filter out the values directly in the underlying list of atoms.
+	// But for now use groupby to filter out duplicate values.
+
+	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
+	stmt* ext = stmt_result(be, groupby, 1);
+
+	return stmt_project(be, ext, s);
+}
+
+static stmt *
+stmt_selectnonil( backend *be, stmt *col, stmt *s )
+{
+	sql_subtype *t = tail_type(col);
+	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
+	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1);
+	return nn;
+}
+
 static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r) 
 {
@@ -291,27 +330,55 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				stmt_const(be, bin_first_column(be, left), s), 
 				stmt_bool(be, 1), cmp_equal, sel, 0); 
 	} else {
-		comp_type cmp = (in)?cmp_equal:cmp_notequal;
+		// TODO: handle_in_exps should contain all necessary logic for in-expressions to be SQL compliant.
+		// For non-SQL-standard compliant behavior, e.g. PostgreSQL backwards compatibility, we should
+		// make sure that this behavior is replicated by the sql optimizer and not handle_in_exps.
 
-		if (!in)
-			s = sel;
-		for( n = nl->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			stmt *i = exp_bin(be, use_r?e->r:e, left, right, grp, ext, cnt, NULL);
-			if(!i)
-				return NULL;
+		stmt* last_null_value = NULL; // CORNER CASE ALERT: See description below.
 
-			if (in) { 
-				i = stmt_uselect(be, c, i, cmp, sel, 0); 
-				if (s)
-					s = stmt_tunion(be, s, i); 
-				else
-					s = i;
-			} else {
-				s = stmt_uselect(be, c, i, cmp, s, 0); 
+		// The actual in-value-list should not contain duplicates to ensure that final join results are unique.
+		s = distinct_value_list(be, nl, &last_null_value);
+
+		if (last_null_value) {
+			// The actual in-value-list should not contain null values.
+			s = stmt_project(be, stmt_selectnonil(be, s, NULL), s);
+		}
+
+		s = stmt_join(be, c, s, in, cmp_left);
+		s = stmt_result(be, s, 0);
+
+		if (!in) {
+			if (last_null_value) {
+				// CORNER CASE ALERT:
+				// In case of a not-in-expression with the associated in-value-list containing a null value,
+				// the entire in-predicate is forced to always return false, i.e. an empty candidate list.
+				// This is similar to postgres behavior.
+				// TODO: However I do not think this behavior is in accordance with SQL standard 2003.
+
+				// Ugly trick to return empty candidate list, because for all x it holds that: (x == null) == false.
+				//list* singleton_bat = sa_list(sql->sa);
+				// list_append(singleton_bat, null_value);
+				s = stmt_uselect(be, c, last_null_value, cmp_equal, NULL, 0);
+				return s;
+			}
+			else {
+				// BACK TO HAPPY FLOW:
+				// Make sure that null values are never returned.
+				stmt* non_nulls;
+				non_nulls = stmt_selectnonil(be, c, NULL);
+				s = stmt_tdiff(be, non_nulls, s);
+				s = stmt_project(be, s, non_nulls);
 			}
 		}
+
+		if (sel) {
+			stmt* oid_intersection;
+			oid_intersection = stmt_tinter(be, s, sel);
+			s = stmt_project(be, oid_intersection, s);
+			s = stmt_result(be, s, 0);
+		}
 	}
+
 	return s;
 }
 
@@ -3153,15 +3220,6 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	}
 	_DELETE(o);
 	return sq;
-}
-
-static stmt *
-stmt_selectnonil( backend *be, stmt *col, stmt *s )
-{
-	sql_subtype *t = tail_type(col);
-	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1);
-	return nn;
 }
 
 static stmt *
