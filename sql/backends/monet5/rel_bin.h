@@ -13,9 +13,9 @@
 #include "sql_statement.h"
 #include "mal_backend.h"
 
-extern stmt * output_rel_bin(backend *be, sql_rel *rel);
+extern stmt *output_rel_bin(backend *be, sql_rel *rel);
 
-extern stmt * sql_parse(backend *be, sql_allocator *sa, char *query, char mode);
+extern stmt *sql_parse(backend *be, sql_allocator *sa, const char *query, char mode);
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 

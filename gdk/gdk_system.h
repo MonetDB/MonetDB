@@ -159,15 +159,24 @@ gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
 
 typedef struct {
 	pthread_mutex_t lock;
+#ifndef NDEBUG
 	const char *name;
+#endif
 } MT_Lock;
 
+#ifdef NDEBUG
+#define MT_lock_init(l, n)	pthread_mutex_init(&(l)->lock, 0)
+#define MT_lock_set(l)		pthread_mutex_lock(&(l)->lock)
+#define MT_lock_unset(l)	pthread_mutex_unlock(&(l)->lock)
+#ifdef PTHREAD_MUTEX_INITIALIZER
+#define MT_LOCK_INITIALIZER(name)	= { PTHREAD_MUTEX_INITIALIZER }
+#endif
+#else
 #define MT_lock_init(l, n)				\
 	do {						\
 		(l)->name = (n);			\
 		pthread_mutex_init(&(l)->lock, 0);	\
 	} while (0)
-#define MT_lock_destroy(l)	pthread_mutex_destroy(&(l)->lock)
 #define MT_lock_set(l)							\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#%s: locking %s...\n",	\
@@ -182,10 +191,13 @@ typedef struct {
 				 __func__, (l)->name);			\
 		pthread_mutex_unlock(&(l)->lock);			\
 	} while (0)
-
 #ifdef PTHREAD_MUTEX_INITIALIZER
 #define MT_LOCK_INITIALIZER(name)	= { PTHREAD_MUTEX_INITIALIZER, name }
-#else
+#endif
+#endif
+#define MT_lock_destroy(l)	pthread_mutex_destroy(&(l)->lock)
+
+#ifndef PTHREAD_MUTEX_INITIALIZER
 /* no static initialization possible, so we need dynamic initialization */
 #define MT_LOCK_INITIALIZER(name)
 #define NEED_MT_LOCK_INIT
@@ -204,6 +216,7 @@ typedef struct MT_Lock {
 	struct MT_Lock * volatile next;
 	const char *name;
 	const char *locker;
+	const char *thread;
 #endif
 } MT_Lock;
 
@@ -218,7 +231,7 @@ gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_COUNT_0(l, n)		(void) ATOMIC_INC(GDKlockcnt, dummy)
-#define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n))
+#define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n), (l)->thread = MT_thread_name())
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", \

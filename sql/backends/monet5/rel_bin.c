@@ -3100,13 +3100,13 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 }
 
 stmt *
-sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
+sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 {
 	mvc *m = be->mvc;
 	mvc *o = NULL;
 	stmt *sq = NULL;
 	buffer *b;
-	char *n;
+	char *nquery;
 	int len = _strlen(query);
 	stream *buf;
 	bstream * bst;
@@ -3127,23 +3127,36 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	be->depth++;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (b == 0)
+	if (b == 0) {
+		*m = *o;
+		GDKfree(o);
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	n = GDKmalloc(len + 1 + 1);
-	if (n == 0)
+	}
+	nquery = GDKmalloc(len + 1 + 1);
+	if (nquery == 0) {
+		*m = *o;
+		GDKfree(o);
+		GDKfree(b);
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	snprintf(n, len + 2, "%s\n", query);
-	query = n;
+	}
+	snprintf(nquery, len + 2, "%s\n", query);
 	len++;
-	buffer_init(b, query, len);
+	buffer_init(b, nquery, len);
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
-		buffer_destroy(b);
+		*m = *o;
+		GDKfree(o);
+		GDKfree(b);
+		GDKfree(nquery);
 		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if((bst = bstream_create(buf, b->len)) == NULL) {
 		close_stream(buf);
+		*m = *o;
+		GDKfree(o);
+		GDKfree(b);
+		GDKfree(nquery);
 		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -3160,9 +3173,11 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	/* create private allocator */
 	m->sa = (sa)?sa:sa_create();
 	if (!m->sa) {
-		GDKfree(query);
+		bstream_destroy(bst);
+		*m = *o;
+		GDKfree(o);
 		GDKfree(b);
-		bstream_destroy(m->scanner.rs);
+		GDKfree(nquery);
 		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -3170,21 +3185,15 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	if (sqlparse(m) || !m->sym) {
 		/* oops an error */
 		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
-				"internal query: %s", query);
+				"internal query: %s", nquery);
 	} else {
 		sql_rel *r = rel_semantic(m, m->sym);
 
-		if (r) {
-			r = rel_optimizer(m, r, 1);
-			if(!r)
-				return NULL;
+		if (r && (r = rel_optimizer(m, r, 1)) != NULL)
 			sq = rel_bin(be, r);
-			if(!sq)
-				return NULL;
-		}
 	}
 
-	GDKfree(query);
+	GDKfree(nquery);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
 	be->depth--;
@@ -3192,31 +3201,19 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 		sa_destroy(m->sa);
 	m->sym = NULL;
 	{
-		char *e = NULL;
 		int status = m->session->status;
 		int sizevars = m->sizevars, topvars = m->topvars;
 		sql_var *vars = m->vars;
 		/* cascade list maybe removed */
 		list *cascade_action = m->cascade_action;
 
-		if (m->session->status || m->errstr[0]) {
-			e = _STRDUP(m->errstr);
-			if (!e) {
-				_DELETE(o);
-				return NULL;
-			}
-		}
+		strcpy(o->errstr, m->errstr);
 		*m = *o;
 		m->sizevars = sizevars;
 		m->topvars = topvars;
 		m->vars = vars;
 		m->session->status = status;
 		m->cascade_action = cascade_action;
-		if (e) {
-			strncpy(m->errstr, e, ERRSIZE);
-			m->errstr[ERRSIZE - 1] = '\0';
-			_DELETE(e);
-		}
 	}
 	_DELETE(o);
 	return sq;
