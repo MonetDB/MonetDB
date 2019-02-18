@@ -1798,7 +1798,7 @@ MTIMEdate_extract_day(int *ret, const date *v)
 str
 MTIMEdate_extract_ymd(int *year, int *month, int *day, const date *v)
 {
-	if (date_isnil(*v)) {
+	if (is_date_nil(*v)) {
 		*year = int_nil;
 		*month = int_nil;
 		*day = int_nil;

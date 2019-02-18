@@ -13,7 +13,7 @@
 #define date_trunc_time_loop(NAME, TYPE, DIVISOR) 	\
 	if  ( strcmp(*scale, NAME) == 0){ \
 		for( ; lo < hi; lo++)		\
-			if (timestamp_isnil(bt[lo])) {     		\
+			if (is_timestamp_nil(bt[lo])) {     		\
 					dt[lo] = *timestamp_nil;     		\
 					nils++;		\
 			} else {                 		\
@@ -77,7 +77,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 
 	if  ( strcmp(*scale, "day") == 0){ 
 		for( ; lo < hi; lo++)		
-			if (timestamp_isnil(bt[lo])) {     		
+			if (is_timestamp_nil(bt[lo])) {     		
 				dt[lo] = *timestamp_nil;     		
 			} else {                 		
 				ts = bt[lo];					
@@ -106,7 +106,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 
 #define date_trunc_single_time(NAME, TYPE, DIVISOR) 	\
 	if  ( strcmp(*scale, NAME) == 0){ \
-		if (timestamp_isnil(*bt)) {     		\
+		if (is_timestamp_nil(*bt)) {     		\
 			*dt = *timestamp_nil;     		\
 		} else {                 		\
 			ts = *bt;					\
@@ -131,7 +131,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	date_trunc_single_time("hour", TIMESTAMP, (1000 * 60 * 24))
 
 	if  ( strcmp(*scale, "day") == 0){ 
-		if (timestamp_isnil(*bt)) {     		
+		if (is_timestamp_nil(*bt)) {     		
 			*dt = *timestamp_nil;     		
 		} else {                 		
 			ts = *bt;					
@@ -140,20 +140,20 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	}	}
 	
 	if  ( strcmp(*scale, "week") == 0){ 
-		if (timestamp_isnil(*bt)) {     		
+		if (is_timestamp_nil(*bt)) {     		
 			*dt = *timestamp_nil;     		
 		} else {                 		
 			ts = *bt;					
 			ts.msecs = 0;
 			MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
 			MTIMEdate_extract_dayofweek(&dow, &ts.days);
-			d =  d - dow + 1;
+			d =  d - dow - 1;
 			MTIMEdate_create(&ts.days, &y, &m, &d);
 			*dt = ts;					
 	}	}
 	
 	if  ( strcmp(*scale, "month") == 0){ 
-		if (timestamp_isnil(*bt)) {     		
+		if (is_timestamp_nil(*bt)) {     		
 			*dt = *timestamp_nil;     		
 		} else {                 		
 			ts = *bt;					
@@ -164,7 +164,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	}	}
 	
 	if  ( strcmp(*scale, "quarter") == 0){ 
-		if (timestamp_isnil(*bt)) {     		
+		if (is_timestamp_nil(*bt)) {     		
 			*dt = *timestamp_nil;     		
 		} else {                 		
 			ts = *bt;					
@@ -176,7 +176,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	}	}
 
 	if  ( strcmp(*scale, "year") == 0){ 
-		if (timestamp_isnil(*bt)) {     		
+		if (is_timestamp_nil(*bt)) {     		
 			*dt = *timestamp_nil;     		
 		} else {                 		
 			ts = *bt;					
@@ -187,7 +187,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	}	}
 
 	if  ( strcmp(*scale, "decade") == 0){ 
-		if (timestamp_isnil(*bt)) {     		
+		if (is_timestamp_nil(*bt)) {     		
 			*dt = *timestamp_nil;     		
 		} else {                 		
 			ts = *bt;					
@@ -199,7 +199,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	}	}
 
 	if  ( strcmp(*scale, "century") == 0){ 
-		if (timestamp_isnil(*bt)) {     		
+		if (is_timestamp_nil(*bt)) {     		
 			*dt = *timestamp_nil;     		
 		} else {                 		
 			ts = *bt;					
@@ -211,7 +211,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	}	}
 
 	if  ( strcmp(*scale, "millenium") == 0){ 
-		if (timestamp_isnil(*bt)) {     		
+		if (is_timestamp_nil(*bt)) {     		
 			*dt = *timestamp_nil;     		
 		} else {                 		
 			ts = *bt;					
