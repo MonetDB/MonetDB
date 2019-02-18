@@ -305,7 +305,7 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_CONTENTION(l, n)	((void) (n))
 #define _DBG_LOCK_SLEEP(l, n)		((void) (n))
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
-#define _DBG_LOCK_INIT(l, n)		((void) (n))
+#define _DBG_LOCK_INIT(l, n)		((void) 0)
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
 #define _DBG_LOCK_LOCKER(l, n)		((void) (n))
 
