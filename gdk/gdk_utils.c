@@ -258,9 +258,6 @@ BATSIGinit(void)
 #ifdef __SIGRTMIN
 	(void) signal(__SIGRTMIN + 1, SIG_IGN);
 #endif
-#ifdef SIGHUP
-	(void) signal(SIGHUP, MT_global_exit);
-#endif
 #ifdef SIGINT
 	(void) signal(SIGINT, BATSIGinterrupt);
 #endif
@@ -714,7 +711,7 @@ GDKregister(MT_Id pid)
 }
 
 void
-GDKreset(int status, int exit)
+GDKreset(int status, int doexit)
 {
 	MT_Id pid = MT_getpid();
 	Thread t, s;
@@ -840,8 +837,8 @@ GDKreset(int status, int exit)
 #endif
 #endif
 #ifndef HAVE_EMBEDDED
-	if (exit) {
-		MT_global_exit(status);
+	if (doexit) {
+		exit(status);
 	}
 #endif
 }
@@ -861,7 +858,7 @@ GDKexit(int status)
 	GDKprepareExit();
 	GDKreset(status, 1);
 #ifndef HAVE_EMBEDDED
-	MT_exit_thread(-1);
+	exit(-1);
 #endif
 }
 
@@ -1204,8 +1201,7 @@ GDKfatal(const char *format, ...)
 		 */
 		if (GDKexiting()) {
 			fflush(stdout);
-			MT_exit_thread(1);
-			/* exit(1); */
+			exit(1);
 		} else {
 			GDKlog(GET_GDKLOCK(PERSISTENT), "%s", message);
 #ifdef COREDUMP
