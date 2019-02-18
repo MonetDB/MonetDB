@@ -287,25 +287,28 @@ static int truncate_check(const str *scale){
 		strcmp(*scale, "microseconds") == 0;
 }
 
-#define date_trunc_loop(NAME, TYPE, DIVISOR) 	\
+#define date_trunc_time_loop(NAME, TYPE, DIVISOR) 	\
 	if  ( strcmp(*scale, NAME) == 0){ \
 		for( ; lo < hi; lo++)		\
-			if (is_lng_nil(bt[lo])) {     		\
-					dt[lo] = lng_nil;     		\
+			if (timestamp_isnil(bt[lo])) {     		\
+					dt[lo] = *timestamp_nil;     		\
 					nils++;		\
-			} else                 		\
-				dt[lo] = (bt[lo] / DIVISOR) * DIVISOR; \
-	}
+			} else {                 		\
+				ts = bt[0];					\
+				ts.msecs = (ts.msecs / DIVISOR) * DIVISOR; \
+				dt[lo] = ts;					\
+	}		}
 
 str
 bat_date_trunc(bat *res, const str *scale, const bat *bid)
 {
 	BAT *b, *bn;
 	oid lo, hi;
-	lng *bt;
-	lng *dt;
+	timestamp *bt;
+	timestamp *dt;
 	char *msg = NULL;
 	lng nils = 0;
+	timestamp ts;
 
 	if ( truncate_check(scale) == 0)
 		throw(SQL, "batcalc.truncate_timestamp", SQLSTATE(HY005) "Improper directive ");
@@ -319,17 +322,17 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 		throw(SQL, "sql.truncate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	bt = (lng *) Tloc(b, 0);
-	dt = (lng *) Tloc(bn, 0);
+	bt = (timestamp *) Tloc(b, 0);
+	dt = (timestamp *) Tloc(bn, 0);
 
 	lo = 0;
 	hi = lo + BATcount(b);
 
-	date_trunc_loop("microseconds", TIMESTAMP, 1)
-	date_trunc_loop("milliseconds", TIMESTAMP, 1000)
-	date_trunc_loop("seconds", TIMESTAMP, (1000 * 60))
-	date_trunc_loop("minute", TIMESTAMP, (1000 * 60 * 60))
-	date_trunc_loop("hour", TIMESTAMP, (1000 * 60 * 60 * 24))
+	date_trunc_time_loop("microseconds", TIMESTAMP, 1)
+	date_trunc_time_loop("milliseconds", TIMESTAMP, 1000)
+	date_trunc_time_loop("seconds", TIMESTAMP, (1000 * 60))
+	date_trunc_time_loop("minute", TIMESTAMP, (1000 * 60 * 60))
+	date_trunc_time_loop("hour", TIMESTAMP, (1000 * 60 * 60 * 24))
 
 	// week
 	// quarter
@@ -349,27 +352,30 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	return msg;
 }
 
-#define date_trunc_single(NAME, TYPE, DIVISOR) 	\
+#define date_trunc_single_time(NAME, TYPE, DIVISOR) 	\
 	if  ( strcmp(*scale, NAME) == 0){ \
-		if (is_lng_nil(*bt)) {     		\
-			*dt = lng_nil;     		\
-		} else                 		\
-			*dt = (*bt / DIVISOR) * DIVISOR; \
-	}
+		if (timestamp_isnil(*bt)) {     		\
+			*dt = *timestamp_nil;     		\
+		} else {                 		\
+			ts = *bt;					\
+			ts.msecs = (ts.msecs / DIVISOR) * DIVISOR; \
+			*dt = ts;					\
+	}	}
 
 str
-date_trunc(lng *dt, const str *scale, const lng *bt)
+date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 {
 	str msg = MAL_SUCCEED;
+	timestamp ts;
 
 	if (truncate_check(scale) == 0)
-		throw(SQL, "sql.truncate", SQLSTATE(HY001) "NYI");	
+		throw(SQL, "sql.truncate", SQLSTATE(HY001) "Improper directive ");	
 
-	date_trunc_single("microseconds", TIMESTAMP, 1)
-	date_trunc_single("milliseconds", TIMESTAMP, 1000)
-	date_trunc_single("seconds", TIMESTAMP, (1000 * 60))
-	date_trunc_single("minute", TIMESTAMP, (1000 * 60 * 60))
-	date_trunc_single("hour", TIMESTAMP, (1000 * 60 * 60 * 24))
+	date_trunc_single_time("microseconds", TIMESTAMP, 1)
+	date_trunc_single_time("milliseconds", TIMESTAMP, 1000)
+	date_trunc_single_time("seconds", TIMESTAMP, (1000 * 60))
+	date_trunc_single_time("minute", TIMESTAMP, (1000 * 60 * 60))
+	date_trunc_single_time("hour", TIMESTAMP, (1000 * 60 * 60 * 24))
 	// week
 	// quarter
 	// decade

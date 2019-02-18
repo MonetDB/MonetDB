@@ -21,3 +21,7 @@ grant execute on function sys."epoch" (BIGINT) to public;
 grant execute on function sys."epoch" (INT) to public;
 grant execute on function sys."epoch" (TIMESTAMP) to public;
 grant execute on function sys."epoch" (TIMESTAMP WITH TIME ZONE) to public;
+
+create function sys.date_trunc(txt string, t timestamp)
+returns timestamp
+external name sql.date_trunc;

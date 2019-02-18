@@ -249,7 +249,7 @@ sql5_export str str_2_timestamp(timestamp *res, const str *val);
 sql5_export str batstr_2_timestamp(bat *res, const bat *val);
 
 sql5_export str bat_date_trunc(bat *res, const str *scale, const bat *v);
-sql5_export str date_trunc(lng *res, const str *scale, const lng *v);
+sql5_export str date_trunc(timestamp *res, const str *scale, const timestamp *v);
 
 sql5_export str nil_2_daytime(daytime *res, const void *val);
 sql5_export str batnil_2_daytime(bat *res, const bat *val);

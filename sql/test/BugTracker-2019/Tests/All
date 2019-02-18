@@ -1,4 +1,5 @@
 copy-into-from-stdin-empty-line.Bug-6669
+date_trunc
 subselect-contradiction.Bug-6683
 insert-replica-table.Bug-6684
 subselect-count.Bug-6686
