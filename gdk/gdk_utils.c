@@ -476,13 +476,29 @@ GDKinit(opt *set, int setlen)
 #endif
 #endif
 	for (i = 0; i <= BBP_BATMASK; i++) {
-		MT_lock_init(&GDKbatLock[i].swap, "GDKswapLock");
-		MT_lock_init(&GDKbatLock[i].hash, "GDKhashLock");
-		MT_lock_init(&GDKbatLock[i].imprints, "GDKimprintsLock");
+#ifndef NDEBUG
+		snprintf(GDKbatLock[i].swapname, sizeof(GDKbatLock[i].swapname),
+			 "GDKswapLock%d", i);
+		snprintf(GDKbatLock[i].hashname, sizeof(GDKbatLock[i].hashname),
+			 "GDKhashLock%d", i);
+		snprintf(GDKbatLock[i].impsname, sizeof(GDKbatLock[i].impsname),
+			 "GDKimpsLock%d", i);
+#endif
+		/* MT_lock_init does not use second argument if NDEBUG set */
+		MT_lock_init(&GDKbatLock[i].swap, GDKbatLock[i].swapname);
+		MT_lock_init(&GDKbatLock[i].hash, GDKbatLock[i].hashname);
+		MT_lock_init(&GDKbatLock[i].imprints, GDKbatLock[i].impsname);
 	}
 	for (i = 0; i <= BBP_THREADMASK; i++) {
-		MT_lock_init(&GDKbbpLock[i].alloc, "GDKcacheLock");
-		MT_lock_init(&GDKbbpLock[i].trim, "GDKtrimLock");
+#ifndef NDEBUG
+		snprintf(GDKbbpLock[i].cachename, sizeof(GDKbbpLock[i].cachename),
+			 "GDKcacheLock%d", i);
+		snprintf(GDKbbpLock[i].trimname, sizeof(GDKbbpLock[i].trimname),
+			 "GDKtrimLock%d", i);
+#endif
+		/* MT_lock_init does not use second argument if NDEBUG set */
+		MT_lock_init(&GDKbbpLock[i].cache, GDKbbpLock[i].cachename);
+		MT_lock_init(&GDKbbpLock[i].trim, GDKbbpLock[i].trimname);
 		GDKbbpLock[i].free = 0;
 	}
 	errno = 0;
@@ -810,7 +826,7 @@ GDKreset(int status, int doexit)
 			MT_lock_destroy(&GDKbatLock[i].imprints);
 		}
 		for (i = 0; i <= BBP_THREADMASK; i++) {
-			MT_lock_destroy(&GDKbbpLock[i].alloc);
+			MT_lock_destroy(&GDKbbpLock[i].cache);
 			MT_lock_destroy(&GDKbbpLock[i].trim);
 			GDKbbpLock[i].free = 0;
 		}

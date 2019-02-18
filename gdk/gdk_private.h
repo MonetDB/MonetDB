@@ -315,12 +315,21 @@ typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
 	MT_Lock imprints;
+#ifndef NDEBUG
+	char swapname[16];
+	char hashname[16];
+	char impsname[16];
+#endif
 } batlock_t;
 
 typedef struct {
-	MT_Lock alloc;
+	MT_Lock cache;
 	MT_Lock trim;
 	bat free;
+#ifndef NDEBUG
+	char cachename[16];
+	char trimname[16];
+#endif
 } bbplock_t;
 
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
@@ -370,7 +379,7 @@ extern MT_Lock MT_system_lock;
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
 #define GDKtrimLock(y)	GDKbbpLock[y].trim
-#define GDKcacheLock(y)	GDKbbpLock[y].alloc
+#define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 
 /* extra space in front of strings in string heaps when hashash is set
