@@ -216,6 +216,7 @@ typedef struct MT_Lock {
 	struct MT_Lock * volatile next;
 	const char *name;
 	const char *locker;
+	const char *thread;
 #endif
 } MT_Lock;
 
@@ -230,7 +231,7 @@ gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_COUNT_0(l, n)		(void) ATOMIC_INC(GDKlockcnt, dummy)
-#define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n))
+#define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n), (l)->thread = MT_thread_name())
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", \
