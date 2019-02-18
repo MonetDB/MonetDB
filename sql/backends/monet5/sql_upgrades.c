@@ -1539,6 +1539,14 @@ sql_update_apr2019(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
+	/* 17_temporal.sql */
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.date_trunc;\n"
+			"create function sys.date_trunc(txt string, t timestamp)\n"
+			"returns timestamp\n"
+			"external name sql.date_trunc;\n");
+
 	/* 26_sysmon.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"grant execute on function sys.queue to public;\n"

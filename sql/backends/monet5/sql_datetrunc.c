@@ -50,6 +50,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	char *msg = NULL;
 	lng nils = 0;
 	timestamp ts;
+	int dow, y, m, d, one = 1;
 
 	if ( truncate_check(scale) == 0)
 		throw(SQL, "batcalc.truncate_timestamp", SQLSTATE(HY005) "Improper directive ");
@@ -83,14 +84,98 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 				ts = bt[lo];					
 				ts.msecs = 0;
 				dt[lo] = ts;					
-		}	}
+	}		}
 
-	// week
-	// month
-	// quarter
-	// decade
-	// century
-	// millenium
+	if  ( strcmp(*scale, "week") == 0){ 
+		for( ; lo < hi; lo++)		
+			if (is_timestamp_nil(bt[lo])) {     		
+				dt[lo] = *timestamp_nil;     		
+			} else {                 		
+				ts = bt[lo];					
+				ts.msecs = 0;
+				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
+				MTIMEdate_extract_dayofweek(&dow, &ts.days);
+				d =  d - dow - 1;
+				MTIMEdate_create(&ts.days, &y, &m, &d);
+				dt[lo] = ts;					
+	}		}
+
+	if  ( strcmp(*scale, "month") == 0){ 
+		for( ; lo < hi; lo++)		
+			if (is_timestamp_nil(bt[lo])) {     		
+				dt[lo] = *timestamp_nil;     		
+			} else {                 		
+				ts = bt[lo];					
+				ts.msecs = 0;
+				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
+				MTIMEdate_create(&ts.days, &y, &m, &one);
+				dt[lo] = ts;					
+	}		}
+
+	if  ( strcmp(*scale, "quarter") == 0){ 
+		for( ; lo < hi; lo++)		
+			if (is_timestamp_nil(bt[lo])) {     		
+				dt[lo] = *timestamp_nil;     		
+			} else {                 		
+				ts = bt[lo];					
+				ts.msecs = 0;
+				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
+				m = m/4 + 1;
+				MTIMEdate_create(&ts.days, &y, &one, &one);
+				dt[lo] = ts;					
+	}		}
+
+	if  ( strcmp(*scale, "year") == 0){ 
+		for( ; lo < hi; lo++)		
+			if (is_timestamp_nil(bt[lo])) {     		
+				dt[lo] = *timestamp_nil;     		
+			} else {                 		
+				ts = bt[lo];					
+				ts.msecs = 0;
+				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
+				MTIMEdate_create(&ts.days, &y, &one, &one);
+				dt[lo] = ts;					
+	}		}
+
+	if  ( strcmp(*scale, "decade") == 0){ 
+		for( ; lo < hi; lo++)		
+			if (is_timestamp_nil(bt[lo])) {     		
+				dt[lo] = *timestamp_nil;     		
+			} else {                 		
+				ts = bt[lo];					
+				ts.msecs = 0;
+				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
+				y = (y /10 ) *10;
+				MTIMEdate_create(&ts.days, &y, &one, &one);
+				dt[lo] = ts;					
+	}		}
+
+	if  ( strcmp(*scale, "century") == 0){ 
+		for( ; lo < hi; lo++)		
+			if (is_timestamp_nil(bt[lo])) {     		
+				dt[lo] = *timestamp_nil;     		
+			} else {                 		
+				ts = bt[lo];					
+				ts.msecs = 0;
+				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
+				y = (y /100 ) *100;
+				MTIMEdate_create(&ts.days, &y, &one, &one);
+				dt[lo] = ts;					
+	}		}
+
+	if  ( strcmp(*scale, "millenium") == 0){ 
+		for( ; lo < hi; lo++)		
+			if (is_timestamp_nil(bt[lo])) {     		
+				dt[lo] = *timestamp_nil;     		
+			} else {                 		
+				ts = bt[lo];					
+				ts.msecs = 0;
+				MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
+				y = (y /1000 ) *1000;
+				MTIMEdate_create(&ts.days, &y, &one, &one);
+				dt[lo] = ts;					
+	}		}
+
 	if( nils){
 		bn->tnonil = false;  
 		bn->tnil = true;     

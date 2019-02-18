@@ -28,12 +28,8 @@ stderr of test 'date_trunc` in directory 'sql/test/BugTracker-2019` itself:
 # 08:07:24 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23934" "--port=33395"
 # 08:07:24 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24278/.s.monetdb.39992
-QUERY = select date_trunc('millennium', timestamp '2019-02-17 02:08:12.345678');
 
-CODE  = HY001
-
-# 08:07:24 >  
-# 08:07:24 >  "Done."
-# 08:07:24 >  
+# 21:04:00 >  
+# 21:04:00 >  "Done."
+# 21:04:00 >  
 
