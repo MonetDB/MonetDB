@@ -378,7 +378,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 {
 	str msg = MAL_SUCCEED;
 	timestamp ts;
-	int y, m, d, one = 1;
+	int dow, y, m, d, one = 1;
 
 	if (truncate_check(scale) == 0)
 		throw(SQL, "sql.truncate", SQLSTATE(HY001) "Improper directive ");	
@@ -396,7 +396,20 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 			ts.msecs = 0;
 			*dt = ts;					
 	}	}
-	// week
+	
+	if  ( strcmp(*scale, "week") == 0){ 
+		if (timestamp_isnil(*bt)) {     		
+			*dt = *timestamp_nil;     		
+		} else {                 		
+			ts = *bt;					
+			ts.msecs = 0;
+			MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
+			MTIMEdate_extract_dayofweek(&dow, &ts.days);
+			d =  d - dow + 1;
+			MTIMEdate_create(&ts.days, &y, &m, &d);
+			*dt = ts;					
+	}	}
+	
 	if  ( strcmp(*scale, "month") == 0){ 
 		if (timestamp_isnil(*bt)) {     		
 			*dt = *timestamp_nil;     		
