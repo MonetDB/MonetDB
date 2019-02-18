@@ -1501,6 +1501,7 @@ str MTIMEdate_extract_quarter_bulk(bat *ret, const bat *bid);
 str MTIMEdate_extract_weekofyear(int *ret, const date *v);
 str MTIMEdate_extract_year(int *ret, const date *v);
 str MTIMEdate_extract_year_bulk(bat *ret, const bat *bid);
+str MTIMEdate_extract_ymd(int *year, int *month, int *day, const date *v);
 str MTIMEdate_fromstr(date *ret, const char *const *s);
 str MTIMEdate_sub_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec);
 str MTIMEdate_sub_sec_interval_wrap(date *ret, const date *t, const int *sec);
