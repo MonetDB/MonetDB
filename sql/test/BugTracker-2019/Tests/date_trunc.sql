@@ -1,3 +1,5 @@
+select timestamp '2019-02-17 02:08:12.345678';
+
 select date_trunc('microseconds', timestamp '2019-02-17 02:08:12.345678');
 select date_trunc('milliseconds', timestamp '2019-02-17 02:08:12.345678');
 select date_trunc('second', timestamp '2019-02-17 02:08:12.345678');

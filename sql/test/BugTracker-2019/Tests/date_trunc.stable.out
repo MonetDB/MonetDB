@@ -65,37 +65,37 @@ Ready.
 % L2 # name
 % timestamp # type
 % 26 # length
-[ ??? ]
+[ 2019-02-11 00:00:00.000000	]
 #select date_trunc('month', timestamp '2019-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2019-02-00 00:00:00.000000	]
+[ 2019-02-01 00:00:00.000000	]
 #select date_trunc('quarter', timestamp '2019-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ ??? 00:00:00.000000	]
+[ 2019-01-01 00:00:00.000000	]
 #select date_trunc('year', timestamp '2019-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2019-00-00 00:00:00.000000	]
+[ 2019-01-01 00:00:00.000000	]
 #select date_trunc('decade', timestamp '2019-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 2000-00-00 00:00:00.000000	]
+[ 2010-01-01 00:00:00.000000	]
 #select date_trunc('century', timestamp '2019-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
 % 26 # length
-[ ????-00-00 00:00:00.000000	]
+[ 2001-01-01 00:00:00.000000	]
 
 # 08:07:24 >  
 # 08:07:24 >  "Done."
