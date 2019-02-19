@@ -772,9 +772,6 @@ void
 GDKreset(int status)
 {
 	MT_Id pid = MT_getpid();
-	Thread t, s;
-	int farmid;
-	int i;
 
 	assert(GDKexiting());
 
@@ -803,7 +800,7 @@ GDKreset(int status)
 		/* they had their chance, now kill them */
 		int killed = 0;
 		MT_lock_set(&GDKthreadLock);
-		for (t = GDKthreads, s = t + THREADS; t < s; t++) {
+		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			if (t->pid) {
 				MT_Id victim = t->pid;
 
@@ -827,14 +824,13 @@ GDKreset(int status)
 		}
 		GDKlog(GET_GDKLOCK(PERSISTENT), GDKLOGOFF);
 
-		for (farmid = 0; farmid < MAXFARMS; farmid++) {
+		for (int farmid = 0; farmid < MAXFARMS; farmid++) {
 			if (BBPfarms[farmid].dirname != NULL) {
-				int skip = 0;
-				int j;
-				for (j = 0; j < farmid; j++) {
+				bool skip = false;
+				for (int j = 0; j < farmid; j++) {
 					if (BBPfarms[j].dirname != NULL &&
 					    strcmp(BBPfarms[farmid].dirname, BBPfarms[j].dirname) == 0) {
-						skip = 1;
+						skip = true;
 						break;
 					}
 				}
@@ -864,12 +860,12 @@ GDKreset(int status)
 		GDKnrofthreads = 0;
 		close_stream((stream *) THRdata[0]);
 		close_stream((stream *) THRdata[1]);
-		for (i = 0; i <= BBP_BATMASK; i++) {
+		for (int i = 0; i <= BBP_BATMASK; i++) {
 			MT_lock_destroy(&GDKbatLock[i].swap);
 			MT_lock_destroy(&GDKbatLock[i].hash);
 			MT_lock_destroy(&GDKbatLock[i].imprints);
 		}
-		for (i = 0; i <= BBP_THREADMASK; i++) {
+		for (int i = 0; i <= BBP_THREADMASK; i++) {
 			MT_lock_destroy(&GDKbbpLock[i].cache);
 			MT_lock_destroy(&GDKbbpLock[i].trim);
 			GDKbbpLock[i].free = 0;
@@ -1072,7 +1068,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 			  (int) messagelen, message, suffix);
 	}
 	fprintf(stderr, "#%s:%s%.*s%s",
-		MT_thread_name(),
+		MT_thread_getname(),
 		prefix[0] == '#' ? prefix + 1 : prefix,
 		(int) messagelen, message, suffix);
 }
@@ -1170,10 +1166,9 @@ GDKerror(const char *format, ...)
 void
 GDKsyserror(const char *format, ...)
 {
+	int err = errno;
 	char message[GDKERRLEN];
 	size_t len = strlen(GDKERROR);
-
-	int err = errno;
 	va_list ap;
 
 	if (strncmp(format, GDKERROR, len) == 0) {
@@ -1395,33 +1390,43 @@ THRsp(void)
 static Thread
 GDK_find_thread(MT_Id pid)
 {
-	Thread t, s;
-
-	for (t = GDKthreads, s = t + THREADS; t < s; t++) {
-		if (t->pid && t->pid == pid) {
+	MT_lock_set(&GDKthreadLock);
+	for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
+		if (t->pid == pid) {
+			MT_lock_unset(&GDKthreadLock);
 			return t;
 		}
 	}
+	MT_lock_unset(&GDKthreadLock);
 	return NULL;
+}
+
+static Thread
+GDK_find_self(void)
+{
+	Thread t;
+
+	if ((t = MT_thread_getdata()) != NULL) /* should succeed */
+		return t;
+	return GDK_find_thread(MT_getpid());
 }
 
 Thread
 THRnew(const char *name)
 {
 	int tid = 0;
-	Thread t;
 	Thread s;
 	MT_Id pid = MT_getpid();
 
-	MT_lock_set(&GDKthreadLock);
 	s = GDK_find_thread(pid);
 	if (s == NULL) {
-		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
+		MT_lock_set(&GDKthreadLock);
+		for (s = GDKthreads; s < GDKthreads + THREADS; s++) {
 			if (s->pid == 0) {
 				break;
 			}
 		}
-		if (s == t) {
+		if (s == GDKthreads + THREADS) {
 			MT_lock_unset(&GDKthreadLock);
 			IODEBUG fprintf(stderr, "#THRnew: too many threads\n");
 			GDKerror("THRnew: too many threads\n");
@@ -1431,12 +1436,12 @@ THRnew(const char *name)
 		*s = (ThreadRec) {
 			.pid = pid,
 			.tid = tid,
-			.data[1] = THRdata[1],
 			.data[0] = THRdata[0],
+			.data[1] = THRdata[1],
 			.sp = THRsp(),
+			.name = GDKstrdup(name),
 		};
 
-		s->name = GDKstrdup(name);
 		if (s->name == NULL) {
 			s->pid = 0;
 			MT_lock_unset(&GDKthreadLock);
@@ -1444,12 +1449,12 @@ THRnew(const char *name)
 			GDKerror("THRnew: malloc failure\n");
 			return NULL;
 		}
+		MT_thread_setdata(s);
 		GDKnrofthreads++;
 		PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", (unsigned) s->tid, (size_t) pid, (size_t) s->sp);
 		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
+		MT_lock_unset(&GDKthreadLock);
 	}
-	MT_lock_unset(&GDKthreadLock);
-
 	return s;
 }
 
@@ -1469,6 +1474,7 @@ THRstarter(void *a)
 
 	MT_sema_down(&t->sem);
 	t->thr->sp = THRsp();
+	MT_thread_setdata(t->thr);
 	(*func)(arg);
 	THRdel(t->thr);
 	MT_sema_destroy(&t->sem);
@@ -1515,10 +1521,13 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 		MT_sema_destroy(&t->sem);
 		GDKfree(t);
 		MT_lock_set(&GDKthreadLock);
+		GDKfree(s->name);
+		s->name = NULL;
 		s->pid = 0;
 		MT_lock_unset(&GDKthreadLock);
 		return 0;
 	}
+	/* must not fail after this: the thread has been started */
 	MT_lock_set(&GDKthreadLock);
 	GDKnrofthreads++;
 	s->pid = pid;
@@ -1532,6 +1541,7 @@ void
 THRdel(Thread t)
 {
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
+	MT_thread_setdata(NULL);
 	MT_lock_set(&GDKthreadLock);
 	PARDEBUG fprintf(stderr, "#pid = %zu, disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 
@@ -1550,15 +1560,13 @@ THRhighwater(void)
 	size_t diff;
 	int rc = 0;
 
-	MT_lock_set(&GDKthreadLock);
-	s = GDK_find_thread(MT_getpid());
+	s = GDK_find_self();
 	if (s != NULL) {
 		c = THRsp();
 		diff = c < s->sp ? s->sp - c : c - s->sp;
 		if (diff > THREAD_STACK_SIZE - 80 * 1024)
 			rc = 1;
 	}
-	MT_lock_unset(&GDKthreadLock);
 	return rc;
 }
 
@@ -1572,15 +1580,22 @@ THRinit(void)
 {
 	int i = 0;
 
-	if((THRdata[0] = (void *) file_wastream(stdout, "stdout")) == NULL)
+	if ((THRdata[0] = (void *) file_wastream(stdout, "stdout")) == NULL)
 		return -1;
-	if((THRdata[1] = (void *) file_rastream(stdin, "stdin")) == NULL) {
-		close_stream(THRdata[0]);
+	if ((THRdata[1] = (void *) file_rastream(stdin, "stdin")) == NULL) {
+		mnstr_destroy(THRdata[0]);
 		THRdata[0] = NULL;
 		return -1;
 	}
 	for (i = 0; i < THREADS; i++) {
 		GDKthreads[i].tid = i + 1;
+	}
+	if (THRnew("main thread") == NULL) {
+		mnstr_destroy(THRdata[0]);
+		THRdata[0] = NULL;
+		mnstr_destroy(THRdata[1]);
+		THRdata[1] = NULL;
+		return -1;
 	}
 	return 0;
 }
@@ -1590,13 +1605,11 @@ THRsetdata(int n, ptr val)
 {
 	Thread s;
 
-	MT_lock_set(&GDKthreadLock);
-	s = GDK_find_thread(MT_getpid());
+	s = GDK_find_self();
 	if (s) {
 		assert(val == NULL || s->data[n] == NULL);
 		s->data[n] = val;
 	}
-	MT_lock_unset(&GDKthreadLock);
 }
 
 void *
@@ -1605,10 +1618,8 @@ THRgetdata(int n)
 	Thread s;
 	void *d;
 
-	MT_lock_set(&GDKthreadLock);
-	s = GDK_find_thread(MT_getpid());
+	s = GDK_find_self();
 	d = s ? s->data[n] : THRdata[n];
-	MT_lock_unset(&GDKthreadLock);
 	return d;
 }
 
@@ -1618,10 +1629,8 @@ THRgettid(void)
 	Thread s;
 	int t;
 
-	MT_lock_set(&GDKthreadLock);
-	s = GDK_find_thread(MT_getpid());
+	s = GDK_find_self();
 	t = s ? s->tid : 1;
-	MT_lock_unset(&GDKthreadLock);
 	return t;
 }
 

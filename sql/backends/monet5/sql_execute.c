@@ -621,13 +621,19 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 		if (err || c->curprg->def->errors || msg) {
 			/* restore the state */
+			char *error = NULL;
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+				error = createException(PARSE, "SQLparser", "%s", m->errstr);
+			else if (*m->errstr)
+				error = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 			else
-				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
+				error = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", msg);
+			if (msg)
+				freeException(msg);
+			msg = error;
 			*m->errstr = 0;
 			goto endofcompile;
 		}

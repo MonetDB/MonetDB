@@ -895,7 +895,10 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL frontend.
 
 This package contains the SELinux policy for running MonetDB under
-control of systemd.
+control of systemd.  There is one tunable parameter, mserver5_can_read_home,
+which can be set using "setsebool -P mserver5_can_read_home=true" to allow
+an mserver5 process started by monetdbd under the control of systemd to
+read files in users' home directories.
 
 %post selinux
 for selinuxvariant in %{selinux_variants}
