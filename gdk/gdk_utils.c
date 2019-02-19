@@ -1115,10 +1115,9 @@ GDKerror(const char *format, ...)
 void
 GDKsyserror(const char *format, ...)
 {
+	int err = errno;
 	char message[GDKERRLEN];
 	size_t len = strlen(GDKERROR);
-
-	int err = errno;
 	va_list ap;
 
 	if (strncmp(format, GDKERROR, len) == 0) {
