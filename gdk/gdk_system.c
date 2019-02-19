@@ -163,6 +163,9 @@ static struct winthread {
 	bool exited:1, detached:1, waiting:1;
 	const char *threadname;
 } *winthreads = NULL;
+static struct winthread mainthread = {
+	.threadname = "main thread",
+};
 
 static CRITICAL_SECTION winthread_cs;
 static DWORD threadslot = TLS_OUT_OF_INDEXES;
@@ -174,7 +177,8 @@ MT_thread_init(void)
 		threadslot = TlsAlloc();
 		if (threadslot == TLS_OUT_OF_INDEXES)
 			return false;
-		if (TlsSetValue(threadslot, NULL) == 0) {
+		mainthread.tid = GetCurrentThreadId();
+		if (TlsSetValue(threadslot, &mainthread) == 0) {
 			TlsFree(threadslot);
 			threadslot = TLS_OUT_OF_INDEXES;
 			return false;
@@ -208,7 +212,7 @@ const char *
 MT_thread_name(void)
 {
 	struct winthread *w = TlsGetValue(threadslot);
-	return w ? w->threadname ? w->threadname : "unknown thread" : "main thread";
+	return w && w->threadname ? w->threadname : "unknown thread";
 }
 
 void
@@ -362,6 +366,7 @@ MT_join_thread(MT_Id t)
 {
 	struct winthread *w;
 
+	assert(t != mainthread.tid);
 	join_threads();
 	w = find_winthread((DWORD) t);
 	if (w == NULL || w->hdl == NULL)
@@ -379,6 +384,7 @@ MT_kill_thread(MT_Id t)
 {
 	struct winthread *w;
 
+	assert(t != mainthread.tid);
 	join_threads();
 	w = find_winthread((DWORD) t);
 	if (w == NULL)
@@ -471,8 +477,12 @@ static struct posthread {
 	MT_Id mtid;
 	bool exited:1, detached:1, waiting:1;
 } *posthreads = NULL;
+static struct posthread mainthread = {
+	.threadname = "main thread",
+	.mtid = 1,
+};
 static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
-static MT_Id MT_thread_id = 0;
+static MT_Id MT_thread_id = 1;
 
 static pthread_key_t threadkey;
 
@@ -487,7 +497,8 @@ MT_thread_init(void)
 			"failed: %s\n", strerror(ret));
 		return false;
 	}
-	if ((ret = pthread_setspecific(threadkey, NULL)) != 0) {
+	mainthread.tid = pthread_self();
+	if ((ret = pthread_setspecific(threadkey, &mainthread)) != 0) {
 		fprintf(stderr,
 			"#MT_thread_init: setting specific value failed: %s\n",
 			strerror(ret));
@@ -524,7 +535,7 @@ MT_thread_name(void)
 	struct posthread *p;
 
 	p = pthread_getspecific(threadkey);
-	return p ? p->threadname ? p->threadname : "unknown thread" : "main thread";
+	return p && p->threadname ? p->threadname : "unknown thread";
 }
 
 #ifdef HAVE_PTHREAD_SIGMASK
@@ -706,6 +717,7 @@ MT_join_thread(MT_Id t)
 	struct posthread *p;
 	int ret;
 
+	assert(t > 1);
 	join_threads();
 	p = find_posthread(t);
 	if (p == NULL)
@@ -723,6 +735,7 @@ MT_join_thread(MT_Id t)
 int
 MT_kill_thread(MT_Id t)
 {
+	assert(t > 1);
 #ifdef HAVE_PTHREAD_KILL
 	struct posthread *p;
 
