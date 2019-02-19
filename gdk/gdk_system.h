@@ -116,8 +116,10 @@ gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
 				const char *threadname);
-gdk_export const char *MT_thread_name(void);
+gdk_export const char *MT_thread_getname(void);
 gdk_export void MT_thread_setname(const char *name);
+gdk_export void *MT_thread_getdata(void);
+gdk_export void MT_thread_setdata(void *data);
 gdk_export void MT_exiting_thread(void);
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
@@ -231,7 +233,7 @@ gdk_export ATOMIC_TYPE volatile GDKlockcnt;
 gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
 gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 #define _DBG_LOCK_COUNT_0(l, n)		(void) ATOMIC_INC(GDKlockcnt, dummy)
-#define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n), (l)->thread = MT_thread_name())
+#define _DBG_LOCK_LOCKER(l, n)		((l)->locker = (n), (l)->thread = MT_thread_getname())
 #define _DBG_LOCK_CONTENTION(l, n)					\
 	do {								\
 		TEMDEBUG fprintf(stderr, "#lock %s contention in %s\n", \

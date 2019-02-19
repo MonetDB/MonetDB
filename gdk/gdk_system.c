@@ -159,7 +159,7 @@ static struct winthread {
 	HANDLE hdl;
 	DWORD tid;
 	void (*func) (void *);
-	void *arg;
+	void *data;
 	bool exited:1, detached:1, waiting:1;
 	const char *threadname;
 } *winthreads = NULL;
@@ -209,7 +209,7 @@ find_winthread(DWORD tid)
 }
 
 const char *
-MT_thread_name(void)
+MT_thread_getname(void)
 {
 	struct winthread *w = TlsGetValue(threadslot);
 	return w && w->threadname ? w->threadname : "unknown thread";
@@ -225,6 +225,23 @@ MT_thread_setname(const char *name)
 		w->threadname = name;
 		LeaveCriticalSection(&winthread_cs);
 	}
+}
+
+void
+MT_thread_setdata(void *data)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w)
+		w->data = data;
+}
+
+void *
+MT_thread_getdata(void)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	return w ? w->data : NULL;
 }
 
 void
@@ -254,9 +271,11 @@ static DWORD WINAPI
 thread_starter(LPVOID arg)
 {
 	struct winthread *w = (struct winthread *) arg;
+	void *data = w->data;
 
+	w->data = NULL;
 	TlsSetValue(threadslot, w);
-	(*w->func)(w->arg);
+	(*w->func)(data);
 	EnterCriticalSection(&winthread_cs);
 	w->exited = true;
 	LeaveCriticalSection(&winthread_cs);
@@ -324,7 +343,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	w->func = f;
 	w->hdl = NULL;
 	w->tid = 0;
-	w->arg = arg;
+	w->data = arg;
 	w->exited = false;
 	w->waiting = false;
 	w->detached = (d == MT_THR_DETACHED);
@@ -339,6 +358,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		rm_winthread(w);
 		return -1;
 	}
+	/* must not fail after this: the thread has been started */
 	*t = (MT_Id) w->tid;
 	return 0;
 }
@@ -471,7 +491,7 @@ pthread_sema_down(pthread_sema_t *s)
 static struct posthread {
 	struct posthread *next;
 	void (*func)(void *);
-	void *arg;
+	void *data;
 	const char *threadname;
 	pthread_t tid;
 	MT_Id mtid;
@@ -530,12 +550,29 @@ MT_thread_setname(const char *name)
 }
 
 const char *
-MT_thread_name(void)
+MT_thread_getname(void)
 {
 	struct posthread *p;
 
 	p = pthread_getspecific(threadkey);
 	return p && p->threadname ? p->threadname : "unknown thread";
+}
+
+void
+MT_thread_setdata(void *data)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p)
+		p->data = data;
+}
+
+void *
+MT_thread_getdata(void)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	return p ? p->data : NULL;
 }
 
 #ifdef HAVE_PTHREAD_SIGMASK
@@ -574,9 +611,11 @@ static void *
 thread_starter(void *arg)
 {
 	struct posthread *p = (struct posthread *) arg;
+	void *data = p->data;
 
+	p->data = NULL;
 	pthread_setspecific(threadkey, p);
-	(*p->func)(p->arg);
+	(*p->func)(data);
 	pthread_mutex_lock(&posthread_lock);
 	p->exited = true;
 	pthread_mutex_unlock(&posthread_lock);
@@ -660,7 +699,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	}
 	p->tid = 0;
 	p->func = f;
-	p->arg = arg;
+	p->data = arg;
 	p->exited = false;
 	p->waiting = false;
 	p->detached = (d == MT_THR_DETACHED);
@@ -682,6 +721,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 			strerror(ret));
 		rm_posthread(p);
 		ret = -1;
+	} else {
+		/* must not fail after this: the thread has been started */
 	}
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);

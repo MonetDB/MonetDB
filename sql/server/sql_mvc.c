@@ -289,7 +289,7 @@ mvc_trans(mvc *m)
 	store_lock();
 	if (GDKverbose >= 1)
 		fprintf(stderr, "#%s: starting transaction\n",
-			MT_thread_name());
+			MT_thread_getname());
 	schema_changed = sql_trans_begin(m->session);
 	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
@@ -420,7 +420,7 @@ build up the hash (not copied in the trans dup)) */
 			fprintf(stderr, "#mvc_commit %s done\n", name);
 		if (GDKverbose >= 1)
 			fprintf(stderr, "#%s: savepoint commit %s done\n",
-				MT_thread_name(), name);
+				MT_thread_getname(), name);
 		return msg;
 	}
 
@@ -459,7 +459,7 @@ build up the hash (not copied in the trans dup)) */
 			fprintf(stderr, "#mvc_commit done\n");
 		if (GDKverbose >= 1)
 			fprintf(stderr, "#%s: commit done (no changes)\n",
-				MT_thread_name());
+				MT_thread_getname());
 		return msg;
 	}
 
@@ -506,7 +506,7 @@ build up the hash (not copied in the trans dup)) */
 		fprintf(stderr, "#mvc_commit done\n");
 	if (GDKverbose >= 1)
 		fprintf(stderr, "#%s: commit done\n",
-			MT_thread_name());
+			MT_thread_getname());
 	return msg;
 }
 
@@ -571,7 +571,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
 	if (GDKverbose >= 1)
 		fprintf(stderr, "#%s: commit%s%s rolled back%s\n",
-			MT_thread_name(), name ? " " : "", name ? name : "",
+			MT_thread_getname(), name ? " " : "", name ? name : "",
 			tr->wtime == 0 ? " (no changes)" : "");
 	return msg;
 }

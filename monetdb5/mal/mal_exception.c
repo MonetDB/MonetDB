@@ -81,9 +81,9 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	}
 	char *q = message;
 	for (char *p = strchr(q, '\n'); p; q = p + 1, p = strchr(q, '\n'))
-		fprintf(stderr, "#%s:!ERROR:%.*s\n", MT_thread_name(), (int) (p - q), q);
+		fprintf(stderr, "#%s:!ERROR:%.*s\n", MT_thread_getname(), (int) (p - q), q);
 	if (*q)
-		fprintf(stderr, "#%s:!ERROR:%s\n", MT_thread_name(), q);
+		fprintf(stderr, "#%s:!ERROR:%s\n", MT_thread_getname(), q);
 	return message;
 }
 
