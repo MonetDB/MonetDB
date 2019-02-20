@@ -720,7 +720,7 @@ GDKexiting(void)
 #ifdef ATOMIC_LOCK
 	pthread_mutex_lock(&GDKstoppedLock.lock);
 #endif
-	stopped = GDKstopped != 0;
+	stopped = ATOMIC_ISSET(GDKstopped, GDKstoppedLock);
 #ifdef ATOMIC_LOCK
 	pthread_mutex_unlock(&GDKstoppedLock.lock);
 #endif

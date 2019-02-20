@@ -315,7 +315,6 @@ bool MT_path_absolute(const char *path);
 void MT_sleep_ms(unsigned int ms);
 void *MT_thread_getdata(void);
 const char *MT_thread_getname(void);
-struct thread_info *MT_thread_info(int *nthreads);
 bool MT_thread_init(void);
 void MT_thread_setdata(void *data);
 void MT_thread_setname(const char *name);

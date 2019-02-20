@@ -29,10 +29,12 @@
  * In addition, the following operations are defined:
  * ATOMIC_TAS -- test-and-set: set variable to "true" and return old value
  * ATOMIC_CLEAR -- set variable to "false"
- * These two operations are only defined on variables of type
+ * ATOMIC_ISSET -- returns whether value is "true"
+ * These three operations are only defined on variables of type
  * ATOMIC_FLAG, and the only values defined for such a variable are
- * "false" (zero) and "true" (non-zero).  The variable can be statically
- * initialized using the ATOMIC_FLAG_INIT macro.
+ * "false" and "true", and they should only be tested through the
+ * ATOMIC_ISSET macro.  The variable can be statically initialized
+ * using the ATOMIC_FLAG_INIT macro.
  */
 
 #ifndef _GDK_ATOMIC_H_
@@ -60,6 +62,7 @@
 #define ATOMIC_FLAG_INIT		{ AO_TS_INITIALIZER }
 #define ATOMIC_CLEAR(var, lck)		AO_CLEAR(&var)
 #define ATOMIC_TAS(var, lck)	(AO_test_and_set_full(&var) != AO_TS_CLEAR)
+#define ATOMIC_ISSET(var, lck)		(var != AO_TS_CLEAR)
 
 #else
 
@@ -108,6 +111,7 @@
 #define ATOMIC_FLAG_INIT		{ 0 }
 #define ATOMIC_CLEAR(var, lck)		_InterlockedExchange(&var, 0)
 #define ATOMIC_TAS(var, lck)		_InterlockedCompareExchange(&var, 1, 0)
+#define ATOMIC_ISSET(var, lck)		(var != 0)
 #pragma intrinsic(_InterlockedCompareExchange)
 
 #elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == 8) && !defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
@@ -132,6 +136,7 @@
 #define ATOMIC_FLAG_INIT		{ 0 }
 #define ATOMIC_CLEAR(var, lck)		__atomic_clear(&var, __ATOMIC_SEQ_CST)
 #define ATOMIC_TAS(var, lck)		__atomic_test_and_set(&var, __ATOMIC_SEQ_CST)
+#define ATOMIC_ISSET(var, lck)		(var != 0)
 
 #else
 
@@ -147,6 +152,7 @@
 #define ATOMIC_FLAG_INIT		{ 0 }
 #define ATOMIC_CLEAR(var, lck)		__sync_lock_release(&var)
 #define ATOMIC_TAS(var, lck)		__sync_lock_test_and_set(&var, 1)
+#define ATOMIC_ISSET(var, lck)		(var != 0)
 
 #endif
 
@@ -255,6 +261,17 @@ __ATOMIC_CLEAR(volatile ATOMIC_FLAG *var, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 }
 #define ATOMIC_CLEAR(var, lck)		__ATOMIC_CLEAR(&var, &(lck).lock)
+
+static inline bool
+__ATOMIC_ISSET(volatile ATOMIC_FLAG *var, pthread_mutex_t *lck)
+{
+	ATOMIC_FLAG val;
+	pthread_mutex_lock(lck);
+	val = *var;
+	pthread_mutex_unlock(lck);
+	return val != 0;
+}
+#define ATOMIC_ISSET(var, lck)		__ATOMIC_ISSET(&var, &(lck).lock)
 
 #endif
 
