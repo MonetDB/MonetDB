@@ -255,6 +255,45 @@ row2cols(backend *be, stmt *sub)
 	return sub;
 }
 
+static stmt*
+distinct_value_list(backend *be, list *vals, stmt ** last_null_value)
+{
+	node *n;
+	stmt *s;
+
+	/* create bat append values */
+	s = stmt_temp(be, exp_subtype(vals->h->data));
+	for( n = vals->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL);
+
+		if (exp_is_null(be->mvc, e))
+			*last_null_value = i;
+
+		if (!i)
+			return NULL;
+
+		s = stmt_append(be, s, i);
+	}
+
+	// Probably faster to filter out the values directly in the underlying list of atoms.
+	// But for now use groupby to filter out duplicate values.
+
+	stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
+	stmt* ext = stmt_result(be, groupby, 1);
+
+	return stmt_project(be, ext, s);
+}
+
+static stmt *
+stmt_selectnonil( backend *be, stmt *col, stmt *s )
+{
+	sql_subtype *t = tail_type(col);
+	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
+	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1);
+	return nn;
+}
+
 static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r) 
 {
@@ -291,27 +330,55 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				stmt_const(be, bin_first_column(be, left), s), 
 				stmt_bool(be, 1), cmp_equal, sel, 0); 
 	} else {
-		comp_type cmp = (in)?cmp_equal:cmp_notequal;
+		// TODO: handle_in_exps should contain all necessary logic for in-expressions to be SQL compliant.
+		// For non-SQL-standard compliant behavior, e.g. PostgreSQL backwards compatibility, we should
+		// make sure that this behavior is replicated by the sql optimizer and not handle_in_exps.
 
-		if (!in)
-			s = sel;
-		for( n = nl->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			stmt *i = exp_bin(be, use_r?e->r:e, left, right, grp, ext, cnt, NULL);
-			if(!i)
-				return NULL;
+		stmt* last_null_value = NULL; // CORNER CASE ALERT: See description below.
 
-			if (in) { 
-				i = stmt_uselect(be, c, i, cmp, sel, 0); 
-				if (s)
-					s = stmt_tunion(be, s, i); 
-				else
-					s = i;
-			} else {
-				s = stmt_uselect(be, c, i, cmp, s, 0); 
+		// The actual in-value-list should not contain duplicates to ensure that final join results are unique.
+		s = distinct_value_list(be, nl, &last_null_value);
+
+		if (last_null_value) {
+			// The actual in-value-list should not contain null values.
+			s = stmt_project(be, stmt_selectnonil(be, s, NULL), s);
+		}
+
+		s = stmt_join(be, c, s, in, cmp_left);
+		s = stmt_result(be, s, 0);
+
+		if (!in) {
+			if (last_null_value) {
+				// CORNER CASE ALERT:
+				// In case of a not-in-expression with the associated in-value-list containing a null value,
+				// the entire in-predicate is forced to always return false, i.e. an empty candidate list.
+				// This is similar to postgres behavior.
+				// TODO: However I do not think this behavior is in accordance with SQL standard 2003.
+
+				// Ugly trick to return empty candidate list, because for all x it holds that: (x == null) == false.
+				//list* singleton_bat = sa_list(sql->sa);
+				// list_append(singleton_bat, null_value);
+				s = stmt_uselect(be, c, last_null_value, cmp_equal, NULL, 0);
+				return s;
+			}
+			else {
+				// BACK TO HAPPY FLOW:
+				// Make sure that null values are never returned.
+				stmt* non_nulls;
+				non_nulls = stmt_selectnonil(be, c, NULL);
+				s = stmt_tdiff(be, non_nulls, s);
+				s = stmt_project(be, s, non_nulls);
 			}
 		}
+
+		if (sel) {
+			stmt* oid_intersection;
+			oid_intersection = stmt_tinter(be, s, sel);
+			s = stmt_project(be, oid_intersection, s);
+			s = stmt_result(be, s, 0);
+		}
 	}
+
 	return s;
 }
 
@@ -1589,6 +1656,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	} else if (rel->l) { /* handle sub query via function */
 		int i;
 		char name[16], *nme;
+		sql_rel *fr;
 
 		nme = number2name(name, 16, ++sql->remote);
 
@@ -1597,6 +1665,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		sub = stmt_list(be, l);
 		sub = stmt_func(be, sub, sa_strdup(sql->sa, nme), rel->l, 0);
+		fr = rel->l;
 		l = sa_list(sql->sa);
 		for(i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
 			sql_exp *c = n->data;
@@ -1605,6 +1674,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			const char *rnme = NULL;
 
 			s = stmt_alias(be, s, rnme, nme);
+			if (fr->card <= CARD_ATOM) /* single value, get result from bat */
+				s = stmt_fetch(be, s);
 			list_append(l, s);
 		}
 		sub = stmt_list(be, l);
@@ -3029,13 +3100,13 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 }
 
 stmt *
-sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
+sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 {
 	mvc *m = be->mvc;
 	mvc *o = NULL;
 	stmt *sq = NULL;
 	buffer *b;
-	char *n;
+	char *nquery;
 	int len = _strlen(query);
 	stream *buf;
 	bstream * bst;
@@ -3056,23 +3127,36 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	be->depth++;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (b == 0)
+	if (b == 0) {
+		*m = *o;
+		GDKfree(o);
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	n = GDKmalloc(len + 1 + 1);
-	if (n == 0)
+	}
+	nquery = GDKmalloc(len + 1 + 1);
+	if (nquery == 0) {
+		*m = *o;
+		GDKfree(o);
+		GDKfree(b);
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	snprintf(n, len + 2, "%s\n", query);
-	query = n;
+	}
+	snprintf(nquery, len + 2, "%s\n", query);
 	len++;
-	buffer_init(b, query, len);
+	buffer_init(b, nquery, len);
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
-		buffer_destroy(b);
+		*m = *o;
+		GDKfree(o);
+		GDKfree(b);
+		GDKfree(nquery);
 		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if((bst = bstream_create(buf, b->len)) == NULL) {
 		close_stream(buf);
+		*m = *o;
+		GDKfree(o);
+		GDKfree(b);
+		GDKfree(nquery);
 		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -3089,9 +3173,11 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	/* create private allocator */
 	m->sa = (sa)?sa:sa_create();
 	if (!m->sa) {
-		GDKfree(query);
+		bstream_destroy(bst);
+		*m = *o;
+		GDKfree(o);
 		GDKfree(b);
-		bstream_destroy(m->scanner.rs);
+		GDKfree(nquery);
 		be->depth--;
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -3099,21 +3185,15 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	if (sqlparse(m) || !m->sym) {
 		/* oops an error */
 		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
-				"internal query: %s", query);
+				"internal query: %s", nquery);
 	} else {
 		sql_rel *r = rel_semantic(m, m->sym);
 
-		if (r) {
-			r = rel_optimizer(m, r, 1);
-			if(!r)
-				return NULL;
+		if (r && (r = rel_optimizer(m, r, 1)) != NULL)
 			sq = rel_bin(be, r);
-			if(!sq)
-				return NULL;
-		}
 	}
 
-	GDKfree(query);
+	GDKfree(nquery);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
 	be->depth--;
@@ -3121,43 +3201,22 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 		sa_destroy(m->sa);
 	m->sym = NULL;
 	{
-		char *e = NULL;
 		int status = m->session->status;
 		int sizevars = m->sizevars, topvars = m->topvars;
 		sql_var *vars = m->vars;
 		/* cascade list maybe removed */
 		list *cascade_action = m->cascade_action;
 
-		if (m->session->status || m->errstr[0]) {
-			e = _STRDUP(m->errstr);
-			if (!e) {
-				_DELETE(o);
-				return NULL;
-			}
-		}
+		strcpy(o->errstr, m->errstr);
 		*m = *o;
 		m->sizevars = sizevars;
 		m->topvars = topvars;
 		m->vars = vars;
 		m->session->status = status;
 		m->cascade_action = cascade_action;
-		if (e) {
-			strncpy(m->errstr, e, ERRSIZE);
-			m->errstr[ERRSIZE - 1] = '\0';
-			_DELETE(e);
-		}
 	}
 	_DELETE(o);
 	return sq;
-}
-
-static stmt *
-stmt_selectnonil( backend *be, stmt *col, stmt *s )
-{
-	sql_subtype *t = tail_type(col);
-	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1);
-	return nn;
 }
 
 static stmt *

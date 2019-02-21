@@ -497,9 +497,9 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 		for(l=0; l < p->retc; l++) {
 			int res = 0;
 			if (is_select)
-				res = setPartnr(ml, getArg(q,p->retc+1), getArg(q,l), k);
+				res = propagatePartnr(ml, getArg(q,p->retc+1), getArg(q,l), k);
 			else
-				res = setPartnr(ml, -1, getArg(q,l), k);
+				res = propagatePartnr(ml, -1, getArg(q,l), k);
 			if(res) {
 				for(l=0; l < k; l++)
 					freeInstruction(r[l]);
@@ -511,13 +511,12 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 	}
 
 	for(k=0; k < p->retc; k++) {
-		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 1)) {
+		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 0)) {
 			for(l=0; l < k; l++)
 				freeInstruction(r[l]);
 			GDKfree(r);
 			return -1;
 		}
-		pushInstruction(mb, r[k]);
 	}
 	GDKfree(r);
 	return 0;
@@ -612,7 +611,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 			getArg(s,0) = newTmpVariable(mb, getArgType(mb, mat[n].mi, k));
 	
 			for (j=1; j<mat[n].mi->argc; j++) {
-				if (overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), -1, -2, 1)){
+				if (overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)){
 					s = pushArgument(mb,s,getArg(mat[n].mi,j));
 				}
 			}

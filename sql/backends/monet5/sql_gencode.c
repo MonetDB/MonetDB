@@ -69,17 +69,6 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 	return idx;
 }
 
-/*
- * To speedup code generation we freeze the references to the major module names.
- */
-
-void
-initSQLreferences(void)
-{
-	if (zero_or_oneRef == NULL)
-		GDKfatal("error initSQLreferences");
-}
-
 InstrPtr
 table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 {
@@ -916,7 +905,7 @@ backend_create_r_func(backend *be, sql_func *f)
 // defaults to python 2 if none is enabled
 static int
 enabled_python_version(void) {
-    char* env = GDKgetenv(pyapi_enableflag);
+    const char* env = GDKgetenv(pyapi_enableflag);
     if (env && strncmp(env, "3", 1) == 0) {
     	return 3;
     }

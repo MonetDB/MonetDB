@@ -1400,6 +1400,7 @@ ATOMunknown_find(const char *nme)
 str
 ATOMunknown_name(int i)
 {
+	assert(i < 0);
 	assert(unknown[-i]);
 	return unknown[-i];
 }

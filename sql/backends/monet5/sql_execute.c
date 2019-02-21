@@ -316,7 +316,7 @@ SQLrun(Client c, backend *be, mvc *m)
 				throw(SQL, "sql.prepare", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			retc = p->retc;
-			freeMalBlk(mb);
+			freeMalBlk(mb); // TODO can be factored out
 			mb = mc;
 			// declare the argument values as a constant
 			// We use the knowledge that the arguments are first on the stack
@@ -454,7 +454,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		throw(SQL, "sql.statement", SQLSTATE(HY002) "Catalogue not available");
 	}
 
-	initSQLreferences();
 	m = sql->mvc;
 	ac = m->session->auto_commit;
 	o = MNEW(mvc);
@@ -622,13 +621,19 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 		if (err || c->curprg->def->errors || msg) {
 			/* restore the state */
+			char *error = NULL;
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
-				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+				error = createException(PARSE, "SQLparser", "%s", m->errstr);
+			else if (*m->errstr)
+				error = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 			else
-				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
+				error = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", msg);
+			if (msg)
+				freeException(msg);
+			msg = error;
 			*m->errstr = 0;
 			goto endofcompile;
 		}
@@ -861,7 +866,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* generate MAL code, ignoring any code generation error */
 		if (backend_callinline(b, c) < 0 ||
 		    backend_dumpstmt(b, c->curprg->def, rel, 1, 1, NULL) < 0) {
-			msg = createException(SQL,"RAstatement","Program contains errors");
+			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
 			SQLaddQueryToCache(c);
 			msg = SQLoptimizeFunction(c,c->curprg->def);

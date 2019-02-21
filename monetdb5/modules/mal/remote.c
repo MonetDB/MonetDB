@@ -89,7 +89,7 @@ str RMTresolve(bat *ret, str *pat) {
 			"your platform, sorry"); /* please upgrade to Linux, etc. */
 #else
 	BAT *list;
-	char *mero_uri;
+	const char *mero_uri;
 	char *p;
 	unsigned int port;
 	char **redirs;

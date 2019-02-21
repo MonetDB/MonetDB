@@ -123,6 +123,7 @@ static str
 WLRgetMaster(void)
 {
 	char path[FILENAME_MAX];
+	int len;
 	str dir;
 	FILE *fd;
 
@@ -130,7 +131,9 @@ WLRgetMaster(void)
 		return MAL_SUCCEED;
 
 	/* collect master properties */
-	snprintf(path,FILENAME_MAX,"..%c%s",DIR_SEP,wlr_master);
+	len = snprintf(path,FILENAME_MAX,"..%c%s",DIR_SEP,wlr_master);
+	if (len == -1 || len >= FILENAME_MAX)
+		throw(MAL, "wlr.getMaster", "wlc.config filename path is too large");
 	if((dir = GDKfilepath(0,path,"wlc.config",0)) == NULL)
 		throw(MAL,"wlr.getMaster","Could not access wlc.config file\n");
 
@@ -154,7 +157,7 @@ static void
 WLRprocess(void *arg)
 {
 	Client cntxt = (Client) arg;
-	int i, pc;
+	int i, pc, len;
 	char path[FILENAME_MAX];
 	stream *fd = NULL;
 	Client c;
@@ -214,7 +217,11 @@ WLRprocess(void *arg)
 #endif
 	path[0]=0;
 	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
-		snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
+		len = snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
+		if (len == -1 || len >= FILENAME_MAX) {
+			mnstr_printf(GDKerr,"#wlr.process: filename path is too large\n");
+			continue;
+		}
 		fd= open_rastream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlr.process:'%s' can not be accessed \n",path);
@@ -428,7 +435,8 @@ WLRinit(void)
 	if( wlr_state != WLR_START)
 		return MAL_SUCCEED;
 	// time to continue the consolidation process in the background
-	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt,
+			     MT_THR_JOINABLE, "WLRprocessScheduler") < 0) {
 			throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
 	}
 	GDKregister(wlr_thread);

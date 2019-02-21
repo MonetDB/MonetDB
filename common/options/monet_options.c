@@ -219,7 +219,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	11	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	9	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -228,24 +228,6 @@ mo_builtin_settings(opt **Set)
 	set[i].name = strdup("gdk_dbpath");
 	set[i].value = strdup(LOCALSTATEDIR DIR_SEP_STR "monetdb5" DIR_SEP_STR
 			      "dbfarm" DIR_SEP_STR "demo");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_debug");
-	set[i].value = strdup("0");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_vmtrim");
-	/* default for gdk_vmtrim is
-	 * "yes" on 32 bit architectures and
-	 * "no"  on 64 bit architectures;
-	 * see also GDKinit() in gdk/gdk_utils.c */
-#if SIZEOF_VOID_P == 4
-	/* 32 bit architecture */
-	set[i].value = strdup("yes");
-#else
-	/* 64 bit architecture */
-	set[i].value = strdup("no");
-#endif
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_prompt");

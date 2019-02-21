@@ -50,37 +50,8 @@ MT_Lock     mal_oltpLock MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
  * Initialization of the MAL context
- * The compiler directive STRUCT_ALIGNED tells that the
- * fields in the VALrecord all start at the same offset.
- * This knowledge avoids low-level type decodings, but should
- * be assured at least once for each platform.
  */
 
-static
-void tstAligned(void)
-{
-#ifdef STRUCT_ALIGNED
-	int allAligned=0;
-	ValRecord v;
-	ptr val, base;
-	base = (ptr) & v.val.ival;
-	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.btval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
-	val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
-#ifdef HAVE_HGE
-	val= (ptr) & v.val.hval; if(val != base){ allAligned = -1; }
-#endif
-	val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
-	if(allAligned<0)
-	    GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
-#endif
-}
 int mal_init(void){
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init( &mal_contextLock, "mal_contextLock");
@@ -96,7 +67,6 @@ int mal_init(void){
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
-	tstAligned();
 	MCinit();
 	mdbInit();
 	monet_memory = MT_npages() * MT_pagesize();
@@ -123,7 +93,7 @@ int mal_init(void){
  */
 void cleanOptimizerPipe(void);
 
-void mserver_reset(int exit)
+void mserver_reset(void)
 {
 	str err = 0;
 
@@ -182,7 +152,7 @@ void mserver_reset(int exit)
 	mal_namespace_reset();
 	/* No need to clean up the namespace, it will simply be extended
 	 * upon restart mal_namespace_reset(); */
-	GDKreset(0, exit);	// terminate all other threads
+	GDKreset(0);	// terminate all other threads
 }
 
 
@@ -196,7 +166,8 @@ void mserver_reset(int exit)
  * Beware, mal_exit is also called during a SIGTERM from the monetdb tool
  */
 
-void mal_exit(void){
-	mserver_reset(1);
-	GDKexit(0); 	/* properly end GDK */
+void mal_exit(int status)
+{
+	mserver_reset();
+	exit(status);				/* properly end GDK */
 }

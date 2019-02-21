@@ -44,14 +44,14 @@ sql_create_comments(mvc *m, sql_schema *s)
 	sql_trans_alter_null(m->session->tr, c, 0);
 }
 
-#define MVC_INIT_DROP_TABLE(SQLID, TNAME)                      \
-	t = mvc_bind_table(m, s, TNAME);                           \
-	SQLID = t->base.id;                                        \
-	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) { \
-		mvc_destroy(m);                                        \
-		fprintf(stderr, "!mvc_init: %s\n", output);            \
-		GDKfree(output);                                       \
-		return -1;                                             \
+#define MVC_INIT_DROP_TABLE(SQLID, TNAME)				\
+	t = mvc_bind_table(m, s, TNAME);				\
+	SQLID = t->base.id;						\
+	if((output = mvc_drop_table(m, s, t, 0)) != MAL_SUCCEED) {	\
+		mvc_destroy(m);						\
+		fprintf(stderr, "!mvc_init: %s\n", output);		\
+		freeException(output);					\
+		return -1;						\
 	}
 
 int
@@ -236,25 +236,13 @@ mvc_exit(void)
 void
 mvc_logmanager(void)
 {
-	Thread thr = THRnew("logmanager");
-
-	if (thr == NULL)
-		GDKfatal("logmanager: cannot allocate thread");
-
 	store_manager();
-	THRdel(thr);
 }
 
 void
 mvc_idlemanager(void)
 {
-	Thread thr = THRnew("idlemanager");
-
-	if (thr == NULL)
-		GDKfatal("idlemanager: cannot allocate thread");
-
 	idle_manager();
-	THRdel(thr);
 }
 
 int
@@ -299,6 +287,9 @@ mvc_trans(mvc *m)
 	assert(!m->session->active);	/* can only start a new transaction */
 
 	store_lock();
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: starting transaction\n",
+			MT_thread_getname());
 	schema_changed = sql_trans_begin(m->session);
 	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
@@ -395,7 +386,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	if (m->session->status < 0) {
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted, will ROLLBACK instead", operation);
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 
@@ -410,14 +401,14 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			store_unlock();
 			msg = createException(SQL, "sql.commit", SQLSTATE(HY001) "%s allocation failure while committing the transaction, will ROLLBACK instead", operation);
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		msg = WLCcommit(m->clientid);
 		store_unlock();
 		if(msg != MAL_SUCCEED) {
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		m->type = Q_TRANS;
@@ -427,6 +418,9 @@ build up the hash (not copied in the trans dup)) */
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", name);
+		if (GDKverbose >= 1)
+			fprintf(stderr, "#%s: savepoint commit %s done\n",
+				MT_thread_getname(), name);
 		return msg;
 	}
 
@@ -458,11 +452,14 @@ build up the hash (not copied in the trans dup)) */
 		store_unlock();
 		if(msg != MAL_SUCCEED) {
 			if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				GDKfree(other);
+				freeException(other);
 			return msg;
 		}
 		if (mvc_debug)
-			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
+			fprintf(stderr, "#mvc_commit done\n");
+		if (GDKverbose >= 1)
+			fprintf(stderr, "#%s: commit done (no changes)\n",
+				MT_thread_getname());
 		return msg;
 	}
 
@@ -490,14 +487,14 @@ build up the hash (not copied in the trans dup)) */
 		store_unlock();
 		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 	msg = WLCcommit(m->clientid);
 	if(msg != MAL_SUCCEED) {
 		store_unlock();
 		if((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			GDKfree(other);
+			freeException(other);
 		return msg;
 	}
 	sql_trans_end(m->session);
@@ -506,7 +503,10 @@ build up the hash (not copied in the trans dup)) */
 	store_unlock();
 	m->type = Q_TRANS;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
+		fprintf(stderr, "#mvc_commit done\n");
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: commit done\n",
+			MT_thread_getname());
 	return msg;
 }
 
@@ -569,6 +569,10 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	m->type = Q_TRANS;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: commit%s%s rolled back%s\n",
+			MT_thread_getname(), name ? " " : "", name ? name : "",
+			tr->wtime == 0 ? " (no changes)" : "");
 	return msg;
 }
 

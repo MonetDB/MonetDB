@@ -53,12 +53,10 @@
 
 #define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
 
-gdk_export int BBPin;		/* BATs swapped into BBP  */
-gdk_export int BBPout;		/* BATs swapped out of BBP */
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
 
 /* global calls */
-gdk_export void BBPaddfarm(const char *dirname, int rolemask);
+gdk_export gdk_return BBPaddfarm(const char *dirname, int rolemask);
 gdk_export void BBPresetfarms(void);
 
 /* update interface */

@@ -55,10 +55,9 @@ static void ComputeParallelAggregation(AggrParams *p);
 static void CreateEmptyReturn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  size_t retcols, oid seqbase);
 
-static char *FunctionBasePath(void);
-static char *FunctionBasePath(void)
+static const char *FunctionBasePath(void)
 {
-	char *basepath = GDKgetenv("function_basepath");
+	const char *basepath = GDKgetenv("function_basepath");
 	if (basepath == NULL) {
 		basepath = getenv("HOME");
 	}
@@ -865,7 +864,8 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					res = MT_create_thread(&params->thread,
 										   (void (*)(void *)) &
 											   ComputeParallelAggregation,
-										   params, MT_THR_JOINABLE);
+										   params, MT_THR_JOINABLE,
+										   "ComputeParallelAggregation");
 					if (res != 0) {
 						msg = createException(MAL, "pyapi.eval",
 											  SQLSTATE(PY000) "Failed to start thread.");

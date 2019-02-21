@@ -111,7 +111,7 @@ typedef struct stmt {
 	stmtdata op4;		/* only op4 will hold other types */
 
 	char nrcols;
-	char key;		/* key (aka all values are unique) */
+	char key;		/* key (aka all values are unique) */ // TODO make this thing a bool
 	char aggr;		/* aggregated */
 	char partition;		/* selected as mitosis candidate */
 
@@ -240,5 +240,6 @@ extern const char *table_name(sql_allocator *sa, stmt *st);
 extern const char *schema_name(sql_allocator *sa, stmt *st);
 
 extern stmt *const_column(backend *ba, stmt *val);
+extern stmt *stmt_fetch(backend *ba, stmt *val);
 
 #endif /* _SQL_STATEMENT_H_ */

@@ -478,7 +478,7 @@ SERVERlistenThread(SOCKET *Sock)
 			goto stream_alloc_fail;
 		}
 		data->out = s;
-		if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, "doChallenge")) == 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -500,7 +500,7 @@ static const struct in6_addr ipv6_loopback_addr = IN6ADDR_LOOPBACK_INIT;
 static const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 
 static str
-SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
+SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 {
 	struct sockaddr* server = NULL;
 	struct sockaddr_in server_ipv4;
@@ -549,12 +549,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	port = *Port;
 	if (Usockfile == NULL || *Usockfile == 0 ||
-		*Usockfile[0] == '\0' || strcmp(*Usockfile, str_nil) == 0)
+		strcmp(Usockfile, str_nil) == 0)
 	{
 		usockfile = NULL;
 	} else {
 #ifdef HAVE_SYS_UN_H
-		usockfile = GDKstrdup(*Usockfile);
+		usockfile = GDKstrdup(Usockfile);
 		if (usockfile == NULL) {
 			GDKfree(psock);
 			throw(MAL,"mal_mapi.listen", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -901,7 +901,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	psock[1] = INVALID_SOCKET;
 #endif
 	psock[2] = INVALID_SOCKET;
-	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock, MT_THR_JOINABLE) != 0) {
+	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock,
+						 MT_THR_JOINABLE, "server listener") != 0) {
 		GDKfree(psock);
 		if (usockfile)
 			GDKfree(usockfile);
@@ -986,7 +987,7 @@ str
 SERVERlisten_default(int *ret)
 {
 	int port = SERVERPORT;
-	str p;
+	const char *p;
 	int maxusers = SERVERMAXUSERS;
 
 	(void) ret;
@@ -994,7 +995,7 @@ SERVERlisten_default(int *ret)
 	if (p)
 		port = (int) strtol(p, NULL, 10);
 	p = GDKgetenv("mapi_usock");
-	return SERVERlisten(&port, &p, &maxusers);
+	return SERVERlisten(&port, p, &maxusers);
 }
 
 str
@@ -1002,7 +1003,7 @@ SERVERlisten_usock(int *ret, str *usock)
 {
 	int maxusers = SERVERMAXUSERS;
 	(void) ret;
-	return SERVERlisten(0, usock, &maxusers);
+	return SERVERlisten(0, usock ? *usock : NULL, &maxusers);
 }
 
 str
@@ -1012,7 +1013,7 @@ SERVERlisten_port(int *ret, int *pid)
 	int maxusers = SERVERMAXUSERS;
 
 	(void) ret;
-	return SERVERlisten(&port, 0, &maxusers);
+	return SERVERlisten(&port, NULL, &maxusers);
 }
 /*
  * The internet connection listener may be terminated from the server console,
@@ -1072,7 +1073,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		GDKfree(data);
 		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
+	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, "doChallenge")) == 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);

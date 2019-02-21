@@ -601,7 +601,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		snprintf(buf, 1024,"%d client sessions still running",leftover);
 	*ret = GDKstrdup(buf);
 	if ( force)
-		mal_exit();
+		mal_exit(0);
 	if(*ret == NULL)
 		throw(MAL, "mal.shutdown", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;

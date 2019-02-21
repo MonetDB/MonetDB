@@ -152,7 +152,10 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		}
 		b->unused--;
 		if(b->unused == 0)
-			BATsetaccess(b, BAT_READ);
+			if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED) {
+				BBPunfix(b->batCacheid);
+				throw(MAL, "mat.pack", GDK_EXCEPTION);
+			}
 		assert(!b->tnil || !b->tnonil);
 		BBPkeepref(*ret = b->batCacheid);
 	}

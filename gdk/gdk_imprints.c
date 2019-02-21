@@ -298,7 +298,9 @@ BATimpsync(void *arg)
 							fsync(fd);
 #endif
 						}
+						hp->dirty = false;
 					} else {
+						failed = " write failed";
 						perror("write hash");
 					}
 					close(fd);
@@ -309,8 +311,13 @@ BATimpsync(void *arg)
 				/* sync-on-disk checked bit */
 				((size_t *) hp->base)[0] |= (size_t) 1 << 16;
 				if (!(GDKdebug & NOSYNCMASK) &&
-				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0)
+				    MT_msync(hp->base, SIZEOF_SIZE_T) < 0) {
+					failed = " sync failed";
 					((size_t *) hp->base)[0] &= ~((size_t) IMPRINTS_VERSION << 8);
+				} else {
+					hp->dirty = false;
+					failed = ""; /* not failed */
+				}
 			}
 			ALGODEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
 					  "imprints persisted "
@@ -521,7 +528,8 @@ BATimprints(BAT *b)
 		    !b->theap.dirty) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
-			if (MT_create_thread(&tid, BATimpsync, b, MT_THR_DETACHED) < 0)
+			if (MT_create_thread(&tid, BATimpsync, b,
+					     MT_THR_DETACHED, "BATimpsync") < 0)
 				BBPunfix(b->batCacheid);
 		}
 	}

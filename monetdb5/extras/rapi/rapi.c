@@ -172,13 +172,15 @@ static char *RAPIinitialize(void) {
 static char *RAPIinstalladdons(void) {
 	int evalErr;
 	ParseStatus status;
-	char rlibs[BUFSIZ];
+	char rlibs[FILENAME_MAX];
 	char rapiinclude[BUFSIZ];
 	SEXP librisexp;
+	int len;
 
 	// r library folder, create if not exists
-	snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP,
-			 "rapi_packages");
+	len = snprintf(rlibs, sizeof(rlibs), "%s%c%s", GDKgetenv("gdk_dbpath"), DIR_SEP, "rapi_packages");
+	if (len == -1 || len >= FILENAME_MAX)
+		return "cannot create rapi_packages directory because the path is too large";
 
 	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
 		return "cannot create rapi_packages directory";
@@ -307,6 +309,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	// install the MAL variables into the R environment
 	// we can basically map values to int ("INTEGER") or double ("REAL")
 	for (i = pci->retc + 2; i < pci->argc; i++) {
+		int bat_type = getBatType(getArgType(mb,pci,i));
 		// check for BAT or scalar first, keep code left
 		if (!isaBatType(getArgType(mb,pci,i))) {
 			b = COLnew(0, getArgType(mb, pci, i), 0, TRANSIENT);
@@ -346,7 +349,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			goto wrapup;
 		}
 		varname = PROTECT(Rf_install(args[i]));
-		varvalue = bat_to_sexp(b);
+		varvalue = bat_to_sexp(b, bat_type);
 		if (varvalue == NULL) {
 			msg = createException(MAL, "rapi.eval", "unknown argument type ");
 			goto wrapup;
@@ -489,7 +492,7 @@ void* RAPIloopback(void *query) {
 			names = PROTECT(NEW_STRING(ncols));
 			for (i = 0; i < ncols; i++) {
 				BAT *b = BATdescriptor(output->cols[i].b);
-				if (b == NULL || !(varvalue = bat_to_sexp(b))) {
+				if (b == NULL || !(varvalue = bat_to_sexp(b, TYPE_any))) {
 					UNPROTECT(i + 3);
 					if (b)
 						BBPunfix(b->batCacheid);

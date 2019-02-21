@@ -929,7 +929,12 @@ setcolprops(BAT *b, const void *x)
 			if (b->ttype == TYPE_oid) {
 				b->tseqbase = * (const oid *) x;
 			}
+			if (!isnil && ATOMlinear(b->ttype)) {
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+			}
 		}
+		return;
 	} else if (b->ttype == TYPE_void) {
 		/* not the first value in a VOID column: we keep the
 		 * seqbase, and x is not used, so only some properties
@@ -950,7 +955,10 @@ setcolprops(BAT *b, const void *x)
 			b->tnil = true;
 			b->tnonil = false;
 		}
-	} else {
+		return;
+	} else if (ATOMlinear(b->ttype)) {
+		PROPrec *prop;
+
 		bi = bat_iterator(b);
 		pos = BUNlast(b);
 		prv = BUNtail(bi, pos - 1);
@@ -969,24 +977,52 @@ setcolprops(BAT *b, const void *x)
 				b->tnokey[1] = pos;
 			}
 		}
-		if (b->tsorted && cmp > 0) {
-			/* out of order */
-			b->tsorted = false;
-			b->tnosorted = pos;
+		if (b->tsorted) {
+			if (cmp > 0) {
+				/* out of order */
+				b->tsorted = false;
+				b->tnosorted = pos;
+			} else if (cmp < 0 && !isnil) {
+				/* new largest value */
+				BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
+			}
+		} else if (!isnil &&
+			   (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
+			   ATOMcmp(b->ttype, VALptr(&prop->v), x) < 0) {
+			BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
 		}
-		if (b->trevsorted && cmp < 0) {
-			/* out of order */
-			b->trevsorted = false;
-			b->tnorevsorted = pos;
+		if (b->trevsorted) {
+			if (cmp < 0) {
+				/* out of order */
+				b->trevsorted = false;
+				b->tnorevsorted = pos;
+				/* if there is a nil in the BAT, it is
+				 * the smallest, but that doesn't
+				 * count for the property, so the new
+				 * value may still be smaller than the
+				 * smallest non-nil so far */
+				if (!b->tnonil && !isnil &&
+				    (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
+				    ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
+					BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+				}
+			} else if (cmp > 0 && !isnil) {
+				/* new smallest value */
+				BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+			}
+		} else if (!isnil &&
+			   (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
+			   ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
+			BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
 		}
 		if (BATtdense(b) && (cmp >= 0 || * (const oid *) prv + 1 != * (const oid *) x)) {
 			assert(b->ttype == TYPE_oid);
 			b->tseqbase = oid_nil;
 		}
-		if (isnil) {
-			b->tnonil = false;
-			b->tnil = true;
-		}
+	}
+	if (isnil) {
+		b->tnonil = false;
+		b->tnil = true;
 	}
 }
 
@@ -1046,37 +1082,17 @@ BUNappend(BAT *b, const void *t, bool force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	if (b->ttype != TYPE_void
-	    && ATOMlinear(b->ttype)
-	    && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
-		PROPrec *prop;
-
-		if (b->batCount == 1) {
-			BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
-			BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
-		} else {
-			if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
-			    ATOMcmp(b->ttype, VALptr(&prop->v), t) < 0) {
-				BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
-			}
-			if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
-			    ATOMcmp(b->ttype, VALptr(&prop->v), t) > 0) {
-				BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
-			}
-		}
 #if 0		/* enable if we have more properties than just min/max */
-		do {
-			for (prop = b->tprops; prop; prop = prop->next)
-				if (prop->id != GDK_MAX_VALUE &&
-				    prop->id != GDK_MIN_VALUE) {
-					BATrmprop(b, prop->id);
-					break;
-				}
-		} while (prop);
+	PROPrec *prop;
+	do {
+		for (prop = b->tprops; prop; prop = prop->next)
+			if (prop->id != GDK_MAX_VALUE &&
+			    prop->id != GDK_MIN_VALUE) {
+				BATrmprop(b, prop->id);
+				break;
+			}
+	} while (prop);
 #endif
-	} else {
-		PROPdestroy(b);
-	}
 	if (b->thash == (Hash *) 1 ||
 	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
 		/* don't bother first loading the hash to then change
@@ -1475,7 +1491,7 @@ BUNfnd(BAT *b, const void *v)
 	BUN r = BUN_NONE;
 	BATiter bi;
 
-	BATcheck(b, "BUNfnd", 0);
+	BATcheck(b, "BUNfnd", BUN_NONE);
 	if (!v)
 		return r;
 	if (BATtvoid(b))
@@ -2049,7 +2065,6 @@ BATmode(BAT *b, bool transient)
 		if (!transient) {
 			check_type(b->ttype);
 		}
-		BBP_dirty = true;
 
 		if (!transient && isVIEW(b)) {
 			if (VIEWreset(b) != GDK_SUCCEED) {

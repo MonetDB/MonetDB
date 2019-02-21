@@ -24,7 +24,7 @@
 #define MAXARG 8				/* was 4 BEWARE the code depends on this knowledge, where? */
 #define STMT_INCREMENT 4
 #define MAL_VAR_WINDOW  32
-#define MAXLISTING 64*1024
+#define MAXLISTING (64*1024)
 
 /* Allocation of space assumes a rather exotic number of
  * arguments. Access to module and function name are cast in macros to

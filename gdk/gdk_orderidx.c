@@ -41,6 +41,7 @@ BATidxsync(void *arg)
 							fsync(fd);
 #endif
 						}
+						hp->dirty = false;
 					} else {
 						perror("write hash");
 					}
@@ -49,8 +50,12 @@ BATidxsync(void *arg)
 			} else {
 				((oid *) hp->base)[0] |= (oid) 1 << 24;
 				if (!(GDKdebug & NOSYNCMASK) &&
-				    MT_msync(hp->base, SIZEOF_OID) < 0)
+				    MT_msync(hp->base, SIZEOF_OID) < 0) {
 					((oid *) hp->base)[0] &= ~((oid) 1 << 24);
+				} else {
+					hp->dirty = false;
+					failed = ""; /* not failed */
+				}
 			}
 			ALGODEBUG fprintf(stderr, "#BATidxsync(%s): orderidx persisted"
 					  " (" LLFMT " usec)%s\n",
@@ -156,7 +161,8 @@ persistOIDX(BAT *b)
 	    !b->theap.dirty) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
-		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
+		if (MT_create_thread(&tid, BATidxsync, b,
+				     MT_THR_DETACHED, "BATidxsync") < 0)
 			BBPunfix(b->batCacheid);
 	} else
 		ALGODEBUG fprintf(stderr, "#persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
@@ -463,7 +469,8 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	    b->batInserted == b->batCount) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
-		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
+		if (MT_create_thread(&tid, BATidxsync, b,
+				     MT_THR_DETACHED, "BATidxsync") < 0)
 			BBPunfix(b->batCacheid);
 	} else
 		ALGODEBUG fprintf(stderr, "#GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));

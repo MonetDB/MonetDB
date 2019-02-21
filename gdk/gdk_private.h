@@ -83,7 +83,7 @@ __hidden void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BBPgetdesc(bat i)
 	__attribute__((__visibility__("hidden")));
-__hidden void BBPinit(void)
+__hidden gdk_return BBPinit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden bat BBPinsert(BAT *bn)
 	__attribute__((__warn_unused_result__))
@@ -315,12 +315,21 @@ typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
 	MT_Lock imprints;
+#ifndef NDEBUG
+	char swapname[16];
+	char hashname[16];
+	char impsname[16];
+#endif
 } batlock_t;
 
 typedef struct {
-	MT_Lock alloc;
+	MT_Lock cache;
 	MT_Lock trim;
 	bat free;
+#ifndef NDEBUG
+	char cachename[16];
+	char trimname[16];
+#endif
 } bbplock_t;
 
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
@@ -333,7 +342,6 @@ extern struct BBPfarm_t {
 	FILE *lock_file;
 } BBPfarms[MAXFARMS];
 
-extern bool BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
 extern size_t GDK_mmap_minsize_persistent; /* size after which we use memory mapped files for persistent heaps */
@@ -371,7 +379,7 @@ extern MT_Lock MT_system_lock;
 #define threadmask(y)	((int) (mix_int(y) & BBP_THREADMASK))
 #endif
 #define GDKtrimLock(y)	GDKbbpLock[y].trim
-#define GDKcacheLock(y)	GDKbbpLock[y].alloc
+#define GDKcacheLock(y)	GDKbbpLock[y].cache
 #define BBP_free(y)	GDKbbpLock[y].free
 
 /* extra space in front of strings in string heaps when hashash is set
