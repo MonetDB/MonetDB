@@ -88,29 +88,29 @@ mvc_schema_privs(mvc *m, sql_schema *s)
 	return 0;
 }
 
-static int
+static bool
 schema_privs(sqlid grantor, sql_schema *s)
 {
 	if (admin_privs(grantor))
-		return 1;
+		return true;
 	if (!s)
-		return 0;
+		return false;
 	if (grantor == s->auth_id)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 str
 sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid grantor)
 {
 	sql_trans *tr = sql->session->tr;
-	int allowed;
+	bool allowed;
 	sqlid grantee_id;
 
-	allowed = admin_privs(grantor) ? 1 : 0;
+	allowed = admin_privs(grantor);
 
 	if (!allowed)
-		allowed = sql_grantable(sql, grantor, GLOBAL_OBJID, privs, 0);
+		allowed = sql_grantable(sql, grantor, GLOBAL_OBJID, privs, 0) == 1;
 
 	if (!allowed)
 		throw(SQL,"sql.grant_global",SQLSTATE(0L000) "GRANT: Grantor '%s' is not allowed to grant global privileges", stack_get_string(sql,"current_user"));
@@ -133,7 +133,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
-	int allowed;
+	bool allowed;
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
@@ -148,7 +148,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 
 	if (!cname) {
 		if (!allowed)
-			allowed = sql_grantable(sql, grantor, t->base.id, privs, 0);
+			allowed = sql_grantable(sql, grantor, t->base.id, privs, 0) == 1;
 
 		if (!allowed)
 			throw(SQL,"sql.grant_table", SQLSTATE(0L000) "GRANT: Grantor '%s' is not allowed to grant privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
@@ -159,7 +159,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 			throw(SQL,"sql.grant_table",SQLSTATE(42S22) "GRANT: Table '%s' has no column '%s'", tname, cname);
 		/* allowed on column */
 		if (!allowed)
-			allowed = sql_grantable(sql, grantor, c->base.id, privs, 0);
+			allowed = sql_grantable(sql, grantor, c->base.id, privs, 0) == 1;
 
 		if (!allowed)
 			throw(SQL, "sql.grant_table", SQLSTATE(0L000) "GRANT: Grantor '%s' is not allowed to grant privilege %s for table '%s'", stack_get_string(sql, "current_user"), priv2string(privs), tname);
@@ -196,7 +196,7 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 	sql_trans *tr = sql->session->tr;
 	sql_schema *s = NULL;
 	sql_func *f = NULL;
-	int allowed;
+	bool allowed;
 	sqlid grantee_id;
 
 	if (sname)
@@ -210,7 +210,7 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 	allowed = schema_privs(grantor, f->s);
 
 	if (!allowed)
-		allowed = sql_grantable(sql, grantor, f->base.id, privs, 0);
+		allowed = sql_grantable(sql, grantor, f->base.id, privs, 0) == 1;
 
 	if (!allowed)
 		throw(SQL, "sql.grant_func", SQLSTATE(0L000) "GRANT: Grantor '%s' is not allowed to grant privileges for function '%s'", stack_get_string(sql,"current_user"), f->base.name);
@@ -253,13 +253,13 @@ sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid gran
 char *
 sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid grantor)
 {
-	int allowed;
+	bool allowed;
 	sqlid grantee_id;
 
-	allowed = admin_privs(grantor) ? 1 : 0;
+	allowed = admin_privs(grantor);
 
 	if (!allowed)
-		allowed = sql_grantable(sql, grantor, GLOBAL_OBJID, privs, 0);
+		allowed = sql_grantable(sql, grantor, GLOBAL_OBJID, privs, 0) == 1;
 
 	if (!allowed)
 		throw(SQL, "sql.revoke_global", SQLSTATE(0L000) "REVOKE: Grantor '%s' is not allowed to revoke global privileges", stack_get_string(sql,"current_user"));
@@ -278,7 +278,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
-	int allowed;
+	bool allowed;
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
@@ -291,7 +291,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)
-		allowed = sql_grantable(sql, grantor, t->base.id, privs, 0);
+		allowed = sql_grantable(sql, grantor, t->base.id, privs, 0) == 1;
 
 	if (!allowed)
 		throw(SQL, "sql.revoke_table", SQLSTATE(0L000) "REVOKE: Grantor '%s' is not allowed to revoke privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
@@ -302,7 +302,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 			throw(SQL,"sql.revoke_table", SQLSTATE(42S22) "REVOKE: table '%s' has no column '%s'", tname, cname);
 		/* allowed on column */
 		if (!allowed)
-			allowed = sql_grantable(sql, grantor, c->base.id, privs, 0);
+			allowed = sql_grantable(sql, grantor, c->base.id, privs, 0) == 1;
 
 		if (!allowed)
 			throw(SQL, "sql.revoke_table", SQLSTATE(0L000) "REVOKE: Grantor '%s' is not allowed to revoke privilege %s for table '%s'", stack_get_string(sql, "current_user"), priv2string(privs), tname);
@@ -331,7 +331,7 @@ sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fu
 {
 	sql_schema *s = NULL;
 	sql_func *f = NULL;
-	int allowed;
+	bool allowed;
 	sqlid grantee_id;
 
 	if (sname)
@@ -344,7 +344,7 @@ sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fu
 	assert(f);
 	allowed = schema_privs(grantor, f->s);
 	if (!allowed)
-		allowed = sql_grantable(sql, grantor, f->base.id, privs, 0);
+		allowed = sql_grantable(sql, grantor, f->base.id, privs, 0) == 1;
 
 	if (!allowed)
 		throw(SQL, "sql.revoke_func", SQLSTATE(0L000) "REVOKE: Grantor '%s' is not allowed to revoke privileges for function '%s'", stack_get_string(sql,"current_user"), f->base.name);
