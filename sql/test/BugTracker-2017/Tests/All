@@ -92,7 +92,7 @@ sqlitelogictest-aggregation-not-in.Bug-6416
 HAVE_NETCDF?sqlsmith-semijoin-constant.bug-6417
 sqlsmith.Bug-6418
 HAVE_SAMTOOLS?sqlsmith.Bug-6423
-HAVE_SAMTOOLS?sqlsmith.Bug-6424
+HAVE_SAMTOOLS&HAVE_NETCDF?sqlsmith.Bug-6424
 HAVE_NETCDF?sqlsmith.Bug-6425
 double-groupby-column.Bug-6207
 sqlitelogictest-aggregation-having-avg.Bug-6428
