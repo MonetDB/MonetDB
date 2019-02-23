@@ -304,6 +304,34 @@ Ready.
 % 1,	2 # length
 [ 6,	42	]
 #drop TABLE integers;
+#CREATE TABLE strings(v VARCHAR(128));
+#INSERT INTO strings VALUES ('hello'), ('world'), (NULL);
+[ 3	]
+#SELECT NULL IN (SELECT * FROM strings); -- NULL
+% .L6 # table_name
+% L6 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT 'hello' IN (SELECT * FROM strings); -- true
+% .L6 # table_name
+% L6 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 'bla' IN (SELECT * FROM strings); -- NULL
+% .L6 # table_name
+% L6 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL); -- false
+% .L6 # table_name
+% L6 # name
+% boolean # type
+% 5 # length
+[ false	]
+#drop table strings;
 
 # 17:27:37 >  
 # 17:27:37 >  "Done."

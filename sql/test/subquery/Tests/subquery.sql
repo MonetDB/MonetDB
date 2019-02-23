@@ -76,3 +76,12 @@ SELECT i FROM integers WHERE NOT(i IN (SELECT i FROM integers WHERE i>1)); -- 1
 SELECT (SELECT SUM(i) FROM integers), (SELECT 42);
 
 drop TABLE integers;
+
+-- varchar tests
+CREATE TABLE strings(v VARCHAR(128));
+INSERT INTO strings VALUES ('hello'), ('world'), (NULL);
+SELECT NULL IN (SELECT * FROM strings); -- NULL
+SELECT 'hello' IN (SELECT * FROM strings); -- true
+SELECT 'bla' IN (SELECT * FROM strings); -- NULL
+SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL); -- false
+drop table strings;
