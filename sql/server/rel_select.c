@@ -1786,6 +1786,10 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 
 			/* get inner queries result value, ie
 			   get last expression of r */
+			/*
+			if (r && list_length(r->exps) != 2) 
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
+				*/
 			if (r) {
 				rs = rel_lastexp(sql, r);
 
@@ -1801,6 +1805,9 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 				rel = r;
 			}
 		} else if (r) {
+			if (list_length(r->exps) != 1) 
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
+
 			rs = rel_lastexp(sql, r);
 			if (r->card > CARD_ATOM) {
 				/* if single value (independed of relations), rewrite */
@@ -1809,7 +1816,15 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 				} else if (quantifier != 1) { 
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, compare_aggr_op(compare_op, quantifier), exp_subtype(rs));
 
+					r = rel_groupby(sql, r, NULL);
+
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
+					if (quantifier == 2 && (compare_op[0] == '<' || compare_op[0] == '>'))
+						/* do not skip nulls in case of >,>=,<=,< */
+						append(rs->l, exp_atom_bool(sql->sa, 0));
+					rs = rel_groupby_add_aggr(sql, r, rs);
+					rs = exp_column(sql->sa, exp_relname(rs), exp_name(rs), exp_subtype(rs), rs->card, has_nil(rs), is_intern(rs));
+					rs = exp_column(sql->sa, exp_relname(rs), exp_name(rs), exp_subtype(rs), rs->card, has_nil(rs), is_intern(rs));
 				}
 			}
 			rel = rel_crossproduct(sql->sa, rel, r, op_semi);
@@ -1982,15 +1997,34 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	}
 	case SQL_COMPARE:
 	{
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->next->data.sym;
-		char *compare_op = sc->data.lval->h->next->data.sval;
+		dnode *n = sc->data.lval->h;
+		symbol *lo = n->data.sym;
+		symbol *ro = n->next->next->data.sym;
+		char *compare_op = n->next->data.sval;
+		int quantifier = 0;
+		sql_exp *rs = NULL, *ls;
+		comp_type cmp_type = compare_str2type(compare_op);
+		int need_not = 0;
 
+		/* 
+		 * = ANY -> IN, <> ALL -> NOT( = ANY) -> NOT IN
+		 * = ALL -> aggr (all), <> ANY -> NOT ( = ALL )
+		 */
 		/* currently we don't handle the (universal and existential)
 		   quantifiers (all and any/some) */
+		if (n->next->next->next)
+			quantifier = n->next->next->next->data.i_val + 1; 
+		assert(quantifier == 0 || quantifier == 1 || quantifier == 2);
 
-		sql_exp *rs = NULL, *ls = rel_value_exp(sql, rel, lo, f, ek);
+		if (quantifier == 1 && cmp_type == cmp_notequal) {
+			need_not = 1;
+			quantifier = 2;
+			cmp_type = cmp_equal;
+			compare_op[0] = '=';
+			compare_op[1] = 0;
+		}
 
+		ls = rel_value_exp(sql, rel, lo, f, ek);
 		if (!ls)
 			return NULL;
 
@@ -2000,7 +2034,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0)
 				return NULL;
-			return rel_binop_(sql, ls, rs, NULL, compare_op, card_value);
+			rs = rel_binop_(sql, ls, rs, NULL, compare_op, card_value);
+			if (need_not)
+				rs = rel_unop_(sql, rs, NULL, "not", card_value);
+			return rs;
 		} else {
 			/* first try without current relation, too see if there
 			are correlations with the outer relation */
@@ -2008,8 +2045,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	
 			/* correlation, ie return new relation */
 			if (!r && sql->session->status != -ERR_AMBIGUOUS) {
-			
-
 				sql_exp *e;
 
 				/* reset error */
@@ -2023,7 +2058,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				if (r) {
 					rs = rel_lastexp(sql, r);
 					*rel = r;
-					e = exp_compare(sql->sa, ls, rs, compare_str2type(compare_op));
+					e = exp_compare(sql->sa, ls, rs, cmp_type);
 					if (!is_sql_sel(f))
 						return e;
 			
@@ -2048,6 +2083,24 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						ls = rel_project_add_exp(sql, l, ls);
 				}
 				rs = rel_lastexp(sql, r);
+				if (quantifier && r->card > CARD_ATOM) {
+					/* flatten the quantifier */
+					sql_subaggr *a;
+
+					if (compare_op[0] == '<') /* todo handle <> */
+					       	a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"max":"min", exp_subtype(rs));
+					else if (compare_op[0] == '>')
+					       	a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"min":"max", exp_subtype(rs));
+					else /* (compare_op[0] == '=')*/ /* only = ALL */
+					       	a = sql_bind_aggr(sql->sa, sql->session->schema, "all", exp_subtype(rs));
+					r = rel_groupby(sql, r, NULL);
+
+					rs = exp_aggr1(sql->sa, rs, a, 0, 1, CARD_ATOM, 0);
+					if (quantifier == 2 && (compare_op[0] == '<' || compare_op[0] == '>'))
+						/* do not skip nulls in case of >,>=,<=,< */
+						append(rs->l, exp_atom_bool(sql->sa, 0));
+					rs = rel_groupby_add_aggr(sql, r, rs);
+				}
 				if (r->card > CARD_ATOM) {
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 
@@ -2543,6 +2596,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *ro = n->next->next->data.sym;
 		char *compare_op = n->next->data.sval;
 		int quantifier = 0;
+
 		/* currently we don't handle the (universal and existential)
 		   quantifiers (all and any/some) */
 		if (n->next->next->next)
@@ -3035,7 +3089,19 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		return rel_select(sql->sa, rel, le);
 	}
 	case SQL_NOT: {
-		sql_exp *re, *le = rel_value_exp(sql, &rel, sc->data.sym, f, ek);
+		sql_exp *re, *le;
+		switch (sc->data.sym->token) {
+		case SQL_IN:
+			sc->data.sym->token = SQL_NOT_IN;
+			return rel_logical_exp(sql, rel, sc->data.sym, f);
+		case SQL_NOT_IN:
+			sc->data.sym->token = SQL_IN;
+			return rel_logical_exp(sql, rel, sc->data.sym, f);
+		/* todo also handle BETWEEN and EXISTS */
+		default:
+			break;
+		} 
+		le = rel_value_exp(sql, &rel, sc->data.sym, f, ek);
 
 		if (!le)
 			return NULL;
@@ -5374,9 +5440,16 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			/* group by needed ? */
 			if (e->card >= CARD_ATOM && e->card > ek.card) {
 				int processed = is_processed(r);
+
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
-				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+				if (ek.card >= card_column) {
+					list *args = new_exp_list(sql->sa);
+					list_append(args, e);
+					list_append(args, exp_atom_bool(sql->sa, 0)); /* no error */
+					e = exp_aggr(sql->sa, args, zero_or_one, 0, 0, CARD_ATOM, 0);
+				} else
+					e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
 				r = rel_groupby(sql, r, NULL);
 				e = rel_groupby_add_aggr(sql, r, e);
 				if (processed)

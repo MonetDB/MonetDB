@@ -3023,7 +3023,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 str
-zero_or_one(ptr ret, const bat *bid)
+zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 {
 	BAT *b;
 	BUN c;
@@ -3036,7 +3036,7 @@ zero_or_one(ptr ret, const bat *bid)
 	c = BATcount(b);
 	if (c == 0) {
 		p = ATOMnilptr(b->ttype);
-	} else if (c == 1) {
+	} else if (c == 1 || (c > 1 && *err == false)) {
 		BATiter bi = bat_iterator(b);
 		p = BUNtail(bi, 0);
 	} else {
@@ -3076,6 +3076,21 @@ zero_or_one(ptr ret, const bat *bid)
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err)
+{
+	bit t = FALSE;
+	(void)err;
+	return zero_or_one_error(ret, bid, &t);
+}
+
+str
+zero_or_one(ptr ret, const bat *bid)
+{
+	bit t = TRUE;
+	return zero_or_one_error(ret, bid, &t);
 }
 
 str

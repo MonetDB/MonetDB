@@ -657,14 +657,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				as = exp_bin(be, at, left, right, NULL, NULL, NULL, sel);
 
-				if (as && as->nrcols <= 0 && left) 
+				if (as && as->nrcols <= 0 && left && (a->aggr->base.name[0] != 'm' || en->next || en == attr->h)) 
 					as = stmt_const(be, bin_first_column(be, left), as);
 				/* insert single value into a column */
-				if (as && as->nrcols <= 0 && !left)
+				if (as && as->nrcols <= 0 && !left && (a->aggr->base.name[0] != 'm' || en->next || en == attr->h))
 					as = const_column(be, as);
 
-				if (!as) 
-					return NULL;	
+				if (!as)
+					return NULL;
 				if (need_distinct(e)){ 
 					stmt *g = stmt_group(be, as, grp, ext, cnt, 1);
 					stmt *next = stmt_result(be, g, 1); 
@@ -889,10 +889,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			return NULL;
 		}
 
+		/*
 		if (left && right && !is_select &&
 		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
 		     re->card > CARD_ATOM || 
 		    (re2 && re2->card > CARD_ATOM))) {
+		    */
+		(void)is_select;
+		if (left && right) {
 			if (l->nrcols == 0)
 				l = stmt_const(be, bin_first_column(be, swapped?right:left), l); 
 			if (r->nrcols == 0)

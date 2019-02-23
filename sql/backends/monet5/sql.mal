@@ -308,6 +308,12 @@ comment "Import a table from the files (fname)";
 command zero_or_one( col:bat[:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+command zero_or_one( col:bat[:any_1], err:bit) :any_1
+address zero_or_one_error
+comment "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil";
+command zero_or_one( col:bat[:any_1], err:bat[:bit]) :any_1
+address zero_or_one_error_bat
+comment "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil";
 
 inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
 	(g,e,h) := group.group(gp);
@@ -322,7 +328,7 @@ end sql.subzero_or_one;
 
 command all( col:bat[:any_1]) :any_1
 address SQLall
-comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+comment "if all values in col are equal return this, else nil";
 
 # todo implement = all aggregator (ie keep last value and compare status)
 inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];

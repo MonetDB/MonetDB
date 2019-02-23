@@ -127,7 +127,7 @@ slice(BAT **retval, BAT *b, lng start, lng end)
  */
 
 str
-ALGminany(ptr result, const bat *bid)
+ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
 	ptr p;
@@ -142,9 +142,9 @@ ALGminany(ptr result, const bat *bid)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmin(b, NULL);
+			* (ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
 		} else {
-			p = BATmin(b, result);
+			p = BATmin_skipnil(b, result, *skipnil);
 			assert(p == result);
 		}
 		if (p == NULL)
@@ -155,7 +155,14 @@ ALGminany(ptr result, const bat *bid)
 }
 
 str
-ALGmaxany(ptr result, const bat *bid)
+ALGminany(ptr result, const bat *bid)
+{
+	bit skipnil = TRUE;
+	return ALGminany_skipnil(result, bid, &skipnil);
+}
+
+str
+ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 {
 	BAT *b;
 	ptr p;
@@ -170,9 +177,9 @@ ALGmaxany(ptr result, const bat *bid)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			* (ptr *) result = p = BATmax(b, NULL);
+			* (ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
 		} else {
-			p = BATmax(b, result);
+			p = BATmax_skipnil(b, result, *skipnil);
 			assert(p == result);
 		}
 		if (p == NULL)
@@ -180,6 +187,13 @@ ALGmaxany(ptr result, const bat *bid)
 	}
 	BBPunfix(b->batCacheid);
 	return msg;
+}
+
+str
+ALGmaxany(ptr result, const bat *bid)
+{
+	bit skipnil = TRUE;
+	return ALGmaxany_skipnil(result, bid, &skipnil);
 }
 
 str

@@ -20,6 +20,8 @@ mal_export str ALGvariancep(dbl *res, const bat *bid);
 
 mal_export str ALGminany(ptr result, const bat *bid);
 mal_export str ALGmaxany(ptr result, const bat *bid);
+mal_export str ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil);
+mal_export str ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil);
 mal_export str ALGgroupby(bat *res, const bat *gids, const bat *cnts);
 mal_export str ALGcard(lng *result, const bat *bid);
 mal_export str ALGselect1(bat *result, const bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);

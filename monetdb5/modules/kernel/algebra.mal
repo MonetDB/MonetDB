@@ -317,8 +317,16 @@ command min(b:bat[:any_2]):any_2
 address ALGminany
 comment "Return the lowest tail value or nil.";
 
+command min(b:bat[:any_2], skipnil:bit):any_2
+address ALGminany_skipnil
+comment "Return the lowest tail value or nil.";
+
 command max(b:bat[:any_2]):any_2
 address ALGmaxany
+comment "Return the highest tail value or nil.";
+
+command max(b:bat[:any_2], skipnil:bit):any_2
+address ALGmaxany_skipnil
 comment "Return the highest tail value or nil.";
 
 pattern avg(b:bat[:any_2]) :dbl
