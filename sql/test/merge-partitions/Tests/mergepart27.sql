@@ -58,11 +58,15 @@ ALTER TABLE subt1 DROP CONSTRAINT subt1_b_fkey; --error, cannot drop SQL constra
 ALTER TABLE subt1 ADD FOREIGN KEY (a) REFERENCES referenceme (mememe); --error, cannot add SQL constraints while the table is part of a merge table
 ALTER TABLE checkkeys ADD TABLE subt2 AS PARTITION BETWEEN 101 AND 200; --error, primary keys don't match
 
+ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_b_fkey; --error, merge table has child tables
 ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe); --error, merge table has child tables
 ALTER TABLE checkkeys ADD FOREIGN KEY (b) REFERENCES otherref (othermeme); --error, merge table has child tables
 
 ALTER TABLE checkkeys DROP TABLE subt1;
 ALTER TABLE subt1 DROP CONSTRAINT subt1_b_fkey;
+
+ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_b_fkey;
+ALTER TABLE checkkeys ADD FOREIGN KEY (b) REFERENCES otherref (othermeme);
 
 CREATE TABLE subt3 (a int PRIMARY KEY, b varchar(32), FOREIGN KEY (a) REFERENCES referenceme(mememe));
 CREATE TABLE another (mememe int PRIMARY KEY);

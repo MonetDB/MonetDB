@@ -1,3 +1,4 @@
+CREATE SCHEMA other_schema;
 CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 SELECT COUNT(*) from table_partitions;
 SELECT COUNT(*) from range_partitions;
@@ -17,6 +18,8 @@ ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 7 AND 9; --error
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5; --error
 
 DROP TABLE subtable1; --error
+ALTER TABLE subtable1 SET SCHEMA other_schema; --error, changing the schema shouldn't be allowed while part of a merge table
+ALTER TABLE subtable1 RENAME TO subtable3; --error, renaming the table shouldn't be allowed while part of a merge table
 
 ALTER TABLE testme DROP TABLE subtable1;
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5;
@@ -29,6 +32,7 @@ DROP TABLE testme;
 DROP TABLE subtable1;
 DROP TABLE wrongtable;
 DROP TABLE subtable2;
+DROP SCHEMA other_schema;
 
 SELECT COUNT(*) from table_partitions;
 SELECT COUNT(*) from range_partitions;

@@ -1,9 +1,9 @@
 stdout of test 'mergepart27` in directory 'sql/test/merge-partitions` itself:
 
 
-# 15:53:38 >  
+# 15:53:38 >
 # 15:53:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34419" "--set" "mapi_usock=/var/tmp/mtest-31182/.s.monetdb.34419" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Apr2019/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
-# 15:53:38 >  
+# 15:53:38 >
 
 # MonetDB 5 server v11.33.0 (hg id: 872b9469db61+)
 # This is an unreleased version
@@ -60,9 +60,9 @@ stdout of test 'mergepart27` in directory 'sql/test/merge-partitions` itself:
 
 Ready.
 
-# 15:53:39 >  
+# 15:53:39 >
 # 15:53:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31182" "--port=34419"
-# 15:53:39 >  
+# 15:53:39 >
 
 #CREATE MERGE TABLE checkreadonly (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 #CREATE TABLE subt1 (a int, b varchar(32));
@@ -102,6 +102,8 @@ Ready.
 #ALTER TABLE checkkeys ADD TABLE subt1 AS PARTITION BETWEEN 1 AND 100;
 #ALTER TABLE checkkeys DROP TABLE subt1;
 #ALTER TABLE subt1 DROP CONSTRAINT subt1_b_fkey;
+#ALTER TABLE checkkeys DROP CONSTRAINT checkkeys_b_fkey;
+#ALTER TABLE checkkeys ADD FOREIGN KEY (b) REFERENCES otherref (othermeme);
 #CREATE TABLE subt3 (a int PRIMARY KEY, b varchar(32), FOREIGN KEY (a) REFERENCES referenceme(mememe));
 #CREATE TABLE another (mememe int PRIMARY KEY);
 #ALTER TABLE checkkeys ADD FOREIGN KEY (a) REFERENCES referenceme (mememe);
@@ -127,7 +129,7 @@ Ready.
 #DROP TABLE otherref;
 #DROP TABLE another;
 
-# 15:53:39 >  
+# 15:53:39 >
 # 15:53:39 >  "Done."
-# 15:53:39 >  
+# 15:53:39 >
 

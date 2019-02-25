@@ -668,9 +668,14 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	dlist *opt_list = NULL;
 	int res = SQL_OK;
 
-(void)ss;
-	if (alter && !isTable(t)) {
-		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
+	(void) ss;
+	if (alter && !(isTable(t) || (isMergeTable(t) && cs_size(&t->members) == 0))) {
+		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
+				  isMergeTable(t)?"MERGE TABLE":
+				  isRemote(t)?"REMOTE TABLE":
+				  isStream(t)?"STREAM TABLE":
+				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
+				  t->base.name, (isMergeTable(t) && cs_size(&t->members)>0) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -741,12 +746,14 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (%p)->token = %s\n", s, token2string(s->token));
 			return SQL_ERR;
 		}
-		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot %s %s '%s'\n",
+		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot %s %s '%s'%s\n",
 				msg, 
 				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
+				isRemote(t)?"REMOTE TABLE":
+				isStream(t)?"STREAM TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				t->base.name);
+				t->base.name, (isMergeTable(t) && cs_size(&t->members)>0) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 
