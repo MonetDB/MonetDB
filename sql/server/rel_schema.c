@@ -1095,7 +1095,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			return NULL;
 
 		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
-			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s table 'with data'",
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s 'with data'",
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
 		/* create table */
@@ -1489,45 +1489,49 @@ sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 			if (te->token == SQL_TABLE) {
 				symbol *extra = dl->h->next->next->next->data.sym;
 
-				if(!extra)
-					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
+				if (strcmp(sname, nsname) != 0)
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all partitions of '%s.%s' must be part of "
+									 "schema '%s'", sname, tname, sname);
+				if (!extra)
+					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, nsname, ntname, 0);
 
 				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
-					return sql_error(sql, 02, SQLSTATE(42000) "The %s table %s.%s should have at least one table associated",
+					return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
 									 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
 
-				if(extra->token == SQL_MERGE_PARTITION) { //partition to hold null values only
+				if (extra->token == SQL_MERGE_PARTITION) { //partition to hold null values only
 					dlist* ll = extra->data.lval;
 					int update = ll->h->next->next->next->data.i_val;
 
-					if(isRangePartitionTable(t)) {
-						return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, NULL, NULL, 1, update);
-					} else if(isListPartitionTable(t)) {
-						return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, NULL, 1, update);
+					if (isRangePartitionTable(t)) {
+						return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, nsname, ntname, NULL, NULL, 1, update);
+					} else if (isListPartitionTable(t)) {
+						return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, nsname, ntname, NULL, 1, update);
 					} else {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a merge table");
+						return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
-				} else if(extra->token == SQL_PARTITION_RANGE) {
+				} else if (extra->token == SQL_PARTITION_RANGE) {
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
 					int nills = ll->h->next->next->data.i_val, update = ll->h->next->next->next->data.i_val;
 
-					if(!isRangePartitionTable(t)) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s table",
-										 isListPartitionTable(t)?"list partition":"merge");
+					if (!isRangePartitionTable(t)) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
 
-					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, min, max, nills, update);
-				} else if(extra->token == SQL_PARTITION_LIST) {
+					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, nsname, ntname, min, max, nills, update);
+				} else if (extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
 					int nills = ll->h->next->data.i_val, update = ll->h->next->next->data.i_val;
 
-					if(!isListPartitionTable(t)) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
-										 isRangePartitionTable(t)?"range partition":"merge");
+					if (!isListPartitionTable(t)) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
 
-					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, values, nills, update);
+					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, nsname, ntname, values, nills, update);
 				}
 				assert(0);
 			} else {
