@@ -917,7 +917,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
-		assert(0);
+		res = SQL_OK;
+		break;
 	default:
 		res = SQL_ERR;
 	}
@@ -1457,15 +1458,6 @@ sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 		sql_exp ** updates, *e;
 
 		assert(te);
-		if (t && te && te->token == SQL_DROP_CONSTRAINT) {
-			dlist *l = te->data.lval;
-			char *kname = l->h->data.sval;
-			int drop_action = l->h->next->data.i_val;
-			
-			sname = get_schema_name(sql, sname, tname);
-			return rel_drop(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action, 0);
-		}
-
 		if (t->persistence != SQL_DECLARED_TABLE)
 			sname = s->base.name;
 
@@ -1554,6 +1546,15 @@ sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 		nt = dup_sql_table(sql->sa, t);
 		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
 			return NULL;
+
+		if (te->token == SQL_DROP_CONSTRAINT) {
+			dlist *l = te->data.lval;
+			char *kname = l->h->data.sval;
+			int drop_action = l->h->next->data.i_val;
+
+			sname = get_schema_name(sql, sname, tname);
+			return rel_drop(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action, 0);
+		}
 
 		if (t->s && !nt->s)
 			nt->s = t->s;
