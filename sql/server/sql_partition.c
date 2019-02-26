@@ -32,41 +32,50 @@ table_column_colnr(int *colnr)
 str
 sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op)
 {
-	if(isPartitionedByColumnTable(nt)) {
-		assert(nt->part.pcol);
-		if(list_length(k->columns) != 1) {
-			throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
-									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
-		} else {
-			sql_kc *kcol = k->columns->h->data;
-			if(kcol->c->colnr != nt->part.pcol->colnr)
-				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must "
-									   "match the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
-		}
-	} else if(isPartitionedByExpressionTable(nt)) {
-		list *kcols, *pcols;
-		sql_allocator *p1, *p2;
+	if (k->type != fkey) {
+		const char *keys = (k->type == pkey) ? "primary" : "unique";
+		assert(k->type == pkey || k->type == ukey);
 
-		assert(nt->part.pexp->cols);
-		if(list_length(k->columns) != list_length(nt->part.pexp->cols))
-			throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
-									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
+		if (isPartitionedByColumnTable(nt)) {
+			assert(nt->part.pcol);
+			if (list_length(k->columns) != 1) {
+				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table, the %s key's "
+					  "columns must match the columns used in the partition definition", op, nt->s->base.name,
+					  nt->base.name, keys);
+			} else {
+				sql_kc *kcol = k->columns->h->data;
+				if (kcol->c->colnr != nt->part.pcol->colnr)
+					throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table, the %s key's "
+						  "columns must match the columns used in the partition definition", op, nt->s->base.name,
+						  nt->base.name, keys);
+			}
+		} else if (isPartitionedByExpressionTable(nt)) {
+			list *kcols, *pcols;
+			sql_allocator *p1, *p2;
 
-		p1 = k->columns->sa; /* save the original sql allocators */
-		p2 = nt->part.pexp->cols->sa;
-		k->columns->sa = sql->sa;
-		nt->part.pexp->cols->sa = sql->sa;
-		kcols = list_sort(k->columns, (fkeyvalue)&key_column_colnr, NULL);
-		pcols = list_sort(nt->part.pexp->cols, (fkeyvalue)&table_column_colnr, NULL);
-		k->columns->sa = p1;
-		nt->part.pexp->cols->sa = p2;
+			assert(nt->part.pexp->cols);
+			if (list_length(k->columns) != list_length(nt->part.pexp->cols))
+				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table, the %s key's "
+					  "columns must match the columns used in the partition definition", op, nt->s->base.name,
+					  nt->base.name, keys);
 
-		for (node *nn = kcols->h, *mm = pcols->h; nn && mm; nn = nn->next, mm = mm->next) {
-			sql_kc *kcol = nn->data;
-			int *colnr = mm->data;
-			if (kcol->c->colnr != *colnr)
-				throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table the keys must match "
-									   "the columns used in the partition definition", op, nt->s->base.name, nt->base.name);
+			p1 = k->columns->sa; /* save the original sql allocators */
+			p2 = nt->part.pexp->cols->sa;
+			k->columns->sa = sql->sa;
+			nt->part.pexp->cols->sa = sql->sa;
+			kcols = list_sort(k->columns, (fkeyvalue)&key_column_colnr, NULL);
+			pcols = list_sort(nt->part.pexp->cols, (fkeyvalue)&table_column_colnr, NULL);
+			k->columns->sa = p1;
+			nt->part.pexp->cols->sa = p2;
+
+			for (node *nn = kcols->h, *mm = pcols->h; nn && mm; nn = nn->next, mm = mm->next) {
+				sql_kc *kcol = nn->data;
+				int *colnr = mm->data;
+				if (kcol->c->colnr != *colnr)
+					throw(SQL, "sql.partition", SQLSTATE(42000) "%s TABLE: %s.%s: in a partitioned table, the %s key's "
+						  "columns must match the columns used in the partition definition", op, nt->s->base.name,
+						  nt->base.name, keys);
+			}
 		}
 	}
 	return NULL;

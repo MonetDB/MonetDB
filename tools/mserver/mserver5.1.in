@@ -106,7 +106,7 @@ Print information about MAL instructions as they are executed.
 .PD 0
 .TP
 \fB\-v\fP[\fIvalue\fP]
-Set or increase verbosity level.  If not
+Set or increase verbosity level.  If no
 .I value
 is specified, the verbosity level is increased by
 .BR 1 .

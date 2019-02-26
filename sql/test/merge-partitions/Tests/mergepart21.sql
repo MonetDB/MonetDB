@@ -2,16 +2,14 @@ CREATE FUNCTION dosomething(a int) RETURNS INT BEGIN RETURN a + 2; END;
 
 CREATE MERGE TABLE trydropme (a int, b int, cc varchar(32), dd real) PARTITION BY VALUES ON (cc);
 
-ALTER TABLE trydropme ADD COLUMN failing int; --error
+ALTER TABLE trydropme ADD COLUMN failing int;
 ALTER TABLE trydropme DROP COLUMN b;
 ALTER TABLE trydropme DROP COLUMN cc; --error
 DROP TABLE trydropme;
 
 CREATE MERGE TABLE nexttest (a int, b int, cc varchar(32), dd real) PARTITION BY VALUES USING (dosomething(a) + dosomething(b));
 
-ALTER TABLE nexttest ADD COLUMN failing int; --error
 ALTER TABLE nexttest DROP COLUMN cc;
-ALTER TABLE nexttest DROP COLUMN a; --error
 DROP FUNCTION dosomething; --error
 
 CREATE TABLE subtable1 (a int, b int, dd real);
@@ -31,6 +29,10 @@ ALTER TABLE subtable1 ADD COLUMN again int; --error
 
 ALTER TABLE nexttest DROP TABLE subtable1;
 ALTER TABLE nexttest DROP TABLE subtable2;
+
+ALTER TABLE nexttest DROP COLUMN a; --error
+ALTER TABLE nexttest DROP COLUMN dd;
+ALTER TABLE nexttest ADD COLUMN ee int;
 
 DROP TABLE subtable1;
 DROP TABLE subtable2;
