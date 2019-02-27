@@ -965,3 +965,19 @@ WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	return WLCrollback(cntxt->idx);
 }
+
+mal_export str WLCprelude(void *ret);
+
+str
+WLCprelude(void *ret)
+{
+	(void) ret;
+#ifdef NEED_MT_LOCK_INIT
+	static bool initialized = false;
+	if (!initialized) {
+		MT_lock_init(&wlc_lock, "wlc_lock");
+		initialized = true;
+	}
+#endif
+	return MAL_SUCCEED;
+}

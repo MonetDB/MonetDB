@@ -135,14 +135,14 @@ q_create(int sz, const char *name)
 
 	if (q == NULL)
 		return NULL;
-	q->size = ((sz << 1) >> 1); /* we want a multiple of 2 */
-	q->last = 0;
+	*q = (Queue) {
+		.size = ((sz << 1) >> 1), /* we want a multiple of 2 */
+	};
 	q->data = (FlowEvent*) GDKmalloc(sizeof(FlowEvent) * q->size);
 	if (q->data == NULL) {
 		GDKfree(q);
 		return NULL;
 	}
-	q->exitcount = 0;
 
 	MT_lock_init(&q->l, name);
 	MT_sema_init(&q->s, 0, name);
@@ -507,18 +507,24 @@ DFLOWinitialize(void)
 		return -1;
 	}
 	for (i = 0; i < THREADS; i++) {
-		MT_sema_init(&workers[i].s, 0, "DFLOWinitialize");
+		snprintf(workers[i].name, sizeof(workers[i].name), "DFLOWworker%d", i);
+		MT_sema_init(&workers[i].s, 0, workers[i].name);
 	}
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
+	if (limit > THREADS)
+		limit = THREADS;
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(exitingLock);
-	MT_lock_init(&dataflowLock, "dataflowLock");
+	static bool initialized = false;
+	if (!initialized) {
+		ATOMIC_INIT(exitingLock);
+		MT_lock_init(&dataflowLock, "dataflowLock");
+		initialized = true;
+	}
 #endif
 	MT_lock_set(&dataflowLock);
 	for (i = 0; i < limit; i++) {
 		workers[i].flag = RUNNING;
 		workers[i].cntxt = NULL;
-		snprintf(workers[i].name, sizeof(workers[i].name), "DFLOWworker%d", i);
 		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, workers[i].name)) == 0)
 			workers[i].flag = IDLE;
 		else

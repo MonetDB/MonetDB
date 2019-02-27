@@ -269,3 +269,9 @@ comment "Catalog operation alter_add_value_partition";
 pattern alter_add_value_partition( sname:str, mtnme:str, psnme:str, ptnme:str, nills:int, update:int, arg:str...)
 address WLCgeneric
 comment "Catalog operation alter_add_value_partition";
+
+command prelude() :void
+address WLCprelude
+comment "Initialization of wlc module";
+
+wlc.prelude();

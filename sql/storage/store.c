@@ -1999,7 +1999,12 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	store_singleuser = singleuser;
 
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&bs_lock, "SQL_bs_lock");
+	static bool initialized = false;
+	if (!initialized) {
+		MT_lock_init(&bs_lock, "SQL_bs_lock");
+		ATOMIC_INIT(store_nr_active_lock);
+		initialized = true;
+	}
 #endif
 	MT_lock_set(&bs_lock);
 

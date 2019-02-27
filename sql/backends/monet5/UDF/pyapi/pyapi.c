@@ -1323,11 +1323,12 @@ wrapup:
 str
 PYFUNCNAME(PyAPIprelude)(void *ret) {
 #ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
+	static bool initialized = false;
 	/* since we don't destroy the lock, only initialize it once */
-	if (!initialized)
+	if (!initialized) {
 		MT_lock_init(&pyapiLock, "pyapi_lock");
-	initialized = 1;
+		initialized = true;
+	}
 #endif
 	(void) ret;
 	MT_lock_set(&pyapiLock);

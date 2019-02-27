@@ -1077,11 +1077,12 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 LIDARprelude(void *ret) {
 #ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
+	static bool initialized = false;
 	/* since we don't destroy the lock, only initialize it once */
-	if (!initialized)
+	if (!initialized) {
 		MT_lock_init(&mt_lidar_lock, "lidar.lock");
-	initialized = 1;
+		initialized = true;
+	}
 #endif
 	(void) ret;
 

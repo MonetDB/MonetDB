@@ -1220,7 +1220,7 @@ sql_update_mar2018_sp1(Client c, mvc *sql)
 static str
 sql_update_remote_tables(Client c, mvc *sql)
 {
-	res_table *output;
+	res_table *output = NULL;
 	str err = MAL_SUCCEED;
 	size_t bufsize = 1000, pos = 0;
 	char *buf;
@@ -1283,27 +1283,30 @@ sql_update_remote_tables(Client c, mvc *sql)
 				v = BUNtvar(tbl_it, i);
 				u = BUNtvar(uri_it, i);
 				if (v == NULL || (*cmp)(v, nil) == 0 ||
-				    u == NULL || (*cmp)(u, nil) == 0) {
-					BBPunfix(tbl->batCacheid);
-					BBPunfix(uri->batCacheid);
+				    u == NULL || (*cmp)(u, nil) == 0)
 					goto bailout;
-				}
 
 				/* Since the loop might fail, it might be a good idea
 				 * to update the credentials as a second step
 				 */
 				remote_server_uri = mapiuri_uri((char *)u, sql->sa);
-				AUTHaddRemoteTableCredentials((char *)v, "monetdb", remote_server_uri, "monetdb", "monetdb", false);
+				if ((err = AUTHaddRemoteTableCredentials((char *)v, "monetdb", remote_server_uri, "monetdb", "monetdb", false)) != MAL_SUCCEED)
+					goto bailout;
 			}
 		}
-		BBPunfix(tbl->batCacheid);
-		BBPunfix(uri->batCacheid);
+	} else {
+		err = createException(SQL, "sql_update_remote_tables", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	res_table_destroy(output);
 
-  bailout:
+bailout:
+	if (tbl)
+		BBPunfix(tbl->batCacheid);
+	if (uri)
+		BBPunfix(uri->batCacheid);
+	if (output)
+		res_table_destroy(output);
 	GDKfree(buf);
-	return err;
+	return err;		/* usually MAL_SUCCEED */
 }
 
 static str

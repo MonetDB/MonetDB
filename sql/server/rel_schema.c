@@ -1489,9 +1489,12 @@ sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 			if (te->token == SQL_TABLE) {
 				symbol *extra = dl->h->next->next->next->data.sym;
 
+				if (isView(pt))
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s",
+									 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 				if (strcmp(sname, nsname) != 0)
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all partitions of '%s.%s' must be part of "
-									 "schema '%s'", sname, tname, sname);
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
+									 "part of schema '%s'", sname, tname, sname);
 				if (!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, nsname, ntname, 0);
 

@@ -55,6 +55,8 @@ static char THRprintbuf[BUFSIZ];
 static volatile ATOMIC_FLAG GDKstopped = ATOMIC_FLAG_INIT;
 static void GDKunlockHome(int farmid);
 
+static MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
+
 #undef malloc
 #undef calloc
 #undef realloc
@@ -488,7 +490,7 @@ GDKinit(opt *set, int setlen)
 #endif
 #endif
 	for (i = 0; i <= BBP_BATMASK; i++) {
-#ifndef NDEBUG
+#ifdef LOCK_STATS
 		snprintf(GDKbatLock[i].swapname, sizeof(GDKbatLock[i].swapname),
 			 "GDKswapLock%d", i);
 		snprintf(GDKbatLock[i].hashname, sizeof(GDKbatLock[i].hashname),
@@ -496,19 +498,19 @@ GDKinit(opt *set, int setlen)
 		snprintf(GDKbatLock[i].impsname, sizeof(GDKbatLock[i].impsname),
 			 "GDKimpsLock%d", i);
 #endif
-		/* MT_lock_init does not use second argument if NDEBUG set */
+		/* MT_lock_init only uses second argument if LOCK_STATS set */
 		MT_lock_init(&GDKbatLock[i].swap, GDKbatLock[i].swapname);
 		MT_lock_init(&GDKbatLock[i].hash, GDKbatLock[i].hashname);
 		MT_lock_init(&GDKbatLock[i].imprints, GDKbatLock[i].impsname);
 	}
 	for (i = 0; i <= BBP_THREADMASK; i++) {
-#ifndef NDEBUG
+#ifdef LOCK_STATS
 		snprintf(GDKbbpLock[i].cachename, sizeof(GDKbbpLock[i].cachename),
 			 "GDKcacheLock%d", i);
 		snprintf(GDKbbpLock[i].trimname, sizeof(GDKbbpLock[i].trimname),
 			 "GDKtrimLock%d", i);
 #endif
-		/* MT_lock_init does not use second argument if NDEBUG set */
+		/* MT_lock_init only uses second argument if LOCK_STATS set */
 		MT_lock_init(&GDKbbpLock[i].cache, GDKbbpLock[i].cachename);
 		MT_lock_init(&GDKbbpLock[i].trim, GDKbbpLock[i].trimname);
 		GDKbbpLock[i].free = 0;
@@ -716,15 +718,7 @@ static ThreadRec GDKthreads[THREADS];
 bool
 GDKexiting(void)
 {
-	bool stopped;
-#ifdef ATOMIC_LOCK
-	pthread_mutex_lock(&GDKstoppedLock.lock);
-#endif
-	stopped = ATOMIC_ISSET(GDKstopped, GDKstoppedLock);
-#ifdef ATOMIC_LOCK
-	pthread_mutex_unlock(&GDKstoppedLock.lock);
-#endif
-	return stopped;
+	return (bool) ATOMIC_ISSET(GDKstopped, GDKstoppedLock);
 }
 
 static struct serverthread {
@@ -839,7 +833,7 @@ GDKreset(int status)
 			}
 		}
 
-#if !defined(USE_PTHREAD_LOCKS) && !defined(NDEBUG)
+#ifdef LOCK_STATS
 		TEMDEBUG GDKlockstatistics(1);
 #endif
 		GDKdebug = 0;
@@ -881,7 +875,7 @@ GDKreset(int status)
 	ATOMunknown_clean();
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_destroy(&MT_system_lock);
-#if defined(USE_PTHREAD_LOCKS) && defined(ATOMIC_LOCK)
+#ifdef ATOMIC_LOCK
 	MT_lock_destroy(&GDKstoppedLock);
 	MT_lock_destroy(&mbyteslock);
 #endif
@@ -1463,6 +1457,7 @@ struct THRstart {
 	void *arg;
 	MT_Sema sem;
 	Thread thr;
+	char semname[16];
 };
 
 static void
@@ -1487,6 +1482,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	MT_Id pid;
 	Thread s;
 	struct THRstart *t;
+	static uint64_t ctr = 0; /* protected by GDKthreadLock */
 
 	if ((t = GDKmalloc(sizeof(*t))) == NULL)
 		return 0;
@@ -1515,7 +1511,8 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	MT_lock_unset(&GDKthreadLock);
 	t->thr = s;
-	MT_sema_init(&t->sem, 0, "THRcreate");
+	snprintf(t->semname, sizeof(t->semname), "THRcreate%" PRIu64, ++ctr);
+	MT_sema_init(&t->sem, 0, t->semname);
 	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
 		GDKerror("THRcreate: could not start thread\n");
 		MT_sema_destroy(&t->sem);

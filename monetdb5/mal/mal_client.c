@@ -267,7 +267,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->filetrans = false;
 
-	MT_sema_init(&c->s, 0, "Client->s");
+	snprintf(c->semaname, sizeof(c->semaname), "Client%d->s", (int) (c - mal_clients));
+	MT_sema_init(&c->s, 0, c->semaname);
 	return c;
 }
 

@@ -20,7 +20,6 @@
 /* #define _DEBUG_TABLET_ */
 
 #include "gdk.h"
-#include "streams.h"
 #include "mal_exception.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -80,5 +79,6 @@ mal_export void TABLETdestroy_format(Tablet *as);
 mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
 mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export void initTablet(void);
 
 #endif

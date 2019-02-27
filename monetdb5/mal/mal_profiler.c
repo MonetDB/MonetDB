@@ -59,9 +59,6 @@ static struct{
 
 
 /* the heartbeat process produces a ping event once every X milliseconds */
-//#ifdef ATOMIC_LOCK
-//static MT_Lock mal_beatLock MT_LOCK_INITIALIZER("beatLock");
-//#endif
 
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
@@ -1088,7 +1085,7 @@ void initProfiler(void)
 void initHeartbeat(void)
 {
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(mal_beatLock, "beatLock");
+	ATOMIC_INIT(mal_beatLock);
 #endif
 	ATOMIC_SET(hbrunning, 1, mal_beatLock);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
