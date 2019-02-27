@@ -2622,9 +2622,9 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
-	if (isMergeTable(ot))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a merge table");
 	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL))
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
+	if (ot->members.set || ot->triggers.set)
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
@@ -2639,9 +2639,31 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 		return NULL;
 
 	for (n = ot->columns.set->h; n; n = n->next) {
-		sql_column *oc = (sql_column*) n->data;
-		if (!mvc_copy_column(sql, nt, oc))
+		sql_column *nc, *oc = (sql_column*) n->data;
+		if (!(nc = mvc_copy_column(sql, nt, oc)))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s_%s_%s conflicts", ns->base.name, nt->base.name, oc->base.name);
+		if (isPartitionedByColumnTable(ot) && oc->base.id == ot->part.pcol->base.id)
+			nt->part.pcol = nc;
+	}
+	if (isPartitionedByExpressionTable(ot)) {
+		char *err = NULL;
+		sql_allocator *oa = sql->sa;
+
+		nt->part.pexp->exp = sa_strdup(sql->session->tr->sa, ot->part.pexp->exp);
+
+		sql->sa = sa_create();
+		if (!sql->sa) {
+			sql->sa = oa;
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+
+		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 0);
+		sa_destroy(sql->sa);
+		sql->sa = NULL;
+		if (err) {
+			sql->sa = oa;
+			return sql_error(sql, 02, "%s", err);
+		}
 	}
 
 	if (ot->idxs.set)
@@ -2652,13 +2674,12 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 		for (n = ot->keys.set->h; n; n = n->next)
 			mvc_copy_key(sql, nt, (sql_key*) n->data);
 
-	if (ot->members.set || ot->triggers.set)
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
-
 	l = rel_table(sql, DDL_CREATE_TABLE, new_schema, nt, 0);
-	inserts = rel_basetable(sql, ot, tname);
-	inserts = rel_project(sql->sa, inserts, rel_projections(sql, inserts, NULL, 1, 0));
-	l = rel_insert(sql, l, inserts);
+	if (!(isMergeTable(ot) || isRemote(ot) || isReplicaTable(ot))) {
+		inserts = rel_basetable(sql, ot, tname);
+		inserts = rel_project(sql->sa, inserts, rel_projections(sql, inserts, NULL, 1, 0));
+		l = rel_insert(sql, l, inserts);
+	}
 	r = rel_drop(sql->sa, DDL_DROP_TABLE, old_schema, tname, 0, 0);
 	return rel_list(sql->sa, l, r);
 }

@@ -70,6 +70,10 @@ Ready.
 
 #CREATE SCHEMA other_schema;
 #CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);
+#ALTER TABLE testme SET SCHEMA other_schema;
+#ALTER TABLE other_schema.testme SET SCHEMA sys;
+#ALTER TABLE testme RENAME TO testme2;
+#ALTER TABLE testme2 RENAME TO testme;
 #SELECT COUNT(*) from table_partitions;
 % sys.L3 # table_name
 % L3 # name
