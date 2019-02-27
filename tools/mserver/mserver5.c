@@ -701,8 +701,9 @@ main(int argc, char **av)
 		MSserveClient(mal_clients);
 	} else
 #endif
-	while (1)
-		MT_sleep_ms(5000);
+	while (!GDKexiting()) {
+		MT_sleep_ms(100);
+	}
 
 	/* mal_exit calls MT_global_exit, so statements after this call will
 	 * never get reached */

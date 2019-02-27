@@ -134,7 +134,8 @@ typedef struct CLIENT {
 	 * activities. Each client runs in its own process thread. Its
 	 * identity is retained here for access by others (=father).
 	 */
-	MT_Sema 	s;	    /* sema to (de)activate thread */ 
+	MT_Sema 	s;	    /* sema to (de)activate thread */
+	char semaname[16];	/* semaphore name */
 	Thread      	mythread;
 	str     	errbuf;     /* location of GDK exceptions */
 	struct CLIENT   *father;    

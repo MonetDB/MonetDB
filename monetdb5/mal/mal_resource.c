@@ -226,10 +226,14 @@ void
 initResource(void)
 {
 #ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(mal_runningLock);
+	static bool initialized = false;
+	if (!initialized) {
+		ATOMIC_INIT(mal_runningLock);
 #ifdef USE_MAL_ADMISSION
-	MT_lock_init(&admissionLock, "admissionLock");
+		MT_lock_init(&admissionLock, "admissionLock");
 #endif
+		initialized = true;
+	}
 #endif
 	mal_running = (ATOMIC_TYPE) GDKnr_threads;
 }

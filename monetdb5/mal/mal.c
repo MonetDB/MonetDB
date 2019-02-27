@@ -38,6 +38,7 @@ int have_hge;
 #include "wlc.h"
 #include "mal_atom.h"
 #include "opt_pipes.h"
+#include "tablet.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -54,14 +55,18 @@ MT_Lock     mal_oltpLock MT_LOCK_INITIALIZER("mal_oltpLock");
 
 int mal_init(void){
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init( &mal_contextLock, "mal_contextLock");
-	MT_lock_init( &mal_namespaceLock, "mal_namespaceLock");
-	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
-	MT_lock_init( &mal_profileLock, "mal_profileLock");
-	MT_lock_init( &mal_copyLock, "mal_copyLock");
-	MT_lock_init( &mal_delayLock, "mal_delayLock");
-	MT_lock_init( &mal_beatLock, "mal_beatLock");
-	MT_lock_init( &mal_oltpLock, "mal_oltpLock");
+	static bool initialized = false;
+	if (!initialized) {
+		MT_lock_init( &mal_contextLock, "mal_contextLock");
+		MT_lock_init( &mal_namespaceLock, "mal_namespaceLock");
+		MT_lock_init( &mal_remoteLock, "mal_remoteLock");
+		MT_lock_init( &mal_profileLock, "mal_profileLock");
+		MT_lock_init( &mal_copyLock, "mal_copyLock");
+		MT_lock_init( &mal_delayLock, "mal_delayLock");
+		MT_lock_init( &mal_beatLock, "mal_beatLock");
+		MT_lock_init( &mal_oltpLock, "mal_oltpLock");
+		initialized = true;
+	}
 #endif
 
 /* Any error encountered here terminates the process
@@ -78,6 +83,7 @@ int mal_init(void){
 	initResource();
 	malBootstrap();
 	initProfiler();
+	initTablet();
 	return 0;
 }
 

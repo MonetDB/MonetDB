@@ -247,7 +247,11 @@ MATHprelude(void *ret)
 {
 	(void) ret;
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&mmath_rse_lock, "mmath_rse_lock");
+	static bool initialized = false;
+	if (!initialized) {
+		MT_lock_init(&mmath_rse_lock, "mmath_rse_lock");
+		initialized = true;
+	}
 #endif
 	init_random_state_engine(mmath_rse, (uint64_t) GDKusec());
 	return MAL_SUCCEED;

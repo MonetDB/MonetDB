@@ -515,11 +515,11 @@ void* RAPIloopback(void *query) {
 
 str RAPIprelude(void *ret) {
 #ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
+	static bool initialized = false;
 	/* since we don't destroy the lock, only initialize it once */
 	if (!initialized)
 		MT_lock_init(&rapiLock, "rapi_lock");
-	initialized = 1;
+	initialized = true;
 #endif
 	(void) ret;
 

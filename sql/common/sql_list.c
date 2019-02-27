@@ -26,12 +26,10 @@ static list *
 list_init(list *l, sql_allocator *sa, fdestroy destroy)
 {
 	if (l) {
-		l->sa = sa;
-		l->destroy = destroy;
-		l->h = l->t = NULL;
-		l->cnt = 0;
-		l->expected_cnt = 0;
-		l->ht = NULL;
+		*l = (list) {
+			.sa = sa,
+			.destroy = destroy,
+		};
 		MT_lock_init(&l->ht_lock, "sa_ht_lock");
 	}
 	return l;

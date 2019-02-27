@@ -860,6 +860,14 @@ SERVERlisten_default(int *ret)
 	str p;
 	int maxusers = SERVERMAXUSERS;
 
+#if defined(ATOMIC_LOCK) && defined(NEED_MT_LOCK_INIT)
+	static bool initialized = false;
+	if (!initialized) {
+		ATOMIC_INIT(atomicLock);
+		initialized = true;
+	}
+#endif
+
 	(void) ret;
 	p = GDKgetenv("mapi_port");
 	if (p)

@@ -36,6 +36,7 @@
  */
 
 #include "monetdb_config.h"
+#include "streams.h"
 #include "tablet.h"
 #include "algebra.h"
 
@@ -640,6 +641,10 @@ typedef struct {
 	MT_Sema consumer;			/* reader waits for call */
 	MT_Sema sema; /* threads wait for work , negative next implies exit */
 	MT_Sema reply;				/* let reader continue */
+	char prodsema[16];			/* names for the above */
+	char conssema[16];
+	char semasema[16];
+	char replsema[16];
 	Tablet *as;
 	char *errbuf;
 	const char *csep, *rsep;
@@ -1652,8 +1657,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	task.rseplen = strlen(rsep);
 	task.errbuf = cntxt->errbuf;
 
-	MT_sema_init(&task.producer, 0, "task.producer");
-	MT_sema_init(&task.consumer, 0, "task.consumer");
+	snprintf(task.prodsema, sizeof(task.prodsema), "task.producer");
+	snprintf(task.conssema, sizeof(task.conssema), "task.consumer");
+	MT_sema_init(&task.producer, 0, task.prodsema);
+	MT_sema_init(&task.consumer, 0, task.conssema);
 	task.ateof = false;
 	task.b = b;
 	task.out = out;
@@ -1723,8 +1730,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #ifdef MLOCK_TST
 		mlock(ptask[j].cols, sizeof(char *) * task.limit);
 #endif
-		MT_sema_init(&ptask[j].sema, 0, "ptask[j].sema");
-		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
+		snprintf(ptask[j].semasema, sizeof(ptask[j].semasema), "ptask%d.sema", j);
+		snprintf(ptask[j].replsema, sizeof(ptask[j].replsema), "ptask%d.repl", j);
+		MT_sema_init(&ptask[j].sema, 0, ptask[j].semasema);
+		MT_sema_init(&ptask[j].reply, 0, ptask[j].replsema);
 		if ((ptask[j].tid = THRcreate(SQLworker, (void *) &ptask[j], MT_THR_JOINABLE, "SQLworker")) == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
 			threads = j;
@@ -2065,4 +2074,14 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#undef _DEBUG_TABLET_
+void
+initTablet(void)
+{
+#ifdef NEED_MT_LOCK_INIT
+	static bool initialized = false;
+	if (!initialized) {
+		MT_lock_init(&errorlock, "errorlock");
+		initialized = true;
+	}
+#endif
+}

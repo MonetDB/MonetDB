@@ -386,7 +386,11 @@ SQLinit(Client c)
 		return MAL_SUCCEED;
 
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&sql_contextLock, "sql_contextLock");
+	static bool initialized = false;
+	if (!initialized) {
+		MT_lock_init(&sql_contextLock, "sql_contextLock");
+		initialized = true;
+	}
 #endif
 
 	MT_lock_set(&sql_contextLock);

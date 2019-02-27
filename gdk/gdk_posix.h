@@ -32,12 +32,6 @@
 #endif
 
 /*
- * @- locking, sleep
- */
-
-gdk_export void MT_sleep_ms(unsigned int ms);
-
-/*
  * @- virtual memory
  */
 #define MT_VMUNITLOG	16

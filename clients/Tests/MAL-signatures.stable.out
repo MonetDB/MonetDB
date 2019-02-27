@@ -12120,6 +12120,7 @@ Ready.
 [ "wlc",	"init",	"pattern wlc.init():void ",	"WLCinitCmd;",	"Test for running as master"	]
 [ "wlc",	"master",	"pattern wlc.master():void ",	"WLCmaster;",	"Activate the workload-capture-replay process"	]
 [ "wlc",	"master",	"pattern wlc.master(path:str):void ",	"WLCmaster;",	"Activate the workload-capture-replay process. Use a different location for the logs."	]
+[ "wlc",	"prelude",	"command wlc.prelude():void ",	"WLCprelude;",	"Initialization of wlc module"	]
 [ "wlc",	"query",	"pattern wlc.query(q:str):void ",	"WLCquery;",	"Keep the queries for replay."	]
 [ "wlc",	"rename_column",	"pattern wlc.rename_column(sname:str, tname:str, cname:str, newnme:str):void ",	"WLCgeneric;",	"Catalog operation rename_column"	]
 [ "wlc",	"rename_schema",	"pattern wlc.rename_schema(sname:str, newnme:str):void ",	"WLCgeneric;",	"Catalog operation rename_schema"	]

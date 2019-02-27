@@ -243,7 +243,11 @@ void
 optPipeInit(void)
 {
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&pipeLock, "pipeLock");
+	static bool initialized = false;
+	if (!initialized) {
+		MT_lock_init(&pipeLock, "pipeLock");
+		initialized = true;
+	}
 #endif
 }
 

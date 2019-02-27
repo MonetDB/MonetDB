@@ -225,8 +225,11 @@ str
 defaultScenario(Client c)
 {
 #ifdef NEED_MT_LOCK_INIT
-	if (c == mal_clients)
+	static bool initialized = false;
+	if (c == mal_clients && !initialized) {
 		MT_lock_init(&scenarioLock, "scenarioLock");
+		initialized = true;
+	}
 #endif
 	return initScenario(c, scenarioRec);
 }
