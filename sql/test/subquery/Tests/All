@@ -1,3 +1,6 @@
 subquery
-subquery2
 any
+all
+subquery2
+scalar
+any_all

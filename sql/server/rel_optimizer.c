@@ -4001,42 +4001,53 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 
 	(void)changes;
 	if (rel->op == op_groupby && list_length(gbe) == 1 && j->op == op_join){ //&& is_join(j->op)) {
-		sql_rel *jl = j->l, *jr = j->r, *cr;
+		sql_rel *jl = j->l, *jr = j->r, *cr, *cl;
 		sql_exp *gb = gbe->h->data, *e;
 		node *n;
 		int left = 1;
-		list *aggrs, *gbe;
+		list *aggrs, *aliases, *gbe;
 
 		if (jl->op == op_project &&
 		    (e = list_find_exp( jl->exps, gb)) != NULL &&
 		     find_prop(e->p, PROP_HASHCOL) != NULL) {
 			left = 0;
 			cr = jr;
+			cl = jl;
 		} else if (jr->op == op_project &&
 		    (e = list_find_exp( jr->exps, gb)) != NULL &&
 		     find_prop(e->p, PROP_HASHCOL) != NULL) {
 			left = 1;
 			cr = jl;
+			cl = jr;
 		} else {
 			return rel;
 		}
 
 		/* only add aggr (based on left/right), and repeat the group by column */
 		aggrs = sa_list(sql->sa);
+		aliases = sa_list(sql->sa);
 		if (rel->exps) for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *ce = n->data;
 
-			if (ce->type == e_aggr) {
+			if (exp_is_atom(ce))
+				list_append(aliases, ce);
+			else if (ce->type == e_column) {
+				if (rel_has_exp(cl, ce) == 0) /* collect aliases outside groupby */
+					list_append(aliases, ce);
+				else
+					list_append(aggrs, ce);
+			} else if (ce->type == e_aggr) {
 				list *args = ce->l;
 
 				/* check args are part of left/right */
-				if (!list_empty(args) && rel_has_exps(cr, args) < 0)
+				if (!list_empty(args) && rel_has_exps(cl, args) == 0)
 					return rel;
 				if (rel->op != op_join && strcmp(((sql_subaggr*)ce->f)->aggr->base.name, "count") == 0)
 					ce->p = prop_create(sql->sa, PROP_COUNT, ce->p);
 				list_append(aggrs, ce); 
 			}
 		}
+		/* TODO move any column expressions (aliases) into the project list */
 
 		/* find gb in left or right and should be unique */
 		gbe = sa_list(sql->sa);
@@ -4060,9 +4071,27 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 			cr = j->r = rel_groupby(sql, cr, gbe);
 		else 
 			cr = j->l = rel_groupby(sql, cr, gbe);
-		cr->exps = list_merge( cr->exps, aggrs, (fdup)NULL);
+		cr->exps = list_merge(cr->exps, aggrs, (fdup)NULL);
+		if (!is_project(cl->op)) 
+			cl = rel_project(sql->sa, cl, 
+				rel_projections(sql, cl, NULL, 1, 1));
+		cl->exps = list_merge(cl->exps, aliases, (fdup)NULL);
+		if (!left)
+			j->l = cl;
+		else 
+			j->r = cl;
 		rel -> l = NULL;
 		rel_destroy(rel);
+
+		if (list_empty(cr->exps) && list_empty(j->exps)) { /* remove crossproduct */ 
+			sql_rel *r = cl;
+			if (!left) 
+				j->l = NULL;
+			else
+				j->r = NULL;
+			rel_destroy(j);
+			j = r;
+		}
 		return j;
 	}
 	return rel;

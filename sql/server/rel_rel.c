@@ -445,6 +445,74 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	return rel;
 }
 
+static char *
+mark_aggr( int op)
+{
+	(void)op;
+	switch(op) {
+	case mark_anyequal:
+	case mark_anynotequal:
+		return "anyequal";
+	case mark_exists:
+		return "exist";
+	case mark_notexists:
+		return "not_exist";
+	default:
+		assert(0);
+		return "anyequal";
+	}
+}
+
+sql_rel *
+rel_mark(mvc *sql, sql_rel *left, sql_rel *right, list *jexps, sql_exp *l, sql_exp *r, int mark_op)
+{
+	sql_rel *rel;
+	sql_exp *id, *me;
+	list *exps;
+	sql_subaggr *markaggr = NULL;
+
+	if (!left)
+		left = rel_project_exp(sql->sa, l);
+	left = rel_add_identity(sql, left, &id);
+	id = exp_ref(sql->sa, id);
+	exps = rel_projections(sql, left, NULL, 1/*keep names */, 1);
+	rel = rel_crossproduct(sql->sa, left, right, (mark_op<=mark_anynotequal)?op_left:op_join);
+	if (jexps)
+		rel->exps = jexps;
+	rel = rel_groupby(sql, rel, exp2list(sql->sa, id)); 
+	rel->exps = exps; 
+	/* add mark expression */
+	if (mark_op == mark_exists || mark_op == mark_notexists) {
+		l = r; 
+		r = NULL;
+	}
+	markaggr = sql_bind_aggr(sql->sa, sql->session->schema, mark_aggr(mark_op), exp_subtype(l));
+	me = exp_aggr1(sql->sa, l, markaggr, 0, 0, CARD_ATOM, 0);
+	set_intern(me);
+	if (r)
+		append(me->l, r);
+	append(rel->exps, me);
+	exp_label(sql->sa, me, ++sql->label);
+	return rel;
+}
+
+sql_exp *
+rel_is_constant(sql_rel **R, sql_exp *e)
+{
+	sql_rel *rel = *R;
+
+	if (rel && rel->op == op_project && list_length(rel->exps) == 1 && 
+	    !rel->l && !rel->r && !rel_is_ref(rel) && e->type == e_column) {
+		sql_exp *ne = rel_find_exp(rel, e);
+		if (ne) {
+			rel_destroy(rel);
+			*R = NULL;
+			return ne;
+		}
+	}
+	return e;
+}
+
 sql_rel *
 rel_topn(sql_allocator *sa, sql_rel *l, list *exps )
 {
@@ -820,6 +888,14 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	}
 	if (e && !list_empty(e))
 		set_processed(rel);
+	return rel;
+}
+
+sql_rel*
+rel_project_exp(sql_allocator *sa, sql_exp *e)
+{
+	sql_rel *rel = rel_project(sa, NULL, append(new_exp_list(sa), e));
+
 	return rel;
 }
 

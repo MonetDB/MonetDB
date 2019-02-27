@@ -188,32 +188,32 @@ Ready.
 % int # type
 % 1 # length
 #SELECT EXISTS(SELECT * FROM integers); -- true
-% sys.L5 # table_name
-% L5 # name
+% .L12 # table_name
+% L12 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXISTS(SELECT * FROM integers WHERE i>10); -- false
-% sys.L5 # table_name
-% L5 # name
+% .L12 # table_name
+% L12 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT EXISTS(SELECT * FROM integers), EXISTS(SELECT * FROM integers); -- true, true
-% sys.L5,	sys.L12 # table_name
-% L5,	L12 # name
+% .L12,	.L23 # table_name
+% L12,	L23 # name
 % boolean,	boolean # type
 % 5,	5 # length
 [ true,	true	]
 #SELECT EXISTS(SELECT * FROM integers) AND EXISTS(SELECT * FROM integers); -- true
-% sys.L10 # table_name
-% L10 # name
+% .L23 # table_name
+% L23 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT EXISTS(SELECT EXISTS(SELECT * FROM integers)); -- true
-% sys.L7 # table_name
-% L7 # name
+% .L21 # table_name
+% L21 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -250,8 +250,8 @@ Ready.
 [ NULL	]
 [ NULL	]
 #SELECT NULL IN (SELECT * FROM integers) FROM integers;
-% .L6 # table_name
-% L6 # name
+% .L11 # table_name
+% L11 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -271,8 +271,8 @@ Ready.
 % 2 # length
 [ 42	]
 #SELECT (SELECT EXISTS(SELECT * FROM integers WHERE i>2)) FROM integers; -- single column 4xtrue
-% sys.L6 # table_name
-% L6 # name
+% .L13 # table_name
+% L13 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -308,26 +308,26 @@ Ready.
 #INSERT INTO strings VALUES ('hello'), ('world'), (NULL);
 [ 3	]
 #SELECT NULL IN (SELECT * FROM strings); -- NULL
-% .L6 # table_name
-% L6 # name
+% .L12 # table_name
+% L12 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 'hello' IN (SELECT * FROM strings); -- true
-% .L6 # table_name
-% L6 # name
+% .L12 # table_name
+% L12 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 'bla' IN (SELECT * FROM strings); -- NULL
-% .L6 # table_name
-% L6 # name
+% .L12 # table_name
+% L12 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL); -- false
-% .L6 # table_name
-% L6 # name
+% .L12 # table_name
+% L12 # name
 % boolean # type
 % 5 # length
 [ false	]

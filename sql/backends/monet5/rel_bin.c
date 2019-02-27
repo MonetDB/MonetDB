@@ -706,6 +706,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (s && s->type == st_list)
 					s = bin_find_column(be, s, e->l?e->l:e->r, e->r);
+				if (s && s->nrcols > 0)
+					return stmt_fetch(be, s);
 				return s; /* ugh */
 			}
 		}

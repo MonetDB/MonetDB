@@ -106,14 +106,6 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 }
 
 static sql_rel*
-rel_project_exp(sql_allocator *sa, sql_exp *e)
-{
-	sql_rel *rel = rel_project(sa, NULL, append(new_exp_list(sa), e));
-
-	return rel;
-}
-
-static sql_rel*
 rel_parent( sql_rel *rel )
 {
 	if (is_project(rel->op) || rel->op == op_topn || rel->op == op_sample) {
@@ -1607,13 +1599,19 @@ exp_is_subquery( mvc *sql, sql_exp *e)
 	return 0;
 }
 
-sql_rel *
-rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti )
+static sql_rel *
+rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti, int quantifier)
 {
 	sql_exp *L = ls, *R = rs, *e = NULL;
 
-	if (!rs2) {
-
+	if (quantifier) {
+		sql_exp *nl = rel_unop_(sql, rs, NULL, "isnull", card_value);
+		e = rel_nop_(sql, rs, nl, rs2, NULL, NULL, (quantifier==1)?"any":"all", card_value);
+		if (anti) {
+			anti = 0;
+			e = rel_unop_(sql, e, NULL, "not", card_value);
+		}
+	} else if (!rs2) {
 		if (ls->card < rs->card) {
 			sql_exp *swap = ls;
 	
@@ -1688,14 +1686,14 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 
 static sql_rel *
 rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs,
-		char *compare_op, sql_exp *esc, int reduce)
+		char *compare_op, sql_exp *esc, int reduce, int quantifier, int need_not)
 {
 	comp_type type = cmp_equal;
 
 	if (!ls || !rs)
 		return NULL;
 
-	if (!rel || !reduce) {
+	if (!quantifier && (!rel || !reduce)) {
 		/* TODO to handle filters here */
 		sql_exp *e;
 
@@ -1718,10 +1716,12 @@ rel_compare_exp(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs,
 			return rel_select(sql->sa, rel, e);
 		}
 	}
+	if (quantifier) 
+		rs = rel_binop_(sql, ls, rs, NULL, compare_op, card_value);
 	type = compare_str2type(compare_op);
 	if (type == cmp_filter) 
 		return rel_filter_exp_(sql, rel, ls, rs, esc, compare_op, 0);
-	return rel_compare_exp_(sql, rel, ls, rs, esc, type, 0);
+	return rel_compare_exp_(sql, rel, ls, rs, esc, type, need_not, quantifier);
 }
 
 static const char *
@@ -1742,11 +1742,35 @@ compare_aggr_op( char *compare, int quantifier)
 }
 
 static sql_rel *
-rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
+rel_compare(mvc *sql, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, symbol *ro2,
 		char *compare_op, int f, exp_kind k, int quantifier)
 {
 	sql_exp *rs = NULL, *rs2 = NULL, *ls;
+	comp_type cmp_type = compare_str2type(compare_op);
 	exp_kind ek = {type_value, card_column, FALSE};
+	int need_not = 0;
+
+	if ((quantifier == 1 && cmp_type == cmp_equal) ||
+	    (quantifier == 2 && cmp_type == cmp_notequal)) {
+		dnode *n = sc->data.lval->h;
+		dlist *dl = dlist_create(sql->sa);
+		/* map into IN/NOT IN */
+		sc->token = cmp_type==cmp_equal?SQL_IN:SQL_NOT_IN;
+		n->next->type = type_list;
+		n->next->data.lval = dl;
+		n->next->next->next = NULL; /* remove quantifier */
+		dl->h = n->next->next;
+		n->next->next = NULL; /* (remove comparison) moved righthand side */ 
+		return rel_logical_exp(sql, rel, sc, f);
+	}	
+	/* <> ANY -> NOT (= ALL) */
+	if (quantifier == 1 && cmp_type == cmp_notequal) {
+		need_not = 1;
+		quantifier = 2;
+		cmp_type = cmp_equal;
+		compare_op[0] = '=';
+		compare_op[1] = 0;
+	}
 
 	if (!ro2 && lo->token == SQL_SELECT) { /* swap subquery to the right hand side */
 		symbol *tmp = lo;
@@ -1758,6 +1782,7 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 			compare_op[0] = '<';
 		else if (compare_op[0] == '<')
 			compare_op[0] = '>';
+		cmp_type = swap_compare(cmp_type);
 	}
 
 	ls = rel_value_exp(sql, &rel, lo, f, ek);
@@ -1809,30 +1834,49 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column\n");
 
 			rs = rel_lastexp(sql, r);
-			if (r->card > CARD_ATOM) {
+			if (r->card <= CARD_ATOM) {
+				quantifier = 0; /* single value, ie. any/all -> simple compare operator */
+			} else if (r->card > CARD_ATOM) {
 				/* if single value (independed of relations), rewrite */
 				if (is_project(r->op) && !r->l && r->exps && list_length(r->exps) == 1) {
-					return rel_compare_exp(sql, rel, ls, r->exps->h->data, compare_op, NULL, k.reduce);
-				} else if (quantifier != 1) { 
+					return rel_compare_exp(sql, rel, ls, r->exps->h->data, compare_op, NULL, k.reduce, 0, 0);
+				} else if (quantifier && r->card > CARD_ATOM) {
+					/* flatten the quantifier */
+					sql_subaggr *a;
+
+					r = rel_groupby(sql, r, NULL);
+					a = sql_bind_aggr(sql->sa, sql->session->schema, "null", exp_subtype(rs));
+					assert(a);
+					rs2 = exp_aggr1(sql->sa, rs, a, 0, 1, CARD_ATOM, 0);
+					rs2 = rel_groupby_add_aggr(sql, r, rs2);
+					if (compare_op[0] == '<') /* todo handle <> */
+					       	a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"max":"min", exp_subtype(rs));
+					else if (compare_op[0] == '>')
+					       	a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"min":"max", exp_subtype(rs));
+					else /* (compare_op[0] == '=')*/ /* only = ALL */
+					       	a = sql_bind_aggr(sql->sa, sql->session->schema, "all", exp_subtype(rs));
+
+					rs = exp_aggr1(sql->sa, rs, a, 0, 1, CARD_ATOM, 0);
+					//if (quantifier == 2 && (compare_op[0] == '<' || compare_op[0] == '>'))
+						/* do not skip nulls in case of >,>=,<=,< */
+						//append(rs1->l, exp_atom_bool(sql->sa, 0));
+					rs = rel_groupby_add_aggr(sql, r, rs);
+				} else if (r->card > CARD_ATOM) { 
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, compare_aggr_op(compare_op, quantifier), exp_subtype(rs));
 
 					r = rel_groupby(sql, r, NULL);
 
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
-					if (quantifier == 2 && (compare_op[0] == '<' || compare_op[0] == '>'))
-						/* do not skip nulls in case of >,>=,<=,< */
-						append(rs->l, exp_atom_bool(sql->sa, 0));
 					rs = rel_groupby_add_aggr(sql, r, rs);
-					rs = exp_column(sql->sa, exp_relname(rs), exp_name(rs), exp_subtype(rs), rs->card, has_nil(rs), is_intern(rs));
 					rs = exp_column(sql->sa, exp_relname(rs), exp_name(rs), exp_subtype(rs), rs->card, has_nil(rs), is_intern(rs));
 				}
 			}
-			rel = rel_crossproduct(sql->sa, rel, r, op_semi);
+			rel = rel_crossproduct(sql->sa, rel, r, (!quantifier)?op_semi:op_join);
 		}
 	}
 	if (!rs) 
 		return NULL;
-	return rel_compare_exp(sql, rel, ls, rs, compare_op, rs2, k.reduce);
+	return rel_compare_exp(sql, rel, ls, rs, compare_op, rs2, k.reduce, quantifier, need_not);
 }
 
 static sql_exp*
@@ -2002,20 +2046,32 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		symbol *ro = n->next->next->data.sym;
 		char *compare_op = n->next->data.sval;
 		int quantifier = 0;
+
 		sql_exp *rs = NULL, *ls;
 		comp_type cmp_type = compare_str2type(compare_op);
 		int need_not = 0;
 
 		/* 
 		 * = ANY -> IN, <> ALL -> NOT( = ANY) -> NOT IN
-		 * = ALL -> aggr (all), <> ANY -> NOT ( = ALL )
+		 * = ALL -> all(groupby(all, nil)), <> ANY -> NOT ( = ALL )
 		 */
-		/* currently we don't handle the (universal and existential)
-		   quantifiers (all and any/some) */
 		if (n->next->next->next)
 			quantifier = n->next->next->next->data.i_val + 1; 
 		assert(quantifier == 0 || quantifier == 1 || quantifier == 2);
 
+		if ((quantifier == 1 && cmp_type == cmp_equal) ||
+		    (quantifier == 2 && cmp_type == cmp_notequal)) {
+			dlist *dl = dlist_create(sql->sa);
+			/* map into IN/NOT IN */
+			sc->token = cmp_type==cmp_equal?SQL_IN:SQL_NOT_IN;
+			n->next->type = type_list;
+			n->next->data.lval = dl;
+			n->next->next->next = NULL; /* remove quantifier */
+			dl->h = n->next->next;
+			n->next->next = NULL; /* (remove comparison) moved righthand side */ 
+			return rel_logical_value_exp(sql, rel, sc, f);
+		}	
+		/* <> ANY -> NOT (= ALL) */
 		if (quantifier == 1 && cmp_type == cmp_notequal) {
 			need_not = 1;
 			quantifier = 2;
@@ -2042,6 +2098,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			/* first try without current relation, too see if there
 			are correlations with the outer relation */
 			sql_rel *r = rel_subquery(sql, NULL, ro, ek, APPLY_JOIN);
+			sql_exp *rs2 = NULL;
 	
 			/* correlation, ie return new relation */
 			if (!r && sql->session->status != -ERR_AMBIGUOUS) {
@@ -2075,7 +2132,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
 					ls = rel_project_add_exp(sql, l, ls);
 				} else if (is_sql_sel(f)) { /* allways add left side in case of selections phase */
-					if (!l->processed) { /* add all expressions to the project */
+					if (!l->processed && is_project(l->op)) { /* add all expressions to the project */
 						l->exps = list_merge(l->exps, rel_projections(sql, l->l, NULL, 1, 1), (fdup)NULL);
 						l->exps = list_distinct(l->exps, (fcmp)exp_equal, (fdup)NULL);
 					}
@@ -2087,18 +2144,22 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					/* flatten the quantifier */
 					sql_subaggr *a;
 
+					r = rel_groupby(sql, r, NULL);
+					a = sql_bind_aggr(sql->sa, sql->session->schema, "null", exp_subtype(rs));
+					assert(a);
+					rs2 = exp_aggr1(sql->sa, rs, a, 0, 1, CARD_ATOM, 0);
+					rs2 = rel_groupby_add_aggr(sql, r, rs2);
 					if (compare_op[0] == '<') /* todo handle <> */
 					       	a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"max":"min", exp_subtype(rs));
 					else if (compare_op[0] == '>')
 					       	a = sql_bind_aggr(sql->sa, sql->session->schema, (quantifier==1)?"min":"max", exp_subtype(rs));
 					else /* (compare_op[0] == '=')*/ /* only = ALL */
 					       	a = sql_bind_aggr(sql->sa, sql->session->schema, "all", exp_subtype(rs));
-					r = rel_groupby(sql, r, NULL);
 
 					rs = exp_aggr1(sql->sa, rs, a, 0, 1, CARD_ATOM, 0);
-					if (quantifier == 2 && (compare_op[0] == '<' || compare_op[0] == '>'))
+					//if (quantifier == 2 && (compare_op[0] == '<' || compare_op[0] == '>'))
 						/* do not skip nulls in case of >,>=,<=,< */
-						append(rs->l, exp_atom_bool(sql->sa, 0));
+						//append(rs1->l, exp_atom_bool(sql->sa, 0));
 					rs = rel_groupby_add_aggr(sql, r, rs);
 				}
 				if (r->card > CARD_ATOM) {
@@ -2112,7 +2173,14 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) 
 				return NULL;
-			return rel_binop_(sql, ls, rs, NULL, compare_op, card_value);
+			rs = rel_binop_(sql, ls, rs, NULL, compare_op, card_value);
+			if (rs2) { 
+				sql_exp *nl = rel_unop_(sql, rs, NULL, "isnull", card_value);
+				rs = rel_nop_(sql, rs, nl, rs2, NULL, NULL, (quantifier==1)?"any":"all", card_value);
+			}
+			if (need_not)
+				rs = rel_unop_(sql, rs, NULL, "not", card_value);
+			return rs;
 		}
 	}
 	/* Set Member ship */
@@ -2123,11 +2191,15 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		symbol *lo = dl->h->data.sym;
 		dnode *n = dl->h->next;
 		sql_rel *left = NULL, *right = NULL, *outer = *rel;
-		sql_exp *l = NULL, *r = NULL;
-		int needproj = 0, vals_only = 1, is_new = 0;
+		sql_exp /**ol,*/ *l = NULL, *r = NULL;
+		int needproj = 0, vals_only = 1;//, is_new = 0;
 		list *vals = NULL, *pexps = NULL;
 
-		if (outer && is_sql_sel(f) && is_project(outer->op) && !is_processed(outer) && !list_empty(outer->exps)) {
+		/* no input, assume single value */
+		if (!*rel) 
+			left = *rel = rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1));
+
+		if (outer && is_sql_sel(f) && is_project(outer->op) && !is_processed(outer)) {
 			needproj = 1;
 			pexps = outer->exps;
 			if (!outer->l) { /* list of constants */
@@ -2136,23 +2208,27 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				*rel = outer->l;
 		}
 
-		l = rel_value_exp(sql, rel, lo, f, ek);
+		/*ol =*/ l = rel_value_exp(sql, rel, lo, f, ek);
 		if (!l)
 			return NULL;
 		ek.card = card_set;
 		if (!left) {
 			left = *rel;
+			/*
 			if (!exp_is_atom(l) && outer && !outer->l && !list_empty(outer->exps) && needproj) {
 				l = rel_project_add_exp(sql, left, l);
 				l = exp_column(sql->sa, exp_relname(l), exp_name(l), exp_subtype(l), l->card, has_nil(l), is_intern(l));
 			}
+			*/
 		}
 
+		/*
 		if (!left || (!left->l && is_sql_sel(f) && list_empty(left->exps))) {
 			needproj = (left != NULL);
 			left = rel_project_exp(sql->sa, l);
 			is_new = 1;
 		}
+		*/
 		if (left && is_project(left->op) && list_empty(left->exps))
 			left = left->l;
 
@@ -2167,10 +2243,13 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				sql_rel *z = NULL, *rl;
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
+				r = rel_is_constant(&z, r);
 				if (l && r && IS_ANY(st->type->eclass)){
 					sql_exp *nl = rel_check_type(sql, exp_subtype(r), l, type_equal);
+					/*
 					if (nl != l && is_new)
 						left = rel_project_exp(sql->sa, nl);
+						*/
 					l = nl;
 					if (l)
 						st = exp_subtype(l);
@@ -2181,11 +2260,13 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					sql->errstr[0] = 0;
 
 					z = left;
+					/*
 					if (is_new) {
 						l = exp_label(sql->sa, l, ++sql->label);
 						l = exp_column(sql->sa, exp_relname(l), exp_name(l), exp_subtype(l), l->card, has_nil(l), is_intern(l));
 						is_new = 0;
 					}
+					*/
 					r = rel_value_exp(sql, &z, sval, f, ek); 
 					if (z == left && r) {
 						if (l && r && IS_ANY(st->type->eclass)){
@@ -2264,18 +2345,35 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				return e;
 			}
 			r = rel_lastexp(sql, right);
+			//ol = l;
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
 				return NULL;
+			/* find ol in rel_project_exp */
+			/* rel_mark returns the combined changes of adding a identity column (in case of a correlated IN), join (based on l == r)
+			 *                  group by based on identity, aggregate (mark) based on mark expression
+			 */
+			/* TODO  need cleaner way to handle changes types, ie changing expressions which are allready in a projection list */
+			/*
+			if (ol == l && is_new) {
+				l = exp_label(sql->sa, l, ++sql->label);
+				l = exp_ref(sql->sa, l);
+			}
+			*/
+			left = rel_mark(sql, left, right, NULL, l, r, (sc->token == SQL_IN)?mark_anyequal:mark_anynotequal);
+			e = rel_lastexp(sql, left);
+			/*
 			left = rel_crossproduct(sql->sa, left, right, op_join);
 			left->op = op_left;
 			set_processed(left);
 			e = exp_compare(sql->sa, l, r, cmp_equal );
 			rel_join_add_exp(sql->sa, left, e);
+			*/
 			if (*rel && needproj) {
 				left = *rel = rel_project(sql->sa, left, pexps);
 				reset_processed(left);
 			} else
 				*rel = left;
+			/*
 			if (is_sql_sel(f)) {
 				e = rel_unop_(sql, r, NULL, "isnull", card_value);
 				if (sc->token == SQL_IN)
@@ -2284,6 +2382,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				e = rel_binop_(sql, l, r, NULL, "<>", card_value);
 			else
 				e = rel_binop_(sql, l, r, NULL, "=", card_value);
+				*/
 			return e;
 		}
 		return NULL;
@@ -2292,20 +2391,48 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	case SQL_NOT_EXISTS:
 	{
 		symbol *lo = sc->data.sym;
-		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
-		sql_subfunc *f = NULL;
+		sql_rel *sq = NULL;
+		sql_exp *le;
+		sql_subfunc *exists = NULL;
 
+		ek.card = card_set;
+	       	le = rel_value_exp(sql, &sq, lo, f, ek);
 		if (!le)
 			return NULL;
 
-		if (sc->token != SQL_EXISTS)
-			f = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
-		else
-			f = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", exp_subtype(le), NULL, F_FUNC);
+		le = rel_is_constant(&sq, le);
 
-		if (!f) 
-			return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->sqlname);
-		return exp_unop(sql->sa, le, f);
+		if (!sq) { 
+			if (sc->token != SQL_EXISTS)
+				exists = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
+			else
+				exists = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", exp_subtype(le), NULL, F_FUNC);
+
+			if (!exists) 
+				return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->sqlname);
+			return exp_unop(sql->sa, le, exists);
+		} else {
+			sql_exp *e;
+			sql_rel *outer = *rel;
+			list *pexps = NULL;
+			int needproj = 0;
+
+			if (outer && is_sql_sel(f) && is_project(outer->op) && !is_processed(outer)) {
+				needproj = 1;
+				pexps = outer->exps;
+				*rel = outer->l;
+			}
+			if (sq->processed)
+				sq = rel_label(sql, sq, 0);
+			le = rel_lastexp(sql, sq);
+			*rel = rel_mark(sql, *rel, sq, NULL, exp_atom_int(sql->sa, 1), le, (sc->token == SQL_EXISTS)?mark_exists:mark_notexists);
+			e = rel_lastexp(sql, *rel);
+			if (*rel && needproj) {
+				*rel = rel_project(sql->sa, *rel, pexps);
+				reset_processed(*rel);
+			} 
+			return e;
+		}
 	}
 	case SQL_LIKE:
 	case SQL_NOT_LIKE:
@@ -2597,12 +2724,14 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		char *compare_op = n->next->data.sval;
 		int quantifier = 0;
 
-		/* currently we don't handle the (universal and existential)
-		   quantifiers (all and any/some) */
+		/* 
+		 * = ANY -> IN, <> ALL -> NOT( = ANY) -> NOT IN
+		 * = ALL -> all(groupby(all, nil)), <> ANY -> NOT ( = ALL )
+		 */
 		if (n->next->next->next)
 			quantifier = n->next->next->next->data.i_val + 1; 
 		assert(quantifier == 0 || quantifier == 1 || quantifier == 2);
-		return rel_compare(sql, rel, lo, ro, NULL, compare_op, f, ek, quantifier);
+		return rel_compare(sql, rel, sc, lo, ro, NULL, compare_op, f, ek, quantifier);
 	}
 	/* Set Member ship */
 	case SQL_IN:
@@ -3066,9 +3195,9 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			e2 = exp_atom_bool(sql->sa, 1);
 			rel = rel_select(sql->sa, rel, exp_compare(sql->sa,  e1, e2, cmp_equal));
 		} else if (sc->token == SQL_NOT_BETWEEN) {
-			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3|flag, 1);
+			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3|flag, 1, 0);
 		} else {
-			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3|flag, 0);
+			rel = rel_compare_exp_(sql, rel, le, re1, re2, 3|flag, 0, 0);
 		}
 		return rel;
 	}
@@ -5756,7 +5885,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 
 		if (re) {
 			found = 1;
-			rel = rel_compare_exp(sql, rel, le, re, "=", NULL, TRUE);
+			rel = rel_compare_exp(sql, rel, le, re, "=", NULL, TRUE, 0, 0);
 			if (full) {
 				sql_exp *cond;
 				cond = rel_unop_(sql, le, NULL, "isnull", card_value);
@@ -6367,7 +6496,7 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 				rel_destroy(rel);
 				return NULL;
 			}
-			rel = rel_compare_exp(sql, rel, ls, rs, "=", NULL, TRUE);
+			rel = rel_compare_exp(sql, rel, ls, rs, "=", NULL, TRUE, 0, 0);
 			if (op != op_join) {
 				cond = rel_unop_(sql, ls, NULL, "isnull", card_value);
 				if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0)

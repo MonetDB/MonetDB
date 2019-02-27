@@ -3109,12 +3109,12 @@ SQLall(ptr ret, const bat *bid)
 	} else if (c == 1 || (b->tsorted && b->trevsorted)) {
 		BATiter bi = bat_iterator(b);
 		p = BUNtail(bi, 0);
-	} else if (b->tkey
-		   || (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
+	} else if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
 		p = ATOMnilptr(b->ttype);
 	} else {
 		BUN q, r;
 		int (*ocmp) (const void *, const void *);
+		const void *n = ATOMnilptr(b->ttype);
 		BATiter bi = bat_iterator(b);
 		r = BUNlast(b);
 		p = BUNtail(bi, 0);
@@ -3122,7 +3122,8 @@ SQLall(ptr ret, const bat *bid)
 		for (q = 1; q < r; q++) {
 			const void *c = BUNtail(bi, q);
 			if (ocmp(p, c) != 0) {
-				p = ATOMnilptr(b->ttype);
+				if (ocmp(n, c) != 0) 
+					p = ATOMnilptr(b->ttype);
 				break;
 			}
 		}
@@ -3158,6 +3159,172 @@ SQLall(ptr ret, const bat *bid)
 		memcpy(ret, p, _s);
 	}
 	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLnil(bit *ret, const bat *bid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	*ret = FALSE;
+	if (BATcount(b) == 0)
+		*ret = bit_nil;
+	if (BATcount(b) > 0) {
+		BUN q, o;
+		int (*ocmp) (const void *, const void *);
+		BATiter bi = bat_iterator(b);
+		const void *nilp = ATOMnilptr(b->ttype);
+
+		o = BUNlast(b);
+		ocmp = ATOMcompare(b->ttype);
+		for (q = 0; q < o; q++) {
+			const void *c = BUNtail(bi, q);
+			if (ocmp(nilp, c) == 0) {
+				*ret = TRUE;
+				break;
+			}
+		}
+	}
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str 
+SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
+{
+	*ret = FALSE;
+	if (*nr == bit_nil) /* empty -> FALSE */
+		*ret = FALSE;
+	else if (*cmp == TRUE)
+		*ret = TRUE;
+	else if (*nl == TRUE || *nr == TRUE)
+		*ret = bit_nil;
+	return MAL_SUCCEED;
+}
+
+str 
+SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr)
+{
+	*ret = TRUE;
+	if (*nr == bit_nil) /* empty -> TRUE */
+		*ret = TRUE;
+	else if (*cmp == FALSE)
+		*ret = FALSE;
+	else if (*nl == TRUE || *nr == TRUE)
+		*ret = bit_nil;
+	return MAL_SUCCEED;
+}
+
+str
+SQLanyequal(bit *ret, const bat *bid1, const bat *bid2)
+{
+	BAT *l, *r;
+	const void *p;
+
+	if ((l = BATdescriptor(*bid1)) == NULL) {
+		throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((r = BATdescriptor(*bid2)) == NULL) {
+		BBPunfix(l->batCacheid);
+		throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	*ret = FALSE;
+	if (BATcount(r) > 0) {
+		BUN q, o;
+		int (*ocmp) (const void *, const void *);
+		BATiter li = bat_iterator(l);
+		BATiter ri = bat_iterator(r);
+		const void *nilp = ATOMnilptr(l->ttype);
+
+		o = BUNlast(r);
+		p = BUNtail(li, 0);
+		ocmp = ATOMcompare(l->ttype);
+		for (q = 0; q < o; q++) {
+			const void *c = BUNtail(ri, q);
+			if (ocmp(nilp, c) == 0)
+				*ret = bit_nil;
+			else if (ocmp(p, c) == 0) {
+				*ret = TRUE;
+				break;
+			}
+		}
+	}
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+SQLanyequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, const bat *gpe, bit *no_nil)
+{
+	BAT *l, *r, *g, *e, *res;
+	bit F = FALSE, hasnil = 0;
+	BUN offset = 0;
+
+	(void)no_nil;
+	if ((l = BATdescriptor(*bid1)) == NULL) {
+		throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((r = BATdescriptor(*bid2)) == NULL) {
+		BBPunfix(l->batCacheid);
+		throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((g = BATdescriptor(*gp)) == NULL) {
+		BBPunfix(l->batCacheid);
+		BBPunfix(r->batCacheid);
+		throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if ((e = BATdescriptor(*gpe)) == NULL) {
+		BBPunfix(l->batCacheid);
+		BBPunfix(r->batCacheid);
+		BBPunfix(g->batCacheid);
+		throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	res = BATconstant(0, TYPE_bit, &F, BATcount(e), TRANSIENT);
+	BAThseqbase(res, e->hseqbase);
+	assert(BATcount(l) == BATcount(r));
+	offset = g->hseqbase - l->hseqbase;
+	if (BATcount(g) > 0) {
+		BUN q, o, s;
+		int (*ocmp) (const void *, const void *);
+		BATiter li = bat_iterator(l);
+		BATiter ri = bat_iterator(r);
+		BATiter gi = bat_iterator(g);
+		BATiter rt = bat_iterator(res);
+
+		bit *ret = BUNtail(rt, 0);
+		const void *nilp = ATOMnilptr(l->ttype);
+
+		o = BUNlast(g);
+		ocmp = ATOMcompare(l->ttype);
+		for (q = offset, s = 0; s < o; q++, s++) {
+			const void *lv = BUNtail(li, q);
+			const void *rv = BUNtail(ri, q);
+			oid id = *(oid*)BUNtail(gi, s);
+
+			if (ret[id] != TRUE) {
+				if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+					ret[id] = bit_nil;
+					hasnil = 1;
+				} else if (ocmp(lv, rv) == 0)
+					ret[id] = TRUE;
+			}
+		}
+	}
+	res->hseqbase = g->hseqbase;
+	res->tnil = hasnil != 0;
+	res->tnonil = hasnil == 0;
+	res->tsorted = res->trevsorted = 0;
+	res->tkey = 0;
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
+	BBPunfix(g->batCacheid);
+	BBPunfix(e->batCacheid);
+	BBPkeepref(*ret = res->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -4980,10 +5147,20 @@ SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int mtype = getArgType(mb, pci, 1);
 
 	(void)cntxt;
-	if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
+	if ((mtype == TYPE_bat || mtype > GDKatomcnt)) {
+	       	BAT *b = BATdescriptor(*(bat *)v);
+
+		if (b)
+			*res = BATcount(b) != 0;
+		else
+			throw(SQL, "aggr.exist", SQLSTATE(HY005) "Cannot access column descriptor");
+	} else
+	//if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
 		*res = TRUE;
+		/*
 	else
 		*res = FALSE;
+		*/
 	return MAL_SUCCEED;
 }
 

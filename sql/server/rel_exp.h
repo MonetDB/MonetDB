@@ -17,6 +17,7 @@
 
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
+#define new_compare_list(sa, l, r) exp2list(sa, exp_compare(sa, l, r, cmp_equal))
 
 extern comp_type swap_compare( comp_type t );
 extern comp_type range2lcompare( int r );
@@ -70,6 +71,7 @@ extern list * exp_types(sql_allocator *sa, list *exps);
 extern int have_nil(list *exps);
 
 extern sql_exp * exp_column(sql_allocator *sa, const char *rname, const char *name, sql_subtype *t, int card, int has_nils, int intern);
+#define exp_ref(sa, e) exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e))
 extern sql_exp * exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
 extern sql_exp * exp_alias_or_copy( mvc *sql, const char *tname, const char *cname, sql_rel *orel, sql_exp *old);
 extern sql_exp * exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level);

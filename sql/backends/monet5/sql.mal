@@ -330,6 +330,26 @@ command all( col:bat[:any_1]) :any_1
 address SQLall
 comment "if all values in col are equal return this, else nil";
 
+command null(b:bat[:any_1]) :bit
+address SQLnil
+comment "if b has a nil return true, else false";
+
+command any(cmp:bit, nl:bit, nr:bit) :bit
+address SQLany_cmp
+comment "if cmp then true, (nl or nr) nil then nil, else false";
+
+command all(cmp:bit, nl:bit, nr:bit) :bit
+address SQLall_cmp
+comment "if !cmp then false, (nl or nr) then nil, else true";
+
+command anyequal(l:bat[:any_1], r:bat[:any_1]) :bit
+address SQLanyequal
+comment "if any value in l is equal return true, else if r has nil nil else false";
+
+command subanyequal(l:bat[:any_1], r:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLanyequal_grp
+comment "if any value in l is equal return true, else if r has nil nil else false";
+
 # todo implement = all aggregator (ie keep last value and compare status)
 inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
 	(g,e,h) := group.group(gp);
