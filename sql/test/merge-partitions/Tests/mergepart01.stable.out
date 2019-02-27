@@ -1,9 +1,9 @@
 stdout of test 'mergepart01` in directory 'sql/test/merge-partitions` itself:
 
 
-# 17:07:38 >  
+# 17:07:38 >
 # 17:07:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30770" "--set" "mapi_usock=/var/tmp/mtest-24782/.s.monetdb.30770" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 17:07:38 >  
+# 17:07:38 >
 
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -64,11 +64,16 @@ Ready.
 # loading sql script: 97_comments.sql
 # loading sql script: 99_system.sql
 
-# 17:07:38 >  
+# 17:07:38 >
 # 17:07:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24782" "--port=30770"
-# 17:07:38 >  
+# 17:07:38 >
 
-#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE (a);
+#CREATE SCHEMA other_schema;
+#CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);
+#ALTER TABLE testme SET SCHEMA other_schema;
+#ALTER TABLE other_schema.testme SET SCHEMA sys;
+#ALTER TABLE testme RENAME TO testme2;
+#ALTER TABLE testme2 RENAME TO testme;
 #SELECT COUNT(*) from table_partitions;
 % sys.L3 # table_name
 % L3 # name
@@ -98,6 +103,7 @@ Ready.
 #CREATE TABLE wrongtable (a int, b varchar(32), c real);
 #CREATE TABLE subtable2 (a int, b varchar(32));
 #ALTER TABLE testme DROP TABLE subtable1;
+#ALTER TABLE subtable1 SET SCHEMA other_schema;
 #ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5;
 #ALTER TABLE testme DROP TABLE subtable2;
 #SELECT COUNT(*) from table_partitions;
@@ -113,9 +119,9 @@ Ready.
 % 1 # length
 [ 0	]
 #DROP TABLE testme;
-#DROP TABLE subtable1;
 #DROP TABLE wrongtable;
 #DROP TABLE subtable2;
+#DROP SCHEMA other_schema CASCADE;
 #SELECT COUNT(*) from table_partitions;
 % sys.L3 # table_name
 % L3 # name
@@ -129,7 +135,7 @@ Ready.
 % 1 # length
 [ 0	]
 
-# 17:07:39 >  
+# 17:07:39 >
 # 17:07:39 >  "Done."
-# 17:07:39 >  
+# 17:07:39 >
 

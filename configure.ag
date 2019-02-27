@@ -1473,7 +1473,7 @@ AS_VAR_IF([have_pthread], [no], [], [
 			LIBS="$LIBS $PTHREAD_LIBS"],
 		[
 			# ok, do old-fashioned stuff
-			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS" # in case user did --with-pthreads
+			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS" # in case user did --with-pthread
 			LIBS="$LIBS $PTHREAD_LIBS"
 			pthread_found=yes
 			AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
@@ -1519,7 +1519,7 @@ AS_VAR_IF([have_pthread], [no],
 	[PTHREAD_LIBS=""
 	 PTHREAD_INCS=""
 	 AC_MSG_RESULT([no])
-	 AC_MSG_ERROR([MonetDB requires libpthread (try --with-pthreada)])],
+	 AC_MSG_ERROR([MonetDB requires libpthread (try --with-pthread)])],
 	[AC_DEFINE([HAVE_LIBPTHREAD], 1, [Define if you have the pthread library])
 	 PTHREAD_INCS="$PTHREAD_INCS $PTHREAD_EXTRA"
 	 # CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"

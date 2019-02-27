@@ -668,9 +668,14 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	dlist *opt_list = NULL;
 	int res = SQL_OK;
 
-(void)ss;
-	if (alter && !isTable(t)) {
-		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
+	(void) ss;
+	if (alter && !(isTable(t) || (isMergeTable(t) && cs_size(&t->members) == 0))) {
+		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
+				  isMergeTable(t)?"MERGE TABLE":
+				  isRemote(t)?"REMOTE TABLE":
+				  isStream(t)?"STREAM TABLE":
+				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
+				  t->base.name, (isMergeTable(t) && cs_size(&t->members)>0) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -741,12 +746,14 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (%p)->token = %s\n", s, token2string(s->token));
 			return SQL_ERR;
 		}
-		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot %s %s '%s'\n",
+		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot %s %s '%s'%s\n",
 				msg, 
 				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
+				isRemote(t)?"REMOTE TABLE":
+				isStream(t)?"STREAM TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				t->base.name);
+				t->base.name, (isMergeTable(t) && cs_size(&t->members)>0) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 
@@ -917,7 +924,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
-		assert(0);
+		res = SQL_OK;
+		break;
 	default:
 		res = SQL_ERR;
 	}
@@ -1087,7 +1095,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			return NULL;
 
 		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
-			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s table 'with data'",
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s 'with data'",
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
 		/* create table */
@@ -1457,15 +1465,6 @@ sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 		sql_exp ** updates, *e;
 
 		assert(te);
-		if (t && te && te->token == SQL_DROP_CONSTRAINT) {
-			dlist *l = te->data.lval;
-			char *kname = l->h->data.sval;
-			int drop_action = l->h->next->data.i_val;
-			
-			sname = get_schema_name(sql, sname, tname);
-			return rel_drop(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action, 0);
-		}
-
 		if (t->persistence != SQL_DECLARED_TABLE)
 			sname = s->base.name;
 
@@ -1490,45 +1489,49 @@ sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 			if (te->token == SQL_TABLE) {
 				symbol *extra = dl->h->next->next->next->data.sym;
 
-				if(!extra)
-					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
+				if (strcmp(sname, nsname) != 0)
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all partitions of '%s.%s' must be part of "
+									 "schema '%s'", sname, tname, sname);
+				if (!extra)
+					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, nsname, ntname, 0);
 
 				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
-					return sql_error(sql, 02, SQLSTATE(42000) "The %s table %s.%s should have at least one table associated",
+					return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
 									 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
 
-				if(extra->token == SQL_MERGE_PARTITION) { //partition to hold null values only
+				if (extra->token == SQL_MERGE_PARTITION) { //partition to hold null values only
 					dlist* ll = extra->data.lval;
 					int update = ll->h->next->next->next->data.i_val;
 
-					if(isRangePartitionTable(t)) {
-						return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, NULL, NULL, 1, update);
-					} else if(isListPartitionTable(t)) {
-						return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, NULL, 1, update);
+					if (isRangePartitionTable(t)) {
+						return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, nsname, ntname, NULL, NULL, 1, update);
+					} else if (isListPartitionTable(t)) {
+						return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, nsname, ntname, NULL, 1, update);
 					} else {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a merge table");
+						return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add a partition into a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
-				} else if(extra->token == SQL_PARTITION_RANGE) {
+				} else if (extra->token == SQL_PARTITION_RANGE) {
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
 					int nills = ll->h->next->next->data.i_val, update = ll->h->next->next->next->data.i_val;
 
-					if(!isRangePartitionTable(t)) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s table",
-										 isListPartitionTable(t)?"list partition":"merge");
+					if (!isRangePartitionTable(t)) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
 
-					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, min, max, nills, update);
-				} else if(extra->token == SQL_PARTITION_LIST) {
+					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, nsname, ntname, min, max, nills, update);
+				} else if (extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
 					int nills = ll->h->next->data.i_val, update = ll->h->next->next->data.i_val;
 
-					if(!isListPartitionTable(t)) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
-										 isRangePartitionTable(t)?"range partition":"merge");
+					if (!isListPartitionTable(t)) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s",
+										 TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 					}
 
-					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, values, nills, update);
+					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, nsname, ntname, values, nills, update);
 				}
 				assert(0);
 			} else {
@@ -1554,6 +1557,15 @@ sql_alter_table(mvc *sql, dlist *dl, dlist *qname, symbol *te, int if_exists)
 		nt = dup_sql_table(sql->sa, t);
 		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
 			return NULL;
+
+		if (te->token == SQL_DROP_CONSTRAINT) {
+			dlist *l = te->data.lval;
+			char *kname = l->h->data.sval;
+			int drop_action = l->h->next->data.i_val;
+
+			sname = get_schema_name(sql, sname, tname);
+			return rel_drop(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action, 0);
+		}
 
 		if (t->s && !nt->s)
 			nt->s = t->s;
@@ -2610,9 +2622,9 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
-	if (isMergeTable(ot))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a merge table");
 	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL))
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
+	if (ot->members.set || ot->triggers.set)
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
@@ -2627,9 +2639,31 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 		return NULL;
 
 	for (n = ot->columns.set->h; n; n = n->next) {
-		sql_column *oc = (sql_column*) n->data;
-		if (!mvc_copy_column(sql, nt, oc))
+		sql_column *nc, *oc = (sql_column*) n->data;
+		if (!(nc = mvc_copy_column(sql, nt, oc)))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s_%s_%s conflicts", ns->base.name, nt->base.name, oc->base.name);
+		if (isPartitionedByColumnTable(ot) && oc->base.id == ot->part.pcol->base.id)
+			nt->part.pcol = nc;
+	}
+	if (isPartitionedByExpressionTable(ot)) {
+		char *err = NULL;
+		sql_allocator *oa = sql->sa;
+
+		nt->part.pexp->exp = sa_strdup(sql->session->tr->sa, ot->part.pexp->exp);
+
+		sql->sa = sa_create();
+		if (!sql->sa) {
+			sql->sa = oa;
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+
+		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 0);
+		sa_destroy(sql->sa);
+		sql->sa = NULL;
+		if (err) {
+			sql->sa = oa;
+			return sql_error(sql, 02, "%s", err);
+		}
 	}
 
 	if (ot->idxs.set)
@@ -2640,13 +2674,12 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 		for (n = ot->keys.set->h; n; n = n->next)
 			mvc_copy_key(sql, nt, (sql_key*) n->data);
 
-	if (ot->members.set || ot->triggers.set)
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
-
 	l = rel_table(sql, DDL_CREATE_TABLE, new_schema, nt, 0);
-	inserts = rel_basetable(sql, ot, tname);
-	inserts = rel_project(sql->sa, inserts, rel_projections(sql, inserts, NULL, 1, 0));
-	l = rel_insert(sql, l, inserts);
+	if (!(isMergeTable(ot) || isRemote(ot) || isReplicaTable(ot))) {
+		inserts = rel_basetable(sql, ot, tname);
+		inserts = rel_project(sql->sa, inserts, rel_projections(sql, inserts, NULL, 1, 0));
+		l = rel_insert(sql, l, inserts);
+	}
 	r = rel_drop(sql->sa, DDL_DROP_TABLE, old_schema, tname, 0, 0);
 	return rel_list(sql->sa, l, r);
 }

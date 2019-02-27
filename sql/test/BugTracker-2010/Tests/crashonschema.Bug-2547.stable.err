@@ -85,7 +85,7 @@ CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create schema intro3 
           grant insert on t2010 to monetdb;
-ERROR = !GRANT no such table 't2010'
+ERROR = !GRANT: no such table 't2010'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop schema intro3;
