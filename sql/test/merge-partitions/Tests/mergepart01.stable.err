@@ -67,7 +67,7 @@ ERROR = !ALTER TABLE: unable to rename table 'subtable1' (there are database obj
 CODE  = 2BM37
 MAPI  = (monetdb) /var/tmp/mtest-19335/.s.monetdb.38088
 QUERY = ALTER TABLE testme ADD TABLE other_schema.subtable1 AS PARTITION BETWEEN 4 AND 23; --error, all the tables must belong to the same schema
-ERROR = !ALTER TABLE: all partitions of 'sys.testme' must be part of schema 'sys'
+ERROR = !ALTER TABLE: all children tables of 'sys.testme' must be part of schema 'sys'
 CODE  = 42000
 
 # 17:07:39 >  
