@@ -149,7 +149,7 @@ GDKlockstatistics(int what)
 		    (what == 3 && lock_isset(l)))
 			fprintf(stderr, "# %-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
 				l->name ? l->name : "unknown",
-				l->count, l->contention, l->sleep,
+				l->count, (size_t) l->contention, (size_t) l->sleep,
 				lock_isset(l) ? "locked" : "",
 				l->locker ? l->locker : "",
 				l->thread ? l->thread : "");
