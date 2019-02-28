@@ -123,7 +123,6 @@ static void generateChallenge(str buf, int min, int max) {
 struct challengedata {
 	stream *in;
 	stream *out;
-	char name[16];
 };
 
 static void
@@ -480,9 +479,10 @@ SERVERlistenThread(SOCKET *Sock)
 			goto stream_alloc_fail;
 		}
 		data->out = s;
-		snprintf(data->name, sizeof(data->name), "client%d",
+		char name[16];
+		snprintf(name, sizeof(name), "client%d",
 				 (int) ATOMIC_INC(threadno, atomicLock));
-		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, data->name)) == 0) {
+		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -955,9 +955,10 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		GDKfree(data);
 		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	snprintf(data->name, sizeof(data->name), "client%d",
+	char name[16];
+	snprintf(name, sizeof(name), "client%d",
 			 (int) ATOMIC_INC(threadno, atomicLock));
-	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, data->name)) == 0) {
+	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);
