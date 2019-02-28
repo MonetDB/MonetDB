@@ -473,7 +473,7 @@ typedef struct {
 	do {						\
 		(s)->name = (n);			\
 		(s)->cnt = (nr);			\
-		pthread_mutex_init(&(s)->mutex);	\
+		pthread_mutex_init(&(s)->mutex, 0);	\
 		pthread_cond_init(&(s)->cond, 0);	\
 	} while (0)
 #define MT_sema_destroy(s)				\
