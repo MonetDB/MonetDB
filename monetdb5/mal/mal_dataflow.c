@@ -91,6 +91,7 @@ static MT_Lock exitingLock MT_LOCK_INITIALIZER("exitingLock");
 #endif
 static volatile ATOMIC_TYPE exiting = 0;
 static MT_Lock dataflowLock MT_LOCK_INITIALIZER("dataflowLock");
+static void stopMALdataflow(void);
 
 void
 mal_dataflow_reset(void)
@@ -992,7 +993,7 @@ deblockdataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return MAL_SUCCEED;
 }
 
-void
+static void
 stopMALdataflow(void)
 {
 	int i;
@@ -1011,6 +1012,7 @@ stopMALdataflow(void)
 				MT_lock_set(&dataflowLock);
 			}
 			workers[i].flag = IDLE;
+			MT_sema_destroy(&workers[i].s);
 		}
 		MT_lock_unset(&dataflowLock);
 	}

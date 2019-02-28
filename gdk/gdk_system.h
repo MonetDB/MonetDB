@@ -450,11 +450,17 @@ typedef struct {
 
 #define MT_sema_init(s, nr, n)						\
 	do {								\
+		assert((s)->sema == NULL);				\
 		strncpy((s)->name, (n), sizeof((s)->name));		\
 		(s)->name[sizeof((s)->name) - 1] = 0;			\
 		(s)->sema = CreateSemaphore(NULL, nr, 0x7fffffff, NULL); \
 	} while (0)
-#define MT_sema_destroy(s)	CloseHandle((s)->sema)
+#define MT_sema_destroy(s)			\
+	do {					\
+		assert((s)->sema != NULL);	\
+		CloseHandle((s)->sema);		\
+		(s)->sema = NULL;		\
+	} while (0)
 #define MT_sema_up(s)		ReleaseSemaphore((s)->sema, 1, NULL)
 #define MT_sema_down(s)							\
 	do {								\

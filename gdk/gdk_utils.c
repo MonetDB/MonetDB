@@ -1430,8 +1430,10 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 
 	if ((t = GDKmalloc(sizeof(*t))) == NULL)
 		return 0;
-	t->func = f;
-	t->arg = arg;
+	*t = (struct THRstart) {
+		.func = f,
+		.arg = arg,
+	};
 	MT_lock_set(&GDKthreadLock);
 	for (s = GDKthreads; s < GDKthreads + THREADS; s++) {
 		if (s->pid == 0) {
