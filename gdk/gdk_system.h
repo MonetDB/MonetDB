@@ -67,6 +67,12 @@
 #define __cold__
 #endif
 
+/* also see gdk.h for these */
+#define THRDMASK	(1)
+#define THRDDEBUG	if (GDKdebug & THRDMASK)
+#define TEMMASK		(1<<10)
+#define TEMDEBUG	if (GDKdebug & TEMMASK)
+
 /*
  * @- pthreads Includes and Definitions
  */
@@ -83,6 +89,10 @@
 
 #ifdef HAVE_SEMAPHORE_H
 # include <semaphore.h>
+#endif
+
+#ifdef HAVE_DISPATCH_DISPATCH_H
+#include <dispatch/dispatch.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
@@ -125,7 +135,6 @@ gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
 				void *arg, enum MT_thr_detach d,
 				const char *threadname);
 gdk_export const char *MT_thread_getname(void);
-gdk_export void MT_thread_setname(const char *name);
 gdk_export void *MT_thread_getdata(void);
 gdk_export void MT_thread_setdata(void *data);
 gdk_export void MT_exiting_thread(void);
@@ -436,15 +445,22 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 
 typedef struct {
 	HANDLE sema;
-	const char *name;
+	char name[16];
 } MT_Sema;
 
 #define MT_sema_init(s, nr, n)						\
 	do {								\
-		(s)->name = n;						\
+		assert((s)->sema == NULL);				\
+		strncpy((s)->name, (n), sizeof((s)->name));		\
+		(s)->name[sizeof((s)->name) - 1] = 0;			\
 		(s)->sema = CreateSemaphore(NULL, nr, 0x7fffffff, NULL); \
 	} while (0)
-#define MT_sema_destroy(s)	CloseHandle((s)->sema)
+#define MT_sema_destroy(s)			\
+	do {					\
+		assert((s)->sema != NULL);	\
+		CloseHandle((s)->sema);		\
+		(s)->sema = NULL;		\
+	} while (0)
 #define MT_sema_up(s)		ReleaseSemaphore((s)->sema, 1, NULL)
 #define MT_sema_down(s)							\
 	do {								\
@@ -458,6 +474,24 @@ typedef struct {
 				 MT_thread_getname(), __func__, (s)->name); \
 	} while (0)
 
+#elif defined(HAVE_DISPATCH_SEMAPHORE_CREATE)
+
+/* MacOS X */
+typedef struct {
+	dispatch_semaphore_t sema;
+	char name[16];
+} MT_Sema;
+
+#define MT_sema_init(s, nr, n)						\
+	do {								\
+		strncpy((s)->name, (n), sizeof((s)->name));		\
+		(s)->name[sizeof((s)->name) - 1] = 0;			\
+		(s)->sema = dispatch_semaphore_create((long) (nr));	\
+	} while (0)
+#define MT_sema_destroy(s)	dispatch_release((s)->sema)
+#define MT_sema_up(s)		dispatch_semaphore_signal((s)->sema)
+#define MT_sema_down(s)		dispatch_semaphore_wait((s)->sema, DISPATCH_TIME_FOREVER)
+
 #elif defined(_AIX) || defined(__MACH__)
 
 /* simulate semaphores using mutex and condition variable */
@@ -466,15 +500,16 @@ typedef struct {
 	int cnt;
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
-	const char *name;
+	char name[16];
 } MT_Sema;
 
-#define MT_sema_init(s, nr, n)				\
-	do {						\
-		(s)->name = (n);			\
-		(s)->cnt = (nr);			\
-		pthread_mutex_init(&(s)->mutex);	\
-		pthread_cond_init(&(s)->cond, 0);	\
+#define MT_sema_init(s, nr, n)					\
+	do {							\
+		strncpy((s)->name, (n), sizeof((s)->name));	\
+		(s)->name[sizeof((s)->name) - 1] = 0;		\
+		(s)->cnt = (nr);				\
+		pthread_mutex_init(&(s)->mutex, 0);		\
+		pthread_cond_init(&(s)->cond, 0);		\
 	} while (0)
 #define MT_sema_destroy(s)				\
 	do {						\
@@ -509,13 +544,14 @@ typedef struct {
 
 typedef struct {
 	sem_t sema;
-	const char *name;
+	char name[16];
 } MT_Sema;
 
-#define MT_sema_init(s, nr, n)			\
-	do {					\
-		(s)->name = (n);		\
-		sem_init(&(s)->sema, 0, nr);	\
+#define MT_sema_init(s, nr, n)					\
+	do {							\
+		strncpy((s)->name, (n), sizeof((s)->name));	\
+		(s)->name[sizeof((s)->name) - 1] = 0;		\
+		sem_init(&(s)->sema, 0, nr);			\
 	} while (0)
 #define MT_sema_destroy(s)	sem_destroy(&(s)->sema)
 #define MT_sema_up(s)						\

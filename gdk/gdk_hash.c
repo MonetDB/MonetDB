@@ -128,7 +128,7 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
 	((size_t *) h->heap.base)[3] = width;
 	((size_t *) h->heap.base)[4] = count;
 	((size_t *) h->heap.base)[5] = 0; /* # filled slots (chain heads) */
-	ALGODEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, nil " BUNFMT ", total " BUNFMT " bytes);\n", size, mask, width, h->nil, (size + mask) * width);
+	ACCELDEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, total " BUNFMT " bytes);\n", size, mask, width, (size + mask) * width);
 	return GDK_SUCCEED;
 }
 
@@ -170,9 +170,9 @@ BATcheckhash(BAT *b)
 	bool ret;
 	lng t = 0;
 
-	ALGODEBUG t = GDKusec();
+	ACCELDEBUG t = GDKusec();
 	MT_lock_set(&GDKhashLock(b->batCacheid));
-	ALGODEBUG t = GDKusec() - t;
+	ACCELDEBUG t = GDKusec() - t;
 	if (b->thash == (Hash *) 1) {
 		Hash *h;
 		const char *nme = BBP_physical(b->batCacheid);
@@ -223,7 +223,7 @@ BATcheckhash(BAT *b)
 					h->heap.parentid = b->batCacheid;
 					h->heap.dirty = false;
 					b->thash = h;
-					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
+					ACCELDEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(b->batCacheid));
 					return true;
 				}
@@ -237,7 +237,7 @@ BATcheckhash(BAT *b)
 	}
 	ret = b->thash != NULL;
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
+	ACCELDEBUG if (ret) fprintf(stderr, "#BATcheckhash: already has hash %s, waited " LLFMT " usec\n", BATgetId(b), t);
 	return ret;
 }
 
@@ -250,7 +250,7 @@ BAThashsync(void *arg)
 	lng t0 = 0;
 	const char *failed = " failed";
 
-	ALGODEBUG t0 = GDKusec();
+	ACCELDEBUG t0 = GDKusec();
 
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->thash != NULL) {
@@ -286,7 +286,7 @@ BAThashsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			ALGODEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
+			ACCELDEBUG fprintf(stderr, "#BAThash: persisting hash %s (" LLFMT " usec)%s\n", hp->filename, GDKusec() - t0, failed);
 		}
 	}
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
@@ -367,16 +367,16 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	const char *nme = BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 
-	ALGODEBUG t0 = GDKusec();
-	ALGODEBUG fprintf(stderr, "#BAThash: create hash(" ALGOBATFMT ");\n",
+	ACCELDEBUG t0 = GDKusec();
+	ACCELDEBUG fprintf(stderr, "#BAThash: create hash(" ALGOBATFMT ");\n",
 			  ALGOBATPAR(b));
 	if (b->ttype == TYPE_void) {
 		if (is_oid_nil(b->tseqbase)) {
-			ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
+			ACCELDEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
 			GDKerror("BAThash: no hash on void/nil column\n");
 			return NULL;
 		}
-		ALGODEBUG fprintf(stderr, "#BAThash: creating hash-table on void column..\n");
+		ACCELDEBUG fprintf(stderr, "#BAThash: creating hash-table on void column..\n");
 
 		tpe = TYPE_void;
 	}
@@ -489,7 +489,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 			}
 			break;
 		}
-		ALGODEBUG if (p < cnt1)
+		ACCELDEBUG if (p < cnt1)
 			fprintf(stderr, "#BAThash(%s): abort starthash with "
 				"mask " BUNFMT " at " BUNFMT "\n", BATgetId(b),
 				mask, p);
@@ -561,7 +561,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 		b->tkey = true;
 		b->batDirtydesc = true;
 	}
-	ALGODEBUG {
+	ACCELDEBUG {
 		fprintf(stderr, "#BAThash: hash construction " LLFMT " usec\n", GDKusec() - t0);
 		HASHcollisions(b, h);
 	}
@@ -585,14 +585,16 @@ BAThash(BAT *b)
 		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
+			char name[16];
+			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BAThashsync, b,
 					     MT_THR_DETACHED,
-					     "BAThashsync") < 0) {
+					     name) < 0) {
 				/* couldn't start thread: clean up */
 				BBPunfix(b->batCacheid);
 			}
 		} else
-			ALGODEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
+			ACCELDEBUG fprintf(stderr, "#BAThash: NOT persisting hash %d\n", b->batCacheid);
 #endif
 	}
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
@@ -663,7 +665,7 @@ HASHdestroy(BAT *b)
 				hp = BBP_cache(p);
 
 			if (!hp || hs != hp->thash) {
-				ALGODEBUG if (*(size_t *) hs->heap.base & (1 << 24))
+				ACCELDEBUG if (*(size_t *) hs->heap.base & (1 << 24))
 					fprintf(stderr, "#HASHdestroy: removing persisted hash %d\n", b->batCacheid);
 				HEAPfree(&hs->heap, true);
 				GDKfree(hs);

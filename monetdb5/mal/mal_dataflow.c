@@ -82,7 +82,6 @@ static struct worker {
 	enum {IDLE, RUNNING, JOINING, EXITED} flag;
 	Client cntxt;				/* client we do work for (NULL -> any) */
 	MT_Sema s;
-	char name[16];
 } workers[THREADS];
 
 static Queue *todo = 0;	/* pending instructions */
@@ -92,6 +91,7 @@ static MT_Lock exitingLock MT_LOCK_INITIALIZER("exitingLock");
 #endif
 static volatile ATOMIC_TYPE exiting = 0;
 static MT_Lock dataflowLock MT_LOCK_INITIALIZER("dataflowLock");
+static void stopMALdataflow(void);
 
 void
 mal_dataflow_reset(void)
@@ -507,8 +507,10 @@ DFLOWinitialize(void)
 		return -1;
 	}
 	for (i = 0; i < THREADS; i++) {
-		snprintf(workers[i].name, sizeof(workers[i].name), "DFLOWworker%d", i);
-		MT_sema_init(&workers[i].s, 0, workers[i].name);
+		char name[16];
+		snprintf(name, sizeof(name), "DFLOWsema%d", i);
+		MT_sema_init(&workers[i].s, 0, name);
+		workers[i].flag = IDLE;
 	}
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 	if (limit > THREADS)
@@ -525,7 +527,9 @@ DFLOWinitialize(void)
 	for (i = 0; i < limit; i++) {
 		workers[i].flag = RUNNING;
 		workers[i].cntxt = NULL;
-		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, workers[i].name)) == 0)
+		char name[16];
+		snprintf(name, sizeof(name), "DFLOWworker%d", i);
+		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0)
 			workers[i].flag = IDLE;
 		else
 			created++;
@@ -891,8 +895,9 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 				workers[i].cntxt = cntxt;
 			}
 			workers[i].flag = RUNNING;
-			snprintf(workers[i].name, sizeof(workers[i].name), "DFLOWworker%d", i);
-			if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, workers[i].name)) == 0) {
+			char name[16];
+			snprintf(name, sizeof(name), "DFLOWworker%d", i);
+			if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0) {
 				/* cannot start new thread, run serially */
 				*ret = TRUE;
 				workers[i].flag = IDLE;
@@ -988,16 +993,17 @@ deblockdataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return MAL_SUCCEED;
 }
 
-void
+static void
 stopMALdataflow(void)
 {
 	int i;
 
 	ATOMIC_SET(exiting, 1, exitingLock);
 	if (todo) {
-		for (i = 0; i < THREADS; i++)
-			MT_sema_up(&todo->s);
 		MT_lock_set(&dataflowLock);
+		for (i = 0; i < THREADS; i++)
+			if (workers[i].flag == RUNNING)
+				MT_sema_up(&todo->s);
 		for (i = 0; i < THREADS; i++) {
 			if (workers[i].flag != IDLE && workers[i].flag != JOINING) {
 				workers[i].flag = JOINING;
@@ -1006,6 +1012,7 @@ stopMALdataflow(void)
 				MT_lock_set(&dataflowLock);
 			}
 			workers[i].flag = IDLE;
+			MT_sema_destroy(&workers[i].s);
 		}
 		MT_lock_unset(&dataflowLock);
 	}

@@ -247,7 +247,7 @@ BATcheckimprints(BAT *b)
 					close(fd);
 					imprints->imprints.parentid = b->batCacheid;
 					b->timprints = imprints;
-					ALGODEBUG fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
+					ACCELDEBUG fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): reusing persisted imprints\n", ALGOBATPAR(b));
 					MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 
 					return true;
@@ -262,7 +262,7 @@ BATcheckimprints(BAT *b)
 	}
 	ret = b->timprints != NULL;
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
-	ALGODEBUG if (ret) fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
+	ACCELDEBUG if (ret) fprintf(stderr, "#BATcheckimprints(" ALGOBATFMT "): already has imprints\n", ALGOBATPAR(b));
 	return ret;
 }
 
@@ -275,7 +275,7 @@ BATimpsync(void *arg)
 	lng t0 = 0;
 	const char *failed = " failed";
 
-	ALGODEBUG t0 = GDKusec();
+	ACCELDEBUG t0 = GDKusec();
 
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	if ((imprints = b->timprints) != NULL) {
@@ -319,7 +319,7 @@ BATimpsync(void *arg)
 					failed = ""; /* not failed */
 				}
 			}
-			ALGODEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
+			ACCELDEBUG fprintf(stderr, "#BATimpsync(" ALGOBATFMT "): "
 					  "imprints persisted "
 					  "(" LLFMT " usec)%s\n", ALGOBATPAR(b),
 					  GDKusec() - t0, failed);
@@ -363,7 +363,7 @@ BATimprints(BAT *b)
 	if (VIEWtparent(b)) {
 		/* views always keep null pointer and need to obtain
 		 * the latest imprint from the parent at query time */
-		s2 = b;		/* remember for ALGODEBUG print */
+		s2 = b;		/* remember for ACCELDEBUG print */
 		b = BBPdescriptor(VIEWtparent(b));
 		assert(b);
 		if (BATcheckimprints(b))
@@ -371,13 +371,13 @@ BATimprints(BAT *b)
 		assert(b->timprints == NULL);
 	}
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
-	ALGODEBUG t0 = GDKusec();
+	ACCELDEBUG t0 = GDKusec();
 	if (b->timprints == NULL) {
 		BUN cnt;
 		const char *nme = BBP_physical(b->batCacheid);
 		size_t pages;
 
-		ALGODEBUG {
+		ACCELDEBUG {
 			if (s2)
 				fprintf(stderr, "#BATimprints(b=" ALGOBATFMT
 					"): creating imprints on parent "
@@ -528,13 +528,15 @@ BATimprints(BAT *b)
 		    !b->theap.dirty) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
+			char name[16];
+			snprintf(name, sizeof(name), "impssync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATimpsync, b,
-					     MT_THR_DETACHED, "BATimpsync") < 0)
+					     MT_THR_DETACHED, name) < 0)
 				BBPunfix(b->batCacheid);
 		}
 	}
 
-	ALGODEBUG fprintf(stderr, "#BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
+	ACCELDEBUG fprintf(stderr, "#BATimprints(%s): imprints construction " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 
 	/* BBPUnfix tries to get the imprints lock which might lead to

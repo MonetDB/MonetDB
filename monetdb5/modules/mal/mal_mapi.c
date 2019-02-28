@@ -273,6 +273,7 @@ doChallenge(void *data)
 static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */
 static volatile ATOMIC_TYPE serveractive = 0;
 static volatile ATOMIC_TYPE serverexiting = 0; /* listeners should exit */
+static volatile ATOMIC_TYPE threadno = 0;	   /* thread sequence no */
 #ifdef ATOMIC_LOCK
 /* lock for all three ATOMIC_TYPE variables above */
 static MT_Lock atomicLock MT_LOCK_INITIALIZER("atomicLock");
@@ -478,7 +479,10 @@ SERVERlistenThread(SOCKET *Sock)
 			goto stream_alloc_fail;
 		}
 		data->out = s;
-		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, "doChallenge")) == 0) {
+		char name[16];
+		snprintf(name, sizeof(name), "client%d",
+				 (int) ATOMIC_INC(threadno, atomicLock));
+		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -823,7 +827,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 #endif
 	psock[2] = INVALID_SOCKET;
 	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock,
-						 MT_THR_JOINABLE, "server listener") != 0) {
+						 MT_THR_JOINABLE, "listenThread") != 0) {
 		GDKfree(psock);
 		if (usockfile)
 			GDKfree(usockfile);
@@ -951,7 +955,10 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		GDKfree(data);
 		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, "doChallenge")) == 0) {
+	char name[16];
+	snprintf(name, sizeof(name), "client%d",
+			 (int) ATOMIC_INC(threadno, atomicLock));
+	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);

@@ -360,6 +360,7 @@
 */
 
 #define THRDMASK	(1)
+#define THRDDEBUG	if (GDKdebug & THRDMASK)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
 #define MEMMASK		(1<<2)
@@ -405,6 +406,8 @@
 #define ?ddbench?	if (GDKdebug&(1<<19))
 #define ?ddbench?	if (GDKdebug&(1<<20))
 */
+#define ACCELMASK	(1<<20)
+#define ACCELDEBUG	if (GDKdebug & (ACCELMASK|ALGOMASK))
 #define ALGOMASK	(1<<21)
 #define ALGODEBUG	if (GDKdebug & ALGOMASK)
 #define ESTIMASK	(1<<22)

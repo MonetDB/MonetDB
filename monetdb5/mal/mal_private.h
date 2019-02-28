@@ -40,8 +40,6 @@ __hidden void initResource(void)
 	__attribute__((__visibility__("hidden")));
 __hidden int moreClients(int reruns)
 	__attribute__((__visibility__("hidden")));
-__hidden void stopMALdataflow(void)
-	__attribute__((__visibility__("hidden")));
 
 __hidden str malAtomDefinition(str name,int tpe)
 	__attribute__((__visibility__("hidden")));

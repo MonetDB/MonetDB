@@ -641,10 +641,6 @@ typedef struct {
 	MT_Sema consumer;			/* reader waits for call */
 	MT_Sema sema; /* threads wait for work , negative next implies exit */
 	MT_Sema reply;				/* let reader continue */
-	char prodsema[16];			/* names for the above */
-	char conssema[16];
-	char semasema[16];
-	char replsema[16];
 	Tablet *as;
 	char *errbuf;
 	const char *csep, *rsep;
@@ -1657,10 +1653,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	task.rseplen = strlen(rsep);
 	task.errbuf = cntxt->errbuf;
 
-	snprintf(task.prodsema, sizeof(task.prodsema), "task.producer");
-	snprintf(task.conssema, sizeof(task.conssema), "task.consumer");
-	MT_sema_init(&task.producer, 0, task.prodsema);
-	MT_sema_init(&task.consumer, 0, task.conssema);
+	MT_sema_init(&task.producer, 0, "task.producer");
+	MT_sema_init(&task.consumer, 0, "task.consumer");
 	task.ateof = false;
 	task.b = b;
 	task.out = out;
@@ -1730,10 +1724,11 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #ifdef MLOCK_TST
 		mlock(ptask[j].cols, sizeof(char *) * task.limit);
 #endif
-		snprintf(ptask[j].semasema, sizeof(ptask[j].semasema), "ptask%d.sema", j);
-		snprintf(ptask[j].replsema, sizeof(ptask[j].replsema), "ptask%d.repl", j);
-		MT_sema_init(&ptask[j].sema, 0, ptask[j].semasema);
-		MT_sema_init(&ptask[j].reply, 0, ptask[j].replsema);
+		char name[16];
+		snprintf(name, sizeof(name), "ptask%d.sema", j);
+		MT_sema_init(&ptask[j].sema, 0, name);
+		snprintf(name, sizeof(name), "ptask%d.repl", j);
+		MT_sema_init(&ptask[j].reply, 0, name);
 		if ((ptask[j].tid = THRcreate(SQLworker, (void *) &ptask[j], MT_THR_JOINABLE, "SQLworker")) == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
 			threads = j;
