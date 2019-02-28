@@ -360,6 +360,7 @@
 */
 
 #define THRDMASK	(1)
+#define THRDDEBUG	if (GDKdebug & THRDMASK)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
 #define MEMMASK		(1<<2)
