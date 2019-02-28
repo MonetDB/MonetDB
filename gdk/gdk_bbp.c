@@ -1332,8 +1332,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	if (n < (bat) ATOMIC_GET(BBPsize, BBPsizeLock))
 		n = (bat) ATOMIC_GET(BBPsize, BBPsizeLock);
 
-	if (GDKdebug & (IOMASK | THRDMASK))
-		fprintf(stderr, "#BBPdir: writing BBP.dir (%d bats).\n", n);
+	IODEBUG fprintf(stderr, "#BBPdir: writing BBP.dir (%d bats).\n", n);
 
 	if (BBPdir_header(nbbpf, n) != GDK_SUCCEED) {
 		goto bailout;
@@ -1418,8 +1417,7 @@ BBPdir(int cnt, bat *subcommit)
 	if (subcommit)
 		return BBPdir_subcommit(cnt, subcommit);
 
-	if (GDKdebug & (IOMASK | THRDMASK))
-		fprintf(stderr, "#BBPdir: writing BBP.dir (%d bats).\n", (int) (bat) ATOMIC_GET(BBPsize, BBPsizeLock));
+	IODEBUG fprintf(stderr, "#BBPdir: writing BBP.dir (%d bats).\n", (int) (bat) ATOMIC_GET(BBPsize, BBPsizeLock));
 	if ((fp = GDKfilelocate(0, "BBP", "w", "dir")) == NULL) {
 		goto bailout;
 	}
