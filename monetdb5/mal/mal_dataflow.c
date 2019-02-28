@@ -509,6 +509,7 @@ DFLOWinitialize(void)
 		char name[16];
 		snprintf(name, sizeof(name), "DFLOWsema%d", i);
 		MT_sema_init(&workers[i].s, 0, name);
+		workers[i].flag = IDLE;
 	}
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 	if (limit > THREADS)
@@ -998,9 +999,10 @@ stopMALdataflow(void)
 
 	ATOMIC_SET(exiting, 1, exitingLock);
 	if (todo) {
-		for (i = 0; i < THREADS; i++)
-			MT_sema_up(&todo->s);
 		MT_lock_set(&dataflowLock);
+		for (i = 0; i < THREADS; i++)
+			if (workers[i].flag == RUNNING)
+				MT_sema_up(&todo->s);
 		for (i = 0; i < THREADS; i++) {
 			if (workers[i].flag != IDLE && workers[i].flag != JOINING) {
 				workers[i].flag = JOINING;
