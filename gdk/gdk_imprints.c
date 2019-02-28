@@ -528,8 +528,10 @@ BATimprints(BAT *b)
 		    !b->theap.dirty) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
+			char name[16];
+			snprintf(name, sizeof(name), "impssync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BATimpsync, b,
-					     MT_THR_DETACHED, "BATimpsync") < 0)
+					     MT_THR_DETACHED, name) < 0)
 				BBPunfix(b->batCacheid);
 		}
 	}

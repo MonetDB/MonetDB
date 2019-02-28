@@ -154,8 +154,6 @@ MCnewClient(void)
 #ifdef MAL_CLIENT_DEBUG
 	fprintf(stderr,"New client created %d\n", (int) (c - mal_clients));
 #endif
-	snprintf(c->name, sizeof(c->name), "client%d", (int) (c - mal_clients));
-	MT_thread_setname(c->name);
 	return c;
 }
 

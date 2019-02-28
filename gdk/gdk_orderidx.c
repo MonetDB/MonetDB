@@ -161,8 +161,10 @@ persistOIDX(BAT *b)
 	    !b->theap.dirty) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
+		char name[16];
+		snprintf(name, sizeof(name), "oidxsync%d", b->batCacheid);
 		if (MT_create_thread(&tid, BATidxsync, b,
-				     MT_THR_DETACHED, "BATidxsync") < 0)
+				     MT_THR_DETACHED, name) < 0)
 			BBPunfix(b->batCacheid);
 	} else
 		ALGODEBUG fprintf(stderr, "#persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
@@ -469,8 +471,10 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	    b->batInserted == b->batCount) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
+		char name[16];
+		snprintf(name, sizeof(name), "oidxsync%d", b->batCacheid);
 		if (MT_create_thread(&tid, BATidxsync, b,
-				     MT_THR_DETACHED, "BATidxsync") < 0)
+				     MT_THR_DETACHED, name) < 0)
 			BBPunfix(b->batCacheid);
 	} else
 		ALGODEBUG fprintf(stderr, "#GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));

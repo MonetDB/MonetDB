@@ -585,9 +585,11 @@ BAThash(BAT *b)
 		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
+			char name[16];
+			snprintf(name, sizeof(name), "hashsync%d", b->batCacheid);
 			if (MT_create_thread(&tid, BAThashsync, b,
 					     MT_THR_DETACHED,
-					     "BAThashsync") < 0) {
+					     name) < 0) {
 				/* couldn't start thread: clean up */
 				BBPunfix(b->batCacheid);
 			}

@@ -177,7 +177,7 @@ static struct winthread {
 	void *data;
 	volatile ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
-	const char *threadname;
+	char threadname[16];
 } *winthreads = NULL;
 static struct winthread mainthread = {
 	.threadname = "main thread",
@@ -226,19 +226,7 @@ const char *
 MT_thread_getname(void)
 {
 	struct winthread *w = TlsGetValue(threadslot);
-	return w && w->threadname ? w->threadname : "unknown thread";
-}
-
-void
-MT_thread_setname(const char *name)
-{
-	struct winthread *w = TlsGetValue(threadslot);
-
-	if (w) {
-		EnterCriticalSection(&winthread_cs);
-		w->threadname = name;
-		LeaveCriticalSection(&winthread_cs);
-	}
+	return w ? w->threadname : "unknown thread";
 }
 
 void
@@ -357,8 +345,9 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.data = arg,
 		.waiting = false,
 		.detached = (d == MT_THR_DETACHED),
-		.threadname = threadname,
 	};
+	strncpy(w->threadname, threadname, sizeof(w->threadname));
+	w->threadname[sizeof(w->threadname) - 1] = 0;
 	EnterCriticalSection(&winthread_cs);
 	w->next = winthreads;
 	winthreads = w;
@@ -441,7 +430,7 @@ static struct posthread {
 	struct posthread *next;
 	void (*func)(void *);
 	void *data;
-	const char *threadname;
+	char threadname[16];
 	pthread_t tid;
 	MT_Id mtid;
 	volatile ATOMIC_TYPE exited;
@@ -494,23 +483,13 @@ find_posthread(MT_Id tid)
 	return p;
 }
 
-void
-MT_thread_setname(const char *name)
-{
-	struct posthread *p;
-
-	p = pthread_getspecific(threadkey);
-	if (p)
-		p->threadname = name;
-}
-
 const char *
 MT_thread_getname(void)
 {
 	struct posthread *p;
 
 	p = pthread_getspecific(threadkey);
-	return p && p->threadname ? p->threadname : "unknown thread";
+	return p ? p->threadname : "unknown thread";
 }
 
 void
@@ -654,8 +633,9 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.data = arg,
 		.waiting = false,
 		.detached = (d == MT_THR_DETACHED),
-		.threadname = threadname,
 	};
+	strncpy(p->threadname, threadname, sizeof(p->threadname));
+	p->threadname[sizeof(p->threadname) - 1] = 0;
 	pthread_mutex_lock(&posthread_lock);
 	p->next = posthreads;
 	posthreads = p;
