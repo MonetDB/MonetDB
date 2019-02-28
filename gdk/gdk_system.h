@@ -91,6 +91,10 @@
 # include <semaphore.h>
 #endif
 
+#ifdef HAVE_DISPATCH_DISPATCH_H
+#include <dispatch/dispatch.h>
+#endif
+
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>	   /* prerequisite of sys/sysctl on OpenBSD */
 #endif
@@ -463,6 +467,24 @@ typedef struct {
 		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down complete\n", \
 				 MT_thread_getname(), __func__, (s)->name); \
 	} while (0)
+
+#elif defined(HAVE_DISPATCH_SEMAPHORE_CREATE)
+
+/* MacOS X */
+typedef struct {
+	dispatch_semaphore_t sema;
+	char name[16];
+} MT_Sema;
+
+#define MT_sema_init(s, nr, n)						\
+	do {								\
+		strncpy((s)->name, (n), sizeof((s)->name));		\
+		(s)->name[sizeof((s)->name) - 1] = 0;			\
+		(s)->sema = dispatch_semaphore_create((long) (nr));	\
+	} while (0)
+#define MT_sema_destroy(s)	dispatch_release((s)->sema)
+#define MT_sema_up(s)		dispatch_semaphore_signal((s)->sema)
+#define MT_sema_down(s)		dispatch_semaphore_wait((s)->sema, DISPATCH_TIME_FOREVER)
 
 #elif defined(_AIX) || defined(__MACH__)
 

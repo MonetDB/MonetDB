@@ -2375,6 +2375,7 @@ AC_HEADER_STDBOOL
 # NOTE: these header files are in alphabetical order to ease maintenance
 AC_CHECK_HEADERS([ \
 	dirent.h \
+	dispatch/dispatch.h \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
@@ -2563,6 +2564,7 @@ AC_CHECK_FUNCS([\
 	cbrt \
 	clock_gettime \
 	ctime_r \
+	dispatch_semaphore_create \
 	fallocate \
 	fcntl \
 	fsync \
