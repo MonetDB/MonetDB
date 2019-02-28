@@ -2391,12 +2391,23 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	case SQL_NOT_EXISTS:
 	{
 		symbol *lo = sc->data.sym;
-		sql_rel *sq = NULL;
+		sql_rel *sq = NULL, *outer = NULL;
 		sql_exp *le;
 		sql_subfunc *exists = NULL;
+		int correlated = 0;
 
 		ek.card = card_set;
 	       	le = rel_value_exp(sql, &sq, lo, f, ek);
+		/* correlated */
+		if (!le && sql->session->status != -ERR_AMBIGUOUS) {
+			/* reset error */
+			outer = *rel;
+			sq = *rel;
+			sql->session->status = 0;
+			sql->errstr[0] = 0;
+			le = rel_value_exp(sql, &sq, lo, f, ek);
+			correlated = 1;
+		}
 		if (!le)
 			return NULL;
 
@@ -2413,7 +2424,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			return exp_unop(sql->sa, le, exists);
 		} else {
 			sql_exp *e;
-			sql_rel *outer = *rel;
 			list *pexps = NULL;
 			int needproj = 0;
 
@@ -2425,7 +2435,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			if (sq->processed)
 				sq = rel_label(sql, sq, 0);
 			le = rel_lastexp(sql, sq);
-			*rel = rel_mark(sql, *rel, sq, NULL, exp_atom_int(sql->sa, 1), le, (sc->token == SQL_EXISTS)?mark_exists:mark_notexists);
+			if (!correlated)
+				*rel = rel_mark(sql, *rel, sq, NULL, exp_atom_int(sql->sa, 1), le, (sc->token == SQL_EXISTS)?mark_exists:mark_notexists);
+			else
+				*rel = sq;
 			e = rel_lastexp(sql, *rel);
 			if (*rel && needproj) {
 				*rel = rel_project(sql->sa, *rel, pexps);
@@ -4678,6 +4691,19 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 	return NULL;
 }
 
+static dlist *
+simple_selection(symbol *sq)
+{
+	if (sq->token == SQL_SELECT) {
+		SelectNode *sn;
+
+ 		sn = (SelectNode *) sq;
+
+		if (!sn->from && !sn->where && !sn->distinct)
+			return sn->selection;
+	}
+	return NULL;
+}
 
 static list *
 rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
@@ -4686,6 +4712,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 	sql_rel *or = rel;
 	list *exps = new_exp_list(sql->sa);
 	dnode *o = orderby->data.lval->h;
+	dlist *selection = NULL;
 
 	if (is_sql_orderby(f)) {
 		assert(is_project(rel->op));
@@ -4701,6 +4728,14 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 			int direction = order->data.lval->h->next->data.i_val;
 			sql_exp *e = NULL;
 
+			assert(order->data.lval->h->next->type == type_int);
+			if ((selection = simple_selection(col)) != NULL) {
+				dnode *o = selection->h;
+				order = o->data.sym;
+				col = order->data.lval->h->data.sym;
+				/* remove optional name from selection */
+				order->data.lval->h->next = NULL;
+			}
 			if (col->token == SQL_COLUMN || col->token == SQL_IDENT || col->token == SQL_ATOM) {
 				int is_last = 0;
 				exp_kind ek = {type_value, card_column, FALSE};
@@ -4728,7 +4763,6 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 				}
 			}
 
-			assert(order->data.lval->h->next->type == type_int);
 			if (or != rel)
 				return NULL;
 			if (!e && sql->session->status != -ERR_AMBIGUOUS && (col->token == SQL_COLUMN || col->token == SQL_IDENT)) {
@@ -5556,8 +5590,27 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 
 		if (se->token == SQL_WITH)
 			r = rel_with_query(sql, se);
-		else
+		else {
+			dlist *selection = NULL;
+
+			if ((selection = simple_selection(se)) != NULL) {
+				dnode *o = selection->h;
+				symbol *sym = o->data.sym;
+				symbol *col = sym->data.lval->h->data.sym;
+				char *aname = NULL;
+				sql_exp *e;
+
+				/* optional name from selection */
+				if (sym->data.lval->h->next) /* optional name */
+					aname = sym->data.lval->h->next->data.sval;
+				e = rel_value_exp2(sql, rel, col, f, ek, is_last);
+				if (aname)
+					exp_setname(sql->sa, e, NULL, aname);
+				*is_last = 1;
+				return e;
+			}
 			r = rel_subquery(sql, NULL, se, ek, APPLY_JOIN);
+		}
 
 		if (r) {
 			sql_exp *e;
@@ -5665,7 +5718,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 					r->r = rel_groupby(sql, r->r, NULL);
 					rs = rel_groupby_add_aggr(sql, r->r, rs);
 					rs = exp_column(sql->sa, exp_relname(rs), exp_name(rs), exp_subtype(rs), exp_card(rs), has_nil(rs), is_intern(rs));
-				} else if (is_sql_sel(f) && !r->r) {
+				} else if (is_sql_sel(f) && !r->r && !is_processed(r)) {
 					*rel = rel_project(sql->sa, *rel, new_exp_list(sql->sa));
 				}
 			}
@@ -5835,7 +5888,7 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int d
 
 		if (ce && exp_subtype(ce)) {
 			/* new relational, we need to rewrite */
-			if (!is_project(inner->op)) {
+			if (!is_project(inner->op) /*&& is_processed(inner) */) {
 				if (inner != o_inner && pre_prj) {
 					inner = rel_project(sql->sa, inner, pre_prj);
 					reset_processed(inner);
@@ -6016,7 +6069,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			   We try hard to keep a projection
 			   around this inner relation.
 			*/
-			if (!is_project(inner->op)) {
+			if (!is_project(inner->op) /*&& is_processed(inner)*/) {
 				if (inner != o_inner && pre_prj) {
 					inner = rel_project(sql->sa, inner, pre_prj);
 					reset_processed(inner);
