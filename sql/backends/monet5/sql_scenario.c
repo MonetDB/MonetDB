@@ -145,33 +145,51 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!s)
 		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
-	s->name = "S_Q_L";
-	s->language = "sql";
-	s->initSystem = NULL;
-	s->exitSystem = "SQLexit";
-	s->initClient = "SQLinitClient";
-	s->exitClient = "SQLexitClient";
-	s->reader = "SQLreader";
-	s->parser = "SQLparser";
-	s->engine = "SQLengine";
-	s->callback = "SQLcallback";
-
+	*s = (struct SCENARIO) {
+		.name = "S_Q_L",
+		.language = "sql",
+		.exitSystem = "SQLexit",
+		.exitSystemCmd = SQLexit,
+		.initClient = "SQLinitClient",
+		.initClientCmd = SQLinitClient,
+		.exitClient = "SQLexitClient",
+		.exitClientCmd = SQLexitClient,
+		.reader = "SQLreader",
+		.readerCmd = SQLreader,
+		.parser = "SQLparser",
+		.parserCmd = SQLparser,
+		.engine = "SQLengine",
+		.engineCmd = SQLengine,
+		.callback = "SQLcallback",
+		.callbackCmd = SQLcallback,
+		.next = s->next,
+	};
 	ms = getFreeScenario();
 	if (!ms)
 		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 
-	ms->name = "M_S_Q_L";
-	ms->language = "msql";
-	ms->initSystem = NULL;
-	ms->exitSystem = "SQLexit";
-	ms->initClient = "SQLinitClient";
-	ms->exitClient = "SQLexitClient";
-	ms->reader = "MALreader";
-	ms->parser = "MALparser";
-	ms->optimizer = "MALoptimizer";
-	/* ms->tactics = .. */
-	ms->engine = "MALengine";
-	ms->callback = "MALcallback";
+	*ms = (struct SCENARIO) {
+		.name = "M_S_Q_L",
+		.language = "msql",
+		.exitSystem = "SQLexit",
+		.exitSystemCmd = SQLexit,
+		.initClient = "SQLinitClient",
+		.initClientCmd = SQLinitClient,
+		.exitClient = "SQLexitClient",
+		.exitClientCmd = SQLexitClient,
+		.reader = "MALreader",
+		.readerCmd = MALreader,
+		.parser = "MALparser",
+		.parserCmd = MALparser,
+		.optimizer = "MALoptimizer",
+		.optimizerCmd = MALoptimizer,
+		.engine = "MALengine",
+		.engineCmd = MALengine,
+		.callback = "MALcallback",
+		.callbackCmd = MALcallback,
+		.next = s->next,
+	};
+
 	tmp = SQLinit(cntxt);
 	if (tmp != MAL_SUCCEED) {
 		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
