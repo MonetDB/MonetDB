@@ -423,7 +423,7 @@ static void GDKlockHome(int farmid);
 
 #ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
-static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
+static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslk");
 #endif
 #endif
 
@@ -478,29 +478,20 @@ GDKinit(opt *set, int setlen)
 #endif
 #endif
 	for (i = 0; i <= BBP_BATMASK; i++) {
-#ifdef LOCK_STATS
-		snprintf(GDKbatLock[i].swapname, sizeof(GDKbatLock[i].swapname),
-			 "GDKswapLock%d", i);
-		snprintf(GDKbatLock[i].hashname, sizeof(GDKbatLock[i].hashname),
-			 "GDKhashLock%d", i);
-		snprintf(GDKbatLock[i].impsname, sizeof(GDKbatLock[i].impsname),
-			 "GDKimpsLock%d", i);
-#endif
-		/* MT_lock_init only uses second argument if LOCK_STATS set */
-		MT_lock_init(&GDKbatLock[i].swap, GDKbatLock[i].swapname);
-		MT_lock_init(&GDKbatLock[i].hash, GDKbatLock[i].hashname);
-		MT_lock_init(&GDKbatLock[i].imprints, GDKbatLock[i].impsname);
+		char name[16];
+		snprintf(name, sizeof(name), "GDKswapLock%d", i);
+		MT_lock_init(&GDKbatLock[i].swap, name);
+		snprintf(name, sizeof(name), "GDKhashLock%d", i);
+		MT_lock_init(&GDKbatLock[i].hash, name);
+		snprintf(name, sizeof(name), "GDKimpsLock%d", i);
+		MT_lock_init(&GDKbatLock[i].imprints, name);
 	}
 	for (i = 0; i <= BBP_THREADMASK; i++) {
-#ifdef LOCK_STATS
-		snprintf(GDKbbpLock[i].cachename, sizeof(GDKbbpLock[i].cachename),
-			 "GDKcacheLock%d", i);
-		snprintf(GDKbbpLock[i].trimname, sizeof(GDKbbpLock[i].trimname),
-			 "GDKtrimLock%d", i);
-#endif
-		/* MT_lock_init only uses second argument if LOCK_STATS set */
-		MT_lock_init(&GDKbbpLock[i].cache, GDKbbpLock[i].cachename);
-		MT_lock_init(&GDKbbpLock[i].trim, GDKbbpLock[i].trimname);
+		char name[16];
+		snprintf(name, sizeof(name), "GDKcacheLock%d", i);
+		MT_lock_init(&GDKbbpLock[i].cache, name);
+		snprintf(name, sizeof(name), "GDKtrimLock%d", i);
+		MT_lock_init(&GDKbbpLock[i].trim, name);
 		GDKbbpLock[i].free = 0;
 	}
 	errno = 0;

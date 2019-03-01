@@ -214,17 +214,16 @@ gdk_export int MT_join_thread(MT_Id t);
 		TEMDEBUG fprintf(stderr, "#%s: %s: locking %s complete\n", \
 				 MT_thread_getname(), __func__, (l)->name); \
 	} while (0)
-#define _DBG_LOCK_INIT(l, n)						\
+#define _DBG_LOCK_INIT(l)						\
 	do {								\
 		(l)->count = (l)->contention = (l)->sleep = 0;		\
-		(l)->name = (n);					\
 		(l)->locker = NULL;					\
 		(l)->thread = NULL;					\
 		/* if name starts with "sa_" don't link in GDKlocklist */ \
 		/* since the lock is in memory that is governed by the */ \
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
-		if (strncmp((n), "sa_", 3) != 0) {			\
+		if (strncmp((l)->name, "sa_", 3) != 0) {		\
 			MT_Lock * volatile _p;				\
 			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
@@ -262,7 +261,7 @@ gdk_export int MT_join_thread(MT_Id t);
 #define _DBG_LOCK_CONTENTION(l)		((void) 0)
 #define _DBG_LOCK_SLEEP(l)		((void) 0)
 #define _DBG_LOCK_COUNT_2(l)		((void) 0)
-#define _DBG_LOCK_INIT(l, n)		((void) 0)
+#define _DBG_LOCK_INIT(l)		((void) 0)
 #define _DBG_LOCK_DESTROY(l)		((void) 0)
 #define _DBG_LOCK_LOCKER(l)		((void) 0)
 #define _DBG_LOCK_UNLOCKER(l)		((void) 0)
@@ -274,22 +273,24 @@ gdk_export int MT_join_thread(MT_Id t);
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef struct MT_Lock {
 	HANDLE lock;
+	char name[16];
 #ifdef LOCK_STATS
 	size_t count;
 	ATOMIC_TYPE volatile contention;
 	ATOMIC_TYPE volatile sleep;
 	struct MT_Lock * volatile next;
-	const char *name;
 	const char *locker;
 	const char *thread;
 #endif
 } MT_Lock;
 
-#define MT_lock_init(l, n)				\
-	do {						\
-		assert((l)->lock == NULL);		\
-		(l)->lock = CreateMutex(NULL, 0, NULL);	\
-		_DBG_LOCK_INIT(l, n);			\
+#define MT_lock_init(l, n)					\
+	do {							\
+		assert((l)->lock == NULL);			\
+		(l)->lock = CreateMutex(NULL, 0, NULL);		\
+		strncpy((l)->name, (n), sizeof((l)->name));	\
+		(l)->name[sizeof((l)->name) - 1] = 0;		\
+		_DBG_LOCK_INIT(l);				\
 	} while (0)
 #define MT_lock_set(l)							\
 	do {								\
@@ -323,20 +324,22 @@ typedef struct MT_Lock {
 #else
 typedef struct MT_Lock {
 	pthread_mutex_t lock;
+	char name[16];
 #ifdef LOCK_STATS
 	size_t count;
 	ATOMIC_TYPE volatile contention;
 	ATOMIC_TYPE volatile sleep;
 	struct MT_Lock * volatile next;
-	const char *name;
 	const char *locker;
 	const char *thread;
 #endif
 } MT_Lock;
-#define MT_lock_init(l, n)				\
-	do {						\
-		pthread_mutex_init(&(l)->lock, 0);	\
-		_DBG_LOCK_INIT(l, n);			\
+#define MT_lock_init(l, n)					\
+	do {							\
+		pthread_mutex_init(&(l)->lock, 0);		\
+		strncpy((l)->name, (n), sizeof((l)->name));	\
+		(l)->name[sizeof((l)->name) - 1] = 0;		\
+		_DBG_LOCK_INIT(l);				\
 	} while (0)
 #define MT_lock_set(l)							\
 	do {								\
@@ -367,7 +370,7 @@ typedef struct MT_Lock {
 #ifdef LOCK_STATS
 #define MT_LOCK_INITIALIZER(n)	= { .lock = PTHREAD_MUTEX_INITIALIZER, .next = (struct MT_Lock *) -1, .name = n, }
 #else
-#define MT_LOCK_INITIALIZER(n)	= { .lock = PTHREAD_MUTEX_INITIALIZER, }
+#define MT_LOCK_INITIALIZER(n)	= { .lock = PTHREAD_MUTEX_INITIALIZER, .name = n, }
 #endif
 #endif
 #endif
@@ -378,12 +381,12 @@ typedef struct MT_Lock {
  * a linked list of active locks */
 typedef struct MT_Lock {
 	ATOMIC_FLAG volatile lock;
+	char name[16];
 #ifdef LOCK_STATS
 	size_t count;
 	ATOMIC_TYPE volatile contention;
 	ATOMIC_TYPE volatile sleep;
 	struct MT_Lock * volatile next;
-	const char *name;
 	const char *locker;
 	const char *thread;
 #endif
@@ -409,10 +412,12 @@ typedef struct MT_Lock {
 		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
 #define MT_lock_try(l)	(ATOMIC_TAS((l)->lock, dummy) == 0)
-#define MT_lock_init(l, n)			\
-	do {					\
-		ATOMIC_CLEAR((l)->lock, dummy);	\
-		_DBG_LOCK_INIT(l, n);		\
+#define MT_lock_init(l, n)					\
+	do {							\
+		ATOMIC_CLEAR((l)->lock, dummy);			\
+		strncpy((l)->name, (n), sizeof((l)->name));	\
+		(l)->name[sizeof((l)->name) - 1] = 0;		\
+		_DBG_LOCK_INIT(l);				\
 	} while (0)
 #define MT_lock_unset(l)				\
 		do {					\
@@ -424,7 +429,7 @@ typedef struct MT_Lock {
 #ifdef LOCK_STATS
 #define MT_LOCK_INITIALIZER(n)	= { .next = (struct MT_Lock *) -1, .name = n, }
 #else
-#define MT_LOCK_INITIALIZER(n)	= { 0 }
+#define MT_LOCK_INITIALIZER(n)	= { .name = n, }
 #endif
 
 #endif

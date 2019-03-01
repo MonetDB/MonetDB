@@ -315,21 +315,12 @@ typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
 	MT_Lock imprints;
-#ifdef LOCK_STATS
-	char swapname[16];
-	char hashname[16];
-	char impsname[16];
-#endif
 } batlock_t;
 
 typedef struct {
 	MT_Lock cache;
 	MT_Lock trim;
 	bat free;
-#ifdef LOCK_STATS
-	char cachename[16];
-	char trimname[16];
-#endif
 } bbplock_t;
 
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
