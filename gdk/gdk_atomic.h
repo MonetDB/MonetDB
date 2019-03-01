@@ -64,9 +64,7 @@
 #define ATOMIC_TAS(var, lck)	(AO_test_and_set_full(&var) != AO_TS_CLEAR)
 #define ATOMIC_ISSET(var, lck)		(var != AO_TS_CLEAR)
 
-#else
-
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#elif defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <intrin.h>
 
@@ -272,8 +270,6 @@ __ATOMIC_ISSET(volatile ATOMIC_FLAG *var, pthread_mutex_t *lck)
 	return val != 0;
 }
 #define ATOMIC_ISSET(var, lck)		__ATOMIC_ISSET(&var, &(lck).lock)
-
-#endif
 
 #endif	/* LIBATOMIC_OPS */
 
