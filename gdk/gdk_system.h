@@ -297,8 +297,10 @@ typedef struct MT_Lock {
 		_DBG_LOCK_COUNT_0(l);					\
 		if (WaitForSingleObject((l)->lock, 0) != WAIT_OBJECT_0) { \
 			_DBG_LOCK_CONTENTION(l);			\
+			MT_thread_setlockwait(l);			\
 			while (WaitForSingleObject((l)->lock, INFINITE) != WAIT_OBJECT_0) \
 				;					\
+			MT_thread_setlockwait(NULL);			\
 		}							\
 		_DBG_LOCK_LOCKER(l);					\
 		_DBG_LOCK_COUNT_2(l);					\
@@ -341,8 +343,10 @@ typedef struct MT_Lock {
 		_DBG_LOCK_COUNT_0(l);					\
 		if (pthread_mutex_trylock(&(l)->lock) != 0) {		\
 			_DBG_LOCK_CONTENTION(l);			\
+			MT_thread_setlockwait(l);			\
 			while (pthread_mutex_lock(&(l)->lock) != 0)	\
 				;					\
+			MT_thread_setlockwait(NULL);			\
 		}							\
 		_DBG_LOCK_LOCKER(l);					\
 		_DBG_LOCK_COUNT_2(l);					\
@@ -392,12 +396,14 @@ typedef struct MT_Lock {
 			/* we didn't get the lock */			\
 			int _spincnt = GDKnr_threads > 1 ? 0 : 1023;	\
 			_DBG_LOCK_CONTENTION(l);			\
+			MT_thread_setlockwait(l);			\
 			do {						\
 				if (++_spincnt >= 1024) {		\
 					_DBG_LOCK_SLEEP(l);		\
 					MT_sleep_ms(1);			\
 				}					\
 			} while (ATOMIC_TAS((l)->lock, dummy) != 0);	\
+			MT_thread_setlockwait(NULL);			\
 		}							\
 		_DBG_LOCK_LOCKER(l);					\
 		_DBG_LOCK_COUNT_2(l);					\
@@ -467,8 +473,10 @@ typedef struct {
 		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down...\n",	\
 				 MT_thread_getname(), __func__, (s)->name); \
 		if (WaitForSingleObject((s)->sema, 0) != WAIT_OBJECT_0) { \
+			MT_thread_setsemawait(s);			\
 			while (WaitForSingleObject((s)->sema, INFINITE) != WAIT_OBJECT_0) \
 				;					\
+			MT_thread_setsemawait(NULL);			\
 		}							\
 		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down complete\n", \
 				 MT_thread_getname(), __func__, (s)->name); \
@@ -530,10 +538,12 @@ typedef struct {
 				 MT_thread_getname(), __func__, (s)->name); \
 		pthread_mutex_lock(&(s)->mutex);			\
 		if (--(s)->cnt < 0) {					\
+			MT_thread_setsemawait(s);			\
 			do {						\
 				pthread_cond_wait(&(s)->cond,		\
 						  &(s)->mutex);		\
 			} while ((s)->cnt < 0);				\
+			MT_thread_setsemawait(NULL);			\
 			pthread_mutex_unlock(&(s)->mutex);		\
 		}							\
 		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down complete\n", \
@@ -564,13 +574,20 @@ typedef struct {
 	do {								\
 		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down...\n",	\
 				 MT_thread_getname(), __func__, (s)->name); \
-		while (sem_wait(&(s)->sema) != 0)			\
-			;						\
+		if (sem_trywait(&(s)->sema) != 0) {			\
+			MT_thread_setsemawait(s);			\
+			while (sem_wait(&(s)->sema) != 0)		\
+				;					\
+			MT_thread_setsemawait(NULL);			\
+		}							\
 		TEMDEBUG fprintf(stderr, "#%s: %s: sema %s down complete\n", \
 				 MT_thread_getname(), __func__, (s)->name); \
 	} while (0)
 
 #endif
+
+gdk_export void MT_thread_setlockwait(MT_Lock *lock);
+gdk_export void MT_thread_setsemawait(MT_Sema *sema);
 
 gdk_export int MT_check_nr_cores(void);
 
