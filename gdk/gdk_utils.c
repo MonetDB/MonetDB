@@ -52,7 +52,7 @@ static char THRprintbuf[BUFSIZ];
 #define chdir _chdir
 #endif
 
-static volatile ATOMIC_FLAG GDKstopped = ATOMIC_FLAG_INIT;
+static volatile ATOMIC_TYPE GDKstopped = 0;
 static void GDKunlockHome(int farmid);
 
 static MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
@@ -667,7 +667,7 @@ static ThreadRec GDKthreads[THREADS];
 bool
 GDKexiting(void)
 {
-	return (bool) ATOMIC_ISSET(GDKstopped, GDKstoppedLock);
+	return (bool) (ATOMIC_GET(GDKstopped, GDKstoppedLock) > 0);
 }
 
 static struct serverthread {
@@ -680,7 +680,7 @@ GDKprepareExit(void)
 {
 	struct serverthread *st;
 
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0)
+	if (ATOMIC_ADD(GDKstopped, 1, GDKstoppedLock) > 0)
 		return;
 
 	MT_lock_set(&GDKthreadLock);
