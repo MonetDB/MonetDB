@@ -148,8 +148,8 @@ GDKlockstatistics(int what)
 		    (what == 2 && l->contention) ||
 		    (what == 3 && lock_isset(l)))
 			fprintf(stderr, "# %-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
-				l->name ? l->name : "unknown",
-				l->count, (size_t) l->contention, (size_t) l->sleep,
+				l->name, l->count, (size_t) l->contention,
+				(size_t) l->sleep,
 				lock_isset(l) ? "locked" : "",
 				l->locker ? l->locker : "",
 				l->thread ? l->thread : "");
@@ -170,6 +170,9 @@ static struct winthread {
 	DWORD tid;
 	void (*func) (void *);
 	void *data;
+	MT_Lock *lockwait;	/* lock we're waiting for */
+	MT_Sema *semawait;	/* semaphore we're waiting for */
+	struct winthread *joinwait; /* process we are joining with */
 	volatile ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
 	char threadname[16];
@@ -233,6 +236,24 @@ MT_thread_setdata(void *data)
 		w->data = data;
 }
 
+void
+MT_thread_setlockwait(MT_Lock *lock)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w)
+		w->lockwait = lock;
+}
+
+void
+MT_thread_setsemawait(MT_Sema *sema)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w)
+		w->semawait = sema;
+}
+
 void *
 MT_thread_getdata(void)
 {
@@ -283,6 +304,7 @@ join_threads(void)
 {
 	bool waited;
 
+	struct winthread *self = TlsGetValue(threadslot);
 	EnterCriticalSection(&winthread_cs);
 	do {
 		waited = false;
@@ -291,7 +313,9 @@ join_threads(void)
 				w->waiting = true;
 				LeaveCriticalSection(&winthread_cs);
 				THRDDEBUG fprintf(stderr, "#join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
+				self->joinwait = w;
 				WaitForSingleObject(w->hdl, INFINITE);
+				self->joinwait = NULL;
 				CloseHandle(w->hdl);
 				rm_winthread(w);
 				waited = true;
@@ -308,6 +332,7 @@ join_detached_threads(void)
 {
 	bool waited;
 
+	struct winthread *self = TlsGetValue(threadslot);
 	EnterCriticalSection(&winthread_cs);
 	do {
 		waited = false;
@@ -316,7 +341,9 @@ join_detached_threads(void)
 				w->waiting = true;
 				LeaveCriticalSection(&winthread_cs);
 				THRDDEBUG fprintf(stderr, "#join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
+				self->joinwait = w;
 				WaitForSingleObject(w->hdl, INFINITE);
+				self->joinwait = NULL;
 				CloseHandle(w->hdl);
 				rm_winthread(w);
 				waited = true;
@@ -388,8 +415,11 @@ MT_join_thread(MT_Id t)
 	if (w == NULL || w->hdl == NULL)
 		return -1;
 	THRDDEBUG fprintf(stderr, "#join \"%s\" \"%s\"\n", MT_thread_getname(), w->threadname);
-	if (WaitForSingleObject(w->hdl, INFINITE) == WAIT_OBJECT_0 &&
-	    CloseHandle(w->hdl)) {
+	struct winthread *self = TlsGetValue(threadslot);
+	self->joinwait = w;
+	DWORD ret = WaitForSingleObject(w->hdl, INFINITE);
+	self->joinwait = NULL;
+	if (ret == WAIT_OBJECT_0 && CloseHandle(w->hdl)) {
 		rm_winthread(w);
 		return 0;
 	}
@@ -429,6 +459,9 @@ static struct posthread {
 	struct posthread *next;
 	void (*func)(void *);
 	void *data;
+	MT_Lock *lockwait;	/* lock we're waiting for */
+	MT_Sema *semawait;	/* semaphore we're waiting for */
+	struct posthread *joinwait; /* process we are joining with */
 	char threadname[16];
 	pthread_t tid;
 	MT_Id mtid;
@@ -508,6 +541,24 @@ MT_thread_getdata(void)
 	return p ? p->data : NULL;
 }
 
+void
+MT_thread_setlockwait(MT_Lock *lock)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p)
+		p->lockwait = lock;
+}
+
+void
+MT_thread_setsemawait(MT_Sema *sema)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p)
+		p->semawait = sema;
+}
+
 #ifdef HAVE_PTHREAD_SIGMASK
 static void
 MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask)
@@ -558,6 +609,7 @@ join_threads(void)
 {
 	bool waited;
 
+	struct posthread *self = pthread_getspecific(threadkey);
 	pthread_mutex_lock(&posthread_lock);
 	do {
 		waited = false;
@@ -566,7 +618,9 @@ join_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				THRDDEBUG fprintf(stderr, "#join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
+				self->joinwait = p;
 				pthread_join(p->tid, NULL);
+				self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -582,6 +636,7 @@ join_detached_threads(void)
 {
 	bool waited;
 
+	struct posthread *self = pthread_getspecific(threadkey);
 	pthread_mutex_lock(&posthread_lock);
 	do {
 		waited = false;
@@ -590,7 +645,9 @@ join_detached_threads(void)
 				p->waiting = true;
 				pthread_mutex_unlock(&posthread_lock);
 				THRDDEBUG fprintf(stderr, "#join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
+				self->joinwait = p;
 				pthread_join(p->tid, NULL);
+				self->joinwait = NULL;
 				rm_posthread(p);
 				waited = true;
 				pthread_mutex_lock(&posthread_lock);
@@ -697,7 +754,11 @@ MT_join_thread(MT_Id t)
 	if (p == NULL)
 		return -1;
 	THRDDEBUG fprintf(stderr, "#join \"%s\" \"%s\"\n", MT_thread_getname(), p->threadname);
-	if ((ret = pthread_join(p->tid, NULL)) != 0) {
+	struct posthread *self = pthread_getspecific(threadkey);
+	self->joinwait = p;
+	ret = pthread_join(p->tid, NULL);
+	self->joinwait = NULL;
+	if (ret != 0) {
 		fprintf(stderr, "#MT_join_thread: joining thread failed: %s\n",
 			strerror(ret));
 		return -1;

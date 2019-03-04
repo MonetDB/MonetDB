@@ -733,6 +733,9 @@
 
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
+/* number of elements in an array */
+#define NELEM(arr)	(sizeof(arr) / sizeof(arr[0]))
+
 /* information about the columns in a result set */
 struct MapiColumn {
 	char *tablename;
@@ -1138,7 +1141,7 @@ wsaerror(int err)
 {
 	int i;
 
-	for (i = 0; i < sizeof(wsaerrlist) / sizeof(wsaerrlist[0]); i++)
+	for (i = 0; i < NELEM(wsaerrlist); i++)
 		if (wsaerrlist[i].e == err)
 			return wsaerrlist[i].m;
 	return "Unknown error";
@@ -2237,7 +2240,7 @@ mapi_reconnect(Mapi mid)
 							socks[i].owner = st.st_uid;
 							socks[i++].port = atoi(e->d_name + 11);
 						}
-						if (i == sizeof(socks) / sizeof(socks[0]))
+						if (i == NELEM(socks))
 							break;
 					}
 					closedir(d);
@@ -2775,7 +2778,7 @@ mapi_reconnect(Mapi mid)
 					break;
 				case '^':
 					r = mid->redirects;
-					m = sizeof(mid->redirects) / sizeof(mid->redirects[0]) - 1;
+					m = NELEM(mid->redirects) - 1;
 					while (*r != NULL && m > 0) {
 						m--;
 						r++;
