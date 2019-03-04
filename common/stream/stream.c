@@ -2736,7 +2736,21 @@ socket_wstream(SOCKET sock, const char *name)
 /* streams working on an open file pointer */
 
 #ifdef _MSC_VER
-/* special case code for reading from/writing to a Windows cmd window */
+/* special case code for reading from/writing to a Windows console and
+ * for reading from a Windows pipe
+ *
+ * For reading from and writing to the console we can use a wide
+ * character interface which means that we are independent of the code
+ * page being used.  We can translate the wide characters (which are
+ * Unicode code points) easily to UTF-8.
+ *
+ * Both for reading from the console and from a pipe, we avoid hanging
+ * (waiting for input) in the read function.  Instead, we only call
+ * the read function when we know there is input available.  This is
+ * to prevent a deadlock situation, especially for reading from pipes,
+ * when another thread were to also interact with pipes (as happend in
+ * the scipy Python module as used in the sql/backends/monet5/pyapi05
+ * test). */
 
 struct console {
 	HANDLE h;
@@ -2760,6 +2774,8 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	if (n == 0)
 		return 0;
 	if (c->rd == c->len) {
+		while (WaitForSingleObject(c->h, INFINITE) == WAIT_TIMEOUT)
+			;
 		if (!ReadConsoleW(c->h, c->wbuf, 8192, &c->len, NULL)) {
 			s->errnr = MNSTR_READ_ERROR;
 			return -1;
@@ -2914,6 +2930,58 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	return (ssize_t) ((p - (const unsigned char *) buf) / elmsize);
 }
 
+static ssize_t
+pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
+{
+	HANDLE h = s->stream_data.p;
+	size_t n = elmsize * cnt;
+	unsigned char *p = buf;
+	DWORD nread;
+
+	if (h == NULL) {
+		s->errnr = MNSTR_READ_ERROR;
+		return -1;
+	}
+	if (n == 0)
+		return 0;
+	for (;;) {
+		DWORD ret = PeekNamedPipe(h, NULL, 0, NULL, &nread, NULL);
+		if (ret == 0) {
+			if (GetLastError() == ERROR_BROKEN_PIPE)
+				return 0;
+			s->errnr = MNSTR_READ_ERROR;
+			return -1;
+		}
+		if (nread > 0)
+			break;
+		Sleep(100);
+	}
+	if ((size_t) nread < n)
+		n = (size_t) nread;
+	if (!ReadFile(h, buf, (DWORD) n, &nread, NULL)) {
+		s->errnr = MNSTR_READ_ERROR;
+		return -1;
+	}
+	/* when in text mode, convert \r\n line endings to \n */
+	if (!s->binary) {
+		char *p1, *p2, *pe;
+
+		p1 = buf;
+		pe = p1 + nread;
+		while (p1 < pe && *p1 != '\r')
+			p1++;
+		p2 = p1;
+		while (p1 < pe) {
+			if (*p1 == '\r' /*&& p1[1] == '\n'*/)
+				nread--;
+			else
+				*p2++ = *p1;
+			p1++;
+		}
+	}
+	return nread / elmsize;
+}
+
 static void
 console_destroy(stream *s)
 {
@@ -3008,26 +3076,43 @@ file_rastream(FILE *restrict fp, const char *restrict name)
 		}
 	}
 #ifdef _MSC_VER
-	if (fileno(fp) == 0 && isatty(0)) {
-		struct console *c = malloc(sizeof(struct console));
-		if (c == NULL) {
-			destroy(s);
-			return NULL;
+	if (fp == stdin) {
+		HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+
+		switch (GetFileType(h)) {
+		case FILE_TYPE_PIPE:
+			s->stream_data.p = h;
+			s->read = pipe_read;
+			s->write = NULL;
+			s->destroy = destroy;
+			s->close = NULL;
+			s->flush = NULL;
+			s->fsync = NULL;
+			s->fgetpos = NULL;
+			s->fsetpos = NULL;
+			break;
+		case FILE_TYPE_CHAR: {
+			struct console *c = malloc(sizeof(struct console));
+			if (c == NULL) {
+				destroy(s);
+				return NULL;
+			}
+			s->stream_data.p = c;
+			*c = (struct console) {
+				.h = h,
+			};
+			s->read = console_read;
+			s->write = NULL;
+			s->destroy = console_destroy;
+			s->close = NULL;
+			s->flush = NULL;
+			s->fsync = NULL;
+			s->fgetpos = NULL;
+			s->fsetpos = NULL;
+			s->isutf8 = true;
+			break;
 		}
-		s->stream_data.p = c;
-		*c = (struct console) {
-			.h = GetStdHandle(STD_INPUT_HANDLE),
-		};
-		s->read = console_read;
-		s->write = NULL;
-		s->destroy = console_destroy;
-		s->close = NULL;
-		s->flush = NULL;
-		s->fsync = NULL;
-		s->fgetpos = NULL;
-		s->fsetpos = NULL;
-		s->isutf8 = true;
-		return s;
+		}
 	}
 #endif
 	return s;
