@@ -1374,7 +1374,8 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 extern sql_rel *rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r);
 
 static sql_rel *
-validate_merge_update_delete(mvc *sql, sql_table *t, sql_rel *upd_del, sql_rel *bt, sql_rel *join_rel)
+validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_table, tokens upd_token,
+							 sql_rel *upd_del, sql_rel *bt, sql_rel *join_rel)
 {
 	char buf[BUFSIZ];
 	sql_exp *aggr, *bigger, *ex;
@@ -1382,6 +1383,9 @@ validate_merge_update_delete(mvc *sql, sql_table *t, sql_rel *upd_del, sql_rel *
 	sql_subfunc *bf;
 	list *exps = new_exp_list(sql->sa);
 	sql_rel *groupby, *res;
+	const char *join_rel_name = rel_name(joined_table);
+
+	assert(upd_token == SQL_UPDATE || upd_token == SQL_DELETE);
 
 	groupby = rel_groupby(sql, rel_dup(join_rel), NULL); //aggregate by all column and count (distinct values)
 	groupby->r = rel_projections(sql, bt, NULL, 1, 0);
@@ -1404,7 +1408,11 @@ validate_merge_update_delete(mvc *sql, sql_table *t, sql_rel *upd_del, sql_rel *
 	exp_label(sql->sa, aggr, ++sql->label); //count all of them, if there is at least one, throw the exception
 
 	ex = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr), is_intern(aggr));
-	snprintf(buf, BUFSIZ, "MERGE: There are rows in '%s.%s' with multiple matches on source relation", t->s->base.name, t->base.name);
+	snprintf(buf, BUFSIZ, "MERGE %s: Multiple rows in the input relation%s%s%s match the same row in the target %s '%s%s%s'",
+			 (upd_token == SQL_DELETE) ? "DELETE" : "UPDATE",
+			 join_rel_name ? " '" : "", join_rel_name ? join_rel_name : "", join_rel_name ? "'" : "",
+			 alias ? "relation" : "table",
+			 alias ? alias : t->s->base.name, alias ? "" : ".", alias ? "" : t->base.name);
 	ex = exp_exception(sql->sa, ex, buf);
 
 	res = rel_exception(sql->sa, groupby, NULL, list_append(new_exp_list(sql->sa), ex));
@@ -1457,7 +1465,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 
 	for(dnode *m = merge_list->h; m; m = m->next) {
 		symbol *sym = m->data.sym, *opt_search, *action;
-		int token = sym->token;
+		tokens token = sym->token;
 		dlist* dl = sym->data.lval, *sts;
 		opt_search = dl->h->data.sym;
 		action = dl->h->next->data.sym;
@@ -1467,7 +1475,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: search condition not yet supported");
 
 		if(token == SQL_MERGE_MATCH) {
-			int uptdel = action->token;
+			tokens uptdel = action->token;
 			sql_exp *e;
 
 			if((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
@@ -1511,7 +1519,7 @@ merge_into_table(mvc *sql, dlist *qname, str alias, symbol *tref, symbol *search
 			} else {
 				assert(0);
 			}
-			if(!upd_del || !(upd_del = validate_merge_update_delete(sql, t, upd_del, bt, join_rel)))
+			if(!upd_del || !(upd_del = validate_merge_update_delete(sql, t, alias, joined, uptdel, upd_del, bt, join_rel)))
 				return NULL;
 		} else if(token == SQL_MERGE_NO_MATCH) {
 			if((processed & MERGE_INSERT) == MERGE_INSERT)
