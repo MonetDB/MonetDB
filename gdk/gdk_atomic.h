@@ -48,22 +48,31 @@
 
 #if ATOMIC_LLONG_LOCK_FREE == 2
 #define ATOMIC_TYPE			atomic_ullong
+#define ATOMIC_CAST			unsigned long long
 #elif ATOMIC_LONG_LOCK_FREE == 2
 #define ATOMIC_TYPE			atomic_ulong
+#define ATOMIC_CAST			unsigned long
 #elif ATOMIC_INT_LOCK_FREE == 2
 #define ATOMIC_TYPE			atomic_uint
+#define ATOMIC_CAST			unsigned int
 #elif ATOMIC_LLONG_LOCK_FREE == 1
 #define ATOMIC_TYPE			atomic_ullong
+#define ATOMIC_CAST			unsigned long long
 #elif ATOMIC_LONG_LOCK_FREE == 1
 #define ATOMIC_TYPE			atomic_ulong
+#define ATOMIC_CAST			unsigned long
 #elif ATOMIC_INT_LOCK_FREE == 1
 #define ATOMIC_TYPE			atomic_uint
+#define ATOMIC_CAST			unsigned int
+#else
+#define ATOMIC_TYPE			atomic_ullong
+#define ATOMIC_CAST			unsigned long long
 #endif
 
 #define ATOMIC_GET(var, lck)		atomic_load(&var)
-#define ATOMIC_SET(var, val, lck)	atomic_store(&var, val)
-#define ATOMIC_ADD(var, val, lck)	atomic_fetch_add(&var, val)
-#define ATOMIC_SUB(var, val, lck)	atomic_fetch_sub(&var, val)
+#define ATOMIC_SET(var, val, lck)	atomic_store(&var, (ATOMIC_CAST) (val))
+#define ATOMIC_ADD(var, val, lck)	atomic_fetch_add(&var, (ATOMIC_CAST) (val))
+#define ATOMIC_SUB(var, val, lck)	atomic_fetch_sub(&var, (ATOMIC_CAST) (val))
 #define ATOMIC_INC(var, lck)		(atomic_fetch_add(&var, 1) + 1)
 #define ATOMIC_DEC(var, lck)		(atomic_fetch_sub(&var, 1) - 1)
 
@@ -82,9 +91,9 @@
 #define ATOMIC_VAR_INIT(val)		(val)
 
 #define ATOMIC_GET(var, lck)		AO_load_full(&var)
-#define ATOMIC_SET(var, val, lck)	AO_store_full(&var, (val))
-#define ATOMIC_ADD(var, val, lck)	AO_fetch_and_add(&var, (val))
-#define ATOMIC_SUB(var, val, lck)	AO_fetch_and_add(&var, -(val))
+#define ATOMIC_SET(var, val, lck)	AO_store_full(&var, (AO_t) (val))
+#define ATOMIC_ADD(var, val, lck)	AO_fetch_and_add(&var, (AO_t) (val))
+#define ATOMIC_SUB(var, val, lck)	AO_fetch_and_add(&var, (AO_t) -(val))
 #define ATOMIC_INC(var, lck)		(AO_fetch_and_add1(&var) + 1)
 #define ATOMIC_DEC(var, lck)		(AO_fetch_and_sub1(&var) - 1)
 
@@ -105,9 +114,9 @@
 #define ATOMIC_VAR_INIT(val)		(val)
 
 #define ATOMIC_GET(var, lck)		var
-#define ATOMIC_SET(var, val, lck)	_InterlockedExchange64(&var, (val))
-#define ATOMIC_ADD(var, val, lck)	_InterlockedExchangeAdd64(&var, val)
-#define ATOMIC_SUB(var, val, lck)	_InterlockedExchangeAdd64(&var, -(val))
+#define ATOMIC_SET(var, val, lck)	_InterlockedExchange64(&var, (int64_t) (val))
+#define ATOMIC_ADD(var, val, lck)	_InterlockedExchangeAdd64(&var, (int64_t) (val))
+#define ATOMIC_SUB(var, val, lck)	_InterlockedExchangeAdd64(&var, -(int64_t) (val))
 #define ATOMIC_INC(var, lck)		_InterlockedIncrement64(&var)
 #define ATOMIC_DEC(var, lck)		_InterlockedDecrement64(&var)
 
@@ -123,9 +132,9 @@
 #define ATOMIC_VAR_INIT(val)		(val)
 
 #define ATOMIC_GET(var, lck)		var
-#define ATOMIC_SET(var, val, lck)	_InterlockedExchange(&var, (val))
-#define ATOMIC_ADD(var, val, lck)	_InterlockedExchangeAdd(&var, (val))
-#define ATOMIC_SUB(var, val, lck)	_InterlockedExchangeAdd(&var, -(val))
+#define ATOMIC_SET(var, val, lck)	_InterlockedExchange(&var, (int) (val))
+#define ATOMIC_ADD(var, val, lck)	_InterlockedExchangeAdd(&var, (int) (val))
+#define ATOMIC_SUB(var, val, lck)	_InterlockedExchangeAdd(&var, -(int) (val))
 #define ATOMIC_INC(var, lck)		_InterlockedIncrement(&var)
 #define ATOMIC_DEC(var, lck)		_InterlockedDecrement(&var)
 
@@ -157,9 +166,9 @@
 
 /* the new way of doing this according to GCC */
 #define ATOMIC_GET(var, lck)		__atomic_load_n(&var, __ATOMIC_SEQ_CST)
-#define ATOMIC_SET(var, val, lck)	__atomic_store_n(&var, (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_ADD(var, val, lck)	__atomic_fetch_add(&var, (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_SUB(var, val, lck)	__atomic_fetch_sub(&var, (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_SET(var, val, lck)	__atomic_store_n(&var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_ADD(var, val, lck)	__atomic_fetch_add(&var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_SUB(var, val, lck)	__atomic_fetch_sub(&var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_INC(var, lck)		__atomic_add_fetch(&var, 1, __ATOMIC_SEQ_CST)
 #define ATOMIC_DEC(var, lck)		__atomic_sub_fetch(&var, 1, __ATOMIC_SEQ_CST)
 
@@ -172,9 +181,9 @@
 
 /* the old way of doing this, (still?) needed for Intel compiler on Linux */
 #define ATOMIC_GET(var, lck)		var
-#define ATOMIC_SET(var, val, lck)	(var = (val))
-#define ATOMIC_ADD(var, val, lck)	__sync_fetch_and_add(&var, (val))
-#define ATOMIC_SUB(var, val, lck)	__sync_fetch_and_sub(&var, (val))
+#define ATOMIC_SET(var, val, lck)	(var = (ATOMIC_TYPE) (val))
+#define ATOMIC_ADD(var, val, lck)	__sync_fetch_and_add(&var, (ATOMIC_TYPE) (val))
+#define ATOMIC_SUB(var, val, lck)	__sync_fetch_and_sub(&var, (ATOMIC_TYPE) (val))
 #define ATOMIC_INC(var, lck)		__sync_add_and_fetch(&var, 1)
 #define ATOMIC_DEC(var, lck)		__sync_sub_and_fetch(&var, 1)
 
@@ -217,7 +226,7 @@ __ATOMIC_SET(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return new;
 }
-#define ATOMIC_SET(var, val, lck)	__ATOMIC_SET(&var, (val), &(lck).lock)
+#define ATOMIC_SET(var, val, lck)	__ATOMIC_SET(&var, (ATOMIC_TYPE) (val), &(lck).lock)
 
 static inline ATOMIC_TYPE
 __ATOMIC_ADD(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
@@ -229,7 +238,7 @@ __ATOMIC_ADD(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_ADD(var, val, lck)	__ATOMIC_ADD(&var, (val), &(lck).lock)
+#define ATOMIC_ADD(var, val, lck)	__ATOMIC_ADD(&var, (ATOMIC_TYPE) (val), &(lck).lock)
 
 static inline ATOMIC_TYPE
 __ATOMIC_SUB(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
@@ -241,7 +250,7 @@ __ATOMIC_SUB(volatile ATOMIC_TYPE *var, ATOMIC_TYPE val, pthread_mutex_t *lck)
 	pthread_mutex_unlock(lck);
 	return old;
 }
-#define ATOMIC_SUB(var, val, lck)	__ATOMIC_SUB(&var, (val), &(lck).lock)
+#define ATOMIC_SUB(var, val, lck)	__ATOMIC_SUB(&var, (ATOMIC_TYPE) (val), &(lck).lock)
 
 static inline ATOMIC_TYPE
 __ATOMIC_INC(volatile ATOMIC_TYPE *var, pthread_mutex_t *lck)

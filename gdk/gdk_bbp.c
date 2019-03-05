@@ -759,7 +759,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 
 		bid = (bat) batid;
 		if (batid >= (uint64_t) ATOMIC_GET(BBPsize, BBPsizeLock)) {
-			ATOMIC_SET(BBPsize, (ATOMIC_TYPE) (batid + 1), BBPsizeLock);
+			ATOMIC_SET(BBPsize, batid + 1, BBPsizeLock);
 			if ((bat) ATOMIC_GET(BBPsize, BBPsizeLock) >= BBPlimit)
 				BBPextend(0, false);
 		}

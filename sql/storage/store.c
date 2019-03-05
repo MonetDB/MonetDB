@@ -6489,7 +6489,7 @@ sql_trans_end(sql_session *s)
 	s->auto_commit = s->ac_on_commit;
 	list_remove_data(active_sessions, s);
 	(void) ATOMIC_DEC(store_nr_active, store_nr_active_lock);
-	assert((ATOMIC_TYPE) list_length(active_sessions) == ATOMIC_GET(store_nr_active, store_nr_active_lock));
+	assert(list_length(active_sessions) == (int) ATOMIC_GET(store_nr_active, store_nr_active_lock));
 }
 
 void

@@ -1072,7 +1072,7 @@ void setHeartbeat(int delay)
 	}
 	if ( delay > 0 &&  delay <= 10)
 		delay = 10;
-	ATOMIC_SET(hbdelay, (ATOMIC_TYPE) delay, mal_beatLock);
+	ATOMIC_SET(hbdelay, delay, mal_beatLock);
 }
 
 void initProfiler(void)
