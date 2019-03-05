@@ -257,7 +257,7 @@ static void
 BATSIGabort(int nr)
 {
 	(void) nr;
-	GDKexit(3);		/* emulate Windows exit code without pop-up */
+	_Exit(3);		/* emulate Windows exit code without pop-up */
 }
 #endif
 
