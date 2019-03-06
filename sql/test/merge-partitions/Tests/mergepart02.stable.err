@@ -29,8 +29,8 @@ stderr of test 'mergepart02` in directory 'sql/test/merge-partitions` itself:
 # 14:32:13 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4188" "--port=35037"
 # 14:32:13 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4188/.s.monetdb.35037
-QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 10; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 5 TO 10; --error
 ERROR = !ALTER TABLE: cannot add a range partition into a LIST PARTITION TABLE
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-4188/.s.monetdb.35037

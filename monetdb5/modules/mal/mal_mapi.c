@@ -270,10 +270,10 @@ doChallenge(void *data)
 	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
 }
 
-static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */
-static volatile ATOMIC_TYPE serveractive = 0;
-static volatile ATOMIC_TYPE serverexiting = 0; /* listeners should exit */
-static volatile ATOMIC_TYPE threadno = 0;	   /* thread sequence no */
+static volatile ATOMIC_TYPE nlistener = ATOMIC_VAR_INIT(0); /* nr of listeners */
+static volatile ATOMIC_TYPE serveractive = ATOMIC_VAR_INIT(0);
+static volatile ATOMIC_TYPE serverexiting = ATOMIC_VAR_INIT(0); /* listeners should exit */
+static volatile ATOMIC_TYPE threadno = ATOMIC_VAR_INIT(0);	   /* thread sequence no */
 #ifdef ATOMIC_LOCK
 /* lock for all three ATOMIC_TYPE variables above */
 static MT_Lock atomicLock MT_LOCK_INITIALIZER("atomicLock");

@@ -22,22 +22,22 @@ CREATE TABLE subtable1 (a int, b varchar(32));\
 CREATE TABLE subtable2 (a int, b varchar(32));\
 CREATE TABLE subtable3 (a int, b varchar(32));\
 CREATE TABLE subtable4 (a int, b varchar(32));\
-ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;\
+ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10;\
 CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);\
-ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION BETWEEN 11 AND 20;\
+ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION FROM 11 TO 20;\
 SELECT "minimum", "maximum" FROM range_partitions;
 '''
 
 script2 = '''\
 SELECT "minimum", "maximum" FROM range_partitions;\
-ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION BETWEEN 11 AND 20;\
+ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20;\
 SELECT "minimum", "maximum" FROM range_partitions;
 '''
 
 script3 = '''\
 SELECT "minimum", "maximum" FROM range_partitions;\
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;\
-ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION BETWEEN 21 AND 30;\
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;\
+ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;\
 INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');\
 INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');\
 SELECT a,b FROM testme;\

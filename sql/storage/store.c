@@ -30,7 +30,7 @@ static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
-volatile ATOMIC_TYPE store_nr_active = 0;
+volatile ATOMIC_TYPE store_nr_active = ATOMIC_VAR_INIT(0);
 #ifdef ATOMIC_LOCK
 MT_Lock store_nr_active_lock MT_LOCK_INITIALIZER("store_nr_active_lock");
 #endif
@@ -6531,7 +6531,7 @@ sql_trans_end(sql_session *s)
 	s->auto_commit = s->ac_on_commit;
 	list_remove_data(active_sessions, s);
 	(void) ATOMIC_DEC(store_nr_active, store_nr_active_lock);
-	assert((ATOMIC_TYPE) list_length(active_sessions) == ATOMIC_GET(store_nr_active, store_nr_active_lock));
+	assert(list_length(active_sessions) == (int) ATOMIC_GET(store_nr_active, store_nr_active_lock));
 }
 
 void

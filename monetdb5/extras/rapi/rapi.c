@@ -79,7 +79,7 @@ void writeConsoleEx(const char * buf, int buflen, int foo) {
 	(void) foo;
 	(void) buf; // silence compiler
 #ifdef _RAPI_DEBUG_
-	THRprintf(GDKout, "# %s", buf);
+	printf("# %s", buf);
 #endif
 }
 

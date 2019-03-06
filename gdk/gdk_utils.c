@@ -25,8 +25,6 @@ static BAT *GDKval = NULL;
 int GDKdebug = 0;
 int GDKverbose = 0;
 
-static char THRprintbuf[BUFSIZ];
-
 #include <signal.h>
 
 #ifdef HAVE_FCNTL_H
@@ -52,10 +50,8 @@ static char THRprintbuf[BUFSIZ];
 #define chdir _chdir
 #endif
 
-static volatile ATOMIC_FLAG GDKstopped = ATOMIC_FLAG_INIT;
+static volatile ATOMIC_TYPE GDKstopped = ATOMIC_VAR_INIT(0);
 static void GDKunlockHome(int farmid);
-
-static MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 
 #undef malloc
 #undef calloc
@@ -295,11 +291,11 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
  * Studio.  By doing this, we avoid locking overhead.  There is also a
  * fall-back for other compilers. */
 #include "gdk_atomic.h"
-static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = 0;
+static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = ATOMIC_VAR_INIT(0);
 #ifndef NDEBUG
 static volatile lng GDK_malloc_success_count = -1;
 #endif
-static volatile ATOMIC_TYPE GDK_vm_cursize = 0;
+static volatile ATOMIC_TYPE GDK_vm_cursize = ATOMIC_VAR_INIT(0);
 #ifdef ATOMIC_LOCK
 static MT_Lock mbyteslock MT_LOCK_INITIALIZER("mbyteslock");
 static MT_Lock GDKstoppedLock MT_LOCK_INITIALIZER("GDKstoppedLock");
@@ -479,7 +475,6 @@ GDKinit(opt *set, int setlen)
 		return GDK_FAIL;
 
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&MT_system_lock, "MT_system_lock");
 	ATOMIC_INIT(GDKstoppedLock);
 	ATOMIC_INIT(mbyteslock);
 	MT_lock_init(&GDKnameLock, "GDKnameLock");
@@ -709,7 +704,7 @@ static ThreadRec GDKthreads[THREADS];
 bool
 GDKexiting(void)
 {
-	return (bool) ATOMIC_ISSET(GDKstopped, GDKstoppedLock);
+	return (bool) (ATOMIC_GET(GDKstopped, GDKstoppedLock) > 0);
 }
 
 static struct serverthread {
@@ -722,7 +717,7 @@ GDKprepareExit(void)
 {
 	struct serverthread *st;
 
-	if (ATOMIC_TAS(GDKstopped, GDKstoppedLock) != 0)
+	if (ATOMIC_ADD(GDKstopped, 1, GDKstoppedLock) > 0)
 		return;
 
 	MT_lock_set(&GDKthreadLock);
@@ -858,14 +853,12 @@ GDKreset(int status)
 
 		memset(GDKthreads, 0, sizeof(GDKthreads));
 		memset(THRdata, 0, sizeof(THRdata));
-		memset(THRprintbuf, 0, sizeof(THRprintbuf));
 		gdk_bbp_reset();
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
 	}
 	ATOMunknown_clean();
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_destroy(&MT_system_lock);
 #ifdef ATOMIC_LOCK
 	MT_lock_destroy(&GDKstoppedLock);
 	MT_lock_destroy(&mbyteslock);
@@ -1049,8 +1042,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		THRprintf(GDKout, "%s%.*s%s", prefix,
-			  (int) messagelen, message, suffix);
+		mnstr_printf(GDKout, "%s%.*s%s", prefix,
+			     (int) messagelen, message, suffix);
 	}
 	fprintf(stderr, "#%s:%s%.*s%s",
 		MT_thread_getname(),
@@ -1062,10 +1055,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
  * a newline, and also that every line in the message (if there are
  * multiple), starts with an exclamation point.
  * One of the problems complicating this whole issue is that each line
- * should be printed using a single call to THRprintf, and moreover,
- * the format string should start with a "!".  This is because
- * THRprintf adds a "#" to the start of the printed text if the format
- * string doesn't start with "!".
+ * should be printed using a single call to mnstr_printf, and moreover,
+ * the format string should start with a "!".
  * Another problem is that we're religious about bounds checking. It
  * would probably also not be quite as bad if we could write in the
  * message buffer.
@@ -1624,65 +1615,6 @@ THRgettid(void)
 	return t;
 }
 
-int
-THRprintf(stream *s, const char *format, ...)
-{
-	str bf = THRprintbuf, p = 0;
-	size_t bfsz = BUFSIZ;
-	int n = 0;
-	ptrdiff_t m = 0;
-	char c;
-	va_list ap;
-
-	if (!s)
-		return -1;
-
-	MT_lock_set(&MT_system_lock);
-	if (*format != '!') {
-		c = '#';
-		if (*format == '#')
-			format++;
-	} else {
-		c = '!';
-		format++;
-	}
-
-	do {
-		p = bf;
-		*p++ = c;
-		if (GDKdebug & THRDMASK) {
-			sprintf(p, "%02d ", THRgettid());
-			while (*p)
-				p++;
-		}
-		m = p - bf;
-		va_start(ap, format);
-		n = vsnprintf(p, bfsz-m, format, ap);
-		va_end(ap);
-		if (n < 0)
-			goto cleanup;
-		if ((size_t) n < bfsz - m)
-			break;	  /* normal loop exit, usually 1st iteration */
-		bfsz = m + n + 1;	/* precisely what is needed */
-		if (bf != THRprintbuf)
-			free(bf);
-		bf = (str) malloc(bfsz);
-		if (bf == NULL)
-			return -1;
-	} while (1);
-
-	p += n;
-
-	n = 0;
-	if (mnstr_write(s, bf, p - bf, 1) != 1)
-		n = -1;
-      cleanup:
-	if (bf != THRprintbuf)
-		free(bf);
-	MT_lock_unset(&MT_system_lock);
-	return n;
-}
-
 static const char *_gdk_version_string = VERSION;
 /**
  * Returns the GDK version as internally allocated string.  Hence the
@@ -1693,39 +1625,6 @@ const char *
 GDKversion(void)
 {
 	return (_gdk_version_string);
-}
-
-/**
- * Extracts the last directory from a path string, if possible.
- * Stores the parent directory (path) in last_dir_parent and
- * the last directory (name) without a leading separators in last_dir.
- * Returns GDK_SUCCEED for success, GDK_FAIL on failure.
- */
-gdk_return
-GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir)
-{
-	char *last_dir_with_sep;
-	ptrdiff_t last_dirsep_index;
-
-	if (path == NULL || *path == 0) {
-		GDKerror("GDKextractParentAndLastDirFromPath: no path\n");
-		return GDK_FAIL;
-	}
-
-	last_dir_with_sep = strrchr(path, DIR_SEP);
-	if (last_dir_with_sep == NULL) {
-		/* it wasn't a path, can't work with that */
-		GDKerror("GDKextractParentAndLastDirFromPath: no separator\n");
-		return GDK_FAIL;
-	}
-	last_dirsep_index = last_dir_with_sep - path;
-	/* split the dir string into absolute parent dir path and
-	 * (relative) log dir name */
-	strncpy(last_dir, last_dir_with_sep + 1, strlen(path));
-	strncpy(last_dir_parent, path, last_dirsep_index);
-	last_dir_parent[last_dirsep_index] = 0;
-
-	return GDK_SUCCEED;
 }
 
 size_t

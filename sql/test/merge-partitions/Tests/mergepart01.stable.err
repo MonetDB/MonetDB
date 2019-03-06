@@ -29,27 +29,23 @@ stderr of test 'mergepart01` in directory 'sql/test/merge-partitions` itself:
 # 17:07:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24782" "--port=30770"
 # 17:07:38 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
-QUERY = ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10; --error
 ERROR = !ALTER TABLE: table 'sys.subtable1' is already part of the RANGE PARTITION TABLE 'sys.testme'
 CODE  = 42S02
-MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
-QUERY = ALTER TABLE testme ADD TABLE wrongtable AS PARTITION BETWEEN 5 AND 6; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testme ADD TABLE wrongtable AS PARTITION FROM 5 TO 6; --error
 ERROR = !ALTER RANGE PARTITION TABLE: to be added table doesn't match RANGE PARTITION TABLE definition
 CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
 QUERY = ALTER TABLE testme ADD TABLE subtable2 AS PARTITION IN ('0', '1', '2'); --error
 ERROR = !ALTER TABLE: cannot add a value partition into a RANGE PARTITION TABLE
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
-QUERY = ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 7 AND 9; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 7 TO 9; --error
 ERROR = !ALTER TABLE: conflicting partitions: 7 to 9 and 5 to 10 from table sys.subtable1
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
-QUERY = ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5; --error
-ERROR = !ALTER TABLE: conflicting partitions: 5 to 5 and 5 to 10 from table sys.subtable1
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-24782/.s.monetdb.30770
+MAPI  = (monetdb) /var/tmp/mtest-28117/.s.monetdb.35132
 QUERY = DROP TABLE subtable1; --error
 ERROR = !DROP TABLE: unable to drop table subtable1 (there are database objects which depend on it)
 CODE  = 42000
@@ -65,8 +61,8 @@ MAPI  = (monetdb) /var/tmp/mtest-12595/.s.monetdb.35222
 QUERY = ALTER TABLE subtable1 RENAME TO subtable3; --error, renaming the table shouldn't be allowed while part of a merge table
 ERROR = !ALTER TABLE: unable to rename table 'subtable1' (there are database objects which depend on it)
 CODE  = 2BM37
-MAPI  = (monetdb) /var/tmp/mtest-19335/.s.monetdb.38088
-QUERY = ALTER TABLE testme ADD TABLE other_schema.subtable1 AS PARTITION BETWEEN 4 AND 23; --error, all the tables must belong to the same schema
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testme ADD TABLE other_schema.subtable1 AS PARTITION FROM 4 TO 23; --error, all the tables must belong to the same schema
 ERROR = !ALTER TABLE: all children tables of 'sys.testme' must be part of schema 'sys'
 CODE  = 42000
 

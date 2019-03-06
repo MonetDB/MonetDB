@@ -72,7 +72,7 @@ Ready.
 #CREATE TABLE subtable1 (a int, b varchar(32));
 #CREATE TABLE subtable2 (a int, b varchar(32));
 #START TRANSACTION;
-#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '-4' AND '12';
+#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM '-4' TO '12';
 #SELECT COUNT(*) from range_partitions;
 % sys.L3 # table_name
 % L3 # name
@@ -88,7 +88,7 @@ Ready.
 % bigint # type
 % 1 # length
 [ 0	]
-#ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN '-4' AND '12';
+#ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM '-4' TO '12';
 #SELECT COUNT(*) from range_partitions;
 % sys.L3 # table_name
 % L3 # name

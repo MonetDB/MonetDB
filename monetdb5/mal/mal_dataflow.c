@@ -89,7 +89,7 @@ static Queue *todo = 0;	/* pending instructions */
 #ifdef ATOMIC_LOCK
 static MT_Lock exitingLock MT_LOCK_INITIALIZER("exitingLock");
 #endif
-static volatile ATOMIC_TYPE exiting = 0;
+static volatile ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
 static MT_Lock dataflowLock MT_LOCK_INITIALIZER("dataflowLock");
 static void stopMALdataflow(void);
 
@@ -105,7 +105,7 @@ mal_dataflow_reset(void)
 		GDKfree(todo);
 	}
 	todo = 0;	/* pending instructions */
-	exiting = 0;
+	ATOMIC_SET(exiting, 0, exitingLock);
 }
 
 /*

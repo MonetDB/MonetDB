@@ -139,7 +139,7 @@
   Also added optional IF EXISTS clause to other existing ALTER TABLE
   statements.
 
-* Tue Okt  9 2018 Aris Koning <aris.koning@monetdbsolutions.com>
+* Tue Oct  9 2018 Aris Koning <aris.koning@monetdbsolutions.com>
 - The sql SAMPLE syntax is extended to include an optional integral SEED
   parameter that sets the seed for the internal random number generator
   in the sample algorithm.  When the seed is set, the user can obtain

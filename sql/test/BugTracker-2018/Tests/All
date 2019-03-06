@@ -22,6 +22,7 @@ count_from_commented_function_signatures.Bug-6542
 truncate_add_user
 USER=testuser&PASSWD=testpassword&HAVE_NETCDF?truncate_sys_netcdf_tables.Bug-6543
 USER=testuser&PASSWD=testpassword&HAVE_SAMTOOLS?truncate_bam_tables.Bug-6543
+USER=testuser&PASSWD=testpassword&HAVE_GEOM?truncate_geom_tables.Bug-6543
 USER=testuser&PASSWD=testpassword?truncate_sys_tables.Bug-6543
 USER=testuser&PASSWD=testpassword?truncate_tmp_tables.Bug-6543
 truncate_remove_user

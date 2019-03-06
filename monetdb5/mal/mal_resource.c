@@ -196,7 +196,7 @@ MALresourceFairness(lng usec)
 #endif
 
 	/* always keep one running to avoid all waiting  */
-	while (clk > DELAYUNIT && users > 1 && ATOMIC_GET(mal_running, mal_runningLock) > (ATOMIC_TYPE) GDKnr_threads && rss > MEMORY_THRESHOLD) {
+	while (clk > DELAYUNIT && users > 1 && (int) ATOMIC_GET(mal_running, mal_runningLock) > GDKnr_threads && rss > MEMORY_THRESHOLD) {
 		if ( delayed++ == 0){
 				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
 		}
@@ -235,5 +235,5 @@ initResource(void)
 		initialized = true;
 	}
 #endif
-	mal_running = (ATOMIC_TYPE) GDKnr_threads;
+	ATOMIC_SET(mal_running, GDKnr_threads, mal_runningLock);
 }

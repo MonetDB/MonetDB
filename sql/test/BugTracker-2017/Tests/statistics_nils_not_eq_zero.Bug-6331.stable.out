@@ -126,6 +126,20 @@ Ready.
 % boolean # type
 % 5 # length
 [ true	]
+#select '~BeginVariableOutput~';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 21 # length
+[ "~BeginVariableOutput~"	]
+#DELETE FROM sys.statistics;
+[ 191	]
+#select '~EndVariableOutput~';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 19 # length
+[ "~EndVariableOutput~"	]
 
 # 13:40:17 >  
 # 13:40:17 >  "Done."

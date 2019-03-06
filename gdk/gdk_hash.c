@@ -263,7 +263,11 @@ BAThashsync(void *arg)
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->thash != NULL) {
 		Heap *hp = &b->thash->heap;
-		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
+		/* only persist if parent BAT hasn't changed in the
+		 * mean time */
+		if (!b->theap.dirty &&
+		    ((size_t *) hp->base)[4] == b->batCount &&
+		    HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED) {
 			if (hp->storage == STORE_MEM) {
 				if ((fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 					((size_t *) hp->base)[0] |= (size_t) 1 << 24;
@@ -656,7 +660,7 @@ HASHlist(Hash *h, BUN i)
 void
 HASHdestroy(BAT *b)
 {
-	if (b) {
+	if (b && b->thash) {
 		Hash *hs;
 		MT_lock_set(&GDKhashLock(b->batCacheid));
 		hs = b->thash;

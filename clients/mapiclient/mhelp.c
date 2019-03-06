@@ -698,9 +698,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"opt_partition_spec",
 	 NULL,
-	 "IN '(' partition_list ')' [ WITH NULL ]\n"
-	 "BETWEEN partition_range_from AND partition_range_to [ WITH NULL ]\n"
-	 "WITH NULL",
+	 "IN '(' partition_list ')' [ WITH NULL VALUES ]\n"
+	 "FROM partition_range_from TO partition_range_to [ WITH NULL VALUES ]\n"
+	 "FOR NULL VALUES",
 	 "partition_list,partition_range_from,partition_range_to",
 	 NULL},
 	{"param",

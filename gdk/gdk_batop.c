@@ -684,8 +684,14 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
-	if (BATcheckhash(b) && (2 * b->thash->mask) < (BATcount(b) + cnt)) {
+	MT_lock_set(&GDKhashLock((b)->batCacheid));
+	if (b->thash == (Hash *) 1 ||
+	    (b->thash != NULL &&
+	     (2 * b->thash->mask) < (BATcount(b) + cnt))) {
+		MT_lock_unset(&GDKhashLock((b)->batCacheid));
 		HASHdestroy(b);
+	} else {
+		MT_lock_unset(&GDKhashLock((b)->batCacheid));
 	}
 
 	r = BUNlast(b);
