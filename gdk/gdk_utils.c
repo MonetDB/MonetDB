@@ -25,8 +25,6 @@ BAT *GDKval = NULL;
 int GDKdebug = 0;
 int GDKverbose = 0;
 
-static char THRprintbuf[BUFSIZ];
-
 #include <signal.h>
 
 #ifdef HAVE_FCNTL_H
@@ -54,8 +52,6 @@ static char THRprintbuf[BUFSIZ];
 
 static volatile ATOMIC_TYPE GDKstopped = ATOMIC_VAR_INIT(0);
 static void GDKunlockHome(int farmid);
-
-static MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
 
 #undef malloc
 #undef calloc
@@ -467,7 +463,6 @@ GDKinit(opt *set, int setlen)
 		return 0;
 
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&MT_system_lock, "MT_system_lock");
 	ATOMIC_INIT(GDKstoppedLock);
 	ATOMIC_INIT(mbyteslock);
 	MT_lock_init(&GDKnameLock, "GDKnameLock");
@@ -813,14 +808,12 @@ GDKreset(int status, int doexit)
 
 		memset(GDKthreads, 0, sizeof(GDKthreads));
 		memset(THRdata, 0, sizeof(THRdata));
-		memset(THRprintbuf, 0, sizeof(THRprintbuf));
 		gdk_bbp_reset();
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
 	}
 	ATOMunknown_clean();
 #ifdef NEED_MT_LOCK_INIT
-	MT_lock_destroy(&MT_system_lock);
 #ifdef ATOMIC_LOCK
 	MT_lock_destroy(&GDKstoppedLock);
 	MT_lock_destroy(&mbyteslock);
@@ -993,8 +986,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		THRprintf(GDKout, "%s%.*s%s", prefix,
-			  (int) messagelen, message, suffix);
+		mnstr_printf(GDKout, "%s%.*s%s", prefix,
+			     (int) messagelen, message, suffix);
 	}
 	fprintf(stderr, "#%s:%s%.*s%s",
 		MT_thread_getname(),
@@ -1006,10 +999,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
  * a newline, and also that every line in the message (if there are
  * multiple), starts with an exclamation point.
  * One of the problems complicating this whole issue is that each line
- * should be printed using a single call to THRprintf, and moreover,
- * the format string should start with a "!".  This is because
- * THRprintf adds a "#" to the start of the printed text if the format
- * string doesn't start with "!".
+ * should be printed using a single call to mnstr_printf, and moreover,
+ * the format string should start with a "!".
  * Another problem is that we're religious about bounds checking. It
  * would probably also not be quite as bad if we could write in the
  * message buffer.
@@ -1568,65 +1559,6 @@ THRgettid(void)
 	s = GDK_find_self();
 	t = s ? s->tid : 1;
 	return t;
-}
-
-int
-THRprintf(stream *s, const char *format, ...)
-{
-	str bf = THRprintbuf, p = 0;
-	size_t bfsz = BUFSIZ;
-	int n = 0;
-	ptrdiff_t m = 0;
-	char c;
-	va_list ap;
-
-	if (!s)
-		return -1;
-
-	MT_lock_set(&MT_system_lock);
-	if (*format != '!') {
-		c = '#';
-		if (*format == '#')
-			format++;
-	} else {
-		c = '!';
-		format++;
-	}
-
-	do {
-		p = bf;
-		*p++ = c;
-		if (GDKdebug & THRDMASK) {
-			sprintf(p, "%02d ", THRgettid());
-			while (*p)
-				p++;
-		}
-		m = p - bf;
-		va_start(ap, format);
-		n = vsnprintf(p, bfsz-m, format, ap);
-		va_end(ap);
-		if (n < 0)
-			goto cleanup;
-		if ((size_t) n < bfsz - m)
-			break;	  /* normal loop exit, usually 1st iteration */
-		bfsz = m + n + 1;	/* precisely what is needed */
-		if (bf != THRprintbuf)
-			free(bf);
-		bf = (str) malloc(bfsz);
-		if (bf == NULL)
-			return -1;
-	} while (1);
-
-	p += n;
-
-	n = 0;
-	if (mnstr_write(s, bf, p - bf, 1) != 1)
-		n = -1;
-      cleanup:
-	if (bf != THRprintbuf)
-		free(bf);
-	MT_lock_unset(&MT_system_lock);
-	return n;
 }
 
 static const char *_gdk_version_string = VERSION;

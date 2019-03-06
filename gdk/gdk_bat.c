@@ -1966,7 +1966,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		storage_t b1, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
-			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
+			BATDEBUG fprintf(stderr, "#BATsetaccess: %s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
 			GDKerror("BATsetaccess: %s has %d views\n",
 				 BATgetId(b), b->batSharecnt);
 			return GDK_FAIL;

@@ -2314,8 +2314,6 @@ gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, void *);
 gdk_export void *THRgetdata(int);
 gdk_export int THRhighwater(void);
-gdk_export int THRprintf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
 
 gdk_export void *THRdata[THREADDATA];
 
