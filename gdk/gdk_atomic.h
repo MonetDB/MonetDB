@@ -42,7 +42,28 @@
 /* define this if you don't want to use atomic instructions */
 /* #define NO_ATOMIC_INSTRUCTIONS */
 
-#if defined(HAVE_STDATOMIC_H) && !defined(__INTEL_COMPILER) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#if defined(HAVE_LIBATOMIC_OPS) && !defined(NO_ATOMIC_INSTRUCTIONS)
+
+#include <atomic_ops.h>
+
+#define ATOMIC_TYPE			AO_t
+#define ATOMIC_VAR_INIT(val)		(val)
+
+#define ATOMIC_GET(var, lck)		AO_load_full(&var)
+#define ATOMIC_SET(var, val, lck)	AO_store_full(&var, (AO_t) (val))
+#define ATOMIC_ADD(var, val, lck)	AO_fetch_and_add(&var, (AO_t) (val))
+#define ATOMIC_SUB(var, val, lck)	AO_fetch_and_add(&var, (AO_t) -(val))
+#define ATOMIC_INC(var, lck)		(AO_fetch_and_add1(&var) + 1)
+#define ATOMIC_DEC(var, lck)		(AO_fetch_and_sub1(&var) - 1)
+
+#define ATOMIC_INIT(lck)		((void) 0)
+
+#define ATOMIC_FLAG			AO_TS_t
+#define ATOMIC_FLAG_INIT		{ AO_TS_INITIALIZER }
+#define ATOMIC_CLEAR(var, lck)		AO_CLEAR(&var)
+#define ATOMIC_TAS(var, lck)	(AO_test_and_set_full(&var) != AO_TS_CLEAR)
+
+#elif defined(HAVE_STDATOMIC_H) && !defined(__INTEL_COMPILER) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <stdatomic.h>
 
@@ -82,27 +103,6 @@
 /* ATOMIC_FLAG_INIT is already defined by the include file */
 #define ATOMIC_CLEAR(var, lck)		atomic_flag_clear(&var)
 #define ATOMIC_TAS(var, lck)		atomic_flag_test_and_set(&var)
-
-#elif defined(HAVE_LIBATOMIC_OPS) && !defined(NO_ATOMIC_INSTRUCTIONS)
-
-#include <atomic_ops.h>
-
-#define ATOMIC_TYPE			AO_t
-#define ATOMIC_VAR_INIT(val)		(val)
-
-#define ATOMIC_GET(var, lck)		AO_load_full(&var)
-#define ATOMIC_SET(var, val, lck)	AO_store_full(&var, (AO_t) (val))
-#define ATOMIC_ADD(var, val, lck)	AO_fetch_and_add(&var, (AO_t) (val))
-#define ATOMIC_SUB(var, val, lck)	AO_fetch_and_add(&var, (AO_t) -(val))
-#define ATOMIC_INC(var, lck)		(AO_fetch_and_add1(&var) + 1)
-#define ATOMIC_DEC(var, lck)		(AO_fetch_and_sub1(&var) - 1)
-
-#define ATOMIC_INIT(lck)		((void) 0)
-
-#define ATOMIC_FLAG			AO_TS_t
-#define ATOMIC_FLAG_INIT		{ AO_TS_INITIALIZER }
-#define ATOMIC_CLEAR(var, lck)		AO_CLEAR(&var)
-#define ATOMIC_TAS(var, lck)	(AO_test_and_set_full(&var) != AO_TS_CLEAR)
 
 #elif defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
