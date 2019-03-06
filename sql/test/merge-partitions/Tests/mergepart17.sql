@@ -6,9 +6,9 @@ ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100; --e
 TRUNCATE sublimits1;
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
 
-INSERT INTO sublimits1 VALUES (100, 'ok');
+INSERT INTO sublimits1 VALUES (99, 'ok');
 UPDATE sublimits1 SET a = a + 1; --error
-UPDATE sublimits1 SET b = 'p' || b WHERE a = 100;
+UPDATE sublimits1 SET b = 'p' || b WHERE a = 99;
 
 SELECT a, b FROM testupdates;
 SELECT a, b FROM sublimits1;
@@ -16,7 +16,7 @@ SELECT a, b FROM sublimits1;
 ALTER TABLE testupdates DROP TABLE sublimits1;
 
 UPDATE sublimits1 SET a = a + 1;
-UPDATE sublimits1 SET b = b || 's' WHERE a = 101;
+UPDATE sublimits1 SET b = b || 's' WHERE a = 100;
 
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100; --error
 UPDATE sublimits1 SET a = a - 1;

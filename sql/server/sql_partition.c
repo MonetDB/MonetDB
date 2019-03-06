@@ -352,7 +352,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				ptr ok;
 
 				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
-				ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue);
+				ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue); //Fixme
 				if(ok)
 					ok = VALconvert(localtype, &vmin);
 				if(ok)

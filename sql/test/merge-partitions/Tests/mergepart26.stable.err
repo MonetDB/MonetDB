@@ -34,7 +34,7 @@ ERROR = !ALTER TABLE: there are values in the expression outside the partition r
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-11485/.s.monetdb.36271
 QUERY = ALTER TABLE subnn ADD TABLE sub1 AS PARTITION BETWEEN 0 AND 8; --error
-ERROR = !ALTER TABLE: there are values in the expression outside the partition list of values
+ERROR = !ALTER TABLE: there are values in the expression outside the partition range
 CODE  = M0M29
 
 # 17:36:53 >  

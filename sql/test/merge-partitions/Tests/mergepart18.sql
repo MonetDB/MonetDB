@@ -23,11 +23,11 @@ SELECT minimum, maximum, with_nulls FROM range_partitions;
 INSERT INTO updateme VALUES (1, 'ups'); --error
 INSERT INTO subt1 VALUES (1, 'ups'); --error
 
-INSERT INTO updateme VALUES (0, 'second'), (201, 'other table');
-INSERT INTO subt1 VALUES (0, 'second');
+INSERT INTO updateme VALUES (-1, 'second'), (201, 'other table');
+INSERT INTO subt1 VALUES (-1, 'second');
 
 START TRANSACTION;
-ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '0' AND '200';
+ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '-1' AND '200';
 SELECT minimum, maximum, with_nulls FROM range_partitions;
 INSERT INTO updateme VALUES (199, 'third');
 ROLLBACK;

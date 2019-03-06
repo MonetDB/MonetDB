@@ -50,11 +50,11 @@ CREATE TABLE sublimits (a int);
 ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND RANGE MAXVALUE;
 ALTER TABLE testrangelimits DROP TABLE sublimits;
 
-INSERT INTO sublimits VALUES (0);
+INSERT INTO sublimits VALUES (-1);
 ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND 0;
 ALTER TABLE testrangelimits DROP TABLE sublimits;
 
-INSERT INTO sublimits VALUES (1);
+INSERT INTO sublimits VALUES (0);
 ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND 0; --error
 
 DROP TABLE testrangelimits;

@@ -14,7 +14,8 @@ ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2008
 ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2020-01-01 00:00:00' AND timestamp '2029-12-12 23:59:59' WITH NULL;
 
 INSERT INTO testtime VALUES (timestamp '2000-01-01 00:00:00', 1), (timestamp '2002-12-03 20:00:00', 2),
-(timestamp '2012-05-12 21:01:00', 3), (timestamp '2019-12-12 23:59:59', 4), (NULL, 5);
+(timestamp '2012-05-12 21:01:00', 3), (timestamp '2019-12-12 23:59:58', 4), (NULL, 5);
+INSERT INTO testtime VALUES (timestamp '2019-12-12 23:59:59', 4); --error
 
 SELECT t, b FROM testtime;
 SELECT t, b FROM onedecade;

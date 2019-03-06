@@ -26,7 +26,7 @@ CREATE TABLE sublimits1 (a int, b varchar(32));
 CREATE TABLE sublimits2 (a int, b varchar(32));
 
 ALTER TABLE testing ADD TABLE sublimits1 AS PARTITION BETWEEN 28 + 2 AND 72 - 2;
-ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION BETWEEN 100 - 30 AND 440 + 98; --error
+ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION BETWEEN 100 - 31 AND 440 + 98; --error
 ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION BETWEEN addone(70) AND addtwo(98);
 
 SELECT "minimum", "maximum" FROM range_partitions;

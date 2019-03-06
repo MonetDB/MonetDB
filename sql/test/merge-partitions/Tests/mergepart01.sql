@@ -20,7 +20,8 @@ ALTER TABLE testme ADD TABLE wrongtable AS PARTITION BETWEEN 5 AND 6; --error
 CREATE TABLE subtable2 (a int, b varchar(32));
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION IN ('0', '1', '2'); --error
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 7 AND 9; --error
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5; --error
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5;
+ALTER TABLE testme DROP TABLE subtable2;
 
 DROP TABLE subtable1; --error
 ALTER TABLE testme SET SCHEMA other_schema; --error, changing schema not allowed while with child tables
