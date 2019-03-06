@@ -79,10 +79,10 @@ sortlocklist(MT_Lock *l)
 	 * start of unprocessed part of left and right lists */
 	t = ll = NULL;
 	while (l && r) {
-		if (l->sleep < r->sleep ||
-		    (l->sleep == r->sleep &&
-		     (l->contention < r->contention ||
-		      (l->contention == r->contention &&
+		if (ATOMIC_GET(l->sleep, dummy) < ATOMIC_GET(r->sleep, dummy) ||
+		    (ATOMIC_GET(l->sleep, dummy) == ATOMIC_GET(r->sleep, dummy) &&
+		     (ATOMIC_GET(l->contention, dummy) < ATOMIC_GET(r->contention, dummy) ||
+		      (ATOMIC_GET(l->contention, dummy) == ATOMIC_GET(r->contention, dummy) &&
 		       l->count <= r->count)))) {
 			/* l is smaller */
 			if (ll == NULL) {
@@ -133,8 +133,8 @@ GDKlockstatistics(int what)
 	if (what == -1) {
 		for (l = GDKlocklist; l; l = l->next) {
 			l->count = 0;
-			l->contention = 0;
-			l->sleep = 0;
+			ATOMIC_SET(l->contention, 0, dummy);
+			ATOMIC_SET(l->sleep, 0, dummy);
 		}
 		ATOMIC_CLEAR(GDKlocklistlock, dummy);
 		return;
@@ -145,19 +145,20 @@ GDKlockstatistics(int what)
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
-		    (what == 2 && l->contention) ||
+		    (what == 2 && ATOMIC_GET(l->contention, dummy)) ||
 		    (what == 3 && lock_isset(l)))
 			fprintf(stderr, "# %-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
-				l->name, l->count, (size_t) l->contention,
-				(size_t) l->sleep,
+				l->name, l->count,
+				(size_t) ATOMIC_GET(l->contention, dummy),
+				(size_t) ATOMIC_GET(l->sleep, dummy),
 				lock_isset(l) ? "locked" : "",
 				l->locker ? l->locker : "",
 				l->thread ? l->thread : "");
 	}
 	fprintf(stderr, "#number of locks  %d\n", n);
-	fprintf(stderr, "#total lock count %zu\n", (size_t) GDKlockcnt);
-	fprintf(stderr, "#lock contention  %zu\n", (size_t) GDKlockcontentioncnt);
-	fprintf(stderr, "#lock sleep count %zu\n", (size_t) GDKlocksleepcnt);
+	fprintf(stderr, "#total lock count %zu\n", (size_t) ATOMIC_GET(GDKlockcnt, dummy));
+	fprintf(stderr, "#lock contention  %zu\n", (size_t) ATOMIC_GET(GDKlockcontentioncnt, dummy));
+	fprintf(stderr, "#lock sleep count %zu\n", (size_t) ATOMIC_GET(GDKlocksleepcnt, dummy));
 	ATOMIC_CLEAR(GDKlocklistlock, dummy);
 }
 

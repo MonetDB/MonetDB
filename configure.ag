@@ -2393,6 +2393,7 @@ AC_CHECK_HEADERS([ \
 	netinet/in.h \
 	procfs.h \
 	pwd.h \
+	stdatomic.h \
 	strings.h \
 	stropts.h \
 	sys/file.h \

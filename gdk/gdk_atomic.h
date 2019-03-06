@@ -17,6 +17,7 @@
  * defined.
  *
  * The following operations are defined:
+ * ATOMIC_VAR_INIT -- initialize the variable (not necessarily atomic!);
  * ATOMIC_GET -- return the value of a variable;
  * ATOMIC_SET -- set the value of a variable;
  * ATOMIC_ADD -- add a value to a variable, return original value;
@@ -41,11 +42,44 @@
 /* define this if you don't want to use atomic instructions */
 /* #define NO_ATOMIC_INSTRUCTIONS */
 
-#if defined(HAVE_LIBATOMIC_OPS) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#if defined(HAVE_STDATOMIC_H) && !defined(__INTEL_COMPILER) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
+
+#include <stdatomic.h>
+
+#if ATOMIC_LLONG_LOCK_FREE == 2
+#define ATOMIC_TYPE			atomic_ullong
+#elif ATOMIC_LONG_LOCK_FREE == 2
+#define ATOMIC_TYPE			atomic_ulong
+#elif ATOMIC_INT_LOCK_FREE == 2
+#define ATOMIC_TYPE			atomic_uint
+#elif ATOMIC_LLONG_LOCK_FREE == 1
+#define ATOMIC_TYPE			atomic_ullong
+#elif ATOMIC_LONG_LOCK_FREE == 1
+#define ATOMIC_TYPE			atomic_ulong
+#elif ATOMIC_INT_LOCK_FREE == 1
+#define ATOMIC_TYPE			atomic_uint
+#endif
+
+#define ATOMIC_GET(var, lck)		atomic_load(&var)
+#define ATOMIC_SET(var, val, lck)	atomic_store(&var, val)
+#define ATOMIC_ADD(var, val, lck)	atomic_fetch_add(&var, val)
+#define ATOMIC_SUB(var, val, lck)	atomic_fetch_sub(&var, val)
+#define ATOMIC_INC(var, lck)		(atomic_fetch_add(&var, 1) + 1)
+#define ATOMIC_DEC(var, lck)		(atomic_fetch_sub(&var, 1) - 1)
+
+#define ATOMIC_INIT(lck)		((void) 0)
+
+#define ATOMIC_FLAG			atomic_flag
+/* ATOMIC_FLAG_INIT is already defined by the include file */
+#define ATOMIC_CLEAR(var, lck)		atomic_flag_clear(&var)
+#define ATOMIC_TAS(var, lck)		atomic_flag_test_and_set(&var)
+
+#elif defined(HAVE_LIBATOMIC_OPS) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <atomic_ops.h>
 
 #define ATOMIC_TYPE			AO_t
+#define ATOMIC_VAR_INIT(val)		(val)
 
 #define ATOMIC_GET(var, lck)		AO_load_full(&var)
 #define ATOMIC_SET(var, val, lck)	AO_store_full(&var, (val))
@@ -68,6 +102,7 @@
 #if SIZEOF_SSIZE_T == 8
 
 #define ATOMIC_TYPE			int64_t
+#define ATOMIC_VAR_INIT(val)		(val)
 
 #define ATOMIC_GET(var, lck)		var
 #define ATOMIC_SET(var, val, lck)	_InterlockedExchange64(&var, (val))
@@ -85,6 +120,7 @@
 #else
 
 #define ATOMIC_TYPE			int
+#define ATOMIC_VAR_INIT(val)		(val)
 
 #define ATOMIC_GET(var, lck)		var
 #define ATOMIC_SET(var, val, lck)	_InterlockedExchange(&var, (val))
@@ -115,6 +151,7 @@
 #else
 #define ATOMIC_TYPE			int
 #endif
+#define ATOMIC_VAR_INIT(val)		(val)
 
 #ifdef __ATOMIC_SEQ_CST
 
@@ -157,6 +194,7 @@
 #else
 #define ATOMIC_TYPE			int
 #endif
+#define ATOMIC_VAR_INIT(val)		(val)
 
 static inline ATOMIC_TYPE
 __ATOMIC_GET(volatile ATOMIC_TYPE *var, pthread_mutex_t *lck)

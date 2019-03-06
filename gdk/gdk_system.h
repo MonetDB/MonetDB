@@ -164,11 +164,20 @@ gdk_export int MT_join_thread(MT_Id t);
 #define LOCK_STATS
 #endif
 
+#ifdef ATOMIC_LOCK
+/* ATOMIC_LOCK and LOCK_STATS are incompatible with each other */
+#undef LOCK_STATS
+#endif
+
 /* define this if you want to use pthread (or Windows) locks instead
  * of atomic instructions for locking (latching) */
 /* #define USE_PTHREAD_LOCKS */
 
 #ifdef LOCK_STATS
+
+#ifdef ATOMIC_LOCK
+#error "ATOMIC_LOCK and LOCK_STATS are incompatible with each other"
+#endif
 
 #define _DBG_LOCK_COUNT_0(l)						\
 	do {								\
@@ -216,7 +225,9 @@ gdk_export int MT_join_thread(MT_Id t);
 	} while (0)
 #define _DBG_LOCK_INIT(l)						\
 	do {								\
-		(l)->count = (l)->contention = (l)->sleep = 0;		\
+		(l)->count = 0;						\
+		ATOMIC_SET((l)->contention, 0, dummy);			\
+		ATOMIC_SET((l)->sleep, 0, dummy);			\
 		(l)->locker = NULL;					\
 		(l)->thread = NULL;					\
 		/* if name starts with "sa_" don't link in GDKlocklist */ \

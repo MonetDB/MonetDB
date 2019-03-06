@@ -45,7 +45,7 @@ int malProfileMode = 0;     /* global flag to indicate profiling mode */
 
 static struct timeval startup_time;
 
-static volatile ATOMIC_TYPE hbdelay = 0;
+static volatile ATOMIC_TYPE hbdelay = ATOMIC_VAR_INIT(0);
 
 #ifdef HAVE_SYS_RESOURCE_H
 struct rusage infoUsage;

@@ -52,7 +52,7 @@ static char THRprintbuf[BUFSIZ];
 #define chdir _chdir
 #endif
 
-static volatile ATOMIC_TYPE GDKstopped = 0;
+static volatile ATOMIC_TYPE GDKstopped = ATOMIC_VAR_INIT(0);
 static void GDKunlockHome(int farmid);
 
 static MT_Lock MT_system_lock MT_LOCK_INITIALIZER("MT_system_lock");
@@ -293,11 +293,11 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
  * Studio.  By doing this, we avoid locking overhead.  There is also a
  * fall-back for other compilers. */
 #include "gdk_atomic.h"
-static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = 0;
+static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = ATOMIC_VAR_INIT(0);
 #ifndef NDEBUG
 static volatile lng GDK_malloc_success_count = -1;
 #endif
-static volatile ATOMIC_TYPE GDK_vm_cursize = 0;
+static volatile ATOMIC_TYPE GDK_vm_cursize = ATOMIC_VAR_INIT(0);
 #ifdef ATOMIC_LOCK
 static MT_Lock mbyteslock MT_LOCK_INITIALIZER("mbyteslock");
 static MT_Lock GDKstoppedLock MT_LOCK_INITIALIZER("GDKstoppedLock");

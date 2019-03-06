@@ -97,7 +97,7 @@ bat BBPlimit = 0;		/* current committed VM BBP array */
 #ifdef ATOMIC_LOCK
 static MT_Lock BBPsizeLock MT_LOCK_INITIALIZER("BBPsizeLock");
 #endif
-static volatile ATOMIC_TYPE BBPsize = 0; /* current used size of BBP array */
+static volatile ATOMIC_TYPE BBPsize = ATOMIC_VAR_INIT(0); /* current used size of BBP array */
 
 struct BBPfarm_t BBPfarms[MAXFARMS];
 
@@ -1002,7 +1002,7 @@ BBPresetfarms(void)
 {
 	BBPexit();
 	BBPunlock();
-	BBPsize = 0;
+	ATOMIC_SET(BBPsize, 0, BBPsizeLock);
 	if (BBPfarms[0].dirname != NULL) {
 		GDKfree((void*) BBPfarms[0].dirname); /* loose "const" */
 	}
@@ -3412,7 +3412,7 @@ gdk_bbp_reset(void)
 	}
 	memset(BBP, 0, sizeof(BBP));
 	BBPlimit = 0;
-	BBPsize = 0;
+	ATOMIC_SET(BBPsize, 0, BBPsizeLock);
 	for (i = 0; i < MAXFARMS; i++)
 		GDKfree((void *) BBPfarms[i].dirname); /* loose "const" */
 	memset(BBPfarms, 0, sizeof(BBPfarms));

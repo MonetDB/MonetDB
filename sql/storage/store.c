@@ -30,7 +30,7 @@ static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
-volatile ATOMIC_TYPE store_nr_active = 0;
+volatile ATOMIC_TYPE store_nr_active = ATOMIC_VAR_INIT(0);
 #ifdef ATOMIC_LOCK
 MT_Lock store_nr_active_lock MT_LOCK_INITIALIZER("store_nr_active_lock");
 #endif
