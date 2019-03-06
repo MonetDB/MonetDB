@@ -2393,7 +2393,6 @@ AC_CHECK_HEADERS([ \
 	netinet/in.h \
 	procfs.h \
 	pwd.h \
-	stdatomic.h \
 	strings.h \
 	stropts.h \
 	sys/file.h \
@@ -2512,6 +2511,22 @@ AC_C_CHAR_UNSIGNED
 AC_C_INLINE
 AC_C_RESTRICT
 AC_C_FLEXIBLE_ARRAY_MEMBER
+
+AC_MSG_CHECKING([if your compiler has usable <stdatomic.h>])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+	@%:@include <stdatomic.h>
+
+	@%:@if ATOMIC_LLONG_LOCK_FREE == 2
+	atomic_ullong i;
+	@%:@else
+	atomic_uint i;
+	@%:@endif
+	]],
+	[[ atomic_store(&i, 0); ]]
+	)],
+	[AC_MSG_RESULT([yes])
+	 AC_DEFINE([HAVE_STDATOMIC_H], 1, [Define to 1 if you have the <stdatomic.h> header file.])],
+	[AC_MSG_RESULT([no])])
 
 AC_MSG_CHECKING([if your compiler understands `__hidden'])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
