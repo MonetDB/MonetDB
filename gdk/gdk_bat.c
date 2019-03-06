@@ -1093,12 +1093,6 @@ BUNappend(BAT *b, const void *t, bool force)
 			}
 	} while (prop);
 #endif
-	if (b->thash == (Hash *) 1 ||
-	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
-		/* don't bother first loading the hash to then change
-		 * it, also, cannot maintain persistent hashes */
-		HASHdestroy(b);
-	}
 	if (b->thash) {
 		HASHins(b, p, t);
 		if (tsize && tsize != b->tvheap->size)

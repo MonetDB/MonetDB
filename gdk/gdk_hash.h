@@ -243,14 +243,19 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHins(b,i,v)							\
 	do {								\
 		if ((b)->thash) {					\
-			assert((b)->thash != (Hash *) 1);		\
-			assert((((size_t *) (b)->thash->heap.base)[0] & (1 << 24)) == 0); \
-			if (((i) & 1023) == 1023 && HASHgonebad((b), (v))) { \
+			MT_lock_set(&GDKhashLock((b)->batCacheid));	\
+			if ((b)->thash == (Hash *) 1 ||			\
+			    ((b)->thash != NULL &&			\
+			     (((size_t *) (b)->thash->heap.base)[0] & (1 << 24) || \
+			      ((size_t *) (b)->thash->heap.base)[2] * 2 < b->batCount)) || \
+			    (((i) & 1023) == 1023 && HASHgonebad((b), (v)))) { \
+				MT_lock_unset(&GDKhashLock((b)->batCacheid)); \
 				HASHdestroy(b);				\
 			} else {					\
 				BUN _c = HASHprobe((b)->thash, (v));	\
 				HASHputall((b)->thash, (i), _c);	\
 				(b)->thash->heap.dirty = true;		\
+				MT_lock_unset(&GDKhashLock((b)->batCacheid)); \
 			}						\
 		}							\
 	} while (0)
