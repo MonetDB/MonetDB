@@ -1573,39 +1573,6 @@ GDKversion(void)
 	return (_gdk_version_string);
 }
 
-/**
- * Extracts the last directory from a path string, if possible.
- * Stores the parent directory (path) in last_dir_parent and
- * the last directory (name) without a leading separators in last_dir.
- * Returns GDK_SUCCEED for success, GDK_FAIL on failure.
- */
-gdk_return
-GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir)
-{
-	char *last_dir_with_sep;
-	ptrdiff_t last_dirsep_index;
-
-	if (path == NULL || *path == 0) {
-		GDKerror("GDKextractParentAndLastDirFromPath: no path\n");
-		return GDK_FAIL;
-	}
-
-	last_dir_with_sep = strrchr(path, DIR_SEP);
-	if (last_dir_with_sep == NULL) {
-		/* it wasn't a path, can't work with that */
-		GDKerror("GDKextractParentAndLastDirFromPath: no separator\n");
-		return GDK_FAIL;
-	}
-	last_dirsep_index = last_dir_with_sep - path;
-	/* split the dir string into absolute parent dir path and
-	 * (relative) log dir name */
-	strncpy(last_dir, last_dir_with_sep + 1, strlen(path));
-	strncpy(last_dir_parent, path, last_dirsep_index);
-	last_dir_parent[last_dirsep_index] = 0;
-
-	return GDK_SUCCEED;
-}
-
 size_t
 GDKmem_cursize(void)
 {

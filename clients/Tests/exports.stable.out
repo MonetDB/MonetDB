@@ -237,7 +237,6 @@ void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...) __attribute
 void GDKexit(int status) __attribute__((__noreturn__));
 void GDKexit(int status);
 bool GDKexiting(void);
-gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir);
 void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 1, 2))) __attribute__((__noreturn__));
 void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 1, 2)));
 jmp_buf GDKfataljump;
