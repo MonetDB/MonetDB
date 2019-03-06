@@ -2,8 +2,8 @@ CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 CREATE TABLE sublimits1 (a int, b varchar(32));
 CREATE TABLE sublimits2 (a int, b varchar(32));
 
-ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION BETWEEN '-200' AND '300';
-ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION BETWEEN '301' AND '500';
+ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FROM '-200' TO '300';
+ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500';
 
 INSERT INTO testme VALUES (-150, 'first'), (103, 'second'), (450, 'third'), (301, 'fourth');
 

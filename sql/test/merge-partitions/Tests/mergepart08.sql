@@ -5,8 +5,8 @@ CREATE TABLE subtable2 (a int, b varchar(32));
 INSERT INTO subtable1 VALUES (1, 'one'), (2, 'two'), (3, 'three');
 INSERT INTO subtable2 VALUES (11, 'eleven'), (12, 'twelve'), (13, 'thirteen');
 
-ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 1 AND 10;
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;
+ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 1 TO 10;
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;
 
 SELECT a, b FROM testme;
 SELECT a, b FROM subtable1;

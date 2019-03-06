@@ -75,7 +75,7 @@ Ready.
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 0,	0 # length
-#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello' AND 'world';
+#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 'hello' TO 'world';
 #SELECT minimum, maximum FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
@@ -83,7 +83,7 @@ Ready.
 % 5,	5 # length
 [ "hello",	"world"	]
 #ALTER TABLE listparts DROP TABLE subtable1;
-#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '"hello"' AND '"world"';
+#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM '"hello"' TO '"world"';
 #SELECT minimum, maximum FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
@@ -107,11 +107,11 @@ Ready.
 #DROP TABLE subtable1;
 #CREATE MERGE TABLE testtimestamps (b timestamp) PARTITION BY RANGE ON (b);
 #CREATE TABLE subtime (b timestamp);
-#ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN RANGE MINVALUE AND RANGE MAXVALUE;
+#ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE;
 #ALTER TABLE testtimestamps DROP TABLE subtime;
 #INSERT INTO subtime VALUES (timestamp '2018-02-01 00:00');
 [ 1	]
-#ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN timestamp '2018-01-01 00:00' AND timestamp '2019-01-01 00:00';
+#ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION FROM timestamp '2018-01-01 00:00' TO timestamp '2019-01-01 00:00';
 #ALTER TABLE testtimestamps DROP TABLE subtime;
 #DELETE FROM subtime;
 [ 1	]
@@ -121,11 +121,11 @@ Ready.
 #DROP TABLE subtime;
 #CREATE MERGE TABLE testrangelimits (a int) PARTITION BY RANGE ON (a);
 #CREATE TABLE sublimits (a int);
-#ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND RANGE MAXVALUE;
+#ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE;
 #ALTER TABLE testrangelimits DROP TABLE sublimits;
 #INSERT INTO sublimits VALUES (-1);
 [ 1	]
-#ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN RANGE MINVALUE AND 0;
+#ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION FROM RANGE MINVALUE TO 0;
 #ALTER TABLE testrangelimits DROP TABLE sublimits;
 #INSERT INTO sublimits VALUES (0);
 [ 1	]

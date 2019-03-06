@@ -28,12 +28,12 @@ stderr of test 'mergepart18` in directory 'sql/test/merge-partitions` itself:
 # 14:11:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9747" "--port=32333"
 # 14:11:23 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
-QUERY = ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '1' AND '100'; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '1' TO '100'; --error
 ERROR = !ALTER TABLE: table 'sys.subt1' isn't part of the RANGE PARTITION TABLE 'sys.updateme'
 CODE  = 42S02
-MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333
-QUERY = ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '-100' AND '0'; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'; --error
 ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-9747/.s.monetdb.32333

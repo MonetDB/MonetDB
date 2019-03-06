@@ -73,7 +73,7 @@ Ready.
 [ 1	]
 #TRUNCATE sublimits1;
 [ 1	]
-#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100;
 #INSERT INTO sublimits1 VALUES (99, 'ok');
 [ 1	]
 #UPDATE sublimits1 SET b = 'p' || b WHERE a = 99;
@@ -97,7 +97,7 @@ Ready.
 [ 1	]
 #UPDATE sublimits1 SET a = a - 1;
 [ 1	]
-#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100;
 #SELECT a, b FROM testupdates;
 % sys.testupdates,	sys.testupdates # table_name
 % a,	b # name
@@ -112,11 +112,11 @@ Ready.
 [ 99,	"poks"	]
 #ALTER TABLE testupdates DROP TABLE sublimits1;
 #START TRANSACTION;
-#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100;
 #ROLLBACK;
 #UPDATE sublimits1 SET a = a + 1;
 [ 1	]
-#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 101;
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 101;
 #SELECT a, b FROM sublimits1;
 % sys.sublimits1,	sys.sublimits1 # table_name
 % a,	b # name

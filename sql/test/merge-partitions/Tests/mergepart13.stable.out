@@ -29,9 +29,9 @@ Ready.
 #CREATE TABLE twodecades (t timestamp, b int);
 #CREATE TABLE threedecades (t timestamp, b int);
 #CREATE TABLE fourdecades (t timestamp, b int);
-#ALTER TABLE testtime ADD TABLE onedecade AS PARTITION BETWEEN timestamp '2000-01-01 00:00:00' AND timestamp '2009-12-12 23:59:59';
-#ALTER TABLE testtime ADD TABLE twodecades AS PARTITION BETWEEN timestamp '2010-01-01 00:00:00' AND timestamp '2019-12-12 23:59:59';
-#ALTER TABLE testtime ADD TABLE threedecades AS PARTITION BETWEEN timestamp '2020-01-01 00:00:00' AND timestamp '2029-12-12 23:59:59' WITH NULL;
+#ALTER TABLE testtime ADD TABLE onedecade AS PARTITION FROM timestamp '2000-01-01 00:00:00' TO timestamp '2009-12-12 23:59:59';
+#ALTER TABLE testtime ADD TABLE twodecades AS PARTITION FROM timestamp '2010-01-01 00:00:00' TO timestamp '2019-12-12 23:59:59';
+#ALTER TABLE testtime ADD TABLE threedecades AS PARTITION FROM timestamp '2020-01-01 00:00:00' TO timestamp '2029-12-12 23:59:59' WITH NULL VALUES;
 #INSERT INTO testtime VALUES (timestamp '2000-01-01 00:00:00', 1), (timestamp '2002-12-03 20:00:00', 2),
 #(timestamp '2012-05-12 21:01:00', 3), (timestamp '2019-12-12 23:59:58', 4), (NULL, 5);
 [ 5	]
@@ -99,7 +99,7 @@ Ready.
 % timestamp,	int # type
 % 26,	1 # length
 [ NULL,	5	]
-#ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION BETWEEN timestamp '2030-01-01 00:00:00' AND RANGE MAXVALUE;
+#ALTER TABLE testtime ADD TABLE fourdecades AS PARTITION FROM timestamp '2030-01-01 00:00:00' TO RANGE MAXVALUE;
 #INSERT INTO testtime VALUES (timestamp '3300-10-10 22:12:00', 3300), (timestamp '2030-01-01 00:00:00', 2033),
 #(timestamp '2002-02-02 02:02:02', 2222);
 [ 3	]

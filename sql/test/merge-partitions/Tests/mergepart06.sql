@@ -5,15 +5,15 @@ CREATE TABLE sublimits3 (a int, b varchar(32));
 CREATE TABLE sublimits4 (a int, b varchar(32));
 CREATE TABLE sublimits5 (a int, b varchar(32));
 
-ALTER TABLE testrangelimits ADD TABLE sublimits1 AS PARTITION BETWEEN 0 AND 100;
+ALTER TABLE testrangelimits ADD TABLE sublimits1 AS PARTITION FROM 0 TO 100;
 
 INSERT INTO testrangelimits VALUES (1, 'first');
 INSERT INTO testrangelimits VALUES (1000, 'ups'); --error
 
-ALTER TABLE testrangelimits ADD TABLE sublimits2 AS PARTITION BETWEEN 101 AND 200;
-ALTER TABLE testrangelimits ADD TABLE sublimits3 AS PARTITION BETWEEN 401 AND 500 WITH NULL;
-ALTER TABLE testrangelimits ADD TABLE sublimits4 AS PARTITION BETWEEN 500 AND 600; --still legal
-ALTER TABLE testrangelimits ADD TABLE sublimits5 AS PARTITION BETWEEN -1 AND 1; --error
+ALTER TABLE testrangelimits ADD TABLE sublimits2 AS PARTITION FROM 101 TO 200;
+ALTER TABLE testrangelimits ADD TABLE sublimits3 AS PARTITION FROM 401 TO 500 WITH NULL VALUES;
+ALTER TABLE testrangelimits ADD TABLE sublimits4 AS PARTITION FROM 500 TO 600; --still legal
+ALTER TABLE testrangelimits ADD TABLE sublimits5 AS PARTITION FROM -1 TO 1; --error
 
 INSERT INTO testrangelimits VALUES (1, 'a'), (101, 'b'), (401, 'c');
 INSERT INTO testrangelimits VALUES (50, 'more'); --1st partition

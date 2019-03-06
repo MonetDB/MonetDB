@@ -1626,7 +1626,7 @@ partition_list:
 
 opt_with_nulls:
     /* empty */		{ $$ = FALSE; }
- |  WITH sqlNULL	{ $$ = TRUE; }
+ |  WITH sqlNULL VALUES	{ $$ = TRUE; }
  ;
 
 opt_partition_spec:
@@ -1635,13 +1635,13 @@ opt_partition_spec:
       append_list(l, $3);
       append_int(l, $5);
       $$ = _symbol_create_list( SQL_PARTITION_LIST, l ); }
- | BETWEEN partition_range_from AND partition_range_to opt_with_nulls
+ | FROM partition_range_from TO partition_range_to opt_with_nulls
     { dlist *l = L();
       append_symbol(l, $2);
       append_symbol(l, $4);
       append_int(l, $5);
       $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
- | WITH sqlNULL
+ | FOR sqlNULL VALUES
     { dlist *l = L();
       append_symbol(l, NULL);
       append_symbol(l, NULL);
