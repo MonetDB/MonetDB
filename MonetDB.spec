@@ -995,7 +995,7 @@ export CFLAGS
 	--with-proj=no \
 	--with-pthread=yes \
 	--with-python2=yes \
-	--with-python3=yes \
+	--with-python3=%{?with_py3integration:yes}%{!?with_py3integration:no} \
 	--with-readline=yes \
 	--with-regex=%{?with_pcre:PCRE}%{!?with_pcre:POSIX} \
 	--with-samtools=%{?with_samtools:yes}%{!?with_samtools:no} \
