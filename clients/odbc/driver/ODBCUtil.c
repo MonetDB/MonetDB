@@ -359,7 +359,7 @@ static struct scalars {
 	{"dayofmonth", 1, "sys.\"dayofmonth\"(\1)", },
 	{"dayofweek", 1, "sys.\"dayofweek\"(\1)", },
 	{"dayofyear", 1, "sys.\"dayofyear\"(\1)", },
-	{"degrees", 1, "sys.\"sys\".\"degrees\"(\1)", },
+	{"degrees", 1, "sys.\"degrees\"(\1)", },
 	{"difference", 2, "sys.\"difference\"(\1,\2)", },
 	{"exp", 1, "sys.\"exp\"(\1)", },
 	{"extract", 1, "sys.\"extract\"(\1)", }, /* include "X FROM " in argument */
@@ -382,10 +382,10 @@ static struct scalars {
 	{"now", 0, "sys.\"now\"()", },
 	{"octet_length", 1, "sys.\"octet_length\"(\1)", },
 	{"pi", 0, "sys.\"pi\"()", },
-	{"position", 1, "sys.\"position\"(\1)", }, /* includes "IN" in argument */
+	{"position", 1, "POSITION(\1)", }, /* includes " IN str" in first argument. Note: POSITION is implemented in the parser. */
 	{"power", 2, "sys.\"power\"(\1,\2)", },
 	{"quarter", 1, "sys.\"quarter\"(\1)", },
-	{"radians", 1, "sys.\"sys\".\"radians\"(\1)", },
+	{"radians", 1, "sys.\"radians\"(\1)", },
 	{"rand", 0, "sys.\"rand\"()", },
 	{"rand", 1, "sys.\"rand\"(\1)", },
 	{"repeat", 2, "sys.\"repeat\"(\1,\2)", },
