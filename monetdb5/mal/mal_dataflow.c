@@ -87,7 +87,7 @@ static struct worker {
 static Queue *todo = 0;	/* pending instructions */
 
 static ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
-static MT_Lock dataflowLock MT_LOCK_INITIALIZER("dataflowLock");
+static MT_Lock dataflowLock = MT_LOCK_INITIALIZER("dataflowLock");
 static void stopMALdataflow(void);
 
 void
@@ -512,13 +512,6 @@ DFLOWinitialize(void)
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 	if (limit > THREADS)
 		limit = THREADS;
-#ifdef NEED_MT_LOCK_INIT
-	static bool initialized = false;
-	if (!initialized) {
-		MT_lock_init(&dataflowLock, "dataflowLock");
-		initialized = true;
-	}
-#endif
 	MT_lock_set(&dataflowLock);
 	for (i = 0; i < limit; i++) {
 		workers[i].flag = RUNNING;

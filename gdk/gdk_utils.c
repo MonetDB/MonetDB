@@ -415,7 +415,7 @@ static void GDKlockHome(int farmid);
 
 #ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
-static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslk");
+static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER("mallocsuccesslk");
 #endif
 #endif
 
@@ -458,14 +458,6 @@ GDKinit(opt *set, int setlen)
 	if (!MT_thread_init())
 		return 0;
 
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&GDKnameLock, "GDKnameLock");
-	MT_lock_init(&GDKthreadLock, "GDKthreadLock");
-	MT_lock_init(&GDKtmLock, "GDKtmLock");
-#ifndef NDEBUG
-	MT_lock_init(&mallocsuccesslock, "mallocsuccesslock");
-#endif
-#endif
 	for (i = 0; i <= BBP_BATMASK; i++) {
 		char name[16];
 		snprintf(name, sizeof(name), "GDKswapLock%d", i);
@@ -807,14 +799,6 @@ GDKreset(int status, int doexit)
 		//gdk_system_reset(); CHECK OUT
 	}
 	ATOMunknown_clean();
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_destroy(&GDKnameLock);
-	MT_lock_destroy(&GDKthreadLock);
-	MT_lock_destroy(&GDKtmLock);
-#ifndef NDEBUG
-	MT_lock_destroy(&mallocsuccesslock);
-#endif
-#endif
 #ifndef HAVE_EMBEDDED
 	if (doexit) {
 		exit(status);
@@ -848,9 +832,9 @@ GDKexit(int status)
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-MT_Lock GDKnameLock MT_LOCK_INITIALIZER("GDKnameLock");
-MT_Lock GDKthreadLock MT_LOCK_INITIALIZER("GDKthreadLock");
-MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
+MT_Lock GDKnameLock = MT_LOCK_INITIALIZER("GDKnameLock");
+MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER("GDKthreadLock");
+MT_Lock GDKtmLock = MT_LOCK_INITIALIZER("GDKtmLock");
 
 /*
  * @+ Concurrency control

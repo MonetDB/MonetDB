@@ -237,19 +237,7 @@ static struct PIPELINES {
 #include "opt_pipes.h"
 #include "optimizer_private.h"
 
-static MT_Lock pipeLock MT_LOCK_INITIALIZER("pipeLock");
-
-void
-optPipeInit(void)
-{
-#ifdef NEED_MT_LOCK_INIT
-	static bool initialized = false;
-	if (!initialized) {
-		MT_lock_init(&pipeLock, "pipeLock");
-		initialized = true;
-	}
-#endif
-}
+static MT_Lock pipeLock = MT_LOCK_INITIALIZER("pipeLock");
 
 /* the session_pipe is the one defined by the user */
 str

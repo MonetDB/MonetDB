@@ -232,7 +232,7 @@ static volatile MT_Id locked_by = 0;
 	} while (0)
 
 static int BBPunloadCnt = 0;
-static MT_Lock GDKunloadLock MT_LOCK_INITIALIZER("GDKunloadLock");
+static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER("GDKunloadLock");
 
 void
 BBPlock(void)
@@ -1021,16 +1021,6 @@ BBPinit(void)
 		GDKfatal("BBPinit: GDKmalloc failed\n");
 	if(!(backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir")))
 		GDKfatal("BBPinit: GDKmalloc failed\n");
-
-#ifdef NEED_MT_LOCK_INIT
-	static initialized = false;
-	if (!initialized) {
-		/* only do this once */
-		MT_lock_init(&GDKunloadLock, "GDKunloadLock");
-		BATsample(NULL, 0);	/* initializes the lock */
-		initialized = true;
-	}
-#endif
 
 	if (BBPfarms[0].dirname == NULL) {
 		BBPaddfarm(".", 1 << PERSISTENT);

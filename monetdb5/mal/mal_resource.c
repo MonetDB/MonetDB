@@ -116,7 +116,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  * The hotclaim is a hint how large the result would be.
  */
 #ifdef USE_MAL_ADMISSION
-static MT_Lock admissionLock MT_LOCK_INITIALIZER("admissionLock");
+static MT_Lock admissionLock = MT_LOCK_INITIALIZER("admissionLock");
 
 /* experiments on sf-100 on small machine showed no real improvement */
 int
@@ -222,14 +222,5 @@ MALrunningThreads(void)
 void
 initResource(void)
 {
-#ifdef NEED_MT_LOCK_INIT
-	static bool initialized = false;
-	if (!initialized) {
-#ifdef USE_MAL_ADMISSION
-		MT_lock_init(&admissionLock, "admissionLock");
-#endif
-		initialized = true;
-	}
-#endif
 	ATOMIC_SET(&mal_running, GDKnr_threads);
 }

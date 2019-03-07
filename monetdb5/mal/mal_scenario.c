@@ -142,7 +142,7 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 };
 
 static str fillScenario(Client c, Scenario scen);
-static MT_Lock scenarioLock MT_LOCK_INITIALIZER("scenarioLock");
+static MT_Lock scenarioLock = MT_LOCK_INITIALIZER("scenarioLock");
 
 
 /*
@@ -224,13 +224,6 @@ initScenario(Client c, Scenario s)
 str
 defaultScenario(Client c)
 {
-#ifdef NEED_MT_LOCK_INIT
-	static bool initialized = false;
-	if (c == mal_clients && !initialized) {
-		MT_lock_init(&scenarioLock, "scenarioLock");
-		initialized = true;
-	}
-#endif
 	return initScenario(c, scenarioRec);
 }
 

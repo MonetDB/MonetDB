@@ -21,7 +21,7 @@
 #define CATALOG_VERSION 52203
 int catalog_version = 0;
 
-static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
+static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static int nr_sessions = 0;
@@ -1953,13 +1953,6 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	store_readonly = readonly;
 	store_singleuser = singleuser;
 
-#ifdef NEED_MT_LOCK_INIT
-	static bool initialized = false;
-	if (!initialized) {
-		MT_lock_init(&bs_lock, "SQL_bs_lock");
-		initialized = true;
-	}
-#endif
 	MT_lock_set(&bs_lock);
 
 	/* initialize empty bats */
