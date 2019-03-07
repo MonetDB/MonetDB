@@ -310,17 +310,22 @@ typedef struct MT_Lock {
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
+static bool inline
+MT_lock_try(MT_Lock *l)
+{
+	if (l->lock == NULL) {
+		HANDLE p = CreateMutex(NULL, 0, NULL);
+		if (_InterlockedCompareExchangePointer(
+			    &l->lock, p, NULL) != NULL)
+			CloseHandle(p);
+	}
+	return WaitForSingleObject(l->lock, 0) == WAIT_OBJECT_0;
+}
+
 #define MT_lock_set(l)							\
 	do {								\
-		if ((l)->lock == NULL) {				\
-			HANDLE _p = CreateMutex(NULL, 0, NULL);		\
-			if (_InterlockedCompareExchangePointer(		\
-				    &(l)->lock, _p, NULL) != NULL)	\
-				CloseHandle(_p);			\
-		}							\
-		assert((l)->lock);					\
 		_DBG_LOCK_COUNT_0(l);					\
-		if (WaitForSingleObject((l)->lock, 0) != WAIT_OBJECT_0) { \
+		if (!MT_lock_try(l)) {					\
 			_DBG_LOCK_CONTENTION(l);			\
 			MT_thread_setlockwait(l);			\
 			while (WaitForSingleObject(			\
@@ -338,18 +343,6 @@ typedef struct MT_Lock {
 		_DBG_LOCK_UNLOCKER(l);		\
 		ReleaseMutex((l)->lock);	\
 	} while (0)
-
-static bool inline
-MT_lock_try(MT_Lock *l)
-{
-	if (l->lock == NULL) {
-		HANDLE p = CreateMutex(NULL, 0, NULL);
-		if (_InterlockedCompareExchangePointer(
-			    &l->lock, p, NULL) != NULL)
-			CloseHandle(p);
-	}
-	return WaitForSingleObject(l->lock, 0) == WAIT_OBJECT_0;
-}
 
 #define MT_lock_destroy(l)			\
 	do {					\
@@ -388,10 +381,12 @@ typedef struct MT_Lock {
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
+#define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
+
 #define MT_lock_set(l)							\
 	do {								\
 		_DBG_LOCK_COUNT_0(l);					\
-		if (pthread_mutex_trylock(&(l)->lock) != 0) {		\
+		if (!MT_lock_try(l)) {					\
 			_DBG_LOCK_CONTENTION(l);			\
 			MT_thread_setlockwait(l);			\
 			while (pthread_mutex_lock(&(l)->lock) != 0)	\
@@ -407,8 +402,6 @@ typedef struct MT_Lock {
 		_DBG_LOCK_UNLOCKER(l);		\
 		pthread_mutex_unlock(&(l)->lock);			\
 	} while (0)
-
-#define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0)
 
 #define MT_lock_destroy(l)				\
 	do {						\
@@ -441,10 +434,12 @@ typedef struct MT_Lock {
 #define MT_LOCK_INITIALIZER(n)	{ .name = n, }
 #endif
 
+#define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)
+
 #define MT_lock_set(l)							\
 	do {								\
 		_DBG_LOCK_COUNT_0(l);					\
-		if (ATOMIC_TAS(&(l)->lock) != 0) {			\
+		if (!MT_lock_try(l)) {					\
 			/* we didn't get the lock */			\
 			int _spincnt = GDKnr_threads > 1 ? 0 : 1023;	\
 			_DBG_LOCK_CONTENTION(l);			\
@@ -460,8 +455,6 @@ typedef struct MT_Lock {
 		_DBG_LOCK_LOCKER(l);					\
 		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
-
-#define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)
 
 #define MT_lock_init(l, n)					\
 	do {							\
