@@ -1686,7 +1686,7 @@ org_have_regex=auto
 dft_regex=auto
 AC_ARG_WITH([regex],
 	[AS_HELP_STRING([--with-regex=TYPE],
-	[use either PRCE or POSIX regular expressions (default=PCRE if available)])],
+	[use either PCRE or POSIX regular expressions (default=PCRE if available)])],
 	[AS_CASE([$withval],
 		[pcre|PCRE], [have_regex=pcre],
 		[posix|POSIX], [have_regex=posix],

@@ -19,6 +19,7 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 % varchar,	varchar # type
 % 2,	2 # length
 [ "5",	"10"	]
+[ NULL,	NULL	]
 [ "11",	"20"	]
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -79,6 +80,7 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 % varchar,	varchar # type
 % 2,	2 # length
 [ "5",	"10"	]
+[ NULL,	NULL	]
 [ "11",	"20"	]
 #SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20;SELECT "minimum", "maximum" FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions # table_name
@@ -86,6 +88,7 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 % varchar,	varchar # type
 % 2,	2 # length
 [ "5",	"10"	]
+[ NULL,	NULL	]
 [ "11",	"20"	]
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -105,12 +108,13 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 % varchar,	varchar # type
 % 2,	2 # length
 [ "5",	"10"	]
+[ NULL,	NULL	]
 [ "11",	"20"	]
-#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
-#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
-#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
-[ 4	]
-#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four'), (NULL, 'five');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE testme DROP TABLE subtable5;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;DROP TABLE subtable5;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four'), (NULL, 'five');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE testme DROP TABLE subtable5;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;DROP TABLE subtable5;
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four'), (NULL, 'five');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE testme DROP TABLE subtable5;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;DROP TABLE subtable5;
+[ 5	]
+#SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four'), (NULL, 'five');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE testme DROP TABLE subtable5;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;DROP TABLE testme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE anothertest;DROP TABLE subtable3;DROP TABLE subtable4;DROP TABLE subtable5;
 [ 4	]
 #SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four');INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');SELECT a,b FROM testme;SELECT a,b FROM anothertest;SELECT "minimum", "maximum" FROM range_partitions;ALTER TABLE testme DROP TABLE subtable1;ALTER TABLE testme DROP TABLE subtable2;ALTER TABLE anothertest DROP TABLE subtable3;ALTER TABLE anothertest DROP TABLE subtable4;SELECT "minimum", "maximum" FROM range_partitions;
 % .testme,	.testme # table_name
@@ -118,6 +122,7 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 % int,	varchar # type
 % 2,	5 # length
 [ 5,	"one"	]
+[ NULL,	"five"	]
 [ 12,	"two"	]
 [ 13,	"three"	]
 [ 15,	"four"	]
@@ -136,6 +141,7 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 % varchar,	varchar # type
 % 2,	2 # length
 [ "5",	"10"	]
+[ NULL,	NULL	]
 [ "11",	"20"	]
 [ "11",	"20"	]
 [ "21",	"30"	]
@@ -166,23 +172,28 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24262/.s.monetdb.39847
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
-#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
-#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
-#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
-#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
-#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+[ 1	]
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
+#CREATE MERGE TABLE upsme (a int, b varchar(32)) PARTITION BY VALUES USING (a + 5);CREATE TABLE subtable1 (a int, b varchar(32));CREATE TABLE subtable2 (a int, b varchar(32));CREATE TABLE subtable3 (a int, b varchar(32));ALTER TABLE upsme ADD TABLE subtable3 AS PARTITION FOR NULL VALUES;INSERT INTO upsme VALUES (NULL, 'one');ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);SELECT "value" FROM value_partitions;
 % sys.value_partitions # table_name
 % value # name
 % varchar # type
 % 2 # length
+[ NULL	]
 [ "15"	]
 [ "25"	]
 [ "35"	]
 [ "45"	]
 [ "55"	]
 [ "65"	]
-# MonetDB 5 server v11.30.0
+# MonetDB 5 server v11.33.0 (hg id: 16db5c168ad1+)
 # This is an unreleased version
 # Serving database 'mTests_sql_test_merge-partitions', using 8 threads
 # Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
@@ -194,9 +205,44 @@ stdout of test 'mergepart23` in directory 'sql/test/merge-partitions` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24262/.s.monetdb.39847
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
-#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
-#ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;
+#INSERT INTO upsme VALUES (10, 'one'), (40, 'two'), (NULL, 'three');INSERT INTO subtable3 VALUES (NULL, 'four');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+[ 3	]
+#INSERT INTO upsme VALUES (10, 'one'), (40, 'two'), (NULL, 'three');INSERT INTO subtable3 VALUES (NULL, 'four');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+[ 1	]
+#INSERT INTO upsme VALUES (10, 'one'), (40, 'two'), (NULL, 'three');INSERT INTO subtable3 VALUES (NULL, 'four');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+% .upsme,	.upsme # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	5 # length
+[ 10,	"two"	]
+[ 40,	"three"	]
+[ NULL,	"one"	]
+[ NULL,	"four"	]
+[ NULL,	"five"	]
+#INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');INSERT INTO subtable3 VALUES (NULL, 'five');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+% sys.subtable1,	sys.subtable1 # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	3 # length
+[ 10,	"two"	]
+#INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');INSERT INTO subtable3 VALUES (NULL, 'five');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+% sys.subtable2,	sys.subtable2 # table_name
+% a,	b # name
+% int,	varchar # type
+% 2,	5 # length
+[ 40,	"three"	]
+#INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');INSERT INTO subtable3 VALUES (NULL, 'five');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+% sys.subtable3,	sys.subtable3 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	4 # length
+[ NULL,	"one"	]
+[ NULL,	"four"	]
+[ NULL,	"five"	]
+#INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');INSERT INTO subtable3 VALUES (NULL, 'five');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+#INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');INSERT INTO subtable3 VALUES (NULL, 'five');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+#INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');INSERT INTO subtable3 VALUES (NULL, 'five');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
+#INSERT INTO upsme VALUES (10, 'two'), (40, 'three'), (NULL, 'four');INSERT INTO subtable3 VALUES (NULL, 'five');SELECT a,b FROM upsme;SELECT a,b FROM subtable1;SELECT a,b FROM subtable2;SELECT a,b FROM subtable3;ALTER TABLE upsme DROP TABLE subtable1;ALTER TABLE upsme DROP TABLE subtable2;ALTER TABLE upsme DROP TABLE subtable3;SELECT "value" FROM value_partitions;DROP TABLE upsme;DROP TABLE subtable1;DROP TABLE subtable2;DROP TABLE subtable3;
 % sys.value_partitions # table_name
 % value # name
 % varchar # type

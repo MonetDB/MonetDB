@@ -392,7 +392,7 @@ SQLhelp sqlhelp1[] = {
 	 "Define access privileges",
 	 "GRANT privileges TO grantee [',' ...] [ WITH GRANT OPTION ]\n"
 	 "GRANT role [',' ...] TO grantee [',' ...] [ WITH ADMIN OPTION]",
-	 "privileges,role,grantee",
+	 "privileges,table_privileges,global_privileges,role,grantee",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Permissions"},
 	{"MERGE",
 	 "",
@@ -413,7 +413,7 @@ SQLhelp sqlhelp1[] = {
 	 "Remove some privileges",
 	 "REVOKE [GRANT OPTION FOR] privileges FROM { grantee [',' ...] | CURRENT_USER | CURRENT_ROLE }\n"
 	 "REVOKE [ADMIN OPTION FOR] role [',' ...] FROM { grantee [',' ...] | CURRENT_USER | CURRENT_ROLE }",
-	 "privileges,grantee,role",
+	 "privileges,table_privileges,global_privileges,grantee,role",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Permissions"},
 	{"ROLLBACK",
 	 "Rollback the current transaction",

@@ -150,7 +150,7 @@
 #include "mal_builder.h"
 #include "wlc.h"
 
-MT_Lock     wlc_lock MT_LOCK_INITIALIZER("wlc_lock");
+MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
 
 static char wlc_snapshot[FILENAME_MAX]; // The location of the snapshot against which the logs work
 static stream *wlc_fd = 0;
@@ -964,20 +964,4 @@ WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	return WLCrollback(cntxt->idx);
-}
-
-mal_export str WLCprelude(void *ret);
-
-str
-WLCprelude(void *ret)
-{
-	(void) ret;
-#ifdef NEED_MT_LOCK_INIT
-	static bool initialized = false;
-	if (!initialized) {
-		MT_lock_init(&wlc_lock, "wlc_lock");
-		initialized = true;
-	}
-#endif
-	return MAL_SUCCEED;
 }

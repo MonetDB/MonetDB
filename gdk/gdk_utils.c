@@ -50,7 +50,7 @@ int GDKverbose = 0;
 #define chdir _chdir
 #endif
 
-static volatile ATOMIC_TYPE GDKstopped = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE GDKstopped = ATOMIC_VAR_INIT(0);
 static void GDKunlockHome(int farmid);
 
 #undef malloc
@@ -291,15 +291,11 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
  * Studio.  By doing this, we avoid locking overhead.  There is also a
  * fall-back for other compilers. */
 #include "gdk_atomic.h"
-static volatile ATOMIC_TYPE GDK_mallocedbytes_estimate = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE GDK_mallocedbytes_estimate = ATOMIC_VAR_INIT(0);
 #ifndef NDEBUG
 static volatile lng GDK_malloc_success_count = -1;
 #endif
-static volatile ATOMIC_TYPE GDK_vm_cursize = ATOMIC_VAR_INIT(0);
-#ifdef ATOMIC_LOCK
-static MT_Lock mbyteslock MT_LOCK_INITIALIZER("mbyteslock");
-static MT_Lock GDKstoppedLock MT_LOCK_INITIALIZER("GDKstoppedLock");
-#endif
+static ATOMIC_TYPE GDK_vm_cursize = ATOMIC_VAR_INIT(0);
 
 size_t _MT_pagesize = 0;	/* variable holding page size */
 size_t _MT_npages = 0;		/* variable holding memory size in pages */
@@ -421,7 +417,7 @@ static gdk_return GDKlockHome(int farmid);
 
 #ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
-static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslk");
+static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER("mallocsuccesslk");
 #endif
 #endif
 
@@ -474,16 +470,6 @@ GDKinit(opt *set, int setlen)
 	if (!MT_thread_init())
 		return GDK_FAIL;
 
-#ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(GDKstoppedLock);
-	ATOMIC_INIT(mbyteslock);
-	MT_lock_init(&GDKnameLock, "GDKnameLock");
-	MT_lock_init(&GDKthreadLock, "GDKthreadLock");
-	MT_lock_init(&GDKtmLock, "GDKtmLock");
-#ifndef NDEBUG
-	MT_lock_init(&mallocsuccesslock, "mallocsuccesslock");
-#endif
-#endif
 	for (i = 0; i <= BBP_BATMASK; i++) {
 		char name[16];
 		snprintf(name, sizeof(name), "GDKswapLock%d", i);
@@ -704,7 +690,7 @@ static ThreadRec GDKthreads[THREADS];
 bool
 GDKexiting(void)
 {
-	return (bool) (ATOMIC_GET(GDKstopped, GDKstoppedLock) > 0);
+	return (bool) (ATOMIC_GET(&GDKstopped) > 0);
 }
 
 static struct serverthread {
@@ -717,7 +703,7 @@ GDKprepareExit(void)
 {
 	struct serverthread *st;
 
-	if (ATOMIC_ADD(GDKstopped, 1, GDKstoppedLock) > 0)
+	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
 	MT_lock_set(&GDKthreadLock);
@@ -858,18 +844,6 @@ GDKreset(int status)
 		//gdk_system_reset(); CHECK OUT
 	}
 	ATOMunknown_clean();
-#ifdef NEED_MT_LOCK_INIT
-#ifdef ATOMIC_LOCK
-	MT_lock_destroy(&GDKstoppedLock);
-	MT_lock_destroy(&mbyteslock);
-#endif
-	MT_lock_destroy(&GDKnameLock);
-	MT_lock_destroy(&GDKthreadLock);
-	MT_lock_destroy(&GDKtmLock);
-#ifndef NDEBUG
-	MT_lock_destroy(&mallocsuccesslock);
-#endif
-#endif
 }
 
 /* coverity[+kill] */
@@ -898,9 +872,9 @@ GDKexit(int status)
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-MT_Lock GDKnameLock MT_LOCK_INITIALIZER("GDKnameLock");
-MT_Lock GDKthreadLock MT_LOCK_INITIALIZER("GDKthreadLock");
-MT_Lock GDKtmLock MT_LOCK_INITIALIZER("GDKtmLock");
+MT_Lock GDKnameLock = MT_LOCK_INITIALIZER("GDKnameLock");
+MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER("GDKthreadLock");
+MT_Lock GDKtmLock = MT_LOCK_INITIALIZER("GDKtmLock");
 
 /*
  * @+ Concurrency control
@@ -1631,25 +1605,25 @@ size_t
 GDKmem_cursize(void)
 {
 	/* RAM/swapmem that Monet is really using now */
-	return (size_t) ATOMIC_GET(GDK_mallocedbytes_estimate, mbyteslock);
+	return (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 }
 
 size_t
 GDKvm_cursize(void)
 {
 	/* current Monet VM address space usage */
-	return (size_t) ATOMIC_GET(GDK_vm_cursize, mbyteslock) + GDKmem_cursize();
+	return (size_t) ATOMIC_GET(&GDK_vm_cursize) + GDKmem_cursize();
 }
 
 #define heapinc(_memdelta)						\
-	(void) ATOMIC_ADD(GDK_mallocedbytes_estimate, _memdelta, mbyteslock)
+	(void) ATOMIC_ADD(&GDK_mallocedbytes_estimate, _memdelta)
 #define heapdec(_memdelta)						\
-	(void) ATOMIC_SUB(GDK_mallocedbytes_estimate, _memdelta, mbyteslock)
+	(void) ATOMIC_SUB(&GDK_mallocedbytes_estimate, _memdelta)
 
 #define meminc(vmdelta)							\
-	(void) ATOMIC_ADD(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock)
+	(void) ATOMIC_ADD(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
 #define memdec(vmdelta)							\
-	(void) ATOMIC_SUB(GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG), mbyteslock)
+	(void) ATOMIC_SUB(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
 
 #ifndef STATIC_CODE_ANALYSIS
 
