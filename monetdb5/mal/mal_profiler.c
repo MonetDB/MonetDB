@@ -45,7 +45,7 @@ int malProfileMode = 0;     /* global flag to indicate profiling mode */
 
 static struct timeval startup_time;
 
-static volatile ATOMIC_TYPE hbdelay = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE hbdelay = ATOMIC_VAR_INIT(0);
 
 #ifdef HAVE_SYS_RESOURCE_H
 struct rusage infoUsage;
@@ -446,7 +446,7 @@ profilerHeartbeatEvent(char *alter)
 	lng usec = GDKusec();
 	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
-	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
+	if (ATOMIC_GET(&hbdelay) == 0 || eventstream  == NULL)
 		return;
 
 	/* get CPU load on beat boundaries only */
@@ -1037,7 +1037,7 @@ void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 }
 
 static MT_Id hbthread;
-static volatile ATOMIC_TYPE hbrunning;
+static ATOMIC_TYPE hbrunning = ATOMIC_VAR_INIT(0);
 
 static void profilerHeartbeat(void *dummy)
 {
@@ -1047,32 +1047,32 @@ static void profilerHeartbeat(void *dummy)
 	(void) dummy;
 	for (;;) {
 		/* wait until you need this info */
-		while (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream == NULL) {
-			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
+		while (ATOMIC_GET(&hbdelay) == 0 || eventstream == NULL) {
+			if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 				return;
 			MT_sleep_ms(timeout);
 		}
-		for (t = (int) ATOMIC_GET(hbdelay, mal_beatLock); t > 0; t -= timeout) {
-			if (GDKexiting() || !ATOMIC_GET(hbrunning, mal_beatLock))
+		for (t = (int) ATOMIC_GET(&hbdelay); t > 0; t -= timeout) {
+			if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 				return;
 			MT_sleep_ms(t > timeout ? timeout : t);
 		}
 		profilerHeartbeatEvent("ping");
 	}
-	ATOMIC_SET(hbdelay, 0, mal_beatLock);
+	ATOMIC_SET(&hbdelay, 0);
 }
 
 void setHeartbeat(int delay)
 {
 	if (delay < 0 ){
-		ATOMIC_SET(hbrunning, 0, mal_beatLock);
+		ATOMIC_SET(&hbrunning, 0);
 		if (hbthread)
 			MT_join_thread(hbthread);
 		return;
 	}
 	if ( delay > 0 &&  delay <= 10)
 		delay = 10;
-	ATOMIC_SET(hbdelay, delay, mal_beatLock);
+	ATOMIC_SET(&hbdelay, delay);
 }
 
 void initProfiler(void)
@@ -1084,14 +1084,11 @@ void initProfiler(void)
 
 void initHeartbeat(void)
 {
-#ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(mal_beatLock);
-#endif
-	ATOMIC_SET(hbrunning, 1, mal_beatLock);
+	ATOMIC_SET(&hbrunning, 1);
 	if (MT_create_thread(&hbthread, profilerHeartbeat, NULL, MT_THR_JOINABLE,
 						 "heartbeat") < 0) {
 		/* it didn't happen */
 		hbthread = 0;
-		ATOMIC_SET(hbrunning, 0, mal_beatLock);
+		ATOMIC_SET(&hbrunning, 0);
 	}
 }

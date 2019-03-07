@@ -164,24 +164,15 @@ gdk_export int MT_join_thread(MT_Id t);
 #define LOCK_STATS
 #endif
 
-#ifdef ATOMIC_LOCK
-/* ATOMIC_LOCK and LOCK_STATS are incompatible with each other */
-#undef LOCK_STATS
-#endif
-
 /* define this if you want to use pthread (or Windows) locks instead
  * of atomic instructions for locking (latching) */
 /* #define USE_PTHREAD_LOCKS */
 
 #ifdef LOCK_STATS
 
-#ifdef ATOMIC_LOCK
-#error "ATOMIC_LOCK and LOCK_STATS are incompatible with each other"
-#endif
-
 #define _DBG_LOCK_COUNT_0(l)						\
 	do {								\
-		(void) ATOMIC_INC(GDKlockcnt, dummy);			\
+		(void) ATOMIC_INC(&GDKlockcnt);				\
 		TEMDEBUG fprintf(stderr, "#%s: %s: locking %s...\n",	\
 				 MT_thread_getname(), __func__, (l)->name); \
 	} while (0)
@@ -201,24 +192,24 @@ gdk_export int MT_join_thread(MT_Id t);
 	do {								\
 		TEMDEBUG fprintf(stderr, "#%s: %s: lock %s contention\n", \
 				 MT_thread_getname(), __func__, (l)->name); \
-		(void) ATOMIC_INC(GDKlockcontentioncnt, dummy);		\
-		(void) ATOMIC_INC((l)->contention, dummy);		\
+		(void) ATOMIC_INC(&GDKlockcontentioncnt);		\
+		(void) ATOMIC_INC(&(l)->contention);			\
 	} while (0)
 #define _DBG_LOCK_SLEEP(l)						\
 	do {								\
 		if (_spincnt == 1024)					\
-			(void) ATOMIC_INC(GDKlocksleepcnt, dummy);	\
-		(void) ATOMIC_INC((l)->sleep, dummy);			\
+			(void) ATOMIC_INC(&GDKlocksleepcnt);		\
+		(void) ATOMIC_INC(&(l)->sleep);				\
 	} while (0)
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
 		(l)->count++;						\
 		if ((l)->next == (struct MT_Lock *) -1) {		\
-			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
+			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
 				;					\
 			(l)->next = GDKlocklist;			\
 			GDKlocklist = (l);				\
-			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
+			ATOMIC_CLEAR(&GDKlocklistlock);			\
 		}							\
 		TEMDEBUG fprintf(stderr, "#%s: %s: locking %s complete\n", \
 				 MT_thread_getname(), __func__, (l)->name); \
@@ -226,8 +217,8 @@ gdk_export int MT_join_thread(MT_Id t);
 #define _DBG_LOCK_INIT(l)						\
 	do {								\
 		(l)->count = 0;						\
-		ATOMIC_SET((l)->contention, 0, dummy);			\
-		ATOMIC_SET((l)->sleep, 0, dummy);			\
+		ATOMIC_INIT(&(l)->contention, 0);			\
+		ATOMIC_INIT(&(l)->sleep, 0);				\
 		(l)->locker = NULL;					\
 		(l)->thread = NULL;					\
 		/* if name starts with "sa_" don't link in GDKlocklist */ \
@@ -236,13 +227,13 @@ gdk_export int MT_join_thread(MT_Id t);
 		/* over when the lock is destroyed and the memory freed */ \
 		if (strncmp((l)->name, "sa_", 3) != 0) {		\
 			MT_Lock * volatile _p;				\
-			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
+			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
 				;					\
 			for (_p = GDKlocklist; _p; _p = _p->next)	\
 				assert(_p != (l));			\
 			(l)->next = GDKlocklist;			\
 			GDKlocklist = (l);				\
-			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
+			ATOMIC_CLEAR(&GDKlocklistlock);			\
 		} else {						\
 			(l)->next = NULL;				\
 		}							\
@@ -255,14 +246,14 @@ gdk_export int MT_join_thread(MT_Id t);
 		/* over when the lock is destroyed and the memory freed */ \
 		if (strncmp((l)->name, "sa_", 3) != 0) {		\
 			MT_Lock * volatile *_p;				\
-			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
+			while (ATOMIC_TAS(&GDKlocklistlock) != 0)	\
 				;					\
 			for (_p = &GDKlocklist; *_p; _p = &(*_p)->next)	\
 				if ((l) == *_p) {			\
 					*_p = (l)->next;		\
 					break;				\
 				}					\
-			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
+			ATOMIC_CLEAR(&GDKlocklistlock);			\
 		}							\
 	} while (0)
 
@@ -287,8 +278,8 @@ typedef struct MT_Lock {
 	char name[16];
 #ifdef LOCK_STATS
 	size_t count;
-	ATOMIC_TYPE volatile contention;
-	ATOMIC_TYPE volatile sleep;
+	ATOMIC_TYPE contention;
+	ATOMIC_TYPE sleep;
 	struct MT_Lock * volatile next;
 	const char *locker;
 	const char *thread;
@@ -338,8 +329,8 @@ typedef struct MT_Lock {
 	char name[16];
 #ifdef LOCK_STATS
 	size_t count;
-	ATOMIC_TYPE volatile contention;
-	ATOMIC_TYPE volatile sleep;
+	ATOMIC_TYPE contention;
+	ATOMIC_TYPE sleep;
 	struct MT_Lock * volatile next;
 	const char *locker;
 	const char *thread;
@@ -391,12 +382,12 @@ typedef struct MT_Lock {
 /* if LOCK_STATS is set, we maintain a bunch of counters and maintain
  * a linked list of active locks */
 typedef struct MT_Lock {
-	ATOMIC_FLAG volatile lock;
+	ATOMIC_FLAG lock;
 	char name[16];
 #ifdef LOCK_STATS
 	size_t count;
-	ATOMIC_TYPE volatile contention;
-	ATOMIC_TYPE volatile sleep;
+	ATOMIC_TYPE contention;
+	ATOMIC_TYPE sleep;
 	struct MT_Lock * volatile next;
 	const char *locker;
 	const char *thread;
@@ -406,7 +397,7 @@ typedef struct MT_Lock {
 #define MT_lock_set(l)							\
 	do {								\
 		_DBG_LOCK_COUNT_0(l);					\
-		if (ATOMIC_TAS((l)->lock, dummy) != 0) {		\
+		if (ATOMIC_TAS(&(l)->lock) != 0) {			\
 			/* we didn't get the lock */			\
 			int _spincnt = GDKnr_threads > 1 ? 0 : 1023;	\
 			_DBG_LOCK_CONTENTION(l);			\
@@ -416,16 +407,16 @@ typedef struct MT_Lock {
 					_DBG_LOCK_SLEEP(l);		\
 					MT_sleep_ms(1);			\
 				}					\
-			} while (ATOMIC_TAS((l)->lock, dummy) != 0);	\
+			} while (ATOMIC_TAS(&(l)->lock) != 0);		\
 			MT_thread_setlockwait(NULL);			\
 		}							\
 		_DBG_LOCK_LOCKER(l);					\
 		_DBG_LOCK_COUNT_2(l);					\
 	} while (0)
-#define MT_lock_try(l)	(ATOMIC_TAS((l)->lock, dummy) == 0)
+#define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)
 #define MT_lock_init(l, n)					\
 	do {							\
-		ATOMIC_CLEAR((l)->lock, dummy);			\
+		ATOMIC_CLEAR(&(l)->lock);			\
 		strncpy((l)->name, (n), sizeof((l)->name));	\
 		(l)->name[sizeof((l)->name) - 1] = 0;		\
 		_DBG_LOCK_INIT(l);				\
@@ -433,7 +424,7 @@ typedef struct MT_Lock {
 #define MT_lock_unset(l)				\
 		do {					\
 			_DBG_LOCK_UNLOCKER(l);		\
-			ATOMIC_CLEAR((l)->lock, dummy);	\
+			ATOMIC_CLEAR(&(l)->lock);	\
 		} while (0)
 #define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
 
@@ -454,10 +445,10 @@ typedef struct MT_Lock {
 #ifdef LOCK_STATS
 gdk_export void GDKlockstatistics(int);
 gdk_export MT_Lock * volatile GDKlocklist;
-gdk_export ATOMIC_FLAG volatile GDKlocklistlock;
-gdk_export ATOMIC_TYPE volatile GDKlockcnt;
-gdk_export ATOMIC_TYPE volatile GDKlockcontentioncnt;
-gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
+gdk_export ATOMIC_FLAG GDKlocklistlock;
+gdk_export ATOMIC_TYPE GDKlockcnt;
+gdk_export ATOMIC_TYPE GDKlockcontentioncnt;
+gdk_export ATOMIC_TYPE GDKlocksleepcnt;
 #endif
 
 /*

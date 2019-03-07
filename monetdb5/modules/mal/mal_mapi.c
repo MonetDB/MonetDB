@@ -270,14 +270,10 @@ doChallenge(void *data)
 	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
 }
 
-static volatile ATOMIC_TYPE nlistener = ATOMIC_VAR_INIT(0); /* nr of listeners */
-static volatile ATOMIC_TYPE serveractive = ATOMIC_VAR_INIT(0);
-static volatile ATOMIC_TYPE serverexiting = ATOMIC_VAR_INIT(0); /* listeners should exit */
-static volatile ATOMIC_TYPE threadno = ATOMIC_VAR_INIT(0);	   /* thread sequence no */
-#ifdef ATOMIC_LOCK
-/* lock for all three ATOMIC_TYPE variables above */
-static MT_Lock atomicLock MT_LOCK_INITIALIZER("atomicLock");
-#endif
+static ATOMIC_TYPE nlistener = ATOMIC_VAR_INIT(0); /* nr of listeners */
+static ATOMIC_TYPE serveractive = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE serverexiting = ATOMIC_VAR_INIT(0); /* listeners should exit */
+static ATOMIC_TYPE threadno = ATOMIC_VAR_INIT(0);	   /* thread sequence no */
 
 static void
 SERVERlistenThread(SOCKET *Sock)
@@ -299,7 +295,7 @@ SERVERlistenThread(SOCKET *Sock)
 		GDKfree(Sock);
 	}
 
-	(void) ATOMIC_INC(nlistener, atomicLock);
+	(void) ATOMIC_INC(&nlistener);
 
 	do {
 		FD_ZERO(&fds);
@@ -320,7 +316,7 @@ SERVERlistenThread(SOCKET *Sock)
 			msgsock = usock;
 #endif
 		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
-		if (ATOMIC_GET(serverexiting, atomicLock) ||
+		if (ATOMIC_GET(&serverexiting) ||
 			GDKexiting())
 			break;
 		if (retval == 0) {
@@ -348,7 +344,7 @@ SERVERlistenThread(SOCKET *Sock)
 #else
 					errno != EINTR
 #endif
-					|| !ATOMIC_GET(serveractive, atomicLock)) {
+					|| !ATOMIC_GET(&serveractive)) {
 					msg = "accept failed";
 					goto error;
 				}
@@ -481,7 +477,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data->out = s;
 		char name[16];
 		snprintf(name, sizeof(name), "client%d",
-				 (int) ATOMIC_INC(threadno, atomicLock));
+				 (int) ATOMIC_INC(&threadno));
 		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
@@ -491,9 +487,9 @@ SERVERlistenThread(SOCKET *Sock)
 						  "cannot fork new client thread");
 			continue;
 		}
-	} while (!ATOMIC_GET(serverexiting, atomicLock) &&
+	} while (!ATOMIC_GET(&serverexiting) &&
 			 !GDKexiting());
-	(void) ATOMIC_DEC(nlistener, atomicLock);
+	(void) ATOMIC_DEC(&nlistener);
 	return;
 error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
@@ -864,14 +860,6 @@ SERVERlisten_default(int *ret)
 	str p;
 	int maxusers = SERVERMAXUSERS;
 
-#if defined(ATOMIC_LOCK) && defined(NEED_MT_LOCK_INIT)
-	static bool initialized = false;
-	if (!initialized) {
-		ATOMIC_INIT(atomicLock);
-		initialized = true;
-	}
-#endif
-
 	(void) ret;
 	p = GDKgetenv("mapi_port");
 	if (p)
@@ -910,10 +898,10 @@ str
 SERVERstop(void *ret)
 {
 fprintf(stderr, "SERVERstop\n");
-	ATOMIC_SET(serverexiting, 1, atomicLock);
+	ATOMIC_SET(&serverexiting, 1);
 	/* wait until they all exited, but skip the wait if the whole
 	 * system is going down */
-	while (ATOMIC_GET(nlistener, atomicLock) > 0 && !GDKexiting())
+	while (ATOMIC_GET(&nlistener) > 0 && !GDKexiting())
 		MT_sleep_ms(100);
 	(void) ret;		/* fool compiler */
 	return MAL_SUCCEED;
@@ -924,14 +912,14 @@ str
 SERVERsuspend(void *res)
 {
 	(void) res;
-	ATOMIC_SET(serveractive, 0, atomicLock);
+	ATOMIC_SET(&serveractive, 0);
 	return MAL_SUCCEED;
 }
 
 str
 SERVERresume(void *res)
 {
-	ATOMIC_SET(serveractive, 1, atomicLock);
+	ATOMIC_SET(&serveractive, 1);
 	(void) res;
 	return MAL_SUCCEED;
 }
@@ -957,7 +945,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	}
 	char name[16];
 	snprintf(name, sizeof(name), "client%d",
-			 (int) ATOMIC_INC(threadno, atomicLock));
+			 (int) ATOMIC_INC(&threadno));
 	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);

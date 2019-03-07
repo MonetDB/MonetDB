@@ -86,10 +86,7 @@ static struct worker {
 
 static Queue *todo = 0;	/* pending instructions */
 
-#ifdef ATOMIC_LOCK
-static MT_Lock exitingLock MT_LOCK_INITIALIZER("exitingLock");
-#endif
-static volatile ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
 static MT_Lock dataflowLock MT_LOCK_INITIALIZER("dataflowLock");
 static void stopMALdataflow(void);
 
@@ -105,7 +102,7 @@ mal_dataflow_reset(void)
 		GDKfree(todo);
 	}
 	todo = 0;	/* pending instructions */
-	ATOMIC_SET(exiting, 0, exitingLock);
+	ATOMIC_SET(&exiting, 0);
 }
 
 /*
@@ -229,7 +226,7 @@ q_dequeue(Queue *q, Client cntxt)
 
 	assert(q);
 	MT_sema_down(&q->s);
-	if (ATOMIC_GET(exiting, exitingLock))
+	if (ATOMIC_GET(&exiting))
 		return NULL;
 	MT_lock_set(&q->l);
 	if (cntxt) {
@@ -368,7 +365,7 @@ DFLOWworker(void *T)
 			}
 		} else
 			fe = fnxt;
-		if (ATOMIC_GET(exiting, exitingLock)) {
+		if (ATOMIC_GET(&exiting)) {
 			break;
 		}
 		fnxt = 0;
@@ -518,7 +515,6 @@ DFLOWinitialize(void)
 #ifdef NEED_MT_LOCK_INIT
 	static bool initialized = false;
 	if (!initialized) {
-		ATOMIC_INIT(exitingLock);
 		MT_lock_init(&dataflowLock, "dataflowLock");
 		initialized = true;
 	}
@@ -760,7 +756,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done, NULL);
-		if (ATOMIC_GET(exiting, exitingLock))
+		if (ATOMIC_GET(&exiting))
 			break;
 		if (f == NULL)
 			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
@@ -998,7 +994,7 @@ stopMALdataflow(void)
 {
 	int i;
 
-	ATOMIC_SET(exiting, 1, exitingLock);
+	ATOMIC_SET(&exiting, 1);
 	if (todo) {
 		MT_lock_set(&dataflowLock);
 		for (i = 0; i < THREADS; i++)
