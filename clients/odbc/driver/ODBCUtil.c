@@ -382,7 +382,7 @@ static struct scalars {
 	{"now", 0, "sys.\"now\"()", },
 	{"octet_length", 1, "sys.\"octet_length\"(\1)", },
 	{"pi", 0, "sys.\"pi\"()", },
-	{"position", 1, "\"position\"(\1)", }, /* includes " IN str" in first argument. Note: POSITION is implemented in the parser. */
+	{"position", 1, "POSITION(\1)", }, /* includes " IN str" in first argument. Note: POSITION is implemented in the parser. */
 	{"power", 2, "sys.\"power\"(\1,\2)", },
 	{"quarter", 1, "sys.\"quarter\"(\1)", },
 	{"radians", 1, "sys.\"radians\"(\1)", },
