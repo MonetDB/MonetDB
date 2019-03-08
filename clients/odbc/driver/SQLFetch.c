@@ -115,7 +115,7 @@ MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray)
 		stmt->rowSetSize++;
 
 		for (i = 1; i <= ird->sql_desc_count; i++)
-			ird->descRec[i].already_returned = 0;
+			ird->descRec[i].already_returned = -1;
 
 		for (i = 1; i <= ard->sql_desc_count; i++) {
 			rec = &ard->descRec[i];
