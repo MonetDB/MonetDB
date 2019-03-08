@@ -336,7 +336,6 @@ Thread THRget(int tid);
 void *THRgetdata(int);
 int THRgettid(void);
 int THRhighwater(void);
-Thread THRnew(const char *name);
 void THRsetdata(int, void *);
 void TMabort(void);
 gdk_return TMcommit(void);
