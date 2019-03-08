@@ -316,8 +316,7 @@ SERVERlistenThread(SOCKET *Sock)
 			msgsock = usock;
 #endif
 		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
-		if (ATOMIC_GET(&serverexiting) ||
-			GDKexiting())
+		if (ATOMIC_GET(&serverexiting) || GDKexiting())
 			break;
 		if (retval == 0) {
 			/* nothing interesting has happened */
@@ -487,12 +486,19 @@ SERVERlistenThread(SOCKET *Sock)
 						  "cannot fork new client thread");
 			continue;
 		}
-	} while (!ATOMIC_GET(&serverexiting) &&
-			 !GDKexiting());
+	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
 	(void) ATOMIC_DEC(&nlistener);
+	if (sock != INVALID_SOCKET)
+		closesocket(sock);
+	if (usock != INVALID_SOCKET)
+		closesocket(usock);
 	return;
 error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
+	if (sock != INVALID_SOCKET)
+		closesocket(sock);
+	if (usock != INVALID_SOCKET)
+		closesocket(usock);
 }
 
 /**
@@ -651,7 +657,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			server.sin_zero[i] = 0;
 		length = (SOCKLEN) sizeof(server);
 
-		do {
+		for (;;) {
 			server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 			if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
 				int e = errno;
@@ -685,7 +691,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			} else {
 				break;
 			}
-		} while (1);
+		}
 
 		if (getsockname(sock, (SOCKPTR) &server, &length) == SOCKET_ERROR) {
 			int e = errno;
@@ -730,6 +736,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			GDKfree(psock);
 			GDKfree(usockfile);
 			errno = e;
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": creation of UNIX socket failed: %s",
 #ifdef _MSC_VER
@@ -747,6 +755,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		 * chars long :/ */
 		if (strlen(usockfile) >= sizeof(userver.sun_path)) {
 			char *e;
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			closesocket(usock);
 			GDKfree(psock);
 			e = createException(MAL, "mal_mapi.listen",
@@ -763,6 +773,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		length = (SOCKLEN) sizeof(userver);
 		if(remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file");
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			closesocket(usock);
 			GDKfree(usockfile);
 			GDKfree(psock);
@@ -771,6 +783,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		if (bind(usock, (SOCKPTR) &userver, length) == SOCKET_ERROR) {
 			char *e;
 			int err = errno;
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			closesocket(usock);
 			(void) remove(usockfile);
 			GDKfree(psock);
@@ -791,6 +805,8 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		if(listen(usock, maxusers) == SOCKET_ERROR) {
 			char *e;
 			int err = errno;
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			closesocket(usock);
 			(void) remove(usockfile);
 			GDKfree(psock);
@@ -824,6 +840,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	psock[2] = INVALID_SOCKET;
 	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock,
 						 MT_THR_JOINABLE, "listenThread") != 0) {
+		if (sock != INVALID_SOCKET)
+			closesocket(sock);
+#ifdef HAVE_SYS_UN_H
+		if (usock != INVALID_SOCKET)
+			closesocket(usock);
+#endif
 		GDKfree(psock);
 		if (usockfile)
 			GDKfree(usockfile);
