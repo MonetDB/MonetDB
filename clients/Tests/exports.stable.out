@@ -2641,7 +2641,6 @@ str startRef;
 str startTrace(str path);
 str starttraceRef;
 str stopProfiler(void);
-str stopRef;
 str stopTrace(str path);
 str stoptraceRef;
 void strAfterCall(ValPtr v, ValPtr bak);
