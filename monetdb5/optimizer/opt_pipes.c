@@ -193,6 +193,7 @@ static struct PIPELINES {
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
+	 "optimizer.aliases();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
