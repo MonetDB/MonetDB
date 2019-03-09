@@ -289,12 +289,9 @@ int
 MCinitClientThread(Client c)
 {
 	Thread t;
-	char cname[11 + 1];
 
-	snprintf(cname, 11, OIDFMT, c->user);
-	cname[11] = '\0';
-	t = THRnew(cname);
-	if (t == 0) {
+	t = MT_thread_getdata();	/* should succeed */
+	if (t == NULL) {
 		MPresetProfiler(c->fdout);
 		return -1;
 	}

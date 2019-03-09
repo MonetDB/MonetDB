@@ -1305,50 +1305,46 @@ GDK_find_self(void)
 	return GDK_find_thread(MT_getpid());
 }
 
-Thread
+static Thread
 THRnew(const char *name)
 {
 	int tid = 0;
 	Thread s;
-	MT_Id pid = MT_getpid();
 
-	s = GDK_find_thread(pid);
-	if (s == NULL) {
-		MT_lock_set(&GDKthreadLock);
-		for (s = GDKthreads; s < GDKthreads + THREADS; s++) {
-			if (s->pid == 0) {
-				break;
-			}
+	MT_lock_set(&GDKthreadLock);
+	for (s = GDKthreads; s < GDKthreads + THREADS; s++) {
+		if (s->pid == 0) {
+			break;
 		}
-		if (s == GDKthreads + THREADS) {
-			MT_lock_unset(&GDKthreadLock);
-			IODEBUG fprintf(stderr, "#THRnew: too many threads\n");
-			GDKerror("THRnew: too many threads\n");
-			return NULL;
-		}
-		tid = s->tid;
-		*s = (ThreadRec) {
-			.pid = pid,
-			.tid = tid,
-			.data[0] = THRdata[0],
-			.data[1] = THRdata[1],
-			.sp = THRsp(),
-			.name = GDKstrdup(name),
-		};
-
-		if (s->name == NULL) {
-			s->pid = 0;
-			MT_lock_unset(&GDKthreadLock);
-			IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
-			GDKerror("THRnew: malloc failure\n");
-			return NULL;
-		}
-		MT_thread_setdata(s);
-		GDKnrofthreads++;
-		PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", (unsigned) s->tid, (size_t) pid, (size_t) s->sp);
-		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
-		MT_lock_unset(&GDKthreadLock);
 	}
+	if (s == GDKthreads + THREADS) {
+		MT_lock_unset(&GDKthreadLock);
+		IODEBUG fprintf(stderr, "#THRnew: too many threads\n");
+		GDKerror("THRnew: too many threads\n");
+		return NULL;
+	}
+	tid = s->tid;
+	*s = (ThreadRec) {
+		.pid = MT_getpid(),
+		.tid = tid,
+		.data[0] = THRdata[0],
+		.data[1] = THRdata[1],
+		.sp = THRsp(),
+		.name = GDKstrdup(name),
+	};
+
+	if (s->name == NULL) {
+		s->pid = 0; /* deallocate */
+		MT_lock_unset(&GDKthreadLock);
+		IODEBUG fprintf(stderr, "#THRnew: malloc failure\n");
+		GDKerror("THRnew: malloc failure\n");
+		return NULL;
+	}
+	MT_thread_setdata(s);
+	GDKnrofthreads++;
+	PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", (unsigned) s->tid, (size_t) s->pid, (size_t) s->sp);
+	PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
+	MT_lock_unset(&GDKthreadLock);
 	return s;
 }
 
