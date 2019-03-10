@@ -11517,6 +11517,7 @@ Ready.
 [ "optimizer",	"no_mitosis_pipe",	"function optimizer.no_mitosis_pipe():void;",	"",	""	]
 [ "optimizer",	"oltp",	"pattern optimizer.oltp():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"oltp",	"pattern optimizer.oltp(mod:str, fcn:str):str ",	"OPTwrapper;",	"Inject the OLTP locking primitives."	]
+[ "optimizer",	"oltp_pipe",	"function optimizer.oltp_pipe():void;",	"",	""	]
 [ "optimizer",	"optimize",	"pattern optimizer.optimize(mod:str, fcn:str):void ",	"QOToptimize;",	"Optimize a specific operation"	]
 [ "optimizer",	"orcam",	"pattern optimizer.orcam(mod:str, fcn:str, targetmod:str, targetfcn:str):void ",	"OPTorcam;",	"Inverse macro, find pattern and replace with a function call."	]
 [ "optimizer",	"orcam",	"pattern optimizer.orcam(targetmod:str, targetfcn:str):void ",	"OPTorcam;",	"Inverse macro processor for current function"	]

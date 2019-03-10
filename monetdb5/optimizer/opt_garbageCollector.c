@@ -31,6 +31,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	char *used;
 	//int *varlnk, *stmtlnk;
 
 	(void) pci;
@@ -49,6 +50,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 */
 	
+	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
+	if ( used == NULL)
+		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
 	old= mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -91,6 +96,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
+		for( j = 0; j< p->retc; j++)
+			used[getArg(p,j)] = 1;
 
 		if ( p->barrier == RETURNsymbol){
 			pushInstruction(mb, p);
@@ -152,14 +159,17 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 #endif
 
-	/* rename all temporaries for ease of debugging */
+	/* rename all temporaries used for ease of debugging and profile interpretation */
 	for( i = 0; i < mb->vtop; i++)
-	if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
-		snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
-	else
-	if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
-		snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
-
+	if ( used[i]){
+		str nme = getVarName(mb,i);
+		if( nme[0] == 'X' && nme[1] == '_' )
+				snprintf(nme, IDLENGTH, "X_%d",i);
+		else
+		if( nme[0] == 'C' && nme[1] == '_' )
+				snprintf(nme, IDLENGTH,"C_%d",i);
+	}
+	GDKfree(used);
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
@@ -168,6 +178,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		chkFlow(mb);
 		chkDeclarations(mb);
 	}
+
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
