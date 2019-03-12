@@ -402,16 +402,14 @@ tablet_read_more(bstream *in, stream *out, size_t n)
 		do {
 			/* query is not finished ask for more */
 			/* we need more query text */
+			if (in->eof) {
+				if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) < 0 ||
+					mnstr_flush(out) < 0)
+					return false;
+				in->eof = false;
+			}
 			if (bstream_next(in) < 0)
 				return false;
-			if (in->eof) {
-				if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
-					mnstr_flush(out);
-				in->eof = false;
-				/* we need more query text */
-				if (bstream_next(in) <= 0)
-					return false;
-			}
 		} while (in->len <= in->pos);
 	} else if (bstream_read(in, n) <= 0) {
 		return false;

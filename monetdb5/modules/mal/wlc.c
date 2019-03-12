@@ -313,12 +313,13 @@ WLClogger(void *arg)
 	(void) arg;
 	while(!GDKexiting()){
 		if( wlc_dir[0] && wlc_fd ){
-				MT_lock_set(&wlc_lock);
-				if((msg = WLCcloselogger()) != MAL_SUCCEED) {
-					GDKerror("%s",msg);
-				}
-				MT_lock_unset(&wlc_lock);
+			MT_lock_set(&wlc_lock);
+			if((msg = WLCcloselogger()) != MAL_SUCCEED) {
+				GDKerror("%s",msg);
+				freeException(msg);
 			}
+			MT_lock_unset(&wlc_lock);
+		}
 		for( seconds = 0; (wlc_beat == 0 || seconds < wlc_beat) && ! GDKexiting(); seconds++)
 			MT_sleep_ms( 1000);
 	}

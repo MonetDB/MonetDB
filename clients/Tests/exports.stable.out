@@ -1426,7 +1426,6 @@ Client MCforkClient(Client father);
 Client MCgetClient(int id);
 void MCinit(void);
 Client MCinitClient(oid user, bstream *fin, stream *fout);
-Client MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout);
 int MCinitClientThread(Client c);
 int MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);
 int MCshutdowninprogress(void);
