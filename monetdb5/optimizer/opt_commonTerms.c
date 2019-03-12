@@ -107,7 +107,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 #endif
 		/* Look into the hash structure for matching instructions */
 		for (j = hash[HASHinstruction(p)];  j > 0  ; j = list[j]) 
-		if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
+			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			fprintf(stderr,"#CANDIDATE[%d->%d] %d %d", j, list[j], 
 				hasSameSignature(mb, p, q, p->retc), 
