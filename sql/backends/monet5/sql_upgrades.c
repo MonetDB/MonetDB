@@ -1539,6 +1539,12 @@ sql_update_apr2019(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
+	/* 15_querylog.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.querylog_enable(smallint);\n"
+			"create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;\n"
+			"update sys.functions set system = true where name = 'querylog_enable' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
 	/* 26_sysmon.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"grant execute on function sys.queue to public;\n"
