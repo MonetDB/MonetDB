@@ -31,9 +31,9 @@ query_cleaned(const char *query)
 {
 	char *q, *r;
 	int quote = 0;		/* inside quotes ('..', "..", {..}) */
-	int bs = 0;		/* seen a backslash in a quoted string */
-	int incomment1 = 0;	/* inside traditional C style comment */
-	int incomment2 = 0;	/* inside comment starting with --  */
+	bool bs = false;		/* seen a backslash in a quoted string */
+	bool incomment1 = false;	/* inside traditional C style comment */
+	bool incomment2 = false;	/* inside comment starting with --  */
 	r = GDKmalloc(strlen(query) + 1);
 	if(!r)
 		return NULL;
@@ -41,11 +41,11 @@ query_cleaned(const char *query)
 	for (q = r; *query; query++) {
 		if (incomment1) {
 			if (*query == '/' && query[-1] == '*') {
-				incomment1 = 0;
+				incomment1 = false;
 			}
 		} else if (incomment2) {
 			if (*query == '\n') {
-				incomment2 = 0;
+				incomment2 = false;
 				/* add newline only if comment doesn't
 				 * occupy whole line */
 				if (q > r && q[-1] != '\n')
@@ -53,9 +53,9 @@ query_cleaned(const char *query)
 			}
 		} else if (quote) {
 			if (bs) {
-				bs = 0;
+				bs = false;
 			} else if (*query == '\\') {
-				bs = 1;
+				bs = true;
 			} else if (*query == quote) {
 				quote = 0;
 			}
@@ -67,9 +67,9 @@ query_cleaned(const char *query)
 			quote = '}';
 			*q++ = *query;
 		} else if (*query == '-' && query[1] == '-') {
-			incomment2 = 1;
+			incomment2 = true;
 		} else if (*query == '/' && query[1] == '*') {
-			incomment1 = 1;
+			incomment1 = true;
 		} else if (*query == '\n') {
 			/* collapse newlines */
 			if (q > r && q[-1] != '\n')
