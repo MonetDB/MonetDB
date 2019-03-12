@@ -93,7 +93,7 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT count(*) FROM kwTemp;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -115,7 +115,7 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT count(*) FROM kwmtemp;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -137,13 +137,13 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'expect 20', COUNT(*) FROM s4_keywords;
-% .L2,	sys.L6 # table_name
+% .L2,	sys.L5 # table_name
 % L2,	L5 # name
 % char,	bigint # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #SELECT 'expect 20', COUNT(*) FROM s4_kwm;
-% .L2,	sys.L6 # table_name
+% .L2,	sys.L5 # table_name
 % L2,	L5 # name
 % char,	bigint # type
 % 9,	2 # length
