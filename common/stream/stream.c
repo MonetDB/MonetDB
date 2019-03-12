@@ -2934,16 +2934,20 @@ static ssize_t
 pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	HANDLE h = s->stream_data.p;
-	size_t n = elmsize * cnt;
-	unsigned char *p = buf;
+	size_t n;
+	unsigned char *p;
 	DWORD nread;
 
 	if (h == NULL) {
 		s->errnr = MNSTR_READ_ERROR;
 		return -1;
 	}
-	if (n == 0)
+	if (elmsize == 0 || cnt == 0)
 		return 0;
+  tailrecurse:
+	n = elmsize * cnt;
+	p = buf;
+
 	for (;;) {
 		DWORD ret = PeekNamedPipe(h, NULL, 0, NULL, &nread, NULL);
 		if (ret == 0) {
@@ -2963,7 +2967,7 @@ pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 	/* when in text mode, convert \r\n line endings to \n */
-	if (!s->binary) {
+	if (!s->binary && nread > 0) {
 		char *p1, *p2, *pe;
 
 		p1 = buf;
@@ -2977,6 +2981,11 @@ pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			else
 				*p2++ = *p1;
 			p1++;
+		}
+		if (nread == 0) {
+			/* try again after removing \r and ending up
+			 * with nothing */
+			goto tailrecurse;
 		}
 	}
 	return nread / elmsize;

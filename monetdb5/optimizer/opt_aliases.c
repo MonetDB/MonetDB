@@ -11,7 +11,7 @@
 #include "opt_aliases.h"
 
 /* an alias is recognized by a simple assignment */
-#define OPTisAlias(X) (X->token == ASSIGNsymbol && X->barrier == 0 && X->argc == 2)
+#define OPTisAlias(X) (X->argc == 2 && X->token == ASSIGNsymbol && X->barrier == 0 )
 
 void
 OPTaliasRemap(InstrPtr p, int *alias){
@@ -37,8 +37,8 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		p= getInstrPtr(mb,i);
 		if (OPTisAlias(p))
 			break;
-		mb->stmt[k++] = p;
 	}
+	k = i;
 	if( i < limit){
 		alias= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 		if (alias == NULL)

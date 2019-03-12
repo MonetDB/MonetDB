@@ -162,7 +162,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.engineCmd = SQLengine,
 		.callback = "SQLcallback",
 		.callbackCmd = SQLcallback,
-		.next = s->next,
 	};
 	ms = getFreeScenario();
 	if (!ms)
@@ -187,7 +186,6 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.engineCmd = MALengine,
 		.callback = "MALcallback",
 		.callbackCmd = MALcallback,
-		.next = s->next,
 	};
 
 	tmp = SQLinit(cntxt);

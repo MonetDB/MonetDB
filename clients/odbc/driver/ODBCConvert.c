@@ -1282,14 +1282,16 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_WVARCHAR:
 		case SQL_WLONGVARCHAR:
 		case SQL_GUID:
-			if (irdrec->already_returned >= datalen) {
+			if (irdrec->already_returned < 0)
+				irdrec->already_returned = 0;
+			else if ((size_t) irdrec->already_returned >= datalen) {
 				/* no more data to return */
 				if (type == SQL_C_WCHAR && ptr)
 					free(ptr);
 				return SQL_NO_DATA;
 			}
 			data += irdrec->already_returned;
-			datalen -= irdrec->already_returned;
+			datalen -= (size_t) irdrec->already_returned;
 			if (ptr) {
 				copyString(data, datalen, ptr, buflen, lenp,
 					   SQLLEN, addStmtError, stmt,
@@ -1919,7 +1921,9 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_LONGVARBINARY:
 			break;
 		}
-		if (irdrec->already_returned >= datalen) {
+		if (irdrec->already_returned < 0)
+			irdrec->already_returned = 0;
+		else if ((size_t) irdrec->already_returned >= datalen) {
 			/* no more data to return */
 			return SQL_NO_DATA;
 		}

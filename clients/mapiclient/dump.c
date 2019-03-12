@@ -2677,7 +2677,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 					mnstr_printf(toConsole, ")");
 				}
 				if (found_nil) {
-					mnstr_printf(toConsole, " WITH NULL VALUES");
+					mnstr_printf(toConsole, " %s NULL VALUES", (i == 0) ? "FOR" : "WITH");
 				}
 			} else { /* by range */
 				char *minv = NULL, *maxv = NULL, *wnulls = NULL;
@@ -2710,7 +2710,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts)
 					squoted_print(toConsole, maxv, '\'');
 				}
 				if (strcmp(wnulls, "true") == 0) {
-					mnstr_printf(toConsole, " WITH NULL VALUES");
+					mnstr_printf(toConsole, " %s NULL VALUES", (minv && maxv) ? "WITH" : "FOR");
 				}
 				mapi_close_handle(shdl);
 			}

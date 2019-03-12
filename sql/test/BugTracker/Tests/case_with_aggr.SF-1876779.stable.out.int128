@@ -29,13 +29,13 @@ Ready.
 
 #CREATE TABLE casebug(a int);
 #SELECT SUM(a) FROM casebug;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % hugeint # type
 % 1 # length
 [ NULL	]
 #SELECT MIN(a) FROM casebug;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % int # type
 % 1 # length

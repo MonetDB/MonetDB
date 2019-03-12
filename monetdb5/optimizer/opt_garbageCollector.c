@@ -25,12 +25,13 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit;
+	int arg, i, j, limit, slimit;
 	InstrPtr p, *old;
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	str nme;
 	char *used;
 	//int *varlnk, *stmtlnk;
 
@@ -96,8 +97,19 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
-		for( j = 0; j< p->retc; j++)
-			used[getArg(p,j)] = 1;
+		/* rename all temporaries used for ease of debugging and profile interpretation */
+		for( j = 0; j< p->retc; j++){
+			arg = getArg(p,j);
+			if( used[arg] ==0){
+				nme = getVarName(mb,arg);
+				if( nme[0] == 'X' && nme[1] == '_' )
+						snprintf(nme, IDLENGTH, "X_%d", arg);
+				else
+				if( nme[0] == 'C' && nme[1] == '_' )
+						snprintf(nme, IDLENGTH,"C_%d", arg);
+				used[arg] ++;
+			}
+		}
 
 		if ( p->barrier == RETURNsymbol){
 			pushInstruction(mb, p);
@@ -141,6 +153,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	//GDKfree(varlnk);
 	//GDKfree(stmtlnk);
 	GDKfree(old);
+	GDKfree(used);
 #ifdef DEBUG_OPT_GARBAGE
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");
@@ -159,17 +172,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 #endif
 
-	/* rename all temporaries used for ease of debugging and profile interpretation */
-	for( i = 0; i < mb->vtop; i++)
-	if ( used[i]){
-		str nme = getVarName(mb,i);
-		if( nme[0] == 'X' && nme[1] == '_' )
-				snprintf(nme, IDLENGTH, "X_%d",i);
-		else
-		if( nme[0] == 'C' && nme[1] == '_' )
-				snprintf(nme, IDLENGTH,"C_%d",i);
-	}
-	GDKfree(used);
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
