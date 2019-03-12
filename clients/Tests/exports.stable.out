@@ -1474,7 +1474,7 @@ str MSinitClientPrg(Client cntxt, str mod, str nme);
 void MSresetInstructions(MalBlkPtr mb, int start);
 void MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start);
 void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize);
-str MSserveClient(void *dummy);
+str MSserveClient(Client cntxt);
 str MTIMEanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, bool preceding, lng first_half);
 str MTIMEcompute_rule_foryear(date *ret, const rule *val, const int *year);
 str MTIMEcurrent_date(date *d);
