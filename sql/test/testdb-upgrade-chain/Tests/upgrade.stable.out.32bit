@@ -5063,6 +5063,9 @@ set schema "sys";
 
 Running database upgrade commands:
 set schema sys;
+drop procedure sys.querylog_enable(smallint);
+create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;
+update sys.functions set system = true where name = 'querylog_enable' and schema_id = (select id from sys.schemas where name = 'sys');
 create function sys.date_trunc(txt string, t timestamp)
 returns timestamp
 external name sql.date_trunc;

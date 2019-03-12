@@ -1525,7 +1525,7 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
 static str
 sql_update_apr2019(Client c, mvc *sql)
 {
-	size_t bufsize = 2000, pos = 0;
+	size_t bufsize = 3000, pos = 0;
 	char *buf, *err;
 	char *schema;
 	sql_schema *s;
@@ -1539,8 +1539,13 @@ sql_update_apr2019(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 
-	/* 17_temporal.sql */
+	/* 15_querylog.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.querylog_enable(smallint);\n"
+			"create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;\n"
+			"update sys.functions set system = true where name = 'querylog_enable' and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
+	/* 17_temporal.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function sys.date_trunc(txt string, t timestamp)\n"
 			"returns timestamp\n"
