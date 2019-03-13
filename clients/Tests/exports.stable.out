@@ -1793,7 +1793,7 @@ str SERVERsetAlias(void *ret, int *mid, str *dbalias);
 str SERVERstop(void *ret);
 str SERVERsuspend(void *ret);
 str SERVERtrace(void *ret, int *mid, int *flag);
-BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin);
+BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam);
 str STRBytes(int *res, const str *arg1);
 str STRConcat(str *res, const str *val1, const str *val2);
 str STRFromWChr(str *res, const int *at);
