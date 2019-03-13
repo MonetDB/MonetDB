@@ -20,8 +20,8 @@
 #include "sql_relation.h"
 #include "sql_storage.h"
 #include "sql_keyword.h"
+#include "sql_querytype.h"
 #include "sql_atom.h"
-#include "sql_query.h"
 #include "sql_tokens.h"
 #include "sql_symbol.h"
 

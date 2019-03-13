@@ -6,15 +6,13 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
-#ifndef _REL_TRANS_H_
-#define _REL_TRANS_H_
+#ifndef _REL_UNNEST_H_
+#define _REL_UNNEST_H_
 
-#include "sql_symbol.h"
-#include "sql_mvc.h"
 #include "sql_relation.h"
-#include "sql_query.h"
+#include "sql_mvc.h"
 
-extern sql_rel *rel_transactions(sql_query *query, symbol *sym);
+extern int exp_has_freevar( sql_exp *e);
+extern sql_rel *rel_unnest(mvc *sql, sql_rel *rel);
 
-#endif /*_REL_TRANS_H_*/
-
+#endif /*_REL_UNNEST_H_*/

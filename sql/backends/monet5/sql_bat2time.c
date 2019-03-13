@@ -15,6 +15,7 @@
 #include "store_sequence.h"
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
 #include "rel_select.h"

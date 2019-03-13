@@ -172,6 +172,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, "()");
 	} 	break;
 	case e_column: 
+		if (is_freevar(e)) 
+			mnstr_printf(fout, "free ");
 		if (e->l)
 			mnstr_printf(fout, "\"%s\".", (char*)e->l);
 		mnstr_printf(fout, "\"%s\"", (char*)e->r);
@@ -434,6 +436,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		else if (!rel->exps && rel->op == op_join)
 			r = "crossproduct";
 		print_indent(sql, fout, depth, decorate);
+		if (is_dependent(rel)) 
+			mnstr_printf(fout, "dependent ");
 		if (need_distinct(rel))
 			mnstr_printf(fout, "distinct ");
 		mnstr_printf(fout, "%s (", r);

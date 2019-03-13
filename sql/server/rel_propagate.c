@@ -130,8 +130,9 @@ generate_alter_table_error_message(char* buf, sql_table *mt)
 }
 
 static sql_exp *
-generate_partition_limits(mvc *sql, sql_rel **r, symbol *s, sql_subtype tpe)
+generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype tpe)
 {
+	mvc *sql = query->sql;
 	if(!s) {
 		return NULL;
 	} else if (s->token == SQL_NULL) {
@@ -161,7 +162,7 @@ generate_partition_limits(mvc *sql, sql_rel **r, symbol *s, sql_subtype tpe)
 	} else {
 		int is_last = 0;
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_exp *e = rel_value_exp2(sql, r, s, sql_sel, ek, &is_last);
+		sql_exp *e = rel_value_exp2(query, r, s, sql_sel, ek, &is_last);
 
 		if (!e) {
 			return NULL;
@@ -171,8 +172,9 @@ generate_partition_limits(mvc *sql, sql_rel **r, symbol *s, sql_subtype tpe)
 }
 
 static sql_rel*
-create_range_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with_nills, sql_exp *pmin, sql_exp *pmax)
+create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, int with_nills, sql_exp *pmin, sql_exp *pmax)
 {
+	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *e1, *e2, *anti_nils;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
@@ -182,7 +184,7 @@ create_range_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with
 	find_partition_type(&tpe, mt);
 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
-	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+	anti_nils = rel_unop_(query, anti_le, NULL, "isnull", card_value);
 
 	if(pmin && pmax) {
 		e1 = exp_copy(sql->sa, pmin);
@@ -220,8 +222,9 @@ create_range_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with
 }
 
 static sql_rel*
-create_list_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with_nills, list *anti_exps)
+create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, int with_nills, list *anti_exps)
 {
+	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
@@ -231,7 +234,7 @@ create_list_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with_
 	find_partition_type(&tpe, mt);
 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
-	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+	anti_nils = rel_unop_(query, anti_le, NULL, "isnull", card_value);
 
 	if(list_length(anti_exps) > 0) {
 		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
@@ -261,8 +264,10 @@ create_list_partition_anti_rel(mvc* sql, sql_table *mt, sql_table *pt, int with_
 }
 
 static sql_rel *
-propagate_validation_to_upper_tables(mvc* sql, sql_table *mt, sql_table *pt, sql_rel *rel)
+propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table *pt, sql_rel *rel)
 {
+	mvc *sql = query->sql;
+
 	sql->caching = 0;
 	for(sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
 		sql_part *spt = find_sql_part(it, prev->base.name);
@@ -270,7 +275,7 @@ propagate_validation_to_upper_tables(mvc* sql, sql_table *mt, sql_table *pt, sql
 			if(isRangePartitionTable(it)) {
 				sql_exp *e1 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.minvalue),
 						*e2 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.maxvalue);
-				rel = rel_list(sql->sa, rel, create_range_partition_anti_rel(sql, it, pt, spt->with_nills, e1, e2));
+				rel = rel_list(sql->sa, rel, create_range_partition_anti_rel(query, it, pt, spt->with_nills, e1, e2));
 			} else if(isListPartitionTable(it)) {
 				list *exps = new_exp_list(sql->sa);
 				for(node *n = spt->part.values->h ; n ; n = n->next) {
@@ -278,7 +283,7 @@ propagate_validation_to_upper_tables(mvc* sql, sql_table *mt, sql_table *pt, sql
 					sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
 					list_append(exps, e1);
 				}
-				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(sql, it, pt, spt->with_nills, exps));
+				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(query, it, pt, spt->with_nills, exps));
 			} else {
 				assert(0);
 			}
@@ -290,9 +295,10 @@ propagate_validation_to_upper_tables(mvc* sql, sql_table *mt, sql_table *pt, sql
 }
 
 sql_rel *
-rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
+rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
 									char *tname2, symbol* min, symbol* max, int with_nills, int update)
 {
+	mvc *sql = query->sql;
 	sql_rel *rel_psm = rel_create(sql->sa), *res;
 	list *exps = new_exp_list(sql->sa);
 	sql_exp *pmin, *pmax;
@@ -305,8 +311,8 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 
 	assert((!min && !max && with_nills) || (min && max));
 	if(min && max) {
-		pmin = generate_partition_limits(sql, &rel_psm, min, tpe);
-		pmax = generate_partition_limits(sql, &rel_psm, max, tpe);
+		pmin = generate_partition_limits(query, &rel_psm, min, tpe);
+		pmax = generate_partition_limits(query, &rel_psm, max, tpe);
 		if(!pmin || !pmax)
 			return NULL;
 	} else {
@@ -334,16 +340,17 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
-	res = create_range_partition_anti_rel(sql, mt, pt, with_nills, pmin, pmax);
+	res = create_range_partition_anti_rel(query, mt, pt, with_nills, pmin, pmax);
 	res->l = rel_psm;
 
-	return propagate_validation_to_upper_tables(sql, mt, pt, res);
+	return propagate_validation_to_upper_tables(query, mt, pt, res);
 }
 
 sql_rel *
-rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
+rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
 								   char *tname2, dlist* values, int with_nills, int update)
 {
+	mvc *sql = query->sql;
 	sql_rel *rel_psm = rel_create(sql->sa), *res;
 	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
 	sql_subtype tpe;
@@ -356,7 +363,7 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	if(values) {
 		for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
 			symbol* next = dn->data.sym;
-			sql_exp *pnext = generate_partition_limits(sql, &rel_psm, next, tpe);
+			sql_exp *pnext = generate_partition_limits(query, &rel_psm, next, tpe);
 			if (subtype_cmp(exp_subtype(pnext), &tpe) != 0)
 				pnext = exp_convert(sql->sa, pnext, exp_subtype(pnext), &tpe);
 
@@ -385,10 +392,10 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
-	res = create_list_partition_anti_rel(sql, mt, pt, with_nills, anti_exps);
+	res = create_list_partition_anti_rel(query, mt, pt, with_nills, anti_exps);
 	res->l = rel_psm;
 
-	return propagate_validation_to_upper_tables(sql, mt, pt, res);
+	return propagate_validation_to_upper_tables(query, mt, pt, res);
 }
 
 static sql_rel* rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt);
@@ -595,9 +602,10 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 }
 
 static sql_rel*
-rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **exception, sql_table *t, int *changes,
+rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_rel **anti_rel, sql_exp **exception, sql_table *t, int *changes,
 						const char *operation, const char *desc)
 {
+	mvc *sql = query->sql;
 	int just_one = 1, found_nils = 0;
 	sql_rel *new_table = NULL, *sel = NULL;
 	sql_exp *anti_exp = NULL, *anti_le = NULL, *accum = NULL, *aggr = NULL;
@@ -647,7 +655,7 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 			}
 
 			if(pt->with_nills) { /* handle the nulls case */
-				sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value);
+				sql_exp *nils = rel_unop_(query, le, NULL, "isnull", card_value);
 				nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 				range = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range),
 							   list_append(new_exp_list(sql->sa), nils), 0);
@@ -667,7 +675,7 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 
 			ein = exp_in(sql->sa, le, exps, cmp_in);
 			if(pt->with_nills) { /* handle the nulls case */
-				sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value);
+				sql_exp *nils = rel_unop_(query, le, NULL, "isnull", card_value);
 				nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 				ein = exp_or(sql->sa, list_append(new_exp_list(sql->sa), ein),
 							 list_append(new_exp_list(sql->sa), nils), 0);
@@ -688,7 +696,7 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 			list_remove_data(dup->exps, del);
 		}
 
-		s1 = rel_insert(sql, new_table, dup);
+		s1 = rel_insert(query, new_table, dup);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
@@ -709,7 +717,7 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 		assert(0);
 	}
 	if(!found_nils) {
-		sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+		sql_exp *anti_nils = rel_unop_(query, anti_le, NULL, "isnull", card_value);
 		anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 		anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
 						  list_append(new_exp_list(sql->sa), anti_nils), 0);
@@ -731,15 +739,15 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 }
 
 static sql_rel*
-rel_propagate_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+rel_propagate_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 {
 	sql_exp* exception = NULL;
 	sql_rel* anti_rel = NULL;
-	sql_rel* res = rel_generate_subinserts(sql, rel, &anti_rel, &exception, t, changes, "INSERT", "insert");
+	sql_rel* res = rel_generate_subinserts(query, rel, &anti_rel, &exception, t, changes, "INSERT", "insert");
 
 	if(res) {
-		res = rel_exception(sql->sa, res, anti_rel, list_append(new_exp_list(sql->sa), exception));
-		res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
+		res = rel_exception(query->sql->sa, res, anti_rel, list_append(new_exp_list(query->sql->sa), exception));
+		res->p = prop_create(query->sql->sa, PROP_DISTRIBUTE, res->p);
 	}
 	return res;
 }
@@ -799,7 +807,7 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 		deletes = rel_generate_subdeletes(sql, rel, t, changes);
 		deletes = rel_exception(sql->sa, deletes, NULL, NULL);
-		inserts = rel_generate_subinserts(sql, rel, &anti_rel, &exception, t, changes, "UPDATE", "update");
+		inserts = rel_generate_subinserts(query, rel, &anti_rel, &exception, t, changes, "UPDATE", "update");
 		inserts = rel_exception(sql->sa, inserts, anti_rel, list_append(new_exp_list(sql->sa), exception));
 		return rel_list(sql->sa, deletes, inserts);*/
 		assert(0);
@@ -808,8 +816,9 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 }
 
 static sql_rel*
-rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 {
+	mvc *sql = query->sql;
 	sql_table *upper = t->p; //is part of a partition table and not been used yet
 	sql_part *pt = find_sql_part(upper, t->base.name);
 	sql_rel *anti_dup = rel_create_common_relation(sql, rel, upper), *left = rel->l;
@@ -835,7 +844,7 @@ rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		assert(0);
 	}
 	if(!pt->with_nills) { /* handle the nulls case */
-		sql_exp *anti_nils = rel_unop_(sql, exp_copy(sql->sa, anti_le), NULL, "isnull", card_value);
+		sql_exp *anti_nils = rel_unop_(query, exp_copy(sql->sa, anti_le), NULL, "isnull", card_value);
 		anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 		anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
 						  list_append(new_exp_list(sql->sa), anti_nils), 0);
@@ -865,8 +874,9 @@ rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 }
 
 sql_rel *
-rel_propagate(mvc *sql, sql_rel *rel, int *changes)
+rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 {
+	mvc *sql = query->sql;
 	bool isSubtable = false;
 	sql_rel *l = rel->l, *propagate = rel;
 
@@ -877,7 +887,7 @@ rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 			isSubtable = true;
 			if(is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
 				sql->caching = 0;
-				rel = rel_subtable_insert(sql, rel, t, changes);
+				rel = rel_subtable_insert(query, rel, t, changes);
 				propagate = rel->l;
 			}
 		}
@@ -890,9 +900,9 @@ rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 				if(is_insert(propagate->op)) { //on inserts create a selection for each partition
 					sql->caching = 0;
 					if(isSubtable) {
-						rel->l = rel_propagate_insert(sql, propagate, t, changes);
+						rel->l = rel_propagate_insert(query, propagate, t, changes);
 					} else {
-						rel = rel_propagate_insert(sql, rel, t, changes);
+						rel = rel_propagate_insert(query, rel, t, changes);
 					}
 				} else if(is_update(propagate->op)) { //for updates propagate like in deletions
 					sql->caching = 0;

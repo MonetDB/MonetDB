@@ -10,6 +10,7 @@
 #include "sql_relation.h"
 #include "rel_exp.h"
 #include "rel_prop.h" /* for prop_copy() */
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
 #ifdef HAVE_HGE
@@ -87,6 +88,7 @@ exp_create(sql_allocator *sa, int type )
 	e->rname = NULL;
 	e->card = 0;
 	e->flag = 0;
+	e->freevar = 0;
 	e->l = e->r = NULL;
 	e->type = (expression_type)type;
 	e->f = NULL;
@@ -620,6 +622,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 	if (e == NULL)
 		return NULL;
 	/*
+	rel = rel_unnest(sql, rel);
 	rel = rel_optimizer(sql, rel, 0);
 	rel = rel_distribute(sql, rel);
 	*/
@@ -701,6 +704,18 @@ exp_label_table(sql_allocator *sa, sql_exp *e, int nr)
 {
 	e->rname = make_label(sa, nr);
 	return e;
+}
+
+list*
+exps_label(sql_allocator *sa, list *exps, int nr)
+{
+	node *n;
+
+	if (!exps)
+		return NULL;
+	for (n = exps->h; n; n = n->next)
+		n->data = exp_label(sa, n->data, nr++);
+	return exps;
 }
 
 void
@@ -2123,3 +2138,17 @@ create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
 		GDKfree(buf);
 	return res;
 }
+
+void
+exps_reset_freevar(list *exps)
+{
+	node *n;
+
+	for(n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+
+		/*later use case per type */
+		reset_freevar(e);
+	}
+}
+

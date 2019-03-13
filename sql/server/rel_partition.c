@@ -9,6 +9,7 @@
 /*#define DEBUG*/
 
 #include "monetdb_config.h"
+#include "sql_query.h"
 #include "rel_partition.h"
 #include "rel_optimizer.h"
 #include "rel_exp.h"

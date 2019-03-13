@@ -27,6 +27,7 @@
 #include "mal_debugger.h"
 
 #include "rel_select.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_prop.h"
 #include "rel_rel.h"
@@ -449,6 +450,8 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
+			r = rel_unnest(sql, r);
+		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql, r);
@@ -780,6 +783,8 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		if(!buf)
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
+		if (r)
+			r = rel_unnest(sql, r);
 		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {

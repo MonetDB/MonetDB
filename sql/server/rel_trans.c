@@ -35,8 +35,9 @@ rel_trans(mvc *sql, int trans_type, int nr, char *name)
 }
 
 sql_rel *
-rel_transactions(mvc *sql, symbol *s)
+rel_transactions(sql_query *query, symbol *s)
 {
+	mvc *sql = query->sql;
 	sql_rel *ret = NULL;
 
 	switch (s->token) {

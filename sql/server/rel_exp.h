@@ -90,6 +90,7 @@ extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, const char *rnam
 extern char* make_label(sql_allocator *sa, int nr);
 extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);
 extern sql_exp* exp_label_table(sql_allocator *sa, sql_exp *e, int nr);
+extern list* exps_label(sql_allocator *sa, list *exps, int nr);
 
 extern sql_exp * exp_copy( sql_allocator *sa, sql_exp *e);
 extern list * exps_copy( sql_allocator *sa, list *exps);
@@ -156,5 +157,7 @@ extern atom *exp_flatten(mvc *sql, sql_exp *e);
 extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
 extern sql_exp *create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value);
+
+extern void exps_reset_freevar(list *exps);
 
 #endif /* _REL_EXP_H_ */

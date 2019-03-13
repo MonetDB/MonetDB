@@ -59,7 +59,7 @@ extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
 #define mark_anyequal	 1
-#define mark_anynotequal 2
+#define mark_allnotequal 2
 #define mark_exists 9
 #define mark_notexists 10
 extern sql_rel * rel_mark(mvc *sql, sql_rel *l, sql_rel *r, list *jexps, sql_exp *le, sql_exp *re, int mark_op);
@@ -96,4 +96,6 @@ extern sql_table *rel_ddl_table_get(sql_rel *r);
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
+
+extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 #endif /* _REL_REL_H_ */

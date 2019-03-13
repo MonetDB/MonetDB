@@ -123,6 +123,8 @@ sql5_export str SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *n
 sql5_export str SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr);
 sql5_export str SQLanyequal(bit *ret, const bat *bid1, const bat *bid2);
 sql5_export str SQLanyequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, const bat *gpe, bit *no_nil);
+sql5_export str SQLallnotequal(bit *ret, const bat *bid1, const bat *bid2);
+sql5_export str SQLallnotequal_grp(bat *ret, const bat *bid1, const bat *bid2, const bat *gp, const bat *gpe, bit *no_nil);
 sql5_export str not_unique(bit *ret, const bat *bid);
 sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -321,5 +323,6 @@ sql5_export str SQLflush_log(void *ret);
 
 sql5_export str SQLexist(bit *res, bat *id);
 sql5_export str SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLsubexist(bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
 
 #endif /* _SQL_H */

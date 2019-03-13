@@ -18,6 +18,7 @@
 #include "sql_semantic.h"
 #include "sql_partition.h"
 #include "sql_privileges.h"
+#include "sql_querytype.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "gdk_logger.h"

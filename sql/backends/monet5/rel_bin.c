@@ -15,6 +15,7 @@
 #include "rel_prop.h"
 #include "rel_select.h"
 #include "rel_updates.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
@@ -1266,7 +1267,8 @@ rel_parse_value(backend *be, char *query, char emode)
 		if (sn->selection->h->data.sym->token == SQL_COLUMN || sn->selection->h->data.sym->token == SQL_IDENT) {
 			int is_last = 0;
 			sql_rel *rel = NULL;
-			sql_exp *e = rel_value_exp2(m, &rel, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel, ek, &is_last);
+			sql_query *query = query_create(m);
+			sql_exp *e = rel_value_exp2(query, &rel, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel, ek, &is_last);
 
 			if (!rel)
 				s = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL); 
@@ -3193,9 +3195,10 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
 				"internal query: %s", nquery);
 	} else {
-		sql_rel *r = rel_semantic(m, m->sym);
+		sql_query *query = query_create(m);
+		sql_rel *r = rel_semantic(query, m->sym);
 
-		if (r && (r = rel_optimizer(m, r, 1)) != NULL)
+		if (r && (r = rel_unnest(m,r)) != NULL && (r = rel_optimizer(m, r, 1)) != NULL)
 			sq = rel_bin(be, r);
 	}
 

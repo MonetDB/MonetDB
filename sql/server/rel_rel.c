@@ -14,6 +14,7 @@
 #include "sql_semantic.h"
 #include "sql_mvc.h"
 
+
 /* we don't name relations directly, but sometimes we need the relation
    name. So we look it up in the first expression
 
@@ -103,6 +104,7 @@ rel_create( sql_allocator *sa )
 	r->flag = 0;
 	r->card = CARD_ATOM;
 	r->processed = 0;
+	r->dependent = 0;
 	r->subquery = 0;
 	r->p = NULL;
 	return r;
@@ -292,7 +294,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e);
 	}
-	if (is_project(rel->op) && rel->l) {
+	if (is_simple_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_join(rel->op)) {
@@ -436,6 +438,7 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	if(!rel)
 		return NULL;
 
+	//assert(join!=op_apply);
 	rel->l = l;
 	rel->r = r;
 	rel->op = join;
@@ -451,8 +454,9 @@ mark_aggr( int op)
 	(void)op;
 	switch(op) {
 	case mark_anyequal:
-	case mark_anynotequal:
 		return "anyequal";
+	case mark_allnotequal:
+		return "allnotequal";
 	case mark_exists:
 		return "exist";
 	case mark_notexists:
@@ -476,7 +480,7 @@ rel_mark(mvc *sql, sql_rel *left, sql_rel *right, list *jexps, sql_exp *l, sql_e
 	left = rel_add_identity(sql, left, &id);
 	id = exp_ref(sql->sa, id);
 	exps = rel_projections(sql, left, NULL, 1/*keep names */, 1);
-	rel = rel_crossproduct(sql->sa, left, right, (mark_op<=mark_anynotequal)?op_left:op_join);
+	rel = rel_crossproduct(sql->sa, left, right, (mark_op<=mark_allnotequal)?op_left:op_join);
 	if (jexps)
 		rel->exps = jexps;
 	rel = rel_groupby(sql, rel, exp2list(sql->sa, id)); 
@@ -959,7 +963,7 @@ exps_has_nil(list *exps)
 }
 
 list *
-rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern )
+rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern)
 {
 	list *lexps, *rexps, *exps;
 	int include_subquery = (intern==2)?1:0;
@@ -976,11 +980,11 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_right:
 	case op_full:
 	case op_apply:
-		exps = rel_projections(sql, rel->l, tname, settname, intern );
+		exps = rel_projections(sql, rel->l, tname, settname, intern);
 		if (rel->op == op_full || rel->op == op_right)
 			exps_has_nil(exps);
 		if (rel->op != op_apply || (rel->flag  == APPLY_LOJ || rel->flag == APPLY_JOIN)) {
-			rexps = rel_projections(sql, rel->r, tname, settname, intern );
+			rexps = rel_projections(sql, rel->r, tname, settname, intern);
 			if (rel->op == op_full || rel->op == op_left)
 				exps_has_nil(rexps);
 			exps = list_merge( exps, rexps, (fdup)NULL);
@@ -1010,8 +1014,8 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 			}
 			return exps;
 		}
-		lexps = rel_projections(sql, rel->l, tname, settname, intern );
-		rexps = rel_projections(sql, rel->r, tname, settname, intern );
+		lexps = rel_projections(sql, rel->l, tname, settname, intern);
+		rexps = rel_projections(sql, rel->r, tname, settname, intern);
 		exps = sa_list(sql->sa);
 		if (lexps && rexps && exps) {
 			node *en, *ren;
@@ -1032,7 +1036,7 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_select:
 	case op_topn:
 	case op_sample:
-		return rel_projections(sql, rel->l, tname, settname, intern );
+		return rel_projections(sql, rel->l, tname, settname, intern);
 	default:
 		return NULL;
 	}
@@ -1436,3 +1440,16 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 	return NULL;
 }
 
+int
+rel_in_rel(sql_rel *super, sql_rel *sub)
+{
+	if (!super)
+		return 0;
+	if (super == sub)
+		return 1;
+	if (is_join(super->op) || is_semi(super->op) || is_set(super->op) || is_modify(super->op) || is_ddl(super->op))
+		return rel_in_rel(super->l, sub) || rel_in_rel(super->r, sub);
+	if (is_select(super->op) || is_project(super->op) || is_topn(super->op) || is_sample(super->op))
+		return rel_in_rel(super->l, sub);
+	return 0;
+}

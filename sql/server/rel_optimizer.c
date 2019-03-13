@@ -417,7 +417,7 @@ exp_count(int *cnt, sql_exp *e)
 			}
 			return 6;
 		case cmp_filter:
-			if (exp_card(e->r) > CARD_AGGR) {
+			if (exps_card(e->r) > CARD_AGGR) {
 				/* filters for joins are special */
 				*cnt += 1000;
 				return 1000;
@@ -8285,7 +8285,8 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 	sql_rel *sel = NULL;
 
 	if(is_modify(rel->op)) {
-		return rel_propagate(sql, rel, changes);
+		sql_query *query = query_create(sql);
+		return rel_propagate(query, rel, changes);
 	} else {
 		if (is_select(rel->op) && rel->l) {
 			sel = rel;
