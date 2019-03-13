@@ -417,7 +417,6 @@ WLRprocessScheduler(void *arg)
 			    ( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||
 			      (wlr_limit == -1 && wlr_timelimit[0] == 0 && wlr_batches < wlc_batches) ||
 			      (wlr_timelimit[0]  && strncmp(clktxt, wlr_timelimit, 26)> 0)  ) ) {
-				MT_thread_setworking("processing");
 				WLRprocess(cntxt);
 			}
 		}
