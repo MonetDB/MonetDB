@@ -1059,7 +1059,6 @@ static void profilerHeartbeat(void *dummy)
 		}
 		profilerHeartbeatEvent("ping");
 	}
-	ATOMIC_SET(&hbdelay, 0);
 }
 
 void setHeartbeat(int delay)

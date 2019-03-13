@@ -198,7 +198,7 @@ MCexitClient(Client c)
 	}
 }
 
-Client
+static Client
 MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
 	const char *prompt;
@@ -212,6 +212,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->fdin = fin ? fin : bstream_create(GDKin, 0);
 	if ( c->fdin == NULL){
+		MT_lock_set(&mal_contextLock);
+		c->mode = FREECLIENT;
+		MT_lock_unset(&mal_contextLock);
 		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
 		return NULL;
 	}
@@ -243,6 +246,13 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;
 	c->prompt = GDKstrdup(prompt);
 	if ( c->prompt == NULL){
+		if (fin == NULL) {
+			c->fdin->s = NULL;
+			bstream_destroy(c->fdin);
+			MT_lock_set(&mal_contextLock);
+			c->mode = FREECLIENT;
+			MT_lock_unset(&mal_contextLock);
+		}
 		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
 		return NULL;
 	}
@@ -447,7 +457,7 @@ freeClient(Client c)
  * When the server is about to shutdown, we should softly terminate
  * all outstanding session.
  */
-static int shutdowninprogress = 0;
+static volatile int shutdowninprogress = 0;
 
 int
 MCshutdowninprogress(void){
