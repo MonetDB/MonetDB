@@ -2337,39 +2337,6 @@ AC_SUBST([LIBLAS_LIBS])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
 
-org_have_atomic_ops=auto
-have_atomic_ops=$org_have_atomic_ops
-AC_ARG_WITH([atomic-ops],
-	[AS_HELP_STRING([--with-atomic-ops],
-		[use atomic_ops library (default=auto)])],
-	[have_atomic_ops=$withval])
-AS_VAR_IF([have_atomic_ops], [no], [], [
-	PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops=yes],
-		[have_atomic_ops=no; why_not_atomic_ops="(atomic_ops library not found)"])
-	AS_VAR_IF([have_atomic_ops], [yes], [
-		AS_CASE([$GCC-$CC],
-		[-*icc*], [
-			# Even with libatomic_ops available, compilation with
-			# atomic_ops enabled fails with Intel's icc (version 11.1);
-			# hence, we refrain from from using atomic_ops with icc.
-			have_atomic_ops=no
-			why_not_atomic_ops="(atomic_ops do not compile with Intel's icc)"],
-		[
-			# On some systems, notably OpenIndiana, atomic_ops may
-			# seem to be installed in that there is a pkg-config
-			# file for it, but that file contains incorrect
-			# information, and can not, in fact, be used.  The
-			# bogus pkg-config file for atomic_ops is part of the
-			# library/gc package.
-			save_CFLAGS="$CFLAGS"
-			CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
-			AC_CHECK_HEADERS([atomic_ops.h], [have_atomic_ops=yes], [have_atomic_ops=no why_not_atomic_ops="(atomic_ops was incorrectly installed (happens on at least Solaris/OpenIndiana))"])
-			CFLAGS="$save_CFLAGS"
-			AS_VAR_IF([have_atomic_ops], [yes], [
-				AC_DEFINE([HAVE_LIBATOMIC_OPS], 1, [Define if you have the libatomic_ops library])
-				CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
-				LIBS="$LIBS $atomic_ops_LIBS"])])])])
-
 #    checks for header files
 AC_HEADER_STDBOOL
 # NOTE: these header files are in alphabetical order to ease maintenance
@@ -2988,7 +2955,6 @@ done
 AS_ECHO([''])
 AS_ECHO(["* Available features/extensions:"])
 for comp in \
-	'atomic_ops ' \
 	'bz2        ' \
 	'curl       ' \
 	'fits       ' \

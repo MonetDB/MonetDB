@@ -34,7 +34,7 @@ Description: MonetDB core library
 
 Package: libmonetdb-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libatomic-ops-dev,
+Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb17, libmonetdb-stream-dev
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a

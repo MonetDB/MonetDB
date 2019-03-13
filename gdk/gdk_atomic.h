@@ -38,27 +38,7 @@
 /* define this if you don't want to use atomic instructions */
 /* #define NO_ATOMIC_INSTRUCTIONS */
 
-#if defined(HAVE_LIBATOMIC_OPS) && !defined(NO_ATOMIC_INSTRUCTIONS)
-
-#include <atomic_ops.h>
-
-#define ATOMIC_TYPE			AO_t
-#define ATOMIC_VAR_INIT(val)		(val)
-#define ATOMIC_INIT(var, val)		(*(var) = (val))
-
-#define ATOMIC_GET(var)			AO_load_full(var)
-#define ATOMIC_SET(var, val)		AO_store_full(var, (AO_t) (val))
-#define ATOMIC_ADD(var, val)		AO_fetch_and_add(var, (AO_t) (val))
-#define ATOMIC_SUB(var, val)		AO_fetch_and_add(var, (AO_t) -(val))
-#define ATOMIC_INC(var)			(AO_fetch_and_add1(var) + 1)
-#define ATOMIC_DEC(var)			(AO_fetch_and_sub1(var) - 1)
-
-#define ATOMIC_FLAG			AO_TS_t
-#define ATOMIC_FLAG_INIT		{ AO_TS_INITIALIZER }
-#define ATOMIC_CLEAR(var)		AO_CLEAR(var)
-#define ATOMIC_TAS(var)	(AO_test_and_set_full(var) != AO_TS_CLEAR)
-
-#elif defined(HAVE_STDATOMIC_H) && !defined(__INTEL_COMPILER) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#if defined(HAVE_STDATOMIC_H) && !defined(__INTEL_COMPILER) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <stdatomic.h>
 
@@ -93,6 +73,11 @@
 #define ATOMIC_INC(var)		(atomic_fetch_add(var, 1) + 1)
 #define ATOMIC_DEC(var)		(atomic_fetch_sub(var, 1) - 1)
 
+#define ATOMIC_PTR_TYPE(typ)		typ
+#define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
+#define ATOMIC_GET_PTR(var)		atomic_load(var)
+#define ATOMIC_SET_PTR(var, val)	atomic_store(var, val)
+
 #define ATOMIC_FLAG		atomic_flag
 /* ATOMIC_FLAG_INIT is already defined by the include file */
 #define ATOMIC_CLEAR(var)	atomic_flag_clear(var)
@@ -101,6 +86,19 @@
 #elif defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <intrin.h>
+
+/* On Windows, with Visual Studio 2005, the compiler uses acquire
+ * semantics for read operations on volatile variables and release
+ * semantics for write operations on volatile variables.
+ *
+ * With Visual Studio 2003, volatile to volatile references are
+ * ordered; the compiler will not re-order volatile variable
+ * access. However, these operations could be re-ordered by the
+ * processor.
+ *
+ * See
+ * https://docs.microsoft.com/en-us/windows/desktop/Sync/synchronization-and-multiprocessor-issues
+ */
 
 #if SIZEOF_SSIZE_T == 8
 
@@ -143,6 +141,11 @@
 
 #endif
 
+#define ATOMIC_PTR_TYPE(typ)		volatile PVOID
+#define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_GET_PTR(var)		(*(var))
+#define ATOMIC_SET_PTR(var, val)	_InterlockedExchangePointer((volatile PVOID*) (var), (PVOID) (val))
+
 #define ATOMIC_FLAG		int
 #define ATOMIC_FLAG_INIT	{ 0 }
 #define ATOMIC_CLEAR(var)	_InterlockedExchange(var, 0)
@@ -168,6 +171,11 @@
 #define ATOMIC_SUB(var, val)	__atomic_fetch_sub(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_INC(var)		__atomic_add_fetch(var, 1, __ATOMIC_SEQ_CST)
 #define ATOMIC_DEC(var)		__atomic_sub_fetch(var, 1, __ATOMIC_SEQ_CST)
+
+#define ATOMIC_PTR_TYPE(typ)		typ
+#define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_GET_PTR(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
+#define ATOMIC_SET_PTR(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
 
 #define ATOMIC_FLAG		char
 #define ATOMIC_FLAG_INIT	{ 0 }
@@ -253,6 +261,40 @@ ATOMIC_DEC(ATOMIC_TYPE *var)
 	size_t new;
 	pthread_mutex_lock(&var->lck);
 	new = var->val -= 1;
+	pthread_mutex_unlock(&var->lck);
+	return new;
+}
+
+#define ATOMIC_PTR_TYPE(typ)		ATOMIC_PTR
+
+typedef struct {
+	void *val;
+	pthread_mutex_t lck;
+} ATOMIC_PTR;
+
+static inline void
+ATOMIC_PTR_INIT(ATOMIC_PTR *var, void *val)
+{
+	pthread_mutex_init(&var->lck, 0);
+	var->val = val;
+}
+
+static inline void *
+ATOMIC_GET_PTR(ATOMIC_PTR *var)
+{
+	void *old;
+	pthread_mutex_lock(&var->lck);
+	old = var->val;
+	pthread_mutex_unlock(&var->lck);
+	return old;
+}
+
+static inline void *
+ATOMIC_SET_PTR(ATOMIC_PTR *var, void *val)
+{
+	void *new;
+	pthread_mutex_lock(&var->lck);
+	new = var->val = val;
 	pthread_mutex_unlock(&var->lck);
 	return new;
 }
