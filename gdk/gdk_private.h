@@ -315,21 +315,12 @@ typedef struct {
 	MT_Lock swap;
 	MT_Lock hash;
 	MT_Lock imprints;
-#ifndef NDEBUG
-	char swapname[16];
-	char hashname[16];
-	char impsname[16];
-#endif
 } batlock_t;
 
 typedef struct {
 	MT_Lock cache;
 	MT_Lock trim;
 	bat free;
-#ifndef NDEBUG
-	char cachename[16];
-	char trimname[16];
-#endif
 } bbplock_t;
 
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
@@ -350,7 +341,6 @@ extern size_t GDK_mmap_pagesize; /* mmap granularity */
 extern MT_Lock GDKnameLock;
 extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
-extern MT_Lock MT_system_lock;
 
 #define BATcheck(tst, msg, err)						\
 	do {								\

@@ -30,20 +30,20 @@ stderr of test 'mergepart17` in directory 'sql/test/merge-partitions` itself:
 # 16:54:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9208" "--port=33193"
 # 16:54:55 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9208/.s.monetdb.33193
-QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100; --error
 ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-9208/.s.monetdb.33193
 QUERY = UPDATE sublimits1 SET a = a + 1; --error
 ERROR = !UPDATE: Update on the partitioned column is not possible at the moment
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-9208/.s.monetdb.33193
-QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100; --error
 ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-9208/.s.monetdb.33193
-QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100; --error
 ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
 

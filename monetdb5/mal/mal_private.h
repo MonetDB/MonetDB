@@ -40,8 +40,6 @@ __hidden void initResource(void)
 	__attribute__((__visibility__("hidden")));
 __hidden int moreClients(int reruns)
 	__attribute__((__visibility__("hidden")));
-__hidden void stopMALdataflow(void)
-	__attribute__((__visibility__("hidden")));
 
 __hidden str malAtomDefinition(str name,int tpe)
 	__attribute__((__visibility__("hidden")));
@@ -110,7 +108,4 @@ __hidden mal_export void mal_resource_reset(void)
 __hidden mal_export void mal_runtime_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-extern volatile ATOMIC_TYPE mal_running;
-#ifdef ATOMIC_LOCK
-extern MT_Lock mal_runningLock;
-#endif
+extern ATOMIC_TYPE mal_running;

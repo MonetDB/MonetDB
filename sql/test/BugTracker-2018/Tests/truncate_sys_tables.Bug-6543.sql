@@ -26,10 +26,6 @@ SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics;
 TRUNCATE TABLE sys.statistics;
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics;
 
-SELECT (COUNT(*) > 0) AS has_rows FROM sys.spatial_ref_sys;
-TRUNCATE TABLE sys.spatial_ref_sys;
-SELECT (COUNT(*) > 0) AS has_rows FROM sys.spatial_ref_sys;
-
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.sequences;
 TRUNCATE TABLE sys.sequences;
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.sequences;

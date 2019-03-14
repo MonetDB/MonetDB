@@ -38,32 +38,22 @@ int have_hge;
 #include "wlc.h"
 #include "mal_atom.h"
 #include "opt_pipes.h"
+#include "tablet.h"
 
-MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
-MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
-MT_Lock     mal_remoteLock MT_LOCK_INITIALIZER("mal_remoteLock");
-MT_Lock  	mal_profileLock MT_LOCK_INITIALIZER("mal_profileLock");
-MT_Lock     mal_copyLock MT_LOCK_INITIALIZER("mal_copyLock");
-MT_Lock     mal_delayLock MT_LOCK_INITIALIZER("mal_delayLock");
-MT_Lock     mal_beatLock MT_LOCK_INITIALIZER("mal_beatLock");
-MT_Lock     mal_oltpLock MT_LOCK_INITIALIZER("mal_oltpLock");
+MT_Lock     mal_contextLock = MT_LOCK_INITIALIZER("mal_contextLock");
+MT_Lock     mal_namespaceLock = MT_LOCK_INITIALIZER("mal_namespaceLk");
+MT_Lock     mal_remoteLock = MT_LOCK_INITIALIZER("mal_remoteLock");
+MT_Lock  	mal_profileLock = MT_LOCK_INITIALIZER("mal_profileLock");
+MT_Lock     mal_copyLock = MT_LOCK_INITIALIZER("mal_copyLock");
+MT_Lock     mal_delayLock = MT_LOCK_INITIALIZER("mal_delayLock");
+MT_Lock     mal_beatLock = MT_LOCK_INITIALIZER("mal_beatLock");
+MT_Lock     mal_oltpLock = MT_LOCK_INITIALIZER("mal_oltpLock");
 
 /*
  * Initialization of the MAL context
  */
 
 int mal_init(void){
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init( &mal_contextLock, "mal_contextLock");
-	MT_lock_init( &mal_namespaceLock, "mal_namespaceLock");
-	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
-	MT_lock_init( &mal_profileLock, "mal_profileLock");
-	MT_lock_init( &mal_copyLock, "mal_copyLock");
-	MT_lock_init( &mal_delayLock, "mal_delayLock");
-	MT_lock_init( &mal_beatLock, "mal_beatLock");
-	MT_lock_init( &mal_oltpLock, "mal_oltpLock");
-#endif
-
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */

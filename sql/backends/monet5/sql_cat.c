@@ -154,6 +154,10 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		node *n = cs_find_id(&rmt->members, rpt->base.id);
 		const char *errtable = TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties);
 
+		if (isView(rpt))
+			throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
+		if (ms->base.id != ps->base.id)
+			throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", msname, mtname, msname);
 		if (n && !update)
 			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 		if (!n && update)

@@ -114,7 +114,7 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "MALoptimizer", 0, 0,
 	 0, 0, 0,
 	 "MALengine", (MALfcn) &MALengine, 0,
-	 "MALcallback", (MALfcn) &MALcallback, 0,0 },
+	 "MALcallback", (MALfcn) &MALcallback, 0 },
 	{"profiler","profiler",			/* name */
 	 0, 0,			/* initClient */
 	 0, 0,			/* exitClient */
@@ -125,7 +125,7 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 	 0, 0, 0,		/* optimizer */
 	 0, 0, 0,		/* scheduler */
 	 0, 0, 0,		/* callback */
-	 0, 0, 0,0		/* engine */
+	 0, 0, 0		/* engine */
 	 },
 	{0, 0,		/* name */
 	 0, 0,		/* init */
@@ -137,12 +137,12 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 	 0, 0, 0,		/* optimizer */
 	 0, 0, 0,		/* scheduler */
 	 0, 0, 0,		/* callback */
-	 0, 0, 0, 0		/* engine */
+	 0, 0, 0		/* engine */
 	 }
 };
 
 static str fillScenario(Client c, Scenario scen);
-static MT_Lock scenarioLock MT_LOCK_INITIALIZER("scenarioLock");
+static MT_Lock scenarioLock = MT_LOCK_INITIALIZER("scenarioLock");
 
 
 /*
@@ -224,10 +224,6 @@ initScenario(Client c, Scenario s)
 str
 defaultScenario(Client c)
 {
-#ifdef NEED_MT_LOCK_INIT
-	if (c == mal_clients)
-		MT_lock_init(&scenarioLock, "scenarioLock");
-#endif
 	return initScenario(c, scenarioRec);
 }
 

@@ -1,9 +1,9 @@
 stdout of test 'mergepart18` in directory 'sql/test/merge-partitions` itself:
 
 
-# 14:11:23 >  
+# 14:11:23 >
 # 14:11:23 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32333" "--set" "mapi_usock=/var/tmp/mtest-9747/.s.monetdb.32333" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
-# 14:11:23 >  
+# 14:11:23 >
 
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -61,15 +61,15 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 14:11:23 >  
+# 14:11:23 >
 # 14:11:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9747" "--port=32333"
-# 14:11:23 >  
+# 14:11:23 >
 
-#CREATE MERGE TABLE updateme (a int, b varchar(32)) PARTITION BY RANGE (a);
+#CREATE MERGE TABLE updateme (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 #CREATE TABLE subt1 (a int, b varchar(32));
 #CREATE TABLE subt2 (a int, b varchar(32));
-#ALTER TABLE updateme ADD TABLE subt2 AS PARTITION BETWEEN '201' AND '300';
-#ALTER TABLE updateme ADD TABLE subt1 AS PARTITION BETWEEN '1' AND '100';
+#ALTER TABLE updateme ADD TABLE subt2 AS PARTITION FROM '201' TO '300';
+#ALTER TABLE updateme ADD TABLE subt1 AS PARTITION FROM '1' TO '100';
 #SELECT minimum, maximum, with_nulls FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum,	with_nulls # name
@@ -102,7 +102,7 @@ Ready.
 % 1,	0 # length
 #DELETE FROM updateme;
 [ 2	]
-#ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '-100' AND '0';
+#ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0';
 #SELECT minimum, maximum, with_nulls FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum,	with_nulls # name
@@ -110,19 +110,19 @@ Ready.
 % 4,	3,	5 # length
 [ "201",	"300",	false	]
 [ "-100",	"0",	false	]
-#INSERT INTO updateme VALUES (0, 'second'), (201, 'other table');
+#INSERT INTO updateme VALUES (-1, 'second'), (201, 'other table');
 [ 2	]
-#INSERT INTO subt1 VALUES (0, 'second');
+#INSERT INTO subt1 VALUES (-1, 'second');
 [ 1	]
 #START TRANSACTION;
-#ALTER TABLE updateme SET TABLE subt1 AS PARTITION BETWEEN '0' AND '200';
+#ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-1' TO '200';
 #SELECT minimum, maximum, with_nulls FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum,	with_nulls # name
 % varchar,	varchar,	boolean # type
 % 3,	3,	5 # length
 [ "201",	"300",	false	]
-[ "0",	"200",	false	]
+[ "-1",	"200",	false	]
 #INSERT INTO updateme VALUES (199, 'third');
 [ 1	]
 #ROLLBACK;
@@ -143,8 +143,8 @@ Ready.
 % int,	varchar # type
 % 3,	11 # length
 [ 201,	"other table"	]
-[ 0,	"second"	]
-[ 0,	"second"	]
+[ -1,	"second"	]
+[ -1,	"second"	]
 [ -50,	"fifth"	]
 [ -50,	"fifth"	]
 #SELECT a, b FROM subt1;
@@ -152,8 +152,8 @@ Ready.
 % a,	b # name
 % int,	varchar # type
 % 3,	6 # length
-[ 0,	"second"	]
-[ 0,	"second"	]
+[ -1,	"second"	]
+[ -1,	"second"	]
 [ -50,	"fifth"	]
 [ -50,	"fifth"	]
 #SELECT a, b FROM subt2;
@@ -168,7 +168,7 @@ Ready.
 #DROP TABLE subt2;
 #DROP TABLE updateme;
 
-# 14:11:24 >  
+# 14:11:24 >
 # 14:11:24 >  "Done."
-# 14:11:24 >  
+# 14:11:24 >
 

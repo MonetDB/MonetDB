@@ -28,5 +28,6 @@ io.printf("#result of inline\n");
 optimizer.remap("user","tst");
 optimizer.costModel("user","tst");
 optimizer.coercions("user","tst");
+optimizer.aliases("user","tst");
 optimizer.evaluate("user","tst");
 mdb.list("user","tst");

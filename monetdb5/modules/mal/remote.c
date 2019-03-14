@@ -239,7 +239,7 @@ str RMTconnectScen(
 		c->type = 0;
 	}
 
-	MT_lock_init(&c->lock, "remote connection lock");
+	MT_lock_init(&c->lock, "remconlock");
 
 #ifdef _DEBUG_MAPI_
 	mapi_trace(c->mconn, true);

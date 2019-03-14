@@ -25,12 +25,14 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit;
+	int arg, i, j, limit, slimit;
 	InstrPtr p, *old;
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
+	str nme;
+	char *used;
 	//int *varlnk, *stmtlnk;
 
 	(void) pci;
@@ -49,6 +51,10 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 */
 	
+	used = (char*) GDKzalloc(sizeof(char) * mb->vtop);
+	if ( used == NULL)
+		throw(MAL, "optimizer.garbagecollector", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
 	old= mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -91,6 +97,19 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
+		/* rename all temporaries used for ease of debugging and profile interpretation */
+		for( j = 0; j< p->retc; j++){
+			arg = getArg(p,j);
+			if( used[arg] ==0){
+				nme = getVarName(mb,arg);
+				if( nme[0] == 'X' && nme[1] == '_' )
+						snprintf(nme, IDLENGTH, "X_%d", arg);
+				else
+				if( nme[0] == 'C' && nme[1] == '_' )
+						snprintf(nme, IDLENGTH,"C_%d", arg);
+				used[arg] ++;
+			}
+		}
 
 		if ( p->barrier == RETURNsymbol){
 			pushInstruction(mb, p);
@@ -134,6 +153,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	//GDKfree(varlnk);
 	//GDKfree(stmtlnk);
 	GDKfree(old);
+	GDKfree(used);
 #ifdef DEBUG_OPT_GARBAGE
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");
@@ -152,14 +172,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 #endif
 
-	/* rename all temporaries for ease of debugging */
-	for( i = 0; i < mb->vtop; i++)
-	if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
-		snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
-	else
-	if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
-		snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
-
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
@@ -168,6 +180,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		chkFlow(mb);
 		chkDeclarations(mb);
 	}
+
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);

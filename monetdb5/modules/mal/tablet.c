@@ -36,6 +36,7 @@
  */
 
 #include "monetdb_config.h"
+#include "streams.h"
 #include "tablet.h"
 #include "algebra.h"
 
@@ -50,7 +51,7 @@
 /* We restrict the row length to be 32MB for the time being */
 #define MAXROWSIZE(X) (X > 32*1024*1024 ? X : 32*1024*1024)
 
-static MT_Lock errorlock MT_LOCK_INITIALIZER("errorlock");
+static MT_Lock errorlock = MT_LOCK_INITIALIZER("errorlock");
 
 static BAT *
 void_bat_create(int adt, BUN nr)
@@ -1581,7 +1582,7 @@ create_rejects_table(Client cntxt)
 }
 
 BUN
-SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin)
+SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep, const char *rsep, char quote, lng skip, lng maxrow, int best, bool from_stdin, const char *tabnam)
 {
 	BUN cnt = 0, cntstart = 0, leftover = 0;
 	int res = 0;		/* < 0: error, > 0: success, == 0: continue processing */
@@ -1592,6 +1593,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	READERtask ptask[MAXWORKERS];
 	int threads = (!maxrow || maxrow > (1 << 16)) ? (GDKnr_threads < MAXWORKERS && GDKnr_threads > 1 ? GDKnr_threads - 1 : MAXWORKERS - 1) : 1;
 	lng lio = 0, tio, t1 = 0, total = 0, iototal = 0;
+	char name[16];
 
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#Prepare copy work for %d threads col '%s' rec '%s' quot '%c'\n",
@@ -1700,7 +1702,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 	}
 
 	task.id = 0;
-	if ((task.tid = THRcreate(SQLproducer, (void *) &task, MT_THR_JOINABLE, "SQLproducer")) == 0) {
+	snprintf(name, sizeof(name), "prod-%s", tabnam);
+	if ((task.tid = THRcreate(SQLproducer, (void *) &task, MT_THR_JOINABLE, name)) == 0) {
 		tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start producer thread", "SQLload_file");
 		goto bailout;
 	}
@@ -1723,9 +1726,12 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #ifdef MLOCK_TST
 		mlock(ptask[j].cols, sizeof(char *) * task.limit);
 #endif
-		MT_sema_init(&ptask[j].sema, 0, "ptask[j].sema");
-		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
-		if ((ptask[j].tid = THRcreate(SQLworker, (void *) &ptask[j], MT_THR_JOINABLE, "SQLworker")) == 0) {
+		snprintf(name, sizeof(name), "ptask%d.sema", j);
+		MT_sema_init(&ptask[j].sema, 0, name);
+		snprintf(name, sizeof(name), "ptask%d.repl", j);
+		MT_sema_init(&ptask[j].reply, 0, name);
+		snprintf(name, sizeof(name), "wrkr%d-%s", j, tabnam);
+		if ((ptask[j].tid = THRcreate(SQLworker, (void *) &ptask[j], MT_THR_JOINABLE, name)) == 0) {
 			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
 			threads = j;
 			for (j = 0; j < threads; j++)
@@ -2064,5 +2070,3 @@ COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	return MAL_SUCCEED;
 }
-
-#undef _DEBUG_TABLET_

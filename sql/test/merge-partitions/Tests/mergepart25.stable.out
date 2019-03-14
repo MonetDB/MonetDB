@@ -68,7 +68,7 @@ Ready.
 #CREATE FUNCTION casttoint(b clob) RETURNS INT BEGIN RETURN cast(b as int); END;
 #CREATE MERGE TABLE testmeplease (a int, b varchar(32)) PARTITION BY RANGE USING ( casttoint(b) );
 #CREATE TABLE sub1 (a int, b varchar(32));
-#ALTER TABLE testmeplease ADD TABLE sub1 AS PARTITION BETWEEN -100 AND 100;
+#ALTER TABLE testmeplease ADD TABLE sub1 AS PARTITION FROM -100 TO 100;
 #UPDATE testmeplease SET a = 99 WHERE a = 2;
 [ 0	]
 #INSERT INTO testmeplease VALUES (1, '1'), (2, '2'), (3, '3');

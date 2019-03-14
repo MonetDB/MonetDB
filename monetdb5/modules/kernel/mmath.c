@@ -240,15 +240,12 @@ MATHunary_FINITE(bit *res, const dbl *a)
 /* global pseudo random generator state */
 static random_state_engine mmath_rse;
 /* serialize access to state */
-static MT_Lock mmath_rse_lock MT_LOCK_INITIALIZER("mmath_rse_lock");
+static MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER("mmath_rse_lock");
 
 str
 MATHprelude(void *ret)
 {
 	(void) ret;
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&mmath_rse_lock, "mmath_rse_lock");
-#endif
 	init_random_state_engine(mmath_rse, (uint64_t) GDKusec());
 	return MAL_SUCCEED;
 }

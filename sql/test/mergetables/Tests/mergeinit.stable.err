@@ -30,6 +30,10 @@ stderr of test 'mergeinit` in directory 'sql/test/mergetables` itself:
 # 16:18:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10817" "--port=39884"
 # 16:18:31 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-3039/.s.monetdb.32377
+QUERY = ALTER TABLE complete ADD TABLE wrong; --error, cannot add views to a merge table
+ERROR = !ALTER TABLE: can't add a view into a MERGE TABLE
+CODE  = 42000
 
 # 16:18:31 >  
 # 16:18:31 >  "Done."

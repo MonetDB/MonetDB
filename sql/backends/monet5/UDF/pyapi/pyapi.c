@@ -67,7 +67,7 @@ static const char *FunctionBasePath(void)
 	return basepath;
 }
 
-static MT_Lock pyapiLock MT_LOCK_INITIALIZER("pyapiLock");
+static MT_Lock pyapiLock = MT_LOCK_INITIALIZER("pyapiLock");
 static int pyapiInitialized = FALSE;
 
 int PYFUNCNAME(PyAPIInitialized)(void) {
@@ -1322,13 +1322,6 @@ wrapup:
 
 str
 PYFUNCNAME(PyAPIprelude)(void *ret) {
-#ifdef NEED_MT_LOCK_INIT
-	static int initialized = 0;
-	/* since we don't destroy the lock, only initialize it once */
-	if (!initialized)
-		MT_lock_init(&pyapiLock, "pyapi_lock");
-	initialized = 1;
-#endif
 	(void) ret;
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {

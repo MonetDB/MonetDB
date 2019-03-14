@@ -154,8 +154,6 @@ MCnewClient(void)
 #ifdef MAL_CLIENT_DEBUG
 	fprintf(stderr,"New client created %d\n", (int) (c - mal_clients));
 #endif
-	snprintf(c->name, sizeof(c->name), "client%d", (int) (c - mal_clients));
-	MT_thread_setname(c->name);
 	return c;
 }
 
@@ -200,7 +198,7 @@ MCexitClient(Client c)
 	}
 }
 
-Client
+static Client
 MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
 	const char *prompt;
@@ -214,6 +212,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->fdin = fin ? fin : bstream_create(GDKin, 0);
 	if ( c->fdin == NULL){
+		MT_lock_set(&mal_contextLock);
+		c->mode = FREECLIENT;
+		MT_lock_unset(&mal_contextLock);
 		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
 		return NULL;
 	}
@@ -245,6 +246,13 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;
 	c->prompt = GDKstrdup(prompt);
 	if ( c->prompt == NULL){
+		if (fin == NULL) {
+			c->fdin->s = NULL;
+			bstream_destroy(c->fdin);
+			MT_lock_set(&mal_contextLock);
+			c->mode = FREECLIENT;
+			MT_lock_unset(&mal_contextLock);
+		}
 		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
 		return NULL;
 	}
@@ -267,7 +275,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->filetrans = false;
 
-	MT_sema_init(&c->s, 0, "Client->s");
+	char name[16];
+	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
+	MT_sema_init(&c->s, 0, name);
 	return c;
 }
 
@@ -289,12 +299,9 @@ int
 MCinitClientThread(Client c)
 {
 	Thread t;
-	char cname[11 + 1];
 
-	snprintf(cname, 11, OIDFMT, c->user);
-	cname[11] = '\0';
-	t = THRnew(cname);
-	if (t == 0) {
+	t = MT_thread_getdata();	/* should succeed */
+	if (t == NULL) {
 		MPresetProfiler(c->fdout);
 		return -1;
 	}
@@ -450,7 +457,7 @@ freeClient(Client c)
  * When the server is about to shutdown, we should softly terminate
  * all outstanding session.
  */
-static int shutdowninprogress = 0;
+static volatile int shutdowninprogress = 0;
 
 int
 MCshutdowninprogress(void){

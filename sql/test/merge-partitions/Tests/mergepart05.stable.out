@@ -1,9 +1,9 @@
 stdout of test 'mergepart05` in directory 'sql/test/merge-partitions` itself:
 
 
-# 17:44:52 >  
+# 17:44:52 >
 # 17:44:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30658" "--set" "mapi_usock=/var/tmp/mtest-3693/.s.monetdb.30658" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 17:44:52 >  
+# 17:44:52 >
 
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -64,18 +64,18 @@ Ready.
 # loading sql script: 97_comments.sql
 # loading sql script: 99_system.sql
 
-# 17:44:52 >  
+# 17:44:52 >
 # 17:44:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3693" "--port=30658"
-# 17:44:52 >  
+# 17:44:52 >
 
-#CREATE MERGE TABLE listparts (b varchar(32)) PARTITION BY RANGE (b);
+#CREATE MERGE TABLE listparts (b varchar(32)) PARTITION BY RANGE ON (b);
 #CREATE TABLE subtable1 (b varchar(32));
 #SELECT minimum, maximum FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
 % varchar,	varchar # type
 % 0,	0 # length
-#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello' AND 'world';
+#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 'hello' TO 'world';
 #SELECT minimum, maximum FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
@@ -83,7 +83,7 @@ Ready.
 % 5,	5 # length
 [ "hello",	"world"	]
 #ALTER TABLE listparts DROP TABLE subtable1;
-#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '"hello"' AND '"world"';
+#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM '"hello"' TO '"world"';
 #SELECT minimum, maximum FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
@@ -91,7 +91,6 @@ Ready.
 % 7,	7 # length
 [ "\"hello\"",	"\"world\""	]
 #ALTER TABLE listparts DROP TABLE subtable1;
-#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 'hello"' AND '"world';
 #SELECT minimum, maximum FROM range_partitions;
 % sys.range_partitions,	sys.range_partitions # table_name
 % minimum,	maximum # name
@@ -106,11 +105,13 @@ Ready.
 % 0,	0 # length
 #DROP TABLE listparts;
 #DROP TABLE subtable1;
-#CREATE MERGE TABLE testtimestamps (b timestamp) PARTITION BY RANGE (b);
+#CREATE MERGE TABLE testtimestamps (b timestamp) PARTITION BY RANGE ON (b);
 #CREATE TABLE subtime (b timestamp);
+#ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE;
+#ALTER TABLE testtimestamps DROP TABLE subtime;
 #INSERT INTO subtime VALUES (timestamp '2018-02-01 00:00');
 [ 1	]
-#ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN timestamp '2018-01-01 00:00' AND timestamp '2019-01-01 00:00';
+#ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION FROM timestamp '2018-01-01 00:00' TO timestamp '2019-01-01 00:00';
 #ALTER TABLE testtimestamps DROP TABLE subtime;
 #DELETE FROM subtime;
 [ 1	]
@@ -118,20 +119,20 @@ Ready.
 [ 1	]
 #DROP TABLE testtimestamps;
 #DROP TABLE subtime;
-#CREATE MERGE TABLE testrangelimits (a int) PARTITION BY RANGE (a);
+#CREATE MERGE TABLE testrangelimits (a int) PARTITION BY RANGE ON (a);
 #CREATE TABLE sublimits (a int);
-#ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN MINVALUE AND MAXVALUE;
+#ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE;
+#ALTER TABLE testrangelimits DROP TABLE sublimits;
+#INSERT INTO sublimits VALUES (-1);
+[ 1	]
+#ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION FROM RANGE MINVALUE TO 0;
 #ALTER TABLE testrangelimits DROP TABLE sublimits;
 #INSERT INTO sublimits VALUES (0);
-[ 1	]
-#ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN MINVALUE AND 0;
-#ALTER TABLE testrangelimits DROP TABLE sublimits;
-#INSERT INTO sublimits VALUES (1);
 [ 1	]
 #DROP TABLE testrangelimits;
 #DROP TABLE sublimits;
 
-# 17:44:53 >  
+# 17:44:53 >
 # 17:44:53 >  "Done."
-# 17:44:53 >  
+# 17:44:53 >
 

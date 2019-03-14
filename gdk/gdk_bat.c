@@ -1093,12 +1093,6 @@ BUNappend(BAT *b, const void *t, bool force)
 			}
 	} while (prop);
 #endif
-	if (b->thash == (Hash *) 1 ||
-	    (b->thash && ((size_t *) b->thash->heap.base)[0] & (1 << 24))) {
-		/* don't bother first loading the hash to then change
-		 * it, also, cannot maintain persistent hashes */
-		HASHdestroy(b);
-	}
 	if (b->thash) {
 		HASHins(b, p, t);
 		if (tsize && tsize != b->tvheap->size)
@@ -1966,7 +1960,7 @@ BATsetaccess(BAT *b, restrict_t newmode)
 		storage_t b1, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
-			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
+			BATDEBUG fprintf(stderr, "#BATsetaccess: %s has %d views; try creating a copy\n", BATgetId(b), b->batSharecnt);
 			GDKerror("BATsetaccess: %s has %d views\n",
 				 BATgetId(b), b->batSharecnt);
 			return GDK_FAIL;

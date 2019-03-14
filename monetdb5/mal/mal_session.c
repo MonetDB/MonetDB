@@ -485,15 +485,14 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 }
 
 /*
- * This is a phtread started function.  Here we start the client. We
- * need to initialize and allocate space for the global variables.
- * Thereafter it is up to the scenario interpreter to process input.
+ * Here we start the client.  We need to initialize and allocate space
+ * for the global variables.  Thereafter it is up to the scenario
+ * interpreter to process input.
  */
 str
-MSserveClient(void *dummy)
+MSserveClient(Client c)
 {
 	MalBlkPtr mb;
-	Client c = (Client) dummy;
 	str msg = 0;
 
 	if (!isAdministrator(c) && MCinitClientThread(c) < 0) {

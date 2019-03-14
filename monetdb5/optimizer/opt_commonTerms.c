@@ -11,23 +11,24 @@
 #include "mal_exception.h"
  /*
  * Caveat. A lot of time was lost due to constants that are indistinguisable
- * at the surface level. It may miss common expressions if their constants
- * are introduced too far apart in the MAL program.
- * It requires the constant optimizer to be ran first.
+ * at the surface level.  It requires the constant optimizer to be ran first.
  */
+
+#define HASHinstruction(X)   getArg((X), (X)->argc-1)
+
 str
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, prop, barrier= 0, cnt;
+	int i, j, k, barrier= 0;
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
+	int duplicate;
 	int *alias;
-	InstrPtr *old = NULL;
+	int *hash;
 	int *list;	
-	/* link all final constant expressions in a list */
-	/* it will help to find duplicate sql.bind calls */
-	int *vars;
+
+	InstrPtr *old = NULL;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -37,8 +38,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void) pci;
 	alias = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int*) GDKzalloc(sizeof(int) * mb->stop);
-	vars = (int*) GDKzalloc(sizeof(int) * mb->vtop);
-	if ( alias == NULL || list == NULL || vars == NULL){
+	hash = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	if ( alias == NULL || list == NULL || hash == NULL){
 		msg = createException(MAL,"optimizer.commonTerms", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
@@ -54,41 +55,18 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 	for ( i = 0; i < limit; i++) {
 		p = old[i];
+		duplicate = 0;
 
 		for ( k = 0; k < p->argc; k++)
 		if ( alias[getArg(p,k)] )
 			getArg(p,k) = alias[getArg(p,k)];
 			
-		/* Link the statement to the previous use, based on the last argument.*/
-		if ( p->retc < p->argc ){
-			list[i] = vars[getArg(p,p->argc-1)];
-			vars[getArg(p,p->argc-1)] = i;
-		} 
-
-		for ( k = 0; k < p->retc; k++)
-			if( vars[getArg(p,k)] && p->barrier != RETURNsymbol){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-				fprintf(stderr, "#ERROR MULTIPLE ASSIGNMENTS[%d] ",i);
-				fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
-#endif
-				pushInstruction(mb,p);
-				barrier= TRUE; // no more optimization allowed
-				break;
-			}
-		if( k < p->retc)
-			continue;
-
-		pushInstruction(mb,p);
 		if (p->token == ENDsymbol){
+			pushInstruction(mb,p);
 			/* wrap up the remainder */
 			for(i++; i<limit; i++)
-				if( old[i]){
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-					fprintf(stderr, "#FINALIZE[%d] ",i);
-					fprintInstruction(stderr, mb, 0, old[i], LIST_MAL_ALL);
-#endif
+				if( old[i])
 					pushInstruction(mb,old[i]);
-			}
 			break;
 		}
 		/*
@@ -104,23 +82,32 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		 * Like all optimizer decisions, it is safe to stop.
 		 */
 		barrier |= getFunctionId(p) == assertRef;
-		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol /* || p->retc == p->argc */) {
+		if (barrier || p->token == NOOPsymbol || p->token == ASSIGNsymbol) {
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 				fprintf(stderr, "#COMMON SKIPPED[%d] %d %d\n",i, barrier, p->retc == p->argc);
 #endif
+			pushInstruction(mb,p);
+			continue;
+		}
+		/* side-effect producing operators can never be replaced */
+		/* the same holds for function calls without an argument, it is unclear where the results comes from (e.g. clock()) */
+		if ( mayhaveSideEffects(cntxt, mb, p,TRUE) || p->argc == p->retc){
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+				fprintf(stderr, "#COMMON SKIPPED[%d] side-effect %d\n", i, p->retc == p->argc);
+#endif
+			pushInstruction(mb,p);
 			continue;
 		}
 
 		/* from here we have a candidate to look for a match */
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-		fprintf(stderr,"#TARGET CANDIDATE[%d] ",i);
-		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
+			fprintf(stderr,"#CANDIDATE[%d] look at list[%d]=>%d\n",
+				i, HASHinstruction(p), hash[HASHinstruction(p)]);
+			fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 #endif
-		prop = mayhaveSideEffects(cntxt, mb, p,TRUE);
-		cnt = i; /* / 128 < 32? 32 : mb->stop/128;	limit search depth */
-		if ( !prop)
-		for (j = list[i]; cnt > 0 && j ; cnt--, j = list[j]) 
-			if ( getFunctionId(q=getInstrPtr(mb,j)) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
+		/* Look into the hash structure for matching instructions */
+		for (j = hash[HASHinstruction(p)];  j > 0  ; j = list[j]) 
+			if ( (q= getInstrPtr(mb,j)) && getFunctionId(q) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			fprintf(stderr,"#CANDIDATE[%d->%d] %d %d", j, list[j], 
 				hasSameSignature(mb, p, q, p->retc), 
@@ -152,6 +139,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 #endif
 						break;
 					}
+					duplicate = 1;
 					clrFunction(p);
 					p->argc = p->retc;
 					for (k = 0; k < q->retc; k++){
@@ -167,11 +155,24 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				}
 			}
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
-			else if ( mayhaveSideEffects(cntxt, mb, q, TRUE) || isUpdateInstruction(p)){
+			else if ( isUpdateInstruction(p)){
 				fprintf(stderr, "#COMMON SKIPPED %d %d ", mayhaveSideEffects(cntxt, mb, q, TRUE) , isUpdateInstruction(p));
 				fprintInstruction(stderr, mb, 0, q, LIST_MAL_ALL);
 			}
 #endif
+		if (duplicate){
+			pushInstruction(mb,p);
+			continue;
+		} 
+		/* update the hash structure with another candidate for re-use */
+#ifdef DEBUG_OPT_COMMONTERMS_MORE
+		fprintf(stderr,"#UPDATE HASH[%d] look at  arg %d hash %d list %d\n",
+			i, getArg(p,p->argc-1), HASHinstruction(p), hash[HASHinstruction(p)]);
+		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
+#endif
+		list[i] = hash[HASHinstruction(p)];
+		hash[HASHinstruction(p)] = i;
+		pushInstruction(mb,p);
 	}
 	for(; i<slimit; i++)
 		if( old[i])
@@ -192,7 +193,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 wrapup:
 	if(alias) GDKfree(alias);
 	if(list) GDKfree(list);
-	if(vars) GDKfree(vars);
+	if(hash) GDKfree(hash);
 	if(old) GDKfree(old);
 	return msg;
 }
