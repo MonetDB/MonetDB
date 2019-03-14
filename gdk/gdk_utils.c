@@ -706,6 +706,7 @@ GDKprepareExit(void)
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
+	THRDDEBUG dump_threads();
 	MT_lock_set(&GDKthreadLock);
 	for (st = serverthread; st; st = serverthread) {
 		MT_lock_unset(&GDKthreadLock);

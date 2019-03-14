@@ -141,6 +141,7 @@ doChallenge(void *data)
 	protocol_version protocol = PROTOCOL_9;
 	size_t buflen = BLOCK;
 
+	MT_thread_setworking("challenging client");
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif

@@ -250,6 +250,8 @@ mal_export str MTIMEdate_extract_year_bulk(bat *ret, const bat *bid);
 mal_export str MTIMEdate_extract_quarter_bulk(bat *ret, const bat *bid);
 mal_export str MTIMEdate_extract_month_bulk(bat *ret, const bat *bid);
 mal_export str MTIMEdate_extract_day_bulk(bat *ret, const bat *bid);
+mal_export str MTIMEdate_extract_ymd(int *year, int *month, int *day, const date *v);
+
 
 mal_export str MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid);
 mal_export str MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid);

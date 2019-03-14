@@ -2137,6 +2137,7 @@ store_manager(void)
 	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
 	const int timeout = GDKdebug & FORCEMITOMASK ? 500 : 50000;
 
+	MT_thread_setworking("sleeping");
 	while (!GDKexiting()) {
 		int res = LOG_OK;
 		int t;
@@ -2165,6 +2166,7 @@ store_manager(void)
 			MT_lock_set(&bs_lock);
 		}
 
+		MT_thread_setworking("flushing");
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
 		gtrans->wstime = timestamp();
@@ -2184,6 +2186,7 @@ store_manager(void)
 
 		if (res != LOG_OK)
 			GDKfatal("write-ahead logging failure, disk full?");
+		MT_thread_setworking("sleeping");
 	}
 }
 
@@ -2193,6 +2196,7 @@ idle_manager(void)
 	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
 	const int timeout = GDKdebug & FORCEMITOMASK ? 50 : 5000;
 
+	MT_thread_setworking("sleeping");
 	while (!GDKexiting()) {
 		sql_session *s;
 		int t;
@@ -2213,6 +2217,7 @@ idle_manager(void)
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
+		MT_thread_setworking("vacuuming");
 		sql_trans_begin(s);
 		if (store_vacuum( s->tr ) == 0)
 			sql_trans_commit(s->tr);
@@ -2220,6 +2225,7 @@ idle_manager(void)
 		sql_session_destroy(s);
 
 		MT_lock_unset(&bs_lock);
+		MT_thread_setworking("sleeping");
 	}
 }
 

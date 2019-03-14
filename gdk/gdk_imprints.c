@@ -360,7 +360,6 @@ BATimprints(BAT *b)
 
 	if (BATcheckimprints(b))
 		return GDK_SUCCEED;
-	assert(b->timprints == NULL);
 
 	if (VIEWtparent(b)) {
 		/* views always keep null pointer and need to obtain
@@ -370,7 +369,6 @@ BATimprints(BAT *b)
 		assert(b);
 		if (BATcheckimprints(b))
 			return GDK_SUCCEED;
-		assert(b->timprints == NULL);
 	}
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
 	ACCELDEBUG t0 = GDKusec();

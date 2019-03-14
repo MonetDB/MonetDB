@@ -345,6 +345,7 @@ DFLOWworker(void *T)
 	}
 	while (1) {
 		if (fnxt == 0) {
+			MT_thread_setworking(NULL);
 			MT_lock_set(&dataflowLock);
 			cntxt = t->cntxt;
 			MT_lock_unset(&dataflowLock);
@@ -363,6 +364,7 @@ DFLOWworker(void *T)
 				/* no more work to be done: exit */
 				break;
 			}
+			MT_thread_setworking(fe->flow->cntxt->query);
 		} else
 			fe = fnxt;
 		if (ATOMIC_GET(&exiting)) {

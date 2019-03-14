@@ -637,6 +637,7 @@ typedef struct {
 
 gdk_export void MT_thread_setlockwait(MT_Lock *lock);
 gdk_export void MT_thread_setsemawait(MT_Sema *sema);
+gdk_export void MT_thread_setworking(const char *work);
 
 gdk_export int MT_check_nr_cores(void);
 
