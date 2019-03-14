@@ -735,9 +735,9 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 			int e = errno;
 			GDKfree(psock);
 			GDKfree(usockfile);
-			errno = e;
 			if (sock != INVALID_SOCKET)
 				closesocket(sock);
+			errno = e;
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": creation of UNIX socket failed: %s",
 #ifdef _MSC_VER
