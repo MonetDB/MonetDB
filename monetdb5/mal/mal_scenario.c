@@ -498,12 +498,24 @@ resetScenario(Client c)
  * between speed and ability to analysis its behavior.
  *
  */
+static const char *phases[] = {
+	[MAL_SCENARIO_CALLBACK] = "scenario callback",
+	[MAL_SCENARIO_ENGINE] = "scenario engine",
+	[MAL_SCENARIO_EXITCLIENT] = "scenario exitclient",
+	[MAL_SCENARIO_INITCLIENT] = "scenario initclient",
+	[MAL_SCENARIO_OPTIMIZE] = "scenario optimize",
+	[MAL_SCENARIO_PARSER] = "scenario parser",
+	[MAL_SCENARIO_READER] = "scenario reader",
+	[MAL_SCENARIO_SCHEDULER] = "scenario scheduler",
+};
 static str
 runPhase(Client c, int phase)
 {
 	str msg = MAL_SUCCEED;
-	if (c->phase[phase])
+	if (c->phase[phase]) {
+		MT_thread_setworking(phases[phase]);
 	    return msg = (str) (*c->phase[phase])(c);
+	}
 	return msg;
 }
 
@@ -535,8 +547,10 @@ runScenarioBody(Client c, int once)
 			goto wrapup;
 	wrapup:
 		if (msg != MAL_SUCCEED){
-			if(c->phase[MAL_SCENARIO_CALLBACK])
+			if (c->phase[MAL_SCENARIO_CALLBACK]) {
+				MT_thread_setworking(phases[MAL_SCENARIO_CALLBACK]);
 				msg = (str) (*c->phase[MAL_SCENARIO_CALLBACK])(c, msg);
+			}
 			if (msg) {
 				mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
 				freeException(msg);
@@ -550,8 +564,8 @@ runScenarioBody(Client c, int once)
 		if( once) break;
 	}
 	c->exception_buf_initialized = 0;
-	if (once == 0 && c->phase[MAL_SCENARIO_EXITCLIENT])
-		msg = (*c->phase[MAL_SCENARIO_EXITCLIENT]) (c);
+	if (once == 0)
+		msg = runPhase(c, MAL_SCENARIO_EXITCLIENT);
 	return msg;
 }
 

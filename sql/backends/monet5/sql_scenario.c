@@ -1033,6 +1033,13 @@ SQLparser(Client c)
 	int oldvtop, oldstop;
 	int pstatus = 0;
 	int err = 0, opt = 0;
+	char *q = NULL;
+
+	/* clean up old stuff */
+	msg = (char *) c->query;
+	c->query = NULL;
+	GDKfree(msg);		/* may be NULL */
+	msg = NULL;
 
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
@@ -1179,7 +1186,13 @@ SQLparser(Client c)
 	 * produce code.
 	 */
 	be->q = NULL;
-	if (m->emode == m_execute) {
+	q = query_cleaned(QUERY(m->scanner));
+	c->query = q;
+
+	if (q == NULL) {
+		err = 1;
+		msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else if (m->emode == m_execute) {
 		assert(m->sym->data.lval->h->type == type_int);
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
@@ -1219,32 +1232,21 @@ SQLparser(Client c)
 		}
 
 		if ((!caching(m) || !cachable(m, r)) && m->emode != m_prepare) {
-			char *q = query_cleaned(QUERY(m->scanner));
-			if(!q) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			} else {
-				/* Query template should not be cached */
-				scanner_query_processed(&(m->scanner));
+			/* Query template should not be cached */
+			scanner_query_processed(&(m->scanner));
 
-				err = 0;
-				if (backend_callinline(be, c) < 0 ||
-					backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
-					err = 1;
-				else opt = 1;
-				GDKfree(q);
-			}
+			err = 0;
+			if (backend_callinline(be, c) < 0 ||
+			    backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
+				err = 1;
+			else opt = 1;
 		} else {
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it.
 			 */
-			char *q = query_cleaned(QUERY(m->scanner)), *escaped_q;
+			char *escaped_q;
 			char qname[IDLENGTH];
 			be->q = NULL;
-			if(!q) {
-				err = 1;
-				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
 			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
 			escaped_q = sql_escape_str(q);
 			if(!escaped_q) {
@@ -1265,7 +1267,6 @@ SQLparser(Client c)
 				err = 1;
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
-			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
 			if (!be->q->code)

@@ -521,6 +521,7 @@ MSserveClient(Client c)
 	} else {
 		do {
 			do {
+				MT_thread_setworking("running scenario");
 				msg = runScenario(c,0);
 				freeException(msg);
 				if (c->mode == FINISHCLIENT)
@@ -529,6 +530,7 @@ MSserveClient(Client c)
 			} while (c->scenario && !GDKexiting());
 		} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
 	}
+	MT_thread_setworking("exiting");
 	/* pre announce our exiting: cleaning up may take a while and we
 	 * don't want to get killed during that time for fear of
 	 * deadlocks */

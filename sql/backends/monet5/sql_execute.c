@@ -751,9 +751,13 @@ SQLengineIntern(Client c, backend *be)
 	str msg = MAL_SUCCEED;
 	char oldlang = be->language;
 	mvc *m = be->mvc;
+	char *q;
 
 	if (oldlang == 'X') {	/* return directly from X-commands */
 		sqlcleanup(be->mvc, 0);
+		q = (char *) c->query;
+		c->query = NULL;
+		GDKfree(q);
 		return MAL_SUCCEED;
 	}
 
@@ -773,6 +777,9 @@ SQLengineIntern(Client c, backend *be)
 			goto cleanup_engine;
 		}
 		sqlcleanup(be->mvc, 0);
+		q = (char *) c->query;
+		c->query = NULL;
+		GDKfree(q);
 		return MAL_SUCCEED;
 	}
 
@@ -818,6 +825,9 @@ cleanup_engine:
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c, c->curprg->def, NULL, be->vtop);
 	be->language = oldlang;
+	q = (char *) c->query;
+	c->query = NULL;
+	GDKfree(q);
 	/*
 	 * Any error encountered during execution should block further processing
 	 * unless auto_commit has been set.

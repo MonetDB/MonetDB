@@ -1047,6 +1047,7 @@ static void profilerHeartbeat(void *dummy)
 	(void) dummy;
 	for (;;) {
 		/* wait until you need this info */
+		MT_thread_setworking("sleeping");
 		while (ATOMIC_GET(&hbdelay) == 0 || eventstream == NULL) {
 			if (GDKexiting() || !ATOMIC_GET(&hbrunning))
 				return;
@@ -1057,6 +1058,7 @@ static void profilerHeartbeat(void *dummy)
 				return;
 			MT_sleep_ms(t > timeout ? timeout : t);
 		}
+		MT_thread_setworking("pinging");
 		profilerHeartbeatEvent("ping");
 	}
 }
