@@ -787,8 +787,8 @@ MOSgetPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int varid, int *part,
 				*nrofparts = getVarConstant(mb,getArg(p,7)).val.ival;
 			}
 		} else
-		if( p->token == ASSIGNsymbol && getArg(p,1) == varid)
-			MOSgetPartition(cntxt,mb,stk,getArg(p,0),part,nrofparts);
+			if( p->token == ASSIGNsymbol && getArg(p,1) == varid)
+				MOSgetPartition(cntxt,mb,stk,getArg(p,0),part,nrofparts);
 	}
 }
 
