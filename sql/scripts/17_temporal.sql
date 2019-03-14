@@ -25,3 +25,4 @@ grant execute on function sys."epoch" (TIMESTAMP WITH TIME ZONE) to public;
 create function sys.date_trunc(txt string, t timestamp)
 returns timestamp
 external name sql.date_trunc;
+grant execute on function sys.date_trunc(string, timestamp) to public;

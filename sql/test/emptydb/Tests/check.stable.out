@@ -4576,6 +4576,7 @@ drop function pcre_replace(string, string, string, string);
 [ "corr",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "corr",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "date_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "date_trunc",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "degrees",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "env",	"public",	"EXECUTE",	NULL,	0	]
 [ "epoch",	"public",	"EXECUTE",	"monetdb",	0	]

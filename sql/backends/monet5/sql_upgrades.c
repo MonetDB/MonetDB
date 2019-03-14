@@ -1542,10 +1542,11 @@ sql_update_apr2019(Client c, mvc *sql)
 	/* 17_temporal.sql */
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function sys.date_trunc;\n"
 			"create function sys.date_trunc(txt string, t timestamp)\n"
 			"returns timestamp\n"
-			"external name sql.date_trunc;\n");
+			"external name sql.date_trunc;\n"
+			"grant execute on function sys.date_trunc(string, timestamp) to public;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = %d;\n", F_FUNC);
 
 	/* 26_sysmon.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
