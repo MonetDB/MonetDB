@@ -16,12 +16,22 @@
  * ATOMIC_INIT -- initialize the variable (not necessarily atomic!);
  * ATOMIC_GET -- return the value of a variable;
  * ATOMIC_SET -- set the value of a variable;
+ * ATOMIC_XCG -- set the value of a variable, return original value;
  * ATOMIC_ADD -- add a value to a variable, return original value;
  * ATOMIC_SUB -- subtract a value from a variable, return original value;
  * ATOMIC_INC -- increment a variable's value, return new value;
  * ATOMIC_DEC -- decrement a variable's value, return new value;
  * These interfaces work on variables of type ATOMIC_TYPE
  * (int or int64_t depending on architecture).
+ *
+ * Some of these are also available for pointers:
+ * ATOMIC_PTR_INIT
+ * ATOMIC_GET_PTR
+ * ATOMIC_SET_PTR
+ * ATOMIC_XCG_PTR
+ * To define an atomic pointer, use ATOMIC_PTR_TYPE(type).  This may
+ * or may not use the type provided to construct a type that is usable
+ * in the above macros.
  *
  * In addition, the following operations are defined:
  * ATOMIC_TAS -- test-and-set: set variable to "true" and return old value
@@ -68,6 +78,7 @@
 #define ATOMIC_INIT(var, val)	atomic_init(var, (ATOMIC_CAST) (val))
 #define ATOMIC_GET(var)		atomic_load(var)
 #define ATOMIC_SET(var, val)	atomic_store(var, (ATOMIC_CAST) (val))
+#define ATOMIC_XCG(var, val)	atomic_exchange(var, (ATOMIC_CAST) (val))
 #define ATOMIC_ADD(var, val)	atomic_fetch_add(var, (ATOMIC_CAST) (val))
 #define ATOMIC_SUB(var, val)	atomic_fetch_sub(var, (ATOMIC_CAST) (val))
 #define ATOMIC_INC(var)		(atomic_fetch_add(var, 1) + 1)
@@ -77,6 +88,7 @@
 #define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
 #define ATOMIC_GET_PTR(var)		atomic_load(var)
 #define ATOMIC_SET_PTR(var, val)	atomic_store(var, val)
+#define ATOMIC_XCG_PTR(var, val)	atomic_exchange(var, val)
 
 #define ATOMIC_FLAG		atomic_flag
 /* ATOMIC_FLAG_INIT is already defined by the include file */
@@ -92,9 +104,8 @@
  * semantics for write operations on volatile variables.
  *
  * With Visual Studio 2003, volatile to volatile references are
- * ordered; the compiler will not re-order volatile variable
- * access. However, these operations could be re-ordered by the
- * processor.
+ * ordered; the compiler will not re-order volatile variable access.
+ * However, these operations could be re-ordered by the processor.
  *
  * See
  * https://docs.microsoft.com/en-us/windows/desktop/Sync/synchronization-and-multiprocessor-issues
@@ -109,6 +120,7 @@
 #define ATOMIC_GET(var)		(*(var))
 /* should we use _InterlockedExchangeAdd64(var, 0) instead? */
 #define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (int64_t) (val))
+#define ATOMIC_XCG(var, val)	_InterlockedExchange64(var, (int64_t) (val))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (int64_t) (val))
 #define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(int64_t) (val))
 #define ATOMIC_INC(var)		_InterlockedIncrement64(var)
@@ -129,6 +141,7 @@
 #define ATOMIC_GET(var)		(*(var))
 /* should we use _InterlockedExchangeAdd(var, 0) instead? */
 #define ATOMIC_SET(var, val)	_InterlockedExchange(var, (int) (val))
+#define ATOMIC_XCG(var, val)	_InterlockedExchange(var, (int) (val))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd(var, (int) (val))
 #define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd(var, -(int) (val))
 #define ATOMIC_INC(var)		_InterlockedIncrement(var)
@@ -145,6 +158,7 @@
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_GET_PTR(var)		(*(var))
 #define ATOMIC_SET_PTR(var, val)	_InterlockedExchangePointer((volatile PVOID*) (var), (PVOID) (val))
+#define ATOMIC_XCG_PTR(var, val)	_InterlockedExchangePointer((volatile PVOID*) (var), (PVOID) (val))
 
 #define ATOMIC_FLAG		int
 #define ATOMIC_FLAG_INIT	{ 0 }
@@ -167,6 +181,7 @@
 
 #define ATOMIC_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_XCG(var, val)	__atomic_exchange_n(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_ADD(var, val)	__atomic_fetch_add(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_SUB(var, val)	__atomic_fetch_sub(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_INC(var)		__atomic_add_fetch(var, 1, __ATOMIC_SEQ_CST)
@@ -176,6 +191,7 @@
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_GET_PTR(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_SET_PTR(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_XCG_PTR(var, val)	__atomic_exchange_n(var, (val), __ATOMIC_SEQ_CST)
 
 #define ATOMIC_FLAG		char
 #define ATOMIC_FLAG_INIT	{ 0 }
@@ -210,8 +226,17 @@ ATOMIC_GET(ATOMIC_TYPE *var)
 	return old;
 }
 
-static inline size_t
+static inline void
 ATOMIC_SET(ATOMIC_TYPE *var, size_t val)
+{
+	pthread_mutex_lock(&var->lck);
+	var->val = val;
+	pthread_mutex_unlock(&var->lck);
+}
+#define ATOMIC_SET(var, val)	ATOMIC_SET(var, (size_t) (val))
+
+static inline size_t
+ATOMIC_XCG(ATOMIC_TYPE *var, size_t val)
 {
 	size_t new;
 	pthread_mutex_lock(&var->lck);
@@ -219,7 +244,7 @@ ATOMIC_SET(ATOMIC_TYPE *var, size_t val)
 	pthread_mutex_unlock(&var->lck);
 	return new;
 }
-#define ATOMIC_SET(var, val)	ATOMIC_SET(var, (size_t) (val))
+#define ATOMIC_XCG(var, val)	ATOMIC_XCG(var, (size_t) (val))
 
 static inline size_t
 ATOMIC_ADD(ATOMIC_TYPE *var, size_t val)
@@ -289,8 +314,16 @@ ATOMIC_GET_PTR(ATOMIC_PTR *var)
 	return old;
 }
 
-static inline void *
+static inline void
 ATOMIC_SET_PTR(ATOMIC_PTR *var, void *val)
+{
+	pthread_mutex_lock(&var->lck);
+	var->val = val;
+	pthread_mutex_unlock(&var->lck);
+}
+
+static inline void *
+ATOMIC_XCG_PTR(ATOMIC_PTR *var, void *val)
 {
 	void *new;
 	pthread_mutex_lock(&var->lck);
