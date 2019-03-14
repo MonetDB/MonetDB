@@ -108,8 +108,8 @@ OPTmosaicImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 		// mark all that needs decompression
 		for(j= p->retc; j<p->argc; j++)
-		if( check[getArg(p,j)] )
-			check[getArg(p,j)] = -1;
+			if( check[getArg(p,j)] )
+				check[getArg(p,j)] = -1;
     }
 	// actual conversion
     for( i=0; i < limit; i++){
