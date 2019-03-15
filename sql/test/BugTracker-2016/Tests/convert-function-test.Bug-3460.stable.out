@@ -8,18 +8,13 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 # MonetDB 5 server v11.23.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2016', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.589 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:37752/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10540/.s.monetdb.37752
-# MonetDB/GIS module loaded
-# MonetDB/SQL module loaded
-# MonetDB/R   module loaded
-
-Ready.
+# Compiled for x86_64-pc-linux-gnu/64bit
+# Found 62.693 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:30838/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26352/.s.monetdb.30838
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

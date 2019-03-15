@@ -526,11 +526,12 @@ runPhase(Client c, int phase)
 static str
 runScenarioBody(Client c, int once)
 {
-	str msg= MAL_SUCCEED;
+	str msg;
 
 	c->exception_buf_initialized = 1;
 	if (setjmp( c->exception_buf) < 0)
 		c->mode = FINISHCLIENT;
+	msg = MAL_SUCCEED;
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
 		// be aware that a MAL call  may initialize a different scenario
 		if ( !c->state[0] && (msg = runPhase(c, MAL_SCENARIO_INITCLIENT)) ) 

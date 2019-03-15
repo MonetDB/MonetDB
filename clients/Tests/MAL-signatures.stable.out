@@ -10740,6 +10740,7 @@ Ready.
 [ "clients",	"setListing",	"pattern clients.setListing(flag:int):int ",	"CLTsetListing;",	"Turn on/off echo of MAL instructions:\n\t1 - echo input,\n\t2 - show mal instruction,\n\t4 - show details of type resolutoin, \n\t8 - show binding information."	]
 [ "clients",	"setPassword",	"pattern clients.setPassword(user:str, pass:str):void ",	"CLTsetPassword;",	"Set the password for the given user"	]
 [ "clients",	"setScenario",	"pattern clients.setScenario(msg:str):str ",	"CLTsetScenario;",	"Switch to other scenario handler, return previous one."	]
+[ "clients",	"setprinttimeout",	"command clients.setprinttimeout(n:int):void ",	"CLTsetPrintTimeout;",	"Print running query every so many seconds."	]
 [ "clients",	"setsession",	"pattern clients.setsession(n:lng):void ",	"CLTsetSessionTimeout;",	"Abort a session after  n seconds."	]
 [ "clients",	"settimeout",	"pattern clients.settimeout(n:lng):void ",	"CLTsetTimeout;",	"Abort a query after  n seconds."	]
 [ "clients",	"settimeout",	"pattern clients.settimeout(q:lng, s:lng):void ",	"CLTsetTimeout;",	"Abort a query after q seconds (q=0 means run undisturbed).\nThe session timeout aborts the connection after spending too\nmany seconds on query processing."	]

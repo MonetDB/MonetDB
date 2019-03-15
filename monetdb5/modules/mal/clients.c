@@ -367,6 +367,17 @@ CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+CLTsetPrintTimeout(void *ret, int *secs)
+{
+	(void) ret;
+	if (is_int_nil(*secs))
+		setqptimeout(0);
+	else
+		setqptimeout((lng) *secs * 1000000);
+	return MAL_SUCCEED;
+}
+
+str
 CLTwakeup(void *ret, int *id)
 {
     (void) ret;     /* fool compiler */

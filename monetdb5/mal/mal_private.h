@@ -48,6 +48,9 @@ __hidden str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 
 __hidden extern MT_Lock mal_namespaceLock;
 
+__hidden void setqptimeout(lng usecs)
+	__attribute__((__visibility__("hidden")));
+
 __hidden void mdbInit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden void mdbExit(void)
