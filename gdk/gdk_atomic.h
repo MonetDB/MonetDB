@@ -84,7 +84,7 @@
 #define ATOMIC_INC(var)		(atomic_fetch_add(var, 1) + 1)
 #define ATOMIC_DEC(var)		(atomic_fetch_sub(var, 1) - 1)
 
-#define ATOMIC_PTR_TYPE(typ)		typ
+#define ATOMIC_PTR_TYPE(typ)		_Atomic typ
 #define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
 #define ATOMIC_GET_PTR(var)		atomic_load(var)
 #define ATOMIC_SET_PTR(var, val)	atomic_store(var, val)
