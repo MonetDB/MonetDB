@@ -871,6 +871,10 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// determine block range to scan for partitioned columns
+	/*
+	** TODO: Figure out how do partitions relate to mosaic chunks.
+	** Is it a good idea to set the capacity to the total size of the select operand b?
+	*/
 	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
 	if ( nrofparts > 1){
 		// don't use more parallelism than entries in the header
