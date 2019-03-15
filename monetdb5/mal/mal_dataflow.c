@@ -364,7 +364,7 @@ DFLOWworker(void *T)
 				/* no more work to be done: exit */
 				break;
 			}
-			MT_thread_setworking(fe->flow->cntxt->query);
+			MT_thread_setworking(fe->flow->cntxt->mythread->name);
 		} else
 			fe = fnxt;
 		if (ATOMIC_GET(&exiting)) {

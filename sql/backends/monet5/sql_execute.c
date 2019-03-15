@@ -293,6 +293,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		*m->errstr=0;
 		return msg;
 	}
+	MT_thread_setworking(c->query);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
 	if (!mb) {
@@ -307,6 +308,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
 			msg = SQLexecutePrepared(c, be, p->blk);
 			freeMalBlk(mb);
+			MT_thread_setworking(NULL);
 			return msg;
 		}
 		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
@@ -347,6 +349,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	msg = SQLoptimizeQuery(c, mb);
 	if( msg != MAL_SUCCEED){
 		// freeMalBlk(mb);
+		MT_thread_setworking(NULL);
 		return msg;
 	}
 	mb->keephistory = FALSE;
@@ -356,6 +359,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		// mal block might be so broken free causes segfault
 		msg = mb->errors;
 		mb->errors = 0;
+		MT_thread_setworking(NULL);
 		return msg;
 	}
 
@@ -377,6 +381,7 @@ SQLrun(Client c, backend *be, mvc *m)
 
 	// release the resources
 	freeMalBlk(mb);
+	MT_thread_setworking(NULL);
 	return msg;
 }
 
