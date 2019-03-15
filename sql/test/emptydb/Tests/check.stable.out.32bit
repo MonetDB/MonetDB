@@ -239,6 +239,7 @@ Ready.
 \dSf sys."right_shift_assign"
 \dSf sys."sessions"
 \dSf sys."setmasklen"
+\dSf sys."setprinttimeout"
 \dSf sys."setsession"
 \dSf sys."settimeout"
 \dSf sys."shpattach"
@@ -686,6 +687,7 @@ SYSTEM FUNCTION         sys.scale_up
 SYSTEM FUNCTION         sys.second
 SYSTEM FUNCTION         sys.sessions
 SYSTEM FUNCTION         sys.setmasklen
+SYSTEM PROCEDURE        sys.setprinttimeout
 SYSTEM PROCEDURE        sys.setsession
 SYSTEM PROCEDURE        sys.settimeout
 SYSTEM PROCEDURE        sys.shpattach
@@ -1105,6 +1107,7 @@ create function "right_shift"(i1 inet, i2 inet) returns boolean external name in
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean external name inet.">>=";
 create function sys.sessions() returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool) external name sql.sessions;
 create function "setmasklen" (p inet, mask int) returns inet external name inet."setmasklen";
+create procedure sys.setprinttimeout("timeout" integer) external name clients.setprinttimeout;
 create procedure sys.setsession("timeout" bigint) external name clients.setsession;
 create procedure sys.settimeout("query" bigint) external name clients.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint) external name clients.settimeout;
@@ -3245,6 +3248,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"second",	"SYSTEM",	"sql_seconds",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"decimal",	9,	3,	"out",	"arg_1",	"timetz",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sessions",	"SYSTEM",	"create function sys.sessions() returns table(\"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"active\" bool) external name sql.sessions;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"user",	"clob",	0,	0,	"out",	"login",	"timestamp",	7,	0,	"out",	"sessiontimeout",	"bigint",	64,	0,	"out",	"lastcommand",	"timestamp",	7,	0,	"out",	"querytimeout",	"bigint",	64,	0,	"out",	"active",	"boolean",	1,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"setmasklen",	"SYSTEM",	"create function \"setmasklen\" (p inet, mask int) returns inet external name inet.\"setmasklen\";",	"inet",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"inet",	0,	0,	"out",	"p",	"inet",	0,	0,	"in",	"mask",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"setprinttimeout",	"SYSTEM",	"create procedure sys.setprinttimeout(\"timeout\" integer) external name clients.setprinttimeout;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"timeout",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"setsession",	"SYSTEM",	"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"timeout",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"settimeout",	"SYSTEM",	"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"query",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"settimeout",	"SYSTEM",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"query",	"bigint",	64,	0,	"in",	"session",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]

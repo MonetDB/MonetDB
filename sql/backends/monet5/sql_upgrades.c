@@ -1553,6 +1553,12 @@ sql_update_apr2019(Client c, mvc *sql)
 			"grant execute on function sys.date_trunc(string, timestamp) to public;\n"
 			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = %d;\n", F_FUNC);
 
+	/* 22_clients.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure sys.setprinttimeout(\"timeout\" integer)\n"
+			"external name clients.setprinttimeout;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'setprinttimeout' and type = %d;\n", F_PROC);
+
 	/* 26_sysmon.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"grant execute on function sys.queue to public;\n"
