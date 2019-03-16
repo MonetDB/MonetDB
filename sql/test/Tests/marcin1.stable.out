@@ -84,8 +84,8 @@ Ready.
 [ 5,	2	]
 [ 5,	3	]
 #select t1marcin1.id, (select t2marcin2.id from t2marcin2 where t1marcin1.id=t2marcin2.id) from t1marcin1;
-% .t1marcin1,	.t2marcin2 # table_name
-% id,	id # name
+% sys.t1marcin1,	.L4 # table_name
+% id,	L4 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]

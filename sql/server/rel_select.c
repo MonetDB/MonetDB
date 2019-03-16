@@ -124,7 +124,7 @@ _rel_lastexp(mvc *sql, sql_rel *rel )
 {
 	sql_exp *e;
 
-	if (!is_processed(rel) || is_topn(rel->op))
+	if (!is_processed(rel) || is_topn(rel->op) || is_sample(rel->op))
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
 	assert(is_project(rel->op));
@@ -1867,7 +1867,10 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 					rs = rel_groupby_add_aggr(sql, r->r, rs);
 					rs = exp_column(sql->sa, exp_relname(rs), exp_name(rs), exp_subtype(rs), exp_card(rs), has_nil(rs), is_intern(rs));
 				}
-				rel = r;
+				if (rel) { 
+					rel = rel_crossproduct(sql->sa, rel, r, (!quantifier)?op_semi:op_join);
+					set_dependent(rel);
+				}
 			}
 		} else if (r) {
 			if (list_length(r->exps) != 1) 
@@ -2468,61 +2471,55 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	case SQL_NOT_EXISTS:
 	{
 		symbol *lo = sc->data.sym;
-		sql_rel *sq = NULL, *outer = NULL;
+		sql_rel *orel = *rel, *sq = NULL;
+		list *pexps = NULL;
+		int needproj = 0, exists=(sc->token == SQL_EXISTS);
+
 		sql_exp *le;
-		sql_subfunc *exists = NULL;
+
+		/* no input, assume single value */
+		if ((!orel || (is_project(orel->op) && !is_processed(orel) && !orel->l && list_empty(orel->exps))) && !query->outer) 
+			orel = *rel = rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1));
 
 		ek.card = card_set;
+		if (is_sql_sel(f) && orel && is_project(orel->op) && !is_processed(orel)) {
+			needproj = 1;
+			pexps = orel->exps;
+			*rel = orel->l;
+		}
+
 	       	le = rel_value_exp(query, &sq, lo, f, ek);
-		/* correlated */
-		if (!le && sql->session->status != -ERR_AMBIGUOUS) {
+		if (!le && sql->session->status != -ERR_AMBIGUOUS) { /* correlated */
 			sql_subaggr *ea = NULL;
-			/* dependent left/mark join */
-			sql_rel *orel = *rel;
-			//sql_exp *ident = NULL;
-			list *pexps = NULL;
-			int needproj = 0;
-			//int apply = (sc->token == SQL_EXISTS)?APPLY_EXISTS:APPLY_NOTEXISTS;
 
-			if (is_project(orel->op) && !is_processed(orel)) {
-				needproj = 1;
-				pexps = orel->exps;
-				*rel = orel->l;
-			}
-
-			//outer = *rel;
-			sq = *rel;
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
-			/* add identity early, used in the apply optimizer */
-			//sq = *rel = rel_add_identity(sql, rel_dup(*rel), &ident);
-			query->outer = sq; //TODO: later move into rel_subquery
-			sq = rel_subquery(query, NULL, lo, ek, 0);//apply);
-			query->outer = NULL; //TODO: later move into rel_subquery
-			/* add group by */
-			//le = rel_value_exp(query, &sq, lo, f, ek);
-			//if (is_apply(sq->op))
-				//sq->flag = (sc->token==SQL_EXISTS)?APPLY_EXISTS:APPLY_NOTEXISTS;
-			if (*rel != orel) {
+
+			query->outer = *rel;
+			sq = rel_subquery(query, NULL, lo, ek, 0);
+			query->outer = NULL;
+
+			if (!sq)
+				return NULL;
+
+			if (*rel != orel) { /* remove proejct */
 				orel->l = NULL;
 				rel_destroy(orel);
 			}
-			le = rel_lastexp(sql, sq);
-			/* aggr (not) exist */
-			sq = rel_groupby(sql, sq, NULL);
-			ea = sql_bind_aggr(sql->sa, sql->session->schema, "count", exp_subtype(le));
-			le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_ATOM, 0);
-			le = rel_groupby_add_aggr(sql, sq, le);
-			le = exp_ref(sql->sa, le);
-			*rel = rel_crossproduct(sql->sa, *rel, sq, op_left); 
+
+			//le = rel_lastexp(sql, sq);
+			le = _rel_lastexp(sql, sq);
+			if (is_sql_sel(f)) { /* aggr (not) exist */
+				sq = rel_groupby(sql, sq, NULL);
+				ea = sql_bind_aggr(sql->sa, sql->session->schema, exists?"exist":"not_exist", exp_subtype(le));
+				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_ATOM, 0);
+				le = rel_groupby_add_aggr(sql, sq, le);
+				le = exp_ref(sql->sa, le);
+			} 
+			*rel = rel_crossproduct(sql->sa, *rel, sq, is_sql_sel(f)?op_left:exists?op_semi:op_anti); 
 			set_dependent(*rel);
-			le = rel_unop_(query, le, NULL, "isnull", card_value);
-			if (sc->token == SQL_EXISTS)
-				le = rel_unop_(query, le, NULL, "not", card_value);
-			if (!is_sql_sel(f)) { /* handle where/having etc */
-				rel_join_add_exp(sql->sa, *rel, le);
-			} else if (*rel && needproj) {
+			if (*rel && needproj) {
 				*rel = rel_project(sql->sa, *rel, pexps);
 				reset_processed(*rel);
 			} 
@@ -2533,35 +2530,42 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 
 		le = rel_is_constant(&sq, le);
 
-		if (!sq) { 
-			if (sc->token != SQL_EXISTS)
-				exists = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
+		if (!sq) {
+			sql_subfunc *exists_func = NULL;
+			
+			if (exists)
+				exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", exp_subtype(le), NULL, F_FUNC);
 			else
-				exists = sql_bind_func(sql->sa, sql->session->schema, "sql_exists", exp_subtype(le), NULL, F_FUNC);
+				exists_func = sql_bind_func(sql->sa, sql->session->schema, "sql_not_exists", exp_subtype(le), NULL, F_FUNC);
 
-			if (!exists) 
+			if (!exists_func) 
 				return sql_error(sql, 02, SQLSTATE(42000) "exist operator on type %s missing", exp_subtype(le)->type->sqlname);
-			return exp_unop(sql->sa, le, exists);
+			*rel = orel;
+			return exp_unop(sql->sa, le, exists_func);
 		} else {
-			sql_exp *e;
-			list *pexps = NULL;
-			int needproj = 0;
+			sql_subaggr *ea = NULL;
 
-			if (outer && is_sql_sel(f) && is_project(outer->op) && !is_processed(outer)) {
-				needproj = 1;
-				pexps = outer->exps;
-				*rel = outer->l;
+			if (*rel != orel) { /* remove proejct */
+				orel->l = NULL;
+				rel_destroy(orel);
 			}
-			if (sq->processed)
-				sq = rel_label(sql, sq, 0);
-			le = rel_lastexp(sql, sq);
-			*rel = rel_mark(sql, *rel, sq, NULL, exp_atom_int(sql->sa, 1), le, (sc->token == SQL_EXISTS)?mark_exists:mark_notexists);
-			e = rel_lastexp(sql, *rel);
+
+			//le = rel_lastexp(sql, sq);
+			le = _rel_lastexp(sql, sq);
+			if (is_sql_sel(f)) { /* aggr (not) exist */
+				sq = rel_groupby(sql, sq, NULL);
+				ea = sql_bind_aggr(sql->sa, sql->session->schema, exists?"exist":"not_exist", exp_subtype(le));
+				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_ATOM, 0);
+				le = rel_groupby_add_aggr(sql, sq, le);
+				le = exp_ref(sql->sa, le);
+			}
+			*rel = rel_crossproduct(sql->sa, *rel, sq, is_sql_sel(f)?op_left:exists?op_semi:op_anti); 
+			set_dependent(*rel);
 			if (*rel && needproj) {
 				*rel = rel_project(sql->sa, *rel, pexps);
 				reset_processed(*rel);
 			} 
-			return e;
+			return le;
 		}
 	}
 	case SQL_LIKE:
@@ -2802,10 +2806,14 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		for(n=nors->h; n; n = n->next) {
 			symbol *lo = n->data;
 			rel = rel_logical_exp(query, rel, lo, f);
+			if (!rel)
+				return NULL;
 		}
 		for(n=ors->h; n; n = n->next) {
 			symbol *lo = n->data;
 			rel = rel_logical_exp(query, rel, lo, f);
+			if (!rel)
+				return NULL;
 		}
 		/*
 		rel = rel_logical_exp(query, rel, lo, f);
@@ -3092,33 +3100,65 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_NOT_EXISTS:
 	{
 		symbol *lo = sc->data.sym;
-		sql_rel *r;
-		int apply = (sc->token == SQL_EXISTS)?APPLY_EXISTS:APPLY_NOTEXISTS;
+		sql_rel *orel = rel, *sq = NULL;
+		list *pexps = NULL;
+		int needproj = 0, exists=(sc->token == SQL_EXISTS);
 
 		ek.card = card_set;
-		r = rel_subquery(query, NULL, lo, ek, apply);
-		if (!r && rel && sql->session->status != -ERR_AMBIGUOUS) { /* correlation */
-			sql_rel *orel = rel;
-			sql_exp *ident = NULL;
+		if (orel && is_project(orel->op) && !is_processed(orel)) {
+			needproj = 1;
+			pexps = orel->exps;
+			rel = orel->l;
+		}
+
+		sq = rel_subquery(query, NULL, lo, ek, 0);
+		if (!sq && rel && sql->session->status != -ERR_AMBIGUOUS) { /* correlation */
+			sql_rel *outer = query->outer; /* should join the outers? */
+			sql_subaggr *ea = NULL;
+			sql_exp *le;
 
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
-			/* add identity early, used in the apply optimizer */
-			rel = rel_add_identity(sql, rel_dup(rel), &ident);
-			r = rel_subquery(query, rel, lo, ek, apply);
-			rel_destroy(orel);
-			return r;
+
+			query->outer = rel; 
+			sq = rel_subquery(query, NULL, lo, ek, 0);
+			query->outer = outer; 
+
+			if (!sq)
+				return NULL;
+
+			if (rel != orel) { /* remove project */
+				orel->l = NULL;
+				rel_destroy(orel);
+			}
+
+			//le = rel_lastexp(sql, sq);
+			le = _rel_lastexp(sql, sq);
+			if (is_sql_sel(f)) { /* aggr (not) exist */
+				sq = rel_groupby(sql, sq, NULL);
+				ea = sql_bind_aggr(sql->sa, sql->session->schema, exists?"exist":"not_exist", exp_subtype(le));
+				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_ATOM, 0);
+				le = rel_groupby_add_aggr(sql, sq, le);
+				le = exp_ref(sql->sa, le);
+			}
+			rel = rel_crossproduct(sql->sa, rel, sq, is_sql_sel(f)?op_left:exists?op_semi:op_anti); 
+			set_dependent(rel);
+			if (rel && needproj) {
+				rel = rel_project(sql->sa, rel, pexps);
+				reset_processed(rel);
+			} 
+			return rel;
 		}
-		if (r && query->outer)
-			return r;
-		if (!r || !rel)
+		if (!sq || !rel)
 			return NULL;
-		r = rel = rel_crossproduct(sql->sa, rel, r, op_join);
+		if (!rel)
+			assert(0);
+		rel = rel_crossproduct(sql->sa, rel, sq, op_join);
 		if (sc->token == SQL_EXISTS) {
-			r->op = op_semi;
+			rel->op = op_semi;
 		} else {	
-			r->op = op_anti;
+			rel->op = op_anti;
 		}
 		return rel;
 	}
@@ -4865,8 +4905,14 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 					} else if (e->type == e_atom) {
 						return sql_error(sql, 02, SQLSTATE(42000) "order not of type SQL_COLUMN");
 					}
-				} else if (e && e->card != rel->card) 
-					e = NULL;
+				} else if (e && e->card != rel->card) {
+					if (e && e->name) {
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", e->name);
+					} else {
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
+					}
+					//e = NULL;
+				}
 			}
 
 			if (or != rel)
@@ -5834,7 +5880,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			if (r) {
 				rs = _rel_lastexp(sql, r);
 				//if (is_sql_sel(f) && exp_card(rs) > CARD_ATOM && r->card > CARD_ATOM && r->r) {
-				if (ek.card < card_column && r->card > CARD_ATOM)
+				if (is_sql_sel(f) && ek.card <= card_column && r->card > CARD_ATOM)
 				{
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
 					rs = exp_aggr1(sql->sa, rs, zero_or_one, 0, 0, CARD_ATOM, 0);
