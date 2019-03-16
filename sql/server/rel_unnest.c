@@ -588,8 +588,46 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
-sql_rel *
-rel_unnest(mvc *sql, sql_rel *rel)
+/* reintroduce selects, for freevar's of other dependent joins */
+static sql_rel *
+push_down_select(mvc *sql, sql_rel *rel)
+{
+	if (!list_empty(rel->exps)) {
+		node *n;
+		list *jexps = sa_list(sql->sa);
+		list *sexps = sa_list(sql->sa);
+		sql_rel *d = rel->l;
+
+		for(n=rel->exps->h; n; n=n->next) {
+			sql_exp *e = n->data;
+			list *v = exp_freevar(sql, e);
+			int found = 1;
+
+			if (v) {
+				node *m;
+				for(m=v->h; m && found; m=m->next) {
+					sql_exp *fv = m->data;
+
+					found = (rel_find_exp(d, fv) != NULL);
+				}
+			}
+			if (found) {
+				append(jexps, e);
+			} else {
+				append(sexps, e);
+			}
+		}	
+		if (!list_empty(sexps)) {
+			rel->exps = jexps;
+			rel->r = rel_select(sql->sa, rel->r, NULL);
+			rel->exps = sexps;
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
+rel_unnest_dependent(mvc *sql, sql_rel *rel)
 {
 	sql_rel *nrel = rel;
 
@@ -602,11 +640,12 @@ rel_unnest(mvc *sql, sql_rel *rel)
 		r = rel->r;
 
 		if (rel_has_freevar(l))
-			rel->l = rel_unnest(sql, rel->l);
+			rel->l = rel_unnest_dependent(sql, rel->l);
 
 		if (!rel_has_freevar(r)) {
 			reset_dependent(rel);
-			return rel;
+			/* reintroduce selects, for freevar's of other dependent joins */
+			return push_down_select(sql, rel);
 		}
 
 		/* try to push dependent join down */
@@ -617,27 +656,27 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 			if (r && is_simple_project(r->op)) {
 				rel = push_up_project(sql, rel);
-				return rel_unnest(sql, rel);
+				return rel_unnest_dependent(sql, rel);
 			}
 
 			if (r && is_select(r->op)) {
 				rel = push_up_select(sql, rel);
-				return rel_unnest(sql, rel);
+				return rel_unnest_dependent(sql, rel);
 			}
 
 			if (r && is_groupby(r->op) && need_distinct(l)) { 
 				rel = push_up_groupby(sql, rel);
-				return rel_unnest(sql, rel);
+				return rel_unnest_dependent(sql, rel);
 			}
 
 			if (r && (is_join(r->op) || is_semi(r->op)) && need_distinct(l)) {
 				rel = push_up_join(sql, rel);
-				return rel_unnest(sql, rel);
+				return rel_unnest_dependent(sql, rel);
 			}
 
 			if (r && is_set(r->op) && need_distinct(l)) {
 				rel = push_up_set(sql, rel);
-				return rel_unnest(sql, rel);
+				return rel_unnest_dependent(sql, rel);
 			}
 
 			/* fallback */
@@ -646,18 +685,68 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 			/* no dependent variables */
 			reset_dependent(rel);
-			rel->r = rel_unnest(sql, rel->r);
+			rel->r = rel_unnest_dependent(sql, rel->r);
 		} else {
-			rel->l = rel_unnest(sql, rel->l);
-			rel->r = rel_unnest(sql, rel->r);
+			rel->l = rel_unnest_dependent(sql, rel->l);
+			rel->r = rel_unnest_dependent(sql, rel->r);
 		}
 	} else {
 		if (rel && (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op)))
-			rel->l = rel_unnest(sql, rel->l);
+			rel->l = rel_unnest_dependent(sql, rel->l);
 		else if (rel && (is_join(rel->op) || is_semi(rel->op) ||  is_set(rel->op) || is_modify(rel->op) || is_ddl(rel->op))) {
-			rel->l = rel_unnest(sql, rel->l);
-			rel->r = rel_unnest(sql, rel->r);
+			rel->l = rel_unnest_dependent(sql, rel->l);
+			rel->r = rel_unnest_dependent(sql, rel->r);
 		}
 	}
 	return nrel;
+}
+
+sql_rel *
+rel_unnest(mvc *sql, sql_rel *rel)
+{
+	if (!rel)
+		return rel;
+
+	switch (rel->op) {
+	case op_basetable:
+	case op_table:
+		break;
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+
+	case op_apply: 
+	case op_semi: 
+	case op_anti: 
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		rel->l = rel_unnest(sql, rel->l);
+		rel->r = rel_unnest(sql, rel->r);
+		break;
+	case op_project:
+	case op_select: 
+	case op_groupby: 
+	case op_topn: 
+	case op_sample: 
+		rel->l = rel_unnest(sql, rel->l);
+		break;
+	case op_ddl:
+		rel->l = rel_unnest(sql, rel->l);
+		if (rel->r)
+			rel->r = rel_unnest(sql, rel->r);
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+	case op_truncate:
+		rel->l = rel_unnest(sql, rel->l);
+		rel->r = rel_unnest(sql, rel->r);
+		break;
+	}
+	if (is_dependent(rel)) 
+		rel = rel_unnest_dependent(sql, rel);
+	return rel;
 }

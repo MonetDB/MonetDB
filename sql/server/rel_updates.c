@@ -1024,10 +1024,11 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				sql->errstr[0] = 0;
 				sql->session->status = status;
 				if (single) {
+					int outer = (r!=NULL);
 					rel_val = NULL;
-					query->outer = r;
+					if (outer) query_push_outer(query, r);
 					v = rel_value_exp(query, &rel_val, a, sql_sel, ek);
-					query->outer = NULL;
+					if (outer) query_pop_outer(query);
 				} else if (!rel_val && r) {
 					r = rel_subquery(query, r, a, ek, APPLY_LOJ);
 					if (r) {

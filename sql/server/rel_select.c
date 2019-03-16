@@ -1088,8 +1088,12 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		
 		if (!exp && rel && *rel)
 			exp = rel_bind_column(sql, *rel, name, f);
-		if (!exp && query && query->outer) {
-			exp = rel_bind_column(sql, query->outer, name, f);
+		if (!exp && query && query_has_outer(query)) {
+			int i;
+			sql_rel *outer;
+
+			for (i=0; !exp && (outer = query_fetch_outer(query,i)); i++)
+				exp = rel_bind_column(sql, outer, name, f);
 			if (exp) { 
 				set_freevar(exp);
 				exp->card = CARD_ATOM;
@@ -1131,8 +1135,12 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 
 		if (!exp && rel && *rel)
 			exp = rel_bind_column2(sql, *rel, tname, cname, f);
-		if (!exp && query && query->outer) {
-			exp = rel_bind_column2(sql, query->outer, tname, cname, f);
+		if (!exp && query && query_has_outer(query)) {
+			int i;
+			sql_rel *outer;
+
+			for (i=0; !exp && (outer = query_fetch_outer(query,i)); i++)
+				exp = rel_bind_column2(sql, outer, tname, cname, f);
 			if (exp) { 
 				set_freevar(exp);
 				exp->card = CARD_ATOM;
@@ -1667,8 +1675,10 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 	if (anti)
 		set_anti(e);
 
-	if (!rel && query->outer)
-		return rel_select(sql->sa, query->outer, e);
+	if (!rel && query_has_outer(query)) {
+		/* for now only top of stack */
+		return rel_select(sql->sa, query_fetch_outer(query, 0), e);
+	}
 
 	/* atom or row => select */
 	if (ls->card > rel->card) {
@@ -1730,7 +1740,7 @@ rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs,
 	if (!ls || !rs)
 		return NULL;
 
-	if (!quantifier && ((!rel && !query->outer) || !reduce)) {
+	if (!quantifier && ((!rel && !query_has_outer(query)) || !reduce)) {
 		/* TODO to handle filters here */
 		sql_exp *e;
 
@@ -1845,9 +1855,9 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
-			query->outer = rel;
+			query_push_outer(query, rel);
 			r = rel_subquery(query, NULL, ro, ek, 0);// is_sql_sel(f)?APPLY_LOJ:APPLY_JOIN);
-			query->outer = NULL;
+			query_pop_outer(query);
 
 			/* get inner queries result value, ie
 			   get last expression of r */
@@ -2313,10 +2323,10 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					*/
 
 					/* expect select ? */
-					query->outer = outer;
+					query_push_outer(query, outer);
 					//r = rel_value_exp(query, &z, sval, f, ek); 
 					z = rel_subquery(query, NULL, sval, ek, 0);//is_sql_sel(f)?APPLY_LOJ:APPLY_JOIN);
-					query->outer = NULL;
+					query_pop_outer(query);
 					if (z)
 						r = rel_lastexp(sql, z);
 					if (z && r) {
@@ -2478,7 +2488,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		sql_exp *le;
 
 		/* no input, assume single value */
-		if ((!orel || (is_project(orel->op) && !is_processed(orel) && !orel->l && list_empty(orel->exps))) && !query->outer) 
+		if ((!orel || (is_project(orel->op) && !is_processed(orel) && !orel->l && list_empty(orel->exps))) && !query_has_outer(query)) 
 			orel = *rel = rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1));
 
 		ek.card = card_set;
@@ -2496,9 +2506,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
 
-			query->outer = *rel;
+			query_push_outer(query, *rel);
 			sq = rel_subquery(query, NULL, lo, ek, 0);
-			query->outer = NULL;
+			query_pop_outer(query);
 
 			if (!sq)
 				return NULL;
@@ -2888,7 +2898,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		/* if left is a value (possibly NULL) we rewrite to a list of OR expressions */
 		
 		/* no input, assume single value */
-		if (!rel && !query->outer) 
+		if (!rel && !query_has_outer(query)) 
 			rel = rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1));
 		left = rel;
 		if (is_sql_sel(f) && !is_processed(left) && left->op == op_project) {
@@ -3113,7 +3123,6 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 		sq = rel_subquery(query, NULL, lo, ek, 0);
 		if (!sq && rel && sql->session->status != -ERR_AMBIGUOUS) { /* correlation */
-			sql_rel *outer = query->outer; /* should join the outers? */
 			sql_subaggr *ea = NULL;
 			sql_exp *le;
 
@@ -3121,9 +3130,9 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 
-			query->outer = rel; 
+			query_push_outer(query, rel);
 			sq = rel_subquery(query, NULL, lo, ek, 0);
-			query->outer = outer; 
+			query_pop_outer(query);
 
 			if (!sq)
 				return NULL;
@@ -3980,7 +3989,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		return e;
 	}
 
-	if (!query->outer && groupby->op != op_groupby) { 		/* implicit groupby */
+	if (!query_has_outer(query) && groupby->op != op_groupby) { 		/* implicit groupby */
 		sql_rel *ng = rel_project2groupby(sql, groupby);
 
 		if (*rel == groupby) {
@@ -3997,7 +4006,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (!*rel)
 		return NULL;
 
-	if (!query->outer && is_sql_where(f)) {
+	if (!query_has_outer(query) && is_sql_where(f)) {
 		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: not allowed in WHERE clause",
 				       uaname ? toUpperCopy(uaname, aname) : aname);
@@ -4183,11 +4192,12 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, CARD_ATOM, have_nil(exps));
 
 		/* if aggregate is from outer side, move it over */
-		if (freevar && query->outer) {
+		if (freevar && query_has_outer(query)) {
 			/* add to outer */
-			sql_rel *outer = query->outer;
+			sql_rel *outer = query_pop_outer(query);
 			sql_rel *gb = outer;
 
+			assert(0);/* added assert for debugging push aggr to outer side */
 			exps_reset_freevar(e->l);
 			if (!is_groupby(gb->op))
 				gb=outer->l;
@@ -4195,6 +4205,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			e = exp_ref(sql->sa, e);
 			if (gb != outer)
 				rel_project_add_exp(sql, outer, e);
+			query_push_outer(query, outer); 
 			e = exp_ref(sql->sa, e);
 			e->card = CARD_ATOM;
 			set_freevar(e);
@@ -5861,6 +5872,10 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			sql_exp *rs = NULL;
 			sql_rel *outerp = NULL;
 
+			if (*rel && is_sql_sel(f) && is_project((*rel)->op) && !is_processed((*rel))) {
+				outerp = *rel;
+				*rel = (*rel)->l;
+			}
 			if (!*rel)
 				return NULL;
 
@@ -5868,18 +5883,11 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 
-			/* add unique */
-			//*rel = r = rel_subquery(query, *rel, se, ek, is_sql_sel(f)?APPLY_LOJ:APPLY_JOIN);
-			if (is_sql_sel(f) && is_project((*rel)->op) && !is_processed((*rel))) {
-				outerp = *rel;
-				*rel = (*rel)->l;
-			}
-			query->outer = *rel;
-			r = rel_subquery(query, NULL, se, ek, 0);// is_sql_sel(f)?APPLY_LOJ:APPLY_JOIN);
-			query->outer = NULL;
+			query_push_outer(query, *rel);
+			r = rel_subquery(query, NULL, se, ek, 0);
+			query_pop_outer(query);
 			if (r) {
 				rs = _rel_lastexp(sql, r);
-				//if (is_sql_sel(f) && exp_card(rs) > CARD_ATOM && r->card > CARD_ATOM && r->r) {
 				if (is_sql_sel(f) && ek.card <= card_column && r->card > CARD_ATOM)
 				{
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
