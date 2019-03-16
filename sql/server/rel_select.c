@@ -1621,20 +1621,6 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 	return rel_filter(sql, rel, l, r, "sys", filter_op, anti);
 }
 
-static int
-exp_is_subquery( mvc *sql, sql_exp *e)
-{
-	if (e->type == e_column) {
-		if (e->card == CARD_ATOM) /* free variable? */
-			return 1;
-		if (mvc_find_subquery(sql, e->l?e->l:e->r, e->r))
-			return 1;
-	}
-	if (e->type == e_convert) 
-		return exp_is_subquery( sql, e->l);
-	return 0;
-}
-
 static sql_rel *
 rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti, int quantifier)
 {
@@ -1693,8 +1679,8 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(rs)) && 
-	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_is_subquery(sql, rs2))))) {
+	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(rs)) &&
+	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(rs2))))) {
 		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -4015,8 +4001,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		return e;
 	}
 #endif
-	if (!(groupby = rel_bind_groupby(sql, rel)))
-		return NULL;
+	if (!(groupby = rel_bind_groupby(sql, rel))) {
+		char *uaname = GDKmalloc(strlen(aname) + 1);
+		sql_exp *e = sql_error(sql, 02, SQLSTATE(42000) "%s: missing group by",
+					       uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			GDKfree(uaname);
+		return e;
+	}
 	
 	if (!args->data.sym) {	/* count(*) case */
 		sql_exp *e;
@@ -4854,7 +4846,7 @@ simple_selection(symbol *sq)
 
  		sn = (SelectNode *) sq;
 
-		if (!sn->from && !sn->where && !sn->distinct)
+		if (!sn->from && !sn->where && !sn->distinct && dlist_length(sn->selection) == 1)
 			return sn->selection;
 	}
 	return NULL;
