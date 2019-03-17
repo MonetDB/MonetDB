@@ -2747,8 +2747,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 			
 			/* handle constants */
-			if (orderbycolstmt->nrcols == 0 && psub && psub->nrcols > 0)
-				orderbycolstmt = stmt_const(be, bin_first_column(be, psub), orderbycolstmt);
+			if (orderbycolstmt->nrcols == 0 && !last) /* no need to sort on constant */
+				continue; 
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
 				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
@@ -2804,10 +2804,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 			}
 			/* single values don't need sorting */
-			if (orderbycolstmt->nrcols == 0) {
-				orderby_ids = NULL;
-				break;
-			}
+			if (orderbycolstmt->nrcols == 0) 
+				continue;
 			if (orderby_ids)
 				orderby = stmt_reorder(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole), orderby_ids, orderby_grp);
 			else

@@ -285,7 +285,7 @@ rel_subquery_optname(sql_query *query, sql_rel *rel, symbol *ast)
 	mvc *sql = query->sql;
 	SelectNode *sn = (SelectNode *) ast;
 	exp_kind ek = {type_value, card_relation, TRUE};
-	sql_rel *sq = rel_subquery(query, rel, ast, ek, APPLY_JOIN);
+	sql_rel *sq = rel_subquery(query, rel, ast, ek, 0);
 
 	assert(ast->token == SQL_SELECT);
 	if (!sq)
@@ -793,7 +793,7 @@ rel_named_table_operator(sql_query *query, sql_rel *rel, symbol *ast)
 {
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_relation, TRUE};
-	sql_rel *sq = rel_subquery(query, rel, ast->data.lval->h->data.sym, ek, APPLY_JOIN);
+	sql_rel *sq = rel_subquery(query, rel, ast->data.lval->h->data.sym, ek, 0);
 	list *exps;
 	node *en;
 	char *tname = NULL;
@@ -2313,7 +2313,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					/* expect select ? */
 					query_push_outer(query, outer);
 					//r = rel_value_exp(query, &z, sval, f, ek); 
-					z = rel_subquery(query, NULL, sval, ek, 0);//is_sql_sel(f)?APPLY_LOJ:APPLY_JOIN);
+					z = rel_subquery(query, NULL, sval, ek, 0);
 					query_pop_outer(query);
 					if (z)
 						r = rel_lastexp(sql, z);
@@ -5772,7 +5772,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 				*is_last = 1;
 				return e;
 			}
-			r = rel_subquery(query, NULL, se, ek, 0);//APPLY_JOIN);
+			r = rel_subquery(query, NULL, se, ek, 0);
 		}
 
 		if (r) {
@@ -6412,6 +6412,7 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek,
 	int used = 0;
 	int old = sql->use_views;
 
+	assert(!rel);
 	if (sq->token != SQL_SELECT)
 		return table_ref(query, rel, sq, 0);
 
@@ -6926,7 +6927,7 @@ rel_selects(sql_query *query, symbol *s)
 			sql->type = Q_SCHEMA;
 			ret = rel_select_with_into(query, s);
 		} else {
-			ret = rel_subquery(query, NULL, s, ek, 0);//APPLY_JOIN);
+			ret = rel_subquery(query, NULL, s, ek, 0);
 			sql->type = Q_TABLE;
 		}
 		stack_pop_frame(sql);
