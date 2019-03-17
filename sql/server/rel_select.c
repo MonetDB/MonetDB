@@ -1832,7 +1832,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	} else {
 		/* first try without current relation, too see if there
 		   are correlations with the outer relation */
-		sql_rel *r = rel_subquery(query, NULL, ro, ek, 0);//APPLY_JOIN);
+		sql_rel *r = rel_subquery(query, NULL, ro, ek, 0);
 
 		/* NOT handled filter case */
 		if (ro2)
@@ -1842,7 +1842,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
 			query_push_outer(query, rel);
-			r = rel_subquery(query, NULL, ro, ek, 0);// is_sql_sel(f)?APPLY_LOJ:APPLY_JOIN);
+			r = rel_subquery(query, NULL, ro, ek, 0);
 			query_pop_outer(query);
 
 			/* get inner queries result value, ie
@@ -2137,7 +2137,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		} else {
 			/* first try without current relation, too see if there
 			are correlations with the outer relation */
-			sql_rel *r = rel_subquery(query, NULL, ro, ek, 0);//APPLY_JOIN);
+			sql_rel *r = rel_subquery(query, NULL, ro, ek, 0);
 			sql_exp *rs2 = NULL;
 	
 			/* correlation, ie return new relation */
@@ -2147,8 +2147,10 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
-				if (!r)
+				if (!r) {
+					assert(0);
 					r = rel_subquery(query, *rel, ro, ek, is_sql_sel(f)?APPLY_LOJ:APPLY_JOIN);
+				}
 
 				/* get inner queries result value, ie
 				   get last expression of r */
@@ -2477,7 +2479,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		if ((!orel || (is_project(orel->op) && !is_processed(orel) && !orel->l && list_empty(orel->exps))) && !query_has_outer(query)) 
 			orel = *rel = rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1));
 
-		ek.card = card_set;
+		ek.card = card_column;
 		if (is_sql_sel(f) && orel && is_project(orel->op) && !is_processed(orel)) {
 			needproj = 1;
 			pexps = orel->exps;
@@ -2811,13 +2813,13 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			if (!rel)
 				return NULL;
 		}
+		return rel;
 		/*
 		rel = rel_logical_exp(query, rel, lo, f);
 		if (!rel)
 			return NULL;
 		return rel_logical_exp(query, rel, ro, f);
 		*/
-		return rel;
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -2922,6 +2924,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			}
 		    
 		}
+		if (list_length(ll) > 1)
+			ek.card = card_relation;
 
 		/* list of values or subqueries */
 		if (n->type == type_list) {
@@ -3021,7 +3025,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				}
 				if (l_used) 
 					rel_join_add_exp(sql->sa, left, e);
-				else if (!is_select(left->op))
+				else if (!is_select(left->op) || rel_is_ref(left))
 					left = rel_select(sql->sa, left, e);
 				else
 					rel_select_add_exp(sql->sa, left, e);
@@ -3100,7 +3104,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		list *pexps = NULL;
 		int needproj = 0, exists=(sc->token == SQL_EXISTS);
 
-		ek.card = card_set;
+		ek.card = card_column;
 		if (orel && is_project(orel->op) && !is_processed(orel)) {
 			needproj = 1;
 			pexps = orel->exps;
@@ -5777,7 +5781,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 		if (r) {
 			sql_exp *e;
 
-			if (ek.card <= card_column && is_project(r->op) && list_length(r->exps) > 1) 
+			if (ek.card <= card_set && is_project(r->op) && list_length(r->exps) > 1) 
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
 			e = _rel_lastexp(sql, r);
 

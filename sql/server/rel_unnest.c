@@ -679,6 +679,9 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
+			if (r && is_base(r->op)) /* table functions need dependent implementation */
+				return rel; 
+
 			/* fallback */
 			if ((ad = rel_dependent_var(sql, rel->l, rel->r)) != NULL)
 				rel = rel_general_unnest(sql, rel, ad);
