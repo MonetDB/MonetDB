@@ -4185,7 +4185,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		}
 	}
 	if (a && execute_priv(sql,a->aggr)) {
-		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, CARD_ATOM, have_nil(exps));
+		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
 		/* if aggregate is from outer side, move it over */
 		if (freevar && query_has_outer(query)) {
@@ -4216,11 +4216,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				groupby=groupby->l;
 
 			//e->card = groupby->card;
-			if (*rel != groupby || !is_sql_sel(f)) { /* selection */
+			if (*rel != groupby || !is_sql_sel(f) || is_sql_orderby(f)) { /* selection */
 				//sql_rel *l = NULL;
 	
 				e = rel_groupby_add_aggr(sql, groupby, e);
-				if (p != groupby)
+				if (p != groupby || is_sql_orderby(f))
 					e = exp_ref(sql->sa, e);
 				if (!group)
 					return e;
@@ -4939,7 +4939,6 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				sql->errstr[0] = '\0';
 
 				/* check for project->select->groupby */
-		#if 0
 				if (is_project(rel->op) && is_sql_orderby(f)) {
 					sql_rel *s = rel->l;
 					sql_rel *p = rel;
@@ -4960,7 +4959,6 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 						}
 					}
 				}
-		#endif
 				if (!e)
 					e = rel_order_by_column_exp(query, &rel, col, f);
 				if (e && e->card != rel->card)

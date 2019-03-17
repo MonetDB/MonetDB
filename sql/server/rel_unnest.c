@@ -174,8 +174,14 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		return exps;
 
 	case op_basetable:
-	case op_table:
 		return NULL;
+	case op_table: {
+		sql_exp *call = rel->r;
+		if (rel->flag != 2 && rel->l)
+			lexps = rel_freevar(sql, rel->l);
+		exps = (rel->flag != 2 && call)?exps_freevar(sql, call->l):NULL;
+		return merge_freevar(exps, lexps);
+	}
 	case op_union:
 	case op_except:
 	case op_inter:
@@ -239,6 +245,7 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 	return res;
 }
 
+#if 0
 static int
 exps_only_simple_refs(list *exps)
 {
@@ -275,6 +282,7 @@ rel_remove_project(sql_rel *rel)
 	}
 	return op;
 }
+#endif 
 
 static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel) 
@@ -543,6 +551,22 @@ push_up_set(mvc *sql, sql_rel *rel)
 }
 
 static sql_rel *
+push_up_table(mvc *sql, sql_rel *rel) 
+{
+	(void)sql;
+	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
+		sql_rel *d = rel->l, *tf = rel->r;
+
+		/* for now just push d into function */
+		if (d && need_distinct(d) && tf && is_base(tf->op)) {
+			tf->l = rel_dup(d);
+			return rel;
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
 rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 {
 	/* current unnest only possible for equality joins, <, <> etc needs more work */
@@ -652,7 +676,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		if (rel_has_freevar(r)){
 			list *ad;
 
-			rel->r = r = rel_remove_project(r);
+			//rel->r = r = rel_remove_project(r);
 
 			if (r && is_simple_project(r->op)) {
 				rel = push_up_project(sql, rel);
@@ -679,8 +703,10 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_base(r->op)) /* table functions need dependent implementation */
+			if (r && is_base(r->op)) { /* TODO table functions need dependent implementation */
+				rel = push_up_table(sql, rel);
 				return rel; 
+			}
 
 			/* fallback */
 			if ((ad = rel_dependent_var(sql, rel->l, rel->r)) != NULL)
