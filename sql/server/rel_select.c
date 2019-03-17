@@ -4188,12 +4188,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
 		/* if aggregate is from outer side, move it over */
-		if (freevar && query_has_outer(query)) {
+		if (0 && freevar && query_has_outer(query)) {
 			/* add to outer */
 			sql_rel *outer = query_pop_outer(query);
 			sql_rel *gb = outer;
 
-			assert(0);/* added assert for debugging push aggr to outer side */
 			exps_reset_freevar(e->l);
 			if (!is_groupby(gb->op))
 				gb=outer->l;
@@ -4961,7 +4960,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				}
 				if (!e)
 					e = rel_order_by_column_exp(query, &rel, col, f);
-				if (e && e->card != rel->card)
+				if (e && e->card != rel->card && e->card != CARD_ATOM)
 					e = NULL;
 			}
 			if (!e) 

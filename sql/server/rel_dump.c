@@ -173,7 +173,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	} 	break;
 	case e_column: 
 		if (is_freevar(e)) 
-			mnstr_printf(fout, "free ");
+			mnstr_printf(fout, "!!!FREE!!! ");
 		if (e->l)
 			mnstr_printf(fout, "\"%s\".", (char*)e->l);
 		mnstr_printf(fout, "\"%s\"", (char*)e->r);

@@ -553,7 +553,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 	} else {
 		exp_kind ek = {type_value, card_relation, TRUE};
 
-		r = rel_subquery(query, NULL, val_or_q, ek, APPLY_JOIN);
+		r = rel_subquery(query, NULL, val_or_q, ek, 0);
 	}
 	if (!r)
 		return NULL;
@@ -1018,19 +1018,19 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			} else if (single) {
 				v = rel_value_exp(query, &rel_val, a, sql_sel, ek);
 			} else {
-				rel_val = rel_subquery(query, NULL, a, ek, APPLY_JOIN);
+				rel_val = rel_subquery(query, NULL, a, ek, 0);
 			}
-			if (!v) {
+			//if (!v) {
+			if ((single && !v) || (!single && !rel_val)) {
 				sql->errstr[0] = 0;
 				sql->session->status = status;
+				assert(!rel_val);
 				if (single) {
-					int outer = (r!=NULL);
-					rel_val = NULL;
-					if (outer) query_push_outer(query, r);
-					v = rel_value_exp(query, &rel_val, a, sql_sel, ek);
-					if (outer) query_pop_outer(query);
+					v = rel_value_exp(query, &r, a, sql_sel, ek);
 				} else if (!rel_val && r) {
-					r = rel_subquery(query, r, a, ek, APPLY_LOJ);
+					query_push_outer(query, r);
+					rel_val = rel_subquery(query, NULL, a, ek, 0);
+					query_pop_outer(query);
 					if (r) {
 						list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
 
@@ -1041,7 +1041,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					}
 				}
 			}
-			if ((single && !v) || (!single && !r)) {
+			if ((single && !v) || (!single && !rel_val)) {
 				rel_destroy(r);
 				return NULL;
 			}
@@ -2074,7 +2074,7 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 	const char *ns = (null_string)?null_string:"null";
 	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e, *oncl_e;
 	exp_kind ek = {type_value, card_relation, TRUE};
-	sql_rel *r = rel_subquery(query, NULL, sq, ek, APPLY_JOIN);
+	sql_rel *r = rel_subquery(query, NULL, sq, ek, 0);
 
 	if (!r)
 		return NULL;

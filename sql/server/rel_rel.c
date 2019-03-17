@@ -438,7 +438,7 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	if(!rel)
 		return NULL;
 
-	//assert(join!=op_apply);
+	assert(join!=op_apply);
 	rel->l = l;
 	rel->r = r;
 	rel->op = join;
