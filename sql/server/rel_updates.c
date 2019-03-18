@@ -1020,7 +1020,6 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			} else {
 				rel_val = rel_subquery(query, NULL, a, ek, 0);
 			}
-			//if (!v) {
 			if ((single && !v) || (!single && !rel_val)) {
 				sql->errstr[0] = 0;
 				sql->session->status = status;
@@ -1056,6 +1055,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 				set_dependent(r);
+				rel_val = NULL;
 				if (single)
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
 			}

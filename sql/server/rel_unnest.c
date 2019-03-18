@@ -287,6 +287,44 @@ rel_remove_project(sql_rel *rel)
 static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel) 
 {
+	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */ 
+	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
+		sql_rel *r = rel->r;
+
+		/* find constant expressions and move these down */
+		if (r && r->op == op_project) {
+			node *n;
+			list *nexps = NULL;
+			list *cexps = NULL;
+			sql_rel *l = r->l;
+
+			if (l && is_select(l->op)) {
+				for(n=r->exps->h; n; n=n->next) {
+					sql_exp *e = n->data;
+
+					if (exp_is_atom(e) || rel_find_exp(l,e)) { /* move down */
+						if (!cexps)
+							cexps = sa_list(sql->sa);
+						append(cexps, e);
+					} else {
+						if (!nexps)
+							nexps = sa_list(sql->sa);
+						append(nexps, e);
+					}
+				}
+				if (cexps) {
+					sql_rel *n = l->l = rel_project( sql->sa, l->l, 
+						rel_projections(sql, l->l, NULL, 1, 1));
+					n->exps = list_merge(n->exps, cexps, (fdup)NULL);
+					if (list_empty(nexps)) {
+						rel->r = l; /* remove empty project */
+					} else {	
+						r->exps = nexps;
+					}
+				}
+			}
+		}
+	}
 	/* input rel is dependent join with on the right a project */ 
 	if (rel && is_join(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;

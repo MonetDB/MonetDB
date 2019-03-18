@@ -3720,6 +3720,7 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	mvc *sql = query->sql;
 	dnode *dl = se->data.lval->h;
 	sql_exp *l, *r;
+	sql_rel *orel = *rel;
 	char *fname = qname_fname(dl->data.lval);
 	char *sname = qname_schema(dl->data.lval);
 	sql_schema *s = sql->session->schema;
@@ -3735,8 +3736,10 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 	l = rel_value_exp(query, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(query, rel, dl->next->next->data.sym, f, iek);
-	if (!l || !r)
+	if (!l || !r) {
+		*rel = orel;
 		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
+	}
 	if (!sf && (!l || !r) && *rel && (*rel)->card == CARD_AGGR) {
 		if (is_sql_having(f) || is_sql_orderby(f))
 			return NULL;
@@ -3763,7 +3766,7 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		}
 	}
 
-	if (!l || !r) 
+	if (!l || !r)
 		return NULL;
 
 	return rel_binop_(query, l, r, s, fname, ek.card);
@@ -3875,8 +3878,13 @@ rel_bind_groupby(mvc *sql, sql_rel **rel)
 {
 	sql_rel *groupby = *rel, *l;
        
-	if (!groupby || !groupby->l)
+	if (!groupby)
 		return NULL;
+	if (!groupby->l) { 
+		if (list_empty(groupby->exps))
+			return NULL;
+		return rel_project2groupby(sql, groupby);
+	}
 	l = groupby->l;
 	if (groupby && groupby->l && !is_processed(groupby) && !is_groupby(groupby->op) && is_groupby(l->op))
 		groupby = groupby->l;
@@ -4917,7 +4925,6 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 					} else {
 						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 					}
-					//e = NULL;
 				}
 			}
 
@@ -4943,7 +4950,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 					sql_rel *p = rel;
 					sql_rel *g = s;
 
-					if (is_select(s->op)) {
+					if (is_select(s->op)) { /* having ? */
 						g = s->l;
 						p = s;
 					}
@@ -4958,10 +4965,10 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 						}
 					}
 				}
-				if (!e)
-					e = rel_order_by_column_exp(query, &rel, col, f);
 				if (e && e->card != rel->card && e->card != CARD_ATOM)
 					e = NULL;
+				if (!e)
+					e = rel_order_by_column_exp(query, &rel, col, f);
 			}
 			if (!e) 
 				return NULL;
@@ -5377,7 +5384,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		for(n = obe->h ; n ; n = n->next) {
 			sql_exp *oexp = n->data, *nexp;
 
-			if (is_sql_sel(f) && pp->op == op_project)
+			if (is_sql_sel(f) && pp->op == op_project && !is_processed(pp))
 				append(pp->exps, oexp);
 			n->data = nexp = opt_groupby_add_exp(sql, p, pp, oexp);
 			if (is_ascending(oexp))
@@ -5766,6 +5773,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 				/* optional name from selection */
 				if (sym->data.lval->h->next) /* optional name */
 					aname = sym->data.lval->h->next->data.sval;
+				if (!(*rel))
+					*rel = rel_project(sql->sa, NULL, append(sa_list(sql->sa), exp_atom_bool(sql->sa, 1)));
 				e = rel_value_exp2(query, rel, col, f, ek, is_last);
 				if (aname)
 					exp_setname(sql->sa, e, NULL, aname);
