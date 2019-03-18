@@ -642,7 +642,7 @@
 #define MONETDB5_PASSWDHASH_TOKEN SHA512
 
 /* Release name or "unreleased" */
-#define MONETDB_RELEASE "unreleased"
+/* #define MONETDB_RELEASE "unreleased" */
 
 /* Define if you do not want assertions */
 /* #undef NDEBUG */

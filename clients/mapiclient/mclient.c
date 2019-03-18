@@ -3430,16 +3430,16 @@ main(int argc, char **argv)
 			user_set_as_flag = true;
 			break;
 		case 'v': {
-			const char *rev = mercurial_revision();
 			mnstr_printf(toConsole,
 				     "mclient, the MonetDB interactive "
 				     "terminal, version %s", VERSION);
-			/* coverity[pointless_string_compare] */
-			if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-				mnstr_printf(toConsole, " (%s)",
-					     MONETDB_RELEASE);
-			else if (strcmp(rev, "Unknown") != 0)
+#ifdef MONETDB_RELEASE
+			mnstr_printf(toConsole, " (%s)", MONETDB_RELEASE);
+#else
+			const char *rev = mercurial_revision();
+			if (strcmp(rev, "Unknown") != 0)
 				mnstr_printf(toConsole, " (hg id: %s)", rev);
+#endif
 			mnstr_printf(toConsole, "\n");
 #ifdef HAVE_LIBREADLINE
 			mnstr_printf(toConsole,
@@ -3605,7 +3605,13 @@ main(int argc, char **argv)
 		mnstr_printf(toConsole,
 			     "Welcome to mclient, the MonetDB%s "
 			     "interactive terminal (%s)\n",
-			     lang, MONETDB_RELEASE);
+			     lang,
+#ifdef MONETDB_RELEASE
+			     MONETDB_RELEASE
+#else
+			     "unreleased"
+#endif
+			);
 
 		if (mode == SQL)
 			dump_version(mid, toConsole, "Database:");

@@ -67,7 +67,8 @@ AC_SUBST([CONFIG_H], [monetdb_config.h])
 HOST=[$target]
 AC_DEFINE_UNQUOTED([HOST], ["$HOST"], [Host identifier])
 
-AC_DEFINE([MONETDB_RELEASE], ["unreleased"], [Release name or "unreleased"])
+dnl The next line is modified for a release and commented between releases
+dnl AC_DEFINE([MONETDB_RELEASE], ["unreleased"], [Release name])
 
 AS_VAR_IF([target_os], [cygwin],
 	[AC_DEFINE([WIN32], 1, [Define on Microsoft Windows (also under Cygwin)])])
