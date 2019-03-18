@@ -119,7 +119,7 @@ Ready.
 % 26 # length
 [ 2101-01-01 00:00:00.000000	]
 [ NULL	]
-#select date_trunc('millenium', t) from dt_tmp;
+#select date_trunc('millennium', t) from dt_tmp;
 % .L2 # table_name
 % L2 # name
 % timestamp # type

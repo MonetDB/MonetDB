@@ -12,7 +12,7 @@
 
 #define date_trunc_time_loop(NAME, DIVISOR)				\
 	do {								\
-		if  ( strcmp(*scale, NAME) == 0){			\
+		if  ( strcasecmp(*scale, NAME) == 0){			\
 			for( ; lo < hi; lo++)				\
 				if (is_timestamp_nil(bt[lo])) {		\
 					dt[lo] = *timestamp_nil;	\
@@ -28,19 +28,19 @@ static inline bool
 truncate_check(const char *scale)
 {
 	return
-		strcmp(scale, "millenium") == 0 ||
-		strcmp(scale, "century") == 0  ||
-		strcmp(scale, "decade") == 0 ||
-		strcmp(scale, "year") == 0 ||
-		strcmp(scale, "quarter" ) == 0 ||
-		strcmp(scale, "month") == 0 ||
-		strcmp(scale, "week") == 0 ||
-		strcmp(scale, "day") == 0  ||
-		strcmp(scale, "hour") == 0 ||
-		strcmp(scale, "minute") == 0 ||
-		strcmp(scale, "second") == 0 ||
-		strcmp(scale, "milliseconds") == 0 ||
-		strcmp(scale, "microseconds") == 0;
+		strcasecmp(scale, "millennium") == 0 ||
+		strcasecmp(scale, "century") == 0  ||
+		strcasecmp(scale, "decade") == 0 ||
+		strcasecmp(scale, "year") == 0 ||
+		strcasecmp(scale, "quarter" ) == 0 ||
+		strcasecmp(scale, "month") == 0 ||
+		strcasecmp(scale, "week") == 0 ||
+		strcasecmp(scale, "day") == 0  ||
+		strcasecmp(scale, "hour") == 0 ||
+		strcasecmp(scale, "minute") == 0 ||
+		strcasecmp(scale, "second") == 0 ||
+		strcasecmp(scale, "milliseconds") == 0 ||
+		strcasecmp(scale, "microseconds") == 0;
 }
 
 str
@@ -78,7 +78,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	date_trunc_time_loop("minute", 1000 * 60);
 	date_trunc_time_loop("hour", 1000 * 60 * 24);
 
-	if  ( strcmp(*scale, "day") == 0){
+	if  ( strcasecmp(*scale, "day") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = *timestamp_nil;
@@ -89,7 +89,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
-	if  ( strcmp(*scale, "week") == 0){
+	if  ( strcasecmp(*scale, "week") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = *timestamp_nil;
@@ -104,7 +104,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
-	if  ( strcmp(*scale, "month") == 0){
+	if  ( strcasecmp(*scale, "month") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = *timestamp_nil;
@@ -117,7 +117,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
-	if  ( strcmp(*scale, "quarter") == 0){
+	if  ( strcasecmp(*scale, "quarter") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = *timestamp_nil;
@@ -131,7 +131,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
-	if  ( strcmp(*scale, "year") == 0){
+	if  ( strcasecmp(*scale, "year") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = *timestamp_nil;
@@ -144,7 +144,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
-	if  ( strcmp(*scale, "decade") == 0){
+	if  ( strcasecmp(*scale, "decade") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = *timestamp_nil;
@@ -158,7 +158,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
-	if  ( strcmp(*scale, "century") == 0){
+	if  ( strcasecmp(*scale, "century") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = *timestamp_nil;
@@ -172,7 +172,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			}
 	}
 
-	if  ( strcmp(*scale, "millenium") == 0){
+	if  ( strcasecmp(*scale, "millennium") == 0){
 		for( ; lo < hi; lo++)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = *timestamp_nil;
@@ -200,7 +200,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 
 #define date_trunc_single_time(NAME, DIVISOR)				\
 	do {								\
-		if  ( strcmp(*scale, NAME) == 0){			\
+		if  ( strcasecmp(*scale, NAME) == 0){			\
 			ts = *bt;					\
 			ts.msecs = (ts.msecs / (DIVISOR)) * (DIVISOR);	\
 			*dt = ts;					\
@@ -228,13 +228,13 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	date_trunc_single_time("minute", 1000 * 60);
 	date_trunc_single_time("hour", 1000 * 60 * 24);
 
-	if  ( strcmp(*scale, "day") == 0){
+	if  ( strcasecmp(*scale, "day") == 0){
 		ts = *bt;
 		ts.msecs = 0;
 		*dt = ts;
 	}
 
-	if  ( strcmp(*scale, "week") == 0){
+	if  ( strcasecmp(*scale, "week") == 0){
 		ts = *bt;
 		ts.msecs = 0;
 		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
@@ -244,7 +244,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 		*dt = ts;
 	}
 
-	if  ( strcmp(*scale, "month") == 0){
+	if  ( strcasecmp(*scale, "month") == 0){
 		ts = *bt;
 		ts.msecs = 0;
 		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
@@ -252,7 +252,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 		*dt = ts;
 	}
 
-	if  ( strcmp(*scale, "quarter") == 0){
+	if  ( strcasecmp(*scale, "quarter") == 0){
 		ts = *bt;
 		ts.msecs = 0;
 		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
@@ -261,7 +261,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 		*dt = ts;
 	}
 
-	if  ( strcmp(*scale, "year") == 0){
+	if  ( strcasecmp(*scale, "year") == 0){
 		ts = *bt;
 		ts.msecs = 0;
 		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
@@ -269,7 +269,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 		*dt = ts;
 	}
 
-	if  ( strcmp(*scale, "decade") == 0){
+	if  ( strcasecmp(*scale, "decade") == 0){
 		ts = *bt;
 		ts.msecs = 0;
 		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
@@ -278,7 +278,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 		*dt = ts;
 	}
 
-	if  ( strcmp(*scale, "century") == 0){
+	if  ( strcasecmp(*scale, "century") == 0){
 		ts = *bt;
 		ts.msecs = 0;
 		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);
@@ -287,7 +287,7 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 		*dt = ts;
 	}
 
-	if  ( strcmp(*scale, "millenium") == 0){
+	if  ( strcasecmp(*scale, "millennium") == 0){
 		ts = *bt;
 		ts.msecs = 0;
 		MTIMEdate_extract_ymd(&y, &m, &d, &ts.days);

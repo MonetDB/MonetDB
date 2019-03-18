@@ -13,4 +13,4 @@ select date_trunc('quarter', timestamp '2119-02-17 02:08:12.345678');
 select date_trunc('year', timestamp '2119-02-17 02:08:12.345678');
 select date_trunc('decade', timestamp '2119-02-17 02:08:12.345678');
 select date_trunc('century', timestamp '2119-02-17 02:08:12.345678');
-select date_trunc('millenium', timestamp '2119-02-17 02:08:12.345678');
+select date_trunc('millennium', timestamp '2119-02-17 02:08:12.345678');

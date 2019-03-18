@@ -17,5 +17,5 @@ select date_trunc('quarter', t) from dt_tmp;
 select date_trunc('year', t) from dt_tmp;
 select date_trunc('decade', t) from dt_tmp;
 select date_trunc('century', t) from dt_tmp;
-select date_trunc('millenium', t) from dt_tmp;
+select date_trunc('millennium', t) from dt_tmp;
 rollback;

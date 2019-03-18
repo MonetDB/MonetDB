@@ -102,7 +102,7 @@ Ready.
 % timestamp # type
 % 26 # length
 [ 2101-01-01 00:00:00.000000	]
-#select date_trunc('millenium', timestamp '2119-02-17 02:08:12.345678');
+#select date_trunc('millennium', timestamp '2119-02-17 02:08:12.345678');
 % .L2 # table_name
 % L2 # name
 % timestamp # type
