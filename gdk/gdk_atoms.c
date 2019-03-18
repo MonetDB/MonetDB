@@ -1363,7 +1363,7 @@ int GDKatomcnt = TYPE_str + 1;
  * unknown atoms is kept.  These can be accessed via the ATOMunknown
  * interface. Finding an (negative) atom index can be done via
  * ATOMunknown_find, which simply adds the atom if it's not in the
- * unknown set. The index van be used to find the name of an unknown
+ * unknown set. The index can be used to find the name of an unknown
  * ATOM via ATOMunknown_name.
  */
 static str unknown[MAXATOMS] = { NULL };
