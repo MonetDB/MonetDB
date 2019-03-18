@@ -701,19 +701,18 @@ static struct serverthread {
 void
 GDKprepareExit(void)
 {
-	struct serverthread *st;
-
 	if (ATOMIC_ADD(&GDKstopped, 1) > 0)
 		return;
 
 	THRDDEBUG dump_threads();
 	MT_lock_set(&GDKthreadLock);
-	for (st = serverthread; st; st = serverthread) {
+	while (serverthread != NULL) {
+		struct serverthread *st = serverthread;
+		serverthread = st->next;
 		MT_lock_unset(&GDKthreadLock);
 		MT_join_thread(st->pid);
-		MT_lock_set(&GDKthreadLock);
-		serverthread = st->next;
 		GDKfree(st);
+		MT_lock_set(&GDKthreadLock);
 	}
 	MT_lock_unset(&GDKthreadLock);
 	join_detached_threads();
@@ -751,22 +750,15 @@ GDKreset(int status)
 		GDKval = NULL;
 	}
 
-	MT_lock_set(&GDKthreadLock);
-	while (serverthread != NULL) {
-		struct serverthread *st = serverthread;
-		serverthread = st->next;
-		MT_lock_unset(&GDKthreadLock);
-		MT_join_thread(st->pid);
-		MT_lock_set(&GDKthreadLock);
-		GDKfree(st);
-	}
-	MT_lock_unset(&GDKthreadLock);
-	join_detached_threads();
+	/* GDKprepareExit() must have been called at this point since
+	 * GDKstopped is set, so the serverthread list must be
+	 * empty */
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
-		int killed = 0;
+		bool killed = false;
 		MT_lock_set(&GDKthreadLock);
+		assert(serverthread == NULL);
 		for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
 			if (t->pid) {
 				MT_Id victim = t->pid;
@@ -774,7 +766,7 @@ GDKreset(int status)
 				if (t->pid != pid) {
 					int e;
 
-					killed = 1;
+					killed = true;
 					e = MT_kill_thread(victim);
 					fprintf(stderr, "#GDKexit: killing thread %d\n", e);
 					GDKnrofthreads --;
@@ -1323,7 +1315,7 @@ Thread
 THRget(int tid)
 {
 	assert(0 < tid && tid <= THREADS);
-	return (GDKthreads + tid - 1);
+	return &GDKthreads[tid - 1];
 }
 
 #if defined(_MSC_VER) && _MSC_VER >= 1900
@@ -1338,28 +1330,10 @@ THRsp(void)
 	return sp;
 }
 
-static Thread
-GDK_find_thread(MT_Id pid)
-{
-	MT_lock_set(&GDKthreadLock);
-	for (Thread t = GDKthreads; t < GDKthreads + THREADS; t++) {
-		if (t->pid == pid) {
-			MT_lock_unset(&GDKthreadLock);
-			return t;
-		}
-	}
-	MT_lock_unset(&GDKthreadLock);
-	return NULL;
-}
-
-static Thread
+static inline Thread
 GDK_find_self(void)
 {
-	Thread t;
-
-	if ((t = MT_thread_getdata()) != NULL) /* should succeed */
-		return t;
-	return GDK_find_thread(MT_getpid());
+	return (Thread) MT_thread_getdata();
 }
 
 static Thread
@@ -1410,7 +1384,6 @@ struct THRstart {
 	void *arg;
 	MT_Sema sem;
 	Thread thr;
-	char semname[16];
 };
 
 static void
@@ -1436,6 +1409,7 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	Thread s;
 	struct THRstart *t;
 	static uint64_t ctr = 0; /* protected by GDKthreadLock */
+	char semname[16];
 
 	if ((t = GDKmalloc(sizeof(*t))) == NULL)
 		return 0;
@@ -1466,8 +1440,9 @@ THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name)
 	};
 	MT_lock_unset(&GDKthreadLock);
 	t->thr = s;
-	snprintf(t->semname, sizeof(t->semname), "THRcreate%" PRIu64, ++ctr);
-	MT_sema_init(&t->sem, 0, t->semname);
+	snprintf(semname, sizeof(semname), "THRcreate%" PRIu64,
+		 (uint64_t) ATOMIC_INC(&ctr));
+	MT_sema_init(&t->sem, 0, semname);
 	if (MT_create_thread(&pid, THRstarter, t, d, name) != 0) {
 		GDKerror("THRcreate: could not start thread\n");
 		MT_sema_destroy(&t->sem);
