@@ -95,7 +95,7 @@
 #define ATOMIC_CLEAR(var)	atomic_flag_clear(var)
 #define ATOMIC_TAS(var)		atomic_flag_test_and_set(var)
 
-#elif defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#elif defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <intrin.h>
 
@@ -109,6 +109,9 @@
  *
  * See
  * https://docs.microsoft.com/en-us/windows/desktop/Sync/synchronization-and-multiprocessor-issues
+ *
+ * This does not go for the Intel compiler, so there we use
+ * _InterlockedExchangeAdd to load the value of an atomic variable.
  */
 
 #if SIZEOF_SSIZE_T == 8
@@ -117,8 +120,12 @@
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
 
+#ifdef __INTEL_COMPILER
+#define ATOMIC_GET(var)		_InterlockedExchangeAdd64(var, 0)
+#else
 #define ATOMIC_GET(var)		(*(var))
 /* should we use _InterlockedExchangeAdd64(var, 0) instead? */
+#endif
 #define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (int64_t) (val))
 #define ATOMIC_XCG(var, val)	_InterlockedExchange64(var, (int64_t) (val))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (int64_t) (val))
@@ -138,8 +145,12 @@
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
 
+#ifdef __INTEL_COMPILER
+#define ATOMIC_GET(var)		_InterlockedExchangeAdd(var, 0)
+#else
 #define ATOMIC_GET(var)		(*(var))
 /* should we use _InterlockedExchangeAdd(var, 0) instead? */
+#endif
 #define ATOMIC_SET(var, val)	_InterlockedExchange(var, (int) (val))
 #define ATOMIC_XCG(var, val)	_InterlockedExchange(var, (int) (val))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd(var, (int) (val))
@@ -359,6 +370,6 @@ ATOMIC_CLEAR(ATOMIC_FLAG *var)
 
 #define USE_PTHREAD_LOCKS		/* must use pthread locks */
 
-#endif	/* LIBATOMIC_OPS */
+#endif
 
 #endif	/* _GDK_ATOMIC_H_ */
