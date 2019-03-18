@@ -995,7 +995,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 		sql_exp *v = NULL;
 		sql_rel *rel_val = NULL;
 		dlist *assignment = n->data.sym->data.lval;
-		int single = (assignment->h->next->type == type_string);
+		int single = (assignment->h->next->type == type_string), outer = 0;
 		/* Single assignments have a name, multicolumn a list */
 
 		a = assignment->h->data.sym;
@@ -1017,6 +1017,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 			} else if (single) {
 				v = rel_value_exp(query, &rel_val, a, sql_sel, ek);
+				outer = 1;
 			} else {
 				rel_val = rel_subquery(query, NULL, a, ek, 0);
 			}
@@ -1024,13 +1025,14 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				sql->errstr[0] = 0;
 				sql->session->status = status;
 				assert(!rel_val);
+				outer = 1;
 				if (single) {
 					v = rel_value_exp(query, &r, a, sql_sel, ek);
 				} else if (!rel_val && r) {
 					query_push_outer(query, r);
 					rel_val = rel_subquery(query, NULL, a, ek, 0);
 					query_pop_outer(query);
-					if (r) {
+					if (0 && r) {
 						list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
 
 						r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
@@ -1044,7 +1046,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				rel_destroy(r);
 				return NULL;
 			}
-			if (rel_val) {
+			if (rel_val && outer) {
 				if (single) {
 					if (!exp_name(v))
 						exp_label(sql->sa, v, ++sql->label);
@@ -1055,9 +1057,10 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 				set_dependent(r);
-				rel_val = NULL;
-				if (single)
+				if (single) {
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+					rel_val = NULL;
+				}
 			}
 		}
 		if (!single) {
@@ -1095,7 +1098,8 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				}
 				if (!exp_name(v))
 					exp_label(sql->sa, v, ++sql->label);
-				v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
+				if (!exp_is_atom(v) || outer)
+					v = exp_ref(sql->sa, v);
 				if (!v) { /* check for NULL */
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				} else if ((v = update_check_column(sql, t, c, v, r, cname, action)) == NULL) {
