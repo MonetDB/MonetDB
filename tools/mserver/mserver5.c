@@ -140,16 +140,17 @@ monet_hello(void)
 
 	printf("# MonetDB 5 server v%s", GDKversion());
 	{
+#ifdef MONETDB_RELEASE
+		printf(" (%s)", MONETDB_RELEASE);
+#else
 		const char *rev = mercurial_revision();
-		/* coverity[pointless_string_compare] */
-		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-			printf(" (%s)", MONETDB_RELEASE);
-		else if (strcmp(rev, "Unknown") != 0)
+		if (strcmp(rev, "Unknown") != 0)
 			printf(" (hg id: %s)", rev);
+#endif
 	}
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
-		printf("\n# This is an unreleased version");
+#ifndef MONETDB_RELEASE
+	printf("\n# This is an unreleased version");
+#endif
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
@@ -185,7 +186,13 @@ monet_hello(void)
 			"\"huge\""
 #endif
 			"]\n}",
-			GDKversion(), MONETDB_RELEASE, HOST, GDKnr_threads,
+			GDKversion(),
+#ifdef MONETDB_RELEASE
+			MONETDB_RELEASE,
+#else
+			"unreleased",
+#endif
+			HOST, GDKnr_threads,
 			sz_mem_h, qc[qi], sizeof(oid) * 8);
 }
 
@@ -514,7 +521,13 @@ main(int argc, char **av)
 	mo_free_options(set, setlen);
 
 	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
-	    GDKsetenv("monet_release", MONETDB_RELEASE) != GDK_SUCCEED) {
+	    GDKsetenv("monet_release",
+#ifdef MONETDB_RELEASE
+		      MONETDB_RELEASE
+#else
+		      "unreleased"
+#endif
+		    ) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 		exit(1);
 	}

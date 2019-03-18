@@ -442,7 +442,12 @@ MNDBGetInfo(ODBCDbc *dbc,
 		int maj = 0, min = 0, pat = 0;
 		sscanf(PACKAGE_VERSION, "%d.%d.%d", &maj, &min, &pat);
 		snprintf(buf, sizeof(buf), "%02d.%02d.%04d %s", maj, min, pat,
-			 MONETDB_RELEASE);
+#ifdef MONETDB_RELEASE
+			 MONETDB_RELEASE
+#else
+			 "unreleased"
+#endif
+			);
 		sValue = buf;
 		break;
 	}
