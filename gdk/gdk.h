@@ -2298,8 +2298,7 @@ typedef struct threadStruct {
 	int tid;		/* logical ID by MonetDB; val == index
 				 * into this array + 1 (0 is
 				 * invalid) */
-	MT_Id pid;		/* physical thread id (pointer-sized)
-				 * from the OS thread library */
+	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
 	str name;
 	void *data[THREADDATA];
 	uintptr_t sp;
