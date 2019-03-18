@@ -565,7 +565,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			lng t = GDKusec();
 			if (cntxt->lastprint + qptimeout < t) {
 				fprintf(stderr, "#%s: query already running "LLFMT"s: %.200s\n",
-						cntxt->mythread->name, (t - cntxt->lastprint)/1000000,
+						cntxt->mythread->name, (lng) (time(0) - cntxt->lastcmd),
 						cntxt->query);
 				cntxt->lastprint = t;
 			}
