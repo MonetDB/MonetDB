@@ -20,7 +20,6 @@
 #include "mal_private.h"
 
 static lng qptimeout = 0; /* how often we print still running queries (usec) */
-static MT_Lock qptimeoutLock = MT_LOCK_INITIALIZER("qptimeoutLock");
 
 void
 setqptimeout(lng usecs)
@@ -297,7 +296,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	 * enough
 	 */
 	cntxt->lastcmd= time(0);
-	cntxt->lastprint = GDKusec();
+	ATOMIC_SET(&cntxt->lastprint, GDKusec());
 	if (env != NULL) {
 		int res = 1;
 		stk = env;
@@ -561,15 +560,17 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 
 		if (qptimeout > 0) {
-			MT_lock_set(&qptimeoutLock);
 			lng t = GDKusec();
-			if (cntxt->lastprint + qptimeout < t) {
-				fprintf(stderr, "#%s: query already running "LLFMT"s: %.200s\n",
+			ATOMIC_BASE_TYPE lp = ATOMIC_GET(&cntxt->lastprint);
+			if ((lng) lp + qptimeout < t) {
+				/* if still the same, replace lastprint with current
+				 * time and print the query */
+				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
+					fprintf(stderr, "#%s: query already running "LLFMT"s: %.200s\n",
 						cntxt->mythread->name, (lng) (time(0) - cntxt->lastcmd),
 						cntxt->query);
-				cntxt->lastprint = t;
+				}
 			}
-			MT_lock_unset(&qptimeoutLock);
 		}
 
 		/* The interpreter loop

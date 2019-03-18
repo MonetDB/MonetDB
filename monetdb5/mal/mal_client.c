@@ -85,6 +85,8 @@ MCinit(void)
 		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
 		mal_exit(1);
 	}
+	for (int i = 0; i < MAL_MAXCLIENTS; i++)
+		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
 }
 
 /* stack the files from which you read */
