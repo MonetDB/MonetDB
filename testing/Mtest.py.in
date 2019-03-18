@@ -360,12 +360,12 @@ F_SKIP = -1
 F_OK = 0
 F_WARN = 1
 F_SOCK = 2
-F_ERROR = 3
-F_TIME = 4
-F_ABRT = 5
-F_RECU = 6
-F_SEGV = 7
-F_MISSING = 8
+F_MISSING = 3
+F_ERROR = 4
+F_TIME = 5
+F_ABRT = 6
+F_RECU = 7
+F_SEGV = 8
 
 FAILURES = {
     F_SKIP  : ("F_SKIP",  '-'),
