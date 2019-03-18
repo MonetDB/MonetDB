@@ -57,7 +57,7 @@ static bool RAPIEnabled(void) {
 
 // The R-environment should be single threaded, calling for some protective measures.
 static MT_Lock rapiLock = MT_LOCK_INITIALIZER("rapiLock");
-static int rapiInitialized = FALSE;
+static bool rapiInitialized = false;
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
 		"INT", "REAL", "CPLX", "STR", "DOT", "ANY", "VEC", "EXPR", "BCODE",
@@ -155,7 +155,7 @@ static char *RAPIinitialize(void) {
 	// install.packages() uses system2 to call gcc etc., so we cannot disable it (perhaps store the pointer somewhere just for that?)
 	//SET_INTERNAL(install("system"), R_NilValue);
 
-	rapiInitialized++;
+	rapiInitialized = true;
 	return NULL;
 }
 #else
@@ -258,6 +258,10 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		throw(MAL, "rapi.eval",
 			  "Embedded R has not been enabled. Start server with --set %s=true",
 			  rapi_enableflag);
+	}
+	if (!rapiInitialized) {
+		throw(MAL, "rapi.eval",
+			  "Embedded R initialization has failed");
 	}
 
 	if (!grouped) {
@@ -523,8 +527,9 @@ str RAPIprelude(void *ret) {
 			char *initstatus;
 			initstatus = RAPIinitialize();
 			if (initstatus != 0) {
+				MT_lock_unset(&rapiLock);
 				throw(MAL, "rapi.eval",
-					  "failed to initialise R environment (%s)", initstatus);
+					  "failed to initialize R environment (%s)", initstatus);
 			}
 			Rf_defineVar(Rf_install("MONETDB_LIBDIR"), ScalarString(RSTR(LIBDIR)), R_GlobalEnv);
 
