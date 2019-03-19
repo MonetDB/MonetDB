@@ -1355,7 +1355,7 @@ THRnew(const char *name, MT_Id pid)
 			s->name = nme;
 			PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n",
 					 (unsigned) s->tid,
-					 (size_t) s->pid,
+					 (size_t) ATOMIC_GET(&s->pid),
 					 (size_t) s->sp);
 			PARDEBUG fprintf(stderr, "#nrofthreads %d\n",
 					 (int) ATOMIC_GET(&GDKnrofthreads) + 1);
@@ -1437,7 +1437,8 @@ THRdel(Thread t)
 	assert(GDKthreads <= t && t < GDKthreads + THREADS);
 	MT_thread_setdata(NULL);
 	PARDEBUG fprintf(stderr, "#pid = %zu, disconnected, %d left\n",
-			 (size_t) t->pid, (int) ATOMIC_GET(&GDKnrofthreads));
+			 (size_t) ATOMIC_GET(&t->pid),
+			 (int) ATOMIC_GET(&GDKnrofthreads));
 
 	GDKfree(t->name);
 	t->name = NULL;

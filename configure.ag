@@ -2489,6 +2489,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	@%:@else
 	atomic_uint i;
 	@%:@endif
+	typedef void *_Atomic volatile aptr;
 	]],
 	[[ atomic_store(&i, 0); ]]
 	)],

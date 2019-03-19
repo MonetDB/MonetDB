@@ -33,12 +33,12 @@
  *
  * Some of these are also available for pointers:
  * ATOMIC_PTR_INIT
- * ATOMIC_GET_PTR
- * ATOMIC_SET_PTR
- * ATOMIC_XCG_PTR
- * To define an atomic pointer, use ATOMIC_PTR_TYPE(type).  This may
- * or may not use the type provided to construct a type that is usable
- * in the above macros.
+ * ATOMIC_PTR_GET
+ * ATOMIC_PTR_SET
+ * ATOMIC_PTR_XCG
+ * ATOMIC_PTR_CAS
+ * To define an atomic pointer, use ATOMIC_PTR_TYPE.  This is a (void *)
+ * pointer that is appropriately adapted for atomic use.
  *
  * In addition, the following operations are defined:
  * ATOMIC_TAS -- test-and-set: set variable to "true" and return old value
@@ -55,30 +55,30 @@
 /* define this if you don't want to use atomic instructions */
 /* #define NO_ATOMIC_INSTRUCTIONS */
 
-#if defined(HAVE_STDATOMIC_H) && !defined(__INTEL_COMPILER) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#if defined(HAVE_STDATOMIC_H) && !defined(__STDC_NO_ATOMICS__) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 #include <stdatomic.h>
 
 #if ATOMIC_LLONG_LOCK_FREE == 2
-typedef atomic_ullong ATOMIC_TYPE;
+typedef volatile atomic_ullong ATOMIC_TYPE;
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #elif ATOMIC_LONG_LOCK_FREE == 2
-typedef atomic_ulong ATOMIC_TYPE;
+typedef volatile atomic_ulong ATOMIC_TYPE;
 typedef unsigned long ATOMIC_BASE_TYPE;
 #elif ATOMIC_INT_LOCK_FREE == 2
-typedef atomic_uint ATOMIC_TYPE;
+typedef volatile atomic_uint ATOMIC_TYPE;
 typedef unsigned int ATOMIC_BASE_TYPE;
 #elif ATOMIC_LLONG_LOCK_FREE == 1
-typedef atomic_ullong ATOMIC_TYPE;
+typedef volatile atomic_ullong ATOMIC_TYPE;
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #elif ATOMIC_LONG_LOCK_FREE == 1
-typedef atomic_ulong ATOMIC_TYPE;
+typedef volatile atomic_ulong ATOMIC_TYPE;
 typedef unsigned long ATOMIC_BASE_TYPE;
 #elif ATOMIC_INT_LOCK_FREE == 1
-typedef atomic_uint ATOMIC_TYPE;
+typedef volatile atomic_uint ATOMIC_TYPE;
 typedef unsigned int ATOMIC_BASE_TYPE;
 #else
-typedef atomic_ullong ATOMIC_TYPE;
+typedef volatile atomic_ullong ATOMIC_TYPE;
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #endif
 
@@ -92,13 +92,19 @@ typedef unsigned long long ATOMIC_BASE_TYPE;
 #define ATOMIC_INC(var)		(atomic_fetch_add(var, 1) + 1)
 #define ATOMIC_DEC(var)		(atomic_fetch_sub(var, 1) - 1)
 
-#define ATOMIC_PTR_TYPE(typ)		_Atomic typ
+#ifdef __INTEL_COMPILER
+typedef volatile atomic_address ATOMIC_PTR_TYPE;
+#else
+typedef void *_Atomic volatile ATOMIC_PTR_TYPE;
+#endif
 #define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
-#define ATOMIC_GET_PTR(var)		atomic_load(var)
-#define ATOMIC_SET_PTR(var, val)	atomic_store(var, val)
-#define ATOMIC_XCG_PTR(var, val)	atomic_exchange(var, val)
+#define ATOMIC_PTR_VAR_INIT(val)	ATOMIC_VAR_INIT(val)
+#define ATOMIC_PTR_GET(var)		atomic_load(var)
+#define ATOMIC_PTR_SET(var, val)	atomic_store(var, (void *) (val))
+#define ATOMIC_PTR_XCG(var, val)	atomic_exchange(var, (void *) (val))
+#define ATOMIC_PTR_CAS(var, exp, des)	atomic_compare_exchange_strong(var, exp, (void *) (des))
 
-typedef atomic_flag ATOMIC_FLAG;
+typedef volatile atomic_flag ATOMIC_FLAG;
 /* ATOMIC_FLAG_INIT is already defined by the include file */
 #define ATOMIC_CLEAR(var)	atomic_flag_clear(var)
 #define ATOMIC_TAS(var)		atomic_flag_test_and_set(var)
@@ -120,6 +126,8 @@ typedef atomic_flag ATOMIC_FLAG;
  *
  * This does not go for the Intel compiler, so there we use
  * _InterlockedExchangeAdd to load the value of an atomic variable.
+ * There might be a better way, but it's hard to find in the
+ * documentation.
  */
 
 #if SIZEOF_SSIZE_T == 8
@@ -197,13 +205,25 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 
 #endif
 
-#define ATOMIC_PTR_TYPE(typ)		volatile PVOID
+typedef PVOID volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
-#define ATOMIC_GET_PTR(var)		(*(var))
-#define ATOMIC_SET_PTR(var, val)	_InterlockedExchangePointer((volatile PVOID*) (var), (PVOID) (val))
-#define ATOMIC_XCG_PTR(var, val)	_InterlockedExchangePointer((volatile PVOID*) (var), (PVOID) (val))
+#define ATOMIC_PTR_VAR_INIT(val)	(val)
+#define ATOMIC_PTR_GET(var)		(*(var))
+#define ATOMIC_PTR_SET(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
+#define ATOMIC_PTR_XCG(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
+static inline bool
+ATOMIC_PTR_CAS(ATOMIC_PTR_TYPE *var, void **exp, void *des)
+{
+	void *old;
+	old = _InterlockedCompareExchangePointer(var, des, *exp);
+	if (old == *exp)
+		return true;
+	*exp = old;
+	return false;
+}
+#define ATOMIC_PTR_CAS(var, exp, des)	ATOMIC_PTR_CAS(var, exp, (void *) (des))
 
-typedef int ATOMIC_FLAG;
+typedef volatile int ATOMIC_FLAG;
 #define ATOMIC_FLAG_INIT	{ 0 }
 #define ATOMIC_CLEAR(var)	_InterlockedExchange(var, 0)
 #define ATOMIC_TAS(var)		_InterlockedCompareExchange(var, 1, 0)
@@ -216,10 +236,10 @@ typedef int ATOMIC_FLAG;
 
 #if SIZEOF_SSIZE_T == 8
 typedef int64_t ATOMIC_BASE_TYPE;
-typedef int64_t ATOMIC_TYPE;
+typedef volatile int64_t ATOMIC_TYPE;
 #else
 typedef int ATOMIC_BASE_TYPE;
-typedef int ATOMIC_TYPE;
+typedef volatile int ATOMIC_TYPE;
 #endif
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
@@ -233,13 +253,14 @@ typedef int ATOMIC_TYPE;
 #define ATOMIC_INC(var)		__atomic_add_fetch(var, 1, __ATOMIC_SEQ_CST)
 #define ATOMIC_DEC(var)		__atomic_sub_fetch(var, 1, __ATOMIC_SEQ_CST)
 
-#define ATOMIC_PTR_TYPE(typ)		typ
+typedef void *volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
-#define ATOMIC_GET_PTR(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
-#define ATOMIC_SET_PTR(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_XCG_PTR(var, val)	__atomic_exchange_n(var, (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_PTR_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
+#define ATOMIC_PTR_SET(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_PTR_XCG(var, val)	__atomic_exchange_n(var, (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_PTR_CAS(var, exp, des)	__atomic_compare_exchange_n(var, exp, (void *) (des), false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
 
-typedef char ATOMIC_FLAG;
+typedef volatile char ATOMIC_FLAG;
 #define ATOMIC_FLAG_INIT	{ 0 }
 #define ATOMIC_CLEAR(var)	__atomic_clear(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_TAS(var)		__atomic_test_and_set(var, __ATOMIC_SEQ_CST)
@@ -354,22 +375,20 @@ ATOMIC_DEC(ATOMIC_TYPE *var)
 	return new;
 }
 
-#define ATOMIC_PTR_TYPE(typ)		ATOMIC_PTR
-
 typedef struct {
 	void *val;
 	pthread_mutex_t lck;
-} ATOMIC_PTR;
+} ATOMIC_PTR_TYPE;
 
 static inline void
-ATOMIC_PTR_INIT(ATOMIC_PTR *var, void *val)
+ATOMIC_PTR_INIT(ATOMIC_PTR_TYPE *var, void *val)
 {
 	pthread_mutex_init(&var->lck, 0);
 	var->val = val;
 }
 
 static inline void *
-ATOMIC_GET_PTR(ATOMIC_PTR *var)
+ATOMIC_PTR_GET(ATOMIC_PTR_TYPE *var)
 {
 	void *old;
 	pthread_mutex_lock(&var->lck);
@@ -379,7 +398,7 @@ ATOMIC_GET_PTR(ATOMIC_PTR *var)
 }
 
 static inline void
-ATOMIC_SET_PTR(ATOMIC_PTR *var, void *val)
+ATOMIC_PTR_SET(ATOMIC_PTR_TYPE *var, void *val)
 {
 	pthread_mutex_lock(&var->lck);
 	var->val = val;
@@ -387,7 +406,7 @@ ATOMIC_SET_PTR(ATOMIC_PTR *var, void *val)
 }
 
 static inline void *
-ATOMIC_XCG_PTR(ATOMIC_PTR *var, void *val)
+ATOMIC_PTR_XCG(ATOMIC_PTR_TYPE *var, void *val)
 {
 	void *new;
 	pthread_mutex_lock(&var->lck);
@@ -395,6 +414,23 @@ ATOMIC_XCG_PTR(ATOMIC_PTR *var, void *val)
 	pthread_mutex_unlock(&var->lck);
 	return new;
 }
+
+static inline bool
+ATOMIC_PTR_CAS(ATOMIC_PTR_TYPE *var, void **exp, void *des)
+{
+	bool ret;
+	pthread_mutex_lock(&var->lck);
+	if (var->val == *exp) {
+		var->val = des;
+		ret = true;
+	} else {
+		*exp = var->val;
+		ret = false;
+	}
+	pthread_mutex_unlock(&var->lck);
+	return ret;
+}
+#define ATOMIC_PTR_CAS(var, exp, des)	ATOMIC_PTR_CAS(var, exp, (void *) (des))
 
 typedef struct {
 	bool flg;
