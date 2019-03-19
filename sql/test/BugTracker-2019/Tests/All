@@ -1,4 +1,5 @@
 copy-into-from-stdin-empty-line.Bug-6669
+HAVE_LIBR?r-date.Bug-6674
 date_trunc
 date_trunc_bulk
 subselect-contradiction.Bug-6683
