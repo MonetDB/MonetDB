@@ -2369,7 +2369,8 @@ AS_VAR_IF([have_atomic_ops], [no], [], [
 			[AS_VAR_IF([have_atomic_ops], [auto], [],
 				[AC_MSG_ERROR([atomic_ops.h header not found])])
 			 have_atomic_ops=no
-			 bzip2_LIBS=
+			 atomic_ops_LIBS=
+			 atomic_ops_CFLAGS=
 			 why_not_atomic_ops="(atomic_ops.h header not found)"])
 		LDFLAGS="$save_LDFLAGS"
 		CPPFLAGS="$save_CPPFLAGS"])
