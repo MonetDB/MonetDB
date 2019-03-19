@@ -215,19 +215,21 @@ typedef int ATOMIC_FLAG;
  * __sync_* primitives is not supported) */
 
 #if SIZEOF_SSIZE_T == 8
+typedef int64_t ATOMIC_BASE_TYPE;
 typedef int64_t ATOMIC_TYPE;
 #else
+typedef int ATOMIC_BASE_TYPE;
 typedef int ATOMIC_TYPE;
 #endif
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
 
 #define ATOMIC_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
-#define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_XCG(var, val)	__atomic_exchange_n(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST
-#define ATOMIC_CAS(var, exp, des)	__atomic_compare_exchange_n(var, exp, (ATOMIC_TYPE) (des), false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
-#define ATOMIC_ADD(var, val)	__atomic_fetch_add(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
-#define ATOMIC_SUB(var, val)	__atomic_fetch_sub(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_XCG(var, val)	__atomic_exchange_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST
+#define ATOMIC_CAS(var, exp, des)	__atomic_compare_exchange_n(var, exp, (ATOMIC_BASE_TYPE) (des), false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define ATOMIC_ADD(var, val)	__atomic_fetch_add(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
+#define ATOMIC_SUB(var, val)	__atomic_fetch_sub(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_INC(var)		__atomic_add_fetch(var, 1, __ATOMIC_SEQ_CST)
 #define ATOMIC_DEC(var)		__atomic_sub_fetch(var, 1, __ATOMIC_SEQ_CST)
 
