@@ -2345,8 +2345,34 @@ AC_ARG_WITH([atomic-ops],
 		[use atomic_ops library (default=auto)])],
 	[have_atomic_ops=$withval])
 AS_VAR_IF([have_atomic_ops], [no], [], [
-	PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops=yes],
-		[have_atomic_ops=no; why_not_atomic_ops="(atomic_ops library not found)"])
+	PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops=yes], [
+		dnl  RHEL 6 doesn't have a pkgconfig file for atomic_ops,
+		dnl  so we also do it the old-fashioned way.
+		dnl  When we drop support for RHEL 6, this whole "not found"
+		dnl  section can be replaced with
+		dnl  [have_atomic_ops=no; why_not_atomic_ops="(atomic_ops library not found)"]
+		atomic_ops_CFLAGS=""
+		atomic_ops_LIBS="-latomic_ops"
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $atomic_ops_CFLAGS"
+		save_LDFLAGS="$LDFLAGS"
+		LDFLAGS="$LDFLAGS $atomic_ops_LIBS"
+		AC_CHECK_HEADER([atomic_ops.h],
+			[AC_CHECK_LIB([atomic_ops], [AO_pause],
+				[have_atomic_ops=yes],
+				[AS_VAR_IF([have_atomic_ops], [auto], [],
+					[AC_MSG_ERROR([atomic_ops library not found])])
+				 have_atomic_ops=no
+				 atomic_ops_LIBS=
+				 atomic_ops_CFLAGS=
+				 why_not_atomic_ops="(atomic_ops library not found)"])],
+			[AS_VAR_IF([have_atomic_ops], [auto], [],
+				[AC_MSG_ERROR([atomic_ops.h header not found])])
+			 have_atomic_ops=no
+			 bzip2_LIBS=
+			 why_not_atomic_ops="(atomic_ops.h header not found)"])
+		LDFLAGS="$save_LDFLAGS"
+		CPPFLAGS="$save_CPPFLAGS"])
 	AS_VAR_IF([have_atomic_ops], [yes], [
 		AS_CASE([$GCC-$CC],
 		[-*icc*], [

@@ -149,7 +149,7 @@
 #define ATOMIC_TAS(var)		_InterlockedCompareExchange(var, 1, 0)
 #pragma intrinsic(_InterlockedCompareExchange)
 
-#elif (defined(__GNUC__) || defined(__INTEL_COMPILER)) && !(defined(__sun__) && SIZEOF_SIZE_T == 8) && !defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
+#elif (defined(__GNUC__) || defined(__INTEL_COMPILER))  && defined(__ATOMIC_SEQ_CST) && !(defined(__sun__) && SIZEOF_SIZE_T == 8) && !defined(_MSC_VER) && !defined(NO_ATOMIC_INSTRUCTIONS)
 
 /* the new way of doing this according to GCC (the old way, using
  * __sync_* primitives is not supported) */

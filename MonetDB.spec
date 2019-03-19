@@ -141,9 +141,8 @@ BuildRequires: geos-devel >= 3.4.0
 BuildRequires: liblas-devel >= 1.8.0
 BuildRequires: pkgconfig(gdal)
 %endif
-%if 0%{?rhel} >= 7
-# On RHEL 7, use the atomic_ops package for atomic operation.
-# On RHEL 6 the package is not available.
+%if %{?rhel:1}%{!?rhel:0}
+# On RHEL, use the atomic_ops package for atomic operation.
 # On Fedora, we use <stdatomic.h> from C11.
 BuildRequires: pkgconfig(atomic_ops)
 %endif
@@ -213,8 +212,8 @@ Summary: MonetDB development files
 Group: Applications/Databases
 Requires: %{name}%{?_isa} = %{version}-%{release}
 Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
-%if 0%{?rhel} >= 7
-# RHEL >= 7
+%if %{?rhel:1}%{!?rhel:0}
+# RHEL
 Requires: libatomic_ops-devel
 %endif
 
