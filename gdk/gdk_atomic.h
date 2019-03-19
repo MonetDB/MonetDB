@@ -147,6 +147,7 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 	*exp = old;
 	return false;
 }
+#define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_INC(var)		_InterlockedIncrement64(var)
@@ -183,6 +184,7 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 	*exp = old;
 	return false;
 }
+#define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
 #define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd(var, -(ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_INC(var)		_InterlockedIncrement(var)
