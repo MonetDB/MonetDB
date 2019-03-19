@@ -144,7 +144,12 @@ BuildRequires: pkgconfig(gdal)
 %if %{?rhel:1}%{!?rhel:0}
 # On RHEL, use the atomic_ops package for atomic operation.
 # On Fedora, we use <stdatomic.h> from C11.
+%if 0%{?rhel} >= 7
 BuildRequires: pkgconfig(atomic_ops)
+%else
+# primitive RHEL 6
+BuildRequires: libatomic_ops-devel
+%endif
 %endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
@@ -214,7 +219,12 @@ Requires: %{name}%{?_isa} = %{version}-%{release}
 Requires: %{name}-stream-devel%{?_isa} = %{version}-%{release}
 %if %{?rhel:1}%{!?rhel:0}
 # RHEL
+%if 0%{?rhel} >= 7
+Requires: pkgconfig(atomic_ops)
+%else
+# primitive RHEL 6
 Requires: libatomic_ops-devel
+%endif
 %endif
 
 %description devel
