@@ -189,7 +189,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-	fprintFunction(stderr, mb, stk, LIST_MAL_ALL);
 
   wrapup:
 	if(alias) GDKfree(alias);
