@@ -1036,7 +1036,7 @@ SQLparser(Client c)
 	char *q = NULL;
 
 	/* clean up old stuff */
-	q = (char *) c->query;
+	q = c->query;
 	c->query = NULL;
 	GDKfree(q);		/* may be NULL */
 
@@ -1336,7 +1336,7 @@ SQLparser(Client c)
 finalize:
 	if (msg) {
 		sqlcleanup(m, 0);
-		q = (char *) c->query;
+		q = c->query;
 		c->query = NULL;
 		GDKfree(q);
 	}
