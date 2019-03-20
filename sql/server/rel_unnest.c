@@ -245,44 +245,25 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 	return res;
 }
 
-#if 0
-static int
-exps_only_simple_refs(list *exps)
+/*
+ * try to bind any freevar in the expression e
+ */
+static void
+rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	int simple = 1;
-	node *n;
+	list *fvs = exp_freevar(sql, e);
 
-	if (!exps || !exps->h)
-		return 1;
-	for (n=exps->h; simple && n; n = n->next) {
-		sql_exp *e = n->data;
+	if (fvs) {
+		node *n;
 
-		simple &= (e->type == e_column && (!e->l || (!e->rname || strcmp(e->l, e->rname) == 0)) &&
-		     (e->r && (!e->name || strcmp(e->r, e->name) == 0)));
-	}
-	return simple;
-}
+		for(n = fvs->h; n; n=n->next) { 
+			sql_exp *e = n->data;
 
-static sql_rel *
-rel_remove_project(sql_rel *rel)
-{
-	sql_rel *p = rel, *op = rel;
-
-	while(rel) {
-		if (rel->op == op_project && exps_only_simple_refs(rel->exps)) {
-			if (!p)
-				op = rel->l;
-			else
-				p->l = rel->l;
+			if (e->freevar && (exp_is_atom(e) || rel_find_exp(rel,e))) 
+				reset_freevar(e);
 		}
-		if (!rel->l || is_basetable(rel->op))
-			break;
-		p = rel;
-		rel = rel->l;
 	}
-	return op;
 }
-#endif 
 
 static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel) 
@@ -339,8 +320,11 @@ push_up_project(mvc *sql, sql_rel *rel)
 			for (m=r->exps->h; m; m = m->next) {
 				sql_exp *e = m->data;
 
-				if (!e->freevar || exp_name(e)) /* only skip full freevars */
+				if (!e->freevar || exp_name(e)) { /* only skip full freevars */
 					append(n->exps, e);
+					if (exp_has_freevar(e)) 
+						rel_bind_var(sql, rel->l, e);
+				}
 			}
 			assert(!r->r);
 			/* remove old project */
@@ -378,6 +362,8 @@ push_up_select(mvc *sql, sql_rel *rel)
 			for (n=r->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
+				if (exp_has_freevar(e)) 
+					rel_bind_var(sql, rel->l, e);
 				rel_join_add_exp(sql->sa, rel, e);
 			}
 			/* remove select */
@@ -423,6 +409,8 @@ push_up_groupby(mvc *sql, sql_rel *rel)
 					append(e->l=sa_list(sql->sa), col);
 					set_no_nil(e);
 				}
+				if (exp_has_freevar(e)) 
+					rel_bind_var(sql, rel->l, e);
 			}
 			r->exps = list_merge(r->exps, a, (fdup)NULL);
 			if (!r->r)
@@ -432,7 +420,7 @@ push_up_groupby(mvc *sql, sql_rel *rel)
 
 			rel->r = r->l; 
 			r->l = rel;
-			/* check if a join expression needs to be move above the group by (into a select) */
+			/* check if a join expression needs to be moved above the group by (into a select) */
 			sexps = sa_list(sql->sa);
 			jexps = sa_list(sql->sa);
 			if (rel->exps) {
@@ -476,8 +464,12 @@ move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
 		sql_exp *e = n->data;
 
 		if (rel_find_exp(rel, e)) {
+			if (exp_has_freevar(e)) 
+				rel_bind_var(sql, rel->l, e);
 			append(rel->exps, e);
 		} else {
+			if (exp_has_freevar(e)) 
+				rel_bind_var(sql, j->l, e);
 			append(j->exps, e);
 		}
 	}
@@ -713,8 +705,6 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 		/* try to push dependent join down */
 		if (rel_has_freevar(r)){
 			list *ad;
-
-			//rel->r = r = rel_remove_project(r);
 
 			if (r && is_simple_project(r->op)) {
 				rel = push_up_project(sql, rel);
