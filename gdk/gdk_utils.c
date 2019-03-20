@@ -436,11 +436,11 @@ GDKsetverbose(int verbose)
 gdk_return
 GDKinit(opt *set, int setlen)
 {
+	static bool first = true;
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
 	const char *p;
 	opt *n;
 	int i, nlen = 0;
-	int farmid;
 	char buf[16];
 
 	/* some sanity checks (should also find if symbols are not defined) */
@@ -467,32 +467,39 @@ GDKinit(opt *set, int setlen)
 	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG,
 		      "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
 
-	if (!MT_thread_init())
-		return GDK_FAIL;
+	if (first) {
+		/* some things are really only initialized once */
+		if (!MT_thread_init())
+			return GDK_FAIL;
 
-	for (i = 0; i <= BBP_BATMASK; i++) {
-		char name[16];
-		snprintf(name, sizeof(name), "GDKswapLock%d", i);
-		MT_lock_init(&GDKbatLock[i].swap, name);
-		snprintf(name, sizeof(name), "GDKhashLock%d", i);
-		MT_lock_init(&GDKbatLock[i].hash, name);
-		snprintf(name, sizeof(name), "GDKimpsLock%d", i);
-		MT_lock_init(&GDKbatLock[i].imprints, name);
-	}
-	for (i = 0; i <= BBP_THREADMASK; i++) {
-		char name[16];
-		snprintf(name, sizeof(name), "GDKcacheLock%d", i);
-		MT_lock_init(&GDKbbpLock[i].cache, name);
-		snprintf(name, sizeof(name), "GDKtrimLock%d", i);
-		MT_lock_init(&GDKbbpLock[i].trim, name);
-		GDKbbpLock[i].free = 0;
+		for (i = 0; i <= BBP_BATMASK; i++) {
+			char name[16];
+			snprintf(name, sizeof(name), "GDKswapLock%d", i);
+			MT_lock_init(&GDKbatLock[i].swap, name);
+			snprintf(name, sizeof(name), "GDKhashLock%d", i);
+			MT_lock_init(&GDKbatLock[i].hash, name);
+			snprintf(name, sizeof(name), "GDKimpsLock%d", i);
+			MT_lock_init(&GDKbatLock[i].imprints, name);
+		}
+		for (i = 0; i <= BBP_THREADMASK; i++) {
+			char name[16];
+			snprintf(name, sizeof(name), "GDKcacheLock%d", i);
+			MT_lock_init(&GDKbbpLock[i].cache, name);
+			snprintf(name, sizeof(name), "GDKtrimLock%d", i);
+			MT_lock_init(&GDKbbpLock[i].trim, name);
+			GDKbbpLock[i].free = 0;
+		}
+		if (mnstr_init() < 0)
+			return GDK_FAIL;
+		first = false;
+	} else {
+		/* BBP was locked by BBPexit() */
+		BBPunlock();
 	}
 	errno = 0;
 	if (!GDKenvironment(dbpath))
 		return GDK_FAIL;
 
-	if (mnstr_init() < 0)
-		return GDK_FAIL;
 	MT_init_posix();
 	if (THRinit() < 0)
 		return GDK_FAIL;
@@ -511,14 +518,13 @@ GDKinit(opt *set, int setlen)
 
 	/* now try to lock the database: go through all farms, and if
 	 * we see a new directory, lock it */
-	for (farmid = 0; farmid < MAXFARMS; farmid++) {
+	for (int farmid = 0; farmid < MAXFARMS; farmid++) {
 		if (BBPfarms[farmid].dirname != NULL) {
-			int skip = 0;
-			int j;
-			for (j = 0; j < farmid; j++) {
+			bool skip = false;
+			for (int j = 0; j < farmid; j++) {
 				if (BBPfarms[j].dirname != NULL &&
 				    strcmp(BBPfarms[farmid].dirname, BBPfarms[j].dirname) == 0) {
-					skip = 1;
+					skip = true;
 					break;
 				}
 			}
@@ -543,15 +549,14 @@ GDKinit(opt *set, int setlen)
 		return GDK_FAIL;
 
 	for (i = 0; i < setlen; i++) {
-		int done = 0;
-		int j;
+		bool done = false;
 
-		for (j = 0; j < nlen; j++) {
+		for (int j = 0; j < nlen; j++) {
 			if (strcmp(n[j].name, set[i].name) == 0) {
 				if (n[j].kind < set[i].kind) {
 					n[j] = set[i];
 				}
-				done = 1;
+				done = true;
 				break;
 			}
 		}
@@ -750,9 +755,17 @@ GDKreset(int status)
 		GDKval = NULL;
 	}
 
-	/* GDKprepareExit() must have been called at this point since
-	 * GDKstopped is set, so the serverthread list must be
-	 * empty */
+	MT_lock_set(&GDKthreadLock);
+	while (serverthread != NULL) {
+		struct serverthread *st = serverthread;
+		serverthread = st->next;
+		MT_lock_unset(&GDKthreadLock);
+		MT_join_thread(st->pid);
+		GDKfree(st);
+		MT_lock_set(&GDKthreadLock);
+	}
+	MT_lock_unset(&GDKthreadLock);
+	join_detached_threads();
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
@@ -819,21 +832,13 @@ GDKreset(int status)
 		ATOMIC_SET(&GDKnrofthreads, 0);
 		close_stream((stream *) THRdata[0]);
 		close_stream((stream *) THRdata[1]);
-		for (int i = 0; i <= BBP_BATMASK; i++) {
-			MT_lock_destroy(&GDKbatLock[i].swap);
-			MT_lock_destroy(&GDKbatLock[i].hash);
-			MT_lock_destroy(&GDKbatLock[i].imprints);
-		}
 		for (int i = 0; i <= BBP_THREADMASK; i++) {
-			MT_lock_destroy(&GDKbbpLock[i].cache);
-			MT_lock_destroy(&GDKbbpLock[i].trim);
 			GDKbbpLock[i].free = 0;
 		}
 
 		memset(THRdata, 0, sizeof(THRdata));
 		gdk_bbp_reset();
 		MT_lock_unset(&GDKthreadLock);
-		//gdk_system_reset(); CHECK OUT
 	}
 	ATOMunknown_clean();
 }
@@ -1442,6 +1447,9 @@ THRdel(Thread t)
 
 	GDKfree(t->name);
 	t->name = NULL;
+	for (int i = 0; i < THREADDATA; i++)
+		t->data[i] = NULL;
+	t->sp = 0;
 	ATOMIC_SET(&t->pid, 0);	/* deallocate */
 	(void) ATOMIC_DEC(&GDKnrofthreads);
 }
@@ -1474,6 +1482,7 @@ THRinit(void)
 {
 	int i = 0;
 	Thread s;
+	static bool first = true;
 
 	if ((THRdata[0] = (void *) file_wastream(stdout, "stdout")) == NULL)
 		return -1;
@@ -1482,9 +1491,12 @@ THRinit(void)
 		THRdata[0] = NULL;
 		return -1;
 	}
-	for (i = 0; i < THREADS; i++) {
-		GDKthreads[i].tid = i + 1;
-		ATOMIC_INIT(&GDKthreads[i].pid, 0);
+	if (first) {
+		for (i = 0; i < THREADS; i++) {
+			GDKthreads[i].tid = i + 1;
+			ATOMIC_INIT(&GDKthreads[i].pid, 0);
+		}
+		first = false;
 	}
 	if ((s = THRnew("main thread", MT_getpid())) == NULL) {
 		mnstr_destroy(THRdata[0]);

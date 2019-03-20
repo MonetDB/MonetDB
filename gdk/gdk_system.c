@@ -285,15 +285,6 @@ MT_thread_getdata(void)
 	return w ? w->data : NULL;
 }
 
-void
-gdk_system_reset(void)
-{
-	assert(threadslot != TLS_OUT_OF_INDEXES);
-	TlsFree(threadslot);
-	threadslot = TLS_OUT_OF_INDEXES;
-	DeleteCriticalSection(&winthread_cs);
-}
-
 static void
 rm_winthread(struct winthread *w)
 {

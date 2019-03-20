@@ -160,8 +160,6 @@ __hidden gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void 
 __hidden gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden void gdk_system_reset(void)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
 __hidden void HASHfree(BAT *b)

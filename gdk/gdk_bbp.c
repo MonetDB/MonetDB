@@ -3530,9 +3530,8 @@ gdk_bbp_reset(void)
 		BBPlimit -= BBPINIT;
 		assert(BBPlimit >= 0);
 		GDKfree(BBP[BBPlimit >> BBPINITLOG]);
+		BBP[BBPlimit >> BBPINITLOG] = NULL;
 	}
-	memset(BBP, 0, sizeof(BBP));
-	BBPlimit = 0;
 	ATOMIC_SET(&BBPsize, 0);
 	for (i = 0; i < MAXFARMS; i++)
 		GDKfree((void *) BBPfarms[i].dirname); /* loose "const" */
