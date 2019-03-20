@@ -566,11 +566,15 @@ rel_label( mvc *sql, sql_rel *r, int all)
 
 		r->exps->ht = NULL;
 		for (; ne; ne = ne->next) {
-			if (all) {
-				nr = ++sql->label;
-				cnme = number2name(cname, 16, nr);
+			sql_exp *e = ne->data;
+
+			if (!e->freevar) {
+				if (all) {
+					nr = ++sql->label;
+					cnme = number2name(cname, 16, nr);
+				}
+				exp_setname(sql->sa, e, tnme, cnme );
 			}
-			exp_setname(sql->sa, ne->data, tnme, cnme );
 		}
 	}
 	/* op_projects can have a order by list */

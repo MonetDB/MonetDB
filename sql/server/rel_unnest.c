@@ -68,7 +68,7 @@ exps_have_freevar( list *exps )
 	return 0;
 }
 
-static int
+int
 rel_has_freevar( sql_rel *rel )
 {
 	if (is_basetable(rel->op))
@@ -339,7 +339,7 @@ push_up_project(mvc *sql, sql_rel *rel)
 			for (m=r->exps->h; m; m = m->next) {
 				sql_exp *e = m->data;
 
-				if (!e->freevar) /* only skip full freevars */
+				if (!e->freevar || exp_name(e)) /* only skip full freevars */
 					append(n->exps, e);
 			}
 			assert(!r->r);
