@@ -1099,20 +1099,6 @@ BBPaddfarm(const char *dirname, int rolemask)
 	return GDK_FAIL;
 }
 
-void
-BBPresetfarms(void)
-{
-	BBPexit();
-	BBPunlock();
-	ATOMIC_SET(&BBPsize, 0);
-	if (BBPfarms[0].dirname != NULL) {
-		GDKfree((void*) BBPfarms[0].dirname); /* loose "const" */
-	}
-	BBPfarms[0].dirname = NULL;
-	BBPfarms[0].roles = 0;
-}
-
-
 gdk_return
 BBPinit(void)
 {
