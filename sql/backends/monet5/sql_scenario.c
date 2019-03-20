@@ -1036,10 +1036,9 @@ SQLparser(Client c)
 	char *q = NULL;
 
 	/* clean up old stuff */
-	msg = (char *) c->query;
+	q = (char *) c->query;
 	c->query = NULL;
-	GDKfree(msg);		/* may be NULL */
-	msg = NULL;
+	GDKfree(q);		/* may be NULL */
 
 	be = (backend *) c->sqlcontext;
 	if (be == 0) {
@@ -1335,8 +1334,12 @@ SQLparser(Client c)
 		}
 	}
 finalize:
-	if (msg)
+	if (msg) {
 		sqlcleanup(m, 0);
+		q = (char *) c->query;
+		c->query = NULL;
+		GDKfree(q);
+	}
 	return msg;
 }
 
