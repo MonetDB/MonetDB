@@ -67,7 +67,8 @@ AC_SUBST([CONFIG_H], [monetdb_config.h])
 HOST=[$target]
 AC_DEFINE_UNQUOTED([HOST], ["$HOST"], [Host identifier])
 
-AC_DEFINE([MONETDB_RELEASE], ["unreleased"], [Release name or "unreleased"])
+dnl The next line is modified for a release and commented between releases
+dnl AC_DEFINE([MONETDB_RELEASE], ["unreleased"], [Release name])
 
 AS_VAR_IF([target_os], [cygwin],
 	[AC_DEFINE([WIN32], 1, [Define on Microsoft Windows (also under Cygwin)])])
@@ -1686,7 +1687,7 @@ org_have_regex=auto
 dft_regex=auto
 AC_ARG_WITH([regex],
 	[AS_HELP_STRING([--with-regex=TYPE],
-	[use either PRCE or POSIX regular expressions (default=PCRE if available)])],
+	[use either PCRE or POSIX regular expressions (default=PCRE if available)])],
 	[AS_CASE([$withval],
 		[pcre|PCRE], [have_regex=pcre],
 		[posix|POSIX], [have_regex=posix],
@@ -2337,44 +2338,12 @@ AC_SUBST([LIBLAS_LIBS])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
 
-org_have_atomic_ops=auto
-have_atomic_ops=$org_have_atomic_ops
-AC_ARG_WITH([atomic-ops],
-	[AS_HELP_STRING([--with-atomic-ops],
-		[use atomic_ops library (default=auto)])],
-	[have_atomic_ops=$withval])
-AS_VAR_IF([have_atomic_ops], [no], [], [
-	PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops=yes],
-		[have_atomic_ops=no; why_not_atomic_ops="(atomic_ops library not found)"])
-	AS_VAR_IF([have_atomic_ops], [yes], [
-		AS_CASE([$GCC-$CC],
-		[-*icc*], [
-			# Even with libatomic_ops available, compilation with
-			# atomic_ops enabled fails with Intel's icc (version 11.1);
-			# hence, we refrain from from using atomic_ops with icc.
-			have_atomic_ops=no
-			why_not_atomic_ops="(atomic_ops do not compile with Intel's icc)"],
-		[
-			# On some systems, notably OpenIndiana, atomic_ops may
-			# seem to be installed in that there is a pkg-config
-			# file for it, but that file contains incorrect
-			# information, and can not, in fact, be used.  The
-			# bogus pkg-config file for atomic_ops is part of the
-			# library/gc package.
-			save_CFLAGS="$CFLAGS"
-			CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
-			AC_CHECK_HEADERS([atomic_ops.h], [have_atomic_ops=yes], [have_atomic_ops=no why_not_atomic_ops="(atomic_ops was incorrectly installed (happens on at least Solaris/OpenIndiana))"])
-			CFLAGS="$save_CFLAGS"
-			AS_VAR_IF([have_atomic_ops], [yes], [
-				AC_DEFINE([HAVE_LIBATOMIC_OPS], 1, [Define if you have the libatomic_ops library])
-				CFLAGS="$CFLAGS $atomic_ops_CFLAGS"
-				LIBS="$LIBS $atomic_ops_LIBS"])])])])
-
 #    checks for header files
 AC_HEADER_STDBOOL
 # NOTE: these header files are in alphabetical order to ease maintenance
 AC_CHECK_HEADERS([ \
 	dirent.h \
+	dispatch/dispatch.h \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
@@ -2511,6 +2480,23 @@ AC_C_INLINE
 AC_C_RESTRICT
 AC_C_FLEXIBLE_ARRAY_MEMBER
 
+AC_MSG_CHECKING([if your compiler has usable <stdatomic.h>])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+	@%:@include <stdatomic.h>
+
+	@%:@if ATOMIC_LLONG_LOCK_FREE == 2
+	atomic_ullong i;
+	@%:@else
+	atomic_uint i;
+	@%:@endif
+	typedef void *_Atomic volatile aptr;
+	]],
+	[[ atomic_store(&i, 0); ]]
+	)],
+	[AC_MSG_RESULT([yes])
+	 AC_DEFINE([HAVE_STDATOMIC_H], 1, [Define to 1 if you have the <stdatomic.h> header file.])],
+	[AC_MSG_RESULT([no])])
+
 AC_MSG_CHECKING([if your compiler understands `__hidden'])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	@%:@include <stdlib.h>
@@ -2563,6 +2549,7 @@ AC_CHECK_FUNCS([\
 	cbrt \
 	clock_gettime \
 	ctime_r \
+	dispatch_semaphore_create \
 	fallocate \
 	fcntl \
 	fsync \
@@ -2970,7 +2957,6 @@ done
 AS_ECHO([''])
 AS_ECHO(["* Available features/extensions:"])
 for comp in \
-	'atomic_ops ' \
 	'bz2        ' \
 	'curl       ' \
 	'fits       ' \

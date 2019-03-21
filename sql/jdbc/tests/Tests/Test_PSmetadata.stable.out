@@ -172,16 +172,15 @@ Ready.
 	searchable    true
 	signed        false
 	writable      false
-1. 1 parameter:	1
-1.
-	nullable      2
+1 parameters reported:
+1.	nullable  2 (UNKNOWN)
 	signed        true
 	precision     32
 	scale         0
 	type          4
 	typename      int
 	classname     java.lang.Integer
-	mode          0
+	mode      1 (IN)
 
 # 13:52:43 >  
 # 13:52:43 >  "Done."

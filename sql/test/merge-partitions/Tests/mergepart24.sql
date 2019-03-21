@@ -25,9 +25,9 @@ CREATE MERGE TABLE testing (a int, b varchar(32)) PARTITION BY RANGE USING (a - 
 CREATE TABLE sublimits1 (a int, b varchar(32));
 CREATE TABLE sublimits2 (a int, b varchar(32));
 
-ALTER TABLE testing ADD TABLE sublimits1 AS PARTITION BETWEEN 28 + 2 AND 72 - 2;
-ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION BETWEEN 100 - 30 AND 440 + 98; --error
-ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION BETWEEN addone(70) AND addtwo(98);
+ALTER TABLE testing ADD TABLE sublimits1 AS PARTITION FROM 28 + 2 TO 72 - 2;
+ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION FROM 100 - 31 TO 440 + 98; --error
+ALTER TABLE testing ADD TABLE sublimits2 AS PARTITION FROM addone(70) TO addtwo(98);
 
 SELECT "minimum", "maximum" FROM range_partitions;
 

@@ -58,7 +58,6 @@ typedef struct SCENARIO {
 	str callback;
 	MALfcn callbackCmd;
 	void *callbackState;
-	struct SCENARIO *next;
 } *Scenario;
 
 mal_export str setScenario(Client c, str nme);

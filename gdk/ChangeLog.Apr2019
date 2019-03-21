@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Mar 19 2019 Sjoerd Mullender <sjoerd@acm.org>
+- During processing, we now try to maintain the smallest and largest
+  values that occur in a BAT.  This information is not saved across
+  server restarts.
+
 * Mon Nov 12 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Added an extra argument of type `bool' to the atom to string and
   string to atom methods to indicate whether the string is for

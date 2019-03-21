@@ -243,7 +243,6 @@ typedef struct MALSTK {
 	 */
 	DFhook admit;
 	DFhook wrapup;
-	MT_Lock stklock;	/* used for parallel processing */
 
 /*
  * It is handy to administer the timing in the stack frame

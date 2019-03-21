@@ -9,18 +9,19 @@ SELECT COUNT(*) from table_partitions;
 SELECT COUNT(*) from range_partitions;
 
 CREATE TABLE subtable1 (a int, b varchar(32));
-ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10;
+ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10;
 SELECT COUNT(*) from table_partitions;
 SELECT COUNT(*) from range_partitions;
-ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 5 AND 10; --error
+ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10; --error
 
 CREATE TABLE wrongtable (a int, b varchar(32), c real);
-ALTER TABLE testme ADD TABLE wrongtable AS PARTITION BETWEEN 5 AND 6; --error
+ALTER TABLE testme ADD TABLE wrongtable AS PARTITION FROM 5 TO 6; --error
 
 CREATE TABLE subtable2 (a int, b varchar(32));
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION IN ('0', '1', '2'); --error
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 7 AND 9; --error
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5; --error
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 7 TO 9; --error
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 5;
+ALTER TABLE testme DROP TABLE subtable2;
 
 DROP TABLE subtable1; --error
 ALTER TABLE testme SET SCHEMA other_schema; --error, changing schema not allowed while with child tables
@@ -29,8 +30,8 @@ ALTER TABLE subtable1 RENAME TO subtable3; --error, renaming the table shouldn't
 
 ALTER TABLE testme DROP TABLE subtable1;
 ALTER TABLE subtable1 SET SCHEMA other_schema;
-ALTER TABLE testme ADD TABLE other_schema.subtable1 AS PARTITION BETWEEN 4 AND 23; --error, all the tables must belong to the same schema
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 5 AND 5;
+ALTER TABLE testme ADD TABLE other_schema.subtable1 AS PARTITION FROM 4 TO 23; --error, all the tables must belong to the same schema
+ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 5;
 ALTER TABLE testme DROP TABLE subtable2;
 
 SELECT COUNT(*) from table_partitions;

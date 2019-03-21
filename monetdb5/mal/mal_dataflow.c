@@ -80,18 +80,15 @@ typedef struct DATAFLOW {
 static struct worker {
 	MT_Id id;
 	enum {IDLE, RUNNING, JOINING, EXITED} flag;
-	Client cntxt;				/* client we do work for (NULL -> any) */
+	ATOMIC_PTR_TYPE cntxt; /* client we do work for (NULL -> any) */
 	MT_Sema s;
-	char name[16];
 } workers[THREADS];
 
 static Queue *todo = 0;	/* pending instructions */
 
-#ifdef ATOMIC_LOCK
-static MT_Lock exitingLock MT_LOCK_INITIALIZER("exitingLock");
-#endif
-static volatile ATOMIC_TYPE exiting = 0;
-static MT_Lock dataflowLock MT_LOCK_INITIALIZER("dataflowLock");
+static ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
+static MT_Lock dataflowLock = MT_LOCK_INITIALIZER("dataflowLock");
+static void stopMALdataflow(void);
 
 void
 mal_dataflow_reset(void)
@@ -105,7 +102,7 @@ mal_dataflow_reset(void)
 		GDKfree(todo);
 	}
 	todo = 0;	/* pending instructions */
-	exiting = 0;
+	ATOMIC_SET(&exiting, 0);
 }
 
 /*
@@ -135,14 +132,14 @@ q_create(int sz, const char *name)
 
 	if (q == NULL)
 		return NULL;
-	q->size = ((sz << 1) >> 1); /* we want a multiple of 2 */
-	q->last = 0;
+	*q = (Queue) {
+		.size = ((sz << 1) >> 1), /* we want a multiple of 2 */
+	};
 	q->data = (FlowEvent*) GDKmalloc(sizeof(FlowEvent) * q->size);
 	if (q->data == NULL) {
 		GDKfree(q);
 		return NULL;
 	}
-	q->exitcount = 0;
 
 	MT_lock_init(&q->l, name);
 	MT_sema_init(&q->s, 0, name);
@@ -229,7 +226,7 @@ q_dequeue(Queue *q, Client cntxt)
 
 	assert(q);
 	MT_sema_down(&q->s);
-	if (ATOMIC_GET(exiting, exitingLock))
+	if (ATOMIC_GET(&exiting))
 		return NULL;
 	MT_lock_set(&q->l);
 	if (cntxt) {
@@ -339,18 +336,15 @@ DFLOWworker(void *T)
 		fprintf(stderr,"DFLOWworker:Could not allocate GDKerrbuf\n");
 	else
 		GDKclrerr();
-	MT_lock_set(&dataflowLock);
-	cntxt = t->cntxt;
-	MT_lock_unset(&dataflowLock);
+	cntxt = ATOMIC_PTR_GET(&t->cntxt);
 	if (cntxt) {
 		/* wait until we are allowed to start working */
 		MT_sema_down(&t->s);
 	}
 	while (1) {
 		if (fnxt == 0) {
-			MT_lock_set(&dataflowLock);
-			cntxt = t->cntxt;
-			MT_lock_unset(&dataflowLock);
+			MT_thread_setworking(NULL);
+			cntxt = ATOMIC_PTR_GET(&t->cntxt);
 			fe = q_dequeue(todo, cntxt);
 			if (fe == NULL) {
 				if (cntxt) {
@@ -366,9 +360,11 @@ DFLOWworker(void *T)
 				/* no more work to be done: exit */
 				break;
 			}
+			if (fe->flow->cntxt && fe->flow->cntxt->mythread)
+				MT_thread_setworking(fe->flow->cntxt->mythread->name);
 		} else
 			fe = fnxt;
-		if (ATOMIC_GET(exiting, exitingLock)) {
+		if (ATOMIC_GET(&exiting)) {
 			break;
 		}
 		fnxt = 0;
@@ -494,6 +490,7 @@ DFLOWinitialize(void)
 {
 	int i, limit;
 	int created = 0;
+	static bool first = true;
 
 	MT_lock_set(&mal_contextLock);
 	if (todo) {
@@ -507,19 +504,24 @@ DFLOWinitialize(void)
 		return -1;
 	}
 	for (i = 0; i < THREADS; i++) {
-		MT_sema_init(&workers[i].s, 0, "DFLOWinitialize");
+		char name[16];
+		snprintf(name, sizeof(name), "DFLOWsema%d", i);
+		MT_sema_init(&workers[i].s, 0, name);
+		workers[i].flag = IDLE;
+		if (first)				/* only initialize once */
+			ATOMIC_PTR_INIT(&workers[i].cntxt, NULL);
 	}
+	first = false;
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
-#ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(exitingLock);
-	MT_lock_init(&dataflowLock, "dataflowLock");
-#endif
+	if (limit > THREADS)
+		limit = THREADS;
 	MT_lock_set(&dataflowLock);
 	for (i = 0; i < limit; i++) {
 		workers[i].flag = RUNNING;
-		workers[i].cntxt = NULL;
-		snprintf(workers[i].name, sizeof(workers[i].name), "DFLOWworker%d", i);
-		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, workers[i].name)) == 0)
+		ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
+		char name[16];
+		snprintf(name, sizeof(name), "DFLOWworker%d", i);
+		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0)
 			workers[i].flag = IDLE;
 		else
 			created++;
@@ -750,7 +752,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 
 	while (actions != tasks ) {
 		f = q_dequeue(flow->done, NULL);
-		if (ATOMIC_GET(exiting, exitingLock))
+		if (ATOMIC_GET(&exiting))
 			break;
 		if (f == NULL)
 			throw(MAL, "dataflow", "DFLOWscheduler(): q_dequeue(flow->done) returned NULL");
@@ -779,9 +781,7 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	}
 	/* release the worker from its specific task (turn it into a
 	 * generic worker) */
-	MT_lock_set(&dataflowLock);
-	w->cntxt = NULL;
-	MT_lock_unset(&dataflowLock);
+	ATOMIC_PTR_SET(&w->cntxt, NULL);
 	/* wrap up errors */
 	assert(flow->done->last == 0);
 	if (flow->error ) {
@@ -853,7 +853,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 			for (i = 0; i < THREADS; i++) {
 				if (workers[i].flag == EXITED) {
 					workers[i].flag = JOINING;
-					workers[i].cntxt = NULL;
+					ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
 					joined = 1;
 					MT_lock_unset(&dataflowLock);
 					MT_join_thread(workers[i].id);
@@ -873,20 +873,22 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 				/* doing a recursive call: copy specificity from
 				 * current worker to new worker */
-				workers[i].cntxt = NULL;
+				ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
 				for (j = 0; j < THREADS; j++) {
 					if (workers[j].flag == RUNNING && workers[j].id == pid) {
-						workers[i].cntxt = workers[j].cntxt;
+						ATOMIC_PTR_SET(&workers[i].cntxt,
+									   ATOMIC_PTR_GET(&workers[j].cntxt));
 						break;
 					}
 				}
 			} else {
 				/* not doing a recursive call: create specific worker */
-				workers[i].cntxt = cntxt;
+				ATOMIC_PTR_SET(&workers[i].cntxt, cntxt);
 			}
 			workers[i].flag = RUNNING;
-			snprintf(workers[i].name, sizeof(workers[i].name), "DFLOWworker%d", i);
-			if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, workers[i].name)) == 0) {
+			char name[16];
+			snprintf(name, sizeof(name), "DFLOWworker%d", i);
+			if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0) {
 				/* cannot start new thread, run serially */
 				*ret = TRUE;
 				workers[i].flag = IDLE;
@@ -982,16 +984,17 @@ deblockdataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return MAL_SUCCEED;
 }
 
-void
+static void
 stopMALdataflow(void)
 {
 	int i;
 
-	ATOMIC_SET(exiting, 1, exitingLock);
+	ATOMIC_SET(&exiting, 1);
 	if (todo) {
-		for (i = 0; i < THREADS; i++)
-			MT_sema_up(&todo->s);
 		MT_lock_set(&dataflowLock);
+		for (i = 0; i < THREADS; i++)
+			if (workers[i].flag == RUNNING)
+				MT_sema_up(&todo->s);
 		for (i = 0; i < THREADS; i++) {
 			if (workers[i].flag != IDLE && workers[i].flag != JOINING) {
 				workers[i].flag = JOINING;
@@ -1000,6 +1003,7 @@ stopMALdataflow(void)
 				MT_lock_set(&dataflowLock);
 			}
 			workers[i].flag = IDLE;
+			MT_sema_destroy(&workers[i].s);
 		}
 		MT_lock_unset(&dataflowLock);
 	}

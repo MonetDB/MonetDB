@@ -32,7 +32,6 @@ function user.tst():void;
     true:bit;
     X_4:int := 0:int;
     X_4:int := 100:int;
-    z := X_4;
 end user.tst;
 
 # 01:05:28 >  

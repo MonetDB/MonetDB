@@ -260,7 +260,7 @@ SELECT d1, extract(quarter from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(halfyear from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(year from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(century from d1) FROM TIMESTAMP_TBL;
-SELECT d1, extract(millenium from d1) FROM TIMESTAMP_TBL;
+SELECT d1, extract(millennium from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(epoch from d1) FROM TIMESTAMP_TBL;
 
 SELECT d1, week(d1) FROM TIMESTAMP_TBL;

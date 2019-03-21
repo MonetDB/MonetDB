@@ -56,8 +56,8 @@ MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
 QUERY = INSERT INTO testnestedpartitions VALUES (4, 'not'), (2, 'going'), (5, 'through'); --error
 ERROR = !INSERT: the insert violates the partition range of values
 CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-20495/.s.monetdb.30967
-QUERY = ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION BETWEEN '1' AND '200'; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION FROM '1' TO '200'; --error
 ERROR = !ALTER TABLE: conflicting partitions: 1 to 200 and 0 to 100 from table sys.subt1
 CODE  = 42000
 

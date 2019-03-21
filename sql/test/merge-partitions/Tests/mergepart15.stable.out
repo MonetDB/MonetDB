@@ -31,7 +31,7 @@ Ready.
 [ 1	]
 #TRUNCATE sublimits1;
 [ 1	]
-#ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION WITH NULL;
+#ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES;
 #INSERT INTO testme VALUES (NULL, 'first'), (NULL, NULL);
 [ 2	]
 #INSERT INTO sublimits1 VALUES (NULL, 'second'), (NULL, NULL);
@@ -54,7 +54,7 @@ Ready.
 [ NULL,	NULL	]
 [ NULL,	"second"	]
 [ NULL,	NULL	]
-#ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION BETWEEN '301' AND '500';
+#ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500';
 #INSERT INTO testme VALUES (NULL, 'fourth'), (303, 'null'), (NULL, 'fifth');
 [ 3	]
 #SELECT a, b FROM testme;

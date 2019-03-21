@@ -31,12 +31,10 @@ Ready.
 #mdb.list("user","tst");
 function user.tst():void;
     true:bit;
-    z := 0:int;
 end user.tst;
 #mdb.list("user","tst");
 function user.tst():void;
     true:bit;
-    z := 0:int;
 end user.tst;
 
 # 05:26:58 >  

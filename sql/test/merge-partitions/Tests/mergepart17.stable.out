@@ -1,9 +1,9 @@
 stdout of test 'mergepart17` in directory 'sql/test/merge-partitions` itself:
 
 
-# 16:54:54 >  
+# 16:54:54 >
 # 16:54:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33193" "--set" "mapi_usock=/var/tmp/mtest-9208/.s.monetdb.33193" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true" "--set" "embedded_c=true"
-# 16:54:54 >  
+# 16:54:54 >
 
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -63,77 +63,77 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 16:54:55 >  
+# 16:54:55 >
 # 16:54:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9208" "--port=33193"
-# 16:54:55 >  
+# 16:54:55 >
 
-#CREATE MERGE TABLE testupdates (a int, b varchar(32)) PARTITION BY RANGE (a);
+#CREATE MERGE TABLE testupdates (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 #CREATE TABLE sublimits1 (a int, b varchar(32));
 #INSERT INTO sublimits1 VALUES (1000, 'ups');
 [ 1	]
 #TRUNCATE sublimits1;
 [ 1	]
-#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
-#INSERT INTO sublimits1 VALUES (100, 'ok');
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100;
+#INSERT INTO sublimits1 VALUES (99, 'ok');
 [ 1	]
-#UPDATE sublimits1 SET b = 'p' || b WHERE a = 100;
+#UPDATE sublimits1 SET b = 'p' || b WHERE a = 99;
 [ 1	]
 #SELECT a, b FROM testupdates;
 % sys.testupdates,	sys.testupdates # table_name
 % a,	b # name
 % int,	varchar # type
-% 3,	3 # length
-[ 100,	"pok"	]
+% 2,	3 # length
+[ 99,	"pok"	]
 #SELECT a, b FROM sublimits1;
 % sys.sublimits1,	sys.sublimits1 # table_name
 % a,	b # name
 % int,	varchar # type
-% 3,	3 # length
-[ 100,	"pok"	]
+% 2,	3 # length
+[ 99,	"pok"	]
 #ALTER TABLE testupdates DROP TABLE sublimits1;
 #UPDATE sublimits1 SET a = a + 1;
 [ 1	]
-#UPDATE sublimits1 SET b = b || 's' WHERE a = 101;
+#UPDATE sublimits1 SET b = b || 's' WHERE a = 100;
 [ 1	]
 #UPDATE sublimits1 SET a = a - 1;
 [ 1	]
-#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100;
 #SELECT a, b FROM testupdates;
 % sys.testupdates,	sys.testupdates # table_name
 % a,	b # name
 % int,	varchar # type
-% 3,	4 # length
-[ 100,	"poks"	]
+% 2,	4 # length
+[ 99,	"poks"	]
 #SELECT a, b FROM sublimits1;
 % sys.sublimits1,	sys.sublimits1 # table_name
 % a,	b # name
 % int,	varchar # type
-% 3,	4 # length
-[ 100,	"poks"	]
+% 2,	4 # length
+[ 99,	"poks"	]
 #ALTER TABLE testupdates DROP TABLE sublimits1;
 #START TRANSACTION;
-#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100;
 #ROLLBACK;
 #UPDATE sublimits1 SET a = a + 1;
 [ 1	]
-#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 101;
+#ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 101;
 #SELECT a, b FROM sublimits1;
 % sys.sublimits1,	sys.sublimits1 # table_name
 % a,	b # name
 % int,	varchar # type
 % 3,	4 # length
-[ 101,	"poks"	]
+[ 100,	"poks"	]
 #SELECT a, b FROM testupdates;
 % sys.testupdates,	sys.testupdates # table_name
 % a,	b # name
 % int,	varchar # type
 % 3,	4 # length
-[ 101,	"poks"	]
+[ 100,	"poks"	]
 #ALTER TABLE testupdates DROP TABLE sublimits1;
 #DROP TABLE sublimits1;
 #DROP TABLE testupdates;
 
-# 16:54:55 >  
+# 16:54:55 >
 # 16:54:55 >  "Done."
-# 16:54:55 >  
+# 16:54:55 >
 

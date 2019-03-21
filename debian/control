@@ -5,7 +5,7 @@ Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: https://www.monetdb.org/
 Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/
-Build-Depends: debhelper (>= 9), autotools-dev, bison, libatomic-ops-dev,
+Build-Depends: debhelper (>= 9), autotools-dev, bison,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libpcre3-dev, libreadline-dev, liblzma-dev,
  libssl-dev, libxml2-dev, pkg-config,
@@ -34,7 +34,7 @@ Description: MonetDB core library
 
 Package: libmonetdb-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libatomic-ops-dev,
+Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb17, libmonetdb-stream-dev
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a

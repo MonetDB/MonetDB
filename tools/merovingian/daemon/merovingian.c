@@ -884,13 +884,14 @@ main(int argc, char *argv[])
 	fclose(pidfile);
 
 	{
-		const char *rev = mercurial_revision();
 		Mfprintf(stdout, "Merovingian %s", VERSION);
-		/* coverity[pointless_string_compare] */
-		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-			Mfprintf(stdout, " (%s)", MONETDB_RELEASE);
-		else if (strcmp(rev, "Unknown") != 0)
+#ifdef MONETDB_RELEASE
+		Mfprintf(stdout, " (%s)", MONETDB_RELEASE);
+#else
+		const char *rev = mercurial_revision();
+		if (strcmp(rev, "Unknown") != 0)
 			Mfprintf(stdout, " (hg id: %s)", rev);
+#endif
 		Mfprintf(stdout, " starting\n");
 	}
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);

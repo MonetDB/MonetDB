@@ -393,6 +393,7 @@ WLRprocessScheduler(void *arg)
 	while(!GDKexiting() && wlr_state == WLR_RUN){
 		// wait at most for the cycle period, also at start
 		//mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlc_beat? wlc_beat:1) * 1000);
+		MT_thread_setworking("sleeping");
 		duration = (wlc_beat? wlc_beat:1) * 1000 ;
 		if( wlr_timelimit[0]){
 			gettimeofday(&clock, NULL);
@@ -405,19 +406,21 @@ WLRprocessScheduler(void *arg)
 			if(strncmp(clktxt, wlr_timelimit,26) >= 0) 
 				MT_sleep_ms(duration);
 		} else
-		for( ; duration > 0  && wlr_state == WLR_PAUSE; duration -= 100){
-			MT_sleep_ms( 100);
-		}
+			for( ; duration > 0  && wlr_state == WLR_PAUSE; duration -= 100){
+				MT_sleep_ms( 100);
+			}
 		if( wlr_master[0] && wlr_state != WLR_PAUSE){
 			if((msg = WLRgetMaster()) != MAL_SUCCEED) {
 				mnstr_printf(GDKerr,"%s\n",msg);
 				freeException(msg);
 			}
 			if( wlrprocessrunning == 0 && 
-				( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||
-				  (wlr_limit == -1 && wlr_timelimit[0] == 0 && wlr_batches < wlc_batches) ||
-				  (wlr_timelimit[0]  && strncmp(clktxt, wlr_timelimit, 26)> 0)  ) )
-					WLRprocess(cntxt);
+			    ( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||
+			      (wlr_limit == -1 && wlr_timelimit[0] == 0 && wlr_batches < wlc_batches) ||
+			      (wlr_timelimit[0]  && strncmp(clktxt, wlr_timelimit, 26)> 0)  ) ) {
+				MT_thread_setworking("processing");
+				WLRprocess(cntxt);
+			}
 		}
 	}
 	wlr_state = WLR_START;

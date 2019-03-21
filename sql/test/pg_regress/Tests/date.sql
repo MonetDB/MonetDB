@@ -50,7 +50,7 @@ SELECT f1, extract(quarter from f1) FROM DATE_TBL;
 SELECT f1, extract(halfyear from f1) FROM DATE_TBL;
 SELECT f1, extract(year from f1) FROM DATE_TBL;
 SELECT f1, extract(century from f1) FROM DATE_TBL;
-SELECT f1, extract(millenium from f1) FROM DATE_TBL;
+SELECT f1, extract(millennium from f1) FROM DATE_TBL;
 SELECT f1, extract(epoch from f1) FROM DATE_TBL;
 
 SELECT f1, week(f1) FROM DATE_TBL;

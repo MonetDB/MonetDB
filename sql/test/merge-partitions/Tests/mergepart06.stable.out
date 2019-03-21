@@ -1,9 +1,9 @@
 stdout of test 'mergepart06` in directory 'sql/test/merge-partitions` itself:
 
 
-# 15:49:30 >  
+# 15:49:30 >
 # 15:49:30 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35425" "--set" "mapi_usock=/var/tmp/mtest-655/.s.monetdb.35425" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_r=yes" "--set" "embedded_py=true" "--set" "embedded_c=true"
-# 15:49:30 >  
+# 15:49:30 >
 
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -63,26 +63,29 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 15:49:31 >  
+# 15:49:31 >
 # 15:49:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-655" "--port=35425"
-# 15:49:31 >  
+# 15:49:31 >
 
-#CREATE MERGE TABLE testrangelimits (a int, b varchar(32)) PARTITION BY RANGE (a);
+#CREATE MERGE TABLE testrangelimits (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 #CREATE TABLE sublimits1 (a int, b varchar(32));
 #CREATE TABLE sublimits2 (a int, b varchar(32));
 #CREATE TABLE sublimits3 (a int, b varchar(32));
-#ALTER TABLE testrangelimits ADD TABLE sublimits1 AS PARTITION BETWEEN 0 AND 100;
+#CREATE TABLE sublimits4 (a int, b varchar(32));
+#CREATE TABLE sublimits5 (a int, b varchar(32));
+#ALTER TABLE testrangelimits ADD TABLE sublimits1 AS PARTITION FROM 0 TO 100;
 #INSERT INTO testrangelimits VALUES (1, 'first');
 [ 1	]
-#ALTER TABLE testrangelimits ADD TABLE sublimits2 AS PARTITION BETWEEN 101 AND 200;
-#ALTER TABLE testrangelimits ADD TABLE sublimits3 AS PARTITION BETWEEN 401 AND 500 WITH NULL;
+#ALTER TABLE testrangelimits ADD TABLE sublimits2 AS PARTITION FROM 101 TO 200;
+#ALTER TABLE testrangelimits ADD TABLE sublimits3 AS PARTITION FROM 401 TO 500 WITH NULL VALUES;
+#ALTER TABLE testrangelimits ADD TABLE sublimits4 AS PARTITION FROM 500 TO 600; --still legal
 #INSERT INTO testrangelimits VALUES (1, 'a'), (101, 'b'), (401, 'c');
 [ 3	]
 #INSERT INTO testrangelimits VALUES (50, 'more'); --1st partition
 [ 1	]
 #INSERT INTO testrangelimits VALUES (171, 'test'); --2nd partition
 [ 1	]
-#INSERT INTO testrangelimits VALUES (401, 'another'), (NULL, 'test'), (450, 'to'), (500, 'pass'); --3rd partition
+#INSERT INTO testrangelimits VALUES (401, 'another'), (NULL, 'test'), (450, 'to'), (499, 'pass'); --3rd partition
 [ 4	]
 #INSERT INTO sublimits1 VALUES (2, 'another');
 [ 1	]
@@ -106,7 +109,7 @@ Ready.
 [ 401,	"another"	]
 [ NULL,	"test"	]
 [ 450,	"to"	]
-[ 500,	"pass"	]
+[ 499,	"pass"	]
 [ NULL,	"attempt"	]
 #SELECT a,b FROM sublimits1;
 % sys.sublimits1,	sys.sublimits1 # table_name
@@ -134,17 +137,25 @@ Ready.
 [ 401,	"another"	]
 [ NULL,	"test"	]
 [ 450,	"to"	]
-[ 500,	"pass"	]
+[ 499,	"pass"	]
 [ NULL,	"attempt"	]
+#SELECT a,b FROM sublimits4;
+% sys.sublimits4,	sys.sublimits4 # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	0 # length
 #ALTER TABLE testrangelimits DROP TABLE sublimits1;
 #ALTER TABLE testrangelimits DROP TABLE sublimits2;
 #ALTER TABLE testrangelimits DROP TABLE sublimits3;
+#ALTER TABLE testrangelimits DROP TABLE sublimits4;
 #DROP TABLE testrangelimits;
 #DROP TABLE sublimits1;
 #DROP TABLE sublimits2;
 #DROP TABLE sublimits3;
+#DROP TABLE sublimits4;
+#DROP TABLE sublimits5;
 
-# 15:49:31 >  
+# 15:49:31 >
 # 15:49:31 >  "Done."
-# 15:49:31 >  
+# 15:49:31 >
 

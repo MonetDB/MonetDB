@@ -789,7 +789,13 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 				len = snprintf(buf2, sizeof(buf2), "%s (%s)\n",
-						VERSION, MONETDB_RELEASE);
+							   VERSION,
+#ifdef MONETDB_RELEASE
+							   MONETDB_RELEASE
+#else
+							   "unreleased"
+#endif
+					);
 				send_client("=");
 				break;
 			} else if (strcmp(p, "mserver") == 0) {

@@ -269,3 +269,4 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 	BBPunfix(b->batCacheid);
 	return msg;
 }
+

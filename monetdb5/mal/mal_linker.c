@@ -200,7 +200,7 @@ loadLibrary(str filename, int flag)
 		handle = dlopen(nme, mode);
 		if (handle == NULL && fileexists(nme))
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " failed to open library %s (from within file '%s'): %s", s, nme, dlerror());
-		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
+		if (handle == NULL && strcmp(SO_EXT, ".so") != /* DISABLES CODE */ (0)) {
 			/* try .so */
 			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
 					 (int) (p - mod_path),

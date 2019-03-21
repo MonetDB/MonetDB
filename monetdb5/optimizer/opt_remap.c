@@ -7,7 +7,7 @@
  */
 
 /*
- * The first attempt of the multiple optimizer is to locate
+ * The first attempt of the multiplex optimizer is to locate
  * a properly typed multi-plexed implementation.
  * The policy is to search for bat<mod>.<fcn> before going
  * into the iterator code generation.
@@ -245,11 +245,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					setModuleId(q,putName(buf));
 					q->typechk = TYPE_UNKNOWN;
 
-					actions++;
 					/* now see if we can resolve the instruction */
 					typeChecker(cntxt->usermodule,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
+					actions++;
 					break;
 				}
 				/* handle simple upgraded assignments as well */
@@ -261,11 +261,11 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					q= pushArgument(mq,q, getArg(q,1));
 					getArg(q,1)= refbat;
 				
-					actions++;
 					q->typechk = TYPE_UNKNOWN;
 					typeChecker(cntxt->usermodule,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
+					actions++;
 					break;
 				}
 		}

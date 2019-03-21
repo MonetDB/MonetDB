@@ -5064,6 +5064,17 @@ set schema "sys";
 
 Running database upgrade commands:
 set schema sys;
+drop procedure sys.querylog_enable(smallint);
+create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;
+update sys.functions set system = true where name = 'querylog_enable' and schema_id = (select id from sys.schemas where name = 'sys');
+create function sys.date_trunc(txt string, t timestamp)
+returns timestamp
+external name sql.date_trunc;
+grant execute on function sys.date_trunc(string, timestamp) to public;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = 1;
+create procedure sys.setprinttimeout("timeout" integer)
+external name clients.setprinttimeout;
+update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'setprinttimeout' and type = 2;
 grant execute on function sys.queue to public;
 grant select on sys.queue to public;
 ALTER TABLE sys.keywords SET READ WRITE;

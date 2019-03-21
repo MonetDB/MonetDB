@@ -4,9 +4,9 @@ CREATE TABLE sublimits2 (a int, b varchar(32));
 
 INSERT INTO sublimits1 VALUES (0, 'dummy');
 
-ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION WITH NULL; --error
+ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES; --error
 TRUNCATE sublimits1;
-ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION WITH NULL;
+ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES;
 
 INSERT INTO testme VALUES (NULL, 'first'), (NULL, NULL);
 INSERT INTO sublimits1 VALUES (NULL, 'second'), (NULL, NULL);
@@ -17,9 +17,9 @@ INSERT INTO sublimits1 VALUES (2, 'third'); --error
 SELECT a, b FROM testme;
 SELECT a, b FROM sublimits1;
 
-ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION WITH NULL; --error
-ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION BETWEEN '301' AND '500' WITH NULL; --error
-ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION BETWEEN '301' AND '500';
+ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FOR NULL VALUES; --error
+ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500' WITH NULL VALUES; --error
+ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500';
 
 INSERT INTO testme VALUES (NULL, 'fourth'), (303, 'null'), (NULL, 'fifth');
 

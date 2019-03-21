@@ -485,15 +485,14 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 }
 
 /*
- * This is a phtread started function.  Here we start the client. We
- * need to initialize and allocate space for the global variables.
- * Thereafter it is up to the scenario interpreter to process input.
+ * Here we start the client.  We need to initialize and allocate space
+ * for the global variables.  Thereafter it is up to the scenario
+ * interpreter to process input.
  */
 str
-MSserveClient(void *dummy)
+MSserveClient(Client c)
 {
 	MalBlkPtr mb;
-	Client c = (Client) dummy;
 	str msg = 0;
 
 	if (!isAdministrator(c) && MCinitClientThread(c) < 0) {
@@ -523,6 +522,7 @@ MSserveClient(void *dummy)
 	} else {
 		do {
 			do {
+				MT_thread_setworking("running scenario");
 				msg = runScenario(c,0);
 				freeException(msg);
 				if (c->mode == FINISHCLIENT)
@@ -531,6 +531,7 @@ MSserveClient(void *dummy)
 			} while (c->scenario && !GDKexiting());
 		} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
 	}
+	MT_thread_setworking("exiting");
 	/* pre announce our exiting: cleaning up may take a while and we
 	 * don't want to get killed during that time for fear of
 	 * deadlocks */

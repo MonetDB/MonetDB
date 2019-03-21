@@ -74,8 +74,8 @@ Ready.
 [ 3	]
 #INSERT INTO subtable2 VALUES (11, 'eleven'), (12, 'twelve'), (13, 'thirteen');
 [ 3	]
-#ALTER TABLE testme ADD TABLE subtable1 AS PARTITION BETWEEN 1 AND 10;
-#ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 11 AND 20;
+#ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 1 TO 10;
+#ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20;
 #SELECT a, b FROM testme;
 % .testme,	.testme # table_name
 % a,	b # name

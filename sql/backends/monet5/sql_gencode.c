@@ -599,7 +599,7 @@ sql_relation2stmt(backend *be, sql_rel *r)
 }
 
 int
-backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, char *query)
+backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, const char *query)
 {
 	mvc *c = be->mvc;
 	InstrPtr q, querylog = NULL;

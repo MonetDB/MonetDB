@@ -357,18 +357,34 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 				ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue);
 				if(ok)
-					ok = VALconvert(localtype, &vmin);
-				if(ok)
 					ok = VALinit(&vmax, TYPE_str, next->part.range.maxvalue);
-				if(ok)
-					ok = VALconvert(localtype, &vmax);
 				if(ok) {
-					p->part.range.minvalue = sa_alloc(sql->session->tr->sa, vmin.len);
-					p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, vmax.len);
-					memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
-					memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
-					p->part.range.minlength = vmin.len;
-					p->part.range.maxlength = vmax.len;
+					if (strcmp((const char *)VALget(&vmin), str_nil) == 0 ||
+						strcmp((const char *)VALget(&vmax), str_nil) == 0) {
+						int tpe = found.type->localtype;
+						const void *nil_ptr = ATOMnilptr(tpe);
+						size_t nil_len = ATOMlen(tpe, nil_ptr);
+
+						assert(p->with_nills && next->with_nills);
+						p->part.range.minvalue = sa_alloc(sql->session->tr->sa, nil_len);
+						p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, nil_len);
+						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
+						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
+						p->part.range.minlength = nil_len;
+						p->part.range.maxlength = nil_len;
+					} else {
+						ok = VALconvert(localtype, &vmin);
+						if(ok)
+							ok = VALconvert(localtype, &vmax);
+						if(ok) {
+							p->part.range.minvalue = sa_alloc(sql->session->tr->sa, vmin.len);
+							p->part.range.maxvalue = sa_alloc(sql->session->tr->sa, vmax.len);
+							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
+							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
+							p->part.range.minlength = vmin.len;
+							p->part.range.maxlength = vmax.len;
+						}
+					}
 				}
 				VALclear(&vmin);
 				VALclear(&vmax);

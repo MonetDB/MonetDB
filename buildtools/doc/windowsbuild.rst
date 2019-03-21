@@ -631,24 +631,6 @@ with the extra parameter ``HAVE_LIBBZ2=1``.
 
 __ http://www.bzip.org/
 
-Libatomic_ops
--------------
-
-`Atomic Ops`__ is a library that provides semi-portable access to
-hardware-provided atomic memory update operations on a number of
-architectures.  We optionally uses this to implement thread-safe
-access to a number of variables and for the implementation of locks.
-
-To install, it suffices to copy the file ``src\atomic_ops.h`` and the
-folder ``src\atomic_ops`` to the installation location in
-e.g. ``C:\Libraries``.
-
-Fix the ``LIBATOMIC_OPS`` definition in ``NT\rules.msc`` so that it
-refers to the location where you installed the header files and call
-``nmake`` with the extra parameter ``HAVE_ATOMIC_OPS=1``.
-
-__ https://github.com/ivmai/libatomic_ops
-
 Build Environment
 =================
 

@@ -182,7 +182,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Run
 
 	/* keep track of actual running instructions over BATs */
 	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_INC(mal_running, mal_runningLock);
+		(void) ATOMIC_INC(&mal_running);
 
 	/* emit the instruction upon start as well */
 	if(malProfileMode > 0 )
@@ -203,7 +203,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 
 	assert(pci);
 	if( isaBatType(getArgType(mb, pci, 0)) )
-		(void) ATOMIC_DEC(mal_running, mal_runningLock);
+		(void) ATOMIC_DEC(&mal_running);
 
 	assert(prof);
 	/* always collect the MAL instruction execution time */

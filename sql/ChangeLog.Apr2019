@@ -6,6 +6,9 @@
   is NULL, the functions return the other value, otherwise they return
   the least/greatest of the two arguments.
 
+* Thu Jan 24 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented SQL2003 natural logarithm function: ln(num_expr).
+
 * Wed Jan 23 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Function octet_length now also accepts a BLOB argument and returns
   the length of the BLOB (i.e. the same as length when called with a
@@ -139,7 +142,7 @@
   Also added optional IF EXISTS clause to other existing ALTER TABLE
   statements.
 
-* Tue Okt  9 2018 Aris Koning <aris.koning@monetdbsolutions.com>
+* Tue Oct  9 2018 Aris Koning <aris.koning@monetdbsolutions.com>
 - The sql SAMPLE syntax is extended to include an optional integral SEED
   parameter that sets the seed for the internal random number generator
   in the sample algorithm.  When the seed is set, the user can obtain

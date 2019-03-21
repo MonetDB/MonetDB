@@ -629,7 +629,7 @@ SYSgdkThread(bat *ret, bat *ret2)
 
 	for (i = 1; i <= THREADS; i++) {
 		thr = THRget(i);
-		if (thr->pid){
+		if (ATOMIC_GET(&thr->pid)){
 			if (BUNappend(bn, &thr->tid, false) != GDK_SUCCEED ||
 				BUNappend(b, thr->name? thr->name:"", false) != GDK_SUCCEED)
 				goto bailout;
