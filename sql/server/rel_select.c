@@ -4652,7 +4652,7 @@ simple_selection(symbol *sq)
 
  		sn = (SelectNode *) sq;
 
-		if (!sn->from && !sn->where && !sn->distinct && dlist_length(sn->selection) == 1)
+		if (!sn->from && !sn->where && !sn->distinct && !sn->window && dlist_length(sn->selection) == 1)
 			return sn->selection;
 	}
 	return NULL;
@@ -4764,6 +4764,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 					e = NULL;
 				if (!e)
 					e = rel_order_by_column_exp(query, &rel, col);
+				if (e && e->card != rel->card && e->card != CARD_ATOM)
+					e = NULL;
 			}
 			if (!e) 
 				return NULL;
