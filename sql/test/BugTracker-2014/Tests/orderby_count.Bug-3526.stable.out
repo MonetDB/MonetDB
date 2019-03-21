@@ -64,8 +64,8 @@ Ready.
 % k,	L16,	L20 # name
 % varchar,	bigint,	bigint # type
 % 3,	1,	1 # length
-[ "one",	2,	2	]
 [ "two",	4,	1	]
+[ "one",	2,	2	]
 
 # 17:12:13 >  
 # 17:12:13 >  "Done."

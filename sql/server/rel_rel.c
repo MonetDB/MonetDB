@@ -23,11 +23,8 @@
 const char *
 rel_name( sql_rel *r )
 {
-	if (!is_project(r->op) && !is_base(r->op) && r->l) {
-		if (is_apply(r->op))
-			return rel_name(r->r);
+	if (!is_project(r->op) && !is_base(r->op) && r->l) 
 		return rel_name(r->l);
-	}
 	if (r->exps && list_length(r->exps)) {
 		sql_exp *e = r->exps->h->data;
 		if (e->rname)
@@ -65,7 +62,6 @@ rel_destroy_(sql_rel *rel)
 	    is_select(rel->op) ||
 	    is_set(rel->op) ||
 	    rel->op == op_topn ||
-	    rel->op == op_apply ||
 		rel->op == op_sample) {
 		if (rel->l)
 			rel_destroy(rel->l);
@@ -147,7 +143,6 @@ rel_copy( sql_allocator *sa, sql_rel *i, int deep )
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_apply:
 	case op_semi:
 	case op_anti:
 	case op_project:
@@ -245,7 +240,6 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		if (rel->l && !(is_base(rel->op)))
 			return rel_bind_column_(sql, p, rel->l, cname );
 		break;
-	case op_apply:
 	case op_semi:
 	case op_anti:
 
@@ -309,14 +303,6 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		   is_topn(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
-	} else if (is_apply(rel->op)) {
-		sql_exp *e = NULL;
-
-		if (!e && rel->l)
-			e = rel_bind_column2(sql, rel->l, tname, cname, f);
-		if (!e && rel->r && (rel->flag == APPLY_JOIN || rel->flag == APPLY_LOJ))
-			return rel_bind_column2(sql, rel->r, tname, cname, f);
-		return e;
 	}
 	return NULL;
 }
@@ -438,7 +424,6 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	if(!rel)
 		return NULL;
 
-	assert(join!=op_apply);
 	rel->l = l;
 	rel->r = r;
 	rel->op = join;
@@ -983,16 +968,13 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_apply:
 		exps = rel_projections(sql, rel->l, tname, settname, intern);
 		if (rel->op == op_full || rel->op == op_right)
 			exps_has_nil(exps);
-		if (rel->op != op_apply || (rel->flag  == APPLY_LOJ || rel->flag == APPLY_JOIN)) {
-			rexps = rel_projections(sql, rel->r, tname, settname, intern);
-			if (rel->op == op_full || rel->op == op_left)
-				exps_has_nil(rexps);
-			exps = list_merge( exps, rexps, (fdup)NULL);
-		}
+		rexps = rel_projections(sql, rel->r, tname, settname, intern);
+		if (rel->op == op_full || rel->op == op_left)
+			exps_has_nil(rexps);
+		exps = list_merge( exps, rexps, (fdup)NULL);
 		return exps;
 	case op_groupby:
 	case op_project:
@@ -1065,7 +1047,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_apply:
 		/* first right (possible subquery) */
 		found = rel_bind_path_(sql, rel->r, e, path);
 		if (!found)

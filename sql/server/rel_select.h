@@ -15,7 +15,7 @@
 
 extern sql_rel *rel_selects(sql_query *query, symbol *sym);
 extern sql_rel *schema_selects(sql_query *query, sql_schema *s, symbol *sym);
-extern sql_rel * rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek, int apply);
+extern sql_rel * rel_subquery(sql_query *query, sql_rel *rel, symbol *sq, exp_kind ek);
 extern sql_rel * rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f);
 extern sql_exp * rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f);
 
@@ -30,7 +30,7 @@ extern sql_exp *rel_unop_(sql_query *query, sql_exp *e, sql_schema *s, char *fna
 extern sql_exp *rel_binop_(sql_query *query, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card);
 extern sql_exp *rel_nop_(sql_query *query, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s, char *fname, int card);
 extern sql_rel *rel_with_query(sql_query *query, symbol *q);
-extern sql_rel *table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral);
+extern sql_rel *table_ref(sql_query *query, sql_rel *rel, symbol *tableref);
 
 extern sql_rel *rel_loader_function(sql_query* query, symbol* s, list *fexps, sql_subfunc **loader_function);
 

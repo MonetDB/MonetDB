@@ -553,7 +553,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 	} else {
 		exp_kind ek = {type_value, card_relation, TRUE};
 
-		r = rel_subquery(query, NULL, val_or_q, ek, 0);
+		r = rel_subquery(query, NULL, val_or_q, ek);
 	}
 	if (!r)
 		return NULL;
@@ -1019,7 +1019,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				v = rel_value_exp(query, &rel_val, a, sql_sel, ek);
 				outer = 1;
 			} else {
-				rel_val = rel_subquery(query, NULL, a, ek, 0);
+				rel_val = rel_subquery(query, NULL, a, ek);
 			}
 			if ((single && !v) || (!single && !rel_val)) {
 				sql->errstr[0] = 0;
@@ -1030,7 +1030,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					v = rel_value_exp(query, &r, a, sql_sel, ek);
 				} else if (!rel_val && r) {
 					query_push_outer(query, r);
-					rel_val = rel_subquery(query, NULL, a, ek, 0);
+					rel_val = rel_subquery(query, NULL, a, ek);
 					query_pop_outer(query);
 					if (0 && r) {
 						list *val_exps = rel_projections(sql, r->r, NULL, 0, 1);
@@ -1226,7 +1226,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			sql_rel *fnd = NULL;
 
 			for (n = fl->h; n && res; n = n->next) {
-				fnd = table_ref(query, NULL, n->data.sym, 0);
+				fnd = table_ref(query, NULL, n->data.sym);
 				if (fnd) {
 					if(alias) {
 						for(node *nn = fnd->exps->h ; nn ; nn = nn->next) {
@@ -1476,7 +1476,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
 	bt = rel_basetable(sql, t, t->base.name);
-	joined = table_ref(query, NULL, tref, 0);
+	joined = table_ref(query, NULL, tref);
 	if (!bt || !joined)
 		return NULL;
 
@@ -2078,7 +2078,7 @@ copyto(sql_query *query, symbol *sq, const char *filename, dlist *seps, const ch
 	const char *ns = (null_string)?null_string:"null";
 	sql_exp *tsep_e, *rsep_e, *ssep_e, *ns_e, *fname_e, *oncl_e;
 	exp_kind ek = {type_value, card_relation, TRUE};
-	sql_rel *r = rel_subquery(query, NULL, sq, ek, 0);
+	sql_rel *r = rel_subquery(query, NULL, sq, ek);
 
 	if (!r)
 		return NULL;

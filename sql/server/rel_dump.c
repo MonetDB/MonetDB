@@ -281,8 +281,6 @@ op2string(operator_type op)
 		return "project";
 	case op_select: 
 		return "select";
-	case op_apply: 
-		return "apply";
 	case op_join: 
 	case op_left: 
 	case op_right: 
@@ -399,7 +397,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	case op_left: 
 	case op_right: 
 	case op_full: 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 	case op_union: 
@@ -412,17 +409,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			r = "right outer join";
 		else if (rel->op == op_full)
 			r = "full outer join";
-		else if (rel->op == op_apply) {
-			r = "apply";
-			if (rel->flag == APPLY_JOIN)
-				r = "apply join";
-			else if (rel->flag == APPLY_LOJ)
-				r = "apply left outer join";
-			else if (rel->flag == APPLY_EXISTS)
-				r = "apply exists";
-			else if (rel->flag == APPLY_NOTEXISTS)
-				r = "apply not exists";
-		}
 		else if (rel->op == op_semi)
 			r = "semijoin";
 		else if (rel->op == op_anti)
@@ -573,7 +559,6 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_left: 
 	case op_right: 
 	case op_full: 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 	case op_union: 

@@ -46,12 +46,6 @@ SEMI/ANTI
 	-> l		is left relation
 	-> r		is rigth relation
 
-APPLY
-	(card MULTI)
-	-> exps		are the bind variables (from the outer, correlated in the subquery)
-	-> l		is outer relation
-	-> r		is subquery relation
-
 UNION|EXCEPT|INTERSECT 
 	(card ATOM, AGGR or MULTI (same card as lower relation))
 	-> exps 	is list of projection expressions

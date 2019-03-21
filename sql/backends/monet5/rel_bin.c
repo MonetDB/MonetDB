@@ -1523,7 +1523,6 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 	case op_right: 
 	case op_full: 
 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 
@@ -5462,8 +5461,6 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		s = rel2bin_join(be, rel, refs);
 		sql->type = Q_TABLE;
 		break;
-	case op_apply:
-		assert(0);
 	case op_semi:
 	case op_anti:
 		s = rel2bin_semijoin(be, rel, refs);
@@ -5767,9 +5764,6 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 		if (rel_deps(sql, r->l, refs, l) != 0 ||
 		    rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
-		break;
-	case op_apply:
-		//assert(0);
 		break;
 	case op_project:
 	case op_select: 

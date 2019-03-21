@@ -161,7 +161,6 @@ typedef enum operator_type {
 	op_full,
 	op_semi,
 	op_anti,
-	op_apply,
 	op_union,
 	op_inter,
 	op_except,
@@ -211,8 +210,6 @@ typedef enum operator_type {
 	(op == op_semi || op == op_anti)
 #define is_joinop(op) \
 	(is_join(op) || is_semi(op))
-#define is_apply(op) \
-	(op == op_apply)
 #define is_select(op) \
 	(op == op_select)
 #define is_set(op) \

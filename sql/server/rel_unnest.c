@@ -23,19 +23,12 @@ exp_has_freevar( sql_exp *e)
 	switch(e->type) {
 	case e_cmp:
 		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
-			if (exps_have_freevar(e->l))
-				return exps_have_freevar(e->r);
-			return 0;
+			return (exps_have_freevar(e->l) || exps_have_freevar(e->r));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			if (exp_has_freevar(e->l)) 
-				return exps_have_freevar(e->r);
-			return 0;
+			return (exp_has_freevar(e->l) || exps_have_freevar(e->r));
 		} else {
-			if (exp_has_freevar(e->l) || 
-			    exp_has_freevar(e->r) || 
-			    (e->f && exp_has_freevar(e->f))) 
-				return 1;
-			return 0;
+			return (exp_has_freevar(e->l) || exp_has_freevar(e->r) || 
+			    (e->f && exp_has_freevar(e->f)));
 		}
 		break;
 	case e_convert: 
@@ -165,7 +158,6 @@ rel_freevar(mvc *sql, sql_rel *rel)
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_apply:
 		exps = exps_freevar(sql, rel->exps);
 		lexps = rel_freevar(sql, rel->l);
 		rexps = rel_freevar(sql, rel->r);
@@ -731,7 +723,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_base(r->op)) { /* TODO table functions need dependent implementation */
+			if (r && is_base(r->op) && need_distinct(l)) { /* TODO table functions need dependent implementation */
 				rel = push_up_table(sql, rel);
 				return rel; 
 			}
@@ -773,7 +765,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	case op_right: 
 	case op_full: 
 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 

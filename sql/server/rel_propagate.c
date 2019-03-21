@@ -510,7 +510,6 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_full:
 		case op_semi:
 		case op_anti:
-		case op_apply:
 			if(rel->l)
 				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			if(rel->r)
