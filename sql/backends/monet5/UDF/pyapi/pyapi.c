@@ -1353,14 +1353,18 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 		marshal_module = PyImport_Import(tmp);
 		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
+			MT_lock_unset(&pyapiLock);
 			return createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Failed to load Marshal module.");
 		}
 		marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
 		if (marshal_loads == NULL) {
+			MT_lock_unset(&pyapiLock);
 			return createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Failed to load function \"loads\" from Marshal module.");
 		}
 		if (PyRun_SimpleString("import numpy") != 0) {
-			return PyError_CreateException("Failed to initialize embedded python", NULL);
+			msg = PyError_CreateException("Failed to initialize embedded python", NULL);
+			MT_lock_unset(&pyapiLock);
+			return msg;
 		}
 		PyEval_SaveThread();
 		if (msg != MAL_SUCCEED) {
@@ -1376,7 +1380,6 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 #endif
 		);
 	}
-	MT_lock_unset(&pyapiLock);
 	MT_lock_unset(&pyapiLock);
 	option_disable_fork = GDKgetenv_istrue(fork_disableflag) || GDKgetenv_isyes(fork_disableflag);
 	return MAL_SUCCEED;
