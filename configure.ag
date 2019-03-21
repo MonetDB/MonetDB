@@ -2623,6 +2623,7 @@ AC_CHECK_FUNCS([\
 	lockf \
 	madvise \
 	mremap \
+	nanosleep \
 	nl_langinfo \
 	_NSGetExecutablePath \
 	pipe2 \
