@@ -95,7 +95,7 @@ Ready.
 #  as "c2_f1"
 #from
 #  "c3_t";
-% .c3_t,	.L20 # table_name
+% sys.c3_t,	.L16 # table_name
 % C,	c2_f1 # name
 % double,	bigint # type
 % 24,	1 # length

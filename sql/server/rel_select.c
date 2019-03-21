@@ -121,19 +121,6 @@ _rel_lastexp(mvc *sql, sql_rel *rel )
 	return exp_column(sql->sa, e->rname, e->name, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 }
 
-#if 0
-static sql_exp *
-rel_firstexp(sql_rel *rel )
-{
-	sql_exp *e;
-
-	assert(list_length(rel->exps));
-	assert(is_project(rel->op));
-	e = rel->exps->h->data;
-	return e;
-}
-#endif
-
 static sql_exp *
 rel_lastexp(mvc *sql, sql_rel *rel )
 {
@@ -2259,17 +2246,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				   get last expression of r */
 				if (r) {
 					rs = rel_lastexp(sql, r);
-#if 0
-					*rel = r;
-					e = exp_compare(sql->sa, ls, rs, cmp_type);
-					if (!is_sql_sel(f))
-						return e;
-			
-					/* For selection we need to convert back into Boolean */
-					ls = rel_unop_(query, ls, NULL, "isnull", card_value);
-					rs = exp_atom_bool(sql->sa, 0);
-					return rel_binop_(query, ls, rs, NULL, "=", card_value);
-#endif
 
 					if (is_sql_sel(f) && ek.card <= card_column && r->card > CARD_ATOM) {
 						sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
@@ -3777,13 +3753,9 @@ rel_bind_groupby(sql_query *query, sql_rel **rel)
 	mvc *sql = query->sql;
 	sql_rel *groupby = *rel, *l;
        
-//	if (!groupby && query_has_outer(query))
-//		groupby = query_fetch_outer(query,0);
 	if (!groupby)
 		return NULL;
 	if (!groupby->l) { 
-		//if (list_empty(groupby->exps))
-		//	return NULL;
 		*rel = groupby = rel_project2groupby(sql, groupby);
 		return groupby;
 	}
@@ -3927,7 +3899,6 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (!args->data.sym) {	/* count(*) case */
 		sql_exp *e;
 		sql_rel *p = groupby;
-		//sql_rel *l = NULL;
 
 		if (strcmp(aname, "count") != 0) {
 			char *uaname = GDKmalloc(strlen(aname) + 1);
@@ -3952,27 +3923,6 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			if (!group)
 				return e;
 		}
-#if 0
-		if (is_groupby((*rel)->op) && is_sql_sel(f)) /* selection */
-			return e;
-
-		e = rel_groupby_add_aggr(sql, groupby, e);
-		if (!group)
-			return e;
-#endif
-
-#if 0
-		if (og)
-	       		l = og->l;
-		if (l && is_sql_sel(f))
-			rel_intermediates_add_exp(sql, groupby, l, e);
-		else if (sel) {
-			rel_intermediates_add_exp(sql, groupby, sel->l, e);
-			if (sel != *rel)
-				rel_intermediates_add_exp(sql, sel, *rel, e);
-		} else
-			rel_intermediates_add_exp(sql, groupby, *rel, e);
-#endif
 		return e;
 	} 
 
@@ -3981,33 +3931,18 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	/* use cnt as nils shouldn't be counted */
 	no_nil = 1;
 
-	//gr = groupby->l;
-	//reset_processed(groupby);
 	if (gr && gr->op == op_project && gr->l)
 		gr = gr->l;
 	for (	; args; args = args->next ) {
-		//int correlated = 0;
 		sql_rel *gl = gr->l;
 		sql_exp *e = rel_value_exp(query, &gl, args->data.sym, f, ek);
-		if (gl != gr->l) {
+		if (gl != gr->l) 
 			gr->l = gl;
-			//correlated = 1;
-		}	
-		/*
-		if (gr && e && is_project(gr->op) && !is_set(gr->op) && e->type != e_column) {
-			e = rel_project_add_exp(sql, gr, e);
-			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e);
-		}
-		*/
-		if (!e || !exp_subtype(e)) { /* we also do not expect parameters here */
-			//set_processed(groupby);
+		if (!e || !exp_subtype(e)) /* we also do not expect parameters here */
 			return NULL;
-		}
 		freevar &= exp_has_freevar(e);
 		list_append(exps, e);
 	}
-	//set_processed(groupby);
-	//groupby->l = gr;
 
 	a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));
 	if (!a && list_length(exps) > 1) { 
@@ -4111,56 +4046,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	}
 	if (a && execute_priv(sql,a->aggr)) {
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
+		sql_rel *p = groupby;
 
-		/* if aggregate is from outer side, move it over */
-		if (0 && freevar && query_has_outer(query)) {
-			/* add to outer */
-			sql_rel *outer = query_pop_outer(query);
-			sql_rel *gb = outer;
-
-			exps_reset_freevar(e->l);
-			if (!is_groupby(gb->op))
-				gb=outer->l;
-			e = rel_groupby_add_aggr(sql, gb, e);
-			e = exp_ref(sql->sa, e);
-			if (gb != outer)
-				rel_project_add_exp(sql, outer, e);
-			query_push_outer(query, outer); 
-			e = exp_ref(sql->sa, e);
-			e->card = CARD_ATOM;
-			set_freevar(e);
-			/*
-			if (!is_sql_sel(f))
-				rel_project_add_exp(sql, *rel, e);
-				*/
-		} else {
-			sql_rel *p = groupby;
-
-			if (!is_groupby(groupby->op))
-				groupby=groupby->l;
-
-			//e->card = groupby->card;
-			if (*rel != groupby || !is_sql_sel(f) || is_sql_orderby(f)) { /* selection */
-				//sql_rel *l = NULL;
-	
-				e = rel_groupby_add_aggr(sql, groupby, e);
-				if (p != groupby || is_sql_orderby(f))
-					e = exp_ref(sql->sa, e);
-				if (!group)
-					return e;
-#if 0
-				if (og)
-		       			l = og->l;
-				if (l && is_sql_sel(f))
-					rel_intermediates_add_exp(sql, groupby, l, e);
-				else if (sel) {
-					rel_intermediates_add_exp(sql, groupby, sel->l, e);
-					if (sel != *rel)
-						rel_intermediates_add_exp(sql, sel, *rel, e);
-				} else
-					rel_intermediates_add_exp(sql, groupby, *rel, e);
-#endif
-			}
+		if (!is_groupby(groupby->op))
+			groupby=groupby->l;
+		if (*rel != groupby || !is_sql_sel(f) || is_sql_orderby(f)) { /* selection */
+			e = rel_groupby_add_aggr(sql, groupby, e);
+			if (p != groupby || is_sql_orderby(f))
+				e = exp_ref(sql->sa, e);
+			if (!group)
+				return e;
 		}
 		return e;
 	} else {
@@ -4538,7 +4433,6 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 	r = r->l;
 	if (!r)
 		return e;
-	//set_processed(r);
 	if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 		e = rel_bind_column(sql, r, name, sql_sel | sql_orderby);
@@ -4703,20 +4597,13 @@ exp_rewrite(mvc *sql, sql_exp *e, sql_rel *r)
 
 /* second complex columns only */
 static sql_exp *
-rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
+rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = *R;
 	sql_exp *e = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
 
-	(void)f;
-	/*
-	if (is_sql_orderby(f)) {
-		assert(is_project(r->op));
-		r = r->l;
-	}
-	*/
 	if (!r)
 		return e;
 
@@ -4726,13 +4613,7 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	}
 
 	if (!e) {
-		//sql_rel *or = r;
-
 		e = rel_value_exp(query, &r, column_r, sql_sel | sql_orderby, ek);
-		/*
-		if (r && or != r)
-			(*R)->l = r;
-			*/
 		/* add to internal project */
 		if (e && is_processed(r)) {
 			e = rel_project_add_exp(sql, r, e);
@@ -4753,8 +4634,6 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 			e = rel_value_exp(query, &nr, column_r, sql_sel | sql_orderby, ek);
 			if (e) {
 				/* first rewrite e back into current column names */
-				//e = exp_rewrite(sql, e, nr);
-				
 				e = rel_project_add_exp(sql, r, e);
 				e = rel_lastexp(sql, r);
 			}
@@ -4871,7 +4750,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 						p = s;
 					}
 					if (is_groupby(g->op)) { /* check for is processed */
-						e = rel_order_by_column_exp(query, &g, col, sql_sel);
+						e = rel_order_by_column_exp(query, &g, col);
 						if (e && g != p->l)
 							p->l = g;
 						if (!e && sql->session->status != -ERR_AMBIGUOUS) {
@@ -4884,7 +4763,7 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				if (e && e->card != rel->card && e->card != CARD_ATOM)
 					e = NULL;
 				if (!e)
-					e = rel_order_by_column_exp(query, &rel, col, f);
+					e = rel_order_by_column_exp(query, &rel, col);
 			}
 			if (!e) 
 				return NULL;
@@ -6124,20 +6003,13 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			if (!gbe)
 				return NULL;
 			rel = rel_groupby(sql, rel, gbe);
-			//aggr = 1;
 		}
-		/*
-		if (!sn->having)
-			set_processed(rel);
-			*/
 	}
 
 	if (sn->having) {
 		/* having implies group by, ie if not supplied do a group by */
 		if (rel->op != op_groupby)
 			rel = rel_groupby(sql, rel, NULL);
-		//aggr = 1;
-		//if (rel) set_processed(rel);
 	}
 
 	n = sn->selection->h;
@@ -6160,10 +6032,6 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		if (inner != o_inner) {  /* relation got rewritten */
 			if (!inner)
 				return NULL;
-			/*
-			if (is_groupby(inner->op))
-				aggr = 1;
-			*/
 			rel = inner;
 		}
 
@@ -6181,7 +6049,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			   We try hard to keep a projection
 			   around this inner relation.
 			*/
-			if (!is_project(inner->op) /*&& is_processed(inner)*/) {
+			if (!is_project(inner->op)) {
 				if (inner != o_inner && pre_prj) {
 					inner = rel_project(sql->sa, inner, pre_prj);
 					reset_processed(inner);
@@ -6219,20 +6087,6 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot compare sets with values, probably an aggregate function missing");
 		rel -> l = inner;
 	}
-	/*
-	if (rel)
-		set_processed(rel);
-	if (aggr && rel) {
-		sql_rel *l = rel;
-		while(l && !is_groupby(l->op))
-			if (is_project(l->op) || is_select(l->op))
-				l = l -> l;
-			else
-				l = NULL;
-		if (l)
-			set_processed(l);
-	}
-	*/
 
 	if (rel && sn->distinct)
 		rel = rel_distinct(rel);
@@ -6279,8 +6133,6 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	if (sn->sample) {
 		list *exps = new_exp_list(sql->sa);
 		
-		// TODO: add documentation
-
 		dlist* sample_parameters = sn->sample->data.lval;
 
 		sql_exp *sample_size = rel_value_exp( query, NULL, sample_parameters->h->data.sym, 0, ek);

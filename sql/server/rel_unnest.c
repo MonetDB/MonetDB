@@ -619,7 +619,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 
 			l = exp_ref(sql->sa, l);
 			r = exp_ref(sql->sa, r);
-			e = exp_compare(sql->sa, l, r, cmp_equal);
+			e = exp_compare(sql->sa, l, r, is_outerjoin(rel->op)?cmp_equal_nil:cmp_equal);
 			if (!rel->exps)
 				rel->exps = sa_list(sql->sa);
 			append(rel->exps, e);
