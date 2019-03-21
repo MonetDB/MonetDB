@@ -36,7 +36,7 @@ pyapi_export str PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk
 
 pyapi_export str PYAPI3PyAPIprelude(void *ret);
 
-int PYFUNCNAME(PyAPIInitialized)(void);
+bool PYFUNCNAME(PyAPIInitialized)(void);
 
 str _loader_init(void);
 
