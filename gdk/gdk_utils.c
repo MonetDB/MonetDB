@@ -15,6 +15,7 @@
  * logging scheme.
  */
 #include "monetdb_config.h"
+#include "monet_options.h"
 
 #include "gdk.h"
 #include "gdk_private.h"

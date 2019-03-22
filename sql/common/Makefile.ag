@@ -7,7 +7,6 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES = .. ../include ../storage \
-		   ../../common/options \
 		   ../../common/stream \
 		   ../../common/utils \
 		   ../../monetdb5/mal \

@@ -12,7 +12,6 @@ INCLUDES = ../include ../common ../storage \
 		   ../../monetdb5/modules/mal \
 		   ../../monetdb5/extras/rapi \
 		   ../../clients/mapilib \
-		   ../../common/options \
 		   ../../common/stream \
 		   ../../common/utils \
 		   ../../gdk

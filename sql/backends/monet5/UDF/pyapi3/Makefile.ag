@@ -6,7 +6,6 @@
 
 INCLUDES = \
 	../../../../../clients/mapilib \
-	../../../../../common/options \
 	../../../../../common/utils \
 	../../../../../common/stream \
 	../../../../../monetdb5/modules/atoms \
