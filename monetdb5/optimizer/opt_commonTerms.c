@@ -170,9 +170,11 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				i, getArg(p,p->argc-1), HASHinstruction(p), hash[HASHinstruction(p)]);
 		fprintInstruction(stderr, mb, 0, p, LIST_MAL_ALL);
 #endif
-		list[i] = hash[HASHinstruction(p)];
-		hash[HASHinstruction(p)] = i;
-		pushInstruction(mb,p);
+		if ( !mayhaveSideEffects(cntxt, mb, p, TRUE) &&  !isUnsafeFunction(p) && !isUpdateInstruction(p) &&){
+			list[i] = hash[HASHinstruction(p)];
+			hash[HASHinstruction(p)] = i;
+			pushInstruction(mb,p);
+		}
 	}
 	for(; i<slimit; i++)
 		if( old[i])
