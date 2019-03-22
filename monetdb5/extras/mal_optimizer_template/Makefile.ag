@@ -9,7 +9,8 @@ INCLUDES = \
 	../../mal \
 	../../../gdk \
 	../../../common/stream \
-	../../../common/options
+	../../../common/options \
+	../../../common/utils
 
 MTSAFE
 

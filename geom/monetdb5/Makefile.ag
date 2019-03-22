@@ -7,6 +7,7 @@
 MTSAFE
 INCLUDES = ../lib \
            ../../gdk \
+           ../../common/utils \
            ../../common/stream \
            ../../common/options \
            ../../monetdb5/mal \

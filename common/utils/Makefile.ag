@@ -10,6 +10,14 @@ MTSAFE
 
 INCLUDES = ../.. $(openssl_CFLAGS)
 
+EXTRA_DIST = matomic.h
+
+headers_h = {
+	DIR = includedir/monetdb
+	HEADERS = h
+	SOURCES = matomic.h
+}
+
 lib_mutils  =  {
 	NOINST
 	SOURCES = mutils.h mutils.c prompt.c mprompt.h revision.c

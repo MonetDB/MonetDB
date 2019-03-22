@@ -9,6 +9,7 @@
 INCLUDES = .. ../../include ../../common \
 		   ../../../common/options \
 		   ../../../common/stream \
+		   ../../../common/utils \
 		   ../../../gdk \
 		   ../../../monetdb5/modules/atoms \
 		   ../../../monetdb5/modules/kernel \

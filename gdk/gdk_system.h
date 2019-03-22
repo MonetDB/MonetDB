@@ -157,7 +157,7 @@ gdk_export int MT_join_thread(MT_Id t);
 /*
  * @- MT Lock API
  */
-#include "gdk_atomic.h"
+#include "matomic.h"
 
 /* in non-debug builds, we don't keep lock statistics */
 #ifndef NDEBUG

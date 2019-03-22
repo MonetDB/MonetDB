@@ -14,6 +14,7 @@ INCLUDES = ../include ../common ../storage \
 		   ../../clients/mapilib \
 		   ../../common/options \
 		   ../../common/stream \
+		   ../../common/utils \
 		   ../../gdk
 
 AM_YFLAGS = -d -p sql -r all
