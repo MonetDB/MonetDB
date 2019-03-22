@@ -688,6 +688,7 @@
 #include "stream_socket.h"
 #include "mapi.h"
 #include "mcrypt.h"
+#include "matomic.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -952,7 +953,7 @@ static int unquote(const char *msg, char **start, const char **next, int endchar
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
-static bool mapi_initialized = false;
+static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
 
 #define check_stream(mid,s,msg,f,e)					\
 	do {								\
@@ -1036,7 +1037,7 @@ mapi_error_str(Mapi mid)
 }
 
 #ifdef _MSC_VER
-static struct {
+static const struct {
 	int e;
 	const char *m;
 } wsaerrlist[] = {
@@ -1796,7 +1797,7 @@ static Mapi
 mapi_new(void)
 {
 	Mapi mid;
-	static uint32_t index = 0;
+	static ATOMIC_TYPE index = ATOMIC_VAR_INIT(0);
 
 	mid = malloc(sizeof(*mid));
 	if (mid == NULL)
@@ -1804,7 +1805,7 @@ mapi_new(void)
 
 	/* then fill in some details */
 	*mid = (struct MapiStruct) {
-		.index = index++,	/* for distinctions in log records */
+		.index = (uint32_t) ATOMIC_ADD(&index, 1),	/* for distinctions in log records */
 		.auto_commit = true,
 		.error = MOK,
 		.languageId = LANG_SQL,
@@ -1912,8 +1913,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	char *dbname;
 	char *query;
 
-	if (!mapi_initialized) {
-		mapi_initialized = true;
+	if (!ATOMIC_TAS(&mapi_initialized)) {
 		if (mnstr_init() < 0)
 			return NULL;
 	}
@@ -2028,8 +2028,7 @@ mapi_mapi(const char *host, int port, const char *username,
 {
 	Mapi mid;
 
-	if (!mapi_initialized) {
-		mapi_initialized = true;
+	if (!ATOMIC_TAS(&mapi_initialized)) {
 		if (mnstr_init() < 0)
 			return NULL;
 	}
