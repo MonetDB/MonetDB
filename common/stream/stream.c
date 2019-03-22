@@ -52,6 +52,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_socket.h"
+#include "matomic.h"
 
 #include <string.h>
 #include <stddef.h>
@@ -211,9 +212,9 @@ struct stream {
 int
 mnstr_init(void)
 {
-	static bool inited = false;
+	static ATOMIC_FLAG inited = ATOMIC_FLAG_INIT;
 
-	if (inited)
+	if (ATOMIC_TAS(&inited))
 		return 0;
 
 #ifdef NATIVE_WIN32
@@ -224,7 +225,6 @@ mnstr_init(void)
 			return -1;
 	}
 #endif
-	inited = true;
 	return 0;
 }
 
@@ -2149,10 +2149,6 @@ open_wastream(const char *filename)
 #ifdef HAVE_CURL
 #include <curl/curl.h>
 
-#ifdef USE_CURL_MULTI
-static CURLM *multi_handle;
-#endif
-
 struct curl_data {
 	CURL *handle;
 	char *buffer;		/* buffer to store incoming data */
@@ -2166,6 +2162,7 @@ struct curl_data {
 #endif
 };
 #ifdef USE_CURL_MULTI
+static CURLM *multi_handle;
 static struct curl_data *curl_handles;
 #endif
 

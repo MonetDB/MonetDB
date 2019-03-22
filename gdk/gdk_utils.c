@@ -15,6 +15,7 @@
  * logging scheme.
  */
 #include "monetdb_config.h"
+#include "monet_options.h"
 
 #include "gdk.h"
 #include "gdk_private.h"
@@ -290,7 +291,7 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
  * the compiler) for both the GNU C compiler and Microsoft Visual
  * Studio.  By doing this, we avoid locking overhead.  There is also a
  * fall-back for other compilers. */
-#include "gdk_atomic.h"
+#include "matomic.h"
 static ATOMIC_TYPE GDK_mallocedbytes_estimate = ATOMIC_VAR_INIT(0);
 #ifndef NDEBUG
 static volatile lng GDK_malloc_success_count = -1;

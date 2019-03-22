@@ -49,8 +49,8 @@
  * using the ATOMIC_FLAG_INIT macro.
  */
 
-#ifndef _GDK_ATOMIC_H_
-#define _GDK_ATOMIC_H_
+#ifndef _MATOMIC_H_
+#define _MATOMIC_H_
 
 /* define this if you don't want to use atomic instructions */
 /* #define NO_ATOMIC_INSTRUCTIONS */
@@ -461,4 +461,4 @@ ATOMIC_CLEAR(ATOMIC_FLAG *var)
 
 #endif
 
-#endif	/* _GDK_ATOMIC_H_ */
+#endif	/* _MATOMIC_H_ */

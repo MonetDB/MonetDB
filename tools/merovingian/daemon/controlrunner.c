@@ -20,6 +20,7 @@
 #include <signal.h>
 #include <fcntl.h>
 
+#include "monet_options.h"
 #include "msabaoth.h"
 #include "mcrypt.h"
 #include "utils/utils.h"
