@@ -1099,11 +1099,15 @@ win_mkdir(const char *pathname, const int mode)
 void
 MT_sleep_ms(unsigned int ms)
 {
-	struct timeval tv;
-
-	tv.tv_sec = ms / 1000;
-	tv.tv_usec = 1000 * (ms % 1000);
-	(void) select(0, NULL, NULL, NULL, &tv);
+#ifdef HAVE_NANOSLEEP
+	(void) nanosleep(&(struct timespec) {.tv_sec = ms / 1000,
+				.tv_nsec = ms == 1 ? 1000 : (long) (ms % 1000) * 1000000,},
+		NULL);
+#else
+	(void) select(0, NULL, NULL, NULL,
+		      &(struct timeval) {.tv_sec = ms / 1000,
+				      .tv_usec = ms == 1 ? 1 : (ms % 1000) * 1000,});
+#endif
 }
 
 #else /* WIN32 */
