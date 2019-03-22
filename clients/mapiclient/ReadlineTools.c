@@ -41,7 +41,7 @@ static const char *sql_commands[] = {
 static Mapi _mid;
 static char _history_file[FILENAME_MAX];
 static int _save_history = 0;
-static char *language;
+static const char *language;
 
 static char *
 sql_tablename_generator(const char *text, int state)
@@ -302,7 +302,7 @@ continue_completion(rl_completion_func_t * func)
 }
 
 void
-init_readline(Mapi mid, char *lang, int save_history)
+init_readline(Mapi mid, const char *lang, int save_history)
 {
 	language = lang;
 	_mid = mid;
