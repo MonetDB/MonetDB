@@ -322,7 +322,6 @@ init_readline(Mapi mid, const char *lang, int save_history)
 
 	if (save_history) {
 		int len;
-#ifndef NATIVE_WIN32
 		if (getenv("HOME") != NULL) {
 			len = snprintf(_history_file, FILENAME_MAX,
 				 "%s/.mapiclient_history_%s",
@@ -332,15 +331,6 @@ init_readline(Mapi mid, const char *lang, int save_history)
 			else
 				_save_history = 1;
 		}
-#else
-		len = snprintf(_history_file, FILENAME_MAX,
-			 "%s%c_mapiclient_history_%s",
-			 mo_find_option(NULL, 0, "prefix"), DIR_SEP, language);
-		if (len == -1 || len >= FILENAME_MAX)
-			fprintf(stderr, "Warning: history filename path is too large\n");
-		else
-			_save_history = 1;
-#endif
 		if (_save_history) {
 			FILE *f;
 			switch (read_history(_history_file)) {
