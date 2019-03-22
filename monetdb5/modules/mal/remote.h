@@ -56,7 +56,6 @@ mal_export str RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 mal_export str RMTdisconnect(void *ret, str *conn);
 mal_export str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn);
 mal_export str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
