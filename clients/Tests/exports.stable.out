@@ -2264,7 +2264,7 @@ str groupbyRef;
 str groupdoneRef;
 int hasCommonResults(InstrPtr p, InstrPtr q);
 int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
-int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);
+int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
 str hashRef;
 int have_hge;
