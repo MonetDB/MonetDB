@@ -2343,15 +2343,17 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		symbol *lo = sc->data.sym;
 		sql_rel *orel = *rel, *sq = NULL;
 		list *pexps = NULL;
-		int needproj = 0, exists=(sc->token == SQL_EXISTS);
-
+		int needproj = 0, exists=(sc->token == SQL_EXISTS), is_value = is_sql_sel(f);
 		sql_exp *le;
+
+		if (ek.type == type_value)
+			is_value = 1;
 
 		/* no input, assume single value */
 		if ((!orel || (is_project(orel->op) && !is_processed(orel) && !orel->l && list_empty(orel->exps))) && !query_has_outer(query))
 			orel = *rel = rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1));
 		ek.card = card_set;
-		if (is_sql_sel(f) && orel && is_project(orel->op) && !is_processed(orel)) {
+		if (is_value && orel && is_project(orel->op) && !is_processed(orel)) {
 			needproj = 1;
 			pexps = orel->exps;
 			*rel = orel->l;
@@ -2379,14 +2381,14 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 
 			//le = rel_lastexp(sql, sq);
 			le = _rel_lastexp(sql, sq);
-			if (is_sql_sel(f)) { /* aggr (not) exist */
+			if (is_value) { /* aggr (not) exist */
 				sq = rel_groupby(sql, sq, NULL);
 				ea = sql_bind_aggr(sql->sa, sql->session->schema, exists?"exist":"not_exist", exp_subtype(le));
 				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_ATOM, 0);
 				le = rel_groupby_add_aggr(sql, sq, le);
 				le = exp_ref(sql->sa, le);
 			} 
-			*rel = rel_crossproduct(sql->sa, *rel, sq, is_sql_sel(f)?op_left:exists?op_semi:op_anti); 
+			*rel = rel_crossproduct(sql->sa, *rel, sq, is_value?op_left:exists?op_semi:op_anti); 
 			set_dependent(*rel);
 			if (*rel && needproj) {
 				*rel = rel_project(sql->sa, *rel, pexps);
@@ -2423,15 +2425,16 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 			if (!exp_is_atom(le))
 				le = _rel_lastexp(sql, sq);
-			if (is_sql_sel(f)) { /* aggr (not) exist */
+			if (is_value) { /* aggr (not) exist */
 				sq = rel_groupby(sql, sq, NULL);
 				ea = sql_bind_aggr(sql->sa, sql->session->schema, exists?"exist":"not_exist", exp_subtype(le));
 				le = exp_aggr1(sql->sa, le, ea, 0, 0, CARD_ATOM, 0);
 				le = rel_groupby_add_aggr(sql, sq, le);
 				le = exp_ref(sql->sa, le);
 			}
-			*rel = rel_crossproduct(sql->sa, *rel, sq, is_sql_sel(f)?op_left:exists?op_semi:op_anti); 
-			set_dependent(*rel);
+			*rel = rel_crossproduct(sql->sa, *rel, sq, is_value?op_left:exists?op_semi:op_anti); 
+			if (rel_has_freevar(sq))
+				set_dependent(*rel);
 			if (*rel && needproj) {
 				*rel = rel_project(sql->sa, *rel, pexps);
 				reset_processed(*rel);
