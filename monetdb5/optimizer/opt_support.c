@@ -471,6 +471,11 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
 		return hasSideEffects(mb, p, strict);
+	//  a manifold instruction can also have side effects.
+	//  for this to check we need the function signature, not its function address.
+	//  The easy way out now is to consider all manifold instructions as potentially having side effects.
+	if ( getModuleId(p) == malRef && getFunctionId(p) == manifoldRef)
+		return TRUE;
 	if (MANIFOLDtypecheck(cntxt,mb,p,1) == NULL)
 		return TRUE;
 	return FALSE;
