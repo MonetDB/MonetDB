@@ -759,6 +759,9 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	if (!rel)
 		return rel;
 
+	if (is_dependent(rel)) 
+		rel = rel_unnest_dependent(sql, rel);
+
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
@@ -797,7 +800,5 @@ rel_unnest(mvc *sql, sql_rel *rel)
 		rel->r = rel_unnest(sql, rel->r);
 		break;
 	}
-	if (is_dependent(rel)) 
-		rel = rel_unnest_dependent(sql, rel);
 	return rel;
 }
