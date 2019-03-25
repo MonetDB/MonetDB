@@ -1050,8 +1050,8 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				if (single) {
 					if (!exp_name(v))
 						exp_label(sql->sa, v, ++sql->label);
-					if (rel_val->op != op_project)
-						rel_val = rel_project(sql->sa, rel_val, NULL);// rel_projections(sql, rel_val, NULL, 0, 1));
+					if (rel_val->op != op_project || is_processed(rel_val))
+						rel_val = rel_project(sql->sa, rel_val, NULL);
 					v = rel_project_add_exp(sql, rel_val, v);
 					reset_processed(rel_val);
 				}

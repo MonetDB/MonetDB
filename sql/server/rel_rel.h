@@ -58,11 +58,6 @@ extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_ty
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
-#define mark_anyequal	 1
-#define mark_allnotequal 2
-#define mark_exists 9
-#define mark_notexists 10
-extern sql_rel * rel_mark(mvc *sql, sql_rel *l, sql_rel *r, list *jexps, sql_exp *le, sql_exp *re, int mark_op);
 /* in case e is an constant and rel is a simple project of only e, free rel */
 extern sql_exp *rel_is_constant(sql_rel **rel, sql_exp *e);
 

@@ -66,13 +66,16 @@ rel_has_freevar( sql_rel *rel )
 {
 	if (is_basetable(rel->op))
 		return 0;
+	else if (is_base(rel->op))
+		return exps_have_freevar(rel->exps) ||
+			(rel->l && rel_has_freevar(rel->l));
 	else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op))
 		return exps_have_freevar(rel->exps) ||
 			(rel->l && rel_has_freevar(rel->l));
 	else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op))
 		return exps_have_freevar(rel->exps) ||
 			rel_has_freevar(rel->l) || rel_has_freevar(rel->r);
-	return 1;
+	return 0;
 }
 
 static list *

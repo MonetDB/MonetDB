@@ -58,6 +58,12 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
+
+	case mark_in: 		r = "any ="; break;
+	case mark_notin: 	r = "all <>"; break;
+	case mark_exists: 	r = "exists"; break;
+	case mark_notexists: 	r = "!exists"; break;
+
 	case cmp_filter: 	r = "filter"; break;
 	default:
 		r = "";

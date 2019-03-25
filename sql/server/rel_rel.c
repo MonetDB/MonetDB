@@ -208,11 +208,15 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		r = rel_bind_column_(sql, p, rel->r, cname);
 
 		if (!r || !rel_issubquery(right)) {
-			*p = rel;
-			l = rel_bind_column_(sql, p, rel->l, cname);
-			if (l && r && !rel_issubquery(r)) {
-				(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-				return NULL;
+			sql_exp *e = r?exps_bind_column(r->exps, cname, &ambiguous):NULL;
+
+			if (!r || !e || !is_freevar(e)) {
+				*p = rel;
+				l = rel_bind_column_(sql, p, rel->l, cname);
+				if (l && r && !rel_issubquery(r)) {
+					(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+					return NULL;
+				}
 			}
 		}
 		if (sql->session->status == -ERR_AMBIGUOUS)
@@ -430,58 +434,6 @@ rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->nrcols = l->nrcols + r->nrcols;
-	return rel;
-}
-
-static char *
-mark_aggr( int op)
-{
-	(void)op;
-	switch(op) {
-	case mark_anyequal:
-		return "anyequal";
-	case mark_allnotequal:
-		return "allnotequal";
-	case mark_exists:
-		return "exist";
-	case mark_notexists:
-		return "not_exist";
-	default:
-		assert(0);
-		return "anyequal";
-	}
-}
-
-sql_rel *
-rel_mark(mvc *sql, sql_rel *left, sql_rel *right, list *jexps, sql_exp *l, sql_exp *r, int mark_op)
-{
-	sql_rel *rel;
-	sql_exp *id, *me;
-	list *exps;
-	sql_subaggr *markaggr = NULL;
-
-	if (!left)
-		left = rel_project_exp(sql->sa, l);
-	left = rel_add_identity(sql, left, &id);
-	id = exp_ref(sql->sa, id);
-	exps = rel_projections(sql, left, NULL, 1/*keep names */, 1);
-	rel = rel_crossproduct(sql->sa, left, right, (mark_op<=mark_allnotequal)?op_left:op_join);
-	if (jexps)
-		rel->exps = jexps;
-	rel = rel_groupby(sql, rel, exp2list(sql->sa, id)); 
-	rel->exps = exps; 
-	/* add mark expression */
-	if (mark_op == mark_exists || mark_op == mark_notexists) {
-		l = r; 
-		r = NULL;
-	}
-	markaggr = sql_bind_aggr(sql->sa, sql->session->schema, mark_aggr(mark_op), exp_subtype(l));
-	me = exp_aggr1(sql->sa, l, markaggr, 0, 0, CARD_ATOM, 0);
-	set_intern(me);
-	if (r)
-		append(me->l, r);
-	append(rel->exps, me);
-	exp_label(sql->sa, me, ++sql->label);
 	return rel;
 }
 

@@ -183,7 +183,6 @@ exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 	return e;
 }
 
-
 static sql_subtype*
 dup_subtype(sql_allocator *sa, sql_subtype *st)
 {
