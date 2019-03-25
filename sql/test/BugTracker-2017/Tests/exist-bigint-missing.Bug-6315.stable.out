@@ -30,7 +30,7 @@ Ready.
 #                else (false)
 #        end
 #from sys.table_types limit 3;
-% sys.L37 # table_name
+% .L37 # table_name
 % L37 # name
 % boolean # type
 % 5 # length
@@ -43,8 +43,8 @@ Ready.
 #                else (false)
 #        end
 #from sys.table_types limit 3;
-% sys.L40 # table_name
-% L40 # name
+% .L41 # table_name
+% L41 # name
 % boolean # type
 % 5 # length
 [ true	]

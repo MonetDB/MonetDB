@@ -1981,6 +1981,7 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 		ne->p = prop_copy(sa, e->p);
 	if (e->name)
 		exp_setname(sa, ne, exp_find_rel_name(e), exp_name(e));
+	ne->freevar = e->freevar;
 	return ne;
 }
 

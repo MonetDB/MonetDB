@@ -260,6 +260,79 @@ rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e)
 	}
 }
 
+static sql_exp * push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e);
+
+static list *
+push_up_project_exps(mvc *sql, sql_rel *rel, list *exps)
+{
+	node *n;
+
+	if (!exps)
+		return exps;
+
+	for(n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+
+		n->data = push_up_project_exp(sql, rel, e);
+	}
+	return exps;
+}
+
+static sql_exp *
+push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	switch(e->type) {
+	case e_cmp:
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+			e->l = push_up_project_exps(sql, rel, e->l);
+			e->r = push_up_project_exps(sql, rel, e->r);
+			return e;
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			e->l = push_up_project_exp(sql, rel, e->l);
+			e->r = push_up_project_exps(sql, rel, e->r);
+			return e;
+		} else {
+			e->l = push_up_project_exp(sql, rel, e->l);
+			e->r = push_up_project_exp(sql, rel, e->r);
+			if (e->f)
+				e->f = push_up_project_exp(sql, rel, e->f);
+		}
+		break;
+	case e_convert: 
+		e->l = push_up_project_exp(sql, rel, e->l);
+		break;
+	case e_func: 
+	case e_aggr: 
+		if (e->l) 
+			e->l = push_up_project_exps(sql, rel, e->l);
+		break;
+	case e_column: 
+		{
+		    	sql_exp *ne;
+
+			/* include project or just lookup */	
+			if (e->l) {
+				ne = exps_bind_column2(rel->exps, e->l, e->r );
+			} else {
+				ne = exps_bind_column(rel->exps, e->r, NULL);
+			}
+			if (ne) {
+				if (ne->type == e_column) {
+					/* deref alias */
+					e->l = ne->l;
+					e->r = ne->r;
+				} else {
+					return push_up_project_exp(sql, rel, ne);
+				}
+			}
+		} break;	
+	case e_atom: 
+	case e_psm: 
+		break;
+	}
+	return e;
+}
+
 static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel) 
 {
@@ -330,8 +403,12 @@ push_up_project(mvc *sql, sql_rel *rel)
 		}
 	}
 	/* a dependent semi/anti join with a project on the right side, could be removed, later we could add renaming */
+	/* renames could be needed for the join expressions */
 	if (rel && is_semi(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
+
+		/* merge project expressions into the join expressions  */
+		rel->exps = push_up_project_exps(sql, r, rel->exps);
 
 		if (r && r->op == op_project) {
 			/* remove old project */
@@ -357,12 +434,14 @@ push_up_select(mvc *sql, sql_rel *rel)
 			for (n=r->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
+				e = exp_copy(sql->sa, e);
 				if (exp_has_freevar(e)) 
 					rel_bind_var(sql, rel->l, e);
 				rel_join_add_exp(sql->sa, rel, e);
 			}
 			/* remove select */
-			rel->r = r->l;
+			rel->r = rel_dup(r->l);
+			rel_destroy(r);
 		}
 	}
 	return rel;
@@ -499,7 +578,7 @@ push_up_join(mvc *sql, sql_rel *rel)
 				j->r = jr;
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
-				j->op = rel->op; // UGH ????
+				j->op = rel->op;
 				move_join_exps(sql, n, j);
 				n->l = rel_project(sql->sa, n->l, rel_projections(sql, n->l, NULL, 1, 1));
 				nr = n->r;
@@ -759,9 +838,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	if (!rel)
 		return rel;
 
-	if (is_dependent(rel)) 
-		rel = rel_unnest_dependent(sql, rel);
-
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
@@ -800,5 +876,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 		rel->r = rel_unnest(sql, rel->r);
 		break;
 	}
+	if (is_dependent(rel)) 
+		rel = rel_unnest_dependent(sql, rel);
 	return rel;
 }

@@ -30,7 +30,7 @@ extern sql_exp *rel_unop_(sql_query *query, sql_exp *e, sql_schema *s, char *fna
 extern sql_exp *rel_binop_(sql_query *query, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card);
 extern sql_exp *rel_nop_(sql_query *query, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s, char *fname, int card);
 extern sql_rel *rel_with_query(sql_query *query, symbol *q);
-extern sql_rel *table_ref(sql_query *query, sql_rel *rel, symbol *tableref);
+extern sql_rel *table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral);
 
 extern sql_rel *rel_loader_function(sql_query* query, symbol* s, list *fexps, sql_subfunc **loader_function);
 

@@ -1226,7 +1226,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			sql_rel *fnd = NULL;
 
 			for (n = fl->h; n && res; n = n->next) {
-				fnd = table_ref(query, NULL, n->data.sym);
+				fnd = table_ref(query, NULL, n->data.sym, 0);
 				if (fnd) {
 					if(alias) {
 						for(node *nn = fnd->exps->h ; nn ; nn = nn->next) {
@@ -1484,7 +1484,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
 	bt = rel_basetable(sql, t, t->base.name);
-	joined = table_ref(query, NULL, tref);
+	joined = table_ref(query, NULL, tref, 0);
 	if (!bt || !joined)
 		return NULL;
 

@@ -550,13 +550,13 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 }
 
 static sql_rel *
-rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast)
+rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int lateral)
 {
 	mvc *sql = query->sql;
 	list *exps = NULL, *tl;
 	node *m;
 	exp_kind ek = {type_value, card_relation, TRUE};
-	sql_rel *sq = NULL;
+	sql_rel *sq = NULL, *outer = NULL;
 	sql_exp *e = NULL;
 	sql_subfunc *sf = NULL;
 	symbol *sym = ast->data.lval->h->data.sym;
@@ -573,7 +573,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast)
 		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
 			if (l->next->next != NULL)
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' requires a single sub query", fname);
-			assert(!rel);
 			sq = rel_subquery(query, NULL, l->next->data.sym, ek);
 		} else if (l->next->type == type_symbol || l->next->type == type_list) {
 			dnode *n;
@@ -585,21 +584,23 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast)
 			else 
 				n = l->next->data.lval->h;
 			for ( ; n; n = n->next) {
-				sql_rel *z = NULL;
-				
-				sql_exp *e = rel_value_exp(query, &z, n->data.sym, sql_sel, iek);
+				sql_exp *e = rel_value_exp(query, &outer, n->data.sym, sql_sel, iek);
 
 				if (!e)
 					return NULL;
 				append(exps, e);
 			}
 			sq = rel_project(sql->sa, NULL, exps);
+			if (lateral && outer) {
+				sq = rel_crossproduct(sql->sa, sq, outer, op_join);
+				set_dependent(sq);
+			}
 		}
 
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
-		if (!sq) 
+		if (!sq || (!lateral && outer))
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 		for (en = sq->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
@@ -808,7 +809,7 @@ check_is_lateral(symbol *tableref)
 }
 
 sql_rel *
-table_ref(sql_query *query, sql_rel *rel, symbol *tableref)
+table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 {
 	mvc *sql = query->sql;
 	char *tname = NULL;
@@ -892,7 +893,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref)
 	} else if (tableref->token == SQL_VALUES) {
 		return rel_values(query, tableref);
 	} else if (tableref->token == SQL_TABLE) {
-		return rel_named_table_function(query, rel, tableref);
+		return rel_named_table_function(query, rel, tableref, lateral);
 	} else if (tableref->token == SQL_TABLE_OPERATOR) {
 		return rel_named_table_operator(query, rel, tableref);
 	} else if (tableref->token == SQL_SELECT) {
@@ -1940,7 +1941,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				sql->errstr[0] = 0;
 
 				r = rel_value_exp(query, &left, n->data.sym, sql_where /* ie no result project */, ek);
-				if (r)
+				if (r && !pexps) 
 					*rel = left; 
 			}
 			if (z && r) {
@@ -3624,6 +3625,16 @@ rel_binop_(sql_query *query, sql_exp *l, sql_exp *r, sql_schema *s,
 	return res;
 }
 
+static int
+rel_check_card(sql_rel *rel, sql_exp *l , sql_exp *r)
+{
+	if (rel && rel->card == CARD_AGGR && l->card != r->card && l->card > CARD_ATOM && r->card > CARD_ATOM) {
+		if(l->card == CARD_AGGR || r->card == CARD_AGGR)
+			return 1;
+	}
+	return 0;
+}
+
 static sql_exp *
 rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 {
@@ -3679,6 +3690,8 @@ rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	if (!l || !r)
 		return NULL;
 
+	if (rel_check_card(*rel, l, r)) 
+		return NULL;	
 	return rel_binop_(query, l, r, s, fname, ek.card);
 }
 
@@ -5844,7 +5857,7 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e )
 
 		if (!is_project((*rel)->op))
 			return NULL;
-		r = rel_named_table_function( query, (*rel)->l, column_e);
+		r = rel_named_table_function( query, (*rel)->l, column_e, 0);
 	
 		if (!r)
 			return NULL;
@@ -6223,7 +6236,7 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 
 	assert(!rel);
 	if (sq->token != SQL_SELECT)
-		return table_ref(query, rel, sq);
+		return table_ref(query, rel, sq, 0);
 
 	/* select ... into is currently not handled here ! */
  	sn = (SelectNode *) sq;
@@ -6257,14 +6270,14 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			int lateral = check_is_lateral(n->data.sym);
 
 			/* just used current expression */
-			fnd = table_ref(query, NULL, n->data.sym);
+			fnd = table_ref(query, NULL, n->data.sym, lateral);
 			if (!fnd && res && lateral && sql->session->status != -ERR_AMBIGUOUS) {
 				/* reset error */
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
 
 				query_push_outer(query, res);
-				fnd = table_ref(query, NULL, n->data.sym);
+				fnd = table_ref(query, NULL, n->data.sym, lateral);
 				query_pop_outer(query);
 			}
 			if (!fnd)
@@ -6331,7 +6344,7 @@ rel_setquery(sql_query *query, sql_rel *rel, symbol *q)
 	sql_rel *t1, *t2; 
 
 	assert(n->next->type == type_int);
-	t1 = table_ref(query, NULL, tab_ref1);
+	t1 = table_ref(query, NULL, tab_ref1, 0);
 	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
 		sql_rel *r = rel;
 
@@ -6341,11 +6354,11 @@ rel_setquery(sql_query *query, sql_rel *rel, symbol *q)
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
-		t1 = table_ref(query, r, tab_ref1);
+		t1 = table_ref(query, r, tab_ref1, 0);
 	}
 	if (!t1)
 		return NULL;
-	t2 = table_ref(query, NULL, tab_ref2);
+	t2 = table_ref(query, NULL, tab_ref2, 0);
 	if (rel && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
 		sql_rel *r = rel;
 
@@ -6356,7 +6369,7 @@ rel_setquery(sql_query *query, sql_rel *rel, symbol *q)
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
-		t2 = table_ref(query, r, tab_ref2);
+		t2 = table_ref(query, r, tab_ref2, 0);
 	}
 	if (!t2)
 		return NULL;
@@ -6422,22 +6435,22 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	}
 
 	lateral = check_is_lateral(tab2);
-	t1 = table_ref(query, NULL, tab1);
+	t1 = table_ref(query, NULL, tab1, 0);
 	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
-		t1 = table_ref(query, NULL, tab1);
+		t1 = table_ref(query, NULL, tab1, 0);
 	}
 	if (t1) {
-		t2 = table_ref(query, NULL, tab2);
+		t2 = table_ref(query, NULL, tab2, 0);
 		if (lateral && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
 
 			query_push_outer(query, t1);
-			t2 = table_ref(query, NULL, tab2);
+			t2 = table_ref(query, NULL, tab2, 0);
 			query_pop_outer(query);
 		}
 	}
@@ -6567,11 +6580,11 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q)
 	dnode *n = q->data.lval->h;
 	symbol *tab1 = n->data.sym;
 	symbol *tab2 = n->next->data.sym;
-	sql_rel *t1 = table_ref(query, rel, tab1);
+	sql_rel *t1 = table_ref(query, rel, tab1, 0);
 	sql_rel *t2 = NULL;
        
 	if (t1)
-		t2 = table_ref(query, rel, tab2);
+		t2 = table_ref(query, rel, tab2, 0);
 	if (!t1 || !t2)
 		return NULL;
 
@@ -6584,7 +6597,7 @@ rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
 {
 	mvc *sql = query->sql;
 	dnode *n = q->data.lval->h;
-	sql_rel *lv = table_ref(query, rel, n->data.sym);
+	sql_rel *lv = table_ref(query, rel, n->data.sym, 0);
 	sql_rel *rv = NULL;
 	int all = n->next->data.i_val;
 	list *lexps, *rexps;
@@ -6592,7 +6605,7 @@ rel_unionjoinquery(sql_query *query, sql_rel *rel, symbol *q)
 	int found = 0;
 
 	if (lv)
-       		rv = table_ref(query, rel, n->next->next->data.sym);
+       		rv = table_ref(query, rel, n->next->next->data.sym, 0);
 	assert(n->next->type == type_int);
 	if (!lv || !rv)
 		return NULL;
