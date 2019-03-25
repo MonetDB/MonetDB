@@ -3792,7 +3792,8 @@ rel_bind_groupby(sql_query *query, sql_rel **rel)
 	if (!groupby)
 		return NULL;
 	if (!groupby->l) { 
-		*rel = groupby = rel_project2groupby(sql, groupby);
+		if (groupby->op != op_groupby)
+			*rel = groupby = rel_project2groupby(sql, groupby);
 		return groupby;
 	}
 	l = groupby->l;
