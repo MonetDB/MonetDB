@@ -579,10 +579,10 @@ push_up_join(mvc *sql, sql_rel *rel)
 				set_dependent(j);
 				n = rel_crossproduct(sql->sa, rel, j, j->op);
 				j->op = rel->op;
-				move_join_exps(sql, n, j);
 				n->l = rel_project(sql->sa, n->l, rel_projections(sql, n->l, NULL, 1, 1));
 				nr = n->r;
 				nr = n->r = rel_project(sql->sa, n->r, rel_projections(sql, nr->r, NULL, 1, 1));
+				move_join_exps(sql, n, j);
 				/* add nr->l exps with labels */ 
 				/* create jexps */
 				if (!n->exps)
@@ -663,7 +663,14 @@ push_up_table(mvc *sql, sql_rel *rel)
 
 		/* for now just push d into function */
 		if (d && need_distinct(d) && tf && is_base(tf->op)) {
-			tf->l = rel_dup(d);
+			if (tf->l) {
+				sql_rel *l = tf->l;
+
+				assert(!l->l);
+				l->l = rel_dup(d);
+			} else {
+				tf->l = rel_dup(d);
+			}
 			return rel;
 		}
 	}
@@ -688,7 +695,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		if (is_semi(rel->op)) {
 			if (rel->op == op_semi)
 				r->op = op_join;
-			move_join_exps(sql, r, rel);
+			move_join_exps(sql, rel, r);
 		}
 		set_dependent(r);
 		r = rel_project(sql->sa, r, (is_semi(r->op))?sa_list(sql->sa):rel_projections(sql, r->r, NULL, 1, 1));
