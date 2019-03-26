@@ -187,20 +187,20 @@ MALoptimizer(Client c)
 }
 
 /* Only used by opt_commonTerms! */
-int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop){
+int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q){
 	int i;
 
 	if ( getFunctionId(q) == getFunctionId(p) &&
 		 getModuleId(q) == getModuleId(p) &&
-		getFunctionId(q) != 0 &&
-		getModuleId(q) != 0) {
-		if( q->retc != p->retc || q->argc != p->argc) return FALSE;
-		assert(stop <= p->argc);
-		for( i=0; i<stop; i++)
-			if (getArgType(mb,p,i) != getArgType(mb,q,i))
+		 getFunctionId(q) != 0 &&
+		 getModuleId(q) != 0) {
+			if( q->retc != p->retc || q->argc != p->argc) 
 				return FALSE;
-		return TRUE;
-	}
+			for( i=0; i < p->argc; i++)
+				if (getArgType(mb,p,i) != getArgType(mb,q,i))
+					return FALSE;
+			return TRUE;
+		}
 	return FALSE;
 }
 
@@ -471,6 +471,11 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
 		return hasSideEffects(mb, p, strict);
+	//  a manifold instruction can also have side effects.
+	//  for this to check we need the function signature, not its function address.
+	//  The easy way out now is to consider all manifold instructions as potentially having side effects.
+	if ( getModuleId(p) == malRef && getFunctionId(p) == manifoldRef)
+		return TRUE;
 	if (MANIFOLDtypecheck(cntxt,mb,p,1) == NULL)
 		return TRUE;
 	return FALSE;
