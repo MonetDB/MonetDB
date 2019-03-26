@@ -5928,8 +5928,8 @@ rel_simple_select(sql_query *query, sql_rel *rel, symbol *where, dlist *selectio
 		}
 
 		if (ce && exp_subtype(ce)) {
-			/* new relational, we need to rewrite */
-			if (!is_project(inner->op) /*&& is_processed(inner) */) {
+			/* we need a project */
+			if (!is_simple_project(inner->op) /*&& is_processed(inner) */) {
 				if (inner != o_inner && pre_prj) {
 					inner = rel_project(sql->sa, inner, pre_prj);
 					reset_processed(inner);
