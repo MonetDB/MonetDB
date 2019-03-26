@@ -1720,6 +1720,7 @@ def GetBitsAndModsAndThreads(env) :
     proc = process.Popen(cmd, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
     proc.killed = False
+    proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
     try:
         t.start()
@@ -2398,6 +2399,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                                  stderr = process.PIPE,
                                  universal_newlines = True)
             proc.killed = False
+            proc.onechild = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
                 t.start()
@@ -2466,6 +2468,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                                  stderr = process.PIPE,
                                  universal_newlines = True)
             proc.killed = False
+            proc.onechild = False
             t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
             try:
                 t.start()
@@ -2714,6 +2717,7 @@ def getkids():
     return procs
 
 def killchildren(pid, procs = None):
+    # not called on Windows
     # kill the specified process ID and all its children
     if procs is None:
         try:
@@ -2739,6 +2743,7 @@ def killchildren(pid, procs = None):
             print('killing process %d failed' % pid)
 
 def reallyKill(proc):
+    # not called on Windows
     killchildren(proc.pid, getkids())
 
 def killProc(proc, outfile = None, cmd = None):
@@ -2793,10 +2798,11 @@ def killProc(proc, outfile = None, cmd = None):
             print('cannot write stack trace')
             print(out)
     proc.killed = True
-    try:
-        signal.SIGKILL          # Windows doesn't have this
-        os.kill
-    except AttributeError:
+    if proc.onechild:
+        if procdebug:
+            print('killProc: calling proc.terminate() on PID %d' % proc.pid)
+        proc.terminate()
+    elif os.name == 'nt':
         if procdebug:
             print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
         p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
@@ -2805,6 +2811,7 @@ def killProc(proc, outfile = None, cmd = None):
         out, err = p.communicate()
         if procdebug:
             print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
+        proc.terminate()
     else:
         killchildren(proc.pid)
 
@@ -2829,6 +2836,7 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     if TestErr == process.PIPE:
         proc.stderr = process._BufferedPipe(proc.stderr)
     proc.killed = False
+    proc.onechild = True
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
 
@@ -2851,7 +2859,7 @@ def CollectIt(pOut, TestOut) :
             TestOut.write(buf)
 ### CollectIt(pOut, pErr, TestOut, TestErr) #
 
-def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
+def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
     global setpgrp
     if type(TestIn) is type(''):
         TestInput = TestIn
@@ -2868,6 +2876,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     proc = process.Popen(cmd, stdin = TestIn, stdout = TestOut,
                          stderr = TestErr, universal_newlines = True)
     proc.killed = False
+    proc.onechild = onechild
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     try:
         t.start()
@@ -2887,7 +2896,7 @@ def RunIt(cmd, TestIn, TestOut, TestErr, TimeOut) :
     if rc == 'interrupt':
         raise KeyboardInterrupt
     return rc
-### RunIt(cmd, TestIn, TestOut, TestErr) #
+### RunIt(cmd, onechild, TestIn, TestOut, TestErr) #
 
 def Log() :
     time.strftime('%H:%M:%S> ',time.localtime(time.time()))
@@ -3125,10 +3134,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if ServerReady:
             if   CALL == "other":
                 cmd = [os.path.join(".", TST + EXT), TST] + PRELUDE
-                returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
-                returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
+                returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
                 cmd = splitcommand(exe['mserver5'][1]) + LOCAL_CONF + PRELUDE
                 cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
@@ -3147,7 +3156,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 for f in d:
                     if test.match(f):
                         cmd.append(f)
-                        returncode = RunIt(cmd, openutf8(os.devnull), ClntOut, ClntErr, TIMEOUT)
+                        returncode = RunIt(cmd, True, openutf8(os.devnull), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
             elif CALL in ["malC", "malCXs"]:
@@ -3168,7 +3177,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 else:
                     Clnt = []   # cannot happen
                 for f in TSTs:
-                    returncode = RunIt(Clnt, openutf8(f), ClntOut, ClntErr, TIMEOUT)
+                    returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
 
@@ -3191,19 +3200,19 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if passwd:
                     Clnt.append('-P%s' % passwd)
                 for f in TSTs:
-                    returncode = RunIt(Clnt, openutf8(f), ClntOut, ClntErr, TIMEOUT)
+                    returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
             elif CALL == "R":
                 Clnt = splitcommand(exe['R_Client'][1])
-                RunIt(Clnt, openutf8(TST+EXT), ClntOut, ClntErr, TIMEOUT)
+                RunIt(Clnt, False, openutf8(TST+EXT), ClntOut, ClntErr, TIMEOUT)
             elif CALL == "ruby":
                 Clnt = splitcommand(exe['ruby_client'][1]) + [TST + EXT]
 
                 Clnt[2], Clnt[1] = Clnt[1], Clnt[2]
                 Clnt.append(env['TSTDB'])
 
-                RunIt(Clnt, "", ClntOut, ClntErr, TIMEOUT)
+                RunIt(Clnt, True, "", ClntOut, ClntErr, TIMEOUT)
         else:
             for fp in ClntOut,ClntErr:
                 fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
@@ -3342,6 +3351,7 @@ def Check(command, input) :
     proc = process.Popen(command, stdin = process.PIPE, stdout = process.PIPE,
                          stderr = process.PIPE, universal_newlines = True)
     proc.killed = False
+    proc.onechild = True
     t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
     try:
         t.start()
