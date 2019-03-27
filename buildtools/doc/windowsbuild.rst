@@ -691,13 +691,12 @@ Studio Tools`` -> ``Visual Studio x64 Win64 Command Prompt (2010)``
 (this is for a 64-bit build on a 64-bit version of the operating
 system).
 
-When using the Intel compiler, you also need to set the ``CC`` and
-``CXX`` variables::
+When using the Intel compiler, you also need to set the ``CC``
+variable::
 
  set CC=icl -Qstd=c99 -GR- -Qsafeseh-
- set CXX=icl -Qstd=c99 -GR- -Qsafeseh-
 
-(These are the values for the 10.1 and 11.1 versions, for 9.1 replace
+(This is the value for the 10.1 and 11.1 versions, for 9.1 replace
 ``-Qstd=c99`` with ``-Qc99``.)
 
 Internal Variables
