@@ -438,11 +438,15 @@ typedef struct MT_Lock {
 		_DBG_LOCK_COUNT_0(l);					\
 		if (!MT_lock_try(l)) {					\
 			/* we didn't get the lock */			\
+			int _spincnt = 0;				\
 			_DBG_LOCK_CONTENTION(l);			\
 			MT_thread_setlockwait(l);			\
 			do {						\
-				_DBG_LOCK_SLEEP(l);			\
-				MT_sleep_ms(1);				\
+				if (++_spincnt == 2048) {		\
+					_spincnt = 0;			\
+					_DBG_LOCK_SLEEP(l);		\
+					MT_sleep_ms(1);			\
+				}					\
 			} while (!MT_lock_try(l));			\
 			MT_thread_setlockwait(NULL);			\
 		}							\
