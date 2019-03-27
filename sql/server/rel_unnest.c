@@ -692,11 +692,9 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		set_distinct(D);
 
 		r = rel_crossproduct(sql->sa, D, r, rel->op);
-		if (is_semi(rel->op)) {
-			if (rel->op == op_semi)
-				r->op = op_join;
-			move_join_exps(sql, rel, r);
-		}
+		if (is_semi(rel->op)) /* keep semi/anti only on the outer side */
+                	r->op = op_join;
+		move_join_exps(sql, rel, r);
 		set_dependent(r);
 		r = rel_project(sql->sa, r, (is_semi(r->op))?sa_list(sql->sa):rel_projections(sql, r->r, NULL, 1, 1));
 		/* append ad + rename */
@@ -715,9 +713,9 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		}
 		list_merge(r->exps, fd, (fdup)NULL);
 		rel->r = r;
+		if (rel->op == op_left) /* only needed once (inner side) */
+                	rel->op = op_join;
 		reset_dependent(rel);
-		//if (rel->op == op_left)
-			rel->op = op_join;
 		return rel;
 	}
 	return rel;
