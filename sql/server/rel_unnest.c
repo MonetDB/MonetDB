@@ -69,7 +69,7 @@ rel_has_freevar( sql_rel *rel )
 	else if (is_base(rel->op))
 		return exps_have_freevar(rel->exps) ||
 			(rel->l && rel_has_freevar(rel->l));
-	else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op))
+	else if (is_simple_project(rel->op) || is_groupby(rel->op) || is_select(rel->op) || is_topn(rel->op) || is_sample(rel->op))
 		return exps_have_freevar(rel->exps) ||
 			(rel->l && rel_has_freevar(rel->l));
 	else if (is_join(rel->op) || is_set(rel->op) || is_semi(rel->op) || is_modify(rel->op))
@@ -337,7 +337,7 @@ static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel) 
 {
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */ 
-	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
+	if (rel && is_outerjoin(rel->op) && is_dependent(rel) && 0) {
 		sql_rel *r = rel->r;
 
 		/* find constant expressions and move these down */
@@ -389,10 +389,10 @@ push_up_project(mvc *sql, sql_rel *rel)
 				sql_exp *e = m->data;
 
 				if (!e->freevar || exp_name(e)) { /* only skip full freevars */
-					append(n->exps, e);
 					if (exp_has_freevar(e)) 
 						rel_bind_var(sql, rel->l, e);
 				}
+				append(n->exps, e);
 			}
 			assert(!r->r);
 			/* remove old project */
@@ -402,8 +402,7 @@ push_up_project(mvc *sql, sql_rel *rel)
 			return n;
 		}
 	}
-	/* a dependent semi/anti join with a project on the right side, could be removed, later we could add renaming */
-	/* renames could be needed for the join expressions */
+	/* a dependent semi/anti join with a project on the right side, could be removed */
 	if (rel && is_semi(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
@@ -413,6 +412,25 @@ push_up_project(mvc *sql, sql_rel *rel)
 		if (r && r->op == op_project) {
 			/* remove old project */
 			rel->r = r->l;
+			r->l = NULL;
+			rel_destroy(r);
+			return rel;
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
+push_up_topn(mvc *sql, sql_rel *rel) 
+{
+	/* a dependent semi/anti join with a project on the right side, could be removed */
+	if (rel && (is_semi(rel->op) || is_join(rel->op)) && is_dependent(rel)) {
+		sql_rel *r = rel->r;
+
+		if (r && r->op == op_topn) {
+			/* remove old topn */
+			rel->r = r->l;
+			rel = rel_topn(sql->sa, rel, r->exps);
 			r->l = NULL;
 			rel_destroy(r);
 			return rel;
@@ -787,6 +805,11 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 
 			if (r && is_simple_project(r->op)) {
 				rel = push_up_project(sql, rel);
+				return rel_unnest_dependent(sql, rel);
+			}
+
+			if (r && is_topn(r->op)) {
+				rel = push_up_topn(sql, rel);
 				return rel_unnest_dependent(sql, rel);
 			}
 
