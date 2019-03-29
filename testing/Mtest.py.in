@@ -2803,8 +2803,8 @@ def killProc(proc, outfile = None, cmd = None):
     proc.killed = True
     if proc.onechild:
         if procdebug:
-            print('killProc: calling proc.terminate() on PID %d' % proc.pid)
-        proc.terminate()
+            print('killProc: calling proc.kill() on PID %d' % proc.pid)
+        proc.kill()
     elif os.name == 'nt':
         if procdebug:
             print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
@@ -2814,7 +2814,7 @@ def killProc(proc, outfile = None, cmd = None):
         out, err = p.communicate()
         if procdebug:
             print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
-        proc.terminate()
+        proc.kill()
     else:
         killchildren(proc.pid)
 

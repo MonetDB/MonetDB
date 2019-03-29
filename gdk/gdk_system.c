@@ -296,6 +296,7 @@ rm_winthread(struct winthread *w)
 	if (*wp)
 		*wp = w->next;
 	LeaveCriticalSection(&winthread_cs);
+	ATOMIC_DESTROY(&w->exited);
 	free(w);
 }
 
@@ -617,6 +618,7 @@ rm_posthread_locked(struct posthread *p)
 		;
 	if (*pp)
 		*pp = p->next;
+	ATOMIC_DESTROY(&p->exited);
 	free(p);
 }
 

@@ -14,6 +14,7 @@
  * The following operations are defined:
  * ATOMIC_VAR_INIT -- initializer for the variable (not necessarily atomic!);
  * ATOMIC_INIT -- initialize the variable (not necessarily atomic!);
+ * ATOMIC_DESTROY -- destroy the variable
  * ATOMIC_GET -- return the value of a variable;
  * ATOMIC_SET -- set the value of a variable;
  * ATOMIC_XCG -- set the value of a variable, return original value;
@@ -33,6 +34,7 @@
  *
  * Some of these are also available for pointers:
  * ATOMIC_PTR_INIT
+ * ATOMIC_PTR_DESTROY
  * ATOMIC_PTR_GET
  * ATOMIC_PTR_SET
  * ATOMIC_PTR_XCG
@@ -83,6 +85,7 @@ typedef unsigned long long ATOMIC_BASE_TYPE;
 #endif
 
 #define ATOMIC_INIT(var, val)	atomic_init(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
 #define ATOMIC_GET(var)		atomic_load(var)
 #define ATOMIC_SET(var, val)	atomic_store(var, (ATOMIC_BASE_TYPE) (val))
 #define ATOMIC_XCG(var, val)	atomic_exchange(var, (ATOMIC_BASE_TYPE) (val))
@@ -98,6 +101,7 @@ typedef volatile atomic_address ATOMIC_PTR_TYPE;
 typedef void *_Atomic volatile ATOMIC_PTR_TYPE;
 #endif
 #define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
+#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	ATOMIC_VAR_INIT(val)
 #define ATOMIC_PTR_GET(var)		atomic_load(var)
 #define ATOMIC_PTR_SET(var, val)	atomic_store(var, (void *) (val))
@@ -136,6 +140,7 @@ typedef volatile int64_t ATOMIC_TYPE;
 typedef int64_t ATOMIC_BASE_TYPE;
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
 
 #ifdef __INTEL_COMPILER
 #define ATOMIC_GET(var)		_InterlockedExchangeAdd64(var, 0)
@@ -173,6 +178,7 @@ typedef volatile int ATOMIC_TYPE;
 typedef int ATOMIC_BASE_TYPE;
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
 
 #ifdef __INTEL_COMPILER
 #define ATOMIC_GET(var)		_InterlockedExchangeAdd(var, 0)
@@ -207,6 +213,7 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 
 typedef PVOID volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	(val)
 #define ATOMIC_PTR_GET(var)		(*(var))
 #define ATOMIC_PTR_SET(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
@@ -243,6 +250,7 @@ typedef volatile int ATOMIC_TYPE;
 #endif
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
 
 #define ATOMIC_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_BASE_TYPE) (val), __ATOMIC_SEQ_CST)
@@ -255,6 +263,7 @@ typedef volatile int ATOMIC_TYPE;
 
 typedef void *volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_SET(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_XCG(var, val)	__atomic_exchange_n(var, (val), __ATOMIC_SEQ_CST)
@@ -284,6 +293,8 @@ ATOMIC_INIT(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
 }
 #define ATOMIC_INIT(var, val)	ATOMIC_INIT((var), (ATOMIC_BASE_TYPE) (val))
 
+#define ATOMIC_DESTROY(var)	pthread_mutex_destroy(&(var)->lck)
+
 static inline ATOMIC_BASE_TYPE
 ATOMIC_GET(ATOMIC_TYPE *var)
 {
@@ -306,11 +317,12 @@ ATOMIC_SET(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
 static inline ATOMIC_BASE_TYPE
 ATOMIC_XCG(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
 {
-	ATOMIC_BASE_TYPE new;
+	ATOMIC_BASE_TYPE old;
 	pthread_mutex_lock(&var->lck);
-	new = var->val = val;
+	old = var->val;
+	var->val = val;
 	pthread_mutex_unlock(&var->lck);
-	return new;
+	return old;
 }
 #define ATOMIC_XCG(var, val)	ATOMIC_XCG(var, (ATOMIC_BASE_TYPE) (val))
 
@@ -387,6 +399,8 @@ ATOMIC_PTR_INIT(ATOMIC_PTR_TYPE *var, void *val)
 	var->val = val;
 }
 
+#define ATOMIC_PTR_DESTROY(var)	pthread_mutex_destroy(&(var)->lck)
+
 static inline void *
 ATOMIC_PTR_GET(ATOMIC_PTR_TYPE *var)
 {
@@ -408,11 +422,12 @@ ATOMIC_PTR_SET(ATOMIC_PTR_TYPE *var, void *val)
 static inline void *
 ATOMIC_PTR_XCG(ATOMIC_PTR_TYPE *var, void *val)
 {
-	void *new;
+	void *old;
 	pthread_mutex_lock(&var->lck);
-	new = var->val = val;
+	old = var->val;
+	var->val = val;
 	pthread_mutex_unlock(&var->lck);
-	return new;
+	return old;
 }
 
 static inline bool
