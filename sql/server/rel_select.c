@@ -2726,6 +2726,8 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				return rel;
 			} else if ((z || l_used) && r) { /* left is single value/column */
 				if (!is_sql_sel(f)) {
+					if (z)
+						r = rel_lastexp(sql, z);
 					if (rel_convert_types(sql, &l, &r, 1, type_equal_no_any) < 0) 
 						return NULL;
 					//r = exp_compare(sql->sa, l, r, sc->token==SQL_IN?mark_in:mark_notin);
