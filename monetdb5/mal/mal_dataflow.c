@@ -905,16 +905,13 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->cntxt = cntxt;
 	flow->mb = mb;
 	flow->stk = stk;
-	ATOMIC_PTR_INIT(&flow->error, NULL);
 
 	/* keep real block count, exclude brackets */
 	flow->start = startpc + 1;
 	flow->stop = stoppc;
 
-	MT_lock_init(&flow->flowlock, "flow->flowlock");
 	flow->done = q_create(stoppc- startpc+1, "flow->done");
 	if (flow->done == NULL) {
-		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
 		throw(MAL, "dataflow", "runMALdataflow(): Failed to create flow->done queue");
 	}
@@ -922,7 +919,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->status = (FlowEvent)GDKzalloc((stoppc - startpc + 1) * sizeof(FlowEventRec));
 	if (flow->status == NULL) {
 		q_destroy(flow->done);
-		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -932,7 +928,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	if (flow->nodes == NULL) {
 		GDKfree(flow->status);
 		q_destroy(flow->done);
-		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -941,10 +936,11 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		GDKfree(flow->nodes);
 		GDKfree(flow->status);
 		q_destroy(flow->done);
-		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	MT_lock_init(&flow->flowlock, "flow->flowlock");
+	ATOMIC_PTR_INIT(&flow->error, NULL);
 	msg = DFLOWinitBlk(flow, mb, size);
 
 	if (msg == MAL_SUCCEED)
@@ -955,6 +951,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	GDKfree(flow->nodes);
 	q_destroy(flow->done);
 	MT_lock_destroy(&flow->flowlock);
+	ATOMIC_PTR_DESTROY(&flow->error);
 	GDKfree(flow);
 
 	/* we created one worker, now tell one worker to exit again */

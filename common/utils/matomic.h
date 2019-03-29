@@ -34,6 +34,7 @@
  *
  * Some of these are also available for pointers:
  * ATOMIC_PTR_INIT
+ * ATOMIC_PTR_DESTROY
  * ATOMIC_PTR_GET
  * ATOMIC_PTR_SET
  * ATOMIC_PTR_XCG
@@ -100,6 +101,7 @@ typedef volatile atomic_address ATOMIC_PTR_TYPE;
 typedef void *_Atomic volatile ATOMIC_PTR_TYPE;
 #endif
 #define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
+#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	ATOMIC_VAR_INIT(val)
 #define ATOMIC_PTR_GET(var)		atomic_load(var)
 #define ATOMIC_PTR_SET(var, val)	atomic_store(var, (void *) (val))
@@ -211,6 +213,7 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 
 typedef PVOID volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	(val)
 #define ATOMIC_PTR_GET(var)		(*(var))
 #define ATOMIC_PTR_SET(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
@@ -260,6 +263,7 @@ typedef volatile int ATOMIC_TYPE;
 
 typedef void *volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_SET(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_XCG(var, val)	__atomic_exchange_n(var, (val), __ATOMIC_SEQ_CST)
@@ -394,6 +398,8 @@ ATOMIC_PTR_INIT(ATOMIC_PTR_TYPE *var, void *val)
 	pthread_mutex_init(&var->lck, 0);
 	var->val = val;
 }
+
+#define ATOMIC_PTR_DESTROY(var)	pthread_mutex_destroy(&(var)->lck)
 
 static inline void *
 ATOMIC_PTR_GET(ATOMIC_PTR_TYPE *var)
