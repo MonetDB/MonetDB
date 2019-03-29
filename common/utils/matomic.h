@@ -306,11 +306,12 @@ ATOMIC_SET(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
 static inline ATOMIC_BASE_TYPE
 ATOMIC_XCG(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE val)
 {
-	ATOMIC_BASE_TYPE new;
+	ATOMIC_BASE_TYPE old;
 	pthread_mutex_lock(&var->lck);
-	new = var->val = val;
+	old = var->val;
+	var->val = val;
 	pthread_mutex_unlock(&var->lck);
-	return new;
+	return old;
 }
 #define ATOMIC_XCG(var, val)	ATOMIC_XCG(var, (ATOMIC_BASE_TYPE) (val))
 
@@ -408,11 +409,12 @@ ATOMIC_PTR_SET(ATOMIC_PTR_TYPE *var, void *val)
 static inline void *
 ATOMIC_PTR_XCG(ATOMIC_PTR_TYPE *var, void *val)
 {
-	void *new;
+	void *old;
 	pthread_mutex_lock(&var->lck);
-	new = var->val = val;
+	old = var->val;
+	var->val = val;
 	pthread_mutex_unlock(&var->lck);
-	return new;
+	return old;
 }
 
 static inline bool
