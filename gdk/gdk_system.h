@@ -256,6 +256,8 @@ gdk_export int MT_join_thread(MT_Id t);
 					break;				\
 				}					\
 			ATOMIC_CLEAR(&GDKlocklistlock);			\
+			ATOMIC_DESTROY(&(l)->contention);		\
+			ATOMIC_DESTROY(&(l)->sleep);			\
 		}							\
 	} while (0)
 

@@ -14,6 +14,7 @@
  * The following operations are defined:
  * ATOMIC_VAR_INIT -- initializer for the variable (not necessarily atomic!);
  * ATOMIC_INIT -- initialize the variable (not necessarily atomic!);
+ * ATOMIC_DESTROY -- destroy the variable
  * ATOMIC_GET -- return the value of a variable;
  * ATOMIC_SET -- set the value of a variable;
  * ATOMIC_ADD -- add a value to a variable, return original value;
@@ -45,6 +46,7 @@
 #define ATOMIC_TYPE			AO_t
 #define ATOMIC_VAR_INIT(val)		(val)
 #define ATOMIC_INIT(var, val)		(*(var) = (val))
+#define ATOMIC_DESTROY(var)		((void) 0)
 
 #define ATOMIC_GET(var)			AO_load_full(var)
 #define ATOMIC_SET(var, val)		AO_store_full(var, (AO_t) (val))
@@ -86,6 +88,7 @@
 #endif
 
 #define ATOMIC_INIT(var, val)	atomic_init(var, (ATOMIC_CAST) (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
 #define ATOMIC_GET(var)		atomic_load(var)
 #define ATOMIC_SET(var, val)	atomic_store(var, (ATOMIC_CAST) (val))
 #define ATOMIC_ADD(var, val)	atomic_fetch_add(var, (ATOMIC_CAST) (val))
@@ -107,6 +110,7 @@
 #define ATOMIC_TYPE		volatile int64_t
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
 
 #define ATOMIC_GET(var)		(*(var))
 /* should we use _InterlockedExchangeAdd64(var, 0) instead? */
@@ -127,6 +131,7 @@
 #define ATOMIC_TYPE		volatile int
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
 
 #define ATOMIC_GET(var)		(*(var))
 /* should we use _InterlockedExchangeAdd(var, 0) instead? */
@@ -161,6 +166,7 @@
 #endif
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_DESTROY(var)	((void) 0)
 
 #define ATOMIC_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_SET(var, val)	__atomic_store_n(var, (ATOMIC_TYPE) (val), __ATOMIC_SEQ_CST)
@@ -191,6 +197,8 @@ ATOMIC_INIT(ATOMIC_TYPE *var, size_t val)
 	var->val = val;
 }
 #define ATOMIC_INIT(var, val)	ATOMIC_INIT((var), (size_t) (val))
+
+#define ATOMIC_DESTROY(var)	pthread_mutex_destroy(&(var)->lck)
 
 static inline size_t
 ATOMIC_GET(ATOMIC_TYPE *var)
