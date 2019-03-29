@@ -3815,18 +3815,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	sql_rel *groupby = *rel, *sel = NULL, *gr, *og = NULL;
 	list *exps = NULL;
 
-	(void)sel;
-
 	/* find having select */
-	if (groupby && groupby->l && !is_processed(groupby) && is_sql_having(f)) { 
-		sql_rel *gl = NULL;
-
+	if (groupby && !is_processed(groupby) && is_sql_having(f)) { 
 		og = groupby;
-		while(groupby->l && !is_processed(groupby) && !is_base(groupby->op)) {
-			gl = groupby->l;
-			if (is_select(gl->op))
+		while(!is_processed(groupby) && !is_base(groupby->op)) {
+			if (is_select(groupby->op) || !groupby->l)
 				break;
-			groupby = gl;
+			if (groupby->l)
+				groupby = groupby->l;
 		}
 		if (groupby && is_select(groupby->op) && !is_processed(groupby)) {
 			group = 1;
@@ -3834,27 +3830,23 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			/* At the end we switch back to the old projection relation og. 
 			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
 		}
-		if (!group)
+		if (!sel)
 			groupby = og;
-
 		if (sel && sel->l)
 			groupby = sel->l;
 	}
 
 	/* find groupby */
-	if (groupby && groupby->l && !is_processed(groupby) && !is_base(groupby->op)) { 
-		sql_rel *gl = groupby->l;
-
+	if (groupby && !is_processed(groupby) && !is_base(groupby->op)) { 
 		og = groupby;
-		while(groupby->l && !is_processed(groupby) && !is_base(groupby->op)) {
-			gl = groupby->l;
-			if (gl->op == op_groupby)
+		while(!is_processed(groupby) && !is_base(groupby->op)) {
+			if (groupby->op == op_groupby || !groupby->l)
 				break;
-			groupby = gl;
+			if (groupby->l)
+				groupby = groupby->l;
 		}
-		if (gl && gl->op == op_groupby) {
+		if (groupby && groupby->op == op_groupby) {
 			group = 1;
-			groupby = gl;
 			/* At the end we switch back to the old projection relation og. 
 			 * During the partitioning and ordering we add the expressions to the intermediate relations. */
 		}
