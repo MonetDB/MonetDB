@@ -4304,7 +4304,6 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 				append(rel->exps, e);
 			*changes += done;
 		}
-		return rel;
 	}
 
 	/* merge select and cross product ? */
