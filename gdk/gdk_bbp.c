@@ -549,9 +549,11 @@ fixfloatbats(void)
 				 "%s/%.*s_nil-nan-convert",
 				 BBPfarms[0].dirname,
 				 (int) (len - 12), BBP_logical(bid));
-			if (written == -1 || written >= FILENAME_MAX)
-				GDKfatal("fixfloatbats: cannot create file %s has a very large pathname\n",
+			if (written == -1 || written >= FILENAME_MAX) {
+				GDKerror("fixfloatbats: cannot create file %s has a very large pathname\n",
 						 filename);
+				return GDK_FAIL;
+			}
 			fp = fopen(filename, "w");
 			if (fp == NULL) {
 				GDKsyserror("fixfloatbats: cannot create file %s\n",
