@@ -70,7 +70,7 @@ typedef struct DATAFLOW {
 	MalStkPtr stk;
 	int start, stop;    /* guarded block under consideration*/
 	FlowEvent status;   /* status of each instruction */
-	str error;          /* error encountered */
+	ATOMIC_PTR_TYPE error;		/* error encountered */
 	int *nodes;         /* dependency graph nodes */
 	int *edges;         /* dependency graph */
 	MT_Lock flowlock;   /* lock to protect the above */
@@ -373,13 +373,10 @@ DFLOWworker(void *T)
 		assert(flow);
 
 		/* whenever we have a (concurrent) error, skip it */
-		MT_lock_set(&flow->flowlock);
-		if (flow->error) {
-			MT_lock_unset(&flow->flowlock);
+		if (ATOMIC_PTR_GET(&flow->error)) {
 			q_enqueue(flow->done, fe);
 			continue;
 		}
-		MT_lock_unset(&flow->flowlock);
 
 #ifdef USE_MAL_ADMISSION
 		if (MALrunningThreads() > 2 && MALadmission(fe->argclaim, fe->hotclaim)) {
@@ -411,13 +408,10 @@ DFLOWworker(void *T)
 		fe->state = DFLOWwrapup;
 		MT_lock_unset(&flow->flowlock);
 		if (error) {
-			MT_lock_set(&flow->flowlock);
+			void *null = NULL;
 			/* only collect one error (from one thread, needed for stable testing) */
-			if (!flow->error)
-				flow->error = error;
-			else
+			if (!ATOMIC_PTR_CAS(&flow->error, &null, error))
 				GDKfree(error);
-			MT_lock_unset(&flow->flowlock);
 			/* after an error we skip the rest of the block */
 			q_enqueue(flow->done, fe);
 			continue;
@@ -572,7 +566,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		flow->status[n].pc = pc;
 		flow->status[n].state = DFLOWpending;
 		flow->status[n].cost = -1;
-		flow->status[n].flow->error = NULL;
+		ATOMIC_PTR_SET(&flow->status[n].flow->error, NULL);
 
 		/* administer flow dependencies */
 		for (j = p->retc; j < p->argc; j++) {
@@ -784,9 +778,8 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	ATOMIC_PTR_SET(&w->cntxt, NULL);
 	/* wrap up errors */
 	assert(flow->done->last == 0);
-	if (flow->error ) {
-		PARDEBUG fprintf(stderr, "#errors encountered %s ", flow->error ? flow->error : "unknown");
-		ret = flow->error;
+	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {
+		PARDEBUG fprintf(stderr, "#errors encountered %s ", ret);
 	}
 	return ret;
 }
@@ -912,7 +905,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->cntxt = cntxt;
 	flow->mb = mb;
 	flow->stk = stk;
-	flow->error = 0;
+	ATOMIC_PTR_INIT(&flow->error, NULL);
 
 	/* keep real block count, exclude brackets */
 	flow->start = startpc + 1;
