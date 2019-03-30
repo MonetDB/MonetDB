@@ -717,7 +717,7 @@ GDKprepareExit(void)
 	/* we're saved from the ABA problem in this code because it is
 	 * only executed by one thread */
 	while ((st = ATOMIC_PTR_GET(&serverthread)) != NULL) {
-		while (!ATOMIC_PTR_CAS(&serverthread, &st, st->next))
+		while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st}), st->next))
 			;
 		MT_join_thread(st->pid);
 		GDKfree(st);
@@ -736,7 +736,7 @@ GDKregister(MT_Id pid)
 		return;
 	st->pid = pid;
 	st->next = ATOMIC_PTR_GET(&serverthread);
-	while (!ATOMIC_PTR_CAS(&serverthread, &st->next, st))
+	while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st->next}), st))
 		;
 }
 
@@ -760,7 +760,7 @@ GDKreset(int status)
 	/* we're saved from the ABA problem in this code because it is
 	 * only executed by one thread */
 	while ((st = ATOMIC_PTR_GET(&serverthread)) != NULL) {
-		while (!ATOMIC_PTR_CAS(&serverthread, &st, st->next))
+		while (!ATOMIC_PTR_CAS(&serverthread, &((void *) {st}), st->next))
 			;
 		MT_join_thread(st->pid);
 		GDKfree(st);
