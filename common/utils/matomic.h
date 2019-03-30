@@ -48,7 +48,7 @@
  * These two operations are only defined on variables of type
  * ATOMIC_FLAG, and the only values defined for such a variable are
  * "false" and "true".  The variable can be statically initialized
- * using the ATOMIC_FLAG_INIT macro.
+ * to "false" using the ATOMIC_FLAG_INIT macro.
  */
 
 #ifndef _MATOMIC_H_
@@ -263,6 +263,7 @@ typedef volatile int ATOMIC_TYPE;
 
 typedef void *volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
+#define ATOMIC_PTR_VAR_INIT(val)	(val)
 #define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_SET(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
@@ -391,6 +392,7 @@ typedef struct {
 	void *val;
 	pthread_mutex_t lck;
 } ATOMIC_PTR_TYPE;
+#define ATOMIC_PTR_VAR_INIT(v)	{ .val = (v), .lck = PTHREAD_MUTEX_INITIALIZER }
 
 static inline void
 ATOMIC_PTR_INIT(ATOMIC_PTR_TYPE *var, void *val)
