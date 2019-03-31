@@ -24,7 +24,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) from b1296395;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

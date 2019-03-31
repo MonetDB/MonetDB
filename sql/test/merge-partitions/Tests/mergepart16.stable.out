@@ -125,13 +125,13 @@ Ready.
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt1;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt2;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -159,25 +159,25 @@ Ready.
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM subt1;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt2;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM subt3;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt4;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

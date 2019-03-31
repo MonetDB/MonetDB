@@ -31,8 +31,8 @@ Ready.
 % 4 # length
 1123
 [ 1	]
-#copy select count(*) from t into stdout using delimiters ',', '\n';
-% sys.L4 # table_name
+#copy select count(*) from t into stdout using delimiters ',', E'\n';
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

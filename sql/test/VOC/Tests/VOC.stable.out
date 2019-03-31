@@ -68107,7 +68107,7 @@ Ready.
 % 7 # length
 [ 1308285	]
 #select count(*) from craftsmen c ;
-% voc.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
@@ -68150,7 +68150,7 @@ Ready.
 [ "soldiers",	4177	]
 [ "total",	2454	]
 #select count(*) from impotenten;
-% voc.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length

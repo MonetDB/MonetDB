@@ -684,6 +684,17 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				as = grp;
 			} else if (left) {
 				as = bin_first_column(be, left);
+				/* small optimization, ie use candidates directly on count(*) */
+				if (!need_distinct(e) && !ext && !need_no_nil(e) && as) { 
+					/* skip alias statements */
+					while (as->type == st_alias)
+						as = as->op1;
+					/* use candidate */
+				       	if (as && as->type == st_join && as->flag == cmp_project) {
+						if (as->op1 && (as->op1->type != st_result || as->op1->op1->type != st_group)) /* exclude a subquery with select distinct under the count */
+							as = as->op1;
+					}
+				}
 			} else {
 				/* create dummy single value in a column */
 				as = stmt_atom_lng(be, 0);

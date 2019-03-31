@@ -24,8 +24,8 @@ Ready.
 # 09:50:32 >  
 
 #select (select count(*) from _tables) > 5;
-% sys.L6 # table_name
-% L6 # name
+% .L5 # table_name
+% L5 # name
 % boolean # type
 % 5 # length
 [ true	]
