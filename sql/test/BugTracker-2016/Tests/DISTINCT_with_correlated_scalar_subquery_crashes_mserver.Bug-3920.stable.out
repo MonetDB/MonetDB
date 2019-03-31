@@ -137,13 +137,13 @@ Ready.
 #2399|150|0
 [ 3416	]
 #SELECT COUNT(*) FROM sys."functions_cpy";
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 1167	]
 #SELECT COUNT(*) FROM sys."args_cpy";
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
