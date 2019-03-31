@@ -39,11 +39,11 @@ Ready.
 % L5 # name
 % hugeint # type
 % 1 # length
+[ 1	]
 [ 2	]
 [ 3	]
 [ 4	]
 [ 5	]
-[ 1	]
 #drop table countt1;
 
 # 13:45:53 >  
