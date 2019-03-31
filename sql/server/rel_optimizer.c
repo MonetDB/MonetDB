@@ -4007,6 +4007,8 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 		int left = 1;
 		list *aggrs, *gbe;
 
+		if (!is_identity(gb, jl) && !is_identity(gb, jr))
+			return rel;
 		if (jl->op == op_project &&
 		    (e = list_find_exp( jl->exps, gb)) != NULL &&
 		     find_prop(e->p, PROP_HASHCOL) != NULL) {
@@ -4020,6 +4022,9 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 		} else {
 			return rel;
 		}
+
+		if ((left && is_base(jl->op)) || (!left && is_base(jr->op)))
+			return rel;
 
 		/* only add aggr (based on left/right), and repeat the group by column */
 		aggrs = sa_list(sql->sa);

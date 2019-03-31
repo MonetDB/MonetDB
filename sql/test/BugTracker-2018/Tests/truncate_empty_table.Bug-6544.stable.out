@@ -106,19 +106,19 @@ Ready.
 #	CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES bam_files ("file_id")
 #);
 #SELECT COUNT(*) FROM bam_files;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) FROM bam_sq;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) FROM bam_rg;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -130,19 +130,19 @@ Ready.
 #TRUNCATE TABLE bam_files;
 [ 0	]
 #SELECT COUNT(*) FROM bam_files;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) FROM bam_sq;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) FROM bam_rg;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

@@ -75,13 +75,13 @@ Ready.
 #ALTER TABLE testme RENAME TO testme2;
 #ALTER TABLE testme2 RENAME TO testme;
 #SELECT COUNT(*) from table_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -89,13 +89,13 @@ Ready.
 #CREATE TABLE subtable1 (a int, b varchar(32));
 #ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10;
 #SELECT COUNT(*) from table_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -109,13 +109,13 @@ Ready.
 #ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 5;
 #ALTER TABLE testme DROP TABLE subtable2;
 #SELECT COUNT(*) from table_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -125,13 +125,13 @@ Ready.
 #DROP TABLE subtable2;
 #DROP SCHEMA other_schema CASCADE;
 #SELECT COUNT(*) from table_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

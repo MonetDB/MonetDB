@@ -26,73 +26,73 @@ Ready.
 
 #CREATE TEMP TABLE tmptable6543 (id int NOT NULL PRIMARY KEY, name VARCHAR(99) NOT NULL);
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
-% tmp.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

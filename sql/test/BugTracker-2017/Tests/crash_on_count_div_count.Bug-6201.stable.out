@@ -28,14 +28,14 @@ Ready.
 #insert into t1 values (1);
 [ 1	]
 #select count(*) / (select count(*) from t1) as c2 from t1;
-% sys.L10 # table_name
+% .L7 # table_name
 % c2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select sum(c2) from (select count(*) / (select count(*) from t1) as c2 from t1) as t;
-% .L14 # table_name
-% L13 # name
+% .L12 # table_name
+% L12 # name
 % bigint # type
 % 1 # length
 [ 1	]

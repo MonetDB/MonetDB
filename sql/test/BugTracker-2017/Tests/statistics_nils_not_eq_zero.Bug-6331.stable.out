@@ -66,8 +66,8 @@ Ready.
 # 13:40:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25363" "--port=30826"
 # 13:40:16 >  
 
-#SELECT count(*) FROM sys.statistics;
-% sys.L4 # table_name
+#SELECT count(*) = 0 FROM sys.statistics;
+% .L4 # table_name
 % L4 # name
 % boolean # type
 % 5 # length
@@ -133,7 +133,7 @@ Ready.
 % 21 # length
 [ "~BeginVariableOutput~"	]
 #DELETE FROM sys.statistics;
-[ 191	]
+[ 196	]
 #select '~EndVariableOutput~';
 % .L2 # table_name
 % L2 # name

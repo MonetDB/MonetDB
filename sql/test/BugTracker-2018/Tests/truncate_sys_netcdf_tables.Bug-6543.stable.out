@@ -25,61 +25,61 @@ Ready.
 # 17:32:24 >  
 
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs;
-% sys.L4 # table_name
+% .L4 # table_name
 % has_rows # name
 % boolean # type
 % 5 # length

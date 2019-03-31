@@ -36,7 +36,7 @@ Ready.
 % int,	int,	double,	clob,	int,	double,	clob # type
 % 1,	1,	24,	0,	1,	24,	0 # length
 #SELECT + - COUNT ( * ) FROM tab0 WHERE NOT NULL NOT IN ( - col0, 4 );
-% sys.L12 # table_name
+% .L12 # table_name
 % L12 # name
 % bigint # type
 % 1 # length
