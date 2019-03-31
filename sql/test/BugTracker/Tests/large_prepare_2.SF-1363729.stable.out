@@ -146,7 +146,7 @@ Ready.
 #);
 [ 1	]
 #select count(*) from mytable;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

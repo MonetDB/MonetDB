@@ -70,13 +70,13 @@ Ready.
 
 #CREATE MERGE TABLE listparts (a int, b varchar(32)) PARTITION BY VALUES (a);
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) from value_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -84,13 +84,13 @@ Ready.
 #CREATE TABLE subtable1 (a int, b varchar(32));
 #ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION IN ('1', '2', '3');
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) from value_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -98,13 +98,13 @@ Ready.
 #CREATE TABLE subtable2 (a int, b varchar(32));
 #ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION IN ('5', '6', '7');
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) from value_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -115,13 +115,13 @@ Ready.
 #DROP TABLE subtable1;
 #DROP TABLE subtable2;
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) from value_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

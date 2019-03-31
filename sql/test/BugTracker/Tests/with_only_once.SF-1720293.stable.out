@@ -59,13 +59,13 @@ Ready.
 #insert into withonlybug select * from withonlybug;
 [ 16	]
 #WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
-% sys.t # table_name
+% .t # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 32	]
 #WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
-% sys.t # table_name
+% .t # table_name
 % L3 # name
 % bigint # type
 % 2 # length

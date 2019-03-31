@@ -76,7 +76,7 @@ Ready.
 #TRUNCATE testing;
 [ 2	]
 #SELECT COUNT(*) FROM testing2; --there should be 1 row
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -94,7 +94,7 @@ Ready.
 #DELETE FROM testing;
 [ 1	]
 #SELECT COUNT(*) FROM testing2; --there should be 1 row
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

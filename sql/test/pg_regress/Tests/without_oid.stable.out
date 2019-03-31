@@ -160,7 +160,7 @@ Ready.
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM create_table_test3;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

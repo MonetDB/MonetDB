@@ -42,7 +42,7 @@ Ready.
 #INSERT INTO sampleData VALUES ( 5,   0 );
 [ 1	]
 #SELECT count(*) from sampleData;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -81,7 +81,7 @@ Ready.
 #) G
 #ON R.GroupID = G.GroupID AND R.rowNo BETWEEN N/2 AND N/2+N%2
 #GROUP BY R.groupID ORDER by R.groupID;
-% sys.r,	.L17 # table_name
+% sys.r,	.L20 # table_name
 % groupid,	medianvalue # name
 % int,	double # type
 % 1,	24 # length
