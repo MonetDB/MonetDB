@@ -153,7 +153,7 @@ exps_freevar(mvc *sql, list *exps)
 static list *
 rel_freevar(mvc *sql, sql_rel *rel)
 {
-	list *lexps, *rexps, *exps;
+	list *lexps = NULL, *rexps = NULL, *exps = NULL;
 	if (!rel)
 		return NULL;
 	switch(rel->op) {
