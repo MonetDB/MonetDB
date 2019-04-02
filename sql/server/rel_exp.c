@@ -1823,6 +1823,7 @@ char *
 compare_func( comp_type t, int anti )
 {
 	switch(t) {
+	case mark_in:
 	case cmp_equal:
 		return anti?"<>":"=";
 	case cmp_lt:
@@ -1833,6 +1834,7 @@ compare_func( comp_type t, int anti )
 		return anti?"<=":">=";
 	case cmp_gt:
 		return anti?"<":">";
+	case mark_notin:
 	case cmp_notequal:
 		return anti?"=":"<>";
 	default:

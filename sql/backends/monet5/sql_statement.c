@@ -1419,11 +1419,11 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		switch (cmptype) {
 		case mark_in:
+		case mark_notin:
 		case cmp_equal:
 		case cmp_equal_nil:
 			op = "=";
 			break;
-		case mark_notin:
 		case cmp_notequal:
 			op = "!=";
 			break;
@@ -1479,10 +1479,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			q = pushArgument(mb, q, r);
 			switch (cmptype) {
 			case mark_in:
+			case mark_notin: /* we use a anti join, todo handle null (not) in empty semantics */
 			case cmp_equal:
 				q = pushStr(mb, q, anti?"!=":"==");
 				break;
-			case mark_notin:
 			case cmp_notequal:
 				q = pushStr(mb, q, anti?"==":"!=");
 				break;
@@ -1864,6 +1864,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 
 	switch (cmptype) {
 	case mark_in:
+	case mark_notin: /* we use a anti join, todo handle null (not) in empty */
 	case cmp_equal:
 		q = newStmt(mb, algebraRef, sjt);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -1888,7 +1889,6 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		if (q == NULL)
 			return NULL;
 		break;
-	case mark_notin:
 	case cmp_notequal:
 		q = newStmt(mb, algebraRef, antijoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));

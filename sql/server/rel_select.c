@@ -1980,6 +1980,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				a = exp_aggr1(sql->sa, l, ea, 0, 0, CARD_ATOM, 0);
 				append(a->l, r);
 				append(a->l, tid);
+				if (!is_sql_sel(f))
+					set_intern(a);
 				r = rel_groupby_add_aggr(sql, left, a);
 				r = exp_ref(sql->sa, r);
 
@@ -1987,9 +1989,12 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					if (pexps)
 						left = rel_project(sql->sa, left, pexps);
 					reset_processed(left);
+#if 0
+					/* value exp ie no select */
 				} else {
 					//rel_join_add_exp(sql->sa, left, r);
 					left = rel_select(sql->sa, left, r);
+#endif
 				}
 				*rel = left;
 				return r;
@@ -2088,7 +2093,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			if (pexps) {
 				if (!l_init)
 					(*rel)->l = left;
-				else if (l_used)
+				else /*if (l_used)*/
 					*rel = left;
 			} else {
 				*rel = left;
@@ -2641,8 +2646,6 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			l_outer=1;
 			l_is_value=0;
 		}
-		//if (l && !exp_is_atom(l)) 
-			//l_is_value=0;
 
 		ek.card = card_set;
 		append(ll, l);
@@ -2726,15 +2729,17 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				return rel;
 			} else if ((z || l_used) && r) { /* left is single value/column */
 				if (!is_sql_sel(f)) {
-					if (z)
+					if (z) {
+						if (exp_is_atom(r) && is_simple_project(z->op) && !z->l) 
+							rel_project_add_exp(sql, z, r);
 						r = rel_lastexp(sql, z);
+					}
 					if (rel_convert_types(sql, &l, &r, 1, type_equal_no_any) < 0) 
 						return NULL;
-					//r = exp_compare(sql->sa, l, r, sc->token==SQL_IN?mark_in:mark_notin);
-					r = exp_compare(sql->sa, l, r, mark_in);
+					r = exp_compare(sql->sa, l, r, sc->token==SQL_IN?mark_in:mark_notin); 
 					if (z) {
 						/* TO BE removed once we have a mark join */
-						if (sc->token == SQL_NOT_IN && l->card != CARD_ATOM && has_nil(l)) {
+						if (0 && sc->token == SQL_NOT_IN && l->card != CARD_ATOM && has_nil(l) /* Should be:  NULL not in set, except when set is empty */) {
 							sql_exp *e = rel_unop_(query, l, NULL, "isnull", card_value);
 							left = rel_select(sql->sa, left, exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal));
 						}

@@ -57,7 +57,7 @@ SELECT * FROM integers WHERE 1 IN (SELECT 1) ORDER BY i;
 SELECT * FROM integers WHERE 1 IN (SELECT * FROM integers) ORDER BY i;
 SELECT * FROM integers WHERE 1 IN (SELECT NULL) ORDER BY i; -- empty 
 
--- 2x 4x null, broken ie left outer join with expression (not isnull())
+-- 2x 4x null
 SELECT 1 IN (SELECT NULL) FROM integers; 
 SELECT NULL IN (SELECT * FROM integers) FROM integers;
 

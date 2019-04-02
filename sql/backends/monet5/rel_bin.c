@@ -2133,6 +2133,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		sql_subtype *lng = sql_bind_localtype("lng");
 		stmt *nilcnt = NULL;
 
+		assert(0);
 		for( en = rel->exps->h; en; en = en->next ) {
 			sql_exp *e = en->data, *r, *l;
 			stmt *s;
@@ -2196,7 +2197,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			stmt *s = NULL;
 
 			/* only handle simple joins here */		
-			if (list_length(lje) && (idx || e->type != e_cmp || e->flag != cmp_equal))
+			if (/*list_length(lje) &&*/ (idx || e->type != e_cmp || e->flag != cmp_equal))
 				break;
 			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
 			    (get_cmp(e) == cmp_or)) { 
