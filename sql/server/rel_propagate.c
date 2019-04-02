@@ -351,7 +351,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	rel_psm->card = CARD_MULTI;
 	rel_psm->nrcols = 0;
 
-	res = create_range_partition_anti_rel(query, mt, pt, with_nills, pmin, pmax);
+	res = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL);
 	res->l = rel_psm;
 
 	return propagate_validation_to_upper_tables(query, mt, pt, res);
