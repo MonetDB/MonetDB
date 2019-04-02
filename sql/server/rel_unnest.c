@@ -495,7 +495,8 @@ push_up_groupby(mvc *sql, sql_rel *rel)
 						col = exp_ref(sql->sa, col);
 						col = exp_unop(sql->sa, col, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(col), NULL, F_FUNC));
 						col = exp_label(sql->sa, col, ++sql->label);
-						append(r->exps, col);
+						if (!exps_find_exp(r->exps, col))
+							append(r->exps, col);
 					}
 					exp_ref(sql->sa, col);
 					append(e->l=sa_list(sql->sa), col);
@@ -508,7 +509,7 @@ push_up_groupby(mvc *sql, sql_rel *rel)
 			if (!r->r)
 				r->r = exps_copy(sql->sa, a);
 			else
-				r->r = list_merge(r->r, exps_copy(sql->sa, a), (fdup)NULL);
+				r->r = list_distinct(list_merge(r->r, exps_copy(sql->sa, a), (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
 
 			rel->r = r->l; 
 			r->l = rel;
