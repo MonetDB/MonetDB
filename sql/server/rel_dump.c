@@ -54,19 +54,24 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_lt: 		r = "<"; break;
 	case cmp_equal: 	r = "="; break;
 	case cmp_notequal: 	r = "!="; break;
-	case cmp_all: 		r = "all"; break;
+
+	case cmp_filter: 	r = "filter"; break;
 	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
+	case cmp_equal_nil: 	r = "=*"; break;
 
 	case mark_in: 		r = "any ="; break;
 	case mark_notin: 	r = "all <>"; break;
 	case mark_exists: 	r = "exists"; break;
 	case mark_notexists: 	r = "!exists"; break;
 
-	case cmp_filter: 	r = "filter"; break;
-	default:
-		r = "";
+	case cmp_all: 		
+	case cmp_project: 		
+	case cmp_joined: 		
+	case cmp_left: 		
+	case cmp_left_project: 		
+				assert(0); r = "inner"; break;
 	}
 	mnstr_printf(fout, " %s ", r);
 }
@@ -1121,9 +1126,21 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			f = cmp_or;
 		}
 		break;
+	case '!': 
+		f = cmp_notequal;
+		(*pos)++;
+		if (r[(*pos)] == '=') {
+			f = cmp_notequal;
+			(*pos)++;
+		}
+		break;
 	case '=': 
 		f = cmp_equal;
 		(*pos)++;
+		if (r[(*pos)] == '*') {
+			f = cmp_equal_nil;
+			(*pos)++;
+		}
 		break;
 	case '<': 
 		f = cmp_lt;
