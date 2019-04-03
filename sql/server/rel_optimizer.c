@@ -4023,7 +4023,8 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 			return rel;
 		}
 
-		if ((left && is_base(jl->op)) || (!left && is_base(jr->op)))
+		if ((left && is_base(jl->op)) || (!left && is_base(jr->op))||
+		    (left && is_select(jl->op)) || (!left && is_select(jr->op)))
 			return rel;
 
 		/* only add aggr (based on left/right), and repeat the group by column */
