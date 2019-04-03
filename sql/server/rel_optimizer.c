@@ -3971,6 +3971,29 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static int
+rel_is_join_on_pkey( sql_rel *rel ) 
+{
+	node *n;
+
+	if (!rel || !rel->exps)
+		return 0;
+	for (n = rel->exps->h; n; n = n->next){
+		sql_exp *je = n->data;
+
+		if (je->type == e_cmp && je->flag == cmp_equal &&
+		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
+			fcmp cmp = (fcmp)&kc_column_cmp;
+			sql_exp *e = je->l;
+			sql_column *c = exp_find_column(rel, e, -2);
+
+			if (c && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL) 
+				return 1;
+		}
+	}
+	return 0;
+}
+
 /*
  * More general 
  * 	groupby(
@@ -4024,7 +4047,8 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 		}
 
 		if ((left && is_base(jl->op)) || (!left && is_base(jr->op))||
-		    (left && is_select(jl->op)) || (!left && is_select(jr->op)))
+		    (left && is_select(jl->op)) || (!left && is_select(jr->op)) 
+		    || rel_is_join_on_pkey(j))
 			return rel;
 
 		/* only add aggr (based on left/right), and repeat the group by column */
@@ -4620,29 +4644,6 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		rel = l;
 	}
 	return rel;
-}
-
-static int
-rel_is_join_on_pkey( sql_rel *rel ) 
-{
-	node *n;
-
-	if (!rel || !rel->exps)
-		return 0;
-	for (n = rel->exps->h; n; n = n->next){
-		sql_exp *je = n->data;
-
-		if (je->type == e_cmp && je->flag == cmp_equal &&
-		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
-			fcmp cmp = (fcmp)&kc_column_cmp;
-			sql_exp *e = je->l;
-			sql_column *c = exp_find_column(rel, e, -2);
-
-			if (c && c->t->p && list_find(c->t->pkey->k.columns, c, cmp) != NULL) 
-				return 1;
-		}
-	}
-	return 0;
 }
 
 static int
