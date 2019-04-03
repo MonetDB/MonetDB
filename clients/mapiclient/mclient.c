@@ -1461,10 +1461,14 @@ SQLrenderer(MapiHdl hdl)
 	rest = calloc(fields, sizeof(*rest));
 	numeric = calloc(fields, sizeof(*numeric));
 	if (len == NULL || hdr == NULL || rest == NULL || numeric == NULL) {
-		free(len);
-		free(hdr);
-		free(rest);
-		free(numeric);
+		if (len)
+			free(len);
+		if (hdr)
+			free(hdr);
+		if (rest)
+			free(rest);
+		if (numeric)
+			free(numeric);
 		fprintf(stderr,"Malloc for SQLrenderer failed");
 		exit(2);
 	}
