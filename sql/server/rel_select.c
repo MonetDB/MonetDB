@@ -2739,7 +2739,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 					r = exp_compare(sql->sa, l, r, sc->token==SQL_IN?mark_in:mark_notin); 
 					if (z) {
 						/* TO BE removed once we have a mark join */
-						if (0 && sc->token == SQL_NOT_IN && l->card != CARD_ATOM && has_nil(l) /* Should be:  NULL not in set, except when set is empty */) {
+						if (/* DISABLES CODE */ (0) && sc->token == SQL_NOT_IN && l->card != CARD_ATOM && has_nil(l) /* Should be:  NULL not in set, except when set is empty */) {
 							sql_exp *e = rel_unop_(query, l, NULL, "isnull", card_value);
 							left = rel_select(sql->sa, left, exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal));
 						}
