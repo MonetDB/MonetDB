@@ -989,7 +989,7 @@ aggr_phase2(char *aggr)
 static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
-	int tp = getArgType(mb,p,0), k, tp2 = TYPE_lng;
+	int tp = getArgType(mb,p,0), k, tp2 = TYPE_lng, i;
 	int battp = (getModuleId(p)==aggrRef)?newBatType(tp):tp, battp2 = 0;
 	int isAvg = (getFunctionId(p) == avgRef);
 	InstrPtr r = NULL, s = NULL, q = NULL, u = NULL;
@@ -1013,6 +1013,8 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		if (isAvg) 
 			q = pushReturn(mb, q, newTmpVariable(mb, tp2));
 		q = pushArgument(mb,q,getArg(mat[m].mi,k));
+		for (i = q->argc; i<p->argc; i++)
+			q = pushArgument(mb,q,getArg(p,i));
 		pushInstruction(mb,q);
 		
 		r = pushArgument(mb,r,getArg(q,0));
@@ -1937,7 +1939,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * Handle the rewrite v:=aggr.count(b) and sum()
 		 * And the min/max is as easy
 		 */
-		if (match == 1 && p->argc == 2 &&
+		if (match == 1 && p->argc >= 2 &&
 		   ((getModuleId(p)==aggrRef &&
 			(getFunctionId(p)== countRef || 
 			 getFunctionId(p)== count_no_nilRef || 
