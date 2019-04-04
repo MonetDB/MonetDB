@@ -1445,6 +1445,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
 			return NULL;
+		if (cmptype == cmp_equal_nil)
+			q = pushBit(mb, q, TRUE); 
 		k = getDestVar(q);
 
 		q = newStmt(mb, algebraRef, selectRef);

@@ -1487,12 +1487,16 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		/* push select into the given relation */
 		return rel_push_select(sql, rel, L, e);
 	} else { /* join */
-		if (is_semi(rel->op) || (is_outerjoin(rel->op) && !is_processed(rel))) {
+		sql_rel *r;
+		if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
 			rel_join_add_exp(sql->sa, rel, e);
 			return rel;
 		}
 		/* push join into the given relation */
-		return rel_push_join(sql, rel, L, R, NULL, e);
+		if ((r = rel_push_join(sql, rel, L, R, NULL, e)) != NULL)
+			return r;
+		rel_join_add_exp(sql->sa, rel, e);
+		return rel;
 	}
 }
 
@@ -1595,12 +1599,16 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		/* push select into the given relation */
 		return rel_push_select(sql, rel, L, e);
 	} else { /* join */
-		if (is_semi(rel->op) || (is_outerjoin(rel->op) && !is_processed((rel)))) {
+		sql_rel *r;
+		if (/*is_semi(rel->op) ||*/ (is_outerjoin(rel->op) && !is_processed((rel)))) {
 			rel_join_add_exp(sql->sa, rel, e);
 			return rel;
 		}
 		/* push join into the given relation */
-		return rel_push_join(sql, rel, L, R, rs2, e);
+		if ((r = rel_push_join(sql, rel, L, R, rs2, e)) != NULL)
+			return r;
+		rel_join_add_exp(sql->sa, rel, e);
+		return rel;
 	}
 }
 
@@ -2717,7 +2725,10 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 					if (rel_convert_types(sql, &l, &r, 1, type_equal_no_any) < 0) 
 						return NULL;
-					e = exp_compare(sql->sa, l, r, cmp_equal );
+					exp_label(sql->sa, r, ++sql->label);
+					r = exp_ref(sql->sa, r);
+					//e = exp_compare(sql->sa, l, r, cmp_equal );
+					e = exp_compare(sql->sa, l, r, sc->token==SQL_IN?mark_in:mark_notin); 
 					rel_join_add_exp(sql->sa, left, e);
 				}
 				if (is_sql_sel(f)) {
@@ -4557,72 +4568,6 @@ rel_projections_(mvc *sql, sql_rel *rel)
 	}
 }
 
-/* exp_rewrite */
-static sql_exp * exp_rewrite(mvc *sql, sql_exp *e, sql_rel *t);
-
-static list *
-exps_rename(mvc *sql, list *l, sql_rel *r) 
-{
-	node *n;
-	list *nl = new_exp_list(sql->sa);
-
-	for(n=l->h; n; n=n->next) {
-		sql_exp *arg = n->data;
-
-		arg = exp_rewrite(sql, arg, r);
-		if (!arg) 
-			return NULL;
-		append(nl, arg);
-	}
-	return nl;
-}
-
-static sql_exp *
-exp_rewrite(mvc *sql, sql_exp *e, sql_rel *r) 
-{
-	sql_exp *l, *ne = NULL;
-
-	switch(e->type) {
-	case e_column:
-		if (e->l) { 
-			e = exps_bind_column2(r->exps, e->l, e->r);
-		} else {
-			e = exps_bind_column(r->exps, e->r, NULL);
-		}
-		if (!e)
-			return NULL;
-		return exp_column(sql->sa, e->l, e->r, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
-	case e_cmp: 
-		return NULL;
-	case e_convert:
-		l = exp_rewrite(sql, e->l, r);
-		if (l)
-			ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
-		break;
-	case e_aggr:
-	case e_func: {
-		list *l = e->l, *nl = NULL;
-
-		if (!l) {
-			return e;
-		} else {
-			nl = exps_rename(sql, l, r);
-			if (!nl)
-				return NULL;
-		}
-		if (e->type == e_func)
-			ne = exp_op(sql->sa, nl, e->f);
-		else 
-			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
-		break;
-	}	
-	case e_atom:
-	case e_psm:
-		return e;
-	}
-	return ne;
-}
-
 /* second complex columns only */
 static sql_exp *
 rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
@@ -4631,20 +4576,22 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	sql_rel *r = *R;
 	sql_exp *e = NULL;
 	exp_kind ek = {type_value, card_column, FALSE};
+	int added_project = 0;
 
-	(void)f;
-	/*
 	if (is_sql_orderby(f)) {
+		sql_rel *rl = r->l;
+
 		assert(is_project(r->op));
-		r = r->l;
+		if (!is_processed(rl)) 
+			r = r->l;
 	}
-	*/
 	if (!r)
 		return e;
 
 	if (!is_project(r->op) || is_set(r->op)) {
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 		(*R)->l = r;
+		added_project = 1;
 	}
 
 	if (!e) {
@@ -4652,7 +4599,12 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 		/* add to internal project */
 		if (e && is_processed(r)) {
 			e = rel_project_add_exp(sql, r, e);
-			e = rel_lastexp(sql, r);
+			//e = rel_lastexp(sql, r);
+			e = exp_ref(sql->sa, e);
+			if (added_project) {
+				e = rel_project_add_exp(sql, *R, e);
+				e = exp_ref(sql->sa, e);
+			}
 		}
 		/* try with reverted aliases */
 		if (!e && r && sql->session->status != -ERR_AMBIGUOUS) {
@@ -4670,7 +4622,12 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 			if (e) {
 				/* first rewrite e back into current column names */
 				e = rel_project_add_exp(sql, r, e);
-				e = rel_lastexp(sql, r);
+				//e = rel_lastexp(sql, r);
+				e = exp_ref(sql->sa, e);
+				if (added_project) {
+					e = rel_project_add_exp(sql, *R, e);
+					e = exp_ref(sql->sa, e);
+				}
 			}
 		}
 	}
@@ -4782,16 +4739,10 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 					sql_rel *p = rel;
 					sql_rel *g = s;
 
-					if (is_select(s->op) && !is_processed(s)) { /* having ? */
+					if (is_select(s->op) && !is_processed(s)) /* having ? */
 						g = s->l;
-						//p = s;
-					}
 					if (is_groupby(g->op)) { /* check for is processed */
 						e = rel_order_by_column_exp(query, &g, col, sql_sel);
-						/*
-						if (e && g != p->l)
-							p->l = g;
-							*/
 						if (e && e->card != rel->card && e->card != CARD_ATOM)
 							e = NULL;
 						if (e && !is_select(p->op)) {
@@ -4818,9 +4769,9 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 			return sql_error(sql, 02, SQLSTATE(42000) "order not of type SQL_COLUMN");
 		}
 	}
+	//*R = rel;
 	if (or != rel)
 		or->l = rel;
-	//*R = rel;
 	return exps;
 }
 
@@ -5144,12 +5095,11 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
 	pp = p;
 
-	if (p && is_processed(p) && p->op == op_groupby) {
-		assert(0);
+	if (p && /*is_processed(p) &&*/ p->op == op_groupby) {
 		group = 1;
 	}
 	/* find groupby */
-	if (p->l && !is_processed(p)) {
+	if (!group && p->l && !is_processed(p)) {
 		sql_rel *pl = p->l;
 
 		op = p;

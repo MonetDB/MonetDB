@@ -431,6 +431,12 @@ exp_count(int *cnt, sql_exp *e)
 		case cmp_or: /* prefer or over functions */
 			*cnt += 3;
 			return 3;
+		case mark_in:
+		case mark_notin:
+		case mark_exists:
+		case mark_notexists:
+			*cnt += 0;
+			return 0;
 		default:
 			return 0;
 		}
@@ -1760,8 +1766,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 	if (is_groupby(rel->op) && !rel_is_ref(rel) &&
             r && !r->exps && r->op == op_join && !(rel_is_ref(r)) && 
 	    /* currently only single count aggregation is handled, no other projects or aggregation */
-	    list_length(rel->exps) == 1 && ((sql_exp *) rel->exps->h->data)->type == e_aggr &&
-            strcmp(((sql_subaggr *) ((sql_exp *) rel->exps->h->data)->f)->aggr->base.name, "count") == 0) {
+	    list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 	    	sql_exp *nce, *oce;
 		sql_rel *gbl, *gbr;		/* Group By */
 		sql_rel *cp;			/* Cross Product */
@@ -1956,8 +1961,7 @@ rel_simplify_fk_joins(int *changes, mvc *sql, sql_rel *rel)
 	while (is_groupby(rel->op) && !rel_is_ref(rel) &&
             r && r->exps && is_join(r->op) && list_length(r->exps) == 1 && !(rel_is_ref(r)) && 
 	    /* currently only single count aggregation is handled, no other projects or aggregation */
-	    list_length(rel->exps) == 1 && ((sql_exp *) rel->exps->h->data)->type == e_aggr &&
-            strcmp(((sql_subaggr *) ((sql_exp *) rel->exps->h->data)->f)->aggr->base.name, "count") == 0) {
+	    list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *or = r;
 
 		r = rel_simplify_count_fk_join(changes, sql, r, rel->exps);
@@ -2905,7 +2909,7 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel, int top)
 		}
 
 		/* get proper output first, then rewrite lower project (such that it can split expressions) */
-		push_down = is_simple_project(rel->op) && !rel->r && !rel_is_ref(rel);
+		push_down = is_simple_project(rel->op) && !rel->r && !rel_is_ref(rel) && !need_distinct(rel);
 		if (push_down)
 			res = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 2));
 
@@ -3944,7 +3948,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 
 			if (oa->type == e_aggr) {
 				sql_subaggr *f = oa->f;
-				int cnt = strcmp(f->aggr->base.name,"count")==0;
+				int cnt = exp_aggr_is_count(oa);
 				sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
 
 				assert(a);
@@ -4068,7 +4072,7 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 				/* check args are part of left/right */
 				if (!list_empty(args) && rel_has_exps(cl, args) == 0)
 					return rel;
-				if (rel->op != op_join && strcmp(((sql_subaggr*)ce->f)->aggr->base.name, "count") == 0)
+				if (rel->op != op_join && exp_aggr_is_count(ce))
 					ce->p = prop_create(sql->sa, PROP_COUNT, ce->p);
 				list_append(aggrs, ce); 
 			}
@@ -5481,7 +5485,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 		} else if (e->type == e_aggr && !need_distinct(e)) {
 			sql_exp *v;
 			sql_subaggr *f = e->f;
-			int cnt = strcmp(f->aggr->base.name,"count")==0;
+			int cnt = exp_aggr_is_count(e);
 			sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
 
 			append(aggrs, e);

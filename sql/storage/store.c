@@ -2415,7 +2415,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k)
 }
 
 #define obj_ref(o,n,flags) 		\
- 	if (newFlagSet(flags)) { /* create new partent */		\
+ 	if (newFlagSet(flags)) { /* create new parent */		\
 		o->po = n;		\
 		n->base.refcnt++;	\
 	} else {			\

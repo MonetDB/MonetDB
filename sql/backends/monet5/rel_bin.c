@@ -2197,7 +2197,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			stmt *s = NULL;
 
 			/* only handle simple joins here */		
-			if (/*list_length(lje) &&*/ (idx || e->type != e_cmp || e->flag != cmp_equal))
+			if (/*list_length(lje) &&*/ (idx || e->type != e_cmp || (e->flag != cmp_equal && e->flag != mark_in)))
 				break;
 			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
 			    (get_cmp(e) == cmp_or)) { 

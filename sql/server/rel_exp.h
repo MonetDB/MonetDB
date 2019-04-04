@@ -160,6 +160,8 @@ extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
 extern sql_exp *create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value);
 
+extern int exp_aggr_is_count(sql_exp *e);
+
 extern void exps_reset_freevar(list *exps);
 
 #endif /* _REL_EXP_H_ */

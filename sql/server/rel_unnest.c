@@ -733,7 +733,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 		list_merge(r->exps, fd, (fdup)NULL);
 		rel->r = r;
 		if (rel->op == op_left) /* only needed once (inner side) */
-                	rel->op = op_join;
+       	        	rel->op = op_join;
 		reset_dependent(rel);
 		return rel;
 	}
