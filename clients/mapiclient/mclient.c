@@ -392,6 +392,14 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			}
 			len++;
 			n = 0;
+		} else if (*s == '\t') {
+			assert(n == 0);
+			len++;	/* rendered as single space */
+			n = 0;
+		} else if ((unsigned char) *s <= 0x1F || *s == '\177') {
+			assert(n == 0);
+			len += 4;
+			n = 0;
 		} else if ((*s & 0x80) == 0) {
 			assert(n == 0);
 			len++;
@@ -517,6 +525,9 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    (0x20000 <= c && c <= 0x2FFFD) ||
 				    (0x30000 <= c && c <= 0x3FFFD))
 					len++;
+				else if (0x0080 <= c && c <= 0x009F)
+					len += 5;
+
 			}
 		} else if ((*s & 0xE0) == 0xC0) {
 			assert(n == 0);
@@ -652,17 +663,6 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 							     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
 							     "");
 
-					if (!numeric[i]) {
-						/* replace tabs with a
-						 * single space to
-						 * avoid screwup the
-						 * width
-						 * calculations */
-						for (s = rest[i]; *s != *t; s++)
-							if (*s == '\t')
-								*s = ' ';
-					}
-
 					s = t;
 					if (trim == 1)
 						while (my_isspace(*s))
@@ -677,16 +677,38 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 								s++;
 						if (trim == 2 && *s == '\n')
 							s++;
-						mnstr_printf(toConsole, " %.*s...%*s",
-							     (int) (t - rest[i]),
-							     rest[i],
+						mnstr_write(toConsole, " ", 1, 1);
+						for (char *p = rest[i]; p < t; p++) {
+							if (*p == '\t')
+								mnstr_write(toConsole, " ", 1, 1);
+							else if ((unsigned char) *p <= 0x1F || *p == '\177')
+								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
+							else if (*p == '\302' &&
+								 (p[1] & 0xE0) == 0x80) {
+								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								p++;
+							} else
+								mnstr_write(toConsole, p, 1, 1);
+						}
+						mnstr_printf(toConsole, "...%*s",
 							     len[i] - 2 - (int) utf8strlen(rest[i], t),
 							     "");
 						croppedfields++;
 					} else {
-						mnstr_printf(toConsole, " %.*s ",
-							     (int) (t - rest[i]),
-							     rest[i]);
+						mnstr_write(toConsole, " ", 1, 1);
+						for (char *p = rest[i]; p < t; p++) {
+							if (*p == '\t')
+								mnstr_write(toConsole, " ", 1, 1);
+							else if ((unsigned char) *p <= 0x1F || *p == '\177')
+								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
+							else if (*p == '\302' &&
+								 (p[1] & 0xE0) == 0x80) {
+								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								p++;
+							} else
+								mnstr_write(toConsole, p, 1, 1);
+						}
+						mnstr_write(toConsole, " ", 1, 1);
 						if (!numeric[i])
 							mnstr_printf(toConsole, "%*s",
 								     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
@@ -721,12 +743,20 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						 * avoid screwup the
 						 * width
 						 * calculations */
-						for (p = rest[i]; *p != '\0'; p++)
+						mnstr_write(toConsole, " ", 1, 1);
+						for (p = rest[i]; *p; p++) {
 							if (*p == '\t')
-								*p = ' ';
-						mnstr_printf(toConsole, " %s ",
-							     rest[i]);
-						mnstr_printf(toConsole, "%*s",
+								mnstr_write(toConsole, " ", 1, 1);
+							else if ((unsigned char) *p <= 0x1F || *p == '\177')
+								mnstr_printf(toConsole, "\\%03o", (unsigned char) *p);
+							else if (*p == '\302' &&
+								 (p[1] & 0xE0) == 0x80) {
+								mnstr_printf(toConsole, "\\u%04x", (p[1] & 0x3F) | 0x80);
+								p++;
+							} else
+								mnstr_write(toConsole, p, 1, 1);
+						}
+						mnstr_printf(toConsole, " %*s",
 							     (int) (len[i] - ulen),
 							     "");
 					}
