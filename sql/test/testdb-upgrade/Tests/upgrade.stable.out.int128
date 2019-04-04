@@ -6236,7 +6236,7 @@ Ready.
 # 11:43:08 >  
 
 #select count(*) from testschema.smallstring;
-% testschema.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

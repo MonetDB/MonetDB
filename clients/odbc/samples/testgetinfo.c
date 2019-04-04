@@ -79,7 +79,7 @@ main(int argc, char **argv)
 	char *user = "monetdb";
 	char *pass = "monetdb";
 	SQLRETURN ret;
-	char str[128];
+	char str[2048];
 	SQLSMALLINT resultlen;
 	SQLUSMALLINT si;
 	SQLUINTEGER i;
@@ -123,35 +123,35 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_AGGREGATE_FUNCTIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_AGGREGATE_FUNCTIONS: %u\n", (unsigned int) i);
+	printf("SQL_AGGREGATE_FUNCTIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_ALTER_DOMAIN, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_ALTER_DOMAIN: %u\n", (unsigned int) i);
+	printf("SQL_ALTER_DOMAIN: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_ALTER_TABLE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_ALTER_TABLE: %u\n", (unsigned int) i);
+	printf("SQL_ALTER_TABLE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_ASYNC_MODE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_ASYNC_MODE: %u\n", (unsigned int) i);
+	printf("SQL_ASYNC_MODE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_BATCH_ROW_COUNT, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_BATCH_ROW_COUNT: %u\n", (unsigned int) i);
+	printf("SQL_BATCH_ROW_COUNT: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_BATCH_SUPPORT, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_BATCH_SUPPORT: %u\n", (unsigned int) i);
+	printf("SQL_BATCH_SUPPORT: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_BOOKMARK_PERSISTENCE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_BOOKMARK_PERSISTENCE: %u\n", (unsigned int) i);
+	printf("SQL_BOOKMARK_PERSISTENCE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CATALOG_LOCATION, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CATALOG_LOCATION: %u\n", (unsigned int) si);
+	printf("SQL_CATALOG_LOCATION: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_CATALOG_NAME_SEPARATOR, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -167,7 +167,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_CATALOG_USAGE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CATALOG_USAGE: %u\n", (unsigned int) i);
+	printf("SQL_CATALOG_USAGE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_COLLATION_SEQ, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -179,127 +179,127 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_CONCAT_NULL_BEHAVIOR, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONCAT_NULL_BEHAVIOR: %u\n", (unsigned int) si);
+	printf("SQL_CONCAT_NULL_BEHAVIOR: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_BIGINT, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_BIGINT: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_BIGINT: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_BINARY, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_BINARY: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_BINARY: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_BIT, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_BIT: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_BIT: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_CHAR, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_CHAR: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_CHAR: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_DATE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_DATE: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_DATE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_DECIMAL, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_DECIMAL: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_DECIMAL: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_DOUBLE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_DOUBLE: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_DOUBLE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_FLOAT, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_FLOAT: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_FLOAT: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_FUNCTIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_FUNCTIONS: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_FUNCTIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_INTEGER, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_INTEGER: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_INTEGER: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_INTERVAL_DAY_TIME, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_INTERVAL_DAY_TIME: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_INTERVAL_DAY_TIME: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_INTERVAL_YEAR_MONTH, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_INTERVAL_YEAR_MONTH: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_INTERVAL_YEAR_MONTH: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_LONGVARBINARY, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_LONGVARBINARY: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_LONGVARBINARY: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_LONGVARCHAR, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_LONGVARCHAR: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_LONGVARCHAR: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_NUMERIC, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_NUMERIC: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_NUMERIC: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_REAL, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_REAL: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_REAL: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_SMALLINT, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_SMALLINT: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_SMALLINT: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_TIME, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_TIME: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_TIME: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_TIMESTAMP, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_TIMESTAMP: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_TIMESTAMP: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_TINYINT, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_TINYINT: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_TINYINT: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_VARBINARY, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_VARBINARY: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_VARBINARY: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CONVERT_VARCHAR, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CONVERT_VARCHAR: %u\n", (unsigned int) i);
+	printf("SQL_CONVERT_VARCHAR: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CORRELATION_NAME, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CORRELATION_NAME: %u\n", (unsigned int) si);
+	printf("SQL_CORRELATION_NAME: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_CREATE_SCHEMA, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CREATE_SCHEMA: %u\n", (unsigned int) i);
+	printf("SQL_CREATE_SCHEMA: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CREATE_TABLE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CREATE_TABLE: %u\n", (unsigned int) i);
+	printf("SQL_CREATE_TABLE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CREATE_TRANSLATION, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CREATE_TRANSLATION: %u\n", (unsigned int) i);
+	printf("SQL_CREATE_TRANSLATION: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CREATE_VIEW, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CREATE_VIEW: %u\n", (unsigned int) i);
+	printf("SQL_CREATE_VIEW: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_CURSOR_COMMIT_BEHAVIOR, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CURSOR_COMMIT_BEHAVIOR: %u\n", (unsigned int) si);
+	printf("SQL_CURSOR_COMMIT_BEHAVIOR: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_CURSOR_ROLLBACK_BEHAVIOR, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CURSOR_ROLLBACK_BEHAVIOR: %u\n", (unsigned int) si);
+	printf("SQL_CURSOR_ROLLBACK_BEHAVIOR: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_CURSOR_SENSITIVITY, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_CURSOR_SENSITIVITY: %u\n", (unsigned int) i);
+	printf("SQL_CURSOR_SENSITIVITY: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DATABASE_NAME, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -319,15 +319,15 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_DBMS_VER, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DBMS_VER: %.*s\n", resultlen, str);
+	printf("#SQL_DBMS_VER: %.*s\n", resultlen, str);
 
 	ret = SQLGetInfo(dbc, SQL_DDL_INDEX, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DDL_INDEX: %u\n", (unsigned int) i);
+	printf("SQL_DDL_INDEX: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DEFAULT_TXN_ISOLATION, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DEFAULT_TXN_ISOLATION: %u\n", (unsigned int) i);
+	printf("SQL_DEFAULT_TXN_ISOLATION: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DESCRIBE_PARAMETER, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -347,47 +347,47 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_DRIVER_VER, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DRIVER_VER: %.*s\n", resultlen, str);
+	printf("#SQL_DRIVER_VER: %.*s\n", resultlen, str);
 
 	ret = SQLGetInfo(dbc, SQL_DROP_ASSERTION, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DROP_ASSERTION: %u\n", (unsigned int) i);
+	printf("SQL_DROP_ASSERTION: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DROP_CHARACTER_SET, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DROP_CHARACTER_SET: %u\n", (unsigned int) i);
+	printf("SQL_DROP_CHARACTER_SET: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DROP_COLLATION, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DROP_COLLATION: %u\n", (unsigned int) i);
+	printf("SQL_DROP_COLLATION: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DROP_DOMAIN, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DROP_DOMAIN: %u\n", (unsigned int) i);
+	printf("SQL_DROP_DOMAIN: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DROP_SCHEMA, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DROP_SCHEMA: %u\n", (unsigned int) i);
+	printf("SQL_DROP_SCHEMA: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DROP_TABLE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DROP_TABLE: %u\n", (unsigned int) i);
+	printf("SQL_DROP_TABLE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DROP_TRANSLATION, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DROP_TRANSLATION: %u\n", (unsigned int) i);
+	printf("SQL_DROP_TRANSLATION: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DROP_VIEW, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DROP_VIEW: %u\n", (unsigned int) i);
+	printf("SQL_DROP_VIEW: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DYNAMIC_CURSOR_ATTRIBUTES1, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DYNAMIC_CURSOR_ATTRIBUTES1: %u\n", (unsigned int) i);
+	printf("SQL_DYNAMIC_CURSOR_ATTRIBUTES1: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_DYNAMIC_CURSOR_ATTRIBUTES2, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_DYNAMIC_CURSOR_ATTRIBUTES2: %u\n", (unsigned int) i);
+	printf("SQL_DYNAMIC_CURSOR_ATTRIBUTES2: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_EXPRESSIONS_IN_ORDERBY, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -395,31 +395,31 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_FETCH_DIRECTION, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_FETCH_DIRECTION: %u\n", (unsigned int) si);
+	printf("SQL_FETCH_DIRECTION: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_FILE_USAGE, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_FILE_USAGE: %u\n", (unsigned int) si);
+	printf("SQL_FILE_USAGE: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1: %u\n", (unsigned int) i);
+	printf("SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES1: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2: %u\n", (unsigned int) i);
+	printf("SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_GETDATA_EXTENSIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_GETDATA_EXTENSIONS: %u\n", (unsigned int) i);
+	printf("SQL_GETDATA_EXTENSIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_GROUP_BY, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_GROUP_BY: %u\n", (unsigned int) si);
+	printf("SQL_GROUP_BY: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_IDENTIFIER_CASE, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_IDENTIFIER_CASE: %u\n", (unsigned int) si);
+	printf("SQL_IDENTIFIER_CASE: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_IDENTIFIER_QUOTE_CHAR, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -427,11 +427,11 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_INFO_SCHEMA_VIEWS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_INFO_SCHEMA_VIEWS: %u\n", (unsigned int) i);
+	printf("SQL_INFO_SCHEMA_VIEWS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_INSERT_STATEMENT, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_INSERT_STATEMENT: %u\n", (unsigned int) i);
+	printf("SQL_INSERT_STATEMENT: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_INTEGRITY, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -439,11 +439,11 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_KEYSET_CURSOR_ATTRIBUTES1, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_KEYSET_CURSOR_ATTRIBUTES1: %u\n", (unsigned int) i);
+	printf("SQL_KEYSET_CURSOR_ATTRIBUTES1: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_KEYSET_CURSOR_ATTRIBUTES2, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_KEYSET_CURSOR_ATTRIBUTES2: %u\n", (unsigned int) i);
+	printf("SQL_KEYSET_CURSOR_ATTRIBUTES2: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_KEYWORDS, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -455,7 +455,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_LOCK_TYPES, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_LOCK_TYPES: %u\n", (unsigned int) i);
+	printf("SQL_LOCK_TYPES: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_MAX_ASYNC_CONCURRENT_STATEMENTS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -563,31 +563,31 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_NON_NULLABLE_COLUMNS, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_NON_NULLABLE_COLUMNS: %u\n", (unsigned int) si);
+	printf("SQL_NON_NULLABLE_COLUMNS: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_NULL_COLLATION, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_NULL_COLLATION: %u\n", (unsigned int) si);
+	printf("SQL_NULL_COLLATION: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_NUMERIC_FUNCTIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_NUMERIC_FUNCTIONS: %u\n", (unsigned int) i);
+	printf("SQL_NUMERIC_FUNCTIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_ODBC_API_CONFORMANCE, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_ODBC_API_CONFORMANCE: %u\n", (unsigned int) si);
+	printf("SQL_ODBC_API_CONFORMANCE: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_ODBC_INTERFACE_CONFORMANCE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_ODBC_INTERFACE_CONFORMANCE: %u\n", (unsigned int) i);
+	printf("SQL_ODBC_INTERFACE_CONFORMANCE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_ODBC_SAG_CLI_CONFORMANCE, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_ODBC_SAG_CLI_CONFORMANCE: %u\n", (unsigned int) si);
+	printf("SQL_ODBC_SAG_CLI_CONFORMANCE: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_ODBC_SQL_CONFORMANCE, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_ODBC_SQL_CONFORMANCE: %u\n", (unsigned int) si);
+	printf("SQL_ODBC_SQL_CONFORMANCE: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_ODBC_VER, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -595,7 +595,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_OJ_CAPABILITIES, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_OJ_CAPABILITIES: %u\n", (unsigned int) i);
+	printf("SQL_OJ_CAPABILITIES: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_ORDER_BY_COLUMNS_IN_SELECT, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -607,19 +607,19 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_PARAM_ARRAY_ROW_COUNTS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_PARAM_ARRAY_ROW_COUNTS: %u\n", (unsigned int) i);
+	printf("SQL_PARAM_ARRAY_ROW_COUNTS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_PARAM_ARRAY_SELECTS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_PARAM_ARRAY_SELECTS: %u\n", (unsigned int) i);
+	printf("SQL_PARAM_ARRAY_SELECTS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_POSITIONED_STATEMENTS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_POSITIONED_STATEMENTS: %u\n", (unsigned int) i);
+	printf("SQL_POSITIONED_STATEMENTS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_POS_OPERATIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_POS_OPERATIONS: %u\n", (unsigned int) i);
+	printf("SQL_POS_OPERATIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_PROCEDURES, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -631,7 +631,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_QUOTED_IDENTIFIER_CASE, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_QUOTED_IDENTIFIER_CASE: %u\n", (unsigned int) si);
+	printf("SQL_QUOTED_IDENTIFIER_CASE: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_ROW_UPDATES, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -643,15 +643,15 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_SCHEMA_USAGE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_SCHEMA_USAGE: %u\n", (unsigned int) i);
+	printf("SQL_SCHEMA_USAGE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_SCROLL_CONCURRENCY, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_SCROLL_CONCURRENCY: %u\n", (unsigned int) si);
+	printf("SQL_SCROLL_CONCURRENCY: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_SCROLL_OPTIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_SCROLL_OPTIONS: %u\n", (unsigned int) i);
+	printf("SQL_SCROLL_OPTIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_SEARCH_PATTERN_ESCAPE, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -667,27 +667,27 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_SQL_CONFORMANCE, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_SQL_CONFORMANCE: %u\n", (unsigned int) i);
+	printf("SQL_SQL_CONFORMANCE: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_STATIC_CURSOR_ATTRIBUTES1, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_STATIC_CURSOR_ATTRIBUTES1: %u\n", (unsigned int) i);
+	printf("SQL_STATIC_CURSOR_ATTRIBUTES1: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_STATIC_CURSOR_ATTRIBUTES2, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_STATIC_CURSOR_ATTRIBUTES2: %u\n", (unsigned int) i);
+	printf("SQL_STATIC_CURSOR_ATTRIBUTES2: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_STRING_FUNCTIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_STRING_FUNCTIONS: %u\n", (unsigned int) i);
+	printf("SQL_STRING_FUNCTIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_SUBQUERIES, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_SUBQUERIES: %u\n", (unsigned int) i);
+	printf("SQL_SUBQUERIES: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_SYSTEM_FUNCTIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_SYSTEM_FUNCTIONS: %u\n", (unsigned int) i);
+	printf("SQL_SYSTEM_FUNCTIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_TABLE_TERM, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
@@ -695,27 +695,27 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_TIMEDATE_ADD_INTERVALS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_TIMEDATE_ADD_INTERVALS: %u\n", (unsigned int) i);
+	printf("SQL_TIMEDATE_ADD_INTERVALS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_TIMEDATE_DIFF_INTERVALS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_TIMEDATE_DIFF_INTERVALS: %u\n", (unsigned int) i);
+	printf("SQL_TIMEDATE_DIFF_INTERVALS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_TIMEDATE_FUNCTIONS, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_TIMEDATE_FUNCTIONS: %u\n", (unsigned int) i);
+	printf("SQL_TIMEDATE_FUNCTIONS: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_TXN_CAPABLE, &si, sizeof(si), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_TXN_CAPABLE: %u\n", (unsigned int) si);
+	printf("SQL_TXN_CAPABLE: 0x%x\n", (unsigned int) si);
 
 	ret = SQLGetInfo(dbc, SQL_TXN_ISOLATION_OPTION, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_TXN_ISOLATION_OPTION: %u\n", (unsigned int) i);
+	printf("SQL_TXN_ISOLATION_OPTION: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_UNION, &i, sizeof(i), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");
-	printf("SQL_UNION: %u\n", (unsigned int) i);
+	printf("SQL_UNION: 0x%x\n", (unsigned int) i);
 
 	ret = SQLGetInfo(dbc, SQL_USER_NAME, str, sizeof(str), &resultlen);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo");

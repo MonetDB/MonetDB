@@ -4145,6 +4145,8 @@ def main(argv) :
 
     env['BINDIR'] = _configure('@QXbindir@')
     vars_.append('BINDIR')
+    env['LIBDIR'] = _configure('@QXlibdir@')
+    vars_.append('LIBDIR')
 
     # export and display env
     STDERR.flush()
