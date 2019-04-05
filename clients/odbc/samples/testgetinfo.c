@@ -1690,12 +1690,12 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_DDL_INDEX, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_DDL_INDEX")) {
-		printf("SQL_DDL_INDEX: %u\n", i);
+		printf("SQL_DDL_INDEX: %u\n", (unsigned int) i);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_DEFAULT_TXN_ISOLATION, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_DEFAULT_TXN_ISOLATION")) {
-		printf("SQL_DEFAULT_TXN_ISOLATION: %u\n", i);
+		printf("SQL_DEFAULT_TXN_ISOLATION: %u\n", (unsigned int) i);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_DESCRIBE_PARAMETER, str, sizeof(str), &resultlen);
@@ -1711,7 +1711,7 @@ main(int argc, char **argv)
 #ifdef SQL_DRIVER_AWARE_POOLING_SUPPORTED
 	ret = SQLGetInfo(dbc, SQL_DRIVER_AWARE_POOLING_SUPPORTED, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_DRIVER_AWARE_POOLING_SUPPORTED")) {
-		printf("SQL_DRIVER_AWARE_POOLING_SUPPORTED: %u\n", i);
+		printf("SQL_DRIVER_AWARE_POOLING_SUPPORTED: %u\n", (unsigned int) i);
 	}
 #endif
 
@@ -2005,8 +2005,10 @@ main(int argc, char **argv)
 			printf(" SQL_GD_BLOCK");
 		if (i & SQL_GD_BOUND)
 			printf(" SQL_GD_BOUND");
+#ifdef SQL_GD_OUTPUT_PARAMS
 		if (i & SQL_GD_OUTPUT_PARAMS)
 			printf(" SQL_GD_OUTPUT_PARAMS");
+#endif
 		printf("\n");
 	}
 
@@ -2243,12 +2245,12 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_ASYNC_CONCURRENT_STATEMENTS, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_ASYNC_CONCURRENT_STATEMENTS")) {
-		printf("SQL_MAX_ASYNC_CONCURRENT_STATEMENTS: %u\n", i);
+		printf("SQL_MAX_ASYNC_CONCURRENT_STATEMENTS: %u\n", (unsigned int) i);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_BINARY_LITERAL_LEN, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_BINARY_LITERAL_LEN")) {
-		printf("SQL_MAX_BINARY_LITERAL_LEN: %u\n", i);
+		printf("SQL_MAX_BINARY_LITERAL_LEN: %u\n", (unsigned int) i);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_CATALOG_NAME_LEN, &s, sizeof(s), &resultlen);
@@ -2258,7 +2260,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_CHAR_LITERAL_LEN, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_CHAR_LITERAL_LEN")) {
-		printf("SQL_MAX_CHAR_LITERAL_LEN: %u\n", i);
+		printf("SQL_MAX_CHAR_LITERAL_LEN: %u\n", (unsigned int) i);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_COLUMN_NAME_LEN, &s, sizeof(s), &resultlen);
@@ -2308,7 +2310,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_INDEX_SIZE, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_INDEX_SIZE")) {
-		printf("SQL_MAX_INDEX_SIZE: %u\n", i);
+		printf("SQL_MAX_INDEX_SIZE: %u\n", (unsigned int) i);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_PROCEDURE_NAME_LEN, &s, sizeof(s), &resultlen);
@@ -2318,7 +2320,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_ROW_SIZE, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_ROW_SIZE")) {
-		printf("SQL_MAX_ROW_SIZE: %u\n", i);
+		printf("SQL_MAX_ROW_SIZE: %u\n", (unsigned int) i);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_ROW_SIZE_INCLUDES_LONG, str, sizeof(str), &resultlen);
@@ -2333,7 +2335,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_STATEMENT_LEN, &i, sizeof(i), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_STATEMENT_LEN")) {
-		printf("SQL_MAX_STATEMENT_LEN: %u\n", i);
+		printf("SQL_MAX_STATEMENT_LEN: %u\n", (unsigned int) i);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_TABLE_NAME_LEN, &s, sizeof(s), &resultlen);
