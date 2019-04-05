@@ -41,6 +41,24 @@ static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
 
 static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
 
+static int
+exps_unique( list *exps )
+{
+	node *n;
+
+	if ((n = exps->h) != NULL) {
+		sql_exp *e = n->data;
+		prop *p;
+
+		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
+			sql_ukey *k = p->value;
+			if (k && list_length(k->k.columns) <= 1)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 /* The important task of the relational optimizer is to optimize the
    join order. 
 
@@ -2381,25 +2399,6 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		return e;
 	}
 	return NULL;
-}
-
-/* TODO: check for keys with more than one colun */
-static int
-exps_unique( list *exps )
-{
-	node *n;
-
-	if ((n = exps->h) != NULL) {
-		sql_exp *e = n->data;
-		prop *p;
-
-		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
-			sql_ukey *k = p->value;
-			if (k && list_length(k->k.columns) <= 1)
-				return 1;
-		}
-	}
-	return 0;
 }
 
 static sql_rel *
@@ -5519,6 +5518,20 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel) 
 {
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->exps && list_empty(rel->r)) { 
+		node *n;
+
+		for (n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+	    		if (exp_aggr_is_count(e) && need_distinct(e)) {
+				/* if count over unique values (ukey/pkey) */
+				if (e->l && exps_unique(e->l))
+					set_nodistinct(e);
+			}
+		}
+	}
+
 	if (is_groupby(rel->op)) {
 		sql_rel *l = rel->l;
 		if (!l || is_groupby(l->op))
