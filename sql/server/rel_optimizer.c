@@ -8065,7 +8065,7 @@ add_nulls(mvc *sql, sql_rel *rel, sql_rel *r)
 static sql_rel *
 rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 {
-	if (0 && (rel->op == op_left || rel->op == op_right || rel->op == op_full) &&
+	if ((rel->op == op_left || rel->op == op_right || rel->op == op_full) &&
 	    list_length(rel->exps) == 1 && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
 		sql_rel *l = rel->l, *nl, *nll, *nlr;
 		sql_rel *r = rel->r, *nr;
