@@ -1,24 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Fri Feb  8 2019 Sjoerd Mullender <sjoerd@acm.org>
-- Changed the way blobs are ordered.  Before, shorter blobs came before
-  longer, now the contents is compared first.
-
-* Wed Jan 23 2019 Sjoerd Mullender <sjoerd@acm.org>
-- Removed function blob.tostring() since it cannot guarantee that the
-  resulting string is properly encoded in UTF-8.
-
-* Tue Jan 22 2019 Sjoerd Mullender <sjoerd@acm.org>
-- Removed the type "sqlblob", changed the external format of the type
-  "blob" to be like what "sqlblob" used to be.  In other words, the
-  "blob" type is now SQL-compatible.
-
-* Thu Nov  8 2018 Sjoerd Mullender <sjoerd@acm.org>
-- The MAL functions algebra.sort and algebra.firstn now have a new,
-  extra second-to-last argument, nilslast:bit, which indicates where
-  NIL values are to be sorted: at the beginning, or at the end.  The old
-  behavior is when for algebra.sort, the value of nilslast is equal to
-  the value or the reverse:bit parameter, for algebra.firstn when the
-  value of nilslast is opposite to the value of the asc:bit parameter.
-
