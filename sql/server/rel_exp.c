@@ -2123,3 +2123,11 @@ create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
 		GDKfree(buf);
 	return res;
 }
+
+int 
+exp_aggr_is_count(sql_exp *e)
+{
+	if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0)
+		return 1;
+	return 0;
+}
