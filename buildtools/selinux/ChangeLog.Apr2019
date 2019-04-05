@@ -1,9 +1,3 @@
 # ChangeLog file for selinux
 # This file is updated with Maddlog
 
-* Tue Mar 19 2019 Sjoerd Mullender <sjoerd@acm.org>
-- There is one tunable parameter, mserver5_can_read_home, which can
-  be set using "setsebool -P mserver5_can_read_home=true" to allow an
-  mserver5 process started by monetdbd under the control of systemd to
-  read files in users' home directories.
-

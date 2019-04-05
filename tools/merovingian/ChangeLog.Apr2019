@@ -1,12 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Tue Mar 19 2019 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
-- Added a new database property named `profilerbeatfreq`. Its value,
-  <freq>, should be an integer and, if it is set the command
-  `profilerstart` will call stethoscope with this value as the
-  argument to -b. This will instruct stethoscope to collect heartbeat
-  events from the MonetDB server every <freq> milliseconds. Please note
-  that no type checking is done, and if
-  <freq> is not an integer, stethoscope will silently ignore it.
-
