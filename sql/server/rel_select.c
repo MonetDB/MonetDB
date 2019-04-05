@@ -4568,6 +4568,72 @@ rel_projections_(mvc *sql, sql_rel *rel)
 	}
 }
 
+/* exp_rewrite */
+static sql_exp * exp_rewrite(mvc *sql, sql_exp *e, sql_rel *t);
+
+static list *
+exps_rename(mvc *sql, list *l, sql_rel *r) 
+{
+	node *n;
+	list *nl = new_exp_list(sql->sa);
+
+	for(n=l->h; n; n=n->next) {
+		sql_exp *arg = n->data;
+
+		arg = exp_rewrite(sql, arg, r);
+		if (!arg) 
+			return NULL;
+		append(nl, arg);
+	}
+	return nl;
+}
+
+static sql_exp *
+exp_rewrite(mvc *sql, sql_exp *e, sql_rel *r) 
+{
+	sql_exp *l, *ne = NULL;
+
+	switch(e->type) {
+	case e_column:
+		if (e->l) { 
+			e = exps_bind_column2(r->exps, e->l, e->r);
+		} else {
+			e = exps_bind_column(r->exps, e->r, NULL);
+		}
+		if (!e)
+			return NULL;
+		return exp_column(sql->sa, e->l, e->r, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+	case e_aggr:
+	case e_cmp: 
+		return NULL;
+	case e_convert:
+		l = exp_rewrite(sql, e->l, r);
+		if (l)
+			ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+		break;
+	case e_func: {
+		list *l = e->l, *nl = NULL;
+
+		if (!l) {
+			return e;
+		} else {
+			nl = exps_rename(sql, l, r);
+			if (!nl)
+				return NULL;
+		}
+		if (e->type == e_func)
+			ne = exp_op(sql->sa, nl, e->f);
+		else 
+			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+		break;
+	}	
+	case e_atom:
+	case e_psm:
+		return e;
+	}
+	return ne;
+}
+
 /* second complex columns only */
 static sql_exp *
 rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
@@ -4579,11 +4645,8 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	int added_project = 0;
 
 	if (is_sql_orderby(f)) {
-		sql_rel *rl = r->l;
-
 		assert(is_project(r->op));
-		if (!is_processed(rl)) 
-			r = r->l;
+		r = r->l;
 	}
 	if (!r)
 		return e;
@@ -4597,11 +4660,10 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 	if (!e) {
 		e = rel_value_exp(query, &r, column_r, sql_sel | sql_orderby, ek);
 		/* add to internal project */
-		if (e && is_processed(r)) {
+		if (e && is_processed(r) && !is_groupby(r->op)) {
 			e = rel_project_add_exp(sql, r, e);
-			//e = rel_lastexp(sql, r);
 			e = exp_ref(sql->sa, e);
-			if (added_project) {
+			if (added_project || is_sql_orderby(f)) {
 				e = rel_project_add_exp(sql, *R, e);
 				e = exp_ref(sql->sa, e);
 			}
@@ -4621,12 +4683,15 @@ rel_order_by_column_exp(sql_query *query, sql_rel **R, symbol *column_r, int f)
 			e = rel_value_exp(query, &nr, column_r, sql_sel | sql_orderby, ek);
 			if (e) {
 				/* first rewrite e back into current column names */
-				e = rel_project_add_exp(sql, r, e);
-				//e = rel_lastexp(sql, r);
-				e = exp_ref(sql->sa, e);
-				if (added_project) {
-					e = rel_project_add_exp(sql, *R, e);
+				e = exp_rewrite(sql, e, nr);
+				
+				if (!is_groupby(r->op)) {
+					e = rel_project_add_exp(sql, r, e);
 					e = exp_ref(sql->sa, e);
+					if (added_project || is_sql_orderby(f)) {
+						e = rel_project_add_exp(sql, *R, e);
+						e = exp_ref(sql->sa, e);
+					}
 				}
 			}
 		}
@@ -4714,9 +4779,6 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				}
 			}
 
-			//if (or != rel)
-			//	return NULL;
-			//if (!e && sql->session->status != -ERR_AMBIGUOUS && col->token == SQL_COLUMN) {
 			if (!e && sql->session->status != -ERR_AMBIGUOUS && (col->token == SQL_COLUMN || col->token == SQL_IDENT)) {
 				/* reset error */
 				sql->session->status = 0;
@@ -4758,6 +4820,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 				}
 				if (!e)
 					e = rel_order_by_column_exp(query, &rel, col, f);
+				if (!e)
+					e = rel_order_by_column_exp(query, &rel, col, sql_sel);
 				if (e && e->card != rel->card && e->card != CARD_ATOM)
 					e = NULL;
 			}
@@ -4769,7 +4833,6 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f )
 			return sql_error(sql, 02, SQLSTATE(42000) "order not of type SQL_COLUMN");
 		}
 	}
-	//*R = rel;
 	if (or != rel)
 		or->l = rel;
 	return exps;

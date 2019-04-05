@@ -44,7 +44,7 @@ print_indent(mvc *sql, stream *fout, int depth, int decorate)
 static void
 cmp_print(mvc *sql, stream *fout, int cmp) 
 {
-	char *r;
+	char *r = NULL;
 
 	(void)sql;
 	switch(cmp) {
@@ -71,7 +71,7 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_joined: 		
 	case cmp_left: 		
 	case cmp_left_project: 		
-				assert(0); r = "inner"; break;
+				r = "inner"; break;
 	}
 	mnstr_printf(fout, " %s ", r);
 }
