@@ -3222,7 +3222,7 @@ static ssize_t
 ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct icstream *ic = (struct icstream *) s->stream_data.p;
-	ICONV_CONST char *inbuf = (ICONV_CONST char *) buf;
+	ICONV_CONST char *inbuf;
 	size_t inbytesleft = elmsize * cnt;
 	char *bf = NULL;
 
@@ -3243,6 +3243,7 @@ ic_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cn
 		inbytesleft += ic->buflen;
 		ic->buflen = 0;
 	}
+	inbuf = (ICONV_CONST char *) buf;
 	while (inbytesleft > 0) {
 		char *outbuf = ic->buffer;
 		size_t outbytesleft = sizeof(ic->buffer);
