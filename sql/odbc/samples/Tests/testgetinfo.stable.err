@@ -31,8 +31,6 @@ stderr of test 'testgetinfo` in directory 'sql/odbc/samples` itself:
 # 00:56:17 >  testgetinfo MonetDB-Test
 # 00:56:17 >  
 
-SQLGetInfo SQL_ASYNC_DBC_FUNCTIONS: Error: SQLstate HY096, Errnr 0, Message [MonetDB][ODBC Driver 11.33.0]Information type out of range
-SQLGetInfo SQL_ASYNC_NOTIFICATION: Error: SQLstate HY096, Errnr 0, Message [MonetDB][ODBC Driver 11.33.0]Information type out of range
 
 # 00:56:17 >  
 # 00:56:17 >  "Done."
