@@ -77,9 +77,9 @@ Ready.
 % i,	j # name
 % int,	tinyint # type
 % 1,	2 # length
-[ NULL,	42	]
-[ 1,	42	]
-[ 2,	42	]
+[ NULL,	NULL	]
+[ 1,	NULL	]
+[ 2,	NULL	]
 [ 3,	42	]
 #SELECT i, (SELECT 42 WHERE i1.i IS NULL) AS j FROM integers i1 ORDER BY i;
 % .i1,	.L5 # table_name
@@ -87,9 +87,9 @@ Ready.
 % int,	tinyint # type
 % 1,	2 # length
 [ NULL,	42	]
-[ 1,	42	]
-[ 2,	42	]
-[ 3,	42	]
+[ 1,	NULL	]
+[ 2,	NULL	]
+[ 3,	NULL	]
 #SELECT i, (SELECT i+i1.i FROM integers WHERE i=1) AS j FROM integers i1 ORDER BY i;
 % sys.i1,	.L7 # table_name
 % i,	j # name
@@ -122,7 +122,7 @@ Ready.
 % i,	j # name
 % int,	tinyint # type
 % 1,	2 # length
-[ NULL,	42	]
+[ NULL,	NULL	]
 [ 1,	42	]
 [ 2,	42	]
 [ 3,	42	]

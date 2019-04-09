@@ -985,7 +985,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	}
 	if (list_length(exps)) { /* more expressions (add selects) */
 		node *n;
-		set_processed(top);
+		//set_processed(top);
 		top = rel_select(sql->sa, top, NULL);
 		for(n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -1000,9 +1000,13 @@ order_joins(mvc *sql, list *rels, list *exps)
 
 			if (l && r) 
 			*/
-			if (exp_is_join_exp(e) == 0)
-				rel_join_add_exp(sql->sa, top->l, e);
-			else
+			if (exp_is_join_exp(e) == 0) {
+				sql_rel *nr = NULL;
+				if (e->flag == cmp_equal)
+					nr = rel_push_join(sql, top->l, e->l, e->r, NULL, e);
+				if (!nr)
+					rel_join_add_exp(sql->sa, top->l, e);
+			} else
 				rel_select_add_exp(sql->sa, top, e);
 		}
 	}

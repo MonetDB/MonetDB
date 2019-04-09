@@ -1946,7 +1946,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 			/* only handle simple joins here */		
 			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
-			    (get_cmp(e) == cmp_or)) {
+			    get_cmp(e) == cmp_or || e->f) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
@@ -2338,7 +2338,7 @@ rel2bin_distinct(backend *be, stmt *s, stmt **distinct)
 		return s;
 
 	/* Use 'all' tid columns */
-	if ((tids = bin_find_columns(be, s, TID)) != NULL) {
+	if (0 && (tids = bin_find_columns(be, s, TID)) != NULL) {
 		for (n = tids->h; n; n = n->next) {
 			stmt *t = n->data;
 

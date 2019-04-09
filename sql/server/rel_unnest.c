@@ -85,7 +85,7 @@ merge_freevar(list *l, list *r)
 		return r;
 	if (!r)
 		return l;
-	return list_merge(l, r, (fdup)NULL);
+	return list_distinct(list_merge(l, r, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
 }
 
 static list * exps_freevar(mvc *sql, list *exps);
@@ -337,7 +337,7 @@ static sql_rel *
 push_up_project(mvc *sql, sql_rel *rel) 
 {
 	/* input rel is dependent outerjoin with on the right a project, we first try to push inner side expressions down (because these cannot be pushed up) */ 
-	if (rel && is_outerjoin(rel->op) && is_dependent(rel) && 0) {
+	if (rel && is_outerjoin(rel->op) && is_dependent(rel)) {
 		sql_rel *r = rel->r;
 
 		/* find constant expressions and move these down */
@@ -362,12 +362,16 @@ push_up_project(mvc *sql, sql_rel *rel)
 					}
 				}
 				if (cexps) {
-					sql_rel *n = l->l = rel_project( sql->sa, l->l, 
+					sql_rel *p = l->l = rel_project( sql->sa, l->l, 
 						rel_projections(sql, l->l, NULL, 1, 1));
-					n->exps = list_merge(n->exps, cexps, (fdup)NULL);
+					p->exps = list_merge(p->exps, cexps, (fdup)NULL);
 					if (list_empty(nexps)) {
 						rel->r = l; /* remove empty project */
 					} else {	
+						for (n = cexps->h; n; n = n->next) { /* add pushed down renamed expressions */
+							sql_exp *e = n->data;
+							append(nexps, exp_ref(sql->sa, e));
+						}
 						r->exps = nexps;
 					}
 				}
@@ -495,10 +499,11 @@ push_up_groupby(mvc *sql, sql_rel *rel)
 						col = exp_ref(sql->sa, col);
 						col = exp_unop(sql->sa, col, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(col), NULL, F_FUNC));
 						col = exp_label(sql->sa, col, ++sql->label);
-						if (!exps_find_exp(r->exps, col))
-							append(r->exps, col);
+						append(p->exps, col);
+						//if (!exps_find_exp(r->exps, col))
+						//	append(r->exps, col);
 					}
-					exp_ref(sql->sa, col);
+					col = exp_ref(sql->sa, col);
 					append(e->l=sa_list(sql->sa), col);
 					set_no_nil(e);
 				}
@@ -614,7 +619,8 @@ push_up_join(mvc *sql, sql_rel *rel)
 					append(nr->exps, pe);
 					pe = exp_ref(sql->sa, pe);
 					e = exp_ref(sql->sa, e);
-					je = exp_compare(sql->sa, e, pe, cmp_equal);
+					//je = exp_compare(sql->sa, e, pe, cmp_equal);
+					je = exp_compare(sql->sa, e, pe, cmp_equal_nil);
 					append(n->exps, je);
 				}
 				return n;
