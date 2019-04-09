@@ -13,6 +13,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+/**** Define the ODBC Version this ODBC driver complies with ****/
+/* also see ODBCGlobal.h */
+#define ODBCVER 0x0352		/* Important: this must be defined before include of sqlext.h */
+
 #include <sql.h>
 #include <sqlext.h>
 
@@ -2255,7 +2260,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_CATALOG_NAME_LEN, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_CATALOG_NAME_LEN")) {
-		printf("SQL_MAX_CATALOG_NAME_LEN: %u\n", s);
+		printf("SQL_MAX_CATALOG_NAME_LEN: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_CHAR_LITERAL_LEN, &i, sizeof(i), &resultlen);
@@ -2265,47 +2270,47 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_COLUMN_NAME_LEN, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_COLUMN_NAME_LEN")) {
-		printf("SQL_MAX_COLUMN_NAME_LEN: %u\n", s);
+		printf("SQL_MAX_COLUMN_NAME_LEN: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_COLUMNS_IN_GROUP_BY, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_COLUMNS_IN_GROUP_BY")) {
-		printf("SQL_MAX_COLUMNS_IN_GROUP_BY: %u\n", s);
+		printf("SQL_MAX_COLUMNS_IN_GROUP_BY: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_COLUMNS_IN_INDEX, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_COLUMNS_IN_INDEX")) {
-		printf("SQL_MAX_COLUMNS_IN_INDEX: %u\n", s);
+		printf("SQL_MAX_COLUMNS_IN_INDEX: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_COLUMNS_IN_ORDER_BY, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_COLUMNS_IN_ORDER_BY")) {
-		printf("SQL_MAX_COLUMNS_IN_ORDER_BY: %u\n", s);
+		printf("SQL_MAX_COLUMNS_IN_ORDER_BY: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_COLUMNS_IN_SELECT, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_COLUMNS_IN_SELECT")) {
-		printf("SQL_MAX_COLUMNS_IN_SELECT: %u\n", s);
+		printf("SQL_MAX_COLUMNS_IN_SELECT: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_COLUMNS_IN_TABLE, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_COLUMNS_IN_TABLE")) {
-		printf("SQL_MAX_COLUMNS_IN_TABLE: %u\n", s);
+		printf("SQL_MAX_COLUMNS_IN_TABLE: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_CURSOR_NAME_LEN, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_CURSOR_NAME_LEN")) {
-		printf("SQL_MAX_CURSOR_NAME_LEN: %u\n", s);
+		printf("SQL_MAX_CURSOR_NAME_LEN: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_DRIVER_CONNECTIONS, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_DRIVER_CONNECTIONS")) {
-		printf("SQL_MAX_DRIVER_CONNECTIONS: %u\n", s);
+		printf("SQL_MAX_DRIVER_CONNECTIONS: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_IDENTIFIER_LEN, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_IDENTIFIER_LEN")) {
-		printf("SQL_MAX_IDENTIFIER_LEN: %u\n", s);
+		printf("SQL_MAX_IDENTIFIER_LEN: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_INDEX_SIZE, &i, sizeof(i), &resultlen);
@@ -2315,7 +2320,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_PROCEDURE_NAME_LEN, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_PROCEDURE_NAME_LEN")) {
-		printf("SQL_MAX_PROCEDURE_NAME_LEN: %u\n", s);
+		printf("SQL_MAX_PROCEDURE_NAME_LEN: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_ROW_SIZE, &i, sizeof(i), &resultlen);
@@ -2330,7 +2335,7 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_SCHEMA_NAME_LEN, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_SCHEMA_NAME_LEN")) {
-		printf("SQL_MAX_SCHEMA_NAME_LEN: %u\n", s);
+		printf("SQL_MAX_SCHEMA_NAME_LEN: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_STATEMENT_LEN, &i, sizeof(i), &resultlen);
@@ -2340,17 +2345,17 @@ main(int argc, char **argv)
 
 	ret = SQLGetInfo(dbc, SQL_MAX_TABLE_NAME_LEN, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_TABLE_NAME_LEN")) {
-		printf("SQL_MAX_TABLE_NAME_LEN: %u\n", s);
+		printf("SQL_MAX_TABLE_NAME_LEN: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_TABLES_IN_SELECT, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_TABLES_IN_SELECT")) {
-		printf("SQL_MAX_TABLES_IN_SELECT: %u\n", s);
+		printf("SQL_MAX_TABLES_IN_SELECT: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MAX_USER_NAME_LEN, &s, sizeof(s), &resultlen);
 	if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo SQL_MAX_USER_NAME_LEN")) {
-		printf("SQL_MAX_USER_NAME_LEN: %u\n", s);
+		printf("SQL_MAX_USER_NAME_LEN: %u\n", (unsigned int) s);
 	}
 
 	ret = SQLGetInfo(dbc, SQL_MULTIPLE_ACTIVE_TXN, str, sizeof(str), &resultlen);

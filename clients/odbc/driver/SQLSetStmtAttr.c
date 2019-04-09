@@ -277,7 +277,7 @@ MNDBSetStmtAttr(ODBCStmt *stmt,
 		/* TODO: implement requested behavior */
 	case SQL_ATTR_ASYNC_ENABLE:		/* SQLULEN */
 #ifdef SQL_ATTR_ASYNC_STMT_EVENT
-	case SQL_ATTR_ASYNC_EVENT:		/* SQLPOINTER */
+	case SQL_ATTR_ASYNC_STMT_EVENT:		/* SQLPOINTER */
 #endif
 #ifdef SQL_ATTR_ASYNC_STMT_PCALLBACK
 	case SQL_ATTR_ASYNC_PCALLBACK:		/* SQLPOINTER */
