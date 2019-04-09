@@ -2757,6 +2757,7 @@ struct console {
 	DWORD len;
 	DWORD rd;
 	unsigned char i;
+	uint32_t ch;
 	WCHAR wbuf[8192];
 };
 
@@ -2871,6 +2872,8 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 	struct console *c = s->stream_data.p;
 	size_t n = elmsize * cnt;
 	const unsigned char *p = buf;
+	uint32_t ch;
+	int x;
 
 	if (c == NULL) {
 		s->errnr = MNSTR_WRITE_ERROR;
@@ -2880,6 +2883,30 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 		return 0;
 
 	c->len = 0;
+	if (c->i > 0) {
+		while (c->i > 0 && n > 0) {
+			if ((*p & 0xC0) != 0x80) {
+				s->errnr = MNSTR_WRITE_ERROR;
+				return -1;
+			}
+			c->ch <<= 6;
+			c->ch |= *p & 0x3F;
+			p++;
+			n--;
+			c->i--;
+		}
+		if (c->i > 0) {
+			;
+		} else if (c->ch > 0x10FFFF || (c->ch & 0xFFFFF800) == 0xD800) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		} else if (c->ch > 0xFFFF) {
+			c->wbuf[c->len++] = 0xD800 | ((c->ch >> 10) - (1 << 6));
+			c->wbuf[c->len++] = 0xDC00 | (c->ch & 0x03FF);
+		} else {
+			c->wbuf[c->len++] = c->ch;
+		}
+	}
 	while (n > 0) {
 		if (c->len >= 8191) {
 			if (!WriteConsoleW(c->h, c->wbuf, c->len, &c->rd, NULL)) {
@@ -2893,31 +2920,45 @@ console_write(stream *restrict s, const void *restrict buf, size_t elmsize, size
 				c->wbuf[c->len++] = L'\r';
 			c->wbuf[c->len++] = *p++;
 			n--;
-		} else if ((*p & 0xE0) == 0xC0 &&
-			   n >= 2 &&
-			   (p[1] & 0xC0) == 0x80) {
-			c->wbuf[c->len++] = ((p[0] & 0x1F) << 6) | (p[1] & 0x3F);
-			p += 2;
-			n -= 2;
-		} else if ((*p & 0xF0) == 0xE0 &&
-			   n >= 3 &&
-			   (p[1] & 0xC0) == 0x80 &&
-			   (p[2] & 0xC0) == 0x80) {
-			c->wbuf[c->len++] = ((p[0] & 0x0F) << 12) | ((p[1] & 0x3F) << 6) | (p[2] & 0x3F);
-			p += 3;
-			n -= 3;
-		} else if ((*p & 0xF8) == 0xF0 &&
-			   n >= 4 &&
-			   (p[1] & 0xC0) == 0x80 &&
-			   (p[2] & 0xC0) == 0x80 &&
-			   (p[3] & 0xC0) == 0x80) {
-			c->wbuf[c->len++] = 0xD800 | ((((p[0] & 0x07) << 8) | ((p[1] & 0x3F) << 2)) - 0x0040) | ((p[2] & 0x30) >> 4);
-			c->wbuf[c->len++] = 0xDC00 | ((p[2] & 0x0F) << 6) | (p[3] & 0x3F);
-			p += 4;
-			n -= 4;
+			x = 0;
+			continue;
+		} else if ((*p & 0xE0) == 0xC0) {
+			x = 1;
+			ch = *p & 0x1F;
+		} else if ((*p & 0xF0) == 0xE0) {
+			x = 2;
+			ch = *p & 0x0F;
+		} else if ((*p & 0xF8) == 0xF0) {
+			x = 3;
+			ch = *p & 0x07;
 		} else {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
+		}
+		p++;
+		n--;
+		while (x > 0 && n > 0) {
+			if ((*p & 0xC0) != 0x80) {
+				s->errnr = MNSTR_WRITE_ERROR;
+				return -1;
+			}
+			ch <<= 6;
+			ch |= *p & 0x3F;
+			p++;
+			n--;
+			x--;
+		}
+		if (x > 0) {
+			c->ch = ch;
+			c->i = x;
+		} else if (ch > 0x10FFFF || (ch & 0xFFFFF800) == 0xD800) {
+			s->errnr = MNSTR_WRITE_ERROR;
+			return -1;
+		} else if (ch > 0xFFFF) {
+			c->wbuf[c->len++] = 0xD800 | ((ch >> 10) - (1 << 6));
+			c->wbuf[c->len++] = 0xDC00 | (ch & 0x03FF);
+		} else {
+			c->wbuf[c->len++] = ch;
 		}
 	}
 	if (c->len > 0) {
