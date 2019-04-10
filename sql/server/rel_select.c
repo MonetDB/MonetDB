@@ -2750,11 +2750,6 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 						return NULL;
 					r = exp_compare(sql->sa, l, r, sc->token==SQL_IN?mark_in:mark_notin); 
 					if (z) {
-						/* TO BE removed once we have a mark join */
-						if (/* DISABLES CODE */ (0) && sc->token == SQL_NOT_IN && l->card != CARD_ATOM && has_nil(l) /* Should be:  NULL not in set, except when set is empty */) {
-							sql_exp *e = rel_unop_(query, l, NULL, "isnull", card_value);
-							left = rel_select(sql->sa, left, exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal));
-						}
 						left = rel_crossproduct(sql->sa, left, z, sc->token==SQL_IN?op_semi:op_anti);
 						if (rel_has_freevar(z))
 							set_dependent(left);
@@ -5692,7 +5687,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 
 					exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 					e = ne;
-				} else { //if (e->card > CARD_ATOM) {
+				} else { 
 					if (is_sql_sel(f) && is_project(p->op) && !is_processed(p)) {
 						if (p->l) {
 							p->l = rel_crossproduct(sql->sa, p->l, r, op_join);
@@ -5702,12 +5697,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 					} else {
 						*rel = rel_crossproduct(sql->sa, p, r, is_sql_sel(f)?op_left:op_join);
 					}
-					/*
-				} else {
-					if (!exp_relname(e))
-						exp_setname(sql->sa, e, exp_name(e), exp_name(e));
-					mvc_push_subquery(sql, exp_relname(e), r);
-					*/
 				}
 				*is_last = 1;
 				return e;

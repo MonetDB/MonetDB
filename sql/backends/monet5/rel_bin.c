@@ -719,19 +719,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = bin_find_column(be, right, e->l, e->r);
 		if (!s && left) 
 			s = bin_find_column(be, left, e->l, e->r);
-		if (!s) {
-			sql_subquery *sq = mvc_find_subquery(be->mvc, e->l?e->l:e->r, e->r);
-
-			if (sq) { 
-				stmt *s = sq->s;
-
-				if (s && s->type == st_list)
-					s = bin_find_column(be, s, e->l?e->l:e->r, e->r);
-				if (s && s->nrcols > 0)
-					return stmt_fetch(be, s);
-				return s; /* ugh */
-			}
-		}
 		if (s && grp)
 			s = stmt_project(be, ext, s);
 		if (!s && right) {
@@ -1244,7 +1231,6 @@ rel_parse_value(backend *be, char *query, char emode)
 	bstream *bs;
 
 	m->qc = NULL;
-	m->sqs = NULL;
 
 	m->caching = 0;
 	m->emode = emode;
@@ -3148,7 +3134,6 @@ sql_parse(backend *be, sql_allocator *sa, const char *query, char mode)
 	*o = *m;
 
 	m->qc = NULL;
-	m->sqs = NULL;
 
 	m->caching = 0;
 	m->emode = mode;
@@ -5550,32 +5535,13 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	return s;
 }
 
-static stmt *
-_subrel_bin(backend *be, sql_rel *rel, list *refs) 
-{
-	if (be->mvc->sqs) {
-		node *n;
-
-		for(n = be->mvc->sqs->h; n; n = n->next) {
-			sql_subquery *v = n->data;
-
-			if (!v->s) {
-				v->s = subrel_bin(be, v->rel, refs);
-				if(!v->s)
-					return NULL;
-			}
-		}
-	}
-	return subrel_bin(be, rel, refs);
-}
-
 stmt *
 rel_bin(backend *be, sql_rel *rel) 
 {
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
 	int sqltype = sql->type;
-	stmt *s = _subrel_bin(be, rel, refs);
+	stmt *s = subrel_bin(be, rel, refs);
 
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
@@ -5589,7 +5555,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
 	int sqltype = sql->type;
-	stmt *s = _subrel_bin(be, rel, refs);
+	stmt *s = subrel_bin(be, rel, refs);
 
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */

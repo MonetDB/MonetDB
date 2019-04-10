@@ -1246,11 +1246,6 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		} else {
 			ne = exps_bind_column(f->exps, e->r, NULL);
 		}
-		if (!ne) {
-			ne = mvc_find_subexp(sql, e->l?e->l:e->r, e->r);
-			if (ne)
-				return e;
-		}
 		if (!ne)
 			return e;
 		e = NULL;
@@ -1258,11 +1253,6 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r, 0);
-		if (!e && ne->type == e_column) {
-			e = mvc_find_subexp(sql, ne->l?ne->l:ne->r, ne->r);
-			if (e)
-				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
-		}
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
 		if (!e && exp_is_atom(ne))
@@ -6833,20 +6823,6 @@ rel_dce(mvc *sql, sql_rel *rel)
 	list *refs = sa_list(sql->sa);
 	node *n;
 
-	if (sql->sqs) {
-		node *n;
-
-		for(n = sql->sqs->h; n; n = n->next) {
-			sql_subquery *v = n->data;
-			sql_rel *i = v->rel;
-
-			while (!rel_is_ref(i) && i->l && !is_base(i->op))
-				i = i->l;
-			if (i)
-				rel_used(i);
-		}
-	}
-
 	rel_dce_refs(sql, rel, refs);
 	if (refs) {
 		node *n;
@@ -9063,15 +9039,6 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
 {
 	lng Tbegin = GDKusec();
 	rel = optimize(sql, rel, value_based_opt);
-	if (sql->sqs) {
-		node *n;
-
-		for(n = sql->sqs->h; n; n = n->next) {
-			sql_subquery *v = n->data;
-
-			v->rel = optimize(sql, v->rel, value_based_opt);
-		}
-	}
 	sql->Topt += GDKusec() - Tbegin;
 	return rel;
 }
