@@ -653,7 +653,6 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 
 	m->topvars = 0;
 	m->frame = 1;
-	m->use_views = 0;
 	m->argmax = MAXPARAMS;
 	m->args = NEW_ARRAY(atom*,m->argmax);
 	if(!m->vars || !m->args) {

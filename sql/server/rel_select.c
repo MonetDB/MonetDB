@@ -829,7 +829,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 		if (!t && !sname) {
 			t = stack_find_table(sql, tname);
-			if (!t && sql->use_views) 
+			if (!t) 
 				temp_table = stack_find_rel_view(sql, tname);
 		}
 		if (!t && !temp_table) {
@@ -1037,7 +1037,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 
 		/* some views are just in the stack,
 		   like before and after updates views */
-		if (rel && !exp && sql->use_views) {
+		if (rel && !exp) {
 			sql_rel *v = stack_find_rel_view(sql, tname);
 
 			if (v) {
@@ -6255,7 +6255,6 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 	mvc *sql = query->sql;
 	sql_rel *res = NULL;
 	SelectNode *sn = NULL;
-	int old = sql->use_views;
 
 	assert(!rel);
 	if (sq->token != SQL_SELECT)
@@ -6283,7 +6282,6 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 		}
 	}
 
-	sql->use_views = 1;
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
 		dnode *n = NULL;
@@ -6319,10 +6317,8 @@ rel_query(sql_query *query, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			return NULL;
 		}
 	} else if (toplevel || !res) {	/* only on top level query */
-		sql->use_views = old;
 		return rel_simple_select(query, rel, sn->where, sn->selection, sn->distinct);
 	}
-	sql->use_views = old;
 	if (res)
 		rel = rel_select_exp(query, res, sn, ek);
 	if (!rel && res) 
