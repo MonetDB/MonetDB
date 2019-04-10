@@ -2818,7 +2818,7 @@ def killProc(proc, outfile = None, cmd = None):
     else:
         killchildren(proc.pid)
 
-def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
+def LaunchIt(cmd, TestOut, TestErr, TimeOut, SrvrOut = None) :
     global setpgrp
     if not SrvrOut:
         SrvrOut = process.PIPE
@@ -2831,8 +2831,8 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     if procdebug:
         print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin = process.PIPE, stdout = SrvrOut,
-                         stderr = TestErr, universal_newlines = True)
+    proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
+                         stderr=TestErr, universal_newlines=True)
     # maybe buffer output as it comes to avoid deadlock
     if SrvrOut == process.PIPE:
         proc.stdout = process._BufferedPipe(proc.stdout)
@@ -2842,13 +2842,6 @@ def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     proc.onechild = True
     t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
     t.start()
-
-    if TestInput:
-        try:
-            proc.stdin.write(TestInput)
-            proc.stdin.flush()
-        except IOError as err:
-            Warn("Flushing input pipe in LaunchIt failed with #%d: '%s'." % (err.errno, err.strerror))
 
     return proc, t
 ### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, SrvrOut) #
@@ -2976,6 +2969,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     pSrvrTimer = None
     try:
         if SERVER in ["MAL", "SQL"]:
+            ServerReady = False
             SrvrOutFile = TST+".server.out"
             SrvrErrFile = TST+".server.err"
             SrvrOut = openutf8(SrvrOutFile,"w")
@@ -2999,12 +2993,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     if Srvr[i].startswith('gdk_nr_threads='):
                         Srvr[i] = 'gdk_nr_threads=%s' % threads
                         break
-            Srvr.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB))
+            dbpath = os.path.join(env['GDK_DBFARM'], TSTDB)
+            Srvr.append('--dbpath=%s' % dbpath)
             if env.get('MULTIFARM'):
                 Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+            Srvr.extend(['--set', 'monet_daemon=yes'])
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
@@ -3063,8 +3059,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             # enable C integration in server
             Srvr.extend(['--set', 'embedded_c=true'])
 
+            try:
+                os.unlink(os.path.join(dbpath, '.started'))
+            except OSError:
+                pass
 
-            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+            pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
             if savepath is not None:
                 os.environ['PATH'] = savepath
                 if savepypath:
@@ -3075,39 +3075,41 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     os.environ['PYTHONHOME'] = savepyhome
                 else:
                     del os.environ['PYTHONHOME']
-            ln="dummy"
-            while 0 < len(ln) and not ln.startswith('Ready.'):
-                ln=pSrvr.stdout.readline()
-                SrvrOut.write(ln)
-                SrvrOut.flush()
-            if not ln.startswith('Ready.'):
-                # If not ready, it may be that there are far too many
-                # network connections in use, all in TIME_WAIT status.
-                # We'll just wait a while for that to clear and try
-                # again.
-                pSrvr.stdin.close()
-                CollectIt(pSrvr.stdout, SrvrOut)
-                pSrvr.wait()
+            while True:
+                pSrvr.poll()
+                if pSrvr.returncode is not None:
+                    break
+                if os.path.exists(os.path.join(dbpath, '.started')):
+                    ServerReady = True
+                    break
+                time.sleep(0.001)
+            if not ServerReady:
+                # Process exited.
+                # It may be that there are far too many network
+                # connections in use, all in TIME_WAIT status.  We'll
+                # just wait a while for that to clear and try again.
                 pSrvrTimer.cancel()
+                CollectIt(pSrvr.stdout, SrvrOut)
                 if returnCode(pSrvr) == 'error' and sys.platform == 'linux2':
                     x = process.Popen(['netstat', '-an'], stdout = process.PIPE, stderr = process.PIPE, universal_newlines = True)
                     out, err = x.communicate()
                     if out.count('TIME_WAIT') > 100:
                         time.sleep(120)
-                        pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                        ln="dummy"
-                        while 0 < len(ln) and not ln.startswith('Ready.'):
-                            ln=pSrvr.stdout.readline()
-                            SrvrOut.write(ln)
-                            SrvrOut.flush()
-                if not ln.startswith('Ready.'):
-                    ServerReady = False
+                        pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
+                        while True:
+                            pSrvr.poll()
+                            if pSrvr.returncode is not None:
+                                break
+                            if os.path.exists(os.path.join(dbpath, '.started')):
+                                ServerReady = True
+                                break
+                            time.sleep(0.001)
 
             if ServerReady:
                 port = int(env['MAPIPORT'])
                 ServerReady = mapi_ping(port, lang)
                 if not ServerReady:
-                    pSrvr.stdin.close()
+                    pSrvr.terminate()
                     CollectIt(pSrvr.stdout, SrvrOut)
                     pSrvr.wait()
                     pSrvrTimer.cancel()
@@ -3116,20 +3118,18 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         out, err = x.communicate()
                         if out.count('TIME_WAIT') > 100:
                             time.sleep(120)
-                            ServerReady = True
-                            pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
-                            ln="dummy"
-                            while 0 < len(ln) and not ln.startswith('Ready.'):
-                                ln=pSrvr.stdout.readline()
-                                SrvrOut.write(ln)
-                                SrvrOut.flush()
-                    if not ln.startswith('Ready.'):
-                        ServerReady = False
-
-                    if ServerReady:
-                        port = int(env['MAPIPORT'])
-                        ServerReady = mapi_ping(port, lang)
-
+                            pSrvr, pSrvrTimer = LaunchIt(Srvr, SrvrOut, SrvrErr, TIMEOUT)
+                            while True:
+                                pSrvr.poll()
+                                if pSrvr.returncode is not None:
+                                    break
+                                if os.path.exists(os.path.join(dbpath, '.started')):
+                                    ServerReady = True
+                                    break
+                                time.sleep(0.001)
+                            if ServerReady:
+                                port = int(env['MAPIPORT'])
+                                ServerReady = mapi_ping(port, lang)
         else:
             ClntOut = openutf8(TestOutFile, 'a')
             ClntErr = openutf8(TestErrFile, 'a')
@@ -3223,38 +3223,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         ClntErr.close()
 
         if SERVER in ["MAL", "SQL"]:
-            EPILOGUE = None
-            if os.path.isfile(TST+".epilogue5"):
-                EPILOGUE = openutf8(TST+".epilogue5",'r')
-            if EPILOGUE:
-                EpiFailed = ""
-                try:
-                    pSrvr.stdin.write(EPILOGUE.read())
-                    pSrvr.stdin.flush()
-                    pSrvr.stdin.write(';\nio.printf("\\nDone..\\n");\n')
-                    pSrvr.stdin.flush()
-                except IOError as err:
-                    EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(err.errno)+": '"+err.strerror+"'. !"
-                    EpiFailed = EpiFailed+"\n! Probably, mserver5 has died before or during. !\n"
-                ln="dummy"
-                while 0 < len(ln) and not ln.startswith('Done..'):
-                    ln=pSrvr.stdout.readline()
-                    SrvrOut.write(ln)
-                    SrvrOut.flush()
-                SrvrOut.write(EpiFailed)
-                SrvrOut.flush()
-                EPILOGUE.close()
-
             if ServerReady:
-                try:
-                    pSrvr.stdin.write('clients.quit();\n')
-                    pSrvr.stdin.flush()
-                except IOError:
-                    pass
-                try:
-                    pSrvr.stdin.close()
-                except IOError as err:
-                    Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (err.errno, err.strerror))
+                pSrvr.terminate()
 
             CollectIt(pSrvr.stdout, SrvrOut)
             pSrvr.wait()

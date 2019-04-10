@@ -59,7 +59,6 @@ stdout of test 'count_from_commented_function_signatures.Bug-6542` in directory 
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:30:12 >  
 # 18:30:12 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30685" "--port=33898"

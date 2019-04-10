@@ -50,7 +50,6 @@ stdout of test 'conformance_load` in directory 'geom/sql/conformance` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:34:33 >  
 # 13:34:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11646" "--port=36548"

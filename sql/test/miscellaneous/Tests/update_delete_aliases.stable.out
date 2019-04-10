@@ -58,7 +58,6 @@ stdout of test 'update_delete_aliases` in directory 'sql/test/miscellaneous` its
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:34:26 >  
 # 15:34:26 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23035" "--port=38079"

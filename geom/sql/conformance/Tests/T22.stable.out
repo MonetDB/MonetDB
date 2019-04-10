@@ -18,7 +18,6 @@ stdout of test 'T22` in directory 'geom/sql/conformance` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 #WARNING To speedup geom.NumPoints a bulk operator implementation is needed
 
 # 14:52:43 >  

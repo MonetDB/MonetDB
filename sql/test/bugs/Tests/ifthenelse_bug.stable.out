@@ -13,7 +13,6 @@ stdout of test 'ifthenelse_bug` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:32100/
 # MonetDB/SQL module v2.22.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

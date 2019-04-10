@@ -19,7 +19,6 @@ stdout of test 'insert_into_merge_table_crash.Bug-3703` in directory 'sql/test/B
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

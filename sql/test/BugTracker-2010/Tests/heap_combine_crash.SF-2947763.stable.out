@@ -15,7 +15,6 @@ stdout of test 'heap_combine_crash.SF-2947763` in directory 'sql/test/BugTracker
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:31369/
 # MonetDB/SQL module v2.36.4 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -19,7 +19,6 @@ stdout of test 'between.Bug-3259` in directory 'sql/test/BugTracker-2013` itself
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 20:18:31 >  
 # 20:18:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5226" "--port=31042"

@@ -16,7 +16,6 @@ stdout of test 'crash_timestamp_convert.Bug-3816` in directory 'sql/test/BugTrac
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:04:38 >  
 # 19:04:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=LAB03" "--port=39900"

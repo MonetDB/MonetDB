@@ -19,7 +19,6 @@ stdout of test 'pyapi_types_boolean` in directory 'monetdb5/extras/pyapi` itself
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:34:46 >  
 # 23:34:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20536" "--port=39373"

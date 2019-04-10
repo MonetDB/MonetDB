@@ -18,7 +18,6 @@ stdout of test 'schema_3_1_88` in directory 'sql/test/LSST` itself:
 # MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 
-Ready.
 
 # 14:45:00 >  
 # 14:45:00 >  mclient -lsql -ftest -i -e --host=eir --port=38469 

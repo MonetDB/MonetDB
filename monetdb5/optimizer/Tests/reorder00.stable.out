@@ -21,7 +21,6 @@ stdout of test 'reorder00` in directory 'monetdb5/optimizer` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:01:31 >  
 # 14:01:31 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-31756" "--port=39544"

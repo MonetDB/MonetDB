@@ -23,7 +23,6 @@ stdout of test 'crash_in_reduce_groupby.Bug-3818` in directory 'sql/test/BugTrac
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:28:41 >  
 # 11:28:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10633" "--port=34815"

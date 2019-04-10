@@ -14,7 +14,6 @@ stdout of test 'insert_order_by.SF-2658243` in directory 'sql/test/BugTracker-20
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38029/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

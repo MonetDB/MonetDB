@@ -17,7 +17,6 @@ stdout of test 'udf-fuse` in directory 'sql/backends/monet5/UDF/udf` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:49:07 >  
 # 18:49:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=31089"

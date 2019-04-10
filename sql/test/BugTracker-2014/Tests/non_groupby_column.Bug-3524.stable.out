@@ -19,7 +19,6 @@ stdout of test 'non_groupby_column.Bug-3524` in directory 'sql/test/BugTracker-2
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:15:00 >  
 # 11:15:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4352" "--port=32287"

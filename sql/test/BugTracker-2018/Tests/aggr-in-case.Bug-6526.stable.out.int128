@@ -18,7 +18,6 @@ stdout of test 'aggr-in-case.Bug-6526` in directory 'sql/test/BugTracker-2018` i
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:07:27 >  
 # 18:07:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17690" "--port=35745"

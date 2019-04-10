@@ -18,7 +18,6 @@ stdout of test 'date_trunc` in directory 'sql/test/BugTracker-2019` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 08:07:24 >  
 # 08:07:24 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23934" "--port=33395"

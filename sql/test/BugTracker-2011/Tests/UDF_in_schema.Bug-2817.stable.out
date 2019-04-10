@@ -17,7 +17,6 @@ stdout of test 'UDF_in_schema.Bug-2817` in directory 'sql/test/BugTracker-2011` 
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

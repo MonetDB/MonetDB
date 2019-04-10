@@ -14,7 +14,6 @@ stdout of test 'load` in directory 'sql/test/Dump` itself:
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:31369/
 # MonetDB/SQL module v2.30.3 loaded
 
-Ready.
 
 # 18:42:56 >  
 # 18:42:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6207" "--port=37397"

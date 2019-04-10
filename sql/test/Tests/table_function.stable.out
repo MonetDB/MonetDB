@@ -19,7 +19,6 @@ stdout of test 'table_function` in directory 'sql/test` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:57:52 >  
 # 18:57:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26433" "--port=36910"

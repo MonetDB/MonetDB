@@ -14,7 +14,6 @@ stdout of test 'order_by_complex_exp` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34580/
 # MonetDB/SQL module v2.29.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

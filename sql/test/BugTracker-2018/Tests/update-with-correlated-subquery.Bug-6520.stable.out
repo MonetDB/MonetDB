@@ -18,7 +18,6 @@ stdout of test 'update-with-correlated-subquery.Bug-6520` in directory 'sql/test
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:27:52 >  
 # 18:27:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6807" "--port=32298"

@@ -19,7 +19,6 @@ stdout of test 'select_select_bug` in directory 'sql/test/bugs` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:07:43 >  
 # 19:07:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17024" "--port=34274"

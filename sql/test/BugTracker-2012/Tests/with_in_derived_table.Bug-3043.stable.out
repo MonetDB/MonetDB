@@ -17,7 +17,6 @@ stdout of test 'with_in_derived_table.Bug-3043` in directory 'sql/test/BugTracke
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 22:12:59 >  
 # 22:12:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32544"

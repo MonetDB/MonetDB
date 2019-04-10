@@ -57,7 +57,6 @@ stdout of test 'create_tables_t` in directory 'sql/test/rdf` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:46:17 >  
 # 10:46:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3472" "--port=36263"

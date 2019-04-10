@@ -23,7 +23,6 @@ stdout of test 'null_in_null.Bug-3900` in directory 'sql/test/BugTracker-2016` i
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 21:33:36 >  
 # 21:33:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11290" "--port=31993"

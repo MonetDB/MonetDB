@@ -14,7 +14,6 @@ stdout of test 'group_by_on_values.SF-2837561` in directory 'sql/test/BugTracker
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32132/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

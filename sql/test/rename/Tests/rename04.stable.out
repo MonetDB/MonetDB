@@ -58,7 +58,6 @@ stdout of test 'rename04` in directory 'sql/test/rename` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:53:11 >  
 # 11:53:11 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8454" "--port=34170"

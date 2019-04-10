@@ -18,7 +18,6 @@ stdout of test 'check_Not_Nullable_columns` in directory 'sql/test/sys-schema` i
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:07:03 >  
 # 18:07:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25731" "--port=34464"

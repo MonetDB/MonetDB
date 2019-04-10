@@ -14,7 +14,6 @@ stdout of test 'correlated_exists.SF-2075147` in directory 'sql/test/BugTracker-
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35446/
 # MonetDB/SQL module v2.26.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 #function user.main():void;

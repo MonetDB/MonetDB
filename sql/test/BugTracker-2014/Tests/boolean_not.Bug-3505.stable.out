@@ -19,7 +19,6 @@ stdout of test 'boolean_not.Bug-3505` in directory 'sql/test/BugTracker-2014` it
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:06:47 >  
 # 19:06:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25685" "--port=38042"

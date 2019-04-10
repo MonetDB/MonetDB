@@ -15,7 +15,6 @@ stdout of test 'python_escape.SF-1916844` in directory 'sql/test/BugTracker` its
 # Listening for connection requests on mapi:monetdb://hirundo.ins.cwi.nl:38861/
 # MonetDB/SQL module v2.22.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

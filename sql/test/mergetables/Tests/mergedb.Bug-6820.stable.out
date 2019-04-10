@@ -18,7 +18,6 @@ stdout of test 'mergedb.Bug-6820` in directory 'sql/test/mergetables` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 23:53:19 >  
 # 23:53:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11852" "--port=36041"

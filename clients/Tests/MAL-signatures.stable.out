@@ -56,7 +56,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:39:22 >  
 # 14:39:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23085" "--port=30158"

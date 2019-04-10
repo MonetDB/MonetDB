@@ -17,7 +17,6 @@ stdout of test 'bam_loader_repos` in directory 'sql/backends/monet5/vaults/bam` 
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21062/.s.monetdb.37021
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:29:49 >  
 # 13:29:49 >  "/usr/bin/python2" "bam_loader_repos.SQL.py" "bam_loader_repos"

@@ -18,7 +18,6 @@ stdout of test 'python2_dec38` in directory 'sql/test/mapi` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:23:27 >  
 # 18:23:27 >  "./python2_dec38.SQL.sh" "python2_dec38"

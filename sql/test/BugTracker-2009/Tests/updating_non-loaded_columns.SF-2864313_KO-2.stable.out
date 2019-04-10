@@ -14,7 +14,6 @@ stdout of test 'updating_non-loaded_columns.SF-2864313_KO-2` in directory 'sql/t
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:38343/
 # MonetDB/SQL module v2.32.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

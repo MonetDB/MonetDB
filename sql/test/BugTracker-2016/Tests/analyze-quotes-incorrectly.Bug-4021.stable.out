@@ -19,7 +19,6 @@ stdout of test 'analyze-quotes-incorrectly.Bug-4021` in directory 'sql/test/BugT
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

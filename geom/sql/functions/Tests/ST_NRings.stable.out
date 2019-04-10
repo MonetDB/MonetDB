@@ -18,7 +18,6 @@ stdout of test 'ST_NRings` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 #WARNING To speedup geom.NRings a bulk operator implementation is needed
 
 # 14:51:12 >  

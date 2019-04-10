@@ -18,7 +18,6 @@ stdout of test 'truncate_tmp_tables.Bug-6543` in directory 'sql/test/BugTracker-
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:00:04 >  
 # 19:00:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11969" "--port=32461" "-utestuser" "-Ptestpassword"

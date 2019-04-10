@@ -19,7 +19,6 @@ stdout of test 'leftjoin.Bug-3720` in directory 'sql/test/BugTracker-2015` itsel
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:46:43 >  
 # 12:46:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2742" "--port=37706"

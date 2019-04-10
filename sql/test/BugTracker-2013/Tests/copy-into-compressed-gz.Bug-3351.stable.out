@@ -19,7 +19,6 @@ stdout of test 'copy-into-compressed-gz.Bug-3351` in directory 'sql/test/BugTrac
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 09:47:23 >  
 # 09:47:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10351" "--port=34634"

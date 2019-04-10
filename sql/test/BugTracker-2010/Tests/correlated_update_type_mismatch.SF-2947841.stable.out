@@ -15,7 +15,6 @@ stdout of test 'correlated_update_type_mismatch.SF-2947841` in directory 'sql/te
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32228/
 # MonetDB/SQL module v2.36.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

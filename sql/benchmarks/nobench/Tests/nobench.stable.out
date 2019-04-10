@@ -46,7 +46,6 @@ stdout of test 'nobench` in directory 'sql/benchmarks/nobench` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:08:13 >  
 # 13:08:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28559" "--port=33349"

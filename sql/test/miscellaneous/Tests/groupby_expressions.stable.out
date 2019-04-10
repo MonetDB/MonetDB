@@ -60,7 +60,6 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:21:56 >  
 # 14:21:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21747" "--port=32012"

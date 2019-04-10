@@ -19,7 +19,6 @@ stdout of test 'cast_and_floor.Bug-6071` in directory 'sql/test/BugTracker-2016`
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 17:04:12 >  
 # 17:04:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26340" "--port=31202"

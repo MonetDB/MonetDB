@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-select-in-column.Bug-6490` in directory 'sql/tes
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 23:22:13 >  
 # 23:22:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13741" "--port=34932"

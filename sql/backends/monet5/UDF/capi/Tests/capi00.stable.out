@@ -53,7 +53,6 @@ stdout of test 'capi00` in directory 'sql/backends/monet5/UDF/capi` itself:
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 16:15:27 >  
 # 16:15:27 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1158" "--port=39285"

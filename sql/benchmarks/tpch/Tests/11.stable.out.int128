@@ -11,7 +11,6 @@ stdout of test '11` in directory 'sql/benchmarks/tpch` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 
 
-Ready.
 
 # 14:36:22 >  
 # 14:36:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4866" "--port=32517"

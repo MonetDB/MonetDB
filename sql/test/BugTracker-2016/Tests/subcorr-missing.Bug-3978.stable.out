@@ -23,7 +23,6 @@ stdout of test 'subcorr-missing.Bug-3978` in directory 'sql/test/BugTracker-2016
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:04:45 >  
 # 13:04:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20295" "--port=39477"

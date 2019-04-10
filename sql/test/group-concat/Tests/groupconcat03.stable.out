@@ -18,7 +18,6 @@ stdout of test 'groupconcat03` in directory 'sql/test/group-concat` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:11:34 >  
 # 14:11:34 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28908" "--port=37314"

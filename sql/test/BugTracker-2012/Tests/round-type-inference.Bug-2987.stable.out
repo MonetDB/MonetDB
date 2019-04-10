@@ -17,7 +17,6 @@ stdout of test 'round-type-inference.Bug-2987` in directory 'sql/test/BugTracker
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:46:34 >  
 # 13:46:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=39315"

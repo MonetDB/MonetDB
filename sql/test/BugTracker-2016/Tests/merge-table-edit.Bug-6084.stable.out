@@ -16,7 +16,6 @@ stdout of test 'merge-table-edit.Bug-6084` in directory 'sql/test/BugTracker-201
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-71845/.s.monetdb.36399
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

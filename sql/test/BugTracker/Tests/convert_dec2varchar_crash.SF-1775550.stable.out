@@ -14,7 +14,6 @@ stdout of test 'convert_dec2varchar_crash.SF-1775550` in directory 'sql/test/Bug
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37754/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

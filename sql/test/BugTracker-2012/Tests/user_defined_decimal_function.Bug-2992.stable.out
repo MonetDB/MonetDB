@@ -17,7 +17,6 @@ stdout of test 'user_defined_decimal_function.Bug-2992` in directory 'sql/test/B
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 08:33:49 >  
 # 08:33:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=34635"

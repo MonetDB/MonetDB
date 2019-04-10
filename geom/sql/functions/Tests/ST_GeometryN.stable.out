@@ -18,7 +18,6 @@ stdout of test 'ST_GeometryN` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:06:10 >  
 # 15:06:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10872" "--port=32276"

@@ -19,7 +19,6 @@ stdout of test 'T19` in directory 'geom/sql` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 07:38:49 >  
 # 07:38:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3079" "--port=37052"

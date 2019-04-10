@@ -19,7 +19,6 @@ stdout of test 'left_shift_inet.Bug-3730` in directory 'sql/test/BugTracker-2015
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:25:18 >  
 # 10:25:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5924" "--port=33923"

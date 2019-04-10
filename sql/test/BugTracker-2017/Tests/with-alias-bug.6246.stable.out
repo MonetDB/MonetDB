@@ -18,7 +18,6 @@ stdout of test 'with-alias-bug.6246` in directory 'sql/test/BugTracker-2017` its
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:42:55 >  
 # 21:42:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11663" "--port=32448"

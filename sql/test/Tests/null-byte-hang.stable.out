@@ -14,7 +14,6 @@ stdout of test 'null-byte-hang` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://ottar.ins.cwi.nl:30609/
 # MonetDB/SQL module v2.26.3 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -19,7 +19,6 @@ stdout of test 'BugDatabaseMetaData_Bug_3356` in directory 'sql/jdbc/tests` itse
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 22:06:18 >  
 # 22:06:18 >  "./BugDatabaseMetaData_Bug_3356.SQL.sh" "BugDatabaseMetaData_Bug_3356"

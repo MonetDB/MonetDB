@@ -1,6 +1,5 @@
 stdout of test 'ssbm` in directory 'sql/test/remote` itself:
 
-Ready.
 
 # 11:09:02 >  
 # 11:09:02 >  "/usr/bin/python2" "ssbm.SQL.py" "ssbm"

@@ -43,7 +43,6 @@ stdout of test 'Dependencies` in directory 'sql/test/Dependencies` itself:
 # loading sql script: 85_bam.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 17:33:38 >  
 # 17:33:38 >  "/usr/bin/python" "Dependencies.SQL.py" "Dependencies"

@@ -14,7 +14,6 @@ stdout of test 'char` in directory 'sql/test/pg_regress` itself:
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:38104/
 # MonetDB/SQL module v2.31.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

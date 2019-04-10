@@ -18,7 +18,6 @@ stdout of test 'ST_IsValid` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:17:46 >  
 # 15:17:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8421" "--port=39488"

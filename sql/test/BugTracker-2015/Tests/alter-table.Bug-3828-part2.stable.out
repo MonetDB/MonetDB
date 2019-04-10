@@ -23,7 +23,6 @@ stdout of test 'alter-table.Bug-3828-part2` in directory 'sql/test/BugTracker-20
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 22:05:39 >  
 # 22:05:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30608" "--port=31473"

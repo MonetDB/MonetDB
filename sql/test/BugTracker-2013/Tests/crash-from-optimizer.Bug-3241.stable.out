@@ -19,7 +19,6 @@ stdout of test 'crash-from-optimizer.Bug-3241` in directory 'sql/test/BugTracker
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:57:02 >  
 # 10:57:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19299" "--port=31204"

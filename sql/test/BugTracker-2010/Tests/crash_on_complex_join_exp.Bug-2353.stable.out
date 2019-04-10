@@ -16,7 +16,6 @@ stdout of test 'crash_on_complex_join_exp.Bug-2353` in directory 'sql/test/BugTr
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33178/
 # MonetDB/SQL module v2.38.4 loaded
 
-Ready.
 
 
 # 21:49:44 >  

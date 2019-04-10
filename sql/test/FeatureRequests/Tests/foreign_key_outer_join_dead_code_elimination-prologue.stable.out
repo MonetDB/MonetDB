@@ -59,7 +59,6 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 01:44:33 >  
 # 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6225" "--port=33793"

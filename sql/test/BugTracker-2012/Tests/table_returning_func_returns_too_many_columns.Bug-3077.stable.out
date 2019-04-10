@@ -17,7 +17,6 @@ stdout of test 'table_returning_func_returns_too_many_columns.Bug-3077` in direc
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

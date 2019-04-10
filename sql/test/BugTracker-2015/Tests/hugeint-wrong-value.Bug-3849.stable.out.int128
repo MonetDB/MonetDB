@@ -21,7 +21,6 @@ stdout of test 'hugeint-wrong-value.Bug-3849` in directory 'sql/test/BugTracker-
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

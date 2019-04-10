@@ -18,7 +18,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:17:18 >  
 # 10:17:18 >  "/usr/bin/python2" "check.SQL.py" "check"

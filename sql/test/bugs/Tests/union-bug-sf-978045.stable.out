@@ -13,7 +13,6 @@ stdout of test 'union-bug-sf-978045` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

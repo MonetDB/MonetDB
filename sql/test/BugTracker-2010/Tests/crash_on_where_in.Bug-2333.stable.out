@@ -16,7 +16,6 @@ stdout of test 'crash_on_where_in.Bug-2333` in directory 'sql/test/BugTracker-20
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35807/
 # MonetDB/SQL module v2.38.4 loaded
 
-Ready.
 
 
 # 19:45:34 >  

@@ -19,7 +19,6 @@ stdout of test 'orderby_count.Bug-3526` in directory 'sql/test/BugTracker-2014` 
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:12:12 >  
 # 17:12:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-917" "--port=33631"

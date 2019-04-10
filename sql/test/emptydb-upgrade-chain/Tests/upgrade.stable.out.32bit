@@ -5384,7 +5384,6 @@ commit;
 
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:02:52 >  
 # 16:02:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5391" "--port=32916"

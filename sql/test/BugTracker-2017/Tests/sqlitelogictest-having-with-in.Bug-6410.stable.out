@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-having-with-in.Bug-6410` in directory 'sql/test/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:37:58 >  
 # 13:37:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5089" "--port=31716"

@@ -56,7 +56,6 @@ stdout of test 'create_view_order_by.Bug-3465` in directory 'sql/test/BugTracker
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 14:53:41 >  
 # 14:53:41 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11584" "--port=31415"

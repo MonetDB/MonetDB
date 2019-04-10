@@ -19,7 +19,6 @@ stdout of test 'crash_after_creation_of_unique_key.Bug-3363` in directory 'sql/t
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:50:26 >  
 # 16:50:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2732" "--port=33150"

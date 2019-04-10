@@ -20,7 +20,6 @@ stdout of test 'tst4006` in directory 'monetdb5/optimizer` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:27:10 >  
 # 15:27:10 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-25519" "--port=37447"

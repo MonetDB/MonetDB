@@ -18,7 +18,6 @@ stdout of test 'crash-orderby-alias.Bug-6527` in directory 'sql/test/BugTracker-
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:50:49 >  
 # 21:50:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31627" "--port=31483"

@@ -47,7 +47,6 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:20:25 >  
 # 16:20:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26153" "--port=36066"

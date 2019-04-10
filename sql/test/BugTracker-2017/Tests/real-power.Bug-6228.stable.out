@@ -20,7 +20,6 @@ stdout of test 'real-power.Bug-6228` in directory 'sql/test/BugTracker-2017` its
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

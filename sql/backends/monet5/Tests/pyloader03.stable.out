@@ -18,7 +18,6 @@ stdout of test 'pyloader03` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 # MonetDB/Python module loaded
 
-Ready.
 
 # 13:26:40 >  
 # 13:26:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30229" "--port=37683"

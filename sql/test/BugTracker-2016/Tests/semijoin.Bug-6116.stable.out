@@ -19,7 +19,6 @@ stdout of test 'semijoin.Bug-6116` in directory 'sql/test/BugTracker-2016` itsel
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:03:40 >  
 # 23:03:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6765" "--port=35104"

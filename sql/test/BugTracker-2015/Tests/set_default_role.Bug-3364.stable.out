@@ -23,7 +23,6 @@ stdout of test 'set_default_role.Bug-3364` in directory 'sql/test/BugTracker-201
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:27:51 >  
 # 16:27:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4508" "--port=33649"

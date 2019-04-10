@@ -14,7 +14,6 @@ stdout of test 'hang_on_copy_into.SF-1100504` in directory 'sql/test/BugDay_2005
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:39012/
 # MonetDB/SQL module v2.33.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

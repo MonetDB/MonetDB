@@ -23,7 +23,6 @@ stdout of test 'epoch_now.Bug-3740` in directory 'sql/test/BugTracker-2015` itse
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:34:16 >  
 # 13:34:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8436" "--port=36853"

@@ -58,7 +58,6 @@ stdout of test 'in-subquery-having-Bug-6651` in directory 'sql/test/BugTracker-2
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:21:55 >  
 # 11:21:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31514" "--port=35221"

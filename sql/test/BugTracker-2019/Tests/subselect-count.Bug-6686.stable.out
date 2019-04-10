@@ -58,7 +58,6 @@ stdout of test 'subselect-count.Bug-6686` in directory 'sql/test/BugTracker-2019
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:03:43 >  
 # 15:03:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12769" "--port=32799"

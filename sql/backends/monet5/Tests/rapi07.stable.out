@@ -20,7 +20,6 @@ stdout of test 'rapi07` in directory 'sql/backends/monet5` itself:
 # MonetDB/SQL module loaded
 #PRELUDE
 
-Ready.
 
 # 10:09:08 >  
 # 10:09:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11475" "--port=38114"

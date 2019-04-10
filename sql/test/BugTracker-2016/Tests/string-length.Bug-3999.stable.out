@@ -23,7 +23,6 @@ stdout of test 'string-length.Bug-3999` in directory 'sql/test/BugTracker-2016` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:44:27 >  
 # 11:44:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9650" "--port=30837"

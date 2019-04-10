@@ -18,7 +18,6 @@ stdout of test 'date_to_str.Bug-6467` in directory 'sql/test/BugTracker-2017` it
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:32:51 >  
 # 14:32:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29760" "--port=30624"
