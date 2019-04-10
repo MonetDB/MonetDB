@@ -2093,7 +2093,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			}
 			if (l_used) 
 				rel_join_add_exp(sql->sa, left, je);
-			else if (!is_sql_sel(f)) {
+			else if (!is_sql_sel(f) && !is_sql_farg(f)) {
 				if (!is_select(left->op) || rel_is_ref(left))
 					left = rel_select(sql->sa, left, e);
 				else
@@ -2729,7 +2729,6 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 						return NULL;
 					exp_label(sql->sa, r, ++sql->label);
 					r = exp_ref(sql->sa, r);
-					//e = exp_compare(sql->sa, l, r, cmp_equal );
 					e = exp_compare(sql->sa, l, r, sc->token==SQL_IN?mark_in:mark_notin); 
 					rel_join_add_exp(sql->sa, left, e);
 				}
@@ -3234,7 +3233,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		default:
 			break;
 		} 
-		le = rel_value_exp(query, &rel, sc->data.sym, f, ek);
+		le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
 			return NULL;
