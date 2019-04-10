@@ -2230,9 +2230,8 @@ gdk_export void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
 gdk_export void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 #ifndef HAVE_EMBEDDED
-__declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)))
-	__attribute__((__noreturn__));
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 #else
 gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));

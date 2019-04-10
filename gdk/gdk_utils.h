@@ -83,8 +83,7 @@ gdk_export void GDKsetmallocsuccesscount(lng count);
  * takes care of this.
  */
 #ifndef HAVE_EMBEDDED
-__declspec(noreturn) gdk_export void GDKexit(int status)
-	__attribute__((__noreturn__));
+gdk_export _Noreturn void GDKexit(int status);
 #else
 gdk_export void GDKexit(int status);
 #endif

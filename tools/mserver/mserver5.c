@@ -85,8 +85,7 @@ mserver_invalid_parameter_handler(
 }
 #endif
 
-__declspec(noreturn) static void usage(char *prog, int xit)
-	__attribute__((__noreturn__));
+static _Noreturn void usage(char *prog, int xit);
 
 static void
 usage(char *prog, int xit)

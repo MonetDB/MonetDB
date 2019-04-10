@@ -3191,8 +3191,7 @@ putfile(void *data, const char *filename, const void *buf, size_t bufsize)
 	return NULL;		/* success */
 }
 
-__declspec(noreturn) static void usage(const char *prog, int xit)
-	__attribute__((__noreturn__));
+static _Noreturn void usage(const char *prog, int xit);
 
 static void
 usage(const char *prog, int xit)

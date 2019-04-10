@@ -2513,6 +2513,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	AC_DEFINE([__hidden], [/* empty */],
 		[Does your compiler support the `__hidden' specifier?])])
 
+AC_MSG_CHECKING([if your compiler understands `_Noreturn'])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+	@%:@include <stdlib.h>
+
+	_Noreturn void foo (const char *a, ...);
+
+	void foo (const char *a, ...)
+		{ (void)a; exit(0); }
+	]],
+	[[ foo ("%s", ""); ]]
+	)],
+	[AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])
+	AC_DEFINE([_Noreturn], [__attribute__((__noreturn__))],
+		[Does your compiler support the `_Noreturn' specifier?])])
+
 AC_MSG_CHECKING([if your compiler can use NAN as an initializer])
 AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
 	@%:@include <math.h>

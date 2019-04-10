@@ -1104,8 +1104,7 @@ typedef enum {
 	INHERIT
 } meroset;
 
-__declspec(noreturn) static void command_set(int argc, char *argv[], meroset type)
-	__attribute__((__noreturn__));
+static _Noreturn void command_set(int argc, char *argv[], meroset type);
 
 static void
 command_set(int argc, char *argv[], meroset type)
