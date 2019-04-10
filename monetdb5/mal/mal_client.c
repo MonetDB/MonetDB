@@ -61,7 +61,7 @@ mal_client_reset(void)
 		GDKfree(mal_clients);
 }
 
-void
+bool
 MCinit(void)
 {
 	const char *max_clients = GDKgetenv("max_clients");
@@ -73,7 +73,7 @@ MCinit(void)
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
 			fprintf(stderr,"#MCinit: GDKsetenv failed");
-			mal_exit(1);
+			return false;
 		}
 	}
 
@@ -83,10 +83,11 @@ MCinit(void)
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
 		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
-		mal_exit(1);
+		return false;
 	}
 	for (int i = 0; i < MAL_MAXCLIENTS; i++)
 		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+	return true;
 }
 
 /* stack the files from which you read */
@@ -385,8 +386,8 @@ MCforkClient(Client father)
  * effects of sharing IO descriptors, also its children. Conversely, a
  * child can not close a parent.
  */
-static void
-freeClient(Client c)
+void
+MCfreeClient(Client c)
 {
 	c->mode = FINISHCLIENT;
 
@@ -507,7 +508,7 @@ MCcloseClient(Client c)
 #endif
 	/* free resources of a single thread */
 	if (!isAdministrator(c)) {
-		freeClient(c);
+		MCfreeClient(c);
 		return;
 	}
 

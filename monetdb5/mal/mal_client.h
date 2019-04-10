@@ -195,7 +195,7 @@ typedef struct CLIENT {
 	char *query;			/* string, identify whatever we're working on */
 } *Client, ClientRec;
 
-mal_export void    MCinit(void);
+mal_export bool    MCinit(void);
 
 mal_export int MAL_MAXCLIENTS;
 mal_export ClientRec *mal_clients;

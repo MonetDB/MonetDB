@@ -236,11 +236,18 @@ static void emergencyBreakpoint(void)
 	/* just a handle to break after system initialization for GDB */
 }
 
+static volatile sig_atomic_t interrupted = 0;
+
 static void
 handler(int sig)
 {
 	(void) sig;
-	mal_exit(-1);
+#ifdef HAVE_CONSOLE
+	if (!monet_daemon)
+		_Exit(-1);
+	else
+#endif
+		interrupted = 1;
 }
 
 int
@@ -713,6 +720,7 @@ main(int argc, char **av)
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
+	free(monet_script);
 
 	if ((err = msab_registerStarted()) != NULL) {
 		/* throw the error at the user, but don't die */
@@ -720,13 +728,12 @@ main(int argc, char **av)
 		free(err);
 	}
 
-	free(monet_script);
 #ifdef HAVE_CONSOLE
 	if (!monet_daemon) {
 		MSserveClient(mal_clients);
 	} else
 #endif
-	while (!GDKexiting()) {
+	while (!interrupted && !GDKexiting()) {
 		MT_sleep_ms(100);
 	}
 

@@ -16,6 +16,8 @@
 /* _MAL_CLIENT_H_ is defined in the same file as Client */
 __hidden void MCexitClient(Client c)
 	__attribute__((__visibility__("hidden")));
+__hidden void MCfreeClient(Client c)
+	__attribute__((__visibility__("hidden")));
 __hidden int MCreadClient(Client c)
 	__attribute__((__visibility__("hidden")));
 __hidden void MCpopClientInput(Client c)
@@ -51,7 +53,7 @@ __hidden extern MT_Lock mal_namespaceLock;
 __hidden void setqptimeout(lng usecs)
 	__attribute__((__visibility__("hidden")));
 
-__hidden void mdbInit(void)
+__hidden bool mdbInit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden void mdbExit(void)
 	__attribute__((__visibility__("hidden")));

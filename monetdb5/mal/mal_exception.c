@@ -161,14 +161,21 @@ dumpExceptionsToStream(stream *out, str whatever) {
 			if (i - last > 0) { /* skip empty lines */
 				if (whatever[last] == '!') /* no need for double ! */
 					last++;
-				mnstr_printf(out, "!%s\n", whatever + last);
+				if (out)
+					mnstr_printf(out, "!%s\n", whatever + last);
+				else
+					fprintf(stderr, "!%s\n", whatever + last);
 			}
 			last = i + 1;
 		}
 	}
 	/* flush last part */
-	if (i - last > 0) /* skip if empty */
-		mnstr_printf(out, "!%s\n", whatever + last);
+	if (i - last > 0) { /* skip if empty */
+		if (out)
+			mnstr_printf(out, "!%s\n", whatever + last);
+		else
+			fprintf(stderr, "!%s\n", whatever + last);
+	}
 }
 
 /**
