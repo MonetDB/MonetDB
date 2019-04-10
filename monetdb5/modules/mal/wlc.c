@@ -276,6 +276,7 @@ WLCcloselogger(void)
 {
 	if( wlc_fd == NULL)
 		return MAL_SUCCEED;
+	mnstr_flush(wlc_fd);
 	mnstr_fsync(wlc_fd);
 	close_stream(wlc_fd);
 	wlc_fd= NULL;
