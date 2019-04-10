@@ -5812,7 +5812,7 @@ rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 	 * where non of the project_cols are from B and x=y is a foreign key join (B is the unique side)
 	 * and there are no filters on B
 	 */
-	if (0 && is_project(rel->op)) {
+	if (/* DISABLES CODE */ (0) && is_project(rel->op)) {
 		sql_rel *j = rel->l;
 
 		if (is_join(j->op)) {
@@ -8045,7 +8045,7 @@ add_nulls(mvc *sql, sql_rel *rel, sql_rel *r)
 static sql_rel *
 rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 {
-	if (0 && (rel->op == op_left || rel->op == op_right || rel->op == op_full) &&
+	if (/* DISABLES CODE */ (0) && (rel->op == op_left || rel->op == op_right || rel->op == op_full) &&
 	    list_length(rel->exps) == 1 && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
 		sql_rel *l = rel->l, *nl, *nll, *nlr;
 		sql_rel *r = rel->r, *nr;
@@ -8889,7 +8889,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	}
 
 	if (gp.cnt[op_select] && gp.cnt[op_join]) {
-		if (0) rel = rewrite_topdown(sql, rel, &rel_push_select_down_join, &changes); 
+		if (/* DISABLES CODE */ (0)) rel = rewrite_topdown(sql, rel, &rel_push_select_down_join, &changes); 
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
 
