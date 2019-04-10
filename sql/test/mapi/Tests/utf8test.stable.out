@@ -87,7 +87,7 @@ select * from utf8test
 | s                                |
 +==================================+
 | value without special characters |
-|
+| funny characters: 
 #drop table utf8test
 
 # 10:26:28 >  
