@@ -2831,8 +2831,13 @@ def LaunchIt(cmd, TestOut, TestErr, TimeOut, SrvrOut = None) :
     if procdebug:
         print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
-                         stderr=TestErr, universal_newlines=True)
+    if os.name == "nt":
+        proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
+                             stderr=TestErr, universal_newlines=True,
+                             creationflags=process.CREATE_NEW_PROCESS_GROUP)
+    else:
+        proc = process.Popen(cmd, stdin=open(os.devnull), stdout=SrvrOut,
+                             stderr=TestErr, universal_newlines=True)
     # maybe buffer output as it comes to avoid deadlock
     if SrvrOut == process.PIPE:
         proc.stdout = process._BufferedPipe(proc.stdout)
@@ -3224,7 +3229,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
 
         if SERVER in ["MAL", "SQL"]:
             if ServerReady:
-                pSrvr.terminate()
+                if os.name == "nt":
+                    pSrvr.send_signal(signal.CTRL_BREAK_EVENT)
+                else:
+                    pSrvr.terminate()
 
             CollectIt(pSrvr.stdout, SrvrOut)
             pSrvr.wait()

@@ -237,6 +237,20 @@ static void emergencyBreakpoint(void)
 
 static volatile sig_atomic_t interrupted = 0;
 
+#ifdef _MSC_VER
+static BOOL
+winhandler(DWORD type)
+{
+	(void) type;
+#ifdef HAVE_CONSOLE
+	if (!monet_daemon)
+		_Exit(-1);
+	else
+#endif
+		interrupted = 1;
+	return TRUE;
+}
+#else
 static void
 handler(int sig)
 {
@@ -248,6 +262,7 @@ handler(int sig)
 #endif
 		interrupted = 1;
 }
+#endif
 
 int
 main(int argc, char **av)
@@ -623,6 +638,10 @@ main(int argc, char **av)
 		}
 	}
 #else
+#ifdef _MSC_VER
+	if (!SetConsoleCtrlHandler(winhandler, TRUE))
+		fprintf(stderr, "!unable to create console control handler\n");
+#else
 	if(signal(SIGINT, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
 #ifdef SIGQUIT
@@ -631,6 +650,7 @@ main(int argc, char **av)
 #endif
 	if(signal(SIGTERM, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
+#endif
 #endif
 
 	{

@@ -19,8 +19,15 @@ else:
     import queue
 
 from subprocess import PIPE
-
 __all__ = ['PIPE', 'Popen', 'client', 'server']
+
+try:
+    # on Windows, also make this available
+    from subprocess import CREATE_NEW_PROCESS_GROUP
+except ImportError:
+    pass
+else:
+    __all__.append('CREATE_NEW_PROCESS_GROUP')
 
 verbose = False
 
