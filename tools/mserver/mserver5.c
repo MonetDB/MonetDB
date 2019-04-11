@@ -238,7 +238,7 @@ static void emergencyBreakpoint(void)
 static volatile sig_atomic_t interrupted = 0;
 
 #ifdef _MSC_VER
-static BOOL
+static BOOL WINAPI
 winhandler(DWORD type)
 {
 	(void) type;
