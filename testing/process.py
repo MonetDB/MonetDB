@@ -13,6 +13,7 @@ import tempfile
 import copy
 import atexit
 import threading
+import signal
 if sys.version.startswith('2'):
     import Queue as queue
 else:
@@ -141,6 +142,7 @@ class _BufferedPipe:
 class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
+        self.isserver = False
         subprocess.Popen.__init__(self, *args, **kwargs)
 
     def wait(self):
@@ -164,6 +166,14 @@ class Popen(subprocess.Popen):
                 except IOError:
                     pass
             self.stdin.close()
+        if self.isserver:
+            try:
+                if os.name == 'nt':
+                    self.send_signal(signal.CTRL_BREAK_EVENT)
+                else:
+                    self.terminate()
+            except OSError:
+                pass
         if self.stdout:
             stdout = self.stdout.read()
             self.stdout.close()
@@ -303,6 +313,7 @@ def server(args=[], stdin=None, stdout=None, stderr=None,
                '--set', 'mapi_open=true',
                '--set', 'gdk_nr_threads=1',
                '--set', 'monet_prompt=']
+    cmd.extend(['--set', 'monet_daemon=yes'])
     if verbose:
         sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
     if notrace and '--trace' in cmd:
@@ -399,13 +410,19 @@ def server(args=[], stdin=None, stdout=None, stderr=None,
         os.unlink(started)
     except OSError:
         pass
+    if os.name == 'nt':
+        kw = {'creationflags', CREATE_NEW_PROCESS_GROUP}
+    else:
+        kw = {}
     p = Popen(cmd + args,
               stdin=stdin,
               stdout=stdout,
               stderr=stderr,
               shell=False,
               universal_newlines=True,
-              bufsize=bufsize)
+              bufsize=bufsize,
+              **kw)
+    p.isserver = True
     if stderr == PIPE:
         p.stderr = _BufferedPipe(p.stderr)
     if stdout == PIPE:
