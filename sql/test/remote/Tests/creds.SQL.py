@@ -1,10 +1,9 @@
 from __future__ import print_function
 
 import os
-import socket
-import sys
 import tempfile
 import threading
+import socket
 
 import pymonetdb
 
@@ -93,15 +92,8 @@ supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, a
 supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
 c = supervisorconn.cursor()
 
-# Create user/schema on supervisor
-
-c.execute("CREATE USER \"supervisor_user\" WITH PASSWORD 'supervisor_pass' NAME 'Supervisor user' schema \"sys\"")
-c.execute("CREATE SCHEMA \"supervisor_schema\" AUTHORIZATION \"supervisor_user\"")
-c.execute("ALTER USER \"supervisor_user\" SET SCHEMA \"supervisor_schema\"");
-c.execute("SET SCHEMA \"supervisor_schema\"")
-
 # Create the movies table and load the data
-movies_filename="$TSTDATAPATH/netflix_data/movies.csv"
+movies_filename=os.getenv("TSTDATAPATH")+"/netflix_data/movies.csv"
 movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
 c.execute(movies_create)
 load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
@@ -112,29 +104,26 @@ mtable = "CREATE MERGE TABLE ratings {}".format(RATINGS_TABLE_DEF)
 c.execute(mtable)
 
 # Create the workers and load the ratings data
-fn_template="$TSTDATAPATH/netflix_data/ratings_sample_{}.csv"
-cmovies = "CREATE REMOTE TABLE movies {} ON '{}/supervisor_schema/movies' WITH USER 'supervisor_user' PASSWORD 'supervisor_pass'".format(MOVIES_TABLE_DEF, supervisor_uri)
+fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
+cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(MOVIES_TABLE_DEF, supervisor_uri)
 workers = create_workers(fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
 
 # Create the remote tables on supervisor
 for wrec in workers:
-    rtable = "CREATE REMOTE TABLE ratings{} {} on '{}'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
+    rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
     c.execute(rtable)
 
     atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
     c.execute(atable)
 
 # Run the queries
-try:
-    c.execute("SELECT COUNT(*) FROM ratings0")
-    print("{} rows in remote table".format(c.fetchall()[0][0]))
-except pymonetdb.OperationalError as e1:
-    print("OperationalError:", file=sys.stderr)
-    print("# " + e1.message, file=sys.stderr)
+c.execute("SELECT COUNT(*) FROM ratings0")
+print("{} rows in remote table".format(c.fetchall()[0][0]))
 
-try:
-    c.execute("SELECT COUNT(*) FROM ratings")
-    print("{} rows in merge table".format(c.fetchall()[0][0]))
-except pymonetdb.OperationalError as e2:
-    print("OperationalError:", file=sys.stderr)
-    print("# " + e2.message, file=sys.stderr)
+c.execute("SELECT COUNT(*) FROM ratings")
+print("{} rows in merge table".format(c.fetchall()[0][0]))
+
+for wrec in workers:
+    wrec['proc'].communicate()
+
+supervisorproc.communicate()
