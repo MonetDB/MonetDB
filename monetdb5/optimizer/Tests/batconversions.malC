@@ -1,0 +1,7 @@
+# Handle the BAT type coercions to simplify re-execution of MAL explain plans.
+# flag it as error if incompatible with definition
+function user.s4_1():void;
+ X_111:bat[:lng] := bat.new(nil:lng);
+ (X_115:bat[:lng], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X_111:bat[:lng], false:bit, false:bit, false:bit);
+end user.s4_1;
+
