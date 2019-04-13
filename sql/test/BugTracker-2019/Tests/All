@@ -6,3 +6,4 @@ subselect-contradiction.Bug-6683
 insert-replica-table.Bug-6684
 subselect-count.Bug-6686
 subselect.Bug-6688
+timestamptransformation.Bug-6695
