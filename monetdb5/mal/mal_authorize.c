@@ -753,7 +753,7 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 	if (*ret1 == NULL)
 		throw(MAL, "getUsers", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (BATcount(duser)) {
-		bn = BATdiff(*ret1, duser, NULL, NULL, false, BUN_NONE);
+		bn = BATdiff(*ret1, duser, NULL, NULL, false, false, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;

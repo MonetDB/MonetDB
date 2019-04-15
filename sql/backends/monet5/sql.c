@@ -1600,7 +1600,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(c->batCacheid);
 			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		cminu = BATdiff(c, u_id, NULL, NULL, false, BUN_NONE);
+		cminu = BATdiff(c, u_id, NULL, NULL, false, false, BUN_NONE);
 		if (!cminu) {
 			BBPunfix(c->batCacheid);
 			BBPunfix(u_id->batCacheid);
@@ -1680,7 +1680,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(i->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			cminu = BATdiff(i, u_id, NULL, NULL, false, BUN_NONE);
+			cminu = BATdiff(i, u_id, NULL, NULL, false, false, BUN_NONE);
 			BBPunfix(u_id->batCacheid);
 			if (!cminu) {
 				BBPunfix(res->batCacheid);
@@ -1974,7 +1974,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (d == NULL)
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Can not bind delete column");
 
-		diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
+		diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (diff == NULL)
