@@ -411,7 +411,7 @@ def server(args=[], stdin=None, stdout=None, stderr=None,
     except OSError:
         pass
     if os.name == 'nt':
-        kw = {'creationflags', CREATE_NEW_PROCESS_GROUP}
+        kw = {'creationflags': CREATE_NEW_PROCESS_GROUP}
     else:
         kw = {}
     p = Popen(cmd + args,
