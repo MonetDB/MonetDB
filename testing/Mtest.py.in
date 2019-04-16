@@ -2016,6 +2016,28 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             #elif os.name == "posix":
             else:
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.R|.rb]`"
+            if quiet:
+                pass
+            elif verbose:
+                STDOUT.write('%s%s  ' %
+                             (prompt(), os.path.join(env['TSTDIR'], TST + EXT)))
+                prred('TEST MISSING')
+                STDOUT.write('\n')
+            else:
+                if ttywidth > 0 and length + 10 + 21 >= ttywidth:
+                    # 10 - length of prompt()
+                    # 21 - length of time plus result
+                    l = ttywidth - 10 - 21 - 1
+                    if len(TST) <= l:
+                        s = '%-*s ' % (l, TST)
+                    else:
+                        s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
+                else:
+                    s = '%-*s ' % (length, TST)
+                STDOUT.write('%s%s' % (prompt(), s))
+                prred('TEST MISSING')
+                STDOUT.write('\n')
+
             return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, TST, SERVER, CALL)
