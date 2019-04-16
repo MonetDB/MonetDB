@@ -19,7 +19,6 @@ stdout of test 'ukey_check_unaligned.Bug-3669` in directory 'sql/test/BugTracker
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 20:45:27 >  
 # 20:45:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6699" "--port=39026"

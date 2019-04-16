@@ -8,9 +8,9 @@ ALTER TABLE testvaluespartitions ADD TABLE sublimits1 AS PARTITION IN ('1', '2',
 INSERT INTO testvaluespartitions VALUES (1, 'first');
 INSERT INTO testvaluespartitions VALUES (1000, 'ups'); --error
 
-ALTER TABLE testvaluespartitions ADD TABLE sublimits2 AS PARTITION IN ('4', '5', '6') WITH NULL;
+ALTER TABLE testvaluespartitions ADD TABLE sublimits2 AS PARTITION IN ('4', '5', '6') WITH NULL VALUES;
 
-ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION WITH NULL; --error
+ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION FOR NULL VALUES; --error
 ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION IN (NULL); --error
 ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION IN ('1'); --error
 ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION IN ('7', '8', '9');

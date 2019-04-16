@@ -12,11 +12,11 @@ io.printf("#Global IO activity information\n");
 (bs,bi):= status.ioStatistics();
 io.print(bs,bi);
 
-io.printf("#Get a split-up of how much virtual memory blocks are in use\n");
+io.printf("#Get a split-up of how many virtual memory blocks are in use\n");
 (bs,bl):= status.vmStatistics(0:lng);
 io.print(bs,bl);
 
-io.print("#Get a split-up of how much memory blocks are in use\n");
+io.print("#Get a split-up of how many memory blocks are in use\n");
 (bs,bl):=status.memUsage(0:lng);
 io.print(bs,bl);
 

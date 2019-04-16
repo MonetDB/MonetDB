@@ -58,7 +58,6 @@ stdout of test 'global-temp-tables.Bug-6643` in directory 'sql/test/BugTracker-2
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:48:58 >  
 # 16:48:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10907" "--port=34153"

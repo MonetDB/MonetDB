@@ -18,7 +18,6 @@ stdout of test 'create-temp-table-ordered-index-error.Bug-6574` in directory 'sq
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:02:21 >  
 # 18:02:21 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15491" "--port=35536"

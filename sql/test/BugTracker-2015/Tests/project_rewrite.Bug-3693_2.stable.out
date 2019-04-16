@@ -19,7 +19,6 @@ stdout of test 'project_rewrite.Bug-3693_2` in directory 'sql/test/BugTracker-20
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 21:39:20 >  
 # 21:39:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17740" "--port=34092"

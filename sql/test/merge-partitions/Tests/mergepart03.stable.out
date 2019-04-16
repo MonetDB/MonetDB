@@ -20,7 +20,6 @@ stdout of test 'mergepart03` in directory 'sql/test/merge-partitions` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -72,9 +71,9 @@ Ready.
 #CREATE TABLE subtable1 (a int, b varchar(32));
 #CREATE TABLE subtable2 (a int, b varchar(32));
 #START TRANSACTION;
-#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '-4' AND '12';
+#ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM '-4' TO '12';
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -83,14 +82,14 @@ Ready.
 #INSERT INTO subtable2 VALUES (1, 'hello');
 [ 1	]
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
-#ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN '-4' AND '12';
+#ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM '-4' TO '12';
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -99,7 +98,7 @@ Ready.
 #INSERT INTO subtable2 VALUES (-5, 'oh no');
 [ 1	]
 #SELECT COUNT(*) from range_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

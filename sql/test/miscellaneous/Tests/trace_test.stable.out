@@ -56,7 +56,6 @@ stdout of test 'trace_test` in directory 'sql/test/miscellaneous` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 08:41:05 >  
 # 08:41:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1541" "--port=34061"

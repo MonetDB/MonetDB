@@ -11,8 +11,8 @@
 SUBDIRS = bat 
 
 INCLUDES = ../include ../common \
-		   ../../common/options \
 		   ../../common/stream \
+		   ../../common/utils \
 		   ../../gdk
 
 lib_store = {

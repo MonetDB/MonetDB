@@ -123,6 +123,7 @@ static str
 WLRgetMaster(void)
 {
 	char path[FILENAME_MAX];
+	int len;
 	str dir;
 	FILE *fd;
 
@@ -130,7 +131,9 @@ WLRgetMaster(void)
 		return MAL_SUCCEED;
 
 	/* collect master properties */
-	snprintf(path,FILENAME_MAX,"..%c%s",DIR_SEP,wlr_master);
+	len = snprintf(path,FILENAME_MAX,"..%c%s",DIR_SEP,wlr_master);
+	if (len == -1 || len >= FILENAME_MAX)
+		throw(MAL, "wlr.getMaster", "wlc.config filename path is too large");
 	if((dir = GDKfilepath(0,path,"wlc.config",0)) == NULL)
 		throw(MAL,"wlr.getMaster","Could not access wlc.config file\n");
 
@@ -154,7 +157,7 @@ static void
 WLRprocess(void *arg)
 {
 	Client cntxt = (Client) arg;
-	int i, pc;
+	int i, pc, len;
 	char path[FILENAME_MAX];
 	stream *fd = NULL;
 	Client c;
@@ -214,7 +217,11 @@ WLRprocess(void *arg)
 #endif
 	path[0]=0;
 	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
-		snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
+		len = snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
+		if (len == -1 || len >= FILENAME_MAX) {
+			mnstr_printf(GDKerr,"#wlr.process: filename path is too large\n");
+			continue;
+		}
 		fd= open_rastream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlr.process:'%s' can not be accessed \n",path);
@@ -386,6 +393,7 @@ WLRprocessScheduler(void *arg)
 	while(!GDKexiting() && wlr_state == WLR_RUN){
 		// wait at most for the cycle period, also at start
 		//mnstr_printf(cntxt->fdout,"#sleep %d ms\n",(wlc_beat? wlc_beat:1) * 1000);
+		MT_thread_setworking("sleeping");
 		duration = (wlc_beat? wlc_beat:1) * 1000 ;
 		if( wlr_timelimit[0]){
 			gettimeofday(&clock, NULL);
@@ -398,19 +406,21 @@ WLRprocessScheduler(void *arg)
 			if(strncmp(clktxt, wlr_timelimit,26) >= 0) 
 				MT_sleep_ms(duration);
 		} else
-		for( ; duration > 0  && wlr_state == WLR_PAUSE; duration -= 100){
-			MT_sleep_ms( 100);
-		}
+			for( ; duration > 0  && wlr_state == WLR_PAUSE; duration -= 100){
+				MT_sleep_ms( 100);
+			}
 		if( wlr_master[0] && wlr_state != WLR_PAUSE){
 			if((msg = WLRgetMaster()) != MAL_SUCCEED) {
 				mnstr_printf(GDKerr,"%s\n",msg);
 				freeException(msg);
 			}
 			if( wlrprocessrunning == 0 && 
-				( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||
-				  (wlr_limit == -1 && wlr_timelimit[0] == 0 && wlr_batches < wlc_batches) ||
-				  (wlr_timelimit[0]  && strncmp(clktxt, wlr_timelimit, 26)> 0)  ) )
-					WLRprocess(cntxt);
+			    ( (wlr_batches == wlc_batches && wlr_tag < wlr_limit) || wlr_limit > wlr_tag  ||
+			      (wlr_limit == -1 && wlr_timelimit[0] == 0 && wlr_batches < wlc_batches) ||
+			      (wlr_timelimit[0]  && strncmp(clktxt, wlr_timelimit, 26)> 0)  ) ) {
+				MT_thread_setworking("processing");
+				WLRprocess(cntxt);
+			}
 		}
 	}
 	wlr_state = WLR_START;
@@ -428,7 +438,8 @@ WLRinit(void)
 	if( wlr_state != WLR_START)
 		return MAL_SUCCEED;
 	// time to continue the consolidation process in the background
-	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
+	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt,
+			     MT_THR_JOINABLE, "WLRprocessScheduler") < 0) {
 			throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
 	}
 	GDKregister(wlr_thread);

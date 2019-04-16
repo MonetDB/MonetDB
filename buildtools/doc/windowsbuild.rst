@@ -631,24 +631,6 @@ with the extra parameter ``HAVE_LIBBZ2=1``.
 
 __ http://www.bzip.org/
 
-Libatomic_ops
--------------
-
-`Atomic Ops`__ is a library that provides semi-portable access to
-hardware-provided atomic memory update operations on a number of
-architectures.  We optionally uses this to implement thread-safe
-access to a number of variables and for the implementation of locks.
-
-To install, it suffices to copy the file ``src\atomic_ops.h`` and the
-folder ``src\atomic_ops`` to the installation location in
-e.g. ``C:\Libraries``.
-
-Fix the ``LIBATOMIC_OPS`` definition in ``NT\rules.msc`` so that it
-refers to the location where you installed the header files and call
-``nmake`` with the extra parameter ``HAVE_ATOMIC_OPS=1``.
-
-__ https://github.com/ivmai/libatomic_ops
-
 Build Environment
 =================
 
@@ -709,13 +691,12 @@ Studio Tools`` -> ``Visual Studio x64 Win64 Command Prompt (2010)``
 (this is for a 64-bit build on a 64-bit version of the operating
 system).
 
-When using the Intel compiler, you also need to set the ``CC`` and
-``CXX`` variables::
+When using the Intel compiler, you also need to set the ``CC``
+variable::
 
  set CC=icl -Qstd=c99 -GR- -Qsafeseh-
- set CXX=icl -Qstd=c99 -GR- -Qsafeseh-
 
-(These are the values for the 10.1 and 11.1 versions, for 9.1 replace
+(This is the value for the 10.1 and 11.1 versions, for 9.1 replace
 ``-Qstd=c99`` with ``-Qc99``.)
 
 Internal Variables

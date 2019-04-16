@@ -19,7 +19,6 @@ stdout of test 'format_date` in directory 'sql/test/copy` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:44:45 >  
 # 11:44:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20793" "--port=38047"
@@ -46,13 +45,13 @@ Ready.
 % int,	int,	varchar,	double,	date,	varchar,	varchar,	int,	varchar,	int,	int,	varchar,	double,	date,	varchar,	varchar,	int,	varchar # type
 % 1,	1,	0,	24,	10,	0,	0,	1,	0,	1,	1,	0,	24,	10,	0,	0,	1,	0 # length
 #select count(*) from orders_1;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length
 [ 150	]
 #select count(*) from orders_2;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length

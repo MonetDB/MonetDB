@@ -19,7 +19,6 @@ stdout of test 'correlated_select.Bug-3250` in directory 'sql/test/BugTracker-20
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 22:53:24 >  
 # 22:53:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19817" "--port=32026"

@@ -408,9 +408,11 @@ TKNZRdepositFile(void *r, str *fnme)
 
 	(void) r;
 	if (**fnme == '/')
-		snprintf(buf, FILENAME_MAX, "%s", *fnme);
+		len = snprintf(buf, FILENAME_MAX, "%s", *fnme);
 	else
-		snprintf(buf, FILENAME_MAX, "%s/%s", monet_cwd, *fnme);
+		len = snprintf(buf, FILENAME_MAX, "%s/%s", monet_cwd, *fnme);
+	if (len == -1 || len >= FILENAME_MAX)
+		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY001) "tokenizer filename path is too large");
 	/* later, handle directory separator */
 	fs = open_rastream(buf);
 	if (fs == NULL)

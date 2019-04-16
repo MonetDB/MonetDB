@@ -14,7 +14,6 @@ stdout of test 'col_from_another_inside_function_body.SF-2420768` in directory '
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34604/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 #function user.main():void;

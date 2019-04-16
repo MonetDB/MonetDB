@@ -58,7 +58,6 @@ stdout of test 'quantile-crash.Bug-6658` in directory 'sql/test/BugTracker-2018`
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:32:48 >  
 # 10:32:48 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25694" "--port=38192"

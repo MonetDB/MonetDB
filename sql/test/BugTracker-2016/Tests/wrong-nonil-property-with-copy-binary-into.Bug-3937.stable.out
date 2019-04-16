@@ -21,7 +21,6 @@ stdout of test 'wrong-nonil-property-with-copy-binary-into.Bug-3937` in director
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -77,8 +76,8 @@ Ready.
 [ 1	]
 [ 2	]
 #select count(*), count(x) from "noNULLtinyint";
-% sys.L4,	sys.L7 # table_name
-% L3,	L6 # name
+% .L3,	sys.L5 # table_name
+% L3,	L5 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	3	]
@@ -107,8 +106,8 @@ Ready.
 [ 2	]
 [ NULL	]
 #select count(*), count(x) from "noNULLtinyint";
-% sys.L4,	sys.L7 # table_name
-% L3,	L6 # name
+% .L3,	sys.L5 # table_name
+% L3,	L5 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 4,	3	]
@@ -138,8 +137,8 @@ Ready.
 [ NULL	]
 [ 2	]
 #select count(*), count(x) from "NULLtinyint";
-% sys.L4,	sys.L7 # table_name
-% L3,	L6 # name
+% .L3,	sys.L5 # table_name
+% L3,	L5 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 3,	2	]

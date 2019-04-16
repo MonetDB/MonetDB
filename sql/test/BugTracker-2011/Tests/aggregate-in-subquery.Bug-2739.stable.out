@@ -17,7 +17,6 @@ stdout of test 'aggregate-in-subquery.Bug-2739` in directory 'sql/test/BugTracke
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

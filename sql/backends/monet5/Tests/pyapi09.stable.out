@@ -22,7 +22,6 @@ stdout of test 'pyapi09` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 [    0     1     2 ... 99997 99998 99999]
 
 # 14:42:12 >  

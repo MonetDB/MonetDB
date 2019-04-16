@@ -18,7 +18,6 @@ stdout of test 'ST_IsRing` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:55:48 >  
 # 14:55:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5773" "--port=34702"

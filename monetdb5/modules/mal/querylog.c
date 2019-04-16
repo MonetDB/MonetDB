@@ -56,8 +56,8 @@ create table querylog.calls(
 );
 */
 
-static int QLOGtrace = 0;
-static int QLOG_init = 0;
+static bool QLOGtrace = false;
+static bool QLOG_init = false;
 static int QLOGthreshold = 0;
 
 static BAT *QLOG_cat_id = 0;
@@ -99,6 +99,7 @@ QLOGcatalog(BAT **r)
 	r[5] = COLcopy(QLOG_cat_plan, QLOG_cat_plan->ttype,false, TRANSIENT);
 	r[6] = COLcopy(QLOG_cat_mal, QLOG_cat_mal->ttype,false, TRANSIENT);
 	r[7] = COLcopy(QLOG_cat_optimize, QLOG_cat_optimize->ttype,false, TRANSIENT);
+	MT_lock_unset(&mal_profileLock);
 	for ( i = 0; i< 8; i++)
 		cnt += r[i] != 0;
 	if( cnt != 8){
@@ -108,7 +109,6 @@ QLOGcatalog(BAT **r)
 			r[i]=0;
 		}
 	}
-	MT_lock_unset(&mal_profileLock);
 	if( r[0])
 		return MAL_SUCCEED;
 	throw(MAL,"catalog_queries", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -135,6 +135,7 @@ QLOGcalls(BAT **r)
 	r[6] = COLcopy(QLOG_calls_result, QLOG_calls_result->ttype,false, TRANSIENT);
 	r[7] = COLcopy(QLOG_calls_cpuload, QLOG_calls_cpuload->ttype,false, TRANSIENT);
 	r[8] = COLcopy(QLOG_calls_iowait, QLOG_calls_iowait->ttype,false, TRANSIENT);
+	MT_lock_unset(&mal_profileLock);
 	for ( i = 0; i< 9; i++)
 		cnt += r[i] != 0;
 	if( cnt != 9){
@@ -144,7 +145,6 @@ QLOGcalls(BAT **r)
 			r[i]=0;
 		}
 	}
-	MT_lock_unset(&mal_profileLock);
 	if( r[0])
 		return MAL_SUCCEED;
 	throw(MAL,"catalog_calls", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -235,10 +235,7 @@ _initQlog(void)
 			throw(MAL,"querylog.init", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	if (QLOG_cat_id == NULL )
-		_QLOGcleanup();
-	else
-		QLOG_init = 1;
+	QLOG_init = true;
 	TMsubcommit_list(commitlist, committop);
 	return MAL_SUCCEED;
 }
@@ -260,7 +257,7 @@ str
 QLOGenable(void *ret)
 {
 	(void) ret;
-	QLOGtrace = TRUE;
+	QLOGtrace = true;
 	return MAL_SUCCEED;
 }
 
@@ -276,7 +273,7 @@ str
 QLOGdisable(void *ret)
 {
 	(void) ret;
-	QLOGtrace = FALSE;
+	QLOGtrace = false;
 	return MAL_SUCCEED;
 }
 

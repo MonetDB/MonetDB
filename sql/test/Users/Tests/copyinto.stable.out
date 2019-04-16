@@ -23,7 +23,6 @@ stdout of test 'copyinto` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:39:23 >  
 # 19:39:23 >  "/usr/bin/python2" "copyinto.SQL.py" "copyinto"
@@ -35,7 +34,7 @@ Ready.
 #';select count(*) from region;CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;GRANT INSERT, SELECT on region to copyuser;
 [ 5	]
 #select count(*) from region;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -43,7 +42,7 @@ Ready.
 #CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;
 #GRANT INSERT, SELECT on region to copyuser;
 #select count(*) from region;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -53,7 +52,7 @@ Ready.
 #';select count(*) from region;
 [ 5	]
 #select count(*) from region;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

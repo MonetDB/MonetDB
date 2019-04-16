@@ -19,7 +19,6 @@ stdout of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:46:44 >  
 # 10:46:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24209" "--port=38855"

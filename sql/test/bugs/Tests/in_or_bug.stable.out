@@ -15,7 +15,6 @@ stdout of test 'in_or_bug` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32742/
 # MonetDB/SQL module v2.36.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -28,13 +27,13 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) from t1 where c1='1' and (c2='3' or c3='3');
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) from t1 where c1='1' and (c2 in ('3') or c3 in ('3'));
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

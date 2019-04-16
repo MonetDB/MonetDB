@@ -18,11 +18,30 @@ stdout of test 'sqlsmith.Bug-6219` in directory 'sql/test/BugTracker-2017` itsel
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
-# 17:09:30 >  
-# 17:09:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20365" "--port=31733"
-# 17:09:30 >  
+#select  
+#  subq_0.c1 as c0, 
+#  subq_0.c2 as c1
+#from 
+#  (select  
+#        ref_25.name as c0, 
+#        (select sessiontimeout from sys.sessions)
+#           as c1, 
+#        63 as c2, 
+#        ref_24.var_id as c3, 
+#        ref_25.name as c4, 
+#        (select sorted from sys.storage)
+#           as c5
+#      from 
+#        sys.idxs as ref_23
+#            inner join sys.netcdf_vardim as ref_24
+#              left join sys.db_user_info as ref_25
+#              on (ref_24.dimpos = ref_25.default_schema )
+#            on (ref_23.id = ref_24.var_id )
+% .L141,	.L143 # table_name
+% c0,	c1 # name
+% bigint,	tinyint # type
+% 1,	1 # length
 
 
 # 17:09:30 >  

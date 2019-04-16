@@ -14,7 +14,7 @@ INCLUDES = ../.. \
 	../../../../../monetdb5/mal \
 	../../../../../monetdb5/modules/mal \
 	../../../../../monetdb5/optimizer \
-	../../../../../common/options \
+	../../../../../common/utils \
 	../../../../../common/stream \
 	../../../../../gdk
 

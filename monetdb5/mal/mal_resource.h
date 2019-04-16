@@ -10,7 +10,7 @@
 #define _MAL_RESOURCE_H
 
 #include "mal_interpreter.h"
-#include "gdk_atomic.h"
+#include "matomic.h"
 
 #define TIMESLICE  (3 * 60 * 1000 * 1000) /* usec , 3 minute high priority */
 #define DELAYUNIT 2 /* ms delay in parallel processing decisions */

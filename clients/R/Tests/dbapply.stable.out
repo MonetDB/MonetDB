@@ -23,7 +23,6 @@ stdout of test 'dbapply` in directory 'clients/R` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:43:14 >  
 # 11:43:14 >  "R" "--vanilla" "--slave" "--args" "35780"

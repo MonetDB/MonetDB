@@ -287,6 +287,9 @@ mvc_trans(mvc *m)
 	assert(!m->session->active);	/* can only start a new transaction */
 
 	store_lock();
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: starting transaction\n",
+			MT_thread_getname());
 	schema_changed = sql_trans_begin(m->session);
 	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
@@ -415,6 +418,9 @@ build up the hash (not copied in the trans dup)) */
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", name);
+		if (GDKverbose >= 1)
+			fprintf(stderr, "#%s: savepoint commit %s done\n",
+				MT_thread_getname(), name);
 		return msg;
 	}
 
@@ -450,12 +456,15 @@ build up the hash (not copied in the trans dup)) */
 			return msg;
 		}
 		if (mvc_debug)
-			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
+			fprintf(stderr, "#mvc_commit done\n");
+		if (GDKverbose >= 1)
+			fprintf(stderr, "#%s: commit done (no changes)\n",
+				MT_thread_getname());
 		return msg;
 	}
 
 	/*
-	while (tr->schema_updates && ATOMIC_GET(store_nr_active, store_nr_active_lock) > 1) {
+	while (tr->schema_updates && ATOMIC_GET(&store_nr_active) > 1) {
 		store_unlock();
 		MT_sleep_ms(100);
 		wait += 100;
@@ -494,7 +503,10 @@ build up the hash (not copied in the trans dup)) */
 	store_unlock();
 	m->type = Q_TRANS;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
+		fprintf(stderr, "#mvc_commit done\n");
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: commit done\n",
+			MT_thread_getname());
 	return msg;
 }
 
@@ -557,6 +569,10 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	m->type = Q_TRANS;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
+	if (GDKverbose >= 1)
+		fprintf(stderr, "#%s: commit%s%s rolled back%s\n",
+			MT_thread_getname(), name ? " " : "", name ? name : "",
+			tr->wtime == 0 ? " (no changes)" : "");
 	return msg;
 }
 

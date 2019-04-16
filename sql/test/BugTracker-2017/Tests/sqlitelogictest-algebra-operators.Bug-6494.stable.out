@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-algebra-operators.Bug-6494` in directory 'sql/te
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:01:45 >  
 # 16:01:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6129" "--port=34700"

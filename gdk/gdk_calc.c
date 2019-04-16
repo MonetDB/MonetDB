@@ -259,7 +259,7 @@ BATcalcnot(BAT *b, BAT *s)
 	bn->trevsorted = nils == 0 && b->tsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = b->tkey;
+	bn->tkey = b->tkey && nils <= 1;
 
 	if (nils != 0 && !b->tnil) {
 		b->tnil = true;
@@ -378,7 +378,7 @@ BATcalcnegate(BAT *b, BAT *s)
 	bn->trevsorted = nils == 0 && b->tsorted;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tkey = b->tkey;
+	bn->tkey = b->tkey && nils <= 1;
 
 	if (nils != 0 && !b->tnil) {
 		b->tnil = true;

@@ -11,11 +11,10 @@ stdout of test 'slow_counting_2.SF-923709` in directory 'sql/test/BugDay_2005-10
 # dbname:mTests_src_test_BugDay_2005-10-06_2.9.3
 # Visit http://monetdb.cwi.nl/ for further information
 
-Ready.
 
 
 #select count(*) from slow_count;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 6 # length

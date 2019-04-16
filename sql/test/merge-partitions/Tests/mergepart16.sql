@@ -9,7 +9,7 @@ CREATE TABLE subt4 (a int, b varchar(32));
 INSERT INTO testnestedpartitions VALUES (1, 'ups'); --error
 
 ALTER TABLE testnestedpartitions ADD TABLE subnested1 AS PARTITION IN ('1', '2', '3'); --error
-ALTER TABLE subnested1 ADD TABLE subt1 AS PARTITION BETWEEN '-1' AND '2';
+ALTER TABLE subnested1 ADD TABLE subt1 AS PARTITION FROM '-1' TO '2';
 ALTER TABLE testnestedpartitions ADD TABLE subnested1 AS PARTITION IN ('1', '2', '3');
 
 INSERT INTO subnested1 VALUES (-1, 'ups'); --error
@@ -19,7 +19,7 @@ INSERT INTO testnestedpartitions VALUES (1, 'ok');
 INSERT INTO testnestedpartitions VALUES (3, 'ups'); --error
 ALTER TABLE subnested1 DROP TABLE subt1;
 
-ALTER TABLE subnested1 ADD TABLE subt1 AS PARTITION BETWEEN '0' AND '100';
+ALTER TABLE subnested1 ADD TABLE subt1 AS PARTITION FROM '0' TO '100';
 INSERT INTO testnestedpartitions VALUES (1, 'ok');
 
 SELECT a, b FROM testnestedpartitions;
@@ -27,9 +27,9 @@ SELECT a, b FROM subnested1;
 SELECT a, b FROM subt1;
 
 ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4', '5'); --error
-ALTER TABLE subnested2 ADD TABLE subt2 AS PARTITION BETWEEN '5' AND '99';
+ALTER TABLE subnested2 ADD TABLE subt2 AS PARTITION FROM '5' TO '99';
 ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('3', '4', '5'); --error
-ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('4', '5', '6') WITH NULL;
+ALTER TABLE testnestedpartitions ADD TABLE subnested2 AS PARTITION IN ('4', '5', '6') WITH NULL VALUES;
 
 INSERT INTO testnestedpartitions VALUES (2, 'going'), (5, 'through');
 INSERT INTO testnestedpartitions VALUES (4, 'not'), (2, 'going'), (5, 'through'); --error
@@ -40,9 +40,9 @@ SELECT a, b FROM subnested2;
 SELECT a, b FROM subt1;
 SELECT a, b FROM subt2;
 
-ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION BETWEEN '1' AND '200'; --error
-ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION BETWEEN '101' AND '200';
-ALTER TABLE subnested2 ADD TABLE subt4 AS PARTITION BETWEEN '100' AND '200' WITH NULL;
+ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION FROM '1' TO '200'; --error
+ALTER TABLE subnested1 ADD TABLE subt3 AS PARTITION FROM '101' TO '200';
+ALTER TABLE subnested2 ADD TABLE subt4 AS PARTITION FROM '100' TO '200' WITH NULL VALUES;
 
 TRUNCATE testnestedpartitions;
 

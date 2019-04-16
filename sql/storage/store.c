@@ -22,7 +22,7 @@
 #define CATALOG_VERSION 52203
 int catalog_version = 0;
 
-static MT_Lock bs_lock MT_LOCK_INITIALIZER("bs_lock");
+static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static int nr_sessions = 0;
@@ -31,10 +31,7 @@ static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 sql_trans *gtrans = NULL;
 list *active_sessions = NULL;
-volatile ATOMIC_TYPE store_nr_active = 0;
-#ifdef ATOMIC_LOCK
-MT_Lock store_nr_active_lock MT_LOCK_INITIALIZER("store_nr_active_lock");
-#endif
+ATOMIC_TYPE store_nr_active = ATOMIC_VAR_INIT(0);
 store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
@@ -1999,9 +1996,6 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	store_readonly = readonly;
 	store_singleuser = singleuser;
 
-#ifdef NEED_MT_LOCK_INIT
-	MT_lock_init(&bs_lock, "SQL_bs_lock");
-#endif
 	MT_lock_set(&bs_lock);
 
 	/* initialize empty bats */
@@ -2152,6 +2146,7 @@ store_manager(void)
 	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
 	const int timeout = GDKdebug & FORCEMITOMASK ? 500 : 50000;
 
+	MT_thread_setworking("sleeping");
 	while (!GDKexiting()) {
 		int res = LOG_OK;
 		int t;
@@ -2172,7 +2167,7 @@ store_manager(void)
 			continue;
 		}
 		need_flush = 0;
-		while (ATOMIC_GET(store_nr_active, store_nr_active_lock)) { /* find a moment to flush */
+		while (ATOMIC_GET(&store_nr_active)) { /* find a moment to flush */
 			MT_lock_unset(&bs_lock);
 			if (GDKexiting())
 				return;
@@ -2180,6 +2175,7 @@ store_manager(void)
 			MT_lock_set(&bs_lock);
 		}
 
+		MT_thread_setworking("flushing");
 		logging = 1;
 		/* make sure we reset all transactions on re-activation */
 		gtrans->wstime = timestamp();
@@ -2199,6 +2195,7 @@ store_manager(void)
 
 		if (res != LOG_OK)
 			GDKfatal("write-ahead logging failure, disk full?");
+		MT_thread_setworking("sleeping");
 	}
 }
 
@@ -2208,6 +2205,7 @@ idle_manager(void)
 	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
 	const int timeout = GDKdebug & FORCEMITOMASK ? 50 : 5000;
 
+	MT_thread_setworking("sleeping");
 	while (!GDKexiting()) {
 		sql_session *s;
 		int t;
@@ -2218,7 +2216,7 @@ idle_manager(void)
 				return;
 		}
 		MT_lock_set(&bs_lock);
-		if (ATOMIC_GET(store_nr_active, store_nr_active_lock) || GDKexiting() || !store_needs_vacuum(gtrans)) {
+		if (ATOMIC_GET(&store_nr_active) || GDKexiting() || !store_needs_vacuum(gtrans)) {
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
@@ -2228,6 +2226,7 @@ idle_manager(void)
 			MT_lock_unset(&bs_lock);
 			continue;
 		}
+		MT_thread_setworking("vacuuming");
 		sql_trans_begin(s);
 		if (store_vacuum( s->tr ) == 0)
 			sql_trans_commit(s->tr);
@@ -2235,6 +2234,7 @@ idle_manager(void)
 		sql_session_destroy(s);
 
 		MT_lock_unset(&bs_lock);
+		MT_thread_setworking("sleeping");
 	}
 }
 
@@ -3157,7 +3157,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 			fs->dset = NULL;
 		}
 		/* only cleanup when alone */
-		if (apply && ts->dset && ATOMIC_GET(store_nr_active, store_nr_active_lock) == 1) {
+		if (apply && ts->dset && ATOMIC_GET(&store_nr_active) == 1) {
 			for (n = ts->dset->h; ok == LOG_OK && n; n = n->next) {
 				sql_base *tb = n->data;
 
@@ -6516,7 +6516,7 @@ sql_trans_begin(sql_session *s)
 	s->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
 	s->tr = tr;
-	(void) ATOMIC_INC(store_nr_active, store_nr_active_lock);
+	(void) ATOMIC_INC(&store_nr_active);
 	list_append(active_sessions, s); 
 	s->status = 0;
 #ifdef STORE_DEBUG
@@ -6534,8 +6534,8 @@ sql_trans_end(sql_session *s)
 	s->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	list_remove_data(active_sessions, s);
-	(void) ATOMIC_DEC(store_nr_active, store_nr_active_lock);
-	assert((ATOMIC_TYPE) list_length(active_sessions) == ATOMIC_GET(store_nr_active, store_nr_active_lock));
+	(void) ATOMIC_DEC(&store_nr_active);
+	assert(list_length(active_sessions) == (int) ATOMIC_GET(&store_nr_active));
 }
 
 void

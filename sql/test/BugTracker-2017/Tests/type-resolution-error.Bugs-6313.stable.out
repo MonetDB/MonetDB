@@ -18,7 +18,6 @@ stdout of test 'type-resolution-error.Bugs-6313` in directory 'sql/test/BugTrack
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:32:27 >  
 # 16:32:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27183" "--port=36678"

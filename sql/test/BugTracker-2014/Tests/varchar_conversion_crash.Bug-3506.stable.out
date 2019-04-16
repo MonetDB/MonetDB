@@ -19,7 +19,6 @@ stdout of test 'varchar_conversion_crash.Bug-3506` in directory 'sql/test/BugTra
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:58:33 >  
 # 18:58:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28742" "--port=38663"

@@ -219,7 +219,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	9	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	8	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -228,10 +228,6 @@ mo_builtin_settings(opt **Set)
 	set[i].name = strdup("gdk_dbpath");
 	set[i].value = strdup(LOCALSTATEDIR DIR_SEP_STR "monetdb5" DIR_SEP_STR
 			      "dbfarm" DIR_SEP_STR "demo");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_debug");
-	set[i].value = strdup("0");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_prompt");

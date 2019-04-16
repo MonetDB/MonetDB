@@ -61,7 +61,7 @@ mal_client_reset(void)
 		GDKfree(mal_clients);
 }
 
-void
+bool
 MCinit(void)
 {
 	const char *max_clients = GDKgetenv("max_clients");
@@ -73,7 +73,7 @@ MCinit(void)
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
 			fprintf(stderr,"#MCinit: GDKsetenv failed");
-			mal_exit(1);
+			return false;
 		}
 	}
 
@@ -83,8 +83,11 @@ MCinit(void)
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
 		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
-		mal_exit(1);
+		return false;
 	}
+	for (int i = 0; i < MAL_MAXCLIENTS; i++)
+		ATOMIC_INIT(&mal_clients[i].lastprint, 0);
+	return true;
 }
 
 /* stack the files from which you read */
@@ -198,7 +201,7 @@ MCexitClient(Client c)
 	}
 }
 
-Client
+static Client
 MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
 	const char *prompt;
@@ -212,6 +215,9 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->fdin = fin ? fin : bstream_create(GDKin, 0);
 	if ( c->fdin == NULL){
+		MT_lock_set(&mal_contextLock);
+		c->mode = FREECLIENT;
+		MT_lock_unset(&mal_contextLock);
 		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
 		return NULL;
 	}
@@ -243,6 +249,13 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;
 	c->prompt = GDKstrdup(prompt);
 	if ( c->prompt == NULL){
+		if (fin == NULL) {
+			c->fdin->s = NULL;
+			bstream_destroy(c->fdin);
+			MT_lock_set(&mal_contextLock);
+			c->mode = FREECLIENT;
+			MT_lock_unset(&mal_contextLock);
+		}
 		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
 		return NULL;
 	}
@@ -264,8 +277,11 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->protocol = PROTOCOL_9;
 
 	c->filetrans = false;
+	c->query = NULL;
 
-	MT_sema_init(&c->s, 0, "Client->s");
+	char name[16];
+	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
+	MT_sema_init(&c->s, 0, name);
 	return c;
 }
 
@@ -287,12 +303,9 @@ int
 MCinitClientThread(Client c)
 {
 	Thread t;
-	char cname[11 + 1];
 
-	snprintf(cname, 11, OIDFMT, c->user);
-	cname[11] = '\0';
-	t = THRnew(cname);
-	if (t == 0) {
+	t = MT_thread_getdata();	/* should succeed */
+	if (t == NULL) {
 		MPresetProfiler(c->fdout);
 		return -1;
 	}
@@ -373,8 +386,8 @@ MCforkClient(Client father)
  * effects of sharing IO descriptors, also its children. Conversely, a
  * child can not close a parent.
  */
-static void
-freeClient(Client c)
+void
+MCfreeClient(Client c)
 {
 	c->mode = FINISHCLIENT;
 
@@ -448,7 +461,7 @@ freeClient(Client c)
  * When the server is about to shutdown, we should softly terminate
  * all outstanding session.
  */
-static int shutdowninprogress = 0;
+static volatile int shutdowninprogress = 0;
 
 int
 MCshutdowninprogress(void){
@@ -495,7 +508,7 @@ MCcloseClient(Client c)
 #endif
 	/* free resources of a single thread */
 	if (!isAdministrator(c)) {
-		freeClient(c);
+		MCfreeClient(c);
 		return;
 	}
 

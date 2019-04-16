@@ -289,11 +289,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO TIMESTAMP_TBL VALUES ('Feb 16 17:32:01 5097 BC');
 ERROR = !Timestamp (Feb 16 17:32:01 5097 BC) has incorrect format
 CODE  = 22007
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = SELECT '' AS date_trunc_week, date_trunc( 'week', cast('2004-02-29 15:44:17.71393' as timestamp) ) AS week_trunc;
-ERROR = !SELECT: no such binary operator 'date_trunc(char,timestamp)'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-18876/.s.monetdb.33756
 QUERY = SELECT '' AS "54", d1 as "timestamp",
            date_part( 'year', d1) AS "year", date_part( 'month', d1) AS "month",
            date_part( 'day', d1) AS "day", date_part( 'hour', d1) AS "hour",
@@ -432,8 +428,8 @@ QUERY = SELECT d1, extract(century from d1) FROM TIMESTAMP_TBL;
 ERROR = !syntax error, unexpected IDENT in: "select d1, extract(century"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = SELECT d1, extract(millenium from d1) FROM TIMESTAMP_TBL;
-ERROR = !syntax error, unexpected IDENT in: "select d1, extract(millenium"
+QUERY = SELECT d1, extract(millennium from d1) FROM TIMESTAMP_TBL;
+ERROR = !syntax error, unexpected IDENT in: "select d1, extract(millennium"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT d1, extract(epoch from d1) FROM TIMESTAMP_TBL;

@@ -53,7 +53,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if( defineQuery == NULL)
 		throw(MAL,"optimizer.querylog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-	defineQuery->argc--;  // remoge MAL instruction count
+	defineQuery->argc--;  // remove MAL instruction count
 	setFunctionId(defineQuery, appendRef);
 	getArg(defineQuery,0) = newTmpVariable(mb,TYPE_any);
 	defineQuery->token = ASSIGNsymbol;

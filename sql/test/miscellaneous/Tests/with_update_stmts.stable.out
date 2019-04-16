@@ -58,7 +58,6 @@ stdout of test 'with_update_stmts` in directory 'sql/test/miscellaneous` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:10:28 >  
 # 16:10:28 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3668" "--port=35526"

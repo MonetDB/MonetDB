@@ -10,7 +10,6 @@
  * Readline specific stuff
  */
 #include "monetdb_config.h"
-#include "monet_options.h"
 
 #ifdef HAVE_LIBREADLINE
 
@@ -41,7 +40,7 @@ static const char *sql_commands[] = {
 static Mapi _mid;
 static char _history_file[FILENAME_MAX];
 static int _save_history = 0;
-static char *language;
+static const char *language;
 
 static char *
 sql_tablename_generator(const char *text, int state)
@@ -302,7 +301,7 @@ continue_completion(rl_completion_func_t * func)
 }
 
 void
-init_readline(Mapi mid, char *lang, int save_history)
+init_readline(Mapi mid, const char *lang, int save_history)
 {
 	language = lang;
 	_mid = mid;
@@ -321,19 +320,16 @@ init_readline(Mapi mid, char *lang, int save_history)
 	}
 
 	if (save_history) {
-#ifndef NATIVE_WIN32
+		int len;
 		if (getenv("HOME") != NULL) {
-			snprintf(_history_file, FILENAME_MAX,
+			len = snprintf(_history_file, FILENAME_MAX,
 				 "%s/.mapiclient_history_%s",
 				 getenv("HOME"), language);
-			_save_history = 1;
+			if (len == -1 || len >= FILENAME_MAX)
+				fprintf(stderr, "Warning: history filename path is too large\n");
+			else
+				_save_history = 1;
 		}
-#else
-		snprintf(_history_file, FILENAME_MAX,
-			 "%s%c_mapiclient_history_%s",
-			 mo_find_option(NULL, 0, "prefix"), DIR_SEP, language);
-		_save_history = 1;
-#endif
 		if (_save_history) {
 			FILE *f;
 			switch (read_history(_history_file)) {

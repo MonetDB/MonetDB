@@ -17,7 +17,6 @@ stdout of test 'server-crash.Bug-3046` in directory 'sql/test/BugTracker-2012` i
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 22:13:03 >  
 # 22:13:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=35583"
@@ -77,7 +76,7 @@ Ready.
 #      rank1.component_ref = component1.id AND
 #      rank1.node_ref = node1.id AND
 #      rank1.pre = rank2.parent AND
-% sys.L11 # table_name
+% sys.L10 # table_name
 % L10 # name
 % bigint # type
 % 1 # length

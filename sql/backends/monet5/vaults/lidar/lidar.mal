@@ -6,10 +6,6 @@
 
 module lidar;
 
-command prelude() :void
-address LIDARprelude;
-lidar.prelude();
-
 pattern attach(fname:str):void
 address LIDARattach
 comment "Open a LIDAR file and return catalog of the table HDUs";

@@ -18,7 +18,6 @@ stdout of test 'setmemorylimit-fail` in directory 'sql/test/malloc_fail` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:41:50 >  
 # 15:41:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-56431" "--port=38119"

@@ -23,7 +23,6 @@ stdout of test 'merge_project.Bug-3955` in directory 'sql/test/BugTracker-2016` 
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:00:10 >  
 # 14:00:10 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23806" "--port=36744"

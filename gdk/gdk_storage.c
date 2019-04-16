@@ -714,7 +714,10 @@ BATmsync(BAT *b)
 			arg->h = &b->theap;
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+			char name[16];
+			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
+					     MT_THR_DETACHED, name) < 0) {
 				/* don't bother if we can't create a thread */
 				BBPunfix(b->batCacheid);
 				GDKfree(arg);
@@ -730,7 +733,10 @@ BATmsync(BAT *b)
 			arg->h = b->tvheap;
 			BBPfix(b->batCacheid);
 #ifdef MSYNC_BACKGROUND
-			if (MT_create_thread(&tid, BATmsyncImplementation, arg, MT_THR_DETACHED) < 0) {
+			char name[16];
+			snprintf(name, sizeof(name), "msync%d", b->batCacheid);
+			if (MT_create_thread(&tid, BATmsyncImplementation, arg,
+					     MT_THR_DETACHED, name) < 0) {
 				/* don't bother if we can't create a thread */
 				BBPunfix(b->batCacheid);
 				GDKfree(arg);

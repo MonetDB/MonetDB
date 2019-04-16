@@ -14,7 +14,6 @@ stdout of test 'rank` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39627/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -26,13 +25,13 @@ Ready.
 
 [ 27	]
 #select count(*) from ranktest;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 27	]
 #select ROW_NUMBER() over () as foo from ranktest order by foo;
-% sys.L6 # table_name
+% sys.L5 # table_name
 % foo # name
 % int # type
 % 2 # length
@@ -64,7 +63,7 @@ Ready.
 [ 26	]
 [ 27	]
 #select ROW_NUMBER() over (PARTITION BY id) as foo, id from ranktest order by foo, id;
-% sys.L6,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest # table_name
 % foo,	id # name
 % int,	int # type
 % 2,	4 # length
@@ -96,7 +95,7 @@ Ready.
 [ 19,	1061	]
 [ 20,	1061	]
 #select ROW_NUMBER() over (PARTITION BY id ORDER BY id) as foo, id from ranktest order by foo, id;
-% sys.L6,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest # table_name
 % foo,	id # name
 % int,	int # type
 % 2,	4 # length
@@ -128,7 +127,7 @@ Ready.
 [ 19,	1061	]
 [ 20,	1061	]
 #select ROW_NUMBER() over (ORDER BY id) as foo, id from ranktest order by foo, id;
-% sys.L6,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest # table_name
 % foo,	id # name
 % int,	int # type
 % 2,	4 # length
@@ -160,7 +159,7 @@ Ready.
 [ 26,	1062	]
 [ 27,	1062	]
 #select RANK() over () as foo from ranktest order by foo;
-% sys.L6 # table_name
+% sys.L5 # table_name
 % foo # name
 % int # type
 % 2 # length
@@ -192,7 +191,7 @@ Ready.
 [ 26	]
 [ 27	]
 #select RANK() over (PARTITION BY id) as foo, id from ranktest order by foo, id;
-% sys.L6,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest # table_name
 % foo,	id # name
 % int,	int # type
 % 1,	4 # length
@@ -224,7 +223,7 @@ Ready.
 [ 1,	1062	]
 [ 1,	1062	]
 #select RANK() over (PARTITION BY id ORDER BY id) as foo, id from ranktest order by foo, id;
-% sys.L6,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest # table_name
 % foo,	id # name
 % int,	int # type
 % 1,	4 # length
@@ -256,7 +255,7 @@ Ready.
 [ 1,	1062	]
 [ 1,	1062	]
 #select RANK() over (ORDER BY id) as foo, id from ranktest order by foo, id;
-% sys.L6,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest # table_name
 % foo,	id # name
 % int,	int # type
 % 2,	4 # length
@@ -288,7 +287,7 @@ Ready.
 [ 21,	1062	]
 [ 21,	1062	]
 #select RANK() over () as foo, id, k from ranktest order by foo, id, k;
-% sys.L6,	sys.ranktest,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest,	sys.ranktest # table_name
 % foo,	id,	k # name
 % int,	int,	clob # type
 % 2,	4,	8 # length
@@ -320,7 +319,7 @@ Ready.
 [ 26,	1061,	"int"	]
 [ 27,	1061,	"smallint"	]
 #select RANK() over (PARTITION BY id) as foo, id, k from ranktest order by foo, id, k;
-% sys.L6,	sys.ranktest,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest,	sys.ranktest # table_name
 % foo,	id,	k # name
 % int,	int,	clob # type
 % 1,	4,	8 # length
@@ -352,7 +351,7 @@ Ready.
 [ 1,	1062,	"smallint"	]
 [ 1,	1062,	"smallint"	]
 #select RANK() over (PARTITION BY id ORDER BY id, k) as foo, id, k from ranktest order by foo, id, k;
-% sys.L6,	sys.ranktest,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest,	sys.ranktest # table_name
 % foo,	id,	k # name
 % int,	int,	clob # type
 % 2,	4,	8 # length
@@ -384,7 +383,7 @@ Ready.
 [ 13,	1061,	"varchar"	]
 [ 13,	1061,	"varchar"	]
 #select RANK() over (ORDER BY id, k) as foo, id, k from ranktest order by foo, id, k;
-% sys.L6,	sys.ranktest,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest,	sys.ranktest # table_name
 % foo,	id,	k # name
 % int,	int,	clob # type
 % 2,	4,	8 # length
@@ -416,7 +415,7 @@ Ready.
 [ 26,	1062,	"smallint"	]
 [ 26,	1062,	"smallint"	]
 #select DENSE_RANK() over () as foo, id, k from ranktest order by k, foo, id;
-% sys.L6,	sys.ranktest,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest,	sys.ranktest # table_name
 % foo,	id,	k # name
 % int,	int,	clob # type
 % 2,	4,	8 # length
@@ -448,7 +447,7 @@ Ready.
 [ 22,	1061,	"varchar"	]
 [ 24,	1061,	"varchar"	]
 #select DENSE_RANK() over (PARTITION BY id) as foo, id, k from ranktest order by k, foo, id;
-% sys.L6,	sys.ranktest,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest,	sys.ranktest # table_name
 % foo,	id,	k # name
 % int,	int,	clob # type
 % 1,	4,	8 # length
@@ -480,7 +479,7 @@ Ready.
 [ 1,	1061,	"varchar"	]
 [ 1,	1061,	"varchar"	]
 #select DENSE_RANK() over (PARTITION BY id ORDER BY id, k) as foo, id, k from ranktest order by k, foo, id;
-% sys.L6,	sys.ranktest,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest,	sys.ranktest # table_name
 % foo,	id,	k # name
 % int,	int,	clob # type
 % 1,	4,	8 # length
@@ -512,7 +511,7 @@ Ready.
 [ 5,	1061,	"varchar"	]
 [ 5,	1061,	"varchar"	]
 #select DENSE_RANK() over (ORDER BY id, k) as foo, id, k from ranktest order by k, foo, id;
-% sys.L6,	sys.ranktest,	sys.ranktest # table_name
+% sys.L5,	sys.ranktest,	sys.ranktest # table_name
 % foo,	id,	k # name
 % int,	int,	clob # type
 % 1,	4,	8 # length

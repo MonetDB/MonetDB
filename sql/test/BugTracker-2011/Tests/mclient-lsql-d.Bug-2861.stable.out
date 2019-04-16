@@ -17,7 +17,6 @@ stdout of test 'mclient-lsql-d.Bug-2861` in directory 'sql/test/BugTracker-2011`
 # MonetDB/SQL module loaded
 # SQLException:mvc:SQL module not initialized
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

@@ -19,7 +19,6 @@ stdout of test 'duplicate_column_name.Bug-3349` in directory 'sql/test/BugTracke
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:39:09 >  
 # 10:39:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28423" "--port=32749"

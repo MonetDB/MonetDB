@@ -13,7 +13,6 @@ stdout of test 'perl_dbi` in directory 'sql/test/mapi` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:39249/
 # MonetDB/SQL module v2.20.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

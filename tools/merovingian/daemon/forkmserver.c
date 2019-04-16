@@ -767,7 +767,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	}
 	int e = errno;
 	pthread_mutex_unlock(&_mero_topdp_lock);
-		
+
 	/* forking failed somehow, cleanup the pipes */
 	close(pfdo[0]);
 	close(pfdo[1]);
@@ -794,6 +794,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	size_t pidfnlen;
 	FILE *pidfile;
 	char *profiler_executable;
+	char *beat_frequency = NULL;
 	char *tmp_exe;
 	struct stat path_info;
 	int error_code;
@@ -855,6 +856,10 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	/* find the path that the profiler will be storing files */
 	ckv = getDefaultProps();
 	readAllProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, PROFILERBEATFREQ);
+	if (kv) {
+		beat_frequency = kv->val;
+	}
 	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
 
 	if (kv == NULL) {
@@ -1035,6 +1040,10 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		argv[arg_idx++] = "-j";  /* JSON output */
 		argv[arg_idx++] = "-d";
 		argv[arg_idx++] = dbname;
+		if (beat_frequency) {
+			argv[arg_idx++] = "-b";
+			argv[arg_idx++] = beat_frequency;
+		}
 		argv[arg_idx++] = "-o";
 		argv[arg_idx++] = log_filename;
 		/* execute */

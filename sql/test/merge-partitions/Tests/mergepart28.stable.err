@@ -28,8 +28,8 @@ stderr of test 'mergepart28` in directory 'sql/test/merge-partitions` itself:
 # 17:13:17 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28639" "--port=36178"
 # 17:13:17 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-28639/.s.monetdb.36178
-QUERY = COPY 1347 RECORDS INTO ratings FROM '/home/ferreira/repositories/monetdb-test-data/netflix_data/movies.csv' USING DELIMITERS ',','\n','\"'; --error
+MAPI  = (monetdb) /var/tmp/mtest-21060/.s.monetdb.33036
+QUERY = COPY 1347 RECORDS INTO ratings FROM E'/home/ferreira/repositories/monetdb-test-data/netflix_data/movies.csv' USING DELIMITERS ',',E'\n','"'; --error
 ERROR = !INSERT: the insert violates the partition range of values
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-28639/.s.monetdb.36178

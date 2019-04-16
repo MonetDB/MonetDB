@@ -13,7 +13,6 @@ stdout of test 'dependency_loop` in directory 'sql/test/Dependencies` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:30726/
 # MonetDB/SQL module v2.22.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

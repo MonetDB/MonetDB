@@ -19,7 +19,6 @@ stdout of test 'reserved_keywords.Bug-3613` in directory 'sql/test/BugTracker-20
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:58:09 >  
 # 18:58:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21543" "--port=39106"

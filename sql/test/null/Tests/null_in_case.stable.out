@@ -15,7 +15,6 @@ stdout of test 'null_in_case` in directory 'sql/test/null` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:30781/
 # MonetDB/SQL module v2.22.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

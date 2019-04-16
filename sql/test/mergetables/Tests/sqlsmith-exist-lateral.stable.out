@@ -18,7 +18,6 @@ stdout of test 'sqlsmith-exist-lateral` in directory 'sql/test/mergetables` itse
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:45:47 >  
 # 21:45:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32287" "--port=36057"

@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-mal-calc-undefined.Bug-6566` in directory 'sql/t
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:05:57 >  
 # 13:05:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17337" "--port=37783"

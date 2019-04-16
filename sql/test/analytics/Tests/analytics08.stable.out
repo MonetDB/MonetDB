@@ -18,7 +18,6 @@ stdout of test 'analytics08` in directory 'sql/test/analytics` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:18:52 >  
 # 12:18:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27127" "--port=39943"

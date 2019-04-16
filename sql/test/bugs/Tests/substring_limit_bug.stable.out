@@ -19,7 +19,6 @@ stdout of test 'substring_limit_bug` in directory 'sql/test/bugs` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:26:55 >  
 # 15:26:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5917" "--port=35479"

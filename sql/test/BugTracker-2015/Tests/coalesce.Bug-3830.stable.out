@@ -21,7 +21,6 @@ stdout of test 'coalesce.Bug-3830` in directory 'sql/test/BugTracker-2015` itsel
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

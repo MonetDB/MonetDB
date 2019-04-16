@@ -141,6 +141,7 @@ doChallenge(void *data)
 	protocol_version protocol = PROTOCOL_9;
 	size_t buflen = BLOCK;
 
+	MT_thread_setworking("challenging client");
 #ifdef _MSC_VER
 	srand((unsigned int) GDKusec());
 #endif
@@ -270,13 +271,10 @@ doChallenge(void *data)
 	MSscheduleClient(buf, challenge, bs, fdout, protocol, buflen);
 }
 
-static volatile ATOMIC_TYPE nlistener = 0; /* nr of listeners */
-static volatile ATOMIC_TYPE serveractive = 0;
-static volatile ATOMIC_TYPE serverexiting = 0; /* listeners should exit */
-#ifdef ATOMIC_LOCK
-/* lock for all three ATOMIC_TYPE variables above */
-static MT_Lock atomicLock MT_LOCK_INITIALIZER("atomicLock");
-#endif
+static ATOMIC_TYPE nlistener = ATOMIC_VAR_INIT(0); /* nr of listeners */
+static ATOMIC_TYPE serveractive = ATOMIC_VAR_INIT(0);
+static ATOMIC_TYPE serverexiting = ATOMIC_VAR_INIT(0); /* listeners should exit */
+static ATOMIC_TYPE threadno = ATOMIC_VAR_INIT(0);	   /* thread sequence no */
 
 static void
 SERVERlistenThread(SOCKET *Sock)
@@ -298,7 +296,7 @@ SERVERlistenThread(SOCKET *Sock)
 		GDKfree(Sock);
 	}
 
-	(void) ATOMIC_INC(nlistener, atomicLock);
+	(void) ATOMIC_INC(&nlistener);
 
 	do {
 		FD_ZERO(&fds);
@@ -319,8 +317,7 @@ SERVERlistenThread(SOCKET *Sock)
 			msgsock = usock;
 #endif
 		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
-		if (ATOMIC_GET(serverexiting, atomicLock) ||
-			GDKexiting())
+		if (ATOMIC_GET(&serverexiting) || GDKexiting())
 			break;
 		if (retval == 0) {
 			/* nothing interesting has happened */
@@ -347,7 +344,7 @@ SERVERlistenThread(SOCKET *Sock)
 #else
 					errno != EINTR
 #endif
-					|| !ATOMIC_GET(serveractive, atomicLock)) {
+					|| !ATOMIC_GET(&serveractive)) {
 					msg = "accept failed";
 					goto error;
 				}
@@ -478,7 +475,10 @@ SERVERlistenThread(SOCKET *Sock)
 			goto stream_alloc_fail;
 		}
 		data->out = s;
-		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, "doChallenge")) == 0) {
+		char name[16];
+		snprintf(name, sizeof(name), "client%d",
+				 (int) ATOMIC_INC(&threadno));
+		if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 			mnstr_destroy(data->in);
 			mnstr_destroy(data->out);
 			GDKfree(data);
@@ -487,12 +487,19 @@ SERVERlistenThread(SOCKET *Sock)
 						  "cannot fork new client thread");
 			continue;
 		}
-	} while (!ATOMIC_GET(serverexiting, atomicLock) &&
-			 !GDKexiting());
-	(void) ATOMIC_DEC(nlistener, atomicLock);
+	} while (!ATOMIC_GET(&serverexiting) && !GDKexiting());
+	(void) ATOMIC_DEC(&nlistener);
+	if (sock != INVALID_SOCKET)
+		closesocket(sock);
+	if (usock != INVALID_SOCKET)
+		closesocket(usock);
 	return;
 error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
+	if (sock != INVALID_SOCKET)
+		closesocket(sock);
+	if (usock != INVALID_SOCKET)
+		closesocket(usock);
 }
 
 /**
@@ -651,7 +658,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 			server.sin_zero[i] = 0;
 		length = (SOCKLEN) sizeof(server);
 
-		do {
+		for (;;) {
 			server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 			if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
 				int e = errno;
@@ -685,7 +692,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 			} else {
 				break;
 			}
-		} while (1);
+		}
 
 		if (getsockname(sock, (SOCKPTR) &server, &length) == SOCKET_ERROR) {
 			int e = errno;
@@ -729,6 +736,8 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 			int e = errno;
 			GDKfree(psock);
 			GDKfree(usockfile);
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			errno = e;
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": creation of UNIX socket failed: %s",
@@ -747,6 +756,8 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 		 * chars long :/ */
 		if (strlen(usockfile) >= sizeof(userver.sun_path)) {
 			char *e;
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			closesocket(usock);
 			GDKfree(psock);
 			e = createException(MAL, "mal_mapi.listen",
@@ -763,6 +774,8 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 		length = (SOCKLEN) sizeof(userver);
 		if(remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file");
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			closesocket(usock);
 			GDKfree(usockfile);
 			GDKfree(psock);
@@ -771,6 +784,8 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 		if (bind(usock, (SOCKPTR) &userver, length) == SOCKET_ERROR) {
 			char *e;
 			int err = errno;
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			closesocket(usock);
 			(void) remove(usockfile);
 			GDKfree(psock);
@@ -791,6 +806,8 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 		if(listen(usock, maxusers) == SOCKET_ERROR) {
 			char *e;
 			int err = errno;
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			closesocket(usock);
 			(void) remove(usockfile);
 			GDKfree(psock);
@@ -822,7 +839,14 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 	psock[1] = INVALID_SOCKET;
 #endif
 	psock[2] = INVALID_SOCKET;
-	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock, MT_THR_JOINABLE) != 0) {
+	if (MT_create_thread(&pid, (void (*)(void *)) SERVERlistenThread, psock,
+						 MT_THR_JOINABLE, "listenThread") != 0) {
+		if (sock != INVALID_SOCKET)
+			closesocket(sock);
+#ifdef HAVE_SYS_UN_H
+		if (usock != INVALID_SOCKET)
+			closesocket(usock);
+#endif
 		GDKfree(psock);
 		if (usockfile)
 			GDKfree(usockfile);
@@ -897,10 +921,10 @@ str
 SERVERstop(void *ret)
 {
 fprintf(stderr, "SERVERstop\n");
-	ATOMIC_SET(serverexiting, 1, atomicLock);
+	ATOMIC_SET(&serverexiting, 1);
 	/* wait until they all exited, but skip the wait if the whole
 	 * system is going down */
-	while (ATOMIC_GET(nlistener, atomicLock) > 0 && !GDKexiting())
+	while (ATOMIC_GET(&nlistener) > 0 && !GDKexiting())
 		MT_sleep_ms(100);
 	(void) ret;		/* fool compiler */
 	return MAL_SUCCEED;
@@ -911,14 +935,14 @@ str
 SERVERsuspend(void *res)
 {
 	(void) res;
-	ATOMIC_SET(serveractive, 0, atomicLock);
+	ATOMIC_SET(&serveractive, 0);
 	return MAL_SUCCEED;
 }
 
 str
 SERVERresume(void *res)
 {
-	ATOMIC_SET(serveractive, 1, atomicLock);
+	ATOMIC_SET(&serveractive, 1);
 	(void) res;
 	return MAL_SUCCEED;
 }
@@ -942,7 +966,10 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 		GDKfree(data);
 		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, "doChallenge")) == 0) {
+	char name[16];
+	snprintf(name, sizeof(name), "client%d",
+			 (int) ATOMIC_INC(&threadno));
+	if ((tid = THRcreate(doChallenge, data, MT_THR_DETACHED, name)) == 0) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);

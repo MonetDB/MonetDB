@@ -360,6 +360,7 @@
 */
 
 #define THRDMASK	(1)
+#define THRDDEBUG	if (GDKdebug & THRDMASK)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
 #define MEMMASK		(1<<2)
@@ -405,6 +406,8 @@
 #define ?ddbench?	if (GDKdebug&(1<<19))
 #define ?ddbench?	if (GDKdebug&(1<<20))
 */
+#define ACCELMASK	(1<<20)
+#define ACCELDEBUG	if (GDKdebug & (ACCELMASK|ALGOMASK))
 #define ALGOMASK	(1<<21)
 #define ALGODEBUG	if (GDKdebug & ALGOMASK)
 #define ESTIMASK	(1<<22)
@@ -2228,9 +2231,8 @@ gdk_export void GDKerror(_In_z_ _Printf_format_string_ const char *format, ...)
 gdk_export void GDKsyserror(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 #ifndef HAVE_EMBEDDED
-__declspec(noreturn) gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)))
-	__attribute__((__noreturn__));
+gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 1, 2)));
 #else
 gdk_export void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
@@ -2296,8 +2298,7 @@ typedef struct threadStruct {
 	int tid;		/* logical ID by MonetDB; val == index
 				 * into this array + 1 (0 is
 				 * invalid) */
-	MT_Id pid;		/* physical thread id (pointer-sized)
-				 * from the OS thread library */
+	ATOMIC_TYPE pid;	/* thread id, 0 = unallocated */
 	str name;
 	void *data[THREADDATA];
 	uintptr_t sp;
@@ -2306,14 +2307,11 @@ typedef struct threadStruct {
 
 gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);
-gdk_export Thread THRnew(const char *name);
 gdk_export MT_Id THRcreate(void (*f) (void *), void *arg, enum MT_thr_detach d, const char *name);
 gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, void *);
 gdk_export void *THRgetdata(int);
 gdk_export int THRhighwater(void);
-gdk_export int THRprintf(stream *s, _In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
 
 gdk_export void *THRdata[THREADDATA];
 

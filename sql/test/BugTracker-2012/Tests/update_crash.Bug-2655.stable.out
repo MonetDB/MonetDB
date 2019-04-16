@@ -39,7 +39,6 @@ stdout of test 'update_crash.Bug-2655` in directory 'sql/test/BugTracker-2012` i
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:26:37 >  
 # 16:26:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lyon" "--port=31477"

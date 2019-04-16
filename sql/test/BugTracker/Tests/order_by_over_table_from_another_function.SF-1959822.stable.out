@@ -13,7 +13,6 @@ stdout of test 'order_by_over_table_from_another_function.SF-1959822` in directo
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:39845/
 # MonetDB/SQL module v2.23.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

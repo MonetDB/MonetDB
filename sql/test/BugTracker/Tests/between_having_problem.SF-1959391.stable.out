@@ -13,7 +13,6 @@ stdout of test 'between_having_problem.SF-1959391` in directory 'sql/test/BugTra
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36007/
 # MonetDB/SQL module v2.24.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 #function user.main():void;

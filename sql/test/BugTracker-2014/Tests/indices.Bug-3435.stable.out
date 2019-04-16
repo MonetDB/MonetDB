@@ -19,7 +19,6 @@ stdout of test 'indices.Bug-3435` in directory 'sql/test/BugTracker-2014` itself
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

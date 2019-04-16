@@ -1,9 +1,9 @@
 stdout of test 'mergepart28` in directory 'sql/test/merge-partitions` itself:
 
 
-# 17:13:15 >  
+# 17:13:15 >
 # 17:13:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36178" "--set" "mapi_usock=/var/tmp/mtest-28639/.s.monetdb.36178" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-merge-partitions/BUILD/var/MonetDB/mTests_sql_test_merge-partitions" "--set" "embedded_c=true"
-# 17:13:15 >  
+# 17:13:15 >
 
 # MonetDB 5 server v11.30.0
 # This is an unreleased version
@@ -58,16 +58,17 @@ stdout of test 'mergepart28` in directory 'sql/test/merge-partitions` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
-# 17:13:17 >  
+# 17:13:17 >
 # 17:13:17 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28639" "--port=36178"
-# 17:13:17 >  
+# 17:13:17 >
 
 #CREATE MERGE TABLE ratings (movie_id BIGINT, release_year INT, title VARCHAR(200)) PARTITION BY RANGE ON (release_year);
 #CREATE TABLE subt1 (movie_id BIGINT, release_year INT, title VARCHAR(200));
 #CREATE TABLE subt2 (movie_id BIGINT, release_year INT, title VARCHAR(200));
-#COPY 1347 RECORDS INTO ratings FROM '/home/ferreira/repositories/monetdb-test-data/netflix_data/movies.csv' USING DELIMITERS ',','\n','\"';
+#ALTER TABLE ratings ADD TABLE subt1 AS PARTITION FROM 1950 TO 2006;
+#ALTER TABLE ratings ADD TABLE subt2 AS PARTITION FROM 1925 TO 1950;
+#COPY 1347 RECORDS INTO ratings FROM E'/home/ferreira/repositories/monetdb-test-data/netflix_data/movies.csv' USING DELIMITERS ',',E'\n','"';
 [ 1347	]
 #CREATE LOADER tryaloader() LANGUAGE PYTHON {
 #    _emit.emit({'movie_id': 1, 'release_year': 1926, 'title': 'A horror movie'});
@@ -79,13 +80,13 @@ Ready.
 % 4 # length
 [ 1347	]
 #SELECT COUNT(*) FROM subt1;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 1322	]
 #SELECT COUNT(*) FROM subt2;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -97,7 +98,7 @@ Ready.
 #DROP TABLE ratings;
 #DROP LOADER tryaloader;
 
-# 17:13:18 >  
+# 17:13:18 >
 # 17:13:18 >  "Done."
-# 17:13:18 >  
+# 17:13:18 >
 

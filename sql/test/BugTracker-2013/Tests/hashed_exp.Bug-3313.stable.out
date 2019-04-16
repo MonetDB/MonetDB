@@ -19,7 +19,6 @@ stdout of test 'hashed_exp.Bug-3313` in directory 'sql/test/BugTracker-2013` its
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:45:40 >  
 # 17:45:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11385" "--port=30649"

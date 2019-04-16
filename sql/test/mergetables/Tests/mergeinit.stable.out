@@ -50,7 +50,6 @@ stdout of test 'mergeinit` in directory 'sql/test/mergetables` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:18:31 >  
 # 16:18:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10817" "--port=39884"

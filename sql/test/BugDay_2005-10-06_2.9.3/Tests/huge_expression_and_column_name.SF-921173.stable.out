@@ -15,7 +15,6 @@ stdout of test 'huge_expression_and_column_name.SF-921173` in directory 'sql/tes
 # Listening for connection requests on mapi:monetdb://localhost.localdomain:30596/
 # MonetDB/SQL module v2.35.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

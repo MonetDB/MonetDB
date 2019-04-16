@@ -19,7 +19,6 @@ stdout of test 'create_table_with_func.Bug-3286` in directory 'sql/test/BugTrack
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 20:04:33 >  
 # 20:04:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23407" "--port=37761"

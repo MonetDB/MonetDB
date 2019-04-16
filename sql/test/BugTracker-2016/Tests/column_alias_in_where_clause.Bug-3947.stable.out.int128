@@ -19,7 +19,6 @@ stdout of test 'column_alias_in_where_clause.Bug-3947` in directory 'sql/test/Bu
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

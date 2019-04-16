@@ -23,7 +23,6 @@ stdout of test 'unicode_varchar-bug-sf-1041324_JdbcClient` in directory 'sql/tes
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:10:32 >  
 # 14:10:32 >  "./unicode_varchar-bug-sf-1041324_JdbcClient.SQL.sh" "unicode_varchar-bug-sf-1041324_JdbcClient"

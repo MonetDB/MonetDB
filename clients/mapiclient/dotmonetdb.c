@@ -15,18 +15,22 @@ parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int
 {
 	char *cfile;
 	FILE *config = NULL;
-	char buf[1024];
+	char buf[FILENAME_MAX];
 
 	if ((cfile = getenv("DOTMONETDBFILE")) == NULL) {
 		/* no environment variable: use a default */
 		if ((config = fopen(".monetdb", "r")) == NULL) {
 			if ((cfile = getenv("HOME")) != NULL) {
-				snprintf(buf, sizeof(buf), "%s%c.monetdb", cfile, DIR_SEP);
-				config = fopen(buf, "r");
-				if (config)
-					cfile = strdup(buf);
-				else
+				int len = snprintf(buf, sizeof(buf), "%s%c.monetdb", cfile, DIR_SEP);
+				if (len == -1 || len >= FILENAME_MAX) {
 					cfile = NULL;
+				} else {
+					config = fopen(buf, "r");
+					if (config)
+						cfile = strdup(buf);
+					else
+						cfile = NULL;
+				}
 			}
 		} else {
 			cfile = strdup(".monetdb");

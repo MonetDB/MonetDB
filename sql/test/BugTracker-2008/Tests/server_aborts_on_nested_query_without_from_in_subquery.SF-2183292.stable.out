@@ -14,7 +14,6 @@ stdout of test 'server_aborts_on_nested_query_without_from_in_subquery.SF-218329
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38731/
 # MonetDB/SQL module v2.26.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 #function user.main():void;

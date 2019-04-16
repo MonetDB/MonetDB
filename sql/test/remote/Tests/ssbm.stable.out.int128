@@ -1,6 +1,5 @@
 stdout of test 'ssbm` in directory 'sql/test/remote` itself:
 
-Ready.
 
 # 11:09:02 >  
 # 11:09:02 >  "/usr/bin/python2" "ssbm.SQL.py" "ssbm"
@@ -76,7 +75,7 @@ Ready.
 #		and s_region = 'AMERICA'
 #	group by d_year, p_brand1
 #	order by d_year, p_brand1;
-% .L3,	.dwdate,	.part # table_name
+% .L2,	.dwdate,	.part # table_name
 % L2,	d_year,	p_brand1 # name
 % hugeint,	int,	clob # type
 % 8,	4,	9 # length
@@ -252,7 +251,7 @@ Ready.
 #		and s_region = 'ASIA'
 #	group by d_year, p_brand1
 #	order by d_year, p_brand1;
-% .L3,	.dwdate,	.part # table_name
+% .L2,	.dwdate,	.part # table_name
 % L2,	d_year,	p_brand1 # name
 % hugeint,	int,	clob # type
 % 8,	4,	9 # length
@@ -318,7 +317,7 @@ Ready.
 #		and s_region = 'EUROPE'
 #	group by d_year, p_brand1
 #	order by d_year, p_brand1;
-% .L3,	.dwdate,	.part # table_name
+% .L2,	.dwdate,	.part # table_name
 % L2,	d_year,	p_brand1 # name
 % hugeint,	int,	clob # type
 % 8,	4,	9 # length

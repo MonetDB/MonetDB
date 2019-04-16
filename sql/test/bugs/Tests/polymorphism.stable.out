@@ -19,7 +19,6 @@ stdout of test 'polymorphism` in directory 'sql/test/bugs` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:03:19 >  
 # 19:03:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18423" "--port=33115"

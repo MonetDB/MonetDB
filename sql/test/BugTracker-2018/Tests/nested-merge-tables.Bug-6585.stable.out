@@ -20,7 +20,6 @@ stdout of test 'nested-merge-tables.Bug-6585` in directory 'sql/test/BugTracker-
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

@@ -15,7 +15,6 @@ stdout of test 'string` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:34553/
 # MonetDB/SQL module v2.21.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -1220,7 +1220,7 @@ sql_update_mar2018_sp1(Client c, mvc *sql)
 static str
 sql_update_remote_tables(Client c, mvc *sql)
 {
-	res_table *output;
+	res_table *output = NULL;
 	str err = MAL_SUCCEED;
 	size_t bufsize = 1000, pos = 0;
 	char *buf;
@@ -1283,27 +1283,30 @@ sql_update_remote_tables(Client c, mvc *sql)
 				v = BUNtvar(tbl_it, i);
 				u = BUNtvar(uri_it, i);
 				if (v == NULL || (*cmp)(v, nil) == 0 ||
-				    u == NULL || (*cmp)(u, nil) == 0) {
-					BBPunfix(tbl->batCacheid);
-					BBPunfix(uri->batCacheid);
+				    u == NULL || (*cmp)(u, nil) == 0)
 					goto bailout;
-				}
 
 				/* Since the loop might fail, it might be a good idea
 				 * to update the credentials as a second step
 				 */
 				remote_server_uri = mapiuri_uri((char *)u, sql->sa);
-				AUTHaddRemoteTableCredentials((char *)v, "monetdb", remote_server_uri, "monetdb", "monetdb", false);
+				if ((err = AUTHaddRemoteTableCredentials((char *)v, "monetdb", remote_server_uri, "monetdb", "monetdb", false)) != MAL_SUCCEED)
+					goto bailout;
 			}
 		}
-		BBPunfix(tbl->batCacheid);
-		BBPunfix(uri->batCacheid);
+	} else {
+		err = createException(SQL, "sql_update_remote_tables", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	res_table_destroy(output);
 
-  bailout:
+bailout:
+	if (tbl)
+		BBPunfix(tbl->batCacheid);
+	if (uri)
+		BBPunfix(uri->batCacheid);
+	if (output)
+		res_table_destroy(output);
 	GDKfree(buf);
-	return err;
+	return err;		/* usually MAL_SUCCEED */
 }
 
 static str
@@ -1522,7 +1525,7 @@ sql_drop_functions_dependencies_Xs_on_Ys(Client c, mvc *sql)
 static str
 sql_update_apr2019(Client c, mvc *sql)
 {
-	size_t bufsize = 2000, pos = 0;
+	size_t bufsize = 3000, pos = 0;
 	char *buf, *err;
 	char *schema;
 	sql_schema *s;
@@ -1535,6 +1538,26 @@ sql_update_apr2019(Client c, mvc *sql)
 	s = mvc_bind_schema(sql, "sys");
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+	/* 15_querylog.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop procedure sys.querylog_enable(smallint);\n"
+			"create procedure sys.querylog_enable(threshold integer) external name sql.querylog_enable;\n"
+			"update sys.functions set system = true where name = 'querylog_enable' and schema_id = (select id from sys.schemas where name = 'sys');\n");
+
+	/* 17_temporal.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.date_trunc(txt string, t timestamp)\n"
+			"returns timestamp\n"
+			"external name sql.date_trunc;\n"
+			"grant execute on function sys.date_trunc(string, timestamp) to public;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'date_trunc' and type = %d;\n", F_FUNC);
+
+	/* 22_clients.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure sys.setprinttimeout(\"timeout\" integer)\n"
+			"external name clients.setprinttimeout;\n"
+			"update sys.functions set system = true where schema_id = (select id from sys.schemas where name = 'sys') and name = 'setprinttimeout' and type = %d;\n", F_PROC);
 
 	/* 26_sysmon.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -2109,15 +2132,14 @@ SQLupgrades(Client c, mvc *m)
 
 	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
 	    t->type == tt_table) {
-		if ((err = sql_update_apr2019(c, m)) != NULL) {
+		if (!hugeint_upgraded &&
+		    (err = sql_fix_system_tables(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
-		if (!hugeint_upgraded) {
-			if ((err = sql_fix_system_tables(c, m)) != NULL) {
-				fprintf(stderr, "!%s\n", err);
-				freeException(err);
-			}
+		if ((err = sql_update_apr2019(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
 		}
 	}
 

@@ -55,8 +55,7 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 
 		if (line == NULL) {
 			/* end of file */
-			if (buf)
-				free(buf);
+			free(buf);
 			return NULL;
 		} else
 			length = strlen(line);

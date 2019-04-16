@@ -20,7 +20,6 @@ stdout of test 'remote13` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:29:41 >  
 # 10:29:41 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-17829" "--port=31716"

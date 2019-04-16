@@ -23,7 +23,6 @@ stdout of test 'insert_ATOM` in directory 'sql/benchmarks/arno` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

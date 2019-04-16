@@ -18,7 +18,6 @@ stdout of test 'mergepart16` in directory 'sql/test/merge-partitions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:36:19 >  
 # 16:36:19 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20495" "--port=30967"
@@ -125,13 +124,13 @@ Ready.
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt1;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt2;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -159,25 +158,25 @@ Ready.
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM subt1;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt2;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM subt3;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM subt4;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

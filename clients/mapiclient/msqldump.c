@@ -27,8 +27,7 @@
 #include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
 
-__declspec(noreturn) static void usage(const char *prog, int xit)
-	__attribute__((__noreturn__));
+static _Noreturn void usage(const char *prog, int xit);
 
 static void
 usage(const char *prog, int xit)
@@ -129,14 +128,15 @@ main(int argc, char **argv)
 			trace = true;
 			break;
 		case 'v': {
-			const char *rev = mercurial_revision();
 			printf("msqldump, the MonetDB interactive database "
 			       "dump tool, version %s", VERSION);
-			/* coverity[pointless_string_compare] */
-			if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-				printf(" (%s)", MONETDB_RELEASE);
-			else if (strcmp(rev, "Unknown") != 0)
+#ifdef MONETDB_RELEASE
+			printf(" (%s)", MONETDB_RELEASE);
+#else
+			const char *rev = mercurial_revision();
+			if (strcmp(rev, "Unknown") != 0)
 				printf(" (hg id: %s)", rev);
+#endif
 			printf("\n");
 			return 0;
 		}
@@ -197,7 +197,6 @@ main(int argc, char **argv)
 		char buf[27];
 		time_t t = time(0);
 		char *p;
-		const char *rev = mercurial_revision();
 
 #ifdef HAVE_CTIME_R3
 		ctime_r(&t, buf, sizeof(buf));
@@ -213,12 +212,13 @@ main(int argc, char **argv)
 
 		mnstr_printf(out,
 			     "-- msqldump version %s", VERSION);
-		/* coverity[pointless_string_compare] */
-		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-			mnstr_printf(out, " (%s)",
-				     MONETDB_RELEASE);
-		else if (strcmp(rev, "Unknown") != 0)
+#ifdef MONETDB_RELEASE
+		mnstr_printf(out, " (%s)", MONETDB_RELEASE);
+#else
+		const char *rev = mercurial_revision();
+		if (strcmp(rev, "Unknown") != 0)
 			mnstr_printf(out, " (hg id: %s)", rev);
+#endif
 		mnstr_printf(out, " %s %s%s\n",
 			     describe ? "describe" : "dump",
 			     functions ? "functions" : table ? "table " : "database",

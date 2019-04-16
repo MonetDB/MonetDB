@@ -14,7 +14,6 @@ stdout of test 'decimal_needs_truncation.SF-2605686` in directory 'sql/test/BugT
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35789/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

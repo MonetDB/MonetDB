@@ -47,7 +47,6 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:20:25 >  
 # 16:20:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26153" "--port=36066"
@@ -492,6 +491,9 @@ Ready.
 [ "sys",	"date_to_str",	0,	"clob",	"create function date_to_str(d date, format string) returns string\n external name mtime.\"date_to_str\";"	]
 [ "sys",	"date_to_str",	1,	"date",	""	]
 [ "sys",	"date_to_str",	2,	"clob",	""	]
+[ "sys",	"date_trunc",	0,	"timestamp",	"create function sys.date_trunc(txt string, t timestamp)\nreturns timestamp\nexternal name sql.date_trunc;"	]
+[ "sys",	"date_trunc",	1,	"clob",	""	]
+[ "sys",	"date_trunc",	2,	"timestamp",	""	]
 [ "sys",	"day",	0,	"int",	"day"	]
 [ "sys",	"day",	1,	"date",	""	]
 [ "sys",	"day",	0,	"int",	"day"	]
@@ -1497,7 +1499,7 @@ Ready.
 [ "sys",	"querylog_catalog",	5,	"clob",	""	]
 [ "sys",	"querylog_catalog",	6,	"int",	""	]
 [ "sys",	"querylog_catalog",	7,	"bigint",	""	]
-[ "sys",	"querylog_enable",	0,	"smallint",	"create procedure sys.querylog_enable(threshold smallint)\nexternal name sql.querylog_enable_threshold;"	]
+[ "sys",	"querylog_enable",	0,	"int",	"create procedure sys.querylog_enable(threshold integer)\nexternal name sql.querylog_enable;"	]
 [ "sys",	"queue",	0,	"bigint",	"create function sys.queue()\nreturns table(\n qtag bigint,\n \"user\" string,\n started timestamp,\n estimate timestamp,\n progress int,\n status string,\n tag oid,\n query string\n)\nexternal name sql.sysmon_queue;"	]
 [ "sys",	"queue",	1,	"clob",	""	]
 [ "sys",	"queue",	2,	"timestamp",	""	]
@@ -3234,6 +3236,7 @@ Ready.
 [ "sys",	"setmasklen",	0,	"inet",	"create function \"setmasklen\" (p inet, mask int) returns inet\n external name inet.\"setmasklen\";"	]
 [ "sys",	"setmasklen",	1,	"inet",	""	]
 [ "sys",	"setmasklen",	2,	"int",	""	]
+[ "sys",	"setprinttimeout",	0,	"int",	"create procedure sys.setprinttimeout(\"timeout\" integer)\n external name clients.setprinttimeout;"	]
 [ "sys",	"setsession",	0,	"bigint",	"create procedure sys.setsession(\"timeout\" bigint)\n external name clients.setsession;"	]
 [ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint)\n external name clients.settimeout;"	]
 [ "sys",	"settimeout",	0,	"bigint",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint)\n external name clients.settimeout;"	]

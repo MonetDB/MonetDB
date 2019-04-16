@@ -19,7 +19,6 @@ stdout of test 'Cannot_Find_Column_Type.Bug-3394` in directory 'sql/test/BugTrac
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

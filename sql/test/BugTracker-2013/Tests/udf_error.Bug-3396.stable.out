@@ -19,7 +19,6 @@ stdout of test 'udf_error.Bug-3396` in directory 'sql/test/BugTracker-2013` itse
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:07:54 >  
 # 10:07:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18528" "--port=37280"

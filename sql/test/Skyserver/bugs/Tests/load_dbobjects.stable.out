@@ -15,7 +15,6 @@ stdout of test 'load_dbobjects` in directory 'sql/test/Skyserver/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -40,8 +39,8 @@ Ready.
 [ "DBObjects",	"U",	"U",	" Every SkyServer database object has a one line description in this table ",	"none",	0	]
 [ "DBViewCols",	"U",	"U",	" The columns of each view are stored for the auto-documentation ",	" * means that every column from the  parent is propagated. ",	0	]
 #select count(*) from DBObjects;
-% sys.L1 # table_name
-% L1 # name
+% .L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 9	]

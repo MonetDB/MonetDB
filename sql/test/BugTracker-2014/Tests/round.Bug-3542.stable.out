@@ -19,7 +19,6 @@ stdout of test 'round.Bug-3542` in directory 'sql/test/BugTracker-2014` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:02:08 >  
 # 11:02:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6484" "--port=32577"

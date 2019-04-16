@@ -5,16 +5,17 @@ stdout of test 'setoptimizer` in directory 'sql/test` itself:
 # 20:30:45 >   mserver5 "--config=/ufs/niels/scratch/monetdb/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/monetdb/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/monetdb/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=39627 --set xrpc_port=43642 --set monet_prompt= --trace  "--dbname=mTests_src_test" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
 # 20:30:45 >  
 
-# MonetDB server v5.9.0, based on kernel v1.27.0
-# Serving database 'mTests_src_test', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39627/
-# MonetDB/SQL module v2.27.0 loaded
-
-Ready.
+# MonetDB 5 server v11.34.0 (hg id: dd50f41573c0+0314fa9c90d0+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.693 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:35848/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8518/.s.monetdb.35848
+# MonetDB/GIS module loaded
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -36,6 +37,8 @@ Ready.
 # loading sql script: 40_geom.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
 
 # 02:57:35 >  
 # 02:57:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=30272"
@@ -64,12 +67,13 @@ Ready.
 % .L1,	.L1,	.L1 # table_name
 % name,	def,	status # name
 % clob,	clob,	clob # type
-% 15,	621,	6 # length
+% 15,	641,	6 # length
 [ "minimal_pipe",	"optimizer.inline();optimizer.remap();optimizer.deadcode();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();",	"stable"	]
-[ "default_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
-[ "volcano_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.volcano();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
-[ "no_mitosis_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
-[ "sequential_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
+[ "default_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
+[ "oltp_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.oltp();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
+[ "volcano_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.volcano();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
+[ "no_mitosis_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
+[ "sequential_pipe",	"optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();",	"stable"	]
 
 # 02:57:35 >  
 # 02:57:35 >  "Done."

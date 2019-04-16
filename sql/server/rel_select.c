@@ -4444,13 +4444,7 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 	}
 
 	if (!e) {
-		//sql_rel *or = r;
-
 		e = rel_value_exp(sql, &r, column_r, sql_sel | sql_orderby, ek);
-		/*
-		if (r && or != r)
-			(*R)->l = r;
-			*/
 		/* add to internal project */
 		if (e && is_processed(r)) {
 			e = rel_project_add_exp(sql, r, e);

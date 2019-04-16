@@ -18,7 +18,6 @@ stdout of test 'sqllitelogistest_case.Bug-6335` in directory 'sql/test/BugTracke
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:21:49 >  
 # 19:21:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30725" "--port=34720"

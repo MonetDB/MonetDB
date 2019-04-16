@@ -14,7 +14,6 @@ stdout of test 'avg-bug.SF-2132666` in directory 'sql/test/BugTracker-2009` itse
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38379/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

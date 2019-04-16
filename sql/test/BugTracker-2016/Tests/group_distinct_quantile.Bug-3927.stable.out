@@ -19,7 +19,6 @@ stdout of test 'group_distinct_quantile.Bug-3927` in directory 'sql/test/BugTrac
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:14:41 >  
 # 16:14:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3198" "--port=38683"

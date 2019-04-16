@@ -23,7 +23,6 @@ stdout of test 'isaUUID_function.Bug-3997` in directory 'sql/test/BugTracker-201
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 #WARNING To speedup uuid.isaUUID a bulk operator implementation is needed
 #    X_108:bat[:oid,:uuid]{horigin=1} := mal.multiplex("uuid":str,"isaUUID":str,X_96:bat[:oid,:str]);
 #WARNING To speedup uuid.isaUUID a bulk operator implementation is needed

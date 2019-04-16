@@ -28,8 +28,8 @@ stderr of test 'mergepart15` in directory 'sql/test/merge-partitions` itself:
 # 11:35:39 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26053" "--port=37352"
 # 11:35:39 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-26053/.s.monetdb.37352
-QUERY = ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION WITH NULL; --error
+MAPI  = (monetdb) /var/tmp/mtest-9854/.s.monetdb.34789
+QUERY = ALTER TABLE testme ADD TABLE sublimits1 AS PARTITION FOR NULL VALUES; --error
 ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-18994/.s.monetdb.34581
@@ -40,12 +40,12 @@ MAPI  = (monetdb) /var/tmp/mtest-26053/.s.monetdb.37352
 QUERY = INSERT INTO sublimits1 VALUES (2, 'third'); --error
 ERROR = !INSERT: table sys.sublimits1 is part of merge table sys.testme and the insert violates the partition range of values
 CODE  = M0M29
-MAPI  = (monetdb) /var/tmp/mtest-26053/.s.monetdb.37352
-QUERY = ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION WITH NULL; --error
+MAPI  = (monetdb) /var/tmp/mtest-9854/.s.monetdb.34789
+QUERY = ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FOR NULL VALUES; --error
 ERROR = !ALTER TABLE: conflicting partitions: table sys.sublimits1 stores null values and only one partition can store null values at the time
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-26053/.s.monetdb.37352
-QUERY = ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION BETWEEN '301' AND '500' WITH NULL; --error
+MAPI  = (monetdb) /var/tmp/mtest-13251/.s.monetdb.37915
+QUERY = ALTER TABLE testme ADD TABLE sublimits2 AS PARTITION FROM '301' TO '500' WITH NULL VALUES; --error
 ERROR = !ALTER TABLE: conflicting partitions: table sys.sublimits1 stores null values and only one partition can store null values at the time
 CODE  = 42000
 

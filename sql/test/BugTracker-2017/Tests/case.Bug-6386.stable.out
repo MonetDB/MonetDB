@@ -18,7 +18,6 @@ stdout of test 'case.Bug-6386` in directory 'sql/test/BugTracker-2017` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:14:35 >  
 # 18:14:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10620" "--port=33907"

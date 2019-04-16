@@ -19,7 +19,6 @@ stdout of test 'cannot_use_columns_after_groupby.Bug-3340` in directory 'sql/tes
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 20:54:49 >  
 # 20:54:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27846" "--port=35773"

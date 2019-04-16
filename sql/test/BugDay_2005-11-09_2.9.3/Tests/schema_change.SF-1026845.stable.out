@@ -14,7 +14,6 @@ stdout of test 'schema_change.SF-1026845` in directory 'sql/test/BugDay_2005-11-
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31407/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 # falling back to direct mode 
 # falling back to direct mode 
 # falling back to direct mode 

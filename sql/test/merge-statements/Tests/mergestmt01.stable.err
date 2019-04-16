@@ -31,12 +31,12 @@ stderr of test 'mergestmt01` in directory 'sql/test/merge-statements` itself:
 MAPI  = (monetdb) /var/tmp/mtest-13603/.s.monetdb.37525
 QUERY = merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
               when matched then update set aa = sub.aa; --error, each target row must match one and only one source row
-ERROR = !MERGE: There are rows in 'sys.predata' with multiple matches on source relation
+ERROR = !MERGE UPDATE: Multiple rows in the input relation 'sub' match the same row in the target table 'sys.predata'
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-13603/.s.monetdb.37525
 QUERY = merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
               when matched then delete; --error, each target row must match one and only one source row
-ERROR = !MERGE: There are rows in 'sys.predata' with multiple matches on source relation
+ERROR = !MERGE DELETE: Multiple rows in the input relation 'sub' match the same row in the target table 'sys.predata'
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-13603/.s.monetdb.37525
 QUERY = merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb

@@ -19,7 +19,6 @@ stdout of test 'swapped_likejoin.Bug-3375` in directory 'sql/test/BugTracker-201
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:06:32 >  
 # 10:06:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22741" "--port=34205"

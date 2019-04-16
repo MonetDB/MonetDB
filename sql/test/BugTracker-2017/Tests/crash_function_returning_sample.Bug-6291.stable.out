@@ -20,7 +20,6 @@ stdout of test 'crash_function_returning_sample.Bug-6291` in directory 'sql/test
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

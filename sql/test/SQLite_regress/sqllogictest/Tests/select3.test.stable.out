@@ -23,7 +23,6 @@ stdout of test 'select3.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:24:26 >  
 # 12:24:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32227" "--port=36911"

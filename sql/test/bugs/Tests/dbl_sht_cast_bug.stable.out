@@ -13,7 +13,6 @@ stdout of test 'dbl_sht_cast_bug` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:30417/
 # MonetDB/SQL module v2.20.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

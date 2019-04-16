@@ -116,7 +116,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  * The hotclaim is a hint how large the result would be.
  */
 #ifdef USE_MAL_ADMISSION
-static MT_Lock admissionLock MT_LOCK_INITIALIZER("admissionLock");
+static MT_Lock admissionLock = MT_LOCK_INITIALIZER("admissionLock");
 
 /* experiments on sf-100 on small machine showed no real improvement */
 int
@@ -164,10 +164,7 @@ MALadmission(lng argclaim, lng hotclaim)
  * By keeping the query start time in the client record we can delay
  * them when resource stress occurs.
  */
-volatile ATOMIC_TYPE mal_running;
-#ifdef ATOMIC_LOCK
-MT_Lock mal_runningLock MT_LOCK_INITIALIZER("mal_runningLock");
-#endif
+ATOMIC_TYPE mal_running = ATOMIC_VAR_INIT(0);
 
 void
 MALresourceFairness(lng usec)
@@ -196,7 +193,7 @@ MALresourceFairness(lng usec)
 #endif
 
 	/* always keep one running to avoid all waiting  */
-	while (clk > DELAYUNIT && users > 1 && ATOMIC_GET(mal_running, mal_runningLock) > (ATOMIC_TYPE) GDKnr_threads && rss > MEMORY_THRESHOLD) {
+	while (clk > DELAYUNIT && users > 1 && (int) ATOMIC_GET(&mal_running) > GDKnr_threads && rss > MEMORY_THRESHOLD) {
 		if ( delayed++ == 0){
 				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
 		}
@@ -219,17 +216,11 @@ MALresourceFairness(lng usec)
 size_t
 MALrunningThreads(void)
 {
-	return ATOMIC_GET(mal_running, mal_runningLock);
+	return ATOMIC_GET(&mal_running);
 }
 
 void
 initResource(void)
 {
-#ifdef NEED_MT_LOCK_INIT
-	ATOMIC_INIT(mal_runningLock);
-#ifdef USE_MAL_ADMISSION
-	MT_lock_init(&admissionLock, "admissionLock");
-#endif
-#endif
-	mal_running = (ATOMIC_TYPE) GDKnr_threads;
+	ATOMIC_SET(&mal_running, GDKnr_threads);
 }

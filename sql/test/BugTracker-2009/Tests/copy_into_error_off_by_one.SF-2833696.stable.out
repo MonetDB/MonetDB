@@ -14,7 +14,6 @@ stdout of test 'copy_into_error_off_by_one.SF-2833696` in directory 'sql/test/Bu
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:37202/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

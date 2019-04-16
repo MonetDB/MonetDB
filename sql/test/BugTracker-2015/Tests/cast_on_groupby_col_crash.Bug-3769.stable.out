@@ -23,7 +23,6 @@ stdout of test 'cast_on_groupby_col_crash.Bug-3769` in directory 'sql/test/BugTr
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:18:34 >  
 # 16:18:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-642" "--port=37897"

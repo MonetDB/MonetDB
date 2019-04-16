@@ -15,7 +15,6 @@ stdout of test 'crash_with_prepare_statement.Bug-2549` in directory 'sql/test/Bu
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:34918/
 # MonetDB/SQL module v2.36.6 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -20,7 +20,6 @@ stdout of test 'date_calculation_and_comparison_wrong_results.Bug-3940` in direc
 # Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

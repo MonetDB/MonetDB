@@ -19,7 +19,6 @@ stdout of test 'loadwisconsin` in directory 'sql/test/pg_regress` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:56:16 >  
 # 12:56:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18845" "--port=37708"

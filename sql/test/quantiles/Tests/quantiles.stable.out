@@ -45,7 +45,6 @@ stdout of test 'quantiles` in directory 'sql/test/quantiles` itself:
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 17:42:26 >  
 # 17:42:26 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4412" "--port=31345"
