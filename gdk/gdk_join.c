@@ -1504,7 +1504,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	 * they were initially set by joininitresults() */
 
 	if (not_in && rstart < rend && !r->tnonil &&
-	    ((BATtvoid(r) && r->tseqbase == oid_nil) ||
+	    ((BATtvoid(l) && l->tseqbase == oid_nil) ||
+	     (BATtvoid(r) && r->tseqbase == oid_nil) ||
 	     (rvals && cmp(nil, VALUE(r, r->tsorted ? rcand ? rcand[0] : rstart : rcand ? rcandend[-1] : rend -1)) == 0)))
 		return nomatch(r1p, r2p, l, r, 0, 0, NULL, NULL, false, false,
 			       "mergejoin", t0);
@@ -1867,7 +1868,12 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		/* lcand/lstart points one beyond the value we're
 		 * going to match: ready for the next iteration. */
-		if (!nil_matches && !l->tnonil && cmp(v, nil) == 0) {
+		if ((!nil_matches || not_in) && !l->tnonil && cmp(v, nil) == 0) {
+			if (not_in) {
+				/* just skip the whole thing: nils
+				 * don't cause any output */
+				continue;
+			}
 			/* v is nil and nils don't match anything, set
 			 * to NULL to indicate nil */
 			v = NULL;
@@ -2530,6 +2536,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (maxsize == BUN_NONE)
 		return GDK_FAIL;
 
+	BAT *r1 = *r1p;
+	BAT *r2 = r2p ? *r2p : NULL;
+
 	rl = 0;
 	if (phash) {
 		BAT *b = BBPdescriptor(VIEWtparent(r));
@@ -2560,35 +2569,42 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					  "hash for candidate list\n",
 					  BATgetId(r));
 			snprintf(ext, sizeof(ext), "thash%x", sr->batCacheid);
-			if ((hsh = BAThash_impl(r, sr, ext)) == NULL)
-				return GDK_FAIL;
+			if ((hsh = BAThash_impl(r, sr, ext)) == NULL) {
+				goto bailout;
+			}
 		}
 	} else {
-		if (BAThash(r) != GDK_SUCCEED)
-			return GDK_FAIL;
+		if (BAThash(r) != GDK_SUCCEED) {
+			hsh = NULL;
+			goto bailout;
+		}
 		hsh = r->thash;
 	}
 	ri = bat_iterator(r);
 	t = ATOMbasetype(r->ttype);
 
 	if (not_in && !r->tnonil) {
-		ro = r->hseqbase;
-		for (rb = HASHget(hsh, HASHprobe(hsh, nil));
-		     rb != HASHnil(hsh);
-		     rb = HASHgetlink(hsh, rb)) {
-			if (sr)
+		/* check whether there is a nil on the right, since if
+		 * so, we should return an empty result */
+		if (sr) {
+			for (rb = HASHget(hsh, HASHprobe(hsh, nil));
+			     rb != HASHnil(hsh);
+			     rb = HASHgetlink(hsh, rb)) {
 				ro = BUNtoid(sr, rb);
-			else
-				ro = rb;
-			if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
+				if ((*cmp)(v, BUNtail(ri, ro - r->hseqbase)) != 0) {
+					HEAPfree(&hsh->heap, true);
+					GDKfree(hsh);
+					return nomatch(r1p, r2p, l, r, 0, 0, NULL, NULL,
+						       false, false, "hashjoin", t0);
+				}
+			}
+		} else {
+			HASHloop_bound(ri, hsh, rb, nil, rl, rh) {
 				return nomatch(r1p, r2p, l, r, 0, 0, NULL, NULL,
 					       false, false, "hashjoin", t0);
 			}
 		}
 	}
-
-	BAT *r1 = *r1p;
-	BAT *r2 = r2p ? *r2p : NULL;
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -2615,8 +2631,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				v = VALUE(l, lo - l->hseqbase);
 			}
 			nr = 0;
-			if (!nil_matches && cmp(v, nil) == 0) {
+			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
 				/* no match */
+				if (not_in)
+					continue;
 			} else if (sr) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
 				     rb != HASHnil(hsh);
@@ -2729,6 +2747,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				v = VALUE(l, lstart);
 			}
 			lstart++;
+			if (not_in && (*cmp)(v, nil) == 0)
+				continue;
 			nr = 0;
 			if (sr) {
 				if (nil_matches || cmp(v, nil) != 0) {
