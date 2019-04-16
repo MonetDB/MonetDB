@@ -56,6 +56,9 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	size_t pathlen;
 	char *path;
 
+	if (GDKinmemory())
+		return GDKstrdup(":inmemory");
+
 	assert(dir == NULL || *dir != DIR_SEP);
 	assert(farmid == NOFARM ||
 	       (farmid >= 0 && farmid < MAXFARMS && BBPfarms[farmid].dirname));
@@ -105,6 +108,7 @@ GDKcreatedir(const char *dir)
 	DIR *dirp;
 
 	IODEBUG fprintf(stderr, "#GDKcreatedir(%s)\n", dir);
+	assert(!GDKinmemory());
 	assert(MT_path_absolute(dir));
 	if (strlen(dir) >= FILENAME_MAX) {
 		GDKerror("GDKcreatedir: directory name too long\n");
@@ -148,6 +152,7 @@ GDKremovedir(int farmid, const char *dirname)
 	struct dirent *dent;
 	int ret;
 
+	assert(!GDKinmemory());
 	if ((dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL)) == NULL)
 		return GDK_FAIL;
 
@@ -191,6 +196,7 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 	char *path = NULL;
 	int fd, flags = 0;
 
+	assert(!GDKinmemory());
 	if (nme == NULL || *nme == 0)
 		return -1;
 
@@ -333,6 +339,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 	int rt = 0;
 	int t0 = 0;
 
+	assert(!GDKinmemory());
 #ifdef STATIC_CODE_ANALYSIS
 	if (fd < 0)		/* in real life, if fd < 0, fstat will fail */
 		return GDK_FAIL;
@@ -392,6 +399,7 @@ GDKextend(const char *fn, size_t size)
 	int fd, flags = O_RDWR;
 	gdk_return rt = GDK_FAIL;
 
+	assert(!GDKinmemory());
 #ifdef O_BINARY
 	/* On Windows, open() fails if the file is bigger than 2^32
 	 * bytes without O_BINARY. */
@@ -423,6 +431,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 
 	IODEBUG fprintf(stderr, "#GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
+	assert(!GDKinmemory());
 	if (mode == STORE_MMAP) {
 		if (dosync && size && !(GDKdebug & NOSYNCMASK) && MT_msync(buf, size) < 0)
 			err = -1;
@@ -512,6 +521,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 {
 	char *ret = NULL;
 
+	assert(!GDKinmemory());
 	assert(size <= *maxsize);
 	assert(farmid != NOFARM || ext == NULL);
 	IODEBUG {
@@ -678,7 +688,7 @@ void
 BATmsync(BAT *b)
 {
 	/* we don't sync views or if we're told not to */
-	if (isVIEW(b) || (GDKdebug & NOSYNCMASK))
+	if (GDKinmemory() || isVIEW(b) || (GDKdebug & NOSYNCMASK))
 		return;
 	/* we don't sync transients */
 	if (b->theap.farmid != 0 ||
@@ -750,6 +760,7 @@ BATsave(BAT *bd)
 	BAT bs;
 	BAT *b = bd;
 
+	assert(!GDKinmemory());
 	BATcheck(b, "BATsave", GDK_FAIL);
 
 	assert(b->batCacheid > 0);
@@ -811,6 +822,7 @@ BATload_intern(bat bid, bool lock)
 	const char *nme;
 	BAT *b;
 
+	assert(!GDKinmemory());
 	assert(bid > 0);
 
 	nme = BBP_physical(bid);

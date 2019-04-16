@@ -72,6 +72,7 @@ def create_workers(fn_template, nworkers, cmovies, ratings_table_def_fk):
             'dbfarm': os.path.join(TMPDIR, workerdbname),
             'mapi': 'mapi:monetdb://localhost:{}/{}/sys/ratings'.format(workerport, workerdbname),
         }
+        os.mkdir(workerrec['dbfarm'])
         workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin=process.PIPE, stdout=process.PIPE)
         workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerport, autocommit=True)
         filename = fn_template.format(workerrec['num'])
@@ -87,6 +88,7 @@ def create_workers(fn_template, nworkers, cmovies, ratings_table_def_fk):
 
 # Start supervisor database
 supervisorport = freeport()
+os.mkdir(os.path.join(TMPDIR, "supervisor"))
 supervisorproc = process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE)
 supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
 supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)

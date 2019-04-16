@@ -181,6 +181,7 @@ BATcheckhash(BAT *b)
 			Hash *h;
 			int fd;
 
+			assert(!GDKinmemory());
 			b->thash = NULL;
 			if ((h = GDKzalloc(sizeof(*h))) != NULL &&
 			    (h->heap.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0) {
@@ -376,7 +377,7 @@ BAThash_impl(BAT *b, BAT *s, const char *ext)
 	BUN nslots;
 	BUN hnil, hget;
 	Hash *h = NULL;
-	const char *nme = BBP_physical(b->batCacheid);
+	const char *nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 
 	ACCELDEBUG t0 = GDKusec();
@@ -594,7 +595,7 @@ BAThash(BAT *b)
 			return GDK_FAIL;
 		}
 #ifdef PERSISTENTHASH
-		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty) {
+		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty && !GDKinmemory()) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			char name[16];
@@ -694,11 +695,11 @@ HASHfree(BAT *b)
 	if (b && b->thash) {
 		MT_lock_set(&GDKhashLock(b->batCacheid));
 		if (b->thash && b->thash != (Hash *) 1) {
-			bool dirty = b->thash->heap.dirty;
+			bool rmheap = GDKinmemory() || b->thash->heap.dirty;
 
-			HEAPfree(&b->thash->heap, dirty);
+			HEAPfree(&b->thash->heap, rmheap);
 			GDKfree(b->thash);
-			b->thash = dirty ? NULL : (Hash *) 1;
+			b->thash = rmheap ? NULL : (Hash *) 1;
 		}
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
 	}
