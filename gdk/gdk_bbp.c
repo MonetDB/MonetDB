@@ -549,9 +549,11 @@ fixfloatbats(void)
 				 "%s/%.*s_nil-nan-convert",
 				 BBPfarms[0].dirname,
 				 (int) (len - 12), BBP_logical(bid));
-			if (written == -1 || written >= FILENAME_MAX)
-				GDKfatal("fixfloatbats: cannot create file %s has a very large pathname\n",
+			if (written == -1 || written >= FILENAME_MAX) {
+				GDKerror("fixfloatbats: cannot create file %s has a very large pathname\n",
 						 filename);
+				return GDK_FAIL;
+			}
 			fp = fopen(filename, "w");
 			if (fp == NULL) {
 				GDKsyserror("fixfloatbats: cannot create file %s\n",
@@ -1098,20 +1100,6 @@ BBPaddfarm(const char *dirname, int rolemask)
 	GDKerror("BBPaddfarm: too many farms\n");
 	return GDK_FAIL;
 }
-
-void
-BBPresetfarms(void)
-{
-	BBPexit();
-	BBPunlock();
-	ATOMIC_SET(&BBPsize, 0);
-	if (BBPfarms[0].dirname != NULL) {
-		GDKfree((void*) BBPfarms[0].dirname); /* loose "const" */
-	}
-	BBPfarms[0].dirname = NULL;
-	BBPfarms[0].roles = 0;
-}
-
 
 gdk_return
 BBPinit(void)
@@ -2247,11 +2235,7 @@ incref(bat i, bool logical, bool lock)
 		 * to the correct values */
 		assert(!logical);
 		if (tp) {
-			BAT *pb;
-			incref(tp, false, lock);
-			pb = getBBPdescriptor(tp, lock);
-			if (!pb) 
-				return 0;
+			assert(pb != NULL);
 			b->theap.base = pb->theap.base + (size_t) b->theap.base;
 		}
 		/* done loading, release descriptor */
@@ -3544,9 +3528,8 @@ gdk_bbp_reset(void)
 		BBPlimit -= BBPINIT;
 		assert(BBPlimit >= 0);
 		GDKfree(BBP[BBPlimit >> BBPINITLOG]);
+		BBP[BBPlimit >> BBPINITLOG] = NULL;
 	}
-	memset(BBP, 0, sizeof(BBP));
-	BBPlimit = 0;
 	ATOMIC_SET(&BBPsize, 0);
 	for (i = 0; i < MAXFARMS; i++)
 		GDKfree((void *) BBPfarms[i].dirname); /* loose "const" */

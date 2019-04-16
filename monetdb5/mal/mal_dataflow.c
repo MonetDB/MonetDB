@@ -70,7 +70,7 @@ typedef struct DATAFLOW {
 	MalStkPtr stk;
 	int start, stop;    /* guarded block under consideration*/
 	FlowEvent status;   /* status of each instruction */
-	str error;          /* error encountered */
+	ATOMIC_PTR_TYPE error;		/* error encountered */
 	int *nodes;         /* dependency graph nodes */
 	int *edges;         /* dependency graph */
 	MT_Lock flowlock;   /* lock to protect the above */
@@ -80,7 +80,7 @@ typedef struct DATAFLOW {
 static struct worker {
 	MT_Id id;
 	enum {IDLE, RUNNING, JOINING, EXITED} flag;
-	Client cntxt;				/* client we do work for (NULL -> any) */
+	ATOMIC_PTR_TYPE cntxt; /* client we do work for (NULL -> any) */
 	MT_Sema s;
 } workers[THREADS];
 
@@ -336,18 +336,15 @@ DFLOWworker(void *T)
 		fprintf(stderr,"DFLOWworker:Could not allocate GDKerrbuf\n");
 	else
 		GDKclrerr();
-	MT_lock_set(&dataflowLock);
-	cntxt = t->cntxt;
-	MT_lock_unset(&dataflowLock);
+	cntxt = ATOMIC_PTR_GET(&t->cntxt);
 	if (cntxt) {
 		/* wait until we are allowed to start working */
 		MT_sema_down(&t->s);
 	}
 	while (1) {
 		if (fnxt == 0) {
-			MT_lock_set(&dataflowLock);
-			cntxt = t->cntxt;
-			MT_lock_unset(&dataflowLock);
+			MT_thread_setworking(NULL);
+			cntxt = ATOMIC_PTR_GET(&t->cntxt);
 			fe = q_dequeue(todo, cntxt);
 			if (fe == NULL) {
 				if (cntxt) {
@@ -363,6 +360,8 @@ DFLOWworker(void *T)
 				/* no more work to be done: exit */
 				break;
 			}
+			if (fe->flow->cntxt && fe->flow->cntxt->mythread)
+				MT_thread_setworking(fe->flow->cntxt->mythread->name);
 		} else
 			fe = fnxt;
 		if (ATOMIC_GET(&exiting)) {
@@ -374,13 +373,10 @@ DFLOWworker(void *T)
 		assert(flow);
 
 		/* whenever we have a (concurrent) error, skip it */
-		MT_lock_set(&flow->flowlock);
-		if (flow->error) {
-			MT_lock_unset(&flow->flowlock);
+		if (ATOMIC_PTR_GET(&flow->error)) {
 			q_enqueue(flow->done, fe);
 			continue;
 		}
-		MT_lock_unset(&flow->flowlock);
 
 #ifdef USE_MAL_ADMISSION
 		if (MALrunningThreads() > 2 && MALadmission(fe->argclaim, fe->hotclaim)) {
@@ -412,13 +408,10 @@ DFLOWworker(void *T)
 		fe->state = DFLOWwrapup;
 		MT_lock_unset(&flow->flowlock);
 		if (error) {
-			MT_lock_set(&flow->flowlock);
+			void *null = NULL;
 			/* only collect one error (from one thread, needed for stable testing) */
-			if (!flow->error)
-				flow->error = error;
-			else
+			if (!ATOMIC_PTR_CAS(&flow->error, &null, error))
 				GDKfree(error);
-			MT_lock_unset(&flow->flowlock);
 			/* after an error we skip the rest of the block */
 			q_enqueue(flow->done, fe);
 			continue;
@@ -491,6 +484,7 @@ DFLOWinitialize(void)
 {
 	int i, limit;
 	int created = 0;
+	static bool first = true;
 
 	MT_lock_set(&mal_contextLock);
 	if (todo) {
@@ -508,14 +502,17 @@ DFLOWinitialize(void)
 		snprintf(name, sizeof(name), "DFLOWsema%d", i);
 		MT_sema_init(&workers[i].s, 0, name);
 		workers[i].flag = IDLE;
+		if (first)				/* only initialize once */
+			ATOMIC_PTR_INIT(&workers[i].cntxt, NULL);
 	}
+	first = false;
 	limit = GDKnr_threads ? GDKnr_threads - 1 : 0;
 	if (limit > THREADS)
 		limit = THREADS;
 	MT_lock_set(&dataflowLock);
 	for (i = 0; i < limit; i++) {
 		workers[i].flag = RUNNING;
-		workers[i].cntxt = NULL;
+		ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
 		char name[16];
 		snprintf(name, sizeof(name), "DFLOWworker%d", i);
 		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0)
@@ -569,7 +566,7 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 		flow->status[n].pc = pc;
 		flow->status[n].state = DFLOWpending;
 		flow->status[n].cost = -1;
-		flow->status[n].flow->error = NULL;
+		ATOMIC_PTR_SET(&flow->status[n].flow->error, NULL);
 
 		/* administer flow dependencies */
 		for (j = p->retc; j < p->argc; j++) {
@@ -778,14 +775,11 @@ DFLOWscheduler(DataFlow flow, struct worker *w)
 	}
 	/* release the worker from its specific task (turn it into a
 	 * generic worker) */
-	MT_lock_set(&dataflowLock);
-	w->cntxt = NULL;
-	MT_lock_unset(&dataflowLock);
+	ATOMIC_PTR_SET(&w->cntxt, NULL);
 	/* wrap up errors */
 	assert(flow->done->last == 0);
-	if (flow->error ) {
-		PARDEBUG fprintf(stderr, "#errors encountered %s ", flow->error ? flow->error : "unknown");
-		ret = flow->error;
+	if ((ret = ATOMIC_PTR_XCG(&flow->error, NULL)) != NULL ) {
+		PARDEBUG fprintf(stderr, "#errors encountered %s ", ret);
 	}
 	return ret;
 }
@@ -852,7 +846,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 			for (i = 0; i < THREADS; i++) {
 				if (workers[i].flag == EXITED) {
 					workers[i].flag = JOINING;
-					workers[i].cntxt = NULL;
+					ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
 					joined = 1;
 					MT_lock_unset(&dataflowLock);
 					MT_join_thread(workers[i].id);
@@ -872,16 +866,17 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 
 				/* doing a recursive call: copy specificity from
 				 * current worker to new worker */
-				workers[i].cntxt = NULL;
+				ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
 				for (j = 0; j < THREADS; j++) {
 					if (workers[j].flag == RUNNING && workers[j].id == pid) {
-						workers[i].cntxt = workers[j].cntxt;
+						ATOMIC_PTR_SET(&workers[i].cntxt,
+									   ATOMIC_PTR_GET(&workers[j].cntxt));
 						break;
 					}
 				}
 			} else {
 				/* not doing a recursive call: create specific worker */
-				workers[i].cntxt = cntxt;
+				ATOMIC_PTR_SET(&workers[i].cntxt, cntxt);
 			}
 			workers[i].flag = RUNNING;
 			char name[16];
@@ -910,16 +905,13 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->cntxt = cntxt;
 	flow->mb = mb;
 	flow->stk = stk;
-	flow->error = 0;
 
 	/* keep real block count, exclude brackets */
 	flow->start = startpc + 1;
 	flow->stop = stoppc;
 
-	MT_lock_init(&flow->flowlock, "flow->flowlock");
 	flow->done = q_create(stoppc- startpc+1, "flow->done");
 	if (flow->done == NULL) {
-		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
 		throw(MAL, "dataflow", "runMALdataflow(): Failed to create flow->done queue");
 	}
@@ -927,7 +919,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->status = (FlowEvent)GDKzalloc((stoppc - startpc + 1) * sizeof(FlowEventRec));
 	if (flow->status == NULL) {
 		q_destroy(flow->done);
-		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -937,7 +928,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	if (flow->nodes == NULL) {
 		GDKfree(flow->status);
 		q_destroy(flow->done);
-		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -946,10 +936,11 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 		GDKfree(flow->nodes);
 		GDKfree(flow->status);
 		q_destroy(flow->done);
-		MT_lock_destroy(&flow->flowlock);
 		GDKfree(flow);
 		throw(MAL, "dataflow", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
+	MT_lock_init(&flow->flowlock, "flow->flowlock");
+	ATOMIC_PTR_INIT(&flow->error, NULL);
 	msg = DFLOWinitBlk(flow, mb, size);
 
 	if (msg == MAL_SUCCEED)
@@ -960,6 +951,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	GDKfree(flow->nodes);
 	q_destroy(flow->done);
 	MT_lock_destroy(&flow->flowlock);
+	ATOMIC_PTR_DESTROY(&flow->error);
 	GDKfree(flow);
 
 	/* we created one worker, now tell one worker to exit again */

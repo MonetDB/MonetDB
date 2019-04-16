@@ -426,6 +426,23 @@ exp_list(backend *be, list *exps, stmt *l, stmt *r, stmt *grp, stmt *ext, stmt *
 	return stmt_list(be, nl);
 }
 
+static stmt *
+exp_count_no_nil_arg( sql_exp *e, stmt *ext, sql_exp *ae, stmt *as ) 
+{
+	/* small optimization, ie use candidates directly on count(*) */
+	if (!need_distinct(e) && !ext && as && (!need_no_nil(e) || !ae || !has_nil(ae))) { 
+		/* skip alias statements */
+		while (as->type == st_alias)
+			as = as->op1;
+		/* use candidate */
+	       	if (as && as->type == st_join && as->flag == cmp_project) {
+			if (as->op1 && (as->op1->type != st_result || as->op1->op1->type != st_group)) /* exclude a subquery with select distinct under the count */
+				as = as->op1;
+		}
+	}
+	return as;
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel) 
 {
@@ -659,6 +676,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (as && as->nrcols <= 0 && left) 
 					as = stmt_const(be, bin_first_column(be, left), as);
+				if (en == attr->h && !en->next && exp_aggr_is_count(e))
+					as = exp_count_no_nil_arg(e, ext, at, as);
 				/* insert single value into a column */
 				if (as && as->nrcols <= 0 && !left)
 					as = const_column(be, as);
@@ -683,6 +702,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				as = grp;
 			} else if (left) {
 				as = bin_first_column(be, left);
+				as = exp_count_no_nil_arg(e, ext, NULL, as);
 			} else {
 				/* create dummy single value in a column */
 				as = stmt_atom_lng(be, 0);

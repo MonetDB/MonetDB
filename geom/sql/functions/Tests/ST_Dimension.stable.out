@@ -18,7 +18,6 @@ stdout of test 'ST_Dimension` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:08:42 >  
 # 15:08:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28358" "--port=37646"

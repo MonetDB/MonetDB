@@ -15,7 +15,6 @@ stdout of test 'escaped_char` in directory 'sql/test/copy` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30207/
 # MonetDB/SQL module v2.34.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

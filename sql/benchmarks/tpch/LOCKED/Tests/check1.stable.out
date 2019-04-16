@@ -13,7 +13,6 @@ stdout of test 'check1` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -24,49 +23,49 @@ Ready.
 # 11:47:54 >  
 
 #select count(*) from customer;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 1500	]
 #select count(*) from nation;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 25	]
 #select count(*) from orders;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length
 [ 15000	]
 #select count(*) from partsupp;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 8000	]
 #select count(*) from part;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 2000	]
 #select count(*) from region;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 5	]
 #select count(*) from supplier;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length
 [ 100	]
 #select count(*) from lineitem;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 5 # length

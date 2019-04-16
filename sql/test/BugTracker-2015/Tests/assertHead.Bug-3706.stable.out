@@ -19,7 +19,6 @@ stdout of test 'assertHead.Bug-3706` in directory 'sql/test/BugTracker-2015` its
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 22:07:36 >  
 # 22:07:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15113" "--port=32645"

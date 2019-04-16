@@ -14,7 +14,6 @@ stdout of test 'AVG_ReturnsNoLines.SF-2596084` in directory 'sql/test/BugTracker
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31980/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -50,7 +49,7 @@ Ready.
 [ 2,	3	]
 #SELECT AVG(x) AS avgx, COUNT(*) AS countstar
 #FROM x;
-% sys.L4,	sys.L7 # table_name
+% sys.L4,	.L7 # table_name
 % avgx,	countstar # name
 % double,	bigint # type
 % 24,	1 # length
@@ -71,7 +70,7 @@ Ready.
 [ 2,	3	]
 #SELECT SUM(x) AS sumx, MIN(x) AS minx, MAX(x) AS maxx, COUNT(x) AS countx, COUNT(*) AS countstar
 #FROM x;
-% sys.L4,	sys.L7,	sys.L12,	sys.L15,	sys.L20 # table_name
+% sys.L4,	sys.L7,	sys.L12,	sys.L15,	.L20 # table_name
 % sumx,	minx,	maxx,	countx,	countstar # name
 % double,	double,	double,	bigint,	bigint # type
 % 24,	24,	24,	1,	1 # length

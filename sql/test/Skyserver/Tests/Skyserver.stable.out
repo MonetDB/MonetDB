@@ -13,7 +13,6 @@ stdout of test 'Skyserver` in directory 'sql/test/Skyserver` itself:
 # Copyright (c) 1993-2008 CWI, all rights reserved
 # Visit http://monetdb.cwi.nl/ for further information
 
-Ready.
 
 
 # 14:14:17 >  
@@ -95,7 +94,7 @@ tables
 [ 1	]
 [ 187	]
 #select count(*) from PhotoObjAll;
-% skyserver.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length

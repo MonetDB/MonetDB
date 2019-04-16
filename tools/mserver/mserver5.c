@@ -85,8 +85,7 @@ mserver_invalid_parameter_handler(
 }
 #endif
 
-__declspec(noreturn) static void usage(char *prog, int xit)
-	__attribute__((__noreturn__));
+static _Noreturn void usage(char *prog, int xit);
 
 static void
 usage(char *prog, int xit)
@@ -140,16 +139,17 @@ monet_hello(void)
 
 	printf("# MonetDB 5 server v%s", GDKversion());
 	{
+#ifdef MONETDB_RELEASE
+		printf(" (%s)", MONETDB_RELEASE);
+#else
 		const char *rev = mercurial_revision();
-		/* coverity[pointless_string_compare] */
-		if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
-			printf(" (%s)", MONETDB_RELEASE);
-		else if (strcmp(rev, "Unknown") != 0)
+		if (strcmp(rev, "Unknown") != 0)
 			printf(" (hg id: %s)", rev);
+#endif
 	}
-	/* coverity[pointless_string_compare] */
-	if (strcmp(MONETDB_RELEASE, "unreleased") == 0)
-		printf("\n# This is an unreleased version");
+#ifndef MONETDB_RELEASE
+	printf("\n# This is an unreleased version");
+#endif
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
@@ -185,7 +185,13 @@ monet_hello(void)
 			"\"huge\""
 #endif
 			"]\n}",
-			GDKversion(), MONETDB_RELEASE, HOST, GDKnr_threads,
+			GDKversion(),
+#ifdef MONETDB_RELEASE
+			MONETDB_RELEASE,
+#else
+			"unreleased",
+#endif
+			HOST, GDKnr_threads,
 			sz_mem_h, qc[qi], sizeof(oid) * 8);
 }
 
@@ -229,12 +235,34 @@ static void emergencyBreakpoint(void)
 	/* just a handle to break after system initialization for GDB */
 }
 
+static volatile sig_atomic_t interrupted = 0;
+
+#ifdef _MSC_VER
+static BOOL WINAPI
+winhandler(DWORD type)
+{
+	(void) type;
+#ifdef HAVE_CONSOLE
+	if (!monet_daemon)
+		_Exit(-1);
+	else
+#endif
+		interrupted = 1;
+	return TRUE;
+}
+#else
 static void
 handler(int sig)
 {
 	(void) sig;
-	mal_exit(-1);
+#ifdef HAVE_CONSOLE
+	if (!monet_daemon)
+		_Exit(-1);
+	else
+#endif
+		interrupted = 1;
 }
+#endif
 
 int
 main(int argc, char **av)
@@ -514,7 +542,13 @@ main(int argc, char **av)
 	mo_free_options(set, setlen);
 
 	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
-	    GDKsetenv("monet_release", MONETDB_RELEASE) != GDK_SUCCEED) {
+	    GDKsetenv("monet_release",
+#ifdef MONETDB_RELEASE
+		      MONETDB_RELEASE
+#else
+		      "unreleased"
+#endif
+		    ) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 		exit(1);
 	}
@@ -604,6 +638,10 @@ main(int argc, char **av)
 		}
 	}
 #else
+#ifdef _MSC_VER
+	if (!SetConsoleCtrlHandler(winhandler, TRUE))
+		fprintf(stderr, "!unable to create console control handler\n");
+#else
 	if(signal(SIGINT, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
 #ifdef SIGQUIT
@@ -612,6 +650,7 @@ main(int argc, char **av)
 #endif
 	if(signal(SIGTERM, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
+#endif
 #endif
 
 	{
@@ -700,6 +739,7 @@ main(int argc, char **av)
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
+	free(monet_script);
 
 	if ((err = msab_registerStarted()) != NULL) {
 		/* throw the error at the user, but don't die */
@@ -707,13 +747,12 @@ main(int argc, char **av)
 		free(err);
 	}
 
-	free(monet_script);
 #ifdef HAVE_CONSOLE
 	if (!monet_daemon) {
 		MSserveClient(mal_clients);
 	} else
 #endif
-	while (!GDKexiting()) {
+	while (!interrupted && !GDKexiting()) {
 		MT_sleep_ms(100);
 	}
 

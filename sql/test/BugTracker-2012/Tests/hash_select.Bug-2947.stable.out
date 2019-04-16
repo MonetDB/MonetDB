@@ -17,7 +17,6 @@ stdout of test 'hash_select.Bug-2947` in directory 'sql/test/BugTracker-2012` it
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:58:29 >  
 # 21:58:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=37666"

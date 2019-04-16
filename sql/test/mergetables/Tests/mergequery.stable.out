@@ -19,7 +19,6 @@ stdout of test 'mergequery` in directory 'sql/test/mergetables` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:20:23 >  
 # 16:20:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11019" "--port=30678"

@@ -8,7 +8,8 @@
 
 MTSAFE
 
-INCLUDES = $(zlib_CFLAGS) \
+INCLUDES = ../utils \
+		   $(zlib_CFLAGS) \
 		   $(bzip2_CFLAGS) \
 		   $(snappy_CFLAGS) \
    		   $(lz4_CFLAGS) \

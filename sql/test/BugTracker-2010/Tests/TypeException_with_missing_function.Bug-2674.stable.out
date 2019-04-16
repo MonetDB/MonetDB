@@ -16,7 +16,6 @@ stdout of test 'TypeException_with_missing_function.Bug-2674` in directory 'sql/
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33682/
 # MonetDB/SQL module v2.40.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

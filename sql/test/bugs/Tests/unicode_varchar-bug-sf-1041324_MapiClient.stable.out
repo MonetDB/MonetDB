@@ -15,7 +15,6 @@ stdout of test 'unicode_varchar-bug-sf-1041324_MapiClient` in directory 'sql/tes
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:38254/
 # MonetDB/SQL module v2.19.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

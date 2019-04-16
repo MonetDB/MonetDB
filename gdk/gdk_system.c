@@ -174,6 +174,7 @@ static struct winthread {
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
 	struct winthread *joinwait; /* process we are joining with */
+	const char *working;	/* what we're currently doing */
 	ATOMIC_TYPE exited;
 	bool detached:1, waiting:1;
 	char threadname[16];
@@ -185,6 +186,23 @@ static struct winthread mainthread = {
 
 static CRITICAL_SECTION winthread_cs;
 static DWORD threadslot = TLS_OUT_OF_INDEXES;
+
+void
+dump_threads(void)
+{
+	EnterCriticalSection(&winthread_cs);
+	for (struct winthread *w = winthreads; w; w = w->next) {
+		fprintf(stderr, "%s, waiting for %s, working on %.200s\n",
+			w->threadname,
+			w->lockwait ? w->lockwait->name :
+			w->semawait ? w->semawait->name :
+			w->joinwait ? w->joinwait->threadname :
+			"nothing",
+			ATOMIC_GET(&w->exited) ? "exiting" :
+			w->working ? w->working : "nothing");
+	}
+	LeaveCriticalSection(&winthread_cs);
+}
 
 bool
 MT_thread_init(void)
@@ -250,21 +268,21 @@ MT_thread_setsemawait(MT_Sema *sema)
 		w->semawait = sema;
 }
 
+void
+MT_thread_setworking(const char *work)
+{
+	struct winthread *w = TlsGetValue(threadslot);
+
+	if (w)
+		w->working = work;
+}
+
 void *
 MT_thread_getdata(void)
 {
 	struct winthread *w = TlsGetValue(threadslot);
 
 	return w ? w->data : NULL;
-}
-
-void
-gdk_system_reset(void)
-{
-	assert(threadslot != TLS_OUT_OF_INDEXES);
-	TlsFree(threadslot);
-	threadslot = TLS_OUT_OF_INDEXES;
-	DeleteCriticalSection(&winthread_cs);
 }
 
 static void
@@ -278,6 +296,7 @@ rm_winthread(struct winthread *w)
 	if (*wp)
 		*wp = w->next;
 	LeaveCriticalSection(&winthread_cs);
+	ATOMIC_DESTROY(&w->exited);
 	free(w);
 }
 
@@ -398,6 +417,7 @@ MT_exiting_thread(void)
 
 	if (w) {
 		ATOMIC_SET(&w->exited, 1);
+		w->working = NULL;
 	}
 }
 
@@ -459,6 +479,7 @@ static struct posthread {
 	MT_Lock *lockwait;	/* lock we're waiting for */
 	MT_Sema *semawait;	/* semaphore we're waiting for */
 	struct posthread *joinwait; /* process we are joining with */
+	const char *working;	/* what we're currently doing */
 	char threadname[16];
 	pthread_t tid;
 	MT_Id mtid;
@@ -474,6 +495,23 @@ static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 static MT_Id MT_thread_id = 1;
 
 static pthread_key_t threadkey;
+
+void
+dump_threads(void)
+{
+	pthread_mutex_lock(&posthread_lock);
+	for (struct posthread *p = posthreads; p; p = p->next) {
+		fprintf(stderr, "%s, waiting for %s, working on %.200s\n",
+			p->threadname,
+			p->lockwait ? p->lockwait->name :
+			p->semawait ? p->semawait->name :
+			p->joinwait ? p->joinwait->threadname :
+			"nothing",
+			ATOMIC_GET(&p->exited) ? "exiting" :
+			p->working ? p->working : "nothing");
+	}
+	pthread_mutex_unlock(&posthread_lock);
+}
 
 bool
 MT_thread_init(void)
@@ -551,6 +589,15 @@ MT_thread_setsemawait(MT_Sema *sema)
 		p->semawait = sema;
 }
 
+void
+MT_thread_setworking(const char *work)
+{
+	struct posthread *p = pthread_getspecific(threadkey);
+
+	if (p)
+		p->working = work;
+}
+
 #ifdef HAVE_PTHREAD_SIGMASK
 static void
 MT_thread_sigmask(sigset_t *new_mask, sigset_t *orig_mask)
@@ -571,6 +618,7 @@ rm_posthread_locked(struct posthread *p)
 		;
 	if (*pp)
 		*pp = p->next;
+	ATOMIC_DESTROY(&p->exited);
 	free(p);
 }
 
@@ -732,6 +780,7 @@ MT_exiting_thread(void)
 	p = pthread_getspecific(threadkey);
 	if (p) {
 		ATOMIC_SET(&p->exited, 1);
+		p->working = NULL;
 	}
 }
 

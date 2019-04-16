@@ -38,7 +38,6 @@ stdout of test 'cast_select` in directory 'sql/test/snodgrass` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:38:29 >  
 # 17:38:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=sofia" "--port=30049"

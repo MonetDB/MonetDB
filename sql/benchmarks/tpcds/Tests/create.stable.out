@@ -58,7 +58,6 @@ stdout of test 'create` in directory 'sql/benchmarks/tpcds` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:16:56 >  
 # 15:16:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12316" "--port=35449"

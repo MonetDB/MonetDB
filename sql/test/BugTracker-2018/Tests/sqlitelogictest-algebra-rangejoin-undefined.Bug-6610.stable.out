@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-algebra-rangejoin-undefined.Bug-6610` in directo
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:10:09 >  
 # 14:10:09 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-714" "--port=33841"

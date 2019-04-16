@@ -19,7 +19,6 @@ stdout of test 'alter_resets_readonly.Bug-3362` in directory 'sql/test/BugTracke
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:44:28 >  
 # 15:44:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3611" "--port=39723"

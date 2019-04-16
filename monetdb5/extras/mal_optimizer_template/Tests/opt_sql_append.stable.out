@@ -37,7 +37,6 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 16:06:52 >  
 # 16:06:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25090" "--port=39713"

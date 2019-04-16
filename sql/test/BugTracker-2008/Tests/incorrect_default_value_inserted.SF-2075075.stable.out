@@ -13,7 +13,6 @@ stdout of test 'incorrect_default_value_inserted.SF-2075075` in directory 'sql/t
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:30598/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

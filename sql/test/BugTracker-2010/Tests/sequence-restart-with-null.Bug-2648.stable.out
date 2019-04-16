@@ -16,7 +16,6 @@ stdout of test 'sequence-restart-with-null.Bug-2648` in directory 'sql/test/BugT
 # MonetDB/SQL module v11.0.0 loaded
 # MonetDB/GIS module v11.0.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

@@ -21,7 +21,6 @@ stdout of test 'flowchk` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 07:33:12 >  
 # 07:33:12 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15547" "--port=37088"

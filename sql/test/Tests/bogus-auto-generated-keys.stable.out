@@ -14,7 +14,6 @@ stdout of test 'bogus-auto-generated-keys` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://pegasus.ins.cwi.nl:37335/
 # MonetDB/SQL module v2.28.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

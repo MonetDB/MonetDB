@@ -18,7 +18,6 @@ stdout of test 'copy_into_fwf` in directory 'clients/R` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:40:23 >  
 # 16:40:23 >  "R" "--vanilla" "--slave" "--args" "30658"

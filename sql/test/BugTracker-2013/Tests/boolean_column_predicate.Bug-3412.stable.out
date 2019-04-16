@@ -19,7 +19,6 @@ stdout of test 'boolean_column_predicate.Bug-3412` in directory 'sql/test/BugTra
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:06:14 >  
 # 16:06:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16327" "--port=39442"

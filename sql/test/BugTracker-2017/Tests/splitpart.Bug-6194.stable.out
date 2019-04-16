@@ -18,7 +18,6 @@ stdout of test 'splitpart.Bug-6194` in directory 'sql/test/BugTracker-2017` itse
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:09:36 >  
 # 12:09:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32245" "--port=36483"

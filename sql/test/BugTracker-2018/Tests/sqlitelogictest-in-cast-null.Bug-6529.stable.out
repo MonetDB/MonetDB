@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-in-cast-null.Bug-6529` in directory 'sql/test/Bu
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:12:38 >  
 # 19:12:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29155" "--port=32688"

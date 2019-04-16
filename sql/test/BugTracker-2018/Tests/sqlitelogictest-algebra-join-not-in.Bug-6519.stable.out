@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-algebra-join-not-in.Bug-6519` in directory 'sql/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:19:09 >  
 # 16:19:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23222" "--port=35290"

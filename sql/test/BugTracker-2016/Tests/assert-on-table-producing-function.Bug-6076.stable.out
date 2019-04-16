@@ -19,7 +19,6 @@ stdout of test 'assert-on-table-producing-function.Bug-6076` in directory 'sql/t
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:17:20 >  
 # 14:17:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23333" "--port=39688"

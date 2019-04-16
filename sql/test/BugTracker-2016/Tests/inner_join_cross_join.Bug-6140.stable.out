@@ -18,7 +18,6 @@ stdout of test 'inner_join_cross_join.Bug-6140` in directory 'sql/test/BugTracke
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 22:28:58 >  
 # 22:28:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22226" "--port=38674"

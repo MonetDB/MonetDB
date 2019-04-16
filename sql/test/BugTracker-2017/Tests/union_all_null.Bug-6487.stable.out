@@ -18,7 +18,6 @@ stdout of test 'union_all_null.Bug-6487` in directory 'sql/test/BugTracker-2017`
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:03:48 >  
 # 16:03:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2035" "--port=36305"

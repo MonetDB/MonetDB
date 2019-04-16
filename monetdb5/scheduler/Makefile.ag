@@ -7,7 +7,6 @@
 INCLUDES = ../mal ../optimizer \
 		   ../modules/atoms ../modules/mal ../modules/kernel \
 		   ../../clients/mapilib \
-		   ../../common/options \
 		   ../../common/stream \
 		   ../../common/utils \
 		   ../../gdk

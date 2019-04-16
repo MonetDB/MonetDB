@@ -57,8 +57,12 @@ int mal_init(void){
 /* Any error encountered here terminates the process
  * with a message sent to stderr
  */
-	MCinit();
-	mdbInit();
+	if (!MCinit())
+		return -1;
+	if (!mdbInit()) {
+		mal_client_reset();
+		return -1;
+	}
 	monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
@@ -66,7 +70,14 @@ int mal_init(void){
 	initHeartbeat();
 #endif
 	initResource();
-	malBootstrap();
+	str err = malBootstrap();
+	if (err != MAL_SUCCEED) {
+		mal_client_reset();
+		mdbExit();
+		dumpExceptionsToStream(NULL, err);
+		freeException(err);
+		return -1;
+	}
 	initProfiler();
 	return 0;
 }

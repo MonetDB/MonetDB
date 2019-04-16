@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-case-subquery-missing.Bug-6523` in directory 'sq
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 23:19:11 >  
 # 23:19:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28683" "--port=35344"

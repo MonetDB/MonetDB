@@ -20,7 +20,6 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-explain-2join-query
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 01:44:33 >  
 # 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6324" "--port=31552"
@@ -34,12 +33,11 @@ Ready.
 % clob # type
 % 183 # length
 function user.s4_1():void;
-    X_1:void := querylog.define("explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;":str, "sequential_pipe":str, 72:int);
+    X_1:void := querylog.define("explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;":str, "sequential_pipe":str, 12:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
-    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
-    X_18:lng := aggr.count(X_8:bat[:int], C_5:bat[:oid]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+    X_18:lng := aggr.count(C_5:bat[:oid]);
+    sql.resultSet(".L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.s4_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=0 usec 
@@ -73,7 +71,7 @@ end user.s4_1;
 % clob # type
 % 189 # length
 function user.s6_1():void;
-    X_1:void := querylog.define("explain select id from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 98:int);
+    X_1:void := querylog.define("explain select id from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 23:int);
     X_25:bat[:str] := bat.new(nil:str);
     X_31:bat[:int] := bat.new(nil:int);
     X_29:bat[:int] := bat.new(nil:int);
@@ -122,9 +120,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 195 # length
+% 194 # length
 function user.s8_1():void;
-    X_1:void := querylog.define("explain select id , v1 from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 120:int);
+    X_1:void := querylog.define("explain select id , v1 from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 65:int);
     X_43:bat[:int] := bat.new(nil:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
@@ -199,9 +197,9 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 195 # length
+% 194 # length
 function user.s10_1():void;
-    X_1:void := querylog.define("explain select id , v2 from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 115:int);
+    X_1:void := querylog.define("explain select id , v2 from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;":str, "sequential_pipe":str, 65:int);
     X_43:bat[:int] := bat.new(nil:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);

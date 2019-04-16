@@ -18,7 +18,6 @@ stdout of test 'cleanup_statistics.Bug-6439` in directory 'sql/test/BugTracker-2
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:52:04 >  
 # 17:52:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15308" "--port=33623"

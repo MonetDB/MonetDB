@@ -56,7 +56,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:39:22 >  
 # 14:39:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23085" "--port=30158"
@@ -10740,6 +10739,7 @@ Ready.
 [ "clients",	"setListing",	"pattern clients.setListing(flag:int):int ",	"CLTsetListing;",	"Turn on/off echo of MAL instructions:\n\t1 - echo input,\n\t2 - show mal instruction,\n\t4 - show details of type resolutoin, \n\t8 - show binding information."	]
 [ "clients",	"setPassword",	"pattern clients.setPassword(user:str, pass:str):void ",	"CLTsetPassword;",	"Set the password for the given user"	]
 [ "clients",	"setScenario",	"pattern clients.setScenario(msg:str):str ",	"CLTsetScenario;",	"Switch to other scenario handler, return previous one."	]
+[ "clients",	"setprinttimeout",	"command clients.setprinttimeout(n:int):void ",	"CLTsetPrintTimeout;",	"Print running query every so many seconds."	]
 [ "clients",	"setsession",	"pattern clients.setsession(n:lng):void ",	"CLTsetSessionTimeout;",	"Abort a session after  n seconds."	]
 [ "clients",	"settimeout",	"pattern clients.settimeout(n:lng):void ",	"CLTsetTimeout;",	"Abort a query after  n seconds."	]
 [ "clients",	"settimeout",	"pattern clients.settimeout(q:lng, s:lng):void ",	"CLTsetTimeout;",	"Abort a query after q seconds (q=0 means run undisturbed).\nThe session timeout aborts the connection after spending too\nmany seconds on query processing."	]
@@ -11675,6 +11675,8 @@ Ready.
 [ "sql",	"cume_dist",	"pattern sql.cume_dist(b:any_1, p:bit, o:bit):dbl ",	"SQLcume_dist;",	"return the accumulated distribution of the number of rows per group to the total number of partition rows"	]
 [ "sql",	"current_time",	"pattern sql.current_time():daytime ",	"SQLcurrent_daytime;",	"Get the clients current daytime"	]
 [ "sql",	"current_timestamp",	"pattern sql.current_timestamp():timestamp ",	"SQLcurrent_timestamp;",	"Get the clients current timestamp"	]
+[ "sql",	"date_trunc",	"command sql.date_trunc(scale:str, v:bat[:timestamp]):bat[:timestamp] ",	"bat_date_trunc;",	"Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)"	]
+[ "sql",	"date_trunc",	"command sql.date_trunc(scale:str, v:timestamp):timestamp ",	"date_trunc;",	"Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)"	]
 [ "sql",	"db_users",	"pattern sql.db_users():bat[:str] ",	"db_users_wrap;",	"return table of users with sql scenario"	]
 [ "sql",	"dec_round",	"command sql.dec_round(v:bte, r:bte):bte ",	"bte_dec_round_wrap;",	"round off the value v to nearests multiple of r"	]
 [ "sql",	"dec_round",	"command sql.dec_round(v:dbl, r:dbl):dbl ",	"dbl_dec_round_wrap;",	"round off the value v to nearests multiple of r"	]

@@ -28,7 +28,6 @@
 #include "ODBCGlobal.h"
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
-#include "monet_options.h"
 #include <time.h>
 
 #ifdef HAVE_ODBCINST_H

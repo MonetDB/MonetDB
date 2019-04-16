@@ -1795,6 +1795,19 @@ MTIMEdate_extract_day(int *ret, const date *v)
 	return MAL_SUCCEED;
 }
 
+str
+MTIMEdate_extract_ymd(int *year, int *month, int *day, const date *v)
+{
+	if (is_date_nil(*v)) {
+		*year = int_nil;
+		*month = int_nil;
+		*day = int_nil;
+	} else {
+		fromdate(*v, day, month, year);
+	}
+	return MAL_SUCCEED;
+}
+
 /* Returns N where d is the Nth day of the year (january 1 returns 1). */
 str
 MTIMEdate_extract_dayofyear(int *ret, const date *v)

@@ -55,7 +55,6 @@ stdout of test 'load` in directory 'sql/test/emptydb` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:10:08 >  
 # 14:10:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1617" "--port=38607"

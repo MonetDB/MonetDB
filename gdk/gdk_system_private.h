@@ -12,6 +12,8 @@
 #error this file should not be included outside its source directory
 #endif
 
+__hidden void dump_threads(void)
+	__attribute__((__visibility__("hidden")));
 __hidden void join_detached_threads(void)
 	__attribute__((__visibility__("hidden")));
 __hidden int MT_kill_thread(MT_Id t)

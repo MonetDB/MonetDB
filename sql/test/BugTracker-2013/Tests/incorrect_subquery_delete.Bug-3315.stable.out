@@ -19,7 +19,6 @@ stdout of test 'incorrect_subquery_delete.Bug-3315` in directory 'sql/test/BugTr
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:36:56 >  
 # 13:36:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-312" "--port=32368"

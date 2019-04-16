@@ -60,34 +60,33 @@ stdout of test 'mergepart00` in directory 'sql/test/merge-partitions` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:00:22 >  
 # 14:00:22 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4925" "--port=36923"
 # 14:00:22 >  
 
 #SELECT COUNT(*) from table_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT COUNT(*) from table_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #CREATE MERGE TABLE mysecondattempt (a int, b varchar(32)) PARTITION BY RANGE (a);
 #SELECT COUNT(*) from table_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #DROP TABLE mysecondattempt;
 #SELECT COUNT(*) from table_partitions;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

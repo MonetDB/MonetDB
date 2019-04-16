@@ -17,7 +17,6 @@ stdout of test 'hash_join_crash.Bug-3089` in directory 'sql/test/BugTracker-2012
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 09:10:22 >  
 # 09:10:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=38474"

@@ -14,7 +14,6 @@ stdout of test 'having_or_bug` in directory 'sql/test/BugTracker-2009` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32347/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

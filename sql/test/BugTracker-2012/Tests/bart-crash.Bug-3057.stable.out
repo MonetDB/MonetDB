@@ -17,7 +17,6 @@ stdout of test 'bart-crash.Bug-3057` in directory 'sql/test/BugTracker-2012` its
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

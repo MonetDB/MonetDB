@@ -59,7 +59,6 @@ stdout of test 'multi-column-hash-wrongly-NIL.Bug-6638` in directory 'sql/test/B
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:21:04 >  
 # 16:21:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9105" "--port=34059"

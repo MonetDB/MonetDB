@@ -11,7 +11,6 @@ stdout of test 'convert_dec2varchar.SF-1774312` in directory 'sql/test/BugTracke
 # Visit http://monetdb.cwi.nl/ for further information.
 
 
-Ready.
 
 
 #select tr, cast(tr as varchar(10)) from (select 11.34555 as tr) as foo;

@@ -23,7 +23,6 @@ stdout of test 'FTexample` in directory 'monetdb5/optimizer` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:59:48 >  
 # 23:59:48 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32050" "--port=33204"

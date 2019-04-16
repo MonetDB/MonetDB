@@ -41,6 +41,24 @@ static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
 
 static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
 
+static int
+exps_unique( list *exps )
+{
+	node *n;
+
+	if ((n = exps->h) != NULL) {
+		sql_exp *e = n->data;
+		prop *p;
+
+		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
+			sql_ukey *k = p->value;
+			if (k && list_length(k->k.columns) <= 1)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 /* The important task of the relational optimizer is to optimize the
    join order. 
 
@@ -1764,8 +1782,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 	if (is_groupby(rel->op) && !rel_is_ref(rel) &&
             r && !r->exps && r->op == op_join && !(rel_is_ref(r)) && 
 	    /* currently only single count aggregation is handled, no other projects or aggregation */
-	    list_length(rel->exps) == 1 && ((sql_exp *) rel->exps->h->data)->type == e_aggr &&
-            strcmp(((sql_subaggr *) ((sql_exp *) rel->exps->h->data)->f)->aggr->base.name, "count") == 0) {
+	    list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 	    	sql_exp *nce, *oce;
 		sql_rel *gbl, *gbr;		/* Group By */
 		sql_rel *cp;			/* Cross Product */
@@ -1960,8 +1977,7 @@ rel_simplify_fk_joins(int *changes, mvc *sql, sql_rel *rel)
 	while (is_groupby(rel->op) && !rel_is_ref(rel) &&
             r && r->exps && is_join(r->op) && list_length(r->exps) == 1 && !(rel_is_ref(r)) && 
 	    /* currently only single count aggregation is handled, no other projects or aggregation */
-	    list_length(rel->exps) == 1 && ((sql_exp *) rel->exps->h->data)->type == e_aggr &&
-            strcmp(((sql_subaggr *) ((sql_exp *) rel->exps->h->data)->f)->aggr->base.name, "count") == 0) {
+	    list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *or = r;
 
 		r = rel_simplify_count_fk_join(changes, sql, r, rel->exps);
@@ -2381,25 +2397,6 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		return e;
 	}
 	return NULL;
-}
-
-/* TODO: check for keys with more than one colun */
-static int
-exps_unique( list *exps )
-{
-	node *n;
-
-	if ((n = exps->h) != NULL) {
-		sql_exp *e = n->data;
-		prop *p;
-
-		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
-			sql_ukey *k = p->value;
-			if (k && list_length(k->k.columns) <= 1)
-				return 1;
-		}
-	}
-	return 0;
 }
 
 static sql_rel *
@@ -3948,7 +3945,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 
 			if (oa->type == e_aggr) {
 				sql_subaggr *f = oa->f;
-				int cnt = strcmp(f->aggr->base.name,"count")==0;
+				int cnt = exp_aggr_is_count(oa);
 				sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
 
 				assert(a);
@@ -3969,6 +3966,29 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 		return rel_inplace_groupby( rel, u, gbe, exps);
 	}
 	return rel;
+}
+
+static int
+rel_is_join_on_pkey( sql_rel *rel ) 
+{
+	node *n;
+
+	if (!rel || !rel->exps)
+		return 0;
+	for (n = rel->exps->h; n; n = n->next){
+		sql_exp *je = n->data;
+
+		if (je->type == e_cmp && je->flag == cmp_equal &&
+		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
+			fcmp cmp = (fcmp)&kc_column_cmp;
+			sql_exp *e = je->l;
+			sql_column *c = exp_find_column(rel, e, -2);
+
+			if (c && c->t->pkey && list_find(c->t->pkey->k.columns, c, cmp) != NULL) 
+				return 1;
+		}
+	}
+	return 0;
 }
 
 /*
@@ -4007,6 +4027,8 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 		int left = 1;
 		list *aggrs, *gbe;
 
+		if (!is_identity(gb, jl) && !is_identity(gb, jr))
+			return rel;
 		if (jl->op == op_project &&
 		    (e = list_find_exp( jl->exps, gb)) != NULL &&
 		     find_prop(e->p, PROP_HASHCOL) != NULL) {
@@ -4021,6 +4043,11 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 			return rel;
 		}
 
+		if ((left && is_base(jl->op)) || (!left && is_base(jr->op))||
+		    (left && is_select(jl->op)) || (!left && is_select(jr->op)) 
+		    || rel_is_join_on_pkey(j))
+			return rel;
+
 		/* only add aggr (based on left/right), and repeat the group by column */
 		aggrs = sa_list(sql->sa);
 		if (rel->exps) for (n = rel->exps->h; n; n = n->next) {
@@ -4032,7 +4059,7 @@ gen_push_groupby_down(int *changes, mvc *sql, sql_rel *rel)
 				/* check args are part of left/right */
 				if (!list_empty(args) && rel_has_exps(cr, args) < 0)
 					return rel;
-				if (rel->op != op_join && strcmp(((sql_subaggr*)ce->f)->aggr->base.name, "count") == 0)
+				if (rel->op != op_join && exp_aggr_is_count(ce))
 					ce->p = prop_create(sql->sa, PROP_COUNT, ce->p);
 				list_append(aggrs, ce); 
 			}
@@ -4614,29 +4641,6 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		rel = l;
 	}
 	return rel;
-}
-
-static int
-rel_is_join_on_pkey( sql_rel *rel ) 
-{
-	node *n;
-
-	if (!rel || !rel->exps)
-		return 0;
-	for (n = rel->exps->h; n; n = n->next){
-		sql_exp *je = n->data;
-
-		if (je->type == e_cmp && je->flag == cmp_equal &&
-		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
-			fcmp cmp = (fcmp)&kc_column_cmp;
-			sql_exp *e = je->l;
-			sql_column *c = exp_find_column(rel, e, -2);
-
-			if (c && c->t->p && list_find(c->t->pkey->k.columns, c, cmp) != NULL) 
-				return 1;
-		}
-	}
-	return 0;
 }
 
 static int
@@ -5390,7 +5394,7 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 		} else if (e->type == e_aggr && !need_distinct(e)) {
 			sql_exp *v;
 			sql_subaggr *f = e->f;
-			int cnt = strcmp(f->aggr->base.name,"count")==0;
+			int cnt = exp_aggr_is_count(e);
 			sql_subaggr *a = sql_bind_aggr(sql->sa, sql->session->schema, (cnt)?"sum":f->aggr->base.name, exp_subtype(e));
 
 			append(aggrs, e);
@@ -5424,6 +5428,20 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 static sql_rel *
 rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel) 
 {
+	if (is_groupby(rel->op) && !rel_is_ref(rel) && rel->exps && list_empty(rel->r)) { 
+		node *n;
+
+		for (n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+	    		if (exp_aggr_is_count(e) && need_distinct(e)) {
+				/* if count over unique values (ukey/pkey) */
+				if (e->l && exps_unique(e->l))
+					set_nodistinct(e);
+			}
+		}
+	}
+
 	if (is_groupby(rel->op)) {
 		sql_rel *l = rel->l;
 		if (!l || is_groupby(l->op))
@@ -9324,7 +9342,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *e = n->data;
 
 			/* count_nil(*) -> count(t.TID) */
-			if (!has_gbe && e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && !e->l) {
+			if (!has_gbe && exp_aggr_is_count(e) && !e->l) {
 				sql_rel *rl = r->l;
 				sql_exp *col = NULL;
 				list *l = new_exp_list(sql->sa);

@@ -15,7 +15,6 @@ stdout of test 'tableDataLimit.SF-2944504` in directory 'sql/test/BugTracker-201
 # Listening for connection requests on mapi:monetdb://loki.ins.cwi.nl:35997/
 # MonetDB/SQL module v2.36.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

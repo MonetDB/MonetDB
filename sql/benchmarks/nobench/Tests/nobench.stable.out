@@ -46,7 +46,6 @@ stdout of test 'nobench` in directory 'sql/benchmarks/nobench` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:08:13 >  
 # 13:08:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28559" "--port=33349"
@@ -57,7 +56,7 @@ Ready.
 #{"nested_obj": {"num": 4, "str": "GBRDCMBQ"}, "dyn2": true, "dyn1": 9, "nested_arr": ["especially"], "str2": "GBRDCMBQ", "str1": "GBRDCMBQGE======", "sparse_093": "GBRDCMBQGE======", "thousandth": 9, "sparse_090": "GBRDCMBQGE======", "sparse_091": "GBRDCMBQGE======", "sparse_092": "GBRDCMBQGE======", "num": 9, "bool": true, "sparse_095": "GBRDCMBQGE======", "sparse_096": "GBRDCMBQGE======", "sparse_097": "GBRDCMBQGE======", "sparse_098": "GBRDCMBQGE======", "sparse_094": "GBRDCMBQGE======", "sparse_099": "GBRDCMBQGE======"},
 [ 10	]
 #select count(*) from bench10;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

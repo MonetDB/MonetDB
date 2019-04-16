@@ -19,7 +19,6 @@ stdout of test 'remote07` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:10:58 >  
 # 10:10:58 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20095" "--port=35702"

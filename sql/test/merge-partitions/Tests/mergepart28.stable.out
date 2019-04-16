@@ -58,7 +58,6 @@ stdout of test 'mergepart28` in directory 'sql/test/merge-partitions` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:13:17 >
 # 17:13:17 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28639" "--port=36178"
@@ -81,13 +80,13 @@ Ready.
 % 4 # length
 [ 1347	]
 #SELECT COUNT(*) FROM subt1;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 1322	]
 #SELECT COUNT(*) FROM subt2;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

@@ -20,7 +20,6 @@ stdout of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'sql/test/BugTracke
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:36:34 >  
 # 23:36:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7551" "--port=35003"

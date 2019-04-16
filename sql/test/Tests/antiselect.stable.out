@@ -13,7 +13,6 @@ stdout of test 'antiselect` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:32793/
 # MonetDB/SQL module v2.23.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

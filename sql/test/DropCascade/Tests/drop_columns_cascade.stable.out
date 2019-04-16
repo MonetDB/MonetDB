@@ -14,7 +14,6 @@ stdout of test 'drop_columns_cascade` in directory 'sql/test/DropCascade` itself
 # Visit http://monetdb.cwi.nl/ for further information
 #01 #BBPdir: writing BBP.dir (8 bats).
 
-Ready.
 #01 #BBPdir: writing BBP.dir (10 bats).
 #01 #BBPdir: writing BBP.dir (12 bats).
 #01 #BBPdir: writing BBP.dir (676 bats).

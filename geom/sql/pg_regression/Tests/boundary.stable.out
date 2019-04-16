@@ -18,7 +18,6 @@ stdout of test 'boundary` in directory 'geom/sql/pg_regression` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:14:23 >  
 # 15:14:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18298" "--port=36603"

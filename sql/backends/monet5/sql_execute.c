@@ -293,6 +293,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		*m->errstr=0;
 		return msg;
 	}
+	MT_thread_setworking(c->query);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
 	if (!mb) {
@@ -307,6 +308,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		if( getFunctionId(p) &&  qc_isapreparedquerytemplate(getFunctionId(p) ) ){
 			msg = SQLexecutePrepared(c, be, p->blk);
 			freeMalBlk(mb);
+			MT_thread_setworking(NULL);
 			return msg;
 		}
 		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
@@ -347,6 +349,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	msg = SQLoptimizeQuery(c, mb);
 	if( msg != MAL_SUCCEED){
 		// freeMalBlk(mb);
+		MT_thread_setworking(NULL);
 		return msg;
 	}
 	mb->keephistory = FALSE;
@@ -356,6 +359,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		// mal block might be so broken free causes segfault
 		msg = mb->errors;
 		mb->errors = 0;
+		MT_thread_setworking(NULL);
 		return msg;
 	}
 
@@ -377,6 +381,7 @@ SQLrun(Client c, backend *be, mvc *m)
 
 	// release the resources
 	freeMalBlk(mb);
+	MT_thread_setworking(NULL);
 	return msg;
 }
 
@@ -750,9 +755,13 @@ SQLengineIntern(Client c, backend *be)
 	str msg = MAL_SUCCEED;
 	char oldlang = be->language;
 	mvc *m = be->mvc;
+	char *q;
 
 	if (oldlang == 'X') {	/* return directly from X-commands */
 		sqlcleanup(be->mvc, 0);
+		q = c->query;
+		c->query = NULL;
+		GDKfree(q);
 		return MAL_SUCCEED;
 	}
 
@@ -772,6 +781,9 @@ SQLengineIntern(Client c, backend *be)
 			goto cleanup_engine;
 		}
 		sqlcleanup(be->mvc, 0);
+		q = c->query;
+		c->query = NULL;
+		GDKfree(q);
 		return MAL_SUCCEED;
 	}
 
@@ -817,6 +829,9 @@ cleanup_engine:
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c, c->curprg->def, NULL, be->vtop);
 	be->language = oldlang;
+	q = c->query;
+	c->query = NULL;
+	GDKfree(q);
 	/*
 	 * Any error encountered during execution should block further processing
 	 * unless auto_commit has been set.

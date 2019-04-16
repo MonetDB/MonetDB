@@ -312,8 +312,10 @@ copyMalBlk(MalBlkPtr old)
 	for (i = 0; i < old->stop; i++) {
 		mb->stmt[i] = copyInstruction(old->stmt[i]);
 		if(!mb->stmt[i]) {
-			while (--i >= 0)
+			while (--i >= 0){
 				freeInstruction(mb->stmt[i]);
+				mb->stmt[i]= NULL;
+			}
 			for (i = 0; i < old->vtop; i++)
 				VALclear(&mb->var[i].value);
 			GDKfree(mb->var);
@@ -324,8 +326,10 @@ copyMalBlk(MalBlkPtr old)
 	}
 	mb->help = old->help ? GDKstrdup(old->help) : NULL;
 	if (old->help && !mb->help) {
-		for (i = 0; i < old->stop; i++)
+		for (i = 0; i < old->stop; i++){
 			freeInstruction(mb->stmt[i]);
+			mb->stmt[i]= NULL;
+		}
 		for (i = 0; i < old->vtop; i++)
 			VALclear(&mb->var[i].value);
 		GDKfree(mb->var);
@@ -549,6 +553,7 @@ removeInstructionBlock(MalBlkPtr mb, int pc, int cnt)
 	for (i = pc; i < pc + cnt; i++) {
 		p = getInstrPtr(mb, i);
 		freeInstruction(p);
+		mb->stmt[i]= NULL;
 	}
 
 	for (i = pc; i < mb->stop - cnt; i++)

@@ -157,7 +157,7 @@ gdk_export int MT_join_thread(MT_Id t);
 /*
  * @- MT Lock API
  */
-#include "gdk_atomic.h"
+#include "matomic.h"
 
 /* in non-debug builds, we don't keep lock statistics */
 #ifndef NDEBUG
@@ -199,12 +199,7 @@ gdk_export int MT_join_thread(MT_Id t);
 		(void) ATOMIC_INC(&(l)->contention);			\
 	} while (0)
 
-#define _DBG_LOCK_SLEEP(l)						\
-	do {								\
-		if (_spincnt == 1024)					\
-			(void) ATOMIC_INC(&GDKlocksleepcnt);		\
-		(void) ATOMIC_INC(&(l)->sleep);				\
-	} while (0)
+#define _DBG_LOCK_SLEEP(l)	((void) ATOMIC_INC(&(l)->sleep))
 
 #define _DBG_LOCK_COUNT_2(l)						\
 	do {								\
@@ -261,6 +256,8 @@ gdk_export int MT_join_thread(MT_Id t);
 					break;				\
 				}					\
 			ATOMIC_CLEAR(&GDKlocklistlock);			\
+			ATOMIC_DESTROY(&(l)->contention);		\
+			ATOMIC_DESTROY(&(l)->sleep);			\
 		}							\
 	} while (0)
 
@@ -328,9 +325,10 @@ MT_lock_try(MT_Lock *l)
 		if (!MT_lock_try(l)) {					\
 			_DBG_LOCK_CONTENTION(l);			\
 			MT_thread_setlockwait(l);			\
+			do						\
+				_DBG_LOCK_SLEEP(l);			\
 			while (WaitForSingleObject(			\
-				       (l)->lock, INFINITE) != WAIT_OBJECT_0) \
-				;					\
+				       (l)->lock, INFINITE) != WAIT_OBJECT_0); \
 			MT_thread_setlockwait(NULL);			\
 		}							\
 		_DBG_LOCK_LOCKER(l);					\
@@ -389,8 +387,9 @@ typedef struct MT_Lock {
 		if (!MT_lock_try(l)) {					\
 			_DBG_LOCK_CONTENTION(l);			\
 			MT_thread_setlockwait(l);			\
-			while (pthread_mutex_lock(&(l)->lock) != 0)	\
-				;					\
+			do						\
+				_DBG_LOCK_SLEEP(l);			\
+			while (pthread_mutex_lock(&(l)->lock) != 0);	\
 			MT_thread_setlockwait(NULL);			\
 		}							\
 		_DBG_LOCK_LOCKER(l);					\
@@ -441,15 +440,16 @@ typedef struct MT_Lock {
 		_DBG_LOCK_COUNT_0(l);					\
 		if (!MT_lock_try(l)) {					\
 			/* we didn't get the lock */			\
-			int _spincnt = GDKnr_threads > 1 ? 0 : 1023;	\
+			int _spincnt = 0;				\
 			_DBG_LOCK_CONTENTION(l);			\
 			MT_thread_setlockwait(l);			\
 			do {						\
-				if (++_spincnt >= 1024) {		\
+				if (++_spincnt == 2048) {		\
+					_spincnt = 0;			\
 					_DBG_LOCK_SLEEP(l);		\
 					MT_sleep_ms(1);			\
 				}					\
-			} while (ATOMIC_TAS(&(l)->lock) != 0);		\
+			} while (!MT_lock_try(l));			\
 			MT_thread_setlockwait(NULL);			\
 		}							\
 		_DBG_LOCK_LOCKER(l);					\
@@ -464,10 +464,12 @@ typedef struct MT_Lock {
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
-#define MT_lock_unset(l)				\
-		do {					\
-			_DBG_LOCK_UNLOCKER(l);		\
-			ATOMIC_CLEAR(&(l)->lock);	\
+#define MT_lock_unset(l)					\
+		do {						\
+			/* lock should be locked */		\
+			assert(ATOMIC_TAS(&(l)->lock) != 0);	\
+			_DBG_LOCK_UNLOCKER(l);			\
+			ATOMIC_CLEAR(&(l)->lock);		\
 		} while (0)
 
 #define MT_lock_destroy(l)	_DBG_LOCK_DESTROY(l)
@@ -637,6 +639,7 @@ typedef struct {
 
 gdk_export void MT_thread_setlockwait(MT_Lock *lock);
 gdk_export void MT_thread_setsemawait(MT_Sema *sema);
+gdk_export void MT_thread_setworking(const char *work);
 
 gdk_export int MT_check_nr_cores(void);
 

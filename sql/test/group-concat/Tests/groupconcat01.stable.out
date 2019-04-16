@@ -59,7 +59,6 @@ stdout of test 'groupconcat01` in directory 'sql/test/group-concat` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:11:33 >  
 # 14:11:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28908" "--port=37314"

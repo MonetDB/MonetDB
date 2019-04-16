@@ -19,7 +19,6 @@ stdout of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -105,13 +104,13 @@ Ready.
 #INSERT INTO wo (i) SELECT i+6688 FROM wi WHERE i<=2448;  -- 6688+2448=9136
 [ 2448	]
 #SELECT count(oid) FROM wi;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
 [ 9136	]
 #SELECT count(i) FROM wo;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 4 # length
@@ -154,13 +153,13 @@ Ready.
 #CREATE TABLE create_table_test3 /* WITHOUT OIDS */ AS
 #    SELECT a + b AS c1, a - b AS c2 FROM create_table_test WITH DATA;
 #SELECT count(oid) FROM create_table_test2;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM create_table_test3;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

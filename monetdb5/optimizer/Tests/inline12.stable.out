@@ -21,7 +21,6 @@ stdout of test 'inline12` in directory 'monetdb5/optimizer` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 17:43:58 >  
 # 17:43:58 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-6812" "--port=39581"

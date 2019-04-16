@@ -14,7 +14,6 @@ stdout of test 'push-select-div-down.SF-2593341` in directory 'sql/test/BugTrack
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31771/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

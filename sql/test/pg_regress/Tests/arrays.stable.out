@@ -18,7 +18,6 @@ stdout of test 'arrays` in directory 'sql/test/pg_regress` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 #CREATE TEMP TABLE arrtest_f (f0 int, f1 text, f2 double);
 #insert into arrtest_f values(1,'cat1',1.21);

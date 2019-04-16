@@ -17,7 +17,6 @@ stdout of test 'capi09` in directory 'sql/backends/monet5/UDF/capi` itself:
 # Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-81291/.s.monetdb.38148
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:29:00 >  
 # 13:29:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-81291" "--port=38148"

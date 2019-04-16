@@ -13,7 +13,6 @@ stdout of test 'with_only_once.SF-1720293` in directory 'sql/test/BugTracker` it
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34442/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -59,13 +58,13 @@ Ready.
 #insert into withonlybug select * from withonlybug;
 [ 16	]
 #WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
-% sys.t # table_name
+% .t # table_name
 % L3 # name
 % bigint # type
 % 2 # length
 [ 32	]
 #WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t;
-% sys.t # table_name
+% .t # table_name
 % L3 # name
 % bigint # type
 % 2 # length

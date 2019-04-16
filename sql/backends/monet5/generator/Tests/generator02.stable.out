@@ -18,7 +18,6 @@ stdout of test 'generator02` in directory 'sql/backends/monet5/generator` itself
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:17:52 >  
 # 21:17:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19043" "--port=31527"

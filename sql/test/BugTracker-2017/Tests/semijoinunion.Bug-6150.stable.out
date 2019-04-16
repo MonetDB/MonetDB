@@ -18,7 +18,6 @@ stdout of test 'semijoinunion.Bug-6150` in directory 'sql/test/BugTracker-2017` 
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:06:12 >  
 # 19:06:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8990" "--port=39841"

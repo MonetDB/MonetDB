@@ -18,7 +18,6 @@ stdout of test 'check` in directory 'sql/test/emptydb` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:17:18 >  
 # 10:17:18 >  "/usr/bin/python2" "check.SQL.py" "check"
@@ -145,6 +144,7 @@ Ready.
 \dSf sys."corr"
 \dSf sys."createorderindex"
 \dSf sys."date_to_str"
+\dSf sys."date_trunc"
 \dSf sys."db_users"
 \dSf sys."debug"
 \dSf sys."degrees"
@@ -238,6 +238,7 @@ Ready.
 \dSf sys."right_shift_assign"
 \dSf sys."sessions"
 \dSf sys."setmasklen"
+\dSf sys."setprinttimeout"
 \dSf sys."setsession"
 \dSf sys."settimeout"
 \dSf sys."shpattach"
@@ -495,6 +496,7 @@ SYSTEM FUNCTION         sys.current_time
 SYSTEM FUNCTION         sys.current_timestamp
 SYSTEM FUNCTION         sys.curtime
 SYSTEM FUNCTION         sys.date_to_str
+SYSTEM FUNCTION         sys.date_trunc
 SYSTEM FUNCTION         sys.day
 SYSTEM FUNCTION         sys.dayofmonth
 SYSTEM FUNCTION         sys.dayofweek
@@ -684,6 +686,7 @@ SYSTEM FUNCTION         sys.scale_up
 SYSTEM FUNCTION         sys.second
 SYSTEM FUNCTION         sys.sessions
 SYSTEM FUNCTION         sys.setmasklen
+SYSTEM PROCEDURE        sys.setprinttimeout
 SYSTEM PROCEDURE        sys.setsession
 SYSTEM PROCEDURE        sys.settimeout
 SYSTEM PROCEDURE        sys.shpattach
@@ -961,6 +964,7 @@ create aggregate corr(e1 smallint, e2 smallint) returns double external name "ag
 create aggregate corr(e1 tinyint, e2 tinyint) returns double external name "aggr"."corr";
 create procedure sys.createorderindex(sys string, tab string, col string) external name sql.createorderindex;
 create function date_to_str(d date, format string) returns string external name mtime."date_to_str";
+create function sys.date_trunc(txt string, t timestamp) returns timestamp external name sql.date_trunc;
 CREATE FUNCTION db_users () RETURNS TABLE(name varchar(2048)) EXTERNAL NAME sql.db_users;
 create function sys.debug(debug int) returns integer external name mdb."setDebug";
 create function degrees(r double) returns double return r*180/pi();
@@ -1108,6 +1112,7 @@ create function "right_shift"(i1 inet, i2 inet) returns boolean external name in
 create function "right_shift_assign"(i1 inet, i2 inet) returns boolean external name inet.">>=";
 create function sys.sessions() returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool) external name sql.sessions;
 create function "setmasklen" (p inet, mask int) returns inet external name inet."setmasklen";
+create procedure sys.setprinttimeout("timeout" integer) external name clients.setprinttimeout;
 create procedure sys.setsession("timeout" bigint) external name clients.setsession;
 create procedure sys.settimeout("query" bigint) external name clients.settimeout;
 create procedure sys.settimeout("query" bigint, "session" bigint) external name clients.settimeout;
@@ -2317,6 +2322,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"current_timestamp",	"SYSTEM",	"current_timestamp",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"timestamptz",	7,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"curtime",	"SYSTEM",	"current_time",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"timetz",	7,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"date_to_str",	"SYSTEM",	"create function date_to_str(d date, format string) returns string external name mtime.\"date_to_str\";",	"mtime",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"d",	"date",	0,	0,	"in",	"format",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"date_trunc",	"SYSTEM",	"create function sys.date_trunc(txt string, t timestamp) returns timestamp external name sql.date_trunc;",	"sql",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"timestamp",	7,	0,	"out",	"txt",	"clob",	0,	0,	"in",	"t",	"timestamp",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"day",	"SYSTEM",	"day",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"bigint",	64,	0,	"out",	"arg_1",	"sec_interval",	13,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"day",	"SYSTEM",	"day",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"date",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"day",	"SYSTEM",	"day",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"timestamp",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3383,6 +3389,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"second",	"SYSTEM",	"sql_seconds",	"mtime",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"decimal",	9,	3,	"out",	"arg_1",	"timetz",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sessions",	"SYSTEM",	"create function sys.sessions() returns table(\"user\" string, \"login\" timestamp, \"sessiontimeout\" bigint, \"lastcommand\" timestamp, \"querytimeout\" bigint, \"active\" bool) external name sql.sessions;",	"sql",	"MAL",	"Function returning a table",	true,	false,	false,	"user",	"clob",	0,	0,	"out",	"login",	"timestamp",	7,	0,	"out",	"sessiontimeout",	"bigint",	64,	0,	"out",	"lastcommand",	"timestamp",	7,	0,	"out",	"querytimeout",	"bigint",	64,	0,	"out",	"active",	"boolean",	1,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"setmasklen",	"SYSTEM",	"create function \"setmasklen\" (p inet, mask int) returns inet external name inet.\"setmasklen\";",	"inet",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"inet",	0,	0,	"out",	"p",	"inet",	0,	0,	"in",	"mask",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"setprinttimeout",	"SYSTEM",	"create procedure sys.setprinttimeout(\"timeout\" integer) external name clients.setprinttimeout;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"timeout",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"setsession",	"SYSTEM",	"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"timeout",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"settimeout",	"SYSTEM",	"create procedure sys.settimeout(\"query\" bigint) external name clients.settimeout;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"query",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"settimeout",	"SYSTEM",	"create procedure sys.settimeout(\"query\" bigint, \"session\" bigint) external name clients.settimeout;",	"clients",	"MAL",	"Procedure",	true,	false,	false,	"query",	"bigint",	64,	0,	"in",	"session",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4790,6 +4797,7 @@ drop function pcre_replace(string, string, string, string);
 [ "corr",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "corr",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "date_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "date_trunc",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "degrees",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "env",	"public",	"EXECUTE",	NULL,	0	]
 [ "epoch",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5064,13 +5072,13 @@ drop function pcre_replace(string, string, string, string);
 % varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 0,	0,	1,	1,	1,	1,	1,	5 # length
 #select count(*) from sys.statistics;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select count(*) from sys.storagemodelinput;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

@@ -23,7 +23,6 @@ stdout of test 'quantile_function_resolution.Bug-3773` in directory 'sql/test/Bu
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:18:57 >  
 # 10:18:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31416" "--port=33648"

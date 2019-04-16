@@ -13,7 +13,6 @@ stdout of test 'multiple_select_on_view.SF-935639` in directory 'sql/test/BugDay
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -26,13 +25,13 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) from c;
-% sys.L10 # table_name
+% .L7 # table_name
 % L7 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #select count(*) from c;
-% sys.L10 # table_name
+% .L7 # table_name
 % L7 # name
 % bigint # type
 % 1 # length

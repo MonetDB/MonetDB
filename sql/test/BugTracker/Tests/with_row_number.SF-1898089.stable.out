@@ -13,7 +13,6 @@ stdout of test 'with_row_number.SF-1898089` in directory 'sql/test/BugTracker` i
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:36544/
 # MonetDB/SQL module v2.22.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -25,7 +24,7 @@ Ready.
 
 [ 32605	]
 #SELECT COUNT(*) AS cnt from tradeDate;
-% sys.L4 # table_name
+% .L4 # table_name
 % cnt # name
 % bigint # type
 % 5 # length

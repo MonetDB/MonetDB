@@ -18,7 +18,6 @@ stdout of test 'or_in_subselect.Bug-6625` in directory 'sql/test/BugTracker-2018
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:56:50 >  
 # 18:56:50 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20632" "--port=37655"

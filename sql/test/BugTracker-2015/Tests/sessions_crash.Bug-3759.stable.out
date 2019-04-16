@@ -23,30 +23,29 @@ stdout of test 'sessions_crash.Bug-3759` in directory 'sql/test/BugTracker-2015`
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:14:53 >  
 # 16:14:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28078" "--port=38342"
 # 16:14:53 >  
 
 #select COUNT(*) from "sys"."queue";
-% .L11 # table_name
+% .L10 # table_name
 % L10 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select COUNT(*) from "sys"."rejects";
-% .L11 # table_name
+% .L10 # table_name
 % L10 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select COUNT(*) from "sys"."sessions";
-% .L11 # table_name
+% .L10 # table_name
 % L10 # name
 % bigint # type
 % 1 # length
-[ 2	]
+[ 1	]
 
 # 16:14:53 >  
 # 16:14:53 >  "Done."

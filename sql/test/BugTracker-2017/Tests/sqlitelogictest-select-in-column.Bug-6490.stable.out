@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-select-in-column.Bug-6490` in directory 'sql/tes
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 23:22:13 >  
 # 23:22:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13741" "--port=34932"
@@ -36,7 +35,7 @@ Ready.
 % int,	int,	double,	clob,	int,	double,	clob # type
 % 1,	1,	24,	0,	1,	24,	0 # length
 #SELECT + - COUNT ( * ) FROM tab0 WHERE NOT NULL NOT IN ( - col0, 4 );
-% sys.L12 # table_name
+% .L12 # table_name
 % L12 # name
 % bigint # type
 % 1 # length

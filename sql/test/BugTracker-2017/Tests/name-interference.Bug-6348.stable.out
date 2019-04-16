@@ -18,7 +18,6 @@ stdout of test 'name-interference.Bug-6348` in directory 'sql/test/BugTracker-20
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:47:15 >  
 # 13:47:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7389" "--port=39137"

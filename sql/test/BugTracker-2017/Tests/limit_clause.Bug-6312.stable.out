@@ -18,7 +18,6 @@ stdout of test 'limit_clause.Bug-6312` in directory 'sql/test/BugTracker-2017` i
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:32:27 >  
 # 16:32:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27183" "--port=36678"

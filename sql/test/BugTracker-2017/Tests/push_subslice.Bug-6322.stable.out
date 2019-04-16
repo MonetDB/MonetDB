@@ -20,7 +20,6 @@ stdout of test 'push_subslice.Bug-6322` in directory 'sql/test/BugTracker-2017` 
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql
@@ -78,7 +77,7 @@ Ready.
 #where (true)
 #  or ((select pc from sys.tracelog)
 #       is not NULL);
-% sys.L15 # table_name
+% sys.L16 # table_name
 % c2 # name
 % varchar # type
 % 98 # length
@@ -216,6 +215,113 @@ Ready.
 [ "+proj=longlat +ellps=aust_SA +towgs84=-117.808,-51.536,137.784,0.303,0.446,0.234,-0.29 +no_defs"	]
 [ "+proj=longlat +ellps=aust_SA +towgs84=-134,-48,149,0,0,0,0 +no_defs"	]
 [ "+proj=longlat +ellps=intl +towgs84=-143,-236,7,0,0,0,0 +no_defs"	]
+#select
+#      (select active from sys.sessions) as c3,
+#       subq_0.c0 as c9
+#from
+#  (select sample_0.proj4text as c0, 7 as c1
+#      from sys.spatial_ref_sys as sample_0
+#              where sample_0.srtext is not NULL limit 95) as subq_0
+#where cast(coalesce(17, subq_0.c1) as int) is not NULL;
+% .L17,	sys.L21 # table_name
+% c3,	c9 # name
+% boolean,	varchar # type
+% 5,	98 # length
+[ true,	"+proj=longlat +ellps=bessel +towgs84=595.48,121.69,515.35,4.115,-2.9383,0.853,-3.408 +no_defs"	]
+[ true,	"+proj=longlat +ellps=aust_SA +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +towgs84=682,-203,480,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=airy +no_defs"	]
+[ true,	"+proj=longlat +ellps=mod_airy +no_defs"	]
+[ true,	"+proj=longlat +ellps=aust_SA +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +no_defs"	]
+[ true,	"+proj=longlat +a=6377492.018 +b=6356173.508712696 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bess_nam +no_defs"	]
+[ true,	"+proj=longlat +a=6378293.645208759 +b=6356617.987679838 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +no_defs"	]
+[ true,	"+proj=longlat +a=6378450.047548896 +b=6356826.621488444 +no_defs"	]
+[ true,	"+proj=longlat +a=6378300.789 +b=6356566.435 +no_defs"	]
+[ true,	"+proj=longlat +a=6378249.2 +b=6356515 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk80 +no_defs"	]
+[ true,	"+proj=longlat +a=6378249.145 +b=6356514.966398753 +no_defs"	]
+[ true,	"+proj=longlat +a=6378249.2 +b=6356514.996941779 +no_defs"	]
+[ true,	"+proj=longlat +a=6377276.345 +b=6356075.41314024 +no_defs"	]
+[ true,	"+proj=longlat +ellps=evrstSS +no_defs"	]
+[ true,	"+proj=longlat +a=6377304.063 +b=6356103.038993155 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +no_defs"	]
+[ true,	"+proj=longlat +ellps=helmert +no_defs"	]
+[ true,	"+proj=longlat +a=6378160 +b=6356774.50408554 +no_defs"	]
+[ true,	"+proj=longlat +ellps=intl +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +no_defs"	]
+[ true,	"+proj=longlat +ellps=krass +no_defs"	]
+[ true,	"+proj=longlat +ellps=WGS66 +no_defs"	]
+[ true,	"+proj=longlat +a=6376523 +b=6355862.933255573 +no_defs"	]
+[ true,	"+proj=longlat +a=6378298.3 +b=6356657.142669561 +no_defs"	]
+[ true,	"+proj=longlat +a=6378300 +b=6356751.689189189 +no_defs"	]
+[ true,	"+proj=longlat +ellps=WGS84 +no_defs"	]
+[ true,	"+proj=longlat +ellps=WGS84 +no_defs"	]
+[ true,	"+proj=longlat +a=6378136.2 +b=6356751.516927429 +no_defs"	]
+[ true,	"+proj=longlat +a=6378136.3 +b=6356751.616592146 +no_defs"	]
+[ true,	"+proj=longlat +a=6378249.144808011 +b=6356514.966204134 +no_defs"	]
+[ true,	"+proj=longlat +a=6371000 +b=6371000 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS67 +no_defs"	]
+[ true,	"+proj=longlat +a=6378135 +b=6356750.304921594 +no_defs"	]
+[ true,	"+proj=longlat +a=6377299.36559538 +b=6356098.359005156 +no_defs"	]
+[ true,	"+proj=longlat +ellps=WGS72 +no_defs"	]
+[ true,	"+proj=longlat +a=6377301.243 +b=6356100.230165384 +no_defs"	]
+[ true,	"+proj=longlat +a=6377299.151 +b=6356098.145120132 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +a=6371007 +b=6371007 +no_defs"	]
+[ true,	"+proj=longlat +a=6370997 +b=6370997 +no_defs"	]
+[ true,	"+proj=longlat +a=6371228 +b=6371228 +no_defs"	]
+[ true,	"+proj=longlat +a=6378273 +b=6356889.449 +no_defs"	]
+[ true,	"+proj=longlat +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=-199.87,74.79,246.62,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +a=6378135 +b=6356750.304921594 +no_defs"	]
+[ true,	"+proj=longlat +ellps=intl +towgs84=-96.062,-82.428,-121.753,4.801,0.345,-1.376,1.496 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +towgs84=414.1,41.3,603.1,-0.855,2.141,-7.023,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +towgs84=-404.78,685.68,45.47,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +towgs84=219.315,168.975,-166.145,0.198,5.926,-2.356,-57.104 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +no_defs"	]
+[ true,	"+proj=longlat +ellps=WGS84 +towgs84=0,0,0,-0,-0,-0,0 +no_defs"	]
+[ true,	"+proj=longlat +a=6377276.345 +b=6356075.41314024 +towgs84=198,881,317,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk80 +towgs84=-239.1,-170.02,397.5,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0.055,-0.541,-0.185,0.0183,-0.0003,-0.007,-0.014 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk80 +towgs84=-180.624,-225.516,173.919,-0.81,-1.898,8.336,16.7101 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +towgs84=61,-285,-181,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk66 +towgs84=11,72,-101,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk80 +towgs84=-125,53,467,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=clrk80 +towgs84=-124.76,53,466.79,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +a=6377276.345 +b=6356075.41314024 +towgs84=282,726,254,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +a=6377301.243 +b=6356100.230165384 +towgs84=283,682,231,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +a=6377299.151 +b=6356098.145120132 +towgs84=295,736,257,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=krass +towgs84=-17.51,-108.32,-62.39,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +towgs84=674.4,15.1,405.3,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=intl +towgs84=-133.63,-157.5,-158.62,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=intl +towgs84=-117,-132,-164,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +a=6378249.2 +b=6356515 +towgs84=-83,37,124,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +towgs84=589,76,480,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +a=6378293.645208759 +b=6356617.987679838 +no_defs"	]
+[ true,	"+proj=longlat +ellps=intl +towgs84=-0.465,372.095,171.736,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=intl +towgs84=-115.854,-99.0583,-152.462,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=intl +no_defs"	]
+[ true,	"+proj=longlat +ellps=intl +towgs84=27.5,14,186.4,0,0,0,0 +no_defs"	]
+[ true,	"+proj=longlat +ellps=bessel +no_defs"	]
 
 # 14:35:34 >  
 # 14:35:34 >  "Done."

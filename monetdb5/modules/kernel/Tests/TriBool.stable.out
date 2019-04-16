@@ -14,7 +14,6 @@ stdout of test 'TriBool` in directory 'monetdb5/modules/kernel` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:34312/
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

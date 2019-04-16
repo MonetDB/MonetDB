@@ -13,7 +13,6 @@ stdout of test 'cascade_operations_in_different_sessions.SF-1823387_create` in d
 # Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:38468/
 # MonetDB/SQL module v2.20.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

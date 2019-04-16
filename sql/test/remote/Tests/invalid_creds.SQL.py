@@ -94,7 +94,7 @@ supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
 c = supervisorconn.cursor()
 
 # Create the movies table and load the data
-movies_filename="$TSTDATAPATH/netflix_data/movies.csv"
+movies_filename=os.getenv("TSTDATAPATH")+"/netflix_data/movies.csv"
 movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
 c.execute(movies_create)
 load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
@@ -105,7 +105,7 @@ mtable = "CREATE MERGE TABLE ratings {}".format(RATINGS_TABLE_DEF)
 c.execute(mtable)
 
 # Create the workers and load the ratings data
-fn_template="$TSTDATAPATH/netflix_data/ratings_sample_{}.csv"
+fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
 cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'nonexistent' PASSWORD 'badpass'".format(MOVIES_TABLE_DEF, supervisor_uri)
 workers = create_workers(fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
 
@@ -131,3 +131,8 @@ try:
 except pymonetdb.OperationalError as e2:
     print("OperationalError:", file=sys.stderr)
     print("# " + e2.message, file=sys.stderr)
+
+for wrec in workers:
+    wrec['proc'].communicate()
+
+supervisorproc.communicate()

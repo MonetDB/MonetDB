@@ -40,7 +40,6 @@ stdout of test 'row_number_does_not_work_in_complex_query.Bug-2805` in directory
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:35:58 >  
 # 14:35:58 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=budapest" "--port=35000"

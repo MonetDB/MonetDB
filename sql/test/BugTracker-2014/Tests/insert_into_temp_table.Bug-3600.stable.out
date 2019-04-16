@@ -19,7 +19,6 @@ stdout of test 'insert_into_temp_table.Bug-3600` in directory 'sql/test/BugTrack
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

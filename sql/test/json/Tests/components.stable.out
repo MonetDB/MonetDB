@@ -19,7 +19,6 @@ stdout of test 'components` in directory 'sql/test/json` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:41:54 >  
 # 18:41:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1955" "--port=35514"

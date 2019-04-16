@@ -18,7 +18,6 @@ stdout of test 'crash-dce.Bug-6330` in directory 'sql/test/BugTracker-2017` itse
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:31:40 >  
 # 19:31:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22559" "--port=33270"

@@ -19,7 +19,6 @@ stdout of test 'binary` in directory 'geom/sql` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:27:15 >  
 # 14:27:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17423" "--port=30565"

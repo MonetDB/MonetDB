@@ -912,6 +912,14 @@ command batcalc.daytime( v:bat[:daytime], digits:int ) :bat[:daytime]
 address batdaytime_2time_daytime
 comment "cast daytime to daytime and check for overflow";
 
+command sql.date_trunc( scale:str, v:bat[:timestamp]):bat[:timestamp] 
+address bat_date_trunc
+comment "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)";
+
+command sql.date_trunc( scale:str, v:timestamp):timestamp 
+address date_trunc
+comment "Truncate a timestamp to (millennium, century,decade,year,quarter,month,week,day,hour,minute,second, milliseconds,microseconds)";
+
 pattern current_time() :daytime
 address SQLcurrent_daytime
 comment "Get the clients current daytime";

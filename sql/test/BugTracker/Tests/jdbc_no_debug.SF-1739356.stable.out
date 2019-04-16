@@ -18,7 +18,6 @@ stdout of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` its
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:14:32 >  
 # 15:14:32 >  "./jdbc_no_debug.SF-1739356.SQL.sh" "jdbc_no_debug.SF-1739356"
@@ -53,9 +52,9 @@ Ready.
 +----------------------------------------------------------------------------+
 18 rows
 Operation successful
-+------------------------------------------------------------------------------------------------------------------------+
++--------------------------------------------------------------------------------------------------------------------+
 | mal                                                                                                   |
-+========================================================================================================================+
++====================================================================================================================+
 | function user.s4_1():void;                                                                            |
 |     X_1:void := querylog.define("explain select count(*) from tables\n;":str, "sequential_pipe":str, 30:int);          |
 |     X_38:bat[:lng] := bat.new(nil:lng);                                                               |
@@ -68,50 +67,44 @@ Operation successful
 |     X_20:bat[:sht] := sql.bind(X_4:int, "sys":str, "_tables":str, "type":str, 1:int);                                  |
 |     C_92:bat[:oid] := algebra.thetaselect(X_20:bat[:sht], C_5:bat[:oid], 2:sht, "!=":str);                             |
 |     C_27:bat[:oid] := sql.subdelta(C_89:bat[:oid], C_5:bat[:oid], X_21:bat[:oid], C_90:bat[:oid], C_92:bat[:oid]);     |
-|     X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "_tables":str, "id":str, 0:int);                                     |
-|     (X_13:bat[:oid], X_14:bat[:int]) := sql.bind(X_4:int, "sys":str, "_tables":str, "id":str, 2:int);                  |
-|     X_11:bat[:int] := sql.bind(X_4:int, "sys":str, "_tables":str, "id":str, 1:int);                                    |
-|     X_29:bat[:int] := sql.projectdelta(C_27:bat[:oid], X_8:bat[:int], X_13:bat[:oid], X_14:bat[:int], X_11:bat[:int]); |
-|     X_31:lng := aggr.count(X_29:bat[:int]);                                                                            |
+|     X_31:lng := aggr.count(C_27:bat[:oid]);                                                                        |
 |     X_37:bat[:lng] := sql.single(X_31:lng);                                                                            |
 |     C_32:bat[:oid] := sql.tid(X_4:int, "tmp":str, "_tables":str);                                                      |
-|     X_34:bat[:int] := sql.bind(X_4:int, "tmp":str, "_tables":str, "id":str, 0:int);                                    |
-|     X_35:bat[:int] := algebra.projection(C_32:bat[:oid], X_34:bat[:int]);                                              |
-|     X_36:lng := aggr.count(X_35:bat[:int]);                                                                            |
+|     X_36:lng := aggr.count(C_32:bat[:oid]);                                                                        |
 |     X_40:bat[:lng] := bat.append(X_38:bat[:lng], X_37:bat[:lng], true:bit);                                            |
 |     X_42:bat[:lng] := bat.append(X_40:bat[:lng], X_36:lng, true:bit);                                                  |
 |     X_43:lng := aggr.sum(X_42:bat[:lng]);                                                                              |
 |     sql.resultSet(".L41":str, "L41":str, "bigint":str, 64:int, 0:int, 7:int, X_43:lng);                                |
 | end user.s4_1;                                                                                        |
-| #inline               actions= 0 time=1 usec                                                                           |
-| #remap                actions= 0 time=5 usec                                                                           |
-| #costmodel            actions= 1 time=2 usec                                                                           |
+| #inline               actions= 0 time=0 usec                                                                       |
+| #remap                actions= 0 time=1 usec                                                                       |
+| #costmodel            actions= 1 time=1 usec                                                                       |
 | #coercion             actions= 1 time=4 usec                                                                           |
 | #aliases              actions= 1 time=5 usec                                                                           |
 | #evaluate             actions= 0 time=4 usec                                                                           |
 | #emptybind            actions= 0 time=1 usec                                                                           |
-| #pushselect           actions= 5 time=21 usec                                                                          |
+| #pushselect           actions= 5 time=19 usec                                                                      |
 | #aliases              actions= 2 time=5 usec                                                                           |
-| #mergetable           actions= 0 time=27 usec                                                                          |
-| #deadcode             actions= 3 time=8 usec                                                                           |
-| #aliases              actions= 0 time=1 usec                                                                           |
+| #mergetable           actions= 0 time=28 usec                                                                      |
+| #deadcode             actions= 9 time=8 usec                                                                       |
+| #aliases              actions= 0 time=0 usec                                                                       |
 | #constants            actions= 1 time=5 usec                                                                           |
 | #commonTerms          actions= 0 time=4 usec                                                                           |
 | #projectionpath       actions= 0 time=2 usec                                                                           |
-| #deadcode             actions= 0 time=6 usec                                                                           |
-| #reorder              actions= 1 time=19 usec                                                                          |
+| #deadcode             actions= 0 time=5 usec                                                                       |
+| #reorder              actions= 1 time=17 usec                                                                      |
 | #matpack              actions= 0 time=0 usec                                                                           |
-| #multiplex            actions= 0 time=1 usec                                                                           |
+| #multiplex            actions= 0 time=2 usec                                                                       |
 | #profiler             actions= 1 time=1 usec                                                                           |
 | #candidates           actions= 1 time=0 usec                                                                           |
 | #deadcode             actions= 0 time=5 usec                                                                           |
 | #wlc                  actions= 0 time=0 usec                                                                           |
-| #garbagecollector     actions= 1 time=17 usec                                                                          |
-| #total                actions=27 time=210 usec                                                                         |
-+------------------------------------------------------------------------------------------------------------------------+
-52 rows
+| #garbagecollector     actions= 1 time=15 usec                                                                      |
+| #total                actions=27 time=202 usec                                                                     |
++--------------------------------------------------------------------------------------------------------------------+
+46 rows
 
-# 15:14:32 >  
-# 15:14:32 >  "Done."
-# 15:14:32 >  
+# 16:04:05 >  
+# 16:04:05 >  "Done."
+# 16:04:05 >  
 

@@ -13,7 +13,6 @@ stdout of test 'insert_not_exists.SF-1380287` in directory 'sql/test/BugTracker`
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -93,7 +92,7 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT count(*) FROM kwTemp;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -115,7 +114,7 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT count(*) FROM kwmtemp;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
@@ -137,13 +136,13 @@ Ready.
 #COMMIT;
 #START TRANSACTION;
 #SELECT 'expect 20', COUNT(*) FROM s4_keywords;
-% .L2,	sys.L5 # table_name
+% .L2,	.L5 # table_name
 % L2,	L5 # name
 % char,	bigint # type
 % 9,	2 # length
 [ "expect 20",	20	]
 #SELECT 'expect 20', COUNT(*) FROM s4_kwm;
-% .L2,	sys.L5 # table_name
+% .L2,	.L5 # table_name
 % L2,	L5 # name
 % char,	bigint # type
 % 9,	2 # length

@@ -19,7 +19,6 @@ stdout of test 'numeric-column-alias.Bug-3279` in directory 'sql/test/BugTracker
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

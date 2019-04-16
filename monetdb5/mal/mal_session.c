@@ -37,59 +37,43 @@ malBootstrap(void)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
-	str bootfile = "mal_init", s = NULL;
+	str bootfile = "mal_init";
 
-	c = MCinitClient((oid) 0, 0, 0);
+	c = MCinitClient((oid) 0, NULL, NULL);
 	if(c == NULL) {
-		fprintf(stderr,"#malBootstrap:Failed to initialise client");
-		mal_exit(1);
+		throw(MAL, "malBootstrap", "Failed to initialize client");
 	}
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if(c->usermodule == NULL) {
-		fprintf(stderr,"#malBootstrap:Failed to initialise client MAL module");
-		mal_exit(1);
+		MCfreeClient(c);
+		throw(MAL, "malBootstrap", "Failed to initialize client MAL module");
 	}
 	if ( (msg = defaultScenario(c)) ) {
-		fprintf(stderr,"#malBootstrap:Failed to initialise default scenario: %s", msg);
-		freeException(msg);
-		mal_exit(1);
+		MCfreeClient(c);
+		return msg;
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
-		fprintf(stderr,"#malBootstrap:Failed to initialise client: %s", msg);
-		freeException(msg);
-		mal_exit(1);
+		MCfreeClient(c);
+		return msg;
 	}
 	if( MCinitClientThread(c) < 0){
-		fprintf(stderr,"#malBootstrap:Failed to create client thread");
-		mal_exit(1);
+		MCfreeClient(c);
+		throw(MAL, "malBootstrap", "Failed to create client thread");
 	}
-	s = malInclude(c, bootfile, 0);
-	if (s != NULL) {
-		fprintf(stderr, "!%s\n", s);
-		GDKfree(s);
-		mal_exit(1);
+	if ((msg = malInclude(c, bootfile, 0)) != MAL_SUCCEED) {
+		MCfreeClient(c);
+		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->usermodule, c->curprg->def);
 	if ( (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
-		mnstr_printf(c->fdout,"!%s%s",msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
-		mnstr_flush(c->fdout);
-		if( GDKerrbuf && GDKerrbuf[0]){
-			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
-			mnstr_flush(c->fdout);
-		}
-#ifdef HAVE_EMBEDDED
+		MCfreeClient(c);
 		return msg;
-#endif
 	}
-	s = MALengine(c);
-	if (s != MAL_SUCCEED) {
-		GDKfree(s);
-#ifdef HAVE_EMBEDDED
-		return msg;
-#endif
-	}
+	msg = MALengine(c);
+	if (msg != MAL_SUCCEED)
+		MCfreeClient(c);
 	return msg;
 }
 
@@ -522,6 +506,7 @@ MSserveClient(Client c)
 	} else {
 		do {
 			do {
+				MT_thread_setworking("running scenario");
 				msg = runScenario(c,0);
 				freeException(msg);
 				if (c->mode == FINISHCLIENT)
@@ -530,6 +515,7 @@ MSserveClient(Client c)
 			} while (c->scenario && !GDKexiting());
 		} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
 	}
+	MT_thread_setworking("exiting");
 	/* pre announce our exiting: cleaning up may take a while and we
 	 * don't want to get killed during that time for fear of
 	 * deadlocks */

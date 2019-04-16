@@ -9,7 +9,6 @@
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-#include "monet_options.h"
 #include <setjmp.h>
 
 gdk_export const char *GDKgetenv(const char *name);
@@ -72,7 +71,8 @@ gdk_export size_t _MT_pagesize;
 #define MT_npages()	_MT_npages
 
 gdk_export void MT_init(void);	/*  init the package. */
-gdk_export gdk_return GDKinit(opt *set, int setlen);
+struct opt;
+gdk_export gdk_return GDKinit(struct opt *set, int setlen);
 
 /* used for testing only */
 gdk_export void GDKsetmallocsuccesscount(lng count);
@@ -83,8 +83,7 @@ gdk_export void GDKsetmallocsuccesscount(lng count);
  * takes care of this.
  */
 #ifndef HAVE_EMBEDDED
-__declspec(noreturn) gdk_export void GDKexit(int status)
-	__attribute__((__noreturn__));
+gdk_export _Noreturn void GDKexit(int status);
 #else
 gdk_export void GDKexit(int status);
 #endif

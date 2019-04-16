@@ -19,7 +19,6 @@ stdout of test 'tst903` in directory 'monetdb5/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 
 #mdb.list("user","foo");

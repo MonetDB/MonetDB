@@ -18,7 +18,6 @@ stdout of test 'drop_schema_restrict.Bug-6438` in directory 'sql/test/BugTracker
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:29:20 >  
 # 17:29:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16183" "--port=33045"

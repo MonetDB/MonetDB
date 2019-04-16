@@ -14,7 +14,6 @@ stdout of test 'in_operator.SF-1211925` in directory 'sql/test/BugDay_2005-12-19
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39107/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

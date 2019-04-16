@@ -29,17 +29,6 @@ stderr of test 'push_subslice.Bug-6322` in directory 'sql/test/BugTracker-2017` 
 # 14:35:32 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7906" "--port=38203"
 # 14:35:32 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7906/.s.monetdb.38203
-QUERY = select
-              (select active from sys.sessions) as c3,
-               subq_0.c0 as c9
-        from
-          (select sample_0.proj4text as c0, 7 as c1
-              from sys.spatial_ref_sys as sample_0
-                      where sample_0.srtext is not NULL limit 95) as subq_0
-        where cast(coalesce(17, subq_0.c1) as int) is not NULL;
-ERROR = !Cardinality violation, scalar value expected
-CODE  = 21000
 
 # 14:35:34 >  
 # 14:35:34 >  "Done."

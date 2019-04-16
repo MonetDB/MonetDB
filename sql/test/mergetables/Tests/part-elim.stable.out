@@ -23,7 +23,6 @@ stdout of test 'part-elim` in directory 'sql/test/mergetables` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:32:44 >  
 # 12:32:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25433" "--port=32914"

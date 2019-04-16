@@ -23,7 +23,6 @@ stdout of test 'schema-trigger.Bug-3710` in directory 'sql/test/BugTracker-2015`
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 08:54:00 >  
 # 08:54:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2873" "--port=37228"

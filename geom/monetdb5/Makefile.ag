@@ -7,8 +7,8 @@
 MTSAFE
 INCLUDES = ../lib \
            ../../gdk \
+           ../../common/utils \
            ../../common/stream \
-           ../../common/options \
            ../../monetdb5/mal \
            $(GEOS_INCS) $(proj_CFLAGS)
 

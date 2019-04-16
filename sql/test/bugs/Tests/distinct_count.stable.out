@@ -13,7 +13,6 @@ stdout of test 'distinct_count` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34726/
 # MonetDB/SQL module v2.24.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -27,7 +26,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select distinct count(*) from tabool;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

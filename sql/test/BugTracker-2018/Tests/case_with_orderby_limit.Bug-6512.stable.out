@@ -18,7 +18,6 @@ stdout of test 'case_with_orderby_limit.Bug-6512` in directory 'sql/test/BugTrac
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 08:11:52 >  
 # 08:11:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16295" "--port=39902"

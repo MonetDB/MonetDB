@@ -13,7 +13,6 @@ stdout of test 'crash_on_delete.SF-1639108` in directory 'sql/test/BugTracker` i
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30364/
 # MonetDB/SQL module v2.24.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;
@@ -46,7 +45,7 @@ Ready.
 [ "the following query causes the server to crash printing \"sql_optimize.mx:1011: set2pivot: Assertion `n' failed.\""	]
 [ 96	]
 #select count(*) from number;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length

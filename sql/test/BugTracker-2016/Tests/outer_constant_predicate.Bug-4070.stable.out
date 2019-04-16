@@ -19,7 +19,6 @@ stdout of test 'outer_constant_predicate.Bug-4070` in directory 'sql/test/BugTra
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:53:25 >  
 # 19:53:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30403" "--port=30438"

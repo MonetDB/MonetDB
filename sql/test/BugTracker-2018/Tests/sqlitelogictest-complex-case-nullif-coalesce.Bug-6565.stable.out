@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-complex-case-nullif-coalesce.Bug-6565` in direct
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:19:51 >  
 # 11:19:51 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29502" "--port=32042"

@@ -88,6 +88,10 @@ comment "A query is aborted after q milliseconds (q=0 means run undisturbed).
 The session timeout aborts the connection after spending too
 many seconds on query processing.";
 
+command setprinttimeout(n:int):void
+address CLTsetPrintTimeout
+comment "Print running query every so many seconds.";
+
 pattern shutdown(delay:int):str
 address CLTshutdown;
 pattern shutdown(delay:int, forced:bit):str
