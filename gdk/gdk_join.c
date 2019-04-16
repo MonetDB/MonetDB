@@ -2572,16 +2572,19 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	t = ATOMbasetype(r->ttype);
 
 	if (not_in && !r->tnonil) {
+		ro = r->hseqbase;
 		for (rb = HASHget(hsh, HASHprobe(hsh, nil));
 		     rb != HASHnil(hsh);
 		     rb = HASHgetlink(hsh, rb)) {
-			ro = BUNtoid(sr, rb);
+			if (sr)
+				ro = BUNtoid(sr, rb);
+			else
+				ro = rb;
 			if ((*cmp)(nil, BUNtail(ri, ro - r->hseqbase)) == 0) {
 				return nomatch(r1p, r2p, l, r, 0, 0, NULL, NULL,
 					       false, false, "hashjoin", t0);
 			}
 		}
-		
 	}
 
 	BAT *r1 = *r1p;

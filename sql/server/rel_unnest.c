@@ -574,6 +574,24 @@ move_join_exps(mvc *sql, sql_rel *j, sql_rel *rel)
 }
 
 static sql_rel *
+push_up_select_l(mvc *sql, sql_rel *rel) 
+{
+	(void)sql;
+	/* input rel is dependent join with on the right a project */ 
+	if (rel && (is_join(rel->op) || is_semi(rel->op))) {
+		sql_rel *l = rel->l;
+
+		if (is_select(l->op) && rel_has_freevar(l) && !rel_is_ref(l) ) {
+			/* push up select (above join) */
+			rel->l = l->l;
+			l->l = rel;
+			return l;
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
 push_up_join(mvc *sql, sql_rel *rel) 
 {
 	/* input rel is dependent join with on the right a project */ 
@@ -590,6 +608,10 @@ push_up_join(mvc *sql, sql_rel *rel)
 			 * */
 			list *rd = NULL, *ld = NULL; 
 
+			if (is_semi(j->op) && is_select(jl->op) && rel_has_freevar(jl) && !rel_is_ref(jl)) {
+				rel->r = j = push_up_select_l(sql, j);
+				return rel; /* ie try again */
+			}
 			rd = (j->op != op_full)?rel_dependent_var(sql, d, jr):(list*)1;
 			ld = (((j->op == op_join && rd) || j->op == op_right))?rel_dependent_var(sql, d, jl):(list*)1;
 

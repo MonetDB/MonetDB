@@ -178,6 +178,7 @@ extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f,
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
 
 extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype);

@@ -1795,7 +1795,43 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2)
 	q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
-	q = pushBit(mb, q, FALSE);    /* not in */
+	q = pushBit(mb, q, FALSE);    /* do not clear nils */    
+	q = pushNil(mb, q, TYPE_lng); /* estimate */
+
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_tdiff);
+		if (s == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		s->op1 = op1;
+		s->op2 = op2;
+		s->nrcols = op1->nrcols;
+		s->key = op1->key;
+		s->aggr = op1->aggr;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
+stmt_tdiff2(backend *be, stmt *op1, stmt *op2)
+{
+	InstrPtr q = NULL;
+	MalBlkPtr mb = be->mb;
+
+	if (op1->nr < 0 || op2->nr < 0)
+		return NULL;
+	q = newStmt(mb, algebraRef, differenceRef);
+	q = pushArgument(mb, q, op1->nr); /* left */
+	q = pushArgument(mb, q, op2->nr); /* right */
+	q = pushNil(mb, q, TYPE_bat); /* left candidate */
+	q = pushNil(mb, q, TYPE_bat); /* right candidate */
+	q = pushBit(mb, q, FALSE);    /* nil matches */
+	q = pushBit(mb, q, TRUE);     /* clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	if (q) {
