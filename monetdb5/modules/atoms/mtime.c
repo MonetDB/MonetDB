@@ -196,12 +196,12 @@ extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
 
-#define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
+#define get_rule(r)	((r).s.weekday | ((r).s.day<<4) | ((r).s.minutes<<10) | ((r).s.month<<21))
 #define set_rule(r,i)							\
 	do {										\
-		(r).asint = int_nil;					\
+		(r).s.empty = 0;						\
 		(r).s.weekday = (i)&15;					\
-		(r).s.day = ((i)&(63<<6))>>6;			\
+		(r).s.day = ((i)&(63<<4))>>4;			\
 		(r).s.minutes = ((i)&(2047<<10))>>10;	\
 		(r).s.month = ((i)&(15<<21))>>21;		\
 	} while (0)
@@ -1128,6 +1128,7 @@ rule_fromstr(const char *buf, size_t *len, rule **d, bool external)
 	if (day >= 1 && day <= LEAPDAYS[month] &&
 		hours >= 0 && hours < 60 &&
 		minutes >= 0 && minutes < 60) {
+		(*d)->s.empty = 0;
 		(*d)->s.month = month;
 		(*d)->s.weekday = WEEKDAY_ZERO + (neg_weekday ? -weekday : weekday);
 		(*d)->s.day = DAY_ZERO + (neg_day ? -day : day);
@@ -2350,6 +2351,7 @@ MTIMErule_create(rule *ret, const int *month, const int *day, const int *weekday
 		!is_int_nil(*minutes) && *minutes >= 0 && *minutes < 24 * 60 &&
 		!is_int_nil(*day) && abs(*day) >= 1 && abs(*day) <= LEAPDAYS[*month] &&
 		(*weekday || *day > 0)) {
+		ret->s.empty = 0;
 		ret->s.month = *month;
 		ret->s.day = DAY_ZERO + *day;
 		ret->s.weekday = WEEKDAY_ZERO + *weekday;

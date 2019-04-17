@@ -7,3 +7,4 @@ insert-replica-table.Bug-6684
 subselect-count.Bug-6686
 subselect.Bug-6688
 timestamptransformation.Bug-6695
+duplicates-not-eliminated-long-CASE-stmt.Bug-6697
