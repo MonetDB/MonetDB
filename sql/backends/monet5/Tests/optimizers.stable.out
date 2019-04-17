@@ -38,7 +38,6 @@ stdout of test 'optimizers` in directory 'sql/backends/monet5` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 03:16:16 >  
 # 03:16:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36613"

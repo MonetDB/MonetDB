@@ -14,7 +14,6 @@ stdout of test 'cardinality_of_expression_is_wrong.SF-2581617` in directory 'sql
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:38092/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

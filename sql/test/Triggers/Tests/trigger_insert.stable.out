@@ -13,7 +13,6 @@ stdout of test 'trigger_insert` in directory 'sql/test/Triggers` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38426/
 # MonetDB/SQL module v2.24.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

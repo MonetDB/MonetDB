@@ -14,7 +14,6 @@ stdout of test 'subtraction_between_two_columns.SF-2582389` in directory 'sql/te
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:30663/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -17,7 +17,6 @@ stdout of test 'incorrect_cast_from_double_to_int.Bug-2579` in directory 'sql/te
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

@@ -14,7 +14,6 @@ stdout of test 'subselect_multiple_unionall_where_1=1-bug-sf-1005596` in directo
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:31946/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

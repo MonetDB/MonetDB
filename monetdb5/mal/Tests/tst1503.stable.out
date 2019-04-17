@@ -6,7 +6,6 @@ stdout of test 'tst1503` in directory 'monetdb5/mal` itself:
 # 07:59:07 >  
 
 
-Ready.
 
 # 15:36:15 >  
 # 15:36:15 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16148" "--port=33827"

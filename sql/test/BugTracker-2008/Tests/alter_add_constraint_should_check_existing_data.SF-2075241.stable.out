@@ -14,7 +14,6 @@ stdout of test 'alter_add_constraint_should_check_existing_data.SF-2075241` in d
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:38461/
 # MonetDB/SQL module v2.26.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

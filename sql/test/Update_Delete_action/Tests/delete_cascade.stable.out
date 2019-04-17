@@ -49,7 +49,6 @@ stdout of test 'delete_cascade` in directory 'sql/test/Update_Delete_action` its
 # loading sql script: 90_generator.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 17:39:27 >  
 # 17:39:27 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4412" "--port=31345"

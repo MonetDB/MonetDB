@@ -15,7 +15,6 @@ stdout of test 'trace` in directory 'sql/test` itself:
 # Listening for connection requests on mapi:monetdb://loki.ins.cwi.nl:30924/
 # MonetDB/SQL module v2.34.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

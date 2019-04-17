@@ -14,7 +14,6 @@ stdout of test '12` in directory 'sql/benchmarks/tpch/LOCKED` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36595/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

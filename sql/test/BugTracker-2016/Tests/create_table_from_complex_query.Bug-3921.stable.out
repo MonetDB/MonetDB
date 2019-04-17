@@ -23,7 +23,6 @@ stdout of test 'create_table_from_complex_query.Bug-3921` in directory 'sql/test
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:34:54 >  
 # 11:34:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21023" "--port=37063"

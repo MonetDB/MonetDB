@@ -85,8 +85,7 @@ mserver_invalid_parameter_handler(
 }
 #endif
 
-__declspec(noreturn) static void usage(char *prog, int xit)
-	__attribute__((__noreturn__));
+static _Noreturn void usage(char *prog, int xit);
 
 static void
 usage(char *prog, int xit)
@@ -236,12 +235,34 @@ static void emergencyBreakpoint(void)
 	/* just a handle to break after system initialization for GDB */
 }
 
+static volatile sig_atomic_t interrupted = 0;
+
+#ifdef _MSC_VER
+static BOOL WINAPI
+winhandler(DWORD type)
+{
+	(void) type;
+#ifdef HAVE_CONSOLE
+	if (!monet_daemon)
+		_Exit(-1);
+	else
+#endif
+		interrupted = 1;
+	return TRUE;
+}
+#else
 static void
 handler(int sig)
 {
 	(void) sig;
-	mal_exit(-1);
+#ifdef HAVE_CONSOLE
+	if (!monet_daemon)
+		_Exit(-1);
+	else
+#endif
+		interrupted = 1;
 }
+#endif
 
 int
 main(int argc, char **av)
@@ -497,18 +518,18 @@ main(int argc, char **av)
 	monet_script[i] = NULL;
 	if (!dbpath) {
 		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
-		if (dbpath == NULL || GDKcreatedir(dbpath) != GDK_SUCCEED) {
+		if (!dbpath) {
 			fprintf(stderr, "!ERROR: cannot allocate memory for database directory \n");
 			exit(1);
 		}
 	}
-	if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
-		exit(1);
-	}
 	if (BBPaddfarm(dbpath, 1 << PERSISTENT) != GDK_SUCCEED ||
 	    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: cannot add farm\n");
+		exit(1);
+	}
+	if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
+		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
 		exit(1);
 	}
 	GDKfree(dbpath);
@@ -617,6 +638,10 @@ main(int argc, char **av)
 		}
 	}
 #else
+#ifdef _MSC_VER
+	if (!SetConsoleCtrlHandler(winhandler, TRUE))
+		fprintf(stderr, "!unable to create console control handler\n");
+#else
 	if(signal(SIGINT, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
 #ifdef SIGQUIT
@@ -625,6 +650,7 @@ main(int argc, char **av)
 #endif
 	if(signal(SIGTERM, handler) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handlers\n");
+#endif
 #endif
 
 	{
@@ -713,6 +739,7 @@ main(int argc, char **av)
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
+	free(monet_script);
 
 	if ((err = msab_registerStarted()) != NULL) {
 		/* throw the error at the user, but don't die */
@@ -720,13 +747,12 @@ main(int argc, char **av)
 		free(err);
 	}
 
-	free(monet_script);
 #ifdef HAVE_CONSOLE
 	if (!monet_daemon) {
 		MSserveClient(mal_clients);
 	} else
 #endif
-	while (!GDKexiting()) {
+	while (!interrupted && !GDKexiting()) {
 		MT_sleep_ms(100);
 	}
 

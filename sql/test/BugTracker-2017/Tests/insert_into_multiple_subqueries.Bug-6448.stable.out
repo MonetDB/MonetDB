@@ -18,7 +18,6 @@ stdout of test 'insert_into_multiple_subqueries.Bug-6448` in directory 'sql/test
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:36:01 >  
 # 15:36:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-83731" "--port=39208"

@@ -22,7 +22,6 @@ stdout of test 'pyapi24` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 ['arg1']
 ['arg1', 'arg2']
 ['arg1', 'arg2', 'arg3']

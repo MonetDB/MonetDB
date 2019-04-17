@@ -18,7 +18,6 @@ stdout of test 'corr_coersion.Bug-6287` in directory 'sql/test/BugTracker-2017` 
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:20:26 >  
 # 11:20:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7703" "--port=36186"

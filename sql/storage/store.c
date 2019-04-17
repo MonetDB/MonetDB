@@ -16,6 +16,7 @@
 #include "bat/bat_storage.h"
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
+#include "bat/nop_logger.h"
 
 /* version 05.22.03 of catalog */
 #define CATALOG_VERSION 52203
@@ -1998,14 +1999,22 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	MT_lock_set(&bs_lock);
 
 	/* initialize empty bats */
-	if (store == store_bat) {
-		if(bat_utils_init() == -1) {
+	switch (store) {
+	case store_bat:
+	case store_mem:
+		if (bat_utils_init() == -1) {
 			MT_lock_unset(&bs_lock);
 			return -1;
 		}
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
-		bat_logger_init(&logger_funcs);
+		if (store == store_bat)
+			bat_logger_init(&logger_funcs);
+		else
+			nop_logger_init(&logger_funcs);
+		break;
+	default:
+		break;
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||

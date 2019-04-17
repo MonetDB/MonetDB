@@ -23,7 +23,6 @@ stdout of test 'testrandom` in directory 'clients/R` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:18:51 >  
 # 15:18:51 >  "R" "--vanilla" "--slave" "--args" "37766"

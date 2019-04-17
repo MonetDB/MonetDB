@@ -14,7 +14,6 @@ stdout of test 'count_distinct_bug.SF-2826015` in directory 'sql/test/BugTracker
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:37866/
 # MonetDB/SQL module v2.32.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

@@ -14,7 +14,6 @@ stdout of test 'parallel_bulk-load.SF-2771052.test` in directory 'sql/test/BugTr
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:39601/
 # MonetDB/SQL module v2.28.3 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

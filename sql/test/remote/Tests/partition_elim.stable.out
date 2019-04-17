@@ -54,7 +54,6 @@ stdout of test 'partition_elim` in directory 'sql/test/remote` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:37:29 >  
 # 18:37:29 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17557" "--port=35081"

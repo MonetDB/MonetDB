@@ -15,7 +15,6 @@ stdout of test 'in_or_bug` in directory 'sql/test/bugs` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:32742/
 # MonetDB/SQL module v2.36.1 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

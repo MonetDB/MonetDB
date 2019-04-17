@@ -73,6 +73,7 @@ def create_workers(fn_template, nworkers, cmovies, ratings_table_def_fk):
             'dbfarm': os.path.join(TMPDIR, workerdbname),
             'mapi': 'mapi:monetdb://localhost:{}/{}/sys/ratings'.format(workerport, workerdbname),
         }
+        os.mkdir(workerrec['dbfarm'])
         workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin=process.PIPE, stdout=process.PIPE)
         workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerport, autocommit=True)
         filename = fn_template.format(workerrec['num'])
@@ -88,20 +89,14 @@ def create_workers(fn_template, nworkers, cmovies, ratings_table_def_fk):
 
 # Start supervisor database
 supervisorport = freeport()
+os.mkdir(os.path.join(TMPDIR, "supervisor"))
 supervisorproc = process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE)
 supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
 supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
 c = supervisorconn.cursor()
 
-# Create user/schema on supervisor
-
-c.execute("CREATE USER \"supervisor_user\" WITH PASSWORD 'supervisor_pass' NAME 'Supervisor user' schema \"sys\"")
-c.execute("CREATE SCHEMA \"supervisor_schema\" AUTHORIZATION \"supervisor_user\"")
-c.execute("ALTER USER \"supervisor_user\" SET SCHEMA \"supervisor_schema\"");
-c.execute("SET SCHEMA \"supervisor_schema\"")
-
 # Create the movies table and load the data
-movies_filename="$TSTDATAPATH/netflix_data/movies.csv"
+movies_filename=os.getenv("TSTDATAPATH")+"/netflix_data/movies.csv"
 movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
 c.execute(movies_create)
 load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
@@ -112,13 +107,13 @@ mtable = "CREATE MERGE TABLE ratings {}".format(RATINGS_TABLE_DEF)
 c.execute(mtable)
 
 # Create the workers and load the ratings data
-fn_template="$TSTDATAPATH/netflix_data/ratings_sample_{}.csv"
-cmovies = "CREATE REMOTE TABLE movies {} ON '{}/supervisor_schema/movies' WITH USER 'supervisor_user' PASSWORD 'supervisor_pass'".format(MOVIES_TABLE_DEF, supervisor_uri)
+fn_template=os.getenv("TSTDATAPATH")+"/netflix_data/ratings_sample_{}.csv"
+cmovies = "CREATE REMOTE TABLE movies {} ON '{}' WITH USER 'nonexistent' PASSWORD 'badpass'".format(MOVIES_TABLE_DEF, supervisor_uri)
 workers = create_workers(fn_template, NWORKERS, cmovies, RATINGS_TABLE_DEF_FK)
 
 # Create the remote tables on supervisor
 for wrec in workers:
-    rtable = "CREATE REMOTE TABLE ratings{} {} on '{}'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
+    rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'invaliduser' PASSWORD 'invalidpass'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
     c.execute(rtable)
 
     atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
@@ -138,3 +133,8 @@ try:
 except pymonetdb.OperationalError as e2:
     print("OperationalError:", file=sys.stderr)
     print("# " + e2.message, file=sys.stderr)
+
+for wrec in workers:
+    wrec['proc'].communicate()
+
+supervisorproc.communicate()

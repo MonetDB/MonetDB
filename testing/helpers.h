@@ -12,8 +12,7 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
-__declspec(noreturn) void ErrXit(char *text1, char *text2, int num)
-	__attribute__((__noreturn__));
+_Noreturn void ErrXit(char *text1, char *text2, int num);
 FILE *Rfopen(char *name);
 FILE *Wfopen(char *name);
 FILE *Afopen(char *name);

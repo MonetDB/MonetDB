@@ -39,7 +39,6 @@ stdout of test 'setoptimizer` in directory 'sql/test` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 02:57:35 >  
 # 02:57:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=30272"

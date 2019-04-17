@@ -19,7 +19,6 @@ stdout of test 'test_privs2_p1` in directory 'sql/test/Users` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:54:46 >  
 # 15:54:46 >  "/usr/bin/python2" "test_privs2_p1.SQL.py" "test_privs2_p1"

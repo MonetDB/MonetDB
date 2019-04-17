@@ -19,7 +19,6 @@ stdout of test 'orderidx04` in directory 'monetdb5/modules/mal` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:07:50 >  
 # 13:07:50 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-22853" "--port=35887"

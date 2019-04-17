@@ -52,7 +52,6 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:10:35 >  
 # 19:10:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10540" "--port=37752"

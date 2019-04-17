@@ -15,7 +15,6 @@ stdout of test 'garbagecollect` in directory 'sql/test/datacell` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:36905/
 # MonetDB/SQL module v2.37.0 loaded
 
-Ready.
 
 
 # 17:22:45 >  

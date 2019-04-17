@@ -18,7 +18,6 @@ stdout of test 'now_results_in_illegal_argument.Bug-2978` in directory 'sql/test
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

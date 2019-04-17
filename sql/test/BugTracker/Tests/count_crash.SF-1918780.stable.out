@@ -13,7 +13,6 @@ stdout of test 'count_crash.SF-1918780` in directory 'sql/test/BugTracker` itsel
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34442/
 # MonetDB/SQL module v2.25.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

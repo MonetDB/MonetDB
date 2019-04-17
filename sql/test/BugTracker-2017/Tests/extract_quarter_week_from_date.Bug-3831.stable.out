@@ -20,7 +20,6 @@ stdout of test 'extract_quarter_week_from_date.Bug-3831` in directory 'sql/test/
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

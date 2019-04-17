@@ -18,7 +18,6 @@ stdout of test 'truncate_sys_netcdf_tables.Bug-6543` in directory 'sql/test/BugT
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:32:24 >  
 # 17:32:24 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8577" "--port=36366"

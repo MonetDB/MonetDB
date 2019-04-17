@@ -41,7 +41,6 @@ stdout of test 'select_null` in directory 'sql/test/BugDay_2005-10-06_2.8` itsel
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:43:22 >  
 # 11:43:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23209" "--port=33225"

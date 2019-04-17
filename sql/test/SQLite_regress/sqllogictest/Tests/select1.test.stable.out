@@ -54,7 +54,6 @@ stdout of test 'select1.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-Ready.
 
 # 17:33:48 >  
 # 17:33:48 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4412" "--port=31345"

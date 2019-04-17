@@ -23,7 +23,6 @@ stdout of test 'rename_exps.Bug-3974` in directory 'sql/test/BugTracker-2016` it
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:27:17 >  
 # 12:27:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21445" "--port=39847"

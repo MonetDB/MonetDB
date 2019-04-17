@@ -19,7 +19,6 @@ stdout of test 'bulkjson` in directory 'sql/test/json` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 20:55:11 >  
 # 20:55:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8950" "--port=39328"

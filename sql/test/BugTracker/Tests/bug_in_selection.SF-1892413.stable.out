@@ -13,7 +13,6 @@ stdout of test 'bug_in_selection.SF-1892413` in directory 'sql/test/BugTracker` 
 # Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:39391/
 # MonetDB/SQL module v2.22.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

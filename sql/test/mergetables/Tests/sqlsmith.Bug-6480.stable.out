@@ -18,7 +18,6 @@ stdout of test 'sqlsmith.Bug-6480` in directory 'sql/test/mergetables` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 23:33:04 >  
 # 23:33:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13741" "--port=34932"

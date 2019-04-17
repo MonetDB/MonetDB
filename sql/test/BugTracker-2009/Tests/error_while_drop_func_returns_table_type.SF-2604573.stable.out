@@ -14,7 +14,6 @@ stdout of test 'error_while_drop_func_returns_table_type.SF-2604573` in director
 # Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:35664/
 # MonetDB/SQL module v2.28.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

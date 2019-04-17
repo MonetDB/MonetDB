@@ -14,7 +14,6 @@ stdout of test 'interval_data_commutative_add_bug-sf-1263928` in directory 'sql/
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34282/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

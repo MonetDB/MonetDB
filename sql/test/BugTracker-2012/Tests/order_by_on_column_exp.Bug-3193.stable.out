@@ -18,7 +18,6 @@ stdout of test 'order_by_on_column_exp.Bug-3193` in directory 'sql/test/BugTrack
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:04:02 >  
 # 13:04:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=31937"

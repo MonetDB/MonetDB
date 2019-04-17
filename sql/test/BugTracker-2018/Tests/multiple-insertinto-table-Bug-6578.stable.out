@@ -18,7 +18,6 @@ stdout of test 'multiple-insertinto-table-Bug-6578` in directory 'sql/test/BugTr
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:28:49 >  
 # 19:28:49 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21940" "--port=38573"

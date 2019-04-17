@@ -19,7 +19,6 @@ stdout of test 'interval` in directory 'sql/test/pg_regress` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 12:56:39 >  
 # 12:56:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27974" "--port=31190"

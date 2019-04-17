@@ -46,7 +46,6 @@ stdout of test 'generator00` in directory 'sql/backends/monet5/generator` itself
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 18:09:06 >  
 # 18:09:06 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27022" "--port=30145"

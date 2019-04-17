@@ -109,14 +109,15 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
-	if (h->size < 4 * GDK_mmap_pagesize ||
+	if (GDKinmemory() ||
+	    h->size < 4 * GDK_mmap_pagesize ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
 		h->base = GDKmalloc(h->size);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc %zu %p\n", h->size, h->base);
 	}
-	if (h->base == NULL) {
+	if (!GDKinmemory() && h->base == NULL) {
 		char *nme;
 		struct stat st;
 
@@ -182,12 +183,17 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 	char nme[sizeof(h->filename)], *ext;
 	const char *failure = "None";
 
-	strncpy(nme, h->filename, sizeof(nme));
+	if (GDKinmemory()) {
+		strncpy(nme, ":inmemory", sizeof(nme));
+		ext = "ext";
+	} else {
+		strncpy(nme, h->filename, sizeof(nme));
 #ifdef STATIC_CODE_ANALYSIS
-	/* help coverity */
-	nme[sizeof(nme) - 1] = 0;
+		/* help coverity */
+		nme[sizeof(nme) - 1] = 0;
 #endif
-	ext = decompose_filename(nme);
+		ext = decompose_filename(nme);
+	}
 	if (size <= h->size)
 		return GDK_SUCCEED;	/* nothing to do */
 
@@ -222,8 +228,8 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		/* extend a malloced heap, possibly switching over to
 		 * file-mapped storage */
 		Heap bak = *h;
-		int exceeds_swap = size >= 4 * GDK_mmap_pagesize && size + GDKmem_cursize() >= GDK_mem_maxsize;
-		int must_mmap = exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient);
+		bool exceeds_swap = size >= 4 * GDK_mmap_pagesize && size + GDKmem_cursize() >= GDK_mem_maxsize;
+		bool must_mmap = !GDKinmemory() && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
 
 		h->size = size;
 
@@ -239,70 +245,73 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			/* bak.base is still valid and may get restored */
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
-		/* too big: convert it to a disk-based temporary heap */
-		int existing = 0;
 
-		assert(h->storage == STORE_MEM);
-		assert(ext != NULL);
-		/* if the heap file already exists, we want to switch
-		 * to STORE_PRIV (copy-on-write memory mapped files),
-		 * but if the heap file doesn't exist yet, the BAT is
-		 * new and we can use STORE_MMAP */
-		int fd = GDKfdlocate(h->farmid, nme, "rb", ext);
-		if (fd >= 0) {
-			existing = 1;
-			close(fd);
-		} else {
-			/* no pre-existing heap file, so create a new
-			 * one */
-			h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
-			if (h->base) {
-				h->newstorage = h->storage = STORE_MMAP;
-				memcpy(h->base, bak.base, bak.free);
-				HEAPfree(&bak, false);
-				return GDK_SUCCEED;
-			}
-		}
-		fd = GDKfdlocate(h->farmid, nme, "wb", ext);
-		if (fd >= 0) {
-			close(fd);
-			h->storage = h->newstorage == STORE_MMAP && existing && !mayshare ? STORE_PRIV : h->newstorage;
-			/* make sure we really MMAP */
-			if (must_mmap && h->newstorage == STORE_MEM)
-				h->storage = STORE_MMAP;
-			h->newstorage = h->storage;
+		if (!GDKinmemory()) {
+			/* too big: convert it to a disk-based temporary heap */
+			bool existing = false;
 
-			h->base = NULL;
-			HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
-			/* try to allocate a memory-mapped based
-			 * heap */
-			if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
-				/* copy data to heap and free old
-				 * memory */
-				memcpy(h->base, bak.base, bak.free);
+			assert(h->storage == STORE_MEM);
+			assert(ext != NULL);
+			/* if the heap file already exists, we want to switch
+			 * to STORE_PRIV (copy-on-write memory mapped files),
+			 * but if the heap file doesn't exist yet, the BAT is
+			 * new and we can use STORE_MMAP */
+			int fd = GDKfdlocate(h->farmid, nme, "rb", ext);
+			if (fd >= 0) {
+				existing = true;
+				close(fd);
+			} else {
+				/* no pre-existing heap file, so create a new
+				 * one */
+				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
+				if (h->base) {
+					h->newstorage = h->storage = STORE_MMAP;
+					memcpy(h->base, bak.base, bak.free);
+					HEAPfree(&bak, false);
+					return GDK_SUCCEED;
+				}
+			}
+			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
+			if (fd >= 0) {
+				close(fd);
+				h->storage = h->newstorage == STORE_MMAP && existing && !mayshare ? STORE_PRIV : h->newstorage;
+				/* make sure we really MMAP */
+				if (must_mmap && h->newstorage == STORE_MEM)
+					h->storage = STORE_MMAP;
+				h->newstorage = h->storage;
+
+				h->base = NULL;
+				HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
+				/* try to allocate a memory-mapped based
+				 * heap */
+				if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
+					/* copy data to heap and free old
+					 * memory */
+					memcpy(h->base, bak.base, bak.free);
+					HEAPfree(&bak, false);
+					return GDK_SUCCEED;
+				}
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
+				/* couldn't allocate, now first save data to
+				 * file */
+				if (HEAPsave_intern(&bak, nme, ext, ".tmp") != GDK_SUCCEED) {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
+					goto failed;
+				}
+				/* then free memory */
 				HEAPfree(&bak, false);
-				return GDK_SUCCEED;
+				/* and load heap back in via memory-mapped
+				 * file */
+				if (HEAPload_intern(h, nme, ext, ".tmp", false) == GDK_SUCCEED) {
+					/* success! */
+					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
+					return GDK_SUCCEED;
+				}
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() != GDK_SUCCEED";
+				/* we failed */
+			} else {
+				failure = "h->storage == STORE_MEM && can_map && fd < 0";
 			}
-			failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
-			/* couldn't allocate, now first save data to
-			 * file */
-			if (HEAPsave_intern(&bak, nme, ext, ".tmp") != GDK_SUCCEED) {
-				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
-				goto failed;
-			}
-			/* then free memory */
-			HEAPfree(&bak, false);
-			/* and load heap back in via memory-mapped
-			 * file */
-			if (HEAPload_intern(h, nme, ext, ".tmp", false) == GDK_SUCCEED) {
-				/* success! */
-				GDKclrerr();	/* don't leak errors from e.g. HEAPload */
-				return GDK_SUCCEED;
-			}
-			failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() != GDK_SUCCEED";
-			/* we failed */
-		} else {
-			failure = "h->storage == STORE_MEM && can_map && fd < 0";
 		}
 	  failed:
 		*h = bak;

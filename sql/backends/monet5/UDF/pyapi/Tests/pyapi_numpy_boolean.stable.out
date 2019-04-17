@@ -19,7 +19,6 @@ stdout of test 'pyapi_numpy_boolean` in directory 'sql/backends/monet5/UDF/pyapi
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 20:29:23 >  
 # 20:29:23 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10493" "--port=32759"

@@ -19,7 +19,6 @@ stdout of test 'crash_on_alter_set_not_null.Bug-3715` in directory 'sql/test/Bug
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 13:28:07 >  
 # 13:28:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22017" "--port=30920"

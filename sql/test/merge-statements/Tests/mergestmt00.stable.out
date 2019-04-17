@@ -58,7 +58,6 @@ stdout of test 'mergestmt00` in directory 'sql/test/merge-statements` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:58:53 >  
 # 12:58:53 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27206" "--port=34138"

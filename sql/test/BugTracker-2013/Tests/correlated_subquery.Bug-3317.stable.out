@@ -19,7 +19,6 @@ stdout of test 'correlated_subquery.Bug-3317` in directory 'sql/test/BugTracker-
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:08:01 >  
 # 19:08:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30396" "--port=38625"

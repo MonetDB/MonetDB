@@ -5387,7 +5387,6 @@ commit;
 
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:03:29 >  
 # 16:03:29 >  "/usr/bin/python" "upgrade.SQL.py" "upgrade"

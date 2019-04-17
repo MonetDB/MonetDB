@@ -18,7 +18,6 @@ stdout of test 'simplify_math.Bug-6324` in directory 'sql/test/BugTracker-2017` 
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:34:03 >  
 # 17:34:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21347" "--port=35650"

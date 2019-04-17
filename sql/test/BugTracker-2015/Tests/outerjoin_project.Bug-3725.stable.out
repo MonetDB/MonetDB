@@ -19,7 +19,6 @@ stdout of test 'outerjoin_project.Bug-3725` in directory 'sql/test/BugTracker-20
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:41:42 >  
 # 10:41:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5429" "--port=30127"

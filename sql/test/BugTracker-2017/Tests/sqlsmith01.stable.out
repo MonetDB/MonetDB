@@ -18,7 +18,6 @@ stdout of test 'sqlsmith01` in directory 'sql/test/BugTracker-2017` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:13:50 >  
 # 17:13:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17366" "--port=33167"

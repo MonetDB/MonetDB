@@ -60,7 +60,6 @@ stdout of test 'crash-after-call-non-existing-loader` in directory 'sql/test/Bug
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 16:24:03 >  
 # 16:24:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13619" "--port=33078"

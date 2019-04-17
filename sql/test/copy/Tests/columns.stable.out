@@ -19,7 +19,6 @@ stdout of test 'columns` in directory 'sql/test/copy` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 09:30:19 >  
 # 09:30:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15100" "--port=36199"

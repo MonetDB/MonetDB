@@ -19,7 +19,6 @@ stdout of test 'select_in_crash.Bug-3491` in directory 'sql/test/BugTracker-2014
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:36:13 >  
 # 15:36:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5557" "--port=39849"

@@ -27,8 +27,7 @@
 #include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
 
-__declspec(noreturn) static void usage(const char *prog, int xit)
-	__attribute__((__noreturn__));
+static _Noreturn void usage(const char *prog, int xit);
 
 static void
 usage(const char *prog, int xit)

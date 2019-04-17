@@ -21,7 +21,6 @@ stdout of test 'pyapi3_13` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:20:17 >  
 # 18:20:17 >  "./pyapi3_13.SQL.sh" "pyapi3_13"

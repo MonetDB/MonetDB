@@ -59,7 +59,6 @@ stdout of test 'ilike-foreign-characters.Bug-6633` in directory 'sql/test/BugTra
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:10:04 >  
 # 10:10:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20516" "--port=38893"

@@ -23,7 +23,6 @@ stdout of test 'decimal_vs_integer.Bug-3941` in directory 'sql/test/BugTracker-2
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 15:01:30 >  
 # 15:01:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23330" "--port=37542"

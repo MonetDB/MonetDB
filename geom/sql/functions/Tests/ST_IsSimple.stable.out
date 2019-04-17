@@ -18,7 +18,6 @@ stdout of test 'ST_IsSimple` in directory 'geom/sql/functions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 14:37:11 >  
 # 14:37:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4305" "--port=38572"

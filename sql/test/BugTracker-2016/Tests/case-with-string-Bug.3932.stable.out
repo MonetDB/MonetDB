@@ -21,7 +21,6 @@ stdout of test 'case-with-string-Bug.3932` in directory 'sql/test/BugTracker-201
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

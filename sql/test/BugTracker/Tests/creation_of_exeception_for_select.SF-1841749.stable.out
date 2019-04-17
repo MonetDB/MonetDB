@@ -15,7 +15,6 @@ stdout of test 'creation_of_exeception_for_select.SF-1841749` in directory 'sql/
 # Listening for connection requests on mapi:monetdb://amelia.ins.cwi.nl:33472/
 # MonetDB/SQL module v2.20.3 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

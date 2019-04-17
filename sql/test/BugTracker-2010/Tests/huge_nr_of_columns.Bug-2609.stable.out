@@ -16,7 +16,6 @@ stdout of test 'huge_nr_of_columns.Bug-2609` in directory 'sql/test/BugTracker-2
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:39106/
 # MonetDB/SQL module v2.41.0 loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 
 

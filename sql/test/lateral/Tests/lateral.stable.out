@@ -57,7 +57,6 @@ stdout of test 'lateral` in directory 'sql/test/lateral` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 19:57:50 >  
 # 19:57:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27963" "--port=35682"

@@ -18,7 +18,6 @@ stdout of test 'copy-into-fwf` in directory 'sql/test` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:22:37 >  
 # 11:22:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10839" "--port=35843"

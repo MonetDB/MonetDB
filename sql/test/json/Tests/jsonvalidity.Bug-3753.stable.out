@@ -23,7 +23,6 @@ stdout of test 'jsonvalidity.Bug-3753` in directory 'sql/test/json` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 23:37:49 >  
 # 23:37:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17553" "--port=30311"

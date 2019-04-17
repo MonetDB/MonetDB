@@ -18,7 +18,6 @@ stdout of test 'different_user` in directory 'sql/test/remote` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:34:18 >  
 # 12:34:18 >  "/bin/python" "different_user.SQL.py" "different_user"

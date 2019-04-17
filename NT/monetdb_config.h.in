@@ -833,6 +833,8 @@
 #endif
 #endif
 
+#define _Noreturn __declspec(noreturn)
+
 /* Define to `long int' if <sys/types.h> does not define. */
 /* #undef off_t */
 

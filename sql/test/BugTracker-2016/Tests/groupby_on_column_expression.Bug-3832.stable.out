@@ -20,7 +20,6 @@ stdout of test 'groupby_on_column_expression.Bug-3832` in directory 'sql/test/Bu
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

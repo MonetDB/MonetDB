@@ -18,7 +18,6 @@ stdout of test 'update_on_procedure.Bug-6479` in directory 'sql/test/BugTracker-
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:27:04 >  
 # 16:27:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13869" "--port=38375"

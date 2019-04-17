@@ -908,6 +908,16 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 		} else {
 			advance(cntxt, i);
 		}
+		if (currChar(cntxt) == ':') {
+			/* skip the type description */
+			tpe = typeElm(cntxt, TYPE_any);
+			if (getVarType(curBlk, idx) == TYPE_any)
+				setVarType(curBlk,idx, tpe);
+			else if (getVarType(curBlk, idx) != tpe){
+				/* non-matching types */
+				return 4;
+			}
+		}
 		*curInstr = pushArgument(curBlk, *curInstr, idx);
 	} else if (currChar(cntxt) == ':') {
 		tpe = typeElm(cntxt, TYPE_any);
@@ -1502,6 +1512,9 @@ parseArguments(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr)
 			break;
 		case 2: return 2;
 		case 3: return 3;
+		case 4: 
+			parseError(cntxt, "Argument type overwrites previous definition\n");
+			return 0;
 		default:
 			parseError(cntxt, "<factor> expected\n");
 			pushInstruction(curBlk, *curInstr);

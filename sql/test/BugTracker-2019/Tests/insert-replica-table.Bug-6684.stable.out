@@ -58,7 +58,6 @@ stdout of test 'insert-replica-table.Bug-6684` in directory 'sql/test/BugTracker
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 09:32:22 >  
 # 09:32:22 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2676" "--port=31160"

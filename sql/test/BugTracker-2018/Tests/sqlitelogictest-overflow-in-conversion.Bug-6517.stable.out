@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-overflow-in-conversion.Bug-6517` in directory 's
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 21:18:55 >  
 # 21:18:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30152" "--port=32808"

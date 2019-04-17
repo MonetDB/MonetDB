@@ -30,7 +30,8 @@ extern int catalog_version;
 
 typedef enum store_type {
 	store_bat,	/* delta bats, ie multi user read/write */
-	store_tst
+	store_tst,
+	store_mem
 } store_type;
 
 #define STORE_READONLY (store_readonly)

@@ -14,7 +14,6 @@ stdout of test 'simple_select` in directory 'sql/test/concurrent` itself:
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:34064/
 # MonetDB/SQL module v2.30.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

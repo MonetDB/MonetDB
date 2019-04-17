@@ -19,7 +19,6 @@ stdout of test 'RELEASE_SAVEPOINT_after_UPDATE_crash.Bug-4010` in directory 'sql
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

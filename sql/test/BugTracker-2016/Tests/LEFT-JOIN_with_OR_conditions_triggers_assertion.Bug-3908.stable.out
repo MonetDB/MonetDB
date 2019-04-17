@@ -21,7 +21,6 @@ stdout of test 'LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908` in dir
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

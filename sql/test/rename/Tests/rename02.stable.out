@@ -60,7 +60,6 @@ stdout of test 'rename02` in directory 'sql/test/rename` itself:
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 17:22:11 >  
 # 17:22:11 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19835" "--port=37796"

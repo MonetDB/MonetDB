@@ -56,7 +56,6 @@ stdout of test 'analytics05` in directory 'sql/test/analytics` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:49:28 >  
 # 10:49:28 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24969" "--port=34564"

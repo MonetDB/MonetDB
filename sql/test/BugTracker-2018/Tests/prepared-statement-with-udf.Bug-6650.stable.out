@@ -58,7 +58,6 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:30:56 >  
 # 13:30:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11999" "--port=36830"

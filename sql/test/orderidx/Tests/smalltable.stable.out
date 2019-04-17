@@ -23,7 +23,6 @@ stdout of test 'smalltable` in directory 'sql/test/orderidx` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:38:23 >  
 # 11:38:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25471" "--port=33382"

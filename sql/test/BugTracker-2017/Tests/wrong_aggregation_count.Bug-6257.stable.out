@@ -20,7 +20,6 @@ stdout of test 'wrong_aggregation_count.Bug-6257` in directory 'sql/test/BugTrac
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

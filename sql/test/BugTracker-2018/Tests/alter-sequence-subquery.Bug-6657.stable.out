@@ -60,7 +60,6 @@ stdout of test 'alter-sequence-subquery.Bug-6657` in directory 'sql/test/BugTrac
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 14:42:29 >  
 # 14:42:29 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31265" "--port=36995"

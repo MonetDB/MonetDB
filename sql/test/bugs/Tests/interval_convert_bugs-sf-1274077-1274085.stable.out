@@ -11,7 +11,6 @@ stdout of test 'interval_convert_bugs-sf-1274077-1274085` in directory 'sql/test
 # Visit http://monetdb.cwi.nl/ for further information.
 
 
-Ready.
 
 
 #select cast('1-2' as interval year to month );

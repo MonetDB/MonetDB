@@ -18,7 +18,6 @@ stdout of test 'imprints_all_types` in directory 'sql/test/orderidx` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 16:58:46 >  
 # 16:58:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18158" "--port=35267"

@@ -23,7 +23,6 @@ stdout of test 'crash_on_declared_table.Bug-3770` in directory 'sql/test/BugTrac
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 22:54:56 >  
 # 22:54:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10166" "--port=33786"

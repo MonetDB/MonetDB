@@ -21,7 +21,6 @@ stdout of test 'time01` in directory 'monetdb5/modules/kernel` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 10:01:42 >  
 # 10:01:42 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-30877" "--port=36122"

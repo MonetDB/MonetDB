@@ -19,7 +19,6 @@ stdout of test 'format_date` in directory 'sql/test/copy` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 11:44:45 >  
 # 11:44:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20793" "--port=38047"

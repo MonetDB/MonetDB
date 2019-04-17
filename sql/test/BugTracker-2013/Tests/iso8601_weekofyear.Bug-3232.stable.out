@@ -19,7 +19,6 @@ stdout of test 'iso8601_weekofyear.Bug-3232` in directory 'sql/test/BugTracker-2
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 12:18:09 >  
 # 12:18:09 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29797" "--port=32914"

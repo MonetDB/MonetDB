@@ -21,7 +21,6 @@ stdout of test 'pyapi16` in directory 'sql/backends/monet5` itself:
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 ['foo' 't' 'f' 'i']
 ['bar' 'e' 'o' 'k']
 ['123' 's' 'u' 'r']

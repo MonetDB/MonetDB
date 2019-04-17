@@ -20,7 +20,6 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-plan-2join-query` i
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 01:44:33 >  
 # 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6324" "--port=31552"

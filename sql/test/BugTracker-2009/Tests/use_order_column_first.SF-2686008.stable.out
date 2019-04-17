@@ -41,7 +41,6 @@ stdout of test 'use_order_column_first.SF-2686008` in directory 'sql/test/BugTra
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 08:36:35 >  
 # 08:36:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22906" "--port=34413"

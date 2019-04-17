@@ -14,7 +14,6 @@ stdout of test 'dumping_tables.SF-2776908` in directory 'sql/test/BugTracker-200
 # Listening for connection requests on mapi:monetdb://rig.ins.cwi.nl:33577/
 # MonetDB/SQL module v2.28.4 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

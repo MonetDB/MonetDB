@@ -18,7 +18,6 @@ stdout of test 'mergepart21` in directory 'sql/test/merge-partitions` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:15:08 >
 # 11:15:08 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9195" "--port=34012"

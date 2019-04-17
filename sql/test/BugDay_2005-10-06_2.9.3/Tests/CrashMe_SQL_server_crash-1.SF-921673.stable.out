@@ -14,7 +14,6 @@ stdout of test 'CrashMe_SQL_server_crash-1.SF-921673` in directory 'sql/test/Bug
 # Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:33615/
 # MonetDB/SQL module v2.27.0 loaded
 
-Ready.
 #function user.main():void;
 #    clients.quit();
 #end main;

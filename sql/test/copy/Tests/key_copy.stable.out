@@ -19,7 +19,6 @@ stdout of test 'key_copy` in directory 'sql/test/copy` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 18:36:17 >  
 # 18:36:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6766" "--port=32293"

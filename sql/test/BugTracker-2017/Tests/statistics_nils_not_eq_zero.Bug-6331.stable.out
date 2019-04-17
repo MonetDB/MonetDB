@@ -20,7 +20,6 @@ stdout of test 'statistics_nils_not_eq_zero.Bug-6331` in directory 'sql/test/Bug
 # MonetDB/Python module loaded
 # MonetDB/R   module loaded
 
-Ready.
 # SQL catalog created, loading sql scripts once
 # loading sql script: 09_like.sql
 # loading sql script: 10_math.sql

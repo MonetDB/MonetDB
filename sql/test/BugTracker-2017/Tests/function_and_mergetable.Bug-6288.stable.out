@@ -18,7 +18,6 @@ stdout of test 'function_and_mergetable.Bug-6288` in directory 'sql/test/BugTrac
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 13:52:13 >  
 # 13:52:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22381" "--port=32178"

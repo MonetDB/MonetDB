@@ -59,7 +59,6 @@ stdout of test 'r-date.Bug-6674` in directory 'sql/test/BugTracker-2019` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 09:26:55 >  
 # 09:26:55 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29563" "--port=35785"

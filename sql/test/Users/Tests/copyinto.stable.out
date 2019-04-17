@@ -23,7 +23,6 @@ stdout of test 'copyinto` in directory 'sql/test/Users` itself:
 # MonetDB/SQL module loaded
 # MonetDB/R   module loaded
 
-Ready.
 
 # 19:39:23 >  
 # 19:39:23 >  "/usr/bin/python2" "copyinto.SQL.py" "copyinto"

@@ -37,7 +37,6 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 17:10:01 >  
 # 17:10:01 >  "/usr/bin/python" "VOC.SQL.py" "VOC"

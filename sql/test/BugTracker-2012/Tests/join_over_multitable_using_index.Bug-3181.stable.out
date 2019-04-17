@@ -18,7 +18,6 @@ stdout of test 'join_over_multitable_using_index.Bug-3181` in directory 'sql/tes
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:30:48 >  
 # 15:30:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=35063"

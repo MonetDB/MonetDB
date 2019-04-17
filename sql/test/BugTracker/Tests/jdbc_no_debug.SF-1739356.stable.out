@@ -18,7 +18,6 @@ stdout of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` its
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 15:14:32 >  
 # 15:14:32 >  "./jdbc_no_debug.SF-1739356.SQL.sh" "jdbc_no_debug.SF-1739356"

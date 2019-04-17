@@ -17,7 +17,6 @@ stdout of test 'correlated_groupby_in_selection.Bug-3011` in directory 'sql/test
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 10:56:33 >  
 # 10:56:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=38171"

@@ -18,7 +18,6 @@ stdout of test 'sqlitelogictest-not-between.Bug-6497` in directory 'sql/test/Bug
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
 
 # 11:27:12 >  
 # 11:27:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16005" "--port=34397"
