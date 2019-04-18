@@ -1575,7 +1575,7 @@ static InstrPtr
 select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int swapped, int type)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr r, p, q;
+	InstrPtr p, q;
 	int l;
 	const char *cmd = (type == st_uselect2) ? selectRef : rangejoinRef;
 
@@ -1583,40 +1583,19 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		return NULL;
 	l = op1->nr;
 	if ((op2->nrcols > 0 || op3->nrcols > 0) && (type == st_uselect2)) {
-		int k, symmetric = cmp&CMP_SYMMETRIC;
-		const char *mod = calcRef;
-		const char *OP1 = "<", *OP2 = "<";
+		int k;
 
 		if (op2->nr < 0 || op3->nr < 0)
 			return NULL;
 
-		if (cmp & 1)
-			OP1 = "<=";
-		if (cmp & 2)
-			OP2 = "<=";
-
-		if (cmp&1 && cmp&2) {
-			if (symmetric)
-				p = newStmt(mb, batcalcRef, betweensymmetricRef);
-			else
-				p = newStmt(mb, batcalcRef, betweenRef);
-			p = pushArgument(mb, p, l);
-			p = pushArgument(mb, p, op2->nr);
-			p = pushArgument(mb, p, op3->nr);
-			k = getDestVar(p);
-		} else {
-			if ((q = multiplex2(mb, mod, convertOperator(OP1), l, op2->nr, TYPE_bit)) == NULL)
-				return NULL;
-
-			if ((r = multiplex2(mb, mod, convertOperator(OP2), l, op3->nr, TYPE_bit)) == NULL)
-				return NULL;
-			p = newStmt(mb, batcalcRef, andRef);
-			p = pushArgument(mb, p, getDestVar(q));
-			p = pushArgument(mb, p, getDestVar(r));
-			if (p == NULL)
-				return NULL;
-			k = getDestVar(p);
-		}
+		p = newStmt(mb, batcalcRef, betweenRef);
+		p = pushArgument(mb, p, l);
+		p = pushArgument(mb, p, op2->nr);
+		p = pushArgument(mb, p, op3->nr);
+		p = pushBit(mb, p, (cmp & CMP_SYMMETRIC) != 0); /* symmetric */
+		p = pushBit(mb, p, (cmp & 1) != 0);	    /* lo inclusive */
+		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
+		k = getDestVar(p);
 
 		q = newStmt(mb, algebraRef, selectRef);
 		q = pushArgument(mb, q, k);

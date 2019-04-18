@@ -407,21 +407,12 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
+	bool symmetric, linc, hinc;
 
-	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], 0) != GDK_SUCCEED)
-		return mythrow(MAL, "calc.between", OPERATION_FAILED);
-	return MAL_SUCCEED;
-}
-
-mal_export str CMDvarBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDvarBETWEENsymmetric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], 1) != GDK_SUCCEED)
+	symmetric = *getArgReference_bit(stk, pci, 4);
+	linc = *getArgReference_bit(stk, pci, 5);
+	hinc = *getArgReference_bit(stk, pci, 6);
+	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], symmetric, linc, hinc) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.between", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
