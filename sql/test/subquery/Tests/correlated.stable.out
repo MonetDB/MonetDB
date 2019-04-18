@@ -18,8 +18,6 @@ stdout of test 'correlated` in directory 'sql/test/subquery` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
 # 20:30:33 >  
 # 20:30:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8372" "--port=37437"
 # 20:30:33 >  

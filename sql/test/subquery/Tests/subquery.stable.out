@@ -58,8 +58,6 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 # loading sql script: 99_system.sql
 # MonetDB/SQL module loaded
 
-Ready.
-
 # 17:27:37 >  
 # 17:27:37 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28086" "--port=30011"
 # 17:27:37 >  

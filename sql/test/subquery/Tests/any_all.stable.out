@@ -18,8 +18,6 @@ stdout of test 'any_all` in directory 'sql/test/subquery` itself:
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
 # 19:15:04 >  
 # 19:15:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27863" "--port=36429"
 # 19:15:04 >  
