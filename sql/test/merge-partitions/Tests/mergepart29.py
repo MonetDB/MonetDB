@@ -23,11 +23,13 @@ def freeport():
 
 farm_dir = tempfile.mkdtemp()
 
+os.mkdir(os.path.join(farm_dir, 'db1'))
 node1_port = freeport()
 node1_proc = process.server(mapiport=node1_port, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 node1_conn = pymonetdb.connect(database='db1', port=node1_port, autocommit=True)
 node1_cur = node1_conn.cursor()
 
+os.mkdir(os.path.join(farm_dir, 'db2'))
 node2_port = freeport()
 node2_proc = process.server(mapiport=node2_port, dbname='db2', dbfarm=os.path.join(farm_dir, 'db2'), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
 node2_conn = pymonetdb.connect(database='db2', port=node2_port, autocommit=True)

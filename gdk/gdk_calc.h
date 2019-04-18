@@ -80,11 +80,11 @@ gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b, BAT *s, bool nil_matche
 gdk_export BAT *BATcalccmp(BAT *b1, BAT *b2, BAT *s);
 gdk_export BAT *BATcalccmpcst(BAT *b, const ValRecord *v, BAT *s);
 gdk_export BAT *BATcalccstcmp(const ValRecord *v, BAT *b, BAT *s);
-gdk_export BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool sym);
-gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool sym);
-gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool sym);
-gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool sym);
-gdk_export gdk_return VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi, bool sym);
+gdk_export BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false);
+gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false);
+gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false);
+gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool symmetric, bool linc, bool hinc, bool nils_false);
+gdk_export gdk_return VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi, bool symmetric, bool linc, bool hinc, bool nils_false);
 gdk_export BAT *BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2);
 gdk_export BAT *BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2);
 gdk_export BAT *BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2);

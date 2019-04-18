@@ -12758,10 +12758,15 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 /* between (any "linear" type) */
 
 #define BETWEEN(v, lo, hi, TYPE)					\
-	(is_##TYPE##_nil(v) || is_##TYPE##_nil(lo) || is_##TYPE##_nil(hi) ? \
-	 (nils++, bit_nil) :						\
-	 (bit) (((v) >= (lo) && (v) <= (hi)) ||				\
-		(sym && (v) >= (hi) && (v) <= (lo))))
+	(is_##TYPE##_nil(v)						\
+	 ? nils_false ? 0 : (nils++, bit_nil)				\
+	 : (is_##TYPE##_nil(lo) || is_##TYPE##_nil(hi)			\
+	    ? (nils++, bit_nil)						\
+	    : (bit) ((((lo) < (v) || (linc && (lo) == (v))) &&		\
+		      ((v) < (hi) || (hinc && (v) == (hi)))) ||		\
+		     (symmetric &&					\
+		      ((hi) < (v) || (hinc && (hi) == (v))) &&		\
+		      ((v) < (lo) || (linc && (v) == (lo)))))))
 
 #define BETWEEN_LOOP_TYPE(TYPE)						\
 	do {								\
@@ -12783,9 +12788,10 @@ static BAT *
 BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		      const void *lo, int incr2, const char *hp2, int wd2,
 		      const void *hi, int incr3, const char *hp3, int wd3,
-		      int tp, BUN cnt, BUN start, BUN end, const oid *restrict cand,
-		      const oid *candend, oid seqbase, bool sym,
-		      const char *func)
+		      int tp, BUN cnt, BUN start, BUN end,
+		      const oid *restrict cand, const oid *candend,
+		      oid seqbase, bool symmetric,
+		      bool linc, bool hinc, bool nils_false, const char *func)
 {
 	BAT *bn;
 	BUN nils = 0;
@@ -12847,21 +12853,41 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 			     soff += wd1, loff += wd2, hoff += wd3) {
 			const void *p1, *p2, *p3;
 			CHECKCAND(dst, l, seqbase, bit_nil);
-			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : (const void *) ((const char *) src + soff);
-			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(lo, j, wd2)) : (const void *) ((const char *) lo + loff);
-			p3 = hp3 ? (const void *) (hp3 + VarHeapVal(hi, k, wd3)) : (const void *) ((const char *) hi + hoff);
-			if (p1 == NULL || p2 == NULL || p3 == NULL ||
-			    (*atomcmp)(p1, nil) == 0 ||
-			    (*atomcmp)(p2, nil) == 0 ||
-			    (*atomcmp)(p3, nil) == 0) {
+			p1 = hp1
+				? (const void *) (hp1 + VarHeapVal(src, i, wd1))
+				: (const void *) ((const char *) src + soff);
+			p2 = hp2
+				? (const void *) (hp2 + VarHeapVal(lo, j, wd2))
+				: (const void *) ((const char *) lo + loff);
+			p3 = hp3
+				? (const void *) (hp3 + VarHeapVal(hi, k, wd3))
+				: (const void *) ((const char *) hi + hoff);
+			if (p1 == NULL || p2 == NULL || p3 == NULL) {
+				nils++;
+				dst[l] = bit_nil;
+			} else if ((*atomcmp)(p1, nil) == 0) {
+				if (nils_false)
+					dst[l] = 0;
+				else {
+					nils++;
+					dst[l] = bit_nil;
+				}
+			} else if ((*atomcmp)(p2, nil) == 0 ||
+				   (*atomcmp)(p3, nil) == 0) {
 				nils++;
 				dst[l] = bit_nil;
 			} else {
-				dst[l] = (bit) (((*atomcmp)(p1, p2) >= 0 &&
-						 (*atomcmp)(p1, p3) <= 0) ||
-						(sym &&
-						 (*atomcmp)(p1, p3) >= 0 &&
-						 (*atomcmp)(p1, p2) <= 0));
+				int c;
+				dst[l] = (bit)
+					((((c = (*atomcmp)(p1, p2)) > 0
+					   || (linc && c == 0))
+					  && ((c = (*atomcmp)(p1, p3)) < 0
+					      || (hinc && c == 0)))
+					 || (symmetric
+					     && ((c = (*atomcmp)(p1, p3)) > 0
+						 || (hinc && c == 0))
+					     && ((c = (*atomcmp)(p1, p2)) < 0
+						 || (linc && c == 0))));
 			}
 		}
 		break;
@@ -12881,7 +12907,8 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 }
 
 BAT *
-BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool sym)
+BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool symmetric,
+	       bool linc, bool hinc, bool nils_false)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -12898,23 +12925,29 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool sym)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	if (b->ttype == TYPE_void &&
-	    lo->ttype == TYPE_void &&
-	    hi->ttype == TYPE_void) {
+	if (BATtvoid(b) &&
+	    BATtvoid(lo) &&
+	    BATtvoid(hi)) {
 		bit res;
 
-		if (is_oid_nil(b->tseqbase) ||
-		    is_oid_nil(lo->tseqbase) ||
-		    is_oid_nil(hi->tseqbase))
+		if (!BATtdense(b))
+			res = nils_false ? 0 : bit_nil;
+		else if (!BATtdense(lo) || !BATtdense(hi))
 			res = bit_nil;
 		else
-			res = (bit) ((b->tseqbase >= lo->tseqbase &&
-				      b->tseqbase <= hi->tseqbase) ||
-				     (sym &&
-				      b->tseqbase >= hi->tseqbase &&
-				      b->tseqbase <= lo->tseqbase));
+			res = (bit)
+				(((b->tseqbase > lo->tseqbase ||
+				   (linc && b->tseqbase == lo->tseqbase)) &&
+				  (b->tseqbase < hi->tseqbase ||
+				   (hinc && b->tseqbase == hi->tseqbase))) ||
+				 (symmetric &&
+				  (b->tseqbase > hi->tseqbase ||
+				   (hinc && b->tseqbase == hi->tseqbase)) &&
+				  (b->tseqbase < lo->tseqbase ||
+				   (linc && b->tseqbase == lo->tseqbase))));
 
-		return BATconstant(b->hseqbase, TYPE_bit, &res, BATcount(b), TRANSIENT);
+		return BATconstant(b->hseqbase, TYPE_bit, &res, BATcount(b),
+				   TRANSIENT);
 	}
 
 	bn = BATcalcbetween_intern(Tloc(b, 0), 1,
@@ -12928,13 +12961,15 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, bool sym)
 				   hi->twidth,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
-				   b->hseqbase, sym, "BATcalcbetween");
+				   b->hseqbase, symmetric, linc, hinc,
+				   nils_false, "BATcalcbetween");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, bool sym)
+BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s,
+		     bool symmetric, bool linc, bool hinc, bool nils_false)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -12957,13 +12992,16 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, b
 				   VALptr(hi), 0, NULL, 0,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
-				   b->hseqbase, sym, "BATcalcbetweencstcst");
+				   b->hseqbase, symmetric,
+				   linc, hinc, nils_false,
+				   "BATcalcbetweencstcst");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool sym)
+BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s,
+		     bool symmetric, bool linc, bool hinc, bool nils_false)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -12991,13 +13029,16 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, bool sym)
 				   VALptr(hi), 0, NULL, 0,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
-				   b->hseqbase, sym, "BATcalcbetweenbatcst");
+				   b->hseqbase, symmetric,
+				   linc, hinc, nils_false,
+				   "BATcalcbetweenbatcst");
 
 	return bn;
 }
 
 BAT *
-BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool sym)
+BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s,
+		     bool symmetric, bool linc, bool hinc, bool nils_false)
 {
 	BAT *bn;
 	BUN start, end, cnt;
@@ -13025,14 +13066,17 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, bool sym)
 				   hi->twidth,
 				   b->ttype, cnt,
 				   start, end, cand, candend,
-				   b->hseqbase, sym, "BATcalcbetweencstbat");
+				   b->hseqbase, symmetric,
+				   linc, hinc, nils_false,
+				   "BATcalcbetweencstbat");
 
 	return bn;
 }
 
 gdk_return
 VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
-	       const ValRecord *hi, bool sym)
+	       const ValRecord *hi, bool symmetric, bool linc, bool hinc,
+	       bool nils_false)
 {
 	BUN nils = 0;		/* to make reusing BETWEEN macro easier */
 	int t;
@@ -13079,17 +13123,24 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	default:
 		nil = ATOMnilptr(t);
 		atomcmp = ATOMcompare(t);
-		if (atomcmp(VALptr(v), nil) == 0 ||
-		    atomcmp(VALptr(lo), nil) == 0 ||
-		    atomcmp(VALptr(hi), nil) == 0)
+		if (atomcmp(VALptr(v), nil) == 0)
+			ret->val.btval = nils_false ? 0 : bit_nil;
+		else if (atomcmp(VALptr(lo), nil) == 0 ||
+			 atomcmp(VALptr(hi), nil) == 0)
 			ret->val.btval = bit_nil;
-		else
+		else {
+			int c;
 			ret->val.btval =
-				(bit) ((atomcmp(VALptr(v), VALptr(lo)) >= 0 &&
-					atomcmp(VALptr(v), VALptr(hi)) <= 0) ||
-				       (sym &&
-					atomcmp(VALptr(v), VALptr(hi)) >= 0 &&
-					atomcmp(VALptr(v), VALptr(lo)) <= 0));
+				(bit) ((((c = atomcmp(VALptr(v), VALptr(lo))) > 0 ||
+					 (linc && c == 0)) &&
+					((c = atomcmp(VALptr(v), VALptr(hi)) < 0 ||
+					  (hinc && c == 0)))) ||
+				       (symmetric &&
+					((c = atomcmp(VALptr(v), VALptr(hi))) > 0 ||
+					 (hinc && c == 0)) &&
+					((c = atomcmp(VALptr(v), VALptr(lo))) < 0 ||
+					 (linc && c == 0))));
+		}
 		break;
 	}
 	(void) nils;

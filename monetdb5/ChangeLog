@@ -2,6 +2,9 @@
 # This file is updated with Maddlog
 
 * Thu Apr 18 2019 Sjoerd Mullender <sjoerd@acm.org>
+- Removed (bat)calc.between_symmetric and changed (bat)calc.between
+  by adding a number of extra arguments, all of type :bit: symmetric,
+  low inclusive, high inclusive, nils false.
 - The layout of the bits in the tzone and rule atoms was changed.
   Before they were bitfields for which the C language does not give a
   guarantee (except that they are packed); now they are explicitly masked
