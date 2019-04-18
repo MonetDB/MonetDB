@@ -8925,7 +8925,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		/* rel_join_order may introduce empty selects */
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 
-		if (level <= 0 && 0)
+		if (level <= 0 && /* DISABLES CODE */ (0))
 			rel = rewrite(sql, rel, &rel_join_push_exps_down, &changes); 
 	}
 
