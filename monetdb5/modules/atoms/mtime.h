@@ -41,7 +41,6 @@
 typedef int date;
 #define date_nil		((date) int_nil)
 #define is_date_nil(X)	((X) == date_nil)
-#define date_max		GDK_int_max /* used for overflow checks */
 
 /*
  * @- daytime
@@ -77,32 +76,17 @@ typedef union {
  * rules are used to define the start and end of DST. It uses the 25
  * lower bits of an int.
  */
-typedef union {
-	struct {
-		unsigned int month:4,	/* values: [1..12] */
-		 minutes:11,			/* values: [0:1439] */
-		 day:6,					/* values: [-31..-1,1..31] */
-		 weekday:4,				/* values: [-7..-1,1..7] */
-		 empty:7;				/* rule uses just 32-7=25 bits */
-	} s;
-	int asint;					/* the same, seen as single value */
-} rule;
+typedef int rule;
 
 /*
  * @- tzone
  * A tzone consists of an offset and two DST rules, all crammed into one lng.
  */
-typedef struct {
-	/* we had this as bit fields in one unsigned long long, but native
-	 * sun CC does not eat that.  */
-	unsigned int dst:1, off1:6, dst_start:25;
-	unsigned int off2:7, dst_end:25;
-} tzone;
+typedef uint64_t tzone;
 
 mal_export tzone tzone_local;
 mal_export timestamp *timestamp_nil;
 
-#define is_tzone_nil(z)   (get_offset(&(z)) == get_offset(tzone_nil))
 #define is_timestamp_nil(t)   ((t).days == timestamp_nil->days && (t).msecs == timestamp_nil->msecs)
 
 mal_export ssize_t daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external);

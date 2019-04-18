@@ -16,8 +16,9 @@
 
 #include "monetdb_config.h"
 #include "mtime.h"
+#include "mtime_private.h"
 
-#define MTIME_SUB_WITH_CHECK(lft, rgt, TYPE, dst, max, on_overflow) \
+#define MTIME_SUB_WITH_CHECK(lft, rgt, TYPE, dst, min, max, on_overflow) \
 	do { \
 		if ((rgt) < 1) { \
 			if ((max) + (rgt) < (lft)) \
@@ -25,7 +26,7 @@
 			else \
 				(dst) = (TYPE) (lft) - (rgt); \
 		} else { \
-			if (-(max) + (rgt) > (lft)) \
+			if ((min) + (rgt) > (lft)) \
 				on_overflow; \
 			else \
 				(dst) = (TYPE) (lft) - (rgt); \
@@ -36,7 +37,7 @@
 
 #define DATE_RANGE_MONTH_DIFF(X,Y,R) \
 	do { \
-		MTIME_SUB_WITH_CHECK(X, Y, date, R, date_max, goto calc_overflow); \
+		MTIME_SUB_WITH_CHECK(X, Y, date, R, DATE_MIN, DATE_MAX, goto calc_overflow); \
 		R = MABSOLUTE(R); \
 		R /= 30; /* days in a month */ \
 		R += (X != Y); /* in a '0' month interval, the rows don't belong to the same frame if the difference is less than one month */ \
@@ -44,7 +45,7 @@
 
 #define TIMESTAMP_RANGE_MONTH_DIFF(X,Y,R) \
 	do { \
-		MTIME_SUB_WITH_CHECK(X.days, Y.days, date, R, date_max, goto calc_overflow); \
+		MTIME_SUB_WITH_CHECK(X.days, Y.days, date, R, DATE_MIN, DATE_MAX, goto calc_overflow); \
 		R = MABSOLUTE(R); \
 		R /= 30; /* days in a month */ \
 		R += (X.days != Y.days); /* same reason as above */ \
@@ -57,14 +58,14 @@
 
 #define DATE_RANGE_SEC_DIFF(X,Y,R) \
 	do { \
-		MTIME_SUB_WITH_CHECK(X, Y, date, R, date_max, goto calc_overflow); \
+		MTIME_SUB_WITH_CHECK(X, Y, date, R, DATE_MIN, DATE_MAX, goto calc_overflow); \
 		R = MABSOLUTE(R); \
 		R *= 86400000; /* days in milliseconds */ \
 	} while (0)
 
 #define TIMESTAMP_RANGE_SEC_DIFF(X,Y,R) \
 	do { \
-		MTIME_SUB_WITH_CHECK(X.days, Y.days, date, R, date_max, goto calc_overflow); \
+		MTIME_SUB_WITH_CHECK(X.days, Y.days, date, R, DATE_MIN, DATE_MAX, goto calc_overflow); \
 		R = MABSOLUTE(R); \
 		R *= 86400000; /* days in milliseconds */ \
 		R += MABSOLUTE(X.msecs - Y.msecs); /* never overflows */ \

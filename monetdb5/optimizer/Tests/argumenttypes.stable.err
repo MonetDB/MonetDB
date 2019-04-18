@@ -38,7 +38,7 @@ QUERY = # Handle the BAT type coercions to simplify re-execution of MAL explain 
         
         #and an error
         (X_115:bat[:lng], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X:bat[:lng], false:bit, false:bit, false:bit);
-
+ERROR = !SyntaxException:parseError:(X_115:bat[:lng], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X:bat[:lng], false:bit, false:bit, false:bit);
         !SyntaxException:parseError:                                                                               ^Argument type overwrites previous definition
         !SyntaxException:parseError:
         !SyntaxException:parseError:^';' expected

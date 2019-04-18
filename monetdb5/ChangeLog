@@ -1,3 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Apr 18 2019 Sjoerd Mullender <sjoerd@acm.org>
+- The layout of the bits in the tzone and rule atoms was changed.
+  Before they were bitfields for which the C language does not give a
+  guarantee (except that they are packed); now they are explicitly masked
+  and shifted.  These types are not used by the SQL layer and therefore
+  unlikely to be in any database.  No upgrade code has been created.
+
