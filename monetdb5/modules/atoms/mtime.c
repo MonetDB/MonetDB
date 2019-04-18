@@ -190,6 +190,7 @@
 
 #include "monetdb_config.h"
 #include "mtime.h"
+#include "mtime_private.h"
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
@@ -243,7 +244,7 @@ static int CUMLEAPDAYS[13] = {
 	0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
 };
 
-static date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
+date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
 #define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : leapyear(y) ? 29 : 28)
 #define YEARDAYS(y)		(leapyear(y) ? 366 : 365)

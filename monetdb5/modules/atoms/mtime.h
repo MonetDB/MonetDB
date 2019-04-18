@@ -41,7 +41,6 @@
 typedef int date;
 #define date_nil		((date) int_nil)
 #define is_date_nil(X)	((X) == date_nil)
-#define date_max		GDK_int_max /* used for overflow checks */
 
 /*
  * @- daytime
