@@ -342,6 +342,8 @@ command all(cmp:bit, nl:bit, nr:bit) :bit
 address SQLall_cmp
 comment "if !cmp then false, (nl or nr) then nil, else true";
 
+module aggr;
+
 command anyequal(l:bat[:any_1], r:bat[:any_1]) :bit
 address SQLanyequal
 comment "if any value in r is equal to l return true, else if r has nil nil else false";
@@ -365,6 +367,8 @@ comment "if all values in r are not equal to l return true, else if r has nil ni
 command suballnotequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
 address SQLallnotequal_grp2
 comment "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true";
+
+module sql;
 
 # todo implement = all aggregator (ie keep last value and compare status)
 inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
