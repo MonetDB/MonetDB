@@ -407,12 +407,13 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 	(void) mb;
-	bool symmetric, linc, hinc;
+	bool symmetric, linc, hinc, nils_false;
 
 	symmetric = *getArgReference_bit(stk, pci, 4);
 	linc = *getArgReference_bit(stk, pci, 5);
 	hinc = *getArgReference_bit(stk, pci, 6);
-	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], symmetric, linc, hinc) != GDK_SUCCEED)
+	nils_false = *getArgReference_bit(stk, pci, 6);
+	if (VARcalcbetween(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)], symmetric, linc, hinc, nils_false) != GDK_SUCCEED)
 		return mythrow(MAL, "calc.between", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

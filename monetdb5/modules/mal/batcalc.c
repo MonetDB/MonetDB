@@ -875,7 +875,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn, *b, *lo = NULL, *hi = NULL, *s = NULL;
 	int tp1, tp2, tp3;
 	int bc = 3;					/* number of BAT arguments */
-	bool symmetric, linc, hinc;
+	bool symmetric, linc, hinc, nils_false;
 
 	(void) cntxt;
 	(void) mb;
@@ -892,6 +892,7 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	symmetric = *getArgReference_bit(stk, pci, bc + 1);
 	linc = *getArgReference_bit(stk, pci, bc + 2);
 	hinc = *getArgReference_bit(stk, pci, bc + 3);
+	nils_false = *getArgReference_bit(stk, pci, bc + 4);
 
 	if (tp1 != TYPE_bat && !isaBatType(tp1)) {
 		if (s)
@@ -932,17 +933,17 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (hi == NULL) {
 			bn = BATcalcbetweencstcst(b, &stk->stk[getArg(pci, 2)],
 									  &stk->stk[getArg(pci, 3)], s,
-									  symmetric, linc, hinc);
+									  symmetric, linc, hinc, nils_false);
 		} else {
 			bn = BATcalcbetweencstbat(b, &stk->stk[getArg(pci, 2)], hi, s,
-									  symmetric, linc, hinc);
+									  symmetric, linc, hinc, nils_false);
 		}
 	} else {
 		if (hi == NULL) {
 			bn = BATcalcbetweenbatcst(b, lo, &stk->stk[getArg(pci, 3)], s,
-									  symmetric, linc, hinc);
+									  symmetric, linc, hinc, nils_false);
 		} else {
-			bn = BATcalcbetween(b, lo, hi, s, symmetric, linc, hinc);
+			bn = BATcalcbetween(b, lo, hi, s, symmetric, linc, hinc, nils_false);
 		}
 	}
 	BBPunfix(b->batCacheid);

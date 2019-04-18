@@ -1595,6 +1595,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		p = pushBit(mb, p, (cmp & CMP_SYMMETRIC) != 0); /* symmetric */
 		p = pushBit(mb, p, (cmp & 1) != 0);	    /* lo inclusive */
 		p = pushBit(mb, p, (cmp & 2) != 0);	    /* hi inclusive */
+		p = pushBit(mb, p, FALSE);		    /* nils_false */
 		k = getDestVar(p);
 
 		q = newStmt(mb, algebraRef, selectRef);
