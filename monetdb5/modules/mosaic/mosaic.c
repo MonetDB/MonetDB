@@ -57,7 +57,7 @@ MOSdumpTask(Client cntxt,MOStask task)
 	int i;
 
 	mnstr_printf(cntxt->fdout,"# ");
-	mnstr_printf(cntxt->fdout,"clk " OIDFMT "\tsizes " OIDFMT "\t%3.0fx\t",
+	mnstr_printf(cntxt->fdout,"clk " "%ld" "\tsizes " OIDFMT "\t%3.0fx\t",
 		task->timer, task->bsrc->tmosaic->free, (flt) task->bsrc->theap.free/task->bsrc->tmosaic->free);
 	for ( i=0; i < MOSAIC_METHODS -1; i++)
 	if( task->filter[i])
