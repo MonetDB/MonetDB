@@ -781,6 +781,7 @@ MOSgetPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int varid, int *part,
 	*nrofparts = 1;
 	for( i = 1; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
+		// TODO: what if input from select comes from some other operator
 		if( getModuleId(p)== sqlRef && getFunctionId(p) == bindRef && getArg(p,0) == varid ){
 			if( p->argc > 6){
 				*part = getVarConstant(mb,getArg(p,6)).val.ival;
