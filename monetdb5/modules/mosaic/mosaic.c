@@ -770,28 +770,6 @@ isCompressed(bat bid)
 	return r;
 }
 
-// locate the corresponding bind operation to determine the partition
-static void
-MOSgetPartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int varid, int *part, int *nrofparts )
-{
-	int i;
-	InstrPtr p;
-
-	*part = 0;
-	*nrofparts = 1;
-	for( i = 1; i< mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		// TODO: what if input from select comes from some other operator
-		if( getModuleId(p)== sqlRef && getFunctionId(p) == bindRef && getArg(p,0) == varid ){
-			if( p->argc > 6){
-				*part = getVarConstant(mb,getArg(p,6)).val.ival;
-				*nrofparts = getVarConstant(mb,getArg(p,7)).val.ival;
-			}
-		} else if( p->token == ASSIGNsymbol && getArg(p,1) == varid)
-				MOSgetPartition(cntxt,mb,stk,getArg(p,0),part,nrofparts);
-	}
-}
-
 /* The algebra operators should fall back to their default
  * when we know that the heap is not compressed
  * The actual decompression should wait until we know that
@@ -811,7 +789,6 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, *bn, *cand = NULL;
 	str msg = MAL_SUCCEED;
 	MOStask task;
-	int part,nrofparts;
 
 	(void) cntxt;
 	(void) mb;
@@ -875,26 +852,9 @@ MOSselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	** TODO: Figure out how do partitions relate to mosaic chunks.
 	** Is it a good idea to set the capacity to the total size of the select operand b?
 	*/
-	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
-	if ( nrofparts > 1){
-		// don't use more parallelism than entries in the header
-		if( nrofparts > task->hdr->top)
-			nrofparts = task->hdr->top;
-		if( part > nrofparts){
-			*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
-			BBPkeepref(bn->batCacheid);
-			GDKfree(task);
-			return MAL_SUCCEED;
-		}
-		startblk = task->hdr->top/nrofparts * part;
-		if( part == nrofparts -1)
-			stopblk  =  task->hdr->top;
-		else
-			stopblk  =  startblk + task->hdr->top/nrofparts;
-	} else{
-		startblk =0;
-		stopblk = task->hdr->top;
-	}
+
+	startblk =0;
+	stopblk = task->hdr->top;
 	// position the scan on the first mosaic block to consider
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
@@ -945,7 +905,6 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx;
 	bat *cid =0,  *ret, *bid;
 	int startblk, stopblk; // block range to scan
-	int part=0,nrofparts=0;
 	BAT *b = 0, *cand = 0, *bn = NULL;
 	BUN cnt=0;
 	str msg= MAL_SUCCEED;
@@ -1004,26 +963,8 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		task->n = BATcount(cand);
 	}
 
-	// determine block range to scan for partitioned columns
-	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
-	if ( nrofparts > 1){
-		// don't use more parallelism than entries in the header
-		if( nrofparts > task->hdr->top)
-			nrofparts = task->hdr->top;
-		if( part > nrofparts){
-			BBPkeepref(*getArgReference_bat(stk,pci,0)= bn->batCacheid);
-			GDKfree(task);
-			return MAL_SUCCEED;
-		}
-		startblk = task->hdr->top/nrofparts * part;
-		if( part == nrofparts -1)
-			stopblk  =  task->hdr->top;
-		else
-			stopblk  =  startblk + task->hdr->top/nrofparts;
-	} else{
-		startblk =0;
-		stopblk = task->hdr->top;
-	}
+	startblk =0;
+	stopblk = task->hdr->top;
 	// position the scan on the first mosaic block to consider
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
@@ -1074,7 +1015,6 @@ str MOSthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *lid =0, *rid=0;
-	int part, nrofparts;
 	int startblk,stopblk;
 	BAT *bl = NULL, *br = NULL, *bn;
 	BUN cnt;
@@ -1131,28 +1071,8 @@ str MOSprojection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	task->cl = ol;
 	task->n = cnt;
 
-	// determine block range to scan for partitioned columns
-	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
-	if ( nrofparts > 1){
-		// don't use more parallelism than entries in the header
-		if( nrofparts > task->hdr->top)
-			nrofparts = task->hdr->top;
-		if( part >= nrofparts){
-			BBPunfix(*lid);
-			BBPunfix(*rid);
-			BBPkeepref(*ret = bn->batCacheid);
-			GDKfree(task);
-			return MAL_SUCCEED;
-		}
-		startblk = task->hdr->top/nrofparts * part;
-		if( part < nrofparts )
-			stopblk  =  startblk + task->hdr->top/nrofparts;
-		else
-			stopblk  =  task->hdr->top;
-	} else {
-		startblk =0;
-		stopblk = task->hdr->top;
-	}
+	startblk =0;
+	stopblk = task->hdr->top;
 	assert(startblk < stopblk);
 	// position the scan on the first mosaic block to consider
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
@@ -1206,7 +1126,6 @@ str
 MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret, *ret2,*lid,*rid, *sl, *sr;
-	int part, nrofparts;
 	int startblk,stopblk;
 	bit *nil_matches= 0;
 	lng *estimate;
@@ -1270,18 +1189,9 @@ MOSjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	task->lbat = bln;
 	task->rbat = brn;
-	// determine block range to scan for partitioned columns
-	MOSgetPartition(cntxt, mb, stk, getArg(pci,1), &part, &nrofparts );
-	if ( nrofparts > 1){
-		startblk = task->hdr->top/nrofparts * part;
-		if( part == nrofparts -1)
-			stopblk  =  task->hdr->top;
-		else
-			stopblk  =  startblk + task->hdr->top/nrofparts;
-	} else{
-		startblk =0;
-		stopblk = task->hdr->top;
-	}
+
+	startblk =0;
+	stopblk = task->hdr->top;
 	// position the scan on the first mosaic block to consider
 	MOSinitializeScan(cntxt,task,startblk,stopblk);
 
