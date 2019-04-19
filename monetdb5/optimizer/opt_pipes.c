@@ -110,6 +110,7 @@ static struct PIPELINES {
 	 "optimizer.emptybind();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
+//	 "optimizer.mitosis();" turned off for now
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
