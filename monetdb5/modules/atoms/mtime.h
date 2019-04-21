@@ -35,8 +35,8 @@
 #include <sys/time.h>		/* gettimeofday */
 #endif
 
-#define YEAR_MAX		5867411
-#define YEAR_MIN		(-YEAR_MAX)
+#define YEAR_MIN		(-4712)	/* 4713 BC */
+#define YEAR_MAX		(YEAR_MIN+(1<<21)/12)
 
 typedef int date;
 #define date_nil		((date) int_nil)

@@ -28,14 +28,13 @@
  * This module introduces four basic types and operations on them:
  * @table @samp
  * @item date
- * a @samp{date} in the Gregorian calendar, e.g. 1999-JAN-31
+ * a @samp{date} in the proleptic Gregorian calendar, e.g. 1999-JAN-31
  *
  * @item daytime
  * a time of day to the detail of milliseconds, e.g. 23:59:59:000
  *
  * @item timestamp
  * a combination of date and time, indicating an exact point in
- *
  * time (GMT). GMT is the time at the Greenwich meridian without a
  * daylight savings time (DST) regime. Absence of DST means that hours
  * are consecutive (no jumps) which makes it easy to perform time
@@ -66,8 +65,7 @@
  * @table @samp
  * @item min and max year
  * The maximum and minimum dates and timestamps that can be stored are
- * in the years 5,867,411 and -5,867,411, respectively. Interestingly,
- * the year 0 is not a valid year. The year before 1 is called -1.
+ * in the years 5,867,411 and -5,867,411, respectively.
  *
  * @item valid dates
  * Fall in a valid year, and have a month and day that is valid in
@@ -200,32 +198,32 @@ extern char *strptime(const char *, const char *, struct tm *);
 #define is_rule_nil(r)		((r) == rule_nil)
 
 /* layout is based on the widths of the components */
-#define WEEKDAY_WIDTH	4
-#define DAY_WIDTH		6
-#define MINUTE_WIDTH	11
-#define MONTH_WIDTH		4
+#define RLWEEKDAY_WIDTH	4
+#define RLDAY_WIDTH		6
+#define RLMINUTE_WIDTH	11
+#define RLMONTH_WIDTH	4
 
-#define WEEKDAY_SHIFT	0
-#define DAY_SHIFT		(WEEKDAY_SHIFT+WEEKDAY_WIDTH)
-#define MINUTE_SHIFT	(DAY_SHIFT+DAY_WIDTH)
-#define MONTH_SHIFT		(MINUTE_SHIFT+MINUTE_WIDTH)
+#define RLWEEKDAY_SHIFT	0
+#define RLDAY_SHIFT		(RLWEEKDAY_SHIFT+RLWEEKDAY_WIDTH)
+#define RLMINUTE_SHIFT	(RLDAY_SHIFT+RLDAY_WIDTH)
+#define RLMONTH_SHIFT	(RLMINUTE_SHIFT+RLMINUTE_WIDTH)
 
-#define rule_month(r)		(((r) >> MONTH_SHIFT) & ((1<<MONTH_WIDTH)-1))
-#define rule_minutes(r)		(((r) >> MINUTE_SHIFT) & ((1<<MINUTE_WIDTH)-1))
-#define rule_day(r)			(((r) >> DAY_SHIFT) & ((1<<DAY_WIDTH)-1))
-#define rule_weekday(r)		(((r) >> WEEKDAY_SHIFT) & ((1<<WEEKDAY_WIDTH)-1))
+#define rule_month(r)	(((r) >> RLMONTH_SHIFT) & ((1<<RLMONTH_WIDTH)-1))
+#define rule_minutes(r)	(((r) >> RLMINUTE_SHIFT) & ((1<<RLMINUTE_WIDTH)-1))
+#define rule_day(r)		((int) (((r) >> RLDAY_SHIFT) & ((1<<RLDAY_WIDTH)-1)) - DAY_ZERO)
+#define rule_weekday(r)	((int) (((r) >> RLWEEKDAY_SHIFT) & ((1<<RLWEEKDAY_WIDTH)-1)) - WEEKDAY_ZERO)
 
-#define mkrule(month, minutes, day, weekday)	\
-	(((month) << MONTH_SHIFT) |					\
-	 ((minutes) << MINUTE_SHIFT) |				\
-	 ((day) << DAY_SHIFT) |						\
-	 ((weekday) << WEEKDAY_SHIFT))
+#define mkrule(month, minutes, day, weekday)			\
+	(((month) << RLMONTH_SHIFT) |						\
+	 ((minutes) << RLMINUTE_SHIFT) |					\
+	 (((day) + DAY_ZERO) << RLDAY_SHIFT) |				\
+	 (((weekday) + WEEKDAY_ZERO) << RLWEEKDAY_SHIFT))
 
 /* phony zero values, used to get negative numbers from unsigned
  * sub-integers in rule */
 #define WEEKDAY_ZERO	8
-#define DAY_ZERO	32
-#define OFFSET_ZERO	4096
+#define DAY_ZERO		32
+#define OFFSET_ZERO		4096
 
 #define tzone_nil			((tzone) lng_nil)
 #define is_tzone_nil(z)		((z) == tzone_nil)
@@ -233,26 +231,26 @@ extern char *strptime(const char *, const char *, struct tm *);
 /* layout is based on the widths of the components; the width of the
  * start and end rules comes from the number of bits used for them (see
  * above) */
-#define END_WIDTH		(WEEKDAY_WIDTH+DAY_WIDTH+MINUTE_WIDTH+MONTH_WIDTH)
-#define START_WIDTH		(WEEKDAY_WIDTH+DAY_WIDTH+MINUTE_WIDTH+MONTH_WIDTH)
-#define OFF_WIDTH		13
-#define	DST_WIDTH		1
+#define ZNEND_WIDTH		(RLWEEKDAY_WIDTH+RLDAY_WIDTH+RLMINUTE_WIDTH+RLMONTH_WIDTH)
+#define ZNSTART_WIDTH	ZNEND_WIDTH
+#define ZNOFF_WIDTH		13
+#define	ZNDST_WIDTH		1
 
-#define END_SHIFT		0
-#define START_SHIFT		(END_SHIFT+END_WIDTH)
-#define OFF_SHIFT		(START_SHIFT+START_WIDTH)
-#define DST_SHIFT		(OFF_SHIFT+OFF_WIDTH)
+#define ZNEND_SHIFT		0
+#define ZNSTART_SHIFT	(ZNEND_SHIFT+ZNEND_WIDTH)
+#define ZNOFF_SHIFT		(ZNSTART_SHIFT+ZNSTART_WIDTH)
+#define ZNDST_SHIFT		(ZNOFF_SHIFT+ZNOFF_WIDTH)
 
-#define tzone_dst(z)		(((z) >> DST_SHIFT) & ((1<<DST_WIDTH)-1))
-#define tzone_off(z)		((int) (((z) >> OFF_SHIFT) & ((1<<OFF_WIDTH)-1)) - OFFSET_ZERO)
-#define tzone_start(z)		(((z) >> START_SHIFT) & ((1<<START_WIDTH)-1))
-#define tzone_end(z)		(((z) >> END_SHIFT) & ((1<<END_WIDTH)-1))
+#define tzone_dst(z)		(((z) >> ZNDST_SHIFT) & ((1<<ZNDST_WIDTH)-1))
+#define tzone_off(z)		((int) (((z) >> ZNOFF_SHIFT) & ((1<<ZNOFF_WIDTH)-1)) - OFFSET_ZERO)
+#define tzone_start(z)		(((z) >> ZNSTART_SHIFT) & ((1<<ZNSTART_WIDTH)-1))
+#define tzone_end(z)		(((z) >> ZNEND_SHIFT) & ((1<<ZNEND_WIDTH)-1))
 
 #define mktzone(dst, off, start, end)							\
-			(((uint64_t) (dst) << DST_SHIFT)					\
-			 | ((uint64_t) ((off) + OFFSET_ZERO) << OFF_SHIFT)	\
-			 | ((uint64_t) (start) << START_SHIFT)				\
-			 | ((uint64_t) (end) << END_SHIFT))
+			(((uint64_t) (dst) << ZNDST_SHIFT)					\
+			 | ((uint64_t) ((off) + OFFSET_ZERO) << ZNOFF_SHIFT)	\
+			 | ((uint64_t) (start) << ZNSTART_SHIFT)				\
+			 | ((uint64_t) (end) << ZNEND_SHIFT))
 
 tzone tzone_local;
 
@@ -277,16 +275,24 @@ static int LEAPDAYS[13] = {
 static int CUMDAYS[13] = {
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
-static int CUMLEAPDAYS[13] = {
-	0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
-};
+
+#define YEAR_OFFSET		(-YEAR_MIN)
+#define DTDAY_WIDTH		5		/* 1..28/29/30/31, depending on month */
+#define DTDAY_SHIFT		0
+#define DTMONTH_WIDTH	21		/* enough for 174762 year */
+#define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
+#define mkdate(d, m, y)	(((((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
+						 | ((d) << DTDAY_SHIFT))
+#define date_day(dt)	(((dt) >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1))
+#define date_month(dt)	((((dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1)
+#define date_year(dt)	((((dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET)
 
 date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
-#define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : leapyear(y) ? 29 : 28)
-#define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
-#define DATE(d,m,y)		((m) > 0 && (m) <= 12 && (d) > 0 && (y) != 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= MONTHDAYS(m, y))
-#define TIME(h,m,s,x)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) <= 60 && (x) >= 0 && (x) < 1000)
+#define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : 28 + ISLEAPYEAR(y))
+
+#define ISDATE(d,m,y)	((m) > 0 && (m) <= 12 && (d) > 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= MONTHDAYS(m, y))
+#define ISTIME(h,m,s,x)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) <= 60 && (x) >= 0 && (x) < 1000)
 #define LOWER(c)		((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
 
 /*
@@ -305,48 +311,19 @@ int TYPE_timestamp;
 int TYPE_tzone;
 int TYPE_rule;
 
-static int synonyms = TRUE;
+static bool synonyms = true;
 
-#define leapyear(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
+#define ISLEAPYEAR(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
 
-static int
-leapyears(int year)
-{
-	/* count the 4-fold years that passed since jan-1-0 */
-	int y4 = year / 4;
-
-	/* count the 100-fold years */
-	int y100 = year / 100;
-
-	/* count the 400-fold years */
-	int y400 = year / 400;
-
-	return y4 + y400 - y100 + (year >= 0);	/* may be negative */
-}
-
-static date
+static inline date
 todate(int day, int month, int year)
 {
-	date n = date_nil;
-
-	if (DATE(day, month, year)) {
-		if (year < 0)
-			year++;				/* HACK: hide year 0 */
-		n = (date) (day - 1);
-		if (month > 2 && leapyear(year))
-			n++;
-		n += CUMDAYS[month - 1];
-		/* current year does not count as leapyear */
-		n += 365 * year + leapyears(year >= 0 ? year - 1 : year);
-	}
-	return n;
+	return ISDATE(day, month, year) ? mkdate(day, month, year) : date_nil;
 }
 
 static void
 fromdate(date n, int *d, int *m, int *y)
 {
-	int day, month, year;
-
 	if (is_date_nil(n)) {
 		if (d)
 			*d = int_nil;
@@ -354,63 +331,20 @@ fromdate(date n, int *d, int *m, int *y)
 			*m = int_nil;
 		if (y)
 			*y = int_nil;
-		return;
-	}
-	year = n / 365;
-	day = (n - year * 365) - leapyears(year >= 0 ? year - 1 : year);
-	if (n < 0) {
-		year--;
-		while (day >= 0) {
-			year++;
-			day -= YEARDAYS(year);
-		}
-		day = YEARDAYS(year) + day;
 	} else {
-		while (day < 0) {
-			year--;
-			day += YEARDAYS(year);
-		}
-	}
-	if (d == 0 && m == 0) {
+		if (d)
+			*d = date_day(n);
+		if (m)
+			*m = date_month(n);
 		if (y)
-			*y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
-		return;
+			*y = date_year(n);
 	}
-
-	day++;
-	if (leapyear(year)) {
-		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
-			if (day > CUMLEAPDAYS[month - 1] && day <= CUMLEAPDAYS[month]) {
-				if (m)
-					*m = month;
-				if (d == 0)
-					return;
-				break;
-			}
-		day -= CUMLEAPDAYS[month - 1];
-	} else {
-		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
-			if (day > CUMDAYS[month - 1] && day <= CUMDAYS[month]) {
-				if (m)
-					*m = month;
-				if (d == 0)
-					return;
-				break;
-			}
-		day -= CUMDAYS[month - 1];
-	}
-	if (d)
-		*d = day;
-	if (m)
-		*m = month;
-	if (y)
-		*y = (year <= 0) ? year - 1 : year;	/* HACK: hide year 0 */
 }
 
 static daytime
 totime(int hour, int min, int sec, int msec)
 {
-	if (TIME(hour, min, sec, msec)) {
+	if (ISTIME(hour, min, sec, msec)) {
 		return (daytime) (((((hour * 60) + min) * 60) + sec) * 1000 + msec);
 	}
 	return daytime_nil;
@@ -481,60 +415,77 @@ parse_substr(int *ret, const char *s, int min, const char *list[], int size)
 }
 
 /* Monday = 1, Sunday = 7 */
-static int
+
+/* 21 April 2019 is a Sunday, we can calculate the offset for the
+ * day-of-week calculation below from this fact */
+#define CNT_OFF		(((YEAR_OFFSET+399)/400)*400)
+static inline int
+date_countdays(date v)
+{
+	int y = date_year(v);
+	int m = date_month(v);
+	int y1 = y + CNT_OFF - 1;
+	return date_day(v) + (y+CNT_OFF)*365 + y1/4 - y1/100 + y1/400 + CUMDAYS[m-1] + (m > 2 && ISLEAPYEAR(y));
+}
+	
+#define DOW_OFF (7 - (((21 + (2019+CNT_OFF)*365 + (2019+CNT_OFF-1)/4 - (2019+CNT_OFF-1)/100 + (2019+CNT_OFF-1)/400 + 90) % 7) + 1))
+static inline int
 date_dayofweek(date v)
 {
-	/* note, v can be negative, so v%7 is in the range -6...6
-	 * v==0 is Saturday, so should result in return value 6 */
-	return (v % 7 + 12) % 7 + 1;
+	/* calculate number of days since the start of the year -CNT_OFF */
+	static_assert(CNT_OFF % 400 == 0, /* for leapyear function to work */
+				  "CNT_OFF must be multiple of 400");
+	int d = date_countdays(v);
+	/* then simply take the remainder from 7 and convert to correct
+	 * weekday */
+	return (d + DOW_OFF) % 7 + 1;
 }
-
-#define SKIP_DAYS(d, w, i)						\
-	do {										\
-		d += i;									\
-		w = (w + i) % 7;						\
-		if (w <= 0)								\
-			w += 7;								\
-	} while (0)
 
 static date
 compute_rule(const rule *val, int y)
 {
-	int m = rule_month(*val), cnt = abs(rule_day(*val) - DAY_ZERO);
-	date d = todate(1, m, y);
-	int dayofweek = date_dayofweek(d);
-	int w = abs(rule_weekday(*val) - WEEKDAY_ZERO);
+	int m = rule_month(*val);
+	int d = rule_day(*val);
+	int w = rule_weekday(*val);
+	int wd;
 
-	if (rule_weekday(*val) == WEEKDAY_ZERO || w == WEEKDAY_ZERO) {
-		/* cnt-th of month */
-		d += cnt - 1;
-	} else if (rule_day(*val) > DAY_ZERO) {
-		if (rule_weekday(*val) < WEEKDAY_ZERO) {
-			/* first weekday on or after cnt-th of month */
-			SKIP_DAYS(d, dayofweek, cnt - 1);
-			cnt = 1;
-		}						/* ELSE cnt-th weekday of month */
-		while (dayofweek != w || --cnt > 0) {
-			if (++dayofweek == WEEKDAY_ZERO)
-				dayofweek = 1;
-			d++;
+	if (w == 0) {
+		/* d-th of month */
+	} else if (d > 0) {
+		if (w < 0) {
+			/* first weekday (-w) on or after d-th of month */
+			wd = date_dayofweek(mkdate(d, m, y));
+			d += (-w + 7 - wd) % 7;
+		} else {
+			/* d-th weekday (w) of month */
+			wd = date_dayofweek(mkdate(1, m, y));
+			d = 1 + (w + 7 - wd) % 7 + (d - 1) * 7;
+		}
+		if (d > MONTHDAYS(m, y)) {
+			d -= MONTHDAYS(m, y);
+			if (++m > 12)
+				y++;
 		}
 	} else {
-		if (rule_weekday(*val) > WEEKDAY_ZERO) {
+		d = -d;
+		if (w > 0) {
 			/* cnt-last weekday from end of month */
-			SKIP_DAYS(d, dayofweek, MONTHDAYS(m, y) - 1);
+			wd = date_dayofweek(mkdate(MONTHDAYS(m, y), m, y));
+			d = MONTHDAYS(m, y) - (wd + 7 - w) % 7 - (d - 1) * 7;
 		} else {
 			/* first weekday on or before cnt-th of month */
-			SKIP_DAYS(d, dayofweek, cnt - 1);
-			cnt = 1;
+			wd = date_dayofweek(mkdate(d, m, y));
+			d -= (wd + 7 + w) % 7;
 		}
-		while (dayofweek != w || --cnt > 0) {
-			if (--dayofweek == 0)
-				dayofweek = 7;
-			d--;
+		while (d < 0) {
+			if (--m == 0) {
+				m = 12;
+				y--;
+			}
+			d += MONTHDAYS(m, y);
 		}
 	}
-	return d;
+	return mkdate(d, m, y);
 }
 
 #define BEFORE(d1, m1, d2, m2) ((d1) < (d2) || ((d1) == (d2) && (m1) <= (m2)))
@@ -576,7 +527,8 @@ ssize_t
 date_fromstr(const char *buf, size_t *len, date **d, bool external)
 {
 	int day = 0, month = int_nil;
-	int year = 0, yearneg = (buf[0] == '-'), yearlast = 0;
+	int year = 0;
+	bool yearneg, yearlast = false;
 	ssize_t pos = 0;
 	int sep;
 
@@ -591,15 +543,17 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
 		return 3;
-	if (yearneg == 0 && !GDKisdigit(buf[0])) {
+	if ((yearneg = (buf[0] == '-')))
+		buf++;
+	if (!yearneg && !GDKisdigit(buf[0])) {
 		if (!synonyms) {
 			GDKerror("Syntax error in date.\n");
 			return -1;
 		}
-		yearlast = 1;
+		yearlast = true;
 		sep = ' ';
 	} else {
-		for (pos = yearneg; GDKisdigit(buf[pos]); pos++) {
+		for (pos = 0; GDKisdigit(buf[pos]); pos++) {
 			year = (buf[pos] - '0') + year * 10;
 			if (year > YEAR_MAX)
 				break;
@@ -652,7 +606,7 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 		while (buf[++pos] == ' ')
 			;
 		if (buf[pos] == '-') {
-			yearneg = 1;
+			yearneg = true;
 			pos++;
 		}
 		while (GDKisdigit(buf[pos])) {
@@ -684,7 +638,7 @@ date_tostr(str *buf, size_t *len, const date *val, bool external)
 		if( *buf == NULL)
 			return -1;
 	}
-	if (is_date_nil(*val) || !DATE(day, month, year)) {
+	if (is_date_nil(*val) || !ISDATE(day, month, year)) {
 		if (external) {
 			strcpy(*buf, "nil");
 			return 3;
@@ -834,7 +788,7 @@ daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
 		if( *buf == NULL)
 			return -1;
 	}
-	if (is_daytime_nil(*val) || !TIME(hour, min, sec, msec)) {
+	if (is_daytime_nil(*val) || !ISTIME(hour, min, sec, msec)) {
 		if (external) {
 			strcpy(*buf, "nil");
 			return 3;
@@ -1048,25 +1002,25 @@ rule_tostr(str *buf, size_t *len, const rule *r, bool external)
 			strcpy(*buf, "nil");
 		else
 			strcpy(*buf, str_nil);
-	} else if (rule_weekday(*r) == WEEKDAY_ZERO) {
+	} else if (rule_weekday(*r) == 0) {
 		sprintf(*buf, "%s %d@%02d:%02d",
-				MONTHS[rule_month(*r)], rule_day(*r) - DAY_ZERO, hours, minutes);
-	} else if (rule_weekday(*r) > WEEKDAY_ZERO && rule_day(*r) > DAY_ZERO) {
+				MONTHS[rule_month(*r)], rule_day(*r), hours, minutes);
+	} else if (rule_weekday(*r) > 0 && rule_day(*r) > 0) {
 		sprintf(*buf, "%s %s from start of %s@%02d:%02d",
-				count1(rule_day(*r) - DAY_ZERO), DAYS[rule_weekday(*r) - WEEKDAY_ZERO],
+				count1(rule_day(*r)), DAYS[rule_weekday(*r)],
 				MONTHS[rule_month(*r)], hours, minutes);
-	} else if (rule_weekday(*r) > WEEKDAY_ZERO && rule_day(*r) < DAY_ZERO) {
+	} else if (rule_weekday(*r) > 0 && rule_day(*r) < 0) {
 		sprintf(*buf, "%s %s from end of %s@%02d:%02d",
-				count1(DAY_ZERO - rule_day(*r)), DAYS[rule_weekday(*r) - WEEKDAY_ZERO],
+				count1(-rule_day(*r)), DAYS[rule_weekday(*r)],
 				MONTHS[rule_month(*r)], hours, minutes);
-	} else if (rule_day(*r) > DAY_ZERO) {
+	} else if (rule_day(*r) > 0) {
 		sprintf(*buf, "first %s on or after %s %d@%02d:%02d",
-				DAYS[WEEKDAY_ZERO - rule_weekday(*r)], MONTHS[rule_month(*r)],
-				rule_day(*r) - DAY_ZERO, hours, minutes);
+				DAYS[-rule_weekday(*r)], MONTHS[rule_month(*r)],
+				rule_day(*r), hours, minutes);
 	} else {
 		sprintf(*buf, "last %s on or before %s %d@%02d:%02d",
-				DAYS[WEEKDAY_ZERO - rule_weekday(*r)], MONTHS[rule_month(*r)],
-				DAY_ZERO - rule_day(*r), hours, minutes);
+				DAYS[-rule_weekday(*r)], MONTHS[rule_month(*r)],
+				-rule_day(*r), hours, minutes);
 	}
 	return (ssize_t) strlen(*buf);
 }
@@ -1163,8 +1117,8 @@ rule_fromstr(const char *buf, size_t *len, rule **d, bool external)
 		minutes >= 0 && minutes < 60) {
 		**d = mkrule(month,
 					 hours * 60 + minutes,
-					 DAY_ZERO + (neg_day ? -day : day),
-					 WEEKDAY_ZERO + (neg_weekday ? -weekday : weekday));
+					 (neg_day ? -day : day),
+					 (neg_weekday ? -weekday : weekday));
 	}
 	return (ssize_t) (cur - buf);
 }
@@ -1840,10 +1794,7 @@ MTIMEdate_extract_dayofyear(int *ret, const date *v)
 	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		int year;
-
-		fromdate(*v, NULL, NULL, &year);
-		*ret = (int) (1 + *v - todate(1, 1, year));
+		*ret = date_countdays(*v) - date_countdays(mkdate(1, 1, date_year(*v))) + 1;
 	}
 	return MAL_SUCCEED;
 }
@@ -1855,20 +1806,23 @@ MTIMEdate_extract_weekofyear(int *ret, const date *v)
 	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		int year;
-		date thd;
-		date thd1;
-
-		/* find the Thursday in the same week as the given date */
-		thd = *v + 4 - date_dayofweek(*v);
-		/* extract the year (may be different from year of the given date!) */
-		fromdate(thd, NULL, NULL, &year);
-		/* find January 4 of that year */
-		thd1 = todate(4, 1, year);
-		/* find the Thursday of the week in which January 4 falls */
-		thd1 += 4 - date_dayofweek(thd1);
-		/* now calculate the week number */
-		*ret = (int) ((thd - thd1) / 7) + 1;
+		int y = date_year(*v);
+		int m = date_month(*v);
+		int d = date_day(*v);
+		int wd1 = date_dayofweek(mkdate(4, 1, y));
+		int wd2 = date_dayofweek(*v);
+		int cnt1, cnt2;
+		if (m == 1 && d < 4 && wd2 > wd1) {
+			/* last week of previous y */
+			cnt1 = date_countdays(mkdate(4, 1, y - 1));
+			wd1 = date_dayofweek(mkdate(4, 1, y - 1));
+		} else {
+			cnt1 = date_countdays(mkdate(4, 1, y));
+		}
+		cnt2 = date_countdays(*v);
+		if (wd2 < wd1)
+			cnt2 += 6;
+		*ret = (cnt2 - cnt1) / 7 + 1;
 	}
 	return MAL_SUCCEED;
 }
@@ -2106,25 +2060,10 @@ MTIMEdate_addyears(date *ret, const date *v, const int *delta)
 	if (is_date_nil(*v) || is_int_nil(*delta)) {
 		*ret = date_nil;
 	} else {
-		int d, m, y, x, z = *delta;
-
-		fromdate(*v, &d, &m, &y);
-		if (m >= 3) {
-			y++;
-		}
-		*ret = *v;
-		while (z > 0) {
-			x = YEARDAYS(y);
-			MTIMEdate_adddays(ret, ret, &x);
-			z--;
-			y++;
-		}
-		while (z < 0) {
-			z++;
-			y--;
-			x = -YEARDAYS(y);
-			MTIMEdate_adddays(ret, ret, &x);
-		}
+		if (*delta >= 0)
+			*ret = *v + ((*delta * 12) << DTMONTH_SHIFT);
+		else
+			*ret = *v - ((-*delta * 12) << DTMONTH_SHIFT);
 	}
 	return MAL_SUCCEED;
 }
@@ -2140,7 +2079,25 @@ MTIMEdate_adddays(date *ret, const date *v, const int *delta)
 	if (is_int_nil(cur) || is_int_nil(inc) || (inc > 0 && (max - cur) < inc) || (inc < 0 && (min - cur) > inc)) {
 		*ret = date_nil;
 	} else {
-		*ret = *v + *delta;
+		int y = date_year(*v);
+		int m = date_month(*v);
+		int d = date_day(*v);
+		d += *delta;
+		while (d <= 0) {
+			if (--m == 0) {
+				m = 12;
+				y--;
+			}
+			d += MONTHDAYS(m, y);
+		}
+		while (d > MONTHDAYS(m, y)) {
+			d -= MONTHDAYS(m, y);
+			if (++m > 12) {
+				m = 1;
+				y++;
+			}
+		}
+		*ret = mkdate(d, m, y);
 	}
 	return MAL_SUCCEED;
 }
@@ -2153,28 +2110,10 @@ MTIMEdate_addmonths(date *ret, const date *v, const int *delta)
 	if (is_date_nil(*v) || is_int_nil(*delta)) {
 		*ret = date_nil;
 	} else {
-		int d, m, y, x, z = *delta;
-
-		fromdate(*v, &d, &m, &y);
-		*ret = *v;
-		while (z > 0) {
-			z--;
-			x = MONTHDAYS(m, y);
-			if (++m == 13) {
-				m = 1;
-				y++;
-			}
-			MTIMEdate_adddays(ret, ret, &x);
-		}
-		while (z < 0) {
-			z++;
-			if (--m == 0) {
-				m = 12;
-				y--;
-			}
-			x = -MONTHDAYS(m, y);
-			MTIMEdate_adddays(ret, ret, &x);
-		}
+		if (*delta >= 0)
+			*ret = *v + (*delta << DTMONTH_SHIFT);
+		else
+			*ret = *v - (-*delta << DTMONTH_SHIFT);
 	}
 	return MAL_SUCCEED;
 }
@@ -2193,7 +2132,7 @@ MTIMEdate_diff(int *ret, const date *v1, const date *v2)
 	if (is_date_nil(*v1) || is_date_nil(*v2)) {
 		*ret = int_nil;
 	} else {
-		*ret = (int) (*v1 - *v2);
+		*ret = date_countdays(*v1) - date_countdays(*v2);
 	}
 	return MAL_SUCCEED;
 }
@@ -2233,16 +2172,13 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	bn->tnonil = true;
 	bn->tnil = false;
 	for (i = 0; i < n; i++) {
-		if (is_date_nil(*t1) || is_date_nil(*t2)) {
-			*tn = int_nil;
+		if (is_date_nil(t1[i]) || is_date_nil(t2[i])) {
+			tn[i] = int_nil;
 			bn->tnonil = false;
 			bn->tnil = true;
 		} else {
-			*tn = (int) (*t1 - *t2);
+			tn[i] = date_countdays(t1[i]) - date_countdays(t2[i]);
 		}
-		t1++;
-		t2++;
-		tn++;
 	}
 	BBPunfix(b2->batCacheid);
 	BATsetcount(bn, (BUN) (tn - (int *) Tloc(bn, 0)));
@@ -2375,10 +2311,7 @@ MTIMErule_create(rule *ret, const int *month, const int *day, const int *weekday
 		!is_int_nil(*minutes) && *minutes >= 0 && *minutes < 24 * 60 &&
 		!is_int_nil(*day) && abs(*day) >= 1 && abs(*day) <= LEAPDAYS[*month] &&
 		(*weekday || *day > 0)) {
-		*ret = mkrule(*month,
-					  *minutes,
-					  DAY_ZERO + *day,
-					  WEEKDAY_ZERO + *weekday);
+		*ret = mkrule(*month, *minutes, *day, *weekday);
 	}
 	return MAL_SUCCEED;
 }
@@ -2428,7 +2361,7 @@ MTIMErule_extract_month(int *ret, const rule *r)
 str
 MTIMErule_extract_day(int *ret, const rule *r)
 {
-	*ret = (is_rule_nil(*r)) ? int_nil : rule_day(*r) - DAY_ZERO;
+	*ret = (is_rule_nil(*r)) ? int_nil : rule_day(*r);
 	return MAL_SUCCEED;
 }
 
@@ -2436,7 +2369,7 @@ MTIMErule_extract_day(int *ret, const rule *r)
 str
 MTIMErule_extract_weekday(int *ret, const rule *r)
 {
-	*ret = (is_rule_nil(*r)) ? int_nil : rule_weekday(*r) - WEEKDAY_ZERO;
+	*ret = (is_rule_nil(*r)) ? int_nil : rule_weekday(*r);
 	return MAL_SUCCEED;
 }
 
