@@ -167,6 +167,8 @@ def mFilter (FILE, IGNORE) :
            iline.startswith('# cmdline opt') or \
            iline.startswith('# config opt'):
             continue
+        if iline.startswith('#--------------------------'):
+            iline = '#--------------------------#\n'
         # normalize exponents in floating point representation: remove
         # leading zeros from exponent (but keeping at least one digit,
         # even if zero)
