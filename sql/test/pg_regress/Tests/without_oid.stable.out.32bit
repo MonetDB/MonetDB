@@ -8,7 +8,7 @@ stdout of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 # MonetDB 5 server v11.20.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_pg_regress', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
+# Compiled for i686-pc-winnt/32bit
 # Found 15.356 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
@@ -104,14 +104,14 @@ stdout of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 #INSERT INTO wo (i) SELECT i+6688 FROM wi WHERE i<=2448;  -- 6688+2448=9136
 [ 2448	]
 #SELECT count(oid) FROM wi;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 9136	]
 #SELECT count(i) FROM wo;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 4 # length
 [ 9136	]
@@ -153,14 +153,14 @@ stdout of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 #CREATE TABLE create_table_test3 /* WITHOUT OIDS */ AS
 #    SELECT a + b AS c1, a - b AS c2 FROM create_table_test WITH DATA;
 #SELECT count(oid) FROM create_table_test2;
-% sys.L1 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
 #SELECT count(*) FROM create_table_test3;
-% sys.L1 # table_name
-% L1 # name
+% .L3 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 2	]
