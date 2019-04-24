@@ -719,7 +719,7 @@ elif sys.version_info[0] == 3:
 
 def openutf8(file, mode='r'):
     try:
-        f = open(file, mode, encoding='utf-8') # Python 3
+        f = open(file, mode, encoding='utf-8', errors='replace') # Python 3
     except TypeError:
         f = open(file, mode)    # Python 2
     return f

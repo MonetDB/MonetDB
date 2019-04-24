@@ -106,7 +106,7 @@ if os.path.exists(lineorderdir):
 if not os.path.exists(lineorderdir):
     os.makedirs(lineorderdir)
 inputData = open(lineordertbl, 'r').read().split('\n')
-linesperslice = len(inputData) / nworkers + 1
+linesperslice = len(inputData) // nworkers + 1
 i = 0
 for lines in range(0, len(inputData), linesperslice):
     outputData = inputData[lines:lines+linesperslice]

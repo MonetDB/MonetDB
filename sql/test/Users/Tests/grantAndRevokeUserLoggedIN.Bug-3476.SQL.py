@@ -20,7 +20,7 @@ def query(conn, sql):
     cur = conn.cursor()
     try:
         cur.execute(sql)
-    except pymonetdb.OperationalError, e:
+    except pymonetdb.OperationalError as e:
         print("!", e)
         return
     r = cur.fetchall()
@@ -31,7 +31,7 @@ def run(conn, sql):
     print(sql)
     try:
         r = conn.execute(sql)
-    except pymonetdb.OperationalError, e:
+    except pymonetdb.OperationalError as e:
         print("!", e)
         return
     print('# OK')

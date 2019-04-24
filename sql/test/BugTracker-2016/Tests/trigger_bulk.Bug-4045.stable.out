@@ -90,6 +90,7 @@ stdout of test 'trigger_bulk.Bug-4045` in directory 'sql/test/BugTracker-2016` i
 % 2,	7 # length
 [ 10,	"monetdb"	]
 [ 20,	"monet"	]
+#DROP TABLE t111 CASCADE;
 
 # 09:09:27 >  
 # 09:09:27 >  "Done."
