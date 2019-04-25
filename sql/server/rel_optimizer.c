@@ -4587,6 +4587,8 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		list *exps = rel->exps, *nexps = sa_list(sql->sa);
 		node *n;
 
+		if (nexps == NULL)
+			return NULL;
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
@@ -7058,7 +7060,9 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 	if (is_select(rel->op) && rel->exps) {
 		node *n;
 		list *exps = sa_list(sql->sa);
-			
+
+		if (exps == NULL)
+			return NULL;
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			list *l = e->l;
