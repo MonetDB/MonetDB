@@ -102,7 +102,7 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		logmsg = GDKgetenv("recovery");
 		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit", "#WARNING server not ready, recovery in progress\n");
-    }while (logmsg == NULL);
+	} while (logmsg == NULL);
 	return msg;
 }
 
@@ -125,7 +125,7 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		logmsg = GDKgetenv("recovery");
 		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
-    }while (logmsg == NULL);
+	} while (logmsg == NULL);
 	return msg;
 }
 
