@@ -3990,12 +3990,13 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 	int res;
 
 	if (tr != gtrans && tr->moved_tables) { //before doing any schema updates,
-		for (node *n = tr->moved_tables->h ; n ; n = n->next) {
+		for (node *n = tr->moved_tables->t ; n ; ) { //iterate backwards
 			sql_moved_table *smt = (sql_moved_table*) n->data;
 
 			assert(smt && smt->to && smt->from && smt->t);
 			cs_move(&smt->to->tables, &smt->from->tables, smt->t);
 			smt->t->s = smt->from;
+			n = smt->p;
 		}
 	}
 	tr->moved_tables = NULL;
@@ -5202,12 +5203,15 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	cs_move(&os->tables, &ns->tables, t);
 	t->s = ns;
 
+	if (!tr->moved_tables) {
+		tr->moved_tables = sa_list(tr->sa);
+		tr->moved_tables->t = NULL;
+	}
 	m = SA_ZNEW(tr->sa, sql_moved_table); //add transaction log entry
 	m->from = os;
 	m->to = ns;
 	m->t = t;
-	if (!tr->moved_tables)
-		tr->moved_tables = sa_list(tr->sa);
+	m->p = tr->moved_tables->t;
 	list_append(tr->moved_tables, m);
 
 	tr->wtime = tr->wstime;

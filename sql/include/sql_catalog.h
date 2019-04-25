@@ -605,6 +605,7 @@ typedef struct sql_moved_table {
 	sql_schema *from;
 	sql_schema *to;
 	sql_table *t;
+	node *p; //need to iterate the list backwards
 } sql_moved_table;
 
 typedef struct res_col {
