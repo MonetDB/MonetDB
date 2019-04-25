@@ -1331,7 +1331,7 @@ bm_tids(BAT *b, BAT *d)
 		return NULL;
 
 	if (BATcount(d)) {
-		BAT *diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
+		BAT *diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
 		logbat_destroy(tids);
 		tids = diff;
 	}

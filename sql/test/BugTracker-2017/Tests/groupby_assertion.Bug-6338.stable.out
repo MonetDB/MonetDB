@@ -63,7 +63,7 @@ stdout of test 'groupby_assertion.Bug-6338` in directory 'sql/test/BugTracker-20
 #          c.type,null 
 #               from sys.tables as T, sys.columns as C 
 #               where T.id = C.table_id and T.name = 'source_ac_0';
-[ 0	]
+[ 3	]
 
 # 16:45:11 >  
 # 16:45:11 >  "Done."

@@ -41,10 +41,10 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 113 # length
+% 69 # length
 project (
 | project (
-| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT 
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 | ) [ "fk"."id" NOT NULL HASHCOL  as "v1"."id" ]
 ) [ "v1"."id" NOT NULL HASHCOL  ] [ "v1"."id" ASC NOT NULL HASHCOL  ]
 

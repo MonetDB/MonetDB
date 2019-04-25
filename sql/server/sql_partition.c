@@ -13,6 +13,7 @@
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_updates.h"
 #include "mal_exception.h"
@@ -266,6 +267,8 @@ bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int 
 		r->exps = sa_list(sql->sa);
 		list_append(r->exps, exp);
 
+		if (r)
+			r = rel_unnest(sql, r);
 		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {

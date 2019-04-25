@@ -36,18 +36,16 @@ stdout of test 'limit.Bug-6322` in directory 'sql/test/BugTracker-2017` itself:
 #where (true)
 #  or ((select pc from sys.tracelog)
 #       is not NULL);
-% sys.L15 # table_name
+% .L23 # table_name
 % c2 # name
 % varchar # type
 % 93 # length
 [ "+proj=longlat +ellps=bessel +towgs84=595.48,121.69,515.35,4.115,-2.9383,0.853,-3.408 +no_defs"	]
 [ "+proj=longlat +ellps=aust_SA +no_defs"	]
 [ "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
-[ "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
 [ "+proj=longlat +ellps=bessel +towgs84=682,-203,480,0,0,0,0 +no_defs"	]
 [ "+proj=longlat +ellps=airy +no_defs"	]
 [ "+proj=longlat +ellps=mod_airy +no_defs"	]
-[ "+proj=longlat +ellps=aust_SA +no_defs"	]
 [ "+proj=longlat +ellps=bessel +no_defs"	]
 [ "+proj=longlat +a=6377492.018 +b=6356173.508712696 +no_defs"	]
 [ "+proj=longlat +ellps=bess_nam +no_defs"	]

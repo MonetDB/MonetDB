@@ -24,7 +24,6 @@ sql_stack_new(sql_allocator *sa, int size)
 		_DELETE(s);
 		return NULL;
 	}
-	s -> values[s->top++] = NULL; 
 	return s;
 }
 
@@ -44,5 +43,21 @@ sql_stack_push(sql_stack *s, void *v)
 void *
 sql_stack_pop(sql_stack *s)
 {
+	if (s->top == 0)
+		return NULL;
 	return s->values[--s->top];
+}
+
+void *
+sql_stack_peek(sql_stack *s, int p)
+{
+	if (p>=s->top)
+		return NULL;
+	return s->values[(s->top-1)-p];
+}
+
+int
+sql_stack_empty(sql_stack *s)
+{
+	return (s->top == 0);
 }

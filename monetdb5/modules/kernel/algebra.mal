@@ -213,7 +213,7 @@ command rangejoin(l:bat[:any_1],r1:bat[:any_1],r2:bat[:any_1],sl:bat[:oid],sr:ba
 address ALGrangejoin
 comment "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2";
 
-command difference(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) :bat[:oid]
+command difference(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,nil_clears:bit,estimate:lng) :bat[:oid]
 address ALGdifference
 comment "Difference of l and r with candidate lists";
 
@@ -317,8 +317,16 @@ command min(b:bat[:any_2]):any_2
 address ALGminany
 comment "Return the lowest tail value or nil.";
 
+command min(b:bat[:any_2], skipnil:bit):any_2
+address ALGminany_skipnil
+comment "Return the lowest tail value or nil.";
+
 command max(b:bat[:any_2]):any_2
 address ALGmaxany
+comment "Return the highest tail value or nil.";
+
+command max(b:bat[:any_2], skipnil:bit):any_2
+address ALGmaxany_skipnil
 comment "Return the highest tail value or nil.";
 
 pattern avg(b:bat[:any_2]) :dbl

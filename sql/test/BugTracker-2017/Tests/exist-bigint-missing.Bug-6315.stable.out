@@ -29,7 +29,7 @@ stdout of test 'exist-bigint-missing.Bug-6315` in directory 'sql/test/BugTracker
 #                else (false)
 #        end
 #from sys.table_types limit 3;
-% sys.L37 # table_name
+% .L37 # table_name
 % L37 # name
 % boolean # type
 % 5 # length
@@ -42,8 +42,8 @@ stdout of test 'exist-bigint-missing.Bug-6315` in directory 'sql/test/BugTracker
 #                else (false)
 #        end
 #from sys.table_types limit 3;
-% sys.L40 # table_name
-% L40 # name
+% .L41 # table_name
+% L41 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -432,6 +432,7 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 			return LOG_ERR;
 
 		if (BATcount(ib) && ib->hseqbase <= rid) { 
+			/* ToDo what if rid updates 'old inserts' */
 			if (void_inplace(ib, rid, upd, true) != GDK_SUCCEED) {
 				bat_destroy(ib);
 				return LOG_ERR;

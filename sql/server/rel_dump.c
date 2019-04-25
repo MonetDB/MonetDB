@@ -44,7 +44,7 @@ print_indent(mvc *sql, stream *fout, int depth, int decorate)
 static void
 cmp_print(mvc *sql, stream *fout, int cmp) 
 {
-	char *r;
+	char *r = NULL;
 
 	(void)sql;
 	switch(cmp) {
@@ -54,13 +54,24 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_lt: 		r = "<"; break;
 	case cmp_equal: 	r = "="; break;
 	case cmp_notequal: 	r = "!="; break;
-	case cmp_all: 		r = "all"; break;
+
+	case cmp_filter: 	r = "filter"; break;
 	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
-	case cmp_filter: 	r = "filter"; break;
-	default:
-		r = "";
+	case cmp_equal_nil: 	r = "=*"; break;
+
+	case mark_in: 		r = "any ="; break;
+	case mark_notin: 	r = "all <>"; break;
+	case mark_exists: 	r = "exists"; break;
+	case mark_notexists: 	r = "!exists"; break;
+
+	case cmp_all: 		
+	case cmp_project: 		
+	case cmp_joined: 		
+	case cmp_left: 		
+	case cmp_left_project: 		
+				r = "inner"; break;
 	}
 	mnstr_printf(fout, " %s ", r);
 }
@@ -172,6 +183,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, "()");
 	} 	break;
 	case e_column: 
+		if (is_freevar(e)) 
+			mnstr_printf(fout, "!!!FREE!!! ");
 		if (e->l)
 			mnstr_printf(fout, "\"%s\".", (char*)e->l);
 		mnstr_printf(fout, "\"%s\"", (char*)e->r);
@@ -279,8 +292,6 @@ op2string(operator_type op)
 		return "project";
 	case op_select: 
 		return "select";
-	case op_apply: 
-		return "apply";
 	case op_join: 
 	case op_left: 
 	case op_right: 
@@ -397,7 +408,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 	case op_left: 
 	case op_right: 
 	case op_full: 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 	case op_union: 
@@ -410,17 +420,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			r = "right outer join";
 		else if (rel->op == op_full)
 			r = "full outer join";
-		else if (rel->op == op_apply) {
-			r = "apply";
-			if (rel->flag == APPLY_JOIN)
-				r = "apply join";
-			else if (rel->flag == APPLY_LOJ)
-				r = "apply left outer join";
-			else if (rel->flag == APPLY_EXISTS)
-				r = "apply exists";
-			else if (rel->flag == APPLY_NOTEXISTS)
-				r = "apply not exists";
-		}
 		else if (rel->op == op_semi)
 			r = "semijoin";
 		else if (rel->op == op_anti)
@@ -434,6 +433,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		else if (!rel->exps && rel->op == op_join)
 			r = "crossproduct";
 		print_indent(sql, fout, depth, decorate);
+		if (is_dependent(rel)) 
+			mnstr_printf(fout, "dependent ");
 		if (need_distinct(rel))
 			mnstr_printf(fout, "distinct ");
 		mnstr_printf(fout, "%s (", r);
@@ -569,7 +570,6 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_left: 
 	case op_right: 
 	case op_full: 
-	case op_apply: 
 	case op_semi: 
 	case op_anti: 
 	case op_union: 
@@ -1126,9 +1126,21 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			f = cmp_or;
 		}
 		break;
+	case '!': 
+		f = cmp_notequal;
+		(*pos)++;
+		if (r[(*pos)] == '=') {
+			f = cmp_notequal;
+			(*pos)++;
+		}
+		break;
 	case '=': 
 		f = cmp_equal;
 		(*pos)++;
+		if (r[(*pos)] == '*') {
+			f = cmp_equal_nil;
+			(*pos)++;
+		}
 		break;
 	case '<': 
 		f = cmp_lt;

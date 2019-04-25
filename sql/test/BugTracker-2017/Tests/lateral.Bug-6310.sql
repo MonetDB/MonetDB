@@ -18,6 +18,7 @@ CREATE TABLE PARTSUPP ( PS_PARTKEY     INTEGER NOT NULL,
                              PRIMARY KEY    (PS_PARTKEY,PS_SUPPKEY),
                              FOREIGN KEY (PS_PARTKEY) references PART );
 
+
 select
   ref_0.message as c0
 from

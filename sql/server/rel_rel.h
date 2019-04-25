@@ -19,6 +19,8 @@
 #define sql_orderby 16
 #define sql_groupby 32 //ORed
 #define sql_partitionby 64 //ORed
+#define sql_aggr 128 //ORed
+#define sql_farg 256 //ORed
 
 #define is_sql_from(X)    ((X & sql_from) == sql_from)
 #define is_sql_where(X)   ((X & sql_where) == sql_where)
@@ -27,6 +29,8 @@
 #define is_sql_orderby(X) ((X & sql_orderby) == sql_orderby)
 #define is_sql_groupby(X) ((X & sql_groupby) == sql_groupby)
 #define is_sql_partitionby(X) ((X & sql_partitionby) == sql_partitionby)
+#define is_sql_aggr(X)    ((X & sql_aggr) == sql_aggr)
+#define is_sql_farg(X)    ((X & sql_farg) == sql_farg)
 
 #define ERR_AMBIGUOUS		050000
 
@@ -58,6 +62,9 @@ extern sql_rel *rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_ty
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern sql_rel *rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join);
 
+/* in case e is an constant and rel is a simple project of only e, free rel */
+extern sql_exp *rel_is_constant(sql_rel **rel, sql_exp *e);
+
 extern sql_rel *rel_topn(sql_allocator *sa, sql_rel *l, list *exps );
 extern sql_rel *rel_sample(sql_allocator *sa, sql_rel *l, list *exps );
 
@@ -71,6 +78,7 @@ extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 extern sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
+extern sql_rel *rel_project_exp(sql_allocator *sa, sql_exp *e);
 extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps);
 
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
@@ -87,4 +95,6 @@ extern sql_table *rel_ddl_table_get(sql_rel *r);
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_exp * rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char *cname );
+
+extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 #endif /* _REL_REL_H_ */

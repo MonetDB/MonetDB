@@ -44,7 +44,7 @@ stdout of test 'sqlsmith.Bug-6459` in directory 'sql/test/mergetables` itself:
 #            from 
 #              sys._tables as ref_6
 #            where false) then ref_4.auth_srid else ref_4.auth_srid end
-% .L154 # table_name
+% .L124 # table_name
 % c0 # name
 % int # type
 % 1 # length
@@ -70,7 +70,7 @@ stdout of test 'sqlsmith.Bug-6459` in directory 'sql/test/mergetables` itself:
 #        on (ref_4.proj4text = ref_5.clk )
 #    where case when EXISTS (
 #          select
-% .L364 # table_name
+% .L340 # table_name
 % c0 # name
 % int # type
 % 1 # length
@@ -98,7 +98,7 @@ stdout of test 'sqlsmith.Bug-6459` in directory 'sql/test/mergetables` itself:
 #            select
 #                ref_0.x as c0,
 #                ref_1.type as c1,
-% .L144,	.L146,	.L150,	.L152,	.L154,	.L156,	.L160,	.L162,	.L164,	.L166,	.L170 # table_name
+% sys.L140,	.L142,	sys.L144,	.L146,	sys.L150,	.L152,	sys.L154,	.L156,	sys.L160,	.L162,	.L164 # table_name
 % c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10 # name
 % clob,	int,	int,	int,	int,	int,	int,	int,	clob,	int,	int # type
 % 0,	1,	1,	1,	1,	1,	1,	1,	0,	1,	1 # length

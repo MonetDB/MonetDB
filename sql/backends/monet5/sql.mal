@@ -308,6 +308,12 @@ comment "Import a table from the files (fname)";
 command zero_or_one( col:bat[:any_1]) :any_1
 address zero_or_one
 comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+command zero_or_one( col:bat[:any_1], err:bit) :any_1
+address zero_or_one_error
+comment "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil";
+command zero_or_one( col:bat[:any_1], err:bat[:bit]) :any_1
+address zero_or_one_error_bat
+comment "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil";
 
 inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];
 	(g,e,h) := group.group(gp);
@@ -322,7 +328,47 @@ end sql.subzero_or_one;
 
 command all( col:bat[:any_1]) :any_1
 address SQLall
-comment "if col contains exactly one value return this. Incase of more raise an exception else return nil";
+comment "if all values in col are equal return this, else nil";
+
+command null(b:bat[:any_1]) :bit
+address SQLnil
+comment "if b has a nil return true, else false";
+
+command any(cmp:bit, nl:bit, nr:bit) :bit
+address SQLany_cmp
+comment "if cmp then true, (nl or nr) nil then nil, else false";
+
+command all(cmp:bit, nl:bit, nr:bit) :bit
+address SQLall_cmp
+comment "if !cmp then false, (nl or nr) then nil, else true";
+
+module aggr;
+
+command anyequal(l:bat[:any_1], r:bat[:any_1]) :bit
+address SQLanyequal
+comment "if any value in r is equal to l return true, else if r has nil nil else false";
+
+command allnotequal(l:bat[:any_1], r:bat[:any_1]) :bit
+address SQLallnotequal
+comment "if all values in r are not equal to l return true, else if r has nil nil else false";
+
+command subanyequal(l:bat[:any_1], r:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLanyequal_grp
+comment "if any value in r is equal to l return true, else if r has nil nil else false";
+
+command subanyequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLanyequal_grp2
+comment "if any value in r is equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then false";
+
+command suballnotequal(l:bat[:any_1], r:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLallnotequal_grp
+comment "if all values in r are not equal to l return true, else if r has nil nil else false";
+
+command suballnotequal(l:bat[:any_1], r:bat[:any_1], rid:bat[:oid], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:bit]
+address SQLallnotequal_grp2
+comment "if all values in r are not equal to l return true, else if r has nil nil else false, except if rid is nil (ie empty) then true";
+
+module sql;
 
 # todo implement = all aggregator (ie keep last value and compare status)
 inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit) :bat[:any_1];

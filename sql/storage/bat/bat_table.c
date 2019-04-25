@@ -26,7 +26,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 		BAT *d, *diff = NULL;
 
 		if ((d = store_funcs.bind_del(tr, t, RD_INS)) != NULL) {
-			diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
+			diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
 			bat_destroy(d);
 		}
 		bat_destroy(tids);
@@ -570,7 +570,7 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 		return NULL;
 	}
 
-	diff = BATdiff(s, rcb, NULL, NULL, false, BUN_NONE);
+	diff = BATdiff(s, rcb, NULL, NULL, false, false, BUN_NONE);
 	bat_destroy(rcb);
 	if (diff == NULL) {
 		full_destroy(rc, lcb);

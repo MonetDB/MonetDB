@@ -147,8 +147,8 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 #       cast(sum(aa) * count(case when bb < 2 then bb - 1 else bb + 1 end) / avg(1) over (rows between current row and current row) as bigint),
 #       avg(sum(aa)) over (rows unbounded preceding),
 #       avg(sum(aa)) over (range unbounded preceding) from analytics;
-% sys.L5,	sys.L16,	sys.L21,	sys.L25 # table_name
-% L5,	L16,	L21,	L25 # name
+% sys.L5,	sys.L15,	sys.L20,	sys.L24 # table_name
+% L5,	L15,	L20,	L24 # name
 % double,	bigint,	double,	double # type
 % 24,	3,	24,	24 # length
 [ 46,	460,	46,	46	]

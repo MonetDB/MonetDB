@@ -20,8 +20,8 @@
 #include "sql_relation.h"
 #include "sql_storage.h"
 #include "sql_keyword.h"
+#include "sql_querytype.h"
 #include "sql_atom.h"
-#include "sql_query.h"
 #include "sql_tokens.h"
 #include "sql_symbol.h"
 
@@ -84,12 +84,6 @@ typedef struct sql_var {
 	char visited; //used for window definitions lookup
 } sql_var;
 
-typedef struct sql_subquery {
-	const char *name;
-	sql_rel *rel;	
-	void *s;
-} sql_subquery;
-
 #define MAXSTATS 8
 
 typedef struct mvc {
@@ -100,7 +94,6 @@ typedef struct mvc {
 	int clientid;		/* id of the owner */
 	struct scanner scanner;
 
-	list *sqs;		/* list of subqueries */
 	list *params;
 	sql_func *forward;	/* forward definitions for recursive functions */
 	sql_var *vars; 		/* stack of variables, frames are simply a
@@ -290,10 +283,6 @@ extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
-
-extern sql_subquery *mvc_push_subquery(mvc *m, const char *name, sql_rel *r);
-extern sql_subquery *mvc_find_subquery(mvc *m, const char *rname, const char *name);
-extern sql_exp *mvc_find_subexp(mvc *m, const char *rname, const char *name);
 
 extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 

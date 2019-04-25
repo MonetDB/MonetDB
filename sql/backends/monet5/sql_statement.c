@@ -14,6 +14,7 @@
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 
 #include "mal_namespace.h"
@@ -1417,6 +1418,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		int k;
 
 		switch (cmptype) {
+		case mark_in:
+		case mark_notin:
 		case cmp_equal:
 		case cmp_equal_nil:
 			op = "=";
@@ -1442,6 +1445,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		if ((q = multiplex2(mb, mod, convertOperator(op), l, r, TYPE_bit)) == NULL) 
 			return NULL;
+		if (cmptype == cmp_equal_nil)
+			q = pushBit(mb, q, TRUE); 
 		k = getDestVar(q);
 
 		q = newStmt(mb, algebraRef, selectRef);
@@ -1475,6 +1480,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushArgument(mb, q, sub->nr);
 			q = pushArgument(mb, q, r);
 			switch (cmptype) {
+			case mark_in:
+			case mark_notin: /* we use a anti join, todo handle null (not) in empty semantics */
 			case cmp_equal:
 				q = pushStr(mb, q, anti?"!=":"==");
 				break;
@@ -1768,6 +1775,43 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2)
 	q = pushNil(mb, q, TYPE_bat); /* left candidate */
 	q = pushNil(mb, q, TYPE_bat); /* right candidate */
 	q = pushBit(mb, q, FALSE);    /* nil matches */
+	q = pushBit(mb, q, FALSE);    /* do not clear nils */    
+	q = pushNil(mb, q, TYPE_lng); /* estimate */
+
+	if (q) {
+		stmt *s = stmt_create(be->mvc->sa, st_tdiff);
+		if (s == NULL) {
+			freeInstruction(q);
+			return NULL;
+		}
+
+		s->op1 = op1;
+		s->op2 = op2;
+		s->nrcols = op1->nrcols;
+		s->key = op1->key;
+		s->aggr = op1->aggr;
+		s->nr = getDestVar(q);
+		s->q = q;
+		return s;
+	}
+	return NULL;
+}
+
+stmt *
+stmt_tdiff2(backend *be, stmt *op1, stmt *op2)
+{
+	InstrPtr q = NULL;
+	MalBlkPtr mb = be->mb;
+
+	if (op1->nr < 0 || op2->nr < 0)
+		return NULL;
+	q = newStmt(mb, algebraRef, differenceRef);
+	q = pushArgument(mb, q, op1->nr); /* left */
+	q = pushArgument(mb, q, op2->nr); /* right */
+	q = pushNil(mb, q, TYPE_bat); /* left candidate */
+	q = pushNil(mb, q, TYPE_bat); /* right candidate */
+	q = pushBit(mb, q, FALSE);    /* nil matches */
+	q = pushBit(mb, q, TRUE);     /* clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	if (q) {
@@ -1838,6 +1882,8 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		return NULL;
 
 	switch (cmptype) {
+	case mark_in:
+	case mark_notin: /* we use a anti join, todo handle null (not) in empty */
 	case cmp_equal:
 		q = newStmt(mb, algebraRef, sjt);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -2947,6 +2993,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	p = find_prop(rel->p, PROP_REMOTE);
 	if (p) 
 		rel->p = prop_remove(rel->p, p);
+	rel = rel_unnest(be->mvc, rel);
 	rel = rel_optimizer(be->mvc, rel, 0);
 	if (p) {
 		p->p = rel->p;

@@ -33,7 +33,7 @@ stdout of test 'in_or_bug` in directory 'sql/test/bugs` itself:
 % 1 # length
 [ 1	]
 #select count(*) from t1 where c1='1' and (c2 in ('3') or c3 in ('3'));
-% .L3 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length

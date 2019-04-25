@@ -37,11 +37,11 @@ ERROR = !SELECT: 'crash2' requires a single sub query
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-41450/.s.monetdb.30991
 QUERY = select * from crash2(1, (select idx from data));
-ERROR = !relational query without result
+ERROR = !SELECT: no such operator 'crash2'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-25976/.s.monetdb.36797
 QUERY = select * from crash3((select idx from data), 2, 3);
-ERROR = !relational query without result
+ERROR = !SELECT: no such operator 'crash3'
 CODE  = 42000
 
 # 18:08:38 >  

@@ -81,8 +81,8 @@ stdout of test 'LEFT-JOIN_with_OR_conditions_triggers_assertion.Bug-3908` in dir
 % char,	int # type
 % 10,	3 # length
 [ "aaa",	100	]
-[ "bbb",	101	]
 [ "bbb",	100	]
+[ "bbb",	101	]
 [ "ccc",	101	]
 #DROP TABLE bar;
 #DROP TABLE foo;

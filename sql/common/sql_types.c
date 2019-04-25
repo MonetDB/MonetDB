@@ -1553,6 +1553,11 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "<=", "calc", "<=", ANY, ANY, BIT, SCALE_FIX);
 	sql_create_aggr(sa, "zero_or_one", "sql", "zero_or_one", ANY, ANY);
 	sql_create_aggr(sa, "all", "sql", "all", ANY, ANY);
+	sql_create_aggr(sa, "null", "sql", "null", ANY, BIT);
+	sql_create_func3(sa, "any", "sql", "any", BIT, BIT, BIT, BIT, SCALE_NONE);
+	sql_create_func3(sa, "all", "sql", "all", BIT, BIT, BIT, BIT, SCALE_NONE);
+	sql_create_aggr(sa, "anyequal", "aggr", "anyequal", ANY, BIT); /* needs 3 arguments (l,r,nil)(ugh) */
+	sql_create_aggr(sa, "allnotequal", "aggr", "allnotequal", ANY, BIT); /* needs 3 arguments (l,r,nil)(ugh) */
 	sql_create_aggr(sa, "exist", "aggr", "exist", ANY, BIT);
 	sql_create_aggr(sa, "not_exist", "aggr", "not_exist", ANY, BIT);
 	sql_create_func(sa, "sql_exists", "aggr", "exist", ANY, NULL, BIT, SCALE_NONE);

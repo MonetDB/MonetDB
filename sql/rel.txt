@@ -46,12 +46,6 @@ SEMI/ANTI
 	-> l		is left relation
 	-> r		is rigth relation
 
-APPLY
-	(card MULTI)
-	-> exps		are the bind variables (from the outer, correlated in the subquery)
-	-> l		is outer relation
-	-> r		is subquery relation
-
 UNION|EXCEPT|INTERSECT 
 	(card ATOM, AGGR or MULTI (same card as lower relation))
 	-> exps 	is list of projection expressions
@@ -126,8 +120,13 @@ e_cmp
 			cmp_in = 8,		in list handling 	->r is a list of values
 			cmp_notin = 9		not in list handling	->r is a list of values
 
-        		cmp_all = 10,		cross product
-			cmp_project = 11, 	special case for projection joins
+		        mark_in = 10,
+        		mark_not_in = 11, 
+        		mark_exists = 12,
+        		mark_not_exists = 13,
+
+        		cmp_all = 14,		cross product
+			cmp_project = 15, 	special case for projection joins
 		)
 
 e_func

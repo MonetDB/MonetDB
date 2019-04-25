@@ -92,8 +92,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
 #  FROM t1
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -196,8 +196,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1,2;
-% .L2,	.L3 # table_name
-% L1,	L3 # name
+% .L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ 0,	NULL	]
@@ -258,8 +258,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT abs(b-c)
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -298,8 +298,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND b IS NOT NULL
 #   AND a>b
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ 391	]
@@ -342,8 +342,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #   AND (e>c OR e<d)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L2,	.L3,	.L4,	.L5,	.L6,	.L7 # table_name
-% d,	L1,	L3,	L4,	L5,	L6,	L7 # name
+% sys.t1,	.L5,	sys.L7,	sys.L11,	sys.L13,	sys.L15,	sys.L17 # table_name
+% d,	L5,	L7,	L11,	L13,	L15,	L17 # name
 % int,	bigint,	bigint,	bigint,	smallint,	bigint,	bigint # type
 % 3,	2,	1,	2,	3,	3,	1 # length
 [ NULL,	9,	3,	NULL,	555,	475,	3	]
@@ -434,8 +434,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -697,8 +697,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% .t1,	.t1,	.L3 # table_name
-% e,	a,	L2 # name
+% sys.t1,	sys.t1,	.L10 # table_name
+% e,	a,	L10 # name
 % int,	int,	bigint # type
 % 3,	3,	1 # length
 [ NULL,	NULL,	0	]
@@ -761,8 +761,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR c>d
 #ORDER BY 1,2,3;
-% .L3,	.L4,	.L6 # table_name
-% L3,	L4,	L5 # name
+% sys.L6,	sys.L10,	.L14 # table_name
+% L6,	L10,	L14 # name
 % bigint,	smallint,	bigint # type
 % 4,	3,	1 # length
 [ NULL,	444,	0	]
@@ -788,8 +788,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L1,	.L3,	.t1,	.L6 # table_name
-% L1,	L2,	d,	L6 # name
+% sys.L2,	.L6,	sys.t1,	sys.L16 # table_name
+% L2,	L6,	d,	L16 # name
 % bigint,	bigint,	int,	bigint # type
 % 1,	2,	3,	4 # length
 [ NULL,	0,	101,	NULL	]
@@ -923,8 +923,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND e+d BETWEEN a+b-10 AND c+130
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1,	sys.L6 # table_name
-% L1,	L2,	L3,	L4,	L5,	b,	L6 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12,	sys.t1,	sys.L15 # table_name
+% L2,	L4,	L6,	L10,	L12,	b,	L15 # name
 % bigint,	bigint,	int,	bigint,	smallint,	int,	bigint # type
 % 1,	2,	3,	1,	3,	3,	2 # length
 [ 2,	-1,	107,	1,	333,	105,	-1	]
@@ -990,8 +990,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #   AND d>e
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.t1,	sys.L7,	sys.t1 # table_name
-% L3,	L4,	L5,	L6,	a,	L7,	d # name
+% sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.t1,	sys.L17,	sys.t1 # table_name
+% L6,	L10,	L12,	L14,	a,	L17,	d # name
 % bigint,	int,	smallint,	bigint,	int,	bigint,	int # type
 % 4,	1,	3,	1,	1,	1,	3 # length
 [ 1120,	NULL,	555,	NULL,	NULL,	4,	114	]
@@ -1113,8 +1113,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L1,	sys.t1,	sys.L2 # table_name
-% e,	L1,	c,	L2 # name
+% sys.t1,	sys.L3,	sys.t1,	sys.L6 # table_name
+% e,	L3,	c,	L6 # name
 % int,	bigint,	int,	bigint # type
 % 3,	3,	3,	2 # length
 [ NULL,	455,	150,	1	]
@@ -1293,8 +1293,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -1314,8 +1314,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -1477,9 +1477,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #   AND d>e
-#;
-% sys.L1,	sys.t1,	sys.L2,	sys.t1 # table_name
-% L1,	d,	L2,	e # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.t1,	sys.L5,	sys.t1 # table_name
+% L2,	d,	L5,	e # name
 % bigint,	int,	bigint,	int # type
 % 3,	3,	1,	3 # length
 [ 385,	128,	4,	126	]
@@ -1491,8 +1491,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -1515,8 +1515,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR c>d
 #    OR (e>c OR e<d)
 #ORDER BY 1,2;
-% sys.L1,	sys.L4 # table_name
-% L1,	L4 # name
+% sys.L2,	sys.L10 # table_name
+% L2,	L10 # name
 % bigint,	bigint # type
 % 2,	4 # length
 [ NULL,	NULL	]
@@ -1550,8 +1550,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 555	]
@@ -1611,8 +1611,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -1642,17 +1642,17 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #   AND (e>a AND e<b)
 #ORDER BY 1,2;
-% .L2,	.L3 # table_name
-% L1,	L3 # name
+% .L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 #SELECT b-c,
 #       c
 #  FROM t1
 # WHERE (e>a AND e<b)
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	c # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	c # name
 % bigint,	int # type
 % 2,	3 # length
 [ -1,	224	]
@@ -1718,8 +1718,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L4 # table_name
+% L4 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -1831,8 +1831,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ NULL	]
@@ -1851,8 +1851,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -1912,8 +1912,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR d>e
 #ORDER BY 1,2,3;
-% .L2,	.L3,	.L4 # table_name
-% L2,	L3,	L4 # name
+% .L16,	.L20,	.L22 # table_name
+% L16,	L20,	L22 # name
 % bigint,	bigint,	int # type
 % 2,	1,	3 # length
 [ NULL,	1,	NULL	]
@@ -1948,8 +1948,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	159	]
@@ -2061,8 +2061,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #   AND a>b
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % smallint,	bigint,	bigint # type
 % 3,	2,	3 # length
 [ 222,	-3,	635	]
@@ -2110,8 +2110,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a>b
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 4 # length
 [ 358	]
@@ -2160,8 +2160,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	L3,	e,	L4,	L5 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.t1,	sys.L11,	sys.L13 # table_name
+% L2,	L4,	L6,	e,	L11,	L13 # name
 % bigint,	smallint,	bigint,	int,	smallint,	bigint # type
 % 1,	3,	2,	3,	3,	1 # length
 [ NULL,	555,	-2,	NULL,	444,	2	]
@@ -2173,9 +2173,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d NOT BETWEEN 110 AND 150
 #    OR (e>a AND e<b)
 #    OR a IS NULL
-#;
-% sys.t1,	sys.L1,	sys.t1 # table_name
-% d,	L1,	e # name
+#ORDER BY 1,2,3;
+% sys.t1,	sys.L3,	sys.t1 # table_name
+% d,	L3,	e # name
 % int,	bigint,	int # type
 % 3,	2,	3 # length
 [ 101,	1,	NULL	]
@@ -2246,8 +2246,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3 # table_name
-% b,	d,	L1,	L2,	L3 # name
+% sys.t1,	sys.t1,	sys.L4,	sys.L6,	sys.L10 # table_name
+% b,	d,	L4,	L6,	L10 # name
 % int,	int,	int,	bigint,	bigint # type
 % 3,	3,	3,	1,	2 # length
 [ 105,	108,	107,	1,	-1	]
@@ -2338,8 +2338,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 2,	1 # length
 [ NULL,	1	]
@@ -2376,8 +2376,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L4 # table_name
-% L1,	a,	L4 # name
+% sys.L2,	sys.t1,	sys.L11 # table_name
+% L2,	a,	L11 # name
 % smallint,	int,	bigint # type
 % 3,	3,	4 # length
 [ 111,	138,	1390	]
@@ -2451,8 +2451,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (a>b-2 AND a<b+2)
 #    OR (e>a AND e<b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -2505,8 +2505,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR a>b
 #ORDER BY 1,2;
-% sys.t1,	sys.L3 # table_name
-% c,	L3 # name
+% sys.t1,	sys.L7 # table_name
+% c,	L7 # name
 % int,	bigint # type
 % 3,	4 # length
 [ NULL,	2360	]
@@ -2670,8 +2670,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L4 # table_name
+% L4 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -2698,8 +2698,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(b-c)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L2,	.t1,	.L3,	.L4,	.L5,	.t1,	.L6 # table_name
-% L1,	d,	L3,	L4,	L5,	b,	L6 # name
+% .L4,	sys.t1,	sys.L7,	sys.L11,	sys.L13,	sys.t1,	sys.L16 # table_name
+% L4,	d,	L7,	L11,	L13,	b,	L16 # name
 % bigint,	int,	bigint,	bigint,	smallint,	int,	bigint # type
 % 2,	3,	2,	2,	3,	3,	1 # length
 [ 0,	101,	NULL,	1,	555,	NULL,	NULL	]
@@ -2808,9 +2808,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
-#;
-% sys.t1,	sys.L1,	sys.L2,	sys.t1 # table_name
-% d,	L1,	L2,	b # name
+#ORDER BY 1,2,3,4;
+% sys.t1,	sys.L3,	sys.L5,	sys.t1 # table_name
+% d,	L3,	L5,	b # name
 % int,	bigint,	bigint,	int # type
 % 3,	2,	1,	3 # length
 [ 108,	-1,	1,	105	]
@@ -2834,8 +2834,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2;
-% .L3,	.L4 # table_name
-% L2,	L4 # name
+% .L13,	.L15 # table_name
+% L13,	L15 # name
 % bigint,	int # type
 % 2,	3 # length
 [ 0,	107	]
@@ -2870,8 +2870,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #   AND (e>c OR e<d)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ -1	]
@@ -2885,8 +2885,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L3,	.L4,	.L5,	.L7 # table_name
-% L1,	L2,	L3,	L4,	L5,	L6 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12,	.L16 # table_name
+% L2,	L4,	L6,	L10,	L12,	L16 # name
 % bigint,	smallint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	3,	2,	2,	3,	1 # length
 [ NULL,	555,	NULL,	NULL,	711,	0	]
@@ -2943,8 +2943,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND e+d BETWEEN a+b-10 AND c+130
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	smallint # type
 % 2,	3 # length
 [ -2,	333	]
@@ -3157,8 +3157,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2;
-% .L2,	.L3 # table_name
-% L1,	L3 # name
+% .L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	bigint # type
 % 1,	3 # length
 [ 0,	369	]
@@ -3184,8 +3184,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% L1,	e,	L2,	L3,	L4 # name
+% sys.L2,	sys.t1,	sys.L5,	sys.L7,	sys.L11 # table_name
+% L2,	e,	L5,	L7,	L11 # name
 % smallint,	int,	bigint,	int,	bigint # type
 % 3,	3,	3,	3,	2 # length
 [ 111,	246,	743,	245,	-1	]
@@ -3211,8 +3211,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND c>d
 #   AND a>b
 #ORDER BY 1,2,3;
-% sys.L2,	sys.L5,	sys.L6 # table_name
-% L2,	L5,	L6 # name
+% sys.L4,	sys.L12,	sys.L14 # table_name
+% L4,	L12,	L14 # name
 % bigint,	bigint,	bigint # type
 % 2,	4,	2 # length
 [ -4,	1300,	1	]
@@ -3353,8 +3353,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L4 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	.L10 # table_name
+% L2,	L4,	L10 # name
 % int,	bigint,	bigint # type
 % 3,	1,	2 # length
 [ NULL,	2,	18	]
@@ -3420,8 +3420,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b IS NOT NULL
 #   AND e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -3489,9 +3489,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(a),
 #       d
 #  FROM t1
-#;
-% sys.L1,	sys.t1,	sys.t1,	sys.t1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% L1,	a,	b,	c,	L2,	L3,	d # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L2,	sys.t1,	sys.t1,	sys.t1,	sys.L7,	sys.L11,	sys.t1 # table_name
+% L2,	a,	b,	c,	L7,	L11,	d # name
 % bigint,	int,	int,	int,	bigint,	int,	int # type
 % 3,	3,	3,	3,	1,	3,	3 # length
 [ NULL,	NULL,	112,	113,	1,	NULL,	114	]
@@ -3531,8 +3531,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	239	]
@@ -3571,9 +3571,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d NOT BETWEEN 110 AND 150
 #   AND (a>b-2 AND a<b+2)
 #   AND a>b
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% L1,	L2,	L3,	c # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.L4,	sys.L6,	sys.t1 # table_name
+% L2,	L4,	L6,	c # name
 % bigint,	bigint,	smallint,	int # type
 % 2,	2,	3,	3 # length
 [ -1,	3,	555,	195	]
@@ -4128,9 +4128,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #   AND (e>c OR e<d)
 #   AND (a>b-2 AND a<b+2)
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	a # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	a # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	159	]
@@ -4165,8 +4165,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -4243,8 +4243,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a-b
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 2,	2 # length
 [ NULL,	NULL	]
@@ -4299,8 +4299,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3;
-% .t1,	.L2,	.L3 # table_name
-% a,	L1,	L3 # name
+% sys.t1,	.L5,	sys.L7 # table_name
+% a,	L5,	L7 # name
 % int,	bigint,	bigint # type
 % 3,	1,	2 # length
 [ 107,	0,	-1	]
@@ -4354,8 +4354,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.t1,	sys.L1,	sys.L2 # table_name
-% a,	d,	L1,	L2 # name
+% sys.t1,	sys.t1,	sys.L4,	sys.L6 # table_name
+% a,	d,	L4,	L6 # name
 % int,	int,	bigint,	smallint # type
 % 3,	3,	2,	3 # length
 [ NULL,	114,	NULL,	444	]
@@ -4493,8 +4493,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2;
-% sys.L1,	sys.L4 # table_name
-% L1,	L4 # name
+% sys.L2,	sys.L10 # table_name
+% L2,	L10 # name
 % int,	bigint # type
 % 3,	4 # length
 [ NULL,	NULL	]
@@ -4519,8 +4519,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(b-c)
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % bigint,	bigint,	bigint # type
 % 2,	2,	1 # length
 [ NULL,	NULL,	NULL	]
@@ -4628,8 +4628,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d>e
 #   AND b>c
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 5	]
@@ -4637,8 +4637,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ NULL	]
@@ -4728,8 +4728,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3 # table_name
-% c,	e,	L1,	L2,	L3 # name
+% sys.t1,	sys.t1,	sys.L4,	sys.L6,	sys.L10 # table_name
+% c,	e,	L4,	L6,	L10 # name
 % int,	int,	smallint,	bigint,	smallint # type
 % 3,	3,	3,	2,	3 # length
 [ NULL,	237,	444,	1,	555	]
@@ -4756,9 +4756,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #    OR a>b
-#;
-% sys.L1,	sys.L2,	sys.t1 # table_name
-% L1,	L2,	e # name
+#ORDER BY 1,2,3;
+% sys.L2,	sys.L4,	sys.t1 # table_name
+% L2,	L4,	e # name
 % smallint,	bigint,	int # type
 % 3,	2,	3 # length
 [ 222,	NULL,	204	]
@@ -4860,8 +4860,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L5,	.L6 # table_name
-% L1,	L2,	L3,	L4,	L6 # name
+% sys.L2,	sys.L4,	sys.L6,	.L12,	sys.L14 # table_name
+% L2,	L4,	L6,	L12,	L14 # name
 % bigint,	bigint,	bigint,	bigint,	int # type
 % 1,	2,	3,	1,	3 # length
 [ NULL,	NULL,	NULL,	0,	104	]
@@ -4906,8 +4906,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L2,	.L3,	.L4,	.t1,	.t1,	.L6,	.L7 # table_name
-% L1,	L3,	L4,	c,	d,	L5,	L7 # name
+% .L4,	sys.L6,	sys.L10,	sys.t1,	sys.t1,	.L16,	sys.L20 # table_name
+% L4,	L6,	L10,	c,	d,	L16,	L20 # name
 % bigint,	smallint,	bigint,	int,	int,	bigint,	bigint # type
 % 1,	3,	3,	3,	3,	1,	2 # length
 [ 0,	333,	317,	106,	108,	0,	2	]
@@ -4917,8 +4917,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2;
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% sys.L2,	.L6 # table_name
+% L2,	L6 # name
 % bigint,	bigint # type
 % 2,	1 # length
 [ NULL,	0	]
@@ -4947,9 +4947,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       e
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
-#;
-% sys.L1,	sys.t1,	sys.t1 # table_name
-% L1,	b,	e # name
+#ORDER BY 1,2,3;
+% sys.L2,	sys.t1,	sys.t1 # table_name
+% L2,	b,	e # name
 % bigint,	int,	int # type
 % 1,	3,	3 # length
 [ 1,	167,	165	]
@@ -4965,8 +4965,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>a AND e<b)
 #   AND c>d
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -5065,8 +5065,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a+b*2
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% L1,	b,	L2,	L3,	L4 # name
+% sys.L2,	sys.t1,	sys.L5,	sys.L7,	sys.L11 # table_name
+% L2,	b,	L5,	L7,	L11 # name
 % bigint,	int,	smallint,	int,	bigint # type
 % 2,	3,	3,	3,	3 # length
 [ NULL,	NULL,	444,	104,	NULL	]
@@ -5188,8 +5188,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a+b*2
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10 # table_name
+% L2,	L4,	L6,	L10 # name
 % bigint,	bigint,	smallint,	bigint # type
 % 2,	2,	3,	3 # length
 [ NULL,	NULL,	222,	723	]
@@ -5241,8 +5241,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END
 #  FROM t1
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -5278,8 +5278,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT d-e
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -5324,8 +5324,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR a IS NULL
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L4,	sys.L5,	sys.L6,	sys.t1,	sys.t1 # table_name
-% L1,	L4,	L5,	L6,	e,	b # name
+% sys.L2,	sys.L10,	sys.L12,	sys.L14,	sys.t1,	sys.t1 # table_name
+% L2,	L10,	L12,	L14,	e,	b # name
 % bigint,	bigint,	smallint,	bigint,	int,	int # type
 % 2,	4,	3,	2,	3,	3 # length
 [ -4,	1300,	333,	1,	132,	130	]
@@ -5350,8 +5350,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L2,	.L3,	.L4,	.t1 # table_name
-% L1,	L3,	L4,	a # name
+% .L4,	sys.L6,	sys.L10,	sys.t1 # table_name
+% L4,	L6,	L10,	a # name
 % bigint,	int,	bigint,	int # type
 % 1,	3,	3,	3 # length
 [ 0,	NULL,	NULL,	NULL	]
@@ -5539,8 +5539,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L2,	.L3,	.L4,	.t1,	.L7,	.L10 # table_name
-% e,	L1,	L3,	L4,	d,	L7,	L10 # name
+% sys.t1,	.L5,	sys.L7,	sys.L11,	sys.t1,	sys.L21,	sys.L23 # table_name
+% e,	L5,	L7,	L11,	d,	L21,	L23 # name
 % int,	bigint,	bigint,	smallint,	int,	bigint,	smallint # type
 % 3,	1,	2,	3,	3,	4,	3 # length
 [ NULL,	0,	NULL,	333,	NULL,	1510,	555	]
@@ -5579,8 +5579,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % bigint,	bigint,	smallint # type
 % 2,	2,	3 # length
 [ NULL,	1,	555	]
@@ -5663,8 +5663,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .t1,	.L2,	.L3,	.L4 # table_name
-% a,	L1,	L3,	L4 # name
+% sys.t1,	.L5,	sys.L7,	sys.L11 # table_name
+% a,	L5,	L7,	L11 # name
 % int,	bigint,	int,	smallint # type
 % 3,	1,	3,	3 # length
 [ NULL,	0,	NULL,	444	]
@@ -5708,8 +5708,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (e>c OR e<d)
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	c,	L3,	L4,	L5 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L7,	sys.L11,	sys.L13 # table_name
+% L2,	L4,	c,	L7,	L11,	L13 # name
 % bigint,	bigint,	int,	bigint,	int,	bigint # type
 % 1,	2,	3,	2,	3,	2 # length
 [ NULL,	NULL,	NULL,	1,	239,	NULL	]
@@ -5782,8 +5782,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -5905,8 +5905,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% .t1,	.L2 # table_name
-% d,	L2 # name
+% .t1,	.L12 # table_name
+% d,	L12 # name
 % int,	smallint # type
 % 3,	3 # length
 [ NULL,	222	]
@@ -5985,8 +5985,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3 # table_name
-% L1,	e,	L2,	L3 # name
+% sys.L2,	sys.t1,	sys.L5,	sys.L7 # table_name
+% L2,	e,	L5,	L7 # name
 % smallint,	int,	bigint,	smallint # type
 % 3,	3,	2,	3 # length
 [ 111,	135,	2,	222	]
@@ -6019,8 +6019,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4;
-% .L2,	.t1,	.L3,	.L6 # table_name
-% L2,	d,	L3,	L6 # name
+% .L16,	.t1,	.L21,	.L27 # table_name
+% L16,	d,	L21,	L27 # name
 % bigint,	int,	bigint,	bigint # type
 % 2,	3,	2,	4 # length
 [ NULL,	NULL,	1,	1580	]
@@ -6055,8 +6055,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -6208,8 +6208,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c-d
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L3,	sys.L4,	sys.L5 # table_name
-% L3,	L4,	L5 # name
+% sys.L6,	sys.L10,	sys.L12 # table_name
+% L6,	L10,	L12 # name
 % bigint,	bigint,	bigint # type
 % 4,	2,	2 # length
 [ NULL,	NULL,	1	]
@@ -6294,8 +6294,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR c>d
 #    OR a>b
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L3,	.L4 # table_name
-% c,	L1,	L2,	L4 # name
+% sys.t1,	sys.L3,	.L7,	sys.L11 # table_name
+% c,	L3,	L7,	L11 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	3,	2,	2 # length
 [ NULL,	711,	24,	NULL	]
@@ -6338,8 +6338,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L2,	.L3,	.L5,	.t1,	.t1,	.L6,	.L7 # table_name
-% L1,	L3,	L4,	c,	e,	L6,	L7 # name
+% .L4,	sys.L6,	.L12,	sys.t1,	sys.t1,	sys.L16,	sys.L20 # table_name
+% L4,	L6,	L12,	c,	e,	L16,	L20 # name
 % bigint,	bigint,	bigint,	int,	int,	int,	smallint # type
 % 2,	2,	1,	3,	3,	3,	3 # length
 [ 1,	-1,	0,	113,	110,	NULL,	444	]
@@ -6441,8 +6441,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .L2,	.L5,	.L6,	.t1,	.L7,	.L10,	.L11 # table_name
-% L1,	L5,	L6,	e,	L7,	L10,	L11 # name
+% .L4,	sys.L13,	sys.L15,	sys.t1,	sys.L20,	sys.L22,	sys.L24 # table_name
+% L4,	L13,	L15,	e,	L20,	L22,	L24 # name
 % bigint,	bigint,	smallint,	int,	bigint,	bigint,	int # type
 % 2,	4,	3,	3,	2,	2,	3 # length
 [ 0,	NULL,	444,	117,	NULL,	-1,	115	]
@@ -6462,8 +6462,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #   AND a>b
 #ORDER BY 1,2,3;
-% .t1,	.L1,	.L3 # table_name
-% d,	L1,	L2 # name
+% sys.t1,	sys.L3,	.L7 # table_name
+% d,	L3,	L7 # name
 % int,	int,	bigint # type
 % 1,	1,	1 # length
 #SELECT b-c,
@@ -6675,8 +6675,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L3,	.t1,	.L4,	.L6 # table_name
-% L1,	L2,	b,	L3,	a,	L4,	L5 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L7,	sys.t1,	sys.L12,	.L16 # table_name
+% L2,	L4,	b,	L7,	a,	L12,	L16 # name
 % bigint,	bigint,	int,	int,	int,	smallint,	bigint # type
 % 2,	1,	3,	3,	3,	3,	2 # length
 [ NULL,	NULL,	236,	239,	239,	444,	24	]
@@ -6799,8 +6799,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2;
-% .t1,	.L2 # table_name
-% e,	L1 # name
+% sys.t1,	.L5 # table_name
+% e,	L5 # name
 % int,	bigint # type
 % 3,	1 # length
 [ NULL,	0	]
@@ -6841,8 +6841,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L3,	.t1,	.L5,	.L10 # table_name
-% L1,	L2,	a,	L4,	L10 # name
+% sys.L2,	.L6,	sys.t1,	.L13,	sys.L23 # table_name
+% L2,	L6,	a,	L13,	L23 # name
 % bigint,	bigint,	int,	bigint,	bigint # type
 % 2,	2,	1,	1,	4 # length
 [ -1,	1,	NULL,	0,	1120	]
@@ -6851,8 +6851,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c-d
 #  FROM t1
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% d,	L1 # name
+% sys.t1,	sys.L3 # table_name
+% d,	L3 # name
 % int,	bigint # type
 % 3,	2 # length
 [ NULL,	NULL	]
@@ -6892,9 +6892,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #   AND a>b
 #   AND coalesce(a,b,c,d,e)<>0
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	a # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	a # name
 % smallint,	int # type
 % 3,	3 # length
 [ 555,	153	]
@@ -6968,8 +6968,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L3 # table_name
-% L1,	d,	L2 # name
+% sys.L2,	sys.t1,	.L7 # table_name
+% L2,	d,	L7 # name
 % bigint,	int,	bigint # type
 % 1,	3,	1 # length
 [ NULL,	116,	0	]
@@ -7118,8 +7118,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>c OR e<d)
 #   AND d>e
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ NULL	]
@@ -7349,8 +7349,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -7372,8 +7372,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ -2	]
@@ -7385,8 +7385,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% sys.t1,	sys.L1,	sys.L4 # table_name
-% b,	L1,	L4 # name
+% sys.t1,	sys.L3,	sys.L11 # table_name
+% b,	L3,	L11 # name
 % int,	bigint,	bigint # type
 % 3,	2,	4 # length
 [ NULL,	-1,	402	]
@@ -7415,8 +7415,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND (e>a AND e<b)
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3;
-% sys.L2,	sys.t1,	sys.L3 # table_name
-% L2,	d,	L3 # name
+% sys.L4,	sys.t1,	sys.L7 # table_name
+% L4,	d,	L7 # name
 % bigint,	int,	smallint # type
 % 1,	1,	1 # length
 #SELECT d-e,
@@ -7430,8 +7430,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d NOT BETWEEN 110 AND 150
 #   AND d>e
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7 # table_name
-% L1,	L2,	L5,	L6,	L7 # name
+% sys.L2,	sys.L4,	sys.L12,	sys.L14,	sys.L16 # table_name
+% L2,	L4,	L12,	L14,	L16 # name
 % bigint,	bigint,	bigint,	smallint,	int # type
 % 1,	1,	4,	3,	3 # length
 [ 1,	1,	440,	444,	220	]
@@ -7463,9 +7463,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #    OR a IS NULL
-#;
-% sys.t1,	sys.L1,	sys.t1,	sys.L2,	sys.t1 # table_name
-% d,	L1,	a,	L2,	e # name
+#ORDER BY 1,2,3,4,5;
+% sys.t1,	sys.L3,	sys.t1,	sys.L6,	sys.t1 # table_name
+% d,	L3,	a,	L6,	e # name
 % int,	bigint,	int,	bigint,	int # type
 % 3,	2,	3,	2,	3 # length
 [ NULL,	NULL,	159,	3,	157	]
@@ -7537,8 +7537,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #   AND b>c
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.t1,	sys.L2 # table_name
-% L1,	d,	c,	L2 # name
+% sys.L2,	sys.t1,	sys.t1,	sys.L6 # table_name
+% L2,	d,	c,	L6 # name
 % bigint,	int,	int,	bigint # type
 % 1,	1,	1,	1 # length
 #SELECT abs(a),
@@ -7612,8 +7612,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT c-d
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -7733,8 +7733,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2;
-% .t1,	.L2 # table_name
-% d,	L1 # name
+% sys.t1,	.L5 # table_name
+% d,	L5 # name
 % int,	bigint # type
 % 3,	2 # length
 [ NULL,	7	]
@@ -7816,8 +7816,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR b>c
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L3,	.L4,	.L5,	.L6,	.t1 # table_name
-% L1,	L2,	L4,	L5,	L6,	e # name
+% sys.L2,	.L6,	sys.L10,	sys.L12,	sys.L14,	sys.t1 # table_name
+% L2,	L6,	L10,	L12,	L14,	e # name
 % smallint,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	2,	1,	3,	3 # length
 [ 111,	26,	-1,	2,	444,	246	]
@@ -7884,8 +7884,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (c<=d-2 OR c>=d+2)
 #   AND e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ 317	]
@@ -7926,9 +7926,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #   AND a>b
-#;
-% sys.t1,	sys.L1,	sys.L2,	sys.t1 # table_name
-% d,	L1,	L2,	c # name
+#ORDER BY 1,2,3,4;
+% sys.t1,	sys.L3,	sys.L5,	sys.t1 # table_name
+% d,	L3,	L5,	c # name
 % int,	bigint,	bigint,	int # type
 % 3,	1,	2,	3 # length
 [ 108,	2,	-1,	106	]
@@ -7987,8 +7987,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR b>c
 #ORDER BY 1,2,3,4,5;
-% .L3,	.t1,	.L4,	.L5,	.L10 # table_name
-% L2,	c,	L4,	L5,	L10 # name
+% .L13,	.t1,	.L16,	.L20,	.L27 # table_name
+% L13,	c,	L16,	L20,	L27 # name
 % bigint,	int,	int,	bigint,	bigint # type
 % 1,	3,	3,	1,	4 # length
 [ 0,	NULL,	239,	NULL,	2360	]
@@ -8022,8 +8022,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2;
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% sys.L2,	.L6 # table_name
+% L2,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
@@ -8046,8 +8046,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 2 # length
 [ 0	]
@@ -8109,9 +8109,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       e
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
-#;
-% sys.L1,	sys.L2,	sys.t1 # table_name
-% L1,	L2,	e # name
+#ORDER BY 1,2,3;
+% sys.L2,	sys.L4,	sys.t1 # table_name
+% L2,	L4,	e # name
 % smallint,	smallint,	int # type
 % 3,	3,	3 # length
 [ 111,	222,	135	]
@@ -8135,8 +8135,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b IS NOT NULL
 #    OR a>b
 #ORDER BY 1,2;
-% .L2,	.L3 # table_name
-% L1,	L3 # name
+% .L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	NULL	]
@@ -8265,8 +8265,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (c<=d-2 OR c>=d+2)
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L4,	.L5,	.L6 # table_name
-% b,	L1,	L2,	L3,	L5,	L6 # name
+% sys.t1,	sys.L3,	sys.L5,	.L11,	sys.L13,	sys.L15 # table_name
+% b,	L3,	L5,	L11,	L13,	L15 # name
 % int,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	3,	2,	1,	3,	3 # length
 [ NULL,	NULL,	-1,	0,	444,	201	]
@@ -8368,9 +8368,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #    OR (a>b-2 AND a<b+2)
-#;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
-% L1,	L2,	b,	L3,	L4,	L5,	d # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L2,	sys.L4,	sys.t1,	sys.L7,	sys.L11,	sys.L13,	sys.t1 # table_name
+% L2,	L4,	b,	L7,	L11,	L13,	d # name
 % bigint,	bigint,	int,	smallint,	bigint,	bigint,	int # type
 % 2,	2,	3,	3,	3,	2,	3 # length
 [ NULL,	1,	158,	333,	475,	3,	NULL	]
@@ -8439,8 +8439,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L2,	.L3,	.t1,	.L5,	.L6 # table_name
-% L1,	L3,	e,	L4,	L6 # name
+% .L4,	sys.L6,	sys.t1,	.L13,	sys.L15 # table_name
+% L4,	L6,	e,	L13,	L15 # name
 % bigint,	bigint,	int,	bigint,	bigint # type
 % 1,	1,	3,	2,	2 # length
 [ 0,	NULL,	NULL,	0,	NULL	]
@@ -8490,8 +8490,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2;
-% .L2,	.L3 # table_name
-% L1,	L3 # name
+% .L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	smallint # type
 % 2,	3 # length
 [ 0,	444	]
@@ -8558,8 +8558,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L2,	.L4,	.L5 # table_name
-% L1,	d,	L2,	L3,	L5 # name
+% sys.L2,	sys.t1,	sys.L5,	.L11,	sys.L13 # table_name
+% L2,	d,	L5,	L11,	L13 # name
 % bigint,	int,	bigint,	bigint,	bigint # type
 % 1,	3,	2,	1,	2 # length
 [ 1,	108,	-2,	0,	-1	]
@@ -8569,8 +8569,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c>d
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -8711,9 +8711,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #   AND (e>a AND e<b)
-#;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1 # table_name
-% L1,	b,	L2,	L3,	L4,	L5,	d # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L2,	sys.t1,	sys.L5,	sys.L7,	sys.L11,	sys.L13,	sys.t1 # table_name
+% L2,	b,	L5,	L7,	L11,	L13,	d # name
 % smallint,	int,	bigint,	bigint,	int,	bigint,	int # type
 % 3,	3,	3,	1,	3,	2,	3 # length
 [ 444,	223,	666,	1,	220,	-1,	222	]
@@ -8738,8 +8738,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L2,	.L3,	.L4,	.t1,	.t1,	.L5 # table_name
-% L1,	L3,	L4,	a,	c,	L5 # name
+% .L4,	sys.L6,	sys.L10,	sys.t1,	sys.t1,	sys.L14 # table_name
+% L4,	L6,	L10,	a,	c,	L14 # name
 % bigint,	bigint,	bigint,	int,	int,	smallint # type
 % 1,	2,	2,	3,	3,	3 # length
 [ 0,	NULL,	NULL,	104,	102,	555	]
@@ -8781,8 +8781,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR b IS NOT NULL
 #    OR a>b
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L5 # name
+% sys.L2,	sys.L4,	.L10,	sys.L12 # table_name
+% L2,	L4,	L10,	L12 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 2,	1,	2,	2 # length
 [ NULL,	1,	2,	-3	]
@@ -8820,8 +8820,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (e>c OR e<d)
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3;
-% .L2,	.L4,	.t1 # table_name
-% L1,	L3,	d # name
+% .L4,	.L10,	sys.t1 # table_name
+% L4,	L10,	d # name
 % bigint,	bigint,	int # type
 % 2,	1,	3 # length
 [ 0,	0,	101	]
@@ -8858,8 +8858,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ -4	]
@@ -8910,8 +8910,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L1,	sys.t1,	sys.L2 # table_name
-% c,	L1,	a,	L2 # name
+% sys.t1,	sys.L3,	sys.t1,	sys.L6 # table_name
+% c,	L3,	a,	L6 # name
 % int,	bigint,	int,	smallint # type
 % 3,	2,	3,	3 # length
 [ NULL,	NULL,	239,	444	]
@@ -8996,8 +8996,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3 # table_name
-% e,	b,	L1,	L2,	L3 # name
+% sys.t1,	sys.t1,	sys.L4,	sys.L6,	sys.L10 # table_name
+% e,	b,	L4,	L6,	L10 # name
 % int,	int,	smallint,	bigint,	smallint # type
 % 3,	3,	3,	2,	3 # length
 [ NULL,	NULL,	555,	1,	444	]
@@ -9072,8 +9072,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND a>b
 #   AND a IS NULL
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 1 # length
 #SELECT (a+b+c+d+e)/5,
@@ -9166,8 +9166,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND (e>c OR e<d)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ 1,	-1	]
@@ -9293,8 +9293,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ 579	]
@@ -9325,8 +9325,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
-% a,	L3,	L4,	L5 # name
+% sys.t1,	sys.L7,	sys.L11,	sys.L13 # table_name
+% a,	L7,	L11,	L13 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	4,	1,	2 # length
 [ 107,	1050,	1,	-2	]
@@ -9512,9 +9512,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
 #    OR coalesce(a,b,c,d,e)<>0
-#;
-% sys.L1,	sys.t1,	sys.L2,	sys.t1 # table_name
-% L1,	d,	L2,	e # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.t1,	sys.L5,	sys.t1 # table_name
+% L2,	d,	L5,	e # name
 % int,	int,	smallint,	int # type
 % 3,	3,	3,	3 # length
 [ NULL,	114,	444,	110	]
@@ -9589,8 +9589,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4;
-% .t1,	.t1,	.L3,	.L4 # table_name
-% a,	e,	L2,	L4 # name
+% .t1,	.t1,	.L15,	.L17 # table_name
+% a,	e,	L15,	L17 # name
 % int,	int,	bigint,	bigint # type
 % 3,	3,	2,	1 # length
 [ NULL,	NULL,	18,	2	]
@@ -9684,8 +9684,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a-b
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.t1,	sys.L1,	sys.L2 # table_name
-% a,	L1,	L2 # name
+% sys.t1,	sys.L3,	sys.L5 # table_name
+% a,	L3,	L5 # name
 % int,	bigint,	bigint # type
 % 3,	3,	2 # length
 [ NULL,	NULL,	NULL	]
@@ -9872,8 +9872,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR a IS NULL
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3 # table_name
-% L1,	e,	L2,	L3 # name
+% sys.L2,	sys.t1,	sys.L5,	sys.L7 # table_name
+% L2,	e,	L5,	L7 # name
 % bigint,	int,	bigint,	bigint # type
 % 2,	3,	2,	2 # length
 [ NULL,	237,	NULL,	3	]
@@ -9992,8 +9992,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L3,	.L6 # table_name
-% d,	L1,	L2,	L6 # name
+% sys.t1,	sys.L3,	.L7,	sys.L16 # table_name
+% d,	L3,	L7,	L16 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	2,	1,	4 # length
 [ NULL,	NULL,	0,	1510	]
@@ -10068,8 +10068,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % smallint,	bigint # type
 % 3,	1 # length
 [ 555,	1	]
@@ -10116,8 +10116,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>c OR e<d)
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L3,	.t1,	.L4,	.t1,	.L5 # table_name
-% L1,	L2,	e,	L4,	b,	L5 # name
+% sys.L2,	.L6,	sys.t1,	sys.L11,	sys.t1,	sys.L14 # table_name
+% L2,	L6,	e,	L11,	b,	L14 # name
 % int,	bigint,	int,	bigint,	int,	smallint # type
 % 3,	1,	3,	1,	3,	3 # length
 [ NULL,	0,	NULL,	2,	206,	555	]
@@ -10151,8 +10151,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2,3;
-% .L1,	.L3,	.L4 # table_name
-% L1,	L2,	L4 # name
+% sys.L2,	.L6,	sys.L10 # table_name
+% L2,	L6,	L10 # name
 % smallint,	bigint,	smallint # type
 % 3,	2,	3 # length
 [ 111,	26,	444	]
@@ -10490,8 +10490,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>a AND e<b)
 #    OR a IS NULL
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L7 # table_name
-% L1,	L2,	L3,	L4,	L7 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10,	sys.L16 # table_name
+% L2,	L4,	L6,	L10,	L16 # name
 % bigint,	bigint,	smallint,	bigint,	bigint # type
 % 3,	1,	3,	2,	4 # length
 [ NULL,	1,	444,	NULL,	1120	]
@@ -10509,8 +10509,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L3,	.L5,	.L6,	.t1 # table_name
-% a,	L1,	L2,	L4,	L6,	d # name
+% sys.t1,	sys.L3,	.L7,	.L13,	sys.L15,	sys.t1 # table_name
+% a,	L3,	L7,	L13,	L15,	d # name
 % int,	bigint,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	1,	2,	2,	3 # length
 [ NULL,	-1,	0,	1,	4,	114	]
@@ -10567,9 +10567,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.t1,	sys.t1 # table_name
-% L1,	L2,	L3,	L4,	L5,	c,	a # name
+#ORDER BY 1,2,3,4,5,6,7;
+% sys.L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12,	sys.t1,	sys.t1 # table_name
+% L2,	L4,	L6,	L10,	L12,	c,	a # name
 % bigint,	smallint,	bigint,	smallint,	bigint,	int,	int # type
 % 2,	3,	3,	3,	2,	3,	3 # length
 [ -4,	333,	560,	444,	2,	187,	188	]
@@ -10691,8 +10691,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR c BETWEEN b-2 AND d+2
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L7 # table_name
-% e,	L1,	L2,	L3,	L4,	L7 # name
+% sys.t1,	sys.L3,	sys.L5,	sys.L7,	sys.L11,	sys.L17 # table_name
+% e,	L3,	L5,	L7,	L11,	L17 # name
 % int,	bigint,	smallint,	bigint,	bigint,	bigint # type
 % 3,	2,	3,	2,	2,	4 # length
 [ NULL,	NULL,	222,	-3,	1,	1240	]
@@ -10753,8 +10753,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -10828,8 +10828,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a-b
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3 # table_name
-% L1,	L2,	d,	L3 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L7 # table_name
+% L2,	L4,	d,	L7 # name
 % bigint,	smallint,	int,	bigint # type
 % 2,	3,	3,	2 # length
 [ NULL,	222,	NULL,	3	]
@@ -10871,8 +10871,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (a>b-2 AND a<b+2)
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% sys.L4,	sys.L5,	sys.L6,	sys.t1,	sys.L7 # table_name
-% L4,	L5,	L6,	c,	L7 # name
+% sys.L10,	sys.L12,	sys.L14,	sys.t1,	sys.L17 # table_name
+% L10,	L12,	L14,	c,	L17 # name
 % bigint,	bigint,	bigint,	int,	bigint # type
 % 4,	2,	2,	3,	3 # length
 [ 364,	1,	3,	184,	544	]
@@ -10905,8 +10905,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d>e
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% d,	L1 # name
+% sys.t1,	sys.L3 # table_name
+% d,	L3 # name
 % int,	smallint # type
 % 3,	3 # length
 [ 108,	333	]
@@ -10927,8 +10927,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a+b*2
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.t1,	sys.L1,	sys.L2 # table_name
-% b,	L1,	L2 # name
+% sys.t1,	sys.L3,	sys.L5 # table_name
+% b,	L3,	L5 # name
 % int,	smallint,	bigint # type
 % 3,	3,	3 # length
 [ NULL,	444,	NULL	]
@@ -11023,8 +11023,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L2,	.L4,	.L5,	.L6,	.L7 # table_name
-% L1,	L2,	L3,	L5,	L6,	L7 # name
+% sys.L2,	sys.L4,	.L10,	sys.L12,	sys.L14,	sys.L16 # table_name
+% L2,	L4,	L10,	L12,	L14,	L16 # name
 % bigint,	bigint,	bigint,	smallint,	int,	bigint # type
 % 1,	2,	2,	3,	3,	2 # length
 [ NULL,	NULL,	0,	444,	104,	NULL	]
@@ -11063,8 +11063,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.t1,	sys.t1,	sys.L1 # table_name
-% d,	c,	L1 # name
+% sys.t1,	sys.t1,	sys.L4 # table_name
+% d,	c,	L4 # name
 % int,	int,	smallint # type
 % 3,	3,	3 # length
 [ NULL,	147,	444	]
@@ -11101,8 +11101,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 3 # length
 [ 382	]
@@ -11219,8 +11219,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L4 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	.L10 # table_name
+% L2,	L4,	L10 # name
 % bigint,	bigint,	bigint # type
 % 2,	1,	2 # length
 [ -1,	2,	5	]
@@ -11310,8 +11310,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -11623,8 +11623,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L1,	.L3,	.t1,	.t1 # table_name
-% L1,	L2,	c,	d # name
+% sys.L2,	.L6,	sys.t1,	sys.t1 # table_name
+% L2,	L6,	c,	d # name
 % bigint,	bigint,	int,	int # type
 % 2,	1,	3,	3 # length
 [ NULL,	0,	NULL,	238	]
@@ -11839,8 +11839,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % bigint,	bigint,	bigint # type
 % 2,	1,	2 # length
 [ NULL,	NULL,	NULL	]
@@ -11883,8 +11883,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND c BETWEEN b-2 AND d+2
 #   AND d>e
 #ORDER BY 1,2,3,4,5;
-% .L2,	.L3,	.t1,	.t1,	.L4 # table_name
-% L1,	L3,	c,	b,	L4 # name
+% .L4,	sys.L6,	sys.t1,	sys.t1,	sys.L12 # table_name
+% L4,	L6,	c,	b,	L12 # name
 % bigint,	bigint,	int,	int,	bigint # type
 % 2,	1,	3,	3,	2 # length
 [ 10,	1,	161,	160,	3	]
@@ -11939,8 +11939,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2;
-% .L2,	.L3 # table_name
-% L1,	L3 # name
+% .L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	smallint # type
 % 1,	3 # length
 [ 0,	111	]
@@ -11978,8 +11978,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d>e
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 2,	2 # length
 [ NULL,	3	]
@@ -12144,8 +12144,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c-d
 #  FROM t1
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% e,	L1 # name
+% sys.t1,	sys.L3 # table_name
+% e,	L3 # name
 % int,	bigint # type
 % 3,	2 # length
 [ NULL,	NULL	]
@@ -12208,8 +12208,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT abs(a)
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ NULL	]
@@ -12262,8 +12262,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% sys.t1,	sys.L2 # table_name
-% a,	L2 # name
+% sys.t1,	sys.L5 # table_name
+% a,	L5 # name
 % int,	bigint # type
 % 3,	2 # length
 [ NULL,	NULL	]
@@ -12302,8 +12302,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L2,	.t1,	.L5,	.L7,	.L10,	.L11 # table_name
-% L1,	L2,	a,	L5,	L6,	L10,	L11 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L13,	.L17,	sys.L21,	sys.L23 # table_name
+% L2,	L4,	a,	L13,	L17,	L21,	L23 # name
 % smallint,	bigint,	int,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	4,	1,	2,	3 # length
 [ 111,	2,	245,	490,	0,	-4,	245	]
@@ -12346,8 +12346,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7,	sys.t1 # table_name
-% L1,	L2,	L5,	L6,	L7,	e # name
+% sys.L2,	sys.L4,	sys.L12,	sys.L14,	sys.L16,	sys.t1 # table_name
+% L2,	L4,	L12,	L14,	L16,	e # name
 % bigint,	bigint,	bigint,	smallint,	int,	int # type
 % 2,	2,	4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	444,	104,	NULL	]
@@ -12553,8 +12553,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 3,	3 # length
 [ NULL,	NULL	]
@@ -12650,9 +12650,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c
 #  FROM t1
 # WHERE c>d
-#;
-% sys.L1,	sys.t1,	sys.t1,	sys.L2,	sys.t1,	sys.t1 # table_name
-% L1,	b,	a,	L2,	e,	c # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.L2,	sys.t1,	sys.t1,	sys.L6,	sys.t1,	sys.t1 # table_name
+% L2,	b,	a,	L6,	e,	c # name
 % smallint,	int,	int,	bigint,	int,	int # type
 % 3,	3,	3,	2,	3,	3 # length
 [ 222,	124,	121,	NULL,	NULL,	123	]
@@ -12723,8 +12723,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b IS NOT NULL
 #   AND b>c
 #ORDER BY 1,2,3,4,5,6;
-% sys.t1,	sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% a,	L1,	b,	L2,	L3,	L4 # name
+% sys.t1,	sys.L3,	sys.t1,	sys.L6,	sys.L10,	sys.L12 # table_name
+% a,	L3,	b,	L6,	L10,	L12 # name
 % int,	bigint,	int,	bigint,	bigint,	bigint # type
 % 3,	2,	3,	3,	1,	2 # length
 [ 121,	1,	124,	369,	1,	-3	]
@@ -12787,9 +12787,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #    OR d NOT BETWEEN 110 AND 150
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	e # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	e # name
 % bigint,	int # type
 % 3,	3 # length
 [ NULL,	NULL	]
@@ -12856,8 +12856,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(b-c)
 #  FROM t1
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% e,	L1 # name
+% sys.t1,	sys.L3 # table_name
+% e,	L3 # name
 % int,	bigint # type
 % 3,	1 # length
 [ NULL,	NULL	]
@@ -12895,9 +12895,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c-d,
 #       e
 #  FROM t1
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% L1,	L2,	L3,	e # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.L4,	sys.L6,	sys.t1 # table_name
+% L2,	L4,	L6,	e # name
 % bigint,	bigint,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ NULL,	NULL,	1,	NULL	]
@@ -12940,8 +12940,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR c>d
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.L5,	.t1 # table_name
-% L1,	L2,	L3,	L4,	d # name
+% sys.L2,	sys.L4,	sys.L6,	.L12,	sys.t1 # table_name
+% L2,	L4,	L6,	L12,	d # name
 % bigint,	bigint,	bigint,	bigint,	int # type
 % 2,	1,	2,	2,	3 # length
 [ NULL,	NULL,	NULL,	24,	238	]
@@ -12993,8 +12993,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3;
-% .L4,	.L6,	.L10 # table_name
-% L4,	L5,	L7 # name
+% sys.L10,	.L14,	.L20 # table_name
+% L10,	L14,	L20 # name
 % bigint,	bigint,	bigint # type
 % 4,	1,	2 # length
 [ 364,	0,	14	]
@@ -13012,8 +13012,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L3,	.L5 # table_name
-% L1,	L2,	d,	L3,	L4 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L7,	.L13 # table_name
+% L2,	L4,	d,	L7,	L13 # name
 % bigint,	bigint,	int,	int,	bigint # type
 % 3,	2,	3,	3,	1 # length
 [ 317,	-1,	108,	107,	0	]
@@ -13026,8 +13026,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L4,	.L5,	.L6 # table_name
-% L1,	c,	L2,	L3,	L5,	L6 # name
+% sys.L2,	sys.t1,	sys.L5,	.L11,	sys.L13,	sys.L15 # table_name
+% L2,	c,	L5,	L11,	L13,	L15 # name
 % bigint,	int,	bigint,	bigint,	bigint,	int # type
 % 2,	3,	2,	1,	2,	3 # length
 [ NULL,	NULL,	3,	0,	NULL,	239	]
@@ -13212,8 +13212,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L1,	d,	L4,	L5 # name
+% sys.L2,	sys.t1,	sys.L11,	sys.L13 # table_name
+% L2,	d,	L11,	L13 # name
 % smallint,	int,	bigint,	bigint # type
 % 3,	3,	4,	2 # length
 [ 111,	136,	1390,	2	]
@@ -13252,8 +13252,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d>e
 #    OR a IS NULL
 #ORDER BY 1,2;
-% .L2,	.L3 # table_name
-% L1,	L3 # name
+% .L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ 0,	NULL	]
@@ -13274,8 +13274,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (c<=d-2 OR c>=d+2)
 #    OR d>e
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -13311,8 +13311,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3;
-% .t1,	.L3,	.L5 # table_name
-% a,	L3,	L4 # name
+% sys.t1,	sys.L7,	.L13 # table_name
+% a,	L7,	L13 # name
 % int,	bigint,	bigint # type
 % 3,	4,	2 # length
 [ NULL,	NULL,	18	]
@@ -13431,8 +13431,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3;
-% sys.t1,	sys.t1,	sys.L1 # table_name
-% d,	c,	L1 # name
+% sys.t1,	sys.t1,	sys.L4 # table_name
+% d,	c,	L4 # name
 % int,	int,	bigint # type
 % 3,	3,	1 # length
 [ 114,	113,	NULL	]
@@ -13442,9 +13442,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       d-e,
 #       d
 #  FROM t1
-#;
-% sys.t1,	sys.t1,	sys.L1,	sys.t1 # table_name
-% a,	c,	L1,	d # name
+#ORDER BY 1,2,3,4;
+% sys.t1,	sys.t1,	sys.L4,	sys.t1 # table_name
+% a,	c,	L4,	d # name
 % int,	int,	bigint,	int # type
 % 3,	3,	2,	3 # length
 [ NULL,	113,	4,	114	]
@@ -13496,8 +13496,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	smallint # type
 % 1,	3 # length
 [ NULL,	222	]
@@ -13551,8 +13551,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND (e>a AND e<b)
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % bigint,	bigint,	bigint # type
 % 2,	2,	2 # length
 [ -1,	-3,	1	]
@@ -13567,9 +13567,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d>e
 #   AND c BETWEEN b-2 AND d+2
 #   AND a>b
-#;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% a,	L1,	L2,	L3,	e # name
+#ORDER BY 1,2,3,4,5;
+% sys.t1,	sys.L3,	sys.L5,	sys.L7,	sys.t1 # table_name
+% a,	L3,	L5,	L7,	e # name
 % int,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	2,	3,	3 # length
 [ 131,	-4,	1,	333,	132	]
@@ -13623,8 +13623,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (e>c OR e<d)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -13691,8 +13691,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L1,	b,	L4,	L5 # name
+% sys.L2,	sys.t1,	sys.L11,	sys.L13 # table_name
+% L2,	b,	L11,	L13 # name
 % bigint,	int,	bigint,	smallint # type
 % 2,	3,	4,	3 # length
 [ NULL,	NULL,	NULL,	444	]
@@ -13710,8 +13710,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #   AND e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b),
@@ -13723,8 +13723,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c>d
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5;
-% .L3,	.L4,	.L6,	.L7,	.t1 # table_name
-% L2,	L4,	L5,	L7,	b # name
+% .L6,	sys.L10,	.L14,	sys.L16,	sys.t1 # table_name
+% L6,	L10,	L14,	L16,	b # name
 % bigint,	bigint,	bigint,	bigint,	int # type
 % 2,	1,	1,	1,	3 # length
 [ 2,	1,	0,	1,	124	]
@@ -13908,8 +13908,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT a+b*2
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ NULL	]
@@ -13947,8 +13947,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ -4	]
@@ -13983,8 +13983,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (a>b-2 AND a<b+2)
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.L4,	sys.t1,	sys.L5 # table_name
-% L1,	c,	L4,	e,	L5 # name
+% sys.L2,	sys.t1,	sys.L11,	sys.t1,	sys.L14 # table_name
+% L2,	c,	L11,	e,	L14 # name
 % bigint,	int,	bigint,	int,	bigint # type
 % 1,	3,	4,	3,	2 # length
 [ 1,	166,	1670,	165,	1	]
@@ -14062,8 +14062,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	149	]
@@ -14208,8 +14208,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L3,	.L4,	.L5,	.L10,	.L12 # table_name
-% L1,	L2,	L4,	L5,	L10,	L11 # name
+% sys.L2,	.L6,	sys.L10,	sys.L12,	sys.L21,	.L25 # table_name
+% L2,	L6,	L10,	L12,	L21,	L25 # name
 % smallint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	3,	4,	1 # length
 [ 111,	26,	2,	743,	490,	0	]
@@ -14302,8 +14302,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% .L2,	.L4,	.L7,	.L10 # table_name
-% L2,	L3,	L7,	L10 # name
+% sys.L4,	.L10,	sys.L17,	sys.L21 # table_name
+% L4,	L10,	L17,	L21 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 2,	1,	4,	2 # length
 [ -4,	0,	1300,	1	]
@@ -14323,8 +14323,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT d-e
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -14364,8 +14364,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR coalesce(a,b,c,d,e)<>0
 #    OR a IS NULL
 #ORDER BY 1,2;
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% sys.L2,	.L6 # table_name
+% L2,	L6 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ NULL,	0	]
@@ -14539,8 +14539,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR a IS NULL
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2;
-% .L2,	.L5 # table_name
-% L1,	L5 # name
+% .L4,	sys.L13 # table_name
+% L4,	L13 # name
 % bigint,	bigint # type
 % 2,	4 # length
 [ 0,	NULL	]
@@ -14567,9 +14567,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	b # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	b # name
 % smallint,	int # type
 % 3,	3 # length
 [ 333,	105	]
@@ -14579,8 +14579,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       e
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.L3,	.t1 # table_name
-% L1,	L2,	e # name
+% sys.L2,	.L6,	sys.t1 # table_name
+% L2,	L6,	e # name
 % bigint,	bigint,	int # type
 % 3,	2,	3 # length
 [ NULL,	0,	NULL	]
@@ -14646,8 +14646,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -14680,8 +14680,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6,7;
-% .L2,	.L3,	.L4,	.L6,	.L7,	.t1,	.L10 # table_name
-% L1,	L3,	L4,	L5,	L7,	a,	L10 # name
+% .L4,	sys.L6,	sys.L10,	.L14,	sys.L16,	sys.t1,	sys.L21 # table_name
+% L4,	L6,	L10,	L14,	L16,	a,	L21 # name
 % bigint,	bigint,	smallint,	bigint,	bigint,	int,	int # type
 % 1,	3,	3,	2,	2,	3,	3 # length
 [ 0,	NULL,	555,	1,	-1,	NULL,	NULL	]
@@ -14750,8 +14750,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2;
-% .L2,	.t1 # table_name
-% L1,	a # name
+% .L4,	sys.t1 # table_name
+% L4,	a # name
 % bigint,	int # type
 % 1,	3 # length
 [ 0,	NULL	]
@@ -14785,8 +14785,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (a>b-2 AND a<b+2)
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L2,	.t1,	.L3,	.t1 # table_name
-% L1,	e,	L3,	d # name
+% .L4,	sys.t1,	sys.L7,	sys.t1 # table_name
+% L4,	e,	L7,	d # name
 % bigint,	int,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	NULL,	NULL,	101	]
@@ -14817,8 +14817,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2;
-% sys.t1,	sys.L3 # table_name
-% c,	L3 # name
+% sys.t1,	sys.L7 # table_name
+% c,	L7 # name
 % int,	bigint # type
 % 3,	4 # length
 [ NULL,	2360	]
@@ -14909,8 +14909,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (a>b-2 AND a<b+2)
 #    OR d>e
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.L7,	sys.L10,	sys.t1 # table_name
-% L1,	L2,	L3,	L6,	L7,	L10,	b # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L14,	sys.L16,	sys.L20,	sys.t1 # table_name
+% L2,	L4,	L6,	L14,	L16,	L20,	b # name
 % smallint,	bigint,	int,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	4,	2,	2,	3 # length
 [ 111,	1,	138,	1390,	2,	-1,	139	]
@@ -14939,8 +14939,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 2 # length
 [ 0	]
@@ -14992,8 +14992,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% .L2,	.L5,	.t1 # table_name
-% L1,	L5,	b # name
+% .L4,	sys.L13,	sys.t1 # table_name
+% L4,	L13,	b # name
 % bigint,	bigint,	int # type
 % 1,	4,	3 # length
 [ 0,	NULL,	NULL	]
@@ -15101,8 +15101,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND (e>c OR e<d)
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -15126,8 +15126,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d NOT BETWEEN 110 AND 150
 #   AND b>c
 #ORDER BY 1,2,3,4,5,6;
-% sys.L4,	sys.t1,	sys.L5,	sys.t1,	sys.L6,	sys.L7 # table_name
-% L4,	e,	L5,	b,	L6,	L7 # name
+% sys.L10,	sys.t1,	sys.L13,	sys.t1,	sys.L16,	sys.L20 # table_name
+% L10,	e,	L13,	b,	L16,	L20 # name
 % bigint,	int,	bigint,	int,	smallint,	bigint # type
 % 3,	3,	2,	3,	3,	2 # length
 [ 382,	192,	3,	194,	222,	-3	]
@@ -15188,8 +15188,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2;
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% sys.L2,	.L6 # table_name
+% L2,	L6 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ NULL,	0	]
@@ -15274,8 +15274,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L3,	.L5,	.L6,	.t1 # table_name
-% L3,	L4,	L6,	a # name
+% sys.L6,	.L12,	sys.L14,	sys.t1 # table_name
+% L6,	L12,	L14,	a # name
 % bigint,	bigint,	smallint,	int # type
 % 4,	1,	3,	3 # length
 [ NULL,	0,	444,	NULL	]
@@ -15477,8 +15477,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR (e>c OR e<d)
 #ORDER BY 1,2,3;
-% .L1,	.L3,	.L4 # table_name
-% L1,	L2,	L4 # name
+% sys.L2,	.L6,	sys.L10 # table_name
+% L2,	L6,	L10 # name
 % bigint,	bigint,	bigint # type
 % 2,	1,	2 # length
 [ NULL,	0,	1	]
@@ -15512,8 +15512,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L4,	sys.L5 # table_name
-% L1,	L4,	L5 # name
+% sys.L2,	sys.L10,	sys.L12 # table_name
+% L2,	L10,	L12 # name
 % bigint,	bigint,	smallint # type
 % 3,	4,	3 # length
 [ NULL,	NULL,	333	]
@@ -15553,8 +15553,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND a>b
 #   AND d>e
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% b,	L1 # name
+% sys.t1,	sys.L3 # table_name
+% b,	L3 # name
 % int,	bigint # type
 % 3,	1 # length
 [ 160,	3	]
@@ -15601,9 +15601,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
-#;
-% sys.L1,	sys.L2,	sys.t1 # table_name
-% L1,	L2,	a # name
+#ORDER BY 1,2,3;
+% sys.L2,	sys.L4,	sys.t1 # table_name
+% L2,	L4,	a # name
 % int,	bigint,	int # type
 % 3,	1,	3 # length
 [ 107,	1,	107	]
@@ -15660,9 +15660,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d>e
 #    OR d NOT BETWEEN 110 AND 150
 #    OR (c<=d-2 OR c>=d+2)
-#;
-% sys.L1,	sys.L2,	sys.t1,	sys.t1 # table_name
-% L1,	L2,	b,	d # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.L4,	sys.t1,	sys.t1 # table_name
+% L2,	L4,	b,	d # name
 % bigint,	bigint,	int,	int # type
 % 3,	2,	3,	3 # length
 [ NULL,	NULL,	NULL,	101	]
@@ -15716,8 +15716,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       d-e
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.t1,	sys.t1,	sys.L3 # table_name
-% L1,	L2,	d,	e,	L3 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.t1,	sys.L10 # table_name
+% L2,	L4,	d,	e,	L10 # name
 % smallint,	bigint,	int,	int,	bigint # type
 % 3,	1,	3,	3,	2 # length
 [ 111,	2,	248,	246,	2	]
@@ -15760,8 +15760,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND c>d
 #   AND b>c
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.t1,	sys.t1,	sys.L5 # table_name
-% L1,	L2,	c,	b,	L5 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.t1,	sys.L14 # table_name
+% L2,	L4,	c,	b,	L14 # name
 % bigint,	bigint,	int,	int,	bigint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT c-d,
@@ -16037,8 +16037,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L3,	sys.L4,	sys.L5,	sys.L6 # table_name
-% a,	L3,	L4,	L5,	L6 # name
+% sys.t1,	sys.L7,	sys.L11,	sys.L13,	sys.L15 # table_name
+% a,	L7,	L11,	L13,	L15 # name
 % int,	bigint,	smallint,	bigint,	smallint # type
 % 1,	4,	3,	1,	3 # length
 [ NULL,	NULL,	444,	NULL,	555	]
@@ -16094,8 +16094,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR c>d
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L2,	.t1,	.L3,	.L4 # table_name
-% L2,	c,	L3,	L4 # name
+% .L11,	.t1,	.L14,	.L16 # table_name
+% L11,	c,	L14,	L16 # name
 % int,	int,	bigint,	bigint # type
 % 3,	3,	1,	2 # length
 [ NULL,	113,	1,	-1	]
@@ -16138,8 +16138,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND c>d
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3 # table_name
-% L1,	L2,	c,	L3 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L7 # table_name
+% L2,	L4,	c,	L7 # name
 % smallint,	smallint,	int,	int # type
 % 3,	3,	3,	3 # length
 [ 222,	444,	193,	191	]
@@ -16249,8 +16249,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L4,	sys.L5 # table_name
-% L1,	L4,	L5 # name
+% sys.L2,	sys.L10,	sys.L12 # table_name
+% L2,	L10,	L12 # name
 % int,	bigint,	bigint # type
 % 3,	4,	2 # length
 [ NULL,	NULL,	1	]
@@ -16301,8 +16301,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2;
-% .L2,	.L3 # table_name
-% L1,	L3 # name
+% .L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	smallint # type
 % 2,	3 # length
 [ 0,	222	]
@@ -16340,8 +16340,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 2,	3 # length
 [ -3,	127	]
@@ -16359,8 +16359,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ NULL,	NULL	]
@@ -16399,8 +16399,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.t1,	.L1,	.L3,	.L4 # table_name
-% b,	c,	e,	L1,	L2,	L4 # name
+% sys.t1,	sys.t1,	sys.t1,	sys.L5,	.L11,	sys.L13 # table_name
+% b,	c,	e,	L5,	L11,	L13 # name
 % int,	int,	int,	int,	bigint,	bigint # type
 % 3,	3,	3,	3,	1,	2 # length
 [ NULL,	102,	NULL,	104,	0,	NULL	]
@@ -16580,8 +16580,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d>e
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 3,	1 # length
 [ 391,	1	]
@@ -16595,8 +16595,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>a AND e<b)
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3,4;
-% .L2,	.L3,	.L6,	.L7 # table_name
-% L1,	L3,	L6,	L7 # name
+% .L4,	sys.L6,	sys.L15,	sys.L17 # table_name
+% L4,	L6,	L15,	L17 # name
 % bigint,	smallint,	bigint,	bigint # type
 % 2,	3,	4,	2 # length
 [ 0,	333,	1050,	-2	]
@@ -16727,8 +16727,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% c,	L1 # name
+% sys.t1,	sys.L3 # table_name
+% c,	L3 # name
 % int,	smallint # type
 % 3,	3 # length
 [ NULL,	555	]
@@ -16814,8 +16814,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L2,	.L3,	.t1,	.L4 # table_name
-% c,	L1,	L3,	a,	L4 # name
+% sys.t1,	.L5,	sys.L7,	sys.t1,	sys.L12 # table_name
+% c,	L5,	L7,	a,	L12 # name
 % int,	bigint,	smallint,	int,	bigint # type
 % 3,	2,	3,	1,	1 # length
 [ 113,	1,	555,	NULL,	NULL	]
@@ -16825,8 +16825,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -16851,8 +16851,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c-d
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % bigint,	bigint,	bigint # type
 % 3,	2,	2 # length
 [ NULL,	NULL,	-1	]
@@ -16932,8 +16932,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d>e
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L4 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	.L10 # table_name
+% L2,	L4,	L10 # name
 % smallint,	bigint,	bigint # type
 % 3,	1,	1 # length
 [ 111,	2,	0	]
@@ -16953,8 +16953,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d>e
 #ORDER BY 1,2,3;
-% sys.t1,	sys.L1,	sys.L2 # table_name
-% a,	L1,	L2 # name
+% sys.t1,	sys.L3,	sys.L5 # table_name
+% a,	L3,	L5 # name
 % int,	bigint,	int # type
 % 3,	2,	3 # length
 [ NULL,	-1,	NULL	]
@@ -16976,8 +16976,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12 # table_name
+% L2,	L4,	L6,	L10,	L12 # name
 % bigint,	bigint,	bigint,	smallint,	bigint # type
 % 1,	2,	2,	3,	2 # length
 [ NULL,	NULL,	-1,	222,	NULL	]
@@ -17055,8 +17055,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 222	]
@@ -17157,8 +17157,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -17367,8 +17367,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND a>b
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.L4,	sys.t1,	sys.t1,	sys.L5,	sys.L6,	sys.t1 # table_name
-% L1,	L4,	b,	e,	L5,	L6,	d # name
+% sys.L2,	sys.L10,	sys.t1,	sys.t1,	sys.L14,	sys.L16,	sys.t1 # table_name
+% L2,	L10,	b,	e,	L14,	L16,	d # name
 % smallint,	bigint,	int,	int,	bigint,	bigint,	int # type
 % 3,	4,	3,	3,	2,	2,	3 # length
 [ 333,	364,	181,	180,	1,	-3,	183	]
@@ -17420,8 +17420,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2;
-% sys.t1,	sys.L1 # table_name
-% c,	L1 # name
+% sys.t1,	sys.L3 # table_name
+% c,	L3 # name
 % int,	bigint # type
 % 3,	1 # length
 [ NULL,	3	]
@@ -17480,8 +17480,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a IS NULL
 #ORDER BY 1,2;
-% sys.L3,	sys.t1 # table_name
-% L3,	b # name
+% sys.L6,	sys.t1 # table_name
+% L6,	b # name
 % bigint,	int # type
 % 4,	3 # length
 [ NULL,	206	]
@@ -17593,8 +17593,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% .L1,	.L2,	.L4,	.L5 # table_name
-% L1,	L2,	L3,	L5 # name
+% sys.L2,	sys.L4,	.L10,	sys.L12 # table_name
+% L2,	L4,	L10,	L12 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	2,	2 # length
 [ NULL,	-1,	0,	-1	]
@@ -17620,8 +17620,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % bigint,	bigint,	bigint # type
 % 1,	3,	2 # length
 [ 1,	NULL,	NULL	]
@@ -17682,8 +17682,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE d>e
 #ORDER BY 1,2;
-% sys.L1,	sys.L4 # table_name
-% L1,	L4 # name
+% sys.L2,	sys.L10 # table_name
+% L2,	L10 # name
 % bigint,	bigint # type
 % 2,	4 # length
 [ NULL,	1120	]
@@ -17701,8 +17701,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -17730,8 +17730,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c-d
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 2,	2 # length
 [ NULL,	NULL	]
@@ -17775,8 +17775,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND (e>c OR e<d)
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
-% L1,	d,	L2,	L3,	L4,	L5 # name
+% sys.L2,	sys.t1,	sys.L5,	sys.L7,	sys.L11,	sys.L13 # table_name
+% L2,	d,	L5,	L7,	L11,	L13 # name
 % bigint,	int,	bigint,	bigint,	smallint,	bigint # type
 % 2,	3,	1,	2,	3,	2 # length
 [ NULL,	NULL,	1,	NULL,	555,	-1	]
@@ -17980,8 +17980,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6,7;
-% .t1,	.L1,	.L3,	.L6,	.t1,	.L10,	.L11 # table_name
-% e,	L1,	L2,	L6,	a,	L7,	L11 # name
+% sys.t1,	sys.L3,	.L7,	sys.L16,	sys.t1,	.L23,	sys.L25 # table_name
+% e,	L3,	L7,	L16,	a,	L23,	L25 # name
 % int,	int,	bigint,	bigint,	int,	bigint,	smallint # type
 % 3,	3,	2,	4,	3,	1,	3 # length
 [ NULL,	NULL,	18,	NULL,	NULL,	0,	444	]
@@ -18012,8 +18012,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L4,	.L5,	.L7,	.L10,	.t1,	.t1 # table_name
-% L1,	L4,	L5,	L6,	L10,	c,	a # name
+% sys.L2,	sys.L10,	sys.L12,	.L16,	sys.L20,	sys.t1,	sys.t1 # table_name
+% L2,	L10,	L12,	L16,	L20,	c,	a # name
 % bigint,	bigint,	int,	bigint,	bigint,	int,	int # type
 % 1,	4,	3,	1,	2,	3,	3 # length
 [ NULL,	NULL,	104,	0,	NULL,	102,	104	]
@@ -18184,8 +18184,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6;
-% sys.t1,	sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4 # table_name
-% b,	L1,	L2,	a,	L3,	L4 # name
+% sys.t1,	sys.L3,	sys.L5,	sys.t1,	sys.L10,	sys.L12 # table_name
+% b,	L3,	L5,	a,	L10,	L12 # name
 % int,	bigint,	bigint,	int,	smallint,	bigint # type
 % 3,	3,	2,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	115,	444,	-1	]
@@ -18221,8 +18221,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10 # table_name
+% L2,	L4,	L6,	L10 # name
 % bigint,	bigint,	bigint,	smallint # type
 % 2,	2,	2,	3 # length
 [ NULL,	NULL,	NULL,	444	]
@@ -18279,8 +18279,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% .L3,	.L4 # table_name
-% L2,	L4 # name
+% .L6,	sys.L10 # table_name
+% L6,	L10 # name
 % bigint,	bigint # type
 % 1,	1 # length
 [ 0,	NULL	]
@@ -18313,8 +18313,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ 391	]
@@ -18330,8 +18330,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c>d
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -18365,8 +18365,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b IS NOT NULL
 #   AND c>d
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -18385,8 +18385,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a>b
 #    OR c>d
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -18493,8 +18493,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2;
-% sys.L2,	sys.L3 # table_name
-% L2,	L3 # name
+% sys.L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	bigint # type
 % 2,	3 # length
 [ NULL,	711	]
@@ -18685,9 +18685,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b,
 #       c
 #  FROM t1
-#;
-% sys.L1,	sys.L2,	sys.t1,	sys.t1 # table_name
-% L1,	L2,	b,	c # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.L4,	sys.t1,	sys.t1 # table_name
+% L2,	L4,	b,	c # name
 % bigint,	bigint,	int,	int # type
 % 1,	2,	3,	3 # length
 [ NULL,	NULL,	NULL,	102	]
@@ -18730,8 +18730,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d>e
 #   AND b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.L3,	.t1,	.L5 # table_name
-% L1,	L2,	L3,	e,	L4 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.t1,	.L13 # table_name
+% L2,	L4,	L6,	e,	L13 # name
 % bigint,	bigint,	bigint,	int,	bigint # type
 % 1,	1,	1,	3,	2 # length
 [ 2,	1,	1,	135,	5	]
@@ -18747,8 +18747,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d NOT BETWEEN 110 AND 150
 #   AND b IS NOT NULL
 #ORDER BY 1,2,3,4;
-% sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L3,	a,	L4,	L5 # name
+% sys.L6,	sys.t1,	sys.L11,	sys.L13 # table_name
+% L6,	a,	L11,	L13 # name
 % bigint,	int,	int,	smallint # type
 % 4,	3,	3,	3 # length
 [ NULL,	NULL,	NULL,	444	]
@@ -18986,8 +18986,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d>e
 #   AND coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2,3;
-% sys.t1,	sys.L3,	sys.L4 # table_name
-% d,	L3,	L4 # name
+% sys.t1,	sys.L7,	sys.L11 # table_name
+% d,	L7,	L11 # name
 % int,	bigint,	bigint # type
 % 3,	4,	1 # length
 [ 128,	1290,	4	]
@@ -19040,8 +19040,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
-% L3,	L4,	L5,	L6,	L7 # name
+% sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L16 # table_name
+% L6,	L10,	L12,	L14,	L16 # name
 % bigint,	bigint,	bigint,	smallint,	smallint # type
 % 4,	2,	2,	3,	3 # length
 [ NULL,	1,	NULL,	555,	444	]
@@ -19098,8 +19098,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (a>b-2 AND a<b+2)
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L2,	.t1,	.L3,	.L5 # table_name
-% L2,	e,	L3,	L4 # name
+% .L11,	.t1,	.L14,	.L20 # table_name
+% L11,	e,	L14,	L20 # name
 % bigint,	int,	bigint,	bigint # type
 % 2,	3,	2,	1 # length
 [ NULL,	NULL,	-4,	0	]
@@ -19133,8 +19133,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>c OR e<d)
 #    OR a IS NULL
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -19272,8 +19272,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.L3,	.L4,	.t1,	.L5,	.L6 # table_name
-% L1,	L2,	L4,	b,	L5,	L6 # name
+% sys.L2,	.L6,	sys.L10,	sys.t1,	sys.L13,	sys.L15 # table_name
+% L2,	L6,	L10,	b,	L13,	L15 # name
 % bigint,	bigint,	bigint,	int,	smallint,	smallint # type
 % 2,	2,	1,	3,	3,	3 # length
 [ NULL,	0,	1,	NULL,	555,	444	]
@@ -19439,8 +19439,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>c OR e<d)
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -19464,8 +19464,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a>b
 #    OR a IS NULL
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % smallint,	bigint # type
 % 3,	2 # length
 [ 222,	-4	]
@@ -19495,8 +19495,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND b>c
 #ORDER BY 1,2,3;
-% sys.L2,	sys.t1,	sys.L3 # table_name
-% L2,	a,	L3 # name
+% sys.L4,	sys.t1,	sys.L7 # table_name
+% L4,	a,	L7 # name
 % smallint,	int,	bigint # type
 % 3,	3,	2 # length
 [ 111,	138,	1	]
@@ -19573,8 +19573,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L3,	.L4,	.t1,	.L5 # table_name
-% L1,	L2,	L4,	b,	L5 # name
+% sys.L2,	.L6,	sys.L10,	sys.t1,	sys.L13 # table_name
+% L2,	L6,	L10,	b,	L13 # name
 % smallint,	bigint,	bigint,	int,	bigint # type
 % 3,	1,	3,	3,	2 # length
 [ 111,	0,	416,	139,	1	]
@@ -19656,8 +19656,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR c>d
 #    OR a IS NULL
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% c,	L1,	L2,	L3,	L4 # name
+% sys.t1,	sys.L3,	sys.L5,	sys.L7,	sys.L11 # table_name
+% c,	L3,	L5,	L7,	L11 # name
 % int,	bigint,	smallint,	bigint,	bigint # type
 % 3,	1,	3,	2,	3 # length
 [ 102,	NULL,	555,	1,	NULL	]
@@ -19683,8 +19683,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       abs(a)
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	104	]
@@ -19726,8 +19726,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L2,	.L3,	.L4,	.t1 # table_name
-% d,	L1,	L3,	L4,	a # name
+% sys.t1,	.L5,	sys.L7,	sys.L11,	sys.t1 # table_name
+% d,	L5,	L7,	L11,	a # name
 % int,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	1,	2,	3 # length
 [ NULL,	8,	1,	2,	153	]
@@ -19774,8 +19774,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR c BETWEEN b-2 AND d+2
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1;
-% .L2 # table_name
-% L2 # name
+% .L16 # table_name
+% L16 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -19810,8 +19810,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 2 # length
 [ 0	]
@@ -19937,8 +19937,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a+b*2
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % smallint,	bigint # type
 % 3,	3 # length
 [ 111,	416	]
@@ -20030,8 +20030,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d>e
 #   AND a IS NULL
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -20167,8 +20167,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (a>b-2 AND a<b+2)
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .L3,	.L4,	.t1,	.L6,	.L7,	.t1 # table_name
-% L3,	L4,	a,	L5,	L7,	d # name
+% sys.L6,	sys.L10,	sys.t1,	.L15,	sys.L17,	sys.t1 # table_name
+% L6,	L10,	a,	L15,	L17,	d # name
 % bigint,	int,	int,	bigint,	bigint,	int # type
 % 4,	3,	3,	1,	2,	3 # length
 [ NULL,	NULL,	NULL,	0,	NULL,	207	]
@@ -20238,8 +20238,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -20317,8 +20317,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L2 # table_name
-% L1,	c,	L2 # name
+% sys.L2,	sys.t1,	sys.L5 # table_name
+% L2,	c,	L5 # name
 % bigint,	int,	smallint # type
 % 2,	3,	3 # length
 [ NULL,	NULL,	555	]
@@ -20421,9 +20421,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #   AND (e>c OR e<d)
 #   AND c>d
-#;
-% sys.L1,	sys.L2,	sys.t1 # table_name
-% L1,	L2,	a # name
+#ORDER BY 1,2,3;
+% sys.L2,	sys.L4,	sys.t1 # table_name
+% L2,	L4,	a # name
 % bigint,	bigint,	int # type
 % 1,	1,	1 # length
 #SELECT CASE a+1 WHEN b THEN 111 WHEN c THEN 222
@@ -20447,8 +20447,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #   AND b>c
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -20462,8 +20462,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2;
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% sys.L2,	.L6 # table_name
+% L2,	L6 # name
 % int,	bigint # type
 % 3,	1 # length
 [ 107,	0	]
@@ -20551,8 +20551,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR c BETWEEN b-2 AND d+2
 #    OR (e>c OR e<d)
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -20678,8 +20678,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR e+d BETWEEN a+b-10 AND c+130
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L2,	.L4,	.L5,	.L6,	.t1 # table_name
-% e,	L2,	L3,	L5,	L6,	b # name
+% .t1,	.L12,	.L16,	.L20,	.L22,	.t1 # table_name
+% e,	L12,	L16,	L20,	L22,	b # name
 % int,	bigint,	bigint,	bigint,	smallint,	int # type
 % 3,	2,	1,	2,	3,	3 # length
 [ NULL,	-4,	0,	NULL,	222,	240	]
@@ -20716,8 +20716,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3;
-% sys.L4,	sys.t1,	sys.t1 # table_name
-% L4,	b,	d # name
+% sys.L10,	sys.t1,	sys.t1 # table_name
+% L10,	b,	d # name
 % bigint,	int,	int # type
 % 4,	3,	3 # length
 [ NULL,	206,	207	]
@@ -20759,8 +20759,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -20785,8 +20785,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b>c
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L5 # table_name
-% L1,	L2,	L5 # name
+% sys.L2,	sys.L4,	sys.L12 # table_name
+% L2,	L4,	L12 # name
 % bigint,	smallint,	bigint # type
 % 2,	3,	4 # length
 [ NULL,	555,	1510	]
@@ -20909,8 +20909,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>a AND e<b)
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ 391	]
@@ -20943,8 +20943,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (c<=d-2 OR c>=d+2)
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2;
-% sys.L1,	sys.L4 # table_name
-% L1,	L4 # name
+% sys.L2,	sys.L10 # table_name
+% L2,	L10 # name
 % bigint,	bigint # type
 % 2,	4 # length
 [ NULL,	NULL	]
@@ -21047,8 +21047,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L2,	.t1,	.L3,	.L5 # table_name
-% L1,	L2,	b,	L3,	L4 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L7,	.L13 # table_name
+% L2,	L4,	b,	L7,	L13 # name
 % bigint,	bigint,	int,	smallint,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ NULL,	NULL,	NULL,	444,	0	]
@@ -21126,9 +21126,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b
 #  FROM t1
 # WHERE a>b
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	b # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	b # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	145	]
@@ -21193,8 +21193,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT a-b
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -21285,9 +21285,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #   AND d NOT BETWEEN 110 AND 150
 #   AND c>d
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	d # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	d # name
 % int,	int # type
 % 3,	3 # length
 [ NULL,	207	]
@@ -21360,9 +21360,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (a>b-2 AND a<b+2)
 #   AND b>c
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	d # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	d # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	NULL	]
@@ -21454,9 +21454,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND (e>c OR e<d)
 #   AND (a>b-2 AND a<b+2)
-#;
-% sys.L1,	sys.L2,	sys.t1 # table_name
-% L1,	L2,	b # name
+#ORDER BY 1,2,3;
+% sys.L2,	sys.L4,	sys.t1 # table_name
+% L2,	L4,	b # name
 % bigint,	smallint,	int # type
 % 1,	3,	3 # length
 [ 2,	111,	139	]
@@ -21475,8 +21475,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L4,	.t1,	.L5 # table_name
-% d,	L1,	L2,	L3,	a,	L5 # name
+% sys.t1,	sys.L3,	sys.L5,	.L11,	sys.t1,	sys.L14 # table_name
+% d,	L3,	L5,	L11,	a,	L14 # name
 % int,	bigint,	bigint,	bigint,	int,	bigint # type
 % 3,	2,	2,	2,	3,	3 # length
 [ 108,	-1,	2,	0,	107,	317	]
@@ -21607,8 +21607,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>a AND e<b)
 #    OR c BETWEEN b-2 AND d+2
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -21633,8 +21633,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L3,	.L4,	.L5,	.L7 # table_name
-% L3,	L4,	L5,	L6 # name
+% sys.L6,	sys.L10,	sys.L12,	.L16 # table_name
+% L6,	L10,	L12,	L16 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 4,	2,	2,	1 # length
 [ NULL,	1,	NULL,	0	]
@@ -21674,8 +21674,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (a>b-2 AND a<b+2)
 #    OR a>b
 #ORDER BY 1,2;
-% .t1,	.L2 # table_name
-% a,	L1 # name
+% sys.t1,	.L5 # table_name
+% a,	L5 # name
 % int,	bigint # type
 % 3,	1 # length
 [ 107,	0	]
@@ -21744,8 +21744,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -21969,8 +21969,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>a AND e<b)
 #    OR (e>c OR e<d)
 #ORDER BY 1,2,3;
-% .L1,	.L3,	.t1 # table_name
-% L1,	L2,	a # name
+% sys.L2,	.L6,	sys.t1 # table_name
+% L2,	L6,	a # name
 % int,	bigint,	int # type
 % 3,	2,	3 # length
 [ NULL,	1,	NULL	]
@@ -22038,8 +22038,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE a>b
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L1,	sys.L2,	sys.t1,	sys.L3 # table_name
-% e,	L1,	L2,	c,	L3 # name
+% sys.t1,	sys.L3,	sys.L5,	sys.t1,	sys.L10 # table_name
+% e,	L3,	L5,	c,	L10 # name
 % int,	bigint,	bigint,	int,	bigint # type
 % 3,	2,	1,	3,	2 # length
 [ NULL,	-4,	4,	244,	NULL	]
@@ -22102,8 +22102,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR a IS NULL
 #    OR c>d
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
-% L1,	L2,	L5,	L6,	L7,	L10 # name
+% sys.L2,	sys.L4,	sys.L12,	sys.L14,	sys.L16,	sys.L20 # table_name
+% L2,	L4,	L12,	L14,	L16,	L20 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	4,	3,	1,	2 # length
 [ NULL,	NULL,	NULL,	NULL,	NULL,	1	]
@@ -22127,8 +22127,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR a>b
 #    OR d>e
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 3 # length
 [ NULL	]
@@ -22304,8 +22304,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND (c<=d-2 OR c>=d+2)
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3,4;
-% .t1,	.L2,	.L3,	.L4 # table_name
-% e,	L1,	L3,	L4 # name
+% sys.t1,	.L5,	sys.L7,	sys.L11 # table_name
+% e,	L5,	L7,	L11 # name
 % int,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1 # length
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
@@ -22315,8 +22315,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a>b
 #    OR c>d
 #ORDER BY 1,2,3;
-% sys.L3,	sys.L4,	sys.L5 # table_name
-% L3,	L4,	L5 # name
+% sys.L6,	sys.L10,	sys.L12 # table_name
+% L6,	L10,	L12 # name
 % bigint,	bigint,	int # type
 % 4,	1,	3 # length
 [ NULL,	NULL,	104	]
@@ -22352,8 +22352,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.t1,	.L1,	.t1,	.L2,	.L4 # table_name
-% c,	b,	L1,	e,	L2,	L3 # name
+% sys.t1,	sys.t1,	sys.L4,	sys.t1,	sys.L7,	.L13 # table_name
+% c,	b,	L4,	e,	L7,	L13 # name
 % int,	int,	bigint,	int,	bigint,	bigint # type
 % 3,	3,	1,	3,	2,	1 # length
 [ NULL,	236,	NULL,	237,	1,	0	]
@@ -22393,8 +22393,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (a>b-2 AND a<b+2)
 #   AND d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L4 # table_name
-% L1,	d,	L4 # name
+% sys.L2,	sys.t1,	sys.L11 # table_name
+% L2,	d,	L11 # name
 % bigint,	int,	bigint # type
 % 2,	3,	3 # length
 [ -1,	196,	398	]
@@ -22408,8 +22408,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR d NOT BETWEEN 110 AND 150
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3;
-% .L1,	.L2,	.L4 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	.L10 # table_name
+% L2,	L4,	L10 # name
 % bigint,	bigint,	bigint # type
 % 2,	3,	2 # length
 [ NULL,	NULL,	0	]
@@ -22522,8 +22522,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2;
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% sys.L2,	.L6 # table_name
+% L2,	L6 # name
 % bigint,	bigint # type
 % 3,	1 # length
 [ NULL,	0	]
@@ -22773,8 +22773,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6;
-% .L1,	.t1,	.L2,	.L4,	.t1,	.L5 # table_name
-% L1,	b,	L2,	L3,	c,	L5 # name
+% sys.L2,	sys.t1,	sys.L5,	.L11,	sys.t1,	sys.L14 # table_name
+% L2,	b,	L5,	L11,	c,	L14 # name
 % bigint,	int,	bigint,	bigint,	int,	bigint # type
 % 2,	3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	NULL,	0,	119,	-1	]
@@ -22813,8 +22813,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4,5,6;
-% sys.t1,	sys.L1,	sys.t1,	sys.L2,	sys.L5,	sys.t1 # table_name
-% b,	L1,	e,	L2,	L5,	a # name
+% sys.t1,	sys.L3,	sys.t1,	sys.L6,	sys.L14,	sys.t1 # table_name
+% b,	L3,	e,	L6,	L14,	a # name
 % int,	bigint,	int,	smallint,	bigint,	int # type
 % 3,	2,	3,	3,	4,	3 # length
 [ NULL,	NULL,	117,	444,	NULL,	115	]
@@ -22833,8 +22833,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       d-e
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 2,	2 # length
 [ NULL,	NULL	]
@@ -22890,9 +22890,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       d
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
-#;
-% sys.L1,	sys.t1,	sys.L2,	sys.t1,	sys.t1 # table_name
-% L1,	a,	L2,	e,	d # name
+#ORDER BY 1,2,3,4,5;
+% sys.L2,	sys.t1,	sys.L5,	sys.t1,	sys.t1 # table_name
+% L2,	a,	L5,	e,	d # name
 % bigint,	int,	bigint,	int,	int # type
 % 2,	3,	2,	3,	3 # length
 [ -1,	107,	-1,	109,	108	]
@@ -22904,8 +22904,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d>e
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % smallint,	bigint # type
 % 3,	3 # length
 [ 111,	416	]
@@ -23018,8 +23018,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND a IS NULL
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L4 # table_name
+% L4 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -23110,8 +23110,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L4,	sys.L5,	sys.t1 # table_name
-% L1,	L4,	L5,	b # name
+% sys.L2,	sys.L10,	sys.L12,	sys.t1 # table_name
+% L2,	L10,	L12,	b # name
 % bigint,	bigint,	bigint,	int # type
 % 2,	4,	2,	3 # length
 [ NULL,	NULL,	1,	NULL	]
@@ -23152,8 +23152,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d NOT BETWEEN 110 AND 150
 #   AND a>b
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % bigint,	bigint,	smallint # type
 % 2,	1,	3 # length
 [ NULL,	NULL,	444	]
@@ -23193,8 +23193,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% .L2,	.L3,	.t1,	.t1,	.L5,	.L6 # table_name
-% L1,	L3,	a,	b,	L4,	L6 # name
+% .L4,	sys.L6,	sys.t1,	sys.t1,	.L14,	sys.L16 # table_name
+% L4,	L6,	a,	b,	L14,	L16 # name
 % bigint,	bigint,	int,	int,	bigint,	bigint # type
 % 2,	3,	3,	3,	1,	2 # length
 [ 2,	369,	121,	124,	0,	NULL	]
@@ -23262,8 +23262,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND a>b
 #   AND (e>c OR e<d)
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L1,	sys.t1,	sys.L4,	sys.t1 # table_name
-% d,	L1,	c,	L4,	e # name
+% sys.t1,	sys.L3,	sys.t1,	sys.L12,	sys.t1 # table_name
+% d,	L3,	c,	L12,	e # name
 % int,	int,	int,	bigint,	int # type
 % 3,	3,	3,	4,	3 # length
 [ 108,	107,	106,	1050,	109	]
@@ -23339,8 +23339,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c-d
 #  FROM t1
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % smallint,	bigint # type
 % 3,	2 # length
 [ 111,	1	]
@@ -23439,8 +23439,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L4,	sys.t1,	sys.t1 # table_name
-% L1,	L4,	e,	a # name
+% sys.L2,	sys.L10,	sys.t1,	sys.t1 # table_name
+% L2,	L10,	e,	a # name
 % smallint,	bigint,	int,	int # type
 % 3,	4,	3,	3 # length
 [ 111,	490,	246,	245	]
@@ -23480,8 +23480,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (c<=d-2 OR c>=d+2)
 #    OR c>d
 #ORDER BY 1,2,3;
-% sys.L1,	sys.t1,	sys.L4 # table_name
-% L1,	e,	L4 # name
+% sys.L2,	sys.t1,	sys.L11 # table_name
+% L2,	e,	L11 # name
 % bigint,	int,	bigint # type
 % 2,	3,	4 # length
 [ NULL,	NULL,	NULL	]
@@ -23600,8 +23600,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND b>c
 #   AND d>e
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L2,	.L3,	.L4,	.L5,	.t1 # table_name
-% e,	L1,	L3,	L4,	L5,	d # name
+% sys.t1,	.L5,	sys.L7,	sys.L11,	sys.L13,	sys.t1 # table_name
+% e,	L5,	L7,	L11,	L13,	d # name
 % int,	bigint,	smallint,	smallint,	bigint,	int # type
 % 3,	1,	3,	3,	1,	3 # length
 [ 230,	0,	333,	555,	1,	233	]
@@ -23612,8 +23612,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND coalesce(a,b,c,d,e)<>0
 #   AND a IS NULL
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 #SELECT CASE WHEN a<b-3 THEN 111 WHEN a<=b THEN 222
@@ -23685,8 +23685,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2;
-% .L1,	.L3 # table_name
-% L1,	L2 # name
+% sys.L2,	.L6 # table_name
+% L2,	L6 # name
 % bigint,	bigint # type
 % 2,	1 # length
 [ NULL,	0	]
@@ -23725,8 +23725,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND b>c
 #ORDER BY 1,2;
-% sys.L2,	sys.L3 # table_name
-% L2,	L3 # name
+% sys.L4,	sys.L6 # table_name
+% L4,	L6 # name
 % bigint,	bigint # type
 % 2,	1 # length
 [ NULL,	1	]
@@ -23778,8 +23778,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3 # table_name
-% L1,	L2,	b,	L3 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L7 # table_name
+% L2,	L4,	b,	L7 # name
 % smallint,	smallint,	int,	bigint # type
 % 3,	3,	3,	2 # length
 [ 111,	444,	249,	-1	]
@@ -23818,8 +23818,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a>b
 #   AND (e>a AND e<b)
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	L3,	L4,	L5 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10,	sys.L12 # table_name
+% L2,	L4,	L6,	L10,	L12 # name
 % bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1 # length
 #SELECT c-d,
@@ -23828,8 +23828,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR a IS NULL
 #ORDER BY 1,2;
-% .L2,	.t1 # table_name
-% L2,	b # name
+% .L11,	.t1 # table_name
+% L11,	b # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	145	]
@@ -23897,8 +23897,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b IS NOT NULL
 #    OR a>b
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ NULL	]
@@ -24145,8 +24145,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ -2	]
@@ -24192,8 +24192,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #    OR a>b
 #ORDER BY 1,2,3;
-% sys.L3,	sys.L4,	sys.L5 # table_name
-% L3,	L4,	L5 # name
+% sys.L6,	sys.L10,	sys.L12 # table_name
+% L6,	L10,	L12 # name
 % bigint,	bigint,	smallint # type
 % 4,	2,	3 # length
 [ NULL,	NULL,	444	]
@@ -24264,8 +24264,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.t1,	sys.t1,	sys.t1,	sys.L2 # table_name
-% L1,	a,	b,	d,	L2 # name
+% sys.L2,	sys.t1,	sys.t1,	sys.t1,	sys.L7 # table_name
+% L2,	a,	b,	d,	L7 # name
 % bigint,	int,	int,	int,	bigint # type
 % 2,	3,	3,	3,	2 # length
 [ NULL,	149,	145,	NULL,	-2	]
@@ -24351,8 +24351,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4,5;
-% .L1,	.L3,	.L4,	.L5,	.L7 # table_name
-% L1,	L2,	L4,	L5,	L6 # name
+% sys.L2,	.L6,	sys.L10,	sys.L12,	.L16 # table_name
+% L2,	L6,	L10,	L12,	L16 # name
 % bigint,	bigint,	bigint,	smallint,	bigint # type
 % 3,	1,	2,	3,	1 # length
 [ 317,	0,	2,	333,	0	]
@@ -24481,8 +24481,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #    OR a IS NULL
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ NULL	]
@@ -24508,8 +24508,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L2,	.L5,	.t1,	.t1 # table_name
-% L2,	L5,	c,	e # name
+% .L11,	.L17,	.t1,	.t1 # table_name
+% L11,	L17,	c,	e # name
 % int,	bigint,	int,	int # type
 % 3,	4,	3,	3 # length
 [ NULL,	NULL,	208,	NULL	]
@@ -24589,8 +24589,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND b>c
 #   AND (c<=d-2 OR c>=d+2)
 #ORDER BY 1,2,3,4;
-% sys.L2,	sys.L3,	sys.t1,	sys.L4 # table_name
-% L2,	L3,	d,	L4 # name
+% sys.L4,	sys.L6,	sys.t1,	sys.L11 # table_name
+% L4,	L6,	d,	L11 # name
 % bigint,	bigint,	int,	bigint # type
 % 1,	3,	3,	1 # length
 [ 1,	579,	190,	1	]
@@ -24628,8 +24628,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR d>e
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% .L2 # table_name
-% L2 # name
+% .L11 # table_name
+% L11 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -24668,8 +24668,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d NOT BETWEEN 110 AND 150
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L3,	sys.L4,	sys.L5 # table_name
-% c,	L3,	L4,	L5 # name
+% sys.t1,	sys.L7,	sys.L11,	sys.L13 # table_name
+% c,	L7,	L11,	L13 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	4,	3,	2 # length
 [ NULL,	2360,	711,	3	]
@@ -24721,8 +24721,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3,4;
-% .L2,	.t1,	.L3,	.L5 # table_name
-% L2,	a,	L3,	L4 # name
+% .L11,	.t1,	.L14,	.L20 # table_name
+% L11,	a,	L14,	L20 # name
 % smallint,	int,	bigint,	bigint # type
 % 3,	3,	2,	1 # length
 [ 111,	245,	-4,	0	]
@@ -24799,8 +24799,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>a AND e<b)
 #    OR d>e
 #ORDER BY 1,2,3,4,5;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% b,	L1,	L2,	L3,	L4 # name
+% sys.t1,	sys.L3,	sys.L5,	sys.L7,	sys.L11 # table_name
+% b,	L3,	L5,	L7,	L11 # name
 % int,	int,	smallint,	bigint,	bigint # type
 % 3,	3,	3,	1,	2 # length
 [ 112,	NULL,	444,	1,	4	]
@@ -24853,8 +24853,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN a<b+3 THEN 333 ELSE 444 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L3,	sys.L4,	sys.L5,	sys.L6,	sys.L7 # table_name
-% L3,	L4,	L5,	L6,	L7 # name
+% sys.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L16 # table_name
+% L6,	L10,	L12,	L14,	L16 # name
 % bigint,	bigint,	bigint,	bigint,	smallint # type
 % 4,	3,	2,	2,	3 # length
 [ NULL,	NULL,	1,	NULL,	444	]
@@ -24930,8 +24930,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT abs(b-c)
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -24968,8 +24968,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ -1	]
@@ -24981,8 +24981,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #    OR c>d
 #ORDER BY 1,2,3;
-% .L2,	.L5,	.t1 # table_name
-% L1,	L5,	b # name
+% .L4,	sys.L13,	sys.t1 # table_name
+% L4,	L13,	b # name
 % bigint,	bigint,	int # type
 % 2,	4,	3 # length
 [ 0,	NULL,	NULL	]
@@ -25154,8 +25154,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR a IS NULL
 #    OR d>e
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.L4 # table_name
-% a,	L1,	L2,	L3 # name
+% sys.t1,	sys.L3,	sys.L5,	.L11 # table_name
+% a,	L3,	L5,	L11 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	3,	2,	2 # length
 [ NULL,	NULL,	NULL,	1	]
@@ -25312,8 +25312,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c-d
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L1,	.t1,	.L3,	.t1,	.L4 # table_name
-% L1,	e,	L2,	b,	L4 # name
+% sys.L2,	sys.t1,	.L7,	sys.t1,	sys.L12 # table_name
+% L2,	e,	L7,	b,	L12 # name
 % bigint,	int,	bigint,	int,	bigint # type
 % 3,	3,	2,	3,	2 # length
 [ NULL,	NULL,	0,	NULL,	1	]
@@ -25391,8 +25391,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1,2;
-% .t1,	.L2 # table_name
-% d,	L1 # name
+% sys.t1,	.L5 # table_name
+% d,	L5 # name
 % int,	bigint # type
 % 3,	1 # length
 [ NULL,	0	]
@@ -25476,8 +25476,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% .L2,	.L3,	.L4,	.t1,	.t1 # table_name
-% L1,	L3,	L4,	d,	b # name
+% .L4,	sys.L6,	sys.L10,	sys.t1,	sys.t1 # table_name
+% L4,	L6,	L10,	d,	b # name
 % bigint,	bigint,	smallint,	int,	int # type
 % 2,	2,	3,	3,	3 # length
 [ 0,	-2,	333,	108,	105	]
@@ -25710,8 +25710,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d>e
 #   AND a>b
 #ORDER BY 1,2,3,4,5,6;
-% .L2,	.L3,	.L4,	.L5,	.L6,	.L10 # table_name
-% L2,	L3,	L4,	L5,	L6,	L7 # name
+% sys.L4,	sys.L6,	sys.L10,	sys.L12,	sys.L14,	.L20 # table_name
+% L4,	L6,	L10,	L12,	L14,	L20 # name
 % smallint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 3,	1,	2,	2,	1,	1 # length
 [ 222,	2,	-3,	2,	3,	0	]
@@ -25763,8 +25763,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       c
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L2,	.L3,	.L4,	.t1 # table_name
-% L1,	L3,	L4,	c # name
+% .L4,	sys.L6,	sys.L10,	sys.t1 # table_name
+% L4,	L6,	L10,	c # name
 % bigint,	smallint,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	333,	2,	106	]
@@ -25803,8 +25803,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND c BETWEEN b-2 AND d+2
 #   AND (e>c OR e<d)
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -25880,8 +25880,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1,2,3;
-% .t1,	.t1,	.L2 # table_name
-% b,	d,	L2 # name
+% .t1,	.t1,	.L13 # table_name
+% b,	d,	L13 # name
 % int,	int,	bigint # type
 % 3,	3,	2 # length
 [ 112,	114,	-1	]
@@ -25941,8 +25941,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (a>b-2 AND a<b+2)
 #   AND (e>c OR e<d)
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 4 # length
 [ 364	]
@@ -25993,8 +25993,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND e+d BETWEEN a+b-10 AND c+130
 #   AND a IS NULL
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 #SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END,
@@ -26083,8 +26083,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #    OR (a>b-2 AND a<b+2)
 #ORDER BY 1;
-% .L4 # table_name
-% L4 # name
+% .L22 # table_name
+% L22 # name
 % bigint # type
 % 4 # length
 [ NULL	]
@@ -26124,8 +26124,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR b IS NOT NULL
 #ORDER BY 1,2,3,4;
-% .L1,	.L3,	.t1,	.t1 # table_name
-% L1,	L2,	c,	b # name
+% sys.L2,	.L6,	sys.t1,	sys.t1 # table_name
+% L2,	L6,	c,	b # name
 % smallint,	bigint,	int,	int # type
 % 3,	2,	3,	3 # length
 [ 111,	5,	137,	139	]
@@ -26163,8 +26163,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR d>e
 #    OR a>b
 #ORDER BY 1,2,3;
-% sys.t1,	sys.L1,	sys.L2 # table_name
-% d,	L1,	L2 # name
+% sys.t1,	sys.L3,	sys.L5 # table_name
+% d,	L3,	L5 # name
 % int,	bigint,	bigint # type
 % 3,	2,	3 # length
 [ NULL,	NULL,	439	]
@@ -26312,8 +26312,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>c OR e<d)
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2;
-% sys.t1,	sys.L3 # table_name
-% a,	L3 # name
+% sys.t1,	sys.L7 # table_name
+% a,	L7 # name
 % int,	bigint # type
 % 3,	4 # length
 [ 131,	1300	]
@@ -26346,8 +26346,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND d>e
 #ORDER BY 1,2;
-% sys.t1,	sys.L2 # table_name
-% d,	L2 # name
+% sys.t1,	sys.L5 # table_name
+% d,	L5 # name
 % int,	bigint # type
 % 3,	2 # length
 [ 114,	-1	]
@@ -26382,8 +26382,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a+b*2
 #  FROM t1
 #ORDER BY 1,2,3;
-% .t1,	.L2,	.L3 # table_name
-% b,	L1,	L3 # name
+% sys.t1,	.L5,	sys.L7 # table_name
+% b,	L5,	L7 # name
 % int,	bigint,	bigint # type
 % 3,	1,	3 # length
 [ NULL,	0,	NULL	]
@@ -26426,8 +26426,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE e+d BETWEEN a+b-10 AND c+130
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.L6,	sys.t1 # table_name
-% e,	L1,	L2,	L3,	L6,	d # name
+% sys.t1,	sys.L3,	sys.L5,	sys.L7,	sys.L15,	sys.t1 # table_name
+% e,	L3,	L5,	L7,	L15,	d # name
 % int,	bigint,	bigint,	int,	bigint,	int # type
 % 3,	2,	1,	3,	4,	3 # length
 [ 109,	-1,	1,	107,	1050,	108	]
@@ -26493,8 +26493,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.L2,	.L3,	.L4,	.L5,	.L7 # table_name
-% L1,	e,	L2,	L3,	L4,	L5,	L6 # name
+% sys.L2,	sys.t1,	sys.L5,	sys.L7,	sys.L11,	sys.L13,	.L17 # table_name
+% L2,	e,	L5,	L7,	L11,	L13,	L17 # name
 % bigint,	int,	bigint,	smallint,	int,	bigint,	bigint # type
 % 1,	3,	3,	3,	3,	2,	2 # length
 [ NULL,	NULL,	NULL,	444,	104,	1,	0	]
@@ -26537,8 +26537,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.b<t1.b)
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.t1,	.t1,	.L2,	.t1,	.L3,	.L5 # table_name
-% L1,	d,	e,	L2,	a,	L3,	L4 # name
+% sys.L2,	sys.t1,	sys.t1,	sys.L6,	sys.t1,	sys.L11,	.L15 # table_name
+% L2,	d,	e,	L6,	a,	L11,	L15 # name
 % smallint,	int,	int,	bigint,	int,	int,	bigint # type
 % 3,	3,	3,	2,	3,	3,	2 # length
 [ 111,	136,	135,	1,	138,	138,	5	]
@@ -26743,8 +26743,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a+b*2
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.t1,	sys.L2 # table_name
-% L1,	b,	c,	L2 # name
+% sys.L2,	sys.t1,	sys.t1,	sys.L6 # table_name
+% L2,	b,	c,	L6 # name
 % smallint,	int,	int,	bigint # type
 % 3,	3,	3,	3 # length
 [ 111,	139,	137,	416	]
@@ -26785,8 +26785,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE c BETWEEN b-2 AND d+2
 #    OR d NOT BETWEEN 110 AND 150
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
-% L1,	L2,	L3,	L4 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.L10 # table_name
+% L2,	L4,	L6,	L10 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	3,	2 # length
 [ NULL,	NULL,	NULL,	-1	]
@@ -26862,8 +26862,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% .t1,	.L1,	.L2,	.L4 # table_name
-% b,	L1,	L2,	L3 # name
+% sys.t1,	sys.L3,	sys.L5,	.L11 # table_name
+% b,	L3,	L5,	L11 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	1 # length
 [ 105,	2,	-1,	0	]
@@ -27134,8 +27134,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND c>d
 #   AND EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L4 # table_name
+% L4 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -27232,8 +27232,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR b>c
 #    OR e+d BETWEEN a+b-10 AND c+130
 #ORDER BY 1;
-% sys.L3 # table_name
-% L3 # name
+% sys.L6 # table_name
+% L6 # name
 % bigint # type
 % 4 # length
 [ 358	]
@@ -27267,9 +27267,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>c OR e<d)
 #   AND a IS NULL
-#;
-% sys.L1,	sys.t1,	sys.t1 # table_name
-% L1,	a,	d # name
+#ORDER BY 1,2,3;
+% sys.L2,	sys.t1,	sys.t1 # table_name
+% L2,	a,	d # name
 % bigint,	int,	int # type
 % 1,	1,	3 # length
 [ 4,	NULL,	114	]
@@ -27313,8 +27313,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE b IS NOT NULL
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L4,	sys.t1 # table_name
-% L1,	L4,	e # name
+% sys.L2,	sys.L10,	sys.t1 # table_name
+% L2,	L10,	e # name
 % int,	bigint,	int # type
 % 3,	4,	3 # length
 [ NULL,	NULL,	NULL	]
@@ -27352,8 +27352,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3,4,5;
-% sys.L1,	sys.L2,	sys.t1,	sys.L3,	sys.L4 # table_name
-% L1,	L2,	c,	L3,	L4 # name
+% sys.L2,	sys.L4,	sys.t1,	sys.L7,	sys.L11 # table_name
+% L2,	L4,	c,	L7,	L11 # name
 % bigint,	bigint,	int,	bigint,	smallint # type
 % 2,	2,	3,	2,	3 # length
 [ NULL,	NULL,	102,	1,	555	]
@@ -27407,8 +27407,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       (SELECT count(*) FROM t1 AS x WHERE x.c>t1.c AND x.d<t1.d)
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L3 # table_name
-% L1,	b,	L2 # name
+% sys.L2,	sys.t1,	.L7 # table_name
+% L2,	b,	L7 # name
 % smallint,	int,	bigint # type
 % 3,	3,	1 # length
 [ 111,	139,	0	]
@@ -27545,9 +27545,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       e
 #  FROM t1
 # WHERE coalesce(a,b,c,d,e)<>0
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	e # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	e # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	NULL	]
@@ -27626,8 +27626,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #    OR (c<=d-2 OR c>=d+2)
 #ORDER BY 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -27805,8 +27805,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (e>c OR e<d)
 #    OR c>d
 #ORDER BY 1,2,3;
-% .L1,	.t1,	.L3 # table_name
-% L1,	c,	L2 # name
+% sys.L2,	sys.t1,	.L7 # table_name
+% L2,	c,	L7 # name
 % int,	int,	bigint # type
 % 3,	3,	2 # length
 [ NULL,	113,	1	]
@@ -27890,8 +27890,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d NOT BETWEEN 110 AND 150
 #   AND a IS NULL
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 1,	1 # length
 [ NULL,	NULL	]
@@ -27900,9 +27900,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a-b,
 #       a
 #  FROM t1
-#;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% L1,	L2,	L3,	a # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.L4,	sys.L6,	sys.t1 # table_name
+% L2,	L4,	L6,	a # name
 % bigint,	bigint,	bigint,	int # type
 % 2,	1,	2,	3 # length
 [ NULL,	NULL,	3,	239	]
@@ -27990,8 +27990,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE b>c
 #    OR c>d
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.L1,	sys.t1,	sys.L2,	sys.L3,	sys.L4,	sys.L5,	sys.L10 # table_name
-% L1,	d,	L2,	L3,	L4,	L5,	L10 # name
+% sys.L2,	sys.t1,	sys.L5,	sys.L7,	sys.L11,	sys.L13,	sys.L21 # table_name
+% L2,	d,	L5,	L7,	L11,	L13,	L21 # name
 % bigint,	int,	int,	bigint,	smallint,	bigint,	bigint # type
 % 1,	3,	3,	2,	3,	2,	4 # length
 [ NULL,	101,	104,	NULL,	555,	1,	NULL	]
@@ -28111,8 +28111,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND d NOT BETWEEN 110 AND 150
 #   AND a>b
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ -3	]
@@ -28129,8 +28129,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #    OR (e>a AND e<b)
 #ORDER BY 1,2,3,4,5;
-% .t1,	.L1,	.L2,	.L3,	.L5 # table_name
-% e,	L1,	L2,	L3,	L4 # name
+% sys.t1,	sys.L3,	sys.L5,	sys.L7,	.L13 # table_name
+% e,	L3,	L5,	L7,	L13 # name
 % int,	bigint,	bigint,	bigint,	bigint # type
 % 3,	2,	2,	2,	2 # length
 [ NULL,	NULL,	-2,	NULL,	18	]
@@ -28176,8 +28176,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % bigint,	bigint,	bigint # type
 % 2,	2,	2 # length
 [ NULL,	NULL,	NULL	]
@@ -28547,8 +28547,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% .L1,	.L3,	.L4,	.L5 # table_name
-% L1,	L2,	L4,	L5 # name
+% sys.L2,	.L6,	sys.L10,	sys.L12 # table_name
+% L2,	L6,	L10,	L12 # name
 % bigint,	bigint,	bigint,	smallint # type
 % 3,	2,	1,	3 # length
 [ NULL,	0,	NULL,	222	]
@@ -28726,8 +28726,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #   AND d>e
 #ORDER BY 1;
-% .L3 # table_name
-% L2 # name
+% .L6 # table_name
+% L6 # name
 % bigint # type
 % 1 # length
 [ 0	]
@@ -28759,8 +28759,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #SELECT a-b
 #  FROM t1
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -28804,8 +28804,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR b>c
 #    OR c>d
 #ORDER BY 1,2,3,4,5;
-% .L2,	.L3,	.t1,	.L4,	.t1 # table_name
-% L2,	L3,	a,	L4,	b # name
+% .L16,	.L20,	.t1,	.L23,	.t1 # table_name
+% L16,	L20,	a,	L23,	b # name
 % bigint,	int,	int,	smallint,	int # type
 % 2,	3,	3,	3,	3 # length
 [ NULL,	149,	149,	555,	145	]
@@ -28965,8 +28965,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (c<=d-2 OR c>=d+2)
 #    OR b>c
 #ORDER BY 1,2,3;
-% sys.L1,	sys.L2,	sys.L3 # table_name
-% L1,	L2,	L3 # name
+% sys.L2,	sys.L4,	sys.L6 # table_name
+% L2,	L4,	L6 # name
 % smallint,	int,	bigint # type
 % 3,	3,	2 # length
 [ 111,	138,	1	]
@@ -28999,8 +28999,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND b>c
 #   AND (a>b-2 AND a<b+2)
 #ORDER BY 1,2,3,4,5,6;
-% sys.L1,	sys.L2,	sys.L3,	sys.t1,	sys.L4,	sys.L5 # table_name
-% L1,	L2,	L3,	e,	L4,	L5 # name
+% sys.L2,	sys.L4,	sys.L6,	sys.t1,	sys.L11,	sys.L13 # table_name
+% L2,	L4,	L6,	e,	L11,	L13 # name
 % bigint,	bigint,	bigint,	int,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT b-c,
@@ -29040,8 +29040,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c BETWEEN b-2 AND d+2
 #ORDER BY 1,2,3,4;
-% .L2,	.L3,	.L4,	.t1 # table_name
-% L1,	L3,	L4,	e # name
+% .L4,	sys.L6,	sys.L10,	sys.t1 # table_name
+% L4,	L6,	L10,	e # name
 % bigint,	smallint,	bigint,	int # type
 % 2,	3,	2,	3 # length
 [ 0,	333,	-2,	109	]
@@ -29121,8 +29121,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>a AND e<b)
 #ORDER BY 1,2,3,4,5,6;
-% .t1,	.L1,	.L2,	.L4,	.t1,	.L5 # table_name
-% a,	L1,	L2,	L3,	b,	L5 # name
+% sys.t1,	sys.L3,	sys.L5,	.L11,	sys.t1,	sys.L14 # table_name
+% a,	L3,	L5,	L11,	b,	L14 # name
 % int,	bigint,	bigint,	bigint,	int,	smallint # type
 % 3,	3,	2,	1,	3,	3 # length
 [ 191,	579,	1,	0,	194,	444	]
@@ -29201,8 +29201,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #    OR (e>a AND e<b)
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	104	]
@@ -29241,8 +29241,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #    OR (e>a AND e<b)
 #    OR coalesce(a,b,c,d,e)<>0
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 2 # length
 [ NULL	]
@@ -29335,9 +29335,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #        WHEN d THEN 333  WHEN e THEN 444 ELSE 555 END,
 #       b
 #  FROM t1
-#;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% e,	L1,	L2,	L3,	b # name
+#ORDER BY 1,2,3,4,5;
+% sys.t1,	sys.L3,	sys.L5,	sys.L7,	sys.t1 # table_name
+% e,	L3,	L5,	L7,	b # name
 % int,	bigint,	smallint,	smallint,	int # type
 % 3,	3,	3,	3,	3 # length
 [ NULL,	NULL,	444,	555,	NULL	]
@@ -29380,8 +29380,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       d-e
 #  FROM t1
 #ORDER BY 1,2,3,4,5,6,7;
-% .L1,	.L3,	.L4,	.L5,	.L6,	.L11,	.L12 # table_name
-% L1,	L2,	L4,	L5,	L6,	L11,	L12 # name
+% sys.L2,	.L6,	sys.L10,	sys.L12,	sys.L14,	sys.L23,	sys.L25 # table_name
+% L2,	L6,	L10,	L12,	L14,	L23,	L25 # name
 % smallint,	bigint,	int,	bigint,	bigint,	bigint,	bigint # type
 % 3,	1,	3,	3,	2,	4,	2 # length
 [ 111,	0,	245,	743,	-4,	490,	2	]
@@ -29439,8 +29439,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE c>d
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 3 # length
 [ NULL	]
@@ -29462,8 +29462,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       d-e
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L1,	sys.t1,	sys.L2 # table_name
-% e,	L1,	c,	L2 # name
+% sys.t1,	sys.L3,	sys.t1,	sys.L6 # table_name
+% e,	L3,	c,	L6 # name
 % int,	bigint,	int,	bigint # type
 % 3,	3,	3,	2 # length
 [ NULL,	NULL,	102,	NULL	]
@@ -29502,8 +29502,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a+b*2
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.L1,	sys.t1,	sys.t1,	sys.L2 # table_name
-% L1,	d,	a,	L2 # name
+% sys.L2,	sys.t1,	sys.t1,	sys.L6 # table_name
+% L2,	d,	a,	L6 # name
 % bigint,	int,	int,	bigint # type
 % 2,	3,	3,	3 # length
 [ NULL,	NULL,	149,	439	]
@@ -29689,9 +29689,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE (c<=d-2 OR c>=d+2)
 #   AND a IS NULL
 #   AND c>d
-#;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% d,	L1,	L2,	L3,	b # name
+#ORDER BY 1,2,3,4,5;
+% sys.t1,	sys.L3,	sys.L5,	sys.L7,	sys.t1 # table_name
+% d,	L3,	L5,	L7,	b # name
 % int,	bigint,	bigint,	smallint,	int # type
 % 1,	1,	1,	1,	1 # length
 #SELECT b,
@@ -29700,8 +29700,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       b-c
 #  FROM t1
 #ORDER BY 1,2,3,4;
-% sys.t1,	sys.L1,	sys.L2,	sys.L3 # table_name
-% b,	L1,	L2,	L3 # name
+% sys.t1,	sys.L3,	sys.L5,	sys.L7 # table_name
+% b,	L3,	L5,	L7 # name
 % int,	bigint,	bigint,	bigint # type
 % 3,	2,	3,	2 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -29744,9 +29744,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE a IS NULL
 #   AND (e>a AND e<b)
 #   AND b IS NOT NULL
-#;
-% sys.t1,	sys.t1,	sys.L1,	sys.L2,	sys.L3,	sys.t1 # table_name
-% c,	e,	L1,	L2,	L3,	a # name
+#ORDER BY 1,2,3,4,5,6;
+% sys.t1,	sys.t1,	sys.L4,	sys.L6,	sys.L10,	sys.t1 # table_name
+% c,	e,	L4,	L6,	L10,	a # name
 % int,	int,	bigint,	bigint,	bigint,	int # type
 % 1,	1,	1,	1,	1,	1 # length
 #SELECT (a+b+c+d+e)/5,
@@ -29789,8 +29789,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE d NOT BETWEEN 110 AND 150
 #    OR b>c
 #ORDER BY 1,2,3,4,5,6,7;
-% sys.t1,	sys.L1,	sys.L2,	sys.L5,	sys.L6,	sys.L7,	sys.L10 # table_name
-% e,	L1,	L2,	L5,	L6,	L7,	L10 # name
+% sys.t1,	sys.L3,	sys.L5,	sys.L13,	sys.L15,	sys.L17,	sys.L21 # table_name
+% e,	L3,	L5,	L13,	L15,	L17,	L21 # name
 % int,	bigint,	smallint,	bigint,	bigint,	bigint,	int # type
 % 3,	2,	3,	4,	2,	1,	3 # length
 [ NULL,	NULL,	555,	NULL,	NULL,	NULL,	104	]
@@ -29959,9 +29959,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE (e>a AND e<b)
 #    OR coalesce(a,b,c,d,e)<>0
-#;
-% sys.L1,	sys.t1,	sys.t1,	sys.t1 # table_name
-% L1,	c,	e,	b # name
+#ORDER BY 1,2,3,4;
+% sys.L2,	sys.t1,	sys.t1,	sys.t1 # table_name
+% L2,	c,	e,	b # name
 % bigint,	int,	int,	int # type
 % 3,	3,	3,	3 # length
 [ NULL,	102,	NULL,	NULL	]
@@ -30089,8 +30089,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #  FROM t1
 # WHERE EXISTS(SELECT 1 FROM t1 AS x WHERE x.b<t1.b)
 #ORDER BY 1;
-% sys.L2 # table_name
-% L2 # name
+% sys.L4 # table_name
+% L4 # name
 % smallint # type
 % 3 # length
 [ 111	]
@@ -30124,8 +30124,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a
 #  FROM t1
 #ORDER BY 1,2,3;
-% .L1,	.L3,	.t1 # table_name
-% L1,	L2,	a # name
+% sys.L2,	.L6,	sys.t1 # table_name
+% L2,	L6,	a # name
 % bigint,	bigint,	int # type
 % 2,	2,	3 # length
 [ NULL,	0,	104	]
@@ -30163,8 +30163,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 # WHERE coalesce(a,b,c,d,e)<>0
 #   AND b IS NOT NULL
 #ORDER BY 1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -30201,8 +30201,8 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #   AND e+d BETWEEN a+b-10 AND c+130
 #   AND b IS NOT NULL
 #ORDER BY 1,2;
-% sys.L1,	sys.L2 # table_name
-% L1,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% L2,	L4 # name
 % bigint,	bigint # type
 % 2,	1 # length
 [ -3,	4	]
@@ -30257,9 +30257,9 @@ stdout of test 'select2.test` in directory 'sql/test/SQLite_regress/sqllogictest
 #       a
 #  FROM t1
 # WHERE c>d
-#;
-% sys.L1,	sys.t1 # table_name
-% L1,	a # name
+#ORDER BY 1,2;
+% sys.L2,	sys.t1 # table_name
+% L2,	a # name
 % bigint,	int # type
 % 2,	3 # length
 [ NULL,	NULL	]

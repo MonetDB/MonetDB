@@ -558,7 +558,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bool force)
 		 * this */
 		BAT *d;
 
-		d = BATdiff(n, b, s, NULL, true, BUN_NONE);
+		d = BATdiff(n, b, s, NULL, true, false, BUN_NONE);
 		if (d == NULL)
 			return GDK_FAIL;
 		s = BATunique(n, d);
