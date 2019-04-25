@@ -5203,10 +5203,8 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	cs_move(&os->tables, &ns->tables, t);
 	t->s = ns;
 
-	if (!tr->moved_tables) {
+	if (!tr->moved_tables)
 		tr->moved_tables = sa_list(tr->sa);
-		tr->moved_tables->t = NULL;
-	}
 	m = SA_ZNEW(tr->sa, sql_moved_table); //add transaction log entry
 	m->from = os;
 	m->to = ns;
