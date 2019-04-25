@@ -2539,6 +2539,7 @@ rel_rename_table(mvc *sql, char* schema_name, char *old_name, char *new_name, in
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
 	append(exps, exp_atom_clob(sql->sa, schema_name));
+	append(exps, exp_atom_clob(sql->sa, schema_name));
 	append(exps, exp_atom_clob(sql->sa, old_name));
 	append(exps, exp_atom_clob(sql->sa, new_name));
 	rel->op = op_ddl;
@@ -2595,15 +2596,13 @@ rel_rename_column(mvc *sql, char* schema_name, char *table_name, char *old_name,
 	return rel;
 }
 
-extern list *rel_dependencies(mvc *sql, sql_rel *r);
-
 static sql_rel *
 rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, int if_exists)
 {
-	node *n;
 	sql_schema *os, *ns;
-	sql_table *ot, *nt;
-	sql_rel *l, *r, *inserts;
+	sql_table *ot;
+	sql_rel *rel;
+	list *exps;
 
 	assert(old_schema && tname && new_schema);
 
@@ -2638,53 +2637,16 @@ rel_set_table_schema(mvc *sql, char* old_schema, char *tname, char *new_schema, 
 	if (mvc_bind_table(sql, ns, tname))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: table '%s' on schema '%s' already exists", tname, new_schema);
 
-	if ((nt = mvc_create_table(sql, ns, tname, ot->type, 0, SQL_DECLARED_TABLE, ot->commit_action, -1, ot->properties)) == NULL)
-		return NULL;
-
-	for (n = ot->columns.set->h; n; n = n->next) {
-		sql_column *nc, *oc = (sql_column*) n->data;
-		if (!(nc = mvc_copy_column(sql, nt, oc)))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s_%s_%s conflicts", ns->base.name, nt->base.name, oc->base.name);
-		if (isPartitionedByColumnTable(ot) && oc->base.id == ot->part.pcol->base.id)
-			nt->part.pcol = nc;
-	}
-	if (isPartitionedByExpressionTable(ot)) {
-		char *err = NULL;
-		sql_allocator *oa = sql->sa;
-
-		nt->part.pexp->exp = sa_strdup(sql->session->tr->sa, ot->part.pexp->exp);
-
-		sql->sa = sa_create();
-		if (!sql->sa) {
-			sql->sa = oa;
-			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-
-		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 0);
-		sa_destroy(sql->sa);
-		sql->sa = NULL;
-		if (err) {
-			sql->sa = oa;
-			return sql_error(sql, 02, "%s", err);
-		}
-	}
-
-	if (ot->idxs.set)
-		for (n = ot->idxs.set->h; n; n = n->next)
-			mvc_copy_idx(sql, nt, (sql_idx*) n->data);
-
-	if (ot->keys.set)
-		for (n = ot->keys.set->h; n; n = n->next)
-			mvc_copy_key(sql, nt, (sql_key*) n->data);
-
-	l = rel_table(sql, DDL_CREATE_TABLE, new_schema, nt, 0);
-	if (!(isMergeTable(ot) || isRemote(ot) || isReplicaTable(ot))) {
-		inserts = rel_basetable(sql, ot, tname);
-		inserts = rel_project(sql->sa, inserts, rel_projections(sql, inserts, NULL, 1, 0));
-		l = rel_insert(sql, l, inserts);
-	}
-	r = rel_drop(sql->sa, DDL_DROP_TABLE, old_schema, tname, 0, 0);
-	return rel_list(sql->sa, l, r);
+	rel = rel_create(sql->sa);
+	exps = new_exp_list(sql->sa);
+	append(exps, exp_atom_clob(sql->sa, old_schema));
+	append(exps, exp_atom_clob(sql->sa, new_schema));
+	append(exps, exp_atom_clob(sql->sa, tname));
+	append(exps, exp_atom_clob(sql->sa, tname));
+	rel->op = op_ddl;
+	rel->flag = DDL_RENAME_TABLE;
+	rel->exps = exps;
+	return rel;
 }
 
 sql_rel *

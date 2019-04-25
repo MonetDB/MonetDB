@@ -85,6 +85,7 @@
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 #define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
+/* Warning TR flags are a bitmask */
 #define TR_NEW 1
 #define TR_RENAMED 2
 
@@ -223,6 +224,7 @@ extern void cs_add(changeset * cs, void *elm, int flag);
 extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
+extern void cs_move(changeset *from, changeset *to, void *data);
 extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
@@ -244,6 +246,7 @@ typedef struct sql_trans {
 	int schema_updates;	/* set on schema changes */
 	int status;		/* status of the last query */
 	list *dropped;  	/* protection against recursive cascade action*/
+	list *moved_tables;
 
 	changeset schemas;
 
@@ -597,6 +600,12 @@ typedef struct sql_table {
 		struct sql_expression *pexp; /* If it is partitioned by an expression */
 	} part;
 } sql_table;
+
+typedef struct sql_moved_table {
+	sql_schema *from;
+	sql_schema *to;
+	sql_table *t;
+} sql_moved_table;
 
 typedef struct res_col {
 	char *tn;

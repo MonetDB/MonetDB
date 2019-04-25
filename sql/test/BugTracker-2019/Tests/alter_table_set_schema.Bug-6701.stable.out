@@ -141,17 +141,17 @@ Ready.
 % .columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns # table_name
 % id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
-% 4,	4,	3,	2,	1,	4,	31,	5,	1,	0 # length
+% 1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
 #SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables);
 % sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
 % id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
-% 4,	4,	3,	2,	1,	4,	31,	5,	1,	0 # length
+% 1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
 #SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
-% 4,	4,	1,	15,	2,	2 # length
+% 1,	1,	1,	0,	1,	1 # length
 #SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
 % sys.objects,	sys.objects,	sys.objects # table_name
 % id,	name,	nr # name
@@ -161,7 +161,7 @@ Ready.
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name
 % int,	int,	int,	varchar # type
-% 4,	4,	1,	15 # length
+% 1,	1,	1,	0 # length
 #SELECT * FROM sys.dependencies WHERE id NOT IN (SELECT id FROM sys.ids);
 % sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
 % id,	depend_id,	depend_type # name
@@ -177,37 +177,37 @@ Ready.
 % .columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns # table_name
 % id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
-% 4,	4,	3,	2,	1,	4,	31,	5,	1,	0 # length
+% 1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
 #SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables);
 % sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
 % id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
-% 4,	4,	3,	2,	1,	4,	31,	5,	1,	0 # length
+% 1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
 #SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
 % id,	table_id,	type,	name,	rkey,	action # name
 % int,	int,	int,	varchar,	int,	int # type
-% 4,	4,	1,	15,	2,	2 # length
+% 1,	1,	1,	0,	1,	1 # length
 #SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids);
 % sys.objects,	sys.objects,	sys.objects # table_name
 % id,	name,	nr # name
 % int,	varchar,	int # type
-% 4,	4,	1 # length
+% 1,	0,	1 # length
 #SELECT * FROM sys.idxs WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
 % id,	table_id,	type,	name # name
 % int,	int,	int,	varchar # type
-% 4,	4,	1,	15 # length
+% 1,	1,	1,	0 # length
 #SELECT * FROM sys.dependencies WHERE id NOT IN (SELECT id FROM sys.ids);
 % sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
 % id,	depend_id,	depend_type # name
 % int,	int,	smallint # type
-% 4,	4,	2 # length
+% 1,	1,	1 # length
 #SELECT * FROM sys.dependencies WHERE depend_id NOT IN (SELECT id FROM sys.ids);
 % sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
 % id,	depend_id,	depend_type # name
 % int,	int,	smallint # type
-% 4,	4,	2 # length
+% 1,	1,	1 # length
 #create table sys.test2 (col1 serial);
 #drop table if exists sys.test2;
 
