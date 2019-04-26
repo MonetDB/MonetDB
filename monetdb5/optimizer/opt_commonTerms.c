@@ -93,7 +93,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		/* when we enter a barrier block, we should ditch all previous instructions from consideration */
 		if( p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol || p->barrier == RETURNsymbol){
 			GDKfree(list);
-			GDKfree(list);
+			GDKfree(hash);
 			list = (int*) GDKzalloc(sizeof(int) * mb->stop);
 			hash = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 		}
