@@ -1060,6 +1060,11 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Apr 26 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.3-20190426
+- Rebuilt.
+- BZ#6647: Add suport to Python 3 on Windows
+- BZ#6696: Re-use of MAL explain plans with complex type coercions
+
 * Fri Apr 05 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.33.1-20190405
 - Rebuilt.
 - BZ#2403: stream: http read support in streams
