@@ -84,7 +84,7 @@ stdout of test 'nested-subquery-in-select.Bug-6125` in directory 'sql/test/BugTr
 #    SELECT COUNT(*) FROM t1 WHERE a1 = b1 AND EXISTS ( SELECT 1 FROM t2 WHERE c1 = a2 AND c2 IN (SELECT a1 FROM t0) )
 #  ) AS score
 #FROM t0;
-% .t0,	.L21 # table_name
+% sys.t0,	.L11 # table_name
 % a1,	score # name
 % int,	bigint # type
 % 1,	1 # length
@@ -94,7 +94,7 @@ stdout of test 'nested-subquery-in-select.Bug-6125` in directory 'sql/test/BugTr
 #    SELECT COUNT(*) FROM t1 WHERE a1 = b1 AND EXISTS ( SELECT 1 FROM t2 WHERE c1 = B2 AND c2 IN (SELECT a1 FROM t0) )
 #  ) AS score
 #FROM t0;
-% .t0,	.L21 # table_name
+% sys.t0,	.L11 # table_name
 % a1,	score # name
 % int,	bigint # type
 % 1,	1 # length
@@ -105,7 +105,7 @@ stdout of test 'nested-subquery-in-select.Bug-6125` in directory 'sql/test/BugTr
 #  ) AS score
 #FROM t0
 #WHERE a2 OR a3;
-% .t0,	.L21 # table_name
+% sys.t0,	.L11 # table_name
 % a1,	score # name
 % int,	bigint # type
 % 1,	1 # length

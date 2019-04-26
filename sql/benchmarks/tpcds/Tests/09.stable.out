@@ -34,7 +34,12 @@ stdout of test '09` in directory 'sql/benchmarks/tpcds` itself:
 #           ELSE
 #                  (SELECT avg(ss_net_paid)
 #                   FROM store_sales
-% sys.L13,	sys.L26,	sys.L41,	sys.L54,	sys.L67 # table_name
+#                   WHERE ss_quantity BETWEEN 1 AND 20)
+#       END bucket1,
+#       CASE
+#           WHEN
+#                  (SELECT count(*)
+% .L13,	.L26,	.L41,	.L54,	.L67 # table_name
 % bucket1,	bucket2,	bucket3,	bucket4,	bucket5 # name
 % double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24 # length

@@ -18,6 +18,7 @@
 #include "sql_semantic.h"
 #include "sql_partition.h"
 #include "sql_privileges.h"
+#include "sql_querytype.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "gdk_logger.h"
@@ -806,7 +807,6 @@ mvc_destroy(mvc *m)
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
-	m->sqs = NULL;
 
 	_DELETE(m->args);
 	m->args = NULL;
@@ -2020,65 +2020,6 @@ sql_part *
 mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
 {
 	return sql_trans_copy_part(m->session->tr, t, pt);
-}
-
-sql_subquery *
-mvc_push_subquery(mvc *m, const char *name, sql_rel *r)
-{
-	sql_subquery *res = NULL;
-
-	if (!m->sqs)
-		m->sqs = sa_list(m->sa);
-	if (m->sqs) {
-		sql_subquery *v = SA_NEW(m->sa, sql_subquery);
-
-		v->name = name;
-		v->rel = r;
-		v->s = NULL;
-		list_append(m->sqs, v);
-		res = v;
-	}
-	return res;
-}
-
-sql_subquery *
-mvc_find_subquery(mvc *m, const char *rname, const char *name) 
-{
-	node *n;
-
-	if (!m->sqs)
-		return NULL;
-	for (n = m->sqs->h; n; n = n->next) {
-		sql_subquery *v = n->data;
-
-		if (strcmp(v->name, rname) == 0) {
-			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
-
-			if (ne)
-				return v;
-		}
-	}
-	return NULL;
-}
-
-sql_exp *
-mvc_find_subexp(mvc *m, const char *rname, const char *name) 
-{
-	node *n;
-
-	if (!m->sqs)
-		return NULL;
-	for (n = m->sqs->h; n; n = n->next) {
-		sql_subquery *v = n->data;
-
-		if (strcmp(v->name, rname) == 0) {
-			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
-
-			if (ne)
-				return ne;
-		}
-	}
-	return NULL;
 }
 
 static inline int dlist_cmp(mvc *sql, dlist *l1, dlist *l2);

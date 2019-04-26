@@ -6,17 +6,14 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2019 MonetDB B.V.
  */
 
-#ifndef _SQL_QUERY_H_
-#define _SQL_QUERY_H_
+#ifndef _REL_UNNEST_H_
+#define _REL_UNNEST_H_
 
-typedef enum sql_query_t {
-	Q_PARSE = 0,
-	Q_TABLE = 1,
-	Q_UPDATE = 2,
-	Q_SCHEMA = 3,
-	Q_TRANS = 4,
-	Q_PREPARE = 5,
-	Q_BLOCK = 6
-} sql_query_t;
+#include "sql_relation.h"
+#include "sql_mvc.h"
 
-#endif /* _SQL_QUERY_H_ */
+extern int exp_has_freevar( sql_exp *e);
+extern int rel_has_freevar( sql_rel *r);
+extern sql_rel *rel_unnest(mvc *sql, sql_rel *rel);
+
+#endif /*_REL_UNNEST_H_*/

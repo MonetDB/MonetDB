@@ -223,7 +223,7 @@ stdout of test 'various-in-value-list-queries` in directory 'sql/test/in-value-l
 [ 50	]
 [ 50	]
 #select * from foo where i = 40 or i in (2*10 + 10, null, i - 1, i, i + 1, null) order by i;
-% .foo # table_name
+% sys.foo # table_name
 % i # name
 % int # type
 % 2 # length
@@ -237,13 +237,13 @@ stdout of test 'various-in-value-list-queries` in directory 'sql/test/in-value-l
 [ 50	]
 [ 50	]
 #select * from foo where i = 40 or i not in (2*10 + 10, null, i - 1, i, i + 1, null) order by i;
-% .foo # table_name
+% sys.foo # table_name
 % i # name
 % int # type
 % 2 # length
 [ 40	]
 #select * from foo where i = 40 or (i + 10) in (2*10 + 10, null, i - 1, i, i + 10, null) order by i;
-% .foo # table_name
+% sys.foo # table_name
 % i # name
 % int # type
 % 2 # length
@@ -257,7 +257,7 @@ stdout of test 'various-in-value-list-queries` in directory 'sql/test/in-value-l
 [ 50	]
 [ 50	]
 #select * from foo where i = 40 or (i + 10) not in (2*10 + 10, null, i - 1, i, i + 10, null) order by i;
-% .foo # table_name
+% sys.foo # table_name
 % i # name
 % int # type
 % 2 # length

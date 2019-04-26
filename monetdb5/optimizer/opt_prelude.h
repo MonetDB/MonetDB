@@ -61,7 +61,6 @@ mal_export  str batstrRef;
 mal_export  str batxmlRef;
 mal_export  str bbpRef;
 mal_export  str betweenRef;
-mal_export  str betweensymmetricRef;
 mal_export  str binddbatRef;
 mal_export  str bindidxRef;
 mal_export  str bindRef;

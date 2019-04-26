@@ -68093,8 +68093,8 @@ stdout of test 'VOC` in directory 'sql/test/VOC` itself:
 #(select 1 from voyages v
 #where c.trip = v.trip and v.boatname = 'AMSTERDAM'
 #and v.departure_harbour ='Texel');
-% voc.L11 # table_name
-% L11 # name
+% voc.L5 # table_name
+% L5 # name
 % bigint # type
 % 7 # length
 [ 1305366	]

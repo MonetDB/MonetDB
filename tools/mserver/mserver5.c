@@ -518,18 +518,18 @@ main(int argc, char **av)
 	monet_script[i] = NULL;
 	if (!dbpath) {
 		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
-		if (dbpath == NULL || GDKcreatedir(dbpath) != GDK_SUCCEED) {
+		if (!dbpath) {
 			fprintf(stderr, "!ERROR: cannot allocate memory for database directory \n");
 			exit(1);
 		}
 	}
-	if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
-		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
-		exit(1);
-	}
 	if (BBPaddfarm(dbpath, 1 << PERSISTENT) != GDK_SUCCEED ||
 	    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: cannot add farm\n");
+		exit(1);
+	}
+	if (GDKcreatedir(dbpath) != GDK_SUCCEED) {
+		fprintf(stderr, "!ERROR: cannot create directory for %s\n", dbpath);
 		exit(1);
 	}
 	GDKfree(dbpath);

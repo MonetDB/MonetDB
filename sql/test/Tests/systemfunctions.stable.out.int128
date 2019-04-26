@@ -53,7 +53,7 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 # 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
-% sys.L17,	sys.L21,	sys.L23,	sys.L25,	sys.L27 # table_name
+% sys.L10,	sys.L12,	sys.L14,	sys.L16,	sys.L20 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	705 # length
@@ -192,6 +192,12 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 [ "sys",	"acos",	1,	"double",	""	]
 [ "sys",	"all",	0,	"any",	"all"	]
 [ "sys",	"all",	1,	"any",	""	]
+[ "sys",	"all",	0,	"boolean",	"all"	]
+[ "sys",	"all",	1,	"boolean",	""	]
+[ "sys",	"all",	2,	"boolean",	""	]
+[ "sys",	"all",	3,	"boolean",	""	]
+[ "sys",	"allnotequal",	0,	"boolean",	"allnotequal"	]
+[ "sys",	"allnotequal",	1,	"any",	""	]
 [ "sys",	"alpha",	0,	"double",	"create function alpha(pdec double, pradius double)\nreturns double external name sql.alpha;"	]
 [ "sys",	"alpha",	1,	"double",	""	]
 [ "sys",	"alpha",	2,	"double",	""	]
@@ -212,6 +218,12 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 [ "sys",	"and",	0,	"boolean",	"and"	]
 [ "sys",	"and",	1,	"boolean",	""	]
 [ "sys",	"and",	2,	"boolean",	""	]
+[ "sys",	"any",	0,	"boolean",	"any"	]
+[ "sys",	"any",	1,	"boolean",	""	]
+[ "sys",	"any",	2,	"boolean",	""	]
+[ "sys",	"any",	3,	"boolean",	""	]
+[ "sys",	"anyequal",	0,	"boolean",	"anyequal"	]
+[ "sys",	"anyequal",	1,	"any",	""	]
 [ "sys",	"ascii",	0,	"int",	"ascii"	]
 [ "sys",	"ascii",	1,	"char",	""	]
 [ "sys",	"ascii",	0,	"int",	"ascii"	]
@@ -1446,6 +1458,8 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 [ "sys",	"ntile",	2,	"hugeint",	""	]
 [ "sys",	"ntile",	3,	"boolean",	""	]
 [ "sys",	"ntile",	4,	"boolean",	""	]
+[ "sys",	"null",	0,	"boolean",	"null"	]
+[ "sys",	"null",	1,	"any",	""	]
 [ "sys",	"octet_length",	0,	"int",	"nitems"	]
 [ "sys",	"octet_length",	1,	"blob",	""	]
 [ "sys",	"octet_length",	0,	"int",	"nbytes"	]

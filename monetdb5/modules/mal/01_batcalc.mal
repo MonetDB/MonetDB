@@ -23100,55 +23100,30 @@ address CMDbatCMP
 comment "Return -1/0/1 if V </==/> B with candidates list";
 
 
-pattern between(b:bat[:any_1],lo:bat[:any_1],hi:bat[:any_1]) :bat[:bit]
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive";
-pattern between(b:bat[:any_1],lo:bat[:any_1],hi:bat[:any_1],s:bat[:oid]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa)";
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list";
-pattern between(b:bat[:any_1],lo:bat[:any_1],hi:any_1) :bat[:bit]
+comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive";
-pattern between(b:bat[:any_1],lo:bat[:any_1],hi:any_1,s:bat[:oid]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa)";
+pattern between(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list";
-pattern between(b:bat[:any_1],lo:any_1,hi:bat[:any_1]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive";
-pattern between(b:bat[:any_1],lo:any_1,hi:bat[:any_1],s:bat[:oid]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa)";
+pattern between(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list";
-pattern between(b:bat[:any_1],lo:any_1,hi:any_1) :bat[:bit]
+comment "B between V1 and V2 (or vice versa) with candidate list";
+pattern between(b:bat[:any_1],v1:any_1,v2:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive";
-pattern between(b:bat[:any_1],lo:any_1,hi:any_1,s:bat[:oid]) :bat[:bit]
+comment "B between V1 and V2 (or vice versa)";
+pattern between(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid],sym:bit,linc:bit,hinc:bit,nils_false:bit) :bat[:bit]
 address CMDbatBETWEEN
-comment "B between LO and HI inclusive with candidates list";
-
-pattern between_symmetric(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
-pattern between_symmetric(b:bat[:any_1],v1:bat[:any_1],v2:bat[:any_1],s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
-pattern between_symmetric(b:bat[:any_1],v1:bat[:any_1],v2:any_1) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
-pattern between_symmetric(b:bat[:any_1],v1:bat[:any_1],v2:any_1,s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
-pattern between_symmetric(b:bat[:any_1],v1:any_1,v2:bat[:any_1]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
-pattern between_symmetric(b:bat[:any_1],v1:any_1,v2:bat[:any_1],s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
-pattern between_symmetric(b:bat[:any_1],v1:any_1,v2:any_1) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
-pattern between_symmetric(b:bat[:any_1],v1:any_1,v2:any_1,s:bat[:oid]) :bat[:bit]
-address CMDbatBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
+comment "B between V1 and V2 (or vice versa) with candidate list";
 
 
 pattern avg(b:bat[:bte]) :dbl

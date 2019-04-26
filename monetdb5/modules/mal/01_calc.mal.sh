@@ -286,13 +286,9 @@ done
 echo
 
 cat <<EOF
-pattern between(b:any_1,lo:any_1,hi:any_1) :bit
+pattern between(b:any_1,lo:any_1,hi:any_1,sym:bit,linc:bit,hinc:bit,nils_false:bit) :bit
 address CMDvarBETWEEN
 comment "B between LO and HI inclusive";
-
-pattern between_symmetric(b:any_1,v1:any_1,v2:any_1) :bit
-address CMDvarBETWEENsymmetric
-comment "B between V1 and V2 (or vice versa) inclusive";
 
 EOF
 

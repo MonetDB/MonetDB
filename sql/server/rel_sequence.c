@@ -210,7 +210,7 @@ list_create_seq(
 
 static sql_rel *
 rel_alter_seq(
-		mvc *sql,
+		sql_query *query,
 		sql_schema *ss,
 		dlist *qname,
 		sql_subtype *tpe,
@@ -221,6 +221,7 @@ rel_alter_seq(
 		lng cache,
 		bit cycle)
 {
+	mvc *sql = query->sql;
 	char* name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_sequence *seq;
@@ -257,7 +258,7 @@ rel_alter_seq(
 		int is_last = 0;
 		sql_subtype *lng_t = sql_bind_localtype("lng");
 
-		val = rel_value_exp2(sql, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
+		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek, &is_last);
 		if (!val || !(val = rel_check_type(sql, lng_t, val, type_equal)))
 			return NULL;
 	} else if (start_type == 2) {
@@ -273,11 +274,12 @@ rel_alter_seq(
 
 static sql_rel *
 list_alter_seq(
-	mvc *sql,
+	sql_query *query,
 	sql_schema *ss,
 	dlist *qname,
 	dlist *options)
 {
+	mvc *sql = query->sql;
 	dnode *n;
 	sql_subtype* t = NULL;
 	lng inc = lng_nil, min = lng_nil, max = lng_nil, cache = lng_nil;
@@ -346,12 +348,13 @@ list_alter_seq(
 			assert(0);
 		}
 	}
-	return rel_alter_seq(sql, ss, qname, t, start, inc, min, max, cache, cycle);
+	return rel_alter_seq(query, ss, qname, t, start, inc, min, max, cache, cycle);
 }
 
 sql_rel *
-rel_sequences(mvc *sql, symbol *s)
+rel_sequences(sql_query *query, symbol *s)
 {
+	mvc *sql = query->sql;
 	sql_rel *res = NULL;
 
 	switch (s->token) {
@@ -372,7 +375,7 @@ rel_sequences(mvc *sql, symbol *s)
 			dlist* l = s->data.lval;
 
 			res = list_alter_seq(
-/* mvc* sql */		sql,
+/* mvc* sql */		query,
 /* sql_schema* s */	cur_schema(sql),
 /* dlist* qname */	l->h->data.lval,
 /* dlist* options */	l->h->next->data.lval);

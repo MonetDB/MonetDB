@@ -85,6 +85,7 @@
 #define SCALE_EQ	7	/* user defined functions need equal scales */
 #define SCALE_DIGITS_FIX 8	/* the geom module requires the types and functions to have the same scale and digits */
 
+/* Warning TR flags are a bitmask */
 #define TR_NEW 1
 #define TR_RENAMED 2
 
@@ -159,16 +160,21 @@ typedef enum comp_type {
 
 	cmp_filter = 6,
 	cmp_or = 7,
-	cmp_in = 8,
-	cmp_notin = 9,
+	cmp_in = 8,			/* in value list */
+	cmp_notin = 9,			/* not in value list */
+	cmp_equal_nil = 10, 		/* case equi join, with nil = nil */
+
+	mark_in = 11,			/* mark joins */
+	mark_notin = 12,
+	mark_exists = 13,
+	mark_notexists = 14,
 
 	/* The followin cmp_* are only used within stmt (not sql_exp) */
-	cmp_all = 10,			/* special case for crossproducts */
-	cmp_project = 11,		/* special case for projection joins */
-	cmp_joined = 12, 		/* special case already joined */
-	cmp_equal_nil = 13, 		/* special case equi join, with nil = nil */
-	cmp_left = 14,			/* special case equi join, keep left order */
-	cmp_left_project = 15		/* last step of outer join */
+	cmp_all = 15,			/* special case for crossproducts */
+	cmp_project = 16,		/* special case for projection joins */
+	cmp_joined = 17, 		/* special case already joined */
+	cmp_left = 18,			/* special case equi join, keep left order */
+	cmp_left_project = 19		/* last step of outer join */
 } comp_type;
 
 /* for ranges we keep the requirment for symmetric */
@@ -223,6 +229,7 @@ extern void cs_add(changeset * cs, void *elm, int flag);
 extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
+extern void cs_move(changeset *from, changeset *to, void *data);
 extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
@@ -244,6 +251,7 @@ typedef struct sql_trans {
 	int schema_updates;	/* set on schema changes */
 	int status;		/* status of the last query */
 	list *dropped;  	/* protection against recursive cascade action*/
+	list *moved_tables;
 
 	changeset schemas;
 
@@ -597,6 +605,13 @@ typedef struct sql_table {
 		struct sql_expression *pexp; /* If it is partitioned by an expression */
 	} part;
 } sql_table;
+
+typedef struct sql_moved_table {
+	sql_schema *from;
+	sql_schema *to;
+	sql_table *t;
+	node *p; //need to iterate the list backwards
+} sql_moved_table;
 
 typedef struct res_col {
 	char *tn;

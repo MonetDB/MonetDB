@@ -234,7 +234,7 @@ pattern rename_schema(sname:str, newnme:str)
 address WLCgeneric
 comment "Catalog operation rename_schema";
 
-pattern rename_table(sname:str, tname:str, newnme:str)
+pattern rename_table(osname:str, nsname:str, otname:str, ntname:str)
 address WLCgeneric
 comment "Catalog operation rename_table";
 

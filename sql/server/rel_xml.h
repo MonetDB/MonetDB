@@ -11,7 +11,8 @@
 
 #include "rel_semantic.h"
 #include "sql_semantic.h"
+#include "sql_query.h"
 
-extern sql_exp *rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f, exp_kind knd);
+extern sql_exp *rel_xml(sql_query *query, sql_rel **rel, symbol *s, int f, exp_kind knd);
 
 #endif /*_REL_XML_H_ */

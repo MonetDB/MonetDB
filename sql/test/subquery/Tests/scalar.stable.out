@@ -1,0 +1,207 @@
+stdout of test 'scalar` in directory 'sql/test/subquery` itself:
+
+
+# 22:16:06 >  
+# 22:16:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32061" "--set" "mapi_usock=/var/tmp/mtest-29985/.s.monetdb.32061" "--set" "monet_prompt=" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_subquery" "--set" "embedded_c=true"
+# 22:16:06 >  
+
+# MonetDB 5 server v11.34.0 (hg id: 6ab80b58ef92+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_subquery', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.385 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:32061/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29985/.s.monetdb.32061
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+# MonetDB/SQL module loaded
+
+# 22:16:07 >  
+# 22:16:07 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29985" "--port=32061"
+# 22:16:07 >  
+
+#SELECT 1+(SELECT 1); -- 2
+% .L2 # table_name
+% L2 # name
+% tinyint # type
+% 1 # length
+[ 2	]
+#SELECT 1=(SELECT 1); -- true
+% .L5 # table_name
+% L5 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 1<>(SELECT 1); -- false
+% .L5 # table_name
+% L5 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 1=(SELECT NULL); -- NULL
+% .L5 # table_name
+% L5 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT NULL=(SELECT 1); -- NULL
+% .L5 # table_name
+% L5 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT EXISTS(SELECT 1); -- true
+% .L2 # table_name
+% L2 # name
+% boolean # type
+% 5 # length
+[ true	]
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (NULL);
+[ 4	]
+#SELECT EXISTS(SELECT 1) FROM integers; -- true, true, true, true
+% .L2 # table_name
+% L2 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+#SELECT EXISTS(SELECT * FROM integers); -- true
+% .L4 # table_name
+% L4 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT EXISTS(SELECT * FROM integers WHERE i IS NULL); -- true
+% .L4 # table_name
+% L4 # name
+% boolean # type
+% 5 # length
+[ true	]
+#DROP TABLE integers;
+#SELECT 1 IN (SELECT 1); -- true
+% .L11 # table_name
+% L11 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT NULL IN (SELECT 1); -- NULL
+% .L11 # table_name
+% L11 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT 1 IN (SELECT NULL); -- NULL
+% .L11 # table_name
+% L11 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT 1 IN (SELECT 2); -- false
+% .L11 # table_name
+% L11 # name
+% boolean # type
+% 5 # length
+[ false	]
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3);
+[ 3	]
+#SELECT 4 IN (SELECT * FROM integers); -- false
+% .L14 # table_name
+% L14 # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT 1 IN (SELECT * FROM integers); -- true
+% .L14 # table_name
+% L14 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT 1 IN (SELECT * FROM integers) FROM integers; -- true, true, true
+% .L13 # table_name
+% L13 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+#INSERT INTO integers VALUES (NULL); 
+[ 1	]
+#SELECT 4 IN (SELECT * FROM integers); -- NULL
+% .L14 # table_name
+% L14 # name
+% boolean # type
+% 5 # length
+[ NULL	]
+#SELECT 1 IN (SELECT * FROM integers); -- true
+% .L14 # table_name
+% L14 # name
+% boolean # type
+% 5 # length
+[ true	]
+#SELECT * FROM integers WHERE (4 IN (SELECT * FROM integers)) IS NULL ORDER BY 1; -- NULL, 1, 2, 3
+% sys.integers # table_name
+% i # name
+% int # type
+% 1 # length
+[ NULL	]
+[ 1	]
+[ 2	]
+[ 3	]
+#SELECT * FROM integers WHERE (i IN (SELECT * FROM integers)) IS NULL ORDER BY 1; -- NULL
+% sys.integers # table_name
+% i # name
+% int # type
+% 1 # length
+[ NULL	]
+#DROP TABLE integers;
+
+# 22:16:07 >  
+# 22:16:07 >  "Done."
+# 22:16:07 >  
+

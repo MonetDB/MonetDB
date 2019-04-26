@@ -38,20 +38,20 @@ stdout of test 'apply_merge_distinct.Bug-3760` in directory 'sql/test/BugTracker
 % 1,	1 # length
 [ 1,	2	]
 #SELECT b, (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a), CASE a WHEN b THEN 444 END FROM t2;
-% .t2,	.L7,	.L12 # table_name
-% b,	L6,	L12 # name
+% sys.t2,	.L5,	sys.L7 # table_name
+% b,	L5,	L7 # name
 % int,	bigint,	smallint # type
 % 1,	1,	1 # length
 [ 2,	0,	NULL	]
 #SELECT b, CASE a WHEN b THEN 444 END, (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a) FROM t2;
-% .t2,	.L3,	.L11 # table_name
-% b,	L3,	L10 # name
+% sys.t2,	sys.L3,	.L7 # table_name
+% b,	L3,	L7 # name
 % int,	smallint,	bigint # type
 % 1,	1,	1 # length
 [ 2,	NULL,	0	]
 #SELECT b as "b1", (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a), CASE a WHEN b THEN 444 END FROM t2;
-% .L2,	.L10,	.L13 # table_name
-% b1,	L7,	L13 # name
+% sys.L2,	.L6,	sys.L10 # table_name
+% b1,	L6,	L10 # name
 % int,	bigint,	smallint # type
 % 1,	1,	1 # length
 [ 2,	0,	NULL	]

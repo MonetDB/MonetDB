@@ -16,6 +16,7 @@
 #include "bat/bat_storage.h"
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
+#include "bat/nop_logger.h"
 
 /* version 05.22.03 of catalog */
 #define CATALOG_VERSION 52203
@@ -1998,14 +1999,22 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 	MT_lock_set(&bs_lock);
 
 	/* initialize empty bats */
-	if (store == store_bat) {
-		if(bat_utils_init() == -1) {
+	switch (store) {
+	case store_bat:
+	case store_mem:
+		if (bat_utils_init() == -1) {
 			MT_lock_unset(&bs_lock);
 			return -1;
 		}
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
-		bat_logger_init(&logger_funcs);
+		if (store == store_bat)
+			bat_logger_init(&logger_funcs);
+		else
+			nop_logger_init(&logger_funcs);
+		break;
+	default:
+		break;
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
@@ -2415,7 +2424,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k)
 }
 
 #define obj_ref(o,n,flags) 		\
- 	if (newFlagSet(flags)) { /* create new partent */		\
+ 	if (newFlagSet(flags)) { /* create new parent */		\
 		o->po = n;		\
 		n->base.refcnt++;	\
 	} else {			\
@@ -3694,6 +3703,20 @@ rollforward_trans(sql_trans *tr, int mode)
 		tr->parent->schema_updates = tr->schema_updates;
 	}
 
+	if (tr->moved_tables) {
+		for (node *n = tr->moved_tables->h ; n ; n = n->next) {
+			sql_moved_table *smt = (sql_moved_table*) n->data;
+			sql_schema *pfrom = find_sql_schema_id(tr->parent, smt->from->base.id);
+			sql_schema *pto = find_sql_schema_id(tr->parent, smt->to->base.id);
+			sql_table *pt = find_sql_table_id(pfrom, smt->t->base.id);
+
+			assert(pfrom && pto && pt);
+			cs_move(&pfrom->tables, &pto->tables, pt);
+			pt->s = pto;
+		}
+		tr->moved_tables = NULL;
+	}
+
 	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, (sql_base *) tr->parent, (rfufunc) &rollforward_update_schema, (rfcfunc) &rollforward_create_schema, (rfdfunc) &rollforward_drop_schema, (dupfunc) &schema_dup, mode);
 	if (mode == R_APPLY) {
@@ -4015,7 +4038,20 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 static int
 reset_trans(sql_trans *tr, sql_trans *ptr)
 {
-	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
+	int res;
+
+	if (tr != gtrans && tr->moved_tables) { //before doing any schema updates,
+		for (node *n = tr->moved_tables->t ; n ; ) { //iterate backwards
+			sql_moved_table *smt = (sql_moved_table*) n->data;
+
+			assert(smt && smt->to && smt->from && smt->t);
+			cs_move(&smt->to->tables, &smt->from->tables, smt->t);
+			smt->t->s = smt->from;
+			n = smt->p;
+		}
+	}
+	tr->moved_tables = NULL;
+	res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#reset trans %d\n", tr->wtime);
 #endif
@@ -5198,6 +5234,36 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 
 	setRenamedFlag(t);
 	t->base.wtime = tr->wtime = tr->wstime;
+	tr->schema_updates ++;
+	return t;
+}
+
+sql_table*
+sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns)
+{
+	sql_table *systable = find_sql_table(find_sql_schema(tr, "sys"), "_tables");
+	node *n = find_sql_table_node(os, id);
+	sql_table *t = n->data;
+	oid rid;
+	sql_moved_table *m;
+
+	rid = table_funcs.column_find_row(tr, find_sql_column(systable, "id"), &t->base.id, NULL);
+	assert(!is_oid_nil(rid));
+	table_funcs.column_update_value(tr, find_sql_column(systable, "schema_id"), rid, &(ns->base.id));
+
+	cs_move(&os->tables, &ns->tables, t);
+	t->s = ns;
+
+	if (!tr->moved_tables)
+		tr->moved_tables = sa_list(tr->sa);
+	m = SA_ZNEW(tr->sa, sql_moved_table); //add transaction log entry
+	m->from = os;
+	m->to = ns;
+	m->t = t;
+	m->p = tr->moved_tables->t;
+	list_append(tr->moved_tables, m);
+
+	tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	return t;
 }

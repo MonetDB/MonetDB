@@ -20,6 +20,7 @@
 #include <ctype.h>
 
 #include "rel_semantic.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 
 /* 

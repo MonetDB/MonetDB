@@ -253,15 +253,6 @@ EOF
 done
 echo
 
-# for tp in ${fixtypes[@]}; do
-#     cat <<EOF
-# pattern between(b:$tp,lo:$tp,hi:$tp) :bit
-# address CMDvarBETWEEN
-# comment "B between LO and HI inclusive, nil border is (minus) infinity";
-
-# EOF
-# done
-
 for tp1 in void ${alltypes[@]}; do
     if [[ $tp1 == str ]]; then
 	continue

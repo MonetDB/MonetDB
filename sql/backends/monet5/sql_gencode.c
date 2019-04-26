@@ -33,7 +33,6 @@
 #include "sql_scenario.h"
 #include "sql_mvc.h"
 #include "sql_qc.h"
-#include "sql_optimizer.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
 #include "querylog.h"
@@ -41,6 +40,7 @@
 #include "mal_debugger.h"
 
 #include "rel_select.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
 #include "rel_partition.h"
@@ -1031,6 +1031,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r) {
+		r = rel_unnest(m, r);
 		r = rel_optimizer(m, r, 0);
 		r = rel_distribute(m, r);
 		r = rel_partition(m, r);

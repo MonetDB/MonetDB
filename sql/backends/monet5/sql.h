@@ -114,8 +114,19 @@ sql5_export str mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_getVersion(lng *r, const int *clientid);
 sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str zero_or_one_error(ptr ret, const bat *bid, const bit *err );
+sql5_export str zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err );
 sql5_export str zero_or_one(ptr ret, const bat *bid);
 sql5_export str SQLall(ptr ret, const bat *bid);
+sql5_export str SQLnil(bit *ret, const bat *bid);
+sql5_export str SQLany_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr);
+sql5_export str SQLall_cmp(bit *ret, const bit *cmp, const bit *nl, const bit *nr);
+sql5_export str SQLanyequal(bit *ret, const bat *l, const bat *r);
+sql5_export str SQLanyequal_grp(bat *ret, const bat *l, const bat *r, const bat *gp, const bat *gpe, bit *no_nil);
+sql5_export str SQLanyequal_grp2(bat *ret, const bat *l, const bat *r, const bat *rid, const bat *gp, const bat *gpe, bit *no_nil);
+sql5_export str SQLallnotequal(bit *ret, const bat *l, const bat *r);
+sql5_export str SQLallnotequal_grp(bat *ret, const bat *l, const bat *r, const bat *gp, const bat *gpe, bit *no_nil);
+sql5_export str SQLallnotequal_grp2(bat *ret, const bat *l, const bat *r, const bat *rid, const bat *gp, const bat *gpe, bit *no_nil);
 sql5_export str not_unique(bit *ret, const bat *bid);
 sql5_export str SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -317,5 +328,6 @@ sql5_export str SQLflush_log(void *ret);
 
 sql5_export str SQLexist(bit *res, bat *id);
 sql5_export str SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLsubexist(bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
 
 #endif /* _SQL_H */

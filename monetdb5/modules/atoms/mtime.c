@@ -190,21 +190,36 @@
 
 #include "monetdb_config.h"
 #include "mtime.h"
+#include "mtime_private.h"
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
+#define rule_nil			((rule) int_nil)
+#define is_rule_nil(r)		((r) == rule_nil)
 
-#define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
-#define set_rule(r,i)							\
-	do {										\
-		(r).asint = int_nil;					\
-		(r).s.weekday = (i)&15;					\
-		(r).s.day = ((i)&(63<<6))>>6;			\
-		(r).s.minutes = ((i)&(2047<<10))>>10;	\
-		(r).s.month = ((i)&(15<<21))>>21;		\
-	} while (0)
+/* layout is based on the widths of the components */
+#define WEEKDAY_WIDTH	4
+#define DAY_WIDTH		6
+#define MINUTE_WIDTH	11
+#define MONTH_WIDTH		4
+
+#define WEEKDAY_SHIFT	0
+#define DAY_SHIFT		(WEEKDAY_SHIFT+WEEKDAY_WIDTH)
+#define MINUTE_SHIFT	(DAY_SHIFT+DAY_WIDTH)
+#define MONTH_SHIFT		(MINUTE_SHIFT+MINUTE_WIDTH)
+
+#define rule_month(r)		(((r) >> MONTH_SHIFT) & ((1<<MONTH_WIDTH)-1))
+#define rule_minutes(r)		(((r) >> MINUTE_SHIFT) & ((1<<MINUTE_WIDTH)-1))
+#define rule_day(r)			(((r) >> DAY_SHIFT) & ((1<<DAY_WIDTH)-1))
+#define rule_weekday(r)		(((r) >> WEEKDAY_SHIFT) & ((1<<WEEKDAY_WIDTH)-1))
+
+#define mkrule(month, minutes, day, weekday)	\
+	(((month) << MONTH_SHIFT) |					\
+	 ((minutes) << MINUTE_SHIFT) |				\
+	 ((day) << DAY_SHIFT) |						\
+	 ((weekday) << WEEKDAY_SHIFT))
 
 /* phony zero values, used to get negative numbers from unsigned
  * sub-integers in rule */
@@ -212,9 +227,32 @@ extern char *strptime(const char *, const char *, struct tm *);
 #define DAY_ZERO	32
 #define OFFSET_ZERO	4096
 
-/* as the offset field got split in two, we need macros to get and set them */
-#define get_offset(z)	(((int) (((z)->off1 << 7) + (z)->off2)) - OFFSET_ZERO)
-#define set_offset(z,i)	do { (z)->off1 = (((i)+OFFSET_ZERO)&8064) >> 7; (z)->off2 = ((i)+OFFSET_ZERO)&127; } while (0)
+#define tzone_nil			((tzone) lng_nil)
+#define is_tzone_nil(z)		((z) == tzone_nil)
+
+/* layout is based on the widths of the components; the width of the
+ * start and end rules comes from the number of bits used for them (see
+ * above) */
+#define END_WIDTH		(WEEKDAY_WIDTH+DAY_WIDTH+MINUTE_WIDTH+MONTH_WIDTH)
+#define START_WIDTH		(WEEKDAY_WIDTH+DAY_WIDTH+MINUTE_WIDTH+MONTH_WIDTH)
+#define OFF_WIDTH		13
+#define	DST_WIDTH		1
+
+#define END_SHIFT		0
+#define START_SHIFT		(END_SHIFT+END_WIDTH)
+#define OFF_SHIFT		(START_SHIFT+START_WIDTH)
+#define DST_SHIFT		(OFF_SHIFT+OFF_WIDTH)
+
+#define tzone_dst(z)		(((z) >> DST_SHIFT) & ((1<<DST_WIDTH)-1))
+#define tzone_off(z)		((int) (((z) >> OFF_SHIFT) & ((1<<OFF_WIDTH)-1)) - OFFSET_ZERO)
+#define tzone_start(z)		(((z) >> START_SHIFT) & ((1<<START_WIDTH)-1))
+#define tzone_end(z)		(((z) >> END_SHIFT) & ((1<<END_WIDTH)-1))
+
+#define mktzone(dst, off, start, end)							\
+			(((uint64_t) (dst) << DST_SHIFT)					\
+			 | ((uint64_t) ((off) + OFFSET_ZERO) << OFF_SHIFT)	\
+			 | ((uint64_t) (start) << START_SHIFT)				\
+			 | ((uint64_t) (end) << END_SHIFT))
 
 tzone tzone_local;
 
@@ -243,7 +281,7 @@ static int CUMLEAPDAYS[13] = {
 	0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
 };
 
-static date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
+date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
 #define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : leapyear(y) ? 29 : 28)
 #define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
@@ -259,12 +297,7 @@ static union {
 	timestamp ts;
 	lng nilval;
 } ts_nil;
-static union {
-	tzone tz;
-	lng nilval;
-} tz_nil;
 timestamp *timestamp_nil = NULL;
-static tzone *tzone_nil = NULL;
 
 int TYPE_date;
 int TYPE_daytime;
@@ -467,16 +500,16 @@ date_dayofweek(date v)
 static date
 compute_rule(const rule *val, int y)
 {
-	int m = val->s.month, cnt = abs(val->s.day - DAY_ZERO);
+	int m = rule_month(*val), cnt = abs(rule_day(*val) - DAY_ZERO);
 	date d = todate(1, m, y);
 	int dayofweek = date_dayofweek(d);
-	int w = abs(val->s.weekday - WEEKDAY_ZERO);
+	int w = abs(rule_weekday(*val) - WEEKDAY_ZERO);
 
-	if (val->s.weekday == WEEKDAY_ZERO || w == WEEKDAY_ZERO) {
+	if (rule_weekday(*val) == WEEKDAY_ZERO || w == WEEKDAY_ZERO) {
 		/* cnt-th of month */
 		d += cnt - 1;
-	} else if (val->s.day > DAY_ZERO) {
-		if (val->s.weekday < WEEKDAY_ZERO) {
+	} else if (rule_day(*val) > DAY_ZERO) {
+		if (rule_weekday(*val) < WEEKDAY_ZERO) {
 			/* first weekday on or after cnt-th of month */
 			SKIP_DAYS(d, dayofweek, cnt - 1);
 			cnt = 1;
@@ -487,7 +520,7 @@ compute_rule(const rule *val, int y)
 			d++;
 		}
 	} else {
-		if (val->s.weekday > WEEKDAY_ZERO) {
+		if (rule_weekday(*val) > WEEKDAY_ZERO) {
 			/* cnt-last weekday from end of month */
 			SKIP_DAYS(d, dayofweek, MONTHDAYS(m, y) - 1);
 		} else {
@@ -510,20 +543,20 @@ static int
 timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 {
 	/* starts with GMT time t, and returns whether it is in the DST for z */
-	lng add = (offset != (lng) 0) ? offset : (get_offset(z)) * (lng) 60000;
+	lng add = (offset != 0) ? offset : tzone_off(*z) * (lng) 60000;
 	int start_days, start_msecs, end_days, end_msecs, year;
 	rule start, end;
 
 	MTIMEtimestamp_add(ret, t, &add);
 
-	if (is_timestamp_nil(*ret) || z->dst == 0) {
+	if (is_timestamp_nil(*ret) || tzone_dst(*z) == 0) {
 		return 0;
 	}
-	set_rule(start, z->dst_start);
-	set_rule(end, z->dst_end);
+	start = tzone_start(*z);
+	end = tzone_end(*z);
 
-	start_msecs = start.s.minutes * 60000;
-	end_msecs = end.s.minutes * 60000;
+	start_msecs = rule_minutes(start) * 60000;
+	end_msecs = rule_minutes(end) * 60000;
 
 	fromdate(ret->days, NULL, NULL, &year);
 	start_days = compute_rule(&start, year);
@@ -778,7 +811,7 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		s += pos;
 	} else {
 		/* if no tzone is specified; work with the local */
-		offset = get_offset(&tzone_local) * (lng) -60000;
+		offset = tzone_off(tzone_local) * (lng) -60000;
 	}
 	val = **ret + offset;
 	if (val < 0)
@@ -877,7 +910,7 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 			/* if no tzone is specified; work with the local */
 			timestamp tmp = **ret;
 
-			offset = get_offset(&tzone_local) * (lng) -60000;
+			offset = tzone_off(tzone_local) * (lng) -60000;
 			if (timestamp_inside(&tmp, &tmp, &tzone_local, (lng) -3600000)) {
 				**ret = tmp;
 			}
@@ -915,7 +948,7 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 		s += pos;
 	} else {
 		/* if no tzone is specified; work with the local */
-		offset = get_offset(&tzone_local) * (lng) -60000;
+		offset = tzone_off(tzone_local) * (lng) -60000;
 	}
 	MTIMEtimestamp_add(*ret, *ret, &offset);
 	return (ssize_t) (s - buf);
@@ -929,7 +962,7 @@ timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *tim
 	size_t big = 128;
 	char buf1[128], buf2[128], *s = *buf, *s1 = buf1, *s2 = buf2;
 	if (timezone != NULL) {
-		/* int off = get_offset(timezone); */
+		/* int off = tzone_off(*timezone); */
 		timestamp tmp = *val;
 
 		if (!is_timestamp_nil(tmp) && timestamp_inside(&tmp, val, timezone, (lng) 0)) {
@@ -1001,8 +1034,8 @@ count1(int i)
 ssize_t
 rule_tostr(str *buf, size_t *len, const rule *r, bool external)
 {
-	int hours = r->s.minutes / 60;
-	int minutes = r->s.minutes % 60;
+	int hours = rule_minutes(*r) / 60;
+	int minutes = rule_minutes(*r) % 60;
 
 	if (*len < 64 || *buf == NULL) {
 		GDKfree(*buf);
@@ -1010,30 +1043,30 @@ rule_tostr(str *buf, size_t *len, const rule *r, bool external)
 		if( *buf == NULL)
 			return -1;
 	}
-	if (is_int_nil(r->asint)) {
+	if (is_rule_nil(*r)) {
 		if (external)
 			strcpy(*buf, "nil");
 		else
 			strcpy(*buf, str_nil);
-	} else if (r->s.weekday == WEEKDAY_ZERO) {
+	} else if (rule_weekday(*r) == WEEKDAY_ZERO) {
 		sprintf(*buf, "%s %d@%02d:%02d",
-				MONTHS[r->s.month], r->s.day - DAY_ZERO, hours, minutes);
-	} else if (r->s.weekday > WEEKDAY_ZERO && r->s.day > DAY_ZERO) {
+				MONTHS[rule_month(*r)], rule_day(*r) - DAY_ZERO, hours, minutes);
+	} else if (rule_weekday(*r) > WEEKDAY_ZERO && rule_day(*r) > DAY_ZERO) {
 		sprintf(*buf, "%s %s from start of %s@%02d:%02d",
-				count1(r->s.day - DAY_ZERO), DAYS[r->s.weekday - WEEKDAY_ZERO],
-				MONTHS[r->s.month], hours, minutes);
-	} else if (r->s.weekday > WEEKDAY_ZERO && r->s.day < DAY_ZERO) {
+				count1(rule_day(*r) - DAY_ZERO), DAYS[rule_weekday(*r) - WEEKDAY_ZERO],
+				MONTHS[rule_month(*r)], hours, minutes);
+	} else if (rule_weekday(*r) > WEEKDAY_ZERO && rule_day(*r) < DAY_ZERO) {
 		sprintf(*buf, "%s %s from end of %s@%02d:%02d",
-				count1(DAY_ZERO - r->s.day), DAYS[r->s.weekday - WEEKDAY_ZERO],
-				MONTHS[r->s.month], hours, minutes);
-	} else if (r->s.day > DAY_ZERO) {
+				count1(DAY_ZERO - rule_day(*r)), DAYS[rule_weekday(*r) - WEEKDAY_ZERO],
+				MONTHS[rule_month(*r)], hours, minutes);
+	} else if (rule_day(*r) > DAY_ZERO) {
 		sprintf(*buf, "first %s on or after %s %d@%02d:%02d",
-				DAYS[WEEKDAY_ZERO - r->s.weekday], MONTHS[r->s.month],
-				r->s.day - DAY_ZERO, hours, minutes);
+				DAYS[WEEKDAY_ZERO - rule_weekday(*r)], MONTHS[rule_month(*r)],
+				rule_day(*r) - DAY_ZERO, hours, minutes);
 	} else {
 		sprintf(*buf, "last %s on or before %s %d@%02d:%02d",
-				DAYS[WEEKDAY_ZERO - r->s.weekday], MONTHS[r->s.month],
-				DAY_ZERO - r->s.day, hours, minutes);
+				DAYS[WEEKDAY_ZERO - rule_weekday(*r)], MONTHS[rule_month(*r)],
+				DAY_ZERO - rule_day(*r), hours, minutes);
 	}
 	return (ssize_t) strlen(*buf);
 }
@@ -1051,7 +1084,7 @@ rule_fromstr(const char *buf, size_t *len, rule **d, bool external)
 		if( *d == NULL)
 			return -1;
 	}
-	(*d)->asint = int_nil;
+	**d = rule_nil;
 	if (strcmp(buf, str_nil) == 0)
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
@@ -1128,10 +1161,10 @@ rule_fromstr(const char *buf, size_t *len, rule **d, bool external)
 	if (day >= 1 && day <= LEAPDAYS[month] &&
 		hours >= 0 && hours < 60 &&
 		minutes >= 0 && minutes < 60) {
-		(*d)->s.month = month;
-		(*d)->s.weekday = WEEKDAY_ZERO + (neg_weekday ? -weekday : weekday);
-		(*d)->s.day = DAY_ZERO + (neg_day ? -day : day);
-		(*d)->s.minutes = hours * 60 + minutes;
+		**d = mkrule(month,
+					 hours * 60 + minutes,
+					 DAY_ZERO + (neg_day ? -day : day),
+					 WEEKDAY_ZERO + (neg_weekday ? -weekday : weekday));
 	}
 	return (ssize_t) (cur - buf);
 }
@@ -1144,17 +1177,17 @@ tzone_fromstr(const char *buf, size_t *len, tzone **d, bool external)
 {
 	int hours = 0, minutes = 0, neg_offset = 0;
 	ssize_t pos = 0;
-	rule r1, *rp1 = &r1, r2, *rp2 = &r2;
+	rule r1, r2;
 	const char *cur = buf;
 
-	rp1->asint = rp2->asint = 0;
+	r1 = r2 = 0;
 	if (*len < (int) sizeof(tzone) || *d == NULL) {
 		GDKfree(*d);
 		*d = (tzone *) GDKmalloc(*len = sizeof(tzone));
 		if( *d == NULL)
 			return -1;
 	}
-	**d = *tzone_nil;
+	**d = tzone_nil;
 	if (strcmp(buf, str_nil) == 0)
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
@@ -1191,22 +1224,24 @@ tzone_fromstr(const char *buf, size_t *len, tzone **d, bool external)
 		}
 	}
 	if (fleximatch(cur, "-dst[", 0)) {
-		pos = rule_fromstr(cur += 5, len, &rp1, false);
+		rule *rp = &r1;
+		pos = rule_fromstr(cur += 5, len, &rp, false);
 		if (pos < 0)
 			return pos;
-		if (is_int_nil(rp1->asint)) {
-			**d = *tzone_nil;
+		if (is_rule_nil(r1)) {
+			**d = tzone_nil;
 			return (ssize_t) (cur + pos - buf);;
 		}
 		if (cur[pos++] != ',') {
 			GDKerror("Syntax error in timezone.\n");
 			return -1;
 		}
-		pos = rule_fromstr(cur += pos, len, &rp2, false);
+		rp = &r2;
+		pos = rule_fromstr(cur += pos, len, &rp, false);
 		if (pos < 0)
 			return pos;
-		if (is_int_nil(rp2->asint)) {
-			**d = *tzone_nil;
+		if (is_rule_nil(r2)) {
+			**d = tzone_nil;
 			return (ssize_t) (cur + pos - buf);;
 		}
 		if (cur[pos++] != ']') {
@@ -1217,15 +1252,14 @@ tzone_fromstr(const char *buf, size_t *len, tzone **d, bool external)
 	}
 	/* semantic check */
 	if (hours < 24 && minutes < 60 &&
-		!is_int_nil(rp1->asint) && !is_int_nil(rp2->asint)) {
+		!is_rule_nil(r1) && !is_rule_nil(r2)) {
 		minutes += hours * 60;
-		set_offset(*d, neg_offset ? -minutes : minutes);
+		if (neg_offset)
+			minutes = -minutes;
 		if (pos) {
-			(*d)->dst = TRUE;
-			(*d)->dst_start = get_rule(r1);
-			(*d)->dst_end = get_rule(r2);
+			**d = mktzone(TRUE, minutes, r1, r2);
 		} else {
-			(*d)->dst = FALSE;
+			**d = mktzone(FALSE, minutes, 0, 0);
 		}
 	}
 	return (ssize_t) (cur - buf);
@@ -1253,12 +1287,12 @@ tzone_tostr(str *buf, size_t *len, const tzone *z, bool external)
 		}
 	} else {
 		rule dst_start, dst_end;
-		int mins = get_offset(z);
+		int mins = tzone_off(*z);
 
-		set_rule(dst_start, z->dst_start);
-		set_rule(dst_end, z->dst_end);
+		dst_start = tzone_start(*z);
+		dst_end = tzone_end(*z);
 
-		if (external && z->dst)
+		if (external && tzone_dst(*z))
 			*s++ = '"';
 		strcpy(s, "GMT");
 		s += 3;
@@ -1269,7 +1303,7 @@ tzone_tostr(str *buf, size_t *len, const tzone *z, bool external)
 			sprintf(s, "-%02d:%02d", (-mins) / 60, (-mins) % 60);
 			s += 6;
 		}
-		if (z->dst) {
+		if (tzone_dst(*z)) {
 			ssize_t l;
 			strcpy(s, "-DST[");
 			s += 5;
@@ -1342,11 +1376,6 @@ MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec)
 	return MAL_SUCCEED;
 }
 
-union lng_tzone {
-	lng lval;
-	tzone tzval;
-};
-
 /*
  * Wrapper
  * The Monet V5 API interface is defined here
@@ -1355,11 +1384,10 @@ union lng_tzone {
 	do {																\
 		str err;														\
 		ticks = (X2);													\
-		if ((err = MTIMEtzone_create(&ltz.tzval, &ticks)) != MAL_SUCCEED) \
+		if ((err = MTIMEtzone_create(&tz, &ticks)) != MAL_SUCCEED) \
 			return err;													\
-		vr.val.lval = ltz.lval;											\
 		if (BUNappend(tzbatnme, (X1), false) != GDK_SUCCEED ||			\
-			BUNappend(tzbatdef, &vr.val.lval, false) != GDK_SUCCEED)	\
+			BUNappend(tzbatdef, &tz, false) != GDK_SUCCEED)				\
 			goto bailout;												\
 	} while (0)
 
@@ -1367,11 +1395,10 @@ union lng_tzone {
 	do {																\
 		str err;														\
 		ticks = (X2);													\
-		if ((err = MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4))) != MAL_SUCCEED) \
+		if ((err = MTIMEtzone_create_dst(&tz, &ticks, &(X3), &(X4))) != MAL_SUCCEED) \
 			return err;													\
-		vr.val.lval = ltz.lval;											\
 		if (BUNappend(tzbatnme, (X1), false) != GDK_SUCCEED ||			\
-			BUNappend(tzbatdef, &vr.val.lval, false) != GDK_SUCCEED)	\
+			BUNappend(tzbatdef, &tz, false) != GDK_SUCCEED)				\
 			goto bailout;												\
 	} while (0)
 
@@ -1423,9 +1450,7 @@ MTIMEprelude(void *ret)
 {
 	const char *msg = NULL;
 	char *err;
-	ValRecord vr;
 	int ticks;
-	union lng_tzone ltz;
 	rule RULE_MAR, RULE_OCT;
 	const char *s1 = "first sunday from end of march@02:00";
 	const char *s2 = "first sunday from end of october@02:00";
@@ -1435,10 +1460,8 @@ MTIMEprelude(void *ret)
 
 	(void) ret;
 	ts_nil.nilval = lng_nil;
-	tz_nil.nilval = lng_nil;
 
 	timestamp_nil = &ts_nil.ts;
-	tzone_nil = &tz_nil.tz;
 
 	TYPE_date = ATOMindex("date");
 	TYPE_daytime = ATOMindex("daytime");
@@ -1451,10 +1474,9 @@ MTIMEprelude(void *ret)
 	LEAPDAYS[0] = int_nil;
 	DATE_MAX = todate(31, 12, YEAR_MAX);
 	DATE_MIN = todate(1, 1, YEAR_MIN);
-	tzone_local.dst = 0;
-	set_offset(&tzone_local, 0);
+	tzone_local = mktzone(0, 0, 0, 0);
 
-	tz = *tzone_nil;			/* to ensure initialized variables */
+	tz = tzone_nil;			/* to ensure initialized variables */
 
 	/* if it was already filled we can skip initialization */
 	if( timezone_name )
@@ -1477,7 +1499,6 @@ MTIMEprelude(void *ret)
 * 	timezone_name
 * 	timezone_def
 */
-	vr.vtype = ATOMindex("timezone");
 	TIMEZONES("Wake Island", 12 * 60);
 	TIMEZONES("Melbourne/Australia", 11 * 60);
 	TIMEZONES("Brisbane/Australia", 10 * 60);
@@ -1508,6 +1529,10 @@ MTIMEprelude(void *ret)
 	msg = "West/Europe";
 	return MTIMEtimezone(&tz, &msg);
   bailout:
+	BBPreclaim(tzbatnme);
+	BBPreclaim(tzbatdef);
+	tzbatnme = NULL;
+	tzbatdef = NULL;
 	throw(MAL, "mtime.prelude", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
@@ -1566,7 +1591,7 @@ MTIMElocal_timezone(lng *res)
 	tzone z;
 
 	MTIMEtzone_get_local(&z);
-	*res = get_offset(&z);
+	*res = tzone_off(z);
 	return MAL_SUCCEED;
 }
 
@@ -1668,11 +1693,11 @@ MTIMEtimestamp_create(timestamp *ret, const date *d, const daytime *t, const tzo
 	if (is_date_nil(*d) || is_daytime_nil(*t) || is_tzone_nil(*z)) {
 		*ret = *timestamp_nil;
 	} else {
-		lng add = get_offset(z) * (lng) -60000;
+		lng add = tzone_off(*z) * (lng) -60000;
 
 		ret->days = *d;
 		ret->msecs = *t;
-		if (z->dst) {
+		if (tzone_dst(*z)) {
 			timestamp tmp;
 
 			if (timestamp_inside(&tmp, ret, z, (lng) -3600000)) {
@@ -1705,7 +1730,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 	const date *d;
 	const daytime dt = totime(0, 0, 0, 0);
 	BUN n;
-	lng add = get_offset(&tzone_local) * (lng) -60000;
+	lng add = tzone_off(tzone_local) * (lng) -60000;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1723,7 +1748,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 		} else {
 			t->days = *d;
 			t->msecs = dt;
-			if (tzone_local.dst &&
+			if (tzone_dst(tzone_local) &&
 				timestamp_inside(&tmp, t, &tzone_local, (lng) -3600000))
 				*t = tmp;
 			MTIMEtimestamp_add(t, t, &add);
@@ -2316,7 +2341,7 @@ MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z)
 
 	if (is_tzone_nil(*z)) {
 		*ret = bit_nil;
-	} else if (z->dst) {
+	} else if (tzone_dst(*z)) {
 		timestamp tmp;
 
 		if (timestamp_inside(&tmp, p, z, (lng) 0)) {
@@ -2332,7 +2357,7 @@ MTIMErule_fromstr(rule *ret, const char * const *s)
 	size_t len = sizeof(rule);
 
 	if (strcmp(*s, "nil") == 0) {
-		ret->asint = int_nil;
+		*ret = rule_nil;
 		return MAL_SUCCEED;
 	}
 	if (rule_fromstr(*s, &len, &ret, false) < 0)
@@ -2344,16 +2369,16 @@ MTIMErule_fromstr(rule *ret, const char * const *s)
 str
 MTIMErule_create(rule *ret, const int *month, const int *day, const int *weekday, const int *minutes)
 {
-	ret->asint = int_nil;
+	*ret = rule_nil;
 	if (!is_int_nil(*month) && *month >= 1 && *month <= 12 &&
 		!is_int_nil(*weekday) && abs(*weekday) <= 7 &&
 		!is_int_nil(*minutes) && *minutes >= 0 && *minutes < 24 * 60 &&
 		!is_int_nil(*day) && abs(*day) >= 1 && abs(*day) <= LEAPDAYS[*month] &&
 		(*weekday || *day > 0)) {
-		ret->s.month = *month;
-		ret->s.day = DAY_ZERO + *day;
-		ret->s.weekday = WEEKDAY_ZERO + *weekday;
-		ret->s.minutes = *minutes;
+		*ret = mkrule(*month,
+					  *minutes,
+					  DAY_ZERO + *day,
+					  WEEKDAY_ZERO + *weekday);
 	}
 	return MAL_SUCCEED;
 }
@@ -2362,13 +2387,10 @@ MTIMErule_create(rule *ret, const int *month, const int *day, const int *weekday
 str
 MTIMEtzone_create_dst(tzone *ret, const int *minutes, const rule *start, const rule *end)
 {
-	*ret = *tzone_nil;
+	*ret = tzone_nil;
 	if (!is_int_nil(*minutes) && abs(*minutes) < 24 * 60 &&
-		!is_int_nil(start->asint) && !is_int_nil(end->asint)) {
-		set_offset(ret, *minutes);
-		ret->dst = TRUE;
-		ret->dst_start = get_rule(*start);
-		ret->dst_end = get_rule(*end);
+		!is_rule_nil(*start) && !is_rule_nil(*end)) {
+		*ret = mktzone(TRUE, *minutes, *start, *end);
 	}
 	return MAL_SUCCEED;
 }
@@ -2377,10 +2399,9 @@ MTIMEtzone_create_dst(tzone *ret, const int *minutes, const rule *start, const r
 str
 MTIMEtzone_create(tzone *ret, const int *minutes)
 {
-	*ret = *tzone_nil;
+	*ret = tzone_nil;
 	if (!is_int_nil(*minutes) && abs(*minutes) < 24 * 60) {
-		set_offset(ret, *minutes);
-		ret->dst = FALSE;
+		*ret = mktzone(FALSE, *minutes, 0, 0);
 	}
 	return MAL_SUCCEED;
 }
@@ -2388,10 +2409,9 @@ MTIMEtzone_create(tzone *ret, const int *minutes)
 str
 MTIMEtzone_create_lng(tzone *ret, const lng *minutes)
 {
-	*ret = *tzone_nil;
+	*ret = tzone_nil;
 	if (!is_lng_nil(*minutes) && *minutes < 24 * 60 && -*minutes < 24 * 60) {
-		set_offset(ret, (int) *minutes);
-		ret->dst = FALSE;
+		*ret = mktzone(FALSE, *minutes, 0, 0);
 	}
 	return MAL_SUCCEED;
 }
@@ -2400,7 +2420,7 @@ MTIMEtzone_create_lng(tzone *ret, const lng *minutes)
 str
 MTIMErule_extract_month(int *ret, const rule *r)
 {
-	*ret = (is_int_nil(r->asint)) ? int_nil : r->s.month;
+	*ret = (is_rule_nil(*r)) ? int_nil : rule_month(*r);
 	return MAL_SUCCEED;
 }
 
@@ -2408,7 +2428,7 @@ MTIMErule_extract_month(int *ret, const rule *r)
 str
 MTIMErule_extract_day(int *ret, const rule *r)
 {
-	*ret = (is_int_nil(r->asint)) ? int_nil : r->s.day - DAY_ZERO;
+	*ret = (is_rule_nil(*r)) ? int_nil : rule_day(*r) - DAY_ZERO;
 	return MAL_SUCCEED;
 }
 
@@ -2416,7 +2436,7 @@ MTIMErule_extract_day(int *ret, const rule *r)
 str
 MTIMErule_extract_weekday(int *ret, const rule *r)
 {
-	*ret = (is_int_nil(r->asint)) ? int_nil : r->s.weekday - WEEKDAY_ZERO;
+	*ret = (is_rule_nil(*r)) ? int_nil : rule_weekday(*r) - WEEKDAY_ZERO;
 	return MAL_SUCCEED;
 }
 
@@ -2424,7 +2444,7 @@ MTIMErule_extract_weekday(int *ret, const rule *r)
 str
 MTIMErule_extract_minutes(int *ret, const rule *r)
 {
-	*ret = (is_int_nil(r->asint)) ? int_nil : r->s.minutes;
+	*ret = (is_rule_nil(*r)) ? int_nil : rule_minutes(*r);
 	return MAL_SUCCEED;
 }
 
@@ -2432,10 +2452,10 @@ MTIMErule_extract_minutes(int *ret, const rule *r)
 str
 MTIMEtzone_extract_start(rule *ret, const tzone *t)
 {
-	if (is_tzone_nil(*t) || !t->dst) {
-		ret->asint = int_nil;
+	if (is_tzone_nil(*t) || !tzone_dst(*t)) {
+		*ret = rule_nil;
 	} else {
-		set_rule(*ret, t->dst_start);
+		*ret = tzone_start(*t);
 	}
 	return MAL_SUCCEED;
 }
@@ -2444,10 +2464,10 @@ MTIMEtzone_extract_start(rule *ret, const tzone *t)
 str
 MTIMEtzone_extract_end(rule *ret, const tzone *t)
 {
-	if (is_tzone_nil(*t) || !t->dst) {
-		ret->asint = int_nil;
+	if (is_tzone_nil(*t) || !tzone_dst(*t)) {
+		*ret = rule_nil;
 	} else {
-		set_rule(*ret, t->dst_end);
+		*ret = tzone_end(*t);
 	}
 	return MAL_SUCCEED;
 }
@@ -2456,7 +2476,7 @@ MTIMEtzone_extract_end(rule *ret, const tzone *t)
 str
 MTIMEtzone_extract_minutes(int *ret, const tzone *t)
 {
-	*ret = (is_tzone_nil(*t)) ? int_nil : get_offset(t);
+	*ret = (is_tzone_nil(*t)) ? int_nil : tzone_off(*t);
 	return MAL_SUCCEED;
 }
 
@@ -2591,7 +2611,7 @@ MTIMEtime_sub_msec_interval_wrap(daytime *ret, const daytime *t, const lng *msec
 str
 MTIMEcompute_rule_foryear(date *ret, const rule *val, const int *year)
 {
-	if (is_int_nil(*(int *) val) || *year < YEAR_MIN || *year > YEAR_MAX) {
+	if (is_rule_nil(*val) || *year < YEAR_MIN || *year > YEAR_MAX) {
 		*ret = date_nil;
 	} else {
 		*ret = compute_rule(val, *year);
@@ -2619,7 +2639,7 @@ MTIMEtzone_fromstr(tzone *ret, const char * const *s)
 	size_t len = sizeof(tzone);
 
 	if (strcmp(*s, "nil") == 0) {
-		*ret = *tzone_nil;
+		*ret = tzone_nil;
 		return MAL_SUCCEED;
 	}
 	if (tzone_fromstr(*s, &len, &ret, false) < 0)

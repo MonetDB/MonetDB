@@ -167,7 +167,7 @@ pattern rename_schema(sname:str, newnme:str)
 address SQLrename_schema
 comment "Catalog operation rename_schema";
 
-pattern rename_table(sname:str, tname:str, newnme:str)
+pattern rename_table(osname:str, nsname:str, otname:str, ntname:str)
 address SQLrename_table
 comment "Catalog operation rename_table";
 

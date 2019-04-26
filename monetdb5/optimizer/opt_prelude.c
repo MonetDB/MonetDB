@@ -63,7 +63,6 @@ str batstrRef;
 str batxmlRef;
 str bbpRef;
 str betweenRef;
-str betweensymmetricRef;
 str binddbatRef;
 str bindidxRef;
 str bindRef;
@@ -365,7 +364,6 @@ void optimizerInit(void)
 	batxmlRef = putName("batxml");
 	bbpRef = putName("bbp");
 	betweenRef = putName("between");
-	betweensymmetricRef = putName("betweensymmetric");
 	binddbatRef = putName("bind_dbat");
 	bindidxRef = putName("bind_idxbat");
 	bindRef = putName("bind");

@@ -102,7 +102,7 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		logmsg = GDKgetenv("recovery");
 		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit", "#WARNING server not ready, recovery in progress\n");
-    }while (logmsg == NULL);
+	} while (logmsg == NULL);
 	return msg;
 }
 
@@ -125,7 +125,7 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		logmsg = GDKgetenv("recovery");
 		if( logmsg== NULL && ++cnt  == 5)
 			throw(SQL,"SQLinit","#WARNING server not ready, recovery in progress\n");
-    }while (logmsg == NULL);
+	} while (logmsg == NULL);
 	return msg;
 }
 
@@ -422,7 +422,7 @@ SQLinit(Client c)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0) {
+	if ((SQLnewcatalog = mvc_init(SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user, 0)) < 0) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -513,7 +513,6 @@ SQLinit(Client c)
 		if (m->sa)
 			sa_destroy(m->sa);
 		m->sa = NULL;
-		m->sqs = NULL;
 
 #else
 		char path[FILENAME_MAX];
@@ -563,7 +562,6 @@ SQLinit(Client c)
 					if (m->sa)
 						sa_destroy(m->sa);
 					m->sa = NULL;
-					m->sqs = NULL;
 					if (newmsg){
 						fprintf(stderr,"%s",newmsg);
 						freeException(newmsg);
@@ -575,7 +573,6 @@ SQLinit(Client c)
 			fprintf(stderr, "!could not read createdb.sql\n");
 #endif
 	} else {		/* handle upgrades */
-		m->sqs = NULL;
 		if (!m->sa)
 			m->sa = sa_create();
 		if (!m->sa) {
@@ -599,6 +596,9 @@ SQLinit(Client c)
 	MT_lock_unset(&sql_contextLock);
 	if (msg != MAL_SUCCEED)
 		return msg;
+
+	if (GDKinmemory())
+		return MAL_SUCCEED;
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE, "logmanager")) == 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
@@ -830,7 +830,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (m->sa)
 		sa_destroy(m->sa);
 	m->sa = NULL;
-	m->sqs = NULL;
 	(void) mb;
 	return msg;
 }
@@ -1073,7 +1072,6 @@ SQLparser(Client c)
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
-	m->sqs = NULL;
 	if (!m->sa) 
 		m->sa = sa_create();
 	if (!m->sa) {

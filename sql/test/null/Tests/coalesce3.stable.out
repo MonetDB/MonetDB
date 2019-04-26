@@ -42,8 +42,8 @@ stdout of test 'coalesce3` in directory 'sql/test/null` itself:
 #     ) x
 #ORDER BY id
 #;
-% .x,	.L2 # table_name
-% id,	L2 # name
+% sys.x,	.L6 # table_name
+% id,	L6 # name
 % int,	int # type
 % 2,	1 # length
 [ 1,	1	]

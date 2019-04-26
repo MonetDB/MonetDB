@@ -2547,10 +2547,16 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			      do_groupmin, "BATgroupmin");
 }
 
+void *
+BATmin(BAT *b, void *aggr)
+{
+	return BATmin_skipnil(b, aggr, 1);
+}
+
 /* return pointer to smallest non-nil value in b, or pointer to nil if
  * there is no such value (no values at all, or only nil) */
 void *
-BATmin(BAT *b, void *aggr)
+BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 {
 	PROPrec *prop;
 	const void *res;
@@ -2615,7 +2621,7 @@ BATmin(BAT *b, void *aggr)
 		} else {
 			(void) do_groupmin(&pos, b, NULL, 1, 0, 0, 0,
 					   BATcount(b), NULL, NULL, BATcount(b),
-					   true, false);
+					   skipnil, false);
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);
@@ -2647,6 +2653,12 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 void *
 BATmax(BAT *b, void *aggr)
 {
+	return BATmax_skipnil(b, aggr, 1);
+}
+
+void *
+BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
+{
 	PROPrec *prop;
 	const void *res;
 	size_t s;
@@ -2674,6 +2686,16 @@ BATmax(BAT *b, void *aggr)
 			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 
 			pos = ords[BATcount(b) - 1];
+			/* nils are first, ie !skipnil, check for nils */
+			if (!skipnil) {
+				BUN z = ords[0];
+
+				bi = bat_iterator(b);
+				res = BUNtail(bi, z - b->hseqbase);
+
+				if (ATOMcmp(b->ttype, res, ATOMnilptr(b->ttype)) == 0)
+					pos = z;
+			}
 		} else if ((VIEWtparent(b) == 0 ||
 			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
 			   BATcheckimprints(b)) {
@@ -2691,7 +2713,7 @@ BATmax(BAT *b, void *aggr)
 		} else {
 			(void) do_groupmax(&pos, b, NULL, 1, 0, 0, 0,
 					   BATcount(b), NULL, NULL, BATcount(b),
-					   true, false);
+					   skipnil, false);
 		}
 		if (is_oid_nil(pos)) {
 			res = ATOMnilptr(b->ttype);

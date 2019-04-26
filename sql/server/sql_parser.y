@@ -6744,9 +6744,9 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_list	ap;
 
 	va_start (ap,format);
-	if (sql->errstr[0] == '\0')
+	if (sql->errstr[0] == '\0' || error_code == 5)
 		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
-	if (!sql->session->status)
+	if (!sql->session->status || error_code == 5)
 		sql->session->status = -error_code;
 	va_end (ap);
 	return NULL;

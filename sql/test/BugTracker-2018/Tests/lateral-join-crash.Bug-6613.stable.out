@@ -1,0 +1,63 @@
+stdout of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 00:28:46 >  
+# 00:28:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34098" "--set" "mapi_usock=/var/tmp/mtest-13250/.s.monetdb.34098" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 00:28:46 >  
+
+# MonetDB 5 server v11.34.0 (hg id: 9b9d1f1578b1+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.385 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2019 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:34098/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13250/.s.monetdb.34098
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+# 00:28:47 >  
+# 00:28:47 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13250" "--port=34098"
+# 00:28:47 >  
+
+#start transaction;
+#create table segments (meter int, distance int, speed int);
+#insert into segments values (1,1,1),(9,9,9);
+[ 2	]
+#select t.* from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t;
+% .t # table_name
+% value # name
+% hugeint # type
+% 2 # length
+[ 1	]
+[ 2	]
+[ 9	]
+[ 10	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+[ 1	]
+[ 2	]
+[ 9	]
+[ 10	]
+[ 11	]
+[ 12	]
+[ 13	]
+[ 14	]
+[ 15	]
+[ 16	]
+[ 17	]
+[ 18	]
+#rollback;
+
+# 00:28:47 >  
+# 00:28:47 >  "Done."
+# 00:28:47 >  
+

@@ -37,6 +37,7 @@ typedef struct expression {
 	void *f;	/* func's and aggr's */
 			/* e_cmp may have have 2 arguments */
 	int flag;	/* EXP_DISTINCT, NO_NIL, ASCENDING, NULLS_LAST, cmp types */
+	int freevar;	/* free variable, ie binds to the upper dependent join */
 	unsigned char card;	/* card
 				   (0 truth value!)
 				   (1 atoms)
@@ -160,7 +161,6 @@ typedef enum operator_type {
 	op_full,
 	op_semi,
 	op_anti,
-	op_apply,
 	op_union,
 	op_inter,
 	op_except,
@@ -210,8 +210,6 @@ typedef enum operator_type {
 	(op == op_semi || op == op_anti)
 #define is_joinop(op) \
 	(is_join(op) || is_semi(op))
-#define is_apply(op) \
-	(op == op_apply)
 #define is_select(op) \
 	(op == op_select)
 #define is_set(op) \
@@ -303,6 +301,19 @@ typedef enum operator_type {
 	(rel)->subquery = 1
 #define reset_subquery(rel) \
 	(rel)->subquery = 0
+#define is_dependent(rel) \
+	((rel)->dependent)
+#define set_dependent(rel) \
+	(rel)->dependent = 1
+#define reset_dependent(rel) \
+	(rel)->dependent = 0
+
+#define is_freevar(e) \
+	((e)->freevar)
+#define set_freevar(e) \
+	(e)->freevar = 1
+#define reset_freevar(e) \
+	(e)->freevar = 0
 
 #define rel_is_ref(rel)		(((sql_rel*)rel)->ref.refcnt > 1)
 
@@ -317,7 +328,8 @@ typedef struct relation {
 	unsigned int
 	 flag:8,	/* EXP_DISTINCT */
 	 card:4,	/* 0, 1 (row), 2 aggr, 3 */
-	 processed:1, /* fully processed or still in the process of building */
+	 dependent:1, 	/* dependent join */
+	 processed:1,   /* fully processed or still in the process of building */
 	 subquery:1;	/* is this part a subquery, this is needed for proper name binding */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;

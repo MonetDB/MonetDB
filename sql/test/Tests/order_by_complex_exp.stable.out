@@ -36,11 +36,13 @@ stdout of test 'order_by_complex_exp` in directory 'sql/test` itself:
 % .plan # table_name
 % rel # name
 % clob # type
-% 128 # length
+% 130 # length
 project (
-| group by (
-| | table(sys.test02) [ "test02"."col1" NOT NULL ] COUNT 
-| ) [ "test02"."col1" NOT NULL ] [ "test02"."col1" NOT NULL, sys.count no nil ("test02"."col1" NOT NULL) NOT NULL as "L3"."L3" ]
+| project (
+| | group by (
+| | | table(sys.test02) [ "test02"."col1" NOT NULL ] COUNT 
+| | ) [ "test02"."col1" NOT NULL ] [ "test02"."col1" NOT NULL, sys.count no nil ("test02"."col1" NOT NULL) NOT NULL as "L3"."L3" ]
+| ) [ "test02"."col1" NOT NULL, "L3"."L3" NOT NULL ]
 ) [ "test02"."col1" NOT NULL ] [ "L3"."L3" ASC NOT NULL, "test02"."col1" ASC NOT NULL ]
 #select col1
 #from test02

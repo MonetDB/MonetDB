@@ -598,6 +598,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		for(k=1; k<mat[m].mi->argc; k++) { 
 			InstrPtr q = copyInstruction(p);
 			InstrPtr s = newInstruction(mb, matRef, packRef);
+			int ttpe = 0;
 
 			if(!q || !s) {
 				if(q)
@@ -610,8 +611,9 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 
 			getArg(s,0) = newTmpVariable(mb, getArgType(mb, mat[n].mi, k));
 	
+		       	ttpe = getArgType(mb, mat[n].mi, 0);
 			for (j=1; j<mat[n].mi->argc; j++) {
-				if (overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)){
+				if (getBatType(ttpe) != TYPE_oid || overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)){
 					s = pushArgument(mb,s,getArg(mat[n].mi,j));
 				}
 			}

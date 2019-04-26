@@ -498,7 +498,7 @@ GDKinit(opt *set, int setlen)
 		BBPunlock();
 	}
 	errno = 0;
-	if (!GDKenvironment(dbpath))
+	if (!GDKinmemory() && !GDKenvironment(dbpath))
 		return GDK_FAIL;
 
 	MT_init_posix();
@@ -624,20 +624,27 @@ GDKinit(opt *set, int setlen)
 	if (GDKnr_threads == 0)
 		GDKnr_threads = MT_check_nr_cores();
 
-	if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
-	    (p = strrchr(p, DIR_SEP)) != NULL) {
-		if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
-			GDKerror("GDKinit: GDKsetenv failed");
-			return GDK_FAIL;
-		}
+	if (!GDKinmemory()) {
+		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
+			(p = strrchr(p, DIR_SEP)) != NULL) {
+			if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
+				GDKerror("GDKinit: GDKsetenv failed");
+				return GDK_FAIL;
+			}
 #if DIR_SEP != '/'		/* on Windows look for different separator */
-	} else if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
-	    (p = strrchr(p, '/')) != NULL) {
-		if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
+		} else if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
+				   (p = strrchr(p, '/')) != NULL) {
+			if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
+				GDKerror("GDKinit: GDKsetenv failed");
+				return GDK_FAIL;
+			}
+#endif
+		}
+	} else {
+		if (GDKsetenv("gdk_dbname", ":inmemory") != GDK_SUCCEED) {
 			GDKerror("GDKinit: GDKsetenv failed");
 			return GDK_FAIL;
 		}
-#endif
 	}
 	if (GDKgetenv("gdk_vm_maxsize") == NULL) {
 		snprintf(buf, sizeof(buf), "%zu", GDK_vm_maxsize);
@@ -847,7 +854,7 @@ GDKreset(int status)
 void
 GDKexit(int status)
 {
-	if (GET_GDKLOCK(PERSISTENT) == NULL) {
+	if (!GDKinmemory() && GET_GDKLOCK(PERSISTENT) == NULL) {
 #ifdef HAVE_EMBEDDED
 		return;
 #else

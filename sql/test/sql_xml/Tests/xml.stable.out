@@ -28,7 +28,7 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 
 #select c.CustId, c.Name as CustName 
 #from customers c;
-% sys.c,	sys.L1 # table_name
+% sys.c,	sys.L3 # table_name
 % custid,	custname # name
 % int,	varchar # type
 % 1,	18 # length
@@ -42,8 +42,8 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #       	xmlelement(name "CustName", c.Name),
 #        xmlelement(name "City", c.City))
 #from customers c;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % xml # type
 % 98 # length
 [ <Customer><CustId>1</CustId><CustName>WoodWorks</CustName><City>Baltimore</City></Customer>	]
@@ -54,8 +54,8 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #select xmlelement(name "Customer",
 #	xmlforest(c.CustId, c.Name AS CustName, c.City))
 #from customers c;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % xml # type
 % 98 # length
 [ <Customer><custid>1</custid><custname>WoodWorks</custname><city>Baltimore</city></Customer>	]
@@ -76,8 +76,8 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #from Customers c, Projects p
 #where c.CustId = p.CustId
 #order by c.CustId, p.ProjId;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % xml # type
 % 128 # length
 [ <CustomerProj><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></CustomerProj>	]
@@ -90,14 +90,14 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #from Customers c, Projects p
 #where c.CustId = p.CustId
 #order by c.CustId, p.ProjId;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % xml # type
-% 127 # length
-[ <project id = "1"><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></project>	]
-[ <project id = "2"><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></project>	]
-[ <project id = "8"><custid>4</custid><custname>Hardware Shop</custname><projid>8</projid><projname>Typhon</projname></project>	]
-[ <project id = "10"><custid>5</custid><custname>Books Inc</custname><projid>10</projid><projname>Sphinx</projname></project>	]
+% 125 # length
+[ <project id="1"><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></project>	]
+[ <project id="2"><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></project>	]
+[ <project id="8"><custid>4</custid><custname>Hardware Shop</custname><projid>8</projid><projname>Typhon</projname></project>	]
+[ <project id="10"><custid>5</custid><custname>Books Inc</custname><projid>10</projid><projname>Sphinx</projname></project>	]
 #select 
 #  xmlelement(name "Customer",
 #    xmlattributes(c.CustId as "id"), 
@@ -110,22 +110,22 @@ stdout of test 'xml` in directory 'sql/test/sql_xml` itself:
 #       where p.CustId = c.CustId) )) as "customer_projects"
 #from Customers c
 #order by c.CustId;
-% .L3 # table_name
+% .L5 # table_name
 % customer_projects # name
 % xml # type
-% 196 # length
-[ <Customer id = "1"><name>WoodWorks</name><city>Baltimore</city><projects><project id = "1"><name>Medusa</name></project></projects></Customer>	]
-[ <Customer id = "2"><name>Software Solutions</name><city>Boston</city></Customer>	]
-[ <Customer id = "3"><name>Food Supplies</name><city>New York</city></Customer>	]
-[ <Customer id = "4"><name>Hardware Shop</name><city>Washington</city><projects><project id = "2"><name>Pegasus</name></project><project id = "8"><name>Typhon</name></project></projects></Customer>	]
-[ <Customer id = "5"><name>Books Inc</name><city>New Orleans</city><projects><project id = "10"><name>Sphinx</name></project></projects></Customer>	]
+% 190 # length
+[ <Customer id="1"><name>WoodWorks</name><city>Baltimore</city><projects><project id="1"><name>Medusa</name></project></projects></Customer>	]
+[ <Customer id="2"><name>Software Solutions</name><city>Boston</city></Customer>	]
+[ <Customer id="3"><name>Food Supplies</name><city>New York</city></Customer>	]
+[ <Customer id="4"><name>Hardware Shop</name><city>Washington</city><projects><project id="2"><name>Pegasus</name></project><project id="8"><name>Typhon</name></project></projects></Customer>	]
+[ <Customer id="5"><name>Books Inc</name><city>New Orleans</city><projects><project id="10"><name>Sphinx</name></project></projects></Customer>	]
 #select 
 #  xmlelement(name "Customer",
 #  xmlattributes(c.CustId as "id"), 
 #  xmlcomment('simple comment test'))
 #from Customers c;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % xml # type
 % 57 # length
 [ <Customer id = "1"><!--simple comment test--></Customer>	]

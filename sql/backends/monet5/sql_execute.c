@@ -26,6 +26,7 @@
 #include "sql_user.h"
 #include "sql_optimizer.h"
 #include "sql_datetime.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_partition.h"
 #include "rel_distribute.h"
@@ -870,8 +871,10 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
 
-		if (*opt)
+		if (*opt) {
+			rel = rel_unnest(m, rel);
 			rel = rel_optimizer(m, rel, 0);
+		}
 
 		if ((msg = MSinitClientPrg(c, "user", "test")) != MAL_SUCCEED) {
 			rel_destroy(rel);
@@ -981,6 +984,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
 	stack_pop_frame(m);
+	if (rel)
+		rel = rel_unnest(m, rel);
 	if (rel)
 		rel = rel_optimizer(m, rel, 0);
 	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0)

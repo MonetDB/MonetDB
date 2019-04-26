@@ -27,6 +27,7 @@
 #include "mal_debugger.h"
 
 #include "rel_select.h"
+#include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_prop.h"
 #include "rel_rel.h"
@@ -451,6 +452,8 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
+			r = rel_unnest(sql, r);
+		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql, r);
@@ -782,6 +785,8 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		if(!buf)
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
+		if (r)
+			r = rel_unnest(sql, r);
 		if (r)
 			r = rel_optimizer(sql, r, 0);
 		if (r) {
@@ -1603,30 +1608,65 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str schema_name = *getArgReference_str(stk, pci, 1);
-	str old_name = *getArgReference_str(stk, pci, 2);
-	str new_name = *getArgReference_str(stk, pci, 3);
-	sql_schema *s;
+	str oschema_name = *getArgReference_str(stk, pci, 1);
+	str nschema_name = *getArgReference_str(stk, pci, 2);
+	str otable_name = *getArgReference_str(stk, pci, 3);
+	str ntable_name = *getArgReference_str(stk, pci, 4);
+	sql_schema *o, *s;
 	sql_table *t;
 
 	initcontext();
-	if (!(s = mvc_bind_schema(sql, schema_name)))
-		throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", schema_name);
-	if (!mvc_schema_privs(sql, s))
-		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), schema_name);
-	if (!(t = mvc_bind_table(sql, s, old_name)))
-		throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", old_name, schema_name);
-	if (t->system)
-		throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
-	if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-		throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", old_name);
-	if (!new_name || strcmp(new_name, str_nil) == 0 || *new_name == '\0')
-		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
-	if (mvc_bind_table(sql, s, new_name))
-		throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, schema_name);
 
-	if (!sql_trans_rename_table(sql->session->tr, s, t->base.id, new_name))
-		throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if(strcmp(oschema_name, nschema_name) == 0) { //renaming the table itself
+		if (!(s = mvc_bind_schema(sql, oschema_name)))
+			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", oschema_name);
+		if (!mvc_schema_privs(sql, s))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), oschema_name);
+		if (!(t = mvc_bind_table(sql, s, otable_name)))
+			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
+		if (t->system)
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
+		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
+			throw (SQL,"sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", otable_name);
+		if (!ntable_name || strcmp(ntable_name, str_nil) == 0 || *ntable_name == '\0')
+			throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
+		if (mvc_bind_table(sql, s, ntable_name))
+			throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", ntable_name, oschema_name);
+
+		if (!sql_trans_rename_table(sql->session->tr, s, t->base.id, ntable_name))
+			throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	} else { //changing the schema of the table
+		assert(strcmp(otable_name, ntable_name) == 0);
+
+		if (!(o = mvc_bind_schema(sql, oschema_name)))
+			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", oschema_name);
+		if (!mvc_schema_privs(sql, o))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), oschema_name);
+		if (!(t = mvc_bind_table(sql, o, otable_name)))
+			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", otable_name, oschema_name);
+		if (t->system)
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: cannot set schema of a system table");
+		if (isTempSchema(o) || isTempTable(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
+		if (isView(t))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
+		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
+			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
+		if (t->members.set || t->triggers.set)
+			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
+		if (!(s = mvc_bind_schema(sql, nschema_name)))
+			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", nschema_name);
+		if (!mvc_schema_privs(sql, s))
+			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: access denied for '%s' to schema '%s'", stack_get_string(sql, "current_user"), nschema_name);
+		if (isTempSchema(s))
+			throw(SQL, "sql.rename_table", SQLSTATE(3F000) "ALTER TABLE: not possible to change table's schema to temporary");
+		if (mvc_bind_table(sql, s, otable_name))
+			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: table '%s' on schema '%s' already exists", otable_name, nschema_name);
+
+		if (!sql_trans_set_table_schema(sql->session->tr, t->base.id, o, s))
+			throw(SQL, "sql.rename_table",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
 	return msg;
 }
 
