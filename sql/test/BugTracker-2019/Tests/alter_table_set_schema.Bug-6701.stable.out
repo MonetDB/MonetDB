@@ -20,11 +20,9 @@ stdout of test 'alter_table_set_schema.Bug-6701` in directory 'sql/test/BugTrack
 # MonetDB/Python2 module loaded
 # MonetDB/R   module loaded
 
-Ready.
-
-# 19:03:57 >  
-# 19:03:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21054" "--port=38092"
-# 19:03:57 >  
+# 10:51:21 >  
+# 10:51:21 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4922" "--port=33370"
+# 10:51:21 >  
 
 #SELECT * FROM sys.columns WHERE table_id NOT IN (SELECT id FROM sys.tables);
 % .columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns,	.columns # table_name
@@ -69,13 +67,13 @@ Ready.
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys.L103 # table_name
+% sys.L44 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from objects where id in (select id from keys where table_id in (select id from tables where name = 'test2'));
-% sys.L205 # table_name
+% sys.L46 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
@@ -88,13 +86,13 @@ Ready.
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys.L103 # table_name
+% sys.L44 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from objects where id in (select id from keys where table_id in (select id from tables where name = 'test2'));
-% sys.L205 # table_name
+% sys.L46 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
@@ -107,13 +105,13 @@ Ready.
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys.L103 # table_name
+% sys.L44 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from objects where id in (select id from keys where table_id in (select id from tables where name = 'test2'));
-% sys.L205 # table_name
+% sys.L46 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
@@ -126,13 +124,13 @@ Ready.
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from keys where table_id in (select id from tables where name = 'test2');
-% sys.L103 # table_name
+% sys.L44 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) as count_rows from objects where id in (select id from keys where table_id in (select id from tables where name = 'test2'));
-% sys.L205 # table_name
+% sys.L46 # table_name
 % count_rows # name
 % bigint # type
 % 1 # length

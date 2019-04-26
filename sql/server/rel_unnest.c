@@ -469,6 +469,18 @@ push_up_select(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static int
+exps_is_constant( list *exps )
+{
+	sql_exp *e;
+
+	if (!exps || list_empty(exps))
+		return 1;
+	if (list_length(exps) > 1)
+		return 0;
+	e = exps->h->data;
+	return exp_is_atom(e);
+}
 
 static sql_rel *
 push_up_groupby(mvc *sql, sql_rel *rel) 
@@ -487,8 +499,8 @@ push_up_groupby(mvc *sql, sql_rel *rel)
 			for (n = r->exps->h; n; n = n->next ) {
 				sql_exp *e = n->data;
 
-				/* count_nil(*) -> count(t.TID) */
-				if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && !e->l) {
+				/* count_nil(* or constant) -> count(t.TID) */
+				if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && (!e->l || exps_is_constant(e->l))) {
 					sql_exp *col;
 					sql_rel *p = r->l; /* ugh */
 
