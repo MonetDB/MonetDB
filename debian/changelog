@@ -1,3 +1,11 @@
+monetdb (11.33.3) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6647: Add suport to Python 3 on Windows
+  * BZ#6696: Re-use of MAL explain plans with complex type coercions
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 26 Apr 2019 15:11:15 +0200
+
 monetdb (11.33.1) unstable; urgency=low
 
   * Rebuilt.
