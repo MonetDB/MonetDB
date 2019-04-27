@@ -416,6 +416,27 @@ dateRead(void *dst, stream *s, size_t cnt)
 }
 
 static void *
+daytimeRead(void *dst, stream *s, size_t cnt)
+{
+	int *ptr;
+	lng *lptr;
+
+	if ((dst = BATatoms[TYPE_int].atomRead(dst, s, cnt)) == NULL)
+		return NULL;
+	ptr = dst;
+	lptr = dst;
+	/* work backwards so that we do this in place */
+	for (size_t i = cnt; i > 0; ) {
+		i--;
+		if (is_int_nil(ptr[i]))
+			lptr[i] = lng_nil;
+		else
+			lptr[i] = ptr[i] * LL_CONSTANT(1000);
+	}
+	return dst;
+}
+
+static void *
 timestampRead(void *dst, stream *s, size_t cnt)
 {
 	union timestamp {
@@ -518,7 +539,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 		if (lg->convert_date && tt > TYPE_str) {
 			if (strcmp(BATatoms[tt].name, "date") == 0)
 				rt = dateRead;
-			if (strcmp(BATatoms[tt].name, "timestamp") == 0)
+			else if (strcmp(BATatoms[tt].name, "daytime") == 0)
+				rt = daytimeRead;
+			else if (strcmp(BATatoms[tt].name, "timestamp") == 0)
 				rt = timestampRead;
 		}
 #endif

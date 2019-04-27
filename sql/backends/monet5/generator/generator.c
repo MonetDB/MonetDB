@@ -145,7 +145,9 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
-			n = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
+			lng df;
+			MTIMEtimestamp_diff(&df, &l, &f);
+			n = (BUN) (df / s);
 			bn = COLnew(0, TYPE_timestamp, n + 1, TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -158,7 +160,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 					return msg;
 				}
 			}
-			if (f.days != l.days || f.msecs != l.msecs) {
+			if (f != l) {
 				*v++ = f;
 				n++;
 			}
@@ -353,17 +355,15 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tss = *getArgReference_lng(stk, p, 3);
 			if ( tss == 0 || 
 				is_timestamp_nil(tsf) || is_timestamp_nil(tsl) ||
-				 (tss > 0 && (tsf.days > tsl.days || (tsf.days == tsl.days && tsf.msecs > tsl.msecs) )) ||
-				 (tss < 0 && (tsf.days < tsl.days || (tsf.days == tsl.days && tsf.msecs < tsl.msecs) )) 
+				 (tss > 0 && tsf > tsl ) ||
+				 (tss < 0 && tsf < tsl ) 
 				)
 				throw(MAL, "generator.select",  SQLSTATE(42000) "Illegal generator range");
 
 			tlow = *getArgReference_TYPE(stk,pci,i, timestamp);
 			thgh = *getArgReference_TYPE(stk,pci,i+1, timestamp);
 
-			if (tlow.msecs == thgh.msecs &&
-			    tlow.days == thgh.days &&
-			    !is_timestamp_nil(tlow))
+			if (!is_timestamp_nil(tlow) && tlow == thgh)
 				hi = li;
 			if( hi && !is_timestamp_nil(thgh) &&
 			    (msg = MTIMEtimestamp_add(&thgh, &thgh, &one)) != MAL_SUCCEED)
@@ -375,7 +375,9 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
-			o2 = (BUN) ((((lng) tsl.days - tsf.days) * 24*60*60*1000 + tsl.msecs - tsf.msecs) / tss);
+			lng df;
+			MTIMEtimestamp_diff(&df, &tsl, &tsf);
+			o2 = (BUN) (df / tss);
 			bn = COLnew(0, TYPE_oid, o2 + 1, TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.select", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -383,8 +385,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			// simply enumerate the sequence and filter it by predicate and candidate list
 			ol = (oid *) Tloc(bn, 0);
 			for (c=0, o1=0; o1 <= o2; o1++) {
-				if( (((tsf.days>tlow.days || (tsf.days== tlow.days && tsf.msecs >= tlow.msecs) || is_timestamp_nil(tlow))) &&
-				    ((tsf.days<thgh.days || (tsf.days== thgh.days && tsf.msecs < thgh.msecs))  || is_timestamp_nil(thgh)) ) != anti ){
+				if(((is_timestamp_nil(tlow) || tsf >= tlow) &&
+				    (is_timestamp_nil(thgh) || tsf < thgh)) != anti ){
 					/* could be improved when no candidate list is available into a void/void BAT */
 					if( cl){
 						while ( c < BATcount(cand) && *cl < o1 ) {cl++; c++;}
@@ -623,15 +625,15 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			}
 			s = *getArgReference_lng(stk,p, 3);
 			if ( s == 0 || 
-				 (s > 0 && (f.days > l.days || (f.days == l.days && f.msecs > l.msecs) )) ||
-				 (s < 0 && (f.days < l.days || (f.days == l.days && f.msecs < l.msecs) )) 
+				 (s > 0 && f > l) ||
+				 (s < 0 && f < l) 
 				) {
 				if (cand)
 					BBPunfix(cand->batCacheid);
 				throw(MAL, "generator.select", SQLSTATE(42000) "Illegal generator range");
 			}
 
-			hgh = low = *timestamp_nil;
+			hgh = low = timestamp_nil;
 			if ( strcmp(oper,"<") == 0){
 				lng minone = -1;
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp);
@@ -668,7 +670,9 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");
 			}
 
-			cap = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
+			lng df;
+			MTIMEtimestamp_diff(&df, &l, &f);
+			cap = (BUN) (df / s);
 			bn = COLnew(0, TYPE_oid, cap, TRANSIENT);
 			if( bn == NULL) {
 				if (cand)
@@ -680,8 +684,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
 			val = f;
 			for(j = 0; j< cap; j++,  o++){
-				if( (( is_timestamp_nil(low) || (val.days > low.days || (val.days == low.days && val.msecs >=low.msecs))) && 
-					 ( is_timestamp_nil(hgh) || (val.days < hgh.days || (val.days == hgh.days && val.msecs <= hgh.msecs)))) != anti){
+				if (((is_timestamp_nil(low) || val >= low) && 
+				     (is_timestamp_nil(hgh) || val <= hgh)) != anti){
 					if(cand){
 						if( cl){ while(cn-- >= 0 && *cl < o) cl++; if ( *cl == o){ *v++= o; c++;}}
 						else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
@@ -799,8 +803,8 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 			s =  *getArgReference_lng(stk,p, 3);
 			if ( s == 0 ||
-				(s< 0 &&	(f.days< l.days || (f.days == l.days && f.msecs < l.msecs))) ||
-			     (s> 0 &&	(l.days< f.days || (l.days == f.days && l.msecs < f.msecs))) ) {
+			     (s< 0 && f < l) ||
+			     (s> 0 && l < f) ) {
 				BBPunfix(b->batCacheid);
 				throw(MAL,"generator.projection", SQLSTATE(42000) "Illegal range");
 			}
@@ -820,9 +824,9 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				if ( is_timestamp_nil(val))
 					continue;
-				if (s > 0 && ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  ) )
+				if (s > 0 && (val < f || val >= l) )
 					continue;
-				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs <= l.msecs)) || ((val.days > f.days || (val.days == f.days && val.msecs > f.msecs)))  ) )
+				if (s < 0 && (val <= l || val > f) )
 					continue;
 				*v++ = val;
 				c++;

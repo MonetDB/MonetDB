@@ -31,7 +31,7 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng now;
 	int i, prog;
 	str usr;
-	timestamp ts, tsn;
+	timestamp tsn;
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
@@ -82,25 +82,19 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 
 		/* convert number of seconds into a timestamp */
-		now = QRYqueue[i].start * 1000;
-		msg = MTIMEunix_epoch(&ts);
-		if (msg)
-			goto bailout;
-		msg = MTIMEtimestamp_add(&tsn, &ts, &now);
+		now = QRYqueue[i].start;
+		msg = MTIMEtimestamplng(&tsn, &now);
 		if (msg)
 			goto bailout;
 		if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
 			goto bailout;
 
 		if ( QRYqueue[i].mb->runtime == 0) {
-			if (BUNappend(estimate, timestamp_nil, false) != GDK_SUCCEED)
+			if (BUNappend(estimate, &timestamp_nil, false) != GDK_SUCCEED)
 				goto bailout;
 		} else {
 			now = (QRYqueue[i].start * 1000 + QRYqueue[i].mb->runtime);
-			msg = MTIMEunix_epoch(&ts);
-			if (msg)
-				goto bailout;
-			msg = MTIMEtimestamp_add(&tsn, &ts, &now);
+			msg = MTIMEtimestamp_lng(&tsn, &now);
 			if (msg)
 				goto bailout;
 			if (BUNappend(estimate, &tsn, false) != GDK_SUCCEED)

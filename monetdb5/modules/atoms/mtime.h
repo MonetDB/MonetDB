@@ -47,8 +47,8 @@ typedef int date;
  * Daytime values are also stored as the number of milliseconds that
  * passed since the start of the day (i.e. midnight).
  */
-typedef int daytime;
-#define daytime_nil ((daytime) int_nil)
+typedef lng daytime;
+#define daytime_nil		((daytime) lng_nil)
 #define is_daytime_nil(X) ((X) == daytime_nil)
 /* it should never overflow */
 
@@ -56,20 +56,9 @@ typedef int daytime;
  * @- timestamp
  * Timestamp is implemented as a record that contains a date and a time (GMT).
  */
-typedef union {
-	lng alignment;
-	struct {
-#ifndef WORDS_BIGENDIAN
-		daytime p_msecs;
-		date p_days;
-#else
-		date p_days;
-		daytime p_msecs;
-#endif
-	} payload;
-} timestamp;
-#define msecs payload.p_msecs
-#define days payload.p_days
+typedef lng timestamp;
+#define timestamp_nil	((timestamp) {lng_nil})
+#define is_timestamp_nil(X)	((X) == timestamp_nil)
 
 /*
  * @- rule
@@ -85,9 +74,6 @@ typedef int rule;
 typedef uint64_t tzone;
 
 mal_export tzone tzone_local;
-mal_export timestamp *timestamp_nil;
-
-#define is_timestamp_nil(t)   ((t).days == timestamp_nil->days && (t).msecs == timestamp_nil->msecs)
 
 mal_export ssize_t daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external);
 mal_export ssize_t timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external);
@@ -218,10 +204,10 @@ mal_export ssize_t daytime_fromstr(const char *buf, size_t *len, daytime **ret, 
 mal_export ssize_t daytime_tostr(str *buf, size_t *len, const daytime *val, bool external);
 mal_export ssize_t timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external);
 mal_export ssize_t timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external);
+mal_export ssize_t tzone_fromstr(const char *buf, size_t *len, tzone **d, bool external);
 mal_export ssize_t tzone_tostr(str *buf, size_t *len, const tzone *z, bool external);
 mal_export ssize_t rule_fromstr(const char *buf, size_t *len, rule **d, bool external);
 mal_export ssize_t rule_tostr(str *buf, size_t *len, const rule *r, bool external);
-mal_export ssize_t tzone_fromstr(const char *buf, size_t *len, tzone **d, bool external);
 
 mal_export str MTIMEstr_to_date(date *d, const char * const *s, const char * const *format);
 mal_export str MTIMEdate_to_str(str *s, const date *d, const char * const *format);
@@ -234,7 +220,6 @@ mal_export str MTIMEdate_extract_year_bulk(bat *ret, const bat *bid);
 mal_export str MTIMEdate_extract_quarter_bulk(bat *ret, const bat *bid);
 mal_export str MTIMEdate_extract_month_bulk(bat *ret, const bat *bid);
 mal_export str MTIMEdate_extract_day_bulk(bat *ret, const bat *bid);
-mal_export str MTIMEdate_extract_ymd(int *year, int *month, int *day, const date *v);
 
 
 mal_export str MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid);
@@ -249,11 +234,12 @@ mal_export int TYPE_timestamp;
 mal_export int TYPE_tzone;
 mal_export int TYPE_rule;
 
-mal_export date MTIMEtodate(int day, int month, int year);
-mal_export void MTIMEfromdate(date n, int *d, int *m, int *y);
-
+mal_export date MTIMEtodate(int year, int month, int day);
+mal_export void MTIMEfromdate(date n, int *y, int *m, int *d);
 mal_export daytime MTIMEtotime(int hour, int min, int sec, int msec);
 mal_export void MTIMEfromtime(daytime n, int *hour, int *min, int *sec, int *msec);
+mal_export timestamp MTIMEtotimestamp(int year, int month, int day, int hour, int min, int sec, int msec);
+mal_export void MTIMEfromtimestamp(timestamp t, int *Y, int *M, int *D, int *h, int *m, int *s, int *ms);
 
 mal_export str MTIMEanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2,
 										  bool preceding, lng first_half);

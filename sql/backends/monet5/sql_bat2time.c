@@ -43,17 +43,14 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 	}
 	BATloop(b, p, q) {
 		char *v = (char *) BUNtvar(bi, p);
-		union {
-			lng l;
-			timestamp r;
-		} u;
-		msg = str_2time_timestamptz(&u.r, &v, digits, tz);
+		timestamp r;
+		msg = str_2time_timestamptz(&r, &v, digits, tz);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -88,17 +85,14 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	}
 	const timestamp *v = (const timestamp *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		union {
-			lng l;
-			timestamp r;
-		} u;
-		msg = timestamp_2time_timestamp(&u.r, v, digits);
+		timestamp r;
+		msg = timestamp_2time_timestamp(&r, v, digits);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -126,17 +120,14 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		union {
-			lng l;
-			timestamp r;
-		} u;
-		msg = nil_2time_timestamp(&u.r, NULL, digits);
+		timestamp r;
+		msg = nil_2time_timestamp(&r, NULL, digits);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -166,17 +157,14 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 	}
 	BATloop(b, p, q) {
 		char *v = (char *) BUNtvar(bi, p);
-		union {
-			lng l;
-			daytime r;
-		} u;
-		msg = str_2time_daytimetz(&u.r, &v, digits, tz);
+		daytime r;
+		msg = str_2time_daytimetz(&r, &v, digits, tz);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -211,17 +199,14 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 	}
 	const daytime *v = (const daytime *) Tloc(b, 0);
 	BATloop(b, p, q) {
-		union {
-			lng l;
-			daytime r;
-		} u;
-		msg = daytime_2time_daytime(&u.r, v, digits);
+		daytime r;
+		msg = daytime_2time_daytime(&r, v, digits);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -249,17 +234,14 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 		throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
-		union {
-			lng l;
-			daytime r;
-		} u;
-		msg = nil_2time_daytime(&u.r, NULL, digits);
+		daytime r;
+		msg = nil_2time_daytime(&r, NULL, digits);
 		if (msg) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
 			return msg;
 		}
-		if (BUNappend(dst, &u.r, false) != GDK_SUCCEED) {
+		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
 			throw(SQL, "sql.daytime", SQLSTATE(HY001) MAL_MALLOC_FAIL);

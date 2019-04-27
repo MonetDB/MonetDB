@@ -3746,14 +3746,16 @@ str
 timestamp_2_daytime(daytime *res, const timestamp *v, const int *digits)
 {
 	int d = (*digits) ? *digits - 1 : 0;
-	int msec = v->msecs;
+	daytime dt;
+
+	MTIMEtimestamp_extract_daytime(&dt, v, NULL);
 
 	/* correct fraction */
-	if (d < 3 && msec) {
-		msec = (int) (msec / scales[3 - d]);
-		msec = (int) (msec * scales[3 - d]);
+	if (d < 6) {
+		dt /= scales[6 - d];
+		dt *= scales[6 - d];
 	}
-	*res = msec;
+	*res = dt;
 	return MAL_SUCCEED;
 }
 
@@ -3761,8 +3763,7 @@ str
 date_2_timestamp(timestamp *res, const date *v, const int *digits)
 {
 	(void) digits;		/* no precision needed */
-	res->days = *v;
-	res->msecs = 0;
+	MTIMEtimestamp_create_from_date(res, v);
 	return MAL_SUCCEED;
 }
 
@@ -3770,17 +3771,17 @@ str
 timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *digits)
 {
 	int d = (*digits) ? *digits - 1 : 0;
+	date dt;
+	daytime tm;
 
-	*res = *v;
+	MTIMEtimestamp_extract_date_default(&dt, v);
+	MTIMEtimestamp_extract_daytime_default(&tm, v);
 	/* correct fraction */
-	if (d < 3) {
-		int msec = res->msecs;
-		if (msec) {
-			msec = (int) (msec / scales[3 - d]);
-			msec = (int) (msec * scales[3 - d]);
-		}
-		res->msecs = msec;
+	if (d < 6) {
+		tm /= scales[6 - d];
+		tm *= scales[6 - d];
 	}
+	MTIMEtimestamp_create_default(res, &dt, &tm);
 	return MAL_SUCCEED;
 }
 
@@ -3789,7 +3790,7 @@ nil_2time_timestamp(timestamp *res, const void *v, const int *digits)
 {
 	(void) digits;
 	(void) v;
-	*res = *timestamp_nil;
+	*res = timestamp_nil;
 	return MAL_SUCCEED;
 }
 
@@ -3800,7 +3801,7 @@ str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 	ssize_t pos;
 
 	if (!*v || strcmp(str_nil, *v) == 0) {
-		*res = *timestamp_nil;
+		*res = timestamp_nil;
 		return MAL_SUCCEED;
 	}
 	if (*tz)

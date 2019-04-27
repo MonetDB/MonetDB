@@ -211,18 +211,20 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	size_t big = 128;
 	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
 	timestamp tmp;
-	const timestamp *a = A;
 	lng timezone = ts_res->timezone;
+	date days;
+	daytime msecs;
 
 	(void) type;
 	if (ts_res->has_tz) {
-		MTIMEtimestamp_add(&tmp, a, &timezone);
-		len1 = date_tostr(&s1, &big, &tmp.days, true);
-		len2 = daytime_tostr(&s2, &big, &tmp.msecs, true);
+		MTIMEtimestamp_add(&tmp, A, &timezone);
 	} else {
-		len1 = date_tostr(&s1, &big, &a->days, true);
-		len2 = daytime_tostr(&s2, &big, &a->msecs, true);
+		tmp = *(const timestamp *)A;
 	}
+	MTIMEtimestamp_extract_date_default(&days, &tmp);
+	MTIMEtimestamp_extract_daytime_default(&msecs, &tmp);
+	len1 = date_tostr(&s1, &big, &days, true);
+	len2 = daytime_tostr(&s2, &big, &msecs, true);
 	if (len1 < 0 || len2 < 0) {
 		GDKfree(s1);
 		GDKfree(s2);
@@ -1696,7 +1698,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					date *dates = (date*) Tloc(iterators[i].b, srow);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
-						tstamp.payload.p_days = dates[j];
+						MTIMEtimestamp_create_from_date(&tstamp, &dates[j]);
 						MTIMEepoch2lng(&time, &tstamp);
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}

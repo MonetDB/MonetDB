@@ -617,6 +617,13 @@ leapyears(int year)
 #define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
 #define mkdate(d, m, y)	(((((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
 			 | ((d) << DTDAY_SHIFT))
+#define TSTIME_WIDTH	37		/* [0..24*60*60*1000000) */
+#define TSTIME_SHIFT	0
+#define TSDATE_WIDTH	(DTDAY_WIDTH+DTMONTH_WIDTH)
+#define TSDATE_SHIFT	(TSTIME_SHIFT+TSTIME_WIDTH)
+#define mktimestamp(d, t)	((lng) (((uint64_t) (d) << TSDATE_SHIFT) | \
+					((uint64_t) (t) << TSTIME_SHIFT)))
+
 int
 cvtdate(int n)
 {
@@ -710,7 +717,7 @@ fixdateheap(BAT *b, const char *anme)
 	/* create new heap */
 	h2 = b->theap;
 	stpconcat(h2.filename, nme, ".tail", NULL);
-	if (HEAPalloc(&h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
+	if (HEAPalloc(&h2, b->batCapacity, strcmp(anme, "date") == 0 ? 4 : 8) != GDK_SUCCEED) {
 		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		GDKerror("fixdateheap: allocating new tail heap "
@@ -733,7 +740,7 @@ fixdateheap(BAT *b, const char *anme)
 				nofix = false;
 			}
 		}
-	} else {
+	} else if (strcmp(anme, "timestamp") == 0) {
 		union timestamp {
 			lng l;
 			struct {
@@ -747,14 +754,28 @@ fixdateheap(BAT *b, const char *anme)
 			} t;
 		};
 		const union timestamp *restrict o = (const union timestamp *) h1.base;
-		union timestamp *restrict n = (union timestamp *) h2.base;
+		lng *restrict n = (lng *) h2.base;
 		for (i = 0; i < b->batCount; i++) {
 			if (is_lng_nil(o[i].l)) {
 				b->tnil = true;
-				n[i].l = lng_nil;
+				n[i] = lng_nil;
 			} else {
-				n[i].t.p_days = cvtdate(o[i].t.p_days);
-				n[i].t.p_msecs = o[i].t.p_msecs;
+				n[i] = mktimestamp(cvtdate(o[i].t.p_days),
+						   o[i].t.p_msecs * LL_CONSTANT(1000));
+				nofix = false;
+			}
+		}
+	} else {
+		/* daytime */
+		const int *restrict o = (const int *) h1.base;
+		lng *restrict n = (lng *) h2.base;
+
+		for (i = 0; i < b->batCount; i++) {
+			if (is_int_nil(o[i])) {
+				b->tnil = true;
+				n[i] = lng_nil;
+			} else {
+				n[i] = o[i] * LL_CONSTANT(1000);
 				nofix = false;
 			}
 		}

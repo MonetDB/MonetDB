@@ -31,7 +31,7 @@
  * a @samp{date} in the proleptic Gregorian calendar, e.g. 1999-JAN-31
  *
  * @item daytime
- * a time of day to the detail of milliseconds, e.g. 23:59:59:000
+ * a time of day to the detail of microseconds, e.g. 23:59:59:000000
  *
  * @item timestamp
  * a combination of date and time, indicating an exact point in
@@ -78,7 +78,7 @@
  * exception; they are no leap years.
  *
  * @item valid daytime
- * The smallest daytime is 00:00:00:000 and the largest 23:59:59:999
+ * The smallest daytime is 00:00:00:000000 and the largest 23:59:59:999999
  * (the hours in a daytime range between [0,23], minutes and seconds
  * between [0,59] and milliseconds between [0:999]).  Daytime
  * identifies a valid time-of-day, not an amount of time (for denoting
@@ -93,7 +93,7 @@
  * use signed integers (the @i{int} Monet type), hence the valid range
  * for difference calculations is between -2147483648 and 2147483647
  * days (which corresponds to roughly -5,867,411 and 5,867,411 years).
- * @item difference in msecs
+ * @item difference in usecs
  * For difference between timestamps (in numbers of milliseconds) we
  * use 64-bit longs (the @i{lng} Monet type).  These are large
  * integers of maximally 19 digits, which therefore impose a limit of
@@ -241,10 +241,10 @@ extern char *strptime(const char *, const char *, struct tm *);
 #define ZNOFF_SHIFT		(ZNSTART_SHIFT+ZNSTART_WIDTH)
 #define ZNDST_SHIFT		(ZNOFF_SHIFT+ZNOFF_WIDTH)
 
-#define tzone_dst(z)		(((z) >> ZNDST_SHIFT) & ((1<<ZNDST_WIDTH)-1))
+#define tzone_dst(z)		((bool) (((z) >> ZNDST_SHIFT) & ((1<<ZNDST_WIDTH)-1)))
 #define tzone_off(z)		((int) (((z) >> ZNOFF_SHIFT) & ((1<<ZNOFF_WIDTH)-1)) - OFFSET_ZERO)
-#define tzone_start(z)		(((z) >> ZNSTART_SHIFT) & ((1<<ZNSTART_WIDTH)-1))
-#define tzone_end(z)		(((z) >> ZNEND_SHIFT) & ((1<<ZNEND_WIDTH)-1))
+#define tzone_start(z)		((rule) (((z) >> ZNSTART_SHIFT) & ((1<<ZNSTART_WIDTH)-1)))
+#define tzone_end(z)		((rule) (((z) >> ZNEND_SHIFT) & ((1<<ZNEND_WIDTH)-1)))
 
 #define mktzone(dst, off, start, end)							\
 			(((uint64_t) (dst) << ZNDST_SHIFT)					\
@@ -276,34 +276,20 @@ static int CUMDAYS[13] = {
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
 
-#define YEAR_OFFSET		(-YEAR_MIN)
-#define DTDAY_WIDTH		5		/* 1..28/29/30/31, depending on month */
-#define DTDAY_SHIFT		0
-#define DTMONTH_WIDTH	21		/* enough for 174762 year */
-#define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
-#define mkdate(d, m, y)	(((((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
-						 | ((d) << DTDAY_SHIFT))
-#define date_day(dt)	(((dt) >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1))
-#define date_month(dt)	((((dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1)
-#define date_year(dt)	((((dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET)
+#define HOUR_USEC		(60*60*LL_CONSTANT(1000000)) /* usec in an hour */
+#define DAY_USEC		(24*HOUR_USEC) /* usec in a day */
 
 date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 
-#define MONTHDAYS(m,y)	((m) != 2 ? LEAPDAYS[m] : 28 + ISLEAPYEAR(y))
+#define monthdays(y, m)	((m) != 2 ? LEAPDAYS[m] : 28 + ISLEAPYEAR(y))
 
-#define ISDATE(d,m,y)	((m) > 0 && (m) <= 12 && (d) > 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= MONTHDAYS(m, y))
-#define ISTIME(h,m,s,x)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) <= 60 && (x) >= 0 && (x) < 1000)
+#define isdate(y, m, d)	((m) > 0 && (m) <= 12 && (d) > 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= monthdays(y, m))
+#define istime(h,m,s,u)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) <= 60 && (u) >= 0 && (u) < 1000000)
 #define LOWER(c)		((c) >= 'A' && (c) <= 'Z' ? (c) + 'a' - 'A' : (c))
 
 /*
  * auxiliary functions
  */
-
-static union {
-	timestamp ts;
-	lng nilval;
-} ts_nil;
-timestamp *timestamp_nil = NULL;
 
 int TYPE_date;
 int TYPE_daytime;
@@ -315,14 +301,17 @@ static bool synonyms = true;
 
 #define ISLEAPYEAR(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
 
+const timestamp unixepoch = mktimestamp(mkdate(1970, 1, 1),
+										mkdaytime(0, 0, 0, 0));
+
 static inline date
-todate(int day, int month, int year)
+todate(int year, int month, int day)
 {
-	return ISDATE(day, month, year) ? mkdate(day, month, year) : date_nil;
+	return isdate(year, month, day) ? mkdate(year, month, day) : date_nil;
 }
 
-static void
-fromdate(date n, int *d, int *m, int *y)
+static inline void
+fromdate(date n, int *y, int *m, int *d)
 {
 	if (is_date_nil(n)) {
 		if (d)
@@ -342,29 +331,26 @@ fromdate(date n, int *d, int *m, int *y)
 }
 
 static daytime
-totime(int hour, int min, int sec, int msec)
+totime(int hour, int min, int sec, int usec)
 {
-	if (ISTIME(hour, min, sec, msec)) {
-		return (daytime) (((((hour * 60) + min) * 60) + sec) * 1000 + msec);
-	}
-	return daytime_nil;
+	return istime(hour, min, sec, usec) ? mkdaytime(hour, min, sec, usec) : daytime_nil;
 }
 
 static void
-fromtime(daytime n, int *hour, int *min, int *sec, int *msec)
+fromtime(daytime n, int *hour, int *min, int *sec, int *usec)
 {
-	int h, m, s, ms;
+	int h, m, s, u;
 
 	if (!is_daytime_nil(n)) {
-		h = n / 3600000;
-		n -= h * 3600000;
-		m = n / 60000;
-		n -= m * 60000;
-		s = n / 1000;
-		n -= s * 1000;
-		ms = n;
+		u = (int) (n % 1000000);
+		n /= 1000000;
+		s = (int) (n % 60);
+		n /= 60;
+		m = (int) (n % 60);
+		n /= 60;
+		h = (int) n;			/* < 24 */
 	} else {
-		h = m = s = ms = int_nil;
+		h = m = s = u = int_nil;
 	}
 	if (hour)
 		*hour = h;
@@ -372,8 +358,8 @@ fromtime(daytime n, int *hour, int *min, int *sec, int *msec)
 		*min = m;
 	if (sec)
 		*sec = s;
-	if (msec)
-		*msec = ms;
+	if (usec)
+		*usec = u;
 }
 
 /* matches regardless of case and extra spaces */
@@ -441,12 +427,89 @@ date_dayofweek(date v)
 	return (d + DOW_OFF) % 7 + 1;
 }
 
-static date
-compute_rule(const rule *val, int y)
+static inline int
+date_diff(date v1, date v2)
 {
-	int m = rule_month(*val);
-	int d = rule_day(*val);
-	int w = rule_weekday(*val);
+	return date_countdays(v1) - date_countdays(v2);
+}
+
+date
+date_add(date dt, int days)
+{
+	int y = date_year(dt);
+	int m = date_month(dt);
+	int d = date_day(dt);
+	d += days;
+	while (d <= 0) {
+		if (--m == 0) {
+			m = 12;
+			if (--y < YEAR_MIN)
+				return date_nil;
+		}
+		d += monthdays(y, m);
+	}
+	while (d > monthdays(y, m)) {
+		d -= monthdays(y, m);
+		if (++m > 12) {
+			m = 1;
+			if (++y > YEAR_MAX)
+				return date_nil;
+		}
+	}
+	return mkdate(y, m, d);
+}
+
+date
+date_addmonth(date dt, int months)
+{
+	int y = date_year(dt);
+	int m = date_month(dt);
+	int d = date_day(dt);
+	m += months;
+	if (m <= 0) {
+		y -= (12 - m) / 12;
+		if (y < YEAR_MIN)
+			return date_nil;
+		m = 12 - (-m % 12);
+	} else if (m > 12) {
+		y += (m - 1) / 12;
+		if (y > YEAR_MAX)
+			return date_nil;
+		m = (m - 1) % 12 + 1;
+	}
+	return mkdate(y, m, d);
+}
+
+static inline lng
+timestamp_diff(timestamp v1, timestamp v2)
+{
+	return ts_time(v2) - ts_time(v1) + DAY_USEC * date_diff(ts_date(v2), ts_date(v1));
+}
+
+timestamp
+timestamp_add(timestamp t, lng us)
+{
+	daytime tm = ts_time(t);
+	date dt = ts_date(t);
+	tm += us;
+	if (tm < 0) {
+		dt = date_add(dt, -(int) ((DAY_USEC - tm) / DAY_USEC));
+		tm = -tm % DAY_USEC;
+	} else if (tm >= DAY_USEC) {
+		dt = date_add(dt, (int) (tm / DAY_USEC));
+		tm %= DAY_USEC;
+	}
+	if (is_date_nil(dt))
+		return timestamp_nil;
+	return mktimestamp(dt, tm);
+}
+
+static date
+compute_rule(rule val, int y)
+{
+	int m = rule_month(val);
+	int d = rule_day(val);
+	int w = rule_weekday(val);
 	int wd;
 
 	if (w == 0) {
@@ -454,15 +517,15 @@ compute_rule(const rule *val, int y)
 	} else if (d > 0) {
 		if (w < 0) {
 			/* first weekday (-w) on or after d-th of month */
-			wd = date_dayofweek(mkdate(d, m, y));
+			wd = date_dayofweek(mkdate(y, m, d));
 			d += (-w + 7 - wd) % 7;
 		} else {
 			/* d-th weekday (w) of month */
-			wd = date_dayofweek(mkdate(1, m, y));
+			wd = date_dayofweek(mkdate(y, m, 1));
 			d = 1 + (w + 7 - wd) % 7 + (d - 1) * 7;
 		}
-		if (d > MONTHDAYS(m, y)) {
-			d -= MONTHDAYS(m, y);
+		if (d > monthdays(y, m)) {
+			d -= monthdays(y, m);
 			if (++m > 12)
 				y++;
 		}
@@ -470,11 +533,11 @@ compute_rule(const rule *val, int y)
 		d = -d;
 		if (w > 0) {
 			/* cnt-last weekday from end of month */
-			wd = date_dayofweek(mkdate(MONTHDAYS(m, y), m, y));
-			d = MONTHDAYS(m, y) - (wd + 7 - w) % 7 - (d - 1) * 7;
+			wd = date_dayofweek(mkdate(y, m, monthdays(y, m)));
+			d = monthdays(y, m) - (wd + 7 - w) % 7 - (d - 1) * 7;
 		} else {
 			/* first weekday on or before cnt-th of month */
-			wd = date_dayofweek(mkdate(d, m, y));
+			wd = date_dayofweek(mkdate(y, m, d));
 			d -= (wd + 7 + w) % 7;
 		}
 		while (d < 0) {
@@ -482,49 +545,53 @@ compute_rule(const rule *val, int y)
 				m = 12;
 				y--;
 			}
-			d += MONTHDAYS(m, y);
+			d += monthdays(y, m);
 		}
 	}
-	return mkdate(d, m, y);
+	return mkdate(y, m, d);
 }
 
 #define BEFORE(d1, m1, d2, m2) ((d1) < (d2) || ((d1) == (d2) && (m1) <= (m2)))
 
-static int
-timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
+static bool
+timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, int offset)
 {
 	/* starts with GMT time t, and returns whether it is in the DST for z */
-	lng add = (offset != 0) ? offset : tzone_off(*z) * (lng) 60000;
-	int start_days, start_msecs, end_days, end_msecs, year;
+	date start_date, end_date, t_date;
+	daytime start_time, end_time, t_time;
+	int year;
 	rule start, end;
 
-	MTIMEtimestamp_add(ret, t, &add);
+	*ret = timestamp_add(*t, ((offset != 0) ? offset : tzone_off(*z)) * LL_CONSTANT(60000000));
 
 	if (is_timestamp_nil(*ret) || tzone_dst(*z) == 0) {
-		return 0;
+		return false;
 	}
 	start = tzone_start(*z);
 	end = tzone_end(*z);
 
-	start_msecs = rule_minutes(start) * 60000;
-	end_msecs = rule_minutes(end) * 60000;
+	start_time = mkdaytime(0, rule_minutes(start), 0, 0);
+	end_time = mkdaytime(0, rule_minutes(end), 0, 0);
 
-	fromdate(ret->days, NULL, NULL, &year);
-	start_days = compute_rule(&start, year);
-	end_days = compute_rule(&end, year);
+	t_date = ts_date(*ret);
+	t_time = ts_time(*ret);
 
-	return BEFORE(start_days, start_msecs, end_days, end_msecs) ?
-		(BEFORE(start_days, start_msecs, ret->days, ret->msecs) &&
-		 BEFORE(ret->days, ret->msecs, end_days, end_msecs)) :
-		(BEFORE(start_days, start_msecs, ret->days, ret->msecs) ||
-		 BEFORE(ret->days, ret->msecs, end_days, end_msecs));
+	year = date_year(t_date);
+	start_date = compute_rule(start, year);
+	end_date = compute_rule(end, year);
+
+	return BEFORE(start_date, start_time, end_date, end_time) ?
+		(BEFORE(start_date, start_time, t_date, t_time) &&
+		 BEFORE(t_date, t_time, end_date, end_time)) :
+		(BEFORE(start_date, start_time, t_date, t_time) ||
+		 BEFORE(t_date, t_time, end_date, end_time));
 }
 
 /*
  * ADT implementations
  */
-ssize_t
-date_fromstr(const char *buf, size_t *len, date **d, bool external)
+static ssize_t
+parse_date(const char *buf, date *d, bool external)
 {
 	int day = 0, month = int_nil;
 	int year = 0;
@@ -532,13 +599,7 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 	ssize_t pos = 0;
 	int sep;
 
-	if (*len < sizeof(date) || *d == NULL) {
-		GDKfree(*d);
-		*d = (date *) GDKmalloc(*len = sizeof(date));
-		if( *d == NULL)
-			return -1;
-	}
-	**d = date_nil;
+	*d = date_nil;
 	if (strcmp(buf, str_nil) == 0)
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
@@ -616,8 +677,8 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 		}
 	}
 	/* handle semantic error here (returns nil in that case) */
-	**d = todate(day, month, yearneg ? -year : year);
-	if (is_date_nil(**d)) {
+	*d = todate(yearneg ? -year : year, month, day);
+	if (is_date_nil(*d)) {
 		GDKerror("Semantic error in date.\n");
 		return -1;
 	}
@@ -625,11 +686,20 @@ date_fromstr(const char *buf, size_t *len, date **d, bool external)
 }
 
 ssize_t
+date_fromstr(const char *buf, size_t *len, date **d, bool external)
+{
+	if (*len < sizeof(date) || *d == NULL) {
+		GDKfree(*d);
+		*d = (date *) GDKmalloc(*len = sizeof(date));
+		if( *d == NULL)
+			return -1;
+	}
+	return parse_date(buf, *d, external);
+}
+
+ssize_t
 date_tostr(str *buf, size_t *len, const date *val, bool external)
 {
-	int day, month, year;
-
-	fromdate(*val, &day, &month, &year);
 	/* longest possible string: "-5867411-01-01" i.e. 14 chars
 	   without NUL (see definition of YEAR_MIN/YEAR_MAX above) */
 	if (*len < 15 || *buf == NULL) {
@@ -638,7 +708,7 @@ date_tostr(str *buf, size_t *len, const date *val, bool external)
 		if( *buf == NULL)
 			return -1;
 	}
-	if (is_date_nil(*val) || !ISDATE(day, month, year)) {
+	if (is_date_nil(*val)) {
 		if (external) {
 			strcpy(*buf, "nil");
 			return 3;
@@ -646,26 +716,21 @@ date_tostr(str *buf, size_t *len, const date *val, bool external)
 		strcpy(*buf, str_nil);
 		return 1;
 	}
-	sprintf(*buf, "%d-%02d-%02d", year, month, day);
+	snprintf(*buf, 15, "%d-%02d-%02d",
+			 date_year(*val), date_month(*val), date_day(*val));
 	return (ssize_t) strlen(*buf);
 }
 
 /*
  * @- daytime
  */
-ssize_t
-daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+static ssize_t
+parse_daytime(const char *buf, daytime *dt, bool external)
 {
-	int hour, min, sec = 0, msec = 0;
+	int hour, min, sec = 0, usec = 0;
 	ssize_t pos = 0;
 
-	if (*len < sizeof(daytime) || *ret == NULL) {
-		GDKfree(*ret);
-		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
-		if (*ret == NULL)
-			return -1;
-	}
-	**ret = daytime_nil;
+	*dt = daytime_nil;
 	if (strcmp(buf, str_nil) == 0)
 		return 1;
 	if (external && strncmp(buf, "nil", 3) == 0)
@@ -695,18 +760,18 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 			GDKisdigit(buf[pos + 1])) {
 			int i;
 			pos++;
-			for (i = 0; i < 3; i++) {
-				msec *= 10;
+			for (i = 0; i < 6; i++) {
+				usec *= 10;
 				if (GDKisdigit(buf[pos])) {
-					msec += buf[pos] - '0';
+					usec += buf[pos] - '0';
 					pos++;
 				}
 			}
 #ifndef TRUNCATE_NUMBERS
 			if (GDKisdigit(buf[pos]) && buf[pos] >= '5') {
 				/* round the value */
-				if (++msec == 1000) {
-					msec = 0;
+				if (++usec == 1000000) {
+					usec = 0;
 					if (++sec == 60) {
 						sec = 0;
 						if (++min == 60) {
@@ -716,7 +781,7 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 								hour = 23;
 								min = 59;
 								sec = 59;
-								msec = 999;
+								usec = 999999;
 							}
 						}
 					}
@@ -728,8 +793,8 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		}
 	}
 	/* handle semantic error here (returns nil in that case) */
-	**ret = totime(hour, min, sec, msec);
-	if (is_daytime_nil(**ret)) {
+	*dt = totime(hour, min, sec, usec);
+	if (is_daytime_nil(*dt)) {
 		GDKerror("Semantic error in time.\n");
 		return -1;
 	}
@@ -737,12 +802,25 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 }
 
 ssize_t
+daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+{
+	if (*len < sizeof(daytime) || *ret == NULL) {
+		GDKfree(*ret);
+		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
+		if (*ret == NULL)
+			return -1;
+	}
+	return parse_daytime(buf, *ret, external);
+}
+
+ssize_t
 daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 {
 	const char *s = buf;
 	ssize_t pos = daytime_fromstr(s, len, ret, external);
-	lng val, offset = 0;
-	daytime mtime = 24 * 60 * 60 * 1000;
+	daytime val;
+	int offset = 0;
+	daytime mtime = mkdaytime(24, 0, 0, 0);
 
 	if (pos < 0 || is_daytime_nil(**ret))
 		return pos;
@@ -758,37 +836,38 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 	if ((s[0] == '-' || s[0] == '+') &&
 		GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
 		((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
-		offset = (((s[1] - '0') * (lng) 10 + (s[2] - '0')) * (lng) 60 + (s[pos] - '0') * (lng) 10 + (s[pos + 1] - '0')) * (lng) 60000;
+		offset = (((s[1] - '0') * 10 + (s[2] - '0')) * 60 + (s[pos] - '0') * 10 + (s[pos + 1] - '0')) * 60;
 		pos += 2;
 		if (s[0] != '-')
 			offset = -offset;
 		s += pos;
 	} else {
 		/* if no tzone is specified; work with the local */
-		offset = tzone_off(tzone_local) * (lng) -60000;
+		offset = tzone_off(tzone_local) * -60;
 	}
-	val = **ret + offset;
+	val = **ret + (lng) offset * 1000000;
 	if (val < 0)
-		val = mtime + val;
-	if (val >= mtime)
-		val = val - mtime;
-	**ret = (daytime) val;
+		**ret = mtime + val;
+	else if (val >= mtime)
+		**ret = val - mtime;
+	else
+		**ret = val;
 	return (ssize_t) (s - buf);
 }
 
 ssize_t
 daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
 {
-	int hour, min, sec, msec;
+	int hour, min, sec, usec;
 
-	fromtime(*val, &hour, &min, &sec, &msec);
-	if (*len < 12 || *buf == NULL) {
+	fromtime(*val, &hour, &min, &sec, &usec);
+	if (*len < 16 || *buf == NULL) {
 		GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 13);
+		*buf = (str) GDKmalloc(*len = 16);
 		if( *buf == NULL)
 			return -1;
 	}
-	if (is_daytime_nil(*val) || !ISTIME(hour, min, sec, msec)) {
+	if (is_daytime_nil(*val) || !istime(hour, min, sec, usec)) {
 		if (external) {
 			strcpy(*buf, "nil");
 			return 3;
@@ -796,7 +875,7 @@ daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
 		strcpy(*buf, str_nil);
 		return 1;
 	}
-	return sprintf(*buf, "%02d:%02d:%02d.%03d", hour, min, sec, msec);
+	return snprintf(*buf, 16, "%02d:%02d:%02d.%06d", hour, min, sec, usec);
 }
 
 /*
@@ -807,45 +886,43 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 {
 	const char *s = buf;
 	ssize_t pos;
-	date *d;
-	daytime *t;
+	date dt;
+	daytime tm;
 
 	if (*len < sizeof(timestamp) || *ret == NULL) {
 		GDKfree(*ret);
 		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
-		if( *ret == NULL)
+		if (*ret == NULL)
 			return -1;
 	}
-	d = &(*ret)->days;
-	t = &(*ret)->msecs;
-	(*ret)->msecs = 0;
-	pos = date_fromstr(buf, len, &d, external);
+	pos = parse_date(buf, &dt, external);
 	if (pos < 0)
 		return pos;
-	if (is_date_nil(*d)) {
-		**ret = *timestamp_nil;
+	if (is_date_nil(dt)) {
+		**ret = timestamp_nil;
 		return pos;
 	}
 	s += pos;
 	if (*s == '@' || *s == ' ' || *s == '-' || *s == 'T') {
 		while (*++s == ' ')
 			;
-		pos = daytime_fromstr(s, len, &t, external);
+		pos = parse_daytime(s, &tm, external);
 		if (pos < 0)
 			return pos;
 		s += pos;
-		if (is_daytime_nil(*t)) {
-			**ret = *timestamp_nil;
+		if (is_daytime_nil(tm)) {
+			**ret = timestamp_nil;
 			return (ssize_t) (s - buf);
 		}
 	} else if (*s) {
-		(*ret)->msecs = daytime_nil;
+		tm = daytime_nil;
 	}
-	if (is_date_nil((*ret)->days) || is_daytime_nil((*ret)->msecs)) {
-		**ret = *timestamp_nil;
+	if (is_date_nil(dt) || is_daytime_nil(tm)) {
+		**ret = timestamp_nil;
 	} else {
 		lng offset = 0;
 
+		**ret = mktimestamp(dt, tm);
 		while (GDKisspace(*s))
 			s++;
 		/* in case of gmt we need to add the time zone */
@@ -855,7 +932,7 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 		if ((s[0] == '-' || s[0] == '+') &&
 			GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
 			((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
-			offset = (((s[1] - '0') * (lng) 10 + (s[2] - '0')) * (lng) 60 + (s[pos] - '0') * (lng) 10 + (s[pos + 1] - '0')) * (lng) 60000;
+			offset = (((s[1] - '0') * LL_CONSTANT(10) + (s[2] - '0')) * LL_CONSTANT(60) + (s[pos] - '0') * LL_CONSTANT(10) + (s[pos + 1] - '0')) * LL_CONSTANT(60000000);
 			pos += 2;
 			if (s[0] != '-')
 				offset = -offset;
@@ -864,12 +941,12 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 			/* if no tzone is specified; work with the local */
 			timestamp tmp = **ret;
 
-			offset = tzone_off(tzone_local) * (lng) -60000;
-			if (timestamp_inside(&tmp, &tmp, &tzone_local, (lng) -3600000)) {
+			offset = tzone_off(tzone_local) * LL_CONSTANT(-60000000);
+			if (timestamp_inside(&tmp, &tmp, &tzone_local, LL_CONSTANT(-3600000))) {
 				**ret = tmp;
 			}
 		}
-		MTIMEtimestamp_add(*ret, *ret, &offset);
+		**ret = timestamp_add(**ret, offset);
 	}
 	return (ssize_t) (s - buf);
 }
@@ -881,7 +958,7 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 	ssize_t pos = timestamp_fromstr(s, len, ret, external);
 	lng offset = 0;
 
-	if (pos < 0 || *ret == timestamp_nil)
+	if (pos < 0 || is_timestamp_nil(**ret))
 		return pos;
 
 	s = buf + pos;
@@ -895,16 +972,16 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 	if ((s[0] == '-' || s[0] == '+') &&
 		GDKisdigit(s[1]) && GDKisdigit(s[2]) && GDKisdigit(s[pos = 4]) &&
 		((s[3] == ':' && GDKisdigit(s[5])) || GDKisdigit(s[pos = 3]))) {
-		offset = (((s[1] - '0') * (lng) 10 + (s[2] - '0')) * (lng) 60 + (s[pos] - '0') * (lng) 10 + (s[pos + 1] - '0')) * (lng) 60000;
+		offset = (((s[1] - '0') * LL_CONSTANT(10) + (s[2] - '0')) * LL_CONSTANT(60) + (s[pos] - '0') * LL_CONSTANT(10) + (s[pos + 1] - '0')) * LL_CONSTANT(60000000);
 		pos += 2;
 		if (s[0] != '-')
 			offset = -offset;
 		s += pos;
 	} else {
 		/* if no tzone is specified; work with the local */
-		offset = tzone_off(tzone_local) * (lng) -60000;
+		offset = tzone_off(tzone_local) * LL_CONSTANT(-60000000);
 	}
-	MTIMEtimestamp_add(*ret, *ret, &offset);
+	**ret = timestamp_add(**ret, offset);
 	return (ssize_t) (s - buf);
 }
 
@@ -919,14 +996,14 @@ timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *tim
 		/* int off = tzone_off(*timezone); */
 		timestamp tmp = *val;
 
-		if (!is_timestamp_nil(tmp) && timestamp_inside(&tmp, val, timezone, (lng) 0)) {
-			lng add = (lng) 3600000;
-
-			MTIMEtimestamp_add(&tmp, &tmp, &add);
+		if (!is_timestamp_nil(tmp) && timestamp_inside(&tmp, val, timezone, LL_CONSTANT(0))) {
+			tmp = timestamp_add(tmp, HOUR_USEC);
 			/* off += 60; */
 		}
-		len1 = date_tostr(&s1, &big, &tmp.days, false);
-		len2 = daytime_tostr(&s2, &big, &tmp.msecs, false);
+		date dt = ts_date(tmp);
+		daytime tm = ts_time(tmp);
+		len1 = date_tostr(&s1, &big, &dt, false);
+		len2 = daytime_tostr(&s2, &big, &tm, false);
 		if (len1 < 0 || len2 < 0)
 			return -1;
 
@@ -975,7 +1052,7 @@ count1(int i)
 
 	if (i <= 0) {
 		return "(illegal number)";
-	} else if (i < 6) {
+	} else if (i < 7) {
 		return COUNT1[i];
 	}
 	sprintf(buf, "%dth", i);
@@ -1003,24 +1080,28 @@ rule_tostr(str *buf, size_t *len, const rule *r, bool external)
 		else
 			strcpy(*buf, str_nil);
 	} else if (rule_weekday(*r) == 0) {
-		sprintf(*buf, "%s %d@%02d:%02d",
-				MONTHS[rule_month(*r)], rule_day(*r), hours, minutes);
-	} else if (rule_weekday(*r) > 0 && rule_day(*r) > 0) {
-		sprintf(*buf, "%s %s from start of %s@%02d:%02d",
-				count1(rule_day(*r)), DAYS[rule_weekday(*r)],
-				MONTHS[rule_month(*r)], hours, minutes);
-	} else if (rule_weekday(*r) > 0 && rule_day(*r) < 0) {
-		sprintf(*buf, "%s %s from end of %s@%02d:%02d",
-				count1(-rule_day(*r)), DAYS[rule_weekday(*r)],
-				MONTHS[rule_month(*r)], hours, minutes);
-	} else if (rule_day(*r) > 0) {
-		sprintf(*buf, "first %s on or after %s %d@%02d:%02d",
-				DAYS[-rule_weekday(*r)], MONTHS[rule_month(*r)],
-				rule_day(*r), hours, minutes);
+		snprintf(*buf, 64, "%s %d@%02d:%02d",
+				 MONTHS[rule_month(*r)], rule_day(*r), hours, minutes);
+	} else if (rule_weekday(*r) > 0) {
+		if (rule_day(*r) > 0) {
+			snprintf(*buf, 64, "%s %s from start of %s@%02d:%02d",
+					 count1(rule_day(*r)), DAYS[rule_weekday(*r)],
+					 MONTHS[rule_month(*r)], hours, minutes);
+		} else if (rule_day(*r) < 0) {
+			snprintf(*buf, 64, "%s %s from end of %s@%02d:%02d",
+					 count1(-rule_day(*r)), DAYS[rule_weekday(*r)],
+					 MONTHS[rule_month(*r)], hours, minutes);
+		}
 	} else {
-		sprintf(*buf, "last %s on or before %s %d@%02d:%02d",
-				DAYS[-rule_weekday(*r)], MONTHS[rule_month(*r)],
-				-rule_day(*r), hours, minutes);
+		if (rule_day(*r) > 0) {
+			snprintf(*buf, 64, "first %s on or after %s %d@%02d:%02d",
+					 DAYS[-rule_weekday(*r)], MONTHS[rule_month(*r)],
+					 rule_day(*r), hours, minutes);
+		} else {
+			snprintf(*buf, 64, "last %s on or before %s %d@%02d:%02d",
+					 DAYS[-rule_weekday(*r)], MONTHS[rule_month(*r)],
+					 -rule_day(*r), hours, minutes);
+		}
 	}
 	return (ssize_t) strlen(*buf);
 }
@@ -1211,9 +1292,9 @@ tzone_fromstr(const char *buf, size_t *len, tzone **d, bool external)
 		if (neg_offset)
 			minutes = -minutes;
 		if (pos) {
-			**d = mktzone(TRUE, minutes, r1, r2);
+			**d = mktzone(true, minutes, r1, r2);
 		} else {
-			**d = mktzone(FALSE, minutes, 0, 0);
+			**d = mktzone(false, minutes, 0, 0);
 		}
 	}
 	return (ssize_t) (cur - buf);
@@ -1291,15 +1372,13 @@ tzone_set_local(const tzone *z)
 	return MAL_SUCCEED;
 }
 
-static str
-daytime_add(daytime *ret, const daytime *v, const lng *msec)
+static daytime
+daytime_add(daytime v, lng usec)
 {
-	if (is_daytime_nil(*v)) {
-		*ret = int_nil;
-	} else {
-		*ret = *v + (daytime) (*msec);
-	}
-	return MAL_SUCCEED;
+	v += usec;
+	if (v < 0 || v >= DAY_USEC)
+		return daytime_nil;
+	return v;
 }
 
 /* returns the timestamp that comes 'milliseconds' after 'value'. */
@@ -1307,25 +1386,11 @@ str
 MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec)
 {
 	if (!is_timestamp_nil(*v) && !is_lng_nil(*msec)) {
-		int day = (int) (*msec / (24 * 60 * 60 * 1000));
-
-		ret->msecs = (int) (v->msecs + (*msec - ((lng) day) * (24 * 60 * 60 * 1000)));
-		ret->days = v->days;
-		if (ret->msecs >= (24 * 60 * 60 * 1000)) {
-			day++;
-			ret->msecs -= (24 * 60 * 60 * 1000);
-		} else if (ret->msecs < 0) {
-			day--;
-			ret->msecs += (24 * 60 * 60 * 1000);
-		}
-		if (day) {
-			MTIMEdate_adddays(&ret->days, &ret->days, &day);
-			if (is_int_nil(ret->days)) {
-				*ret = *timestamp_nil;
-			}
-		}
+		*ret = timestamp_add(*v, *msec * 1000);
+		if (is_timestamp_nil(*ret))
+			throw(MAL, "time.add", SQLSTATE(22003) "overflow in calculation");
 	} else {
-		*ret = *timestamp_nil;
+		*ret = timestamp_nil;
 	}
 	return MAL_SUCCEED;
 }
@@ -1395,7 +1460,11 @@ static BAT *timezone_name = NULL;
 static BAT *timezone_def = NULL;
 
 void MTIMEreset(void) {
+	if (timezone_name)
+		BBPunfix(timezone_name->batCacheid);
 	timezone_name = NULL;
+	if (timezone_def)
+		BBPunfix(timezone_def->batCacheid);
 	timezone_def = NULL;
 }
 
@@ -1413,9 +1482,6 @@ MTIMEprelude(void *ret)
 	BAT *tzbatdef;
 
 	(void) ret;
-	ts_nil.nilval = lng_nil;
-
-	timestamp_nil = &ts_nil.ts;
 
 	TYPE_date = ATOMindex("date");
 	TYPE_daytime = ATOMindex("daytime");
@@ -1426,9 +1492,9 @@ MTIMEprelude(void *ret)
 	MONTHS[0] = (str) str_nil;
 	DAYS[0] = (str) str_nil;
 	LEAPDAYS[0] = int_nil;
-	DATE_MAX = todate(31, 12, YEAR_MAX);
-	DATE_MIN = todate(1, 1, YEAR_MIN);
-	tzone_local = mktzone(0, 0, 0, 0);
+	DATE_MAX = todate(YEAR_MAX, 12, 31);
+	DATE_MIN = todate(YEAR_MIN, 1, 1);
+	tzone_local = mktzone(false, 0, 0, 0);
 
 	tz = tzone_nil;			/* to ensure initialized variables */
 
@@ -1485,8 +1551,6 @@ MTIMEprelude(void *ret)
   bailout:
 	BBPreclaim(tzbatnme);
 	BBPreclaim(tzbatdef);
-	tzbatnme = NULL;
-	tzbatdef = NULL;
 	throw(MAL, "mtime.prelude", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
@@ -1613,7 +1677,7 @@ MTIMEdate_fromstr(date *ret, const char * const *s)
 str
 MTIMEdate_create(date *ret, const int *year, const int *month, const int *day)
 {
-	*ret = todate(*day, *month, *year);
+	*ret = todate(*year, *month, *day);
 	return MAL_SUCCEED;
 }
 
@@ -1621,7 +1685,7 @@ MTIMEdate_create(date *ret, const int *year, const int *month, const int *day)
 str
 MTIMEdaytime_create(daytime *ret, const int *hour, const int *min, const int *sec, const int *msec)
 {
-	*ret = totime(*hour, *min, *sec, *msec);
+	*ret = totime(*hour, *min, *sec, *msec * 1000);
 	return MAL_SUCCEED;
 }
 
@@ -1631,8 +1695,7 @@ MTIMEtimestamp_fromstr(timestamp *ret, const char * const *d)
 	size_t len = sizeof(timestamp);
 
 	if (strcmp(*d, "nil") == 0) {
-		ret->msecs = daytime_nil;
-		ret->days = date_nil;
+		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
 	if (timestamp_fromstr(*d, &len, &ret, false) < 0)
@@ -1645,20 +1708,19 @@ str
 MTIMEtimestamp_create(timestamp *ret, const date *d, const daytime *t, const tzone *z)
 {
 	if (is_date_nil(*d) || is_daytime_nil(*t) || is_tzone_nil(*z)) {
-		*ret = *timestamp_nil;
+		*ret = timestamp_nil;
 	} else {
-		lng add = tzone_off(*z) * (lng) -60000;
+		lng add = tzone_off(*z) * LL_CONSTANT(-60000000);
 
-		ret->days = *d;
-		ret->msecs = *t;
+		*ret = mktimestamp(*d, *t);
 		if (tzone_dst(*z)) {
 			timestamp tmp;
 
-			if (timestamp_inside(&tmp, ret, z, (lng) -3600000)) {
+			if (timestamp_inside(&tmp, ret, z, LL_CONSTANT(-3600000))) {
 				*ret = tmp;
 			}
 		}
-		MTIMEtimestamp_add(ret, ret, &add);
+		*ret = timestamp_add(*ret, add);
 	}
 	return MAL_SUCCEED;
 }
@@ -1684,7 +1746,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 	const date *d;
 	const daytime dt = totime(0, 0, 0, 0);
 	BUN n;
-	lng add = tzone_off(tzone_local) * (lng) -60000;
+	lng add = tzone_off(tzone_local) * LL_CONSTANT(-60000000);
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1697,15 +1759,14 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 	bn->tnil = false;
 	for (n = BATcount(b); n > 0; n--, t++, d++) {
 		if (is_date_nil(*d)) {
-			*t = *timestamp_nil;
+			*t = timestamp_nil;
 			bn->tnil = true;
 		} else {
-			t->days = *d;
-			t->msecs = dt;
+			*t = mktimestamp(*d, dt);
 			if (tzone_dst(tzone_local) &&
-				timestamp_inside(&tmp, t, &tzone_local, (lng) -3600000))
+				timestamp_inside(&tmp, t, &tzone_local, LL_CONSTANT(-3600000)))
 				*t = tmp;
-			MTIMEtimestamp_add(t, t, &add);
+			*t = timestamp_add(*t, add);
 			if (is_timestamp_nil(*t))
 				bn->tnil = true;
 		}
@@ -1727,7 +1788,7 @@ MTIMEdate_extract_year(int *ret, const date *v)
 	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		fromdate(*v, NULL, NULL, ret);
+		*ret = date_year(*v);
 	}
 	return MAL_SUCCEED;
 }
@@ -1739,13 +1800,7 @@ MTIMEdate_extract_quarter(int *ret, const date *v)
 	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		int mnd = 0;
-		fromdate(*v, NULL, &mnd, NULL);
-		if (mnd <= 6) {
-			*ret = (mnd <= 3) ? 1 : 2;
-		} else {
-			*ret = (mnd <= 9) ? 3 : 4;
-		}
+		*ret = (date_month(*v) - 1) / 4 + 1;
 	}
 	return MAL_SUCCEED;
 }
@@ -1757,7 +1812,7 @@ MTIMEdate_extract_month(int *ret, const date *v)
 	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		fromdate(*v, NULL, ret, NULL);
+		*ret = date_month(*v);
 	}
 	return MAL_SUCCEED;
 }
@@ -1769,20 +1824,7 @@ MTIMEdate_extract_day(int *ret, const date *v)
 	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		fromdate(*v, ret, NULL, NULL);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_extract_ymd(int *year, int *month, int *day, const date *v)
-{
-	if (is_date_nil(*v)) {
-		*year = int_nil;
-		*month = int_nil;
-		*day = int_nil;
-	} else {
-		fromdate(*v, day, month, year);
+		*ret = date_day(*v);
 	}
 	return MAL_SUCCEED;
 }
@@ -1794,7 +1836,7 @@ MTIMEdate_extract_dayofyear(int *ret, const date *v)
 	if (is_date_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		*ret = date_countdays(*v) - date_countdays(mkdate(1, 1, date_year(*v))) + 1;
+		*ret = date_countdays(*v) - date_countdays(mkdate(date_year(*v), 1, 1)) + 1;
 	}
 	return MAL_SUCCEED;
 }
@@ -1809,15 +1851,15 @@ MTIMEdate_extract_weekofyear(int *ret, const date *v)
 		int y = date_year(*v);
 		int m = date_month(*v);
 		int d = date_day(*v);
-		int wd1 = date_dayofweek(mkdate(4, 1, y));
+		int wd1 = date_dayofweek(mkdate(y, 1, 4));
 		int wd2 = date_dayofweek(*v);
 		int cnt1, cnt2;
 		if (m == 1 && d < 4 && wd2 > wd1) {
 			/* last week of previous y */
-			cnt1 = date_countdays(mkdate(4, 1, y - 1));
-			wd1 = date_dayofweek(mkdate(4, 1, y - 1));
+			cnt1 = date_countdays(mkdate(y - 1, 1, 4));
+			wd1 = date_dayofweek(mkdate(y - 1, 1, 4));
 		} else {
-			cnt1 = date_countdays(mkdate(4, 1, y));
+			cnt1 = date_countdays(mkdate(y, 1, 4));
 		}
 		cnt2 = date_countdays(*v);
 		if (wd2 < wd1)
@@ -1875,17 +1917,16 @@ MTIMEdaytime_extract_seconds(int *ret, const daytime *v)
 	return MAL_SUCCEED;
 }
 
-/* extracts (milli) seconds from daytime (value between 0 and 59000) */
+/* extracts (milli) seconds from daytime (value between 0 and 59999) */
 str
 MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *v)
 {
-	int sec, milli;
-
 	if (is_daytime_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		fromtime(*v, NULL, NULL, &sec, &milli);
-		*ret = sec * 1000 + milli;
+		int sec, usec;
+		fromtime(*v, NULL, NULL, &sec, &usec);
+		*ret = sec * 1000 + usec / 1000;
 	}
 	return MAL_SUCCEED;
 }
@@ -1897,7 +1938,9 @@ MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v)
 	if (is_daytime_nil(*v)) {
 		*ret = int_nil;
 	} else {
-		fromtime(*v, NULL, NULL, NULL, ret);
+		int usec;
+		fromtime(*v, NULL, NULL, NULL, &usec);
+		*ret = usec / 1000;
 	}
 	return MAL_SUCCEED;
 }
@@ -1906,21 +1949,21 @@ MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v)
 str
 MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t, const tzone *z)
 {
-	if (is_timestamp_nil(*t) || is_tzone_nil(*z)) {
+	if (is_timestamp_nil(*t) || (z != NULL && is_tzone_nil(*z))) {
 		*ret = daytime_nil;
-	} else {
+	} else if (z) {
 		timestamp tmp;
 
-		if (timestamp_inside(&tmp, t, z, (lng) 0)) {
-			lng add = (lng) 3600000;
-
-			MTIMEtimestamp_add(&tmp, &tmp, &add);
+		if (timestamp_inside(&tmp, t, z, LL_CONSTANT(0))) {
+			tmp = timestamp_add(tmp, HOUR_USEC);
 		}
 		if (is_timestamp_nil(tmp)) {
 			*ret = daytime_nil;
 		} else {
-			*ret = tmp.msecs;
+			*ret = ts_time(tmp);
 		}
+	} else {
+		*ret = ts_time(*t);
 	}
 	return MAL_SUCCEED;
 }
@@ -1940,7 +1983,6 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 	daytime *dt;
 	BUN n;
 	timestamp tmp;
-	lng add = (lng) 3600000;	/* one hour */
 
 	if (b == NULL)
 		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1957,13 +1999,13 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 			*dt = daytime_nil;
 			bn->tnil = true;
 		} else {
-			if (timestamp_inside(&tmp, t, &tzone_local, (lng) 0))
-				MTIMEtimestamp_add(&tmp, &tmp, &add);
+			if (timestamp_inside(&tmp, t, &tzone_local, LL_CONSTANT(0)))
+				tmp = timestamp_add(tmp, HOUR_USEC);
 			if (is_timestamp_nil(tmp)) {
 				*dt = daytime_nil;
 				bn->tnil = true;
 			} else {
-				*dt = tmp.msecs;
+				*dt = ts_time(tmp);
 			}
 		}
 	}
@@ -1981,21 +2023,21 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 str
 MTIMEtimestamp_extract_date(date *ret, const timestamp *t, const tzone *z)
 {
-	if (is_timestamp_nil(*t) || is_tzone_nil(*z)) {
+	if (is_timestamp_nil(*t) || (z != NULL && is_tzone_nil(*z))) {
 		*ret = date_nil;
-	} else {
+	} else if (z) {
 		timestamp tmp;
 
-		if (timestamp_inside(&tmp, t, z, (lng) 0)) {
-			lng add = (lng) 3600000;
-
-			MTIMEtimestamp_add(&tmp, &tmp, &add);
+		if (timestamp_inside(&tmp, t, z, LL_CONSTANT(0))) {
+			tmp = timestamp_add(tmp, HOUR_USEC);
 		}
 		if (is_timestamp_nil(tmp)) {
 			*ret = date_nil;
 		} else {
-			*ret = tmp.days;
+			*ret = ts_date(tmp);
 		}
+	} else {
+		*ret = ts_date(*t);
 	}
 	return MAL_SUCCEED;
 }
@@ -2015,7 +2057,6 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 	date *d;
 	BUN n;
 	timestamp tmp;
-	lng add = (lng) 3600000;	/* one hour */
 
 	if (b == NULL)
 		throw(MAL, "batcalc.date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2032,13 +2073,13 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 			*d = date_nil;
 			bn->tnil = true;
 		} else {
-			if (timestamp_inside(&tmp, t, &tzone_local, (lng) 0))
-				MTIMEtimestamp_add(&tmp, &tmp, &add);
+			if (timestamp_inside(&tmp, t, &tzone_local, LL_CONSTANT(0)))
+				tmp = timestamp_add(tmp, HOUR_USEC);
 			if (is_timestamp_nil(tmp)) {
 				*d = date_nil;
 				bn->tnil = true;
 			} else {
-				*d = tmp.days;
+				*d = ts_date(tmp);
 			}
 		}
 	}
@@ -2060,10 +2101,14 @@ MTIMEdate_addyears(date *ret, const date *v, const int *delta)
 	if (is_date_nil(*v) || is_int_nil(*delta)) {
 		*ret = date_nil;
 	} else {
-		if (*delta >= 0)
-			*ret = *v + ((*delta * 12) << DTMONTH_SHIFT);
-		else
-			*ret = *v - ((-*delta * 12) << DTMONTH_SHIFT);
+		int y = date_year(*v);
+		int m = date_month(*v);
+		int d = date_day(*v);
+		y += *delta;
+		if (y < YEAR_MIN || y > YEAR_MAX)
+			throw(MAL, "mtime.addyears",
+				  SQLSTATE(22003) "overflow in calculation");
+		*ret = mkdate(y, m, d);
 	}
 	return MAL_SUCCEED;
 }
@@ -2073,31 +2118,13 @@ MTIMEdate_addyears(date *ret, const date *v, const int *delta)
 str
 MTIMEdate_adddays(date *ret, const date *v, const int *delta)
 {
-	lng min = DATE_MIN, max = DATE_MAX;
-	lng cur = (lng) *v, inc = *delta;
-
-	if (is_int_nil(cur) || is_int_nil(inc) || (inc > 0 && (max - cur) < inc) || (inc < 0 && (min - cur) > inc)) {
+	if (is_date_nil(*v) || is_int_nil(*delta)) {
 		*ret = date_nil;
 	} else {
-		int y = date_year(*v);
-		int m = date_month(*v);
-		int d = date_day(*v);
-		d += *delta;
-		while (d <= 0) {
-			if (--m == 0) {
-				m = 12;
-				y--;
-			}
-			d += MONTHDAYS(m, y);
-		}
-		while (d > MONTHDAYS(m, y)) {
-			d -= MONTHDAYS(m, y);
-			if (++m > 12) {
-				m = 1;
-				y++;
-			}
-		}
-		*ret = mkdate(d, m, y);
+		*ret = date_add(*v, *delta);
+		if (is_date_nil(*ret))
+			throw(MAL, "mtime.adddays",
+				  SQLSTATE(22003) "overflow in calculation");
 	}
 	return MAL_SUCCEED;
 }
@@ -2110,10 +2137,10 @@ MTIMEdate_addmonths(date *ret, const date *v, const int *delta)
 	if (is_date_nil(*v) || is_int_nil(*delta)) {
 		*ret = date_nil;
 	} else {
-		if (*delta >= 0)
-			*ret = *v + (*delta << DTMONTH_SHIFT);
-		else
-			*ret = *v - (-*delta << DTMONTH_SHIFT);
+		*ret = date_addmonth(*v, *delta);
+		if (is_date_nil(*ret))
+			throw(MAL, "mtime.adddays",
+				  SQLSTATE(22003) "overflow in calculation");
 	}
 	return MAL_SUCCEED;
 }
@@ -2121,6 +2148,10 @@ MTIMEdate_addmonths(date *ret, const date *v, const int *delta)
 str
 MTIMEdate_submonths(date *ret, const date *v, const int *delta)
 {
+	if (is_int_nil(*delta)) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
+	}
 	int mindelta = -(*delta);
 	return MTIMEdate_addmonths(ret, v, &mindelta);
 }
@@ -2129,11 +2160,10 @@ MTIMEdate_submonths(date *ret, const date *v, const int *delta)
 str
 MTIMEdate_diff(int *ret, const date *v1, const date *v2)
 {
-	if (is_date_nil(*v1) || is_date_nil(*v2)) {
+	if (is_date_nil(*v1) || is_date_nil(*v2))
 		*ret = int_nil;
-	} else {
-		*ret = date_countdays(*v1) - date_countdays(*v2);
-	}
+	else
+		*ret = date_diff(*v1, *v2);
 	return MAL_SUCCEED;
 }
 
@@ -2177,7 +2207,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 			bn->tnonil = false;
 			bn->tnil = true;
 		} else {
-			tn[i] = date_countdays(t1[i]) - date_countdays(t2[i]);
+			tn[i] = date_diff(t1[i], t2[i]);
 		}
 	}
 	BBPunfix(b2->batCacheid);
@@ -2208,7 +2238,7 @@ MTIMEtimestamp_diff(lng *ret, const timestamp *v1, const timestamp *v2)
 	if (is_timestamp_nil(*v1) || is_timestamp_nil(*v2)) {
 		*ret = lng_nil;
 	} else {
-		*ret = ((lng) (v1->days - v2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (v1->msecs - v2->msecs));
+		*ret = timestamp_diff(*v1, *v2) / 1000;
 	}
 	return MAL_SUCCEED;
 }
@@ -2248,16 +2278,13 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	bn->tnonil = true;
 	bn->tnil = false;
 	for (i = 0; i < n; i++) {
-		if (is_timestamp_nil(*t1) || is_timestamp_nil(*t2)) {
-			*tn = lng_nil;
+		if (is_timestamp_nil(t1[i]) || is_timestamp_nil(t2[i])) {
+			tn[i] = lng_nil;
 			bn->tnonil = false;
 			bn->tnil = true;
 		} else {
-			*tn = ((lng) (t1->days - t2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (t1->msecs - t2->msecs));
+			tn[i] = timestamp_diff(t1[i], t2[i]) / 1000;
 		}
-		t1++;
-		t2++;
-		tn++;
 	}
 	BBPunfix(b2->batCacheid);
 	BATsetcount(bn, (BUN) (tn - (lng *) Tloc(bn, 0)));
@@ -2280,7 +2307,7 @@ MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z)
 	} else if (tzone_dst(*z)) {
 		timestamp tmp;
 
-		if (timestamp_inside(&tmp, p, z, (lng) 0)) {
+		if (timestamp_inside(&tmp, p, z, LL_CONSTANT(0))) {
 			*ret = TRUE;
 		}
 	}
@@ -2323,7 +2350,7 @@ MTIMEtzone_create_dst(tzone *ret, const int *minutes, const rule *start, const r
 	*ret = tzone_nil;
 	if (!is_int_nil(*minutes) && abs(*minutes) < 24 * 60 &&
 		!is_rule_nil(*start) && !is_rule_nil(*end)) {
-		*ret = mktzone(TRUE, *minutes, *start, *end);
+		*ret = mktzone(true, *minutes, *start, *end);
 	}
 	return MAL_SUCCEED;
 }
@@ -2334,7 +2361,7 @@ MTIMEtzone_create(tzone *ret, const int *minutes)
 {
 	*ret = tzone_nil;
 	if (!is_int_nil(*minutes) && abs(*minutes) < 24 * 60) {
-		*ret = mktzone(FALSE, *minutes, 0, 0);
+		*ret = mktzone(false, *minutes, 0, 0);
 	}
 	return MAL_SUCCEED;
 }
@@ -2344,7 +2371,7 @@ MTIMEtzone_create_lng(tzone *ret, const lng *minutes)
 {
 	*ret = tzone_nil;
 	if (!is_lng_nil(*minutes) && *minutes < 24 * 60 && -*minutes < 24 * 60) {
-		*ret = mktzone(FALSE, *minutes, 0, 0);
+		*ret = mktzone(false, *minutes, 0, 0);
 	}
 	return MAL_SUCCEED;
 }
@@ -2468,19 +2495,32 @@ MTIMEdate_add_msec_interval_lng_wrap(date *ret, const date *t, const lng *msec)
 str
 MTIMEtimestamp_sub_msec_interval_lng_wrap(timestamp *ret, const timestamp *t, const lng *msec)
 {
-	lng Msec = -*msec;
-	return MTIMEtimestamp_add(ret, t, &Msec);
+	if (is_lng_nil(*msec) || is_date_nil(*t)) {
+		*ret = timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	*ret = timestamp_add(*t, -*msec * 1000);
+	if (is_timestamp_nil(*ret))
+		throw(MAL, "mtime.date_sub_msec_interval",
+			  SQLSTATE(22003) "overflow in calculation");
+	return MAL_SUCCEED;
 }
 
 str
 MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, const timestamp *v, const int *months)
 {
-	daytime t;
-	date d;
-	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
-	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
-	MTIMEdate_addmonths(&d, &d, months);
-	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+	if (is_timestamp_nil(*v) || is_int_nil(*months)) {
+		*ret = timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	date dt = ts_date(*v);
+	daytime tm = ts_time(*v);
+	dt = date_addmonth(dt, *months);
+	if (is_date_nil(dt))
+		throw(MAL, "mtime.timestamp_add_month_interval",
+			  SQLSTATE(22003) "overflow in calculation");
+	*ret = mktimestamp(dt, tm);
+	return MAL_SUCCEED;
 }
 
 str
@@ -2492,7 +2532,7 @@ MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *v, c
 	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
 	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
 	if (*months > (YEAR_MAX*12))
-		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
+		throw(MAL, "mtime.timestamp_sub_interval", "too many months");
 	m = (int)*months;
 	MTIMEdate_addmonths(&d, &d, &m);
 	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
@@ -2519,7 +2559,7 @@ MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *v, c
 	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
 	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
 	if (*months > (YEAR_MAX*12))
-		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
+		throw(MAL, "mtime.timestamp_sub_interval", "too many months");
 	m = -(int)*months;
 	MTIMEdate_addmonths(&d, &d, &m);
 	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
@@ -2529,15 +2569,29 @@ MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *v, c
 str
 MTIMEtime_add_msec_interval_wrap(daytime *ret, const daytime *t, const lng *mseconds)
 {
-	lng s = *mseconds;
-	return daytime_add(ret, t, &s);
+	if (is_daytime_nil(*t) || is_lng_nil(*mseconds))
+		*ret = daytime_nil;
+	else {
+		*ret = daytime_add(*t, *mseconds * 1000);
+		if (is_daytime_nil(*ret))
+			throw(MAL, "mtime.time_add_msec_interval",
+				  SQLSTATE(22003) "overflow in calculation");
+	}
+	return MAL_SUCCEED;
 }
 
 str
 MTIMEtime_sub_msec_interval_wrap(daytime *ret, const daytime *t, const lng *mseconds)
 {
-	lng s = -*mseconds;
-	return daytime_add(ret, t, &s);
+	if (is_daytime_nil(*t) || is_lng_nil(*mseconds))
+		*ret = daytime_nil;
+	else {
+		*ret = daytime_add(*t, -*mseconds * 1000);
+		if (is_daytime_nil(*ret))
+			throw(MAL, "mtime.time_sub_msec_interval",
+				  SQLSTATE(22003) "overflow in calculation");
+	}
+	return MAL_SUCCEED;
 }
 
 /* compute the date from a rule in a certain year. */
@@ -2547,7 +2601,7 @@ MTIMEcompute_rule_foryear(date *ret, const rule *val, const int *year)
 	if (is_rule_nil(*val) || *year < YEAR_MIN || *year > YEAR_MAX) {
 		*ret = date_nil;
 	} else {
-		*ret = compute_rule(val, *year);
+		*ret = compute_rule(*val, *year);
 	}
 	return MAL_SUCCEED;
 }
@@ -2684,70 +2738,43 @@ MTIMEdaytime3(daytime *ret, const int *h, const int *m, const int *s)
 str
 MTIMEunix_epoch(timestamp *ret)
 {
-	date d0 = todate(1, 1, 1970);
-	int zero = 0;
-	const char *s = "GMT";
-	daytime d1;
-	tzone d2;
-	str e;
-
-	if ((e = MTIMEdaytime_create(&d1, &zero, &zero, &zero, &zero)) != MAL_SUCCEED)
-		return e;
-	if ((e = MTIMEtzone_fromstr(&d2, &s)) != MAL_SUCCEED)
-		return e;
-	return MTIMEtimestamp_create(ret, &d0, &d1, &d2);
+	*ret = unixepoch;
+	return MAL_SUCCEED;
 }
 
 str
 MTIMEepoch2int(int *ret, const timestamp *t)
 {
-	timestamp e;
 	lng v;
-	str err;
 
-	if ((err = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
-		return err;
-	if ((err = MTIMEtimestamp_diff(&v, t, &e)) != MAL_SUCCEED)
-		return err;
-	if (is_lng_nil(v))
+	if (is_timestamp_nil(*t)) {
 		*ret = int_nil;
-	else if ((v/1000) > GDK_int_max || (v/1000) < GDK_int_min)
+		return MAL_SUCCEED;
+	}
+	v = timestamp_diff(*t, unixepoch) / 1000000;
+	if (v > (lng) GDK_int_max || v < (lng) GDK_int_min)
 		throw(MAL, "mtime.epoch", "22003!epoch value too large");
 	else
-		*ret = (int) (v / 1000);
+		*ret = (int) v;
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEepoch2lng(lng *ret, const timestamp *t)
 {
-	timestamp e;
-	lng v;
-	str err;
-
-	if ((err = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
-		return err;
-	if ((err = MTIMEtimestamp_diff(&v, t, &e)) != MAL_SUCCEED)
-		return err;
-	if (is_lng_nil(v))
-		*ret = int_nil;
-	else
-		*ret = v;
+	*ret = timestamp_diff(*t, unixepoch) / 1000;
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEepoch_bulk(bat *ret, bat *bid)
 {
-	timestamp epoch;
 	const timestamp *t;
 	lng *tn;
 	str msg = MAL_SUCCEED;
 	BAT *b, *bn;
 	BUN i, n;
 
-	if ((msg = MTIMEunix_epoch(&epoch)) != MAL_SUCCEED)
-		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "batcalc.epoch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -2761,20 +2788,18 @@ MTIMEepoch_bulk(bat *ret, bat *bid)
 	bn->tnonil = true;
 	b->tnil = false;
 	for (i = 0; i < n; i++) {
-		if (is_timestamp_nil(*t)) {
-			*tn = lng_nil;
+		if (is_timestamp_nil(t[i])) {
+			tn[i] = lng_nil;
 			bn->tnonil = false;
 			bn->tnil = true;
 		} else {
-			*tn = ((lng) (t->days - epoch.days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (t->msecs - epoch.msecs));
+			tn[i] = timestamp_diff(t[i], unixepoch) / 1000;
 		}
-		t++;
-		tn++;
 	}
 	BBPunfix(b->batCacheid);
-	BATsetcount(bn, (BUN) (tn - (lng *) Tloc(bn, 0)));
-	bn->tsorted = BATcount(bn) <= 1;
-	bn->trevsorted = BATcount(bn) <= 1;
+	BATsetcount(bn, n);
+	bn->tsorted = n <= 1;
+	bn->trevsorted = n <= 1;
 	BBPkeepref(bn->batCacheid);
 	*ret = bn->batCacheid;
 	return msg;
@@ -2783,35 +2808,27 @@ MTIMEepoch_bulk(bat *ret, bat *bid)
 str
 MTIMEtimestamp(timestamp *ret, const int *sec)
 {
-	timestamp t;
-	lng l;
-	str e;
-
 	if (is_int_nil(*sec)) {
-		*ret = *timestamp_nil;
+		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
-		return e;
-	l = ((lng) *sec) * 1000;
-	return MTIMEtimestamp_add(ret, &t, &l);
+	*ret = timestamp_add(unixepoch, *sec * LL_CONSTANT(1000000));
+	if (is_timestamp_nil(*ret))
+		throw(MAL, "mtime.timestamp", "22003!value too large");
+	return MAL_SUCCEED;
 }
 
 str
 MTIMEtimestamplng(timestamp *ret, const lng *sec)
 {
-	timestamp t;
-	lng l;
-	str e;
-
 	if (is_lng_nil(*sec)) {
-		*ret = *timestamp_nil;
+		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
-		return e;
-	l = ((lng) *sec);
-	return MTIMEtimestamp_add(ret, &t, &l);
+	*ret = timestamp_add(unixepoch, *sec * LL_CONSTANT(1000000));
+	if (is_timestamp_nil(*ret))
+		throw(MAL, "mtime.epoch", "22003!value too large");
+	return MAL_SUCCEED;
 }
 
 str
@@ -2819,36 +2836,29 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 {
 	BAT *b, *bn;
 	timestamp *t;
-	timestamp e;
 	const int *s;
-	lng ms;
 	BUN n;
-	str msg;
 
-	if ((msg = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
-		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, n, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	s = (const int *) Tloc(b, 0);
 	t = (timestamp *) Tloc(bn, 0);
 	bn->tnil = false;
-	for (n = BATcount(b); n > 0; n--, t++, s++) {
-		if (is_int_nil(*s)) {
-			*t = *timestamp_nil;
+	for (BUN i = 0; i < n; i++) {
+		if (is_int_nil(s[i])) {
+			t[i] = timestamp_nil;
 			bn->tnil = true;
-		} else {
-			ms = ((lng)*s) * 1000;
-			if ((msg = MTIMEtimestamp_add(t, &e, &ms)) != MAL_SUCCEED) {
+		} else {				
+			t[i] = timestamp_add(unixepoch, s[i] * LL_CONSTANT(1000000));
+			if (is_timestamp_nil(t[i])) {
 				BBPreclaim(bn);
-				BBPunfix(b->batCacheid);
-				return msg;
+				throw(MAL, "batcalc.timestamp", "22003!value too large");
 			}
-			if (is_timestamp_nil(*t))
-				bn->tnil = true;
 		}
 	}
 	BATsetcount(bn, BATcount(b));
@@ -2864,13 +2874,14 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 str
 MTIMEtimestamp_lng(timestamp *ret, const lng *msec)
 {
-	timestamp t;
-	lng l = *msec;
-	str e;
-
-	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
-		return e;
-	return MTIMEtimestamp_add(ret, &t, &l);
+	if (is_lng_nil(*msec)) {
+		*ret = timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	*ret = timestamp_add(unixepoch, *msec * LL_CONSTANT(1000));
+	if (is_timestamp_nil(*ret))
+		throw(MAL, "mtime.timestamp", "22003!value too large");
+	return MAL_SUCCEED;
 }
 
 str
@@ -2878,34 +2889,29 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 {
 	BAT *b, *bn;
 	timestamp *t;
-	timestamp e;
 	const lng *ms;
 	BUN n;
-	str msg;
 
-	if ((msg = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
-		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, n, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	ms = (const lng *) Tloc(b, 0);
 	t = (timestamp *) Tloc(bn, 0);
 	bn->tnil = false;
-	for (n = BATcount(b); n > 0; n--, t++, ms++) {
-		if (is_lng_nil(*ms)) {
-			*t = *timestamp_nil;
+	for (BUN i = 0; i < n; i++) {
+		if (is_lng_nil(ms[i])) {
+			t[i] = timestamp_nil;
 			bn->tnil = true;
-		} else {
-			if ((msg = MTIMEtimestamp_add(t, &e, ms)) != MAL_SUCCEED) {
+		} else {				
+			t[i] = timestamp_add(unixepoch, ms[i] * LL_CONSTANT(1000));
+			if (is_timestamp_nil(t[i])) {
 				BBPreclaim(bn);
-				BBPunfix(b->batCacheid);
-				return msg;
+				throw(MAL, "batcalc.timestamp", "22003!value too large");
 			}
-			if (is_timestamp_nil(*t))
-				bn->tnil = true;
 		}
 	}
 	BATsetcount(bn, BATcount(b));
@@ -2954,14 +2960,29 @@ MTIMEruleDef2(rule *ret, const int *m, const char * const *dnme, const int *w, c
 str
 MTIMEcurrent_timestamp(timestamp *ret)
 {
-	timestamp ts;
-	lng t = ((lng) time(0)) * 1000;
-	str e;
-
-	/* convert number of seconds into a timestamp */
-	if ((e = MTIMEunix_epoch(&ts)) == MAL_SUCCEED)
-		e = MTIMEtimestamp_add(ret, &ts, &t);
-	return e;
+#if defined(HAVE_GETSYSTEMTIMEASFILETIME)
+	FILETIME ft;
+	ULARGE_INTEGER l;
+	GetSystemTimeAsFileTime(&ft);
+	l.LowPart = ft.dwLowDateTime;
+	l.HighPart = ft.dwHighDateTime;
+	*ret = timestamp_add(mktimestamp(mkdate(1601, 1, 1),
+									 mkdaytime(0, 0, 0, 0)),
+						 (lng) (l.QuadPart / 10));
+#elif defined(HAVE_CLOCK_GETTIME)
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	*ret = timestamp_add(unixepoch, ts.tv_sec * LL_CONSTANT(1000000) + ts.tv_nsec / 1000);
+#elif defined(HAVE_GETTIMEOFDAY)
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	*ret = timestamp_add(unixepoch, tv.tv_sec * LL_CONSTANT(1000000) + tv.tv_usec);
+#else
+	*ret = timestamp_add(unixepoch, (lng) time(NULL) * LL_CONSTANT(1000000));
+#endif
+	if (is_timestamp_nil(*ret))
+		throw(MAL, "mtime.epoch", "22003!value too large");
+	return MAL_SUCCEED;
 }
 
 str
@@ -3155,19 +3176,8 @@ MTIMEsql_seconds(int *ret, const lng *t)
 str
 MTIMEmsec(lng *r)
 {
-#ifdef HAVE_GETTIMEOFDAY
-	struct timeval tp;
-
-	gettimeofday(&tp, NULL);
-	*r = ((lng) (tp.tv_sec)) * LL_CONSTANT(1000) + (lng) tp.tv_usec / LL_CONSTANT(1000);
-#else
-#ifdef HAVE_FTIME
-	struct timeb tb;
-
-	ftime(&tb);
-	*r = ((lng) (tb.time)) * LL_CONSTANT(1000) + ((lng) tb.millitm);
-#endif
-#endif
+	lng t = GDKusec();
+	*r = t / 1000;
 	return MAL_SUCCEED;
 }
 
@@ -3363,10 +3373,10 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	BAT *b, *bn;
 	BUN i, n;
 	int *h;
-	const date *t;
+	const daytime *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.hourse", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(MAL, "batmtime.hours", SQLSTATE(HY005) "Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
@@ -3377,22 +3387,17 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	bn->tnonil = true;
 	bn->tnil = false;
 
-	t = (const date *) Tloc(b, 0);
+	t = (const daytime *) Tloc(b, 0);
 	h = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (is_date_nil(*t)) {
-			*h = int_nil;
+		if (is_daytime_nil(t[i])) {
+			h[i] = int_nil;
 			bn->tnil = true;
 		} else {
-			MTIMEdaytime_extract_hours(h, t);
-			if (is_int_nil(*h)) {
-				bn->tnil = true;
-			}
+			fromtime(t[i], &h[i], NULL, NULL, NULL);
 		}
-		h++;
-		t++;
 	}
-	BATsetcount(bn, (BUN) (h - (int *) Tloc(bn, 0)));
+	BATsetcount(bn, n);
 
 	bn->tnonil = !bn->tnil;
 	bn->tsorted = BATcount(bn) < 2;
@@ -3408,8 +3413,8 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
 	BUN i, n;
-	const date *t;
 	int *m;
+	const daytime *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batmtime.minutes", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -3423,22 +3428,17 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 	bn->tnonil = true;
 	bn->tnil = false;
 
-	t = (const date *) Tloc(b, 0);
+	t = (const daytime *) Tloc(b, 0);
 	m = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (is_date_nil(*t)) {
-			*m = int_nil;
+		if (is_daytime_nil(t[i])) {
+			m[i] = int_nil;
 			bn->tnil = true;
 		} else {
-			MTIMEdaytime_extract_minutes(m, t);
-			if (is_int_nil(*m)) {
-				bn->tnil = true;
-			}
+			fromtime(t[i], NULL, &m[i], NULL, NULL);
 		}
-		m++;
-		t++;
 	}
-	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, 0)));
+	BATsetcount(bn, n);
 
 	bn->tnonil = !bn->tnil;
 	bn->tsorted = BATcount(bn) < 2;
@@ -3454,8 +3454,8 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
 	BUN i, n;
-	const date *t;
 	int *s;
+	const daytime *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batmtime.seconds", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -3469,22 +3469,17 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 	bn->tnonil = true;
 	bn->tnil = false;
 
-	t = (const date *) Tloc(b, 0);
+	t = (const daytime *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (is_date_nil(*t)) {
-			*s = int_nil;
+		if (is_daytime_nil(t[i])) {
+			s[i] = int_nil;
 			bn->tnil = true;
 		} else {
-			MTIMEdaytime_extract_seconds(s, t);
-			if (is_int_nil(*s)) {
-				bn->tnil = true;
-			}
+			fromtime(t[i], NULL, NULL, &s[i], NULL);
 		}
-		s++;
-		t++;
 	}
-	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
+	BATsetcount(bn, n);
 
 	bn->tnonil = !bn->tnil;
 	bn->tsorted = BATcount(bn) < 2;
@@ -3500,38 +3495,34 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
 	BUN i, n;
-	const date *t;
 	int *s;
+	const daytime *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(MAL, "batmtime.seconds", SQLSTATE(HY005) "Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batmtime.seconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = true;
 	bn->tnil = false;
 
-	t = (const date *) Tloc(b, 0);
+	t = (const daytime *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (is_date_nil(*t)) {
-			*s = int_nil;
+		if (is_daytime_nil(t[i])) {
+			s[i] = int_nil;
 			bn->tnil = true;
 		} else {
-			MTIMEdaytime_extract_sql_seconds(s, t);
-			if (is_int_nil(*s)) {
-				bn->tnil = true;
-			}
+			int sec, usec;
+			fromtime(t[i], NULL, NULL, &sec, &usec);
+			s[i] = sec * 1000 + usec / 1000;
 		}
-		s++;
-		t++;
 	}
-
-	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
+	BATsetcount(bn, n);
 
 	bn->tnonil = !bn->tnil;
 	bn->tsorted = BATcount(bn) < 2;
@@ -3547,37 +3538,34 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 {
 	BAT *b, *bn;
 	BUN i, n;
-	const date *t;
-	int *s;
+	int *ms;
+	const daytime *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.milliseconds", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(MAL, "batmtime.seconds", SQLSTATE(HY005) "Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "batmtime.milliseconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(MAL, "batmtime.seconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	bn->tnonil = true;
 	bn->tnil = false;
 
-	t = (const date *) Tloc(b, 0);
-	s = (int *) Tloc(bn, 0);
+	t = (const daytime *) Tloc(b, 0);
+	ms = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
-		if (is_date_nil(*t)) {
-			*s = int_nil;
+		if (is_daytime_nil(t[i])) {
+			ms[i] = int_nil;
 			bn->tnil = true;
 		} else {
-			MTIMEdaytime_extract_milliseconds(s, t);
-			if (is_int_nil(*s)) {
-				bn->tnil = true;
-			}
+			int usec;
+			fromtime(t[i], NULL, NULL, NULL, &usec);
+			ms[i] = usec / 1000;
 		}
-		s++;
-		t++;
 	}
-	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
+	BATsetcount(bn, n);
 
 	bn->tnonil = !bn->tnil;
 	bn->tsorted = BATcount(bn) < 2;
@@ -3600,7 +3588,7 @@ MTIMEstr_to_date(date *d, const char * const *s, const char * const *format)
 	t = (struct tm) {0};
 	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'\n", *format, *s);
-	*d = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
+	*d = todate(t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
 	return MAL_SUCCEED;
 }
 
@@ -3619,7 +3607,7 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 		return MAL_SUCCEED;
 	}
 	t = (struct tm) {0};
-	fromdate(*d, &t.tm_mday, &mon, &year);
+	fromdate(*d, &year, &mon, &t.tm_mday);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
 	t.tm_isdst = -1;
@@ -3655,7 +3643,6 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 	struct tm t;
 	char buf[512];
 	size_t sz;
-	int msec;
 
 	if (is_daytime_nil(*d) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
@@ -3664,8 +3651,7 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 		return MAL_SUCCEED;
 	}
 	t = (struct tm) {0};
-	fromtime(*d, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
-	(void)msec;
+	fromtime(*d, &t.tm_hour, &t.tm_min, &t.tm_sec, NULL);
 	t.tm_isdst = -1;
 	(void)mktime(&t); /* corrects the tm_wday etc */
 	if ((sz = strftime(buf, sizeof(buf), *format, &t)) == 0)
@@ -3683,14 +3669,14 @@ MTIMEstr_to_timestamp(timestamp *ts, const char * const *s, const char * const *
 	struct tm t;
 
 	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
-		*ts = *timestamp_nil;
+		*ts = timestamp_nil;
 		return MAL_SUCCEED;
 	}
 	t = (struct tm) {0};
 	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_timestamp", "format '%s', doesn't match timestamp '%s'\n", *format, *s);
-	ts->days = todate(t.tm_mday, t.tm_mon + 1, t.tm_year + 1900);
-	ts->msecs = totime(t.tm_hour, t.tm_min, t.tm_sec, 0);
+	*ts = mktimestamp(mkdate(t.tm_year + 1900, t.tm_mon + 1, t.tm_mday),
+					  mkdaytime(t.tm_hour, t.tm_min, t.tm_sec, 0));
 	return MAL_SUCCEED;
 }
 
@@ -3700,7 +3686,7 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 	struct tm t;
 	char buf[512];
 	size_t sz;
-	int mon, year, msec;
+	int mon, year;
 
 	if (is_timestamp_nil(*ts) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
@@ -3709,13 +3695,12 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 		return MAL_SUCCEED;
 	}
 	t = (struct tm) {0};
-	fromdate(ts->days, &t.tm_mday, &mon, &year);
+	fromdate(ts_date(*ts), &year, &mon, &t.tm_mday);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
-	fromtime(ts->msecs, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
+	fromtime(ts_time(*ts), &t.tm_hour, &t.tm_min, &t.tm_sec, NULL);
 	t.tm_isdst = -1;
 	(void)mktime(&t); /* corrects the tm_wday etc */
-	(void)msec;
 	if ((sz = strftime(buf, sizeof(buf), *format, &t)) == 0)
 		throw(MAL, "mtime.timestamp_to_str", "failed to convert timestampt to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
@@ -3726,18 +3711,44 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 }
 
 
-date MTIMEtodate(int day, int month, int year) {
-	return todate(day, month, year);
+date MTIMEtodate(int year, int month, int day) {
+	return todate(year, month, day);
 }
 
-void MTIMEfromdate(date n, int *d, int *m, int *y) {
-	fromdate(n, d, m, y);
+void MTIMEfromdate(date n, int *y, int *m, int *d) {
+	fromdate(n, y, m, d);
 }
 
 daytime MTIMEtotime(int hour, int min, int sec, int msec) {
-	return totime(hour, min, sec, msec);
+	return totime(hour, min, sec, msec * 1000);
 }
 
 void MTIMEfromtime(daytime n, int *hour, int *min, int *sec, int *msec) {
-	fromtime(n, hour, min, sec, msec);
+	int usec;
+	fromtime(n, hour, min, sec, &usec);
+	if (msec && !is_int_nil(usec))
+		*msec = usec / 1000;
+}
+
+timestamp MTIMEtotimestamp(int year, int month, int day, int hour, int min, int sec, int msec)
+{
+	date d = todate(year, month, day);
+	daytime t = totime(hour, min, sec, msec * 1000);
+	if (is_date_nil(d) || is_daytime_nil(t))
+		return timestamp_nil;
+	return mktimestamp(d, t);
+}
+
+void MTIMEfromtimestamp(timestamp t, int *Y, int *M, int *D, int *h, int *m, int *s, int *ms)
+{
+	int us;
+	if (is_timestamp_nil(t)) {
+		fromdate(date_nil, Y, M, D);
+		fromtime(daytime_nil, h, m, s, &us);
+	} else {
+		fromdate(ts_date(t), Y, M, D);
+		fromtime(ts_time(t), h, m, s, &us);
+		if (ms)
+			*ms = us / 1000;
+	}
 }

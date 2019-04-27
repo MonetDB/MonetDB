@@ -629,8 +629,8 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *qtimeoutId = getArgReference_bat(stk,pci,4);
 	bat *activeId = getArgReference_bat(stk,pci,5);
     Client c;
-	timestamp ts, ret;
-	lng clk,timeout;
+	timestamp ret;
+	lng timeout;
 	str msg;
 
 	(void) cntxt;
@@ -658,11 +658,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (c->mode == RUNCLIENT) {
 		if (BUNappend(user, c->username, false) != GDK_SUCCEED)
 			goto bailout;
-		msg = MTIMEunix_epoch(&ts);
-		if (msg)
-			goto bailout;
-		clk = c->login * 1000;
-		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
+		msg = MTIMEtimestamplng(&ret, &(lng){c->login});
 		if (msg)
 			goto bailout;
 		if (BUNappend(login, &ret, false) != GDK_SUCCEED)
@@ -670,11 +666,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		timeout = c->stimeout / 1000000;
 		if (BUNappend(stimeout, &timeout, false) != GDK_SUCCEED)
 			goto bailout;
-		msg = MTIMEunix_epoch(&ts);
-		if (msg)
-			goto bailout;
-		clk = c->lastcmd * 1000;
-		msg = MTIMEtimestamp_add(&ret,&ts, &clk);
+		msg = MTIMEtimestamplng(&ret, &(lng){c->lastcmd});
 		if (msg)
 			goto bailout;
 		if (BUNappend(last, &ret, false) != GDK_SUCCEED)
