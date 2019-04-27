@@ -150,7 +150,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 							, 0)) == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
 #endif
 		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
@@ -231,7 +231,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 				closesocket(ssock);
 				continue;
 			} else {
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 				(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
 #endif
 				break;

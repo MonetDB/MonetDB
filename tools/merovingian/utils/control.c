@@ -63,7 +63,7 @@ char* control_send(
 					strerror(errno));
 			return(strdup(sbuf));
 		}
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 		server = (struct sockaddr_un) {
@@ -106,7 +106,7 @@ char* control_send(
 		if (rp == NULL) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect to %s:%s: %s", host, sport,
 #ifdef _MSC_VER
-					wsaerror(WSAGetLastError())
+					 wsaerror(WSAGetLastError())
 #else
 					 strerror(errno)
 #endif
@@ -114,7 +114,7 @@ char* control_send(
 			return(strdup(sbuf));
 		}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
 		/* try reading length */

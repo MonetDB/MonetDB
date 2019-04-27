@@ -58,7 +58,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 					, rp->ai_protocol);
 			if (sock == -1)
 				continue;
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 			(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
@@ -104,7 +104,7 @@ openConnectionTCP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 		}
 		server = bind_ipv6 ? (struct sockaddr*) &server_ipv6 : (struct sockaddr*) &server_ipv4;
 
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
@@ -184,7 +184,7 @@ openConnectionUDP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short
 					  , rp->ai_protocol);
 		if (sock == -1)
 			continue;
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
@@ -234,7 +234,7 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	if (sock == -1)
 		return(newErr("creation of UNIX stream socket failed: %s",
 					strerror(errno)));
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 	(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 

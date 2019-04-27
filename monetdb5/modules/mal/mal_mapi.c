@@ -623,7 +623,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 						e = errno;
 						continue;
 					}
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 					(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
@@ -633,7 +633,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 						continue;
 					}
 
-					bind_check = bind(sock, rp->ai_addr, rp->ai_addrlen);
+					bind_check = bind(sock, (SOCKPTR) rp->ai_addr, (socklen_t) rp->ai_addrlen);
 					e = errno;
 					if (bind_check == SOCKET_ERROR) {
 						closesocket(sock);
@@ -669,9 +669,9 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 				errno = e;
 				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed: %s", port,
 #ifdef _MSC_VER
-											wsaerror(WSAGetLastError())
+					  wsaerror(WSAGetLastError())
 #else
-											strerror(errno)
+					  strerror(errno)
 #endif
 				);
 			} while (1);
@@ -741,7 +741,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 				else
 					server_ipv4.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 
-				if (bind(sock, server, length) == SOCKET_ERROR) {
+				if (bind(sock, (SOCKPTR) server, length) == SOCKET_ERROR) {
 					int e = errno;
 					if (
 #ifdef _MSC_VER
