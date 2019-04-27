@@ -3647,7 +3647,7 @@ rel_project_cse(int *changes, mvc *sql, sql_rel *rel)
 }
 
 static list *
-exps_merge_rse( mvc *sql, list *l, list *r )
+exps_merge_select_rse( mvc *sql, list *l, list *r )
 {
 	node *n, *m, *o;
 	list *nexps = NULL, *lexps, *rexps;
@@ -3657,7 +3657,7 @@ exps_merge_rse( mvc *sql, list *l, list *r )
 		sql_exp *e = n->data;
 	
 		if (e->type == e_cmp && e->flag == cmp_or) {
-			list *nexps = exps_merge_rse(sql, e->l, e->r);
+			list *nexps = exps_merge_select_rse(sql, e->l, e->r);
 			for (o = nexps->h; o; o = o->next) 
 				append(lexps, o->data);
 		} else {
@@ -3669,7 +3669,7 @@ exps_merge_rse( mvc *sql, list *l, list *r )
 		sql_exp *e = n->data;
 	
 		if (e->type == e_cmp && e->flag == cmp_or) {
-			list *nexps = exps_merge_rse(sql, e->l, e->r);
+			list *nexps = exps_merge_select_rse(sql, e->l, e->r);
 			for (o = nexps->h; o; o = o->next) 
 				append(rexps, o->data);
 		} else {
@@ -3743,6 +3743,62 @@ exps_merge_rse( mvc *sql, list *l, list *r )
 	return nexps;
 }
 
+static list *
+exps_merge_project_rse( mvc *sql, list *exps)
+{
+	node *n;
+	list *nexps = NULL;
+
+ 	nexps = new_exp_list(sql->sa);
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+	
+		if (is_func(e->type) && e->l) { 
+			list *fexps = e->l;
+			sql_subfunc *f = e->f;
+
+			/* is and function */
+			if (strcmp(f->func->base.name, "and") == 0 && list_length(fexps) == 2) {
+				sql_exp *l = list_fetch(fexps, 0);
+				sql_exp *r = list_fetch(fexps, 1);
+
+				/* check merge into single between */
+				if (is_func(l->type) && is_func(r->type)) {
+					list *lfexps = l->l;
+					list *rfexps = r->l;
+					sql_subfunc *lf = l->f;
+					sql_subfunc *rf = r->f;
+
+					if (((strcmp(lf->func->base.name, ">=") == 0 || strcmp(lf->func->base.name, ">") == 0) && list_length(lfexps) == 2) && 
+					    ((strcmp(rf->func->base.name, "<=") == 0 || strcmp(rf->func->base.name, "<") == 0) && list_length(rfexps) == 2)
+					    && exp_equal(list_fetch(lfexps,0), list_fetch(rfexps,0)) == 0) { 
+						sql_exp *ce = list_fetch(lfexps, 0);
+						list *types, *ops = sa_list(sql->sa);
+						sql_subfunc *between;
+
+						append(ops, ce);
+						append(ops, list_fetch(lfexps, 1));
+						append(ops, list_fetch(rfexps, 1));
+						append(ops, exp_atom_bool(sql->sa, 0)); /* non symetrical */
+						append(ops, exp_atom_bool(sql->sa, lf->func->base.name[1] == '=')); /* left inclusive */
+						append(ops, exp_atom_bool(sql->sa, rf->func->base.name[1] == '=')); /* right exclusive */
+						append(ops, exp_atom_bool(sql->sa, 0)); /* nils_false */
+
+						types = exp_types(sql->sa, ops);
+						/* convert into between */
+						between = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "between", types, F_FUNC);
+						if (between)
+							e = exp_op(sql->sa, ops, between);
+					}
+				}
+			} else {
+				e->l = exps_merge_project_rse(sql, fexps);
+			}
+		}
+		append(nexps, e);
+	}
+	return nexps;
+}
 
 /* merge related sub expressions 
  * 
@@ -3771,7 +3827,7 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
 
 			if (e->type == e_cmp && e->flag == cmp_or) {
 				/* possibly merge related expressions */
-				list *ps = exps_merge_rse(sql, e->l, e->r);
+				list *ps = exps_merge_select_rse(sql, e->l, e->r);
 				for (o = ps->h; o; o = o->next) 
 					append(nexps, o->data);
 			}
@@ -3780,6 +3836,9 @@ rel_merge_rse(int *changes, mvc *sql, sql_rel *rel)
 		       for (o = nexps->h; o; o = o->next)
 				append(rel->exps, o->data);
 	}
+	/* the project case of rse */
+	if (is_project(rel->op) && rel->exps)
+		rel->exps = exps_merge_project_rse(sql, rel->exps);
 	return rel;
 }
 
@@ -8883,11 +8942,11 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) 
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
-	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
-		/* only once */
-		if (level <= 0)
+	if (gp.cnt[op_select] || gp.cnt[op_project]) 
+		if (level <= 0) /* only once */
 			rel = rewrite(sql, rel, &rel_merge_rse, &changes); 
 
+	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
 		rel = rewrite_topdown(sql, rel, &rel_push_select_down, &changes); 
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
