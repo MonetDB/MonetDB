@@ -4782,71 +4782,6 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 	return 0;
 }
 
-static int
-rel_has_cmp_exp(sql_rel *rel, sql_exp *e)
-{
-	if (e->type == e_cmp) {
-		if (get_cmp(e) == cmp_or) {
-			return rel_has_exp(rel, e->l) == 0 &&
-				rel_has_all_exps(rel, e->r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
-			return rel_has_all_exps(rel, e->l) &&
-				rel_has_all_exps(rel, e->r);
-		} else {
-			return rel_has_exp(rel, e->l) == 0 &&
-				rel_has_exp(rel, e->r) == 0 &&
-		 		(!e->f || rel_has_exp(rel, e->f) == 0);
-		}
-	}
-	return 0;
-}
-
-static sql_rel *
-rel_join_push_exps_down(int *changes, mvc *sql, sql_rel *rel) 
-{
-	if ((is_join(rel->op) && !is_outerjoin(rel->op)) || is_semi(rel->op)) {
-		sql_rel *l = rel->l, *r = rel->r;
-		list *jexps = NULL, *lexps = NULL, *rexps = NULL;
-		node *n;
-
-		if (list_empty(rel->exps))
-			return rel;
-
-		for(n=rel->exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
-			int le = rel_has_cmp_exp(l, e);
-			int re = rel_has_cmp_exp(r, e);
-
-			if (le && !re) {
-				if (!lexps)
-					lexps=sa_list(sql->sa);
-				append(lexps, e);
-			} else if (!le && re) {
-				if (!rexps)
-					rexps=sa_list(sql->sa);
-				append(rexps, e);
-			} else {
-				if (!jexps)
-					jexps=sa_list(sql->sa);
-				append(jexps, e);
-			}
-		}
-		if (lexps || rexps)
-			rel->exps = jexps;
-		if (lexps) {
-			l = rel->l = rel_select(sql->sa, rel->l, NULL);
-			l->exps = lexps;
-			(*changes) = 1;
-		}
-		if (rexps) {
-			r = rel->r = rel_select(sql->sa, rel->r, NULL);
-			r->exps = rexps;
-			(*changes) = 1;
-		}
-	}
-	return rel;
-}
-
 /*
  * Push (semi)joins down unions, this is basically for merge tables, where
  * we know that the fk-indices are split over two clustered merge tables.
@@ -8950,7 +8885,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
 	if (gp.cnt[op_select] || gp.cnt[op_project]) 
-		if (level <= 0) /* only once */
+		if (level == 1) /* only once */
 			rel = rewrite(sql, rel, &rel_merge_rse, &changes); 
 
 	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
@@ -8994,9 +8929,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		rel = rewrite(sql, rel, &rel_push_join_down_union, &changes); 
 		/* rel_join_order may introduce empty selects */
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
-
-		if (level <= 0 && /* DISABLES CODE */ (0))
-			rel = rewrite(sql, rel, &rel_join_push_exps_down, &changes); 
 	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) {
