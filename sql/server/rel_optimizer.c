@@ -9641,8 +9641,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 		rel = rewrite_topdown(sql, rel, &rel_split_outerjoin, &changes);
 
 	if (gp.cnt[op_select] || gp.cnt[op_semi]) {
-		/* only once */
-		if (level <= 0)
+		if (level == 1) /* only once */
 			rel = rewrite(sql, rel, &rel_merge_rse, &changes); 
 
 		rel = rewrite_topdown(sql, rel, &rel_push_select_down, &changes); 
