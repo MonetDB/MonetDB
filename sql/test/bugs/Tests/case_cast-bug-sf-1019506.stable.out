@@ -34,7 +34,7 @@ stdout of test 'case_cast-bug-sf-1019506` in directory 'sql/test/bugs` itself:
 #	cast(c.name as clob) as column_name, 
 #	cast(null as char(1)) as asc_or_desc, 
 #	cast(null as integer) as cardinality, 
-% .L53,	.L56,	.L61,	sys.L65,	.L70,	.L73,	.L77,	sys.L102,	.L105,	.L110,	.L113,	.L116,	.L121 # table_name
+% .L54,	.L57,	.L62,	sys.L66,	.L71,	.L74,	.L100,	.L103,	.L106,	.L111,	.L114,	.L117,	.L122 # table_name
 % table_cat,	table_schem,	table_name,	non_unique,	index_qualifier,	index_name,	type,	ordinal_position,	column_name,	asc_or_desc,	cardinality,	pages,	filter_condition # name
 % clob,	varchar,	varchar,	smallint,	clob,	varchar,	smallint,	smallint,	varchar,	char,	int,	int,	clob # type
 % 0,	0,	0,	1,	0,	0,	1,	1,	0,	1,	1,	1,	0 # length

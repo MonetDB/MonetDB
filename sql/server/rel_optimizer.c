@@ -1207,6 +1207,9 @@ rel_join_order(mvc *sql, sql_rel *rel)
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 		rel = reorder_join(sql, rel);
+	} else if (is_join(rel->op)) {
+		rel->l = rel_join_order(sql, rel->l);
+		rel->r = rel_join_order(sql, rel->r);
 	}
 	(void)e_changes;
 	return rel;
