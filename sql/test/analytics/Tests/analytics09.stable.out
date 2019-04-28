@@ -254,7 +254,7 @@ stdout of test 'analytics09` in directory 'sql/test/analytics` itself:
 #select 21 - avg(sum(aa)) over (),
 #       avg(45 * count(aa) + sum(aa)) over (),
 #       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa;
-% .L5,	.L10,	sys.L16 # table_name
+% .L5,	sys.L10,	sys.L16 # table_name
 % L5,	L10,	L16 # name
 % double,	double,	bigint # type
 % 24,	24,	3 # length

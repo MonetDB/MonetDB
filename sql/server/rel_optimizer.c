@@ -3787,8 +3787,12 @@ exps_merge_project_rse( mvc *sql, list *exps)
 						types = exp_types(sql->sa, ops);
 						/* convert into between */
 						between = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "between", types, F_FUNC);
-						if (between)
-							e = exp_op(sql->sa, ops, between);
+						if (between) {
+							sql_exp *ne = exp_op(sql->sa, ops, between);
+
+							exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
+							e = ne;
+						}
 					}
 				}
 			} else {
@@ -7331,7 +7335,7 @@ add_exps_too_project(mvc *sql, list *exps, sql_rel *rel)
 	for(n=exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->type != e_column)
+		if (e->type != e_column && e->type != e_atom)
 			n->data = add_exp_too_project(sql, e, rel);
 	}
 }
