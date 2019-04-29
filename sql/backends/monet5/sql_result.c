@@ -221,8 +221,8 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	} else {
 		tmp = *(const timestamp *)A;
 	}
-	MTIMEtimestamp_extract_date_default(&days, &tmp);
-	MTIMEtimestamp_extract_daytime_default(&msecs, &tmp);
+	MTIMEtimestamp_extract_date(&days, &tmp);
+	MTIMEtimestamp_extract_daytime(&msecs, &tmp);
 	len1 = date_tostr(&s1, &big, &days, true);
 	len2 = daytime_tostr(&s2, &big, &msecs, true);
 	if (len1 < 0 || len2 < 0) {

@@ -40,25 +40,6 @@
  * are consecutive (no jumps) which makes it easy to perform time
  * difference calculations.
  *
- * @item timezone
- * the local time is often different from GMT (even at Greenwich in
- * summer, as the UK also has DST). Therefore, whenever a timestamp is
- * composed from a local daytime and date, a timezone should be
- * specified in order to translate the local daytime to GMT (and vice
- * versa if a timestamp is to be decomposed in a local date and
- * daytime).
- *
- * @item rule
- * There is an additional atom @samp{rule} that is used to define when
- * daylight savings time in a timezone starts and ends. We provide
- * predefined timezone objects for a number of timezones below (see
- * the init script of this module).  Also, there is one timezone
- * called the local @samp{timezone}, which can be set to one global
- * value in a running Monet server, that is used if the timezone
- * parameter is omitted from a command that needs it (if not set, the
- * default value of the local timezone is plain GMT).
- * @end table
- *
  * Limitations
  * The valid ranges of the various data types are as follows:
  *
@@ -133,36 +114,6 @@
  * explained above). In solar terms, however, this calendar is
  * reasonably accurate (see the "correction seconds" note below).
  *
- * @item timezones
- * The basic timezone regime was established on @b{November 1, 1884}
- * in the @emph{International Meridian Conference} held in Greenwich
- * (UK). Before that, a different time held in almost any city. The
- * conference established 24 different time zones defined by regular
- * longitude intervals that all differed by one hour. Not for long it
- * was that national and political interest started to erode this
- * nicely regular system.  Timezones now often follow country borders,
- * and some regions (like the Guinea areas in Latin America) have
- * times that differ with a 15 minute grain from GMT rather than an
- * hour or even half-an-hour grain.
- *
- * An extra complication became the introduction of daylight saving
- * time (DST), which causes a time jump in spring, when the clock is
- * skips one hour and in autumn, when the clock is set back one hour
- * (so in a one hour span, the same times occur twice).  The DST
- * regime is a purely political decision made on a country-by-country
- * basis. Countries in the same timezone can have different DST
- * regimes. Even worse, some countries have DST in some years, and not
- * in other years.
- *
- * To avoid confusion, this module stores absolute points of time in
- * GMT only (GMT does not have a DST regime). When storing local times
- * in the database, or retrieving local times from absolute
- * timestamps, a correct timezone object should be used for the
- * conversion.
- *
- * Applications that do not make correct use of timezones, will
- * produce irregular results on e.g. time difference calculations.
- *
  * @item correction seconds
  * Once every such hundred years, a correction second is added on new
  * year's night.  As I do not know the rule, and this rule would
@@ -173,15 +124,6 @@
  * milliseconds (rather than in days) have a small error if the time
  * difference spans many hundreds of years.
  * @end table
- *
- * TODO: we cannot handle well changes in the timezone rules (e.g.,
- * DST only exists since 40 years, and some countries make frequent
- * changes to the DST policy). To accommodate this we should make
- * timezone_local a function with a year parameter. The tool should
- * maintain and access the timezone database stored in two bats
- * [str,timezone],[str,year].  Lookup of the correct timezone would be
- * dynamic in this structure. The timezone_setlocal would just set the
- * string name of the timezone.
  *
  * Time/date comparison
  */
@@ -194,66 +136,6 @@
 extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
-#define rule_nil			((rule) int_nil)
-#define is_rule_nil(r)		((r) == rule_nil)
-
-/* layout is based on the widths of the components */
-#define RLWEEKDAY_WIDTH	4
-#define RLDAY_WIDTH		6
-#define RLMINUTE_WIDTH	11
-#define RLMONTH_WIDTH	4
-
-#define RLWEEKDAY_SHIFT	0
-#define RLDAY_SHIFT		(RLWEEKDAY_SHIFT+RLWEEKDAY_WIDTH)
-#define RLMINUTE_SHIFT	(RLDAY_SHIFT+RLDAY_WIDTH)
-#define RLMONTH_SHIFT	(RLMINUTE_SHIFT+RLMINUTE_WIDTH)
-
-#define rule_month(r)	(((r) >> RLMONTH_SHIFT) & ((1<<RLMONTH_WIDTH)-1))
-#define rule_minutes(r)	(((r) >> RLMINUTE_SHIFT) & ((1<<RLMINUTE_WIDTH)-1))
-#define rule_day(r)		((int) (((r) >> RLDAY_SHIFT) & ((1<<RLDAY_WIDTH)-1)) - DAY_ZERO)
-#define rule_weekday(r)	((int) (((r) >> RLWEEKDAY_SHIFT) & ((1<<RLWEEKDAY_WIDTH)-1)) - WEEKDAY_ZERO)
-
-#define mkrule(month, minutes, day, weekday)			\
-	(((month) << RLMONTH_SHIFT) |						\
-	 ((minutes) << RLMINUTE_SHIFT) |					\
-	 (((day) + DAY_ZERO) << RLDAY_SHIFT) |				\
-	 (((weekday) + WEEKDAY_ZERO) << RLWEEKDAY_SHIFT))
-
-/* phony zero values, used to get negative numbers from unsigned
- * sub-integers in rule */
-#define WEEKDAY_ZERO	8
-#define DAY_ZERO		32
-#define OFFSET_ZERO		4096
-
-#define tzone_nil			((tzone) lng_nil)
-#define is_tzone_nil(z)		((z) == tzone_nil)
-
-/* layout is based on the widths of the components; the width of the
- * start and end rules comes from the number of bits used for them (see
- * above) */
-#define ZNEND_WIDTH		(RLWEEKDAY_WIDTH+RLDAY_WIDTH+RLMINUTE_WIDTH+RLMONTH_WIDTH)
-#define ZNSTART_WIDTH	ZNEND_WIDTH
-#define ZNOFF_WIDTH		13
-#define	ZNDST_WIDTH		1
-
-#define ZNEND_SHIFT		0
-#define ZNSTART_SHIFT	(ZNEND_SHIFT+ZNEND_WIDTH)
-#define ZNOFF_SHIFT		(ZNSTART_SHIFT+ZNSTART_WIDTH)
-#define ZNDST_SHIFT		(ZNOFF_SHIFT+ZNOFF_WIDTH)
-
-#define tzone_dst(z)		((bool) (((z) >> ZNDST_SHIFT) & ((1<<ZNDST_WIDTH)-1)))
-#define tzone_off(z)		((int) (((z) >> ZNOFF_SHIFT) & ((1<<ZNOFF_WIDTH)-1)) - OFFSET_ZERO)
-#define tzone_start(z)		((rule) (((z) >> ZNSTART_SHIFT) & ((1<<ZNSTART_WIDTH)-1)))
-#define tzone_end(z)		((rule) (((z) >> ZNEND_SHIFT) & ((1<<ZNEND_WIDTH)-1)))
-
-#define mktzone(dst, off, start, end)							\
-			(((uint64_t) (dst) << ZNDST_SHIFT)					\
-			 | ((uint64_t) ((off) + OFFSET_ZERO) << ZNOFF_SHIFT)	\
-			 | ((uint64_t) (start) << ZNSTART_SHIFT)				\
-			 | ((uint64_t) (end) << ZNEND_SHIFT))
-
-tzone tzone_local;
-
 static const char *MONTHS[13] = {
 	NULL, "january", "february", "march", "april", "may", "june",
 	"july", "august", "september", "october", "november", "december"
@@ -262,12 +144,6 @@ static const char *MONTHS[13] = {
 static const char *DAYS[8] = {
 	NULL, "monday", "tuesday", "wednesday", "thursday",
 	"friday", "saturday", "sunday"
-};
-static const char *COUNT1[7] = {
-	NULL, "first", "second", "third", "fourth", "fifth", "last"
-};
-static const char *COUNT2[7] = {
-	NULL, "1st", "2nd", "3rd", "4th", "5th", "last"
 };
 static int LEAPDAYS[13] = {
 	0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -294,8 +170,6 @@ date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 int TYPE_date;
 int TYPE_daytime;
 int TYPE_timestamp;
-int TYPE_tzone;
-int TYPE_rule;
 
 static bool synonyms = true;
 
@@ -502,89 +376,6 @@ timestamp_add(timestamp t, lng us)
 	if (is_date_nil(dt))
 		return timestamp_nil;
 	return mktimestamp(dt, tm);
-}
-
-static date
-compute_rule(rule val, int y)
-{
-	int m = rule_month(val);
-	int d = rule_day(val);
-	int w = rule_weekday(val);
-	int wd;
-
-	if (w == 0) {
-		/* d-th of month */
-	} else if (d > 0) {
-		if (w < 0) {
-			/* first weekday (-w) on or after d-th of month */
-			wd = date_dayofweek(mkdate(y, m, d));
-			d += (-w + 7 - wd) % 7;
-		} else {
-			/* d-th weekday (w) of month */
-			wd = date_dayofweek(mkdate(y, m, 1));
-			d = 1 + (w + 7 - wd) % 7 + (d - 1) * 7;
-		}
-		if (d > monthdays(y, m)) {
-			d -= monthdays(y, m);
-			if (++m > 12)
-				y++;
-		}
-	} else {
-		d = -d;
-		if (w > 0) {
-			/* cnt-last weekday from end of month */
-			wd = date_dayofweek(mkdate(y, m, monthdays(y, m)));
-			d = monthdays(y, m) - (wd + 7 - w) % 7 - (d - 1) * 7;
-		} else {
-			/* first weekday on or before cnt-th of month */
-			wd = date_dayofweek(mkdate(y, m, d));
-			d -= (wd + 7 + w) % 7;
-		}
-		while (d < 0) {
-			if (--m == 0) {
-				m = 12;
-				y--;
-			}
-			d += monthdays(y, m);
-		}
-	}
-	return mkdate(y, m, d);
-}
-
-#define BEFORE(d1, m1, d2, m2) ((d1) < (d2) || ((d1) == (d2) && (m1) <= (m2)))
-
-static bool
-timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, int offset)
-{
-	/* starts with GMT time t, and returns whether it is in the DST for z */
-	date start_date, end_date, t_date;
-	daytime start_time, end_time, t_time;
-	int year;
-	rule start, end;
-
-	*ret = timestamp_add(*t, ((offset != 0) ? offset : tzone_off(*z)) * LL_CONSTANT(60000000));
-
-	if (is_timestamp_nil(*ret) || tzone_dst(*z) == 0) {
-		return false;
-	}
-	start = tzone_start(*z);
-	end = tzone_end(*z);
-
-	start_time = mkdaytime(0, rule_minutes(start), 0, 0);
-	end_time = mkdaytime(0, rule_minutes(end), 0, 0);
-
-	t_date = ts_date(*ret);
-	t_time = ts_time(*ret);
-
-	year = date_year(t_date);
-	start_date = compute_rule(start, year);
-	end_date = compute_rule(end, year);
-
-	return BEFORE(start_date, start_time, end_date, end_time) ?
-		(BEFORE(start_date, start_time, t_date, t_time) &&
-		 BEFORE(t_date, t_time, end_date, end_time)) :
-		(BEFORE(start_date, start_time, t_date, t_time) ||
-		 BEFORE(t_date, t_time, end_date, end_time));
 }
 
 /*
@@ -841,9 +632,6 @@ daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 		if (s[0] != '-')
 			offset = -offset;
 		s += pos;
-	} else {
-		/* if no tzone is specified; work with the local */
-		offset = tzone_off(tzone_local) * -60;
 	}
 	val = **ret + (lng) offset * 1000000;
 	if (val < 0)
@@ -937,14 +725,6 @@ timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
 			if (s[0] != '-')
 				offset = -offset;
 			s += pos;
-		} else {
-			/* if no tzone is specified; work with the local */
-			timestamp tmp = **ret;
-
-			offset = tzone_off(tzone_local) * LL_CONSTANT(-60000000);
-			if (timestamp_inside(&tmp, &tmp, &tzone_local, LL_CONSTANT(-3600000))) {
-				**ret = tmp;
-			}
 		}
 		**ret = timestamp_add(**ret, offset);
 	}
@@ -977,9 +757,6 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 		if (s[0] != '-')
 			offset = -offset;
 		s += pos;
-	} else {
-		/* if no tzone is specified; work with the local */
-		offset = tzone_off(tzone_local) * LL_CONSTANT(-60000000);
 	}
 	**ret = timestamp_add(**ret, offset);
 	return (ssize_t) (s - buf);
@@ -987,391 +764,54 @@ timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool externa
 
 
 ssize_t
-timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *timezone, bool external)
+timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external)
 {
 	ssize_t len1, len2;
 	size_t big = 128;
 	char buf1[128], buf2[128], *s = *buf, *s1 = buf1, *s2 = buf2;
-	if (timezone != NULL) {
-		/* int off = tzone_off(*timezone); */
-		timestamp tmp = *val;
+	date dt;
+	daytime tm;
 
-		if (!is_timestamp_nil(tmp) && timestamp_inside(&tmp, val, timezone, LL_CONSTANT(0))) {
-			tmp = timestamp_add(tmp, HOUR_USEC);
-			/* off += 60; */
-		}
-		date dt = ts_date(tmp);
-		daytime tm = ts_time(tmp);
-		len1 = date_tostr(&s1, &big, &dt, false);
-		len2 = daytime_tostr(&s2, &big, &tm, false);
-		if (len1 < 0 || len2 < 0)
-			return -1;
-
-		if (*len < 2 + (size_t) len1 + (size_t) len2 || *buf == NULL) {
+	if (is_timestamp_nil(*val)) {
+		if (*len < 4 || *buf == NULL) {
 			GDKfree(*buf);
-			*buf = GDKmalloc(*len = (size_t) len1 + (size_t) len2 + 2);
+			*buf = GDKmalloc(*len = 4);
 			if( *buf == NULL)
 				return -1;
 		}
-		s = *buf;
-		if (is_timestamp_nil(tmp)) {
-			if (external) {
-				strcpy(*buf, "nil");
-				return 3;
-			}
-			strcpy(*buf, str_nil);
-			return 1;
-		}
-		strcpy(s, buf1);
-		s += len1;
-		*s++ = ' ';
-		strcpy(s, buf2);
-		s += len2;
-		/* omit GMT distance in order not to confuse the confused user
-		   strcpy(s, "GMT"); s += 3;
-		   if (off) {
-		   *s++ = (off>=0)?'+':'-';
-		   sprintf(s, "%02d%02d", abs(off)/60, abs(off)%60);
-		   s += 4;
-		   }
-		 */
-	}
-	return (ssize_t) (s - *buf);
-}
-
-ssize_t
-timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external)
-{
-	return timestamp_tz_tostr(buf, len, val, &tzone_local, external);
-}
-
-static const char *
-count1(int i)
-{
-	static char buf[16];
-
-	if (i <= 0) {
-		return "(illegal number)";
-	} else if (i < 7) {
-		return COUNT1[i];
-	}
-	sprintf(buf, "%dth", i);
-	return buf;
-}
-
-/*
- * @- rule
- */
-ssize_t
-rule_tostr(str *buf, size_t *len, const rule *r, bool external)
-{
-	int hours = rule_minutes(*r) / 60;
-	int minutes = rule_minutes(*r) % 60;
-
-	if (*len < 64 || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 64);
-		if( *buf == NULL)
-			return -1;
-	}
-	if (is_rule_nil(*r)) {
-		if (external)
+		if (external) {
 			strcpy(*buf, "nil");
-		else
-			strcpy(*buf, str_nil);
-	} else if (rule_weekday(*r) == 0) {
-		snprintf(*buf, 64, "%s %d@%02d:%02d",
-				 MONTHS[rule_month(*r)], rule_day(*r), hours, minutes);
-	} else if (rule_weekday(*r) > 0) {
-		if (rule_day(*r) > 0) {
-			snprintf(*buf, 64, "%s %s from start of %s@%02d:%02d",
-					 count1(rule_day(*r)), DAYS[rule_weekday(*r)],
-					 MONTHS[rule_month(*r)], hours, minutes);
-		} else if (rule_day(*r) < 0) {
-			snprintf(*buf, 64, "%s %s from end of %s@%02d:%02d",
-					 count1(-rule_day(*r)), DAYS[rule_weekday(*r)],
-					 MONTHS[rule_month(*r)], hours, minutes);
+			return 3;
 		}
-	} else {
-		if (rule_day(*r) > 0) {
-			snprintf(*buf, 64, "first %s on or after %s %d@%02d:%02d",
-					 DAYS[-rule_weekday(*r)], MONTHS[rule_month(*r)],
-					 rule_day(*r), hours, minutes);
-		} else {
-			snprintf(*buf, 64, "last %s on or before %s %d@%02d:%02d",
-					 DAYS[-rule_weekday(*r)], MONTHS[rule_month(*r)],
-					 -rule_day(*r), hours, minutes);
-		}
-	}
-	return (ssize_t) strlen(*buf);
-}
-
-ssize_t
-rule_fromstr(const char *buf, size_t *len, rule **d, bool external)
-{
-	int day = 0, month = 0, weekday = 0, hours = 0, minutes = 0;
-	int neg_day = 0, neg_weekday = 0, pos;
-	const char *cur = buf;
-
-	if (*len < (int) sizeof(rule) || *d == NULL) {
-		GDKfree(*d);
-		*d = (rule *) GDKmalloc(*len = sizeof(rule));
-		if( *d == NULL)
-			return -1;
-	}
-	**d = rule_nil;
-	if (strcmp(buf, str_nil) == 0)
+		strcpy(*buf, str_nil);
 		return 1;
-	if (external && strncmp(buf, "nil", 3) == 0)
-		return 3;
-
-	/* start parsing something like "first", "second", .. etc */
-	pos = parse_substr(&day, cur, 0, COUNT1, 6);
-	if (pos == 0) {
-		pos = parse_substr(&day, cur, 0, COUNT2, 6);
-	}
-	if (pos && cur[pos++] == ' ') {
-		/* now we must see a weekday */
-		cur += pos;
-		cur += parse_substr(&weekday, cur, 3, DAYS, 7);
-		if (is_int_nil(weekday)) {
-			return 0;			/* syntax error */
-		}
-		pos = fleximatch(cur, " from start of ", 0);
-		if (pos == 0) {
-			pos = fleximatch(cur, " from end of ", 0);
-			if (pos)
-				neg_day = 1;
-		}
-		if (pos && day < 6) {
-			/* RULE 1+2: X-th weekday from start/end of month */
-			pos = parse_substr(&month, cur += pos, 3, MONTHS, 12);
-		} else if (day == 1) {
-			/* RULE 3: first weekday on or after-th of month */
-			pos = fleximatch(cur, " on or after ", 0);
-			neg_weekday = 1;
-			day = int_nil;		/* re-read below */
-		} else if (day == 6) {
-			/* RULE 4: last weekday on or before X-th of month */
-			pos = fleximatch(cur, " on or before ", 0);
-			neg_weekday = neg_day = 1;
-			day = int_nil;		/* re-read below */
-		}
-		if (pos == 0) {
-			GDKerror("Syntax error in timezone rule.\n");
-			return -1;
-		}
-		cur += pos;
-	}
-	if (is_int_nil(day)) {
-		/* RULE 5:  X-th of month */
-		cur += parse_substr(&month, cur, 3, MONTHS, 12);
-		if (is_int_nil(month) || *cur++ != ' ' || !GDKisdigit(*cur)) {
-			GDKerror("Syntax error in timezone rule.\n");
-			return -1;
-		}
-		day = 0;
-		while (GDKisdigit(*cur) && day < 31) {
-			day = (*(cur++) - '0') + day * 10;
-		}
 	}
 
-	/* parse hours:minutes */
-	if (*cur++ != '@' || !GDKisdigit(*cur)) {
-		GDKerror("Syntax error in timezone rule.\n");
+	dt = ts_date(*val);
+	tm = ts_time(*val);
+	len1 = date_tostr(&s1, &big, &dt, false);
+	len2 = daytime_tostr(&s2, &big, &tm, false);
+	if (len1 < 0 || len2 < 0)
 		return -1;
-	}
-	while (GDKisdigit(*cur) && hours < 24) {
-		hours = (*(cur++) - '0') + hours * 10;
-	}
-	if (*cur++ != ':' || !GDKisdigit(*cur)) {
-		GDKerror("Syntax error in timezone rule.\n");
-		return -1;
-	}
-	while (GDKisdigit(*cur) && minutes < 60) {
-		minutes = (*(cur++) - '0') + minutes * 10;
-	}
 
-	/* assign if semantically ok */
-	if (day >= 1 && day <= LEAPDAYS[month] &&
-		hours >= 0 && hours < 60 &&
-		minutes >= 0 && minutes < 60) {
-		**d = mkrule(month,
-					 hours * 60 + minutes,
-					 (neg_day ? -day : day),
-					 (neg_weekday ? -weekday : weekday));
-	}
-	return (ssize_t) (cur - buf);
-}
-
-/*
- * @- tzone
- */
-ssize_t
-tzone_fromstr(const char *buf, size_t *len, tzone **d, bool external)
-{
-	int hours = 0, minutes = 0, neg_offset = 0;
-	ssize_t pos = 0;
-	rule r1, r2;
-	const char *cur = buf;
-
-	r1 = r2 = 0;
-	if (*len < (int) sizeof(tzone) || *d == NULL) {
-		GDKfree(*d);
-		*d = (tzone *) GDKmalloc(*len = sizeof(tzone));
-		if( *d == NULL)
-			return -1;
-	}
-	**d = tzone_nil;
-	if (strcmp(buf, str_nil) == 0)
-		return 1;
-	if (external && strncmp(buf, "nil", 3) == 0)
-		return 3;
-
-	/* syntax checks */
-	if (fleximatch(cur, "gmt", 0) == 0) {
-		GDKerror("Syntax error in timezone.\n");
-		return -1;
-	}
-	cur += 3;
-	if (*cur == '-' || *cur == '+') {
-		const char *bak = cur + 1;
-
-		neg_offset = (*cur++ == '-');
-		if (!GDKisdigit(*cur)) {
-			GDKerror("Syntax error in timezone.\n");
-			return -1;
-		}
-		while (GDKisdigit(*cur) && hours < 9999) {
-			hours = (*(cur++) - '0') + hours * 10;
-		}
-		if (*cur == ':' && GDKisdigit(cur[1])) {
-			cur++;
-			do {
-				minutes = (*(cur++) - '0') + minutes * 10;
-			} while (GDKisdigit(*cur) && minutes < 60);
-		} else if (*cur != ':' && (cur - bak) == 4) {
-			minutes = hours % 100;
-			hours = hours / 100;
-		} else {
-			GDKerror("Syntax error in timezone.\n");
-			return -1;
-		}
-	}
-	if (fleximatch(cur, "-dst[", 0)) {
-		rule *rp = &r1;
-		pos = rule_fromstr(cur += 5, len, &rp, false);
-		if (pos < 0)
-			return pos;
-		if (is_rule_nil(r1)) {
-			**d = tzone_nil;
-			return (ssize_t) (cur + pos - buf);;
-		}
-		if (cur[pos++] != ',') {
-			GDKerror("Syntax error in timezone.\n");
-			return -1;
-		}
-		rp = &r2;
-		pos = rule_fromstr(cur += pos, len, &rp, false);
-		if (pos < 0)
-			return pos;
-		if (is_rule_nil(r2)) {
-			**d = tzone_nil;
-			return (ssize_t) (cur + pos - buf);;
-		}
-		if (cur[pos++] != ']') {
-			GDKerror("Syntax error in timezone.\n");
-			return -1;
-		}
-		cur += pos;
-	}
-	/* semantic check */
-	if (hours < 24 && minutes < 60 &&
-		!is_rule_nil(r1) && !is_rule_nil(r2)) {
-		minutes += hours * 60;
-		if (neg_offset)
-			minutes = -minutes;
-		if (pos) {
-			**d = mktzone(true, minutes, r1, r2);
-		} else {
-			**d = mktzone(false, minutes, 0, 0);
-		}
-	}
-	return (ssize_t) (cur - buf);
-}
-
-ssize_t
-tzone_tostr(str *buf, size_t *len, const tzone *z, bool external)
-{
-	str s;
-
-	if (*len < 160 || *buf == NULL) {
+	if (*len < 2 + (size_t) len1 + (size_t) len2 || *buf == NULL) {
 		GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 160);
+		*buf = GDKmalloc(*len = (size_t) len1 + (size_t) len2 + 2);
 		if( *buf == NULL)
 			return -1;
 	}
 	s = *buf;
-	if (is_tzone_nil(*z)) {
-		if (external) {
-			strcpy(s, "nil");
-			s += 3;
-		} else {
-			strcpy(s, str_nil);
-			s += 1;
-		}
-	} else {
-		rule dst_start, dst_end;
-		int mins = tzone_off(*z);
-
-		dst_start = tzone_start(*z);
-		dst_end = tzone_end(*z);
-
-		if (external && tzone_dst(*z))
-			*s++ = '"';
-		strcpy(s, "GMT");
-		s += 3;
-		if (mins > 0) {
-			sprintf(s, "+%02d:%02d", mins / 60, mins % 60);
-			s += 6;
-		} else if (mins < 0) {
-			sprintf(s, "-%02d:%02d", (-mins) / 60, (-mins) % 60);
-			s += 6;
-		}
-		if (tzone_dst(*z)) {
-			ssize_t l;
-			strcpy(s, "-DST[");
-			s += 5;
-			l = rule_tostr(&s, len, &dst_start, false);
-			if (l < 0)
-				return -1;
-			s += l;
-			*s++ = ',';
-			l = rule_tostr(&s, len, &dst_end, false);
-			if (l < 0)
-				return -1;
-			s += l;
-			*s++ = ']';
-			if (external)
-				*s++ = '"';
-			*s = 0;
-		}
-	}
+	strcpy(s, buf1);
+	s += len1;
+	*s++ = ' ';
+	strcpy(s, buf2);
+	s += len2;
 	return (ssize_t) (s - *buf);
 }
 
 /*
  * operator implementations
  */
-static str
-tzone_set_local(const tzone *z)
-{
-	if (is_tzone_nil(*z))
-		throw(MAL, "mtime.timezone_local", "cannot set timezone to nil");
-	tzone_local = *z;
-	return MAL_SUCCEED;
-}
-
 static daytime
 daytime_add(daytime v, lng usec)
 {
@@ -1386,40 +826,15 @@ str
 MTIMEtimestamp_add(timestamp *ret, const timestamp *v, const lng *msec)
 {
 	if (!is_timestamp_nil(*v) && !is_lng_nil(*msec)) {
-		*ret = timestamp_add(*v, *msec * 1000);
-		if (is_timestamp_nil(*ret))
+		timestamp t = timestamp_add(*v, *msec * 1000);
+		if (is_timestamp_nil(t))
 			throw(MAL, "time.add", SQLSTATE(22003) "overflow in calculation");
+		*ret = t;
 	} else {
 		*ret = timestamp_nil;
 	}
 	return MAL_SUCCEED;
 }
-
-/*
- * Wrapper
- * The Monet V5 API interface is defined here
- */
-#define TIMEZONES(X1, X2)												\
-	do {																\
-		str err;														\
-		ticks = (X2);													\
-		if ((err = MTIMEtzone_create(&tz, &ticks)) != MAL_SUCCEED) \
-			return err;													\
-		if (BUNappend(tzbatnme, (X1), false) != GDK_SUCCEED ||			\
-			BUNappend(tzbatdef, &tz, false) != GDK_SUCCEED)				\
-			goto bailout;												\
-	} while (0)
-
-#define TIMEZONES2(X1, X2, X3, X4)										\
-	do {																\
-		str err;														\
-		ticks = (X2);													\
-		if ((err = MTIMEtzone_create_dst(&tz, &ticks, &(X3), &(X4))) != MAL_SUCCEED) \
-			return err;													\
-		if (BUNappend(tzbatnme, (X1), false) != GDK_SUCCEED ||			\
-			BUNappend(tzbatdef, &tz, false) != GDK_SUCCEED)				\
-			goto bailout;												\
-	} while (0)
 
 /*
  * Include BAT macros
@@ -1456,102 +871,25 @@ MTIMEtimestamp2timestamp(timestamp *ret, const timestamp *src)
 	return MAL_SUCCEED;
 }
 
-static BAT *timezone_name = NULL;
-static BAT *timezone_def = NULL;
-
 void MTIMEreset(void) {
-	if (timezone_name)
-		BBPunfix(timezone_name->batCacheid);
-	timezone_name = NULL;
-	if (timezone_def)
-		BBPunfix(timezone_def->batCacheid);
-	timezone_def = NULL;
 }
 
 str
 MTIMEprelude(void *ret)
 {
-	const char *msg = NULL;
-	char *err;
-	int ticks;
-	rule RULE_MAR, RULE_OCT;
-	const char *s1 = "first sunday from end of march@02:00";
-	const char *s2 = "first sunday from end of october@02:00";
-	tzone tz;
-	BAT *tzbatnme;
-	BAT *tzbatdef;
-
 	(void) ret;
 
 	TYPE_date = ATOMindex("date");
 	TYPE_daytime = ATOMindex("daytime");
 	TYPE_timestamp = ATOMindex("timestamp");
-	TYPE_tzone = ATOMindex("timezone");
-	TYPE_rule = ATOMindex("rule");
 
 	MONTHS[0] = (str) str_nil;
 	DAYS[0] = (str) str_nil;
 	LEAPDAYS[0] = int_nil;
 	DATE_MAX = todate(YEAR_MAX, 12, 31);
 	DATE_MIN = todate(YEAR_MIN, 1, 1);
-	tzone_local = mktzone(false, 0, 0, 0);
 
-	tz = tzone_nil;			/* to ensure initialized variables */
-
-	/* if it was already filled we can skip initialization */
-	if( timezone_name )
-		return MAL_SUCCEED;
-	tzbatnme = COLnew(0, TYPE_str, 30, TRANSIENT);
-	tzbatdef = COLnew(0, ATOMindex("timezone"), 30, TRANSIENT);
-
-	if (tzbatnme == NULL || tzbatdef == NULL) {
-		BBPreclaim(tzbatnme);
-		BBPreclaim(tzbatdef);
-		throw(MAL, "time.prelude", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	if (BBPrename(tzbatnme->batCacheid, "timezone_name") != 0 ||
-		BBPrename(tzbatdef->batCacheid, "timezone_def") != 0)
-		throw(MAL, "time.prelude", GDK_EXCEPTION);
-	timezone_name = tzbatnme;
-	timezone_def = tzbatdef;
-
-/* perhaps add the following to the global kvstore
-* 	timezone_name
-* 	timezone_def
-*/
-	TIMEZONES("Wake Island", 12 * 60);
-	TIMEZONES("Melbourne/Australia", 11 * 60);
-	TIMEZONES("Brisbane/Australia", 10 * 60);
-	TIMEZONES("Japan", 9 * 60);
-	TIMEZONES("Singapore", 8 * 60);
-	TIMEZONES("Thailand", 7 * 60);
-	TIMEZONES("Pakistan", 5 * 60);
-	TIMEZONES("United Arab Emirates", 4 * 60);
-	TIMEZONES("GMT", 0 * 0);
-	TIMEZONES("Azore Islands", -1 * 60);
-	TIMEZONES("Hawaii/USA", -10 * 60);
-	TIMEZONES("American Samoa", -11 * 60);
-	if ((err = MTIMErule_fromstr(&RULE_MAR, &s1)) != MAL_SUCCEED ||
-		(err = MTIMErule_fromstr(&RULE_OCT, &s2)) != MAL_SUCCEED)
-		return err;
-	TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT);
-	TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT);
-	TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT);
-	TIMEZONES2("West/Europe", 1 * 60, RULE_MAR, RULE_OCT);
-	TIMEZONES2("UK", 0 * 0, RULE_MAR, RULE_OCT);
-	TIMEZONES2("Eastern/Brazil", -2 * 60, RULE_OCT, RULE_MAR);
-	TIMEZONES2("Western/Brazil", -3 * 60, RULE_OCT, RULE_MAR);
-	TIMEZONES2("Andes/Brazil", -4 * 60, RULE_OCT, RULE_MAR);
-	TIMEZONES2("East/USA", -5 * 60, RULE_MAR, RULE_OCT);
-	TIMEZONES2("Central/USA", -6 * 60, RULE_MAR, RULE_OCT);
-	TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT);
-	TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT);
-	msg = "West/Europe";
-	return MTIMEtimezone(&tz, &msg);
-  bailout:
-	BBPreclaim(tzbatnme);
-	BBPreclaim(tzbatdef);
-	throw(MAL, "mtime.prelude", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1568,48 +906,6 @@ MTIMEsynonyms(void *ret, const bit *allow)
 	(void) ret;
 	if (!is_bit_nil(*allow))
 		synonyms = *allow;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimezone(tzone *ret, const char * const *name)
-{
-	BUN p;
-	str s;
-	tzone *z;
-	BATiter tzi;
-
-	if ((p = BUNfnd(timezone_name, *name)) == BUN_NONE)
-		throw(MAL, "mtime.setTimezone", "unknown timezone");
-	tzi = bat_iterator(timezone_def);
-	z = (tzone *) BUNtloc(tzi, p);
-	if ((s = tzone_set_local(z)) != MAL_SUCCEED)
-		return s;
-	*ret = *z;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtzone_set_local(void *res, const tzone *z)
-{
-	(void) res;					/* fool compilers */
-	return tzone_set_local(z);
-}
-
-str
-MTIMEtzone_get_local(tzone *z)
-{
-	*z = tzone_local;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMElocal_timezone(lng *res)
-{
-	tzone z;
-
-	MTIMEtzone_get_local(&z);
-	*res = tzone_off(z);
 	return MAL_SUCCEED;
 }
 
@@ -1705,48 +1001,31 @@ MTIMEtimestamp_fromstr(timestamp *ret, const char * const *d)
 
 /* creates a timestamp from (date,daytime) parameters */
 str
-MTIMEtimestamp_create(timestamp *ret, const date *d, const daytime *t, const tzone *z)
+MTIMEtimestamp_create(timestamp *ret, const date *d, const daytime *t)
 {
-	if (is_date_nil(*d) || is_daytime_nil(*t) || is_tzone_nil(*z)) {
+	if (is_date_nil(*d) || is_daytime_nil(*t)) {
 		*ret = timestamp_nil;
 	} else {
-		lng add = tzone_off(*z) * LL_CONSTANT(-60000000);
-
 		*ret = mktimestamp(*d, *t);
-		if (tzone_dst(*z)) {
-			timestamp tmp;
-
-			if (timestamp_inside(&tmp, ret, z, LL_CONSTANT(-3600000))) {
-				*ret = tmp;
-			}
-		}
-		*ret = timestamp_add(*ret, add);
 	}
 	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_create_default(timestamp *ret, const date *d, const daytime *t)
-{
-	return MTIMEtimestamp_create(ret, d, t, &tzone_local);
 }
 
 str
 MTIMEtimestamp_create_from_date(timestamp *ret, const date *d)
 {
 	daytime t = totime(0, 0, 0, 0);
-	return MTIMEtimestamp_create(ret, d, &t, &tzone_local);
+	return MTIMEtimestamp_create(ret, d, &t);
 }
 
 str
 MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 {
 	BAT *b, *bn;
-	timestamp *t, tmp;
+	timestamp *t;
 	const date *d;
 	const daytime dt = totime(0, 0, 0, 0);
 	BUN n;
-	lng add = tzone_off(tzone_local) * LL_CONSTANT(-60000000);
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1763,12 +1042,6 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 			bn->tnil = true;
 		} else {
 			*t = mktimestamp(*d, dt);
-			if (tzone_dst(tzone_local) &&
-				timestamp_inside(&tmp, t, &tzone_local, LL_CONSTANT(-3600000)))
-				*t = tmp;
-			*t = timestamp_add(*t, add);
-			if (is_timestamp_nil(*t))
-				bn->tnil = true;
 		}
 	}
 	BATsetcount(bn, BATcount(b));
@@ -1947,21 +1220,10 @@ MTIMEdaytime_extract_milliseconds(int *ret, const daytime *v)
 
 /* extracts daytime from timestamp */
 str
-MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t, const tzone *z)
+MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t)
 {
-	if (is_timestamp_nil(*t) || (z != NULL && is_tzone_nil(*z))) {
+	if (is_timestamp_nil(*t)) {
 		*ret = daytime_nil;
-	} else if (z) {
-		timestamp tmp;
-
-		if (timestamp_inside(&tmp, t, z, LL_CONSTANT(0))) {
-			tmp = timestamp_add(tmp, HOUR_USEC);
-		}
-		if (is_timestamp_nil(tmp)) {
-			*ret = daytime_nil;
-		} else {
-			*ret = ts_time(tmp);
-		}
 	} else {
 		*ret = ts_time(*t);
 	}
@@ -1969,20 +1231,13 @@ MTIMEtimestamp_extract_daytime(daytime *ret, const timestamp *t, const tzone *z)
 }
 
 str
-MTIMEtimestamp_extract_daytime_default(daytime *ret, const timestamp *t)
-{
-	return MTIMEtimestamp_extract_daytime(ret, t, &tzone_local);
-}
-
-str
-MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
+MTIMEtimestamp_extract_daytime_bulk(bat *ret, bat *bid)
 {
 	BAT *b = BATdescriptor(*bid);
 	BAT *bn;
 	const timestamp *t;
 	daytime *dt;
 	BUN n;
-	timestamp tmp;
 
 	if (b == NULL)
 		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1994,24 +1249,18 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 	t = (const timestamp *) Tloc(b, 0);
 	dt = (daytime *) Tloc(bn, 0);
 	bn->tnil = false;
-	for (n = BATcount(b); n > 0; n--, t++, dt++) {
-		if (is_timestamp_nil(*t)) {
-			*dt = daytime_nil;
+	n = BATcount(b);
+	for (BUN i = 0; i < n; i++) {
+		if (is_timestamp_nil(t[i])) {
+			dt[i] = daytime_nil;
 			bn->tnil = true;
 		} else {
-			if (timestamp_inside(&tmp, t, &tzone_local, LL_CONSTANT(0)))
-				tmp = timestamp_add(tmp, HOUR_USEC);
-			if (is_timestamp_nil(tmp)) {
-				*dt = daytime_nil;
-				bn->tnil = true;
-			} else {
-				*dt = ts_time(tmp);
-			}
+			dt[i] = ts_time(t[i]);
 		}
 	}
-	BATsetcount(bn, BATcount(b));
-	bn->tsorted = b->tsorted || BATcount(bn) <= 1;
-	bn->trevsorted = b->trevsorted || BATcount(bn) <= 1;
+	BATsetcount(bn, n);
+	bn->tsorted = b->tsorted || n <= 1;
+	bn->trevsorted = b->trevsorted || n <= 1;
 	bn->tnonil = !bn->tnil;
 	BBPunfix(b->batCacheid);
 	*ret = bn->batCacheid;
@@ -2021,21 +1270,10 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 
 /* extracts date from timestamp */
 str
-MTIMEtimestamp_extract_date(date *ret, const timestamp *t, const tzone *z)
+MTIMEtimestamp_extract_date(date *ret, const timestamp *t)
 {
-	if (is_timestamp_nil(*t) || (z != NULL && is_tzone_nil(*z))) {
+	if (is_timestamp_nil(*t)) {
 		*ret = date_nil;
-	} else if (z) {
-		timestamp tmp;
-
-		if (timestamp_inside(&tmp, t, z, LL_CONSTANT(0))) {
-			tmp = timestamp_add(tmp, HOUR_USEC);
-		}
-		if (is_timestamp_nil(tmp)) {
-			*ret = date_nil;
-		} else {
-			*ret = ts_date(tmp);
-		}
 	} else {
 		*ret = ts_date(*t);
 	}
@@ -2043,20 +1281,13 @@ MTIMEtimestamp_extract_date(date *ret, const timestamp *t, const tzone *z)
 }
 
 str
-MTIMEtimestamp_extract_date_default(date *ret, const timestamp *t)
-{
-	return MTIMEtimestamp_extract_date(ret, t, &tzone_local);
-}
-
-str
-MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
+MTIMEtimestamp_extract_date_bulk(bat *ret, bat *bid)
 {
 	BAT *b = BATdescriptor(*bid);
 	BAT *bn;
 	const timestamp *t;
 	date *d;
 	BUN n;
-	timestamp tmp;
 
 	if (b == NULL)
 		throw(MAL, "batcalc.date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -2068,24 +1299,18 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 	t = (const timestamp *) Tloc(b, 0);
 	d = (date *) Tloc(bn, 0);
 	bn->tnil = false;
-	for (n = BATcount(b); n > 0; n--, t++, d++) {
-		if (is_timestamp_nil(*t)) {
-			*d = date_nil;
+	n = BATcount(b);
+	for (BUN i = 0; i < n; i++) {
+		if (is_timestamp_nil(t[i])) {
+			d[i] = date_nil;
 			bn->tnil = true;
 		} else {
-			if (timestamp_inside(&tmp, t, &tzone_local, LL_CONSTANT(0)))
-				tmp = timestamp_add(tmp, HOUR_USEC);
-			if (is_timestamp_nil(tmp)) {
-				*d = date_nil;
-				bn->tnil = true;
-			} else {
-				*d = ts_date(tmp);
-			}
+			d[i] = ts_date(t[i]);
 		}
 	}
-	BATsetcount(bn, BATcount(b));
-	bn->tsorted = b->tsorted || BATcount(bn) <= 1;
-	bn->trevsorted = b->trevsorted || BATcount(bn) <= 1;
+	BATsetcount(bn, n);
+	bn->tsorted = b->tsorted || n <= 1;
+	bn->trevsorted = b->trevsorted || n <= 1;
 	bn->tnonil = !bn->tnil;
 	BBPunfix(b->batCacheid);
 	*ret = bn->batCacheid;
@@ -2296,150 +1521,6 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 	return MAL_SUCCEED;
 }
 
-/* return whether DST holds in the tzone at a certain point of time. */
-str
-MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z)
-{
-	*ret = FALSE;
-
-	if (is_tzone_nil(*z)) {
-		*ret = bit_nil;
-	} else if (tzone_dst(*z)) {
-		timestamp tmp;
-
-		if (timestamp_inside(&tmp, p, z, LL_CONSTANT(0))) {
-			*ret = TRUE;
-		}
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MTIMErule_fromstr(rule *ret, const char * const *s)
-{
-	size_t len = sizeof(rule);
-
-	if (strcmp(*s, "nil") == 0) {
-		*ret = rule_nil;
-		return MAL_SUCCEED;
-	}
-	if (rule_fromstr(*s, &len, &ret, false) < 0)
-		throw(MAL, "mtime.rule", GDK_EXCEPTION);
-	return MAL_SUCCEED;
-}
-
-/* create a DST start/end date rule. */
-str
-MTIMErule_create(rule *ret, const int *month, const int *day, const int *weekday, const int *minutes)
-{
-	*ret = rule_nil;
-	if (!is_int_nil(*month) && *month >= 1 && *month <= 12 &&
-		!is_int_nil(*weekday) && abs(*weekday) <= 7 &&
-		!is_int_nil(*minutes) && *minutes >= 0 && *minutes < 24 * 60 &&
-		!is_int_nil(*day) && abs(*day) >= 1 && abs(*day) <= LEAPDAYS[*month] &&
-		(*weekday || *day > 0)) {
-		*ret = mkrule(*month, *minutes, *day, *weekday);
-	}
-	return MAL_SUCCEED;
-}
-
-/* create a tzone as a simple hour difference from GMT. */
-str
-MTIMEtzone_create_dst(tzone *ret, const int *minutes, const rule *start, const rule *end)
-{
-	*ret = tzone_nil;
-	if (!is_int_nil(*minutes) && abs(*minutes) < 24 * 60 &&
-		!is_rule_nil(*start) && !is_rule_nil(*end)) {
-		*ret = mktzone(true, *minutes, *start, *end);
-	}
-	return MAL_SUCCEED;
-}
-
-/* create a tzone as an hour difference from GMT and a DST. */
-str
-MTIMEtzone_create(tzone *ret, const int *minutes)
-{
-	*ret = tzone_nil;
-	if (!is_int_nil(*minutes) && abs(*minutes) < 24 * 60) {
-		*ret = mktzone(false, *minutes, 0, 0);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtzone_create_lng(tzone *ret, const lng *minutes)
-{
-	*ret = tzone_nil;
-	if (!is_lng_nil(*minutes) && *minutes < 24 * 60 && -*minutes < 24 * 60) {
-		*ret = mktzone(false, *minutes, 0, 0);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extract month from rule. */
-str
-MTIMErule_extract_month(int *ret, const rule *r)
-{
-	*ret = (is_rule_nil(*r)) ? int_nil : rule_month(*r);
-	return MAL_SUCCEED;
-}
-
-/* extract day from rule. */
-str
-MTIMErule_extract_day(int *ret, const rule *r)
-{
-	*ret = (is_rule_nil(*r)) ? int_nil : rule_day(*r);
-	return MAL_SUCCEED;
-}
-
-/* extract weekday from rule. */
-str
-MTIMErule_extract_weekday(int *ret, const rule *r)
-{
-	*ret = (is_rule_nil(*r)) ? int_nil : rule_weekday(*r);
-	return MAL_SUCCEED;
-}
-
-/* extract minutes from rule. */
-str
-MTIMErule_extract_minutes(int *ret, const rule *r)
-{
-	*ret = (is_rule_nil(*r)) ? int_nil : rule_minutes(*r);
-	return MAL_SUCCEED;
-}
-
-/* extract rule that determines start of DST from tzone. */
-str
-MTIMEtzone_extract_start(rule *ret, const tzone *t)
-{
-	if (is_tzone_nil(*t) || !tzone_dst(*t)) {
-		*ret = rule_nil;
-	} else {
-		*ret = tzone_start(*t);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extract rule that determines end of DST from tzone. */
-str
-MTIMEtzone_extract_end(rule *ret, const tzone *t)
-{
-	if (is_tzone_nil(*t) || !tzone_dst(*t)) {
-		*ret = rule_nil;
-	} else {
-		*ret = tzone_end(*t);
-	}
-	return MAL_SUCCEED;
-}
-
-/* extract number of minutes that tzone is offset wrt GMT. */
-str
-MTIMEtzone_extract_minutes(int *ret, const tzone *t)
-{
-	*ret = (is_tzone_nil(*t)) ? int_nil : tzone_off(*t);
-	return MAL_SUCCEED;
-}
-
 str
 MTIMEdate_sub_sec_interval_wrap(date *ret, const date *t, const int *sec)
 {
@@ -2529,13 +1610,13 @@ MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *v, c
 	daytime t;
 	date d;
 	int m;
-	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
-	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	MTIMEtimestamp_extract_daytime(&t, v);
+	MTIMEtimestamp_extract_date(&d, v);
 	if (*months > (YEAR_MAX*12))
 		throw(MAL, "mtime.timestamp_sub_interval", "too many months");
 	m = (int)*months;
 	MTIMEdate_addmonths(&d, &d, &m);
-	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+	return MTIMEtimestamp_create(ret, &d, &t);
 }
 
 str
@@ -2544,10 +1625,10 @@ MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, const timestamp *v, const
 	daytime t;
 	date d;
 	int m = -*months;
-	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
-	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	MTIMEtimestamp_extract_daytime(&t, v);
+	MTIMEtimestamp_extract_date(&d, v);
 	MTIMEdate_addmonths(&d, &d, &m);
-	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+	return MTIMEtimestamp_create(ret, &d, &t);
 }
 
 str
@@ -2556,13 +1637,13 @@ MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *v, c
 	daytime t;
 	date d;
 	int m;
-	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
-	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
+	MTIMEtimestamp_extract_daytime(&t, v);
+	MTIMEtimestamp_extract_date(&d, v);
 	if (*months > (YEAR_MAX*12))
 		throw(MAL, "mtime.timestamp_sub_interval", "too many months");
 	m = -(int)*months;
 	MTIMEdate_addmonths(&d, &d, &m);
-	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
+	return MTIMEtimestamp_create(ret, &d, &t);
 }
 
 
@@ -2591,46 +1672,6 @@ MTIMEtime_sub_msec_interval_wrap(daytime *ret, const daytime *t, const lng *msec
 			throw(MAL, "mtime.time_sub_msec_interval",
 				  SQLSTATE(22003) "overflow in calculation");
 	}
-	return MAL_SUCCEED;
-}
-
-/* compute the date from a rule in a certain year. */
-str
-MTIMEcompute_rule_foryear(date *ret, const rule *val, const int *year)
-{
-	if (is_rule_nil(*val) || *year < YEAR_MIN || *year > YEAR_MAX) {
-		*ret = date_nil;
-	} else {
-		*ret = compute_rule(*val, *year);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtzone_tostr(str *s, const tzone *ret)
-{
-	char *s1 = NULL;
-	size_t len = 0;
-
-	if (tzone_tostr(&s1, &len, ret, false) < 0) {
-		GDKfree(s1);
-		throw(MAL, "mtime,str", GDK_EXCEPTION);
-	}
-	*s = s1;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtzone_fromstr(tzone *ret, const char * const *s)
-{
-	size_t len = sizeof(tzone);
-
-	if (strcmp(*s, "nil") == 0) {
-		*ret = tzone_nil;
-		return MAL_SUCCEED;
-	}
-	if (tzone_fromstr(*s, &len, &ret, false) < 0)
-		throw(MAL, "mtime.timezone", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
@@ -2925,39 +1966,6 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 }
 
 str
-MTIMEruleDef0(rule *ret, const int *m, const int *d, const int *w, const int *h, const int *mint)
-{
-	int d0 = 60 * *h;
-	int d1 = d0 + *mint;
-
-	return MTIMErule_create(ret, m, d, w, &d1);
-}
-
-str
-MTIMEruleDef1(rule *ret, const int *m, const char * const *dnme, const int *w, const int *h, const int *mint)
-{
-	int d;
-	int d0 = 60 * *h;
-	int d1 = d0 + *mint;
-	str e;
-
-	if ((e = MTIMEday_from_str(&d, dnme)) != MAL_SUCCEED)
-		return e;
-	return MTIMErule_create(ret, m, &d, w, &d1);
-}
-
-str
-MTIMEruleDef2(rule *ret, const int *m, const char * const *dnme, const int *w, const int *mint)
-{
-	int d;
-	str e;
-
-	if ((e = MTIMEday_from_str(&d, dnme)) != MAL_SUCCEED)
-		return e;
-	return MTIMErule_create(ret, m, &d, w, mint);
-}
-
-str
 MTIMEcurrent_timestamp(timestamp *ret)
 {
 #if defined(HAVE_GETSYSTEMTIMEASFILETIME)
@@ -2993,7 +2001,7 @@ MTIMEcurrent_date(date *d)
 
 	if ((e = MTIMEcurrent_timestamp(&stamp)) != MAL_SUCCEED)
 		return e;
-	return MTIMEtimestamp_extract_date_default(d, &stamp);
+	return MTIMEtimestamp_extract_date(d, &stamp);
 }
 
 str
@@ -3004,7 +2012,7 @@ MTIMEcurrent_time(daytime *t)
 
 	if ((e = MTIMEcurrent_timestamp(&stamp)) != MAL_SUCCEED)
 		return e;
-	return MTIMEtimestamp_extract_daytime_default(t, &stamp);
+	return MTIMEtimestamp_extract_daytime(t, &stamp);
 }
 
 /* more SQL extraction utilities */
@@ -3014,7 +2022,7 @@ MTIMEtimestamp_year(int *ret, const timestamp *t)
 	date d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_date(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdate_extract_year(ret, &d);
 }
@@ -3025,7 +2033,7 @@ MTIMEtimestamp_quarter(int *ret, const timestamp *t)
 	date d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_date(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdate_extract_quarter(ret, &d);
 }
@@ -3036,7 +2044,7 @@ MTIMEtimestamp_month(int *ret, const timestamp *t)
 	date d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_date(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdate_extract_month(ret, &d);
 }
@@ -3048,7 +2056,7 @@ MTIMEtimestamp_day(int *ret, const timestamp *t)
 	date d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_date(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdate_extract_day(ret, &d);
 }
@@ -3059,7 +2067,7 @@ MTIMEtimestamp_hours(int *ret, const timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdaytime_extract_hours(ret, &d);
 }
@@ -3070,7 +2078,7 @@ MTIMEtimestamp_minutes(int *ret, const timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdaytime_extract_minutes(ret, &d);
 }
@@ -3081,7 +2089,7 @@ MTIMEtimestamp_seconds(int *ret, const timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdaytime_extract_seconds(ret, &d);
 }
@@ -3092,7 +2100,7 @@ MTIMEtimestamp_sql_seconds(int *ret, const timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdaytime_extract_sql_seconds(ret, &d);
 }
@@ -3103,7 +2111,7 @@ MTIMEtimestamp_milliseconds(int *ret, const timestamp *t)
 	daytime d;
 	str e;
 
-	if ((e = MTIMEtimestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+	if ((e = MTIMEtimestamp_extract_daytime(&d, t)) != MAL_SUCCEED)
 		return e;
 	return MTIMEdaytime_extract_milliseconds(ret, &d);
 }

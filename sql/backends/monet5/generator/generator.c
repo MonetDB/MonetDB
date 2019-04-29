@@ -351,7 +351,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tsf = *getArgReference_TYPE(stk, p, 1, timestamp);
 			tsl = *getArgReference_TYPE(stk, p, 2, timestamp);
 			if ( p->argc == 3) 
-					throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
+				throw(MAL,"generator.table", SQLSTATE(42000) "Timestamp step missing");
 			tss = *getArgReference_lng(stk, p, 3);
 			if ( tss == 0 || 
 				is_timestamp_nil(tsf) || is_timestamp_nil(tsl) ||

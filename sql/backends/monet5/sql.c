@@ -3748,7 +3748,7 @@ timestamp_2_daytime(daytime *res, const timestamp *v, const int *digits)
 	int d = (*digits) ? *digits - 1 : 0;
 	daytime dt;
 
-	MTIMEtimestamp_extract_daytime(&dt, v, NULL);
+	MTIMEtimestamp_extract_daytime(&dt, v);
 
 	/* correct fraction */
 	if (d < 6) {
@@ -3774,14 +3774,14 @@ timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *digits)
 	date dt;
 	daytime tm;
 
-	MTIMEtimestamp_extract_date_default(&dt, v);
-	MTIMEtimestamp_extract_daytime_default(&tm, v);
+	MTIMEtimestamp_extract_date(&dt, v);
+	MTIMEtimestamp_extract_daytime(&tm, v);
 	/* correct fraction */
 	if (d < 6) {
 		tm /= scales[6 - d];
 		tm *= scales[6 - d];
 	}
-	MTIMEtimestamp_create_default(res, &dt, &tm);
+	MTIMEtimestamp_create(res, &dt, &tm);
 	return MAL_SUCCEED;
 }
 

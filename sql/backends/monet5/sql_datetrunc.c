@@ -12,10 +12,10 @@
 
 #define do_date_trunc(res, val, DIVISOR)					\
 	do {								\
-		MTIMEtimestamp_extract_date_default(&days, (val));	\
-		MTIMEtimestamp_extract_daytime_default(&msecs, (val));	\
+		MTIMEtimestamp_extract_date(&days, (val));	\
+		MTIMEtimestamp_extract_daytime(&msecs, (val));		\
 		msecs = (msecs / (DIVISOR)) * (DIVISOR);		\
-		MTIMEtimestamp_create_default((res), &days, &msecs);	\
+		MTIMEtimestamp_create((res), &days, &msecs);		\
 	} while (0)
 
 #define date_trunc_time_loop(NAME, DIVISOR)				\
@@ -90,8 +90,8 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = timestamp_nil;
 			} else {
-				MTIMEtimestamp_extract_date_default(&days, &bt[lo]);
-				MTIMEtimestamp_create_default(&dt[lo], &days, &msecs);
+				MTIMEtimestamp_extract_date(&days, &bt[lo]);
+				MTIMEtimestamp_create(&dt[lo], &days, &msecs);
 			}
 	}
 
@@ -100,12 +100,12 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 			if (is_timestamp_nil(bt[lo])) {
 				dt[lo] = timestamp_nil;
 			} else {
-				MTIMEtimestamp_extract_date_default(&days, &bt[lo]);
+				MTIMEtimestamp_extract_date(&days, &bt[lo]);
 				MTIMEdate_extract_dayofweek(&dow, &days);
 				MTIMEfromdate(days, &y, &m, &d);
 				d =  d - dow - 1;
 				days = MTIMEtodate(y, m, d);
-				MTIMEtimestamp_create_default(&dt[lo], &days, &msecs);
+				MTIMEtimestamp_create(&dt[lo], &days, &msecs);
 			}
 	}
 
@@ -221,17 +221,17 @@ date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
 	date_trunc_single_time("hour", 1000 * 60 * 24);
 
 	if  ( strcasecmp(*scale, "day") == 0){
-		MTIMEtimestamp_extract_date_default(&days, bt);
-		MTIMEtimestamp_create_default(dt, &days, &msecs);
+		MTIMEtimestamp_extract_date(&days, bt);
+		MTIMEtimestamp_create(dt, &days, &msecs);
 	}
 
 	if  ( strcasecmp(*scale, "week") == 0){
-		MTIMEtimestamp_extract_date_default(&days, bt);
+		MTIMEtimestamp_extract_date(&days, bt);
 		MTIMEdate_extract_dayofweek(&dow, &days);
 		MTIMEfromdate(days, &y, &m, &d);
 		d =  d - dow - 1;
 		days = MTIMEtodate(y, m, d);
-		MTIMEtimestamp_create_default(dt, &days, &msecs);
+		MTIMEtimestamp_create(dt, &days, &msecs);
 	}
 
 	if  ( strcasecmp(*scale, "month") == 0){

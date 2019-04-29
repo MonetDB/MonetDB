@@ -388,8 +388,6 @@ SQLinit(Client c)
 	char *msg = MAL_SUCCEED;
 	bool readonly = GDKgetenv_isyes("gdk_readonly");
 	bool single_user = GDKgetenv_isyes("gdk_single_user");
-	const char *gmt = "GMT";
-	tzone tz;
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;
@@ -410,12 +408,6 @@ SQLinit(Client c)
 	};
 	monet5_user_init(&be_funcs);
 
-	msg = MTIMEtimezone(&tz, &gmt);
-	if (msg) {
-		MT_lock_unset(&sql_contextLock);
-		return msg;
-	}
-	(void) tz;
 	if (debug_str)
 		SQLdebug = strtol(debug_str, NULL, 10);
 	if (single_user)
