@@ -117,7 +117,7 @@ comment "Equality of two dates";
 #       MSEC = integer between 0 and 999 (default = 0)
 #        SEP = '.' or ':'
 # @end verbatim
-atom daytime :int;
+atom daytime :lng;
 command fromstr()
 address daytime_tz_fromstr;
 command tostr()

@@ -770,13 +770,14 @@ fixdateheap(BAT *b, const char *anme)
 		const int *restrict o = (const int *) h1.base;
 		lng *restrict n = (lng *) h2.base;
 
+		h2.free <<= 1;
+		nofix = false;
 		for (i = 0; i < b->batCount; i++) {
 			if (is_int_nil(o[i])) {
 				b->tnil = true;
 				n[i] = lng_nil;
 			} else {
 				n[i] = o[i] * LL_CONSTANT(1000);
-				nofix = false;
 			}
 		}
 	}
@@ -799,6 +800,10 @@ fixdateheap(BAT *b, const char *anme)
 			GDKfree(srcdir);
 			GDKerror("fixdateheap: saving heap failed\n");
 			return GDK_FAIL;
+		}
+		if (strcmp(anme, "daytime") == 0) {
+			b->twidth = 8;
+			b->tshift = 3;
 		}
 		HEAPfree(&h2, false);
 		b->theap = h2;
@@ -847,10 +852,6 @@ fixdatebats(void)
 			}
 			fclose(fp);
 		}
-		if (b->batCount == 0 || b->tnonil) {
-			/*  no NILs to convert */
-			continue;
-		}
 		/* The date type is not known in GDK when reading the BBP */
 		if (b->ttype < 0) {
 			const char *anme;
@@ -859,7 +860,8 @@ fixdatebats(void)
 			anme = ATOMunknown_name(b->ttype);
 			/* known string types */
 			if ((strcmp(anme, "date") == 0 ||
-			     strcmp(anme, "timestamp") == 0) &&
+			     strcmp(anme, "timestamp") == 0 ||
+			     strcmp(anme, "daytime") == 0) &&
 			    fixdateheap(b, anme) != GDK_SUCCEED)
 				return GDK_FAIL;
 		}
