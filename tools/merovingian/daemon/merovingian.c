@@ -116,6 +116,8 @@ FILE *_mero_ctlout = NULL;
 FILE *_mero_ctlerr = NULL;
 /* broadcast socket for announcements */
 int _mero_broadcastsock = -1;
+/* ipv6 global any bind address constant */
+const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 /* broadcast address/port */
 struct sockaddr_in _mero_broadcastaddr;
 /* hostname of this machine */
@@ -303,6 +305,7 @@ main(int argc, char *argv[])
 	FILE *oerr = NULL;
 	int thret;
 	char merodontfork = 0;
+	bool use_ipv6 = false;
 	confkeyval ckv[] = {
 		{"logfile",       strdup("merovingian.log"), 0,                STR},
 		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
@@ -310,6 +313,7 @@ main(int argc, char *argv[])
 		{"sockdir",       strdup("/tmp"),          0,                  STR},
 		{"listenaddr",    strdup("localhost"),     0,                  STR},
 		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
+		{"ipv6",          strdup("false"),         0,                  BOOLEAN},
 
 		{"exittimeout",   strdup("60"),            60,                 INT},
 		{"forward",       strdup("proxy"),         0,                  OTHER},
@@ -363,6 +367,8 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "embedpy3");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedc");
+	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "ipv6");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
@@ -579,6 +585,7 @@ main(int argc, char *argv[])
 	}
 	_mero_props = ckv;
 
+	use_ipv6 = getConfNum(_mero_props, "ipv6") == 1;
 	pidfilename = getConfVal(_mero_props, "pidfile");
 
 	p = getConfVal(_mero_props, "forward");
@@ -897,9 +904,9 @@ main(int argc, char *argv[])
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	/* open up connections */
-	if ((e = openConnectionTCP(&sock, host, port, stdout)) == NO_ERR &&
+	if ((e = openConnectionTCP(&sock, use_ipv6, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-		(discovery == 0 || (e = openConnectionUDP(&discsock, host, port)) == NO_ERR) &&
+		(discovery == 0 || (e = openConnectionUDP(&discsock, false, host, port)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;

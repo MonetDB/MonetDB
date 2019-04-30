@@ -74,6 +74,7 @@ extern unsigned short _mero_controlport;
 extern FILE *_mero_ctlout;
 extern FILE *_mero_ctlerr;
 extern int _mero_broadcastsock;
+extern const struct in6_addr ipv6_any_addr;
 extern struct sockaddr_in _mero_broadcastaddr;
 extern char _mero_hostname[128];
 extern confkeyval *_mero_db_props;

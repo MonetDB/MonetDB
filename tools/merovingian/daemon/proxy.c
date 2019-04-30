@@ -86,13 +86,8 @@ proxyThread(void *d)
 err
 startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 {
-	struct hostent *hp;
-	struct sockaddr_in server;
-	struct sockaddr *serv;
-	socklen_t servsize;
 	int ssock = -1;
-	char *port, *t;
-	char *conn;
+	char *port, *t, *conn, *endipv6;
 	struct stat statbuf;
 	stream *sfdin, *sfout;
 	merovingian_proxy *pctos, *pstoc;
@@ -103,8 +98,21 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	/* quick 'n' dirty parsing */
 	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
 		conn = strdup(url + sizeof("mapi:monetdb://") - 1);
-		/* drop anything off after the hostname */
-		if ((port = strchr(conn, ':')) != NULL) {
+
+		if (*conn == '[') { /* check for an IPv6 address */
+			if ((endipv6 = strchr(conn, ']')) != NULL) {
+				if ((port = strchr(endipv6, ':')) != NULL) {
+					*port = '\0';
+					port++;
+					if ((t = strchr(port, '/')) != NULL)
+						*t = '\0';
+				} else {
+					return(newErr("can't find a port in redirect: %s", url));
+				}
+			} else {
+				return(newErr("invalid IPv6 address in redirect: %s", url));
+			}
+		} else if ((port = strchr(conn, ':')) != NULL) { /* drop anything off after the hostname */
 			*port = '\0';
 			port++;
 			if ((t = strchr(port, '/')) != NULL)
@@ -142,7 +150,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 							, 0)) == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
-#ifndef SOCK_CLOEXEC
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
 #endif
 		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
@@ -197,39 +205,42 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		mnstr_destroy(cfout);
 		return(NO_ERR);
 	} else {
-		hp = gethostbyname(conn);
-		if (hp == NULL) {
-			err x = newErr("cannot get address for hostname '%s': %s",
-						conn, hstrerror(h_errno));
+		int check;
+		struct addrinfo *results, *rp, hints = (struct addrinfo) {
+			.ai_family = AF_UNSPEC,
+			.ai_socktype = SOCK_STREAM,
+			.ai_protocol = IPPROTO_TCP,
+		};
+
+		if ((check = getaddrinfo(conn, port, &hints, &results)) != 0) {
+			err x = newErr("cannot get address for hostname '%s': %s", conn, gai_strerror(check));
 			free(conn);
 			return(x);
 		}
 		free(conn);
 
-		server = (struct sockaddr_in) {
-			.sin_family = hp->h_addrtype,
-			.sin_port = htons((unsigned short) atoi(port)),
-		};
-		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
-		serv = (struct sockaddr *) &server;
-		servsize = sizeof(server);
-
-		ssock = socket(serv->sa_family, SOCK_STREAM
+		for (rp = results; rp; rp = rp->ai_next) {
+			ssock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
-					   | SOCK_CLOEXEC
+							| SOCK_CLOEXEC
 #endif
-					   , IPPROTO_TCP);
-		if (ssock == -1) {
+						   , rp->ai_protocol);
+			if (ssock == -1)
+				continue;
+			if (connect(ssock, rp->ai_addr, rp->ai_addrlen) == -1) {
+				closesocket(ssock);
+				continue;
+			} else {
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
+				(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
+#endif
+				break;
+			}
+		}
+		if (results)
+			freeaddrinfo(results);
+		if (rp == NULL)
 			return(newErr("cannot open socket: %s", strerror(errno)));
-		}
-#ifndef SOCK_CLOEXEC
-		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
-#endif
-
-		if (connect(ssock, serv, servsize) == -1) {
-			closesocket(ssock);
-			return(newErr("cannot connect: %s", strerror(errno)));
-		}
 	}
 
 	sfdin = block_stream(socket_rstream(ssock, "merovingian<-server (proxy read)"));

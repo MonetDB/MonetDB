@@ -1975,9 +1975,16 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		dbname = NULL;
 		query = uri;
 	} else {
-		char *p;
+		char *p = uri;
 
-		if ((p = strchr(uri, ':')) == NULL) {
+		if (*p == '[') {
+			if ((p = strchr(p, ']')) == NULL) {
+				free(uri);
+				mapi_setError(mid, "URI contains an invalid IPv6 address", "mapi_mapiuri", MERROR);
+				return mid;
+			}
+		}
+		if ((p = strchr(p, ':')) == NULL) {
 			free(uri);
 			mapi_setError(mid,
 				      "URI must contain a port number after "
@@ -2829,6 +2836,14 @@ mapi_reconnect(Mapi mid)
 				red += 15; /* "mapi:monetdb://" */
 				p = red;
 				q = NULL;
+				if (*red == '[') {
+					if ((red = strchr(red, ']')) == NULL) {
+						mapi_close_handle(hdl);
+						mapi_setError(mid, "invalid IPv6 hostname", "mapi_reconnect", MERROR);
+						close_connection(mid);
+						return mid->error;
+					}
+				}
 				if ((red = strchr(red, ':')) != NULL) {
 					*red++ = '\0';
 					q = red;

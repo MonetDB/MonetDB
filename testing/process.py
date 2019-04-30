@@ -305,7 +305,7 @@ def client(lang, args=[], stdin=None, stdout=None, stderr=None,
 def server(args=[], stdin=None, stdout=None, stderr=None,
            mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
            dbextra=None, bufsize=0, log=False,
-           notrace=False, notimeout=False):
+           notrace=False, notimeout=False, ipv6=False):
     '''Start a server process.'''
     cmd = _server[:]
     if not cmd:
@@ -318,6 +318,14 @@ def server(args=[], stdin=None, stdout=None, stderr=None,
         sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
+    if ipv6:
+        for i in range(len(cmd)):
+            if cmd[i].startswith('mapi_ipv6='):
+                del cmd[i]
+                del cmd[i - 1]
+                break
+        cmd.append('--set')
+        cmd.append('mapi_ipv6=true')
     if mapiport is not None:
         # make sure it's a string
         mapiport = str(int(mapiport))

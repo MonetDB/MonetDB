@@ -11,8 +11,8 @@
 
 #include "merovingian.h"
 
-err openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log);
-err openConnectionUDP(int *ret, const char *bindaddr, unsigned short port);
+err openConnectionTCP(int *ret, bool use_ipv6, const char *bindaddr, unsigned short port, FILE *log);
+err openConnectionUDP(int *ret, bool bind_ipv6, const char *bindaddr, unsigned short port);
 err openConnectionUNIX(int *ret, const char *path, int mode, FILE *log);
 
 #endif
