@@ -10,10 +10,21 @@
 
 #include "monetdb_config.h"
 #include "rel_unnest.h"
+#include "rel_optimizer.h"
+#include "rel_prop.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 
 static int exps_have_freevar( list *exps );
+
+/* check if the set is distinct for the set of free variables */
+static int
+is_distinct_set(mvc *sql, sql_rel *rel, list *ad)
+{
+	if (ad && exps_unique(sql, rel, ad ))
+		return 1;
+	return need_distinct(rel);
+}	
 
 int
 exp_has_freevar( sql_exp *e)
@@ -469,26 +480,42 @@ push_up_select(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static int
+exps_is_constant( list *exps )
+{
+	sql_exp *e;
+
+	if (!exps || list_empty(exps))
+		return 1;
+	if (list_length(exps) > 1)
+		return 0;
+	e = exps->h->data;
+	return exp_is_atom(e);
+}
 
 static sql_rel *
-push_up_groupby(mvc *sql, sql_rel *rel) 
+push_up_groupby(mvc *sql, sql_rel *rel, list *ad) 
 {
 	/* input rel is dependent join with on the right a project */ 
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
 
 		/* left of rel should be a set */ 
-		if (l && need_distinct(l) && r && r->op == op_groupby) {
+		if (l && is_distinct_set(sql, l, ad) && r && r->op == op_groupby) {
 			list *sexps, *jexps;
 			node *n;
 			/* move groupby up, ie add attributes of left + the old expression list */
 			list *a = rel_projections(sql, rel->l, NULL, 1, 1);
 		
+			assert(rel->op != op_anti);
+			if (rel->op == op_semi && !need_distinct(l))
+				rel->op = op_join;
+
 			for (n = r->exps->h; n; n = n->next ) {
 				sql_exp *e = n->data;
 
-				/* count_nil(*) -> count(t.TID) */
-				if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && !e->l) {
+				/* count_nil(* or constant) -> count(t.TID) */
+				if (e->type == e_aggr && strcmp(((sql_subaggr *)e->f)->aggr->base.name, "count") == 0 && (!e->l || exps_is_constant(e->l))) {
 					sql_exp *col;
 					sql_rel *p = r->l; /* ugh */
 
@@ -599,7 +626,7 @@ push_up_join(mvc *sql, sql_rel *rel)
 		sql_rel *d = rel->l, *j = rel->r;
 
 		/* left of rel should be a set */ 
-		if (d && need_distinct(d) && j && (is_join(j->op) || is_semi(j->op))) {
+		if (d && is_distinct_set(sql, d, NULL) && j && (is_join(j->op) || is_semi(j->op))) {
 			sql_rel *jl = j->l, *jr = j->r;
 			/* op_join if F(jl) intersect A(D) = empty -> jl join (D djoin jr) 
 			 * 	      F(jr) intersect A(D) = empty -> (D djoin jl) join jr
@@ -676,7 +703,7 @@ push_up_set(mvc *sql, sql_rel *rel)
 		sql_rel *d = rel->l, *s = rel->r;
 
 		/* left of rel should be a set */ 
-		if (d && need_distinct(d) && s && is_set(s->op)) {
+		if (d && is_distinct_set(sql, d, NULL) && s && is_set(s->op)) {
 			list *sexps;
 			node *m;
 			sql_rel *sl = s->l, *sr = s->r, *n;
@@ -709,7 +736,7 @@ push_up_table(mvc *sql, sql_rel *rel)
 		sql_rel *d = rel->l, *tf = rel->r;
 
 		/* for now just push d into function */
-		if (d && need_distinct(d) && tf && is_base(tf->op)) {
+		if (d && is_distinct_set(sql, d, NULL) && tf && is_base(tf->op)) {
 			if (tf->l) {
 				sql_rel *l = tf->l;
 
@@ -830,7 +857,7 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 
 		/* try to push dependent join down */
 		if (rel_has_freevar(r)){
-			list *ad;
+			list *ad = rel_dependent_var(sql, rel->l, rel->r);
 
 			if (r && is_simple_project(r->op)) {
 				rel = push_up_project(sql, rel);
@@ -847,22 +874,22 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_groupby(r->op) && need_distinct(l)) { 
-				rel = push_up_groupby(sql, rel);
+			if (r && is_groupby(r->op) && is_distinct_set(sql, l, ad)) { 
+				rel = push_up_groupby(sql, rel, ad);
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && (is_join(r->op) || is_semi(r->op)) && need_distinct(l)) {
+			if (r && (is_join(r->op) || is_semi(r->op)) && is_distinct_set(sql, l, NULL)) {
 				rel = push_up_join(sql, rel);
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_set(r->op) && need_distinct(l)) {
+			if (r && is_set(r->op) && is_distinct_set(sql, l, NULL)) {
 				rel = push_up_set(sql, rel);
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_base(r->op) && need_distinct(l)) { /* TODO table functions need dependent implementation */
+			if (r && is_base(r->op) && is_distinct_set(sql, l, NULL)) { /* TODO table functions need dependent implementation */
 				rel = push_up_table(sql, rel);
 				return rel; 
 			}

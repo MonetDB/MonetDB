@@ -1551,6 +1551,17 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, ">=", "calc", ">=", ANY, ANY, BIT, SCALE_FIX);
 	sql_create_func(sa, "<", "calc", "<", ANY, ANY, BIT, SCALE_FIX);
 	sql_create_func(sa, "<=", "calc", "<=", ANY, ANY, BIT, SCALE_FIX);
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_OUT);
+	sql_create_func_(sa, "between", "calc", "between", 
+			 list_append(list_append (list_append (list_append(list_append(list_append(list_append(sa_list(sa), 
+				create_arg(sa, NULL, sql_create_subtype(sa, ANY, 0, 0), ARG_IN)), 
+				create_arg(sa, NULL, sql_create_subtype(sa, ANY, 0, 0), ARG_IN)), 
+				create_arg(sa, NULL, sql_create_subtype(sa, ANY, 0, 0), ARG_IN)), 
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)), 
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)), 
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)), 
+				create_arg(sa, NULL, sql_create_subtype(sa, BIT, 0, 0), ARG_IN)), 
+				sres, FALSE, F_FUNC, SCALE_FIX);
 	sql_create_aggr(sa, "zero_or_one", "sql", "zero_or_one", ANY, ANY);
 	sql_create_aggr(sa, "all", "sql", "all", ANY, ANY);
 	sql_create_aggr(sa, "null", "sql", "null", ANY, BIT);

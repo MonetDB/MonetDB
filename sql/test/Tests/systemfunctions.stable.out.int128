@@ -53,7 +53,7 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 # 16:20:25 >  
 
 #select s.name as "schema", f.name as "function", a.number as "argno", a.type as "argtype", case a.number when 0 then f.func else '' end as "definition" from sys.functions f, sys.schemas s, sys.args a where s.id = f.schema_id and f.id = a.func_id and f.id in (select * from sys.systemfunctions) order by s.name, f.name, f.id, a.number;
-% sys.L10,	sys.L12,	sys.L14,	sys.L16,	sys.L20 # table_name
+% sys.L11,	sys.L13,	sys.L15,	sys.L17,	sys.L21 # table_name
 % schema,	function,	argno,	argtype,	definition # name
 % varchar,	varchar,	int,	varchar,	varchar # type
 % 8,	24,	2,	14,	705 # length
@@ -283,6 +283,14 @@ stdout of test 'systemfunctions` in directory 'sql/test` itself:
 [ "sys",	"bbp",	8,	"clob",	""	]
 [ "sys",	"bbp",	9,	"clob",	""	]
 [ "sys",	"bbp",	10,	"clob",	""	]
+[ "sys",	"between",	0,	"boolean",	"between"	]
+[ "sys",	"between",	1,	"any",	""	]
+[ "sys",	"between",	2,	"any",	""	]
+[ "sys",	"between",	3,	"any",	""	]
+[ "sys",	"between",	4,	"boolean",	""	]
+[ "sys",	"between",	5,	"boolean",	""	]
+[ "sys",	"between",	6,	"boolean",	""	]
+[ "sys",	"between",	7,	"boolean",	""	]
 [ "sys",	"bit_and",	0,	"oid",	"and"	]
 [ "sys",	"bit_and",	1,	"oid",	""	]
 [ "sys",	"bit_and",	2,	"oid",	""	]

@@ -89,6 +89,12 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			pushInstruction(mb,p);
 			continue;
 		}
+
+		/* when we enter a barrier block, we should ditch all previous instructions from consideration */
+		if( p->barrier== BARRIERsymbol || p->barrier== CATCHsymbol || p->barrier == RETURNsymbol){
+			memset(list, 0, sizeof(int) * mb->stop);
+			memset(hash, 0, sizeof(int) * mb->vtop);
+		}
 		/* side-effect producing operators can never be replaced */
 		/* the same holds for function calls without an argument, it is unclear where the results comes from (e.g. clock()) */
 		if ( mayhaveSideEffects(cntxt, mb, p,TRUE) || p->argc == p->retc){

@@ -4038,20 +4038,7 @@ reset_schema(sql_trans *tr, sql_schema *fs, sql_schema *pfs)
 static int
 reset_trans(sql_trans *tr, sql_trans *ptr)
 {
-	int res;
-
-	if (tr != gtrans && tr->moved_tables) { //before doing any schema updates,
-		for (node *n = tr->moved_tables->t ; n ; ) { //iterate backwards
-			sql_moved_table *smt = (sql_moved_table*) n->data;
-
-			assert(smt && smt->to && smt->from && smt->t);
-			cs_move(&smt->to->tables, &smt->from->tables, smt->t);
-			smt->t->s = smt->from;
-			n = smt->p;
-		}
-	}
-	tr->moved_tables = NULL;
-	res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
+	int res = reset_changeset(tr, &tr->schemas, &ptr->schemas, (sql_base *)tr->parent, (resetf) &reset_schema, (dupfunc) &schema_dup);
 #ifdef STORE_DEBUG
 	fprintf(stderr,"#reset trans %d\n", tr->wtime);
 #endif
@@ -5260,7 +5247,6 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	m->from = os;
 	m->to = ns;
 	m->t = t;
-	m->p = tr->moved_tables->t;
 	list_append(tr->moved_tables, m);
 
 	tr->wtime = tr->wstime;
@@ -6567,8 +6553,15 @@ sql_trans_begin(sql_session *s)
 	fprintf(stderr,"#sql trans begin %d\n", snr);
 #endif
 	if (tr->stime < gtrans->wstime || tr->wtime || 
-			store_schema_number() != snr) 
-		reset_trans(tr, gtrans);
+			store_schema_number() != snr) {
+		if (!list_empty(tr->moved_tables)) {
+			tr->name = (char*)1; /* make sure it get destroyed properly */
+			sql_trans_destroy(tr);
+			s->tr = tr = sql_trans_create(s->stk, NULL, NULL);
+		} else {
+			reset_trans(tr, gtrans);
+		}
+	}
 	tr = trans_init(tr, tr->stk, tr->parent);
 	s->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
