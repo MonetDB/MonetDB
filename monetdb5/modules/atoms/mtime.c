@@ -357,7 +357,7 @@ date_addmonth(date dt, int months)
 static inline lng
 timestamp_diff(timestamp v1, timestamp v2)
 {
-	return ts_time(v2) - ts_time(v1) + DAY_USEC * date_diff(ts_date(v2), ts_date(v1));
+	return ts_time(v1) - ts_time(v2) + DAY_USEC * date_diff(ts_date(v1), ts_date(v2));
 }
 
 timestamp
