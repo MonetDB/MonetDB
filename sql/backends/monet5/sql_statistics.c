@@ -21,39 +21,6 @@ analysis by optimizers.
 #include "sql_statistics.h"
 #include "sql_execute.h"
 
-#define atommem(size)					\
-	do {						\
-		if (*dst == NULL || *len < (size)) {	\
-			GDKfree(*dst);			\
-			*len = (size);			\
-			*dst = GDKmalloc(*len);		\
-			if (*dst == NULL)		\
-				return -1;		\
-		}					\
-	} while (0)
-
-static ssize_t
-strToStrSQuote(char **dst, size_t *len, const void *src, bool external)
-{
-	ssize_t l = 0;
-
-	(void) external;
-	assert(external);
-	if (GDK_STRNIL((str) src)) {
-		atommem(4);
-
-		return snprintf(*dst, *len, "nil");
-	} else {
-		size_t sz = escapedStrlen(src, NULL, NULL, '\'');
-		atommem(sz + 3);
-		l = (ssize_t) escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '\'');
-		l++;
-		(*dst)[0] = (*dst)[l++] = '"';
-		(*dst)[l] = 0;
-	}
-	return l;
-}
-
 str
 sql_drop_statistics(Client cntxt, sql_table *t)
 {
@@ -85,12 +52,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
 	node *nsch, *ntab, *ncol;
-	char *query = NULL, *dquery;
-	size_t querylen = 0;
 	char *maxval = NULL, *minval = NULL;
 	size_t minlen = 0, maxlen = 0;
 	str sch = 0, tbl = 0, col = 0;
-	bool sorted, revsorted;
+	bit sorted, revsorted;	/* not bool since address is taken */
 	lng nils = 0;
 	lng uniq = 0;
 	lng samplesize = *getArgReference_lng(stk, pci, 2);
@@ -98,14 +63,24 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int width = 0;
 	int minmax = *getArgReference_int(stk, pci, 1);
 	int sfnd = 0, tfnd = 0, cfnd = 0;
+	sql_schema *sys;
+	sql_table *sysstats;
+	sql_column *statsid;
+	oid rid;
+	timestamp ts;
 
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	dquery = (char *) GDKzalloc(96);
-	if (dquery == NULL) {
-		throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
+	sys = mvc_bind_schema(m, "sys");
+	if (sys == NULL)
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "Internal error");
+	sysstats = mvc_bind_table(m, sys, "statistics");
+	if (sysstats == NULL)
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "No table sys.statistics");
+	statsid = mvc_bind_column(m, sysstats, "column_id");
+	if (statsid == NULL)
+		throw(SQL, "sql.analyze", SQLSTATE(3F000) "No table sys.statistics");
 
 	switch (argc) {
 	case 6:
@@ -137,8 +112,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (tbl && strcmp(bt->name, tbl))
 					continue;
 				if (t->persistence != SQL_PERSIST) {
-					GDKfree(dquery);
-					GDKfree(query);
 					GDKfree(maxval);
 					GDKfree(minval);
 					throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' is not persistent", bt->name);
@@ -170,10 +143,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sz = BATcount(bn);
 						tostr = BATatoms[bn->ttype].atomToStr;
 
-						if (tostr == BATatoms[TYPE_str].atomToStr)
-							tostr = strToStrSQuote;
-
-						snprintf(dquery, 96, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
+						rid = table_funcs.column_find_row(tr, statsid, &c->base.id, NULL);
 						cfnd = 1;
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) samplesize);
@@ -220,7 +190,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							GDKfree(maxval);
 							maxval = GDKmalloc(4);
 							if (maxval == NULL) {
-								GDKfree(dquery);
 								GDKfree(minval);
 								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
@@ -230,7 +199,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							GDKfree(minval);
 							minval = GDKmalloc(4);
 							if (minval == NULL){
-								GDKfree(dquery);
 								GDKfree(maxval);
 								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
@@ -238,11 +206,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 						if (tostr) {
 							if ((val = BATmax(bn,0)) == NULL)
-								strcpy(maxval, "nil");
+								strcpy(maxval, str_nil);
 							else {
-								if (tostr(&maxval, &maxlen, val, true) < 0) {
+								if (tostr(&maxval, &maxlen, val, false) < 0) {
 									GDKfree(val);
-									GDKfree(dquery);
 									GDKfree(minval);
 									GDKfree(maxval);
 									throw(SQL, "analyze", GDK_EXCEPTION);
@@ -250,11 +217,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								GDKfree(val);
 							}
 							if ((val = BATmin(bn,0)) == NULL)
-								strcpy(minval, "nil");
+								strcpy(minval, str_nil);
 							else {
-								if (tostr(&minval, &minlen, val, true) < 0) {
+								if (tostr(&minval, &minlen, val, false) < 0) {
 									GDKfree(val);
-									GDKfree(dquery);
 									GDKfree(minval);
 									GDKfree(maxval);
 									throw(SQL, "analyze", GDK_EXCEPTION);
@@ -262,47 +228,24 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								GDKfree(val);
 							}
 						} else {
-							strcpy(maxval, "nil");
-							strcpy(minval, "nil");
+							strcpy(maxval, str_nil);
+							strcpy(minval, str_nil);
 						}
-						if (strlen(minval) + strlen(maxval) + 1024 > querylen) {
-							querylen = strlen(minval) + strlen(maxval) + 1024;
-							GDKfree(query);
-							query = GDKmalloc(querylen);
-							if (query == NULL) {
-								GDKfree(dquery);
-								GDKfree(maxval);
-								GDKfree(minval);
-								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-							}
-						}
-						snprintf(query, querylen, "insert into sys.statistics (column_id,type,width,stamp,\"sample\",count,\"unique\",nils,minval,maxval,sorted,revsorted) values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s,%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false", revsorted ? "true" : "false");
-#ifdef DEBUG_SQL_STATISTICS
-						fprintf(stderr, "%s\n", dquery);
-						fprintf(stderr, "%s\n", query);
-#endif
 						BBPunfix(bn->batCacheid);
-						msg = SQLstatementIntern(cntxt, &dquery, "SQLanalyze", TRUE, FALSE, NULL);
-						if (msg) {
-							GDKfree(dquery);
-							GDKfree(query);
+						MTIMEcurrent_timestamp(&ts);
+						if (!is_oid_nil(rid) && table_funcs.table_delete(tr, sysstats, rid) != LOG_OK) {
 							GDKfree(maxval);
 							GDKfree(minval);
-							return msg;
+							throw(SQL, "analyze", "delete failed");
 						}
-						msg = SQLstatementIntern(cntxt, &query, "SQLanalyze", TRUE, FALSE, NULL);
-						if (msg) {
-							GDKfree(dquery);
-							GDKfree(query);
+						if (table_funcs.table_insert(tr, sysstats, &c->base.id, c->type.type->sqlname, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, minval, maxval, &sorted, &revsorted) != LOG_OK) {
 							GDKfree(maxval);
 							GDKfree(minval);
-							return msg;
+							throw(SQL, "analyze", "insert failed");
 						}
 					}
 			}
 	}
-	GDKfree(dquery);
-	GDKfree(query);
 	GDKfree(maxval);
 	GDKfree(minval);
 	if (sch && !sfnd)
