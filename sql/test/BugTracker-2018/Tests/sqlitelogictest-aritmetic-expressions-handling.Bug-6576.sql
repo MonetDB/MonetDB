@@ -21,3 +21,4 @@ SELECT DISTINCT - 16 + ( + 37 ) - - 56 * - - 11 * - 0 + + MAX ( + 29 ) AS col2; 
 SELECT - 54 * + 0; -- 0
 SELECT ALL - 30 + + 85, - ( - + 43 ) - 71 + - 0 * - - 78 + - 78 + - - 47 * - 93 + 32 * + SUM ( 90 ) AS col0; -- 55, -1597
 SELECT ALL + COUNT ( * ) - - + 0 * - 32; -- 1
+SELECT CAST ( NULL AS INTEGER ) - 1 - 1 + 2 * 70; --NULL
