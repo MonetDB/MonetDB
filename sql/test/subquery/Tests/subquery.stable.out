@@ -256,10 +256,10 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ NULL	]
 [ NULL	]
 [ NULL	]
-#SELECT SUM(i) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
-% sys.L5 # table_name
-% L5 # name
-% hugeint # type
+#SELECT cast(SUM(i) as bigint) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
+% sys.L7 # table_name
+% L7 # name
+% bigint # type
 % 1 # length
 [ 6	]
 #SELECT (SELECT (SELECT (SELECT 42))); -- 42
@@ -277,16 +277,16 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 [ true	]
 [ true	]
 [ true	]
-#SELECT (SELECT MAX(i) FROM integers) AS k, SUM(i) FROM integers GROUP BY k; -- 3,6
-% .L3,	.L6 # table_name
-% k,	L6 # name
-% int,	hugeint # type
+#SELECT (SELECT MAX(i) FROM integers) AS k, cast(SUM(i) as bigint) FROM integers GROUP BY k; -- 3,6
+% .L3,	.L7 # table_name
+% k,	L7 # name
+% int,	bigint # type
 % 1,	1 # length
 [ 3,	6	]
-#SELECT i % 2 AS k, SUM(i) FROM integers GROUP BY k HAVING SUM(i) > (SELECT MAX(i) FROM integers); -- 1,4
-% sys.L2,	sys.L4 # table_name
-% k,	L4 # name
-% int,	hugeint # type
+#SELECT i % 2 AS k, cast(SUM(i) as bigint) FROM integers GROUP BY k HAVING SUM(i) > (SELECT MAX(i) FROM integers); -- 1,4
+% sys.L2,	sys.L5 # table_name
+% k,	L5 # name
+% int,	bigint # type
 % 1,	1 # length
 [ 1,	4	]
 #SELECT i FROM integers WHERE NOT(i IN (SELECT i FROM integers WHERE i>1)); -- 1
@@ -295,10 +295,10 @@ stdout of test 'subquery` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 [ 1	]
-#SELECT (SELECT SUM(i) FROM integers), (SELECT 42);
-% .L5,	.L7 # table_name
-% L5,	L7 # name
-% hugeint,	tinyint # type
+#SELECT (SELECT cast(SUM(i) as bigint) FROM integers), (SELECT 42);
+% .L6,	.L10 # table_name
+% L6,	L10 # name
+% bigint,	tinyint # type
 % 1,	2 # length
 [ 6,	42	]
 #drop TABLE integers;
