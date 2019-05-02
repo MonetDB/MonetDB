@@ -8186,16 +8186,16 @@ find_col_exp( list *exps, sql_exp *e)
 }
 
 static int
-exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom *emax)
+exp_range_overlap( mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom *emax)
 {
 	sql_subtype *t = exp_subtype(e);
 
 	if (!min || !max || !emin || !emax)
 		return 0;
 
-	if (strcmp("nil", (char*)min) == 0)
+	if (GDK_STRNIL(min))
 		return 0;
-	if (strcmp("nil", (char*)max) == 0)
+	if (GDK_STRNIL(max))
 		return 0;
 
 	if (t->type->localtype == TYPE_dbl) {
@@ -8393,7 +8393,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 								((first && (i=find_col_exp(cols, e)) != -1) ||
 								 (!first && pos[j] > 0))) {
 								/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
-								void *min, *max;
+								char *min, *max;
 								sql_column *col = NULL;
 								sql_rel *bt = NULL;
 
@@ -8528,7 +8528,7 @@ exp_is_zero_rows(mvc *sql, sql_rel *rel, sql_rel *sel)
 				if (lval && hval) {
 					sql_rel *bt;
 					sql_column *col = name_find_column(sel, c->rname, c->name, -2, &bt);
-					void *min, *max;
+					char *min, *max;
 					if (col
 						&& col->t == t
 						&& sql_trans_ranges(sql->session->tr, col, &min, &max)
