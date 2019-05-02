@@ -22,27 +22,37 @@ analysis by optimizers.
 #include "sql_execute.h"
 
 str
-sql_drop_statistics(Client cntxt, sql_table *t)
+sql_drop_statistics(mvc *m, sql_table *t)
 {
 	node *ncol;
-	char *dquery, *msg = NULL;
+	sql_trans *tr;
+	sql_schema *sys;
+	sql_table *sysstats;
+	sql_column *statsid;
+	oid rid;
 
-	dquery = (char *) GDKzalloc(96);
-	if (dquery == NULL) {
-		throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
+	tr = m->session->tr;
+	sys = mvc_bind_schema(m, "sys");
+	if (sys == NULL)
+		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "Internal error");
+	sysstats = mvc_bind_table(m, sys, "statistics");
+	if (sysstats == NULL)
+		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
+	statsid = mvc_bind_column(m, sysstats, "column_id");
+	if (statsid == NULL)
+		throw(SQL, "sql_drop_statistics", SQLSTATE(3F000) "No table sys.statistics");
+
 	if (isTable(t) && t->columns.set) {
 		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 			sql_column *c = ncol->data;
 
-			snprintf(dquery, 96, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
-			msg = SQLstatementIntern(cntxt, &dquery, "SQLanalyze", TRUE, FALSE, NULL);
-			if (msg)
-				break;
+			rid = table_funcs.column_find_row(tr, statsid, &c->base.id, NULL);
+			if (!is_oid_nil(rid) &&
+			    table_funcs.table_delete(tr, sysstats, rid) != LOG_OK)
+				throw(SQL, "analyze", "delete failed");
 		}
 	}
-	GDKfree(dquery);
-	return msg;
+	return MAL_SUCCEED;
 }
 
 str
