@@ -6718,7 +6718,7 @@ rel_dependencies(mvc *sql, list *refs)
 static void
 rel_dce_refs(mvc *sql, sql_rel *rel, list *refs) 
 {
-	if (!rel)
+	if (!rel || (rel_is_ref(rel) && list_find(refs, rel, NULL))) 
 		return ;
 
 	switch(rel->op) {
@@ -6731,6 +6731,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 
 		if (rel->l && (rel->op != op_table || rel->flag != 2))
 			rel_dce_refs(sql, rel->l, refs);
+		break;
 
 	case op_basetable:
 	case op_insert:
@@ -6947,7 +6948,7 @@ sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
 	list *refs = sa_list(sql->sa);
-	node *n;
+	//node *n;
 
 	rel_dce_refs(sql, rel, refs);
 	if (refs) {
@@ -6965,12 +6966,6 @@ rel_dce(mvc *sql, sql_rel *rel)
 	rel = rel_add_projects(sql, rel);
 	rel_used(rel);
 	rel_dce_sub(sql, rel, refs);
-
-	if (refs) {
-		refs = rel_dependencies(sql, refs);
-		for (n = refs->h; n; n = n->next)
-			rel_dce_sub(sql, n->data, refs);
-	}
 	return rel;
 }
 
@@ -8383,16 +8378,16 @@ find_col_exp( list *exps, sql_exp *e)
 }
 
 static int
-exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom *emax)
+exp_range_overlap( mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom *emax)
 {
 	sql_subtype *t = exp_subtype(e);
 
 	if (!min || !max || !emin || !emax)
 		return 0;
 
-	if (strcmp("nil", (char*)min) == 0)
+	if (GDK_STRNIL(min))
 		return 0;
-	if (strcmp("nil", (char*)max) == 0)
+	if (GDK_STRNIL(max))
 		return 0;
 
 	if (t->type->localtype == TYPE_dbl) {
@@ -8591,7 +8586,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 								((first && (i=find_col_exp(cols, e)) != -1) ||
 								 (!first && pos[j] > 0))) {
 								/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
-								void *min, *max;
+								char *min, *max;
 								sql_column *col = NULL;
 								sql_rel *bt = NULL;
 
@@ -8726,7 +8721,7 @@ exp_is_zero_rows(mvc *sql, sql_rel *rel, sql_rel *sel)
 				if (lval && hval) {
 					sql_rel *bt;
 					sql_column *col = name_find_column(sel, c->rname, c->name, -2, &bt);
-					void *min, *max;
+					char *min, *max;
 					if (col
 						&& col->t == t
 						&& sql_trans_ranges(sql->session->tr, col, &min, &max)
