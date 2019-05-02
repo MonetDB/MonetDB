@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu May  2 2019 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Added "mapi_ipv6" property to monet_options to force ipv6 address
+  binding only.  This property is inherited while forking from
+  monetdbd if it is also set there.
+
 * Thu Apr 18 2019 Sjoerd Mullender <sjoerd@acm.org>
 - Removed (bat)calc.between_symmetric and changed (bat)calc.between
   by adding a number of extra arguments, all of type :bit: symmetric,
