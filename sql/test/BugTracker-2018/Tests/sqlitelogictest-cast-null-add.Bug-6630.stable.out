@@ -74,7 +74,7 @@ Ready.
 [ NULL	]
 #SELECT ALL CAST ( col1 / - - ( + CAST ( NULL AS INTEGER ) ) AS BIGINT ) col0,
 #           CAST ( 39 + + + CAST ( NULL AS INTEGER ) + + - 10 + col1 / - col0 AS BIGINT ) AS col1 FROM tab2;
-% sys.L4,	.L10 # table_name
+% .L4,	.L10 # table_name
 % col0,	col1 # name
 % bigint,	bigint # type
 % 1,	1 # length

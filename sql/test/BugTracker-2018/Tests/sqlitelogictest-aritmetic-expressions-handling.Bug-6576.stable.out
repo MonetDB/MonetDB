@@ -157,6 +157,12 @@ Ready.
 % bigint # type
 % 1 # length
 [ 1	]
+#SELECT CAST ( NULL AS INTEGER ) - 1 - 1 + 2 * 70; --NULL
+% .L3 # table_name
+% L3 # name
+% hugeint # type
+% 1 # length
+[ NULL	]
 
 # 16:20:37 >  
 # 16:20:37 >  "Done."

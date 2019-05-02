@@ -31,7 +31,7 @@ Ready.
 % real # type
 % 15 # length
 #SELECT col0 + - - CAST( NULL AS DECIMAL ) - + col0 + + col1 FROM tab1 cor0 WHERE ( NULL ) IS NOT NULL;
-% sys.L3 # table_name
+% .L3 # table_name
 % L3 # name
 % decimal # type
 % 20 # length
