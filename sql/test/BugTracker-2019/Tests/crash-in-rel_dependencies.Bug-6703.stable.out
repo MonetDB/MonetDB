@@ -18,11 +18,9 @@ stdout of test 'crash-in-rel_dependencies.Bug-6703` in directory 'sql/test/BugTr
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
-Ready.
-
-# 12:49:43 >  
-# 12:49:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9773" "--port=36629"
-# 12:49:43 >  
+# 15:47:38 >  
+# 15:47:38 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28187" "--port=33199"
+# 15:47:38 >  
 
 #START TRANSACTION;
 #CREATE TABLE resultbuffer_int_str(q int, i1 int ,s1 string, prob double);
