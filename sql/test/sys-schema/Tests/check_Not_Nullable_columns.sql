@@ -174,8 +174,8 @@ SELECT "sample", * FROM "sys"."statistics" WHERE "sample" IS NULL;
 SELECT "count", * FROM "sys"."statistics" WHERE "count" IS NULL;
 SELECT "unique", * FROM "sys"."statistics" WHERE "unique" IS NULL;
 SELECT "nils", * FROM "sys"."statistics" WHERE "nils" IS NULL;
-SELECT "minval", * FROM "sys"."statistics" WHERE "minval" IS NULL;
-SELECT "maxval", * FROM "sys"."statistics" WHERE "maxval" IS NULL;
+-- SELECT "minval", * FROM "sys"."statistics" WHERE "minval" IS NULL;
+-- SELECT "maxval", * FROM "sys"."statistics" WHERE "maxval" IS NULL;
 SELECT "sorted", * FROM "sys"."statistics" WHERE "sorted" IS NULL;
 SELECT "revsorted", * FROM "sys"."statistics" WHERE "revsorted" IS NULL;
 

@@ -215,7 +215,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							minlen = 4;
 						}
 						if (tostr) {
-							if ((val = BATmax(bn,0)) == NULL)
+							if ((val = BATmax(bn, NULL)) == NULL)
 								strcpy(maxval, str_nil);
 							else {
 								if (tostr(&maxval, &maxlen, val, false) < 0) {
@@ -226,7 +226,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								}
 								GDKfree(val);
 							}
-							if ((val = BATmin(bn,0)) == NULL)
+							if ((val = BATmin(bn, NULL)) == NULL)
 								strcpy(minval, str_nil);
 							else {
 								if (tostr(&minval, &minlen, val, false) < 0) {

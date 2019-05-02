@@ -134,7 +134,7 @@ Ready.
 % mal # name
 % clob # type
 % 130 # length
-function user.SQLanalyze():void;
+function user.main():void;
     X_5:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0;":str, "default_pipe":str, 51:int);
 barrier X_149:bit := language.dataflow();
     X_43:bat[:dbl] := bat.new(nil:dbl);
@@ -189,12 +189,13 @@ barrier X_149:bit := language.dataflow();
     language.pass(C_130:bat[:oid]);
 exit X_149:bit;
     sql.resultSet(X_68:bat[:str], X_69:bat[:str], X_71:bat[:str], X_72:bat[:int], X_73:bat[:int], X_46:bat[:dbl], X_49:bat[:dbl]);
-end user.SQLanalyze;
-#inline               actions= 0 time=4 usec 
-#remap                actions= 0 time=7 usec 
-#costmodel            actions= 1 time=7 usec 
-#coercion             actions= 0 time=7 usec 
-#evaluate             actions=10 time=99 usec 
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#aliases              actions= 6 time=9 usec 
+#evaluate             actions= 4 time=18 usec 
 #emptybind            actions= 0 time=1 usec 
 #pushselect           actions= 6 time=43 usec 
 #aliases              actions=14 time=40 usec 
@@ -220,7 +221,7 @@ end user.SQLanalyze;
 % mal # name
 % clob # type
 % 130 # length
-function user.SQLanalyze():void;
+function user.main():void;
     X_8:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1);":str, "default_pipe":str, 61:int);
 barrier X_161:bit := language.dataflow();
     X_53:bat[:dbl] := bat.new(nil:dbl);
@@ -275,29 +276,31 @@ barrier X_161:bit := language.dataflow();
     language.pass(C_142:bat[:oid]);
 exit X_161:bit;
     sql.resultSet(X_78:bat[:str], X_79:bat[:str], X_81:bat[:str], X_82:bat[:int], X_83:bat[:int], X_56:bat[:dbl], X_59:bat[:dbl]);
-end user.SQLanalyze;
-#inline               actions= 0 time=4 usec 
-#remap                actions= 0 time=8 usec 
-#costmodel            actions= 1 time=6 usec 
-#coercion             actions= 8 time=47 usec 
-#evaluate             actions=20 time=154 usec 
-#emptybind            actions= 0 time=1 usec 
-#pushselect           actions= 6 time=48 usec 
-#aliases              actions=24 time=41 usec 
-#mitosis              actions=1 time=80 usec 
-#mergetable           actions= 3 time=192 usec 
-#deadcode             actions= 4 time=43 usec 
-#aliases              actions= 0 time=1 usec 
-#constants            actions= 9 time=34 usec 
-#commonTerms          actions= 0 time=24 usec 
-#projectionpath       actions= 0 time=19 usec 
-#deadcode             actions= 0 time=33 usec 
-#reorder              actions= 1 time=127 usec 
-#matpack              actions= 2 time=20 usec 
-#dataflow             actions= 1 time=111 usec 
-#multiplex            actions= 0 time=7 usec 
-#profiler             actions=1 time=6 usec 
-#candidates           actions=1 time=4 usec 
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#aliases              actions=12 time=10 usec 
+#evaluate             actions= 8 time=26 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 6 time=12 usec 
+#aliases              actions=12 time=8 usec 
+#mitosis              actions=1 time=23 usec 
+#mergetable           actions= 3 time=48 usec 
+#deadcode             actions= 4 time=12 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 6 time=9 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=5 usec 
+#deadcode             actions= 0 time=9 usec 
+#reorder              actions= 1 time=29 usec 
+#matpack              actions= 2 time=5 usec 
+#dataflow             actions= 1 time=25 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=2 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=10 usec 
 #wlc                  actions= 0 time=0 usec 
 #garbagecollector     actions= 1 time=242 usec 
 #total                actions=26 time=1621 usec 
@@ -306,7 +309,7 @@ end user.SQLanalyze;
 % mal # name
 % clob # type
 % 151 # length
-function user.SQLanalyze():void;
+function user.main():void;
     X_9:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0;":str, "default_pipe":str, 40:int);
 barrier X_139:bit := language.dataflow();
     X_40:bat[:str] := bat.new(nil:str);
@@ -351,12 +354,13 @@ barrier X_139:bit := language.dataflow();
     language.pass(X_113:bat[:dbl]);
 exit X_139:bit;
     sql.resultSet(X_57:bat[:str], X_58:bat[:str], X_60:bat[:str], X_61:bat[:int], X_62:bat[:int], X_37:bat[:dbl], X_38:bat[:dbl]);
-end user.SQLanalyze;
-#inline               actions= 0 time=3 usec 
-#remap                actions= 0 time=6 usec 
-#costmodel            actions= 1 time=5 usec 
-#coercion             actions= 0 time=5 usec 
-#evaluate             actions=12 time=130 usec 
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 8 time=7 usec 
+#evaluate             actions= 4 time=17 usec 
 #emptybind            actions= 0 time=1 usec 
 #pushselect           actions= 3 time=33 usec 
 #aliases              actions=14 time=30 usec 
@@ -382,7 +386,7 @@ end user.SQLanalyze;
 % mal # name
 % clob # type
 % 164 # length
-function user.SQLanalyze():void;
+function user.main():void;
     X_11:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0);":str, "default_pipe":str, 46:int);
 barrier X_147:bit := language.dataflow();
     X_46:bat[:str] := bat.new(nil:str);
@@ -427,29 +431,31 @@ barrier X_147:bit := language.dataflow();
     language.pass(X_121:bat[:dbl]);
 exit X_147:bit;
     sql.resultSet(X_63:bat[:str], X_64:bat[:str], X_66:bat[:str], X_67:bat[:int], X_68:bat[:int], X_43:bat[:dbl], X_44:bat[:dbl]);
-end user.SQLanalyze;
-#inline               actions= 0 time=3 usec 
-#remap                actions= 0 time=14 usec 
-#costmodel            actions= 1 time=5 usec 
-#coercion             actions= 0 time=6 usec 
-#evaluate             actions=18 time=124 usec 
-#emptybind            actions= 0 time=2 usec 
-#pushselect           actions= 3 time=35 usec 
-#aliases              actions=20 time=33 usec 
-#mitosis              actions=1 time=75 usec 
-#mergetable           actions= 4 time=183 usec 
-#deadcode             actions= 5 time=38 usec 
-#aliases              actions= 0 time=2 usec 
-#constants            actions=11 time=33 usec 
-#commonTerms          actions= 0 time=22 usec 
-#projectionpath       actions= 0 time=15 usec 
-#deadcode             actions= 0 time=28 usec 
-#reorder              actions= 1 time=108 usec 
-#matpack              actions= 2 time=22 usec 
-#dataflow             actions= 1 time=81 usec 
-#multiplex            actions= 0 time=7 usec 
-#profiler             actions=1 time=4 usec 
-#candidates           actions=1 time=4 usec 
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=4 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=2 usec 
+#aliases              actions=12 time=9 usec 
+#evaluate             actions= 6 time=21 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 3 time=10 usec 
+#aliases              actions= 8 time=6 usec 
+#mitosis              actions=1 time=22 usec 
+#mergetable           actions= 4 time=59 usec 
+#deadcode             actions= 5 time=11 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 7 time=8 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=4 usec 
+#deadcode             actions= 0 time=8 usec 
+#reorder              actions= 1 time=25 usec 
+#matpack              actions= 2 time=6 usec 
+#dataflow             actions= 1 time=22 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=2 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=10 usec 
 #wlc                  actions= 0 time=0 usec 
 #garbagecollector     actions= 1 time=208 usec 
 #total                actions=26 time=1367 usec 
@@ -458,7 +464,7 @@ end user.SQLanalyze;
 % mal # name
 % clob # type
 % 168 # length
-function user.SQLanalyze():void;
+function user.main():void;
     X_15:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0);":str, "default_pipe":str, 52:int);
 barrier X_157:bit := language.dataflow();
     X_54:bat[:str] := bat.new(nil:str);
@@ -503,31 +509,34 @@ barrier X_157:bit := language.dataflow();
     language.pass(X_131:bat[:dbl]);
 exit X_157:bit;
     sql.resultSet(X_71:bat[:str], X_72:bat[:str], X_74:bat[:str], X_75:bat[:int], X_76:bat[:int], X_51:bat[:dbl], X_52:bat[:dbl]);
-end user.SQLanalyze;
-#inline               actions= 0 time=3 usec 
-#remap                actions= 0 time=10 usec 
-#costmodel            actions= 1 time=4 usec 
-#coercion             actions= 4 time=21 usec 
-#evaluate             actions=24 time=104 usec 
-#emptybind            actions= 0 time=1 usec 
-#pushselect           actions= 3 time=27 usec 
-#aliases              actions=26 time=27 usec 
-#mitosis              actions=1 time=51 usec 
-#mergetable           actions= 4 time=121 usec 
-#deadcode             actions= 5 time=27 usec 
-#aliases              actions= 0 time=1 usec 
-#constants            actions=13 time=27 usec 
-#commonTerms          actions= 0 time=15 usec 
-#projectionpath       actions= 0 time=11 usec 
-#deadcode             actions= 0 time=19 usec 
-#reorder              actions= 1 time=76 usec 
-#matpack              actions= 2 time=14 usec 
-#dataflow             actions=27 time=41 usec 
-#multiplex            actions= 0 time=5 usec 
-#profiler             actions= 1 time=5 usec 
-#candidates           actions= 1 time=2 usec 
-#garbagecollector     actions= 1 time=33 usec 
-#total                actions= 1 time=695 usec 
+end user.main;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=3 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions=16 time=10 usec 
+#evaluate             actions= 8 time=25 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 3 time=9 usec 
+#aliases              actions=10 time=6 usec 
+#mitosis              actions=1 time=21 usec 
+#mergetable           actions= 4 time=44 usec 
+#deadcode             actions= 5 time=11 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 7 time=9 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=4 usec 
+#deadcode             actions= 0 time=8 usec 
+#reorder              actions= 1 time=24 usec 
+#matpack              actions= 2 time=5 usec 
+#dataflow             actions= 1 time=22 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=9 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=28 usec 
+#total                actions=29 time=348 usec 
 #drop table test;
 #drop table test1;
 #drop table test2;
