@@ -608,16 +608,6 @@ stdout of test 'check_Not_Nullable_columns` in directory 'sql/test/sys-schema` i
 % nils,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
 % bigint,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
 % 1,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-#SELECT "minval", * FROM "sys"."statistics" WHERE "minval" IS NULL;
-% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% minval,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
-#SELECT "maxval", * FROM "sys"."statistics" WHERE "maxval" IS NULL;
-% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
-% maxval,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
-% clob,	int,	clob,	int,	timestamp,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
-% 0,	1,	0,	1,	26,	1,	1,	1,	1,	0,	0,	5,	5 # length
 #SELECT "sorted", * FROM "sys"."statistics" WHERE "sorted" IS NULL;
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % sorted,	column_id,	type,	width,	stamp,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name

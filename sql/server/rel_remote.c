@@ -17,14 +17,20 @@ mapiuri_valid( const char *uri)
 	int i = 0, l = 0;
 	const char *p = uri;
 
-	if (strncmp(p, "mapi:monetdb://", strlen(mapi_prefix)))
+	if (strncmp(p, mapi_prefix, strlen(mapi_prefix)))
 		return 0;
 	/* optional host (todo limit to valid hostnames ??) */
 	p += strlen(mapi_prefix);
-	for(; *p; p++) {
-		if (*p == ':')
-			break;
-		if (*p == '/')
+	if (*p == '[') { //check for IPv6 addresses
+		for (; *p; p++) {
+			if (*p == ']')
+				break;
+		}
+	}
+	if (!p)
+		return 0;
+	for (; *p; p++) {
+		if (*p == ':' || *p == '/')
 			break;
 	}
 	if (!p)

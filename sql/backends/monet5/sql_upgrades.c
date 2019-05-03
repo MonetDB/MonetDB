@@ -191,7 +191,6 @@ sql_update_hugeint(Client c, mvc *sql)
 	size_t bufsize = 8192, pos = 0;
 	char *buf, *err;
 	char *schema;
-	sql_schema *s;
 
 	if ((err = sql_fix_system_tables(c, sql)) != NULL)
 		return err;
@@ -201,21 +200,18 @@ sql_update_hugeint(Client c, mvc *sql)
 
 	schema = stack_get_string(sql, "current_schema");
 
-	s = mvc_bind_schema(sql, "sys");
-
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
+	/* 80_udf_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function fuse(one bigint, two bigint)\n"
-			"returns hugeint\n"
-			"external name udf.fuse;\n");
+			"returns hugeint external name udf.fuse;\n");
 
+	/* 90_generator_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function sys.generate_series(first hugeint, \"limit\" hugeint)\n"
 			"returns table (value hugeint)\n"
-			"external name generator.series;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
+			"external name generator.series;\n"
 			"create function sys.generate_series(first hugeint, \"limit\" hugeint, stepsize hugeint)\n"
 			"returns table (value hugeint)\n"
 			"external name generator.series;\n");
@@ -223,58 +219,36 @@ sql_update_hugeint(Client c, mvc *sql)
 	/* 39_analytics_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create aggregate stddev_samp(val HUGEINT) returns DOUBLE\n"
-			"    external name \"aggr\".\"stdev\";\n"
+			"\texternal name \"aggr\".\"stdev\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_samp(HUGEINT) TO PUBLIC;\n"
 			"create aggregate stddev_pop(val HUGEINT) returns DOUBLE\n"
-			"    external name \"aggr\".\"stdevp\";\n"
+			"\texternal name \"aggr\".\"stdevp\";\n"
+			"GRANT EXECUTE ON AGGREGATE stddev_pop(HUGEINT) TO PUBLIC;\n"
 			"create aggregate var_samp(val HUGEINT) returns DOUBLE\n"
-			"    external name \"aggr\".\"variance\";\n"
+			"\texternal name \"aggr\".\"variance\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_samp(HUGEINT) TO PUBLIC;\n"
 			"create aggregate var_pop(val HUGEINT) returns DOUBLE\n"
-			"    external name \"aggr\".\"variancep\";\n"
+			"\texternal name \"aggr\".\"variancep\";\n"
+			"GRANT EXECUTE ON AGGREGATE var_pop(HUGEINT) TO PUBLIC;\n"
 			"create aggregate median(val HUGEINT) returns HUGEINT\n"
-			"    external name \"aggr\".\"median\";\n"
+			"\texternal name \"aggr\".\"median\";\n"
+			"GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;\n"
 			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
-			"    external name \"aggr\".\"quantile\";\n"
+			"\texternal name \"aggr\".\"quantile\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;\n"
 			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
-			"    external name \"aggr\".\"corr\";\n");
+			"\texternal name \"aggr\".\"corr\";\n"
+			"GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
 
 	/* 40_json_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create function json.filter(js json, name hugeint)\n"
-			"returns json\n"
-			"external name json.filter;\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.tablestoragemodel;\n"
-			"create view sys.tablestoragemodel\n"
-			"as select \"schema\",\"table\",max(count) as \"count\",\n"
-			"  sum(columnsize) as columnsize,\n"
-			"  sum(heapsize) as heapsize,\n"
-			"  sum(hashes) as hashes,\n"
-			"  sum(\"imprints\") as \"imprints\",\n"
-			"  sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n"
-			"from sys.storagemodel() group by \"schema\",\"table\";\n");
+			"returns json external name json.filter;\n"
+			"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"update sys.functions set system = true where name in ('fuse', 'generate_series', 'stddev_samp', 'stddev_pop', 'var_samp', 'var_pop', 'median', 'quantile', 'corr') and schema_id = (select id from sys.schemas where name = 'sys');\n"
-			"update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');\n"
-			"update sys._tables set system = true where name = 'tablestoragemodel' and schema_id = (select id from sys.schemas where name = 'sys');\n");
-
-	if (s != NULL) {
-		sql_table *t;
-
-		if ((t = mvc_bind_table(sql, s, "tablestoragemodel")) != NULL)
-			t->system = 0;
-	}
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"grant execute on aggregate sys.stddev_samp(hugeint) to public;\n"
-			"grant execute on aggregate sys.stddev_pop(hugeint) to public;\n"
-			"grant execute on aggregate sys.var_samp(hugeint) to public;\n"
-			"grant execute on aggregate sys.var_pop(hugeint) to public;\n"
-			"grant execute on aggregate sys.median(hugeint) to public;\n"
-			"grant execute on aggregate sys.quantile(hugeint, double) to public;\n"
-			"grant execute on aggregate sys.corr(hugeint, hugeint) to public;\n"
-			"grant execute on function json.filter(json, hugeint) to public;\n");
+			"update sys.functions set system = true where name = 'filter' and schema_id = (select id from sys.schemas where name = 'json');\n");
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);

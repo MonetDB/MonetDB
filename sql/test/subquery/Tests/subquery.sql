@@ -61,19 +61,19 @@ SELECT * FROM integers WHERE 1 IN (SELECT NULL) ORDER BY i; -- empty
 SELECT 1 IN (SELECT NULL) FROM integers; 
 SELECT NULL IN (SELECT * FROM integers) FROM integers;
 
-SELECT SUM(i) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
+SELECT CAST(SUM(i) AS BIGINT) FROM integers WHERE 1 IN (SELECT * FROM integers); -- 6
 
 -- moved ANY into any.sql
 -- moved ALL into all.sql
 
 SELECT (SELECT (SELECT (SELECT 42))); -- 42
 SELECT (SELECT EXISTS(SELECT * FROM integers WHERE i>2)) FROM integers; -- single column 4xtrue
-SELECT (SELECT MAX(i) FROM integers) AS k, SUM(i) FROM integers GROUP BY k; -- 3,6
+SELECT (SELECT MAX(i) FROM integers) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k; -- 3,6
 
 -- more all into all.sql
-SELECT i % 2 AS k, SUM(i) FROM integers GROUP BY k HAVING SUM(i) > (SELECT MAX(i) FROM integers); -- 1,4
+SELECT i % 2 AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k HAVING SUM(i) > (SELECT MAX(i) FROM integers); -- 1,4
 SELECT i FROM integers WHERE NOT(i IN (SELECT i FROM integers WHERE i>1)); -- 1
-SELECT (SELECT SUM(i) FROM integers), (SELECT 42);
+SELECT (SELECT CAST(SUM(i) AS BIGINT) FROM integers), (SELECT 42);
 
 drop TABLE integers;
 

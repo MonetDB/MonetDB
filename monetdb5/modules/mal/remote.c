@@ -110,6 +110,11 @@ str RMTresolve(bat *ret, str *pat) {
 
 	/* extract port from mero_uri, let mapi figure out the rest */
 	mero_uri+=strlen("mapi:monetdb://");
+	if (*mero_uri == '[') {
+		if ((mero_uri = strchr(mero_uri, ']')) == NULL)
+			throw(MAL, "remote.resolve", "illegal IPv6 address on merovingian_uri: %s",
+				  GDKgetenv("merovingian_uri"));
+	}
 	if ((p = strchr(mero_uri, ':')) == NULL)
 		throw(MAL, "remote.resolve", "illegal merovingian_uri setting: %s",
 				GDKgetenv("merovingian_uri"));

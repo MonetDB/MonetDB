@@ -103,12 +103,12 @@ SELECT i, (SELECT MIN(i+2*i1.i) FROM integers) FROM integers i1 ORDER BY i;
 	-- 1, 3
 	-- 2, 5
 	-- 3, 7
-SELECT i, SUM(i), (SELECT SUM(i)+SUM(i1.i) FROM integers) FROM integers i1 GROUP BY i ORDER BY i;
+SELECT i, CAST(SUM(i) AS BIGINT), CAST((SELECT SUM(i)+SUM(i1.i) FROM integers) AS BIGINT) FROM integers i1 GROUP BY i ORDER BY i;
 	-- NULL, NULL, NULL
 	-- 1, 1, 7
 	-- 2, 2, 8
 	-- 3, 3, 9
-SELECT i, SUM(i), (SELECT SUM(i)+COUNT(i1.i) FROM integers) FROM integers i1 GROUP BY i ORDER BY i;
+SELECT i, CAST(SUM(i) AS BIGINT), CAST((SELECT SUM(i)+COUNT(i1.i) FROM integers) AS BIGINT) FROM integers i1 GROUP BY i ORDER BY i;
 	-- NULL, NULL, 6
 	-- 1, 1, 7
 	-- 2, 2, 7
@@ -126,17 +126,17 @@ SELECT i, (SELECT MIN(i+2*i1.i) FROM integers) FROM integers i1 ORDER BY i;
 	-- 2, 5
 	-- 3, 7
 -- aggregate ONLY inside subquery
-SELECT (SELECT SUM(i1.i)) FROM integers i1; -- 6
+SELECT CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 6
 -- aggregate ONLY inside subquery, with column reference outside of subquery
 --SELECT FIRST(i), (SELECT SUM(i1.i)) FROM integers i1; -- missing FIRST aggregate
-SELECT MIN(i), (SELECT SUM(i1.i)) FROM integers i1; -- 1, 6
+SELECT MIN(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 1, 6
 -- this will fail, because "i" is not an aggregate but the SUM(i1.i) turns this query into an aggregate
 SELECT i, (SELECT SUM(i1.i)) FROM integers i1;
 SELECT i+1, (SELECT SUM(i1.i)) FROM integers i1;
-SELECT MIN(i), (SELECT SUM(i1.i)) FROM integers i1; -- 1, 6
-SELECT (SELECT SUM(i1.i)), (SELECT SUM(i1.i)) FROM integers i1; -- 6, 6
+SELECT MIN(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 1, 6
+SELECT CAST((SELECT SUM(i1.i)) AS BIGINT), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1; -- 6, 6
 -- subquery inside aggregation
-SELECT SUM(i), SUM((SELECT i FROM integers WHERE i=i1.i)) FROM integers i1; -- 6, 6
+SELECT CAST(SUM(i) AS BIGINT), CAST(SUM((SELECT i FROM integers WHERE i=i1.i)) AS BIGINT) FROM integers i1; -- 6, 6
 SELECT SUM(i), (SELECT SUM(i) FROM integers WHERE i>SUM(i1.i)) FROM integers i1; -- 6, NULL
 -- subquery with aggregation inside aggregation should fail
 SELECT SUM((SELECT SUM(i))) FROM integers; -- error

@@ -439,6 +439,7 @@ CONDITIONALS = {
     'MERCURIAL'            : "",
     'RELEASERUN'           : "",
     'BAD_HOSTNAME'         : "",
+    'HAVE_IPV6'            : "",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -4100,6 +4101,16 @@ def main(argv) :
             socket.getaddrinfo(socket.gethostname(), None)
         except:
             CONDITIONALS['BAD_HOSTNAME'] = '#' # True
+
+    if THISFILE == "Mtest.py": # env['MAPIPORT'] not available on Mapprove.py
+        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        try:
+            s.bind(('::1', int(env['MAPIPORT'])))
+        except socket.error as err:
+            CONDITIONALS['HAVE_IPV6'] = '' # False
+        else:
+            CONDITIONALS['HAVE_IPV6'] = '#' # True
+        s.close()
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':

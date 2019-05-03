@@ -31,18 +31,6 @@ stderr of test 'lateral-join-crash.Bug-6613` in directory 'sql/test/BugTracker-2
 # 00:28:47 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13250" "--port=34098"
 # 00:28:47 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-13250/.s.monetdb.34098
-QUERY = select t.meter, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t(meter);
-ERROR = !SELECT: no such column 't.meter'
-CODE  = 42S22
-MAPI  = (monetdb) /var/tmp/mtest-13250/.s.monetdb.34098
-QUERY = select * from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1);
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-13250/.s.monetdb.34098
-QUERY = select t.*, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t(meter);
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
 
 # 00:28:47 >  
 # 00:28:47 >  "Done."

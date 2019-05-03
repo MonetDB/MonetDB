@@ -5811,7 +5811,7 @@ sql_trans_dist_count( sql_trans *tr, sql_column *col )
 }
 
 int
-sql_trans_ranges( sql_trans *tr, sql_column *col, void **min, void **max )
+sql_trans_ranges( sql_trans *tr, sql_column *col, char **min, char **max )
 {
 	if (col && isTable(col->t)) {
 		/* get from statistics */

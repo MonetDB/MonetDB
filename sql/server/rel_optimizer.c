@@ -41,24 +41,6 @@ static sql_rel * rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel);
 
 static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
 
-static int
-exps_unique( list *exps )
-{
-	node *n;
-
-	if ((n = exps->h) != NULL) {
-		sql_exp *e = n->data;
-		prop *p;
-
-		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
-			sql_ukey *k = p->value;
-			if (k && list_length(k->k.columns) <= 1)
-				return 1;
-		}
-	}
-	return 0;
-}
-
 /* The important task of the relational optimizer is to optimize the
    join order. 
 
@@ -130,10 +112,11 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 	case op_left: 
 	case op_right: 
 	case op_full: 
-	case op_semi: 
-	case op_anti: 
 		/* first right (possible subquery) */
 		c = name_find_column( rel->r, rname, name, pnr, bt);
+		/* fall through */
+	case op_semi: 
+	case op_anti: 
 		if (!c) 
 			c = name_find_column( rel->l, rname, name, pnr, bt);
 		return c;
@@ -2398,6 +2381,81 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return NULL;
 }
 
+static int
+rel_is_unique( sql_rel *rel, sql_ukey *k)
+{
+	switch(rel->op) {
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_join:
+		return 0;
+	case op_semi:
+	case op_anti:
+		return rel_is_unique(rel->l, k);
+	case op_table:
+	case op_basetable:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+int
+exps_unique(mvc *sql, sql_rel *rel, list *exps)
+{
+	node *n;
+	char *matched = NULL; 
+	int nr = 0;
+	sql_ukey *k = NULL;
+
+	if (list_empty(exps))
+		return 0;
+	for(n = exps->h; n && !k; n = n->next) {
+		sql_exp *e = n->data;
+		prop *p;
+
+		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL)
+			k = p->value;
+	}
+	if (!k || list_length(k->k.columns) > list_length(exps))
+		return 0;
+	if (rel) {
+		matched = (char*)sa_alloc(sql->sa, list_length(k->k.columns));
+		memset(matched, 0, list_length(k->k.columns));
+		for(n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			fcmp cmp = (fcmp)&kc_column_cmp;
+			sql_column *c = exp_find_column(rel, e, -2);
+			node *m;
+	
+			if (c && (m=list_find(k->k.columns, c, cmp)) != NULL) {
+				int pos = list_position(k->k.columns, m->data);
+				if (!matched[pos]) 
+					nr++;
+				matched[pos] = 1;
+			}
+		}
+		if (nr == list_length(k->k.columns)) {
+			return rel_is_unique(rel, k);
+		}
+	}
+	/*
+	if ((n = exps->h) != NULL) {
+		sql_exp *e = n->data;
+		prop *p;
+
+		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
+			sql_ukey *k = p->value;
+			if (k && list_length(k->k.columns) <= 1)
+				return 1;
+		}
+	}
+	*/
+	return 0;
+}
+
+
 static sql_rel *
 rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 {
@@ -2411,9 +2469,9 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 	}
 
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ]) 
-	 * into project [ pk ] ( select ( table )  */
+	 * into project [ pk ] ( select/semijoin ( table )  */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    l->op == op_select && exps_unique(rel->exps)) 
+	    (l->op == op_select || l->op == op_semi) && exps_unique(sql, rel, rel->exps)) 
 		set_nodistinct(rel);
 	/* rewrite distinct project [ gbe ] ( select ( groupby [ gbe ] [ gbe, e ] )[ e op val ]) 
 	 * into project [ gbe ] ( select ( group etc ) */
@@ -5173,7 +5231,7 @@ static sql_rel *
 rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel) 
 {
 	/* first remove distinct if already unique */
-	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(rel->exps))
+	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(sql, rel, rel->exps))
 		set_nodistinct(rel);
 
 	if (rel->op == op_project && rel->l && rel->exps && !rel->r) {
@@ -5201,8 +5259,8 @@ rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel)
 			ur = rel_project(sql->sa, ur, 
 				rel_projections(sql, ur, NULL, 1, 1));
 		need_distinct = (need_distinct && 
-				(!exps_unique(ul->exps) ||
-				 !exps_unique(ur->exps)));
+				(!exps_unique(sql, ul, ul->exps) ||
+				 !exps_unique(sql, ur, ur->exps)));
 		rel_rename_exps(sql, u->exps, ul->exps);
 		rel_rename_exps(sql, u->exps, ur->exps);
 
@@ -5588,7 +5646,7 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 
 	    		if (exp_aggr_is_count(e) && need_distinct(e)) {
 				/* if count over unique values (ukey/pkey) */
-				if (e->l && exps_unique(e->l))
+				if (e->l && exps_unique(sql, rel, e->l))
 					set_nodistinct(e);
 			}
 		}
@@ -6660,7 +6718,7 @@ rel_dependencies(mvc *sql, list *refs)
 static void
 rel_dce_refs(mvc *sql, sql_rel *rel, list *refs) 
 {
-	if (!rel)
+	if (!rel || (rel_is_ref(rel) && list_find(refs, rel, NULL))) 
 		return ;
 
 	switch(rel->op) {
@@ -6673,6 +6731,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 
 		if (rel->l && (rel->op != op_table || rel->flag != 2))
 			rel_dce_refs(sql, rel->l, refs);
+		break;
 
 	case op_basetable:
 	case op_insert:
@@ -6889,7 +6948,7 @@ sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
 	list *refs = sa_list(sql->sa);
-	node *n;
+	//node *n;
 
 	rel_dce_refs(sql, rel, refs);
 	if (refs) {
@@ -6907,12 +6966,6 @@ rel_dce(mvc *sql, sql_rel *rel)
 	rel = rel_add_projects(sql, rel);
 	rel_used(rel);
 	rel_dce_sub(sql, rel, refs);
-
-	if (refs) {
-		refs = rel_dependencies(sql, refs);
-		for (n = refs->h; n; n = n->next)
-			rel_dce_sub(sql, n->data, refs);
-	}
 	return rel;
 }
 
@@ -8325,16 +8378,16 @@ find_col_exp( list *exps, sql_exp *e)
 }
 
 static int
-exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom *emax)
+exp_range_overlap( mvc *sql, sql_exp *e, char *min, char *max, atom *emin, atom *emax)
 {
 	sql_subtype *t = exp_subtype(e);
 
 	if (!min || !max || !emin || !emax)
 		return 0;
 
-	if (strcmp("nil", (char*)min) == 0)
+	if (GDK_STRNIL(min))
 		return 0;
-	if (strcmp("nil", (char*)max) == 0)
+	if (GDK_STRNIL(max))
 		return 0;
 
 	if (t->type->localtype == TYPE_dbl) {
@@ -8533,7 +8586,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 								((first && (i=find_col_exp(cols, e)) != -1) ||
 								 (!first && pos[j] > 0))) {
 								/* check if the part falls within the bounds of the select expression else skip this (keep at least on part-table) */
-								void *min, *max;
+								char *min, *max;
 								sql_column *col = NULL;
 								sql_rel *bt = NULL;
 
@@ -8668,7 +8721,7 @@ exp_is_zero_rows(mvc *sql, sql_rel *rel, sql_rel *sel)
 				if (lval && hval) {
 					sql_rel *bt;
 					sql_column *col = name_find_column(sel, c->rname, c->name, -2, &bt);
-					void *min, *max;
+					char *min, *max;
 					if (col
 						&& col->t == t
 						&& sql_trans_ranges(sql->session->tr, col, &min, &max)

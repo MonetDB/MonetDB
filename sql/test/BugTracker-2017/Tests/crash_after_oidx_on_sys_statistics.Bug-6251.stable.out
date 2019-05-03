@@ -88,7 +88,7 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
 % clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 9,	1,	2,	2,	2,	1,	5,	5 # length
+% 9,	1,	2,	2,	2,	2,	5,	5 # length
 [ "int",	4,	12,	12,	12,	0,	true,	false	]
 [ "clob",	1,	12,	12,	5,	0,	false,	false	]
 [ "int",	4,	12,	12,	3,	0,	false,	false	]
@@ -97,8 +97,8 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "clob",	1,	12,	12,	1,	0,	true,	true	]
-[ "clob",	1,	12,	12,	1,	0,	true,	true	]
+[ "clob",	1,	12,	12,	1,	12,	true,	true	]
+[ "clob",	1,	12,	12,	1,	12,	true,	true	]
 [ "boolean",	1,	12,	12,	1,	0,	true,	true	]
 [ "boolean",	1,	12,	12,	1,	0,	true,	true	]
 #CREATE ORDERED INDEX stat_oidx ON sys.statistics (width);
@@ -106,7 +106,7 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	sorted,	revsorted # name
 % clob,	int,	bigint,	bigint,	bigint,	bigint,	boolean,	boolean # type
-% 9,	1,	2,	2,	2,	1,	5,	5 # length
+% 9,	1,	2,	2,	2,	2,	5,	5 # length
 [ "int",	4,	12,	12,	12,	0,	true,	false	]
 [ "clob",	1,	12,	12,	5,	0,	false,	false	]
 [ "int",	4,	12,	12,	3,	0,	false,	false	]
@@ -115,8 +115,8 @@ stdout of test 'crash_after_oidx_on_sys_statistics.Bug-6251` in directory 'sql/t
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
 [ "bigint",	8,	12,	12,	1,	0,	true,	true	]
-[ "clob",	1,	12,	12,	1,	0,	true,	true	]
-[ "clob",	1,	12,	12,	1,	0,	true,	true	]
+[ "clob",	1,	12,	12,	1,	12,	true,	true	]
+[ "clob",	1,	12,	12,	1,	12,	true,	true	]
 [ "boolean",	1,	12,	12,	1,	0,	true,	true	]
 [ "boolean",	1,	12,	12,	1,	0,	true,	true	]
 #DELETE FROM sys.statistics;

@@ -6142,6 +6142,8 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		inner = rel->l;
 		assert(is_project(rel->op) && inner);
 	
+		if (inner && inner->op == op_groupby)
+			set_processed(inner);
 		inner = rel_logical_exp(query, inner, sn->having, sql_having);
 
 		if (!inner)

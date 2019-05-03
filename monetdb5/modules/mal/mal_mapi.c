@@ -502,55 +502,19 @@ error:
 		closesocket(usock);
 }
 
-/**
- * Small utility function to call the sabaoth marchConnection function
- * with the right arguments.  If the socket is bound to 0.0.0.0 the
- * hostname address is used, to make the info usable for servers outside
- * localhost.
- */
-static void SERVERannounce(struct in_addr addr, int port, str usockfile) {
-	str buf;
-	char host[128];
+static const struct in6_addr ipv6_loopback_addr = IN6ADDR_LOOPBACK_INIT;
 
-	if (port > 0) {
-		if (addr.s_addr == INADDR_ANY) {
-			gethostname(host, sizeof(host));
-			host[sizeof(host) - 1] = '\0';
-		} else {
-			/* avoid doing this, it requires some includes that probably
-			 * give trouble on windowz
-			host = inet_ntoa(addr);
-			 */
-			sprintf(host, "%u.%u.%u.%u",
-					(unsigned) ((ntohl(addr.s_addr) >> 24) & 0xff),
-					(unsigned) ((ntohl(addr.s_addr) >> 16) & 0xff),
-					(unsigned) ((ntohl(addr.s_addr) >> 8) & 0xff),
-					(unsigned) (ntohl(addr.s_addr) & 0xff));
-		}
-		if ((buf = msab_marchConnection(host, port)) != NULL)
-			free(buf);
-		else
-			/* announce that we're now reachable */
-			printf("# Listening for connection requests on "
-					"mapi:monetdb://%s:%i/\n", host, port);
-	}
-	if (usockfile != NULL) {
-		port = 0;
-		if ((buf = msab_marchConnection(usockfile, port)) != NULL)
-			free(buf);
-		else
-			/* announce that we're now reachable */
-			printf("# Listening for UNIX domain connection requests on "
-					"mapi:monetdb://%s\n", usockfile);
-	}
-}
+static const struct in6_addr ipv6_any_addr = IN6ADDR_ANY_INIT;
 
 static str
 SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 {
-	struct sockaddr_in server;
+	struct sockaddr* server = NULL;
+	struct sockaddr_in server_ipv4;
+	struct sockaddr_in6 server_ipv6;
 	SOCKET sock = INVALID_SOCKET;
 	SOCKET *psock;
+	bool bind_ipv6 = false;
 	bool accept_any = false;
 	bool autosense = false;
 #ifdef HAVE_SYS_UN_H
@@ -564,18 +528,27 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 	int port;
 	int maxusers;
 	char *usockfile;
+	str buf;
+	char host[128];
+	const char *listenaddr;
 #ifdef DEBUG_SERVER
 	char msg[512], host[512];
 	Client cntxt= mal_clients;
 #endif
 
 	accept_any = GDKgetenv_istrue("mapi_open");
+	bind_ipv6 = GDKgetenv_istrue("mapi_ipv6");
 	autosense = GDKgetenv_istrue("mapi_autosense");
+	listenaddr = GDKgetenv("mapi_listenaddr");
 
 	/* early way out, we do not want to listen on any port when running in embedded mode */
 	if (GDKgetenv_istrue("mapi_disable")) {
 		return MAL_SUCCEED;
 	}
+
+	if (listenaddr && accept_any)
+		throw(ILLARG,"mal_mapi.listen", OPERATION_FAILED
+									   ": mapi_open and mapi_listenaddr cannot be set at the same time");
 
 	psock = GDKmalloc(sizeof(SOCKET) * 3);
 	if (psock == NULL)
@@ -614,69 +587,102 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 	}
 
 	if (port > 0) {
-		sock = socket(AF_INET, SOCK_STREAM
+		if (listenaddr && *listenaddr) {
+			int check = 0, e = errno;
+			char sport[16];
+			struct addrinfo *result = NULL, *rp = NULL, hints = (struct addrinfo) {
+				.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
+				.ai_socktype = SOCK_STREAM,
+				.ai_flags = AI_PASSIVE,
+				.ai_protocol = IPPROTO_TCP,
+			};
+
+			do {
+				snprintf(sport, 16, "%d", port);
+				check = getaddrinfo(listenaddr, sport, &hints, &result);
+				if (check != 0) {
+					if (autosense && port <= 65535) {
+						port++;
+						continue;
+					}
+					GDKfree(psock);
+					GDKfree(usockfile);
+					throw(IO, "mal_mapi.listen", OPERATION_FAILED
+							  ": bind to stream socket on address %s and port %d failed: %s", listenaddr, port,
+							  gai_strerror(check));
+				}
+
+				for (rp = result; rp != NULL; rp = rp->ai_next) {
+					int bind_check;
+					sock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
-					  | SOCK_CLOEXEC
+								  | SOCK_CLOEXEC
 #endif
-					  , 0);
-		if (sock == INVALID_SOCKET) {
-			int e = errno;
-			GDKfree(psock);
-			GDKfree(usockfile);
-			errno = e;
-			throw(IO, "mal_mapi.listen",
-				  OPERATION_FAILED ": creation of stream socket failed: %s",
-#ifdef _MSC_VER
-				  wsaerror(WSAGetLastError())
-#else
-				  strerror(errno)
-#endif
-				);
-		}
+								  , rp->ai_protocol);
+					if (sock == INVALID_SOCKET) {
+						e = errno;
+						continue;
+					}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
-		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+					(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
-		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
-#ifdef _MSC_VER
-			const char *err = wsaerror(WSAGetLastError());
-#else
-			const char *err = strerror(errno);
-#endif
-			GDKfree(psock);
-			GDKfree(usockfile);
-			closesocket(sock);
-			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", err);
-		}
+					if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
+						e = errno;
+						closesocket(sock);
+						continue;
+					}
 
-		server.sin_family = AF_INET;
-		if (accept_any)
-			server.sin_addr.s_addr = htonl(INADDR_ANY);
-		else
-			server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-		for (i = 0; i < 8; i++)
-			server.sin_zero[i] = 0;
-		length = (SOCKLEN) sizeof(server);
+					bind_check = bind(sock, (SOCKPTR) rp->ai_addr, (socklen_t) rp->ai_addrlen);
+					e = errno;
+					if (bind_check == SOCKET_ERROR) {
+						closesocket(sock);
+						continue;
+					} else
+						break;
+				}
+				if (result)
+					freeaddrinfo(result);
+				errno = e;
+				if (errno == 0 && sock != INVALID_SOCKET)
+					break;
 
-		for (;;) {
-			server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
-			if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
-				int e = errno;
-				if (
+				if (port > 65535) {
+					GDKfree(psock);
+					GDKfree(usockfile);
+					throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed", port);
+				} else if (
 #ifdef _MSC_VER
-					WSAGetLastError() == WSAEADDRINUSE &&
+							WSAGetLastError() == WSAEADDRINUSE &&
 #else
 #ifdef EADDRINUSE
-					errno == EADDRINUSE &&
+							errno == EADDRINUSE &&
 #else
 #endif
 #endif
-					autosense && port <= 65535)
-				{
-					port++;
-					continue;
+							autosense && port <= 65535) {
+								port++;
+								continue;
 				}
-				closesocket(sock);
+				GDKfree(psock);
+				GDKfree(usockfile);
+				errno = e;
+				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed: %s", port,
+#ifdef _MSC_VER
+					  wsaerror(WSAGetLastError())
+#else
+					  strerror(errno)
+#endif
+				);
+			} while (1);
+		} else {
+			sock = socket(bind_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+						  | SOCK_CLOEXEC
+#endif
+						  , 0);
+			if (sock == INVALID_SOCKET) {
+				int e = errno;
 				GDKfree(psock);
 				GDKfree(usockfile);
 				errno = e;
@@ -688,35 +694,110 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 #else
 					  strerror(errno)
 #endif
-					);
+				);
+			}
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
+			(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
+
+			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
+				int e = errno;
+#ifdef _MSC_VER
+				const char *err = wsaerror(WSAGetLastError());
+#else
+				const char *err = strerror(errno);
+#endif
+				GDKfree(psock);
+				GDKfree(usockfile);
+				closesocket(sock);
+				errno = e;
+				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", err);
+			}
+
+			if (bind_ipv6) {
+				memset(&server_ipv6, 0, sizeof(server_ipv6));
+				server_ipv6.sin6_family = AF_INET6;
+				if (accept_any)
+					server_ipv6.sin6_addr = ipv6_any_addr;
+				else
+					server_ipv6.sin6_addr = ipv6_loopback_addr;
+				server = (struct sockaddr*) &server_ipv6;
+				length = (SOCKLEN) sizeof(server_ipv6);
 			} else {
-				break;
+				server_ipv4.sin_family = AF_INET;
+				if (accept_any)
+					server_ipv4.sin_addr.s_addr = htonl(INADDR_ANY);
+				else
+					server_ipv4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+				for (i = 0; i < 8; i++)
+					server_ipv4.sin_zero[i] = 0;
+				server = (struct sockaddr*) &server_ipv4;
+				length = (SOCKLEN) sizeof(server_ipv4);
+			}
+
+			for (;;) {
+				if (bind_ipv6)
+					server_ipv6.sin6_port = htons((unsigned short) ((port) & 0xFFFF));
+				else
+					server_ipv4.sin_port = htons((unsigned short) ((port) & 0xFFFF));
+
+				if (bind(sock, (SOCKPTR) server, length) == SOCKET_ERROR) {
+					int e = errno;
+					if (
+#ifdef _MSC_VER
+						WSAGetLastError() == WSAEADDRINUSE &&
+#else
+#ifdef EADDRINUSE
+						errno == EADDRINUSE &&
+#else
+#endif
+#endif
+						autosense && port <= 65535)
+					{
+						port++;
+						continue;
+					}
+					closesocket(sock);
+					GDKfree(psock);
+					GDKfree(usockfile);
+					errno = e;
+					throw(IO, "mal_mapi.listen", OPERATION_FAILED ": bind to stream socket port %d failed: %s", port,
+#ifdef _MSC_VER
+						  wsaerror(WSAGetLastError())
+#else
+						  strerror(errno)
+#endif
+					);
+				} else {
+					break;
+				}
+			}
+
+			if (getsockname(sock, server, &length) == SOCKET_ERROR) {
+				int e = errno;
+				closesocket(sock);
+				GDKfree(psock);
+				GDKfree(usockfile);
+				errno = e;
+				throw(IO, "mal_mapi.listen", OPERATION_FAILED ": failed getting socket name: %s",
+#ifdef _MSC_VER
+					  wsaerror(WSAGetLastError())
+#else
+					  strerror(errno)
+#endif
+				);
 			}
 		}
 
-		if (getsockname(sock, (SOCKPTR) &server, &length) == SOCKET_ERROR) {
+		if (listen(sock, maxusers) == SOCKET_ERROR) {
 			int e = errno;
-			closesocket(sock);
 			GDKfree(psock);
 			GDKfree(usockfile);
+			if (sock != INVALID_SOCKET)
+				closesocket(sock);
 			errno = e;
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": failed getting socket name: %s",
-#ifdef _MSC_VER
-				  wsaerror(WSAGetLastError())
-#else
-				  strerror(errno)
-#endif
-				);
-		}
-		if(listen(sock, maxusers) == SOCKET_ERROR) {
-			int e = errno;
-			closesocket(sock);
-			GDKfree(psock);
-			GDKfree(usockfile);
-			errno = e;
-			throw(IO, "mal_mapi.listen",
-				  OPERATION_FAILED ": failed to set socket to listen %s",
 #ifdef _MSC_VER
 				  wsaerror(WSAGetLastError())
 #else
@@ -732,7 +813,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 					   | SOCK_CLOEXEC
 #endif
 					   , 0);
-		if (usock == INVALID_SOCKET ) {
+		if (usock == INVALID_SOCKET) {
 			int e = errno;
 			GDKfree(psock);
 			GDKfree(usockfile);
@@ -760,8 +841,7 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 				closesocket(sock);
 			closesocket(usock);
 			GDKfree(psock);
-			e = createException(MAL, "mal_mapi.listen",
-					OPERATION_FAILED ": UNIX socket path too long: %s",
+			e = createException(MAL, "mal_mapi.listen", OPERATION_FAILED ": UNIX socket path too long: %s",
 					usockfile);
 			GDKfree(usockfile);
 			return e;
@@ -863,7 +943,58 @@ SERVERlisten(int *Port, const char *Usockfile, int *Maxusers)
 	 * predictable... */
 	srand((unsigned int) GDKusec());
 
-	SERVERannounce(server.sin_addr, port, usockfile);
+	if (port > 0) {
+		if (bind_ipv6) {
+			if (memcmp(server_ipv6.sin6_addr.s6_addr, &ipv6_loopback_addr, sizeof(struct in6_addr)) == 0) {
+				sprintf(host, "[::1]");
+			} else if (memcmp(server_ipv6.sin6_addr.s6_addr, &ipv6_any_addr, sizeof(struct in6_addr)) == 0) {
+				gethostname(host, sizeof(host));
+				host[sizeof(host) - 1] = '\0';
+			} else {
+				snprintf(host, sizeof(host),"[%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]",
+						(int)server_ipv6.sin6_addr.s6_addr[0],  (int)server_ipv6.sin6_addr.s6_addr[1],
+						(int)server_ipv6.sin6_addr.s6_addr[2],  (int)server_ipv6.sin6_addr.s6_addr[3],
+						(int)server_ipv6.sin6_addr.s6_addr[4],  (int)server_ipv6.sin6_addr.s6_addr[5],
+						(int)server_ipv6.sin6_addr.s6_addr[6],  (int)server_ipv6.sin6_addr.s6_addr[7],
+						(int)server_ipv6.sin6_addr.s6_addr[8],  (int)server_ipv6.sin6_addr.s6_addr[9],
+						(int)server_ipv6.sin6_addr.s6_addr[10], (int)server_ipv6.sin6_addr.s6_addr[11],
+						(int)server_ipv6.sin6_addr.s6_addr[12], (int)server_ipv6.sin6_addr.s6_addr[13],
+						(int)server_ipv6.sin6_addr.s6_addr[14], (int)server_ipv6.sin6_addr.s6_addr[15]);
+			}
+		} else {
+			if (server_ipv4.sin_addr.s_addr == INADDR_ANY) {
+				gethostname(host, sizeof(host));
+				host[sizeof(host) - 1] = '\0';
+			} else {
+				/* avoid doing this, it requires some includes that probably
+				 * give trouble on windowz
+				host = inet_ntoa(addr);
+				 */
+				snprintf(host, sizeof(host), "%u.%u.%u.%u",
+						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 24) & 0xff),
+						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 16) & 0xff),
+						(unsigned) ((ntohl(server_ipv4.sin_addr.s_addr) >> 8) & 0xff),
+						(unsigned) (ntohl(server_ipv4.sin_addr.s_addr) & 0xff));
+			}
+		}
+
+		if ((buf = msab_marchConnection(host, port)) != NULL)
+			free(buf);
+		else
+			/* announce that we're now reachable */
+			printf("# Listening for connection requests on "
+				   "mapi:monetdb://%s:%i/\n", host, port);
+	}
+	if (usockfile != NULL) {
+		port = 0;
+		if ((buf = msab_marchConnection(usockfile, port)) != NULL)
+			free(buf);
+		else
+			/* announce that we're now reachable */
+			printf("# Listening for UNIX domain connection requests on "
+				   "mapi:monetdb://%s\n", usockfile);
+	}
+
 	if (usockfile)
 		GDKfree(usockfile);
 	return MAL_SUCCEED;
