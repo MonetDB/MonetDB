@@ -717,17 +717,17 @@ rel_values(sql_query *query, symbol *tableref)
 	dnode *o;
 	node *m;
 	list *exps = sa_list(sql->sa);
-
 	exp_kind ek = {type_value, card_value, TRUE};
-	if (!rowlist->h)
-		r = rel_project(sql->sa, NULL, NULL);
 
-	/* last element in the list is the table_name */
-	for (o = rowlist->h; o->next; o = o->next) {
+	for (o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
 
-		if (r && list_length(r->exps) != dlist_length(values)) {
-			return sql_error(sql, 02, SQLSTATE(42000) "VALUES: number of values doesn't match");
+		/* When performing sub-queries, the relation name appears under a SQL_NAME symbol at the end of the list */
+		if (o->type == type_symbol && o->data.sym->token == SQL_NAME)
+			break;
+
+		if (!list_empty(exps) && list_length(exps) != dlist_length(values)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "VALUES: number of columns doesn't match between rows");
 		} else {
 			dnode *n;
 
@@ -2606,6 +2606,8 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			return rel_lastexp(sql, *rel);
 		return NULL;
 	}
+	case SQL_DEFAULT:
+		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
 		sql_exp *re, *le = rel_value_exp(query, rel, sc, f, ek);
 		sql_subtype bt;
@@ -3272,6 +3274,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
 		return rel_setquery(query, rel, sc);
+	case SQL_DEFAULT:
+		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	default: {
 		sql_exp *re, *le = rel_value_exp(query, &rel, sc, f, ek);
 
@@ -5814,6 +5818,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek, 
 	case SQL_COALESCE:
 	case SQL_NULLIF:
 		return rel_case_exp(query, rel, se, f);
+	case SQL_DEFAULT:
+		return sql_error(sql, 02, SQLSTATE(42000) "DEFAULT keyword not allowed outside insert and update statements");
 	case SQL_XMLELEMENT:
 	case SQL_XMLFOREST:
 	case SQL_XMLCOMMENT:
@@ -6422,8 +6428,6 @@ rel_setquery(sql_query *query, sql_rel *rel, symbol *q)
 	return res;
 }
 
-
-
 static sql_rel *
 rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt jointype, symbol *tab2, symbol *js)
 {
@@ -6680,6 +6684,10 @@ rel_selects(sql_query *query, symbol *s)
 	switch (s->token) {
 	case SQL_WITH:
 		ret = rel_with_query(query, s);
+		sql->type = Q_TABLE;
+		break;
+	case SQL_VALUES:
+		ret = rel_values(query, s);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_SELECT: {

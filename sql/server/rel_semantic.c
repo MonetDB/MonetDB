@@ -234,6 +234,7 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
+	case SQL_VALUES:
 		return rel_selects(query, s);
 
 	default:

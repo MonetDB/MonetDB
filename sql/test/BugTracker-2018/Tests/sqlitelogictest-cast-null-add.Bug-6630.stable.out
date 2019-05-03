@@ -73,7 +73,7 @@ stdout of test 'sqlitelogictest-cast-null-add.Bug-6630` in directory 'sql/test/B
 [ NULL	]
 #SELECT ALL CAST ( col1 / - - ( + CAST ( NULL AS INTEGER ) ) AS BIGINT ) col0,
 #           CAST ( 39 + + + CAST ( NULL AS INTEGER ) + + - 10 + col1 / - col0 AS BIGINT ) AS col1 FROM tab2;
-% .L4,	.L10 # table_name
+% sys.L4,	.L10 # table_name
 % col0,	col1 # name
 % bigint,	bigint # type
 % 1,	1 # length
