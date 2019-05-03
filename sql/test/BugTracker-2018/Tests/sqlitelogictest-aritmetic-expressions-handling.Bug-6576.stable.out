@@ -160,7 +160,7 @@ Ready.
 #SELECT CAST ( NULL AS INTEGER ) - 1 - 1 + 2 * 70; --NULL
 % .L3 # table_name
 % L3 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ NULL	]
 
