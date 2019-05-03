@@ -217,6 +217,8 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 			osq = sq;
 		}
+		if (columnrefs && dlist_length(columnrefs) > sq->nrcols)
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: The number of aliases is longer than the number of columns (%d>%d)", dlist_length(columnrefs), sq->nrcols);
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
@@ -608,7 +610,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 			append(tl, exp_subtype(e));
 		}
 	}
-		
+
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 	e = find_table_function(sql, s, fname, exps, tl);
@@ -650,6 +652,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		append(exps, exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0));
 	}
 	rel = rel_table_func(sql->sa, rel, e, exps, (sq != NULL));
+	if (ast->data.lval->h->next->data.sym && ast->data.lval->h->next->data.sym->data.lval->h->next->data.lval)
+		rel = rel_table_optname(sql, rel, ast->data.lval->h->next->data.sym);
 	return rel;
 }
 
@@ -712,7 +716,7 @@ rel_values(sql_query *query, symbol *tableref)
 	symbol *optname = rowlist->t->data.sym;
 	dnode *o;
 	node *m;
-	list *exps = sa_list(sql->sa); 
+	list *exps = sa_list(sql->sa);
 
 	exp_kind ek = {type_value, card_value, TRUE};
 	if (!rowlist->h)
@@ -784,8 +788,8 @@ rel_values(sql_query *query, symbol *tableref)
 		vals->f = nexps;
 	}
 	r = rel_project(sql->sa, NULL, exps);
-	rel_table_optname(sql, r, optname);
-	return r;
+	r->nrcols = list_length(exps);
+	return rel_table_optname(sql, r, optname);
 }
 
 static int
@@ -813,6 +817,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 	mvc *sql = query->sql;
 	char *tname = NULL;
 	sql_table *t = NULL;
+	sql_rel *res = NULL;
 
 	if (tableref->token == SQL_NAME) {
 		dlist *name = tableref->data.lval->h->data.lval;
@@ -888,7 +893,10 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral)
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
 
-		return rel_basetable(sql, t, tname);
+		res = rel_basetable(sql, t, tname);
+		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) /* AS with column aliases */
+			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym);
+		return res;
 	} else if (tableref->token == SQL_VALUES) {
 		return rel_values(query, tableref);
 	} else if (tableref->token == SQL_TABLE) {
