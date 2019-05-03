@@ -1455,7 +1455,7 @@ exp_is_null(mvc *sql, sql_exp *e )
 		list *l = e->l;
 
 		if (!r && l)
-			for (n = l->h; n && r; n = n->next) 
+			for (n = l->h; n && !r; n = n->next) 
 				r |= exp_is_null(sql, n->data);
 		return r;
 	}
