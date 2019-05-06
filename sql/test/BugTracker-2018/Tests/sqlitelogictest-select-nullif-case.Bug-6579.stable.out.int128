@@ -31,6 +31,16 @@ Ready.
 % hugeint # type
 % 4 # length
 [ -225	]
+#SELECT + - CAST ( 30 AS INTEGER ) + + CASE - 83 WHEN 22 THEN NULL WHEN - + MAX ( DISTINCT + ( + + 35 ) ) - - 48
+#- CAST ( + 90 AS INTEGER ) THEN NULL ELSE + - 80 END AS col1, ( + - 13 ) + + CAST ( NULL AS INTEGER ) + - 76 + - +
+#CASE + + NULLIF ( - MAX ( + NULLIF ( + 43, + 25 + + - CAST ( NULL AS INTEGER ) ) ), - - COUNT ( * ) ) WHEN 12 + + 36 *
+#- + CAST ( NULL AS INTEGER ) THEN NULL WHEN + 34 * + 10 THEN MIN ( DISTINCT + 68 ) / 10 WHEN 31 - COUNT ( * ) / + 16
+#THEN + 12 ELSE NULL END;
+% .L6,	.L25 # table_name
+% col1,	L25 # name
+% bigint,	hugeint # type
+% 4,	1 # length
+[ -110,	NULL	]
 
 # 09:56:14 >  
 # 09:56:14 >  "Done."

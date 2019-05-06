@@ -79,6 +79,11 @@ Ready.
 % col0,	col1,	col2 # name
 % int,	int,	int # type
 % 1,	1,	1 # length
+#SELECT * FROM tab1, tab0 AS cor0 WHERE NULL NOT IN ( cor0.col2 ); --6 columns in the output
+% sys.tab1,	sys.tab1,	sys.tab1,	sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% col0,	col1,	col2,	col0,	col1,	col2 # name
+% int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	1,	1 # length
 #ROLLBACK;
 
 # 13:53:34 >  
