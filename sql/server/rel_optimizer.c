@@ -6133,7 +6133,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n && !fnd; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type != e_aggr && e->type != e_column) {
+			if (e->type != e_aggr && e->type != e_column && e->type != e_atom) {
 				fnd = 1;
 			}
 		}
