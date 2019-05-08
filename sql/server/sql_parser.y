@@ -3223,8 +3223,6 @@ values_or_query_spec:
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
  |   DEFAULT VALUES
 		{ $$ = _symbol_create_list( SQL_VALUES, L()); }
- |   VALUES row_commalist
-		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  query_expression
  ;
 
@@ -3437,11 +3435,9 @@ with_query_expression:
  | merge_stmt
  ;
 
-
 sql:
-    select_statement_single_row
-|
-    select_no_parens_orderby
+   select_statement_single_row
+ | select_no_parens_orderby
  ;
 
 simple_select:
@@ -3536,6 +3532,7 @@ select_no_parens:
 	  append_list(l, $4);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_INTERSECT, l); }
+ |  VALUES row_commalist     { $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  '(' select_no_parens ')' { $$ = $2; }
  |   simple_select
  ;
@@ -4018,21 +4015,14 @@ filter_exp:
 		  $$ = _symbol_create_list(SQL_FILTER, l ); }
  ;
 
-
 subquery_with_orderby:
     '(' select_no_parens_orderby ')'	{ $$ = $2; }
- |  '(' VALUES row_commalist ')'	
-				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
- |  '(' with_query ')'	
-				{ $$ = $2; }
+ |  '(' with_query ')'			{ $$ = $2; }
  ;
 
 subquery:
     '(' select_no_parens ')'	{ $$ = $2; }
- |  '(' VALUES row_commalist ')'	
-				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
- |  '(' with_query ')'	
-				{ $$ = $2; }
+ |  '(' with_query ')'		{ $$ = $2; }
  ;
 
 	/* simple_scalar expressions */

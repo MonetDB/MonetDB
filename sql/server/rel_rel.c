@@ -545,6 +545,7 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
 		append(rel->exps, e);
+		rel->nrcols++;
 		if (e->card > rel->card)
 			rel->card = e->card;
 	} else if (rel->op == op_groupby) {
@@ -647,6 +648,7 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 			exp_setname(sql->sa, e, nme, nme);
 		}
 		append(rel->exps, e);
+		rel->nrcols++;
 		m = e;
 	}
 	ne = exp_column(sql->sa, exp_relname(m), exp_name(m), exp_subtype(m),

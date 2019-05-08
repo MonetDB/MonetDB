@@ -30,7 +30,7 @@ stdout of test 'python3_dbapi` in directory 'sql/test/mapi` itself:
 
 [(1,)]
 (2,)
-42000!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+42000!syntax error, unexpected IDENT, expecting SELECT or '(' or VALUES in: "( xyz"
 
 [(3, 'three'), (7, 'seven')]
 2

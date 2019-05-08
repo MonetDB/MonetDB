@@ -31,4 +31,6 @@ col2 - + 22, - - 21 );
 
 SELECT DISTINCT * FROM tab2 AS cor0 WHERE CAST ( NULL AS INTEGER ) / col2 NOT IN ( 19 / col2 );
 
+SELECT * FROM tab1, tab0 AS cor0 WHERE NULL NOT IN ( cor0.col2 ); --6 columns in the output
+
 ROLLBACK;

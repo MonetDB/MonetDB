@@ -5,4 +5,6 @@ select t.* from segments as s, lateral generate_series(s.meter, s.meter+s.distan
 select t.value, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t;
 select * from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1);
 select t.*, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t;
+select t.meter, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t(meter);
+select t.*, s.distance, s.speed from segments as s, lateral generate_series(s.meter, s.meter+s.distance+1) as t(meter);
 rollback;
