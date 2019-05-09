@@ -7069,10 +7069,10 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 #SELECT v, convert(v, timetz) from T_time;
 % sys.t_time,	sys.L3 # table_name
 % v,	L3 # name
-% time,	timetz # type
-% 8,	21 # length
-[ 00:00:00,	02:00:00.000000+02:00	]
-[ 23:59:58,	01:59:58.000000+02:00	]
+% time,	time # type
+% 8,	8 # length
+[ 00:00:00,	02:00:00+02:00	]
+[ 23:59:58,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(36)) from T_time;
 % sys.t_time,	sys.L3 # table_name
@@ -7109,10 +7109,10 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 #SELECT v, cast(v as timetz) from T_time;
 % sys.t_time,	sys.L3 # table_name
 % v,	L3 # name
-% time,	timetz # type
-% 8,	21 # length
-[ 00:00:00,	02:00:00.000000+02:00	]
-[ 23:59:58,	01:59:58.000000+02:00	]
+% time,	time # type
+% 8,	8 # length
+[ 00:00:00,	02:00:00+02:00	]
+[ 23:59:58,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #DROP TABLE T_time;
 #CREATE TABLE T_timestamp (v TIMESTAMP);
@@ -7179,7 +7179,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-01-01 00:00:00.000000,	00:00:00	]
 [ 2016-02-29 00:00:00.000000,	00:00:00	]
 [ 2016-12-31 23:59:58.000000,	23:59:58	]
-[ NULL,	00:00:00	]
+[ NULL,	NULL	]
 #SELECT v, convert(v, timestamp) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
@@ -7194,13 +7194,13 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
 % timestamp,	timetz # type
-% 26,	21 # length
-[ 1999-12-31 23:59:59.000000,	01:59:59.000000+02:00	]
-[ 2016-01-01 00:00:00.000000,	02:00:00.000000+02:00	]
-[ 2016-02-29 00:00:00.000000,	02:00:00.000000+02:00	]
-[ 2016-12-31 23:59:58.000000,	01:59:58.000000+02:00	]
-[ NULL,	02:00:00.000000+02:00	]
-#SELECT v, convert(v, timestamptz) from T_timestamp;
+% 26,	14 # length
+[ 1999-12-31 23:59:59.000000,	01:59:59+02:00	]
+[ 2016-01-01 00:00:00.000000,	02:00:00+02:00	]
+[ 2016-02-29 00:00:00.000000,	02:00:00+02:00	]
+[ 2016-12-31 23:59:58.000000,	01:59:58+02:00	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, timestamp with time zone) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
 % timestamp,	timestamp # type
@@ -7259,7 +7259,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-01-01 00:00:00.000000,	00:00:00	]
 [ 2016-02-29 00:00:00.000000,	00:00:00	]
 [ 2016-12-31 23:59:58.000000,	23:59:58	]
-[ NULL,	00:00:00	]
+[ NULL,	NULL	]
 #SELECT v, cast(v as timestamp) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
@@ -7274,13 +7274,13 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
 % timestamp,	timetz # type
-% 26,	21 # length
-[ 1999-12-31 23:59:59.000000,	01:59:59.000000+02:00	]
-[ 2016-01-01 00:00:00.000000,	02:00:00.000000+02:00	]
-[ 2016-02-29 00:00:00.000000,	02:00:00.000000+02:00	]
-[ 2016-12-31 23:59:58.000000,	01:59:58.000000+02:00	]
-[ NULL,	02:00:00.000000+02:00	]
-#SELECT v, cast(v as timestamptz) from T_timestamp;
+% 26,	14 # length
+[ 1999-12-31 23:59:59.000000,	01:59:59+02:00	]
+[ 2016-01-01 00:00:00.000000,	02:00:00+02:00	]
+[ 2016-02-29 00:00:00.000000,	02:00:00+02:00	]
+[ 2016-12-31 23:59:58.000000,	01:59:58+02:00	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as timestamp with time zone) from T_timestamp;
 % sys.t_timestamp,	sys.L3 # table_name
 % v,	L3 # name
 % timestamp,	timestamp # type
@@ -7300,89 +7300,89 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_timetz # table_name
 % v # name
 % timetz # type
-% 21 # length
+% 14 # length
 [ NULL	]
-[ 02:00:00.000000+02:00	]
-[ 01:59:58.000000+02:00	]
+[ 02:00:00+02:00	]
+[ 01:59:58+02:00	]
 #SELECT v, convert(v, varchar(36)) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	varchar # type
-% 21,	21 # length
-[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
-[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+% 14,	14 # length
+[ 02:00:00+02:00,	"02:00:00+02:00"	]
+[ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	clob # type
-% 21,	21 # length
-[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
-[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+% 14,	14 # length
+[ 02:00:00+02:00,	"02:00:00+02:00"	]
+[ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	clob # type
-% 21,	21 # length
-[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
-[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+% 14,	14 # length
+[ 02:00:00+02:00,	"02:00:00+02:00"	]
+[ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, time) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
-% timetz,	time # type
-% 21,	8 # length
-[ 02:00:00.000000+02:00,	00:00:00	]
-[ 01:59:58.000000+02:00,	23:59:58	]
+% timetz,	timetz # type
+% 14,	14 # length
+[ 02:00:00+02:00,	00:00:00	]
+[ 01:59:58+02:00,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, timetz) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	timetz # type
-% 21,	21 # length
-[ 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
-[ 01:59:58.000000+02:00,	01:59:58.000000+02:00	]
+% 14,	14 # length
+[ 02:00:00+02:00,	02:00:00+02:00	]
+[ 01:59:58+02:00,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as varchar(36)) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	varchar # type
-% 21,	21 # length
-[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
-[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+% 14,	14 # length
+[ 02:00:00+02:00,	"02:00:00+02:00"	]
+[ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	clob # type
-% 21,	21 # length
-[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
-[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+% 14,	14 # length
+[ 02:00:00+02:00,	"02:00:00+02:00"	]
+[ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	clob # type
-% 21,	21 # length
-[ 02:00:00.000000+02:00,	"02:00:00.000000+02:00"	]
-[ 01:59:58.000000+02:00,	"01:59:58.000000+02:00"	]
+% 14,	14 # length
+[ 02:00:00+02:00,	"02:00:00+02:00"	]
+[ 01:59:58+02:00,	"01:59:58+02:00"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as time) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
-% timetz,	time # type
-% 21,	8 # length
-[ 02:00:00.000000+02:00,	00:00:00	]
-[ 01:59:58.000000+02:00,	23:59:58	]
+% timetz,	timetz # type
+% 14,	14 # length
+[ 02:00:00+02:00,	00:00:00	]
+[ 01:59:58+02:00,	23:59:58	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as timetz) from T_timetz;
 % sys.t_timetz,	sys.L3 # table_name
 % v,	L3 # name
 % timetz,	timetz # type
-% 21,	21 # length
-[ 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
-[ 01:59:58.000000+02:00,	01:59:58.000000+02:00	]
+% 14,	14 # length
+[ 02:00:00+02:00,	02:00:00+02:00	]
+[ 01:59:58+02:00,	01:59:58+02:00	]
 [ NULL,	NULL	]
 #DROP TABLE T_timetz;
 #CREATE TABLE T_timestamptz (v TIMESTAMPTZ);
@@ -7449,7 +7449,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-01-01 02:00:00.000000+02:00,	00:00:00	]
 [ 2016-02-29 02:00:00.000000+02:00,	00:00:00	]
 [ 2017-01-01 01:59:58.000000+02:00,	23:59:58	]
-[ NULL,	00:00:00	]
+[ NULL,	NULL	]
 #SELECT v, convert(v, timestamp) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
@@ -7464,13 +7464,13 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
 % timestamptz,	timetz # type
-% 32,	21 # length
-[ 2000-01-01 01:59:59.000000+02:00,	01:59:59.000000+02:00	]
-[ 2016-01-01 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
-[ 2016-02-29 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
-[ 2017-01-01 01:59:58.000000+02:00,	01:59:58.000000+02:00	]
-[ NULL,	02:00:00.000000+02:00	]
-#SELECT v, convert(v, timestamptz) from T_timestamptz;
+% 32,	14 # length
+[ 2000-01-01 01:59:59.000000+02:00,	01:59:59+02:00	]
+[ 2016-01-01 02:00:00.000000+02:00,	02:00:00+02:00	]
+[ 2016-02-29 02:00:00.000000+02:00,	02:00:00+02:00	]
+[ 2017-01-01 01:59:58.000000+02:00,	01:59:58+02:00	]
+[ NULL,	NULL	]
+#SELECT v, convert(v, timestamp with time zone) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
 % timestamptz,	timestamptz # type
@@ -7529,7 +7529,7 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 [ 2016-01-01 02:00:00.000000+02:00,	00:00:00	]
 [ 2016-02-29 02:00:00.000000+02:00,	00:00:00	]
 [ 2017-01-01 01:59:58.000000+02:00,	23:59:58	]
-[ NULL,	00:00:00	]
+[ NULL,	NULL	]
 #SELECT v, cast(v as timestamp) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
@@ -7544,13 +7544,13 @@ stdout of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracke
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
 % timestamptz,	timetz # type
-% 32,	21 # length
-[ 2000-01-01 01:59:59.000000+02:00,	01:59:59.000000+02:00	]
-[ 2016-01-01 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
-[ 2016-02-29 02:00:00.000000+02:00,	02:00:00.000000+02:00	]
-[ 2017-01-01 01:59:58.000000+02:00,	01:59:58.000000+02:00	]
-[ NULL,	02:00:00.000000+02:00	]
-#SELECT v, cast(v as timestamptz) from T_timestamptz;
+% 32,	14 # length
+[ 2000-01-01 01:59:59.000000+02:00,	01:59:59+02:00	]
+[ 2016-01-01 02:00:00.000000+02:00,	02:00:00+02:00	]
+[ 2016-02-29 02:00:00.000000+02:00,	02:00:00+02:00	]
+[ 2017-01-01 01:59:58.000000+02:00,	01:59:58+02:00	]
+[ NULL,	NULL	]
+#SELECT v, cast(v as timestamp with time zone) from T_timestamptz;
 % sys.t_timestamptz,	sys.L3 # table_name
 % v,	L3 # name
 % timestamptz,	timestamptz # type
