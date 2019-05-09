@@ -1001,6 +1001,7 @@ mal_export str MTIMEtimestamp_day(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_hours(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_minutes(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_sql_seconds(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_sql_seconds_bulk(bat *ret, bat *bid);
 mal_export str MTIMEsql_year(int *ret, const int *months);
 mal_export str MTIMEsql_month(int *ret, const int *months);
 mal_export str MTIMEsql_day(lng *ret, const lng *msecs);
@@ -1506,7 +1507,7 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, bat *bid)
 str
 MTIMEdaytime_extract_sql_seconds(int *ret, const daytime *t)
 {
-	*ret = is_daytime_nil(*t) ? int_nil : (int) (*t % 60000000) / 1000;
+	*ret = is_daytime_nil(*t) ? int_nil : (int) ((*t % 60000000) / 1000);
 	return MAL_SUCCEED;
 }
 
@@ -1533,7 +1534,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, bat *bid)
 			m[i] = int_nil;
 			bn->tnil = true;
 		} else {
-			m[i] = (int) (d[i] % 60000000) / 1000;
+			m[i] = (int) ((d[i] % 60000000) / 1000);
 		}
 	}
 	bn->tnonil = !bn->tnil;
@@ -1677,7 +1678,43 @@ MTIMEtimestamp_minutes(int *ret, const timestamp *t)
 str
 MTIMEtimestamp_sql_seconds(int *ret, const timestamp *t)
 {
-	*ret = is_timestamp_nil(*t) ? int_nil : (int) (ts_time(*t) % 60000000) / 1000;
+	*ret = is_timestamp_nil(*t) ? int_nil : (int) ((ts_time(*t) % 60000000) / 1000);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_sql_seconds_bulk(bat *ret, bat *bid)
+{
+	BAT *b, *bn;
+	BUN n;
+	const timestamp *t;
+	int *m;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "batmtime.sql_seconds", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	t = Tloc(b, 0);
+	m = Tloc(bn, 0);
+	bn->tnil = false;
+	for (BUN i = 0; i < n; i++) {
+		if (is_timestamp_nil(t[i])) {
+			m[i] = int_nil;
+			bn->tnil = true;
+		} else {
+			m[i] = (int) ((ts_time(t[i]) % 60000000) / 1000);
+		}
+	}
+	bn->tnonil = !bn->tnil;
+	BATsetcount(bn, n);
+	bn->tsorted = n < 2;
+	bn->trevsorted = n < 2;
+	bn->tkey = false;
+	BBPunfix(b->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 

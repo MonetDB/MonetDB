@@ -584,6 +584,8 @@ address MTIMEtimestamp_minutes;
 # address MTIMEtimestamp_seconds;
 command sql_seconds(t:timestamp):int
 address MTIMEtimestamp_sql_seconds;
+command batmtime.sql_seconds(d:bat[:timestamp]):bat[:int]
+address MTIMEtimestamp_sql_seconds_bulk;
 # command milliseconds(t:timestamp):int
 # address MTIMEtimestamp_milliseconds;
 
