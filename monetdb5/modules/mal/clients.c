@@ -160,7 +160,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(bn, local_itoa(cntxt->debug), false) != GDK_SUCCEED)
 		goto bailout;
 
-	CLTtimeConvert((time_t) cntxt->login,s);
+	CLTtimeConvert(cntxt->login, s);
 	if (BUNappend(b, "login", false) != GDK_SUCCEED ||
 		BUNappend(bn, s, false) != GDK_SUCCEED)
 		goto bailout;
@@ -189,7 +189,7 @@ CLTLogin(bat *nme, bat *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
-			CLTtimeConvert((time_t) c->login,s);
+			CLTtimeConvert(c->login, s);
 			if (BUNappend(b, s, false) != GDK_SUCCEED ||
 				BUNappend(u, &c->user, false) != GDK_SUCCEED)
 				goto bailout;
@@ -658,17 +658,23 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (c->mode == RUNCLIENT) {
 		if (BUNappend(user, c->username, false) != GDK_SUCCEED)
 			goto bailout;
-		msg = MTIMEtimestamplng(&ret, &(lng){c->login});
-		if (msg)
+		ret = timestamp_fromtime(c->login);
+		if (is_timestamp_nil(ret)) {
+			msg = createException(SQL, "sql.sessions",
+								  SQLSTATE(22003) "cannot convert time");
 			goto bailout;
+		}
 		if (BUNappend(login, &ret, false) != GDK_SUCCEED)
 			goto bailout;
 		timeout = c->stimeout / 1000000;
 		if (BUNappend(stimeout, &timeout, false) != GDK_SUCCEED)
 			goto bailout;
-		msg = MTIMEtimestamplng(&ret, &(lng){c->lastcmd});
-		if (msg)
+		ret = timestamp_fromtime(c->lastcmd);
+		if (is_timestamp_nil(ret)) {
+			msg = createException(SQL, "sql.sessions",
+								  SQLSTATE(22003) "cannot convert time");
 			goto bailout;
+		}
 		if (BUNappend(last, &ret, false) != GDK_SUCCEED)
 			goto bailout;
 		timeout = c->qtimeout / 1000000;

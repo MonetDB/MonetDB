@@ -92,7 +92,6 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 {
 	BUN c, n;
 	BAT *bn;
-	str msg;
 	int tpe;
 	(void) cntxt;
 
@@ -145,19 +144,18 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
-			lng df;
-			MTIMEtimestamp_diff(&df, &l, &f);
-			n = (BUN) (df / s);
+			s *= 1000; /* msec -> usec */
+			n = (BUN) (timestamp_diff(l, f) / s);
 			bn = COLnew(0, TYPE_timestamp, n + 1, TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			v = (timestamp *) Tloc(bn, 0);
 			for (c = 0; c < n; c++) {
 				*v++ = f;
-				msg = MTIMEtimestamp_add(&f, &f, &s);
-				if (msg != MAL_SUCCEED) {
+				f = timestamp_add_usec(f, s);
+				if (is_timestamp_nil(f)) {
 					BBPreclaim(bn);
-					return msg;
+					throw(MAL, "generator.table", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
 			if (f != l) {
@@ -302,7 +300,6 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN c;
 	BAT *bn, *cand = NULL;
 	InstrPtr p;
-	str msg = MAL_SUCCEED;
 	int tpe;
 
 	(void) cntxt;
@@ -345,7 +342,6 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			timestamp tsf,tsl;
 			timestamp tlow,thgh;
 			lng tss;
-			lng one = 1;
 			oid *ol;
 
 			tsf = *getArgReference_TYPE(stk, p, 1, timestamp);
@@ -365,19 +361,22 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (!is_timestamp_nil(tlow) && tlow == thgh)
 				hi = li;
-			if( hi && !is_timestamp_nil(thgh) &&
-			    (msg = MTIMEtimestamp_add(&thgh, &thgh, &one)) != MAL_SUCCEED)
-				return msg;
-			if( !li && !is_timestamp_nil(tlow) &&
-			    (msg = MTIMEtimestamp_add(&tlow, &tlow, &one)) != MAL_SUCCEED)
-				return msg;
+			if( hi && !is_timestamp_nil(thgh)) {
+				thgh = timestamp_add_usec(thgh, 1);
+				if (is_timestamp_nil(thgh))
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+			}
+			if( !li && !is_timestamp_nil(tlow)) {
+				tlow = timestamp_add_usec(tlow, 1);
+				if (is_timestamp_nil(tlow))
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
+			}
 
 			/* casting one value to lng causes the whole
 			 * computation to be done as lng, reducing the
 			 * risk of overflow */
-			lng df;
-			MTIMEtimestamp_diff(&df, &tsl, &tsf);
-			o2 = (BUN) (df / tss);
+			tss *= 1000; /* msec -> usec */
+			o2 = (BUN) (timestamp_diff(tsl, tsf) / tss);
 			bn = COLnew(0, TYPE_oid, o2 + 1, TRANSIENT);
 			if (bn == NULL)
 				throw(MAL, "generator.select", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -401,10 +400,10 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						n++;
 					}
 				}
-				msg = MTIMEtimestamp_add(&tsf, &tsf, &tss);
-				if (msg != MAL_SUCCEED) {
+				tsf = timestamp_add_usec(tsf, tss);
+				if (is_timestamp_nil(tsf)) {
 					BBPreclaim(bn);
-					return msg;
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
 				}
 			}
 			BATsetcount(bn, (BUN) n);
@@ -635,24 +634,24 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			hgh = low = timestamp_nil;
 			if ( strcmp(oper,"<") == 0){
-				lng minone = -1;
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &minone)) != MAL_SUCCEED) {
+				hgh = timestamp_add_usec(hgh, -1);
+				if (is_timestamp_nil(hgh)) {
 					if (cand)
 						BBPunfix(cand->batCacheid);
-					return msg;
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
 				}
 			} else
 			if ( strcmp(oper,"<=") == 0){
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp) ;
 			} else
 			if ( strcmp(oper,">") == 0){
-				lng one = 1;
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				if ((msg = MTIMEtimestamp_add(&low, &low, &one)) != MAL_SUCCEED) {
+				low = timestamp_add_usec(low, 1);
+				if (is_timestamp_nil(low)) {
 					if (cand)
 						BBPunfix(cand->batCacheid);
-					return msg;
+					throw(MAL, "generator.select", SQLSTATE(22003) "overflow in calculation");
 				}
 			} else
 			if ( strcmp(oper,">=") == 0){
@@ -670,9 +669,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");
 			}
 
-			lng df;
-			MTIMEtimestamp_diff(&df, &l, &f);
-			cap = (BUN) (df / s);
+			s *= 1000; /* msec -> usec */
+			cap = (BUN) (timestamp_diff(l, f) / s);
 			bn = COLnew(0, TYPE_oid, cap, TRANSIENT);
 			if( bn == NULL) {
 				if (cand)
@@ -691,8 +689,11 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 						else { while(cn-- >= 0 && oc < o) oc++; if ( oc == o){ *v++= o; c++;} }
 					} else {*v++ = o; c++;}
 				}
-				if( (msg = MTIMEtimestamp_add(&val, &val, &s)) != MAL_SUCCEED)
+				val = timestamp_add_usec(val, s);
+				if (is_timestamp_nil(val)) {
+					msg = createException(MAL, "generator.thetaselect", SQLSTATE(22003) "overflow in calculation");
 					goto wrapup;
+				}
 			}
 		} else {
 			if (cand)
@@ -809,6 +810,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				throw(MAL,"generator.projection", SQLSTATE(42000) "Illegal range");
 			}
 
+			s *= 1000; /* msec -> usec */
 			bn = COLnew(0, TYPE_timestamp, cnt, TRANSIENT);
 			if( bn == NULL){
 				BBPunfix(bid);
@@ -819,8 +821,9 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			for(; cnt-- > 0; ol ? *ol++ : o++){
 				t = ((lng) ( b->ttype == TYPE_void?o:*ol)) * s;
-				if( (msg = MTIMEtimestamp_add(&val, &f, &t)) != MAL_SUCCEED)
-					return msg;
+				val = timestamp_add_usec(f, t);
+				if (is_timestamp_nil(val))
+					throw(MAL, "generator.projection", SQLSTATE(22003) "overflow in calculation");
 
 				if ( is_timestamp_nil(val))
 					continue;

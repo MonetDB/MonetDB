@@ -3692,9 +3692,13 @@ daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 
 	/* correct fraction */
 	*res = *v;
-	if (!is_daytime_nil(*v) && d < 3) {
-		*res = (daytime) (*res / scales[3 - d]);
-		*res = (daytime) (*res * scales[3 - d]);
+	if (!is_daytime_nil(*v) && d < 6) {
+#ifdef TRUNCATE_NUMBERS
+		*res = (daytime) (*res / scales[6 - d]);
+#else
+		*res = (daytime) ((*res + scales[5 - d]*5) / scales[6 - d]);
+#endif
+		*res = (daytime) (*res * scales[6 - d]);
 	}
 	return MAL_SUCCEED;
 }
@@ -3702,8 +3706,9 @@ daytime_2time_daytime(daytime *res, const daytime *v, const int *digits)
 str
 second_interval_2_daytime(daytime *res, const lng *s, const int *digits)
 {
-	*res = (daytime) *s;
-	return daytime_2time_daytime(res, res, digits);
+	daytime d;
+	d = daytime_add_usec(daytime_create(0, 0, 0, 0), *s * 1000);
+	return daytime_2time_daytime(res, &d, digits);
 }
 
 str
@@ -3748,11 +3753,15 @@ timestamp_2_daytime(daytime *res, const timestamp *v, const int *digits)
 	int d = (*digits) ? *digits - 1 : 0;
 	daytime dt;
 
-	MTIMEtimestamp_extract_daytime(&dt, v);
+	dt = timestamp_daytime(*v);
 
 	/* correct fraction */
-	if (d < 6) {
+	if (!is_daytime_nil(dt) && d < 6) {
+#ifdef TRUNCATE_NUMBERS
 		dt /= scales[6 - d];
+#else
+		dt = (dt + scales[5 - d]*5) / scales[6 - d];
+#endif
 		dt *= scales[6 - d];
 	}
 	*res = dt;
@@ -3763,7 +3772,7 @@ str
 date_2_timestamp(timestamp *res, const date *v, const int *digits)
 {
 	(void) digits;		/* no precision needed */
-	MTIMEtimestamp_create_from_date(res, v);
+	*res = timestamp_fromdate(*v);
 	return MAL_SUCCEED;
 }
 
@@ -3774,14 +3783,18 @@ timestamp_2time_timestamp(timestamp *res, const timestamp *v, const int *digits)
 	date dt;
 	daytime tm;
 
-	MTIMEtimestamp_extract_date(&dt, v);
-	MTIMEtimestamp_extract_daytime(&tm, v);
+	dt = timestamp_date(*v);
+	tm = timestamp_daytime(*v);
 	/* correct fraction */
-	if (d < 6) {
+	if (!is_daytime_nil(tm) && d < 6) {
+#ifdef TRUNCATE_NUMBERS
 		tm /= scales[6 - d];
+#else
+		tm = (tm + scales[5 - d]*5) / scales[6 - d];
+#endif
 		tm *= scales[6 - d];
 	}
-	MTIMEtimestamp_create(res, &dt, &tm);
+	*res = timestamp_create(dt, tm);
 	return MAL_SUCCEED;
 }
 
@@ -4045,8 +4058,12 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	default:
 		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
-	if (scale)
+	if (scale) {
+#ifndef TRUNCATE_NUMBERS
+		r += 5*scales[scale-1];
+#endif
 		r /= scales[scale];
+	}
 	*ret = r;
 	return MAL_SUCCEED;
 }
@@ -4089,19 +4106,13 @@ SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg;
-	daytime t, *res = getArgReference_TYPE(stk, pci, 0, daytime);
+	daytime *res = getArgReference_TYPE(stk, pci, 0, daytime);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 
-	if ((msg = MTIMEcurrent_time(&t)) == MAL_SUCCEED) {
-		t += m->timezone;
-		while (t < 0)
-			t += 24*60*60*1000;
-		while (t >= 24*60*60*1000)
-			t -= 24*60*60*1000;
-		*res = t;
-	}
+	*res = timestamp_daytime(timestamp_add_usec(timestamp_current(),
+						    m->timezone * LL_CONSTANT(1000)));
 	return msg;
 }
 
@@ -4110,15 +4121,12 @@ SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg;
-	timestamp t, *res = getArgReference_TYPE(stk, pci, 0, timestamp);
+	timestamp *res = getArgReference_TYPE(stk, pci, 0, timestamp);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 
-	if ((msg = MTIMEcurrent_timestamp(&t)) == MAL_SUCCEED) {
-		lng offset = m->timezone;
-		return MTIMEtimestamp_add(res, &t, &offset);
-	}
+	*res = timestamp_add_usec(timestamp_current(), m->timezone * LL_CONSTANT(1000));
 	return msg;
 }
 

@@ -919,9 +919,10 @@ set_statement:
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE LOCAL
 		{ dlist *l = L();
+		sql_subtype t;
 		append_string(l, sa_strdup(SA, "current_timezone"));
-		append_symbol(l, _symbol_create_list( SQL_OP, append_list(L(),
-			append_string( L(), sa_strdup(SA, "local_timezone")))));
+		sql_find_subtype(&t, "sec_interval", inttype2digits(ihour, isec), 0);
+		append_symbol(l, _newAtomNode(atom_int(SA, &t, 0)));
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	set TIME ZONE interval_expression
 		{ dlist *l = L();

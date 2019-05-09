@@ -1796,49 +1796,53 @@ size_t GetTypeCount(int type, void *struct_ptr)
 
 void data_from_date(date d, cudf_data_date *ptr)
 {
-	int day, month, year;
-	MTIMEfromdate(d, &year, &month, &day);
-	ptr->day = day;
-	ptr->month = month;
-	ptr->year = year;
+	ptr->day = date_day(d);
+	ptr->month = date_month(d);
+	ptr->year = date_year(d);
 }
 
 date date_from_data(cudf_data_date *ptr)
 {
-	return MTIMEtodate(ptr->year, ptr->month, ptr->day);
+	return date_create(ptr->year, ptr->month, ptr->day);
 }
 
 void data_from_time(daytime d, cudf_data_time *ptr)
 {
-	int hour, min, sec, msec;
-	MTIMEfromtime(d, &hour, &min, &sec, &msec);
-	ptr->hours = hour;
-	ptr->minutes = min;
-	ptr->seconds = sec;
-	ptr->ms = msec;
+	ptr->hours = daytime_hour(d);
+	ptr->minutes = daytime_min(d);
+	ptr->seconds = daytime_sec(d);
+	ptr->ms = daytime_usec(d) / 1000;
 }
 
 daytime time_from_data(cudf_data_time *ptr)
 {
-	return MTIMEtotime(ptr->hours, ptr->minutes, ptr->seconds, ptr->ms);
+	return daytime_create(ptr->hours, ptr->minutes, ptr->seconds,
+						  ptr->ms * 1000);
 }
 
 void data_from_timestamp(timestamp d, cudf_data_timestamp *ptr)
 {
-	int year, month, day, hour, min, sec, msec;
-	MTIMEfromtimestamp(d, &year, &month, &day, &hour, &min, &sec, &msec);
-	ptr->date.year = year;
-	ptr->date.month = month;
-	ptr->date.day = day;
-	ptr->time.hours = hour;
-	ptr->time.minutes = min;
-	ptr->time.seconds = sec;
-	ptr->time.ms = msec;
+	daytime tm = timestamp_daytime(d);
+	date dt = timestamp_date(d);
+
+	ptr->date.day = date_day(dt);
+	ptr->date.month = date_month(dt);
+	ptr->date.year = date_year(dt);
+	ptr->time.hours = daytime_hour(tm);
+	ptr->time.minutes = daytime_min(tm);
+	ptr->time.seconds = daytime_sec(tm);
+	ptr->time.ms = daytime_usec(tm) / 1000;
 }
 
 timestamp timestamp_from_data(cudf_data_timestamp *ptr)
 {
-	return MTIMEtotimestamp(ptr->date.year, ptr->date.month, ptr->date.day, ptr->time.hours, ptr->time.minutes, ptr->time.seconds, ptr->time.ms);
+	return timestamp_create(date_create(ptr->date.year,
+										ptr->date.month,
+										ptr->date.day),
+							daytime_create(ptr->time.hours,
+										   ptr->time.minutes,
+										   ptr->time.seconds,
+										   ptr->time.ms * 1000));
 }
 
 int date_is_null(cudf_data_date value)

@@ -242,7 +242,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							strcpy(minval, str_nil);
 						}
 						BBPunfix(bn->batCacheid);
-						MTIMEcurrent_timestamp(&ts);
+						ts = timestamp_current();
 						if (!is_oid_nil(rid) && table_funcs.table_delete(tr, sysstats, rid) != LOG_OK) {
 							GDKfree(maxval);
 							GDKfree(minval);

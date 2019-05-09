@@ -222,7 +222,6 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *lockid = getArgReference_bat(stk,pci,2);
 	bat *used = getArgReference_bat(stk,pci,3);
 	int i;
-	lng now;
 	str msg = MAL_SUCCEED; 
 	timestamp tsn;
 
@@ -245,9 +244,8 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for( i = 0; msg ==  MAL_SUCCEED && i < MAXOLTPLOCKS; i++)
 	if (oltp_locks[i].used ){
-		now = oltp_locks[i].start;
-		if ((msg = MTIMEtimestamp_lng(&tsn, &now)) != MAL_SUCCEED ||
-			BUNappend(bs, oltp_locks[i].start ? &tsn : &timestamp_nil, false) != GDK_SUCCEED ||
+		tsn = oltp_locks[i].start ? timestamp_fromusec(oltp_locks[i].start) : timestamp_nil;
+		if (BUNappend(bs, &tsn, false) != GDK_SUCCEED ||
 			BUNappend(bu, oltp_locks[i].cntxt ? oltp_locks[i].cntxt->username : str_nil, false) != GDK_SUCCEED ||
 			BUNappend(bl, &i, false) != GDK_SUCCEED ||
 			BUNappend(bc, &oltp_locks[i].used, false) != GDK_SUCCEED)

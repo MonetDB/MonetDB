@@ -136,46 +136,29 @@ static ssize_t
 sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
-	int i;
 	ssize_t len1;
 	size_t big = 128;
 	char buf1[128], *s1 = buf1, *s;
-	lng val = 0, timezone = ts_res->timezone;
 	daytime tmp;
-	const daytime *a = A;
-	daytime mtime = 24 * 60 * 60 * 1000;
 
 	(void) type;
+	tmp = *(const daytime *) A;
 	if (ts_res->has_tz)
-		val = *a + timezone;
-	else
-		val = *a;
-	if (val < 0)
-		val = mtime + val;
-	if (val > mtime)
-		val = val - mtime;
-	tmp = (daytime) val;
+		tmp = daytime_add_usec_modulo(tmp, ts_res->timezone * 1000);
 
-	len1 = daytime_tostr(&s1, &big, &tmp, true);
+	len1 = daytime_precision_tostr(&s1, &big, tmp, ts_res->fraction, true);
 	if (len1 < 0)
 		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
 		if (*len < 4 || *buf == NULL) {
-			if (*buf)
-				GDKfree(*buf);
-			*buf = (str) GDKzalloc(*len = 4);
-			if (*buf == NULL) {
+			GDKfree(*buf);
+			*buf = GDKzalloc(*len = 4);
+			if (*buf == NULL)
 				return -1;
-			}
 		}
-		strcpy(*buf, s1);
+		strcpy(*buf, "nil");
 		return len1;
 	}
-
-	/* fixup the fraction, default is 3 */
-	len1 += (ts_res->fraction - 3);
-	if (ts_res->fraction == 0)
-		len1--;
 
 	if (*len < (size_t) len1 + 8) {
 		if (*buf)
@@ -188,16 +171,12 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 	s = *buf;
 	strcpy(s, buf1);
 	s += len1;
-	s[0] = 0;
-	/* extra zero's for usec's */
-	for (i = 3; i < ts_res->fraction; i++)
-		s[-i + 2] = '0';
 
 	if (ts_res->has_tz) {
-		timezone = ts_res->timezone / 60000;
-		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
-		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
-		s += 5;
+		lng timezone = llabs(ts_res->timezone / 60000);
+		s += sprintf(s, "%c%02d:%02d",
+			     (ts_res->timezone >= 0) ? '+' : '-',
+			     (int) (timezone / 60), (int) (timezone % 60));
 	}
 	return (ssize_t) (s - *buf);
 }
@@ -206,35 +185,40 @@ static ssize_t
 sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
-	int i;
 	ssize_t len1, len2;
 	size_t big = 128;
 	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
 	timestamp tmp;
 	lng timezone = ts_res->timezone;
 	date days;
-	daytime msecs;
+	daytime usecs;
 
 	(void) type;
+	tmp = *(const timestamp *)A;
 	if (ts_res->has_tz) {
-		MTIMEtimestamp_add(&tmp, A, &timezone);
-	} else {
-		tmp = *(const timestamp *)A;
+		tmp = timestamp_add_usec(tmp, timezone * 1000);
 	}
-	MTIMEtimestamp_extract_date(&days, &tmp);
-	MTIMEtimestamp_extract_daytime(&msecs, &tmp);
+	days = timestamp_date(tmp);
+	usecs = timestamp_daytime(tmp);
 	len1 = date_tostr(&s1, &big, &days, true);
-	len2 = daytime_tostr(&s2, &big, &msecs, true);
+	len2 = daytime_precision_tostr(&s2, &big, usecs, ts_res->fraction, true);
 	if (len1 < 0 || len2 < 0) {
 		GDKfree(s1);
 		GDKfree(s2);
 		return -1;
 	}
 
-	/* fixup the fraction, default is 3 */
-	len2 += (ts_res->fraction - 3);
-	if (ts_res->fraction == 0)
-		len2--;
+	if ((len1 == 3 && strcmp(s1, "nil") == 0) ||
+	    (len2 == 3 && strcmp(s2, "nil") == 0)) {
+		if (*len < 4 || *buf == NULL) {
+			GDKfree(*buf);
+			*buf = GDKzalloc(*len = 4);
+			if (*buf == NULL)
+				return -1;
+		}
+		strcpy(*buf, "nil");
+		return len1;
+	}
 
 	if (*len < (size_t) len1 + (size_t) len2 + 8) {
 		if (*buf)
@@ -251,9 +235,6 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	strcpy(s, buf2);
 	s += len2;
 	s[0] = 0;
-	/* extra zero's for usec's */
-	for (i = 3; i < ts_res->fraction; i++)
-		s[-i + 2] = '0';
 
 	if (ts_res->has_tz) {
 		timezone = ts_res->timezone / 60000;
@@ -1683,23 +1664,23 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					size_t j = 0;
 					bool swap = mnstr_get_swapbytes(s);
 					timestamp *times = (timestamp*) Tloc(iterators[i].b, srow);
+					timestamp epoch = timestamp_create(date_create(1970, 1, 1), daytime_create(0, 0, 0, 0));
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
-						MTIMEepoch2lng(&time, times + j);
+						time = timestamp_diff(times[j], epoch) / 1000;
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}
 					atom_size = sizeof(lng);
 				} else if (c->type.type->eclass == EC_DATE) {
 					// convert dates into timestamps since epoch
 					lng time;
-					timestamp tstamp;
 					size_t j = 0;
 					bool swap = mnstr_get_swapbytes(s);
 					date *dates = (date*) Tloc(iterators[i].b, srow);
+					date epoch = date_create(1970, 1, 1);
 					lng *bufptr = (lng*) buf;
 					for(j = 0; j < (row - srow); j++) {
-						MTIMEtimestamp_create_from_date(&tstamp, &dates[j]);
-						MTIMEepoch2lng(&time, &tstamp);
+						time = date_diff(dates[j], epoch) * 24*60*60*LL_CONSTANT(1000);
 						bufptr[j] = swap ? long_long_SWAP(time) : time;
 					}
 					atom_size = sizeof(lng);

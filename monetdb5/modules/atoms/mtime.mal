@@ -203,22 +203,22 @@ address timestamp_fromstr;
 command tostr()
 address timestamp_tostr;
 
-unsafe command unix_epoch():timestamp
-address MTIMEunix_epoch
-comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
-unsafe command epoch():timestamp
-address MTIMEcurrent_timestamp
-comment "unix-time (epoch) support: seconds since the Unix epoch";
+# unsafe command unix_epoch():timestamp
+# address MTIMEunix_epoch
+# comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
+# unsafe command epoch():timestamp
+# address MTIMEcurrent_timestamp
+# comment "unix-time (epoch) support: seconds since the Unix epoch";
 
 command epoch(t:timestamp):int
-address MTIMEepoch2int
+address MTIMEseconds_since_epoch
 comment "unix-time (epoch) support: seconds since epoch";
 
 command epoch(t:int):timestamp
-address MTIMEtimestamp
+address MTIMEtimestamp_fromsecond
 comment "convert seconds since epoch into a timestamp";
 command epoch(t:lng):timestamp
-address MTIMEtimestamplng
+address MTIMEtimestamp_frommsec
 comment "convert milli seconds since epoch into a timestamp";
 
 
@@ -278,56 +278,56 @@ comment "Equality of two timestamps";
 
 module batmtime;
 module mtime;
-command date_sub_sec_interval(t:date,s:int):date
-address MTIMEdate_sub_sec_interval_wrap
-comment "Subtract seconds from a date";
+# command date_sub_sec_interval(t:date,s:int):date
+# address MTIMEdate_sub_sec_interval_wrap
+# comment "Subtract seconds from a date";
 command date_sub_msec_interval(t:date,ms:lng):date
-address MTIMEdate_sub_msec_interval_lng_wrap;
+address MTIMEdate_sub_msec_interval;
 
-command date_add_sec_interval(t:date,s:int):date
-address MTIMEdate_add_sec_interval_wrap
-comment "Add seconds to a date";
+# command date_add_sec_interval(t:date,s:int):date
+# address MTIMEdate_add_sec_interval_wrap
+# comment "Add seconds to a date";
 command date_add_msec_interval(t:date,ms:lng):date
-address MTIMEdate_add_msec_interval_lng_wrap;
+address MTIMEdate_add_msec_interval;
 
 command timestamp_sub_msec_interval(t:timestamp,ms:lng):timestamp
-address MTIMEtimestamp_sub_msec_interval_lng_wrap;
+address MTIMEtimestamp_sub_msec_interval;
 command timestamp_add_msec_interval(t:timestamp,ms:lng):timestamp
-address MTIMEtimestamp_add;
+address MTIMEtimestamp_add_msec_interval;
 
 command timestamp_sub_month_interval(t:timestamp,s:int):timestamp
-address MTIMEtimestamp_sub_month_interval_wrap
+address MTIMEtimestamp_sub_month_interval
 comment "Subtract months from a timestamp";
 
-command timestamp_sub_month_interval(t:timestamp,s:lng):timestamp
-address MTIMEtimestamp_sub_month_interval_lng_wrap
-comment "Subtract months from a timestamp";
+# command timestamp_sub_month_interval(t:timestamp,s:lng):timestamp
+# address MTIMEtimestamp_sub_month_interval_lng_wrap
+# comment "Subtract months from a timestamp";
 
 command timestamp_add_month_interval(t:timestamp,s:int):timestamp
-address MTIMEtimestamp_add_month_interval_wrap
+address MTIMEtimestamp_add_month_interval
 comment "Add months to a timestamp";
 
-command timestamp_add_month_interval(t:timestamp,s:lng):timestamp
-address MTIMEtimestamp_add_month_interval_lng_wrap
-comment "Add months to a timestamp";
+# command timestamp_add_month_interval(t:timestamp,s:lng):timestamp
+# address MTIMEtimestamp_add_month_interval_lng_wrap
+# comment "Add months to a timestamp";
 
-command timestamp(t:timestamp):timestamp
-address MTIMEtimestamp2timestamp;
+# command timestamp(t:timestamp):timestamp
+# address MTIMEtimestamp2timestamp;
 
 command time_sub_msec_interval(t:daytime,ms:lng):daytime
-address MTIMEtime_sub_msec_interval_wrap
+address MTIMEtime_sub_msec_interval
 comment "Subtract seconds from a time";
 command time_add_msec_interval(t:daytime,ms:lng):daytime
-address MTIMEtime_add_msec_interval_wrap
+address MTIMEtime_add_msec_interval
 comment "Add seconds to a time";
 
 command diff(val1:daytime, val2:daytime) :lng
-address MTIMEdaytime_diff
+address MTIMEdaytime_diff_msec
 comment "returns the number of msec between 'val1' and 'val2'.";
 
-command date_add_month_interval(t:date,s:int):date
-address MTIMEdate_addmonths
-comment "Add months to a date";
+# command date_add_month_interval(t:date,s:int):date
+# address MTIMEdate_addmonths
+# comment "Add months to a date";
 
 command date_sub_month_interval(t:date,s:int):date
 address MTIMEdate_submonths
@@ -337,43 +337,47 @@ comment "Subtract months from a date";
 # #command int(d:date):int = MTIMEdate_2int;
 # #command int(d:daytime):int = MTIMEdaytime_2int;
 # #command lng(d:timestamp):int = MTIMEtimestamp_2lng;
-command date(:date):date
-address MTIMEdate2date
-comment "generate the nil date";
-command date(:void):date
-address MTIMEnil2date
-comment "generate the nil date";
+# command date(:date):date
+# address MTIMEdate2date
+# comment "generate the nil date";
+# command date(:void):date
+# address MTIMEnil2date
+# comment "generate the nil date";
+
+command local_timezone():lng
+address MTIMElocal_timezone_msec
+comment "get the local timezone in seconds";
 
 # @+ Time/date construction
 # Construct temporal values from simple(r) parameters.
 # Out-of range result values are represented by the nil.
-command date(s:str):date
-address MTIMEdate_fromstr
-comment "convert the string to a type date value";
+# command date(s:str):date
+# address MTIMEdate_fromstr
+# comment "convert the string to a type date value";
 
-command date(yr:int, mo:int, day:int):date
-address MTIMEdate_create
-comment "creates a date from (year,month,day).";
+# command date(yr:int, mo:int, day:int):date
+# address MTIMEdate_create
+# comment "creates a date from (year,month,day).";
 
-command daytime(s:str):daytime
-address MTIMEdaytime_fromstr
-comment "convert the string to a daytime value.";
-command daytime(:daytime):daytime
-address MTIMEdaytime2daytime;
-command daytime(:lng):daytime
-address MTIMEsecs2daytime;
+# command daytime(s:str):daytime
+# address MTIMEdaytime_fromstr
+# comment "convert the string to a daytime value.";
+# command daytime(:daytime):daytime
+# address MTIMEdaytime2daytime;
+# command daytime(:lng):daytime
+# address MTIMEsecs2daytime;
 
-command daytime(h:int,m:int,s:int,mi:int)
-		:daytime
-address MTIMEdaytime_create
-comment "creates a time from (hours,minutes,
-	seconds,milliseconds) parameters.";
-command timestamp(d:date,dt:daytime) :timestamp
-address MTIMEtimestamp_create
-comment "creates a timestamp from (date, daytime) parameters.";
-command timestamp(d:date) :timestamp
-address MTIMEtimestamp_create_from_date
-comment "creates a timestamp from (d,00:00:00) parameters.";
+# command daytime(h:int,m:int,s:int,mi:int)
+# 		:daytime
+# address MTIMEdaytime_create
+# comment "creates a time from (hours,minutes,
+# 	seconds,milliseconds) parameters.";
+# command timestamp(d:date,dt:daytime) :timestamp
+# address MTIMEtimestamp_create
+# comment "creates a timestamp from (date, daytime) parameters.";
+# command timestamp(d:date) :timestamp
+# address MTIMEtimestamp_create_from_date
+# comment "creates a timestamp from (d,00:00:00) parameters.";
 
 # @+ Time/date decomposition
 # There are routines that decompose a date and routines that decompose a daytime.
@@ -417,11 +421,11 @@ comment "extracts minutes from daytime";
 command batmtime.minutes(d:bat[:daytime]):bat[:int]
 address MTIMEdaytime_extract_minutes_bulk;
 
-command seconds(d:daytime) :int
-address MTIMEdaytime_extract_seconds
-comment "extracts seconds from daytime";
-command batmtime.seconds(d:bat[:daytime]):bat[:int]
-address MTIMEdaytime_extract_seconds_bulk;
+# command seconds(d:daytime) :int
+# address MTIMEdaytime_extract_seconds
+# comment "extracts seconds from daytime";
+# command batmtime.seconds(d:bat[:daytime]):bat[:int]
+# address MTIMEdaytime_extract_seconds_bulk;
 
 command sql_seconds(d:daytime) :int
 address MTIMEdaytime_extract_sql_seconds
@@ -429,19 +433,19 @@ comment "extracts seconds (with fractional milliseconds) from daytime";
 command batmtime.sql_seconds(d:bat[:daytime]):bat[:int]
 address MTIMEdaytime_extract_sql_seconds_bulk;
 
-command milliseconds(d:daytime) :int
-address MTIMEdaytime_extract_milliseconds
-comment "extracts milliseconds from daytime";
-command batmtime.milliseconds(d:bat[:daytime]):bat[:int]
-address MTIMEdaytime_extract_milliseconds_bulk;
+# command milliseconds(d:daytime) :int
+# address MTIMEdaytime_extract_milliseconds
+# comment "extracts milliseconds from daytime";
+# command batmtime.milliseconds(d:bat[:daytime]):bat[:int]
+# address MTIMEdaytime_extract_milliseconds_bulk;
 
-command daytime(t:timestamp) :daytime
-address MTIMEtimestamp_extract_daytime
-comment "extracts daytime from timestamp.";
+# command daytime(t:timestamp) :daytime
+# address MTIMEtimestamp_extract_daytime
+# comment "extracts daytime from timestamp.";
 
-command date(t:timestamp) :date
-address MTIMEtimestamp_extract_date
-comment "extracts date from timestamp.";
+# command date(t:timestamp) :date
+# address MTIMEtimestamp_extract_date
+# comment "extracts date from timestamp.";
 
 # @+ Time/date arithmetic
 # We choose to represent intervals of time as numbers of days (as int, a 32-bits integer)
@@ -451,18 +455,18 @@ comment "extracts date from timestamp.";
 #
 # Arithmetic overflow returns the nil atom (no error messages). For all commands in
 # this modules it holds that if one of the parameters is nil, the result is also nil
-command addyears(value:date, years:int) :date
-address MTIMEdate_addyears
-comment "returns the date after a number
-	of years (possibly negative).";
+# command addyears(value:date, years:int) :date
+# address MTIMEdate_addyears
+# comment "returns the date after a number
+# 	of years (possibly negative).";
 command addmonths(value:date, months:int) :date
 address MTIMEdate_addmonths
 comment "returns the date after a number of
 	months (possibly negative).";
-command adddays(value:date, days:int) :date
-address MTIMEdate_adddays
-comment "returns the date after a number
-	of days (possibly negative).";
+# command adddays(value:date, days:int) :date
+# address MTIMEdate_adddays
+# comment "returns the date after a number
+# 	of days (possibly negative).";
 command diff(val1:date, val2:date) :int
 address MTIMEdate_diff
 comment "returns the number of days
@@ -475,46 +479,46 @@ comment "Returns N where d is the Nth day
 command weekofyear(d:date) :int
 address MTIMEdate_extract_weekofyear
 comment "Returns the week number in the year.";
-command week(d:date) :int
-address MTIMEdate_extract_weekofyear
-comment "Returns the week number in the year.";
+# command week(d:date) :int
+# address MTIMEdate_extract_weekofyear
+# comment "Returns the week number in the year.";
 command dayofweek(d:date) :int
 address MTIMEdate_extract_dayofweek
 comment "Returns the current day of the week
 	where 1=monday, .., 7=sunday";
 
-command add(v:timestamp, msecs:lng) :timestamp
-address MTIMEtimestamp_add
-comment "returns the timestamp that comes 'msecs'
-	(possibly negative) after 'value'.";
+# command add(v:timestamp, msecs:lng) :timestamp
+# address MTIMEtimestamp_add
+# comment "returns the timestamp that comes 'msecs'
+# 	(possibly negative) after 'value'.";
 command diff(val1:timestamp, val2:timestamp) :lng
-address MTIMEtimestamp_diff
+address MTIMEtimestamp_diff_msec
 comment "returns the number of milliseconds
 	between 'val1' and 'val2'.";
 
 # @- Day and month names
 # One day we should introduce the concept of locale, and hook here.
-command monthnum(month:str) :int
-address MTIMEmonth_from_str
-comment "Returns month number [1-12] from a string
-	 or nil if does not match any.";
-command monthname(month:int) :str
-address MTIMEmonth_to_str
-comment "Returns month name from a number
-	between [1-12], str(nil) otherwise.";
-command daynum(day:str) :int
-address MTIMEday_from_str
-comment "Returns number of day [1-7] from a
-	string or nil if does not match any.";
-command dayname(day:int) :str
-address MTIMEday_to_str
-comment "Returns day name from a number
-	between [1-7], str(nil) otherwise.";
+# command monthnum(month:str) :int
+# address MTIMEmonth_from_str
+# comment "Returns month number [1-12] from a string
+# 	 or nil if does not match any.";
+# command monthname(month:int) :str
+# address MTIMEmonth_to_str
+# comment "Returns month name from a number
+# 	between [1-12], str(nil) otherwise.";
+# command daynum(day:str) :int
+# address MTIMEday_from_str
+# comment "Returns number of day [1-7] from a
+# 	string or nil if does not match any.";
+# command dayname(day:int) :str
+# address MTIMEday_to_str
+# comment "Returns day name from a number
+# 	between [1-7], str(nil) otherwise.";
 
-command time_synonyms(allow:bit)
-address MTIMEsynonyms
-comment "Allow synonyms for the parse format of
-	date/timestamp.";
+# command time_synonyms(allow:bit)
+# address MTIMEsynonyms
+# comment "Allow synonyms for the parse format of
+# 	date/timestamp.";
 
 command str_to_date(s:str, format:str) :date
 address MTIMEstr_to_date
@@ -543,19 +547,19 @@ comment "create a string from the time, using the specified format (see man strf
 # @+ Utilities
 # The Monet V4 procs are converted into functions.
 
-command msecs(d:int,h:int,m:int,s:int,ms:int):lng
-address MTIMEmsecs
-comment "convert date components to milliseconds";
+# command msecs(d:int,h:int,m:int,s:int,ms:int):lng
+# address MTIMEmsecs
+# comment "convert date components to milliseconds";
 
-command daytime(h:int):daytime
-address MTIMEdaytime1
-comment "default time with zeroed components";
-command daytime(h:int,m:int):daytime
-address MTIMEdaytime2
-comment "default time with zeroed components";
-command daytime(h:int,m:int,s:int):daytime
-address MTIMEdaytime3
-comment "default time with zeroed components";
+# command daytime(h:int):daytime
+# address MTIMEdaytime1
+# comment "default time with zeroed components";
+# command daytime(h:int,m:int):daytime
+# address MTIMEdaytime2
+# comment "default time with zeroed components";
+# command daytime(h:int,m:int,s:int):daytime
+# address MTIMEdaytime3
+# comment "default time with zeroed components";
 
 command current_timestamp():timestamp
 address MTIMEcurrent_timestamp;
@@ -576,12 +580,12 @@ command hours(t:timestamp):int
 address MTIMEtimestamp_hours;
 command minutes(t:timestamp):int
 address MTIMEtimestamp_minutes;
-command seconds(t:timestamp):int
-address MTIMEtimestamp_seconds;
+# command seconds(t:timestamp):int
+# address MTIMEtimestamp_seconds;
 command sql_seconds(t:timestamp):int
 address MTIMEtimestamp_sql_seconds;
-command milliseconds(t:timestamp):int
-address MTIMEtimestamp_milliseconds;
+# command milliseconds(t:timestamp):int
+# address MTIMEtimestamp_milliseconds;
 
 command year(months:int):int
 address MTIMEsql_year;
@@ -596,9 +600,9 @@ address MTIMEsql_minutes;
 command seconds(msecs:lng):int
 address MTIMEsql_seconds;
 
-unsafe command msec():lng
-address MTIMEmsec
-comment "get time of day in msec since 1-1-1970.";
+# unsafe command msec():lng
+# address MTIMEmsec
+# comment "get time of day in msec since 1-1-1970.";
 
 # @+ Prelude section
 # Upon intialization of the time module, we have to
@@ -609,8 +613,8 @@ comment "get time of day in msec since 1-1-1970.";
 command prelude() :void
 address MTIMEprelude;
 
-command epilogue() :void
-address MTIMEepilogue;
+# command epilogue() :void
+# address MTIMEepilogue;
 
 mtime.prelude();
 
@@ -621,14 +625,14 @@ command date(d:date):date address MTIMEdate_date;
 command date(t:timestamp) :date address MTIMEtimestamp_extract_date;
 
 command timestamp(s:str):timestamp address MTIMEtimestamp_fromstr;
-command timestamp(t:timestamp):timestamp address MTIMEtimestamp2timestamp;
-command timestamp(d:date) :timestamp address MTIMEtimestamp_create_from_date;
-command timestamp(secs:int):timestamp address MTIMEtimestamp;
-command timestamp(msecs:lng):timestamp address MTIMEtimestamp_lng;
+command timestamp(t:timestamp):timestamp address MTIMEtimestamp_timestamp;
+command timestamp(d:date) :timestamp address MTIMEtimestamp_fromdate;
+command timestamp(secs:int):timestamp address MTIMEtimestamp_fromsecond;
+command timestamp(msecs:lng):timestamp address MTIMEtimestamp_frommsec;
 
 command daytime(s:str):daytime address MTIMEdaytime_fromstr;
-command daytime(d:daytime):daytime address MTIMEdaytime2daytime;
-command daytime(s:lng):daytime address MTIMEsecs2daytime;
+command daytime(d:daytime):daytime address MTIMEdaytime_daytime;
+command daytime(s:lng):daytime address MTIMEdaytime_fromseconds;
 command daytime(t:timestamp) :daytime address MTIMEtimestamp_extract_daytime;
 
 module batcalc;
@@ -637,13 +641,13 @@ command date(t:bat[:timestamp]) :bat[:date]
 address MTIMEtimestamp_extract_date_bulk;
 
 command timestamp(d:bat[:date]) :bat[:timestamp]
-address MTIMEtimestamp_create_from_date_bulk;
+address MTIMEtimestamp_fromdate_bulk;
 command timestamp(secs:bat[:int]) :bat[:timestamp]
-address MTIMEtimestamp_bulk;
+address MTIMEtimestamp_fromsecond_bulk;
 command timestamp(msecs:bat[:lng]) :bat[:timestamp]
-address MTIMEtimestamp_lng_bulk;
+address MTIMEtimestamp_frommsec_bulk;
 
 command daytime(s:bat[:lng]) :bat[:daytime]
-address MTIMEsecs2daytime_bulk;
+address MTIMEdaytime_fromseconds_bulk;
 command daytime(t:bat[:timestamp]) :bat[:daytime]
 address MTIMEtimestamp_extract_daytime_bulk;

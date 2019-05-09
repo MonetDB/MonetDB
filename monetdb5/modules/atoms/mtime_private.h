@@ -31,4 +31,3 @@
 extern date DATE_MAX, DATE_MIN;		/* often used dates; computed once */
 extern date date_add(date dt, int days);
 extern date date_addmonth(date dt, int months);
-extern timestamp timestamp_add(timestamp t, lng us);

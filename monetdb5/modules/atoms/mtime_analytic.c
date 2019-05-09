@@ -15,22 +15,18 @@
  */
 
 #include "monetdb_config.h"
+#include "mal_exception.h"
 #include "mtime.h"
-#include "mtime_private.h"
 
-#define MABSOLUTE(X) ((X) < 0 ? -(X) : (X))
+#define date_sub_month(D,M)			date_add_month(D,-(M))
+#define timestamp_sub_month(T,M)	timestamp_add_month(T,-(M))
 
-#define DATE_ADD_MONTH(D,M)	date_addmonth(D,M)
-#define DATE_SUB_MONTH(D,M)	date_addmonth(D,-(M))
-#define TIMESTAMP_ADD_MONTH(T,M)	mktimestamp(date_addmonth(ts_date(T),M),ts_time(T))
-#define TIMESTAMP_SUB_MONTH(T,M)	mktimestamp(date_addmonth(ts_date(T),-(M)),ts_time(T))
-
-#define DAYTIME_ADD_MSEC(D,M)	(D + M)
-#define DAYTIME_SUB_MSEC(D,M)	(D - M)
-#define DATE_ADD_MSEC(D,M)		date_add(D,(M)/(24*60*60*1000))
-#define DATE_SUB_MSEC(D,M)		date_add(D,-(M)/(24*60*60*1000))
-#define TIMESTAMP_ADD_MSEC(T,M)	timestamp_add(T, (M)*1000)
-#define TIMESTAMP_SUB_MSEC(T,M)	timestamp_add(T, -(M)*1000)
+#define daytime_add_msec(D,M)		daytime_add_usec(D, 1000*(M))
+#define daytime_sub_msec(D,M)		daytime_add_usec(D, -1000*(M))
+#define date_add_msec(D,M)			date_add_day(D,(M)/(24*60*60*1000))
+#define date_sub_msec(D,M)			date_add_day(D,-(M)/(24*60*60*1000))
+#define timestamp_add_msec(T,M)		timestamp_add_usec(T, (M)*1000)
+#define timestamp_sub_msec(T,M)		timestamp_add_usec(T, -(M)*1000)
 
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {																\
@@ -111,9 +107,9 @@
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(IMP, LIMIT) \
 	do { \
 		if(tp1 == TYPE_date) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, DATE_SUB_MONTH, DATE_ADD_MONTH); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, date_sub_month, date_add_month); \
 		} else if(tp1 == TYPE_timestamp) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, TIMESTAMP_SUB_MONTH, TIMESTAMP_ADD_MONTH); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
 		} else { \
 			goto type_not_supported; \
 		} \
@@ -122,11 +118,11 @@
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(IMP, LIMIT) \
 	do { \
 		if(tp1 == TYPE_daytime) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, DAYTIME_SUB_MSEC, DAYTIME_ADD_MSEC); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, daytime_sub_msec, daytime_add_msec); \
 		} else if(tp1 == TYPE_date) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, DATE_SUB_MSEC, DATE_ADD_MSEC); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, date_sub_msec, date_add_msec); \
 		} else if(tp1 == TYPE_timestamp) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, TIMESTAMP_SUB_MSEC, TIMESTAMP_ADD_MSEC); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
 		} else { \
 			goto type_not_supported; \
 		} \

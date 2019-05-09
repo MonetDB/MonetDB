@@ -5,7 +5,7 @@ except ImportError:
     import process
 
 def main():
-    if time.daylight and time.gmtime(time.time()).tm_isdst:
+    if time.daylight and time.localtime(time.time()).tm_isdst:
         zone = time.altzone
     else:
         zone = time.timezone

@@ -1273,7 +1273,6 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 	/* remaining transactions are not committed, ie abort */
 	while (tr)
 		tr = tr_abort(lg, tr);
-	t0 = time(NULL);
 	if (lg->debug & 1) {
 		printf("# Finished reading the write-ahead log '%s'\n", filename);
 		fflush(stdout);
